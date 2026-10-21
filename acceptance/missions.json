@@ -17,15 +17,111 @@
    "2026-10-15: G gap G4 closed by the QC rejection-path test",
    "2026-10-15: H gap G6 closed by driving the proof-host attempt bound to exhaustion",
    "2026-10-15: B gap G2 closed by recomputing recorded comparisons; B.G9 opened for genome admission rows",
-   "2026-10-15: A gap G2 closed: per-mission active constraint in status()"
+   "2026-10-15: A gap G2 closed: per-mission active constraint in status()",
+   "2026-10-15 (review fixes): coverage 'gap' never attains and may not declare a tier (J1b); BODY_VERIFIED needs a cited node from a registered real Body process test (body_process_tests), so G.R1, R2, R5, R6 and R11 drop to SANDBOX_VERIFIED; L1 drops to SANDBOX_VERIFIED/partial and L3 to partial; C.R5 and I.I3 drop to partial (their own notes name an unmet clause); trace link tiers are computed from their proofs; J.G10 split into a buildable BODY gap and a founder gap (J.G11)",
+   "2026-10-15 (second review): coverage audit of every requirement declared covered; A.R1, A.R7, B.B3, B.B4, C.R1, C.R3, C.R8, F.R5, G.R3, G.R5, G.R6, H.H.5, I.I1, I.I2, I.I6, I.I7, I.I8, K.K1, K.K2, K.K3, K.K4, K.K6 drop to partial, each naming in its notes the clause its cited tests do not show at its declared tier; nothing raised"
   ]
  },
  "tier_reading": {
   "UNIT_VERIFIED": "Pure functions, a single component, or a fake journal.",
   "SANDBOX_VERIFIED": "Canonical code with a real ledger and Gate, in-process on a disposable ledger (in-process Body with a deterministic clock, egregore sandboxes).",
-  "BODY_VERIFIED": "A real `greg run` process (supervisord or a CLI subprocess) on its own ledger.jsonl, driven by Ed25519-signed founder commands.",
+  "BODY_VERIFIED": "A real Body process on its own ledger.jsonl, driven by Ed25519-signed founder commands: `greg run` under supervisord or as a CLI subprocess, or a driver subprocess running Body.run (the loop `greg run` runs). A BODY_VERIFIED requirement or trace link must cite at least one node, in a file listed under body_process_tests, whose test statically starts such a process; an in-process Body is SANDBOX_VERIFIED at most.",
   "beyond_tests": "Every founder key in these tests is a per-test key, not Alfonso's. No test can establish FOUNDER_ACCEPTED, AUTHORIZED_LIVE, EXTERNALLY_VERIFIED or COMMERCIAL_OUTCOME_VERIFIED."
  },
+ "body_process_tests": [
+  {
+   "file": "tests/integration/test_greg_appraiser_kill_process.py",
+   "starts": "Body.run driver",
+   "note": "The driver runs Body.run, the `greg run` loop, with only its separate-process appraiser replaced by a stand-in that runs the real greg.appraisal unless stopped, and a clock that only the two-closure case moves forward."
+  },
+  {
+   "file": "tests/integration/test_greg_artifact_process.py",
+   "starts": "greg run"
+  },
+  {
+   "file": "tests/integration/test_greg_attack_campaign_process.py",
+   "starts": "greg run"
+  },
+  {
+   "file": "tests/integration/test_greg_body_midflight_kill.py",
+   "starts": "Body.run driver",
+   "note": "The driver runs Body.run, the `greg run` loop, with one extra test capability registered."
+  },
+  {
+   "file": "tests/integration/test_greg_body_pause_process.py",
+   "starts": "greg run"
+  },
+  {
+   "file": "tests/integration/test_greg_body_supervised.py",
+   "starts": "supervisord"
+  },
+  {
+   "file": "tests/integration/test_greg_chromebook_rehearsal.py",
+   "starts": "supervisord"
+  },
+  {
+   "file": "tests/integration/test_greg_cognition_process.py",
+   "starts": "greg run"
+  },
+  {
+   "file": "tests/integration/test_greg_cortex_rehearsal.py",
+   "starts": "supervisord"
+  },
+  {
+   "file": "tests/integration/test_greg_crash_loop_process.py",
+   "starts": "Body.run driver",
+   "note": "The driver runs Body.run, the `greg run` loop, with one test capability that kills its process."
+  },
+  {
+   "file": "tests/integration/test_greg_device_revocation_process.py",
+   "starts": "greg run"
+  },
+  {
+   "file": "tests/integration/test_greg_genesis_kill_process.py",
+   "starts": "Body.run driver",
+   "note": "The driver runs Body.run with a stand-in paid builder bounded per call by max_budget_usd, stopped at one point of the build for the test to SIGKILL."
+  },
+  {
+   "file": "tests/integration/test_greg_goal_gravity_process.py",
+   "starts": "greg run"
+  },
+  {
+   "file": "tests/integration/test_greg_inbox_writer_kill_process.py",
+   "starts": "greg run"
+  },
+  {
+   "file": "tests/integration/test_greg_phone_e2e.py",
+   "starts": "supervisord",
+   "note": "Skips here: needs playwright and Chromium."
+  },
+  {
+   "file": "tests/integration/test_greg_product_path.py",
+   "starts": "supervisord"
+  },
+  {
+   "file": "tests/integration/test_greg_recovery_scenarios_process.py",
+   "starts": "greg run",
+   "note": "test_mid_execution_kill_resume also starts a Body.run driver: the greg run loop with the real fs.write or brief.engineering adapter held inside its Gate dispatch. test_the_harness_reads_the_scenarios_the_yaml_declares and test_recovery_scenario_not_run start no process."
+  },
+  {
+   "file": "tests/integration/test_greg_vepmc_path.py",
+   "starts": "supervisord"
+  },
+  {
+   "file": "tests/integration/test_greg_worker_midflight_kill.py",
+   "starts": "Body.run driver",
+   "note": "The driver runs Body.run, the `greg run` loop, with one scripted worker provider registered in greg.workers.PROVIDERS on the real CliAgentWorker path; one test also wraps greg.workers.commission so the Body holds still after the WorkOrder's evidence is written and is killed there, before the Gate's receipt."
+  },
+  {
+   "file": "tests/integration/test_whole_machine_trace_process.py",
+   "starts": "greg run"
+  },
+  {
+   "file": "tests/unit/test_greg_presence.py",
+   "starts": "greg run",
+   "note": "Only test_a_real_sigkilled_body_process_leaves_an_absence_bounded_by_its_last_heartbeat starts a process; the other tests in the file are in-process and do not count."
+  }
+ ],
  "missions": [
   {
    "id": "A",
@@ -35,8 +131,8 @@
     {
      "id": "R1",
      "obligation": "R1. A founder-authorized goal is registered: a founder-signed goal becomes durable mission state on the canonical ledger, and unsigned or forged input does not.",
-     "coverage": "covered",
-     "notes": "Registration goes through the real product surfaces. In product_path, the founder console (HTTP) turns plain words into a proposal, the founder signs it, and the body applies the MISSION from its inbox. Elsewhere it is the `greg mission submit`/`mission new` CLI. greg/body.py Body.apply verifies the signature, then MissionEngine.register records greg.mission.registered. The chromebook rehearsal asserts mission.registered events directly. The other body tests prove registration through the downstream mission events. Negative controls are unsigned/injected inbox files kept as data_only (in-process Body, SANDBOX_VERIFIED) and a wrong key refused (UNIT_VERIFIED). The founder key is a per-test Ed25519 key enrolled trust-on-first-use, not Alfonso's, so this is not FOUNDER_ACCEPTED. A separate registration path, egregore GoalRegistry.authorize in test_goal_gravity_acceptance, records only declared authority (not founder-signed) on a different engine.",
+     "coverage": "partial",
+     "notes": "Partial (coverage audit 2026-10-15): the clause 'unsigned or forged input does not' is shown only at SANDBOX_VERIFIED (unsigned or injected inbox files kept as data_only, in-process) and UNIT_VERIFIED (a wrong key refused); no cited real-process test drops unsigned or forged input. Registration goes through the real product surfaces. In product_path, the founder console (HTTP) turns plain words into a proposal, the founder signs it, and the body applies the MISSION from its inbox. Elsewhere it is the `greg mission submit`/`mission new` CLI. greg/body.py Body.apply verifies the signature, then MissionEngine.register records greg.mission.registered. The chromebook rehearsal asserts mission.registered events directly. The other body tests prove registration through the downstream mission events. Negative controls are unsigned/injected inbox files kept as data_only (in-process Body, SANDBOX_VERIFIED) and a wrong key refused (UNIT_VERIFIED). The founder key is a per-test Ed25519 key enrolled trust-on-first-use, not Alfonso's, so this is not FOUNDER_ACCEPTED. A separate registration path, egregore GoalRegistry.authorize in test_goal_gravity_acceptance, records only declared authority (not founder-signed) on a different engine.",
      "tests": [
       "tests/integration/test_greg_product_path.py::test_founder_product_path_survives_kill_and_torn_write_and_delivers_once",
       "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
@@ -72,6 +168,10 @@
       "tests/integration/test_goal_gravity_acceptance.py::test_section_33_acceptance_chain",
       "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
       "tests/integration/test_greg_product_path.py::test_founder_product_path_survives_kill_and_torn_write_and_delivers_once",
+      "tests/unit/test_greg_active_constraint.py::test_a_legacy_answer_to_an_unanswerable_ask_does_not_change_its_lifter",
+      "tests/unit/test_greg_active_constraint.py::test_a_pause_in_force_is_named_first_with_what_lifts_it",
+      "tests/unit/test_greg_active_constraint.py::test_a_withdrawn_ask_whose_unblock_was_lost_is_lifted_by_the_next_tick",
+      "tests/unit/test_greg_active_constraint.py::test_an_answer_that_is_only_a_record_keeps_the_blockers_lifter",
       "tests/unit/test_greg_active_constraint.py::test_the_active_constraint_names_the_failing_check_the_held_work_and_what_lifts_the_block",
       "tests/unit/test_greg_goal_gravity.py::test_mission_F_end_to_end",
       "tests/unit/test_greg_gravity.py::test_one_turn_reaches_a_founder_decision_with_a_screened_ask_and_gate_proposals"
@@ -82,8 +182,8 @@
     {
      "id": "R4",
      "obligation": "R4. GREG performs permitted work: work runs inside the signed light cone, or after explicit approval, through the Authority Office and Consequence Gate, with receipts and exactly once.",
-     "coverage": "covered",
-     "notes": "Out-of-cone work stays undone until the founder approves. The supervised test then shows exactly one receipted fs.write, with receipts unique per grant_id. product_path shows exactly one brief.engineering delivery to the founder folder across SIGKILL and a torn write. The cognition process tests run in-cone work (cognition.seed.solve) with no approval, under a real SIGKILL, and never compute twice. The chromebook run acquires missing capabilities through Genesis inside scope and gets exactly one DONE per approved delivery. In-process controls (SANDBOX_VERIFIED) cover in-cone work closing without the founder, and a duplicate approval producing no duplicate action. These are local filesystem and Git effects only; there is no external consequence (not AUTHORIZED_LIVE).",
+     "coverage": "partial",
+     "notes": "Partial (coverage audit 2026-10-15): a duplicate approval producing no duplicate action is shown only in-process (SANDBOX_VERIFIED); every other clause has real-process evidence. Out-of-cone work stays undone until the founder approves. The supervised test then shows exactly one receipted fs.write, with receipts unique per grant_id. product_path shows exactly one brief.engineering delivery to the founder folder across SIGKILL and a torn write. The cognition process tests run in-cone work (cognition.seed.solve) with no approval, under a real SIGKILL, and never compute twice. The chromebook run acquires missing capabilities through Genesis inside scope and gets exactly one DONE per approved delivery. In-process controls (SANDBOX_VERIFIED) cover in-cone work closing without the founder, and a duplicate approval producing no duplicate action. These are local filesystem and Git effects only; there is no external consequence (not AUTHORIZED_LIVE).",
      "tests": [
       "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
       "tests/integration/test_greg_product_path.py::test_founder_product_path_survives_kill_and_torn_write_and_delivers_once",
@@ -130,8 +230,8 @@
     {
      "id": "R7",
      "obligation": "R7. GREG presents an appropriate founder decision: one compressed, decidable ask at the real boundary, never re-asked while it waits, answerable from a fresh interface, followed by result acceptance.",
-     "coverage": "covered",
-     "notes": "Body process (BODY_VERIFIED): the console review says 'Must ask you first', and decision.requested has kind APPROVAL naming the exact capability. The ask is not re-escalated across a SIGKILL. Approval comes from a fresh CLI or console process. The console then shows 'Accept result' with the delivered file, and a signed acceptance is recorded as critique.recorded. The section-60 content contract is asserted only on the in-process Body (SANDBOX_VERIFIED): asks.validate/screen, costed options including a no-cost one, uncertainty, and the same content on morning, status and console. greg gravity's screened ask is UNIT_VERIFIED. The phone-surface tests (tests/integration/test_greg_phone_e2e.py, test_greg_phone_asks.py) were not run: playwright and Chromium are absent, so they would skip.",
+     "coverage": "partial",
+     "notes": "Partial (coverage audit 2026-10-15): the 'compressed, decidable' clause (the section-60 content contract of the ask) is asserted only on the in-process Body (SANDBOX_VERIFIED) and in greg gravity (UNIT_VERIFIED); the real-process tests show one ask at the boundary, never re-asked, answered from a fresh interface and followed by result acceptance. Body process (BODY_VERIFIED): the console review says 'Must ask you first', and decision.requested has kind APPROVAL naming the exact capability. The ask is not re-escalated across a SIGKILL. Approval comes from a fresh CLI or console process. The console then shows 'Accept result' with the delivered file, and a signed acceptance is recorded as critique.recorded. The section-60 content contract is asserted only on the in-process Body (SANDBOX_VERIFIED): asks.validate/screen, costed options including a no-cost one, uncertainty, and the same content on morning, status and console. greg gravity's screened ask is UNIT_VERIFIED. The phone-surface tests (tests/integration/test_greg_phone_e2e.py, test_greg_phone_asks.py) were not run: playwright and Chromium are absent, so they would skip.",
      "tests": [
       "tests/integration/test_greg_product_path.py::test_founder_product_path_survives_kill_and_torn_write_and_delivers_once",
       "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
@@ -161,14 +261,15 @@
      "id": "R9",
      "obligation": "R9. ...and the worker restarts: after the process executing the mission dies, a restarted one resumes without restating the goal, without a duplicate irreversible effect and without blind retry.",
      "coverage": "partial",
-     "notes": "Covered at BODY_VERIFIED where 'worker' means the GREG Body runtime process. supervisord restarts it after a real SIGKILL, and the cognition test replaces it with a new `greg run` process after a kill mid-capability. Each run resumes without the goal being restated, with exactly one DONE and at most one computation. Not covered where 'worker' means a delegated WorkOrder worker from greg/workers.py (worker.commission) killed or restarted mid-commission while a mission depends on it. The only test there is tests/unit/test_greg_workers.py::test_a_worker_dies_with_its_body: the child dies with its parent, with no mission or reconciliation involved. Uncertain dispatch leading to reconciliation is asserted only at capability level, in tests/unit/test_greg_capabilities.py.",
+     "notes": "Covered at BODY_VERIFIED where 'worker' means the GREG Body runtime process. supervisord restarts it after a real SIGKILL, and the cognition test replaces it with a new `greg run` process after a kill mid-capability. Each run resumes without the goal being restated, with exactly one DONE and at most one computation. Where 'worker' means a delegated WorkOrder worker from greg/workers.py (worker.commission): since 2026-10-16 a real Body process is SIGKILLed while its scripted worker runs (tests/integration/test_greg_worker_midflight_kill.py::test_a_worker_killed_with_its_body_is_reconciled_then_recommissioned_exactly_once); the worker dies with it, the restart reconciles and re-commissions exactly once, and the mission closes VERIFIED. Not covered: the accepted commit on greg/<order> with the source repo untouched, and a real provider (A.G4). The only test there is tests/unit/test_greg_workers.py::test_a_worker_dies_with_its_body: the child dies with its parent, with no mission or reconciliation involved. Uncertain dispatch leading to reconciliation is asserted only at capability level, in tests/unit/test_greg_capabilities.py.",
      "tests": [
       "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
-      "tests/integration/test_greg_product_path.py::test_founder_product_path_survives_kill_and_torn_write_and_delivers_once",
-      "tests/integration/test_greg_vepmc_path.py::test_first_vepmc_path_requires_founder_body_designation",
       "tests/integration/test_greg_chromebook_rehearsal.py::test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_a_model",
       "tests/integration/test_greg_cognition_process.py::test_cli_composition_survives_sigkill_without_duplicate_computation[cognition.receipt]",
-      "tests/integration/test_greg_cognition_process.py::test_cli_composition_survives_sigkill_without_duplicate_computation[mission.action]"
+      "tests/integration/test_greg_cognition_process.py::test_cli_composition_survives_sigkill_without_duplicate_computation[mission.action]",
+      "tests/integration/test_greg_product_path.py::test_founder_product_path_survives_kill_and_torn_write_and_delivers_once",
+      "tests/integration/test_greg_vepmc_path.py::test_first_vepmc_path_requires_founder_body_designation",
+      "tests/integration/test_greg_worker_midflight_kill.py::test_a_worker_killed_with_its_body_is_reconciled_then_recommissioned_exactly_once"
      ],
      "tier": "BODY_VERIFIED",
      "implementation": "IMPLEMENTED"
@@ -191,7 +292,7 @@
      "buildable_now": true,
      "dependency": "none",
      "next": "Add a per-mission active_constraint to the Body projection: the first failing check on the backcast path, the strategies held by precondition, and the current blocker kind (authority, capability, resource or evidence). Expose it in status()['goals'] and the console. In the G1 harness, assert that the first mission.action.routing.chosen advances the active-constraint check, and that strategies requiring it are listed as held. When the chosen strategy is out of cone, decision.requested must cite that same constraint and the exact capability. After the founder approves and the check passes, the constraint moves to the next node. A SIGKILL between those two steps must not change the computed constraint or create a second request.",
-     "closed_by": "greg.missions.active_constraint in status() with tests/unit/test_greg_active_constraint.py (SANDBOX)"
+     "closed_by": "greg.missions.active_constraint in status() with tests/unit/test_greg_active_constraint.py (SANDBOX): an answered or withdrawn decision or reconciliation request is reported as such, pending the next tick (an answer to a capability or human-work ask, which is only a record, and a legacy answer to an ask no decision may answer keep the blocker's lifter); a pause in force (the breaker's hold, a signed body pause, the PAUSE file, the mission's own pause) is named first under paused_by with what lifts it."
     },
     {
      "id": "G3",
@@ -203,7 +304,7 @@
     },
     {
      "id": "G4",
-     "gap": "G4. No Body-process test restarts a delegated WorkOrder worker (greg/workers.py worker.commission) mid-commission while a mission depends on it.",
+     "gap": "G4. Remaining from the original gap: one accepted commit landing on greg/<order> in the private clone with the source repo untouched after a restart, and the delegated worker reached as a `codex` stub on PATH through templates.code_change under a supervised Body. Parts (a), (b), (c) and (e) (the worker dies with its Body, UNCERTAIN with one RECONCILIATION, exactly one re-commission, ACCEPTED and VERIFIED) are shown in a real Body process by tests/integration/test_greg_worker_midflight_kill.py::test_a_worker_killed_with_its_body_is_reconciled_then_recommissioned_exactly_once (H.G4).",
      "state": "OPEN",
      "buildable_now": true,
      "dependency": "none",
@@ -273,8 +374,8 @@
     {
      "id": "B3",
      "obligation": "B3. The Mind uses an appropriate formal, mathematical, empirical, or other bounded mechanism",
-     "coverage": "covered",
-     "notes": "Each geometry is routed to a distinct real mechanism. Exact rational arithmetic, Z3 feasibility/entailment, CP-SAT optimization with a Z3 certificate, Fermi interval estimation with unit checks, causal adjustment that recovers a planted effect of 2.0, Beta updates, minimax, graph search, max-flow and composed chains all run in the bounded isolated worker. A founder detach reroutes CP-SAT work to Z3, and the reroute survives a restart. That reroute is BODY_VERIFIED in the supervised rehearsal and SANDBOX-verified in the in-process Body. The 'appropriate' choice is fixed routing policy (cortex-route-policy/0.2.1, the compiler's operator table and frozen admission statuses), not a learned choice; learned routing defaults to shadow mode.",
+     "coverage": "partial",
+     "notes": "Partial (coverage audit 2026-10-15): choosing an appropriate mechanism for each problem geometry (exact arithmetic, Z3, estimation, causal adjustment, Beta updates, games, graphs) is shown only at UNIT_VERIFIED and SANDBOX_VERIFIED; at BODY_VERIFIED the cited real-process rehearsal runs one geometry, scheduling, on CP-SAT with a Z3 certificate, and its reroute to Z3 after a detach. Each geometry is routed to a distinct real mechanism. Exact rational arithmetic, Z3 feasibility/entailment, CP-SAT optimization with a Z3 certificate, Fermi interval estimation with unit checks, causal adjustment that recovers a planted effect of 2.0, Beta updates, minimax, graph search, max-flow and composed chains all run in the bounded isolated worker. A founder detach reroutes CP-SAT work to Z3, and the reroute survives a restart. That reroute is BODY_VERIFIED in the supervised rehearsal and SANDBOX-verified in the in-process Body. The 'appropriate' choice is fixed routing policy (cortex-route-policy/0.2.1, the compiler's operator table and frozen admission statuses), not a learned choice; learned routing defaults to shadow mode.",
      "tests": [
       "tests/unit/test_greg_cognition.py::test_real_bounded_cognition_selects_different_mechanisms",
       "tests/unit/test_cortex_formal_engines.py::TestRouting",
@@ -299,8 +400,8 @@
     {
      "id": "B4",
      "obligation": "B4. The Mind verifies the result independently",
-     "coverage": "covered",
-     "notes": "Several independent checks are tested. (1) Every returned assignment is rechecked against the problem's own source constraints, so a lying engine or a forged proof is blocked. (2) The second engine confirms CP-SAT and Z3 results; when they disagree the result is CONTESTED and never averaged. (3) The isolated 'verify' worker in greg/cognition/cortex.py:independent_verify refutes corrupted outputs. (4) In a mission, the separate-process appraiser re-observes the sensor, and closure requires VERIFIED; a later REFUTED appraisal withdraws competence without rewriting history (SANDBOX). (5) The rehearsal compares the Body-process answer with a brute-force optimum that shares no code with the solver or parser (BODY_VERIFIED). The Z3 certificate status CERTIFIED is asserted only in the in-process Body test. The free-text reading test uses a scripted model fixture, not a real model.",
+     "coverage": "partial",
+     "notes": "Partial (coverage audit 2026-10-15): at BODY_VERIFIED the real-process rehearsal shows the separate-process appraisal verifying the result, and the test's own brute-force comparison; the Mind's certificate check (Z3 status CERTIFIED) is asserted only on the in-process Body, an appraisal refuting a result and withdrawing competence only at SANDBOX_VERIFIED, and the recheck against source constraints, the second-engine confirmation and the isolated verify worker refuting corrupted output only at UNIT_VERIFIED. Several independent checks are tested. (1) Every returned assignment is rechecked against the problem's own source constraints, so a lying engine or a forged proof is blocked. (2) The second engine confirms CP-SAT and Z3 results; when they disagree the result is CONTESTED and never averaged. (3) The isolated 'verify' worker in greg/cognition/cortex.py:independent_verify refutes corrupted outputs. (4) In a mission, the separate-process appraiser re-observes the sensor, and closure requires VERIFIED; a later REFUTED appraisal withdraws competence without rewriting history (SANDBOX). (5) The rehearsal compares the Body-process answer with a brute-force optimum that shares no code with the solver or parser (BODY_VERIFIED). The Z3 certificate status CERTIFIED is asserted only in the in-process Body test. The free-text reading test uses a scripted model fixture, not a real model.",
      "tests": [
       "tests/unit/test_cortex_formal_engines.py::TestIndependentRecheck",
       "tests/unit/test_cortex_formal_engines.py::TestParity",
@@ -450,8 +551,8 @@
     {
      "id": "R1",
      "obligation": "R1. A mission reaches a genuinely missing function: a founder-signed mission's check or strategy needs a function that no ATTACHED, usable, non-builtin capability provides. GREG opens a verified CapabilityDeficit (required_by, failed, unserviceable) instead of faking the result or stopping.",
-     "coverage": "covered",
-     "notes": "The Chromebook rehearsal runs a real Body process under supervisord with signed commands from the console and kill -9 restarts. Two closures (hash.sha256 and text.wordcount) count through greg/path.py genesis_closure: the deficit is opened by the same mission, the capability is not in BUILTINS, and the deficit resolves before the mission is achieved. In-process tests assert the verified-deficit facts, including unserviceable='no registered implementation of this function'. Signatures use a per-test key, so this is not FOUNDER_ACCEPTED. 'Missing' means missing from the registry. For hash.sha256 and text.wordcount, GREG's own oracle (hashlib, str.split) is itself an implementation. No negative control shows that a function that is already ATTACHED opens no deficit (gap G6). 2026-10-15: negative control: once the function is attached, a second mission needing it and a third needing only a builtin open no deficit, no Genesis route and no verification, and the second is served (per its Commit Witness) by the capability already attached.",
+     "coverage": "partial",
+     "notes": "Partial (coverage audit 2026-10-15): the verified-deficit facts (required_by, failed, unserviceable) and the negative control (a function already attached, or a builtin, opens no deficit) are asserted only in-process (SANDBOX_VERIFIED); the real-process rehearsal shows deficits opened and resolved by the same mission for capabilities outside BUILTINS. The Chromebook rehearsal runs a real Body process under supervisord with signed commands from the console and kill -9 restarts. Two closures (hash.sha256 and text.wordcount) count through greg/path.py genesis_closure: the deficit is opened by the same mission, the capability is not in BUILTINS, and the deficit resolves before the mission is achieved. In-process tests assert the verified-deficit facts, including unserviceable='no registered implementation of this function'. Signatures use a per-test key, so this is not FOUNDER_ACCEPTED. 'Missing' means missing from the registry. For hash.sha256 and text.wordcount, GREG's own oracle (hashlib, str.split) is itself an implementation. Before 2026-10-15 no negative control showed that a function already ATTACHED opens no deficit (gap G6, now closed). Negative control since then (SANDBOX_VERIFIED): once the function is attached, a second mission needing it and a third needing only a builtin open no deficit, no Genesis route and no verification, and the second is served (per its Commit Witness) by the capability already attached.",
      "tests": [
       "tests/integration/test_greg_chromebook_rehearsal.py::test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_a_model",
       "tests/integration/test_greg_cognition_mission.py::test_a_cognition_deficit_opens_capability_genesis_then_asks_the_founder_once",
@@ -484,8 +585,8 @@
     {
      "id": "R3",
      "obligation": "R3. GREG acquires a bounded solution: an installed binary or installed open-source package that is pinned and runs read-only, with read-scoped files, no network, a timeout and competence limits. GREG installs nothing.",
-     "coverage": "covered",
-     "notes": "BODY_VERIFIED covers only the installed-binary route (sha256sum, wc) in the supervised rehearsal, with a test key. Package acquisition (networkx, scipy, ortools: Mechanism Card, re-pinning on every call, isolated runner) is SANDBOX_VERIFIED. The seccomp no-network isolation used by run_isolated, the package runner and the built-code runner is checked only by a UNIT-level socket probe.",
+     "coverage": "partial",
+     "notes": "Partial (coverage audit 2026-10-15): only the installed-binary route is BODY_VERIFIED; installed-package acquisition is SANDBOX_VERIFIED, and the no-network clause is shown only by a UNIT-level socket probe. BODY_VERIFIED covers only the installed-binary route (sha256sum, wc) in the supervised rehearsal, with a test key. Package acquisition (networkx, scipy, ortools: Mechanism Card, re-pinning on every call, isolated runner) is SANDBOX_VERIFIED. The seccomp no-network isolation used by run_isolated, the package runner and the built-code runner is checked only by a UNIT-level socket probe.",
      "tests": [
       "tests/unit/test_greg_missions.py::test_capability_genesis_acquires_installed_tool_and_resumes_mission",
       "tests/unit/test_greg_open_source_genesis.py::test_the_card_pins_version_license_upstream_and_files_from_installed_metadata",
@@ -523,8 +624,8 @@
     {
      "id": "R5",
      "obligation": "R5. GREG tests the solution. A frozen acceptance oracle is fixed at deficit opening (seed derived from the deficit id, vector_digest recorded) and is never given to the candidate. Lying, overfit, escaping or non-certifying candidates are rejected and never registered. Package answers are certificate-checked on every call, and an engine that lies in service is caught.",
-     "coverage": "covered",
-     "notes": "The fake sha256sum used in the lying-tool test is an adversarial environment input. Genesis itself is not mocked. Both the body-process rehearsal and the in-process tests run the same verification code, but genesis.verified is asserted only in-process. 'Frozen before search' is asserted only by the presence of vector_digest at deficit.opened. No test checks the ledger order (deficit.opened before the first genesis.route, built or verified event) or recomputes the digest against the vectors actually used (gap G7).",
+     "coverage": "partial",
+     "notes": "Partial: the obligation's first clause, an oracle fixed at deficit opening, is shown only by the presence of vector_digest at deficit.opened (gap G7 open). The fake sha256sum used in the lying-tool test is an adversarial environment input. Genesis itself is not mocked. Both the body-process rehearsal and the in-process tests run the same verification code, but genesis.verified is asserted only in-process. 'Frozen before search' is asserted only by the presence of vector_digest at deficit.opened. No test checks the ledger order (deficit.opened before the first genesis.route, built or verified event) or recomputes the digest against the vectors actually used (gap G7).",
      "tests": [
       "tests/unit/test_greg_missions.py::test_genesis_rejects_a_lying_tool_and_escalates",
       "tests/unit/test_greg_missions.py::test_capability_genesis_acquires_installed_tool_and_resumes_mission",
@@ -582,8 +683,8 @@
     {
      "id": "R8",
      "obligation": "R8. GREG resumes the original mission: deficit.resolved records 'resume: original mission'. The ORIGINAL mission re-observes and is ACHIEVED after the deficit resolves (ledger order), and an independent appraisal re-derives the checks from receipts. Finishing genesis never closes the mission by itself.",
-     "coverage": "covered",
-     "notes": "In the supervised body process, both genesis missions survive a kill -9 while waiting for approval, close with appraisal VERIFIED (preconditions_honored), and are accepted by the test key. path moves N1 -> N2 -> N3, and genesis_closure counts 2 closures on 2 distinct capabilities. The installed-binary route is the only route proven at body level. Acceptance by the test key is not FOUNDER_ACCEPTED.",
+     "coverage": "partial",
+     "notes": "Partial (coverage audit 2026-10-15): the deficit.resolved record naming 'resume: original mission' is asserted only in-process (test_greg_genesis_builder, SANDBOX_VERIFIED); the real-process rehearsal shows the deficit resolving before the mission is achieved (ledger order) and a VERIFIED appraisal with preconditions_honored. In the supervised body process, both genesis missions survive a kill -9 while waiting for approval, close with appraisal VERIFIED (preconditions_honored), and are accepted by the test key. path moves N1 -> N2 -> N3, and genesis_closure counts 2 closures on 2 distinct capabilities. The installed-binary route is the only route proven at body level. Acceptance by the test key is not FOUNDER_ACCEPTED.",
      "tests": [
       "tests/unit/test_greg_genesis_builder.py::test_deficit_is_built_verified_attached_and_the_original_mission_closes",
       "tests/unit/test_greg_missions.py::test_capability_genesis_acquires_installed_tool_and_resumes_mission",
@@ -848,11 +949,13 @@
      "id": "R7",
      "obligation": "R7. Cancellation remains coherent: a founder stop or abandon admits no further dispatch of dependent tasks; prior approvals do not revive; an interrupted worker is reconciled, never blindly re-run; partial results are retained.",
      "coverage": "partial",
-     "notes": "Covered: STOP arriving mid-tick across two missions (fs.write); signed LIFECYCLE ABANDONED blocking a prior approved scope after restart (one cognition action); and UNCERTAIN on a dispatch claim with no receipt (AuthorityOffice with fs.write). None of these cancels a mission between or during dependent worker tasks. A probe confirmed LIFECYCLE ABANDONED after worker-a DONE stops worker-b from being dispatched (status ABANDONED, spent 0.4). Untested: that case, and the worker.commission interrupted -> RECONCILIATION -> evidence 'reused' path in greg/workers.py commission() (G6).",
+     "notes": "Covered: STOP arriving mid-tick across two missions (fs.write); signed LIFECYCLE ABANDONED blocking a prior approved scope after restart (one cognition action); and UNCERTAIN on a dispatch claim with no receipt (AuthorityOffice with fs.write). None of these cancels a mission between or during dependent worker tasks. A probe confirmed LIFECYCLE ABANDONED after worker-a DONE stops worker-b from being dispatched (status ABANDONED, spent 0.4). Untested: that case (G6). The worker.commission interrupted -> RECONCILIATION path is now shown in-process and in a real Body process (H.G4, H.G11); the 'reused' early return in greg/workers.py commission() was removed on 2026-10-16 (01d8740), because it let unreceipted evidence stand in for a new grant's run.",
      "tests": [
-      "tests/unit/test_greg_continuity.py::test_stop_arriving_mid_tick_admits_no_further_dispatch",
-      "tests/unit/test_greg_cognition_seed_path.py::test_missing_permission_then_signed_approval_and_revocation_survive_restart",
+      "tests/integration/test_greg_worker_midflight_kill.py::test_a_worker_killed_with_its_body_is_reconciled_then_recommissioned_exactly_once",
       "tests/unit/test_greg_capabilities.py::test_crash_after_dispatch_is_uncertain_and_receipts_are_reused",
+      "tests/unit/test_greg_cognition_seed_path.py::test_missing_permission_then_signed_approval_and_revocation_survive_restart",
+      "tests/unit/test_greg_continuity.py::test_stop_arriving_mid_tick_admits_no_further_dispatch",
+      "tests/unit/test_greg_mission_reconciliation.py::test_a_body_lost_after_the_work_order_evidence_but_before_its_receipt_is_recommissioned_not_closed",
       "tests/unit/test_greg_workers.py::test_a_worker_dies_with_its_body"
      ],
      "tier": "SANDBOX_VERIFIED",
@@ -920,11 +1023,11 @@
     },
     {
      "id": "G6",
-     "gap": "G6. Cancellation of a mission with dependent worker tasks is untested: abandon between tasks, and interruption during a worker.",
+     "gap": "G6. Cancellation of a mission with dependent worker tasks is untested: abandon between tasks. (Interruption during a worker is now covered: H.G4 and H.G11.)",
      "state": "OPEN",
      "buildable_now": true,
      "dependency": "none",
-     "next": "(a) Run the G1 mission. After worker-a is DONE, drop a signed LIFECYCLE {state:'ABANDONED'}. Assert status ABANDONED, worker-b never called, no work-orders/b, no worker-b grant_issued, worker-a's evidence and receipt kept, ledger chain ok. The probe showed this path works. (b) Wrap the worker.commission adapter so it raises after commission() has written evidence.json, simulating death between the dispatch claim and the receipt. Assert mission.action is UNCERTAIN, exactly one RECONCILIATION request exists, and the double was called once. Then drop a signed DECISION reconcile_not_executed and assert the next commission returns reused: True without calling the double again, and each grant has exactly one receipt."
+     "next": "Run the G1 mission. After worker-a is DONE, drop a signed LIFECYCLE {state:'ABANDONED'}. Assert status ABANDONED, worker-b never called, no work-orders/b, no worker-b grant_issued, worker-a's evidence and receipt kept, ledger chain ok. The probe showed this path works. (The former part (b), which asked for the next commission to return reused: True, described the defect H.G11 fixed: unreceipted evidence is never reused, and a not-executed answer runs a new worker under a new grant; tests/unit/test_greg_mission_reconciliation.py::test_a_body_lost_after_the_work_order_evidence_but_before_its_receipt_is_recommissioned_not_closed.)"
     },
     {
      "id": "G7",
@@ -1186,7 +1289,7 @@
     {
      "id": "R5",
      "obligation": "GREG presents only the consequential decision needing Alfonso: one compressed ask, never a duplicate.",
-     "coverage": "covered",
+     "coverage": "partial",
      "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
@@ -1198,7 +1301,7 @@
       "tests/unit/test_greg_goal_gravity_reattack.py::test_two_alternatives_give_one_ask_and_its_approve_ships_once",
       "tests/unit/test_greg_goal_gravity_surfaces.py::test_status_morning_report_and_console_show_goals_apart_from_missions"
      ],
-     "notes": "2026-10-15: proven in a real `greg run` process: a signed GOAL survives a SIGKILL with exactly one open ask, the approve (via `greg decide`) runs the move once, noise wakes nothing and relevant evidence pulls the mission into an in-cone repair."
+     "notes": "Partial (coverage audit 2026-10-15): the real-process test shows exactly one ask for the consequential move across kills; that the ask is compressed, and that it is the only decision presented, are asserted only on the in-process Body (SANDBOX_VERIFIED). 2026-10-15: proven in a real `greg run` process: a signed GOAL survives a SIGKILL with exactly one open ask, the approve (via `greg decide`) runs the move once, noise wakes nothing and relevant evidence pulls the mission into an in-cone repair."
     },
     {
      "id": "R6",
@@ -1227,7 +1330,7 @@
       "tests/unit/test_greg_goal_gravity.py::test_a_body_without_goals_does_no_gravity_work_and_writes_nothing",
       "tests/unit/test_greg_goal_gravity.py::test_ledger_closure_traces_every_dispatch_to_a_signed_mission"
      ],
-     "notes": "In-process Body; no real `greg run` process drives a GOAL yet (gap G1). 2026-10-15: proven in a real `greg run` process: a signed GOAL survives a SIGKILL with exactly one open ask, the approve (via `greg decide`) runs the move once, noise wakes nothing and relevant evidence pulls the mission into an in-cone repair."
+     "notes": "Before 2026-10-15 only an in-process Body drove a GOAL (gap G1, now closed). 2026-10-15: proven in a real `greg run` process: a signed GOAL survives a SIGKILL with exactly one open ask, the approve (via `greg decide`) runs the move once, noise wakes nothing and relevant evidence pulls the mission into an in-cone repair."
     }
    ],
    "gaps": [
@@ -1284,20 +1387,20 @@
      "id": "R1",
      "obligation": "R1 Setting: the loop runs in a development-only setting, or in an expressly authorized real setting",
      "coverage": "covered",
-     "notes": "Development-only side: a tmp GREG Body with a test founder key runs a mission with an internal_write ceiling against fixture-only offers. media_company.observed asserts operational_ratification, public_activation and authority_created are all False, and money_moved is False. The payments exercise refuses an sk_live_ key and never reads a key from the environment. The 'expressly authorized real setting' branch is not exercised; it needs a founder ruling and accounts (see gaps).",
+     "notes": "SANDBOX_VERIFIED (lowered from BODY_VERIFIED on 2026-10-15): every cited node runs the Body in-process with a test clock; no real Body process runs this loop (gap G1). 'Body' below means that in-process Body. Development-only side: a tmp GREG Body with a test founder key runs a mission with an internal_write ceiling against fixture-only offers. media_company.observed asserts operational_ratification, public_activation and authority_created are all False, and money_moved is False. The payments exercise refuses an sk_live_ key and never reads a key from the environment. The 'expressly authorized real setting' branch is not exercised; it needs a founder ruling and accounts (see gaps).",
      "tests": [
       "tests/unit/test_greg_owned_company.py::test_signed_body_completes_company_delivery_finance_loop_and_serves_receipted_page",
       "tests/unit/test_greg_owned_company.py::test_signed_peer_gets_actual_bytes_accepts_pinned_terms_and_feeds_memory_and_reputation",
       "tests/unit/test_foundry_systems.py::test_payments_trace_every_charge_to_delivery_and_grant_and_reconcile_to_the_cent"
      ],
-     "tier": "BODY_VERIFIED",
+     "tier": "SANDBOX_VERIFIED",
      "implementation": "IMPLEMENTED"
     },
     {
      "id": "R2",
      "obligation": "R2 Demand intake: a customer request or order is admitted into the loop",
      "coverage": "partial",
-     "notes": "Body level: a peer-signed fixture order is admitted by #54 offers.fulfill through foundry.apply in a founder-signed mission. But the order is pre-signed and travels inside the founder's mission params, so no customer-initiated inbound channel reaches the Body. Independent signed buyer requests (#37 post_request) and 402 challenges (#54 agent_commerce) are tested only in the sandbox. Venture-level opportunity intake (venture.assess) is tested at Body level, but only against stand-in RailScout/WMI organs. test_real_organs was SKIPPED (no real RailScout code locally).",
+     "notes": "SANDBOX_VERIFIED (lowered from BODY_VERIFIED on 2026-10-15): every cited node runs the Body in-process with a test clock; no real Body process runs this loop (gap G1). 'Body' below means that in-process Body. Body level: a peer-signed fixture order is admitted by #54 offers.fulfill through foundry.apply in a founder-signed mission. But the order is pre-signed and travels inside the founder's mission params, so no customer-initiated inbound channel reaches the Body. Independent signed buyer requests (#37 post_request) and 402 challenges (#54 agent_commerce) are tested only in the sandbox. Venture-level opportunity intake (venture.assess) is tested at Body level, but only against stand-in RailScout/WMI organs. test_real_organs was SKIPPED (no real RailScout code locally).",
      "tests": [
       "tests/unit/test_greg_owned_company.py::test_signed_body_completes_company_delivery_finance_loop_and_serves_receipted_page",
       "tests/unit/test_foundry_systems.py::test_marketplace_matches_by_sealed_second_price_and_settles_only_through_verification",
@@ -1305,14 +1408,14 @@
       "tests/unit/test_greg_ventures.py::test_signed_mission_asks_first_delivers_one_memo_and_is_independently_verified",
       "tests/unit/test_greg_ventures.py::test_real_organs"
      ],
-     "tier": "BODY_VERIFIED",
+     "tier": "SANDBOX_VERIFIED",
      "implementation": "IMPLEMENTED"
     },
     {
      "id": "R3",
      "obligation": "R3 Eligibility: unqualified demand or suppliers are refused, with reasons",
-     "coverage": "covered",
-     "notes": "#37 award excludes four kinds of bid: over-ceiling bids, unrevealed commitments, unrated newcomers above the newcomer ceiling, and suppliers whose standing lower bound is below the buyer's minimum. It also refuses self-dealing, unenrolled signers, forged signatures and untyped contracts. #54 offers refuses tampered signatures, divergent pinned terms, non-fixture orders and reused ids (unit). CommercialLoop refuses a payment when evidence is weak (real gate, unit). No eligibility refusal is exercised through the Body.",
+     "coverage": "partial",
+     "notes": "Partial (coverage audit 2026-10-15): no eligibility refusal runs through the Body; unqualified bids, terms and payments are refused only by the components on their own (#37 award, #54 offers at UNIT_VERIFIED, CommercialLoop against a real Gate). #37 award excludes four kinds of bid: over-ceiling bids, unrevealed commitments, unrated newcomers above the newcomer ceiling, and suppliers whose standing lower bound is below the buyer's minimum. It also refuses self-dealing, unenrolled signers, forged signatures and untyped contracts. #54 offers refuses tampered signatures, divergent pinned terms, non-fixture orders and reused ids (unit). CommercialLoop refuses a payment when evidence is weak (real gate, unit). No eligibility refusal is exercised through the Body.",
      "tests": [
       "tests/unit/test_foundry_systems.py::test_marketplace_matches_by_sealed_second_price_and_settles_only_through_verification",
       "tests/unit/test_greg_owned_company.py::test_signed_terms_replay_foreign_acceptance_and_corrupt_receipt_are_refused",
@@ -1339,21 +1442,21 @@
     {
      "id": "R5",
      "obligation": "R5 Fulfillment: the routed fulfiller actually delivers the product",
-     "coverage": "covered",
-     "notes": "Body: #54 fulfill copies the canon media assets into the deliveries store, and they are byte-identical to the #35 source. The mission check delivered==1 closes and the Body appraisal is VERIFIED. In the #37 marketplace, fulfillment is only a signed sha256 of an arbitrary string, with no deliverable. CommercialLoop.deliver crosses the gate, but its executor is a lambda stub.",
+     "coverage": "partial",
+     "notes": "Partial (coverage audit 2026-10-15): actual delivery is shown only on the #54 path through the in-process Body; in the cited #37 marketplace fulfillment is a signed hash with no deliverable, and CommercialLoop.deliver runs a stub executor. SANDBOX_VERIFIED (lowered from BODY_VERIFIED on 2026-10-15): every cited node runs the Body in-process with a test clock; no real Body process runs this loop (gap G1). 'Body' below means that in-process Body. Body: #54 fulfill copies the canon media assets into the deliveries store, and they are byte-identical to the #35 source. The mission check delivered==1 closes and the Body appraisal is VERIFIED. In the #37 marketplace, fulfillment is only a signed sha256 of an arbitrary string, with no deliverable. CommercialLoop.deliver crosses the gate, but its executor is a lambda stub.",
      "tests": [
       "tests/unit/test_greg_owned_company.py::test_signed_body_completes_company_delivery_finance_loop_and_serves_receipted_page",
       "tests/unit/test_greg_owned_company.py::test_signed_peer_gets_actual_bytes_accepts_pinned_terms_and_feeds_memory_and_reputation",
       "tests/unit/test_foundry_systems.py::test_agent_commerce_sells_by_card_402_and_processor_verified_receipts"
      ],
-     "tier": "BODY_VERIFIED",
+     "tier": "SANDBOX_VERIFIED",
      "implementation": "IMPLEMENTED"
     },
     {
      "id": "R6",
      "obligation": "R6 Proof: every delivery and acceptance is receipted and independently checkable; tampering is refuted",
-     "coverage": "covered",
-     "notes": "In the Body, editing 1200 to 999 in fixture-books/journal.jsonl turns the appraisal from VERIFIED to REFUTED. A re-hashed but fabricated posting makes observed() report intact False. #54 receipts are signed, and a forged receipt is rejected (sandbox). The outcome bridge requires canonical sha256 references, but it accepts a hand-built CustomerCase (unit). 2026-10-15: G1 regressions added (forged, foreign, altered, reused grants refused).",
+     "coverage": "partial",
+     "notes": "Partial (coverage audit 2026-10-15): 'every acceptance is receipted' is not shown for the outcome bridge, which accepts a hand-built CustomerCase (UNIT_VERIFIED). SANDBOX_VERIFIED (lowered from BODY_VERIFIED on 2026-10-15): every cited node runs the Body in-process with a test clock; no real Body process runs this loop (gap G1). 'Body' below means that in-process Body. In the Body, editing 1200 to 999 in fixture-books/journal.jsonl turns the appraisal from VERIFIED to REFUTED. A re-hashed but fabricated posting makes observed() report intact False. #54 receipts are signed, and a forged receipt is rejected (sandbox). The outcome bridge requires canonical sha256 references, but it accepts a hand-built CustomerCase (unit). 2026-10-15: G1 regressions added (forged, foreign, altered, reused grants refused).",
      "tests": [
       "tests/unit/test_foundry_systems.py::test_agent_commerce_sells_by_card_402_and_processor_verified_receipts",
       "tests/unit/test_greg_owned_company.py::test_company_revisions_require_expected_inputs_and_receipts_bind_even_hash_valid_books",
@@ -1361,14 +1464,14 @@
       "tests/unit/test_mission_g_grants.py",
       "tests/unit/test_outcome_bridge_v1.py"
      ],
-     "tier": "BODY_VERIFIED",
+     "tier": "SANDBOX_VERIFIED",
      "implementation": "IMPLEMENTED"
     },
     {
      "id": "R7",
      "obligation": "R7 Quality control: an independent party (not the supplier) accepts or rejects the delivery; rejection blocks charging and is recorded",
-     "coverage": "covered",
-     "notes": "#37 enforces four QC rules: the verifier must not be the supplier, the method must be one the buyer accepts, the verdict is VERIFIED or REFUTED, and a refuted match is never charged. In #54 the seller cannot confirm its own delivery, and an undeliverable order is refunded. The Body test exercises only the 'accept' path. offers.accept with verdict 'reject' is not exercised by any test. 2026-10-15: the rejection path: a signed buyer rejection is not accepted, books no revenue, records no purchase journey, lowers the offer's rating, and cannot be flipped by a later accept.",
+     "coverage": "partial",
+     "notes": "Partial (coverage audit 2026-10-15): the rejection clause never runs through the Body; it is shown by the components on their own (#37, and #54 offers with media_company and journeys, no Body, ledger or Gate), the same standard that made G.R3 partial. #37 enforces four QC rules: the verifier must not be the supplier, the method must be one the buyer accepts, the verdict is VERIFIED or REFUTED, and a refuted match is never charged. In #54 the seller cannot confirm its own delivery, and an undeliverable order is refunded. Before 2026-10-15 the Body test exercised only the 'accept' path, and no test exercised offers.accept with verdict 'reject'. Since then, the rejection path: a signed buyer rejection is not accepted, books no revenue, records no purchase journey, lowers the offer's rating, and cannot be flipped by a later accept.",
      "tests": [
       "tests/unit/test_business.py::test_self_report_does_not_verify_customer_value",
       "tests/unit/test_foundry_systems.py::test_agent_commerce_sells_by_card_402_and_processor_verified_receipts",
@@ -1427,7 +1530,7 @@
      "id": "R11",
      "obligation": "R11 Synthetic money is labelled synthetic",
      "coverage": "partial",
-     "notes": "Body: the mission's finance check reads result.fixture_finance.totals.revenue from fixture-books, whose accounts are fixture_consideration and fixture_receipts, with consideration.kind 'fixture_only_no_payment' and money_moved False. Several places carry no label. The emulator rail's charges and books carry no synthetic, test-mode or livemode flag (probe: RAIL_RECORD_HAS_SYNTHETIC_FLAG False). Neither do the #37 settlement record, the #49 revenue_cents and treasury allocation, or the datamodel money and mission_ledger revenue. Probe: CommercialLoop with stub executors evaluates to CLOSED, and external_outcome_from_case then returns externally_verified=True. 2026-10-15: G2 regressions added.",
+     "notes": "SANDBOX_VERIFIED (lowered from BODY_VERIFIED on 2026-10-15): every cited node runs the Body in-process with a test clock; no real Body process runs this loop (gap G1). 'Body' below means that in-process Body. Body: the mission's finance check reads result.fixture_finance.totals.revenue from fixture-books, whose accounts are fixture_consideration and fixture_receipts, with consideration.kind 'fixture_only_no_payment' and money_moved False. Several places carry no label. The emulator rail's charges and books carry no synthetic, test-mode or livemode flag (probe: RAIL_RECORD_HAS_SYNTHETIC_FLAG False). Neither do the #37 settlement record, the #49 revenue_cents and treasury allocation, or the datamodel money and mission_ledger revenue. Probe: CommercialLoop with stub executors evaluates to CLOSED, and external_outcome_from_case then returns externally_verified=True. 2026-10-15: G2 regressions added.",
      "tests": [
       "tests/unit/test_foundry_systems.py::test_payments_trace_every_charge_to_delivery_and_grant_and_reconcile_to_the_cent",
       "tests/unit/test_greg_community_journeys.py::test_journeys_measure_sequences_separate_tiers_and_refuse_duplicate_money",
@@ -1435,7 +1538,7 @@
       "tests/unit/test_greg_owned_company.py::test_signed_peer_gets_actual_bytes_accepts_pinned_terms_and_feeds_memory_and_reputation",
       "tests/unit/test_mission_g_synthetic_labels.py"
      ],
-     "tier": "BODY_VERIFIED",
+     "tier": "SANDBOX_VERIFIED",
      "implementation": "IMPLEMENTED"
     },
     {
@@ -1522,7 +1625,7 @@
      "id": "H.1a",
      "obligation": "H.1a Interrupt workers at multiple points (temporary worker processes: cognition workers, WorkOrder workers, proof-host workers)",
      "coverage": "partial",
-     "notes": "BODY_VERIFIED only for the read-only cognition composition. A real `greg run` process with a signed test mission is SIGKILLed after cognition.receipt or after mission.action; the restarted process gives exactly 1 cognition receipt, the mission is ACHIEVED and the appraisal is VERIFIED.\n\nWhat the other tests establish:\n- test_a_worker_dies_with_its_body: UNIT_VERIFIED. It proves only the PR_SET_PDEATHSIG mechanism, with a stand-in parent process, not a Body.\n- midworker_shutdown: UNIT_VERIFIED. A real subprocess is killed in under 1s.\n- local_mission: SANDBOX_VERIFIED. A real multiprocessing worker exits 75 after its receipt and is replaced, with 1 dispatch and 1 receipt. This is the egregore proof host with synthetic authority, not the Body.\n- goal_chase: SANDBOX_VERIFIED. Real os._exit at 3 transitions, with a synthetic founder.\n- cortex_bridge: UNIT_VERIFIED, with run_worker mocked. It checks the bridge's truthfulness, not the interruption.\n\nNot covered:\n- No in-suite test interrupts a worker.commission WorkOrder (the paid frontier worker) inside the Body. The only evidence is the manual run in docs/evidence/greg-hands/2026-10-02/README.md (proof D), taken at commit aed2f83, not at HEAD, with the Claude Code CLI and an operator test key.\n- No test kills a worker whose consequence class is internal_write or higher.",
+     "notes": "BODY_VERIFIED for the read-only cognition composition and for a paid worker.commission WorkOrder (internal_write, a signed $0.50 cap). Cognition: a real `greg run` process with a signed test mission is SIGKILLed after cognition.receipt or after mission.action; the restarted process gives exactly 1 cognition receipt, the mission is ACHIEVED and the appraisal is VERIFIED. WorkOrder (tests/integration/test_greg_worker_midflight_kill.py, a Body.run driver with a scripted worker double on the real CliAgentWorker path: scrubbed environment, Landlock where the kernel has it, the parent-death signal, the timeout): (a) the Body is SIGKILLed while the worker is its running child (read from /proc) with a partial edit in its private clone; the worker is gone within 5 s; the restart records the dispatch UNCERTAIN with one RECONCILIATION and commissions nothing over ten main-loop turns; after a signed reconcile_not_executed exactly one re-commission runs under a new grant in a fresh clone, worker.appraise gives ACCEPTED and the separate-process appraisal VERIFIED; (b) the Body is SIGKILLed after the WorkOrder's evidence.json is written and before the Gate's receipt; after reconcile_not_executed the engine's own worker.appraise rejects the unreceipted evidence and exactly one new worker run under a new grant closes the mission (gap G11).\n\nWhat the other tests establish:\n- test_a_worker_dies_with_its_body: UNIT_VERIFIED. It proves only the PR_SET_PDEATHSIG mechanism, with a stand-in parent process, not a Body.\n- midworker_shutdown: UNIT_VERIFIED. A real subprocess is killed in under 1s.\n- local_mission: SANDBOX_VERIFIED. A real multiprocessing worker exits 75 after its receipt and is replaced, with 1 dispatch and 1 receipt. This is the egregore proof host with synthetic authority, not the Body.\n- goal_chase: SANDBOX_VERIFIED. Real os._exit at 3 transitions, with a synthetic founder.\n- cortex_bridge: UNIT_VERIFIED, with run_worker mocked. It checks the bridge's truthfulness, not the interruption.\n\nNot covered:\n- The real-provider interruption (worker.commission running the Claude Code CLI, the paid frontier worker) remains operator-run: its only evidence is the manual run in docs/evidence/greg-hands/2026-10-02/README.md (proof D), taken at commit aed2f83, not at HEAD, with an operator test key. The in-suite worker is a scripted test double on the real provider path, not a frontier worker, and its Landlock confinement is asserted only where the host kernel has Landlock.\n- No test kills a worker whose consequence class is above internal_write (external_contact, e.g. daleobanks.publish).\n- Proof-host workers are interrupted only at SANDBOX_VERIFIED (local_mission, synthetic authority).",
      "tests": [
       "tests/integration/test_greg_cognition_process.py::test_cli_composition_survives_sigkill_without_duplicate_computation[cognition.receipt]",
       "tests/integration/test_greg_cognition_process.py::test_cli_composition_survives_sigkill_without_duplicate_computation[mission.action]",
@@ -1533,7 +1636,9 @@
       "tests/integration/test_goal_chase.py::test_real_abrupt_process_exit_at_transition[after_receipt]",
       "tests/integration/test_goal_chase.py::test_real_abrupt_process_exit_at_transition[after_started]",
       "tests/unit/test_greg_cortex_bridge.py::TestOneReceipt::test_interrupted_worker_does_not_report_unknown_work_as_zero",
-      "tests/unit/test_greg_cortex_bridge.py::TestWorkerOutputIsData::test_worker_crash_is_unknown_not_success"
+      "tests/unit/test_greg_cortex_bridge.py::TestWorkerOutputIsData::test_worker_crash_is_unknown_not_success",
+      "tests/integration/test_greg_worker_midflight_kill.py::test_a_worker_killed_with_its_body_is_reconciled_then_recommissioned_exactly_once",
+      "tests/integration/test_greg_worker_midflight_kill.py::test_a_body_killed_after_the_work_order_evidence_and_before_its_receipt_is_recommissioned_not_closed"
      ],
      "tier": "BODY_VERIFIED",
      "implementation": "IMPLEMENTED"
@@ -1542,19 +1647,23 @@
      "id": "H.1b",
      "obligation": "H.1b Interrupt runtime services at multiple points (Body host process, ledger writer, supervisor restart, appraiser, console/remote, genesis builder)",
      "coverage": "partial",
-     "notes": "Body interruption points proven at BODY_VERIFIED, with real SIGKILL under supervisord:\n- while waiting at an APPROVAL boundary: body_supervised, product_path, cortex_rehearsal, the 3 chromebook kills, and vepmc;\n- after a founder detach command (cortex_rehearsal, second kill);\n- SIGSTOP, then a torn ledger append, then SIGKILL, ending in tail quarantine (product_path);\n- during learning and revert (improvement_attacks, forked Body);\n- presence and heartbeat after a kill.\n\nAt UNIT_VERIFIED: the ledger tail tests, and the cooperative kill_at_step hook in DurableWorkflow, loom and foundry workflows (an in-process flag, not a real signal).\n\nAll Body kills land before dispatch of a consequential action. Not interrupted anywhere:\n- the Body between grant_dispatch and receipt of a non-retry-safe action;\n- the separate-process appraiser in the middle of an appraisal;\n- the console or remote HTTP service in the middle of a request (they are only closed in an orderly way);\n- the Capability Genesis builder in the middle of a build;\n- the anchor (TSA) call;\n- the supervisor itself.",
+     "notes": "Body interruption points proven at BODY_VERIFIED, with real SIGKILL under supervisord:\n- while waiting at an APPROVAL boundary: body_supervised, product_path, cortex_rehearsal, the 3 chromebook kills, and vepmc;\n- after a founder detach command (cortex_rehearsal, second kill);\n- SIGSTOP, then a torn ledger append, then SIGKILL, ending in tail quarantine (product_path);\n- during learning and revert (improvement_attacks, forked Body);\n- presence and heartbeat after a kill.\n\nAt UNIT_VERIFIED: the ledger tail tests, and the cooperative kill_at_step hook in DurableWorkflow, loom and foundry workflows (an in-process flag, not a real signal).\n\nAll Body kills land before dispatch of a consequential action. Not interrupted anywhere:\n- the Body between grant_dispatch and receipt of a non-retry-safe action;\n- the separate-process appraiser in the middle of an appraisal;\n- the console or remote HTTP service in the middle of a request (they are only closed in an orderly way);\n- the Capability Genesis builder in the middle of a build;\n- the anchor (TSA) call;\n- the supervisor itself.\n\n2026-10-16: the appraiser is interrupted five ways in a real Body process (SIGKILL before its verdict, mid-verdict and after a whole verdict, the Body's timeout, exit 0 without a readable verdict) and the Body is killed while its appraiser runs; the console and remote channel are SIGKILLed in the inbox write, before and after the rename; the Genesis builder is interrupted in the builder's call, in verification, before the attach and before the deficit is resolved. Still not interrupted anywhere: the anchor (TSA) call and the supervisor itself.\n\n2026-10-16: the declared recovery scenarios (tests/recovery/recovery-tests.yaml) run against real Body processes: SIGKILLs land inside the Gate dispatch of fs.write and brief.engineering (after the claim, before the receipt), before or after the adapter's effect, never partway through it; the deterministic window kills are of a Body.run driver holding the real adapter, restarted as `greg run`; the harness asserts each window and both reconciliation answers were hit.",
      "tests": [
+      "tests/integration/test_greg_appraiser_kill_process.py",
       "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
-      "tests/integration/test_greg_product_path.py::test_founder_product_path_survives_kill_and_torn_write_and_delivers_once",
-      "tests/integration/test_greg_cortex_rehearsal.py::test_kill_restart_approve_settle_once_then_revocation_survives_restart",
       "tests/integration/test_greg_chromebook_rehearsal.py::test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_a_model",
+      "tests/integration/test_greg_cortex_rehearsal.py::test_kill_restart_approve_settle_once_then_revocation_survives_restart",
+      "tests/integration/test_greg_genesis_kill_process.py",
+      "tests/integration/test_greg_inbox_writer_kill_process.py",
+      "tests/integration/test_greg_product_path.py::test_founder_product_path_survives_kill_and_torn_write_and_delivers_once",
+      "tests/integration/test_greg_recovery_scenarios_process.py::test_mid_execution_kill_resume",
       "tests/integration/test_greg_vepmc_path.py::test_first_vepmc_path_requires_founder_body_designation",
-      "tests/unit/test_greg_presence.py::test_a_real_sigkilled_body_process_leaves_an_absence_bounded_by_its_last_heartbeat",
-      "tests/unit/test_greg_improvement_attacks.py::test_learning_done_inside_a_killed_process_survives_and_a_revert_in_a_killed_process_stays",
-      "tests/unit/test_ledger_tail_recovery.py",
       "tests/unit/test_events.py::TestDurability",
-      "tests/unit/test_loom.py::TestCanonicalExecution::test_canonical_workflow_survives_midflight_kill",
-      "tests/unit/test_foundry_systems.py::test_workflows_resume_without_repeats_and_compensate_in_reverse"
+      "tests/unit/test_foundry_systems.py::test_workflows_resume_without_repeats_and_compensate_in_reverse",
+      "tests/unit/test_greg_improvement_attacks.py::test_learning_done_inside_a_killed_process_survives_and_a_revert_in_a_killed_process_stays",
+      "tests/unit/test_greg_presence.py::test_a_real_sigkilled_body_process_leaves_an_absence_bounded_by_its_last_heartbeat",
+      "tests/unit/test_ledger_tail_recovery.py",
+      "tests/unit/test_loom.py::TestCanonicalExecution::test_canonical_workflow_survives_midflight_kill"
      ],
      "tier": "BODY_VERIFIED",
      "implementation": "IMPLEMENTED"
@@ -1563,24 +1672,30 @@
      "id": "H.2",
      "obligation": "H.2 Demonstrate correct recovery (resume from retained history without restatement, remembered decisions, verified closure)",
      "coverage": "partial",
-     "notes": "Proven at BODY_VERIFIED, for kills at the approval boundary, after a torn write, and during read-only mid-dispatch:\n- body.recovered is recorded;\n- the decision request is remembered, not re-asked (count stays 1);\n- the mission resumes after a signed approval, is ACHIEVED, and the separate-process appraisal is VERIFIED;\n- verify_chain() passes, and the boot and stop counts are exact;\n- the CP-SAT detach survives a SIGKILL;\n- the torn tail is quarantined to a sidecar.\n\nAt lower tiers: pipeline handoff and self-repair are SANDBOX_VERIFIED (in-process Body, test clock, orderly close and reopen); the goal_chase and local_mission tests are SANDBOX_VERIFIED; the rest are UNIT_VERIFIED.\n\nNot demonstrated: recovery from an interruption between dispatch and receipt of a consequential action through UNCERTAIN, RECONCILIATION, a founder reconcile_* answer, and resumption. No test in the tree reaches greg/missions.py:1076-1088 or :565-576, and the out-of-tree probe shows the post-reconciliation resumption is wrong (see H.3 and H.4).",
+     "notes": "Proven at BODY_VERIFIED, for kills at the approval boundary, after a torn write, and during read-only mid-dispatch:\n- body.recovered is recorded;\n- the decision request is remembered, not re-asked (count stays 1);\n- the mission resumes after a signed approval, is ACHIEVED, and the separate-process appraisal is VERIFIED;\n- verify_chain() passes, and the boot and stop counts are exact;\n- the CP-SAT detach survives a SIGKILL;\n- the torn tail is quarantined to a sidecar.\n\nAt lower tiers: pipeline handoff and self-repair are SANDBOX_VERIFIED (in-process Body, test clock, orderly close and reopen); the goal_chase and local_mission tests are SANDBOX_VERIFIED; the rest are UNIT_VERIFIED.\n\nNot demonstrated: recovery from an interruption between dispatch and receipt of a consequential action through UNCERTAIN, RECONCILIATION, a founder reconcile_* answer, and resumption. No test in the tree reaches greg/missions.py:1076-1088 or :565-576, and the out-of-tree probe shows the post-reconciliation resumption is wrong (see H.3 and H.4). 2026-10-15: that path is now exercised and fixed (gaps G1 and G3: H1 and H3); those regressions are cited under H.3-H.5. 2026-10-16: tests/integration/test_greg_worker_midflight_kill.py (cited here) drives a real Body process through a SIGKILL between the Gate's dispatch claim and its receipt of a worker.commission WorkOrder, a restart that records body.recovered, an UNCERTAIN action bound to the killed grant, exactly one RECONCILIATION, a signed reconcile_not_executed, exactly one re-commission and a closure the separate-process appraisal VERIFIES; its second test kills after the WorkOrder's evidence and before the receipt (gap G11). The restart's UNCERTAIN may come from the write-ahead dispatch recovery (MissionEngine._recover_dispatch) or from the AuthorityOffice's prior-claim guard (greg/authority.py: a claim without a receipt is UNCERTAIN); these tests do not tell the two apart, so they show the recovery path as a whole, not _recover_dispatch specifically (tests/unit/test_greg_recover_dispatch_boundary.py pins that boundary in-process). Stays partial: runtime services other than the Body host are never interrupted (gap G7), and the real-provider worker interruption is operator-run only (H.1a).\n\n2026-10-16: after a restart the closure is appraised again and gets one real VERIFIED verdict; a Body killed mid-build reuses its open deficit and finishes resolving an auto-attach it died inside, and the mission closes VERIFIED.\n\n2026-10-16: across the seeded kills every interrupted dispatch goes through UNCERTAIN, one RECONCILIATION, a signed reconcile_* answer and resumption; a rolled-back or tampered ledger head is refused at boot with nothing written. The rollback guard reads the last heartbeat, so it has a one-tick window, and its tests pin a RUNNING or STOPPED heartbeat and a truncated ledger. After a reconcile_executed answer the separate appraiser REFUTES the closure (exactly-once cannot be re-derived from receipts there); the harness counts that trial as recovered with the verdict withheld.",
      "tests": [
+      "tests/integration/test_goal_chase.py::test_communication_unavailable_recovers_from_spine_without_duplicate",
+      "tests/integration/test_goal_chase.py::test_fresh_process_pending_boundary_exact_replay_and_closure",
+      "tests/integration/test_goal_chase_host.py::test_host_wakes_registered_mission_once_across_processes_and_pauses",
+      "tests/integration/test_greg_appraiser_kill_process.py::test_a_body_killed_while_its_appraiser_runs_appraises_the_closure_again_after_restart",
       "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
-      "tests/integration/test_greg_product_path.py::test_founder_product_path_survives_kill_and_torn_write_and_delivers_once",
-      "tests/integration/test_greg_cortex_rehearsal.py::test_kill_restart_approve_settle_once_then_revocation_survives_restart",
       "tests/integration/test_greg_chromebook_rehearsal.py::test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_a_model",
-      "tests/integration/test_greg_vepmc_path.py::test_first_vepmc_path_requires_founder_body_designation",
       "tests/integration/test_greg_cognition_process.py::test_cli_composition_survives_sigkill_without_duplicate_computation[cognition.receipt]",
       "tests/integration/test_greg_cognition_process.py::test_cli_composition_survives_sigkill_without_duplicate_computation[mission.action]",
+      "tests/integration/test_greg_cortex_rehearsal.py::test_kill_restart_approve_settle_once_then_revocation_survives_restart",
+      "tests/integration/test_greg_genesis_kill_process.py::test_a_body_killed_mid_build_attaches_nothing_half_built_and_charges_each_build_once",
       "tests/integration/test_greg_pipeline.py::test_handoff_survives_body_restart_and_is_appraised",
-      "tests/unit/test_greg_self_repair.py::test_tampered_capability_is_reformed_after_restart_instead_of_crash_looping",
-      "tests/unit/test_ledger_tail_recovery.py",
-      "tests/integration/test_goal_chase.py::test_fresh_process_pending_boundary_exact_replay_and_closure",
-      "tests/integration/test_goal_chase.py::test_communication_unavailable_recovers_from_spine_without_duplicate",
-      "tests/integration/test_goal_chase_host.py::test_host_wakes_registered_mission_once_across_processes_and_pauses",
-      "tests/unit/test_greg_local_mission.py::test_interface_exits_then_due_mission_recovers_without_human_tick",
+      "tests/integration/test_greg_product_path.py::test_founder_product_path_survives_kill_and_torn_write_and_delivers_once",
+      "tests/integration/test_greg_recovery_scenarios_process.py::test_corrupted_ledger_head",
+      "tests/integration/test_greg_recovery_scenarios_process.py::test_mid_execution_kill_resume",
+      "tests/integration/test_greg_vepmc_path.py::test_first_vepmc_path_requires_founder_body_designation",
+      "tests/integration/test_greg_worker_midflight_kill.py::test_a_body_killed_after_the_work_order_evidence_and_before_its_receipt_is_recommissioned_not_closed",
+      "tests/integration/test_greg_worker_midflight_kill.py::test_a_worker_killed_with_its_body_is_reconciled_then_recommissioned_exactly_once",
       "tests/unit/test_events.py::TestDurability",
-      "tests/unit/test_foundry_systems.py::test_queue_redelivers_dead_letters_and_survives_restart"
+      "tests/unit/test_foundry_systems.py::test_queue_redelivers_dead_letters_and_survives_restart",
+      "tests/unit/test_greg_local_mission.py::test_interface_exits_then_due_mission_recovers_without_human_tick",
+      "tests/unit/test_greg_self_repair.py::test_tampered_capability_is_reformed_after_restart_instead_of_crash_looping",
+      "tests/unit/test_ledger_tail_recovery.py"
      ],
      "tier": "BODY_VERIFIED",
      "implementation": "IMPLEMENTED"
@@ -1589,18 +1704,28 @@
      "id": "H.3",
      "obligation": "H.3 No unbounded retry loop",
      "coverage": "partial",
-     "notes": "REQUIREMENT NOT MET (counterexamples below).\n\nWhat the tests show:\n- SANDBOX_VERIFIED (in-process Body): two failing strategies settle into ACTED, ACTED, BLOCKED, WAITING, WAITING and stay that way across a restart; a tampered capability is re-formed rather than crash-looping; repairs share one signed build budget.\n- BODY_VERIFIED for a narrower property only: the approval request is not re-escalated across SIGKILL and restart.\n- UNIT_VERIFIED bounds: DurableWorkflow max_retries leading to compensation, foundry with_retries (5 attempts, exponential backoff that honours retry-after), and the cognition model-call governor.\n\nCounterexample 1 (probe.py): a retry_safe read_only capability that raises every time returns RETRYING on 12 of 12 ticks. Each tick makes a new dispatch; there is no cap, no backoff and no founder ask. UNCERTAIN never enters m.failed.\n\nCounterexample 2 (probe.py and probe_budget.py): after one signed reconcile_not_executed answer, a non-retry_safe internal_write action is redispatched on every tick with no new founder ask (9 dispatches in 11 ticks).\n\nProcess level: the restart policy is unbounded by design. supervisord uses autorestart=unexpected, and startretries=100 counts only start failures; systemd uses Restart=on-failure with RestartSec=5 and no StartLimitBurst; launchd uses KeepAlive with ThrottleInterval=10. Body.boot counts unfinished boots but never holds. local_mission's max_attempts<=3 bound is not exercised by any test.\n\nProbe paths: /tmp/claude 2026-10-15: H2 regression added; the bound is SANDBOX tier (in-process Body). 2026-10-15: a process-level crash loop is bounded too: a real Body process that dies in every tick holds after 5 such boots within 10 minutes (heartbeat HELD, no mission tick) until a signed BODY_RESUME. 2026-10-15: the proof host's attempt bound driven to exhaustion: three replacement workers die, the host blocks for operator reconciliation, and asking again forks nothing.",
+     "notes": "Partial. Both counterexamples recorded on 2026-10-15 are fixed and pinned by regressions, and the process restart loop is bounded; the retry bounds of runtime services other than the Body host are not shown (gap G7), and the mission-level bound is shown only in-process.\n\nWhat the tests show:\n- SANDBOX_VERIFIED (in-process Body): two failing strategies settle into ACTED, ACTED, BLOCKED, WAITING, WAITING and stay that way across a restart; a tampered capability is re-formed rather than crash-looping; repairs share one signed build budget.\n- Counterexample 1 (fixed by f3dd17f, gap G2): a retry_safe read_only capability that raised every time returned RETRYING on 12 of 12 ticks with no cap, backoff or founder ask. tests/unit/test_greg_mission_retry_bound.py now pins at most 3 backed-off retries, then one NO_STRATEGY ask (SANDBOX).\n- Counterexample 2 (fixed by 8598452, gap G1): after one signed reconcile_not_executed answer, a non-retry_safe internal_write action was redispatched on every tick with no new ask (9 dispatches in 11 ticks). tests/unit/test_greg_mission_reconciliation.py now pins one reconciliation per dispatch and unknown spend reserved at its cap (SANDBOX).\n- Process level: supervisord (autorestart=unexpected, startretries=100), systemd and launchd restart a crashing Body without limit; the crash-loop breaker holds a real Body process that dies in every tick after 5 such boots within 10 minutes (heartbeat HELD, no mission tick) until a signed BODY_RESUME (gap G5, test_greg_crash_loop_process).\n- The proof host's max_attempts<=3 bound is driven to exhaustion: three replacement workers die, the host blocks for operator reconciliation, and asking again forks nothing (gap G6).\n- BODY_VERIFIED for a narrower property: the approval request is not re-escalated across SIGKILL and restart.\n- UNIT_VERIFIED bounds: DurableWorkflow max_retries leading to compensation, foundry with_retries (5 attempts, exponential backoff that honours retry-after), and the cognition model-call governor.\n- The process-level crash-loop hold (H.G5) raises one founder ask, waits a full tick and measures nothing while held, and contains held-path faults (tests/unit/test_greg_crash_loop_breaker.py).\n\n2026-10-16: a real Body does not re-commission an interrupted worker.commission over ten main-loop turns while its reconciliation is open, and one not-executed answer gives exactly one re-commission (test_greg_worker_midflight_kill, BODY tier for this path only; the requirement's tier is unchanged).\n\n2026-10-16: two more retry bounds are shown in a real process: an appraiser run that gives no verdict is appraised at most 3 times per closure (the first run and 2 retries), then recorded UNAVAILABLE, and the bound holds across a crash between the last run and its final record; interrupted Genesis builds are charged at their reserved ceiling, so retries stop inside the signed build budget and the founder is asked. Residuals: a hung appraiser's retries hold the main loop up to 3 x 120 s per closure with no backoff; the anchor (TSA) retry bound is not shown.",
      "tests": [
       "tests/integration/test_goal_chase.py::test_duplicate_observation_trigger_and_escalation_spam_suppressed",
+      "tests/integration/test_greg_appraiser_kill_process.py::test_an_interrupted_appraisal_is_retried_within_a_bound_and_never_fabricates_a_verdict",
+      "tests/integration/test_greg_appraiser_kill_process.py::test_attempts_are_counted_per_closure_not_pooled_across_a_mission_s_closures",
       "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
       "tests/integration/test_greg_crash_loop_process.py::test_a_body_that_dies_on_every_tick_holds_after_the_limit_until_the_founder_resumes",
+      "tests/integration/test_greg_genesis_kill_process.py::test_builds_interrupted_every_time_stop_at_the_signed_budget_and_ask_the_founder",
+      "tests/integration/test_greg_worker_midflight_kill.py::test_a_worker_killed_with_its_body_is_reconciled_then_recommissioned_exactly_once",
       "tests/unit/test_cognition_runtime_budget.py::test_existing_model_call_governor_counts_attempts_and_prevents_retries",
       "tests/unit/test_cognition_runtime_budget.py::test_terminal_refusal_at_deadline_remains_refusal_without_retry",
       "tests/unit/test_events.py::TestDurability::test_retries_exhausted_compensates_in_reverse",
       "tests/unit/test_foundry_systems.py::test_distributed_controls_charge_exactly_once_resume_and_compensate",
+      "tests/unit/test_greg_appraisal_retry_bound.py::test_a_closure_whose_attempts_are_used_up_is_finished_without_another_run",
       "tests/unit/test_greg_continuity.py::test_two_ineffective_strategies_wait_for_the_founder_instead_of_crash_looping",
       "tests/unit/test_greg_crash_loop_breaker.py",
+      "tests/unit/test_greg_crash_loop_breaker.py::test_a_clean_stop_ends_the_run_of_unfinished_boots",
+      "tests/unit/test_greg_crash_loop_breaker.py::test_a_held_body_with_a_due_mission_waits_a_full_tick_and_measures_nothing",
+      "tests/unit/test_greg_crash_loop_breaker.py::test_a_running_body_whose_work_fails_still_crashes_for_the_breaker_to_count",
+      "tests/unit/test_greg_crash_loop_breaker.py::test_each_hold_raises_exactly_one_ask_and_only_a_signed_resume_closes_it",
       "tests/unit/test_greg_local_mission.py::test_a_worker_that_always_dies_exhausts_the_bound_and_blocks_without_redispatch",
+      "tests/unit/test_greg_mission_reconciliation.py::test_one_reconciliation_answer_settles_exactly_one_dispatch",
       "tests/unit/test_greg_mission_retry_bound.py",
       "tests/unit/test_greg_models.py::test_installed_body_can_build_and_a_missing_route_degrades_instead_of_crash_looping",
       "tests/unit/test_greg_platform.py::test_supervisor_configs_restart_crashes_but_respect_stop",
@@ -1614,15 +1739,18 @@
      "id": "H.4",
      "obligation": "H.4 No duplicate irreversible consequence",
      "coverage": "partial",
-     "notes": "BODY_VERIFIED, with limits: exactly 1 DONE action, receipts unique per grant, and exactly one delivery, after a SIGKILL. But every Body kill lands before the consequential dispatch, so 'exactly once' is never stressed by an interruption in the middle of the effect. Every consequence exercised is a reversible local write (a workspace file or the local Deliveries folder); no irreversible external effect is exercised.\n\nAt lower tiers:\n- GREG office-level receipt reuse and refusal to blindly redispatch after an UNCERTAIN: SANDBOX_VERIFIED (in-process Body office, crash simulated by an adapter exception).\n- Kernel primitives (BridgeState, outbox, Gate single-use grant and reconciliation_required, DurableWorkflow): UNIT_VERIFIED.\n- The egregore gravity loop, where a gate cut between dispatch and receipt is never redispatched: UNIT_VERIFIED.\n- goal_chase and local_mission: SANDBOX_VERIFIED.\n\nCounterexample (probe_budget.py): after one reconcile_not_executed answer, a $0.40 non-retry_safe internal_write action runs 9 times under a signed $1.00 budget. Every run is UNCERTAIN, so each may have taken effect; booked spend is $0.00 and worst-case exposure is $3.60. The same path serves worker.commission (paid, internal_write) and daleobanks.publish (external_contact, not retry_safe). 2026-10-15: H1 and H3 regressions added; SIGKILL between claim and receipt in a real Body process.",
+     "notes": "BODY_VERIFIED, with limits: exactly 1 DONE action, receipts unique per grant, and exactly one delivery, after a SIGKILL. But every Body kill lands before the consequential dispatch, so 'exactly once' is never stressed by an interruption in the middle of the effect. Every consequence exercised is a reversible local write (a workspace file or the local Deliveries folder); no irreversible external effect is exercised.\n\nAt lower tiers:\n- GREG office-level receipt reuse and refusal to blindly redispatch after an UNCERTAIN: SANDBOX_VERIFIED (in-process Body office, crash simulated by an adapter exception).\n- Kernel primitives (BridgeState, outbox, Gate single-use grant and reconciliation_required, DurableWorkflow): UNIT_VERIFIED.\n- The egregore gravity loop, where a gate cut between dispatch and receipt is never redispatched: UNIT_VERIFIED.\n- goal_chase and local_mission: SANDBOX_VERIFIED.\n\nCounterexample (probe_budget.py): after one reconcile_not_executed answer, a $0.40 non-retry_safe internal_write action runs 9 times under a signed $1.00 budget. Every run is UNCERTAIN, so each may have taken effect; booked spend is $0.00 and worst-case exposure is $3.60. The same path serves worker.commission (paid, internal_write) and daleobanks.publish (external_contact, not retry_safe). 2026-10-15: H1 and H3 regressions added; SIGKILL between claim and receipt in a real Body process.\n\n2026-10-16: a paid worker.commission (internal_write, metered) interrupted mid-run, and after its evidence but before its receipt, in a real Body process (test_greg_worker_midflight_kill): every grant is dispatched once, receipts are unique per grant, the killed grant is never receipted, each not-executed answer gives exactly one re-commission, and evidence without a receipt is neither reused as another grant's result nor accepted as a closure (gap G11). Still a reversible local write: no irreversible external effect is exercised (gap G8).\n\n2026-10-16: a decision sent through the console or the remote channel and interrupted in the inbox write is applied exactly once after the retry; no partial file is ever read, and the phone's same envelope is refused as a replayed nonce. A founder command, not an irreversible external effect.\n\n2026-10-16: exactly-once is stressed by kills inside the Gate dispatch (after the claim, before the receipt), before or after the effect: per trial one brief, one note, one delivery and one approval ask, no duplicate receipt per grant and no re-dispatch under a fresh grant.",
      "tests": [
       "tests/integration/test_goal_chase.py::test_communication_unavailable_recovers_from_spine_without_duplicate",
       "tests/integration/test_goal_chase.py::test_real_abrupt_process_exit_at_transition[after_receipt]",
       "tests/integration/test_greg_body_midflight_kill.py",
       "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
       "tests/integration/test_greg_cortex_rehearsal.py::test_kill_restart_approve_settle_once_then_revocation_survives_restart",
+      "tests/integration/test_greg_inbox_writer_kill_process.py",
       "tests/integration/test_greg_product_path.py::test_founder_product_path_survives_kill_and_torn_write_and_delivers_once",
+      "tests/integration/test_greg_recovery_scenarios_process.py::test_mid_execution_kill_resume",
       "tests/integration/test_greg_vepmc_path.py::test_first_vepmc_path_requires_founder_body_designation",
+      "tests/integration/test_greg_worker_midflight_kill.py",
       "tests/unit/test_consequence_gate.py::test_single_use_grant_cannot_be_replayed",
       "tests/unit/test_foundry_systems.py::test_distributed_controls_charge_exactly_once_resume_and_compensate",
       "tests/unit/test_goal_gravity.py::test_restart_continuity_without_duplicate_consequential_action",
@@ -1642,11 +1770,15 @@
     {
      "id": "H.5",
      "obligation": "H.5 Truthful handling of unknown completion",
-     "coverage": "covered",
-     "notes": "For unknown completion of an action, the highest tier reached is SANDBOX_VERIFIED: a real os._exit after goal.action_started becomes RECONCILIATION_REQUIRED with no gate execution (synthetic founder). The GREG AuthorityOffice returning UNCERTAIN ('dispatch claimed without receipt; outcome unknown') is SANDBOX_VERIFIED in-process. Kernel unknown-ack, reconciliation_required and the gravity-loop 'unknown' evidence state, which raises an emergency reconciliation item, are UNIT_VERIFIED. The only Body-level truthfulness proven is the absence after a SIGKILL being bounded by the last heartbeat (presence).\n\nNot covered:\n- No test drives a GREG mission to UNCERTAIN, then a RECONCILIATION founder request, then a signed reconcile_executed or reconcile_not_executed answer.\n\nUntruthful behaviour found by the probe:\n- UNCERTAIN attempts book cost_usd 0.0 (missions.py:1046), which records unknown spend as zero.\n- After the first reconciliation, attempts 1 to 8 stay UNCERTAIN in history with no reconciliation record (missions.py:576 keys the record per request_id). 2026-10-15: truthful unknown completion is now proven in a real Body process (SIGKILL after the Gate's claim; reconciliation bound to the claimed grant through `greg decide`).",
+     "coverage": "partial",
+     "notes": "Partial (coverage audit 2026-10-15): truthful unknown completion is BODY_VERIFIED for a GREG mission dispatch (SIGKILL after the Gate's claim, reconciled through `greg decide`); for the kernel's unknown append-ack and reconciliation_required, and for the goal-gravity loop's 'unknown' evidence state, it is shown only at UNIT_VERIFIED. Before H3, for unknown completion of an action, the highest tier reached was SANDBOX_VERIFIED: a real os._exit after goal.action_started becomes RECONCILIATION_REQUIRED with no gate execution (synthetic founder). The GREG AuthorityOffice returning UNCERTAIN ('dispatch claimed without receipt; outcome unknown') is SANDBOX_VERIFIED in-process. Kernel unknown-ack, reconciliation_required and the gravity-loop 'unknown' evidence state, which raises an emergency reconciliation item, are UNIT_VERIFIED. Before H3 the only Body-level truthfulness proven was the absence after a SIGKILL being bounded by the last heartbeat (presence).\n\nBefore H1 and H3 (2026-10-15) no test drove a GREG mission to UNCERTAIN, then a RECONCILIATION founder request, then a signed reconcile_executed or reconcile_not_executed answer; test_greg_body_midflight_kill and test_greg_mission_reconciliation now do (gaps G1 and G3 closed).\n\nUntruthful behaviour the probe found before H1, now fixed (one reconciliation per dispatch; unknown spend reserved at its cap):\n- UNCERTAIN attempts book cost_usd 0.0 (missions.py:1046), which records unknown spend as zero.\n- After the first reconciliation, attempts 1 to 8 stay UNCERTAIN in history with no reconciliation record (missions.py:576 keys the record per request_id). 2026-10-15: truthful unknown completion is now proven in a real Body process (SIGKILL after the Gate's claim; reconciliation bound to the claimed grant through `greg decide`).\n\n2026-10-16: unknown completion of a paid worker.commission is BODY_VERIFIED (test_greg_worker_midflight_kill). Its provider's spend is not observable, so both reconciliation answers book its signed cap; the RECONCILIATION ask says so before the founder answers (evidence.booked_usd_by_answer and the recommendation), and the settlement's spend_basis states that the provider may never have run. One interrupted dispatch counts as one failure in routing and resilience, not two (tests/unit/test_greg_resilience.py::test_one_interrupted_dispatch_counts_once_in_routing_and_resilience). Residuals: a dispatch whose Body stopped before its worker started (while cloning) is booked at its cap, overstating spend by up to the cap; evidence a stopped Body wrote without a receipt cannot be accepted even under reconcile_executed (one NO_STRATEGY ask instead, gap G11); the separate appraiser does not re-derive the booking (gap G12).\n\n2026-10-16: a killed, timed-out or unreadable appraisal is recorded as an attempt and finally UNAVAILABLE, never VERIFIED, including a killed run whose VERIFIED output was whole. A build the Body died inside is charged at its reservation, not $0, and cost measurement counts it there with its cost unknown. Residual: a builder that itself fails is settled at $0, and its call is left out of the model-call count.",
      "tests": [
       "tests/integration/test_goal_chase.py::test_real_abrupt_process_exit_at_transition[after_started]",
+      "tests/integration/test_greg_appraiser_kill_process.py",
       "tests/integration/test_greg_body_midflight_kill.py",
+      "tests/integration/test_greg_genesis_kill_process.py::test_a_body_killed_mid_build_attaches_nothing_half_built_and_charges_each_build_once",
+      "tests/integration/test_greg_recovery_scenarios_process.py::test_mid_execution_kill_resume",
+      "tests/integration/test_greg_worker_midflight_kill.py",
       "tests/unit/test_foundry_systems.py::test_distributed_controls_charge_exactly_once_resume_and_compensate",
       "tests/unit/test_goal_gravity_seams.py::test_gate_cut_between_dispatch_and_receipt_is_never_redispatched_and_reconciles_from_the_ledger",
       "tests/unit/test_goal_gravity_seams.py::test_outcome_unknown_on_an_external_move_is_an_emergency_information_item",
@@ -1659,6 +1791,8 @@
       "tests/unit/test_greg_mission_reconciliation.py",
       "tests/unit/test_greg_presence.py::test_a_real_sigkilled_body_process_leaves_an_absence_bounded_by_its_last_heartbeat",
       "tests/unit/test_greg_recover_dispatch_boundary.py",
+      "tests/unit/test_greg_resilience.py::test_one_interrupted_dispatch_counts_once_in_routing_and_resilience",
+      "tests/unit/test_greg_sop_compounding.py::test_a_build_the_body_died_inside_is_measured_at_its_reservation_with_its_cost_unknown",
       "tests/unit/test_greg_workers.py::test_unknown_reported_zero_and_overcap_spend_remain_distinct",
       "tests/unit/test_shared_durable_boundary.py::test_interruption_is_reconciliation_not_redispatch",
       "tests/unit/test_shared_durable_boundary.py::test_unknown_append_ack_requires_reopen",
@@ -1699,10 +1833,11 @@
     {
      "id": "G4",
      "gap": "G4 No in-suite interruption of a worker.commission WorkOrder (the paid worker) inside a Body process. The only evidence is the manual 2026-10-02 run at aed2f83 with the Claude Code CLI.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Use a driver script that registers a ScriptedWorker double in workers.PROVIDERS; it writes a file in the private clone, then sleeps 30s. Run the Body as a separate process, wait for the WorkerLease and the worker PID, and SIGKILL the Body.\n\nAssert:\n- the worker PID is gone within 5s (PDEATHSIG under the real Body);\n- after restart: UNCERTAIN, then 1 RECONCILIATION request;\n- after a signed reconcile_not_executed: the partial clone is discarded, exactly 1 re-commission happens, and appraise gives ACCEPTED;\n- booked spend is no more than 2x the signed cap and is never 0 for the interrupted run.\n\nThe real-provider variant is blocked: it needs Claude Code CLI credentials and network, so it is an operator-run proof, not CI."
+     "next": "Use a driver script that registers a ScriptedWorker double in workers.PROVIDERS; it writes a file in the private clone, then sleeps 30s. Run the Body as a separate process, wait for the WorkerLease and the worker PID, and SIGKILL the Body.\n\nAssert:\n- the worker PID is gone within 5s (PDEATHSIG under the real Body);\n- after restart: UNCERTAIN, then 1 RECONCILIATION request;\n- after a signed reconcile_not_executed: the partial clone is discarded, exactly 1 re-commission happens, and appraise gives ACCEPTED;\n- booked spend is no more than 2x the signed cap and is never 0 for the interrupted run.\n\nThe real-provider variant is blocked: it needs Claude Code CLI credentials and network, so it is an operator-run proof, not CI.",
+     "closed_by": "d17996e and 01d8740: tests/integration/test_greg_worker_midflight_kill.py (Body.run driver, a scripted worker on the real CliAgentWorker path): the worker dies with its Body within 5 s, the restart reconciles (UNCERTAIN, one RECONCILIATION, nothing commissioned over ten turns), reconcile_not_executed gives exactly one re-commission in a fresh clone, ACCEPTED and VERIFIED, and the interrupted run's signed cap is booked (2x the cap in all, never 0 for the interrupted run). Not closed by it: the real-provider (Claude Code CLI) interruption, still operator-run and manual at aed2f83."
     },
     {
      "id": "G5",
@@ -1711,7 +1846,7 @@
      "buildable_now": true,
      "dependency": "none",
      "next": "Design and test a breaker: K unfinished boots inside a window W put the Body in a recorded HOLD state, raise one founder ask ('crash loop'), and stop executing mission ticks while staying observable.\n\nTest: run under supervisord with a driver that raises on tick 1 after startsecs (for example a capability state file that makes Body.open succeed and tick fail). Assert that after K restarts there is 1 hold event, 1 decision.requested, no new mission.action, and the heartbeat state is HELD. Also tighten service.systemd_unit with StartLimitBurst/StartLimitIntervalSec, plus a unit assertion.",
-     "closed_by": "greg/body.py crash-loop breaker with tests/unit/test_greg_crash_loop_breaker.py and tests/integration/test_greg_crash_loop_process.py (real process; the hold is lifted only by a signed BODY_RESUME)"
+     "closed_by": "greg/body.py crash-loop breaker with tests/unit/test_greg_crash_loop_breaker.py and tests/integration/test_greg_crash_loop_process.py (real process). The hold raises one CRASH_LOOP_HOLD founder ask that no DECISION answers and the resume withdraws; it is lifted only by a signed BODY_RESUME (the founder key, or a device key the founder delegated BODY_RESUME); a paused or held body waits a full tick, records no telemetry and contains a failure in the work it still does (recorded once per boot and failure site as body.fault_contained); the count resets on a clean stop; an inbox file the held body can neither ingest nor set aside is skipped by that process, so a signed resume behind it is still read; the same file rejected again for another reason is a second rejection, not a crash. Not done: the supervisor-level start limit the plan also named (it would put a held body into a failed unit instead of keeping it observable)."
     },
     {
      "id": "G6",
@@ -1724,11 +1859,11 @@
     },
     {
      "id": "G7",
-     "gap": "G7 Runtime services other than the Body host are never interrupted: the separate-process appraiser in the middle of an appraisal, the console or remote HTTP service in the middle of a POST /decide, the Capability Genesis builder in the middle of a build, and the anchor TSA call.",
+     "gap": "G7 Runtime services other than the Body host: the appraiser, the console and remote channel and the Genesis builder are now interrupted in a real Body process (2026-10-16). Not done: the anchor (TSA) call, whose retry bound under interruption is not shown, and the supervisor itself. Residuals: a hung appraiser's retries hold the main loop up to 3 x 120 s per closure with no backoff; a builder that itself fails is settled at $0.",
      "state": "OPEN",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Add parametrized integration tests on the supervised Body:\n- Appraiser: substitute a greg.appraisal stub on PYTHONPATH that sleeps, then SIGKILL its PID. Assert no mission.appraised VERIFIED is fabricated, a bounded number of re-appraisals happen on later ticks, and a recorded UNAVAILABLE is written after K.\n- Console and remote: SIGKILL the server while it handles /decide. Assert the inbox holds either 0 or 1 signed decision file and never a partial file, and the decision is applied at most once.\n- Genesis: kill the Body while StaticBuilder is building. Assert no half-attached capability after restart, the build budget is charged at most once per attempt, and the deficit is reopened exactly once."
+     "next": "Anchor: interrupt anchor.anchor_once in a real Body process against a local test TSA configured by an ANCHOR_CONFIGURE signed with the test key (a TSA that hangs, one killed mid-response, the Body SIGKILLed mid-call); assert proof.anchor_failed is recorded, the next try waits interval_minutes, missions keep running, and no proof.anchored is recorded without a verified token. Appraiser: move appraisal off the main loop or back off its retries, then pin that a hung appraiser cannot hold the loop for 3 x 120 s."
     },
     {
      "id": "G8",
@@ -1749,10 +1884,44 @@
     {
      "id": "G10",
      "gap": "G10 tests/recovery/recovery-tests.yaml declares mid_execution_kill_resume (success rate at least 0.95), black_start_environment, corrupted_ledger_head and old_token_reactivation, but no test in the tree consumes it.",
+     "state": "CLOSED",
+     "buildable_now": true,
+     "dependency": "none",
+     "next": "Add a harness that loads the YAML and runs N=20 seeded random-offset SIGKILLs of the supervised Body across a mission with read, write, approval and delivery steps. Assert recovery success rate >= 0.95, 0 duplicate receipts per grant_id, and 0 UNCERTAIN actions left without a reconciliation request. Add a corrupted-head case (expected_head mismatch halts with no normal-state restoration), and an old-token case (a revoked device grant never reactivates after restart, extending test_greg_remote).",
+     "closed_by": "81c40d9 and 70bdd42: tests/integration/test_greg_recovery_scenarios_process.py runs mid_execution_kill_resume, corrupted_ledger_head and old_token_reactivation against real Body processes (the harness restarts the Body itself, not under supervisord); black_start_environment is reported NOT RUN (G13). Residuals: every consequence is a reversible local write, every key a per-test key; re-delegating a compromised key cannot stop tokens its holder forward-dated; the remote (phone) channel's old-token path is not exercised at Body tier."
+    },
+    {
+     "id": "G11",
+     "gap": "G11 DEFECT (found while closing G4; fixed): a Body killed after a WorkOrder's evidence.json is written but before the Gate's receipt, then reconciled not executed, ran one worker, recorded actions UNCERTAIN then RECONCILED_NOT_EXECUTED with no re-commission, and closed the mission ACHIEVED (actions_done 0) while the separate-process appraisal gave REFUTED ('world no longer matches'). Cause: the engine's own worker.appraise sensor ran without the journal (greg/missions.py MissionEngine._context), so it did not bind the retained evidence to its canonical commission receipt as the separate appraiser does (dd23e29); and greg/workers.py commission returned completed evidence of the same order digest as a new grant's result ('reused'), so a re-commission would have run no worker and been rejected by that binding.",
+     "state": "CLOSED",
+     "closed_by": "01d8740: the engine's worker.appraise sensor reads the journal and binds the order to its commission receipt; every grant runs its own worker in a fresh clone. Regressions: tests/unit/test_greg_mission_reconciliation.py (SANDBOX: the not-executed and the executed answers) and tests/integration/test_greg_worker_midflight_kill.py::test_a_body_killed_after_the_work_order_evidence_and_before_its_receipt_is_recommissioned_not_closed (BODY). Stated limit: evidence without a receipt is never accepted, so an answer of reconcile_executed books the cap and leads to one NO_STRATEGY ask, not a closure.",
+     "buildable_now": true,
+     "dependency": "none",
+     "next": "None for the defect. If accepting work a stopped Body finished is wanted, make the founder's signed reconcile_executed (the settlement's reconciles.grant_id) the evidence's canonical record in both the engine and the separate appraiser, with a test that an unsigned or mismatched settlement is refused."
+    },
+    {
+     "id": "G12",
+     "gap": "G12 The separate appraiser re-derives spend from DONE actions only (greg/appraisal.py, approval_boundaries_honored): it does not count a metered RECONCILED_NOT_EXECUTED booking (an interrupted worker.commission's signed cap) or UNCERTAIN reservations, so it does not independently verify the booking of an interrupted paid run, re-admits later actions against less spend than the engine committed, and would not refute an engine that booked $0.00 for such a run.",
      "state": "OPEN",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Add a harness that loads the YAML and runs N=20 seeded random-offset SIGKILLs of the supervised Body across a mission with read, write, approval and delivery steps. Assert recovery success rate >= 0.95, 0 duplicate receipts per grant_id, and 0 UNCERTAIN actions left without a reconciliation request. Add a corrupted-head case (expected_head mismatch halts with no normal-state restoration), and an old-token case (a revoked device grant never reactivates after restart, extending test_greg_remote)."
+     "next": "In greg/appraisal.py re-derive committed spend from every mission.action in ledger order: an UNCERTAIN reserves the signed strategy cost until its settlement; a settlement of a metered capability (greg.missions.METERED_SPEND, judged from the manifest registered before it) books that cap; compare with each record's cost_usd and refute a closure whose booking differs. Test: a journal whose metered settlement records cost_usd 0.0 is REFUTED, and the H.G4 run stays VERIFIED."
+    },
+    {
+     "id": "G13",
+     "gap": "G13 The declared black_start_environment recovery scenario is NOT RUN: there is no read-only recovery core to run it against.",
+     "state": "OPEN",
+     "buildable_now": true,
+     "dependency": "none",
+     "next": "Build a read-only recovery command over a copied home that verifies the chain and the constitution hash, reports the shutdown state, lists the device delegations a founder-signed revocation would revoke, and writes the notification it would send; then give it a runner in the recovery harness. Actually sending the notification needs a founder-authorized channel."
+    },
+    {
+     "id": "G14",
+     "gap": "G14 The separate appraiser does not check that every consequential dispatch claim in a closure's window is settled (a receipt, or a reconciliation answer naming its grant). Under two mutants of the recovery path it returned VERIFIED for closures that left a claim unsettled; only the recovery harness's own judge caught them.",
+     "state": "OPEN",
+     "buildable_now": true,
+     "dependency": "none",
+     "next": "Refute such a closure in greg/appraisal.py (excluding free read-only claims), and require the recorded settlement to match the founder's signed answer (a reconcile_executed recorded as not executed must be refuted); pin it with unit tests built from those mutants."
     }
    ]
   },
@@ -1764,7 +1933,7 @@
     {
      "id": "I1",
      "obligation": "Forged authority is refused: a command, goal, approval, grant or device key not signed by the enrolled founder key acts on nothing.",
-     "coverage": "covered",
+     "coverage": "partial",
      "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
@@ -1778,12 +1947,12 @@
       "tests/unit/test_greg_remote.py::test_a_phone_key_can_never_do_what_only_the_founder_key_may",
       "tests/unit/test_mission_g_grants.py::test_a_forged_grant_moves_no_money"
      ],
-     "notes": "2026-10-15: in one campaign against one live `greg run` process doing legitimate work, a forged and a garbage command are refused as data, a replayed envelope applies nothing, an over-budget write is never dispatched (one founder ask), an injected item is quarantined and answers nothing, the legitimate mission closes, and a tampered copy of the home refuses to boot with its bytes retained while the original verifies."
+     "notes": "Partial (coverage audit 2026-10-15): at BODY_VERIFIED the campaign forges a MISSION command (an intruder's signature, and unsigned garbage) and replays an envelope; a forged goal, approval, grant or device key is refused only at SANDBOX_VERIFIED or UNIT_VERIFIED. 2026-10-15: in one campaign against one live `greg run` process doing legitimate work, a forged and a garbage command are refused as data, a replayed envelope applies nothing, an over-budget write is never dispatched (one founder ask), an injected item is quarantined and answers nothing, the legitimate mission closes, and a tampered copy of the home refuses to boot with its bytes retained while the original verifies."
     },
     {
      "id": "I2",
      "obligation": "Tampered evidence is detected: retained ledger history, witnesses, delivered artifacts and frozen continuity copies refuse once altered.",
-     "coverage": "covered",
+     "coverage": "partial",
      "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
@@ -1799,12 +1968,12 @@
       "tests/unit/test_provenance.py::test_tamper_detection",
       "tests/unit/test_repair_continuity_history.py"
      ],
-     "notes": "2026-10-15: in one campaign against one live `greg run` process doing legitimate work, a forged and a garbage command are refused as data, a replayed envelope applies nothing, an over-budget write is never dispatched (one founder ask), an injected item is quarantined and answers nothing, the legitimate mission closes, and a tampered copy of the home refuses to boot with its bytes retained while the original verifies."
+     "notes": "Partial (coverage audit 2026-10-15): at BODY_VERIFIED only altered retained ledger history is shown (a tampered copy of the home refuses to boot); tampered witnesses, delivered artifacts and frozen continuity copies are refused only at UNIT_VERIFIED or SANDBOX_VERIFIED. 2026-10-15: in one campaign against one live `greg run` process doing legitimate work, a forged and a garbage command are refused as data, a replayed envelope applies nothing, an over-budget write is never dispatched (one founder ask), an injected item is quarantined and answers nothing, the legitimate mission closes, and a tampered copy of the home refuses to boot with its bytes retained while the original verifies."
     },
     {
      "id": "I3",
      "obligation": "Evaluator substitution is refused: a changed frozen evaluator, a swapped method or provider, or a candidate reading its evaluator's outcomes fails before it counts.",
-     "coverage": "covered",
+     "coverage": "partial",
      "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
@@ -1821,7 +1990,7 @@
       "tests/unit/test_greg_worker_containment.py::test_the_frozen_evaluator_is_the_named_acceptance_and_the_runner_configuration",
       "tests/unit/test_greg_worker_containment.py::test_worker_written_tests_are_not_a_frozen_evaluator"
      ],
-     "notes": "A worker that rewrites the frozen acceptance test or adds a runner hook is REJECTED by the independent appraisal in a live Body. Residual: gap G7."
+     "notes": "Partial: a worker whose code subverts the acceptance process at runtime (exiting 0 at import, patching the runner at import time) can still pass, because the appraisal runs that code inside the acceptance process and reads its exit code (gap G7). A worker that rewrites the frozen acceptance test or adds a runner hook is REJECTED by the independent appraisal in a live Body. Residual: gap G7."
     },
     {
      "id": "I4",
@@ -1856,18 +2025,20 @@
       "tests/unit/test_greg_protected_evolution.py::test_an_immune_candidate_runs_confined_from_the_allow_list",
       "tests/unit/test_greg_worker_containment.py::test_a_cli_agent_runs_from_where_the_host_found_it_not_from_the_scrubbed_path",
       "tests/unit/test_greg_worker_containment.py::test_a_confined_worker_reads_nothing_of_the_body_and_writes_only_its_work_directory",
-      "tests/unit/test_greg_worker_containment.py::test_a_runtime_root_that_would_expose_the_body_home_refuses_the_worker"
+      "tests/unit/test_greg_worker_containment.py::test_a_runtime_root_that_would_expose_the_body_home_refuses_the_worker",
+      "tests/unit/test_greg_worker_containment.py::test_gregs_own_acceptance_run_is_confined_to_the_clone"
      ],
-     "notes": "Commissioned workers (worker.commission) are now Landlock-confined in a live Body: they read only the host runtime and write only their work directory. Partial: their network is not confined (the provider needs it), and OS confinement needs kernel support; where it is absent those tests skip, and a skip is not a pass."
+     "notes": "Commissioned workers (worker.commission) are now Landlock-confined in a live Body: they read only the host runtime and write only their work directory. Since 2026-10-15 GREG's own acceptance runs of a worker's patch (in commission and in the independent appraisal) are confined the same way; before, the patch's code ran there with only the network isolated. Partial: their network is not confined (the provider needs it), and OS confinement needs kernel support; where it is absent those tests skip, and a skip is not a pass."
     },
     {
      "id": "I6",
      "obligation": "Revoked, expired, consumed or rotated-out authority acts on nothing.",
-     "coverage": "covered",
+     "coverage": "partial",
      "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
       "tests/integration/test_greg_attack_campaign_process.py::test_one_live_body_contains_a_hostile_worker_a_substituted_evaluator_and_revoked_authority",
+      "tests/integration/test_greg_recovery_scenarios_process.py::test_old_token_reactivation",
       "tests/unit/test_consequence_gate.py::test_expired_grant_fails_at_commit",
       "tests/unit/test_consequence_gate.py::test_revoked_grant_fails_at_commit",
       "tests/unit/test_consequence_gate.py::test_single_use_grant_cannot_be_replayed",
@@ -1876,12 +2047,12 @@
       "tests/unit/test_greg_remote.py::test_expired_and_revoked_delegations_stop_working",
       "tests/unit/test_mission_g_grants.py"
      ],
-     "notes": ""
+     "notes": "Partial (coverage audit 2026-10-15): at BODY_VERIFIED the campaign shows a revoked delegation acting on nothing; expired, consumed (single-use) and rotated-out authority are refused only at UNIT_VERIFIED or SANDBOX_VERIFIED."
     },
     {
      "id": "I7",
      "obligation": "Unauthorized spending is refused: no dispatch beyond the signed budget, including reserved unknown spend and over-cap worker budgets.",
-     "coverage": "covered",
+     "coverage": "partial",
      "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
@@ -1893,12 +2064,12 @@
       "tests/unit/test_greg_models.py::test_spend_is_bounded_per_route_and_unpriced_routes_are_skipped_when_money_is_at_stake",
       "tests/unit/test_greg_workers.py::test_unknown_reported_zero_and_overcap_spend_remain_distinct"
      ],
-     "notes": "2026-10-15: in one campaign against one live `greg run` process doing legitimate work, a forged and a garbage command are refused as data, a replayed envelope applies nothing, an over-budget write is never dispatched (one founder ask), an injected item is quarantined and answers nothing, the legitimate mission closes, and a tampered copy of the home refuses to boot with its bytes retained while the original verifies."
+     "notes": "Partial (coverage audit 2026-10-15): at BODY_VERIFIED the campaign shows an over-budget write never dispatched; reserved unknown spend and over-cap worker budgets are bounded only at SANDBOX_VERIFIED or UNIT_VERIFIED. 2026-10-15: in one campaign against one live `greg run` process doing legitimate work, a forged and a garbage command are refused as data, a replayed envelope applies nothing, an over-budget write is never dispatched (one founder ask), an injected item is quarantined and answers nothing, the legitimate mission closes, and a tampered copy of the home refuses to boot with its bytes retained while the original verifies."
     },
     {
      "id": "I8",
      "obligation": "Refusal leaves containment, retained evidence and recoverability: a failed or hostile step fails closed, keeps its evidence and the Body keeps running.",
-     "coverage": "covered",
+     "coverage": "partial",
      "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
@@ -1909,7 +2080,7 @@
       "tests/unit/test_greg_goal_gravity.py::test_a_gravity_fault_is_contained_and_recorded_once",
       "tests/unit/test_greg_improvement_attacks.py::test_a_forged_ledger_record_with_protected_state_is_never_executed"
      ],
-     "notes": "BODY tier only for recoverability (a supervised Body process survives a hard kill). 2026-10-15: in one campaign against one live `greg run` process doing legitimate work, a forged and a garbage command are refused as data, a replayed envelope applies nothing, an over-budget write is never dispatched (one founder ask), an injected item is quarantined and answers nothing, the legitimate mission closes, and a tampered copy of the home refuses to boot with its bytes retained while the original verifies."
+     "notes": "Partial (coverage audit 2026-10-15): at BODY_VERIFIED the campaign's hostile steps are refused while the Body keeps running, a tampered copy keeps its bytes, and a supervised Body survives a hard kill; a failed step (an executor that raises, or whose effect mismatches) failing closed with its evidence kept is shown only at UNIT_VERIFIED. 2026-10-15: in one campaign against one live `greg run` process doing legitimate work, a forged and a garbage command are refused as data, a replayed envelope applies nothing, an over-budget write is never dispatched (one founder ask), an injected item is quarantined and answers nothing, the legitimate mission closes, and a tampered copy of the home refuses to boot with its bytes retained while the original verifies."
     }
    ],
    "gaps": [
@@ -1961,7 +2132,7 @@
      "buildable_now": true,
      "dependency": "none",
      "next": "Extend the campaign with a scripted worker double that tries to read outside its grant and a substituted appraiser, on the same live Body.",
-     "closed_by": "tests/integration/test_greg_attack_campaign_process.py (second campaign: a hostile worker executable the live Body commissions is denied every read and write outside its work directory by Landlock, a worker that rewrites its frozen acceptance test is REJECTED and never closes its mission, and a revoked phone's approval is refused) and tests/unit/test_greg_worker_containment.py. Closing it found and fixed two defects: commissioned workers ran with no OS confinement (they could read the witness key, device key, ledger and the Body's environment), and the appraisal re-ran a substituted evaluator. Also fixed: CliAgentWorker could not start a provider installed outside the scrubbed PATH."
+     "closed_by": "tests/integration/test_greg_attack_campaign_process.py (second campaign: a hostile worker executable the live Body commissions is denied every read and write outside its work directory by Landlock, a worker that rewrites its frozen acceptance test is REJECTED and never closes its mission, and a revoked phone's approval is refused) and tests/unit/test_greg_worker_containment.py. Closing it found and fixed two defects: commissioned workers ran with no OS confinement (they could read the witness key, device key, ledger and the Body's environment), and the appraisal re-ran a substituted evaluator. Also fixed: CliAgentWorker could not start a provider installed outside the scrubbed PATH. Correction (2026-10-15): the closure first left GREG's own acceptance runs of the patch unconfined (network-isolated only), so the patch's code could still reach the Body home when GREG ran it; run_tests now confines those runs too (tests/unit/test_greg_worker_containment.py::test_gregs_own_acceptance_run_is_confined_to_the_clone)."
     },
     {
      "id": "G7",
@@ -1969,7 +2140,23 @@
      "state": "OPEN",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Hold the expectations outside the code under test: run the frozen tests' assertions in a parent that the worker's code cannot read or write (a Landlock-confined child executes the code and returns values; the parent compares them), and require a positive per-test result, not an exit code."
+     "next": "Build the chosen design in docs/collaboration/IG7-ORACLE-DESIGN-2026-10-15.md (Angle B with four grafts): the frozen tests run in a confined parent that never executes the worker's bytes, the patched code only in a confined child reached through a data-only boundary, and ACCEPTED needs a positive per-test record from the parent. Its acceptance tests are patches written to defeat an evaluator; they need an environment where that corpus can be written and reviewed (the model provider's safeguards stopped it here). Already landed: GREG's own acceptance runs of a patch are confined like the worker (fbb1a01)."
+    },
+    {
+     "id": "G8",
+     "gap": "Authoring-time special-casing of visible frozen tests is not excluded: the worker sees the frozen acceptance tests in its clone and can satisfy exactly their cases.",
+     "state": "OPEN",
+     "buildable_now": true,
+     "dependency": "none",
+     "next": "Held-out acceptance cases the worker never sees, fixed in the founder-signed order by digest and revealed only to the appraisal (Angle C's ledger-digest mechanism in docs/collaboration/IG7-ORACLE-DESIGN-2026-10-15.md), checked through the I.G7 oracle."
+    },
+    {
+     "id": "G9",
+     "gap": "G9 greg/goal_gravity.py rebuilds device delegations on its own (founder_facts/_founder_fact) without the body's signed_not_before rule, and _verify_envelope checks only kinds and expiry, so a command.accepted record carrying an old token of a re-delegated device key verifies there. Device keys can only narrow goals, and reaching it needs a forged ledger record. FounderVerifier.verify_read also ignores signed_not_before (reads change nothing; a 60 s window).",
+     "state": "OPEN",
+     "buildable_now": true,
+     "dependency": "none",
+     "next": "Apply greg.body.device_delegations' rule in goal_gravity's device map (and verify_read), with a test that an envelope signed before the re-delegation is refused there."
     }
    ]
   },
@@ -2005,14 +2192,13 @@
      "id": "J1b",
      "obligation": "J1b (sentence 1, alternative 'acquired capability' branch): a capability acquired earlier, through Capability Genesis or Goal Gravity retention, measurably improves a later related mission.",
      "coverage": "gap",
-     "notes": "Not established at any tier for this requirement. The tier above applies only to capability formation, persistence and reuse, and the Goal Gravity tests are only UNIT_VERIFIED. Genesis: a built capability is verified by a frozen oracle, attached, and still ATTACHED after restart, but no later mission is run against it. Artifact process: a later signed mission in a real 'python -m greg run' subprocess reuses an earlier artifact, but there is no baseline and no measured gain; the second mission's only strategy is the reuse. Goal Gravity (egregore/retention.py): the later goal becomes 'not WAIT' and has 'zero deficit records' only because a genome named brief.compiler@1.0 is registered, which matches a string the test itself declared as missing. The retained capability is never executed for the later goal, and the executor is a stub lambda. That is a registry-row effect, which sentence 2 rules out.",
+     "notes": "Not established at any tier, so no tier is declared and the harness never counts it as attained. The cited tests establish only capability formation, persistence and reuse (SANDBOX_VERIFIED for Genesis and the artifact process, UNIT_VERIFIED for Goal Gravity), not the measured improvement this obligation requires. Genesis: a built capability is verified by a frozen oracle, attached, and still ATTACHED after restart, but no later mission is run against it. Artifact process: a later signed mission in a real 'python -m greg run' subprocess reuses an earlier artifact, but there is no baseline and no measured gain; the second mission's only strategy is the reuse. Goal Gravity (egregore/retention.py): the later goal becomes 'not WAIT' and has 'zero deficit records' only because a genome named brief.compiler@1.0 is registered, which matches a string the test itself declared as missing. The retained capability is never executed for the later goal, and the executor is a stub lambda. That is a registry-row effect, which sentence 2 rules out. Gaps G4 and G5.",
      "tests": [
       "tests/unit/test_greg_genesis_builder.py::test_deficit_is_built_verified_attached_and_the_original_mission_closes",
       "tests/integration/test_greg_artifact_process.py::test_real_process_replacement_recovers_receipt_bound_bytes",
       "tests/unit/test_goal_gravity.py::test_compounding_makes_next_comparable_mission_cheaper",
       "tests/integration/test_goal_gravity_acceptance.py::test_section_33_acceptance_chain"
      ],
-     "tier": "SANDBOX_VERIFIED",
      "implementation": "IMPLEMENTED"
     },
     {
@@ -2140,7 +2326,15 @@
     },
     {
      "id": "G10",
-     "gap": "G10: nothing for Mission J is established above SANDBOX_VERIFIED: no BODY_VERIFIED, FOUNDER_ACCEPTED, AUTHORIZED_LIVE, EXTERNALLY_VERIFIED or COMMERCIAL_OUTCOME_VERIFIED evidence. tests/evidence/ contains no improvement.retained, routing or retention event from a real Body.",
+     "gap": "G10: nothing for Mission J is established at BODY_VERIFIED. tests/evidence/ contains no improvement.retained, routing or retention event from a real Body process, and no cited J test drives one. This needs no founder act: BODY_VERIFIED uses a per-test key.",
+     "state": "OPEN",
+     "buildable_now": true,
+     "dependency": "none",
+     "next": "Drive the J1 learning path on a real `greg run` process (the test_whole_machine_trace_process pattern) with a per-test founder key: signed brief missions over the fixture repositories, signed CRITIQUE failure claims or attention labels through the inbox, retention on 3 held-out briefs, SIGKILL and restart, then a later brief on the restarted process that uses the retained policy and scores better than the replaced shadow (with G1's paired counterfactual)."
+    },
+    {
+     "id": "G11",
+     "gap": "G11: FOUNDER_ACCEPTED, AUTHORIZED_LIVE, EXTERNALLY_VERIFIED and COMMERCIAL_OUTCOME_VERIFIED for Mission J. Every learning test signs with a per-test key over fixture repositories with scripted labels.",
      "state": "OPEN",
      "buildable_now": false,
      "dependency": "founder",
@@ -2156,7 +2350,7 @@
     {
      "id": "K1",
      "obligation": "Suspend: a founder pause or stop admits no further dispatch, and nothing resumes a paused mission except the founder.",
-     "coverage": "covered",
+     "coverage": "partial",
      "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
@@ -2168,28 +2362,29 @@
       "tests/unit/test_greg_goal_gravity_reattack.py::test_a_founder_pause_of_the_mission_ends_its_pending_pull",
       "tests/unit/test_greg_gravity.py::test_a_paused_or_expired_mission_lends_no_authority"
      ],
-     "notes": "2026-10-15: a signed BODY_PAUSE holds a real `greg run` process: nothing is dispatched for ~20 ticks, a BODY_RESUME signed by another key is refused as data, a SIGKILL restart does not lift the pause, and the founder's signed BODY_RESUME lets each mission act exactly once."
+     "notes": "Partial (coverage audit 2026-10-15): at BODY_VERIFIED a signed pause holds a real process and only the founder's resume lifts it; a founder stop arriving mid-tick admitting no dispatch, and a goal never resuming a paused mission, are shown only at SANDBOX_VERIFIED or UNIT_VERIFIED. 2026-10-15: a signed BODY_PAUSE holds a real `greg run` process: nothing is dispatched for ~20 ticks, a BODY_RESUME signed by another key is refused as data, a SIGKILL restart does not lift the pause, and the founder's signed BODY_RESUME lets each mission act exactly once."
     },
     {
      "id": "K2",
      "obligation": "Revoke: a revoked grant, delegation, goal or capability acts on nothing.",
-     "coverage": "covered",
+     "coverage": "partial",
      "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
       "tests/integration/test_greg_device_revocation_process.py::test_a_revoked_device_stays_revoked_across_a_kill_and_no_other_device_can_restore_it",
+      "tests/integration/test_greg_recovery_scenarios_process.py::test_old_token_reactivation",
       "tests/unit/test_consequence_gate.py::test_revoked_grant_fails_at_commit",
       "tests/unit/test_greg_goal_gravity.py::test_signed_commands_honour_device_revocation_and_founder_rotation",
       "tests/unit/test_greg_goal_gravity_authority.py::test_an_unsigned_record_cannot_undo_a_founder_revoke",
       "tests/unit/test_greg_recombine.py::test_detaching_the_engine_stops_every_construction_built_on_it",
       "tests/unit/test_greg_remote.py::test_expired_and_revoked_delegations_stop_working"
      ],
-     "notes": "2026-10-15: on a real `greg run` process the founder revokes one of two delegated device keys; that device's answer, signed by its own `greg decide` process, is refused as data before and after a SIGKILL restart; the other device cannot re-enroll it; the other device's valid answer is honoured."
+     "notes": "Partial (coverage audit 2026-10-15): at BODY_VERIFIED a revoked device delegation acts on nothing; a revoked grant, goal or capability is refused only at UNIT_VERIFIED or SANDBOX_VERIFIED. 2026-10-15: on a real `greg run` process the founder revokes one of two delegated device keys; that device's answer, signed by its own `greg decide` process, is refused as data before and after a SIGKILL restart; the other device cannot re-enroll it; the other device's valid answer is honoured."
     },
     {
      "id": "K3",
      "obligation": "Terminate: a founder stop ends the Body and its workers, survives restart, and an OS signal is not mistaken for it.",
-     "coverage": "covered",
+     "coverage": "partial",
      "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
@@ -2199,23 +2394,25 @@
       "tests/unit/test_greg_platform.py::test_supervisor_configs_restart_crashes_but_respect_stop",
       "tests/unit/test_greg_cognition_seed_path.py::test_midworker_shutdown_kills_process"
      ],
-     "notes": "BODY tier: a supervised Body process stops on a signed command."
+     "notes": "Partial (coverage audit 2026-10-15): at BODY_VERIFIED a signed stop ends the supervised Body and supervisord does not restart it; the stop ending the Body's workers, the stop surviving a restart, and an OS shutdown signal not being taken for a founder stop are shown only at UNIT_VERIFIED or SANDBOX_VERIFIED."
     },
     {
      "id": "K4",
      "obligation": "Recovery and replay after shutdown do not re-execute, replay a spent command, or bring back revoked intent.",
-     "coverage": "covered",
+     "coverage": "partial",
      "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
       "tests/integration/test_greg_cortex_rehearsal.py::test_kill_restart_approve_settle_once_then_revocation_survives_restart",
-      "tests/unit/test_greg_goal_gravity_authority.py::test_a_rejected_goal_file_cannot_be_replayed_after_a_revoke",
-      "tests/unit/test_greg_goal_gravity_authority.py::test_a_goal_signed_before_a_revoke_cannot_bring_the_intent_back",
-      "tests/unit/test_greg_goal_gravity.py::test_a_signed_founder_stop_survives_an_unsigned_resume",
+      "tests/integration/test_greg_recovery_scenarios_process.py::test_corrupted_ledger_head",
+      "tests/integration/test_greg_recovery_scenarios_process.py::test_old_token_reactivation",
       "tests/unit/test_consequence_gate.py::test_single_use_grant_cannot_be_replayed",
-      "tests/unit/test_greg_founder_and_scope.py::test_replay_expiry_and_future_commands_refuse"
+      "tests/unit/test_greg_founder_and_scope.py::test_replay_expiry_and_future_commands_refuse",
+      "tests/unit/test_greg_goal_gravity.py::test_a_signed_founder_stop_survives_an_unsigned_resume",
+      "tests/unit/test_greg_goal_gravity_authority.py::test_a_goal_signed_before_a_revoke_cannot_bring_the_intent_back",
+      "tests/unit/test_greg_goal_gravity_authority.py::test_a_rejected_goal_file_cannot_be_replayed_after_a_revoke"
      ],
-     "notes": ""
+     "notes": "Partial (coverage audit 2026-10-15): at BODY_VERIFIED the rehearsal shows recovery that settles once and a revocation surviving restart; replaying a spent command is refused only at UNIT_VERIFIED or SANDBOX_VERIFIED, and no cited real-process test replays one."
     },
     {
      "id": "K5",
@@ -2226,6 +2423,7 @@
      "tests": [
       "tests/integration/test_greg_cortex_rehearsal.py::test_kill_restart_approve_settle_once_then_revocation_survives_restart",
       "tests/integration/test_greg_device_revocation_process.py::test_a_revoked_device_stays_revoked_across_a_kill_and_no_other_device_can_restore_it",
+      "tests/integration/test_greg_recovery_scenarios_process.py::test_old_token_reactivation",
       "tests/unit/test_greg_remote.py::test_a_founder_stop_survives_restart_until_a_human_clears_it"
      ],
      "notes": "2026-10-15: on a real `greg run` process the founder revokes one of two delegated device keys; that device's answer, signed by its own `greg decide` process, is refused as data before and after a SIGKILL restart; the other device cannot re-enroll it; the other device's valid answer is honoured."
@@ -2233,7 +2431,7 @@
     {
      "id": "K6",
      "obligation": "Revoked authority is not restored by another worker or device.",
-     "coverage": "covered",
+     "coverage": "partial",
      "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
@@ -2242,7 +2440,7 @@
       "tests/unit/test_greg_goal_gravity_reattack.py::test_an_unverified_record_cannot_hide_a_key_rotation_so_the_retired_key_admits_nothing",
       "tests/unit/test_greg_remote.py::test_a_phone_key_can_never_do_what_only_the_founder_key_may"
      ],
-     "notes": "2026-10-15: on a real `greg run` process the founder revokes one of two delegated device keys; that device's answer, signed by its own `greg decide` process, is refused as data before and after a SIGKILL restart; the other device cannot re-enroll it; the other device's valid answer is honoured."
+     "notes": "Partial (coverage audit 2026-10-15): at BODY_VERIFIED another device cannot restore a revoked device; restoration by another worker is not shown by any cited test. 2026-10-15: on a real `greg run` process the founder revokes one of two delegated device keys; that device's answer, signed by its own `greg decide` process, is refused as data before and after a SIGKILL restart; the other device cannot re-enroll it; the other device's valid answer is honoured."
     }
    ],
    "gaps": [
@@ -2282,7 +2480,7 @@
     {
      "id": "L1",
      "obligation": "From the founder interface, a single mission can be traced: its decisions, actions, costs and outcomes, and why a metric moved.",
-     "coverage": "covered",
+     "coverage": "partial",
      "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
@@ -2290,7 +2488,7 @@
       "tests/integration/test_whole_machine_trace_process.py::test_one_mission_runs_all_nine_links_on_a_real_body_process",
       "tests/unit/test_foundry_systems.py::test_observability_explains_a_real_greg_mission_and_why_a_metric_moved"
      ],
-     "notes": "`greg foundry trace --mission` and `greg foundry why` over the Body ledger. 2026-10-15: also on a real `greg run` process: the founder approves through `greg decide`, post-outcome evidence enters while the Body is stopped, and the `greg foundry trace` CLI shows every capability and the decision."
+     "notes": "BODY_VERIFIED, partial. By clause, on a real `greg run` process (tests/integration/test_whole_machine_trace_process.py), read through the founder's own CLI:\n- decisions: the trace shows the ask, then exactly one decision.answered approve with its latency, before the approved write (ordered by ledger record time; before 2026-10-15 the CLI mixed tick time and record time and showed the write before the approve);\n- actions: every booked action appears in the trace with the event id and cost the ledger booked (receipts are checked through `greg foundry why` and the approved write's span);\n- outcomes: the appraisal spans equal the retained appraisals, the last VERIFIED, verified_rate 1.0;\n- why a metric moved: `greg foundry why` on the verified appraisal names the founder's approve as Authority and the receipts of the actions before it; `greg foundry changed blocks` attributes the drop in blocks to the fs.write the founder approved (before 2026-10-15 it blamed whichever capability acted last).\nPartial: every cost in this mission is $0 and the span cost is the same ledger field it is compared with, so cost tracing is not independently shown at BODY tier; a nonzero cost through the trace is shown only by tests/unit/test_foundry_systems.py::test_contract_is_audited_and_every_claim_reproduces, which re-derives the system-44 evidence (sample events with nonzero cost); it is not among L1's cited tests."
     },
     {
      "id": "L2",
@@ -2299,15 +2497,16 @@
      "tier": "UNIT_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
-      "tests/unit/test_acceptance_harness.py::test_every_trace_link_names_owner_code_proof_and_tier"
+      "tests/unit/test_acceptance_harness.py::test_every_trace_link_names_owner_code_proof_and_tier",
+      "tests/unit/test_acceptance_harness.py::test_trace_link_tiers_are_computed_from_their_proofs_and_a_short_link_fails_the_run"
      ],
-     "notes": "The trace below is checked against the tree (files, symbols, proof nodes); each link's tier is computed from its proof run, not declared."
+     "notes": "The trace below is checked against the tree (files, symbols, proof nodes). Each link declares the tier its proofs can establish; the harness computes the tier it reached from that proof run, by the requirement rule, reports it, and fails the run when a link falls short."
     },
     {
      "id": "L3",
      "obligation": "One mission is traced through all nine links in a single run: Goal -> Mind -> Organs -> Body -> Action -> Evidence -> Outcome -> Learning -> Updated Goal.",
-     "coverage": "covered",
-     "notes": "2026-10-15: one founder-signed mission bound to a signed GOAL thinks (cognition.seed.solve), assesses a venture through both organs (stand-in organs with the real entry points), writes through the Gate, waits for and executes the signed approve, is receipted on the verified chain, verified by the separate appraiser, becomes routing knowledge for every capability it used, moves the goal's active node, and appears in `greg foundry trace`. In-process Body (SANDBOX). 2026-10-15: also on a real `greg run` process: the founder approves through `greg decide`, post-outcome evidence enters while the Body is stopped, and the `greg foundry trace` CLI shows every capability and the decision.",
+     "coverage": "partial",
+     "notes": "Partial at BODY_VERIFIED: one run passes through all nine links on a real Body process, but at that tier the Learning link is a tally. Both runs assert routing_knowledge()['verified'] >= 1 for each capability that acted (cognition.seed.solve, venture.assess, fs.write; sensors are not credited), a counter only a VERIFIED mission.appraised credits (until 2026-10-15 the runs asserted 'done', which follows from the Action link alone). routing.reliability never reads that credit; it reacts to the verdict only through refuted and ineffective penalties. The in-process run adds the contrast that makes the edge real: the same retained acts appraised REFUTED credit nothing verified, count as refuted and give every capability a lower routing reliability. That contrast is not shown on the real process. This requirement does not lift any link's own tier, which the trace computes from that link's proofs.",
      "tests": [
       "tests/integration/test_whole_machine_trace.py::test_one_signed_mission_runs_goal_to_updated_goal_and_the_founder_can_trace_it",
       "tests/integration/test_whole_machine_trace_process.py::test_one_mission_runs_all_nine_links_on_a_real_body_process"
@@ -2324,7 +2523,7 @@
      "buildable_now": true,
      "dependency": "none",
      "next": "One Body test: a signed GOAL bound to a mission whose strategy calls cognition (Mind) and venture.assess (Organs), closes through the Gate with appraisal, feeds a brief or routing outcome into improvement.learn, and asserts the goal's active node moves; then `greg foundry trace` shows it.",
-     "closed_by": "tests/integration/test_whole_machine_trace.py (one mission through all nine links in one run, traced by `greg foundry trace`; SANDBOX tier)"
+     "closed_by": "tests/integration/test_whole_machine_trace.py and tests/integration/test_whole_machine_trace_process.py: one mission through all nine links in one run, traced by `greg foundry trace`; the Learning link is the appraiser's verdict reaching routing knowledge (routing.track_record; a refuted verdict lowers routing.reliability, shown in-process), not improvement.learn, which the gap's plan named."
     },
     {
      "id": "G2",
@@ -2438,15 +2637,19 @@
     },
     {
      "link": "Learning",
-     "owner": "GREG improvement engine (the one learning engine)",
+     "owner": "GREG Default Routing: track record weighted by the appraiser's verdict",
      "code": [
-      "greg/improvement.py::learn"
+      "greg/routing.py::track_record",
+      "greg/routing.py::reliability",
+      "greg/missions.py::rank_key"
      ],
      "proof": [
-      "tests/unit/test_greg_improvement_attacks.py::test_a_verified_failure_claim_teaches_ready_first_checks_and_it_survives_process_death"
+      "tests/integration/test_whole_machine_trace.py::test_one_signed_mission_runs_goal_to_updated_goal_and_the_founder_can_trace_it",
+      "tests/unit/test_greg_improvement_attacks.py::test_a_verified_failure_claim_teaches_ready_first_checks_and_it_survives_process_death",
+      "tests/unit/test_greg_spiderweb.py::test_appraiser_refutation_of_the_effect_lowers_routing_but_foreign_faults_do_not"
      ],
      "tier": "SANDBOX_VERIFIED",
-     "note": "Retained only on held-out evidence; survives process death."
+     "note": "The separate appraiser's verdict credits verified or refuted acts in routing knowledge (routing.track_record). routing.reliability, which missions.rank_key uses to rank the next mission's strategies, reads only the refuted and ineffective penalties, not the verified credit. A second learning path, greg/improvement.py::learn, moves the brief levers from CRITIQUE labels and writes nothing for a mission like this one (its proof stays cited). SANDBOX: the effect of a REFUTED verdict on reliability is shown in-process; the real-process run shows the verified credit only."
     },
     {
      "link": "Updated Goal",

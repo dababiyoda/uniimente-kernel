@@ -30,7 +30,7 @@ import urllib.parse
 import urllib.request
 
 from capabilities.genome import AuthorityEnvelope, CapabilityGenome, GenomeRegistry, CONSEQUENCE_CLASSES
-from greg import egress
+from greg import egress, isolation
 
 ROUTES = ("api", "app_integration", "cli", "browser", "os_automation", "visual", "internal")
 # Spider-Web Compounding Rule (INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING): every
@@ -364,16 +364,21 @@ REFUSALS = {b"F": "filesystem confinement unavailable; command refused",
             b"N": "network isolation unavailable; command refused"}
 
 
-def _isolating_preexec(install_filter, confine: dict | None, refused_fd: int):
+def _isolating_preexec(install_filter, confine: dict | None, refused_fd: int, *, grants=None, libc=None):
     """Fail closed without an exit status: a command's own exit 97 or 98 must never read as a refusal
     (nor a refusal as a command that ran). The child writes why to a close-on-exec pipe only the body
     holds, then raises, so the command never executes and Popen reports the failure to the parent."""
     from greg.isolation import confine_paths      # resolved here, in the parent: the child imports nothing
 
+    from greg.isolation import restrict
+
     def preexec():
-        if confine is not None:
+        if confine is not None or grants is not None:
             try:
-                confine_paths(**confine)
+                if confine is not None:
+                    confine_paths(**confine)
+                if grants is not None:
+                    restrict(grants, libc)         # precomputed in the body: the child only makes syscalls
             except Exception:
                 os.write(refused_fd, b"F")         # never run a confined command unconfined
                 raise
@@ -390,7 +395,8 @@ MACOS_NO_NETWORK = "(version 1)(allow default)(deny network*)"
 
 def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout: int = 30,
                  extra_env: dict | None = None, input_bytes: bytes | None = None,
-                 confine: dict | None = None, stop_check=None) -> subprocess.CompletedProcess:
+                 confine: dict | None = None, stop_check=None,
+                 confine_to: Path | None = None) -> subprocess.CompletedProcess:
     """Run one command with a scrubbed environment and, by default, no network.
 
     Linux: the Kernel's seccomp filter (tools/offline_test.py, held in memory). macOS: the system
@@ -400,28 +406,55 @@ def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout
     ``stop_check`` runs the command supervised (``workers.supervised_run``): founder STOP is polled,
     the process group is killed, and on Linux the child dies with the body; a stop raises
     ``workers.WorkerInterrupted``.
+
+    ``confine_to``: for code GREG runs on a worker's behalf (its patch's tests). On Linux with Landlock
+    (ABI >= 3) the command and everything it starts read only the host runtime and write only that
+    directory (``greg.isolation.worker_grants``; TMPDIR is a directory inside it), so the patch cannot read
+    the Body home into its output or write outside it, as the worker itself cannot. Where Landlock is absent
+    it runs as before. The returned process carries ``confinement`` either way.
     """
     env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "HOME": str(cwd), **(extra_env or {})}
-    preexec = None
+    confinement, grants, libc = None, None, None
+    if confine_to is not None:
+        # Code GREG runs on a worker's behalf (its patch's tests): confined like the worker itself.
+        status = isolation.available()
+        if status.get("available"):
+            try:
+                grants, libc = isolation.worker_grants(confine_to), isolation._libc()
+            except isolation.IsolationError as exc:
+                raise CapabilityError(f"the command cannot be confined, so it is refused: {exc}") from None
+            scratch = Path(confine_to) / ".greg-tmp"
+            scratch.mkdir(exist_ok=True)
+            env["TMPDIR"] = str(scratch)
+            confinement = {"filesystem": "landlock", "abi": status["abi"],
+                           "writable": [str(Path(confine_to).resolve())]}
+        else:
+            confinement = {"filesystem": "none",
+                           "reason": status.get("reason") or f"Landlock ABI {status.get('abi')} below 3"}
     if confine is not None and sys.platform == "darwin":
         raise CapabilityError("filesystem confinement unavailable on this host; command refused")
+    proc = None
     if isolate_network and sys.platform == "darwin":
         if not Path("/usr/bin/sandbox-exec").exists():
             raise CapabilityError("network isolation unavailable; command refused", failure_class="transient")
         argv = ["/usr/bin/sandbox-exec", "-p", MACOS_NO_NETWORK, *argv]
-    elif isolate_network or confine is not None:
+    elif isolate_network or confine is not None or grants is not None:
         install_filter = _network_filter() if isolate_network else (lambda: None)
         if install_filter is None:
             raise CapabilityError("network isolation unavailable; command refused", failure_class="transient")
         refused_r, refused_w = os.pipe()          # close-on-exec: the command itself never holds it
         try:
-            return _spawn(argv, cwd=cwd, env=env, timeout=timeout, input_bytes=input_bytes, stop_check=stop_check,
-                          preexec=_isolating_preexec(install_filter, confine, refused_w), refused=refused_r)
+            proc = _spawn(argv, cwd=cwd, env=env, timeout=timeout, input_bytes=input_bytes, stop_check=stop_check,
+                          preexec=_isolating_preexec(install_filter, confine, refused_w, grants=grants, libc=libc),
+                          refused=refused_r)
         finally:
             os.close(refused_r)
             os.close(refused_w)
-    return _spawn(argv, cwd=cwd, env=env, timeout=timeout, input_bytes=input_bytes, stop_check=stop_check,
-                  preexec=None, refused=None)
+    if proc is None:
+        proc = _spawn(argv, cwd=cwd, env=env, timeout=timeout, input_bytes=input_bytes, stop_check=stop_check,
+                      preexec=None, refused=None)
+    proc.confinement = confinement
+    return proc
 
 
 def _spawn(argv, *, cwd, env, timeout, input_bytes, stop_check, preexec, refused):

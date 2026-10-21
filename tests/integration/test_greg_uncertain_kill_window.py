@@ -83,7 +83,7 @@ def test_a_kill_before_the_question_is_asked_leads_to_the_question_not_a_second_
     assert len(calls) == 2 and (ws / "note.txt").read_text() == "hello"   # the one retry, after the answer
 
 
-def test_a_kill_before_the_block_reuses_the_open_question_and_its_answer_releases_the_held_cap(tmp_path, monkeypatch):
+def test_a_kill_before_the_block_reuses_the_open_question_and_its_answer_settles_the_held_cap(tmp_path, monkeypatch):
     home, key, body_id, _ = make_body(tmp_path)
     mid = "m:priced-kill"
     ws = workspace(home, mid)
@@ -119,5 +119,12 @@ def test_a_kill_before_the_block_reuses_the_open_question_and_its_answer_release
     _run(home, clock, 1)
     with Body(home, clock=clock) as body:
         m = body.engine.book.missions[mid]
-        assert ("commission", 0) not in m.reserved      # the answer released attempt 0's hold
-    assert len(calls) == 2                              # and the one retry fit the signed $0.05 budget
+        assert ("commission", 0) not in m.reserved      # the answer released attempt 0's hold...
+        # ...and, the worker being metered, booked its cap once as spent (#178 H.G4: "not executed" settles the
+        # effect, not the money its provider may have spent). Before H.G4 the hold was released as $0 and the one
+        # retry fit the signed $0.05 budget; now the budget is spent at its worst case and a retry needs the founder.
+        assert m.spent_usd == 0.05 and m.committed_usd == 0.05
+        asks = [e.payload for e in body.journal.replay("decision.requested")
+                if e.payload["mission_id"] == mid and e.payload["kind"] == "APPROVAL"]
+        assert asks and any("exceeds budget" in r for r in asks[-1]["evidence"]["policy"]), asks
+    assert len(calls) == 1                              # no paid retry without the founder

@@ -42,6 +42,22 @@ def founder_reconciled(action: dict) -> bool:
         str(r).startswith("founder reconciliation: ") for r in action.get("reasons") or ()))
 
 
+def dispatch_outcomes(events):
+    """Each dispatch's outcome counted once. A founder's RECONCILED_NOT_EXECUTED settles an UNCERTAIN dispatch whose
+    failure was already counted (same mission, action and attempt), so it is not a second failure, even when it
+    carries the capability for its spend record (a metered run's booked cap). A settlement with no UNCERTAIN before
+    it is still counted."""
+    uncertain = set()
+    for event in events:
+        data = event.payload
+        dispatch = (data.get("mission_id"), data.get("action_id"), data.get("attempt"))
+        if data.get("status") == "UNCERTAIN":
+            uncertain.add(dispatch)
+        elif data.get("status") == "RECONCILED_NOT_EXECUTED" and dispatch in uncertain:
+            continue
+        yield event
+
+
 def track_record(journal: Journal) -> dict[str, dict]:
     record = defaultdict(lambda: {"done": 0, "failed": 0, "ineffective": 0, "refuted": 0, "verified": 0,
                                   "founder_reconciled": 0})

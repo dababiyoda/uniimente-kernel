@@ -285,6 +285,14 @@ class FounderVerifier:
             raise FounderAuthError("command lifetime invalid")
         if not issued - CLOCK_SKEW <= now < expires:
             raise FounderAuthError("command expired or issued in the future")
+        device = self.devices.get(envelope["founder_key_id"]) if envelope["founder_key_id"] not in self.enrolled \
+            else None
+        if device and device.get("signed_not_before") and issued < instant(device["signed_not_before"]):
+            # An old token never reactivates: a key delegated again after a revocation verifies only what it
+            # signed after the body recorded the new delegation (greg.body.device_delegations).
+            raise FounderAuthError("signed before this device key's current delegation: nothing the key signed "
+                                   "before it was delegated again (under the revoked delegation, or while revoked) "
+                                   "ever verifies")
         if not isinstance(envelope["body"], dict):
             raise FounderAuthError("command body must be an object")
         try:

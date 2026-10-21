@@ -187,7 +187,8 @@ def test_acceptance_without_an_envelope_follows_the_setting_and_never_opens_the_
     elif result["confinement"] == "refused":          # this host has no network filter either: refused, not run
         assert "network isolation unavailable" in result["tail"]
     else:
-        assert result["confinement"].startswith("supervised") and "NOT confined" in result["confinement"]
+        floor = "confined by Landlock" if landlock.available().get("available") else "NOT confined"
+        assert result["confinement"].startswith("supervised") and floor in result["confinement"], result
         assert result["passed"], result["tail"]        # the socket was refused: the network stayed closed
 
 

@@ -210,11 +210,14 @@ def _committed_before(journal: Journal, seq: dict, mission_id: str, before: int)
             continue
         slot = (p.get("action_id"), p.get("attempt"))
         if p.get("status") == "UNCERTAIN":
-            # as the fold reads it: a record from before reservations existed holds its signed cost
-            reserved[slot] = float(p["reserved_usd"]) if "reserved_usd" in p else signed.get(p.get("action_id"), 0.0)
+            # as the fold reads it: a #184-era record holds the cap it recorded (cost_reserved), an older one its
+            # signed cost
+            legacy = float(p.get("cost_usd", 0.0) or 0.0) if p.get("cost_reserved") else signed.get(p.get("action_id"), 0.0)
+            reserved[slot] = float(p["reserved_usd"]) if "reserved_usd" in p else legacy
         else:
             reserved.pop(slot, None)
-            if p.get("status") == "DONE":
+            # booked spend: a completion, and a metered run reconciled "not executed" at its cap (#178 H.G4)
+            if p.get("status") in ("DONE", "RECONCILED_NOT_EXECUTED"):
                 spent += float(p.get("cost_usd", 0.0) or 0.0)
     return round(spent + round(sum(reserved.values()), 9), 9)
 
@@ -238,14 +241,20 @@ def _manifest_before(journal: Journal, seq: dict, cid, before: int):
 
 
 def _devices_before(journal: Journal, seq: dict, before: int) -> dict:
-    devices = {}
+    """Device delegations as the ledger stood at ``before``, under the body's rule (greg.body.device_delegations):
+    a key delegated again after a revocation carries ``signed_not_before``, the recorded time of that re-delegation,
+    and nothing it signed before then verifies (an old token never reactivates)."""
+    devices, revoked = {}, set()
     for event in journal.replay("device."):
         if seq.get(event.event_id, 1 << 60) > before:
             continue
+        kid = event.payload.get("device_key_id")
         if event.type == "greg.device.enrolled":
-            devices[event.payload["device_key_id"]] = event.payload
+            devices[kid] = ({**event.payload, "signed_not_before": event.payload.get("at")} if kid in revoked
+                            else event.payload)
         elif event.type == "greg.device.revoked":
-            devices.pop(event.payload["device_key_id"], None)
+            revoked.add(kid)
+            devices.pop(kid, None)
     return devices
 
 
@@ -271,6 +280,10 @@ def _decision_signed(journal: Journal, ledger, seq: dict, answer: dict, answer_s
         if (device is None or "DECISION" not in device.get("kinds", []) or issued is None or expires is None
                 or not issued < expires):
             return False
+        if "signed_not_before" in device:    # re-delegated: unbounded (no recorded time) refuses, as old tokens do
+            not_before = _instant_or_none(device["signed_not_before"])
+            if not_before is None or issued < not_before:
+                return False
         public = device["public_key"]
     try:
         Ed25519PublicKey.from_public_bytes(bytes.fromhex(public)).verify(bytes.fromhex(env["signature"]),
@@ -439,28 +452,30 @@ def appraise(request: dict) -> dict:
         action_events = [e for e in journal.replay("mission.action")
                          if e.payload["mission_id"] == mid and e.payload["status"] == "DONE"
                          and registered_seq < seq[e.event_id] < achieved_seq]
-        # A founder-reconciled step has no receipt by construction: the founder attested whether an
-        # interrupted dispatch executed. It counts only behind that founder's answer to this mission's
-        # RECONCILIATION request for the same action; it is never re-derived as a receipted run.
-        from greg.missions import reconciled
-        answered = {e.payload["request_id"]: e.payload.get("answer", "") for e in journal.replay("decision.answered")}
-        asked = {(r.payload.get("mission_id"), r.payload.get("action_id")) for r in journal.replay("decision.requested")
-                 if r.payload.get("kind") == "RECONCILIATION"
-                 and answered.get(r.payload["request_id"], "").startswith("reconcile_")}
-        attested = [e for e in action_events if reconciled(e.payload) and not e.payload.get("receipt")]
-        once = True
-        for event in attested:
-            if (mid, event.payload["action_id"]) not in asked:
-                once = False
-                findings.append(f"{event.payload['action_id']}: a reconciled step without the founder's answer")
-        action_events = [e for e in action_events if e not in attested]
         actions = [e.payload for e in action_events]
         receipts = [a["receipt"] for a in actions if a.get("receipt")]
-        once = once and len(receipts) == len(actions) == len(set(receipts))
+        once = len(receipts) == len(actions) == len(set(receipts))
+        # The Gate keeps one durable dispatch claim per proposal and per grant (policy/consequence_gate.py refuses
+        # a second). A second claim in this window naming a completed action's proposal or grant is reported as
+        # the duplicate it is; it also unbinds that action's receipt, so exactly_once fails.
+        window_claims = [r.payload for r in ledger.by_type("grant_dispatch") if registered_seq < r.seq < achieved_seq]
         for event in action_events:
             action = event.payload
             receipt = ledger.find(action["receipt"]) if action.get("receipt") else None
             strategy = next((s for s in spec["strategies"] if s["action_id"] == action["action_id"]), None)
+            settled = action.get("reconciles") or {}
+            proposal = settled.get("proposal_id") or (AuthorityOffice.proposal_id(action["scope_digest"],
+                                                                                  action.get("attempt"))
+                                                      if action.get("scope_digest") else None)
+            grant_id = (receipt.payload.get("grant_id") if receipt is not None and receipt.record_type == "receipt"
+                        else settled.get("grant_id"))
+            claimed = [c for c in window_claims if (proposal and c.get("proposal_id") == proposal)
+                       or (grant_id and c.get("grant_id") == grant_id)]
+            if len(claimed) > 1:
+                once = False
+                findings.append(f"{action['action_id']}: {len(claimed)} Gate dispatch claims name its proposal or "
+                                "grant (duplicate dispatch claim; the Gate records exactly one)")
+                continue
             if (receipt is None or receipt.record_type != "receipt" or strategy is None
                     or action.get("scope_digest") is None or action.get("capability") is None
                     or not registered_seq < receipt.seq < seq[event.event_id]
@@ -471,7 +486,11 @@ def appraise(request: dict) -> dict:
                                                     observation=False, claimed_scope=action["scope_digest"],
                                                     claimed_capability=action["capability"])):
                 once = False
-                findings.append(f"{action['action_id']}: completed action lacks its signed strategy's Gate receipt")
+                findings.append(
+                    f"{action['action_id']}: recorded as settled by a founder reconciliation answer, with no Gate "
+                    "receipt; exactly-once cannot be re-derived from receipts"
+                    if receipt is None and action.get("reconciles") else
+                    f"{action['action_id']}: completed action lacks its signed strategy's Gate receipt")
         # A compensating receipt (mission abandoned or superseded after executing) is its own effect: it may
         # repeat no other receipt, and each executed action is compensated at most once.
         compensations = [e.payload for e in journal.replay("mission.compensated")
@@ -483,8 +502,8 @@ def appraise(request: dict) -> dict:
             once = False
             findings.append("a compensation repeats a receipt or compensates an action twice")
         checks["exactly_once"] = once
-        if not checks["exactly_once"]:
-            findings.append("duplicate receipt, dispatch claim or compensation")
+        if len(receipts) != len(set(receipts)):   # only a real duplicate is reported as one
+            findings.append("duplicate receipt: one Gate receipt is cited by more than one completed action")
 
         # 4b. deliverables: the delivered file must be exactly the render of the receipted inputs
         # A standing mission's closure covers only the actions since its previous closure:

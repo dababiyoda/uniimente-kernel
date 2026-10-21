@@ -32,6 +32,7 @@ import sys
 import pytest
 
 from greg import isolation, workers
+from greg.worker_isolation import WorkerIsolationError, _backend as envelope_backend
 from greg.body import Body
 from tests.greg_fixtures import Clock, drop, horizon, make_body, signed
 
@@ -238,3 +239,57 @@ def test_a_worker_that_replaces_its_evaluator_never_closes_its_mission(tmp_path,
     assert any("frozen evaluator" in f for f in verdict["findings"]), verdict
     # The substituted evaluator really would have passed: the tests GREG ran on the patched clone are green.
     assert verdict["independent_tests"] and all(t["passed"] for t in verdict["independent_tests"]), verdict
+
+
+@pytest.mark.skipif(not LANDLOCK, reason="Landlock ABI >= 3 is not available on this kernel")
+def _escape_script(outside):
+    return (f"import pathlib, tempfile\n"
+            f"pathlib.Path(tempfile.mkdtemp(), 'ok').write_text('ok')\n"
+            f"pathlib.Path({str(outside)!r}).write_text('x')\n")
+
+
+def test_gregs_own_acceptance_run_is_confined_to_the_clone(tmp_path, monkeypatch):
+    """GREG's acceptance commands run the worker's patch, so run_tests confines them as the worker was. Under the
+    founder's ``supervised`` setting on a host without the envelope, the run reports Landlock with the clone as its
+    only writable root, writing outside the clone fails, and a temporary directory inside the clone still works."""
+    clone, outside = tmp_path / "clone", tmp_path / "outside.txt"
+    clone.mkdir()
+
+    def no_envelope(*args, **kwargs):
+        raise WorkerIsolationError("bubblewrap unavailable on this host",
+                                   evidence={"status": "unsupported", "reason": "bubblewrap unavailable"})
+    monkeypatch.setattr(workers, "prepare_worker", no_envelope)
+    [result] = workers.run_tests([["python", "-c", _escape_script(outside)], ["python", "-c", "pass"]], clone,
+                                 timeout=60, confinement="supervised")[:1]
+    assert not result["passed"] and "PermissionError" in result["tail"], result["tail"]
+    assert not outside.exists()
+    assert result["filesystem"]["filesystem"] == "landlock"
+    assert result["filesystem"]["writable"] == [str(clone.resolve())]
+
+
+def test_every_acceptance_command_keeps_the_founders_setting(tmp_path, monkeypatch):
+    """Regression (integration of #178 into #184): run_tests once overwrote its ``confinement`` argument with the
+    first command's Landlock record, so every later command ran as if the body were ``required``."""
+    def no_envelope(*args, **kwargs):
+        raise WorkerIsolationError("bubblewrap unavailable on this host",
+                                   evidence={"status": "unsupported", "reason": "bubblewrap unavailable"})
+    monkeypatch.setattr(workers, "prepare_worker", no_envelope)
+    results = workers.run_tests([["python", "-c", "pass"]] * 3, tmp_path, timeout=60, confinement="supervised")
+    assert [r["confinement"].startswith("supervised") for r in results] == [True] * 3, results
+    assert all(r["passed"] for r in results)
+
+
+def test_gregs_own_acceptance_run_in_the_envelope_cannot_write_outside_the_clone(tmp_path):
+    """The default body: acceptance runs in the bubblewrap envelope, whose filesystem outside the clone is
+    read-only, and the record says the envelope confined it."""
+    try:
+        envelope_backend(require_bubblewrap=True)
+    except WorkerIsolationError as exc:
+        pytest.skip(f"no bubblewrap envelope on this host: {exc}")
+    clone, outside = tmp_path / "clone", tmp_path / "outside.txt"
+    clone.mkdir()
+    [result] = workers.run_tests([["python", "-c", _escape_script(outside)]], clone, timeout=60)
+    assert not result["passed"] and ("Read-only file system" in result["tail"] or "PermissionError" in result["tail"]
+                                     or "No such file" in result["tail"]), result["tail"]
+    assert not outside.exists()
+    assert result["filesystem"] == {"filesystem": "os-confined", "mechanism": "bubblewrap"}

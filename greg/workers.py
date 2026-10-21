@@ -841,15 +841,17 @@ def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None, confinem
 
     Worker-written tests are untrusted code. On a host that cannot provide the envelope (no usable
     bubblewrap), the command is refused and recorded as failed; it never runs with GREG's own reach.
-    The one exception is the founder's ``supervised`` body setting: there the command runs as #178 ran
-    it, scrubbed and with the network denied (seccomp / sandbox-exec), and its result says the filesystem
-    was not confined. Without network denial it is refused in every mode."""
+    The one exception is the founder's ``supervised`` body setting: there the command runs as #178 runs
+    it, scrubbed, with the network denied (seccomp / sandbox-exec) and, where the kernel has Landlock,
+    confined as the worker was (``confine_to``: it reads only the host runtime and writes only its clone);
+    its result says which. Without network denial it is refused in every mode."""
     from greg.capabilities import run_isolated
     results = []
     for argv in tests:
         argv = [sys.executable if a in ("python", "python3") else a for a in argv]
         started = time.monotonic()
         mode = "envelope: private filesystem, PID and network namespaces"
+        filesystem = {"filesystem": "os-confined", "mechanism": "bubblewrap"}
         try:
             try:
                 envelope = prepare_worker(argv, cwd, timeout_seconds=timeout, provider="acceptance-tests",
@@ -859,10 +861,14 @@ def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None, confinem
                 # Acceptance the envelope cannot host is only acceptance on a host without it.
                 if confinement_mode(confinement) != "supervised" or not envelope_cannot_confine(exc):
                     raise
-                mode = "supervised: network denied, environment scrubbed, filesystem NOT confined"
                 proc = run_isolated(argv, cwd=cwd, isolate_network=True, timeout=timeout, stop_check=stop_check,
+                                    confine_to=cwd,
                                     extra_env={"PATH": f"{Path(sys.executable).parent}:/usr/bin:/bin",
                                                "PYTHONDONTWRITEBYTECODE": "1"})
+                floor = filesystem = getattr(proc, "confinement", None)
+                mode = ("supervised: network denied, environment scrubbed, filesystem confined by Landlock "
+                        "(reads the runtime, writes only the clone)" if floor else
+                        "supervised: network denied, environment scrubbed, filesystem NOT confined")
             else:
                 envelope["env"]["PYTHONDONTWRITEBYTECODE"] = "1"
                 proc = supervised_run(envelope["argv"], cwd=cwd, timeout=timeout, capture_output=True,
@@ -872,10 +878,12 @@ def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None, confinem
         except subprocess.TimeoutExpired:
             code, out = -1, f"timed out after {timeout}s"
         except (CapabilityError, WorkerIsolationError, OSError, subprocess.SubprocessError) as exc:
-            code, out, mode = -1, "acceptance confinement refused: " + str(exc)[:300], "refused"
+            code, out, mode, filesystem = -1, "acceptance confinement refused: " + str(exc)[:300], "refused", None
+        # ``confinement`` states the mode in words; ``filesystem`` is what the OS enforced (#178's Landlock grants, or
+        # the envelope), None when nothing confined the filesystem or the run was refused.
         results.append({"argv": argv, "returncode": code, "passed": code == 0,
                         "seconds": round(time.monotonic() - started, 2), "tail": out[-MAX_TAIL:],
-                        "network": "denied", "confinement": mode})
+                        "network": "denied", "confinement": mode, "filesystem": filesystem})
     return results
 
 
@@ -939,11 +947,11 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
         raise WorkerError(why)
     root = _order_dir(ctx, order.order)
     evidence_path = root / "evidence.json"
-    if evidence_path.is_file():                       # reconciliation said "not executed" but it had finished
-        prior = json.loads(evidence_path.read_text())
-        if prior.get("order_digest") == order.digest() and prior.get("status") in ("COMPLETED", "NO_CHANGE"):
-            return {**prior["summary"], "reused": True}
-    if root.exists():                                 # a partial, interrupted run: discard it, keep a note
+    # Every grant runs its own worker in a fresh clone. Evidence an earlier grant left (a body stopped after
+    # writing it but before the Gate's receipt, then reconciled "not executed") is never returned as this grant's
+    # result: its grant has no receipt, so the bound appraisal rejects it, and this grant's receipt would record a
+    # run that did not happen under it (acceptance H.G11). The earlier grant's receipt, if any, keeps its summary.
+    if root.exists():                                 # an earlier or interrupted run: discard it
         (ctx.workspace / "work-orders").mkdir(parents=True, exist_ok=True)
         shutil.rmtree(root)
     root.mkdir(parents=True)
@@ -985,10 +993,14 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
         # Confinement was refused before a provider process was launched; no spend occurred.
         raise WorkerError(str(exc)) from exc
     except Exception as exc:
-        # Once dispatch began, an exception does not establish that no paid work happened.
+        # Once dispatch began, an exception does not establish that no paid work happened. A governed worker (its
+        # own process under GREG's runner) reports a lost run itself as interrupted, so an exception from it is a
+        # failure to launch or run and stays FAILED with its cap booked. An opaque provider's exception says nothing
+        # about what its run already did: that run is interrupted (#178), reconciled and never re-run blind.
+        governed = isinstance(provider, (ClaudeCodeWorker, CliAgentWorker, ScriptWorker))
         report = WorkerReport(order.provider, order.provider, -1, 0.0, None,
                               error=f"worker failed with {type(exc).__name__}: {str(exc)[:300]}",
-                              isolation=getattr(exc, "isolation", None) or {})
+                              isolation=getattr(exc, "isolation", None) or {}, interrupted=not governed)
     spend = worker_spend(report.cost_usd, order.max_budget_usd)
     (root / "worker-report.json").write_text(json.dumps({**asdict(report), "cost_usd": spend["reported_usd"],
                                                          "spend": spend}, indent=2, sort_keys=True, default=str))

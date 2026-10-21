@@ -354,19 +354,6 @@ SEARCH_POLICIES = {
 }
 DEFAULT_SEARCH = "mutate-incumbent/1"
 MAX_LHS = 64
-# How the trusted parent chooses the cycle's ONE candidate from the search lineage: a frozen setting of the cycle,
-# applied to train losses only, never to stress or held-out items. The search itself (which configurations are bred
-# from which) is the same under every selection: later generations are always bred from the best train MEANS, so
-# a selection changes only the final pick. Cycles 1-5 ran mean/1 (a setting without the key). The unchanged rule's
-# train gate still applies to whatever is picked.
-SELECTION_RULES = {
-    "mean/1": "the evaluated configuration with the lowest train mean loss, ties by id (cycles 1-5)",
-    "signtest/1": "among evaluated configurations other than the incumbent whose train mean loss beats the "
-                  "incumbent's by more than the train gain (the rule's train gate), the smallest one-sided exact "
-                  "sign-test p against the incumbent over paired train items (lower loss wins, 1e-12 tolerance), "
-                  "ties by train mean loss then id; if none qualifies, as mean/1",
-}
-DEFAULT_SELECTION = "mean/1"
 
 
 def _axis_cover(target: Target) -> list[dict]:
@@ -395,19 +382,14 @@ def _latin_hypercube(target: Target, n: int, seed: int) -> list[dict]:
     return [target.validate({key: columns[key][i] for key in target.space}) for i in range(n)]
 
 
-def search_setting(target: Target, policy: str = DEFAULT_SEARCH, *, seed: int, lhs: int = 0,
-                   selection: str = DEFAULT_SELECTION) -> dict:
-    """The search setting a freeze records: the policy, its parameter, every configuration it declares and, when it
-    is not the default mean/1, the selection rule (a setting without the key is exactly what cycles 1-5 froze)."""
+def search_setting(target: Target, policy: str = DEFAULT_SEARCH, *, seed: int, lhs: int = 0) -> dict:
+    """The search setting a freeze records: the policy, its parameter and every configuration it declares."""
     if policy not in SEARCH_POLICIES:
         raise EvolutionError(f"unknown search policy {policy!r}; declared: {sorted(SEARCH_POLICIES)}")
-    if type(selection) is not str or selection not in SELECTION_RULES:
-        raise EvolutionError(f"unknown selection rule {selection!r}; declared: {sorted(SELECTION_RULES)}")
-    chosen = {} if selection == DEFAULT_SELECTION else {"selection": selection}
     if policy == "mutate-incumbent/1":
         if lhs:
             raise EvolutionError("mutate-incumbent/1 declares no cover")
-        return {"policy": policy, **chosen}
+        return {"policy": policy}
     if type(lhs) is not int or not 0 <= lhs <= MAX_LHS:
         raise EvolutionError(f"cover/1: lhs is an integer in [0, {MAX_LHS}]")
     seen, initial = {config_id(target.incumbent)}, []
@@ -415,67 +397,27 @@ def search_setting(target: Target, policy: str = DEFAULT_SEARCH, *, seed: int, l
         if config_id(config) not in seen:
             seen.add(config_id(config))
             initial.append(config)
-    return {"policy": policy, "lhs": lhs, "initial": initial, **chosen}
+    return {"policy": policy, "lhs": lhs, "initial": initial}
 
 
 def checked_search_setting(target: Target, setting, *, seed: int) -> dict:
-    """``setting`` if it is exactly what its declared policy and selection produce for this target and seed (a
-    frozen list of configurations is re-derived and compared, never trusted), else EvolutionError."""
+    """``setting`` if it is exactly what its declared policy produces for this target and seed (a frozen list of
+    configurations is re-derived and compared, never trusted), else EvolutionError."""
     if setting is None:
         return search_setting(target, seed=seed)
-    if not isinstance(setting, dict) or set(setting) - {"policy", "lhs", "initial", "selection"}:
-        raise EvolutionError("a search setting is {policy, lhs, initial, selection}")
-    if "selection" in setting and setting["selection"] == DEFAULT_SELECTION:
-        raise EvolutionError("FROZEN_INPUT_CHANGED: the default selection is frozen by omitting the key")
-    want = search_setting(target, setting.get("policy"), seed=seed, lhs=setting.get("lhs", 0),
-                          selection=setting.get("selection", DEFAULT_SELECTION))
+    if not isinstance(setting, dict) or set(setting) - {"policy", "lhs", "initial"}:
+        raise EvolutionError("a search setting is {policy, lhs, initial}")
+    want = search_setting(target, setting.get("policy"), seed=seed, lhs=setting.get("lhs", 0))
     if canonical(setting) != canonical(want):
         raise EvolutionError("FROZEN_INPUT_CHANGED: the search setting is not what its declared policy produces")
     return want
 
 
-def _paired_sign(losses: dict, reference: dict) -> tuple[int, int, float]:
-    """Wins and losses of ``losses`` against ``reference`` over the same items (lower loss wins, 1e-12 tolerance,
-    as the held-out step counts them) and the one-sided exact sign-test p."""
-    if set(losses) != set(reference):
-        raise EvolutionError("a paired comparison needs the same items on both sides")
-    wins = sum(1 for k in reference if losses[k] < reference[k] - 1e-12)
-    defeats = sum(1 for k in reference if reference[k] < losses[k] - 1e-12)
-    return wins, defeats, sign_test(wins, defeats)
-
-
-def select_candidate(selection: str, scored: dict, incumbent_id: str, incumbent_loss: float,
-                     incumbent_losses: dict | None) -> tuple[str, dict]:
-    """The candidate's id under a frozen selection rule, and what the rule read. ``scored`` maps id to (train mean
-    loss, configuration, per-item train losses); the incumbent enters at ``incumbent_loss``."""
-    if selection not in SELECTION_RULES:
-        raise EvolutionError(f"unknown selection rule {selection!r}")
-    by_mean = min(scored, key=lambda cid: (scored[cid][0], cid))
-    if selection == "mean/1":
-        return by_mean, {"selection": selection}
-    if incumbent_losses is None:
-        raise EvolutionError(f"{selection} needs the incumbent's per-item train losses")
-    eligible = {}
-    for cid, (mean, _, losses) in scored.items():
-        if cid != incumbent_id and relative_gain(incumbent_loss, mean) > TRAIN_GAIN_MIN:
-            eligible[cid] = _paired_sign(losses, incumbent_losses)
-    if not eligible:
-        return by_mean, {"selection": selection, "eligible": 0, "fallback": "mean/1"}
-    best = min(eligible, key=lambda cid: (eligible[cid][2], scored[cid][0], cid))
-    wins, defeats, p = eligible[best]
-    return best, {"selection": selection, "eligible": len(eligible), "train_wins": wins, "train_losses": defeats,
-                  "train_sign_test_p_one_sided": round(p, 6)}
-
-
 def run_search(target: Target, evaluate, *, generations: int, population: int, seed: int, incumbent_loss: float,
-               initial=(), selection: str = DEFAULT_SELECTION, incumbent_losses: dict | None = None) -> dict:
+           initial=()) -> dict:
     """The trusted parent's search inside the closed space. ``evaluate(config)`` returns its loss per train item;
-    the incumbent enters at ``incumbent_loss`` (the cycle passes its recorded, rounded train loss) and, for a
-    selection that compares items, ``incumbent_losses``. Returns the lineage, the number of configurations
-    evaluated and the candidate chosen by the frozen ``selection`` (mean/1: the lowest train mean loss, ties by
-    id). Which configurations are evaluated does not depend on the selection."""
-    if selection not in SELECTION_RULES:
-        raise EvolutionError(f"unknown selection rule {selection!r}")
+    the incumbent enters at ``incumbent_loss`` (the cycle passes its recorded, rounded train loss). Returns the
+    lineage, the number of configurations evaluated and the one with the lowest train mean loss (ties by id)."""
     rng = random.Random(seed)
     incumbent_id = config_id(target.incumbent)
     lineage, scored = [], {}
@@ -483,11 +425,10 @@ def run_search(target: Target, evaluate, *, generations: int, population: int, s
     def consider(config, parents, ops, generation):
         cid = config_id(config)
         if cid not in scored:
-            losses = evaluate(config)
-            scored[cid] = (statistics.fmean(losses.values()), config, losses)
+            scored[cid] = (statistics.fmean(evaluate(config).values()), config)
             lineage.append({"id": cid, "generation": generation, "parents": parents, "ops": ops, "config": config,
                             "train_mean_loss": round(scored[cid][0], 6)})
-    scored[incumbent_id] = (incumbent_loss, target.incumbent, incumbent_losses)
+    scored[incumbent_id] = (incumbent_loss, target.incumbent)
     lineage.append({"id": incumbent_id, "generation": 0, "parents": [], "ops": ["incumbent"],
                     "config": target.incumbent, "train_mean_loss": incumbent_loss})
     for _ in range(population - 1):
@@ -504,10 +445,9 @@ def run_search(target: Target, evaluate, *, generations: int, population: int, s
             child, ops = crossover(target, a[1], b[1], rng)
             child, more = mutate(target, child, rng)
             consider(child, [config_id(a[1]), config_id(b[1])], ops + more, generation)
-    best_id, read = select_candidate(selection, scored, incumbent_id, incumbent_loss, incumbent_losses)
-    best_loss, best, _ = scored[best_id]
-    return {"lineage": lineage, "evaluated": len(scored), "selection": read,
-            "candidate": {"id": best_id, "config": best, "train_mean_loss": best_loss}}
+    best_loss, best = min(scored.values(), key=lambda v: (v[0], config_id(v[1])))
+    return {"lineage": lineage, "evaluated": len(scored),
+            "candidate": {"id": config_id(best), "config": best, "train_mean_loss": best_loss}}
 
 
 # ------------------------------------------------------------------ isolation
@@ -635,7 +575,7 @@ TRUSTED_CLOSURE = ("greg/cognition/evolution.py", "greg/cognition/evolution_sand
                    "greg/cognition/contracts.py", "greg/improvement.py", "greg/cognition/genomes/admission.py")
 TARGET_DATA = {"forecast_quantile": ("cortex/evaluation/data/m4_weekly.json.gz",)}
 # /3 (cycle 5): the settings carry the search policy and every configuration it declares
-FREEZE_SCHEMA = "greg-protected-evolution-freeze/4"      # /4: settings.search may name a selection rule
+FREEZE_SCHEMA = "greg-protected-evolution-freeze/3"
 EVIDENCE = ROOT / "docs" / "evidence" / "greg-protected-evolution"
 
 
@@ -832,7 +772,7 @@ def _settings(generations, population, seed, search) -> dict:
 
 
 def freeze_inputs(target_name: str, *, generations: int, population: int, seed: int, search: str = DEFAULT_SEARCH,
-                  lhs: int = 0, selection: str = DEFAULT_SELECTION) -> dict:
+                  lhs: int = 0) -> dict:
     """What a cycle's pre-registration fixes before any candidate runs: the rule and its constants, the search
     settings (generations, population, seed and the search policy with every configuration it declares), the split
     (item ids) and both evaluators' seals (code, outcomes and inputs), and the digest of every file the cycle can
@@ -840,7 +780,7 @@ def freeze_inputs(target_name: str, *, generations: int, population: int, seed: 
     if target_name not in TARGET_SPECS:
         raise EvolutionError(f"unknown evolution target {target_name!r}")
     spec = TARGET_SPECS[target_name]()
-    setting = search_setting(spec.target(), search, seed=seed, lhs=lhs, selection=selection)
+    setting = search_setting(spec.target(), search, seed=seed, lhs=lhs)
     settings = _settings(generations, population, seed, setting)
     train_items, heldout_items, excluded = spec.split()
     return {"schema": FREEZE_SCHEMA, "target": target_name, "rule": RULE,
@@ -854,7 +794,7 @@ def freeze_inputs(target_name: str, *, generations: int, population: int, seed: 
 
 
 def freeze(target_name: str, path: Path, *, generations: int = 5, population: int = 8, seed: int = 20261008,
-           search: str = DEFAULT_SEARCH, lhs: int = 0, selection: str = DEFAULT_SELECTION) -> dict:
+           search: str = DEFAULT_SEARCH, lhs: int = 0) -> dict:
     """Write a cycle's pre-registration. Refuses to overwrite one, refuses a trusted file whose bytes differ from
     HEAD (the freeze must describe committed code), and refuses a held-out split any earlier cycle or freeze has
     already looked at."""
@@ -865,7 +805,7 @@ def freeze(target_name: str, path: Path, *, generations: int = 5, population: in
     if dirty:
         raise EvolutionError(f"DIRTY_TREE: commit the trusted files before freezing: {dirty}")
     inputs = freeze_inputs(target_name, generations=generations, population=population, seed=seed, search=search,
-                           lhs=lhs, selection=selection)
+                           lhs=lhs)
     _refuse_spent(target_name, inputs["split"]["heldout"], exclude=path)
     manifest = {"frozen_at": datetime.now(timezone.utc).isoformat(), "inputs": inputs}
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -1057,12 +997,9 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
     # 3-4. isolated search inside the closed space, by the frozen search policy
     found = run_search(target, lambda config: evaluate(config, train)[0], generations=generations,
                    population=population, seed=seed, incumbent_loss=record["failure"]["incumbent_mean_train_loss"],
-                   initial=search_cfg.get("initial", ()),
-                   selection=search_cfg.get("selection", DEFAULT_SELECTION), incumbent_losses=incumbent_train)
+                   initial=search_cfg.get("initial", ()))
     record["search"] = {"generations": generations, "population": population, "policy": search_cfg["policy"],
                         "evaluated": found["evaluated"], "lineage": found["lineage"]}
-    if "selection" in search_cfg:          # cycles 1-5 (mean/1) recorded no selection; their records are unchanged
-        record["search"]["selection"] = found["selection"]
     best_loss, best, best_id = (found["candidate"]["train_mean_loss"], found["candidate"]["config"],
                                 found["candidate"]["id"])
     record["candidate"] = {"id": best_id, "config": best, "train_mean_loss": round(best_loss, 6)}
@@ -1189,14 +1126,12 @@ if __name__ == "__main__":
     ap.add_argument("--seed", type=int, default=20261008, help="with --write-freeze: the search seed")
     ap.add_argument("--search", default=DEFAULT_SEARCH, choices=sorted(SEARCH_POLICIES), help="with --write-freeze")
     ap.add_argument("--lhs", type=int, default=0, help="with --write-freeze and --search cover/1")
-    ap.add_argument("--selection", default=DEFAULT_SELECTION, choices=sorted(SELECTION_RULES),
-                    help="with --write-freeze: how the cycle's one candidate is chosen from the lineage")
     ap.add_argument("--inside", action="store_true", help=argparse.SUPPRESS)      # the clean room's own process
     ap.add_argument("--launcher", help=argparse.SUPPRESS)
     args = ap.parse_args()
     if args.write_freeze:
         inputs = freeze(args.target, args.write_freeze, generations=args.generations, population=args.population,
-                        seed=args.seed, search=args.search, lhs=args.lhs, selection=args.selection)["inputs"]
+                        seed=args.seed, search=args.search, lhs=args.lhs)["inputs"]
         print(json.dumps({"seals": inputs["seals"], "settings": {**inputs["settings"], "search": {
             k: (len(v) if k == "initial" else v) for k, v in inputs["settings"]["search"].items()}}}, indent=1))
         raise SystemExit(0)

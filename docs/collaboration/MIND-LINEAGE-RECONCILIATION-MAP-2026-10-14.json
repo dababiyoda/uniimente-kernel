@@ -2,7 +2,7 @@
  "schema": "mind-lineage-reconciliation-map/1",
  "base": "92bc6e31e0baa8fd507833e0f272b4a5e532e4d3",
  "pr155": "ef5f078013b549a51458dc9f6b5f34b324ea70b0",
- "pr158": "050c1b2b6a009b633ce35b6d4ec8043ce9e4c05a",
+ "pr158": "095551086038e02a124f5d71c9c847de235722f1",
  "vocabulary": [
   "complementary",
   "interchangeable",
@@ -361,6 +361,20 @@
    "classification": "complementary",
    "disposition": "merged",
    "note": "both lineages' entries kept; the convergence entry is added on top"
+  },
+  {
+   "path": "docs/collaboration/MIND-COVERAGE-2026-10-21.json",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/collaboration/MIND-COVERAGE-2026-10-21.md",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
   },
   {
    "path": "docs/collaboration/MIND-LINEAGE-SOURCE-MANIFEST-2026-10-14.json",
@@ -1147,6 +1161,97 @@
    "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
   },
   {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-7/DECISION.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-7/PREREGISTRATION.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-7/pilot/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-7/pilot/region.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-7/pilot/simulate.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-7/pilot/summary.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-stress-gate-audit/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-stress-gate-audit/item_losses.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-stress-gate-audit/probe-at-239a87f.txt",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-stress-gate-audit/probe-at-3587fcf.txt",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-stress-gate-audit/probe.py",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-stress-gate-audit/reanalysis.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-stress-gate-audit/reproduce_stress.py",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
    "path": "docs/evidence/pr155-crowd-sparse/2026-10-14/README.md",
    "lineage": "pr155",
    "classification": "historical evidence",
@@ -1175,6 +1280,13 @@
    "note": "founder source or intent record"
   },
   {
+   "path": "docs/intent/INTENT-20261021-MIND-MAXIMUM-CONTINUATION.json",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
    "path": "docs/intent/sources/FULL-POLYINTELLIGENCE-MIND-CONTINUATION-2026-10-07-source.md",
    "lineage": "pr155",
    "classification": "duplicate",
@@ -1187,6 +1299,13 @@
    "classification": "historical evidence",
    "disposition": "kept",
    "note": "founder source or intent record"
+  },
+  {
+   "path": "docs/intent/sources/MIND-MAXIMUM-CONTINUATION-2026-10-21-source.md",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
   },
   {
    "path": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md",
@@ -1567,6 +1686,13 @@
    "note": "present in one lineage only (pr158)"
   },
   {
+   "path": "scripts/build_mind_coverage_record.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
    "path": "scripts/build_mind_evidence_index.py",
    "lineage": "pr158",
    "classification": "complementary",
@@ -1600,6 +1726,13 @@
    "classification": "complementary",
    "disposition": "kept",
    "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "scripts/p8_immune_pilot.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
   },
   {
    "path": "scripts/prepare_m4_weekly.py",
@@ -1889,6 +2022,13 @@
    "note": "present in one lineage only (pr158)"
   },
   {
+   "path": "tests/unit/test_mind_coverage_record.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
    "path": "tests/unit/test_mind_evidence_index.py",
    "lineage": "pr158",
    "classification": "complementary",
@@ -1929,6 +2069,13 @@
    "classification": "complementary",
    "disposition": "kept",
    "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "tests/unit/test_p8_immune_pilot.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
   },
   {
    "path": "tests/unit/test_vpl_metrics.py",

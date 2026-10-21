@@ -98,7 +98,10 @@ def test_one_evolution_controller_is_reachable_from_runtime():
     assert importers == ["cortex/evaluation/evolution/run.py"], importers
     allowed = {"cortex/evaluation/evolution/run.py",          # its historical runner
                "greg/cognition/evolution_routing.py",         # itself
-               "greg/cognition/genome_library.py"}            # names it in the inventory's description text
+               "greg/cognition/genome_library.py",            # names it in the inventory's description text
+               # #158's coverage record cites the file as evidence of a benchmarked alternative (a path and a grep
+               # pattern); the importer scan above still covers it, so it cannot import the module
+               "scripts/build_mind_coverage_record.py"}
     named = sorted(str(p.relative_to(ROOT)) for p in sources
                    if "evolution_routing" in p.read_text(errors="replace") and str(p.relative_to(ROOT)) not in allowed)
     assert named == [], named

@@ -1171,3 +1171,251 @@ def test_earlier_constraint_release_splits_and_the_seal_code_are_unchanged():
         D.constraint_release_instance, D._twt_optimum, D._cr_inputs, D.constraint_release_solve_with,
         D.constraint_release_random_restart, D.constraint_release_subregion, E._cr_stress))
     assert hashlib.sha256(generated.encode()).hexdigest() == GENERATION_CODE_SHA256
+
+
+# ------------------------------------------------------------------ named immune splits (cycle 7 design)
+def test_cycle_2s_immune_split_keeps_its_name_and_seeds_and_is_checked_without_generating(monkeypatch):
+    from greg.cognition.genomes import admission, collective
+
+    def refuse(seed):
+        raise AssertionError(f"generated instance {seed}")
+    monkeypatch.setattr(collective, "immune_gaussian_instance", refuse)
+    train, held, reserved = E.immune_split_seeds("cycle-2")
+    assert (train, held) == (tuple(range(7000, 7040)), tuple(range(8000, 8060)))
+    assert E.IMMUNE_SPLITS["cycle-2"] == (E.IMMUNE_TRAIN_SEEDS, E.IMMUNE_HELDOUT_SEEDS)
+    cr = {s for seeds in E.CR_SPLITS.values() for part in seeds for s in part}
+    assert cr <= reserved and set(admission.HELDOUT_SEEDS) <= reserved and not (set(train) | set(held)) & reserved
+    # cycle 2 never looked at its held-out split, and the pre-freeze ledger names it by the named split
+    assert E._spent_heldout("immune_detect") == {}
+    assert E.PRE_FREEZE_HELDOUT["2026-10-09/cycle-immune-2"][1]() == {f"s{s}" for s in held}
+    assert {f"s{s}" for s in held} <= E._registered_heldout("immune_detect")
+    for bad in ({"cycle-x": (tuple(range(7020, 7030)), tuple(range(8540, 8550)))},     # overlaps cycle 2's train
+                {"cycle-x": (tuple(range(7880, 7890)), tuple(range(8540, 8550)))},     # a constraint-release split
+                {"cycle-x": (tuple(range(3100, 3110)), tuple(range(8540, 8550)))},     # outside P8's range
+                {"cycle-x": (tuple(range(8540, 8550)), tuple(range(8545, 8555)))}):    # train meets held-out
+        monkeypatch.setattr(E, "IMMUNE_SPLITS", {**E.IMMUNE_SPLITS, **bad})
+        with pytest.raises(E.EvolutionError, match="overlap"):
+            E.immune_split_seeds("cycle-x")
+        with pytest.raises(E.EvolutionError, match="overlap"):
+            E.immune_split("cycle-x")                           # the guard runs before any instance
+    with pytest.raises(E.EvolutionError, match="unknown"):
+        E.immune_split_seeds("cycle-9")
+
+
+# the immune method, score, stress sets and baseline, byte-identical at cycle 2's commit ed4ee29 and at 050c1b2
+# (the generator was then named differently; test_genomes_collective_native pins the split it produces)
+IMMUNE_CYCLE_CODE_SHA256 = "77b51d45108def343693c123a6c58d1e2e9357b403dbc9fcc493904af468e36a"
+
+
+def test_the_immune_cycle_code_is_unchanged_since_cycle_2():
+    import hashlib
+    import inspect
+    from greg.cognition.genomes import collective as C
+    code = "".join(inspect.getsource(f) for f in (C.immune_solve_with, C.immune_score, C.immune_zscore,
+                                                   C._binom_upper, C._immune_inputs, C._standardiser,
+                                                   C._immune_config, E._immune_stress))
+    assert hashlib.sha256(code.encode()).hexdigest() == IMMUNE_CYCLE_CODE_SHA256
+    seal = inspect.getsource(E.SealedEvaluator) + inspect.getsource(C.immune_score) + E.RULE
+    assert hashlib.sha256(seal.encode()).hexdigest().startswith("8126e28e9f1c")
+
+
+def test_p8_reserves_8600_to_9199_which_no_admission_freeze_or_p8_split_had_used():
+    """Added for cycle 7's design (2026-10-21) before any instance of these seeds was generated: an admission run
+    can no longer choose them, and every earlier P8 split, canary and admission freeze stays outside them."""
+    from greg.cognition.genomes import admission
+    extension = set(range(8600, 9200))
+    assert admission.P8_RESERVED == range(7000, 9200) and extension <= set(admission.P8_RESERVED)
+    used = admission.spent_seeds() | set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS)
+    used |= {s for name, seeds in (*E.CR_SPLITS.items(), *E.IMMUNE_SPLITS.items()) if name != "cycle-7"
+             for part in seeds for s in part}                           # cycle 7's immune split is what it is for
+    used |= {s for seeds in E.CR_CANARY_SEEDS.values() for s in seeds}
+    assert not used & extension and max(used & set(admission.P8_RESERVED)) < 8600
+    for manifest in E.EVIDENCE.rglob("freeze.json"):
+        split = json.loads(manifest.read_text()).get("inputs", {}).get("split", {})
+        ids = {int(k[1:]) for k in (*split.get("train", []), *split.get("heldout", [])) if k[1:].isdigit()}
+        assert not ids & extension, manifest
+
+
+def test_the_cycle_7_immune_split_is_registered_fresh_and_not_current(monkeypatch):
+    from greg.cognition.genomes import admission, collective
+
+    def refuse(seed):
+        raise AssertionError(f"generated instance {seed}")
+    monkeypatch.setattr(collective, "immune_gaussian_instance", refuse)
+    train, held, reserved = E.immune_split_seeds("cycle-7")
+    assert (train, held) == (tuple(range(8600, 8720)), tuple(range(8720, 8840)))
+    assert set(E.IMMUNE_SPLITS["cycle-2"][0]) | set(E.IMMUNE_SPLITS["cycle-2"][1]) <= reserved
+    assert set(train) | set(held) <= set(admission.P8_RESERVED) and not (set(train) | set(held)) & reserved
+    assert not (set(train) | set(held)) & set(range(3000, 4000))       # no review seed of any pilot
+    assert E.IMMUNE_CURRENT_SPLIT == "cycle-2"                          # the pilot judged it NOT_VIABLE
+    assert {f"s{s}" for s in held} <= E._registered_heldout("immune_detect")   # a test run never looks at it
+    assert not {f"s{s}" for s in held} & set().union(*E._spent_heldout("immune_detect").values(), set())
+    # the constraint-release splits now avoid it too
+    assert set(train) | set(held) <= E.cr_split_seeds("cycle-6")[2]
+
+
+# ------------------------------------------------------------------ stress gate with wrong answers (2026-10-21)
+def test_the_stress_gate_counts_wrong_answers_when_both_means_are_infinite():
+    """Found by the cycle-7 design pilot: ``worsened(inf, inf)`` is False, so a candidate with more wrong answers
+    than an incumbent that already had one passed the adversarial gate."""
+    inf = float("inf")
+    assert E.worsened(inf, inf) is False                                  # the blind spot itself
+    more = {"incumbent": inf, "candidate": inf, "wrong": {"incumbent": 2, "candidate": 3, "both_answered": 10,
+                                                          "incumbent_answered_mean": -0.9,
+                                                          "candidate_answered_mean": -0.95}}
+    assert E.stress_worsened(more)
+    fewer = {**more, "wrong": {**more["wrong"], "incumbent": 3, "candidate": 2}}
+    assert not E.stress_worsened(fewer)
+    equal_worse = {**more, "wrong": {**more["wrong"], "candidate": 2, "candidate_answered_mean": -0.5}}
+    assert E.stress_worsened(equal_worse)                                 # -0.5 vs -0.9: worse by > 5%
+    equal_same = {**more, "wrong": {**more["wrong"], "candidate": 2, "candidate_answered_mean": -0.9}}
+    assert not E.stress_worsened(equal_same)
+    new_wrong = {"incumbent": -0.9, "candidate": inf, "wrong": {"incumbent": 0, "candidate": 1, "both_answered": 9,
+                                                                "incumbent_answered_mean": -0.9,
+                                                                "candidate_answered_mean": -0.9}}
+    assert E.stress_worsened(new_wrong)
+    assert E.stress_worsened({"incumbent": 0.010, "candidate": 0.0106}) and \
+        not E.stress_worsened({"incumbent": 0.010, "candidate": 0.0104})   # finite sets: unchanged
+
+
+AUDIT = E.EVIDENCE / "2026-10-21-stress-gate-audit"
+AUDITED_RECORDS = ("2026-10-08/cycle-forecast-1.json", "2026-10-09/cycle-immune-2.json", "2026-10-14/cycle-cr-3.json",
+                   "2026-10-15-cr-4/cycle-cr-4.json", "2026-10-16-cr-5/cycle-cr-5.json",
+                   "2026-10-16-cr-6/cycle-cr-6.json")
+
+
+def test_every_recorded_stress_decision_is_unchanged_on_reproduced_item_level_losses():
+    """Replaces the 32246ee test, which passed only the two recorded means and so reached the old comparison through
+    the ``wrong is None`` fallback. Here the gate runs on per-item stress losses reproduced from each record's TRAIN
+    items at its source commit (independent audit, 2026-10-21; no held-out item was built). The reproduced means must
+    equal the frozen record's, which ties the item data to the record; then every adversarial verdict must be the
+    recorded one, and the item-level wrong-answer branch must actually run somewhere."""
+    items = json.loads((AUDIT / "item_losses.json").read_text())["cycles"]
+    reanalysis = json.loads((AUDIT / "reanalysis.json").read_text())["cycles"]
+    assert sorted(c["record"] for c in items.values()) == sorted(AUDITED_RECORDS)
+    item_level = 0
+    for name, cycle in items.items():
+        record = json.loads((E.EVIDENCE / cycle["record"]).read_text())
+        assert record["source_commit"] == cycle["source_commit"] and record["evaluator_seals"]["train"] == \
+            cycle["train_seal"]
+        summary = E.stress_summary(cycle["losses"]["incumbent"], cycle["losses"]["candidate"])
+        assert set(summary) == {k for k, v in record["adversarial"].items() if isinstance(v, dict)}
+        for kind, v in summary.items():
+            assert (v["incumbent"], v["candidate"]) == (record["adversarial"][kind]["incumbent"],
+                                                       record["adversarial"][kind]["candidate"]), (name, kind)
+            item_level += "wrong" in v
+        rejected = (not record["adversarial"]["all_outputs_verified"]
+                    or any(E.stress_worsened(v) for v in summary.values()))
+        assert rejected == (record.get("reason") == "adversarial evaluation failed"), name
+        assert reanalysis[name]["status"] == "RESOLVED"
+        assert reanalysis[name]["original"]["decision"] == reanalysis[name]["reanalysed"]["decision"] == \
+            record["decision"]
+    assert item_level >= 2           # cycle 2: scarce (0 vs 1 wrong) and strict (1 vs 1 wrong, both-answered means)
+    strict = E.stress_summary(*(({k: v for k, v in items["cycle-immune-2"]["losses"][r].items()
+                                  if k.startswith("strict:")}) for r in ("incumbent", "candidate")))["strict"]
+    assert strict["wrong"]["incumbent"] == strict["wrong"]["candidate"] == 1 and not E.stress_worsened(strict)
+
+
+def test_the_means_only_form_never_reaches_the_wrong_answer_branch():
+    """Why the 32246ee historical test proved nothing about the new branch: given only the two means it falls back."""
+    inf = math.inf
+    assert E.stress_worsened({"incumbent": inf, "candidate": inf}) is False
+    assert E.stress_worsened({"incumbent": inf, "candidate": inf, "wrong": {
+        "incumbent": 1, "candidate": 2, "both_answered": 3, "incumbent_answered_mean": 0.1,
+        "candidate_answered_mean": 0.1}}) is True
+
+
+# ------------------------------------------------------------------ independent stress-gate audit (2026-10-21)
+def _inline_239a87f(inc_s, cand_s):
+    """cycle()'s adversarial aggregation as it stood at 239a87f, verbatim, as the reference for well-formed input."""
+    import statistics
+    adversarial = {}
+    for kind in sorted({k.split(":")[0] for k in inc_s}):
+        ki = [inc_s[k] for k in inc_s if k.startswith(kind)]
+        kc = [cand_s[k] for k in cand_s if k.startswith(kind)]
+        adversarial[kind] = {"incumbent": round(statistics.fmean(ki), 6), "candidate": round(statistics.fmean(kc), 6)}
+        if any(math.isinf(v) for v in ki + kc):
+            finite = [(a, b) for a, b in zip(ki, kc) if not (math.isinf(a) or math.isinf(b))]
+            adversarial[kind]["wrong"] = {"incumbent": sum(map(math.isinf, ki)), "candidate": sum(map(math.isinf, kc)),
+                                          "both_answered": len(finite),
+                                          "incumbent_answered_mean": round(statistics.fmean(a for a, _ in finite), 6)
+                                          if finite else None,
+                                          "candidate_answered_mean": round(statistics.fmean(b for _, b in finite), 6)
+                                          if finite else None}
+    return adversarial
+
+
+def test_stress_items_group_by_exact_kind_so_a_prefix_kind_cannot_mask_a_worse_set():
+    """At 239a87f ``k.startswith(kind)`` put ``leaner:*`` items into ``lean``: a 50-fold worse ``lean`` set passed."""
+    inc, cand = {"lean:a": 0.01, "leaner:a": 10.0}, {"lean:a": 0.5, "leaner:a": 0.0}
+    summary = E.stress_summary(inc, cand)
+    assert summary["lean"] == {"incumbent": 0.01, "candidate": 0.5}
+    assert E.stress_worsened(summary["lean"])
+
+
+def test_stress_items_pair_by_key_not_by_position():
+    """At 239a87f ``zip(ki, kc)`` paired by position: loss maps in different key orders compared the wrong items."""
+    inf = math.inf
+    inc, cand = {"k:a": inf, "k:b": 0.01, "k:c": 0.01}, {"k:c": 0.5, "k:b": 0.01, "k:a": inf}
+    wrong = E.stress_summary(inc, cand)["k"]["wrong"]
+    assert wrong["both_answered"] == 2 and wrong["candidate_answered_mean"] == 0.255
+    assert E.stress_worsened(E.stress_summary(inc, cand)["k"])
+    with pytest.raises(E.EvolutionError, match="STRESS_UNPAIRED"):
+        E.stress_summary(inc, {"k:a": inf, "k:b": 0.01})                # zip would silently drop k:c
+
+
+def test_stress_summary_equals_the_239a87f_aggregation_on_well_formed_aligned_losses():
+    rng = random.Random(7)
+    for _ in range(3000):
+        kinds = rng.sample(["lean", "fewval", "scarce", "strict"], rng.randint(1, 3))
+        keys = [f"{k}:s{i}" for k in kinds for i in range(rng.randint(1, 5))]
+        draw = lambda: math.inf if rng.random() < 0.2 else rng.choice([-0.9, -0.2, 0.0, 0.01, 0.0105, 1.0])  # noqa
+        inc, cand = {k: draw() for k in keys}, {k: draw() for k in keys}
+        assert E.stress_summary(inc, cand) == _inline_239a87f(inc, cand)
+
+
+def test_the_cycle_aggregates_its_stress_sets_through_stress_summary():
+    import inspect
+    source = inspect.getsource(E.cycle)
+    assert "stress_summary(inc_s, cand_s)" in source and "startswith(kind)" not in source
+
+
+@pytest.mark.parametrize("kind", [
+    {"incumbent": 0.01, "candidate": math.nan},                          # NaN compares False: passed at 239a87f
+    {"incumbent": math.nan, "candidate": 9.0},
+    {"incumbent": -math.inf, "candidate": 5.0},                          # -inf + 0.05 * inf is NaN: passed
+    {"incumbent": None, "candidate": 0.01},
+    {"incumbent": True, "candidate": 0.01},
+    {"incumbent": math.inf, "candidate": math.inf, "wrong": {"incumbent": 1, "candidate": 1, "both_answered": 3,
+     "incumbent_answered_mean": 0.1, "candidate_answered_mean": math.nan}},          # passed
+    {"incumbent": math.inf, "candidate": math.inf, "wrong": {"incumbent": 1, "candidate": -5, "both_answered": 3,
+     "incumbent_answered_mean": 0.1, "candidate_answered_mean": 0.1}},               # negative count: passed
+    {"incumbent": math.inf, "candidate": math.inf, "wrong": {"incumbent": 1.0, "candidate": 1.0, "both_answered": 3,
+     "incumbent_answered_mean": 0.1, "candidate_answered_mean": 0.1}},
+    {"incumbent": math.inf, "candidate": math.inf, "wrong": {"incumbent": 1, "candidate": 1, "both_answered": 3,
+     "incumbent_answered_mean": None, "candidate_answered_mean": None}},             # TypeError at 239a87f
+    {"incumbent": None, "candidate": None, "malformed": {"incumbent": 1, "candidate": 0}},
+])
+def test_the_stress_gate_fails_closed_on_values_it_cannot_rank(kind):
+    assert E.stress_worsened(kind) is True
+
+
+@pytest.mark.parametrize("inc, cand", [
+    ({"k:a": 0.01, "k:b": 0.01}, {"k:a": math.nan, "k:b": 0.01}),        # inline: no wrong block, NaN mean, PASS
+    ({"k:a": math.nan, "k:b": 0.01}, {"k:a": 9.0, "k:b": 9.0}),            # a NaN incumbent disarmed the set: PASS
+    ({"k:a": -math.inf, "k:b": 0.01}, {"k:a": 0.5, "k:b": 0.5}),          # -inf counted as a wrong answer: PASS
+    ({"k:a": math.inf, "k:b": -math.inf}, {"k:a": 0.5, "k:b": 0.5}),      # inline raised ValueError in fsum
+])
+def test_a_stress_set_with_a_nan_or_negative_infinite_loss_is_malformed_and_fails(inc, cand):
+    summary = E.stress_summary(inc, cand)["k"]
+    assert summary["malformed"] and summary["incumbent"] is None and E.stress_worsened(summary)
+
+
+def test_well_formed_wrong_answer_semantics_are_unchanged_by_failing_closed():
+    inf = math.inf
+    s = lambda inc, cand: E.stress_worsened(E.stress_summary(inc, cand)["k"])     # noqa: E731
+    assert s({"k:a": inf, "k:b": 0.01}, {"k:a": 1.0, "k:b": 1.0}) is False          # fewer wrong: passes (policy)
+    assert s({"k:a": inf, "k:b": 0.1}, {"k:a": inf, "k:b": inf}) is True            # more wrong
+    assert s({"k:a": inf, "k:b": 0.01}, {"k:a": inf, "k:b": 0.1}) is True           # equal, answered worse
+    assert s({"k:a": inf, "k:b": 0.01}, {"k:a": 5.0, "k:b": inf}) is False          # equal, none both answered
+    assert s({"k:a": 0.010}, {"k:a": 0.0106}) is True and s({"k:a": 0.010}, {"k:a": 0.0104}) is False

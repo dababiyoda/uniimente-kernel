@@ -106,7 +106,7 @@
     ]
    }
   ],
-  "equality_digest": "sha256:8f7f644932353cf0ee6d877648c34720959707be7c3bf35a288944a1741198a3",
+  "equality_digest": "sha256:8016e63a80ff8498e8237225d04f37233bfabd4230631f2bace7473f0e7053ac",
   "equivalences": [
    {
     "a": "greg.cognition.genomes.collective:flock_dropout_instance",
@@ -199,7 +199,7 @@
     ]
    }
   ],
-  "generators_sampled": 67,
+  "generators_sampled": 70,
   "sample_seeds": [
    0,
    1,

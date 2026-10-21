@@ -282,7 +282,7 @@
   ],
   "max_consequence_class": "internal_write",
   "budget_usd": 0.05,
-  "horizon": "2026-10-22T14:13:57.287369Z"
+  "horizon": "2026-10-22T17:08:16.849203Z"
  },
  "auto_attach": {
   "max_consequence_class": "read_only"

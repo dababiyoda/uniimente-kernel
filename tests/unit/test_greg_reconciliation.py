@@ -194,6 +194,28 @@ def test_the_morning_report_renders_a_reconciliation_retained_before_it_carried_
     assert [a["at"] is None for a in report["q3_what_i_did"]] == [False, True]
 
 
+def test_the_morning_report_books_a_metered_cap_kept_on_not_executed(tmp_path):
+    """Merge review of 8be3909: H.G4 keeps a metered dispatch's signed cap booked when the founder says it did not
+    execute; the morning report's spend summed DONE actions only, so it showed $0 the engine had booked."""
+    home, key, body_id, _ = make_body(tmp_path)
+    note = workspace(home, "m:metered") / "c.txt"
+    drop(home, signed(key, body_id, "MISSION", mission(
+        "m:metered", checks=[note_check("c", note, "ok")],
+        strategies=[write_strategy("w", "c.txt", "ok", ["c"])], capabilities=["fs.read", "fs.write"])))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        tick(body, clock, 3)
+        body.journal.record("mission.action", {
+            "mission_id": "m:metered", "action_id": "commission", "attempt": 0, "status": "RECONCILED_NOT_EXECUTED",
+            "capability": "worker.commission", "route": "founder_reconciliation", "receipt": None, "cost_usd": 0.05,
+            "spend_basis": "signed_cap: the dispatch was claimed and never receipted", "at": "2026-10-21T00:00:00Z",
+            "reasons": ["founder reconciliation: reconcile_not_executed"]}, key=["m:metered", "commission", "nx"])
+        done = sum(a.get("cost_usd") or 0.0 for a in (e.payload for e in body.journal.replay("mission.action"))
+                   if a["status"] == "DONE")
+        report = morning_report(body.journal, body.engine)
+    assert report["metrics"]["spend_usd"] == pytest.approx(done + 0.05)
+
+
 def test_a_reconciled_brief_cannot_be_labelled_because_it_retained_no_inputs(tmp_path):
     from greg import improvement, tribunal
     home, key, body_id, _ = make_body(tmp_path)
@@ -414,3 +436,34 @@ def test_a_ledger_wedged_by_the_old_shared_reconciliation_question_is_asked_agai
         assert again["request_id"] != first["request_id"]
         reconcile(body, key, body_id, clock, "reconcile_not_executed")
         assert body.engine.book.missions["m:wedged"].status == "ACHIEVED"
+
+
+def test_every_reconciliation_ask_tells_the_founder_what_not_executed_books_for_a_metered_capability():
+    """Merge review of 8be3909: the re-ask for a retained blocker (answered about an earlier dispatch) built its own
+    wording without H.G4's warning, though the settlement books a metered cap on either answer. Both asks now
+    take their wording and the per-answer booking from one place."""
+    from greg.missions import reconciliation_terms
+    text, booked = reconciliation_terms("worker.commission", 0.05)
+    assert "either answer books $0.05" in text and booked == {"reconcile_executed": 0.05, "reconcile_not_executed": 0.05}
+    text, booked = reconciliation_terms("fs.write", 0.6)
+    assert "metered" not in text and booked == {"reconcile_executed": 0.6, "reconcile_not_executed": 0.0}
+
+
+def test_resilience_never_counts_a_founder_reconciled_execution_as_a_completion():
+    """Merge review of 1e55bbd: routing's track record treats a founder's "it executed" (no receipt) as neither a
+    success nor a failure, but resilience counted it as a completion beside the same dispatch's UNCERTAIN, so a
+    capability that never produced a receipt read as improving after failure and as the concentrated one."""
+    acts = []
+    for n in range(3):
+        acts.append({"mission_id": "m:x", "action_id": "a", "attempt": n, "status": "UNCERTAIN",
+                     "capability": "pay.vendor", "receipt": None, "reasons": ["stopped"],
+                     "at": f"2026-10-01T00:{2 * n + 1:02d}:00Z"})
+        acts.append({"mission_id": "m:x", "action_id": "a", "attempt": n, "status": "DONE",
+                     "capability": "pay.vendor", "receipt": None, "route": "founder_reconciliation",
+                     "reasons": ["founder reconciliation: reconcile_executed"],
+                     "at": f"2026-10-01T00:{2 * n + 2:02d}:00Z"})
+    journal = SimpleNamespace(replay=lambda kind=None: [
+        SimpleNamespace(type="greg.mission.action", payload=p, event_id=f"e{i}", occurred_at=p["at"])
+        for i, p in enumerate(acts)] if kind == "mission.action" else [])
+    assert not resilience.after_failure(journal).get("pay.vendor", {}).get("completion_after")
+    assert resilience.concentration(journal)["completed_actions"] == 0

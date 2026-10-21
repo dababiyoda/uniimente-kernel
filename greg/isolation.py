@@ -239,6 +239,21 @@ WORKER_KERNEL_FILES = ("/proc/cpuinfo", "/proc/meminfo", "/proc/stat", "/proc/lo
                        "/proc/version", "/proc/filesystems", "/proc/self")
 
 
+def _install_tree(tree: Path) -> set:
+    """The install tree above a provider's ``bin`` directory, unless granting it would expose the founder's files.
+
+    A tree that is the user's home or contains it (``~/bin/agent``) is never granted. A tree directly in the home
+    is granted whole only when it is a virtual environment; otherwise (``~/.local``, whose ``share`` and ``state``
+    hold other programs' data and credentials) only its ``lib`` directory is."""
+    home = Path.home().resolve()
+    tree = tree.resolve()
+    if tree == home or tree in home.parents:
+        return set()
+    if tree.parent == home and not (tree / "pyvenv.cfg").is_file():
+        return {tree / "lib"}
+    return {tree}
+
+
 def worker_grants(workdir, *, binaries=(), read_files=()):
     """The Landlock grants for one commissioned worker: its work directory read/write, the runtime read/execute.
 
@@ -254,7 +269,7 @@ def worker_grants(workdir, *, binaries=(), read_files=()):
         if binary:
             given, real = Path(binary).absolute(), Path(binary).resolve()
             roots |= {given.parent, real.parent}
-            optional.add(real.parent.parent)      # the install tree (a venv, a node prefix), only where it is safe
+            optional |= _install_tree(real.parent.parent)   # a venv or node prefix, only where it is safe
     grants = {}
     for root in sorted(roots | optional):
         if not root.exists():

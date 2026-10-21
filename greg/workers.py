@@ -877,8 +877,12 @@ def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None, confinem
             code, out = proc.returncode, (proc.stdout + proc.stderr).decode("utf-8", "replace")
         except subprocess.TimeoutExpired:
             code, out = -1, f"timed out after {timeout}s"
-        except (CapabilityError, WorkerIsolationError, OSError, subprocess.SubprocessError) as exc:
+        except (CapabilityError, WorkerIsolationError, subprocess.SubprocessError) as exc:
             code, out, mode, filesystem = -1, "acceptance confinement refused: " + str(exc)[:300], "refused", None
+        except OSError as exc:
+            # The worker's clone could not host the run (e.g. it made the clone unwritable): the patch fails
+            # acceptance (#178). Nothing outside the clone ran, so this is never an outcome GREG cannot know.
+            code, out = -1, f"acceptance could not run in the worker's clone: {type(exc).__name__}: {exc}"
         # ``confinement`` states the mode in words; ``filesystem`` is what the OS enforced (#178's Landlock grants, or
         # the envelope), None when nothing confined the filesystem or the run was refused.
         results.append({"argv": argv, "returncode": code, "passed": code == 0,

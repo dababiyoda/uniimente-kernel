@@ -7,7 +7,8 @@
     "RECOMBINE": "a mechanism ported into this branch with credit; the rest retained as a competing implementation",
     "RETAIN_AS_EVIDENCE": "preserved unmerged with its results; placed relative to the #137 decision",
     "RETAIN_AS_EVIDENCE+MECHANISM_SOURCE": "as above, and named mechanisms are queued for porting once its base lands",
-    "ADJACENT_MAIN_COMPATIBLE": "main-based work that touches neighbouring files; not a cognition seed"
+    "ADJACENT_MAIN_COMPATIBLE": "main-based work that touches neighbouring files; not a cognition seed",
+    "ON_MAIN_NON_CANONICAL": "merged to main and labelled non-canonical there; its tested invariants are a mechanism source; absorption or retirement is a founder decision"
   },
   "measured_in_this_session": {
     "method": "git merge-base/rev-list/diff against main 19fa33c on 2026-10-13; PR bodies read through the GitHub API; code read for #141 and #139 only",
@@ -337,6 +338,29 @@
       "measured_results": "Its own claims: full frontier suite at 47bff1d 2720 passed, 5 failed (environmental, identical at base), 16 skipped; 13 new tests; 15 of 15 mutants caught; characterization: every available family refutes every lie in its small sample (lower bounds about 0.44-0.51), answers invariant under renaming and reordering, exact arithmetic abstains at 64 terms, graph unattached on the default registry; frozen comparison not re-run because no evaluated path changed.",
       "carried_into_this_branch": "Nothing merged (depends on #161/#158/#137). Mechanisms to port after the #137 decision: RFC 9901-style salted-hash selective disclosure of receipts (reveal claim type, status, verdict, dissent and limits; withhold inputs, outputs and evidence pointers), same-input completeness, a custody statement over the ledger chain, and append-only institutional responses that grant nothing.",
       "authority_created": false
+    },
+    {
+      "implementation_id": "cognition-lineage/pr-165",
+      "pr": 165,
+      "head": "b2f2d21 (merged), relabelled by #170 at d64a6c9",
+      "commits_ahead_of_main": 0,
+      "contains_pr137": false,
+      "diff_vs_main": "on main: capabilities/router.py, tests/unit/test_capability_router.py, docs/intent/INTENT-20261014-competency-compiler.json",
+      "title": "Add the Capability Router (Competency Compiler) and record its founder intent; relabelled non-canonical by #170",
+      "branch": "main",
+      "package": "capabilities/router.py",
+      "base": "main",
+      "author": "claude",
+      "disposition": "ON_MAIN_NON_CANONICAL",
+      "lineage_relation": "another Competency Compiler built from the same 2026-10-14 restatement of the directive after a search of main only. It maps problem classes to admissible epistemic methods, prefers proven over unproven mechanisms then least consequence then lowest cost, composes the fewest mechanisms that cover a method set, calibrates only from independently verified outcomes, emits a CapabilityDeficit with the doctrine's resolution order, and rebuilds its track record from a verified ledger chain. Its typed 'establishes' column overlaps this branch's Epistemic Finality Rule, and its CapabilityDeficit overlaps the cortex receipt's capability_deficit; the two deficit shapes are not yet reconciled by a contract or adapter. Nothing calls it.",
+      "measured_results": "Its own record: tests/unit/test_capability_router.py, synthetic fixtures only; no routed decision has executed against reality. Measured here: merged into this branch at 42a37f9 without conflict; full suite 1129 passed, 4 skipped with Z3.",
+      "carried_into_this_branch": "Present through the merge of main at 42a37f9; nothing in this branch calls it, and this branch adds nothing to it.",
+      "authority_created": false
     }
-  ]
+  ],
+  "landscape_after_2026_10_14": {
+    "note": "This registry is a snapshot of the cognition lineages as of 2026-10-14, plus the router merged to main. After it, the integration line grew: #173 (full-machine convergence, which converges #141 among others), #178 (one-machine trunk), #179-#189 (the converged Mind and its descendants) and #184 (the current head of that line, which contains #141's head ebc2130 and carries its own cortex, version 0.2.1). Those later lineages are tracked by the integration line itself, not re-catalogued here.",
+    "canonicality": "Open and not decided here. Main's INTENT-20261014-competency-compiler names the #143 lineage as the canonical candidate (#143/#145/#154); this branch carries #141 (PRODUCTIZE below means carried into this branch, not chosen for the institution); the integration line (#173/#178/#184) carries #141 together with the Mind lineages. Choosing among them is a founder decision.",
+    "founder_correction": "INTENT-20261019-UPWARD-ASCENT (draft #190) makes cataloguing and relabelling insufficient: this branch's Seed Cortex mechanisms owe a measured capability dividend on the existing GREG path, landed as work stacked on the integration line, not as a rival trunk. That elevation is the next step and is not claimed here."
+  }
 }

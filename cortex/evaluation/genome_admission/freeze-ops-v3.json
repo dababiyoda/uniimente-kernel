@@ -1,0 +1,133 @@
+{
+  "frozen_at": "2026-10-16T09:05:04.530322+00:00",
+  "inputs": {
+    "files": {
+      "cortex/evaluation/genome_admission/run_ops_v3.py": "sha256:30d1b59c7b9fe885aecf2c2a5e5d057757a364de28796cf04e246db61128b50b",
+      "cortex/evaluation/genome_admission/run.py": "sha256:1ddc445e357f21b34e8a660ea05089937a58f3ea07fc1e2b1ac4981f9a01a2f3",
+      "cortex/evaluation/genome_admission/run_v2.py": "sha256:53aa25ec0a2be0582f25401889ab6f3365fb85525fc7bb6ea32ea9e003e828d5",
+      "cortex/evaluation/pr155_crowd_sparse/run.py": "sha256:7cbe812101581825ec63ff1abf2078589e772e960e263581f636c8102c813f54",
+      "cortex/evaluation/genome_admission/prereg-ops-v3.json": "sha256:2509fbbde43b8275bc44c283b886514d889d3a45587b9d67bca27f6e7c9509a4",
+      "greg/cognition/repertoire.py": "sha256:c1c4d7afe3c804800090936401386331b125213a5611df9a0f84517a38c52922",
+      "greg/cognition/solvers.py": "sha256:3fedfa6eca5d8c516432356a300662e34931c57bc4bf545fa7ae8d8de940ac1d"
+    },
+    "solver_closures": {
+      "blackbox": {
+        "path": "greg/cognition/repertoire.py",
+        "function": "evolve_blackbox",
+        "closure_sha256": "sha256:ff8651f01a35eecfe49fb51791451f0f7ffdaf9a2e7390efcadf0fb013b38d30"
+      },
+      "collective": {
+        "path": "greg/cognition/solvers.py",
+        "function": "quorum",
+        "closure_sha256": "sha256:3d3171e8a365607261c8630637b33e1ea3be093070b0247738d208739bba7a62"
+      },
+      "control": {
+        "path": "greg/cognition/solvers.py",
+        "function": "control",
+        "closure_sha256": "sha256:ecca2966b6b872b7882f09ee28435e00cc4f2dafcbfd0aef4bf742a1dd694721"
+      },
+      "crowd": {
+        "path": "greg/cognition/repertoire.py",
+        "function": "crowd_label",
+        "closure_sha256": "sha256:25fdad1e8f10cc935d34eeb0be69c54ac8f035817d9b69658fe97d38def45a48"
+      },
+      "evolutionary": {
+        "path": "greg/cognition/solvers.py",
+        "function": "evolutionary",
+        "closure_sha256": "sha256:6802f67e85fe94459bfda565b8c1e3c628ecf6a31c97b605aec7345d24b5b38e"
+      },
+      "exact": {
+        "path": "greg/cognition/solvers.py",
+        "function": "exact",
+        "closure_sha256": "sha256:e6fc72c9a50760826bbe51225748e0ac39fdb0a6535ee94488e17f198ef1b47d"
+      },
+      "game": {
+        "path": "greg/cognition/solvers.py",
+        "function": "game",
+        "closure_sha256": "sha256:2428ae2e27e4cc2ac56945dcc1bfd6f24ab1aade60070b23e01b4b9029b1242c"
+      },
+      "graph": {
+        "path": "greg/cognition/solvers.py",
+        "function": "graph",
+        "closure_sha256": "sha256:a53bde90a60a988093e405db668e24db234631a8dce84d6cf938a3208b276d14"
+      },
+      "information": {
+        "path": "greg/cognition/solvers.py",
+        "function": "information",
+        "closure_sha256": "sha256:2ddbb1d9f941abbbbd626e003ceb053d2660c44bb894d25b86c92c0dbe1a66b3"
+      },
+      "micro": {
+        "path": "greg/cognition/solvers.py",
+        "function": "micro",
+        "closure_sha256": "sha256:fb9265e4703ce6d719cbb0d9479748a5de180cea9131234bb43060f0252c685f"
+      },
+      "pattern": {
+        "path": "greg/cognition/solvers.py",
+        "function": "pattern",
+        "closure_sha256": "sha256:4f2a7ed3d50063540ebf10530eaf487582fb96fa0fc2ab7e2707f6dc66880a07"
+      },
+      "probabilistic": {
+        "path": "greg/cognition/solvers.py",
+        "function": "bayesian",
+        "closure_sha256": "sha256:1a1662833a2302616498d68bd844a4070f99256b8af59c6c88a78010e8430818"
+      },
+      "robust_pattern": {
+        "path": "greg/cognition/repertoire.py",
+        "function": "robust_anomalies",
+        "closure_sha256": "sha256:1e72fad51bc9809eacb88100eeaa9ba7f56b08808ed2e535b9e2443caf69d008"
+      },
+      "sequential": {
+        "path": "greg/cognition/solvers.py",
+        "function": "sequential",
+        "closure_sha256": "sha256:79cbcb72d956a27c47a4d294452112ca78e6a96a6d03e0e977499ca7866514ca"
+      },
+      "simulation": {
+        "path": "greg/cognition/solvers.py",
+        "function": "simulation",
+        "closure_sha256": "sha256:d8475c501336ffec3d8d6a5deb8429c3919ed26bbd9b6bf995bb670e08d2602b"
+      },
+      "swarm": {
+        "path": "greg/cognition/repertoire.py",
+        "function": "swarm_minimize",
+        "closure_sha256": "sha256:ae534e5c9f7f8645b27e251d40ef7d914f0db6c16edb63ac33e57401f9002189"
+      }
+    },
+    "seeds": [
+      5001,
+      5040
+    ],
+    "families": [
+      "blackbox",
+      "collective",
+      "control",
+      "crowd",
+      "evolutionary",
+      "exact",
+      "game",
+      "graph",
+      "information",
+      "micro",
+      "pattern",
+      "probabilistic",
+      "robust_pattern",
+      "sequential",
+      "simulation",
+      "swarm"
+    ],
+    "subgeometries": [
+      "crowd_sparse"
+    ],
+    "structural": {
+      "search": "ALIAS",
+      "estimation": "SUPERSEDED_BY_CANONICAL_ORGAN",
+      "formal": "SUPERSEDED_BY_CANONICAL_ORGAN",
+      "optimization": "SUPERSEDED_BY_CANONICAL_ORGAN",
+      "causal": "NOT_BENCHMARKED",
+      "semantic": "NOT_RUN",
+      "human": "ROUTE_ONLY",
+      "evidence": "NOT_BENCHMARKED",
+      "protection": "NOT_BENCHMARKED"
+    },
+    "rule": "run.status (v1, frozen)"
+  }
+}

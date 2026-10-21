@@ -408,20 +408,49 @@ def verify(family, data, answer, proof_class, *, deadline=None):
                 recomputed[item] = [math.exp(x - top) / total for x in logs]
             checks["posteriors_recomputed_from_votes"] = set(recomputed) == set(post) and all(
                 all(math.isclose(a, b, abs_tol=1e-6) for a, b in zip(recomputed[i], post[i])) for i in post)
-            smoothing = float(artifact["trace"].get("smoothing", data.get("smoothing", 1.0)))
-            em = artifact["trace"]["em"]
-            converged = len(em) >= 2 and abs(em[-1]["map_objective"] - em[-2]["map_objective"]) < 1e-7
-            if converged:
-                counts = {g: [[smoothing] * k for _ in range(k)] for g in confusion}
-                for item, by_group in votes.items():
-                    for g, label in by_group.items():
+            # Re-run EM here, independently of greg.cognition.repertoire (round-2 review of #179, N1). EM is
+            # deterministic from the soft-majority start, so a claimed stopping point (converged or capped) and
+            # the shipped model must match the verifier's own run; claiming non-convergence no longer skips a check.
+            smoothing = float(data.get("smoothing", 1.0))
+            cap = int(data.get("max_iterations", 50))
+            groups = sorted({str(r["independence_group"]) for r in data["labels"]})
+            items = sorted(votes)
+            mine = {i: [sum(1 for g in votes[i].values() if g == c) / len(votes[i]) for c in range(k)] for i in items}
+            steps, last, fit_prior, fit_conf = 0, None, None, None
+            for _ in range(cap):
+                fit_prior = [(sum(mine[i][c] for i in items) + smoothing) / (len(items) + k * smoothing)
+                             for c in range(k)]
+                tallies = {g: [[smoothing] * k for _ in range(k)] for g in groups}
+                for i in items:
+                    for g, label in votes[i].items():
                         for c in range(k):
-                            counts[g][c][label] += post[item][c]
-                checks["model_is_m_step_fixed_point"] = all(
-                    math.isclose(counts[g][c][j] / sum(counts[g][c]), confusion[g][c][j], abs_tol=1e-3)
-                    for g in counts for c in range(k) for j in range(k))
-            else:
-                dissent.append("EM stopped at its iteration cap: the M-step fixed-point check was not applied.")
+                            tallies[g][c][label] += mine[i][c]
+                fit_conf = {g: [[x / sum(row) for x in row] for row in rows] for g, rows in tallies.items()}
+                fit = 0.0
+                for i in items:
+                    logs = [math.log(fit_prior[c]) + sum(math.log(fit_conf[g][c][label])
+                                                         for g, label in votes[i].items()) for c in range(k)]
+                    top = max(logs)
+                    total = sum(math.exp(x - top) for x in logs)
+                    mine[i] = [math.exp(x - top) / total for x in logs]
+                    fit += top + math.log(total)
+                fit += smoothing * (sum(math.log(p) for p in fit_prior) + sum(
+                    math.log(x) for rows in fit_conf.values() for row in rows for x in row))
+                steps += 1
+                if last is not None and abs(fit - last) < 1e-7:
+                    break
+                last = fit
+            em = artifact["trace"]["em"]
+            checks["em_rerun_matches_reported_iterations"] = len(em) == steps == output.get("iterations", steps)
+            checks["em_rerun_matches_posteriors"] = set(mine) == set(post) and all(
+                all(math.isclose(a, b, abs_tol=1e-6) for a, b in zip(mine[i], post[i])) for i in post)
+            checks["em_rerun_matches_model"] = (
+                all(math.isclose(a, b, abs_tol=1e-6) for a, b in zip(fit_prior, prior))
+                and set(fit_conf) == set(confusion)
+                and all(math.isclose(fit_conf[g][c][j], confusion[g][c][j], abs_tol=1e-6)
+                        for g in fit_conf for c in range(k) for j in range(k)))
+            if steps == cap and not (len(em) >= 2 and abs(em[-1]["map_objective"] - em[-2]["map_objective"]) < 1e-7):
+                dissent.append("EM stopped at its iteration cap; the verifier's own run stopped at the same cap.")
             reliability = [sum(prior[c] * confusion[g][c][c] for c in range(k)) for g in confusion]
             checks["observers_better_than_chance_on_average"] = sum(reliability) / len(reliability) > 1 / k
         dissent.append("Dawid-Skene assumes observers err independently given the true class; correlated error "
@@ -449,6 +478,26 @@ def verify(family, data, answer, proof_class, *, deadline=None):
         trace = artifact.get("trace") or []
         if family == "swarm":                      # the swarm always spends its whole budget
             checks["evaluation_count_matches_method"] = output["evaluations"] == budget
+        elif data["function"] in closed and len(shift) == len(bounds):
+            # differential evolution may stop early, so no closed form gives its count; it is deterministic from the
+            # declared seed, so re-run the declared method on the verifier's own objective (round-2 review, M5)
+            from scipy.optimize import differential_evolution
+            population = int(data.get("population", 10))
+            per_generation = population * len(bounds)
+            spent, found = 0, math.inf
+
+            def counted(z):
+                nonlocal spent, found
+                spent += 1
+                y = closed[data["function"]]([a - b for a, b in zip(list(z), shift)])
+                found = min(found, y)
+                return y
+            if 4 <= population <= 50 and budget >= 2 * per_generation:
+                differential_evolution(counted, bounds, maxiter=budget // per_generation - 1, popsize=population,
+                                       seed=int(data["seed"]), polish=False, tol=0, atol=0, workers=1,
+                                       updating="immediate")
+                checks["evaluation_count_matches_method"] = output["evaluations"] == spent
+                checks["fitness_matches_method"] = math.isclose(found, output["fitness"], rel_tol=1e-9, abs_tol=1e-12)
         if trace:                                  # the last recorded improvement is the reported best
             checks["trace_consistent"] = (math.isclose(trace[-1]["fitness"], output["fitness"], rel_tol=1e-12,
                                                        abs_tol=1e-15)

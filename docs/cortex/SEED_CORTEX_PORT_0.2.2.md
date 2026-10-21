@@ -80,6 +80,37 @@ withheld-reader wording above). They are recorded on #167 rather than fixed ther
 - **26:** the refusing freeze gates are correct; the adjacent hole (re-freezing an observed held-out in place) is
   closed; freeze provenance (source commits, `reproducible_at`) is a recorded follow-up.
 
+## Adversarial review of the port (19 findings, all fixed)
+
+Four lenses reviewed this diff (cortex rules, GREG's path, evaluation integrity, records and the cost of caution);
+each finding then went to an independent skeptic that had to reproduce it or refute it. Every finding was also
+reproduced here before its fix, and each fix has a test that fails on the reviewed head (`1f1e688`). The worst two
+were defects this port introduced:
+
+| Finding | Severity | Fix |
+|---|---|---|
+| Two checks with one cortex sensor share one receipt; the new once-per-receipt guard raised inside every ledger rebuild, so every later cortex request on that body abstained | high | the claims on one receipt collapse to one decision (a failure on any of them decides); a refused claim is skipped, never raised |
+| A schedule whose formal engines were all withheld was recommended, coverage "complete", with no solver run | high | the schedule part is unanswered: `NO_ELIGIBLE_METHOD`, the withheld engines named |
+| The body clock reached only direct `problem` requests; compose, compile and chain kept the declared instant | high | one signed-path context set by `cognition.solve` and `cognition.compose`; direct callers unchanged |
+| The body clock replaced the payload's `as_of`, flipping evidence freshness | medium | authority expiry is judged at `authority_as_of` (disclosed on the receipt); `as_of` still dates the question |
+| A part another part masked (`schedule_request` beside `formal_model`) ran organs the compile never selected | medium | the cortex's own route policy is re-read until only the selected organ is routed; fail closed otherwise |
+| A pinned organ's mission reported the other organs' parts as a capability gap | medium | parts outside the pin are not sent, and the receipt says so |
+| Any compile harm >= 0.5 was forwarded as class "financial" | medium | the harm reaches the organ as the cortex's own harm levels; its own rule decides the class |
+| The extractor's model call was not planned, so an honest worker exceeded the serving ceiling | medium | planned before any organ spends; over budget is `BUDGET_EXHAUSTED` up front |
+| Malformed mandate weights, scope, purposes or record ids escaped `Cortex.run` | medium | rejected as records (`MALFORMED_INPUT`) |
+| A dominated option under another authority removed the founder's weights | medium | weights are judged over the Pareto front only |
+| A lead that timed out could settle a success; the engine that answered could not | low | success needs the method's own answer; a superseded lead settles only its failure |
+| Engines that ran were listed as "not required"; a deficit named only one part's families | low | truthful alternatives; every part's withheld and disabled families |
+| Evaluation: a truncated reply counted as a run baseline, a malformed one as unrun; an in-checkout venv made every run INCONCLUSIVE; the guard dropped the real reasons; the report dropped INCOMPLETE rows | medium, low | failures inside the call are unreached, malformed replies are scored failures (both runners); installed dependencies skipped; prior verdict kept; rows reported |
+| The records said five fixes were made on #167 too | low | corrected: recorded on #167, not fixed there |
+
+One pinned integration test changed with its reason: a financial compile now escalates at the organ (item 19), so the
+test of "a world-unverified compile settles nothing" uses a reputation harm of 0.6 that keeps its scenario.
+
+`freeze-v0.2.2.json` was regenerated once, before publication, because the review changed frozen files; the first
+manifest (`sha256:62588f5b...`) and its held-out run stay in this branch's history (`78e6846`). The held-out set has
+been observed since 0.1.x, so both runs are regression checks: no item's disposition, state or score changed.
+
 ## Two lineage conflicts left for the founder
 
 - **A declaration its inputs contradict.** This line makes it a Genesis deficit with dissent (audit 2026-10-14; 16 tests
@@ -90,12 +121,13 @@ withheld-reader wording above). They are recorded on #167 rather than fixed ther
 
 ## Evidence
 
-- `tests/unit/test_cortex_seed_ports.py` and `tests/unit/test_greg_seed_port_paths.py`: 77 tests; on `900c6ae` the
-  repairs' tests fail (the few that pass there guard against an over-strict port).
-- Mutation gate, new group "seed ports": 42 mutants, each removing one guard, all caught.
+- `tests/unit/test_cortex_seed_ports.py` and `tests/unit/test_greg_seed_port_paths.py`: 110 tests; on `900c6ae` the
+  repairs' tests fail (the few that pass there guard against an over-strict port), and the review's tests fail on
+  `1f1e688`.
+- Mutation gate, new group "seed ports": 65 mutants, each removing one guard, all caught (150 in the whole gate; one retired as equivalent, with its reason).
 - Frozen held-out (`heldout-v0.1`, 42 items, already observed: a regression check, not a fresh claim): routed quality
-  0.964 with 0 critical errors under both 0.2.1 and 0.2.2; no item's disposition, state or score changed
-  (`tests/evidence/cortex-seed-v0.2.2/`). The declared model baselines did not run (no local model), so the exit is
+  0.964 with 0 critical errors under 0.2.1, the first 0.2.2 freeze and the reviewed one; no item's disposition, state
+  or score changed (`tests/evidence/cortex-seed-v0.2.2/`, manifest `sha256:f2ddf5ca...`). The declared model baselines did not run (no local model), so the exit is
   `INCONCLUSIVE`, as for 0.2.1.
 - Crossgeo development (24 items) and selection (36 items) partitions, routed, existing, static and abstain arms on
   both trees: no disposition or outcome changed, no hard failure. The repairs close failure classes the frozen suites do

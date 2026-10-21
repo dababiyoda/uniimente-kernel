@@ -68,7 +68,7 @@ def cortex_main(request, emit):
     # controlled grammar alone, and out-of-grammar text abstains (DEPENDENCY_UNAVAILABLE).
     cortex.organs["cortex.extraction.schedule@0.1.0"] = ScheduleExtractionOrgan(client if model else None)
     receipt = cortex.run(request["problem"], records=request.get("records"),
-                         authority_as_of=request.get("authority_as_of"))
+                         **({"authority_as_of": request["authority_as_of"]} if request.get("authority_as_of") else {}))
     text = canonical(receipt)
     if len(text.encode()) > 512 * 1024:
         raise CognitionError("cortex receipt exceeds 512 KiB")

@@ -309,8 +309,8 @@ PORT_MUTANTS = [
      "        if high:\n            # as on the problem, operation", "        if False:\n            # as on the problem, operation"),
     ("the compiler's control flag reaches the cortex", "greg/cognition/compiler.py",
      "if k not in PART_FLAGS and k not in foreign}", "if k not in foreign}"),
-    ("organs the compile did not select still run", "greg/cognition/compiler.py",
-     "if k not in PART_FLAGS and k not in foreign}", "if k not in PART_FLAGS}"),
+    # retired 2026-10-21 as equivalent: the route-policy loop that follows ("a masked part routes another organ...")
+    # withholds every part routing an unselected organ by itself, so dropping the first strip changes nothing
     ("a claim that never ran is credited", "greg/cognition/seed_path.py",
      "for c in receipt.payload['claims'] if claim_ran(c)],", "for c in receipt.payload['claims']],"),
     ("a schedule-optimize lead is keyed to the whole problem", "cortex/routing.py",

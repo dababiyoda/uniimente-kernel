@@ -14,7 +14,7 @@ Faithful summary, not verbatim and not founder authentication. Repetition adds n
 | state | active |
 | binding_scope | `cortex/` 0.2.2, `greg/cognition/` bridge, compiler, seed path and evaluation harnesses; draft PR stacked on #184 |
 | constitutional_constraints | cognition proposes and never authorizes; no new authority, spend, contact or merge; one authority, many governed capabilities; preserve every superseded freeze and result |
-| success_evidence | `tests/unit/test_cortex_seed_ports.py`, `tests/unit/test_greg_seed_port_paths.py` (fail on `900c6ae`); 42 new mutants caught; held-out routed quality 0.964 with 0 critical errors unchanged; crossgeo development and selection dispositions unchanged; seed replay 120/120 at `freeze-v12.json` |
+| success_evidence | `tests/unit/test_cortex_seed_ports.py`, `tests/unit/test_greg_seed_port_paths.py` (fail on `900c6ae`; the adversarial review's 19 findings each fail on `1f1e688`); 65 new mutants caught; held-out routed quality 0.964 with 0 critical errors unchanged; crossgeo development and selection dispositions unchanged; seed replay 120/120 at `freeze-v12.json` |
 | failure_evidence | none of the repairs shows a gain on the frozen suites (they close failure classes the suites do not contain); model baselines not run (no local model) |
 | dependencies | #184 (base); #167 (source lineage); the capability dividend PR that follows |
 | conflicts | a contradicted declaration: Genesis deficit here, abstention in 0.1.6; a deficit verified within one receipt here, by recurrence in 0.1.6 (founder decisions, recorded in `docs/cortex/SEED_CORTEX_PORT_0.2.2.md`) |

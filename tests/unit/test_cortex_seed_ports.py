@@ -849,3 +849,15 @@ def test_a_model_that_dies_inside_the_call_is_unreached_in_both_runners(monkeypa
     assert "always_llm" not in part["rows"] and part["incomplete_rows"]["always_llm"]
     reported = crossgeo.report(part, part)
     assert reported["heldout"]["incomplete_rows"]["always_llm"] == part["incomplete_rows"]["always_llm"]
+
+
+def test_a_cross_check_engine_is_keyed_under_its_parts_class_not_the_whole_problems():
+    """An infeasible schedule-optimize request: CP-SAT answers, Z3 runs as the cross-check. Both served the compiled
+    optimization part; the problem's own class is constraint_feasibility (review of the port)."""
+    r = run({"schedule_request": {"text": "Shift: 5 hours. Job A takes 3 hours. Job B takes 4 hours. One machine; "
+                                          "one job at a time. Minimize total completion time."}, "declared": DECL},
+            "cross-check")
+    assert r["geometry"]["epistemic_class"] == "constraint_feasibility"
+    assert [(a["organ_id"], a["why"]) for a in r["route"]["attempts"]] == [(FORMAL, "confirmation")]
+    assert r["route"]["part_geometries"][FORMAL] == "optimization"
+    assert f"{FORMAL}|optimization" in r["outcome_link"]["memory_keys"]

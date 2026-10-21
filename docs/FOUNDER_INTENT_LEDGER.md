@@ -20,6 +20,20 @@
 
 State: active. Authority delta: none.
 
+Progress 2026-10-21 (measured; negative results kept):
+
+- **Evaluator audit** ([evidence](evidence/greg-protected-evolution/2026-10-21-stress-gate-audit/README.md)) by an independent reviewer.
+  - All six past P8 decisions hold on reproduced item-level stress data. Each cycle was re-run at its source commit, on train items only.
+  - Two defects were fixed: the gate passed values it could not rank (fail-open) and paired items by position.
+  - Six policy items go to the founder.
+- **The authorized immune successor (immune-8)** ([decision](evidence/greg-protected-evolution/2026-10-21-immune-8/DECISION.md)) is NOT_VIABLE: best simulated P(RETAIN) 0.000. No third immune pilot. The next step is `develop_repair`.
+- **Coverage** ([record](collaboration/MIND-COVERAGE-2026-10-21.md)): section 31 has 9 conditions met, 8 partly met, 0 unmet.
+- **Whole-machine trace** ([evidence](evidence/greg-whole-machine-trace/2026-10-21/README.md)): one consequence-inert mission ran all nine steps on the canonical path, with eight gaps recorded. Signed with a test key; VEPMC 0.
+- **Natural family on GREG's own dependency graph** ([evidence](evidence/greg-natural-ops-2026-10-21/README.md)): the frozen verdict is LIFT 5-0. That lift is an input-size artefact, and the exact in-process method beats every GREG arm.
+- **Data-exposure ledger across both lineages** ([ledger](evidence/greg-data-exposure-ledger.json)): 352 exposure records at this head.
+- **Six new withheld genomes**, with development numbers only.
+- **Founder decisions prepared:** [D1-D5](collaboration/FOUNDER-DECISIONS-2026-10-21.md).
+
 ## Convergence of the two Mind lineages — 2026-10-14
 
 `INTENT-20261014-MIND-LINEAGE-CONVERGENCE` ([record](intent/INTENT-20261014-MIND-LINEAGE-CONVERGENCE.json), [verbatim source](intent/sources/MIND-LINEAGE-CONVERGENCE-2026-10-14-source.md), [source-location manifest](collaboration/MIND-LINEAGE-SOURCE-MANIFEST-2026-10-14.json)): two sessions implemented the 2026-10-07 directive in parallel (PR #158 and PR #155) and froze different evaluations at eight identical paths. Neither session is the winner; both contribute to one GREG Mind.

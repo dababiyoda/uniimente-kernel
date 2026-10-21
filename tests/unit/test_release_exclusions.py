@@ -22,7 +22,8 @@ def test_every_listed_path_is_tracked_frozen_evidence_and_every_source_is_unclea
 def test_no_unlisted_tracked_file_carries_a_marker_of_listed_data():
     """A new suite, result or log built from an uncleared source must join the list."""
     listed = {e["path"] for e in LIST["paths"]}
-    ignore = ("docs/collaboration/", "docs/evidence/greg-mind-evidence-index.json", "tests/")
+    ignore = ("docs/collaboration/", "docs/evidence/greg-mind-evidence-index.json", "tests/",
+              *LIST.get("provenance_only", {}).get("paths", []))
     found = set()
     for markers in LIST["markers"].values():
         for marker in markers:
@@ -175,3 +176,13 @@ def test_a_release_of_every_unlisted_tracked_file_passes(tmp_path):
     edited = (ROOT / "docs/collaboration/RELEASE-EXCLUSIONS.json").read_bytes() + b" "
     _tar(tmp_path / "list.tar", [("RELEASE-EXCLUSIONS.json", edited)])
     assert C.scan_archive(tmp_path / "list.tar")                         # only the exact list is exempt
+
+
+def test_a_provenance_record_is_exempt_only_byte_for_byte(tmp_path):
+    """The data-exposure ledger cites SNDlib network names; as tracked it is provenance, edited it is scanned."""
+    path = LIST["provenance_only"]["paths"][0]
+    tracked = (ROOT / path).read_bytes()
+    _tar(tmp_path / "ok.tar", [(path, tracked)])
+    assert C.scan_archive(tmp_path / "ok.tar") == []
+    _tar(tmp_path / "edited.tar", [(path, tracked.replace(b'"abilene"', b'"abilene", "x"', 1))])
+    assert C.scan_archive(tmp_path / "edited.tar")

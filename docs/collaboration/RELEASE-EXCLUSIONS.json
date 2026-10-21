@@ -191,5 +191,11 @@
    "carries": "per-item network-derived values (#158's F7 re-measurement with flow_expansion_mcf)",
    "sha256": "sha256:eea74ffe2282460ceda736bb49b92681a8c0123575f48ffabb28c2fa484ee575"
   }
- ]
+ ],
+ "provenance_only": {
+  "paths": [
+   "docs/evidence/greg-data-exposure-ledger.json"
+  ],
+  "why": "generated provenance records that cite listed artifacts by path, digest and instance name (for example SNDlib network names such as abilene) and carry no data values. Exempt from the marker rule only byte-identical to the tracked file; an edited copy is scanned, and the digest, canonical-JSON and path rules still apply."
+ }
 }

@@ -2,7 +2,7 @@
  "schema": "mind-lineage-reconciliation-map/1",
  "base": "92bc6e31e0baa8fd507833e0f272b4a5e532e4d3",
  "pr155": "ef5f078013b549a51458dc9f6b5f34b324ea70b0",
- "pr158": "10fdbab83054027c5b782a87dd24c997b2d2fed9",
+ "pr158": "463a9d0883c9dfa45979f8f2c47e657b0a0ec20d",
  "vocabulary": [
   "complementary",
   "interchangeable",
@@ -1263,7 +1263,7 @@
    "lineage": "pr158",
    "classification": "complementary",
    "disposition": "selected:pr158",
-   "note": "#158's genomes, including its verifier lane's version bumps (flow_reinforce_greedy 1.0.2, flow_capacity_plan 1.0.3) and its own correction of flow_expansion_mcf's known_strengths (review of #179, L10)"
+   "note": "#158's genomes, including its verifier lane's version bumps (flow_reinforce_greedy 1.0.2, flow_capacity_plan 1.0.3) and its corrections of flow_expansion_mcf's known_strengths (review of #179, L10; 463a9d0 cites its F7 result). Mechanism level (review L14): graph_then_allocate (composition), flow_expansion_mcf (single exact genome) and expansion_truth (the harness truth, duplicated by run_v4's PMCF) are interchangeable implementations of budgeted capacity expansion. #158's admission v3 (pre-registered 878f76c) admits flow_expansion_mcf 1.0.0 DEFAULT_FOR_GEOMETRY against the composition twin, and F7 v6 (re-use of v4's items) finds it MATCHES the composition on 200 of 200 with NO_LIFT for the composition: it is the canonical routed default for that geometry; the composition stays a registered alternative; attaching remains the founder's"
   },
   {
    "path": "greg/cognition/genomes/forecasting.py",

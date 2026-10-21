@@ -182,9 +182,10 @@ def _family_limits(index: dict) -> dict:
     out = {}
     for row in index["recipes"].values():
         for verdict in [row, *row.get("history", [])]:
-            source = json.loads((ROOT / verdict["evidence"].partition("#")[0]).read_text())
-            named = [lim for lim in source["limits"] if verdict["family"] in re.findall(r"\bF\d+R?\b", lim)]
-            general = [lim for lim in source["limits"] if not re.findall(r"\bF\d+R?\b", lim)]
+            from scripts.build_mind_evidence_index import run_limits
+            limits = run_limits(verdict["evidence"].partition("#")[0])
+            named = [lim for lim in limits if verdict["family"] in re.findall(r"\bF\d+R?\b", lim)]
+            general = [lim for lim in limits if not re.findall(r"\bF\d+R?\b", lim)]
             out[verdict["family"]] = named or general
     return out
 
@@ -201,10 +202,17 @@ def test_composition_families_are_declared_as_the_frozen_runs_describe_them_and_
     rows = _rows(M.status())
 
     def expected(recipe, label):
-        # a lift measured on recipe code that has since changed is BUILT until re-measured (review of #179, H5)
-        return "BUILT" if recipe_stale(recipe, index["recipes"][recipe]) else label
+        # a lift measured on recipe code that has since changed is BUILT until re-measured (review of #179, H5); a
+        # deciding NO_LIFT verdict that no significant loss explains is UNRESOLVED (P6 converged v1: F1 35-0 with one
+        # false answer, F3 tied by the exact single genome)
+        record = index["recipes"][recipe]
+        if not record.get("lift"):
+            return "UNRESOLVED"
+        return "BUILT" if recipe_stale(recipe, record) else label
     for recipe in ("estimate_then_optimize", "identify_then_optimize", "bayes_then_voi"):    # F1, F2R, F4
         assert rows[f"recipe.{recipe}"]["label"] == expected(recipe, "SIMULATED"), recipe
+    assert rows["recipe.estimate_then_optimize"]["label"] == "UNRESOLVED"                     # converged v1 decides
+    assert rows["recipe.graph_then_allocate"]["label"] == "UNRESOLVED"
     for recipe in ("forecast_then_staff", "graph_then_allocate", "track_then_staff"):        # F6, F7, F8: real data
         assert rows[f"recipe.{recipe}"]["label"] == expected(recipe, "HELDOUT_SUPPORTED"), recipe
     # the complete closure (review of #179, B2) shows the code F8 measured has changed on the converged tree

@@ -314,6 +314,9 @@ ANSWER_ONLY_RECORDS = {
 NOT_ANSWERABLE = {
     "SCOPE_RENEWAL": "Approve or Reject cannot renew a mandate. Sign a new MISSION with a new horizon and "
                      "supersede this one (`greg mission ...`, then LIFECYCLE SUPERSEDED), or abandon it.",
+    "CRASH_LOOP_HOLD": "Approve or Reject cannot lift the hold. Only a signed BODY_RESUME does (`greg resume`, the "
+                       "Resume button, or a device key you delegated BODY_RESUME to), and it withdraws this ask; "
+                       "BODY_STOP stops the body.",
 }
 
 

@@ -206,6 +206,24 @@ def test_one_signed_mission_runs_the_whole_machine_across_processes(tmp_path):
     answer = greg(home, "decide", request["request_id"], "reconcile_not_executed", "--key", str(key),
                   "--no-passphrase", "--reason", "no evidence.json or patch was retained for the order")
     assert answer.returncode == 0, answer.stderr
+    # Not executed settles the effect, not the spend: the metered dispatch's signed cap stays booked (H.G4), so the
+    # rerun exceeds the signed budget and GREG asks the founder for exactly that spend instead of widening it.
+    spend = wait_for(lambda: [r for r in facts(home, mid)["requests"] if r["kind"] == "APPROVAL"],
+                     timeout=180, what="a spend approval for the rerun", body=body, log=log)[-1]
+    assert spend["action_id"] == "commission" and "exceeds budget" in spend["why_now"], spend
+    assert dispatches(home, mid, "commission") == ["UNCERTAIN"], "the rerun spent past the budget without the founder"
+    answer = greg(home, "decide", spend["request_id"], "approve", "--key", str(key), "--no-passphrase",
+                  "--reason", "rerun the order once; the interrupted attempt produced nothing")
+    assert answer.returncode == 0, answer.stderr
+    # The cone is now overspent, and only a free read-only observation passes an overspent cone (greg/lightcone.py):
+    # the free handoff write is asked for too, by exact scope.
+    handoff = wait_for(lambda: [r for r in facts(home, mid)["requests"]
+                                if r["kind"] == "APPROVAL" and r["action_id"] == "handoff"],
+                       timeout=180, what="the handoff approval", body=body, log=log)[-1]
+    assert "cost 0.0 " in handoff["why_now"], handoff
+    answer = greg(home, "decide", handoff["request_id"], "approve", "--key", str(key), "--no-passphrase",
+                  "--reason", "record the handoff")
+    assert answer.returncode == 0, answer.stderr
     wait_for(lambda: facts(home, mid)["appraised"], timeout=300, what="closure and appraisal", body=body, log=log)
     assert greg(home, "stop", "--local").returncode == 0
     assert body.wait(timeout=60) == 0

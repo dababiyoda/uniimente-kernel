@@ -480,3 +480,118 @@ def test_a_handoff_sensor_receipt_must_carry_the_params_this_mission_resolved(tm
     assert verdict["verdict"] == "REFUTED", verdict
     assert not verdict["checks"]["closure_evidence_bound"] and verdict["checks"]["exactly_once"]
     assert any("a: receipt not bound" in f for f in verdict["findings"])
+
+
+# -- a dispatch the founder reconciled as executed (acceptance gap H.G10) -----------------------------------------
+# The recovery harness (tests/integration/test_greg_recovery_scenarios_process.py) SIGKILLs a body after fs.write
+# wrote its file and before the Gate's receipt; the founder answers reconcile_executed. The appraiser re-derives
+# closures from receipts only, so it withholds VERIFIED. Before the fix it also reported a "duplicate receipt or
+# dispatch claim" that does not exist: one claim, no receipt, no second dispatch.
+
+def test_a_founder_reconciled_dispatch_is_named_as_such_not_reported_as_a_duplicate(tmp_path):
+    from greg.capabilities import BUILTINS
+    from tests.greg_fixtures import Clock, drop
+    home, key, body_id, _ = make_body(tmp_path)
+    mid = "m:reconciled"
+    drop(home, signed(key, body_id, "MISSION", mission(
+        mid, checks=[note_check("n", workspace(home, mid) / "n.txt", "settled")],
+        strategies=[write_strategy("w", "n.txt", "settled", ["n"])], capabilities=["fs.read", "fs.write"])))
+    manifest, write = BUILTINS["fs.write"]
+
+    def receipt_lost(params, ctx):            # the real write happens; the body loses power before its receipt
+        write(params, ctx)
+        raise RuntimeError("power lost after the write, before the Gate's receipt")
+
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.registry.register(manifest, receipt_lost, state="ATTACHED")
+        body.boot()
+        _run(body, clock, ticks=2)
+        [ask] = [e.payload for e in body.journal.replay("decision.requested") if e.payload["kind"] == "RECONCILIATION"]
+        drop(home, signed(key, body_id, "DECISION", {"request_id": ask["request_id"], "answer": "reconcile_executed"}))
+        assert _run(body, clock)[-1] == "ACHIEVED"
+        claims = {r.payload["grant_id"] for r in body.ledger.by_type("grant_dispatch")}
+        receipts = [r.payload["grant_id"] for r in body.ledger.by_type("receipt")]
+        verdict = body.journal.replay("mission.appraised")[-1].payload
+    assert ask["authority_requested"]["grant_id"] in claims and ask["authority_requested"]["grant_id"] not in receipts
+    assert len(receipts) == len(set(receipts))                       # there is no duplicate to report
+    assert verdict["verdict"] == "REFUTED" and verdict["checks"]["exactly_once"] is False
+    assert not [f for f in verdict["findings"] if "duplicate" in f], verdict["findings"]
+    assert [f for f in verdict["findings"] if f.startswith("w: ") and "founder reconciliation" in f], verdict["findings"]
+
+
+# -- a duplicate dispatch claim is named as one (acceptance gap H.G10, review of round 1) --------------------------
+# The Gate records exactly one dispatch claim per proposal and per grant. Round 1 narrowed the appraiser's
+# "duplicate" finding to duplicate receipts, so a second claim for a completed action's proposal was reported only
+# as a missing receipt, which the action has.
+
+def test_a_second_dispatch_claim_for_a_completed_action_is_reported_as_a_duplicate_claim(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    mid = "m:claimed-twice"
+    check = note_check("n", workspace(home, mid) / "effect.txt", "done")
+    with Body(home) as body:
+        state = _register(body, key, body_id, mid, [check])
+        done = _write(body, state)
+        grant = body.ledger.find(done["receipt"]).payload["grant_id"]
+        [claim] = [r.payload for r in body.ledger.by_type("grant_dispatch") if r.payload["grant_id"] == grant]
+        # A blind retry under a fresh grant, as a defective Gate or a worker appending claims would leave it.
+        body.ledger.append("grant_dispatch", {**claim, "grant_id": "grant-of-a-blind-retry"})
+        receipt = _read(body, state, check)
+        _claim(body, mid, [receipt])
+        verdict = body.appraise(mid)
+    assert verdict["verdict"] == "REFUTED" and verdict["checks"]["exactly_once"] is False, verdict
+    assert [f for f in verdict["findings"] if f.startswith("effect: 2 Gate dispatch claims")
+            and "duplicate dispatch claim" in f], verdict["findings"]
+    assert not [f for f in verdict["findings"] if "lacks its signed strategy's Gate receipt" in f], verdict["findings"]
+
+
+# -- an old token of a re-delegated device key (acceptance gap H.G10, review of round 1) --------------------------
+# greg.body.device_delegations gives a key delegated again after a revocation ``signed_not_before``. The separate
+# appraiser re-derives device delegations itself; before it applied the same rule it accepted an approval that a
+# re-delegated phone signed under its revoked delegation, so a body that wrongly accepted the old token was VERIFIED.
+
+@pytest.mark.parametrize("signed_when", ["before_its_revocation", "while_it_stood_revoked"])
+def test_the_appraiser_refuses_an_approval_a_re_delegated_device_signed_before_its_re_delegation(tmp_path, signed_when):
+    from datetime import timedelta
+    import greg.body as body_module
+    from greg.founder import generate_founder_key, instant, key_id, load_founder_key, stamp
+    from tests.greg_fixtures import Clock
+    home, key, body_id, _ = make_body(tmp_path)
+    phone_public = generate_founder_key(tmp_path / "phone.pem", None)
+    phone = load_founder_key(tmp_path / "phone.pem", None)
+    clock = Clock()
+    grant = {"public_key": phone_public, "label": "phone", "kinds": ["DECISION"],
+             "expires_at": stamp(clock.now + timedelta(days=30))}
+    mid = "m:re-delegated-old-token"
+    spec = mission(mid, checks=[note_check("n", workspace(home, mid) / "n.txt", "approved")],
+                   strategies=[write_strategy("w", "n.txt", "approved", ["n"])], capabilities=["fs.read"],
+                   ceiling="read_only")                     # the write is outside the cone: it needs an approval
+    with Body(home, clock=clock) as body:
+        body.apply(signed(key, body_id, "DEVICE_ENROLL", grant, now=clock.now), channel="inbox")
+        body.apply(signed(key, body_id, "MISSION", spec, now=clock.now), channel="inbox")
+        body.boot()
+        assert _run(body, clock, ticks=2)[-1] == "WAITING"
+        [ask] = [e.payload for e in body.journal.replay("decision.requested") if e.payload["kind"] == "APPROVAL"]
+        answer = {"request_id": ask["request_id"], "answer": "approve"}
+        if signed_when == "before_its_revocation":
+            old = signed(phone, body_id, "DECISION", answer, now=clock.now)
+        clock.advance(60)
+        body.apply(signed(key, body_id, "DEVICE_REVOKE", {"device_key_id": key_id(phone_public)}, now=clock.now),
+                   channel="inbox")
+        clock.advance(30)
+        if signed_when == "while_it_stood_revoked":   # the rule is anchored at the re-delegation, not the revocation
+            old = signed(phone, body_id, "DECISION", answer, now=clock.now)
+        clock.advance(30)
+        body.apply(signed(key, body_id, "DEVICE_ENROLL", grant, now=clock.now), channel="inbox")
+        [device] = body.device_keys().values()
+        assert instant(device["signed_not_before"]) > instant(old["issued_at"])   # the body's own verifier refuses it
+        # A body with the defect round 1 fixed (no signed_not_before) accepts the old token and acts on it.
+        body.device_keys = lambda: {k: {f: v for f, v in d.items() if f != "signed_not_before"}
+                                    for k, d in body_module.device_delegations(body.journal).items()}
+        body.apply(old, channel="inbox")
+        assert _run(body, clock)[-1] == "ACHIEVED"
+        verdict = body.journal.replay("mission.appraised")[-1].payload
+    assert verdict["verdict"] == "REFUTED", verdict
+    assert verdict["checks"]["approval_boundaries_honored"] is False, verdict
+    assert [f for f in verdict["findings"] if f.startswith("w: executed without a prior founder approval")], \
+        verdict["findings"]

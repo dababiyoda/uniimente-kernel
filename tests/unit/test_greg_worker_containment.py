@@ -235,3 +235,20 @@ def test_a_worker_that_replaces_its_evaluator_never_closes_its_mission(tmp_path,
     assert any("frozen evaluator" in f for f in verdict["findings"]), verdict
     # The substituted evaluator really would have passed: the tests GREG ran on the patched clone are green.
     assert verdict["independent_tests"] and all(t["passed"] for t in verdict["independent_tests"]), verdict
+
+
+@pytest.mark.skipif(not LANDLOCK, reason="Landlock ABI >= 3 is not available on this kernel")
+def test_gregs_own_acceptance_run_is_confined_to_the_clone(tmp_path):
+    """GREG's acceptance commands run the worker's patch, so run_tests confines them as the worker was: the run
+    reports Landlock with the clone as its only writable root, writing outside the clone fails, and a temporary
+    directory inside the clone still works."""
+    clone, outside = tmp_path / "clone", tmp_path / "outside.txt"
+    clone.mkdir()
+    script = (f"import pathlib, tempfile\n"
+              f"pathlib.Path(tempfile.mkdtemp(), 'ok').write_text('ok')\n"
+              f"pathlib.Path({str(outside)!r}).write_text('x')\n")
+    [result] = workers.run_tests([["python", "-c", script]], clone, timeout=60)
+    assert not result["passed"] and "PermissionError" in result["tail"], result["tail"]
+    assert not outside.exists()
+    assert result["confinement"]["filesystem"] == "landlock"
+    assert result["confinement"]["writable"] == [str(clone.resolve())]

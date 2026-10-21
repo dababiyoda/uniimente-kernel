@@ -214,7 +214,7 @@ def test_sop_extraction_excludes_founder_reconciled_steps_consistently(tmp_path)
     from greg import sop
     home, key, body_id, _ = make_body(tmp_path)
     clock = Clock()
-    for n, reconciled in ((1, True), (2, False), (3, False)):
+    for n, reconciled in ((1, True), (2, False), (3, False), (4, False)):
         mid = f"m:reconcile-sop-{n}"
         drop(home, signed(key, body_id, "MISSION", mission(
             mid, checks=[note_check("c", workspace(home, mid) / "c.txt", "ok")],
@@ -232,8 +232,9 @@ def test_sop_extraction_excludes_founder_reconciled_steps_consistently(tmp_path)
     with Body(home, clock=clock) as body:
         procedures = sop.closed_procedures(body.journal)
         proposed = [e.payload for e in body.journal.replay("sop.proposed")]
-    # the appraiser verified only receipted steps; the reconciled one is not part of the procedure
-    assert procedures == {f"m:reconcile-sop-{n}": ["fs.write"] for n in (1, 2, 3)}
+    # A closure whose DONE step is founder-reconciled with no receipt is not VERIFIED (greg/appraisal.py), so that
+    # mission never reaches a procedure; the three receipted runs do, and only their receipted steps count.
+    assert procedures == {f"m:reconcile-sop-{n}": ["fs.write"] for n in (2, 3, 4)}
     assert len(proposed) == 1 and proposed[0]["occurrences"] == 3
     assert "founder-reconciled steps" in proposed[0]["evidence_level"]
 

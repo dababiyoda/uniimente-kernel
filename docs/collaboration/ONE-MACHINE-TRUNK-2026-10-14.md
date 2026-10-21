@@ -203,6 +203,18 @@ Two base tests were updated to this trunk. The http.get manifest now declares th
 
 The one-machine worker double now writes nothing outside its clone, because confinement forbids it. The tests observe it from outside: in `/proc`, and through GREG's dispatch records.
 
+### 6g. Third base move: the build books, metered spend and the appraiser's rule on reconciled closures (2026-10-21)
+
+This merge brings in base `ddcab38` (31 commits). The base's decisions are canonical here. Where a base rule changed what this trunk's tests expected, the test now follows the base, and each change is stated below.
+
+| Area | Canonical (base) | Kept from this branch, and what changed |
+|---|---|---|
+| Genesis spend (H.G7) | Every builder call is reserved at its ceiling before it starts. A build that fails or is interrupted stays booked. | When a paid candidate was left unjudged by an outage or a kill, it is judged against the frozen oracle before any builder is paid again. In the in-verify kill case this means one builder call instead of the base's two. The oracle still gates what is attached, and every call is still on the books once. |
+| Metered spend (H.G4) | If the founder answers "not executed" on a metered dispatch, its signed cap stays booked. | In the whole-machine run, the rerun now exceeds the $0.05 budget, so GREG asks the founder for that exact spend. An overspent cone passes only a free read-only observation, so the free handoff write is also asked for. The test answers both requests. The signed budget was not widened. |
+| Reconciled closures | If a DONE step was reconciled by the founder with no receipt, the appraiser refutes the closure. | The exception this branch briefly added is reverted. The SOP test now uses one reconciled mission and three receipted ones. The reconciled mission never reaches a procedure. |
+
+Rejected: widening the template's budget so the rerun fits. It would hide H.G4 from the one test that exercises it across processes.
+
 ## 7. Gap map (seven investigators and a critic) and what was closed
 
 | Rank | Gap | Status on this trunk |

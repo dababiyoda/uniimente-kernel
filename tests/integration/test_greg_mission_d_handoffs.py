@@ -23,6 +23,7 @@ import pytest
 from greg import workers
 from greg.body import Body
 from greg.missions import MissionError, validate_mission
+from provenance.ledger import sha256_json
 from tests.greg_fixtures import Clock, drop, horizon, make_body, signed
 
 
@@ -115,6 +116,8 @@ def _run(tmp_path, monkeypatch, spec_kw=None, *, double=None, ticks=8, seconds=6
                "asks": [e.payload for e in body.journal.replay("decision.requested")],
                "observed": [e.payload for e in body.journal.replay("mission.observed")],
                "chain": body.ledger.verify_chain()[0]}
+        out["receipts"] = {a["receipt"]: body.ledger.find(a["receipt"]).payload
+                           for a in out["actions"] if a.get("receipt")}
     return out
 
 
@@ -183,7 +186,16 @@ def test_a_rejected_producer_output_never_feeds_a_consumer(tmp_path, monkeypatch
 def test_an_accepted_producer_output_feeds_its_consumer(tmp_path, monkeypatch):
     run = _run(tmp_path, monkeypatch, {"handoff": "bind"}, ticks=8)
     assert [c["order"] for c in run["double"].calls] == ["a", "b"]
-    assert run["double"].calls[1]["context"].startswith("commit ")
+    done = {a["action_id"]: a for a in run["actions"] if a["status"] == "DONE"}
+    producer, consumer = done["worker-a"], done["worker-b"]
+    commit = run["receipts"][producer["receipt"]]["result"]["output"]["commit"]
+    assert commit and len(commit) == 40, commit                       # worker-a's receipted commit sha
+    # worker-b consumed exactly that commit, resolved from worker-a's retained receipt through the signed edge
+    assert run["double"].calls[1]["context"] == "commit " + commit
+    assert consumer["bindings"] == [{"param": "context", "from_action": "worker-a", "from_receipt": producer["receipt"],
+                                     "field": "commit", "value_sha256": sha256_json({"v": "commit " + commit})}]
+    grants = [run["receipts"][a["receipt"]]["grant_id"] for a in (producer, consumer)]
+    assert all(grants) and grants[0] != grants[1], "each worker dispatch carries its own single-action grant"
     assert run["m"].status == "ACHIEVED"
 
 

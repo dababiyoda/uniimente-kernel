@@ -27,8 +27,9 @@ import statistics
 
 # The mission engine's own failure vocabulary (greg/authority.py, greg/routing.py): a capability that ran
 # and failed is REFUSED with a receipt (negative result_class); UNAVAILABLE, UNCERTAIN and
-# RECONCILED_NOT_EXECUTED are failures in any case. A REFUSED without a receipt is a policy or scope refusal,
-# not the capability's failure. FAILED and ERROR are kept for organs and synthetic journals that use them.
+# RECONCILED_NOT_EXECUTED are failures in any case, but one dispatch counts once: the settlement of an UNCERTAIN
+# already counted is skipped (greg.routing.dispatch_outcomes). A REFUSED without a receipt is a policy or scope
+# refusal, not the capability's failure. FAILED and ERROR are kept for organs and synthetic journals that use them.
 FAILED_ACTIONS = ("FAILED", "ERROR", "UNCERTAIN", "UNAVAILABLE", "RECONCILED_NOT_EXECUTED")
 
 
@@ -58,6 +59,13 @@ def _at(event) -> datetime:
 
 def _events(journal, prefix):
     return sorted(journal.replay(prefix), key=_at)
+
+
+def _outcomes(journal):
+    """mission.action records in time order, each dispatch's outcome once (greg.routing.dispatch_outcomes). The
+    settlement is matched in ledger order: it carries no ``at`` of its own, so a time sort could put it first."""
+    from greg.routing import dispatch_outcomes
+    return sorted(dispatch_outcomes(journal.replay("mission.action")), key=_at)
 
 
 def episodes(journal) -> list[dict]:
@@ -91,7 +99,7 @@ def episodes(journal) -> list[dict]:
 
 
 def common_causes(journal, window: timedelta = timedelta(hours=1)) -> list[dict]:
-    failures = [e for e in _events(journal, "mission.action") if failed(e.payload)]
+    failures = [e for e in _outcomes(journal) if failed(e.payload)]
     by_cap = defaultdict(list)
     for e in failures:
         by_cap[e.payload.get("capability") or "?"].append(e)
@@ -124,7 +132,7 @@ def concentration(journal) -> dict:
 def after_failure(journal) -> dict:
     """Per capability: completion rate of the WINDOW actions after each failure vs the WINDOW before."""
     by_cap = defaultdict(list)
-    for e in _events(journal, "mission.action"):
+    for e in _outcomes(journal):
         status = e.payload.get("status")
         if status == "DONE" or failed(e.payload):
             by_cap[e.payload.get("capability") or "?"].append(
@@ -193,7 +201,7 @@ def decoupling_from_journal(journal) -> list[dict]:
     origin = min(whole_days)
     whole = [((d - origin).days, statistics.fmean(v)) for d, v in sorted(whole_days.items())]
     per_cap = defaultdict(lambda: defaultdict(list))
-    for e in journal.replay("mission.action"):
+    for e in _outcomes(journal):
         status = e.payload.get("status")
         if status == "DONE" or failed(e.payload):
             per_cap[e.payload.get("capability") or "?"][_at(e).date()].append(1.0 if status == "DONE" else 0.0)

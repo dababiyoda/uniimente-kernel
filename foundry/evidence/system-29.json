@@ -1,0 +1,94 @@
+{
+ "command": "python -m foundry.completion --run 29",
+ "name": "Agent-to-agent protocols",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "accepted": {
+   "method": "deterministic_invariant",
+   "status": "accepted",
+   "verification": "VERIFIED"
+  },
+  "admitted_budget_usd": 0.0,
+  "admitted_ceiling": "internal_write",
+  "books": {
+   "equation_holds": true,
+   "payable_to_agents_cents": 950
+  },
+  "card_proof": {
+   "body_matches_leaf": true,
+   "inclusion_ok": true,
+   "root_matches_signed_root": true,
+   "signature_ok": true
+  },
+  "card_served": true,
+  "classify_accepted": "accepted",
+  "ledger": {
+   "admitted": 3,
+   "routed_through_gate": 9
+  },
+  "methods_exposed": [
+   "embassy/challenge",
+   "embassy/present",
+   "tasks/list",
+   "tasks/claim",
+   "tasks/submit",
+   "tasks/get",
+   "embassy/standing"
+  ],
+  "negotiation": {
+   "counter_cents": 500,
+   "countered": "countered",
+   "then": "accepted"
+  },
+  "open_tasks_listed": 5,
+  "receipt_verifies": true,
+  "refusals": {
+   "card_not_signed_by_its_key": "the card is not signed by the key it names",
+   "claim_already_claimed_task": "task 't-factor' is not open",
+   "claim_while_suspended": "claims suspended: result for t-factor-2 refuted (product and primality); an oper",
+   "expired_nonce": "nonce expired at 2026-10-13T15:02:00Z",
+   "forged_request_signature": "request signature does not verify against the admitted key",
+   "foundry_op_over_the_wire": "method not found: 'foundry/apply'; the embassy exposes ['embassy/challenge', 'em",
+   "interior_path": "method not found: 'ledger/read'; the embassy exposes ['embassy/challenge', 'emba",
+   "replayed_nonce": "nonce already used; a presentation is not replayable",
+   "replayed_sequence": "sequence 1 is not after 1; replay refused",
+   "submit_twice": "task t-factor is accepted; a result is submitted once",
+   "submit_unclaimed": "task 't-sort' is not claimed by you",
+   "unknown_method_signed": "method not found: 'tasks/delete'; the embassy exposes ['embassy/challenge', 'emb",
+   "unsigned_before_admission": "unsigned request; every call after admission is signed by the agent's key",
+   "wrong_audience": "presentation signature does not verify for this audience, card and nonce"
+  },
+  "refuted_task_reopened": true,
+  "rejected": {
+   "status": "rejected",
+   "suspended": true,
+   "why": "product and primality"
+  },
+  "sort_accepted": "accepted",
+  "standing": {
+   "atlas@embassy:classify": {
+    "incidents": 0,
+    "status": "insufficient"
+   },
+   "atlas@embassy:factor": {
+    "incidents": 0,
+    "status": "insufficient"
+   },
+   "atlas@embassy:sort": {
+    "incidents": 0,
+    "status": "insufficient"
+   },
+   "loki@embassy:factor": {
+    "incidents": 1,
+    "status": "rated"
+   }
+  },
+  "undecidable": {
+   "status": "claimed",
+   "verdict": "UNDECIDABLE"
+  },
+  "undecidable_earned_no_verdict": true
+ },
+ "result_sha256": "sha256:b53a9b36ea605b3ec3955cd62b401276af10d09713d4f48437331de208d6a818",
+ "system": 29
+}

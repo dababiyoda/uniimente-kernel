@@ -1,0 +1,17 @@
+{
+  "attempt_limit": 0,
+  "host_cpu_seconds": 0.0033310000000000284,
+  "host_elapsed_seconds": 0.003343260999940867,
+  "next_reconsideration": "explicit new mission with approved budget",
+  "pending_message": {
+    "delivery": "retained locally; no real channel",
+    "evidence_head": "sha256:f226177875c9ec7303872b1c12e5d2821de1b98b312c25d650fa6f51049a3d28",
+    "goal_id": "greg-proof:6df4f8c503ba4b39918e59c6054cb29b",
+    "kind": "RECOVERY_REQUIRED",
+    "requested_action": "review retained failure before any further execution",
+    "why_now": "bounded host stopped without verified closure"
+  },
+  "status": "WAIT_BUDGET",
+  "worker_exits": [],
+  "worker_pids": []
+}

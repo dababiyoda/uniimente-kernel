@@ -1,11 +1,23 @@
 # Founder Effect Compiler Doctrine
 
+## Controlling founder correction — complete machine, 2026-10-01
+
+**Body + Organs + Mind is the fixed completion boundary.** Apply `docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json` and the current `AGENTS.md` execution rule: prove and integrate each increment, then automatically continue the parent machine objective. Seed/PR/VEPMC gates never stop unrelated achievable implementation; specific live authority and real-use evidence remain separate.
+
+
 Status: **ACTIVE FOUNDER INTENT**  
 Owner: Alfonso Lopez  
 Intent record: `docs/intent/INTENT-0030-effect-not-metaphor.md`  
 Applies to: UNIIMENTE Kernel, every organ, every Venture Cell, every coding/research agent, every future repository or tool acting on UNIIMENTE work.
 
 ## Governing correction
+
+Product effects are now clarified by
+`intent/INTENT-GREG-EMBODIED-2026-09-11.md`: owned computer as first practical
+body, GREG as primary interface, persistent work beyond UI closure, authorized
+computer use, morning review, functional capability genesis, eventual human/AI
+business teams and justified compute growth. macOS remains underneath. This
+extends the destination without changing the effect-not-metaphor rule below.
 
 Founder language describes the **desired effect, invariant, or capability** unless Alfonso explicitly says the implementation itself must be literal.
 

@@ -1,0 +1,178 @@
+"""Cognition through signed missions, the real Gate, retained receipts and restart."""
+import subprocess
+
+import pytest
+
+from greg.body import Body
+from greg.cognition.settlement import competence
+from tests.greg_fixtures import Clock, drop, make_body, mission, signed
+
+
+def test_cognition_is_durable_receipted_and_reobserved_on_the_existing_body(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    params = {"problem_id": "real:numeric", "operation": "calculate", "data": {"expression": "0.1+0.2"}}
+    spec = mission("m:cognition", checks=[{
+        "check_id": "exact", "description": "independently checked exact arithmetic",
+        "sensor": {"capability": "cognition.solve", "target": "cognition:arithmetic", "params": params},
+        "predicate": {"op": "equals", "field": "output.exact", "value": "3/10"}}],
+        strategies=[{"action_id": "recompute", "capability": "cognition.solve", "target": "cognition:arithmetic",
+                     "params": params, "advances": ["exact"], "rationale": "recompute the exact numerical answer"}],
+        capabilities=["cognition.solve"], targets=("cognition:*",), ceiling="read_only")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    with Body(home) as body:
+        body.boot()
+        outcome = body.tick()
+        assert outcome["missions"][0]["state"] == "ACHIEVED"
+        receipts = [r.payload["result"].get("output") for r in body.ledger.by_type("receipt")]
+        cognitive = next(r for r in receipts if isinstance(r, dict) and r.get("problem_id") == "real:numeric")
+        assert cognitive["method"] == "cognition.exact" and cognitive["authority_created"] is False
+        appraised = body.journal.replay("mission.appraised")[-1].payload
+        assert appraised["verdict"] == "VERIFIED", appraised
+        assert len(competence(body.journal)) == 1
+        assert len(body.journal.replay("cognition.settled")) == 1
+        from greg.cognition.cells import cells
+        cell = cells(body.journal, body.registry)[0]
+        assert cell["local_state"]["observed"] == 1 and cell["local_state"]["correct"] == 1
+        assert cell["authority_ceiling"] == "read_only"
+        cell_id = cell["cell_id"]
+        count = len(body.ledger.by_type("receipt"))
+    with Body(home) as body:
+        body.boot()
+        body.tick()
+        assert len(body.ledger.by_type("receipt")) == count
+        assert len(body.journal.replay("cognition.settled")) == 1
+        assert next(iter(competence(body.journal).values()))["count"] == 1
+        assert cells(body.journal, body.registry)[0]["cell_id"] == cell_id
+        assert body.office.gate is not None
+        body.journal.record("mission.appraised", {"mission_id": "m:cognition", "verdict": "REFUTED", "checks": {}},
+                            key="later-independent-refutation")
+        assert competence(body.journal) == {} and cells(body.journal, body.registry) == []
+
+
+def test_detachment_survives_restart_and_solver_cannot_bypass_it(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    with Body(home) as body:
+        body.apply(signed(key, body_id, "CAPABILITY_DETACH", {"capability_id": "cognition.exact"}))
+    with Body(home) as body:
+        manifest, adapter = body.registry.manifests["cognition.solve"], body.registry.adapters["cognition.solve"]
+        from greg.capabilities import InvocationContext
+        ctx = InvocationContext(workspace=tmp_path, read_roots=(), secrets=None, manifest=manifest,
+                                target="cognition:test", capability_registry=body.registry)
+        out = adapter({"problem_id": "detached", "operation": "calculate", "data": {"expression": "1+1"}}, ctx)
+        assert out["abstention_state"] == "CAPABILITY_DEFICIT" and out["output"] is None
+
+
+def test_console_exposes_scoped_cognitive_result_from_retained_receipt(tmp_path):
+    from greg.console import Console, render_home
+    home,key,body_id,_=make_body(tmp_path)
+    params={"problem_id":"console:exact", "operation":"calculate", "data":{"expression":"2+3"}}
+    spec=mission("m:console-cognition", checks=[{"check_id":"sum", "description":"exact sum", "sensor":{"capability":"cognition.solve","target":"cognition:sum","params":params},"predicate":{"op":"equals","field":"output.exact","value":"5"}}],strategies=[],capabilities=["cognition.solve"],targets=("cognition:*",),ceiling="read_only")
+    drop(home,signed(key,body_id,"MISSION",spec))
+    with Body(home) as body:body.boot();body.tick()
+    console=Console(home)
+    snapshot=console.snapshot();assert snapshot['cognitive'][0]['method']=='cognition.exact'
+    assert snapshot['cognitive'][0]['selection_rationale']
+    assert snapshot['cognitive'][0]['proof_class']=='exact_calculation'
+    page=render_home(console).decode()
+    assert 'console:exact' in page and 'Next permitted step' in page and 'Uncertainty:' in page and 'Evidence:' in page
+    assert 'and a Mac body' not in page
+    from greg import remote
+    from greg.founder import sign_read
+    from datetime import datetime, timezone
+    import json, pytest
+    with pytest.raises(remote.RemoteError):
+        remote.handle(home, 'GET', '/api/status', {}, b'')
+    now=datetime.now(timezone.utc)
+    headers=sign_read(key,body_id=body_id,method='GET',path='/api/status',now=now)
+    response=remote.handle(home,'GET','/api/status',headers,b'',now=now)
+    data=json.loads(response[2])['data']
+    assert data['cognitive'][0]['receipt_id']==snapshot['cognitive'][0]['receipt_id']
+
+
+def test_a_cognition_deficit_opens_capability_genesis_then_asks_the_founder_once(tmp_path):
+    """Directive 2026-10-07 section 24: no fitting intelligence -> Genesis search -> one founder ask."""
+    home, key, body_id, _ = make_body(tmp_path)
+    params = {"problem_id": "real:residual", "compile": {"geometry": {"geometry": "optimization",
+                                                                      "subgeometry": "unseen_structure"},
+                                                         "data": {"mystery_field": 1}}}
+    spec = mission("m:residual", checks=[{
+        "check_id": "answered", "description": "a competent method answered",
+        "sensor": {"capability": "cognition.solve", "target": "cognition:residual", "params": params},
+        "predicate": {"op": "equals", "field": "state", "value": "ANSWERED"}}],
+        strategies=[{"action_id": "compile", "capability": "cognition.solve", "target": "cognition:residual",
+                     "params": params, "advances": ["answered"], "rationale": "compile the residual geometry"}],
+        capabilities=["cognition.solve"], targets=("cognition:*",), ceiling="read_only")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    with Body(home) as body:
+        body.boot()
+        for _ in range(3):
+            body.tick()
+        state = body.engine.book.missions["m:residual"]
+        asks = [e.payload for e in body.journal.replay("decision.requested") if e.payload["mission_id"] == "m:residual"]
+        assert state.blocker and state.blocker["type"] == "capability"
+        assert state.blocker["function"] == "cognition.optimization:unseen_structure"
+        assert [a["kind"] for a in asks] == ["CAPABILITY_ATTACH"]
+        done = [e.payload for e in body.journal.replay("mission.action") if e.payload["mission_id"] == "m:residual"]
+        assert len(done) == 1 and done[0]["status"] == "DONE"
+
+
+@pytest.mark.parametrize("first_solve", ["answers", "times_out"])
+def test_recombined_native_game_uses_same_gate_appraisal_and_learning_after_restart(tmp_path, monkeypatch, first_solve):
+    # A first solve that times out (a cold solver under load) abstains with no verification ("NOT_RUN"); the mission
+    # closes on a later solve. The receipt checked below is the one the passing observation was served by, never
+    # simply the first receipt for the problem, which was an abstention in that case (acceptance run, 2026-10-16).
+    if first_solve == "times_out":
+        from greg.cognition import cortex
+        real, calls = cortex._numeric, []
+
+        def cold(*args, **kwargs):
+            calls.append(1)
+            if len(calls) == 1:
+                raise subprocess.TimeoutExpired("cognition.game", 1)
+            return real(*args, **kwargs)
+        monkeypatch.setattr(cortex, "_numeric", cold)
+    home, key, body_id, _ = make_body(tmp_path)
+    params = {"problem_id": "qualified:game", "operation": "minimax",
+              "data": {"payoffs": [[1, -1], [-1, 1]]}}
+    spec = mission("m:native-game", checks=[{
+        "check_id": "value", "description": "check encoded minimax value",
+        "sensor": {"capability": "cognition.solve", "target": "cognition:game", "params": params},
+        "predicate": {"op": "equals", "field": "output.value", "value": 0}}],
+        strategies=[{"action_id": "recompute", "capability": "cognition.solve", "target": "cognition:game",
+                     "params": params, "advances": ["value"], "rationale": "bounded numeric minimax"}],
+        capabilities=["cognition.solve"], targets=("cognition:*",), ceiling="read_only")
+    with Body(home) as body:
+        # Non-seed families start withheld (VERIFIED) on every body; the founder attaches them.
+        body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": "cognition.game"}))
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        # The converged engine acts in one tick and books the achieved closure on the next. Under host
+        # load a budget-bounded solve may abstain (TIMEOUT/BUDGET_EXHAUSTED); that observation is
+        # inconclusive, the engine backs off and re-observes, and the strategy is never blamed for it.
+        for _ in range(6):
+            body.tick()
+            if body.engine.book.missions["m:native-game"].status == "ACHIEVED":
+                break
+            clock.advance(31)
+        assert body.engine.book.missions["m:native-game"].status == "ACHIEVED"
+        assert not [e for e in body.journal.replay("routing.outcome")
+                    if e.payload["mission_id"] == "m:native-game"], "an abstaining sensor never books a strategy ineffective"
+        [*_, passed] = [e.payload for e in body.journal.replay("mission.observed")
+                        if e.payload["mission_id"] == "m:native-game" and e.payload["passed"]]
+        cognitive = body.ledger.find(passed["receipt"]).payload["result"]["output"]
+        assert cognitive["problem_id"] == "qualified:game"
+        assert cognitive["method"] == "cognition.game" and cognitive["method_version"] == "0.3.0"
+        assert cognitive["evaluator"] == "greg.cognition.verification/0.3.0"
+        assert cognitive["evaluator_result"]["checks"]["independent_minimax_primal_dual"]
+        assert cognitive["authority_created"] is False and cognitive["empirical_validity"] == "WORLD_UNVERIFIED"
+        assert body.journal.replay("mission.appraised")[-1].payload["verdict"] == "VERIFIED"
+        count = len(body.ledger.by_type("receipt"))
+    with Body(home, clock=clock) as body:
+        body.boot()
+        body.tick()
+        assert len(body.ledger.by_type("receipt")) == count
+        history = competence(body.journal)
+        assert len(history) == 1
+        assert next(iter(history))[:2] == ("cognition.game", "0.3.0")

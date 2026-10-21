@@ -1,0 +1,331 @@
+{
+  "decision_id": "FM-NATIVE-RECOMBINATION-20261007",
+  "title": "Reconcile bounded #145 intelligence into the shared GREG path",
+  "problem": "Source-conditional numeric mechanisms currently receive shape-only appraisal in the converged Cortex/Hands lineage.",
+  "founder_intent_refs": [
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "Full-machine directive sections 14,15,46,60,61,77",
+    "Linked prior decision FM-CONVERGENCE-20261007"
+  ],
+  "baseline": "#143/#148 on latest #147 with bounded numeric engines but shape-only verification for eleven native families.",
+  "alternatives": [
+    {
+      "name": "simplest_viable_alternative",
+      "description": "Reuse eleven existing #145 solvers and their separate source-check functions in the existing owners.",
+      "advantages": [
+        "No third Cortex or authority store.",
+        "Qualified versions separate competence history."
+      ],
+      "disadvantages": [
+        "Selective reuse requires contract parity tests."
+      ],
+      "revival_evidence": "Selected after both strengthening passes."
+    },
+    {
+      "name": "strongest_competing_architecture",
+      "description": "Merge all of #145 immediately.",
+      "advantages": [
+        "Includes its budget, routing and recovery mechanisms."
+      ],
+      "disadvantages": [
+        "Its wrapper removes the #143 Cortex proof/unresolved contracts; broad merge obscures ownership."
+      ],
+      "revival_evidence": "Reconciled contracts and passing cross-lineage tests."
+    },
+    {
+      "name": "reversible_experiment",
+      "description": "Keep extracted numeric replacements on the dedicated draft convergence branch.",
+      "advantages": [
+        "No deployment or main merge; original branches preserved."
+      ],
+      "disadvantages": [
+        "Local tests cannot prove actual founder or external outcomes."
+      ],
+      "revival_evidence": "Current experiment; production remains founder reserved."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Matching forged proof/output remains accepted for native families.",
+    "advantages": [
+      "No migration work."
+    ],
+    "disadvantages": [
+      "Fails independent-appraisal intent."
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Preserve all intelligence horizons; qualify only bounded current effects. All five roles performed by one agent, not independent human review.",
+      "material_concerns": [
+        "Native qualification is not whole-mind completion."
+      ],
+      "evidence_refs": [
+        "greg/cognition/catalog.py",
+        "greg/cognition/solvers.py",
+        "greg/cognition/verification.py",
+        "tests/unit/test_greg_native_reconciliation.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Keep existing catalog, contracts, registry, mission, Gate and receipt owners. All five roles performed by one agent, not independent human review.",
+      "material_concerns": [
+        "Whole #145 replacement would erase useful #143 contracts."
+      ],
+      "evidence_refs": [
+        "greg/cognition/catalog.py",
+        "greg/cognition/solvers.py",
+        "greg/cognition/verification.py",
+        "tests/unit/test_greg_native_reconciliation.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Require recomputation from the input and coherent-forgery tests. All five roles performed by one agent, not independent human review.",
+      "material_concerns": [
+        "Agreement between output and proof is insufficient."
+      ],
+      "evidence_refs": [
+        "greg/cognition/catalog.py",
+        "greg/cognition/solvers.py",
+        "greg/cognition/verification.py",
+        "tests/unit/test_greg_native_reconciliation.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Separate method versions and retain original source SHA. All five roles performed by one agent, not independent human review.",
+      "material_concerns": [
+        "Older competence must not silently train new implementations."
+      ],
+      "evidence_refs": [
+        "greg/cognition/catalog.py",
+        "greg/cognition/solvers.py",
+        "greg/cognition/verification.py",
+        "tests/unit/test_greg_native_reconciliation.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Disclose simulation, declared quorum labels and unauthenticated human panels. All five roles performed by one agent, not independent human review.",
+      "material_concerns": [
+        "Mathematical validity creates neither world truth nor authority."
+      ],
+      "evidence_refs": [
+        "greg/cognition/catalog.py",
+        "greg/cognition/solvers.py",
+        "greg/cognition/verification.py",
+        "tests/unit/test_greg_native_reconciliation.py"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Bounded extracted source checks and legacy/Cortex parity",
+      "tier": "unit_test",
+      "reference": "137 focused tests; PR #145 680a0d438e94a004ab596ab3287e28878bfb747d",
+      "finding": "137 passed after fixing a missing digest import; no live provider, business or physical action."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Whole #145 or full machine is integrated",
+      "tier": "other",
+      "reference": "docs/evidence/full-machine-convergence-20261007/handoff.md",
+      "finding": "False. Office-projected budgets, routing and recovery remain unintegrated."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "One GREG obtains failure-diverse computation checks without a new mind or permission path.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Reuse stronger existing mechanisms.",
+        "amplified_value": "Better eligibility, typed proof and reliable settlement on the same machine."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Selective extraction may omit source dependencies or break contracts.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Copy named pure functions only; run current and upstream-derived cases plus both Cortex/seed contracts."
+      },
+      {
+        "id": "D2",
+        "statement": "Past shape-only competence can contaminate routing history.",
+        "severity": "high",
+        "response_type": "learning",
+        "redesigned_response": "Advance only replaced methods to 0.3.0; histories are keyed by method version."
+      },
+      {
+        "id": "D3",
+        "statement": "World truth or consent could be inferred from numeric proofs.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Retain WORLD_UNVERIFIED and explicit family limitations, human judgment and existing Gate."
+      },
+      {
+        "id": "D4",
+        "statement": "Eleven families could encourage unnecessary complexity.",
+        "severity": "medium",
+        "response_type": "protective",
+        "redesigned_response": "Do not add orchestration; use only existing eligible operation dispatch and bounded workloads."
+      },
+      {
+        "id": "D5",
+        "statement": "Deferring the rest of #145 could become another stopping error.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Retain office-budget reconciliation as the next unblocked executable action."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Shape-only appraisal is weaker despite existing solver code.",
+      "do_nothing": "Preserves unsafe false proof acceptance.",
+      "simplest_viable_alternative": "Reuse selected functions with one catalog, source checks and version-separated history.",
+      "strongest_competing_architecture": "Broad merge loses useful current contracts without prior reconciliation.",
+      "reversible_experiment": "Draft branch, known bounded fixtures, signed test missions, no external effects."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "strongest_competing_architecture",
+        "rejection_reason": "Whole wrapper replacement would regress #143 compatibility.",
+        "revival_evidence": "Contract reconciliation with all current tests passing."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack false independence, complexity, authority drift, provider dependence, numeric edge cases, source swapping, overfit and hidden human labor.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "dependency",
+        "statement": "A verifier could share the constructor's exact failure mode.",
+        "strengthening_response": "Use Fraction substitution, independent Bellman recursion and primal-dual bounds; disclose shared simulation PRNG and absence of an external evaluator."
+      },
+      {
+        "id": "N2",
+        "category": "gaming",
+        "statement": "A matching forgery can bypass internal output/proof equality checks.",
+        "strengthening_response": "Adversarially mutate output and proof together; require source-bound recomputation and safeguard mutations. Protect proof contracts, evaluators and frozen evidence from generated-worker edits while leaving ordinary solvers evolvable."
+      },
+      {
+        "id": "N3",
+        "category": "overfit",
+        "statement": "Known analytic fixtures do not establish broad competence or improved routing.",
+        "strengthening_response": "Claim bounded source-conditional qualification only; retain stronger analytic baselines and UNMEASURED superiority."
+      },
+      {
+        "id": "N4",
+        "category": "comprehensibility",
+        "statement": "Extra registry or learning implementations would fragment the machine.",
+        "strengthening_response": "No new registry, Constitution, scheduler or authority store. Keep #143 Cortex and legacy seed dispatch."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Focused parity passed; full-stack rerun is still required.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Regression, promotion or a stronger outcome claim."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "New versions separate learning records; old receipts remain.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Regression, promotion or a stronger outcome claim."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "WORLD_UNVERIFIED, human judgment and Gate remain load-bearing.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Regression, promotion or a stronger outcome claim."
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "accepted",
+        "rationale": "Only existing pure functions changed; no new organization.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Regression, promotion or a stronger outcome claim."
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "Next unblocked work is office-projected budget reconciliation.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Regression, promotion or a stronger outcome claim."
+      }
+    ],
+    "final_design": "Extract eleven bounded solvers and source checks from #145 into greg.cognition; preserve #143 Cortex contracts, seed compatibility, capability state and authority. Version the replacements and source-check evaluator, protect evidence standards from generated-worker edits, and challenge them before draft promotion.",
+    "residual_risks": [
+      {
+        "risk": "Declared models and inputs may not reflect reality.",
+        "mitigation": "Typed evidence and explicit WORLD_UNVERIFIED; independent external outcome required.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any real-world or economic claim."
+      },
+      {
+        "risk": "No independent human approval or broad competence evaluation.",
+        "mitigation": "Draft only; preserve local evidence tiers and frozen comparisons.",
+        "owner": "Real Alfonso / authorized reviewers",
+        "review_trigger": "Merge or deployment request."
+      },
+      {
+        "risk": "Enclosing office budgets are not yet reconciled.",
+        "mitigation": "Keep exact next build active, not externally blocked.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Next implementation campaign."
+      }
+    ],
+    "recommendation": "RETAIN"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserve limitations and unfinished obligations, not artificial consensus.",
+    "entries": [
+      {
+        "role": "Founder-Intent Steward",
+        "position": "A qualified native repertoire is not the full Mind or whole-machine exhaustion.",
+        "rationale": "Budget, dynamic planning, live hands and higher outcome tiers remain unfinished.",
+        "evidence_threshold": "End-to-end canonical integration and evidence at each required tier.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any completion claim."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Dedicated draft branch; reuse existing owners; version replacements; preserve histories and contracts. No main merge or deployment.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert the native extraction commit; retain original upstream heads and evidence."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Cortex or seed contract regresses.",
+    "Generated authority or real-world validity inferred from mathematical results.",
+    "Mandatory verification optimized away.",
+    "A new rival registry or authority path appears."
+  ],
+  "decision": "RETAIN",
+  "decision_owner": "GREG maintainers for reversible development; Alfonso for reserved promotion",
+  "review_trigger": "Full-suite results, hosted CI, next office-budget reconciliation."
+}

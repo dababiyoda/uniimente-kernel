@@ -1,0 +1,4 @@
+{
+  "failure": "model unavailable: URLError: <urlopen error [Errno 111] Connection refused>",
+  "proof_class": "semantic_sourced"
+}

@@ -1,0 +1,472 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/goal-record.schema.json",
+  "title": "Persistent Goal Record",
+  "description": "An authorized founder goal as persisted by the Goal Gravity registry (egregore/goals.py). Authority fields are declared lineage, not authentication. A goal record never carries execution authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "goal_id",
+    "founder_intent",
+    "desired_state",
+    "priority",
+    "authority",
+    "time_horizon",
+    "plan",
+    "relevant_entities",
+    "domains",
+    "wake_conditions",
+    "opportunity_factors",
+    "review_cadence_seconds",
+    "resource_budget",
+    "dependencies",
+    "known_opportunities",
+    "known_threats",
+    "missing_capabilities",
+    "wake_threshold",
+    "intersection_threshold",
+    "intersection_window_seconds",
+    "execution_authority",
+    "assumptions",
+    "supersedes"
+  ],
+  "properties": {
+    "goal_id": {
+      "$ref": "#/$defs/hash"
+    },
+    "founder_intent": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Verbatim founder expression"
+    },
+    "desired_state": {
+      "type": "string",
+      "minLength": 1
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "authorized_by",
+        "authorization_ref",
+        "legal_principal",
+        "max_consequence_class",
+        "authority_note"
+      ],
+      "properties": {
+        "authorized_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authorization_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "legal_principal": {
+          "type": "string",
+          "minLength": 1,
+          "not": {
+            "enum": [
+              "UNIIMENTE",
+              "uniimente"
+            ]
+          }
+        },
+        "max_consequence_class": {
+          "$ref": "#/$defs/consequence_class"
+        },
+        "standing_capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "authority_note": {
+          "const": "declared lineage; not founder authentication; grants no execution authority"
+        }
+      }
+    },
+    "time_horizon": {
+      "type": "string",
+      "minLength": 1
+    },
+    "plan": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/plan_node"
+      }
+    },
+    "relevant_entities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "domains": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "wake_conditions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/wake_condition"
+      }
+    },
+    "opportunity_factors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/opportunity_factor"
+      }
+    },
+    "review_cadence_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "resource_budget": {
+      "type": "object",
+      "required": [
+        "max_model_calls",
+        "max_estimated_cost_usd"
+      ],
+      "properties": {
+        "max_model_calls": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_estimated_cost_usd": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "known_opportunities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "known_threats": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "missing_capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "wake_threshold": {
+      "type": "number",
+      "minimum": 0
+    },
+    "intersection_threshold": {
+      "type": "number",
+      "minimum": 0
+    },
+    "intersection_window_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "execution_authority": {
+      "const": "none"
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Critical assumptions (directive section 27)"
+    },
+    "supersedes": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/hash"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "goal_id this goal replaces after a founder 'change this goal'"
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "consequence_class": {
+      "enum": [
+        "read_only",
+        "internal_write",
+        "external_contact",
+        "financial",
+        "irreversible"
+      ]
+    },
+    "direction": {
+      "enum": [
+        "gte",
+        "lte",
+        "eq"
+      ]
+    },
+    "wake_condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "match",
+        "weight",
+        "direction",
+        "threshold"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "subject",
+            "tag",
+            "domain",
+            "metric"
+          ]
+        },
+        "match": {
+          "type": "string",
+          "minLength": 1
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0
+        },
+        "direction": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/direction"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "threshold": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "opportunity_factor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "factor_id",
+        "domain",
+        "subject",
+        "attribute",
+        "direction",
+        "threshold",
+        "weight",
+        "effect"
+      ],
+      "properties": {
+        "factor_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "domain": {
+          "type": "string",
+          "minLength": 1
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1
+        },
+        "attribute": {
+          "type": "string",
+          "minLength": 1
+        },
+        "direction": {
+          "enum": [
+            "gte",
+            "lte",
+            "eq",
+            "present"
+          ]
+        },
+        "threshold": {
+          "type": [
+            "number",
+            "boolean",
+            "null"
+          ]
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0
+        },
+        "effect": {
+          "enum": [
+            "cost_down",
+            "feasibility_up",
+            "timing",
+            "risk_down",
+            "upside_up",
+            "cost_up",
+            "feasibility_down",
+            "risk_up",
+            "upside_down"
+          ]
+        }
+      }
+    },
+    "intervention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intervention_id",
+        "description",
+        "action_class",
+        "requested_capability",
+        "consequence_class",
+        "target",
+        "expected_outcome",
+        "payload",
+        "estimated_cost_usd",
+        "reversible",
+        "tactic",
+        "route_hash"
+      ],
+      "properties": {
+        "intervention_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requested_capability": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consequence_class": {
+          "$ref": "#/$defs/consequence_class"
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expected_outcome": {
+          "type": "string",
+          "minLength": 1
+        },
+        "payload": {
+          "type": "object"
+        },
+        "estimated_cost_usd": {
+          "type": "number",
+          "minimum": 0
+        },
+        "reversible": {
+          "type": "boolean"
+        },
+        "tactic": {
+          "type": "string"
+        },
+        "route_hash": {
+          "$ref": "#/$defs/hash"
+        }
+      }
+    },
+    "plan_node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node_id",
+        "outcome",
+        "gate",
+        "sbm",
+        "sbm_direction",
+        "sbm_target",
+        "exit_evidence",
+        "interventions",
+        "requires_capabilities",
+        "requires_relationships"
+      ],
+      "properties": {
+        "node_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "outcome": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gate": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sbm": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Single Bottleneck Metric key: subject.attribute"
+        },
+        "sbm_direction": {
+          "$ref": "#/$defs/direction"
+        },
+        "sbm_target": {
+          "type": [
+            "number",
+            "boolean"
+          ]
+        },
+        "exit_evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "interventions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/intervention"
+          }
+        },
+        "requires_capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[^@]+@[^@]+$"
+          }
+        },
+        "requires_relationships": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "entities whose <entity>.relationship belief must be truthy"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "authority_created": false,
+  "authority_ref": "sha256:309af683df4e94f57cdb36d4b55e7c732f3dd0f28dba9c7d436372b7e3a0db85",
+  "grant_id": "309f0b4f-101b-4b8e-8320-98c563eb993b",
+  "max_budget_usd": 2.0,
+  "mission_id": "m:media-z3-release-post",
+  "order": "z3-release-post",
+  "order_digest": "sha256:51fb9cab97c70a5c9b3ac19ca6807aff3fd7488cd290480f38b967c7f846e59f",
+  "provider": "claude-code",
+  "push_rights": false,
+  "secrets": "none",
+  "timeout_seconds": 600,
+  "workspace": "/tmp/greg-hands/body/workspace/m_media-z3-release-post/work-orders/z3-release-post/work"
+}

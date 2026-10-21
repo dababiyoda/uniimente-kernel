@@ -160,7 +160,11 @@ class _Parser:
                 # Lookahead: IDENT (STRING)? LBRACE -> nested block; IDENT EQUALS -> assignment
                 nxt = self.tokens[self.pos + 1]
                 if nxt.kind == "EQUALS":
-                    name = self.next().value
+                    field_token = self.next()
+                    name = field_token.value
+                    if name in block.fields:
+                        raise UCLSyntaxError(
+                            f"duplicate field {name!r} at {field_token.line}:{field_token.col}")
                     self.expect("EQUALS")
                     block.fields[name] = self.parse_value()
                 elif nxt.kind in ("LBRACE", "STRING"):

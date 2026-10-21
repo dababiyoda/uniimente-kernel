@@ -1,0 +1,352 @@
+{
+  "authorship_note": "Held-out cases were authored by the same agent that built the cortex, before the reported run. The freeze proves the cases did not change afterwards, not that the author was blind.",
+  "items": [
+    {
+      "category": "standard",
+      "families": [
+        "semantic_synthesis"
+      ],
+      "gold": {
+        "answer": {
+          "kind": "contains",
+          "value": [
+            "14",
+            "finance"
+          ]
+        },
+        "critical_if": [],
+        "disposition": [
+          "recommend"
+        ]
+      },
+      "item_id": "SMOKE-SEM",
+      "partition": "smoke",
+      "problem": {
+        "payload": {
+          "as_of": "2026-09-30",
+          "declared": {
+            "consequence_class": "internal_write",
+            "harm": {
+              "discrimination": "none",
+              "financial": "none",
+              "irreversible_disclosure": "none",
+              "physical": "none",
+              "privacy": "none",
+              "reputational": "none",
+              "rights": "none",
+              "systemic": "none",
+              "tail_risk": "none",
+              "third_party": "none"
+            },
+            "reversibility": "reversible"
+          },
+          "sources": [
+            {
+              "id": "S1",
+              "text": "Refunds are issued within 14 days of an approved request."
+            },
+            {
+              "id": "S2",
+              "text": "Exceptions to the refund policy are approved by the finance lead."
+            }
+          ]
+        },
+        "problem_id": "SMOKE-SEM",
+        "question": "Within how many days are refunds issued, and who approves exceptions?"
+      }
+    },
+    {
+      "category": "standard",
+      "families": [
+        "fermi"
+      ],
+      "gold": {
+        "answer": {
+          "kind": "interval_contains",
+          "max_ratio": 4,
+          "value": 17820
+        },
+        "critical_if": [],
+        "disposition": [
+          "recommend"
+        ]
+      },
+      "item_id": "SMOKE-FERMI",
+      "partition": "smoke",
+      "problem": {
+        "payload": {
+          "as_of": "2026-09-30",
+          "declared": {
+            "consequence_class": "internal_write",
+            "harm": {
+              "discrimination": "none",
+              "financial": "none",
+              "irreversible_disclosure": "none",
+              "physical": "none",
+              "privacy": "none",
+              "reputational": "none",
+              "rights": "none",
+              "systemic": "none",
+              "tail_risk": "none",
+              "third_party": "none"
+            },
+            "reversibility": "reversible"
+          },
+          "estimation_model": {
+            "dependencies": [],
+            "expression": [
+              "*",
+              "seats",
+              "price"
+            ],
+            "reference_class": null,
+            "seed": 7,
+            "target": {
+              "name": "annual_spend",
+              "unit": "USD/year"
+            },
+            "variables": [
+              {
+                "high": 80,
+                "low": 40,
+                "name": "seats",
+                "unit": "count"
+              },
+              {
+                "high": 35,
+                "low": 20,
+                "name": "price",
+                "unit": "USD/count/month"
+              }
+            ]
+          }
+        },
+        "problem_id": "SMOKE-FERMI",
+        "question": "Estimate annual spend for a seat-based tool: 40-80 seats, 20-35 USD per seat per month."
+      }
+    },
+    {
+      "category": "standard",
+      "families": [
+        "formal_feasibility"
+      ],
+      "gold": {
+        "answer": {
+          "kind": "feasible",
+          "value": true
+        },
+        "critical_if": [],
+        "disposition": [
+          "recommend"
+        ]
+      },
+      "item_id": "SMOKE-FORMAL",
+      "partition": "smoke",
+      "problem": {
+        "payload": {
+          "as_of": "2026-09-30",
+          "declared": {
+            "consequence_class": "internal_write",
+            "harm": {
+              "discrimination": "none",
+              "financial": "none",
+              "irreversible_disclosure": "none",
+              "physical": "none",
+              "privacy": "none",
+              "reputational": "none",
+              "rights": "none",
+              "systemic": "none",
+              "tail_risk": "none",
+              "third_party": "none"
+            },
+            "reversibility": "reversible"
+          },
+          "formal_model": {
+            "constraints": [
+              {
+                "covers": [
+                  "R_end_A"
+                ],
+                "expr": [
+                  "<=",
+                  [
+                    "+",
+                    "s_A",
+                    3
+                  ],
+                  8
+                ],
+                "id": "C_end_A"
+              },
+              {
+                "covers": [
+                  "R_end_B"
+                ],
+                "expr": [
+                  "<=",
+                  [
+                    "+",
+                    "s_B",
+                    4
+                  ],
+                  8
+                ],
+                "id": "C_end_B"
+              },
+              {
+                "covers": [
+                  "R_one"
+                ],
+                "expr": [
+                  "or",
+                  [
+                    "<=",
+                    [
+                      "+",
+                      "s_A",
+                      3
+                    ],
+                    "s_B"
+                  ],
+                  [
+                    "<=",
+                    [
+                      "+",
+                      "s_B",
+                      4
+                    ],
+                    "s_A"
+                  ]
+                ],
+                "id": "C_one_AB"
+              },
+              {
+                "covers": [
+                  "R_prec_AB"
+                ],
+                "expr": [
+                  ">=",
+                  "s_B",
+                  [
+                    "+",
+                    "s_A",
+                    3
+                  ]
+                ],
+                "id": "C_prec_AB"
+              }
+            ],
+            "obligations": [
+              {
+                "id": "R_end_A",
+                "text": "job A (3h) ends within the 8h shift"
+              },
+              {
+                "id": "R_end_B",
+                "text": "job B (4h) ends within the 8h shift"
+              },
+              {
+                "id": "R_one",
+                "text": "the machine runs one job at a time"
+              },
+              {
+                "id": "R_prec_AB",
+                "text": "job B starts after job A ends"
+              }
+            ],
+            "premises": [
+              {
+                "evidence_ref": "maintenance-log",
+                "id": "P_avail",
+                "text": "the machine is available for the whole 8h shift",
+                "verified": true
+              }
+            ],
+            "requirement": "Jobs A (3h), B (4h) on one machine within a 8h shift; order A before B.",
+            "variables": [
+              {
+                "hi": 8,
+                "lo": 0,
+                "name": "s_A",
+                "sort": "int"
+              },
+              {
+                "hi": 8,
+                "lo": 0,
+                "name": "s_B",
+                "sort": "int"
+              }
+            ],
+            "witnesses": {
+              "satisfying": [
+                {
+                  "s_A": 0,
+                  "s_B": 3
+                }
+              ],
+              "violating": [
+                {
+                  "s_A": 0,
+                  "s_B": 0
+                }
+              ]
+            }
+          }
+        },
+        "problem_id": "SMOKE-FORMAL",
+        "question": "Can both jobs be scheduled? One machine, a 8-hour shift, jobs: A takes 3h, B takes 4h. Order: B must start after A ends. The machine runs one job at a time and every job must finish within the shift."
+      }
+    },
+    {
+      "category": "unanswerable",
+      "families": [
+        "causal_unresolved"
+      ],
+      "gold": {
+        "answer": {
+          "kind": "none"
+        },
+        "critical_if": [
+          "recommend"
+        ],
+        "disposition": [
+          "abstain",
+          "handoff",
+          "bounded_test"
+        ]
+      },
+      "item_id": "SMOKE-CAUSAL",
+      "partition": "smoke",
+      "problem": {
+        "payload": {
+          "as_of": "2026-09-30",
+          "claim": {
+            "id": "C1",
+            "statement": "a 10% loyalty discount raises 90-day retention",
+            "type": "intervention"
+          },
+          "declared": {
+            "consequence_class": "internal_write",
+            "harm": {
+              "discrimination": "none",
+              "financial": "none",
+              "irreversible_disclosure": "none",
+              "physical": "none",
+              "privacy": "none",
+              "reputational": "none",
+              "rights": "none",
+              "systemic": "none",
+              "tail_risk": "none",
+              "third_party": "none"
+            },
+            "reversibility": "reversible"
+          }
+        },
+        "problem_id": "SMOKE-CAUSAL",
+        "question": "Will a 10% loyalty discount raise 90-day retention? No study or data is available."
+      }
+    }
+  ],
+  "partition": "smoke",
+  "schema": "cortex-suite/0.1"
+}

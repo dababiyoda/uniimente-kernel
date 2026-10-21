@@ -17,10 +17,22 @@ import os
 import copy
 import fcntl
 import threading
+import time
+from collections.abc import Sequence
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 
 GENESIS_PREV = "sha256:" + "0" * 64
+# Hot paths verify only records not yet verified; the whole chain is still reconstructed on open,
+# on every explicit verify_chain(), and at least this often (FINDING-LEDGER-APPEND-COST-2026-10-14).
+FULL_VERIFY_SECONDS = 300.0
+_monotonic = time.monotonic
+# A Commit Witness is the Consequence Gate's durability boundary (policy/consequence_gate.py step 9, before the
+# dispatch claim and the executor). It is appended only onto a chain reconstructed whole at that moment, so no
+# effect is witnessed, claimed or executed on history altered in memory. The check lives here because the Gate's
+# source is a reviewed, hash-bound subject (evolution/repair/subjects.py SR-002) and so cannot change silently
+# (installed-body merge; FINDING-LEDGER-APPEND-COST-2026-10-14).
+COMMIT_RECORD_TYPES = ("witness",)
 
 
 class ReconciliationRequired(RuntimeError):
@@ -53,11 +65,85 @@ class LedgerRecord:
     hash_version: int = 1
 
 
+def copy_json(value):
+    """A caller-owned copy of JSON data (dicts, lists, scalars); faster than copy.deepcopy."""
+    if type(value) is dict:
+        return {k: copy_json(v) for k, v in value.items()}
+    if type(value) is list:
+        return [copy_json(v) for v in value]
+    if isinstance(value, (dict, list)):
+        return copy.deepcopy(value)
+    return value
+
+
+def _copy_record(rec: "LedgerRecord") -> "LedgerRecord":
+    return LedgerRecord(rec.seq, rec.ts_utc, rec.record_type, copy_json(rec.payload), rec.prev_hash, rec.hash,
+                        rec.corrects, rec.hash_version)
+
+
+class RecordsView(Sequence):
+    """Read-only view of retained history. Every record it yields is the caller's own copy, so
+    changing one never changes what the ledger retains."""
+    __slots__ = ("_records",)
+
+    def __init__(self, records: list):
+        self._records = records
+
+    def __len__(self):
+        return len(self._records)
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return [_copy_record(r) for r in self._records[index]]
+        return _copy_record(self._records[index])
+
+    def __iter__(self):
+        return (_copy_record(r) for r in list(self._records))
+
+    def __reversed__(self):
+        return (_copy_record(r) for r in reversed(list(self._records)))
+
+    def __contains__(self, value):
+        return value in self._records
+
+    def index(self, value, *args):
+        return self._records.index(value, *args)
+
+    def count(self, value):
+        return self._records.count(value)
+
+    def __eq__(self, other):
+        theirs = other._records if isinstance(other, RecordsView) else other
+        return isinstance(theirs, (list, tuple)) and list(self._records) == list(theirs)
+
+    def __repr__(self):
+        return f"RecordsView({self._records!r})"
+
+
+TAIL_POLICIES = ("refuse", "ignore", "quarantine")
+
+
 class EvidenceLedger:
-    """Append-only hash chain. In-memory by default; optional JSONL persistence."""
+    """Append-only hash chain. In-memory by default; optional JSONL persistence.
+
+    ``tail`` decides what to do with a final line that has no newline. ``append``
+    acknowledges a record only after the whole line and its newline are fsynced,
+    so such a line was never acknowledged: it is a write torn by power loss or a
+    crash, or a write still in progress in another process.
+
+    * ``refuse`` (default): fail closed, as before.
+    * ``ignore``: read-only observers load the complete prefix and report the tail
+      in ``unacknowledged_tail``. A reader racing the writer no longer fails.
+    * ``quarantine``: the writer copies the torn bytes to a sidecar file, truncates
+      the ledger to its last complete line and appends a ``recovery`` record. The
+      bytes are preserved, never silently discarded.
+
+    A malformed complete line is corruption under every policy and is refused.
+    """
 
     def __init__(self, constitution_hash: str, path: str | None = None,
-                 *, read_only: bool = False, expected_head: str | None = None):
+                 *, read_only: bool = False, expected_head: str | None = None,
+                 tail: str = "refuse"):
         self.path = path
         self.constitution_hash = constitution_hash
         self.read_only = read_only
@@ -66,6 +152,12 @@ class EvidenceLedger:
         self._pid = os.getpid()
         self._uncertain = False
         self._closed = False
+        self.unacknowledged_tail: dict | None = None
+        if tail not in TAIL_POLICIES:
+            raise ValueError(f'unknown tail policy {tail!r}')
+        if tail == "quarantine" and read_only:
+            raise ValueError('a read-only observer cannot quarantine history; use tail="ignore"')
+        self._tail_policy = tail
         if not isinstance(constitution_hash, str) or not constitution_hash.strip():
             raise ValueError('expected constitutional anchor is required')
         if path and not read_only:
@@ -75,10 +167,16 @@ class EvidenceLedger:
             except OSError as exc:
                 self.close()
                 raise WriterConflict('ledger already has a writer') from exc
-        self.records: list[LedgerRecord] = []
+        # Retained records never leave this object: every read hands out a copy. A record verified
+        # once therefore stays verified unless this private list itself is altered, which the
+        # scheduled full reconstruction detects.
+        self._records: list[LedgerRecord] = []
+        self._verified = 0           # records[:_verified] passed verification
+        self._full_at: float | None = None   # monotonic time of the last full reconstruction
+        self._verified_tail: LedgerRecord | None = None   # the object records[_verified - 1] was
         genesis_payload = {"kind": "genesis", "constitution_hash": constitution_hash}
         gh = sha256_json({"seq": 0, "payload": genesis_payload, "prev_hash": GENESIS_PREV})
-        self.records.append(LedgerRecord(0, _now(), "genesis", genesis_payload, GENESIS_PREV, gh))
+        self._records.append(LedgerRecord(0, _now(), "genesis", genesis_payload, GENESIS_PREV, gh))
         try:
             if path and os.path.exists(path):
                 self._load(path)
@@ -86,14 +184,43 @@ class EvidenceLedger:
                 if read_only or expected_head:
                     raise ValueError('expected history is missing')
                 with open(path, "x", encoding="utf-8") as fh:
-                    fh.write(json.dumps(asdict(self.records[0])) + "\n")
+                    fh.write(json.dumps(asdict(self._records[0])) + "\n")
                     fh.flush()
                     os.fsync(fh.fileno())
             if expected_head and self.head != expected_head:
                 raise ValueError('history differs from expected head: truncation or fork')
+            if self.unacknowledged_tail and self._tail_policy == "quarantine":
+                self._quarantine_tail()
         except Exception:
             self.close()
             raise
+
+    def _quarantine_tail(self) -> None:
+        """Move never-acknowledged bytes aside, keep them, and record the recovery."""
+        tail = self.unacknowledged_tail
+        data = tail.pop("_bytes")
+        sidecar = f"{self.path}.unacknowledged-{tail['sha256'][7:23]}"
+        try:
+            fd = os.open(sidecar, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        except FileExistsError:
+            with open(sidecar, "rb") as fh:
+                if fh.read() != data:
+                    raise ValueError('a different quarantined tail already uses this name')
+        else:
+            with os.fdopen(fd, "wb") as fh:
+                fh.write(data)
+                fh.flush()
+                os.fsync(fh.fileno())
+        with open(self.path, "r+b") as fh:
+            fh.truncate(tail["offset"])
+            fh.flush()
+            os.fsync(fh.fileno())
+        tail["sidecar"] = sidecar
+        self.append("recovery", {
+            "kind": "unacknowledged_tail_quarantined", "offset": tail["offset"], "bytes": tail["bytes"],
+            "sha256": tail["sha256"], "sidecar": os.path.basename(sidecar),
+            "meaning": "a write that was never acknowledged (torn by power loss or crash); its bytes are kept "
+                       "in the sidecar for reconciliation and were not replayed"})
 
     def close(self):
         if self._writer is not None:
@@ -106,8 +233,20 @@ class EvidenceLedger:
             self.close()
 
     @property
+    def records(self) -> RecordsView:
+        """Retained history, read-only; each record read from it is the caller's own copy."""
+        return RecordsView(self._records)
+
+    @records.setter
+    def records(self, records) -> None:
+        # Assigned history (a review snapshot) is copied in and verified again from the beginning.
+        with self._lock:
+            self._records = [_copy_record(r if isinstance(r, LedgerRecord) else LedgerRecord(**r)) for r in records]
+            self._verified, self._full_at, self._verified_tail = 0, None, None
+
+    @property
     def head(self) -> str:
-        return self.records[-1].hash
+        return self._records[-1].hash
 
     def append(self, record_type: str, payload: dict, *, corrects: str | None = None) -> LedgerRecord:
         with self._lock:
@@ -118,7 +257,7 @@ class EvidenceLedger:
             raise WriterConflict('not the active ledger writer')
         if self._uncertain:
             raise ReconciliationRequired('previous append is uncertain; reopen verified history')
-        ok, reason = self.verify_chain()
+        ok, reason = self.verify_chain() if record_type in COMMIT_RECORD_TYPES else self.verify_incremental()
         if not ok:
             raise ValueError(reason)
         if record_type in ('genesis', 'constitution_transition'):
@@ -127,7 +266,7 @@ class EvidenceLedger:
         payload = json.loads(json.dumps(payload, allow_nan=False))
         if not isinstance(payload, dict):
             raise ValueError('ledger payload must be an object')
-        seq = len(self.records)
+        seq = len(self._records)
         prev = self.head
         ts = _now()
         body = {"seq": seq, "record_type": record_type, "payload": payload,
@@ -145,8 +284,11 @@ class EvidenceLedger:
                 except OSError as exc:
                     self._uncertain = True
                     raise ReconciliationRequired('append acknowledgment lost') from exc
-        self.records.append(rec)
-        return copy.deepcopy(rec)
+        self._records.append(rec)
+        if self._verified == seq:
+            # Built here from the verified head and hashed above: verified by construction.
+            self._verified, self._verified_tail = seq + 1, rec
+        return _copy_record(rec)
 
     def seal(self, *, sealed_by: str, reason: str) -> LedgerRecord:
         """Seal the head (shutdown propagation step 5). Returns the seal record."""
@@ -154,61 +296,106 @@ class EvidenceLedger:
 
     def verify_chain(self) -> tuple[bool, str]:
         """Independently reconstruct and verify every link (evidence closure)."""
-        if not self.records:
-            return False, 'empty history'
-        for i, rec in enumerate(self.records):
-            if type(rec.seq) is not int or rec.seq != i:
-                return False, f"sequence break at {i}"
-            if (type(rec.payload) is not dict or type(rec.hash_version) is not int
-                    or rec.hash_version not in (1, 2)):
-                return False, f'unsupported record at {i}'
-            if rec.record_type == 'constitution_transition':
-                return False, 'unsupported amendment history: authority not established'
-            if i == 0:
-                expected = {'kind': 'genesis', 'constitution_hash': self.constitution_hash}
-                if (rec.prev_hash != GENESIS_PREV or rec.record_type != 'genesis'
-                        or rec.payload != expected or rec.corrects is not None
-                        or rec.hash_version != 1):
-                    return False, "genesis structure or expected constitution mismatch"
-                if sha256_json({'seq': 0, 'payload': expected, 'prev_hash': GENESIS_PREV}) != rec.hash:
-                    return False, 'genesis hash mismatch'
-                continue
-            if rec.record_type == 'genesis':
-                return False, 'second genesis refused'
-            if rec.prev_hash != self.records[i - 1].hash:
-                return False, f"chain break at seq {i}"
-            body = {"seq": rec.seq, "record_type": rec.record_type, "payload": rec.payload,
-                    "prev_hash": rec.prev_hash, "corrects": rec.corrects}
-            if rec.hash_version == 2:
-                body.update(ts_utc=rec.ts_utc, hash_version=2)
-            if sha256_json(body) != rec.hash:
-                return False, f"payload hash mismatch at seq {i}"
-        return True, f"chain intact: {len(self.records)} records"
+        with self._lock:
+            records = self._records
+            if not records:
+                return False, 'empty history'
+            for i in range(len(records)):
+                ok, reason = self._verify_record(i)
+                if not ok:
+                    self._verified, self._full_at = 0, None
+                    return False, reason
+            self._verified, self._full_at, self._verified_tail = len(records), _monotonic(), records[-1]
+            return True, f"chain intact: {len(records)} records"
+
+    def verify_incremental(self) -> tuple[bool, str]:
+        """Verify the records not yet verified; reconstruct the whole chain on schedule.
+
+        Retained records never leave this object (reads hand out copies), so a verified record stays
+        verified unless the private list itself is altered. A full reconstruction runs on open, on
+        every explicit verify_chain(), whenever the verified prefix is not the one last seen, and at
+        least every FULL_VERIFY_SECONDS; it detects such an alteration within that window.
+        """
+        with self._lock:
+            records, done = self._records, self._verified
+            if (self._full_at is None or not 0 < done <= len(records)
+                    or records[done - 1] is not self._verified_tail
+                    or _monotonic() - self._full_at >= FULL_VERIFY_SECONDS):
+                return self.verify_chain()
+            for i in range(done, len(records)):
+                ok, reason = self._verify_record(i)
+                if not ok:
+                    self._verified, self._full_at = 0, None
+                    return False, reason
+            self._verified, self._verified_tail = len(records), records[-1]
+            return True, f"chain intact: {len(records)} records"
+
+    def _verify_record(self, i: int) -> tuple[bool, str]:
+        rec = self._records[i]
+        if type(rec.seq) is not int or rec.seq != i:
+            return False, f"sequence break at {i}"
+        if (type(rec.payload) is not dict or type(rec.hash_version) is not int
+                or rec.hash_version not in (1, 2)):
+            return False, f'unsupported record at {i}'
+        if rec.record_type == 'constitution_transition':
+            return False, 'unsupported amendment history: authority not established'
+        if i == 0:
+            expected = {'kind': 'genesis', 'constitution_hash': self.constitution_hash}
+            if (rec.prev_hash != GENESIS_PREV or rec.record_type != 'genesis'
+                    or rec.payload != expected or rec.corrects is not None
+                    or rec.hash_version != 1):
+                return False, "genesis structure or expected constitution mismatch"
+            if sha256_json({'seq': 0, 'payload': expected, 'prev_hash': GENESIS_PREV}) != rec.hash:
+                return False, 'genesis hash mismatch'
+            return True, ''
+        if rec.record_type == 'genesis':
+            return False, 'second genesis refused'
+        if rec.prev_hash != self._records[i - 1].hash:
+            return False, f"chain break at seq {i}"
+        body = {"seq": rec.seq, "record_type": rec.record_type, "payload": rec.payload,
+                "prev_hash": rec.prev_hash, "corrects": rec.corrects}
+        if rec.hash_version == 2:
+            body.update(ts_utc=rec.ts_utc, hash_version=2)
+        if sha256_json(body) != rec.hash:
+            return False, f"payload hash mismatch at seq {i}"
+        return True, ''
 
     def find(self, record_hash: str) -> LedgerRecord | None:
-        for r in self.records:
+        for r in self._records:
             if r.hash == record_hash:
-                return r
+                return _copy_record(r)
         return None
 
     def by_type(self, record_type: str) -> list[LedgerRecord]:
-        return [r for r in self.records if r.record_type == record_type]
+        return [_copy_record(r) for r in self._records if r.record_type == record_type]
 
     def _load(self, path: str) -> None:
         # Durable history supplies transition truth only after full verification.
         # Hash consistency is not factual appraisal, permission or authentication.
         loaded = []
+        with open(path, "rb") as fh:
+            raw = fh.read()
+        complete_end = raw.rfind(b"\n") + 1
+        if complete_end < len(raw):
+            if self._tail_policy == "refuse":
+                raise ValueError('partial or blank history record')
+            torn = raw[complete_end:]
+            self.unacknowledged_tail = {"offset": complete_end, "bytes": len(torn),
+                                        "sha256": "sha256:" + hashlib.sha256(torn).hexdigest(),
+                                        "_bytes": torn}
         try:
-            with open(path, "r", encoding="utf-8") as fh:
-                for line in fh:
-                    if not line.endswith('\n') or not line.strip():
-                        raise ValueError('partial or blank history record')
-                    from adapters.contract_validation import strict_json
-                    d = strict_json(line)
-                    loaded.append(LedgerRecord(**d))
-        except (TypeError, json.JSONDecodeError) as exc:
+            from adapters.contract_validation import strict_json
+            for chunk in raw[:complete_end].split(b"\n")[:-1]:
+                line = chunk.decode("utf-8") + "\n"
+                if not line.strip():
+                    raise ValueError('partial or blank history record')
+                d = strict_json(line)
+                loaded.append(LedgerRecord(**d))
+        except (TypeError, UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise ValueError('malformed retained history') from exc
-        self.records = loaded
+        if self.unacknowledged_tail and self._tail_policy == "ignore":
+            self.unacknowledged_tail.pop("_bytes")
+        self._records = loaded
         ok, msg = self.verify_chain()
         if not ok:
             raise ValueError(f"ledger at {path} failed verification on load: {msg}")

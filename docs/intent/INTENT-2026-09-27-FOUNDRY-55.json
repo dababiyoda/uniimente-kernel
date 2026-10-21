@@ -1,0 +1,26 @@
+{
+  "intent_id": "INTENT-2026-09-27-FOUNDRY-55",
+  "statement": "All 55 numbered systems in the founder-supplied arsenal are mandatory delivery obligations. Each needs real working behavior, a usable integrated GREG/Foundry interface, meaningful tests, and reproducible execution evidence, including limits and recovery. Shared primitives are encouraged; a registry entry alone is not delivery. Deferring preserves the obligation; removal or substitution requires explicit founder approval. First founder-owned mission is an integration milestone, with hardware selected later.",
+  "source_refs": [
+    "2026-09-27 founder directive in project conversation",
+    "docs/intent/sources/FOUNDRY-55-2026-09-27-source.md",
+    "founder-supplied 03-What-gives-UNIIMENTE-the-science-fiction-advantage.txt"
+  ],
+  "owner": "Alfonso Lopez; Kernel and canonical GREG/Foundry maintainers implement",
+  "state": "active",
+  "binding_scope": "All 55 numbered systems remain in scope for reversible development and draft review; each numbered item needs independent integration evidence. No chat source becomes cryptographic runtime authentication.",
+  "constitutional_constraints": [
+    "one GREG runtime, one Kernel authority plane, one canonical ledger and no duplicate executable learning engines",
+    "building does not authorize installation, activation, spending, external contact, publication, deployment or merger",
+    "founder retains shutdown and scope authority, with human rights before participant operations"
+  ],
+  "success_evidence": ["55 distinct item-level demonstrations of actual integrated behavior with meaningful tests and reproducible evidence, limitations and recovery"],
+  "failure_evidence": ["Existing foundry/arsenal.py statuses are selection metadata rather than item-level acceptance", "Current FoundryComposer returns non-executing plans; neither that plan nor catalog membership completes an item"],
+  "dependencies": ["greg/ body, Kernel Gate and EvidenceLedger, foundry/arsenal.py", "founder-owned hardware and legitimate authority for embodied and external milestones"],
+  "conflicts": ["Earlier delivery focus on VEPMC is a sequencing rule, not a license to delete remaining numbered requirements", "Earlier Mac-specific first-body framing is a candidate hardware path; Alfonso states he owns no Mac and will select hardware later"],
+  "next_review_trigger": "Each numbered system's executable integration review; founder hardware selection for VEPMC; only founder may approve removal/substitution",
+  "supersedes": [],
+  "superseded_by": [],
+  "implementation_refs": ["foundry/arsenal.py", "foundry/composition.py", "greg/capabilities.py", "greg/precedents.py"],
+  "reality_status": "active build obligation; 55/55 completion unproven; no item may pass solely from its catalog status"
+}

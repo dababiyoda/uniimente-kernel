@@ -1,0 +1,2232 @@
+{
+  "arms": {
+    "always_abstain": {
+      "items": [
+        {
+          "answer": null,
+          "correct_abstention": false,
+          "critical": false,
+          "disposition": "abstain",
+          "error": false,
+          "gate_violation": false,
+          "geometry": "semantic",
+          "item_id": "SMOKE-SEM",
+          "latency_s": 0.0,
+          "overcautious": true,
+          "receipt_id": null,
+          "score": 0.25,
+          "state": null,
+          "unsupported_certainty": false
+        },
+        {
+          "answer": null,
+          "correct_abstention": false,
+          "critical": false,
+          "disposition": "abstain",
+          "error": false,
+          "gate_violation": false,
+          "geometry": "estimate",
+          "item_id": "SMOKE-FERMI",
+          "latency_s": 0.0,
+          "overcautious": true,
+          "receipt_id": null,
+          "score": 0.25,
+          "state": null,
+          "unsupported_certainty": false
+        },
+        {
+          "answer": null,
+          "correct_abstention": false,
+          "critical": false,
+          "disposition": "abstain",
+          "error": false,
+          "gate_violation": false,
+          "geometry": "formal",
+          "item_id": "SMOKE-FORMAL",
+          "latency_s": 0.0,
+          "overcautious": true,
+          "receipt_id": null,
+          "score": 0.25,
+          "state": null,
+          "unsupported_certainty": false
+        },
+        {
+          "answer": null,
+          "correct_abstention": true,
+          "critical": false,
+          "disposition": "abstain",
+          "error": false,
+          "gate_violation": false,
+          "geometry": "claim:intervention",
+          "item_id": "SMOKE-CAUSAL",
+          "latency_s": 0.0,
+          "overcautious": false,
+          "receipt_id": null,
+          "score": 1.0,
+          "state": null,
+          "unsupported_certainty": false
+        }
+      ],
+      "paired_gain_vs_routed": {
+        "ci95": [
+          0.0,
+          0.75
+        ],
+        "mean": 0.375,
+        "n": 4
+      },
+      "status": "RUN",
+      "summary": {
+        "abstention": {
+          "overcautious": 3,
+          "precision": 0.25,
+          "recall": 1.0,
+          "withheld": 4
+        },
+        "by_family": {
+          "causal_unresolved": {
+            "mean": 1.0,
+            "n": 1
+          },
+          "fermi": {
+            "mean": 0.25,
+            "n": 1
+          },
+          "formal_feasibility": {
+            "mean": 0.25,
+            "n": 1
+          },
+          "semantic_synthesis": {
+            "mean": 0.25,
+            "n": 1
+          }
+        },
+        "calibration": {
+          "coverage": null,
+          "interval_items": 0,
+          "nominal": 0.9
+        },
+        "cost_usd_total": 0.0,
+        "critical_errors": 0,
+        "errors": 0,
+        "gate_violations": 0,
+        "latency_s_mean": 0.0,
+        "latency_s_p95": 0.0,
+        "mean_quality": 0.4375,
+        "mean_quality_ci95": [
+          0.25,
+          0.8125
+        ],
+        "model_calls": 0,
+        "n": 4,
+        "solver_calls": 0,
+        "unsupported_certainty": 0
+      }
+    },
+    "always_llm": {
+      "reason": "configured local model unavailable: URLError: <urlopen error [Errno 111] Connection refused>",
+      "status": "NOT_RUN"
+    },
+    "llm_committee": {
+      "reason": "configured local model unavailable: URLError: <urlopen error [Errno 111] Connection refused>",
+      "status": "NOT_RUN"
+    },
+    "routed_seed": {
+      "items": [
+        {
+          "answer": null,
+          "correct_abstention": false,
+          "critical": false,
+          "disposition": "abstain",
+          "error": false,
+          "gate_violation": false,
+          "geometry": "semantic",
+          "item_id": "SMOKE-SEM",
+          "latency_s": 0.001337,
+          "overcautious": true,
+          "receipt_id": "sha256:0042b24d96939e3bb5f1619699e9b7f16c8dc805f9a467d8f9bef90750db1da0",
+          "score": 0.25,
+          "state": "DEPENDENCY_UNAVAILABLE",
+          "unsupported_certainty": false
+        },
+        {
+          "answer": {
+            "high": 27916.70126325743,
+            "interval": 0.9,
+            "low": 11475.126155384243,
+            "median": 17959.554750094263,
+            "unit": "USD/year"
+          },
+          "correct_abstention": false,
+          "critical": false,
+          "disposition": "recommend",
+          "error": false,
+          "gate_violation": false,
+          "geometry": "estimate",
+          "item_id": "SMOKE-FERMI",
+          "latency_s": 0.175971,
+          "overcautious": false,
+          "receipt_id": "sha256:de0e669732c16ebc29e38388270d2215fbb727b350183230ea1f6566460d464f",
+          "score": 1.0,
+          "state": "OK",
+          "unsupported_certainty": false
+        },
+        {
+          "answer": {
+            "feasible": true,
+            "model": {
+              "s_A": 0,
+              "s_B": 3
+            }
+          },
+          "correct_abstention": false,
+          "critical": false,
+          "disposition": "recommend",
+          "error": false,
+          "gate_violation": false,
+          "geometry": "formal",
+          "item_id": "SMOKE-FORMAL",
+          "latency_s": 0.058767,
+          "overcautious": false,
+          "receipt_id": "sha256:09accaede41b2e4fb6908ba9852fb6c5fd55f4ed6102c93b034215d388d8b4d7",
+          "score": 1.0,
+          "state": "OK",
+          "unsupported_certainty": false
+        },
+        {
+          "answer": null,
+          "correct_abstention": true,
+          "critical": false,
+          "disposition": "bounded_test",
+          "error": false,
+          "gate_violation": false,
+          "geometry": "claim:intervention",
+          "item_id": "SMOKE-CAUSAL",
+          "latency_s": 0.000844,
+          "overcautious": false,
+          "receipt_id": "sha256:30bbf39b68bf438aedce149ba722b4d4585d81f4c182bea3aa3bc245ac56e4f2",
+          "score": 1.0,
+          "state": "NOT_IDENTIFIED",
+          "unsupported_certainty": false
+        }
+      ],
+      "status": "RUN",
+      "summary": {
+        "abstention": {
+          "overcautious": 1,
+          "precision": 0.5,
+          "recall": 1.0,
+          "withheld": 2
+        },
+        "by_family": {
+          "causal_unresolved": {
+            "mean": 1.0,
+            "n": 1
+          },
+          "fermi": {
+            "mean": 1.0,
+            "n": 1
+          },
+          "formal_feasibility": {
+            "mean": 1.0,
+            "n": 1
+          },
+          "semantic_synthesis": {
+            "mean": 0.25,
+            "n": 1
+          }
+        },
+        "calibration": {
+          "coverage": 1.0,
+          "interval_items": 1,
+          "nominal": 0.9
+        },
+        "cost_usd_total": 0.0,
+        "critical_errors": 0,
+        "errors": 0,
+        "gate_violations": 0,
+        "latency_s_mean": 0.05922966250011541,
+        "latency_s_p95": 0.058767210000041814,
+        "mean_quality": 0.8125,
+        "mean_quality_ci95": [
+          0.4375,
+          1.0
+        ],
+        "model_calls": 1,
+        "n": 4,
+        "solver_calls": 7,
+        "unsupported_certainty": 0
+      }
+    }
+  },
+  "cortex_version": "0.2.0",
+  "exit": {
+    "promote": false,
+    "reasons": [
+      "declared baseline always_llm not run: configured local model unavailable: URLError: <urlopen error [Errno 111] Connection refused>",
+      "declared baseline llm_committee not run: configured local model unavailable: URLError: <urlopen error [Errno 111] Connection refused>"
+    ],
+    "verdict": "INCONCLUSIVE"
+  },
+  "freeze_manifest_sha256": null,
+  "frozen_at": null,
+  "item_count": 4,
+  "learning_checks": {
+    "after_delayed_or_absent": {
+      "basis": "prior",
+      "conditions": [],
+      "estimate": 0.5,
+      "geometry": "constraint_feasibility",
+      "method": "cortex.formal.z3",
+      "version": "0.2.0",
+      "weighted_outcomes": 0.0
+    },
+    "after_six_verified": {
+      "basis": "cell",
+      "conditions": [],
+      "estimate": 0.9688,
+      "geometry": "constraint_feasibility",
+      "method": "cortex.formal.z3",
+      "version": "0.2.0",
+      "weighted_outcomes": 6.0
+    },
+    "max_single_update": 0.2778,
+    "prediction_as_outcome": "refused: prediction cannot settle competence",
+    "receipt_id": "sha256:76fa1f8cc6a8267aff78f8f6af6b4fa0e627929dbd7bbec3434e5b5a9b86cd5a",
+    "registry_unchanged": true,
+    "rollback_to_checkpoint": {
+      "basis": "prior",
+      "conditions": [],
+      "estimate": 0.5,
+      "geometry": "constraint_feasibility",
+      "method": "cortex.formal.z3",
+      "version": "0.2.0",
+      "weighted_outcomes": 0.0
+    }
+  },
+  "partition": "smoke",
+  "representative_receipts": {
+    "SMOKE-CAUSAL": {
+      "accountability": {
+        "falsification_conditions": [
+          {
+            "condition": "no claim asserted; nothing to falsify",
+            "route": "cortex.evidence_causal@0.1.0"
+          }
+        ],
+        "missing_information": [
+          "observation: an explicit estimand",
+          "observation: identification assumptions",
+          "observation: treatment, outcome and confounder data (or an experiment)",
+          "unresolved: What is the effect of the intervention in 'a 10% loyalty discount raises 90-day retention'?"
+        ],
+        "note": "competence evidence and proof narrow disputes; they never create authority",
+        "strongest_counterargument": null
+      },
+      "alternatives": [
+        {
+          "route": "cortex.deterrence.accountability@0.1.0",
+          "why_not": [
+            "does not support causal"
+          ]
+        },
+        {
+          "route": "cortex.estimation.fermi@0.1.0",
+          "why_not": [
+            "does not support causal"
+          ]
+        },
+        {
+          "route": "cortex.extraction.schedule@0.1.0",
+          "why_not": [
+            "does not support causal"
+          ]
+        },
+        {
+          "route": "cortex.formal.z3@0.2.0",
+          "why_not": [
+            "does not support causal"
+          ]
+        },
+        {
+          "route": "cortex.optimization.cpsat@0.2.0",
+          "why_not": [
+            "does not support causal"
+          ]
+        },
+        {
+          "route": "cortex.semantic@0.1.0",
+          "why_not": [
+            "does not support causal"
+          ]
+        }
+      ],
+      "assumptions": [],
+      "authority_created": false,
+      "budget_controller": {
+        "decisions": [],
+        "mandatory": [
+          "eligibility gates",
+          "adversarial verifier",
+          "independent assignment re-evaluation",
+          "consequence ceiling"
+        ],
+        "note": "mandatory checks are never traded for cost; only optional deeper cognition is gated on its chance of changing the decision",
+        "policy": "cortex-thinking-budget/0.1"
+      },
+      "created_at": "2026-09-30T00:00:00Z",
+      "disposition": {
+        "kind": "bounded_test",
+        "next_step": "bounded_experiment",
+        "reason": "route states ['NOT_IDENTIFIED']"
+      },
+      "eligibility": [
+        {
+          "eligible": false,
+          "key": "cortex.deterrence.accountability@0.1.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support causal"
+          ]
+        },
+        {
+          "eligible": false,
+          "key": "cortex.estimation.fermi@0.1.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support causal"
+          ]
+        },
+        {
+          "eligible": true,
+          "key": "cortex.evidence_causal@0.1.0",
+          "may_recommend": true,
+          "reasons": []
+        },
+        {
+          "eligible": false,
+          "key": "cortex.extraction.schedule@0.1.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support causal"
+          ]
+        },
+        {
+          "eligible": false,
+          "key": "cortex.formal.z3@0.2.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support causal"
+          ]
+        },
+        {
+          "eligible": false,
+          "key": "cortex.optimization.cpsat@0.2.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support causal"
+          ]
+        },
+        {
+          "eligible": false,
+          "key": "cortex.semantic@0.1.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support causal"
+          ]
+        }
+      ],
+      "execution_authority": "none",
+      "expenditure": {
+        "model_calls": 0,
+        "seconds": 0.000592,
+        "solver_calls": 0,
+        "usd": 0.0
+      },
+      "gates": null,
+      "geometry": {
+        "ambiguity": "low",
+        "causal_structure": "unidentified",
+        "claim_type": "intervention",
+        "consequence_class": "internal_write",
+        "consequence_vector": {
+          "discrimination": "none",
+          "financial": "none",
+          "irreversible_disclosure": "none",
+          "physical": "none",
+          "privacy": "none",
+          "reputational": "none",
+          "rights": "none",
+          "systemic": "none",
+          "tail_risk": "none",
+          "third_party": "none"
+        },
+        "constraints": [],
+        "epistemic_class": "causal",
+        "evidence_quality": "none",
+        "exactness": "unknown",
+        "objective": "estimate_effect",
+        "problem_id": "SMOKE-CAUSAL",
+        "provenance": {
+          "consequence_class": {
+            "confidence": null,
+            "source": "requester_declared"
+          },
+          "epistemic_class": {
+            "confidence": 1.0,
+            "source": "payload_structure"
+          },
+          "reversibility": {
+            "confidence": null,
+            "source": "requester_declared"
+          }
+        },
+        "rejected_proposals": [],
+        "resource_limits": {
+          "max_cost_usd": 0.05,
+          "max_latency_s": 30.0,
+          "max_model_calls": 4,
+          "max_solver_calls": 64
+        },
+        "reversibility": "reversible",
+        "temporal_character": "static",
+        "uncertainty": "high",
+        "unresolved_fields": []
+      },
+      "inputs": {
+        "evidence_refs": [],
+        "payload_keys": [
+          "as_of",
+          "claim",
+          "declared"
+        ]
+      },
+      "l1_checks": [
+        {
+          "check": "schema_valid",
+          "detail": "problem and payload parsed",
+          "value": "pass"
+        },
+        {
+          "check": "as_of_present",
+          "detail": "2026-09-30",
+          "value": "pass"
+        },
+        {
+          "check": "evidence_fresh",
+          "detail": "no evidence items",
+          "value": "not_applicable"
+        },
+        {
+          "check": "no_instruction_text_in_sources",
+          "detail": "scanned sources",
+          "value": "not_applicable"
+        },
+        {
+          "check": "budget_declared",
+          "detail": {
+            "max_cost_usd": 0.05,
+            "max_latency_s": 30.0,
+            "max_model_calls": 4,
+            "max_solver_calls": 64
+          },
+          "value": "unknown"
+        },
+        {
+          "check": "formal_engine_available",
+          "detail": "no formal model",
+          "value": "not_applicable"
+        }
+      ],
+      "outcome": {
+        "outcome": "SMALL_EXPERIMENT",
+        "reasons": [
+          "NON_IDENTIFIABLE"
+        ],
+        "taxonomy": "directive-outcomes/0.1"
+      },
+      "outcome_link": {
+        "memory_keys": [
+          "cortex.evidence_causal@0.1.0|causal"
+        ],
+        "settlement_ref": null,
+        "status": "absent_feedback"
+      },
+      "output": {
+        "answer": null,
+        "per_route": [
+          {
+            "answer": null,
+            "assumptions": [],
+            "dependencies": [
+              "python-stdlib"
+            ],
+            "expenditure": {
+              "model_calls": 0,
+              "seconds": 2.5e-05,
+              "solver_calls": 0,
+              "usd": 0.0
+            },
+            "notes": [],
+            "organ_id": "cortex.evidence_causal@0.1.0",
+            "organ_version": "0.1.0",
+            "origin": "deterministic",
+            "proof": {
+              "as_of": "2026-09-30",
+              "available": [],
+              "claim": {
+                "id": "C1",
+                "statement": "a 10% loyalty discount raises 90-day retention",
+                "type": "intervention"
+              },
+              "contradiction_weight": 0,
+              "contradictions": [],
+              "excluded": [],
+              "identification": "absent",
+              "missing_observations": [
+                {
+                  "description": "an explicit estimand",
+                  "tag": "estimand"
+                },
+                {
+                  "description": "identification assumptions",
+                  "tag": "identification_assumptions"
+                },
+                {
+                  "description": "treatment, outcome and confounder data (or an experiment)",
+                  "tag": "treatment_outcome_confounder_data"
+                }
+              ],
+              "note": "association evidence does not identify an intervention effect",
+              "proof_class": "evidence_assessment",
+              "proposal": "bounded_experiment",
+              "provenance": [],
+              "stale": [],
+              "support_weight": 0,
+              "unresolved_question": "What is the effect of the intervention in 'a 10% loyalty discount raises 90-day retention'?"
+            },
+            "state": "NOT_IDENTIFIED",
+            "uncertainty": "unresolved"
+          }
+        ],
+        "state": "NOT_IDENTIFIED"
+      },
+      "problem": {
+        "payload_digest": "sha256:1d1f79200040b3b93635177f64183050dafe9283b64711e4602a0d910abad7b8",
+        "problem_id": "SMOKE-CAUSAL",
+        "question_digest": "sha256:997f49b7d94abbdcbbfcc656b510cede9f771d7d593c8d85274e57dcbb17ca72"
+      },
+      "proof_artifacts": [
+        {
+          "as_of": "2026-09-30",
+          "available": [],
+          "claim": {
+            "id": "C1",
+            "statement": "a 10% loyalty discount raises 90-day retention",
+            "type": "intervention"
+          },
+          "contradiction_weight": 0,
+          "contradictions": [],
+          "excluded": [],
+          "identification": "absent",
+          "missing_observations": [
+            {
+              "description": "an explicit estimand",
+              "tag": "estimand"
+            },
+            {
+              "description": "identification assumptions",
+              "tag": "identification_assumptions"
+            },
+            {
+              "description": "treatment, outcome and confounder data (or an experiment)",
+              "tag": "treatment_outcome_confounder_data"
+            }
+          ],
+          "note": "association evidence does not identify an intervention effect",
+          "proof_class": "evidence_assessment",
+          "proposal": "bounded_experiment",
+          "provenance": [],
+          "stale": [],
+          "support_weight": 0,
+          "unresolved_question": "What is the effect of the intervention in 'a 10% loyalty discount raises 90-day retention'?"
+        }
+      ],
+      "protection": null,
+      "ranking": null,
+      "receipt_id": "sha256:30bbf39b68bf438aedce149ba722b4d4585d81f4c182bea3aa3bc245ac56e4f2",
+      "route": {
+        "attempts": [],
+        "composition": false,
+        "formal_plan": null,
+        "policy": "cortex-route-policy/0.2",
+        "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
+        "selected": [
+          "cortex.evidence_causal@0.1.0"
+        ]
+      },
+      "schema": "cortex-receipt/0.2",
+      "shared_dependencies": {},
+      "truth": {
+        "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate",
+        "empirical_validity": "unknown",
+        "formal_validity": "not_applicable",
+        "legitimate_authority": "not_granted_by_cortex"
+      },
+      "uncertainty": "unresolved",
+      "verifier": {
+        "blocking": false,
+        "findings": [],
+        "independence": {
+          "independent_of_routes": true,
+          "note": "agreement between routes that share a model, solver or source is not independent verification",
+          "shared_between_routes": {},
+          "shared_with_routes": [],
+          "verifier": "cortex.verifier.adversarial@0.1.0",
+          "verifier_dependencies": [
+            "python-stdlib",
+            "rules:cortex.organs.adversarial"
+          ]
+        },
+        "proof_class": "verifier_findings",
+        "verifier": "cortex.verifier.adversarial@0.1.0"
+      },
+      "versions": {
+        "cortex": "0.2.0",
+        "policy": "cortex-route-policy/0.2",
+        "routes": {
+          "cortex.evidence_causal@0.1.0": "0.1.0"
+        }
+      }
+    },
+    "SMOKE-FERMI": {
+      "accountability": {
+        "falsification_conditions": [
+          {
+            "condition": "an observed value outside [11475.126155384243, 27916.70126325743] USD/year, or a reference class the estimate contradicts",
+            "route": "cortex.estimation.fermi@0.1.0"
+          }
+        ],
+        "missing_information": [],
+        "note": "competence evidence and proof narrow disputes; they never create authority",
+        "strongest_counterargument": {
+          "detail": "no reference-class anchor available",
+          "kind": "no_outside_view",
+          "severity": "minor"
+        }
+      },
+      "alternatives": [
+        {
+          "route": "cortex.deterrence.accountability@0.1.0",
+          "why_not": [
+            "does not support estimate"
+          ]
+        },
+        {
+          "route": "cortex.evidence_causal@0.1.0",
+          "why_not": [
+            "does not support estimate"
+          ]
+        },
+        {
+          "route": "cortex.extraction.schedule@0.1.0",
+          "why_not": [
+            "does not support estimate"
+          ]
+        },
+        {
+          "route": "cortex.formal.z3@0.2.0",
+          "why_not": [
+            "does not support estimate"
+          ]
+        },
+        {
+          "route": "cortex.optimization.cpsat@0.2.0",
+          "why_not": [
+            "does not support estimate"
+          ]
+        },
+        {
+          "route": "cortex.semantic@0.1.0",
+          "why_not": [
+            "does not support estimate"
+          ]
+        }
+      ],
+      "assumptions": [
+        "seats: range 40.0\u201380.0 is a 90% interval (lognormal)",
+        "price: range 20.0\u201335.0 is a 90% interval (lognormal)",
+        "assumed independent: [('seats', 'price')]"
+      ],
+      "authority_created": false,
+      "budget_controller": {
+        "decisions": [],
+        "mandatory": [
+          "eligibility gates",
+          "adversarial verifier",
+          "independent assignment re-evaluation",
+          "consequence ceiling"
+        ],
+        "note": "mandatory checks are never traded for cost; only optional deeper cognition is gated on its chance of changing the decision",
+        "policy": "cortex-thinking-budget/0.1"
+      },
+      "created_at": "2026-09-30T00:00:00Z",
+      "disposition": {
+        "kind": "recommend",
+        "next_step": null,
+        "reason": "route states ['OK']"
+      },
+      "eligibility": [
+        {
+          "eligible": false,
+          "key": "cortex.deterrence.accountability@0.1.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support estimate"
+          ]
+        },
+        {
+          "eligible": true,
+          "key": "cortex.estimation.fermi@0.1.0",
+          "may_recommend": true,
+          "reasons": []
+        },
+        {
+          "eligible": false,
+          "key": "cortex.evidence_causal@0.1.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support estimate"
+          ]
+        },
+        {
+          "eligible": false,
+          "key": "cortex.extraction.schedule@0.1.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support estimate"
+          ]
+        },
+        {
+          "eligible": false,
+          "key": "cortex.formal.z3@0.2.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support estimate"
+          ]
+        },
+        {
+          "eligible": false,
+          "key": "cortex.optimization.cpsat@0.2.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support estimate"
+          ]
+        },
+        {
+          "eligible": false,
+          "key": "cortex.semantic@0.1.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support estimate"
+          ]
+        }
+      ],
+      "execution_authority": "none",
+      "expenditure": {
+        "model_calls": 0,
+        "seconds": 0.175449,
+        "solver_calls": 0,
+        "usd": 0.0
+      },
+      "gates": null,
+      "geometry": {
+        "ambiguity": "low",
+        "causal_structure": "none",
+        "claim_type": null,
+        "consequence_class": "internal_write",
+        "consequence_vector": {
+          "discrimination": "none",
+          "financial": "none",
+          "irreversible_disclosure": "none",
+          "physical": "none",
+          "privacy": "none",
+          "reputational": "none",
+          "rights": "none",
+          "systemic": "none",
+          "tail_risk": "none",
+          "third_party": "none"
+        },
+        "constraints": [],
+        "epistemic_class": "estimate",
+        "evidence_quality": "none",
+        "exactness": "approximate_ok",
+        "objective": "estimate_quantity",
+        "problem_id": "SMOKE-FERMI",
+        "provenance": {
+          "consequence_class": {
+            "confidence": null,
+            "source": "requester_declared"
+          },
+          "epistemic_class": {
+            "confidence": 1.0,
+            "source": "payload_structure"
+          },
+          "reversibility": {
+            "confidence": null,
+            "source": "requester_declared"
+          }
+        },
+        "rejected_proposals": [],
+        "resource_limits": {
+          "max_cost_usd": 0.05,
+          "max_latency_s": 30.0,
+          "max_model_calls": 4,
+          "max_solver_calls": 64
+        },
+        "reversibility": "reversible",
+        "temporal_character": "static",
+        "uncertainty": "high",
+        "unresolved_fields": []
+      },
+      "inputs": {
+        "evidence_refs": [],
+        "payload_keys": [
+          "as_of",
+          "declared",
+          "estimation_model"
+        ]
+      },
+      "l1_checks": [
+        {
+          "check": "schema_valid",
+          "detail": "problem and payload parsed",
+          "value": "pass"
+        },
+        {
+          "check": "as_of_present",
+          "detail": "2026-09-30",
+          "value": "pass"
+        },
+        {
+          "check": "evidence_fresh",
+          "detail": "no evidence items",
+          "value": "not_applicable"
+        },
+        {
+          "check": "no_instruction_text_in_sources",
+          "detail": "scanned sources",
+          "value": "not_applicable"
+        },
+        {
+          "check": "budget_declared",
+          "detail": {
+            "max_cost_usd": 0.05,
+            "max_latency_s": 30.0,
+            "max_model_calls": 4,
+            "max_solver_calls": 64
+          },
+          "value": "unknown"
+        },
+        {
+          "check": "formal_engine_available",
+          "detail": "no formal model",
+          "value": "not_applicable"
+        }
+      ],
+      "outcome": {
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "reasons": [],
+        "taxonomy": "directive-outcomes/0.1"
+      },
+      "outcome_link": {
+        "memory_keys": [
+          "cortex.estimation.fermi@0.1.0|estimate"
+        ],
+        "settlement_ref": null,
+        "status": "absent_feedback"
+      },
+      "output": {
+        "answer": {
+          "high": 27916.70126325743,
+          "interval": 0.9,
+          "low": 11475.126155384243,
+          "median": 17959.554750094263,
+          "unit": "USD/year"
+        },
+        "per_route": [
+          {
+            "answer": {
+              "high": 27916.70126325743,
+              "interval": 0.9,
+              "low": 11475.126155384243,
+              "median": 17959.554750094263,
+              "unit": "USD/year"
+            },
+            "assumptions": [
+              "seats: range 40.0\u201380.0 is a 90% interval (lognormal)",
+              "price: range 20.0\u201335.0 is a 90% interval (lognormal)",
+              "assumed independent: [('seats', 'price')]"
+            ],
+            "dependencies": [
+              "python-stdlib"
+            ],
+            "expenditure": {
+              "model_calls": 0,
+              "seconds": 0.173942,
+              "solver_calls": 0,
+              "usd": 0.0
+            },
+            "notes": [],
+            "organ_id": "cortex.estimation.fermi@0.1.0",
+            "organ_version": "0.1.0",
+            "origin": "deterministic",
+            "proof": {
+              "decomposition": "annual_spend = (seats * price)",
+              "dependencies": [],
+              "dependency_effect": {
+                "interval_width_dependent": 16441.575107873185,
+                "interval_width_if_independent": 16441.575107873185,
+                "ratio": 1.0
+              },
+              "dominant_uncertainty": "seats",
+              "high": 27916.70126325743,
+              "inputs": [
+                {
+                  "dist": "lognormal",
+                  "high": 80.0,
+                  "low": 40.0,
+                  "name": "seats",
+                  "unit": "count"
+                },
+                {
+                  "dist": "lognormal",
+                  "high": 35.0,
+                  "low": 20.0,
+                  "name": "price",
+                  "unit": "USD/count/day"
+                }
+              ],
+              "interval": 0.9,
+              "low": 11475.126155384243,
+              "median": 17959.554750094263,
+              "proof_class": "estimation",
+              "reference_class": {
+                "available": false,
+                "note": "no reference class supplied"
+              },
+              "samples": 20000,
+              "seed": 7,
+              "sensitivity": [
+                {
+                  "rank_correlation": 0.7639,
+                  "swing": 12699.606293110168,
+                  "variable": "seats"
+                },
+                {
+                  "rank_correlation": 0.6076,
+                  "swing": 10182.337649086387,
+                  "variable": "price"
+                }
+              ],
+              "units": {
+                "canonical": "USD/day",
+                "dimension_check": "pass",
+                "result": "USD/day",
+                "target": "USD/year"
+              }
+            },
+            "state": "OK",
+            "uncertainty": "90% interval [1.148e+04, 2.792e+04] USD/year; dominant uncertainty: seats"
+          }
+        ],
+        "state": "OK"
+      },
+      "problem": {
+        "payload_digest": "sha256:17230380bf999a3bab58f8689db6a6aee80eb8fac97e2d823153bea424bbff19",
+        "problem_id": "SMOKE-FERMI",
+        "question_digest": "sha256:76a6ecfce6b5ac9a69283d52ddc4241079559f70d097f071908f5489ea7f865c"
+      },
+      "proof_artifacts": [
+        {
+          "decomposition": "annual_spend = (seats * price)",
+          "dependencies": [],
+          "dependency_effect": {
+            "interval_width_dependent": 16441.575107873185,
+            "interval_width_if_independent": 16441.575107873185,
+            "ratio": 1.0
+          },
+          "dominant_uncertainty": "seats",
+          "high": 27916.70126325743,
+          "inputs": [
+            {
+              "dist": "lognormal",
+              "high": 80.0,
+              "low": 40.0,
+              "name": "seats",
+              "unit": "count"
+            },
+            {
+              "dist": "lognormal",
+              "high": 35.0,
+              "low": 20.0,
+              "name": "price",
+              "unit": "USD/count/day"
+            }
+          ],
+          "interval": 0.9,
+          "low": 11475.126155384243,
+          "median": 17959.554750094263,
+          "proof_class": "estimation",
+          "reference_class": {
+            "available": false,
+            "note": "no reference class supplied"
+          },
+          "samples": 20000,
+          "seed": 7,
+          "sensitivity": [
+            {
+              "rank_correlation": 0.7639,
+              "swing": 12699.606293110168,
+              "variable": "seats"
+            },
+            {
+              "rank_correlation": 0.6076,
+              "swing": 10182.337649086387,
+              "variable": "price"
+            }
+          ],
+          "units": {
+            "canonical": "USD/day",
+            "dimension_check": "pass",
+            "result": "USD/day",
+            "target": "USD/year"
+          }
+        }
+      ],
+      "protection": null,
+      "ranking": null,
+      "receipt_id": "sha256:de0e669732c16ebc29e38388270d2215fbb727b350183230ea1f6566460d464f",
+      "route": {
+        "attempts": [],
+        "composition": false,
+        "formal_plan": null,
+        "policy": "cortex-route-policy/0.2",
+        "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
+        "selected": [
+          "cortex.estimation.fermi@0.1.0"
+        ]
+      },
+      "schema": "cortex-receipt/0.2",
+      "shared_dependencies": {},
+      "truth": {
+        "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate",
+        "empirical_validity": "unverified_estimate",
+        "formal_validity": "not_applicable",
+        "legitimate_authority": "not_granted_by_cortex"
+      },
+      "uncertainty": "90% interval [1.148e+04, 2.792e+04] USD/year; dominant uncertainty: seats",
+      "verifier": {
+        "blocking": false,
+        "findings": [
+          {
+            "detail": "no reference-class anchor available",
+            "kind": "no_outside_view",
+            "severity": "minor",
+            "target": null
+          },
+          {
+            "detail": "assumed independent: [('seats', 'price')]",
+            "kind": "independence_assumed",
+            "severity": "minor",
+            "target": null
+          }
+        ],
+        "independence": {
+          "independent_of_routes": true,
+          "note": "agreement between routes that share a model, solver or source is not independent verification",
+          "shared_between_routes": {},
+          "shared_with_routes": [],
+          "verifier": "cortex.verifier.adversarial@0.1.0",
+          "verifier_dependencies": [
+            "python-stdlib",
+            "rules:cortex.organs.adversarial"
+          ]
+        },
+        "proof_class": "verifier_findings",
+        "verifier": "cortex.verifier.adversarial@0.1.0"
+      },
+      "versions": {
+        "cortex": "0.2.0",
+        "policy": "cortex-route-policy/0.2",
+        "routes": {
+          "cortex.estimation.fermi@0.1.0": "0.1.0"
+        }
+      }
+    },
+    "SMOKE-FORMAL": {
+      "accountability": {
+        "falsification_conditions": [
+          {
+            "condition": "the reported model violating a constraint, or a requirement the encoding omits, or premise ['P_avail'] found false",
+            "route": "cortex.formal.z3@0.2.0"
+          }
+        ],
+        "missing_information": [],
+        "note": "competence evidence and proof narrow disputes; they never create authority",
+        "strongest_counterargument": {
+          "detail": "C_end_A is implied by the others",
+          "kind": "redundant_constraint",
+          "severity": "minor"
+        }
+      },
+      "alternatives": [
+        {
+          "route": "cortex.deterrence.accountability@0.1.0",
+          "why_not": [
+            "does not support constraint_feasibility"
+          ]
+        },
+        {
+          "route": "cortex.estimation.fermi@0.1.0",
+          "why_not": [
+            "does not support constraint_feasibility"
+          ]
+        },
+        {
+          "route": "cortex.evidence_causal@0.1.0",
+          "why_not": [
+            "does not support constraint_feasibility"
+          ]
+        },
+        {
+          "route": "cortex.extraction.schedule@0.1.0",
+          "why_not": [
+            "not required by this payload"
+          ]
+        },
+        {
+          "route": "cortex.optimization.cpsat@0.2.0",
+          "why_not": [
+            "not required by this payload"
+          ]
+        },
+        {
+          "route": "cortex.semantic@0.1.0",
+          "why_not": [
+            "does not support constraint_feasibility"
+          ]
+        }
+      ],
+      "assumptions": [
+        "premise P_avail: the machine is available for the whole 8h shift (verified=True)"
+      ],
+      "authority_created": false,
+      "budget_controller": {
+        "decisions": [
+          {
+            "reason": "the returned assignment is re-checked against every source constraint by the solver-independent evaluator; a second engine cannot change a verified witness",
+            "step": "second engine",
+            "taken": false
+          }
+        ],
+        "mandatory": [
+          "eligibility gates",
+          "adversarial verifier",
+          "independent assignment re-evaluation",
+          "consequence ceiling"
+        ],
+        "note": "mandatory checks are never traded for cost; only optional deeper cognition is gated on its chance of changing the decision",
+        "policy": "cortex-thinking-budget/0.1"
+      },
+      "created_at": "2026-09-30T00:00:00Z",
+      "disposition": {
+        "kind": "recommend",
+        "next_step": null,
+        "reason": "route states ['OK']"
+      },
+      "eligibility": [
+        {
+          "eligible": false,
+          "key": "cortex.deterrence.accountability@0.1.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support constraint_feasibility"
+          ]
+        },
+        {
+          "eligible": false,
+          "key": "cortex.estimation.fermi@0.1.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support constraint_feasibility"
+          ]
+        },
+        {
+          "eligible": false,
+          "key": "cortex.evidence_causal@0.1.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support constraint_feasibility"
+          ]
+        },
+        {
+          "eligible": true,
+          "key": "cortex.extraction.schedule@0.1.0",
+          "may_recommend": true,
+          "reasons": []
+        },
+        {
+          "eligible": true,
+          "key": "cortex.formal.z3@0.2.0",
+          "may_recommend": true,
+          "reasons": []
+        },
+        {
+          "eligible": true,
+          "key": "cortex.optimization.cpsat@0.2.0",
+          "may_recommend": true,
+          "reasons": []
+        },
+        {
+          "eligible": false,
+          "key": "cortex.semantic@0.1.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support constraint_feasibility"
+          ]
+        }
+      ],
+      "execution_authority": "none",
+      "expenditure": {
+        "model_calls": 0,
+        "seconds": 0.058293,
+        "solver_calls": 7,
+        "usd": 0.0
+      },
+      "gates": null,
+      "geometry": {
+        "ambiguity": "low",
+        "causal_structure": "none",
+        "claim_type": null,
+        "consequence_class": "internal_write",
+        "consequence_vector": {
+          "discrimination": "none",
+          "financial": "none",
+          "irreversible_disclosure": "none",
+          "physical": "none",
+          "privacy": "none",
+          "reputational": "none",
+          "rights": "none",
+          "systemic": "none",
+          "tail_risk": "none",
+          "third_party": "none"
+        },
+        "constraints": [
+          "C_end_A",
+          "C_end_B",
+          "C_one_AB",
+          "C_prec_AB"
+        ],
+        "epistemic_class": "constraint_feasibility",
+        "evidence_quality": "none",
+        "exactness": "exact_required",
+        "objective": "decide_feasibility",
+        "problem_id": "SMOKE-FORMAL",
+        "provenance": {
+          "consequence_class": {
+            "confidence": null,
+            "source": "requester_declared"
+          },
+          "epistemic_class": {
+            "confidence": 1.0,
+            "source": "payload_structure"
+          },
+          "reversibility": {
+            "confidence": null,
+            "source": "requester_declared"
+          }
+        },
+        "rejected_proposals": [],
+        "resource_limits": {
+          "max_cost_usd": 0.05,
+          "max_latency_s": 30.0,
+          "max_model_calls": 4,
+          "max_solver_calls": 64
+        },
+        "reversibility": "reversible",
+        "temporal_character": "static",
+        "uncertainty": "low",
+        "unresolved_fields": []
+      },
+      "inputs": {
+        "evidence_refs": [],
+        "payload_keys": [
+          "as_of",
+          "declared",
+          "formal_model"
+        ]
+      },
+      "l1_checks": [
+        {
+          "check": "schema_valid",
+          "detail": "problem and payload parsed",
+          "value": "pass"
+        },
+        {
+          "check": "as_of_present",
+          "detail": "2026-09-30",
+          "value": "pass"
+        },
+        {
+          "check": "evidence_fresh",
+          "detail": "no evidence items",
+          "value": "not_applicable"
+        },
+        {
+          "check": "no_instruction_text_in_sources",
+          "detail": "scanned sources",
+          "value": "not_applicable"
+        },
+        {
+          "check": "budget_declared",
+          "detail": {
+            "max_cost_usd": 0.05,
+            "max_latency_s": 30.0,
+            "max_model_calls": 4,
+            "max_solver_calls": 64
+          },
+          "value": "unknown"
+        },
+        {
+          "check": "formal_engine_available",
+          "detail": {
+            "excluded": {},
+            "order": [
+              "cortex.formal.z3@0.2.0",
+              "cortex.optimization.cpsat@0.2.0"
+            ]
+          },
+          "value": "pass"
+        }
+      ],
+      "outcome": {
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "reasons": [],
+        "taxonomy": "directive-outcomes/0.1"
+      },
+      "outcome_link": {
+        "memory_keys": [
+          "cortex.formal.z3@0.2.0|constraint_feasibility"
+        ],
+        "settlement_ref": null,
+        "status": "absent_feedback"
+      },
+      "output": {
+        "answer": {
+          "feasible": true,
+          "model": {
+            "s_A": 0,
+            "s_B": 3
+          }
+        },
+        "per_route": [
+          {
+            "answer": {
+              "feasible": true,
+              "model": {
+                "s_A": 0,
+                "s_B": 3
+              }
+            },
+            "assumptions": [
+              "premise P_avail: the machine is available for the whole 8h shift (verified=True)"
+            ],
+            "dependencies": [
+              "solver:z3"
+            ],
+            "expenditure": {
+              "model_calls": 0,
+              "seconds": 0.055792,
+              "solver_calls": 7,
+              "usd": 0.0
+            },
+            "notes": [],
+            "organ_id": "cortex.formal.z3@0.2.0",
+            "organ_version": "0.2.0",
+            "origin": "solver",
+            "proof": {
+              "completeness": "not established by reverse translation",
+              "counterexample_search": [
+                {
+                  "constraint": "C_end_A",
+                  "result": "implied by the others (redundant or mis-encoded?)"
+                },
+                {
+                  "constraint": "C_end_B",
+                  "result": "binding: violable without it"
+                },
+                {
+                  "constraint": "C_one_AB",
+                  "result": "implied by the others (redundant or mis-encoded?)"
+                },
+                {
+                  "constraint": "C_prec_AB",
+                  "result": "binding: violable without it"
+                }
+              ],
+              "discrepancy_check": {
+                "discrepancies": [],
+                "warnings": [],
+                "witnesses": [
+                  {
+                    "agrees": true,
+                    "index": 0,
+                    "kind": "satisfying",
+                    "witness": {
+                      "s_A": 0,
+                      "s_B": 3
+                    }
+                  },
+                  {
+                    "agrees": true,
+                    "index": 0,
+                    "kind": "violating",
+                    "witness": {
+                      "s_A": 0,
+                      "s_B": 0
+                    }
+                  }
+                ]
+              },
+              "original_requirement": "Jobs A (3h), B (4h) on one machine within a 8h shift; order A before B.",
+              "premises": [
+                {
+                  "evidence_ref": "maintenance-log",
+                  "id": "P_avail",
+                  "text": "the machine is available for the whole 8h shift",
+                  "verified": true
+                }
+              ],
+              "proof_class": "formal",
+              "reverse_translation": [
+                "s_A is an integer in [0, 8]",
+                "s_B is an integer in [0, 8]",
+                "C_end_A (covers R_end_A): (s_A + 3) \u2264 8",
+                "C_end_B (covers R_end_B): (s_B + 4) \u2264 8",
+                "C_one_AB (covers R_one): ((s_A + 3) \u2264 s_B) or ((s_B + 4) \u2264 s_A)",
+                "C_prec_AB (covers R_prec_AB): s_B \u2265 (s_A + 3)"
+              ],
+              "scope": "valid_given_encoding",
+              "solver": {
+                "model": {
+                  "s_A": 0,
+                  "s_B": 3
+                },
+                "name": "z3",
+                "status": "SAT",
+                "version": "5.1.0"
+              },
+              "structured_model": {
+                "bounds": {
+                  "s_A": [
+                    0,
+                    8
+                  ],
+                  "s_B": [
+                    0,
+                    8
+                  ]
+                },
+                "constraints": [
+                  {
+                    "covers": [
+                      "R_end_A"
+                    ],
+                    "expr": [
+                      "<=",
+                      [
+                        "+",
+                        "s_A",
+                        3
+                      ],
+                      8
+                    ],
+                    "id": "C_end_A"
+                  },
+                  {
+                    "covers": [
+                      "R_end_B"
+                    ],
+                    "expr": [
+                      "<=",
+                      [
+                        "+",
+                        "s_B",
+                        4
+                      ],
+                      8
+                    ],
+                    "id": "C_end_B"
+                  },
+                  {
+                    "covers": [
+                      "R_one"
+                    ],
+                    "expr": [
+                      "or",
+                      [
+                        "<=",
+                        [
+                          "+",
+                          "s_A",
+                          3
+                        ],
+                        "s_B"
+                      ],
+                      [
+                        "<=",
+                        [
+                          "+",
+                          "s_B",
+                          4
+                        ],
+                        "s_A"
+                      ]
+                    ],
+                    "id": "C_one_AB"
+                  },
+                  {
+                    "covers": [
+                      "R_prec_AB"
+                    ],
+                    "expr": [
+                      ">=",
+                      "s_B",
+                      [
+                        "+",
+                        "s_A",
+                        3
+                      ]
+                    ],
+                    "id": "C_prec_AB"
+                  }
+                ],
+                "obligations": {
+                  "R_end_A": "job A (3h) ends within the 8h shift",
+                  "R_end_B": "job B (4h) ends within the 8h shift",
+                  "R_one": "the machine runs one job at a time",
+                  "R_prec_AB": "job B starts after job A ends"
+                },
+                "query": {
+                  "kind": "feasibility"
+                },
+                "variables": {
+                  "s_A": "int",
+                  "s_B": "int"
+                }
+              },
+              "unverified_premises": []
+            },
+            "state": "OK",
+            "uncertainty": "formally exact given the encoding; empirical correspondence rests on verified premises"
+          }
+        ],
+        "state": "OK"
+      },
+      "problem": {
+        "payload_digest": "sha256:2f14f8181d112ac7dc036aac4de18104d7b9ac1ca0509432a3e3409ee7fe1c0b",
+        "problem_id": "SMOKE-FORMAL",
+        "question_digest": "sha256:b8c908d40414cf150965da073dcd965f43ffb7b20063ecb191df9019f99e1fd3"
+      },
+      "proof_artifacts": [
+        {
+          "completeness": "not established by reverse translation",
+          "counterexample_search": [
+            {
+              "constraint": "C_end_A",
+              "result": "implied by the others (redundant or mis-encoded?)"
+            },
+            {
+              "constraint": "C_end_B",
+              "result": "binding: violable without it"
+            },
+            {
+              "constraint": "C_one_AB",
+              "result": "implied by the others (redundant or mis-encoded?)"
+            },
+            {
+              "constraint": "C_prec_AB",
+              "result": "binding: violable without it"
+            }
+          ],
+          "discrepancy_check": {
+            "discrepancies": [],
+            "warnings": [],
+            "witnesses": [
+              {
+                "agrees": true,
+                "index": 0,
+                "kind": "satisfying",
+                "witness": {
+                  "s_A": 0,
+                  "s_B": 3
+                }
+              },
+              {
+                "agrees": true,
+                "index": 0,
+                "kind": "violating",
+                "witness": {
+                  "s_A": 0,
+                  "s_B": 0
+                }
+              }
+            ]
+          },
+          "original_requirement": "Jobs A (3h), B (4h) on one machine within a 8h shift; order A before B.",
+          "premises": [
+            {
+              "evidence_ref": "maintenance-log",
+              "id": "P_avail",
+              "text": "the machine is available for the whole 8h shift",
+              "verified": true
+            }
+          ],
+          "proof_class": "formal",
+          "reverse_translation": [
+            "s_A is an integer in [0, 8]",
+            "s_B is an integer in [0, 8]",
+            "C_end_A (covers R_end_A): (s_A + 3) \u2264 8",
+            "C_end_B (covers R_end_B): (s_B + 4) \u2264 8",
+            "C_one_AB (covers R_one): ((s_A + 3) \u2264 s_B) or ((s_B + 4) \u2264 s_A)",
+            "C_prec_AB (covers R_prec_AB): s_B \u2265 (s_A + 3)"
+          ],
+          "scope": "valid_given_encoding",
+          "solver": {
+            "model": {
+              "s_A": 0,
+              "s_B": 3
+            },
+            "name": "z3",
+            "status": "SAT",
+            "version": "5.1.0"
+          },
+          "structured_model": {
+            "bounds": {
+              "s_A": [
+                0,
+                8
+              ],
+              "s_B": [
+                0,
+                8
+              ]
+            },
+            "constraints": [
+              {
+                "covers": [
+                  "R_end_A"
+                ],
+                "expr": [
+                  "<=",
+                  [
+                    "+",
+                    "s_A",
+                    3
+                  ],
+                  8
+                ],
+                "id": "C_end_A"
+              },
+              {
+                "covers": [
+                  "R_end_B"
+                ],
+                "expr": [
+                  "<=",
+                  [
+                    "+",
+                    "s_B",
+                    4
+                  ],
+                  8
+                ],
+                "id": "C_end_B"
+              },
+              {
+                "covers": [
+                  "R_one"
+                ],
+                "expr": [
+                  "or",
+                  [
+                    "<=",
+                    [
+                      "+",
+                      "s_A",
+                      3
+                    ],
+                    "s_B"
+                  ],
+                  [
+                    "<=",
+                    [
+                      "+",
+                      "s_B",
+                      4
+                    ],
+                    "s_A"
+                  ]
+                ],
+                "id": "C_one_AB"
+              },
+              {
+                "covers": [
+                  "R_prec_AB"
+                ],
+                "expr": [
+                  ">=",
+                  "s_B",
+                  [
+                    "+",
+                    "s_A",
+                    3
+                  ]
+                ],
+                "id": "C_prec_AB"
+              }
+            ],
+            "obligations": {
+              "R_end_A": "job A (3h) ends within the 8h shift",
+              "R_end_B": "job B (4h) ends within the 8h shift",
+              "R_one": "the machine runs one job at a time",
+              "R_prec_AB": "job B starts after job A ends"
+            },
+            "query": {
+              "kind": "feasibility"
+            },
+            "variables": {
+              "s_A": "int",
+              "s_B": "int"
+            }
+          },
+          "unverified_premises": []
+        }
+      ],
+      "protection": null,
+      "ranking": null,
+      "receipt_id": "sha256:09accaede41b2e4fb6908ba9852fb6c5fd55f4ed6102c93b034215d388d8b4d7",
+      "route": {
+        "attempts": [],
+        "composition": false,
+        "formal_plan": {
+          "excluded": {},
+          "order": [
+            "cortex.formal.z3@0.2.0",
+            "cortex.optimization.cpsat@0.2.0"
+          ],
+          "policy": "cortex-route-policy/0.2",
+          "policy_order": [
+            "cortex.formal.z3@0.2.0",
+            "cortex.optimization.cpsat@0.2.0"
+          ],
+          "query_kind": "feasibility"
+        },
+        "policy": "cortex-route-policy/0.2",
+        "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
+        "selected": [
+          "cortex.formal.z3@0.2.0"
+        ]
+      },
+      "schema": "cortex-receipt/0.2",
+      "shared_dependencies": {},
+      "truth": {
+        "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate",
+        "empirical_validity": "premises_verified",
+        "formal_validity": "valid_given_encoding",
+        "legitimate_authority": "not_granted_by_cortex"
+      },
+      "uncertainty": "formally exact given the encoding; empirical correspondence rests on verified premises",
+      "verifier": {
+        "blocking": false,
+        "findings": [
+          {
+            "detail": "C_end_A is implied by the others",
+            "kind": "redundant_constraint",
+            "severity": "minor",
+            "target": null
+          },
+          {
+            "detail": "C_one_AB is implied by the others",
+            "kind": "redundant_constraint",
+            "severity": "minor",
+            "target": null
+          }
+        ],
+        "independence": {
+          "independent_of_routes": true,
+          "note": "agreement between routes that share a model, solver or source is not independent verification",
+          "shared_between_routes": {},
+          "shared_with_routes": [],
+          "verifier": "cortex.verifier.adversarial@0.1.0",
+          "verifier_dependencies": [
+            "python-stdlib",
+            "rules:cortex.organs.adversarial"
+          ]
+        },
+        "proof_class": "verifier_findings",
+        "verifier": "cortex.verifier.adversarial@0.1.0"
+      },
+      "versions": {
+        "cortex": "0.2.0",
+        "policy": "cortex-route-policy/0.2",
+        "routes": {
+          "cortex.formal.z3@0.2.0": "0.2.0"
+        },
+        "solver": {
+          "name": "z3",
+          "version": "5.1.0"
+        }
+      }
+    },
+    "SMOKE-SEM": {
+      "accountability": {
+        "falsification_conditions": [
+          {
+            "condition": "no claim asserted; nothing to falsify",
+            "route": "cortex.semantic@0.1.0"
+          }
+        ],
+        "missing_information": [],
+        "note": "competence evidence and proof narrow disputes; they never create authority",
+        "strongest_counterargument": null
+      },
+      "alternatives": [
+        {
+          "route": "cortex.deterrence.accountability@0.1.0",
+          "why_not": [
+            "does not support semantic"
+          ]
+        },
+        {
+          "route": "cortex.estimation.fermi@0.1.0",
+          "why_not": [
+            "does not support semantic"
+          ]
+        },
+        {
+          "route": "cortex.evidence_causal@0.1.0",
+          "why_not": [
+            "not required by this payload"
+          ]
+        },
+        {
+          "route": "cortex.extraction.schedule@0.1.0",
+          "why_not": [
+            "does not support semantic"
+          ]
+        },
+        {
+          "route": "cortex.formal.z3@0.2.0",
+          "why_not": [
+            "does not support semantic"
+          ]
+        },
+        {
+          "route": "cortex.optimization.cpsat@0.2.0",
+          "why_not": [
+            "does not support semantic"
+          ]
+        }
+      ],
+      "assumptions": [],
+      "authority_created": false,
+      "budget_controller": {
+        "decisions": [],
+        "mandatory": [
+          "eligibility gates",
+          "adversarial verifier",
+          "independent assignment re-evaluation",
+          "consequence ceiling"
+        ],
+        "note": "mandatory checks are never traded for cost; only optional deeper cognition is gated on its chance of changing the decision",
+        "policy": "cortex-thinking-budget/0.1"
+      },
+      "created_at": "2026-09-30T00:00:00Z",
+      "disposition": {
+        "kind": "abstain",
+        "next_step": "acquire the missing input",
+        "reason": "route states ['DEPENDENCY_UNAVAILABLE']"
+      },
+      "eligibility": [
+        {
+          "eligible": false,
+          "key": "cortex.deterrence.accountability@0.1.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support semantic"
+          ]
+        },
+        {
+          "eligible": false,
+          "key": "cortex.estimation.fermi@0.1.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support semantic"
+          ]
+        },
+        {
+          "eligible": true,
+          "key": "cortex.evidence_causal@0.1.0",
+          "may_recommend": true,
+          "reasons": []
+        },
+        {
+          "eligible": false,
+          "key": "cortex.extraction.schedule@0.1.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support semantic"
+          ]
+        },
+        {
+          "eligible": false,
+          "key": "cortex.formal.z3@0.2.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support semantic"
+          ]
+        },
+        {
+          "eligible": false,
+          "key": "cortex.optimization.cpsat@0.2.0",
+          "may_recommend": false,
+          "reasons": [
+            "does not support semantic"
+          ]
+        },
+        {
+          "eligible": true,
+          "key": "cortex.semantic@0.1.0",
+          "may_recommend": true,
+          "reasons": []
+        }
+      ],
+      "execution_authority": "none",
+      "expenditure": {
+        "model_calls": 1,
+        "seconds": 0.001084,
+        "solver_calls": 0,
+        "usd": 0.0
+      },
+      "gates": null,
+      "geometry": {
+        "ambiguity": "low",
+        "causal_structure": "none",
+        "claim_type": null,
+        "consequence_class": "internal_write",
+        "consequence_vector": {
+          "discrimination": "none",
+          "financial": "none",
+          "irreversible_disclosure": "none",
+          "physical": "none",
+          "privacy": "none",
+          "reputational": "none",
+          "rights": "none",
+          "systemic": "none",
+          "tail_risk": "none",
+          "third_party": "none"
+        },
+        "constraints": [],
+        "epistemic_class": "semantic",
+        "evidence_quality": "low",
+        "exactness": "unknown",
+        "objective": "synthesize",
+        "problem_id": "SMOKE-SEM",
+        "provenance": {
+          "consequence_class": {
+            "confidence": null,
+            "source": "requester_declared"
+          },
+          "epistemic_class": {
+            "confidence": 1.0,
+            "source": "payload_structure"
+          },
+          "reversibility": {
+            "confidence": null,
+            "source": "requester_declared"
+          }
+        },
+        "rejected_proposals": [],
+        "resource_limits": {
+          "max_cost_usd": 0.05,
+          "max_latency_s": 30.0,
+          "max_model_calls": 4,
+          "max_solver_calls": 64
+        },
+        "reversibility": "reversible",
+        "temporal_character": "static",
+        "uncertainty": "unknown",
+        "unresolved_fields": []
+      },
+      "inputs": {
+        "evidence_refs": [
+          "S1",
+          "S2"
+        ],
+        "payload_keys": [
+          "as_of",
+          "declared",
+          "sources"
+        ]
+      },
+      "l1_checks": [
+        {
+          "check": "schema_valid",
+          "detail": "problem and payload parsed",
+          "value": "pass"
+        },
+        {
+          "check": "as_of_present",
+          "detail": "2026-09-30",
+          "value": "pass"
+        },
+        {
+          "check": "evidence_fresh",
+          "detail": "no evidence items",
+          "value": "not_applicable"
+        },
+        {
+          "check": "no_instruction_text_in_sources",
+          "detail": "scanned sources",
+          "value": "pass"
+        },
+        {
+          "check": "budget_declared",
+          "detail": {
+            "max_cost_usd": 0.05,
+            "max_latency_s": 30.0,
+            "max_model_calls": 4,
+            "max_solver_calls": 64
+          },
+          "value": "unknown"
+        },
+        {
+          "check": "formal_engine_available",
+          "detail": "no formal model",
+          "value": "not_applicable"
+        }
+      ],
+      "outcome": {
+        "outcome": "ABSTAIN",
+        "reasons": [
+          "CAPABILITY_UNAVAILABLE"
+        ],
+        "taxonomy": "directive-outcomes/0.1"
+      },
+      "outcome_link": {
+        "memory_keys": [
+          "cortex.semantic@0.1.0|semantic"
+        ],
+        "settlement_ref": null,
+        "status": "absent_feedback"
+      },
+      "output": {
+        "answer": null,
+        "per_route": [
+          {
+            "answer": null,
+            "assumptions": [],
+            "dependencies": [
+              "model:unknown",
+              "egregore.local_model"
+            ],
+            "expenditure": {
+              "model_calls": 1,
+              "seconds": 0.000492,
+              "solver_calls": 0,
+              "usd": 0.0
+            },
+            "notes": [],
+            "organ_id": "cortex.semantic@0.1.0",
+            "organ_version": "0.1.0",
+            "origin": "model_output",
+            "proof": {
+              "failure": "model unavailable: URLError: <urlopen error [Errno 111] Connection refused>",
+              "proof_class": "semantic_sourced"
+            },
+            "state": "DEPENDENCY_UNAVAILABLE",
+            "uncertainty": "unresolved"
+          }
+        ],
+        "state": "DEPENDENCY_UNAVAILABLE"
+      },
+      "problem": {
+        "payload_digest": "sha256:e42ff0fad32c5f49d152e123c659a155561666d4cc98bbbb946c8ddfa7038853",
+        "problem_id": "SMOKE-SEM",
+        "question_digest": "sha256:42a95b7f07ecc4dcf0329f80862714d27e65480119b02e06a0bbcdf11ba60f92"
+      },
+      "proof_artifacts": [
+        {
+          "failure": "model unavailable: URLError: <urlopen error [Errno 111] Connection refused>",
+          "proof_class": "semantic_sourced"
+        }
+      ],
+      "protection": null,
+      "ranking": null,
+      "receipt_id": "sha256:0042b24d96939e3bb5f1619699e9b7f16c8dc805f9a467d8f9bef90750db1da0",
+      "route": {
+        "attempts": [],
+        "composition": false,
+        "formal_plan": null,
+        "policy": "cortex-route-policy/0.2",
+        "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
+        "selected": [
+          "cortex.semantic@0.1.0"
+        ]
+      },
+      "schema": "cortex-receipt/0.2",
+      "shared_dependencies": {},
+      "truth": {
+        "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate",
+        "empirical_validity": "unknown",
+        "formal_validity": "not_applicable",
+        "legitimate_authority": "not_granted_by_cortex"
+      },
+      "uncertainty": "unresolved",
+      "verifier": {
+        "blocking": false,
+        "findings": [],
+        "independence": {
+          "independent_of_routes": true,
+          "note": "agreement between routes that share a model, solver or source is not independent verification",
+          "shared_between_routes": {},
+          "shared_with_routes": [],
+          "verifier": "cortex.verifier.adversarial@0.1.0",
+          "verifier_dependencies": [
+            "python-stdlib",
+            "rules:cortex.organs.adversarial"
+          ]
+        },
+        "proof_class": "verifier_findings",
+        "verifier": "cortex.verifier.adversarial@0.1.0"
+      },
+      "versions": {
+        "cortex": "0.2.0",
+        "policy": "cortex-route-policy/0.2",
+        "routes": {
+          "cortex.semantic@0.1.0": "0.1.0"
+        }
+      }
+    }
+  },
+  "resource_disclosure": {
+    "always_abstain": "no computation; scoring-rule reference only",
+    "always_llm": "one call per item to the configured local model (egregore.local_model defaults)",
+    "llm_committee": "three calls per item to the same local model; majority vote",
+    "routed_seed": "Python + z3 solver in-process; semantic route uses the same local model as the baselines; latency includes geometry, eligibility, gates, verification and receipt construction"
+  },
+  "run_at": "2026-10-01T14:40:22Z",
+  "schema": "cortex-seed-results/0.1"
+}

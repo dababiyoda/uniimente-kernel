@@ -1,0 +1,358 @@
+{
+  "decision_id": "FM-OCI-20261002",
+  "title": "Package and actually rebuild an owned restricted-rule OCI capability",
+  "problem": "System9 has no executable OCI packaging despite the available disposable Docker host. Package an existing owned capability and prove immutable image rebuild and second-environment execution.",
+  "founder_intent_refs": [
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-2026-09-27-FOUNDRY-55"
+  ],
+  "baseline": "Linked FM-LANDLOCK-20261001; PR147 closure head492e6906 CI pending. Existing system2 DSL and system53 fixed-timestamp source packaging; current system9 is PARTIAL.",
+  "alternatives": [
+    {
+      "name": "simplest_viable_alternative",
+      "description": "Use official Python and BuildKit resolved immutable digests, fixed timestamps and exact existing DSL bytes. Build twice on disposable CI and compare OCI content/config/layer digests.",
+      "advantages": [
+        "No new evaluator or authority owner."
+      ],
+      "disadvantages": [
+        "Requires actual Docker/registry availability and independently checked output."
+      ],
+      "revival_evidence": "New image/runtime/dependency evidence; wider machine obligations remain active."
+    },
+    {
+      "name": "strongest_competing_architecture",
+      "description": "Package the full GREG and all organ dependencies with gVisor-class execution.",
+      "advantages": [
+        "Advances broad machine portability and general source execution."
+      ],
+      "disadvantages": [
+        "Needs larger dependency closure, stronger runner and actual escape/revocation evidence; cannot be claimed from this capability image."
+      ],
+      "revival_evidence": "New image/runtime/dependency evidence; wider machine obligations remain active."
+    },
+    {
+      "name": "reversible_experiment",
+      "description": "Actual signed fixture Body packages context, CI independently builds twice and executes restricted valid/refused requests.",
+      "advantages": [
+        "Closes image evidence with no public activation or image push."
+      ],
+      "disadvantages": [
+        "Fixture founder key and restricted capability are not full machine or live founder acceptance."
+      ],
+      "revival_evidence": "New image/runtime/dependency evidence; wider machine obligations remain active."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Leave a buildable portability dependency as architecture prose.",
+    "advantages": [
+      "No build tooling addition."
+    ],
+    "disadvantages": [
+      "Repeats local-proof stopping and leaves system9 unfinished."
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Package actual owned capability; successful proof immediately resumes full Body + Organs + Mind. These are distinct analytical perspectives of one agent, not independent reviewers.",
+      "material_concerns": [
+        "A context registry can masquerade as OCI execution."
+      ],
+      "evidence_refs": [
+        "foundry/systems/oci.py",
+        "scripts/ci/prove_oci.py",
+        "tests/unit/test_greg_oci.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Reuse system2 evaluator and system53 epoch; only immutable official base is accepted. GREG worker never receives Docker socket. These are distinct analytical perspectives of one agent, not independent reviewers.",
+      "material_concerns": [
+        "New container package might create a second runtime/authority owner."
+      ],
+      "evidence_refs": [
+        "foundry/systems/oci.py",
+        "scripts/ci/prove_oci.py",
+        "tests/unit/test_greg_oci.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Refuse mutable/foreign/injected bases and arbitrary source; rootless non-network container with read-only filesystem, no capabilities, CPU/memory/PID ceilings. These are distinct analytical perspectives of one agent, not independent reviewers.",
+      "material_concerns": [
+        "Ordinary Docker cannot establish system10 gVisor-class containment."
+      ],
+      "evidence_refs": [
+        "foundry/systems/oci.py",
+        "scripts/ci/prove_oci.py",
+        "tests/unit/test_greg_oci.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Retain actual OCI archives, source/base/builder/tool versions, paired digests and host/container cases. Clean builder in finally. These are distinct analytical perspectives of one agent, not independent reviewers.",
+      "material_concerns": [
+        "Timestamp/tool drift may make nominal rebuilds differ."
+      ],
+      "evidence_refs": [
+        "foundry/systems/oci.py",
+        "scripts/ci/prove_oci.py",
+        "tests/unit/test_greg_oci.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Use fixture founder key and local CI image only, no push or public action. Partial wider packaging and isolation remain explicit. These are distinct analytical perspectives of one agent, not independent reviewers.",
+      "material_concerns": [
+        "A single capability image might be represented as full-machine completion."
+      ],
+      "evidence_refs": [
+        "foundry/systems/oci.py",
+        "scripts/ci/prove_oci.py",
+        "tests/unit/test_greg_oci.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Actual host Docker exists",
+      "tier": "sandbox_execution",
+      "reference": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36993709647",
+      "finding": "Docker28.0.4 observed; that run failed one confined MCP dependency test and proves no OCI capability."
+    },
+    {
+      "claim": "Reproducible image mechanism",
+      "tier": "primary_source",
+      "reference": "https://docs.docker.com/build/ci/github-actions/reproducible-builds/",
+      "finding": "SOURCE_DATE_EPOCH normalizes build timestamps; actual paired output comparison remains mandatory."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "OCI image already verified",
+      "tier": "other",
+      "reference": "scripts/ci/prove_oci.py",
+      "finding": "Not yet: fresh hosted build/export/run evidence required. Local host has no Docker CLI."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "System9 has no executable OCI packaging despite the available disposable Docker host. Package an existing owned capability and prove immutable image rebuild and second-environment execution.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Package actual owned capability; successful proof immediately resumes full Body + Organs + Mind.",
+        "amplified_value": "Advance interoperable machine capability with canonical authority."
+      },
+      {
+        "id": "A2",
+        "statement": "Reuse system2 evaluator and system53 epoch; only immutable official base is accepted. GREG worker never receives Docker socket.",
+        "amplified_value": "Advance interoperable machine capability with canonical authority."
+      },
+      {
+        "id": "A3",
+        "statement": "Refuse mutable/foreign/injected bases and arbitrary source; rootless non-network container with read-only filesystem, no capabilities, CPU/memory/PID ceilings.",
+        "amplified_value": "Advance interoperable machine capability with canonical authority."
+      },
+      {
+        "id": "A4",
+        "statement": "Retain actual OCI archives, source/base/builder/tool versions, paired digests and host/container cases. Clean builder in finally.",
+        "amplified_value": "Advance interoperable machine capability with canonical authority."
+      },
+      {
+        "id": "A5",
+        "statement": "Use fixture founder key and local CI image only, no push or public action. Partial wider packaging and isolation remain explicit.",
+        "amplified_value": "Advance interoperable machine capability with canonical authority."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "A context registry can masquerade as OCI execution.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Package actual owned capability; successful proof immediately resumes full Body + Organs + Mind."
+      },
+      {
+        "id": "D2",
+        "statement": "New container package might create a second runtime/authority owner.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Reuse system2 evaluator and system53 epoch; only immutable official base is accepted. GREG worker never receives Docker socket."
+      },
+      {
+        "id": "D3",
+        "statement": "Ordinary Docker cannot establish system10 gVisor-class containment.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Refuse mutable/foreign/injected bases and arbitrary source; rootless non-network container with read-only filesystem, no capabilities, CPU/memory/PID ceilings."
+      },
+      {
+        "id": "D4",
+        "statement": "Timestamp/tool drift may make nominal rebuilds differ.",
+        "severity": "high",
+        "response_type": "learning",
+        "redesigned_response": "Retain actual OCI archives, source/base/builder/tool versions, paired digests and host/container cases. Clean builder in finally."
+      },
+      {
+        "id": "D5",
+        "statement": "A single capability image might be represented as full-machine completion.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Use fixture founder key and local CI image only, no push or public action. Partial wider packaging and isolation remain explicit."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Linked FM-LANDLOCK-20261001; PR147 closure head492e6906 CI pending. Existing system2 DSL and system53 fixed-timestamp source packaging; current system9 is PARTIAL.",
+      "do_nothing": "Leave a buildable portability dependency as architecture prose.",
+      "simplest_viable_alternative": "Use official Python and BuildKit resolved immutable digests, fixed timestamps and exact existing DSL bytes. Build twice on disposable CI and compare OCI content/config/layer digests.",
+      "strongest_competing_architecture": "Package the full GREG and all organ dependencies with gVisor-class execution.",
+      "reversible_experiment": "Actual signed fixture Body packages context, CI independently builds twice and executes restricted valid/refused requests."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "strongest_competing_architecture",
+        "rejection_reason": "Needs larger dependency closure, stronger runner and actual escape/revocation evidence; cannot be claimed from this capability image. Retained as active continuation, not removed.",
+        "revival_evidence": "Implemented full dependency closure and stronger runner with actual tests."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack nominal build claims, mutable input resolution, arbitrary code, false authority, timestamps and Docker-as-microVM claims.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "dependency",
+        "statement": "A pinned base alone leaves the builder mutable.",
+        "strengthening_response": "Resolve official BuildKit to an immutable digest before creating builder; retain actual Docker/Buildx/BuildKit identities."
+      },
+      {
+        "id": "N2",
+        "category": "gaming",
+        "statement": "Context hashes and export success could hide substitution or unequal rebuilt code.",
+        "strengthening_response": "Verify actual OCI blob addresses/descriptors, paired manifest/config/layer identity, loaded config match and six exact host/container results including three refusals."
+      },
+      {
+        "id": "N3",
+        "category": "overfit",
+        "statement": "Signed fixture mission might be labelled Alfonso acceptance or whole Body image.",
+        "strengthening_response": "Record exact fixture tier and restricted capability scope; keep system9 partial beyond this proof and continue machine objective."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "experiment",
+        "rationale": "Package actual owned capability; successful proof immediately resumes full Body + Organs + Mind.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Actual hosted artifact and subsequent runtime changes."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "experiment",
+        "rationale": "Reuse system2 evaluator and system53 epoch; only immutable official base is accepted. GREG worker never receives Docker socket.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Actual hosted artifact and subsequent runtime changes."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "experiment",
+        "rationale": "Refuse mutable/foreign/injected bases and arbitrary source; rootless non-network container with read-only filesystem, no capabilities, CPU/memory/PID ceilings.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Actual hosted artifact and subsequent runtime changes."
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "experiment",
+        "rationale": "Retain actual OCI archives, source/base/builder/tool versions, paired digests and host/container cases. Clean builder in finally.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Actual hosted artifact and subsequent runtime changes."
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "experiment",
+        "rationale": "Use fixture founder key and local CI image only, no push or public action. Partial wider packaging and isolation remain explicit.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Actual hosted artifact and subsequent runtime changes."
+      }
+    ],
+    "final_design": "Guarded signed Body packages exact reviewed DSL/entry bytes into deterministic context with digest-pinned official base. Disposable managed CI uses immutable BuildKit, exports two real OCI artifacts and compares loaded second-environment behavior; no Docker socket in worker and no push.",
+    "residual_risks": [
+      {
+        "risk": "A context registry can masquerade as OCI execution.",
+        "mitigation": "Package actual owned capability; successful proof immediately resumes full Body + Organs + Mind.",
+        "owner": "GREG maintainers",
+        "review_trigger": "New packaging/runtime requirement or complete-system claim."
+      },
+      {
+        "risk": "New container package might create a second runtime/authority owner.",
+        "mitigation": "Reuse system2 evaluator and system53 epoch; only immutable official base is accepted. GREG worker never receives Docker socket.",
+        "owner": "GREG maintainers",
+        "review_trigger": "New packaging/runtime requirement or complete-system claim."
+      },
+      {
+        "risk": "Ordinary Docker cannot establish system10 gVisor-class containment.",
+        "mitigation": "Refuse mutable/foreign/injected bases and arbitrary source; rootless non-network container with read-only filesystem, no capabilities, CPU/memory/PID ceilings.",
+        "owner": "GREG maintainers",
+        "review_trigger": "New packaging/runtime requirement or complete-system claim."
+      },
+      {
+        "risk": "Timestamp/tool drift may make nominal rebuilds differ.",
+        "mitigation": "Retain actual OCI archives, source/base/builder/tool versions, paired digests and host/container cases. Clean builder in finally.",
+        "owner": "GREG maintainers",
+        "review_trigger": "New packaging/runtime requirement or complete-system claim."
+      },
+      {
+        "risk": "A single capability image might be represented as full-machine completion.",
+        "mitigation": "Use fixture founder key and local CI image only, no push or public action. Partial wider packaging and isolation remain explicit.",
+        "owner": "GREG maintainers",
+        "review_trigger": "New packaging/runtime requirement or complete-system claim."
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserved and scoped, no independent consensus claimed.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Docker image execution is not the required general-code gVisor-class isolation.",
+        "rationale": "Runtime shares host kernel; restricted DSL prevents source admission but does not retire system10.",
+        "evidence_threshold": "Implemented stronger runner and escape/resource/revocation evidence.",
+        "owner": "GREG maintainers",
+        "review_trigger": "General source/provider admission."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Add system9 to canonical Foundry dispatch and explicit published source inventory. Test through existing signed Body and Gate. Build/run only on disposable CI with artifacts retained.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert new system9 files/dispatch/workflow; preserve failed evidence and original owned source.",
+      "Retain wider OCI and isolation obligations on completion horizon."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Mutable/foreign base accepted.",
+    "Untrusted source or worker obtains Docker socket.",
+    "Unequal OCI rebuilds or host/container results labelled reproduced.",
+    "Image push, public activation or authority manufactured.",
+    "Successful image treated as full machine completion."
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Kernel/GREG maintainers within authorized development; Alfonso owns consequential decisions",
+  "review_trigger": "Fresh CI artifact, any changed runtime/source, then automatically continue the parent Body + Organs + Mind objective."
+}

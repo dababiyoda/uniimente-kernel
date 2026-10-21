@@ -1,0 +1,1034 @@
+"""Capability broker: every tool, API, plugin and computer-use route GREG can use.
+
+A capability is data plus one adapter function. Its manifest declares what it
+does, what it can touch and how it fails; the embedded kernel CapabilityGenome is
+validated by the canonical GenomeRegistry, so there is one capability-validation
+owner. The broker never grants authority: invocation happens only through
+``greg.authority.AuthorityOffice`` and the Kernel ConsequenceGate.
+
+Lifecycle (building != installation != activation != authority):
+
+    DISCOVERED -> VERIFIED -> ATTACHED  (usable inside a mission light cone)
+                         \\-> QUARANTINED / DETACHED (retained, never deleted)
+
+Computer-use route preference (structured before visual):
+    api -> app_integration -> cli -> browser -> os_automation -> visual
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass, field, asdict
+import glob
+import hashlib
+from html.parser import HTMLParser
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import urllib.parse
+import urllib.request
+
+from capabilities.genome import AuthorityEnvelope, CapabilityGenome, GenomeRegistry, CONSEQUENCE_CLASSES
+from greg import egress, isolation
+
+ROUTES = ("api", "app_integration", "cli", "browser", "os_automation", "visual", "internal")
+# Spider-Web Compounding Rule (INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING): every
+# capability must strengthen at least one control point of the founder-intent ->
+# verified-outcome transaction. The seven nodes are the rule's seven items.
+SUPER_NODES = ("eligibility", "routing", "proof", "settlement", "reliability", "capability_formation",
+               "compounding")
+# evolution/spider_web.py judges strategies against four of them under older names;
+# this is the one translation between the two vocabularies (tested, not imported).
+STRATEGY_SUPER_NODES = {"eligibility": "eligibility", "default_routing": "routing",
+                        "proof_and_truth": "proof", "cashflow_and_settlement": "settlement"}
+STATES = ("DISCOVERED", "VERIFIED", "ATTACHED", "DETACHED", "QUARANTINED")
+MAX_READ_BYTES = 256 * 1024
+KERNEL_ROOT = Path(__file__).resolve().parents[1]
+
+
+class CapabilityError(RuntimeError):
+    """Capability unavailable, malformed, outside its manifest or failed."""
+
+
+@dataclass
+class CapabilityManifest:
+    capability_id: str                 # e.g. "fs.read"
+    version: str
+    provider: str                      # "greg-builtin", "installed:/usr/bin/sha256sum", "api:github"
+    function: str                      # functional tag used by Capability Genesis search
+    description: str
+    route: str
+    consequence_class: str
+    inputs: dict
+    outputs: dict
+    target_prefix: str                 # every target this capability touches starts with this
+    network: str = "none"              # none | egress-allowlist
+    egress_allowlist: tuple = ()
+    filesystem: str = "none"           # none | read-scoped | workspace-write | artifact-write | deliver-write
+    credentials: tuple = ()            # secret handle names; values never enter manifests or ledger
+    binaries: tuple = ()               # exact executables a CLI capability may run
+    data_classes: tuple = ()
+    budget_ceiling_usd: float = 0.0
+    platforms: tuple = ("linux", "darwin")
+    retry_safe: bool = False           # read-only and idempotent: an unknown outcome may be re-attempted
+    strengthens: tuple = ()            # SUPER_NODES this capability reinforces (Spider-Web rule; required)
+    target_from: str = ""              # param holding the URL whose host the signed target must name
+    tests: tuple = ()
+    provenance: dict = field(default_factory=dict)
+    attach: str = "founder command or pre-authorized mission light cone"
+    detach: str = "founder CAPABILITY_DETACH; in-flight work reconciles first"
+    rollback: str = "detach; retained history is never rewritten"
+    cognitive_profiles: tuple = ()
+    cognitive_profile: dict = field(default_factory=dict)
+
+    def validate(self) -> list[str]:
+        problems = []
+        if self.route not in ROUTES:
+            problems.append(f"unknown route {self.route!r}")
+        if self.consequence_class not in CONSEQUENCE_CLASSES:
+            problems.append(f"unknown consequence class {self.consequence_class!r}")
+        if self.network not in ("none", "egress-allowlist", "target-host-only"):
+            problems.append("network must be none, egress-allowlist or target-host-only")
+        if (self.network == "target-host-only") != bool(self.target_from):
+            problems.append("target-host-only network requires target_from (and only it may use target_from)")
+        if self.network == "egress-allowlist" and not self.egress_allowlist:
+            problems.append("egress allowlist required")
+        if self.filesystem not in ("none", "read-scoped", "workspace-write", "artifact-write", "deliver-write"):
+            problems.append("unknown filesystem class")
+        if self.route == "cli" and not self.binaries:
+            problems.append("cli capability must name exact binaries")
+        if self.retry_safe and self.consequence_class != "read_only":
+            problems.append("only read_only capabilities may be retry_safe")
+        if not self.target_prefix or self.target_prefix == "*":
+            problems.append("bounded target prefix required")
+        if not self.strengthens:
+            problems.append("Spider-Web rule: capability must declare which control points it strengthens")
+        unknown = set(self.strengthens) - set(SUPER_NODES)
+        if unknown:
+            problems.append(f"unknown super-nodes {sorted(unknown)}")
+        problems.extend(self.genome().validate())
+        return problems
+
+    def genome(self) -> CapabilityGenome:
+        return CapabilityGenome(
+            name=self.capability_id, version=self.version, description=self.description,
+            interface={"inputs": self.inputs, "outputs": self.outputs}, contracts=[],
+            authority=AuthorityEnvelope(max_consequence_class=self.consequence_class,
+                                        budget_ceiling_usd=self.budget_ceiling_usd,
+                                        requires_human=self.consequence_class in ("financial", "irreversible")),
+            acceptance_tests=list(self.tests) or ["declared-by-builder"],
+            failure_modes=["unavailable", "refused", "timeout", "outcome_unknown"],
+            recovery_path=self.rollback, cognitive_profiles=list(self.cognitive_profiles),
+            cognitive_profile=self.cognitive_profile)
+
+    def digest(self) -> str:
+        return "sha256:" + hashlib.sha256(json.dumps(self.to_dict(), sort_keys=True).encode()).hexdigest()
+
+    def to_dict(self) -> dict:
+        value = asdict(self)
+        for key, item in value.items():
+            if isinstance(item, tuple):
+                value[key] = list(item)
+        if not value["target_from"]:
+            value.pop("target_from")  # absent when unused: every earlier manifest digest is unchanged
+        if not value['cognitive_profiles']:
+            value.pop('cognitive_profiles')  # preserve historical manifest digests
+        if not value["cognitive_profile"]:
+            value.pop("cognitive_profile")  # additive profile: legacy manifest digests are preserved
+        return value
+
+    @classmethod
+    def from_dict(cls, value: dict) -> "CapabilityManifest":
+        known = set(cls.__dataclass_fields__)
+        if set(value) - known:
+            raise CapabilityError(f"unknown manifest fields {sorted(set(value) - known)}")
+        data = dict(value)
+        for key in ("egress_allowlist", "credentials", "binaries", "data_classes", "platforms", "tests",
+                    "strengthens", "cognitive_profiles"):
+            if key in data:
+                data[key] = tuple(data[key])
+        return cls(**data)
+
+    def available(self) -> tuple[bool, str]:
+        platform = "darwin" if sys.platform == "darwin" else "linux"
+        if platform not in self.platforms:
+            return False, f"requires {'/'.join(self.platforms)}; this body runs {platform}"
+        for binary in self.binaries:
+            if not Path(binary).is_absolute() or not os.access(binary, os.X_OK):
+                return False, f"binary {binary} not installed or not executable"
+        return True, "available"
+
+
+# -- secret broker ------------------------------------------------------------------
+
+class SecretBroker:
+    """Resolves named credential handles at call time only.
+
+    Backends: a mode-0600 JSON file inside the body (development) and, on macOS,
+    the login Keychain via /usr/bin/security (read-only lookup; Alfonso adds
+    items himself). A worker never receives the vault, only a handle it declared.
+    """
+
+    def __init__(self, path: Path, *, keychain_service: str = "uniimente.greg"):
+        self.path, self.keychain_service = Path(path), keychain_service
+
+    def _file(self) -> dict:
+        if not self.path.exists():
+            return {}
+        mode = self.path.stat().st_mode & 0o777
+        if mode & 0o077:
+            raise CapabilityError("secret file must be mode 0600")
+        return json.loads(self.path.read_text())
+
+    def put(self, name: str, value: str) -> None:
+        data = self._file()
+        data[name] = value
+        fd = os.open(self.path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as fh:
+            json.dump(data, fh)
+
+    def remove(self, name: str) -> bool:
+        data = self._file()
+        if name not in data:
+            return False
+        del data[name]
+        fd = os.open(self.path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as fh:
+            json.dump(data, fh)
+        return True
+
+    def names(self) -> list[str]:
+        return sorted(self._file())
+
+    def resolve(self, name: str, *, declared: tuple) -> str:
+        if name not in declared:
+            raise CapabilityError(f"credential {name!r} not declared by this capability")
+        data = self._file()
+        if name in data:
+            return data[name]
+        if sys.platform == "darwin" and Path("/usr/bin/security").exists():
+            proc = subprocess.run(["/usr/bin/security", "find-generic-password", "-s",
+                                   self.keychain_service, "-a", name, "-w"],
+                                  capture_output=True, text=True, timeout=10)
+            if proc.returncode == 0:
+                return proc.stdout.rstrip("\n")
+        raise CapabilityError(f"credential {name!r} unavailable")
+
+
+# -- invocation context and adapters ---------------------------------------------
+
+@dataclass(frozen=True)
+class InvocationBudgetWindow:
+    """Read-only limits projected by AuthorityOffice; this is not a grant."""
+    horizon: str
+    grant_expires_at: str
+    remaining_money_usd: float
+    authority_ref: str
+    grant_id: str
+    grant_digest: str | None = None
+    mission_id: str | None = None
+    scope_digest: str | None = None
+    proposal_id: str | None = None
+    witness_id: str | None = None
+    dispatch_effect_digest: str | None = None
+    latency_ceiling_seconds: float = 30.0
+    compute_ceiling_operations: int = 100000
+
+
+@dataclass
+class InvocationContext:
+    workspace: Path                    # the only place internal writes may land
+    read_roots: tuple[Path, ...]       # filesystem roots this mission may read
+    secrets: SecretBroker
+    manifest: CapabilityManifest
+    deliver_root: Path | None = None   # founder-visible outbox for deliverables (deliver-write only)
+    learned: dict | None = None        # held-out-verified presentation policies (greg.improvement); never authority
+    journal: object | None = None     # canonical ledger for memory and receipt-bound artifacts
+    target: str = ""                   # exact signed target set by the authority office
+    artifact_root: Path | None = None  # body-local immutable bytes; receipts remain on the canonical ledger
+    mission_id: str = ""
+    authority_ref: str = ""
+    grant_id: str = ""
+    policy_version: str = ""
+    stop_check: object | None = None
+    capability_registry: object | None = None  # read-only view for consequence-inert solver eligibility
+    cognition_model: dict | None = None       # effective founder-selected local model; never a paid fallback
+    cognition_budget: InvocationBudgetWindow | None = None
+
+    def secret(self, name: str) -> str:
+        return self.secrets.resolve(name, declared=self.manifest.credentials)
+
+
+def _inside(path: Path, roots) -> Path:
+    resolved = path.resolve()
+    for root in roots:
+        root = Path(root).resolve()
+        if resolved == root or root in resolved.parents:
+            return resolved
+    raise CapabilityError(f"path {path} outside permitted roots")
+
+
+def fs_read(params, ctx: InvocationContext) -> dict:
+    path = _inside(Path(params["path"]), ctx.read_roots + (ctx.workspace,))
+    if not path.is_file():  # absence is a measurement of the world, not a sensor failure
+        return {"path": str(path), "exists": False}
+    data = path.read_bytes()
+    if len(data) > MAX_READ_BYTES:
+        raise CapabilityError("file exceeds read ceiling")
+    return {"path": str(path), "exists": True, "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest(),
+            "text": data.decode("utf-8", errors="replace")}
+
+
+def fs_list(params, ctx: InvocationContext) -> dict:
+    path = _inside(Path(params["path"]), ctx.read_roots + (ctx.workspace,))
+    if not path.is_dir():
+        return {"path": str(path), "exists": False, "entries": []}
+    entries = sorted(p.name + ("/" if p.is_dir() else "") for p in path.iterdir())[:1000]
+    return {"path": str(path), "entries": entries}
+
+
+def fs_write(params, ctx: InvocationContext) -> dict:
+    """Write one text file in the mission workspace, and only the file the signed target names.
+
+    The founder-signed target (``workspace:<relative path>``) binds the file: a parameter value that
+    a typed handoff supplied (greg/pipeline.py, a strategy's ``bind``) can change what is written,
+    never where. Without this, a document's text could pick which workspace file is overwritten,
+    including the evidence a person's work is measured by (review of 2026-10-14; artifact.materialize
+    already binds its path the same way)."""
+    ctx.workspace.mkdir(parents=True, exist_ok=True)
+    path = _inside(ctx.workspace / params["relative_path"], (ctx.workspace,))
+    named = "workspace:" + path.relative_to(Path(ctx.workspace).resolve()).as_posix()
+    if ctx.target != named:
+        raise CapabilityError(f"write path {named!r} does not match the signed target {ctx.target!r}")
+    content = params["content"]
+    if not isinstance(content, str) or len(content.encode()) > MAX_READ_BYTES:
+        raise CapabilityError("content must be text under the write ceiling")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_text(content)
+    temporary.replace(path)
+    return {"path": str(path), "sha256": hashlib.sha256(content.encode()).hexdigest()}
+
+
+def _no_network_preexec():
+    # Reuse the Kernel's reviewed seccomp filter where libseccomp exists.
+    try:
+        sys.path.insert(0, str(KERNEL_ROOT / "tools"))
+        from offline_test import install_filter  # type: ignore
+        install_filter()
+    except Exception:
+        os._exit(97)  # fail closed: never run an isolated command without isolation
+
+
+MACOS_NO_NETWORK = "(version 1)(allow default)(deny network*)"
+
+
+def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout: int = 30,
+                 extra_env: dict | None = None, input_bytes: bytes | None = None,
+                 confine_to: Path | None = None) -> subprocess.CompletedProcess:
+    """Run one command with a scrubbed environment and, by default, no network.
+
+    Linux: the Kernel's seccomp filter (tools/offline_test.py). macOS: the system
+    sandbox-exec profile denying network. No isolation available -> refusal.
+
+    ``confine_to``: for code GREG runs on a worker's behalf (its patch's tests). On Linux with Landlock
+    (ABI >= 3) the command and everything it starts read only the host runtime and write only that
+    directory (``greg.isolation.worker_grants``; TMPDIR is a directory inside it), so the patch cannot read
+    the Body home into its output or write outside it, as the worker itself cannot. Where Landlock is absent
+    it runs as before. The returned process carries ``confinement`` either way.
+    """
+    env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "HOME": str(cwd), **(extra_env or {})}
+    network = None
+    if isolate_network:
+        if sys.platform == "darwin":
+            if not Path("/usr/bin/sandbox-exec").exists():
+                raise CapabilityError("network isolation unavailable; command refused")
+            argv = ["/usr/bin/sandbox-exec", "-p", MACOS_NO_NETWORK, *argv]
+        else:
+            network = _no_network_preexec
+    confinement, grants, libc = None, None, None
+    if confine_to is not None:
+        status = isolation.available()
+        if status.get("available"):
+            try:
+                grants, libc = isolation.worker_grants(confine_to), isolation._libc()
+            except isolation.IsolationError as exc:
+                raise CapabilityError(f"the command cannot be confined, so it is refused: {exc}") from None
+            scratch = Path(confine_to) / ".greg-tmp"
+            scratch.mkdir(exist_ok=True)
+            env["TMPDIR"] = str(scratch)
+            confinement = {"filesystem": "landlock", "abi": status["abi"],
+                           "writable": [str(Path(confine_to).resolve())]}
+        else:
+            confinement = {"filesystem": "none",
+                           "reason": status.get("reason") or f"Landlock ABI {status.get('abi')} below 3"}
+
+    def preexec():
+        if network is not None:
+            network()                      # first: it reads the Kernel's filter, which Landlock does not grant
+        if grants is not None:
+            isolation.restrict(grants, libc)
+
+    stdin = {"stdin": subprocess.DEVNULL} if input_bytes is None else {"input": input_bytes}
+    proc = subprocess.run(argv, cwd=cwd, env=env, capture_output=True, timeout=timeout,
+                          preexec_fn=preexec if network is not None or grants is not None else None, **stdin)
+    if network is not None and proc.returncode == 97:
+        raise CapabilityError("network isolation unavailable; command refused")
+    proc.confinement = confinement
+    return proc
+
+
+def run_cli(params, ctx: InvocationContext, *, isolate_network: bool = True, timeout: int = 30) -> dict:
+    argv = params["argv"]
+    if not isinstance(argv, list) or not argv or not all(isinstance(a, str) for a in argv):
+        raise CapabilityError("argv must be a non-empty list of strings")
+    if argv[0] not in ctx.manifest.binaries:
+        raise CapabilityError(f"executable {argv[0]} not in this capability's manifest")
+    ctx.workspace.mkdir(parents=True, exist_ok=True)
+    proc = run_isolated(argv, cwd=ctx.workspace, isolate_network=isolate_network, timeout=timeout)
+    return {"argv": argv, "returncode": proc.returncode,
+            "stdout": proc.stdout[:MAX_READ_BYTES].decode("utf-8", errors="replace"),
+            "stderr": proc.stderr[-4000:].decode("utf-8", errors="replace")}
+
+
+def git_inspect(params, ctx: InvocationContext) -> dict:
+    repo = _inside(Path(params["path"]), ctx.read_roots)
+    def git(*args):
+        return subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True,
+                              timeout=20, env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8",
+                                               "GIT_CONFIG_NOSYSTEM": "1", "HOME": str(ctx.workspace)})
+    head, status, log = git("rev-parse", "HEAD"), git("status", "--porcelain"), git("log", "--oneline", "-10")
+    if head.returncode:
+        raise CapabilityError("not a git repository")
+    return {"path": str(repo), "head": head.stdout.strip(), "dirty": bool(status.stdout.strip()),
+            "recent": log.stdout.strip().splitlines()}
+
+
+def http_get(params, ctx: InvocationContext) -> dict:
+    url = params["url"]
+    parts = urllib.parse.urlsplit(url)
+    if parts.scheme != "https" or parts.hostname not in ctx.manifest.egress_allowlist:
+        raise CapabilityError(f"egress to {parts.hostname!r} not in allowlist")
+    request = urllib.request.Request(url, headers={"User-Agent": "uniimente-greg/0.1"})
+    try:
+        # Every redirect hop is re-checked against this capability's allowlist.
+        with egress.open_checked(request, allowlist=ctx.manifest.egress_allowlist, timeout=20) as response:
+            body = response.read(MAX_READ_BYTES + 1)
+            final_url = response.geturl()
+    except egress.EgressRefused as exc:
+        raise CapabilityError(str(exc)) from None
+    if len(body) > MAX_READ_BYTES:
+        raise CapabilityError("response exceeds read ceiling")
+    return {"url": url, "final_url": final_url, "status": response.status,
+            "sha256": hashlib.sha256(body).hexdigest(),
+            "text": body.decode("utf-8", errors="replace"), "trust": "untrusted-external-data"}
+
+
+CHROME_CANDIDATES = (
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser",
+)
+
+
+def chrome_binary() -> str:
+    """The browser GREG drives: an installed Chrome/Chromium (founder-chosen via GREG_CHROMIUM)."""
+    for candidate in (os.environ.get("GREG_CHROMIUM", ""), *CHROME_CANDIDATES,
+                      *sorted(glob.glob("/opt/pw-browsers/chromium-*/chrome-linux/chrome"))):
+        if candidate and Path(candidate).is_file() and os.access(candidate, os.X_OK):
+            return candidate
+    return CHROME_CANDIDATES[0]
+
+
+class _VisibleText(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.parts, self.title, self._skip, self._in_title = [], "", 0, False
+
+    def handle_starttag(self, tag, attrs):
+        self._skip += tag in ("script", "style", "noscript", "template")
+        self._in_title = self._in_title or tag == "title"
+
+    def handle_endtag(self, tag):
+        self._skip -= tag in ("script", "style", "noscript", "template") and self._skip > 0
+        self._in_title = self._in_title and tag != "title"
+
+    def handle_data(self, data):
+        if self._in_title:
+            self.title += data
+        elif not self._skip and data.strip():
+            self.parts.append(" ".join(data.split()))
+
+
+def browser_render(params, ctx: InvocationContext) -> dict:
+    """Load a page in a real headless browser, run its JavaScript, return what a person would see.
+
+    The signed target must be ``web:<host>`` of this URL (enforced by the authority office via
+    ``target_from``), and the browser may resolve ONLY that host: every other name maps to
+    NOTFOUND, so page scripts cannot reach third parties. https, or http on loopback only.
+    Fresh profile per call, no extensions, no sync, no background networking.
+    """
+    import tempfile
+    url = str(params["url"])
+    parts = urllib.parse.urlsplit(url)
+    host = parts.hostname or ""
+    loopback = host in ("127.0.0.1", "localhost", "::1")
+    authority = f"{host}:{parts.port or (443 if parts.scheme == 'https' else 80)}"
+    if parts.scheme != "https" and not (parts.scheme == "http" and loopback):
+        raise CapabilityError("browser.render loads https pages (http only on this machine's loopback)")
+    binary = chrome_binary()
+    with tempfile.TemporaryDirectory(prefix="greg-browser-") as profile:
+        argv = [binary, "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
+                "--disable-extensions", "--disable-background-networking", "--disable-sync",
+                "--disable-component-update", "--disable-default-apps", "--mute-audio", "--hide-scrollbars",
+                f"--user-data-dir={profile}", f"--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE {host}",
+                # Every request goes to a dead proxy except the exact target origin, so page scripts
+                # cannot reach third parties even by IP literal (implicit loopback bypass removed).
+                "--proxy-server=http://127.0.0.1:9", f"--proxy-bypass-list=<-loopback>;{authority}",
+                "--virtual-time-budget=5000", "--dump-dom", url]
+        sandboxed = not (sys.platform.startswith("linux") and os.geteuid() == 0)
+        if not sandboxed:
+            argv.insert(1, "--no-sandbox")  # Chromium cannot sandbox itself as root on Linux; reported below
+        env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "HOME": profile}
+        try:
+            proc = subprocess.run(argv, capture_output=True, timeout=45, env=env, cwd=profile)
+        except subprocess.TimeoutExpired as exc:
+            raise CapabilityError("browser did not finish rendering within 45 seconds") from exc
+    dom = proc.stdout[:MAX_READ_BYTES * 4]
+    if proc.returncode or not dom.strip():
+        raise CapabilityError("browser could not render the page: " + proc.stderr.decode("utf-8", "replace")[-300:])
+    parser = _VisibleText()
+    parser.feed(dom.decode("utf-8", errors="replace"))
+    text = "\n".join(parser.parts)[:MAX_READ_BYTES]
+    return {"url": url, "title": parser.title.strip()[:300], "text": text, "dom_sha256": hashlib.sha256(dom).hexdigest(),
+            "dom_bytes": len(dom), "browser": Path(binary).name, "os_sandboxed": sandboxed,
+            "egress": f"only {authority} reachable", "trust": "untrusted-external-data"}
+
+
+def mac_notify(params, ctx: InvocationContext) -> dict:
+    text, title = str(params["text"])[:200], str(params.get("title", "GREG"))[:60]
+    script = f"display notification {json.dumps(text)} with title {json.dumps(title)}"
+    proc = subprocess.run(["/usr/bin/osascript", "-e", script], capture_output=True, text=True, timeout=10)
+    if proc.returncode:
+        raise CapabilityError("osascript failed: " + proc.stderr[-300:])
+    return {"delivered": True}
+
+
+def mac_screenshot(params, ctx: InvocationContext) -> dict:
+    ctx.workspace.mkdir(parents=True, exist_ok=True)
+    out = _inside(ctx.workspace / params.get("name", "screen.png"), (ctx.workspace,))
+    proc = subprocess.run(["/usr/sbin/screencapture", "-x", str(out)], capture_output=True, timeout=20)
+    if proc.returncode or not out.exists():
+        raise CapabilityError("screencapture failed; Screen Recording permission may be missing")
+    return {"path": str(out), "sha256": hashlib.sha256(out.read_bytes()).hexdigest()}
+
+
+def mac_frontmost_app(params, ctx: InvocationContext) -> dict:
+    script = 'tell application "System Events" to get name of first application process whose frontmost is true'
+    proc = subprocess.run(["/usr/bin/osascript", "-e", script], capture_output=True, text=True, timeout=10)
+    if proc.returncode:
+        raise CapabilityError("Accessibility/Automation permission missing: " + proc.stderr[-300:])
+    return {"frontmost": proc.stdout.strip()}
+
+
+def repo_pin_audit(params, ctx: InvocationContext) -> dict:
+    """Read-only contract-consistency audit of real local repositories.
+
+    Metabolized from #101 (egregore/repository_audit.py): the exact-object Git
+    reads and the semantic derive() are reused unchanged; the fixed 60-second
+    proof mission around them is not. Observes each repository's cached
+    origin/main itself, so it can run every night without a pre-known commit.
+    """
+    repositories, report = _repo_report(params, ctx, profile=None)
+    return {"compatible": report["compatible"], "rows": report["rows"],
+            "commits": {r["role"]: r["commit"] for r in repositories},
+            "drift": [r for r in report["rows"] if not r["matches"]], "source_scope": report["source_scope"]}
+
+
+def _repo_report(params, ctx: InvocationContext, *, profile):
+    from egregore.repository_audit import capture, derive, git_read
+    repositories = []
+    for repo in params["repositories"]:
+        path = _inside(Path(repo["path"]), ctx.read_roots)
+        commit = git_read(str(path), "rev-parse", "refs/remotes/origin/main").decode().strip()
+        repositories.append({"role": repo["role"], "path": str(path), "commit": commit})
+    sources = capture(repositories, profile) if profile else capture(repositories)
+    return repositories, derive(sources, params["expected_pin"], params["expected_version"], profile)
+
+
+def repo_integration_audit(params, ctx: InvocationContext) -> dict:
+    """Bounded static integration findings across the organs (read-only).
+
+    Ported from PR #112 (repository_audit integration-v1 profile): exact Git
+    blobs of the boundary files plus the Gate/runtime/reflection/bridge sources,
+    AST-level checks such as "resume accepts a hash without the Gate". Findings
+    are evidence for the founder's morning brief, never authority.
+    """
+    repositories, report = _repo_report(params, ctx, profile="integration-v1")
+    findings = [{k: f[k] for k in ("id", "kind", "summary", "next_action")} | {
+        "evidence": {k: f["evidence"].get(k) for k in ("role", "commit", "file", "blob", "line") if k in f["evidence"]}}
+        for f in report["findings"]]
+    return {"compatible": report["compatible"], "commits": {r["role"]: r["commit"] for r in repositories},
+            "finding_ids": sorted(f["id"] for f in findings), "count": len(findings), "findings": findings,
+            "authority_findings": sorted(f["id"] for f in findings if f["kind"] == "authority"),
+            "coverage": report["coverage"], "limits": report["limits"]}
+
+
+STRENGTHENS = {
+    "foundry.query": ("proof", "routing", "compounding"),
+    "foundry.apply": ("proof", "settlement", "compounding", "capability_formation"),
+    "fs.read": ("proof",), "fs.list": ("proof",), "fs.write": ("settlement",),
+    "git.inspect": ("proof",), "http.get": ("proof", "capability_formation"),
+    "mac.notify": ("settlement", "eligibility"), "mac.screenshot": ("proof",),
+    "mac.frontmost_app": ("proof", "routing"), "repo.pin_audit": ("proof", "eligibility", "reliability"),
+    "github.pulls": ("proof", "routing"), "brief.freshness": ("proof", "settlement"),
+    "brief.engineering": ("settlement", "proof", "routing"),
+    "repo.integration_audit": ("proof", "eligibility", "reliability"),
+    "browser.render": ("proof", "capability_formation"),
+    "memory.precedents": ("proof", "routing", "compounding"),
+    "artifact.store": ("proof", "reliability", "compounding"),
+    "artifact.inspect": ("proof", "reliability"),
+    "artifact.materialize": ("proof", "reliability", "compounding"),
+    "venture.assess": ("proof", "routing", "settlement", "compounding"),
+    "venture.status": ("proof",),
+    "business.reconcile": ("proof", "settlement"),
+    "worker.commission": ("capability_formation", "routing", "settlement", "compounding"),
+    "worker.appraise": ("proof", "eligibility", "reliability"),
+    "browser.session": ("proof", "capability_formation", "settlement"),
+    "browser.trace": ("proof",),
+    "daleobanks.verify": ("proof", "eligibility"),
+    "daleobanks.publish": ("settlement", "routing"),
+    "daleobanks.outcome": ("proof", "settlement"),
+    "institution.survey": ("routing", "eligibility", "proof"),
+    "institution.compose": ("capability_formation", "routing", "compounding"),
+    "institution.dossier": ("settlement", "routing", "compounding"),
+    "institution.appraise": ("proof", "reliability"),
+}
+
+
+def _lazy(module: str, name: str):
+    """Adapter defined in another greg module (imported on first call, avoiding cycles)."""
+    def adapter(params, ctx):
+        import importlib
+        return getattr(importlib.import_module(module), name)(params, ctx)
+    adapter.__name__ = name
+    return adapter
+
+
+def _builtin(capability_id, function, description, route, consequence, target_prefix, inputs, outputs, **kw):
+    kw.setdefault("strengthens", STRENGTHENS[capability_id])
+    kw.setdefault("provenance", {"source": "uniimente-kernel/greg/capabilities.py"})
+    kw.setdefault("tests", (f"tests/unit/test_greg_capabilities.py::{capability_id}",))
+    return CapabilityManifest(capability_id=capability_id, version="1.0.0", provider="greg-builtin",
+                              function=function, description=description, route=route,
+                              consequence_class=consequence, inputs=inputs, outputs=outputs,
+                              target_prefix=target_prefix, **kw)
+
+
+BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
+    "artifact.store": (_builtin("artifact.store", "artifact.store",
+                                 "Retain one scoped file by SHA-256 for later missions", "api",
+                                 "internal_write", "artifact:", {"namespace": "str", "path": "str"},
+                                 {"namespace": "str", "address": "str", "bytes": "int", "created": "bool"},
+                                 filesystem="artifact-write", tests=("tests/unit/test_greg_artifacts.py",),
+                                 provenance={"source": "uniimente-kernel/greg/artifacts.py",
+                                             "mechanism_from": "greg/genesis.py built-source store"}),
+                       _lazy("greg.artifacts", "store")),
+    "artifact.inspect": (_builtin("artifact.inspect", "artifact.inspect",
+                                   "Rehash a retained artifact with namespace receipt", "api", "read_only",
+                                   "artifact:", {"namespace": "str", "address": "str"},
+                                   {"present": "bool", "address": "str", "import_receipt": "str?"},
+                                   retry_safe=True, tests=("tests/unit/test_greg_artifacts.py",),
+                                   provenance={"source": "uniimente-kernel/greg/artifacts.py"}),
+                         _lazy("greg.artifacts", "inspect")),
+    "artifact.materialize": (_builtin("artifact.materialize", "artifact.materialize",
+                                       "Restore receipt-bound bytes to the mission workspace", "api",
+                                       "internal_write", "workspace:",
+                                       {"namespace": "str", "address": "str", "relative_path": "str"},
+                                       {"path": "str", "address": "str", "created": "bool"},
+                                       filesystem="workspace-write", tests=("tests/unit/test_greg_artifacts.py",),
+                                       provenance={"source": "uniimente-kernel/greg/artifacts.py"}),
+                             _lazy("greg.artifacts", "materialize")),
+    "memory.precedents": (_builtin("memory.precedents", "memory.precedents",
+                                   "Retrieve bounded action precedents and separately appraised missions",
+                                   "api", "read_only", "memory:", {"capability": "str"},
+                                   {"capability": "str", "action_evidence": "dict",
+                                    "locally_appraised_missions": "list", "limitations": "str"},
+                                   retry_safe=True,
+                                   provenance={"source": "uniimente-kernel/greg/precedents.py",
+                                               "mechanism_from": "memory/causal.py; greg/sop.py"}),
+                           _lazy("greg.precedents", "precedents")),
+    "fs.read": (_builtin("fs.read", "filesystem.read", "Read one file inside permitted roots", "api",
+                         "read_only", "fs:", {"path": "str"},
+                         {"path": "str", "exists": "bool", "bytes": "int", "sha256": "str", "text": "str"},
+                         filesystem="read-scoped", retry_safe=True), fs_read),
+    "fs.list": (_builtin("fs.list", "filesystem.list", "List one directory inside permitted roots", "api",
+                         "read_only", "fs:", {"path": "str"}, {"path": "str", "exists": "bool", "entries": "list"},
+                         filesystem="read-scoped", retry_safe=True), fs_list),
+    "fs.write": (_builtin("fs.write", "filesystem.write", "Write one text file inside the mission workspace",
+                          "api", "internal_write", "workspace:", {"relative_path": "str", "content": "str"},
+                          {"path": "str", "sha256": "str"}, filesystem="workspace-write"), fs_write),
+    "git.inspect": (_builtin("git.inspect", "repository.inspect", "Read HEAD, dirtiness and recent log", "cli",
+                             "read_only", "fs:", {"path": "str"},
+                             {"path": "str", "head": "str", "dirty": "bool", "recent": "list[str]"},
+                             filesystem="read-scoped",
+                             binaries=tuple(b for b in ("/usr/bin/git",) if Path(b).exists()) or ("/usr/bin/git",),
+                             retry_safe=True), git_inspect),
+    "http.get": (_builtin("http.get", "web.fetch", "HTTPS GET from an explicit egress allowlist", "api",
+                          "read_only", "https:", {"url": "str"},
+                          {"url": "str", "final_url": "str", "status": "int", "sha256": "str", "text": "str",
+                           "trust": "str"},
+                          network="egress-allowlist", egress_allowlist=("example.com",),
+                          data_classes=("public_web",), retry_safe=True), http_get),
+    "browser.render": (_builtin("browser.render", "web.render",
+                                "Render a page in a real headless browser (JavaScript executed) and read it",
+                                "browser", "read_only", "web:", {"url": "str"},
+                                {"title": "str", "text": "str", "dom_sha256": "str"},
+                                network="target-host-only", data_classes=("public_web",), retry_safe=True,
+                                binaries=(chrome_binary(),), target_from="url",
+                                provenance={"source": "uniimente-kernel/greg/capabilities.py",
+                                            "mechanism_from": "installed Chrome/Chromium --headless --dump-dom"}),
+                       browser_render),
+    "mac.notify": (_builtin("mac.notify", "founder.notify", "Local macOS notification to the founder",
+                            "os_automation", "internal_write", "founder:", {"text": "str", "title": "str?"}, {"delivered": "bool"},
+                            binaries=("/usr/bin/osascript",), platforms=("darwin",)), mac_notify),
+    "mac.screenshot": (_builtin("mac.screenshot", "screen.capture", "Capture the screen into the workspace",
+                                "visual", "read_only", "screen:", {"name": "str?"}, {"path": "str", "sha256": "str"},
+                                binaries=("/usr/sbin/screencapture",), platforms=("darwin",),
+                                data_classes=("screen_content",)), mac_screenshot),
+    "mac.frontmost_app": (_builtin("mac.frontmost_app", "desktop.observe", "Name the frontmost application",
+                                   "os_automation", "read_only", "desktop:", {"none": "no parameters"}, {"frontmost": "str"},
+                                   binaries=("/usr/bin/osascript",), platforms=("darwin",),
+                                   retry_safe=True), mac_frontmost_app),
+    "repo.pin_audit": (_builtin("repo.pin_audit", "repository.contract_audit",
+                                "Verify organs pin the same Kernel boundary package (real Git objects, read-only)",
+                                "cli", "read_only", "repo:",
+                                {"repositories": "list[{role,path}]", "expected_pin": "sha",
+                                 "expected_version": "str"},
+                                {"compatible": "bool", "rows": "list", "commits": "dict", "drift": "list",
+                                 "source_scope": "str"},
+                                filesystem="read-scoped", retry_safe=True,
+                                binaries=tuple(b for b in ("/usr/bin/git",) if Path(b).exists()) or ("/usr/bin/git",),
+                                provenance={"source": "uniimente-kernel/greg/capabilities.py",
+                                            "mechanism_from": "PR #101 egregore/repository_audit.py (capture, derive)"}),
+                       repo_pin_audit),
+    "github.pulls": (_builtin("github.pulls", "code_hosting.pull_requests",
+                              "Open pull requests and their check runs from the GitHub REST API (read-only)",
+                              "api", "read_only", "github:", {"github": "list[owner/name]"},
+                              {"repos": "dict", "api_calls": "int", "rate_limited": "bool", "authenticated": "bool"},
+                              network="egress-allowlist",
+                              egress_allowlist=("api.github.com",), credentials=("github_token",),
+                              data_classes=("public_web", "repository_metadata"), retry_safe=True),
+                     _lazy("greg.briefs", "github_pulls")),
+    "brief.freshness": (_builtin("brief.freshness", "delivery.freshness",
+                                 "Age of the newest delivered brief of one kind", "api", "read_only", "deliver:",
+                                 {"kind": "str?"}, {"kind": "str", "count": "int", "latest": "str|null",
+                                                   "age_hours": "float|null", "sha256": "str"},
+                                 filesystem="read-scoped", retry_safe=True),
+                        _lazy("greg.briefs", "brief_freshness")),
+    "brief.engineering": (_builtin("brief.engineering", "report.engineering_brief",
+                                   "Read local Git and GitHub pull requests, render the engineering brief, "
+                                   "deliver it as one new file for the founder", "api", "internal_write",
+                                   "deliver:", {"local": "list[{name,path}]", "github": "list[owner/name]",
+                                                "stale_days": "int?"},
+                                   {"path": "str", "sha256": "str", "bytes": "int", "inputs": "dict",
+                                    "inputs_digest": "str", "attention": "int"},
+                                   network="egress-allowlist", egress_allowlist=("api.github.com",),
+                                   filesystem="deliver-write", credentials=("github_token",),
+                                   data_classes=("public_web", "repository_metadata"),
+                                   provenance={"source": "uniimente-kernel/greg/briefs.py",
+                                               "mechanism_from": "#112 source-bound morning brief; "
+                                                                 "#101 exact Git reads"}),
+                          _lazy("greg.briefs", "engineering_brief")),
+    "repo.integration_audit": (_builtin("repo.integration_audit", "repository.integration_audit",
+                                        "Static integration findings across Kernel/DALEOBANKS/WMI (exact Git blobs, read-only)",
+                                        "cli", "read_only", "repo:",
+                                        {"repositories": "list[{role,path}]", "expected_pin": "sha",
+                                         "expected_version": "str"},
+                                        {"finding_ids": "list[str]", "count": "int", "findings": "list"},
+                                        filesystem="read-scoped", retry_safe=True,
+                                        binaries=tuple(b for b in ("/usr/bin/git",) if Path(b).exists()) or ("/usr/bin/git",),
+                                        provenance={"source": "uniimente-kernel/greg/capabilities.py",
+                                                    "mechanism_from": "PR #112 egregore/repository_audit.py integration-v1"}),
+                               repo_integration_audit),
+    "venture.assess": (_builtin("venture.assess", "venture.assessment",
+                                "Run RailScout (source-bound evidence) and the WealthMachine venture engine on one "
+                                "signal manifest; deliver one decision memo whose verdict may not outrun the "
+                                "evidence", "cli", "internal_write", "deliver:",
+                                {"railscout_root": "path", "wmi_root": "path", "manifest": "path",
+                                 "source_root": "path"},
+                                {"path": "str", "sha256": "str", "verdict": "str", "railscout_status": "str",
+                                 "engine_verdict": "str", "inputs": "dict", "inputs_digest": "str"},
+                                filesystem="deliver-write", binaries=(sys.executable,),
+                                data_classes=("project_sources",),
+                                provenance={"source": "uniimente-kernel/greg/ventures.py",
+                                            "mechanism_from": "RailScout railscout/appraise.py; WMI "
+                                                              "src/services/opportunity_intake.py; kernel "
+                                                              "adapters/daleobanks_opportunity + "
+                                                              "wealthmachine_assessment (Bridge A)"}),
+                       _lazy("greg.ventures", "assess")),
+    "business.reconcile": (_builtin("business.reconcile", "business.reconcile",
+                                    "Match exactly one exported statement row to a signed price, currency and "
+                                    "case reference (to the cent; ambiguous or near matches never count)", "api",
+                                    "read_only", "fs:", {"path": "str", "amount": "number", "currency": "str",
+                                                         "reference": "str", "columns": "dict?",
+                                                         "minor_units": "bool?"},
+                                    {"matched": "bool", "matches": "int", "rows_read": "int", "row": "int?",
+                                     "sha256": "str?", "detail": "str"},
+                                    filesystem="read-scoped", retry_safe=True,
+                                    tests=("tests/unit/test_greg_business_case.py",),
+                                    provenance={"source": "uniimente-kernel/greg/business_loop.py",
+                                                "mechanism_from": "business/commercial_loop.py stage order; "
+                                                                  "beancount/hledger exact single-posting "
+                                                                  "matching (DISCOVER, no code copied)"}),
+                           _lazy("greg.business_loop", "reconcile")),
+    "venture.status": (_builtin("venture.status", "venture.assessment_status",
+                                "Has a decision memo been delivered for this signal manifest, and with what "
+                                "binding verdict", "api", "read_only", "deliver:", {"manifest": "path"},
+                                {"assessed": "bool", "verdict": "str|null", "path": "str|null",
+                                 "manifest_sha256": "str"}, filesystem="read-scoped", retry_safe=True),
+                       _lazy("greg.ventures", "status")),
+    "foundry.query": (_builtin("foundry.query", "foundry.system_query",
+                               "Read-only operation of an implemented Foundry system (search, graph, reputation, "
+                               "model check, verify, history, trial balance)", "internal", "read_only", "foundry:",
+                               {"system": "int", "op": "str", "args": "dict?"}, {"system": "int", "op": "str", "result": "dict"},
+                               filesystem="read-scoped", retry_safe=True,
+                               provenance={"source": "uniimente-kernel/foundry/systems",
+                                           "mechanism_from": "Foundry arsenal (55-system mandate)"}),
+                      _lazy("greg.foundry_bridge", "query")),
+    "foundry.apply": (_builtin("foundry.apply", "foundry.system_apply",
+                               "Write operation of an implemented Foundry system inside the mission workspace "
+                               "(store, commit, post, record)", "internal", "internal_write", "foundry:",
+                               {"system": "int", "op": "str", "args": "dict?"}, {"system": "int", "op": "str", "result": "dict"},
+                               filesystem="workspace-write",
+                               provenance={"source": "uniimente-kernel/foundry/systems",
+                                           "mechanism_from": "Foundry arsenal (55-system mandate)"}),
+                      _lazy("greg.foundry_bridge", "apply")),
+    # -- execution fabric: GREG's hands (workers, computer use, DALEOBANKS work surface) -------
+    "worker.commission": (_builtin("worker.commission", "work.commission",
+                                   "Commission one bounded WorkOrder to a real tool-using worker (coding or "
+                                   "document) in a private workspace; GREG collects diff, tests and evidence",
+                                   "cli", "internal_write", "work:",
+                                   {"order": "str", "mode": "str?", "objective": "str", "repo": "path?",
+                                    "base": "str?", "inputs": "list[path]?", "acceptance": "dict",
+                                    "allowed_paths": "list[glob]", "provider": "str?", "max_budget_usd": "float",
+                                    "timeout_seconds": "int?", "context": "str?"},
+                                   {"status": "str", "branch": "str?", "commit": "str?", "changed_files": "list",
+                                    "patch_sha256": "str", "greg_tests_passed": "bool", "worker": "dict"},
+                                   filesystem="workspace-write", network="egress-allowlist",
+                                   egress_allowlist=("api.anthropic.com",), data_classes=("project_sources",),
+                                   binaries=tuple(b for b in ("/usr/bin/git",) if Path(b).exists()) or ("/usr/bin/git",),
+                                   tests=("tests/unit/test_greg_workers.py",),
+                                   provenance={"source": "uniimente-kernel/greg/workers.py",
+                                               "mechanism_from": "greg/builders.py ClaudeCodeBuilder; headless "
+                                                                 "agent CLIs (Claude Code, Codex, Aider)"}),
+                          _lazy("greg.workers", "commission")),
+    "worker.appraise": (_builtin("worker.appraise", "work.appraise",
+                                 "Independently appraise a WorkOrder: fresh clone, retained patch re-applied, "
+                                 "scope/protected-surface checks, acceptance re-run with no network",
+                                 "cli", "read_only", "work:", {"order": "str"},
+                                 {"verdict": "str", "findings": "list", "changed_files": "list",
+                                  "independent_tests": "list"},
+                                 filesystem="read-scoped", data_classes=("project_sources",), retry_safe=True,
+                                 binaries=tuple(b for b in ("/usr/bin/git",) if Path(b).exists()) or ("/usr/bin/git",),
+                                 tests=("tests/unit/test_greg_workers.py",),
+                                 provenance={"source": "uniimente-kernel/greg/workers.py",
+                                             "mechanism_from": "greg/appraisal.py separate re-derivation"}),
+                        _lazy("greg.workers", "appraise")),
+    "browser.session": (_builtin("browser.session", "computer.browser_session",
+                                 "Drive a disposable real browser through signed steps (navigate, type, click, "
+                                 "select, extract, download) with per-step screenshots; stops at consequential "
+                                 "steps, unprovisioned credentials and bot challenges",
+                                 "browser", "internal_write", "web:", {"url": "str", "steps": "list",
+                                                                       "session": "str?", "also_hosts": "list?",
+                                                                       "on_challenge": "str?"},
+                                 {"status": "str", "boundary": "str?", "steps": "list", "extracted": "dict",
+                                  "trace_sha256": "str"},
+                                 network="target-host-only", target_from="url", filesystem="workspace-write",
+                                 data_classes=("public_web",), tests=("tests/unit/test_greg_computer.py",),
+                                 provenance={"source": "uniimente-kernel/greg/computer.py",
+                                             "mechanism_from": "Playwright (Apache-2.0) + installed Chromium"}),
+                        _lazy("greg.computer", "session")),
+    "browser.trace": (_builtin("browser.trace", "computer.browser_trace",
+                               "Re-read a retained browser session trace and re-hash its screenshots",
+                               "api", "read_only", "web:", {"session": "str"},
+                               {"present": "bool", "status": "str", "screenshots_intact": "bool",
+                                "extracted": "dict"}, filesystem="read-scoped", retry_safe=True,
+                               tests=("tests/unit/test_greg_computer.py",),
+                               provenance={"source": "uniimente-kernel/greg/computer.py"}),
+                      _lazy("greg.computer", "session_status")),
+    "daleobanks.verify": (_builtin("daleobanks.verify", "media.verify_draft",
+                                   "DALEOBANKS EthicsGuard/Critic/PromptFirewall on a draft plus figure-to-source "
+                                   "binding (DALEOBANKS code, DALEOBANKS interpreter)", "cli", "read_only",
+                                   "daleobanks:", {"daleobanks_root": "path", "draft": "path", "source": "path",
+                                                   "python": "path?", "max_chars": "int?"},
+                                   {"verdict": "str", "findings": "list", "draft_sha256": "str"},
+                                   filesystem="read-scoped", binaries=(sys.executable,), retry_safe=True,
+                                   data_classes=("project_sources",), tests=("tests/unit/test_greg_daleobanks_bridge.py",),
+                                   provenance={"source": "uniimente-kernel/greg/daleobanks_bridge.py",
+                                               "mechanism_from": "DALEOBANKS services/ethics_guard.py, critic.py, "
+                                                                 "prompt_firewall.py"}),
+                          _lazy("greg.daleobanks_bridge", "verify")),
+    "daleobanks.publish": (_builtin("daleobanks.publish", "media.publish_request",
+                                    "Request one publish through DALEOBANKS's own gate (decision ledger, LIVE kill "
+                                    "switch, rate governor); a dry-run is reported as a block, never as a post",
+                                    "cli", "external_contact", "daleobanks:",
+                                    {"daleobanks_root": "path", "draft": "path", "python": "path?"},
+                                    {"status": "str", "why": "str", "published": "dict", "daleobanks_ledger": "dict"},
+                                    filesystem="workspace-write", binaries=(sys.executable,),
+                                    data_classes=("public_web",), tests=("tests/unit/test_greg_daleobanks_bridge.py",),
+                                    provenance={"source": "uniimente-kernel/greg/daleobanks_bridge.py",
+                                                "mechanism_from": "DALEOBANKS services/multiplexer.py, "
+                                                                  "social_base.py, ledger.py KillSwitch"}),
+                           _lazy("greg.daleobanks_bridge", "publish")),
+    "daleobanks.outcome": (_builtin("daleobanks.outcome", "media.publish_outcome",
+                                    "Read DALEOBANKS's hash-chained ledger for this mission's publish request",
+                                    "api", "read_only", "daleobanks:", {"none": "no parameters"},
+                                    {"requested": "bool", "outcome": "str", "results": "list"},
+                                    filesystem="read-scoped", retry_safe=True,
+                                    tests=("tests/unit/test_greg_daleobanks_bridge.py",)),
+                           _lazy("greg.daleobanks_bridge", "publish_status")),
+}
+
+STRENGTHENS["pipeline.inspect"] = ("routing", "proof", "settlement")
+BUILTINS["pipeline.inspect"] = (_builtin("pipeline.inspect", "pipeline.inspect",
+    "Inspect typed output of a successful action in this signed mission", "internal", "read_only",
+    "pipeline:", {"action_id": "str", "field": "str", "type": "str"},
+    {"available": "bool", "value": "typed data", "bindings": "list"}, retry_safe=True,
+    strengthens=("routing", "proof", "settlement"), tests=("tests/integration/test_greg_pipeline.py",)),
+    _lazy("greg.pipeline", "inspect"))
+_INSTITUTION_TESTS = ("tests/unit/test_greg_institution.py", "tests/integration/test_greg_first_mission.py")
+_INSTITUTION_SOURCE = {"source": "uniimente-kernel/greg/institution.py",
+                       "mechanism_from": "greg/path.py developmental position; foundry/completion.yaml; "
+                                         "cognition.dp_knapsack (exact selection)"}
+BUILTINS.update({
+    "institution.survey": (_builtin("institution.survey", "institution.survey",
+                                    "Reconstruct the primary objective from GREG's developmental path and score the "
+                                    "open buildable opportunities by a declared prior; founder-only items go to the "
+                                    "decision queue", "api", "read_only", "institution:",
+                                    {"kernel_root": "path", "effort_budget": "int 1..200"},
+                                    {"objective": "dict", "founder_decisions": "list", "candidates": "list",
+                                     "knapsack": "{values, weights, capacity}", "authority_created": "false"},
+                                    filesystem="read-scoped", retry_safe=True, data_classes=("project_sources",),
+                                    tests=_INSTITUTION_TESTS, provenance=_INSTITUTION_SOURCE),
+                           _lazy("greg.institution", "survey")),
+    "institution.compose": (_builtin("institution.compose", "institution.compose",
+                                     "For each candidate: the existing capabilities, Foundry systems and code that "
+                                     "advance it, and its CapabilityDeficits", "api", "read_only", "institution:",
+                                     {"kernel_root": "path", "candidates": "list"},
+                                     {"plans": "list", "composable": "int", "deficits": "int"},
+                                     filesystem="read-scoped", retry_safe=True, data_classes=("project_sources",),
+                                     tests=_INSTITUTION_TESTS, provenance=_INSTITUTION_SOURCE),
+                            _lazy("greg.institution", "compose")),
+    "institution.dossier": (_builtin("institution.dossier", "institution.dossier",
+                                     "Deliver one private founder dossier: objective, decisions, exact selection "
+                                     "against the greedy baseline, composition, frozen next work order, next step",
+                                     "api", "internal_write", "deliver:",
+                                     {"survey": "dict", "selection": "dict", "composition": "dict"},
+                                     {"delivered": "path", "json": "path", "sha256": "str", "selected": "list"},
+                                     filesystem="deliver-write", data_classes=("project_sources",),
+                                     tests=_INSTITUTION_TESTS, provenance=_INSTITUTION_SOURCE),
+                            _lazy("greg.institution", "dossier")),
+    "institution.appraise": (_builtin("institution.appraise", "institution.appraise",
+                                      "Independent sensor: re-survey the sources, re-prove optimality by a "
+                                      "different algorithm, replay the baseline, refute a dossier that does not hold",
+                                      "api", "read_only", "institution:", {"kernel_root": "path"},
+                                      {"verdict": "VERIFIED|REFUTED|ABSENT", "findings": "list", "checked": "int"},
+                                      filesystem="read-scoped", retry_safe=True, data_classes=("project_sources",),
+                                      tests=_INSTITUTION_TESTS, provenance=_INSTITUTION_SOURCE),
+                             _lazy("greg.institution", "appraise")),
+})
+
+# Cognitive families are the SAME capability manifests/genomes, lazily executed.
+# No second intelligence registry, event store, runtime, policy or model router.
+from greg.cognition.catalog import builtin_entries as _cognitive_entries  # noqa: E402
+BUILTINS.update(_cognitive_entries(CapabilityManifest, _lazy))
+
+
+class CapabilityRegistry:
+    """In-memory projection of capability events retained on the canonical spine."""
+
+    def __init__(self):
+        self.manifests: dict[str, CapabilityManifest] = {}
+        self.adapters: dict[str, object] = {}
+        self.state: dict[str, str] = {}
+        self.genomes = GenomeRegistry()
+
+    def register(self, manifest: CapabilityManifest, adapter, *, state: str) -> None:
+        if state not in STATES:
+            raise CapabilityError(f"unknown state {state}")
+        problems = manifest.validate()
+        if problems:
+            raise CapabilityError(f"invalid manifest {manifest.capability_id}: {problems}")
+        from greg.asks import human_work
+        if human_work(manifest.function):
+            raise CapabilityError(f"{manifest.capability_id}: {manifest.function} is work only a person may do; "
+                                  "GREG asks for that person and observes the deliverable, and never registers "
+                                  "software in their place")
+        self.genomes.register(manifest.genome())
+        self.manifests[manifest.capability_id] = manifest
+        self.adapters[manifest.capability_id] = adapter
+        self.state[manifest.capability_id] = state
+
+    def set_state(self, capability_id: str, state: str) -> None:
+        if capability_id not in self.manifests or state not in STATES:
+            raise CapabilityError("unknown capability or state")
+        self.state[capability_id] = state
+
+    def usable(self, capability_id: str) -> tuple[bool, str]:
+        if capability_id not in self.manifests:
+            return False, "not registered"
+        if self.state[capability_id] != "ATTACHED":
+            return False, f"state {self.state[capability_id]}"
+        return self.manifests[capability_id].available()
+
+    def by_function(self, function: str) -> list[CapabilityManifest]:
+        return [m for m in self.manifests.values() if m.function == function]
+
+    def inventory(self) -> list[dict]:
+        rows = []
+        for cid, manifest in sorted(self.manifests.items()):
+            ok, why = manifest.available()
+            rows.append({"capability_id": cid, "function": manifest.function, "route": manifest.route,
+                         "description": manifest.description, "inputs": manifest.inputs,
+                         "outputs": manifest.outputs, "target_prefix": manifest.target_prefix,
+                         "filesystem": manifest.filesystem,
+                         "consequence_class": manifest.consequence_class, "state": self.state[cid],
+                         "provider": manifest.provider, "health": "available" if ok else why,
+                         "credentials": list(manifest.credentials), "network": manifest.network,
+                         "strengthens": list(manifest.strengthens)})
+        return rows
+
+
+def installed_binary(name: str) -> str | None:
+    """Locate an installed executable on the standard system path only."""
+    found = shutil.which(name, path="/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin")
+    return str(Path(found).resolve()) if found else None
+
+# Seed-path cognition (#142 lineage): the static smallest-sufficient router over cortex.seed methods.
+# Converged 2026-10-02: the canonical ``cognition.solve`` is the cortex 0.2.1 bridge registered by
+# greg.cognition.catalog (#143/#140 lineage); this solver stays registered as the governed
+# alternative ``cognition.seed.solve`` (benchmark twin and fallback), never as a second authority.
+# ``cognition.status`` / ``cognition.settle`` keep their ids: they read and settle seed-path receipts.
+from dataclasses import asdict as _profile_dict
+from cortex.seed.contracts import CognitiveCapabilityProfile, METHODS, PROOFS
+
+for _cid, _handler, _consequence, _inputs in (
+    ('cognition.seed.solve', 'solve', 'read_only', {'problem': 'cognition/1'}),
+    ('cognition.status', 'status', 'read_only', {'problem_id': 'str'}),
+    ('cognition.settle', 'settle', 'internal_write', {'outcome_id': 'str', 'receipt_id': 'str',
+        'tier': 'str', 'score': 'number|null', 'evidence_refs': 'list', 'supersedes': 'str|null', 'conditions': 'dict'}),
+):
+    STRENGTHENS[_cid] = ('eligibility', 'routing', 'proof', 'settlement')
+    BUILTINS[_cid] = (_builtin(_cid, _cid, 'Bounded typed cognition with canonical authority and evidence',
+        'internal', _consequence, 'cognition:', _inputs, {'receipt': 'dict'},
+        strengthens=('eligibility', 'routing', 'proof', 'settlement'),
+        tests=('tests/unit/test_greg_cognition_seed_path.py',),
+        network='egress-allowlist' if _handler == 'solve' else 'none',
+        egress_allowlist=('127.0.0.1',) if _handler == 'solve' else (),
+        cognitive_profiles=tuple(_profile_dict(CognitiveCapabilityProfile(
+            METHODS[k], k, PROOFS[k], 'bounded seed; availability checked per request'))
+            for k in METHODS) if _handler == 'solve' else (),
+        provenance={'source': 'greg/cognition/seed_path.py', 'intent': 'INTENT-2026-10-01-POLYINTELLIGENCE-SEED'}),
+        _lazy('greg.cognition.seed_path', _handler))

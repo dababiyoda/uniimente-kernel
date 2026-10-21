@@ -1,0 +1,355 @@
+{
+  "decision_id": "FM-CONVERGENCE-20261007",
+  "title": "Converge existing Cortex and Hands while retaining tested seed compatibility",
+  "problem": "The current #147 Body/organ lineage and #148 Hands lack #143 Cortex; the same cognition.solve name has two incompatible contracts.",
+  "founder_intent_refs": [
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "Founder full-machine directive supplied in this 2026-10-07 session"
+  ],
+  "baseline": "#147 32003ed, #148 1aab413, #143 68b484b; latest #145 680a0d4 remains a separate reviewed delta.",
+  "alternatives": [
+    {
+      "name": "simplest_viable_alternative",
+      "description": "Use existing greg.cognition package as owner. Dispatch the legacy cognition/1 request to seed_compat and other requests to Cortex. Retain profiles, tests and history; use one existing capability registry and mission context.",
+      "advantages": [
+        "Uses existing mission, registry, Kernel and ledger owners."
+      ],
+      "disadvantages": [
+        "Compatibility adds maintenance cost."
+      ],
+      "revival_evidence": "Fresh executable compatibility and outcome evidence."
+    },
+    {
+      "name": "strongest_competing_architecture",
+      "description": "Integrate latest #145 changes immediately as a second broad merge.",
+      "advantages": [
+        "Retains its additional budget, routing and native repertoire mechanisms."
+      ],
+      "disadvantages": [
+        "Unreviewed overlapping contracts would obscure attribution and introduce another conflict set."
+      ],
+      "revival_evidence": "Fresh executable compatibility and outcome evidence."
+    },
+    {
+      "name": "reversible_experiment",
+      "description": "Keep the convergence on a draft branch and challenge it through signed local missions.",
+      "advantages": [
+        "Preserves main and founder deployment decisions."
+      ],
+      "disadvantages": [
+        "Test identities and local outcomes do not prove live founder use."
+      ],
+      "revival_evidence": "Fresh executable compatibility and outcome evidence."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Mind and Hands remain disconnected; operators still transfer results.",
+    "advantages": [
+      "No implementation risk."
+    ],
+    "disadvantages": [
+      "Misses a buildable founder requirement."
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Preserve intended full machine and do not treat this checkpoint as exhaustion. Five roles performed by one agent; not independent human reviewers.",
+      "material_concerns": [
+        "The latest #145 mechanisms are not yet integrated."
+      ],
+      "evidence_refs": [
+        "greg/cognition/__init__.py",
+        "greg/cognition/seed_compat.py",
+        "greg/missions.py",
+        "foundry/owned-source.json"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Reconcile the package/module collision through an explicit compatibility dispatcher, not a third Cortex. Five roles performed by one agent; not independent human reviewers.",
+      "material_concerns": [
+        "Two request contracts can diverge over time."
+      ],
+      "evidence_refs": [
+        "greg/cognition/__init__.py",
+        "greg/cognition/seed_compat.py",
+        "greg/missions.py",
+        "foundry/owned-source.json"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Keep capability eligibility, signed Gate and protected paths load-bearing; test both contracts. Five roles performed by one agent; not independent human reviewers.",
+      "material_concerns": [
+        "A second profile field could silently replace a historical digest."
+      ],
+      "evidence_refs": [
+        "greg/cognition/__init__.py",
+        "greg/cognition/seed_compat.py",
+        "greg/missions.py",
+        "foundry/owned-source.json"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Regenerate the explicit owned-source allowlist after module migration and rerun whole-stack tests. Five roles performed by one agent; not independent human reviewers.",
+      "material_concerns": [
+        "Stale package allowlists can break isolated owned workers."
+      ],
+      "evidence_refs": [
+        "greg/cognition/__init__.py",
+        "greg/cognition/seed_compat.py",
+        "greg/missions.py",
+        "foundry/owned-source.json"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Record initial failed tests and distinguish local test identities from Alfonso or external outcomes. Five roles performed by one agent; not independent human reviewers.",
+      "material_concerns": [
+        "A passing suite does not establish full-machine or founder-device proof."
+      ],
+      "evidence_refs": [
+        "greg/cognition/__init__.py",
+        "greg/cognition/seed_compat.py",
+        "greg/missions.py",
+        "foundry/owned-source.json"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Executable local integration",
+      "tier": "sandbox_execution",
+      "reference": "docs/evidence/full-machine-convergence-20261007/",
+      "finding": "Signed test-key missions and separate-process appraisal; no production or economic claim."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Full machine complete",
+      "tier": "other",
+      "reference": "docs/evidence/full-machine-convergence-20261007/handoff.md",
+      "finding": "False: latest #145, generic CLI confinement, actual browser/provider chains, founder-device and external economic/human proofs remain open."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "The current #147 Body/organ lineage and #148 Hands lack #143 Cortex; the same cognition.solve name has two incompatible contracts.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Preserve intended full machine and do not treat this checkpoint as exhaustion.",
+        "amplified_value": "Useful work through one governed GREG."
+      },
+      {
+        "id": "A2",
+        "statement": "Reconcile the package/module collision through an explicit compatibility dispatcher, not a third Cortex.",
+        "amplified_value": "Useful work through one governed GREG."
+      },
+      {
+        "id": "A3",
+        "statement": "Keep capability eligibility, signed Gate and protected paths load-bearing; test both contracts.",
+        "amplified_value": "Useful work through one governed GREG."
+      },
+      {
+        "id": "A4",
+        "statement": "Regenerate the explicit owned-source allowlist after module migration and rerun whole-stack tests.",
+        "amplified_value": "Useful work through one governed GREG."
+      },
+      {
+        "id": "A5",
+        "statement": "Record initial failed tests and distinguish local test identities from Alfonso or external outcomes.",
+        "amplified_value": "Useful work through one governed GREG."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "The latest #145 mechanisms are not yet integrated.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Preserve intended full machine and do not treat this checkpoint as exhaustion."
+      },
+      {
+        "id": "D2",
+        "statement": "Two request contracts can diverge over time.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Reconcile the package/module collision through an explicit compatibility dispatcher, not a third Cortex."
+      },
+      {
+        "id": "D3",
+        "statement": "A second profile field could silently replace a historical digest.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Keep capability eligibility, signed Gate and protected paths load-bearing; test both contracts."
+      },
+      {
+        "id": "D4",
+        "statement": "Stale package allowlists can break isolated owned workers.",
+        "severity": "high",
+        "response_type": "learning",
+        "redesigned_response": "Regenerate the explicit owned-source allowlist after module migration and rerun whole-stack tests."
+      },
+      {
+        "id": "D5",
+        "statement": "A passing suite does not establish full-machine or founder-device proof.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Record initial failed tests and distinguish local test identities from Alfonso or external outcomes."
+      }
+    ],
+    "comparisons": {
+      "baseline": "#147 32003ed, #148 1aab413, #143 68b484b; latest #145 680a0d4 remains a separate reviewed delta.",
+      "do_nothing": "Mind and Hands remain disconnected; operators still transfer results.",
+      "simplest_viable_alternative": "Use existing greg.cognition package as owner. Dispatch the legacy cognition/1 request to seed_compat and other requests to Cortex. Retain profiles, tests and history; use one existing capability registry and mission context.",
+      "strongest_competing_architecture": "Integrate latest #145 changes immediately as a second broad merge.",
+      "reversible_experiment": "Keep the convergence on a draft branch and challenge it through signed local missions."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "strongest_competing_architecture",
+        "rejection_reason": "Unreviewed overlapping contracts would obscure attribution and introduce another conflict set. Deferred reconciliation remains an active obligation.",
+        "revival_evidence": "Reviewed #145 delta after this merge has a tested checkpoint."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack authority drift, false proof, provider dependence, complexity, stale source inventory, cross-mission leakage and hidden labor.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "comprehensibility",
+        "statement": "Python silently preferred the package over the old module.",
+        "strengthening_response": "Move the module to seed_compat and test both entry contracts."
+      },
+      {
+        "id": "N2",
+        "category": "fragility",
+        "statement": "27 initial suite failures included 26 stale owned-source inventory failures.",
+        "strengthening_response": "Repair the canonical packaging source manifest and rerun affected owners and full suite."
+      },
+      {
+        "id": "N3",
+        "category": "gaming",
+        "statement": "Latest #145 head is newer than supplied snapshot.",
+        "strengthening_response": "Name its exact head and keep its reconciliation an explicit unblocked next action."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Preserve intended full machine and do not treat this checkpoint as exhaustion.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed interfaces or outcome claims."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Reconcile the package/module collision through an explicit compatibility dispatcher, not a third Cortex.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed interfaces or outcome claims."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Keep capability eligibility, signed Gate and protected paths load-bearing; test both contracts.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed interfaces or outcome claims."
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "accepted",
+        "rationale": "Regenerate the explicit owned-source allowlist after module migration and rerun whole-stack tests.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed interfaces or outcome claims."
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "Record initial failed tests and distinguish local test identities from Alfonso or external outcomes.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed interfaces or outcome claims."
+      }
+    ],
+    "final_design": "Use existing greg.cognition package as owner. Dispatch the legacy cognition/1 request to seed_compat and other requests to Cortex. Retain profiles, tests and history; use one existing capability registry and mission context.",
+    "residual_risks": [
+      {
+        "risk": "The latest #145 mechanisms are not yet integrated.",
+        "mitigation": "Preserve intended full machine and do not treat this checkpoint as exhaustion.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any completion, deployment or authority claim."
+      },
+      {
+        "risk": "Two request contracts can diverge over time.",
+        "mitigation": "Reconcile the package/module collision through an explicit compatibility dispatcher, not a third Cortex.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any completion, deployment or authority claim."
+      },
+      {
+        "risk": "A second profile field could silently replace a historical digest.",
+        "mitigation": "Keep capability eligibility, signed Gate and protected paths load-bearing; test both contracts.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any completion, deployment or authority claim."
+      },
+      {
+        "risk": "Stale package allowlists can break isolated owned workers.",
+        "mitigation": "Regenerate the explicit owned-source allowlist after module migration and rerun whole-stack tests.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any completion, deployment or authority claim."
+      },
+      {
+        "risk": "A passing suite does not establish full-machine or founder-device proof.",
+        "mitigation": "Record initial failed tests and distinguish local test identities from Alfonso or external outcomes.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any completion, deployment or authority claim."
+      }
+    ],
+    "recommendation": "RETAIN"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Retain unfinished obligations explicitly.",
+    "entries": [
+      {
+        "role": "Founder-Intent Steward",
+        "position": "A tested convergence checkpoint is not full-machine exhaustion.",
+        "rationale": "Latest #145 and safe buildable dependencies still need work.",
+        "evidence_threshold": "Executable reconciliation and required outcome tiers.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any full-machine completion claim."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Use existing greg.cognition package as owner. Dispatch the legacy cognition/1 request to seed_compat and other requests to Cortex. Retain profiles, tests and history; use one existing capability registry and mission context. Preserve historical parents and compatibility tests; no main merge.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert branch delta; retain original branches, ledgers and negative test evidence."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Authority expanded by data or compatibility dispatch.",
+    "Cross-mission input accepted.",
+    "Constitution, shutdown or production permission bypassed.",
+    "Local test outcomes represented as economic or founder-device evidence."
+  ],
+  "decision": "RETAIN",
+  "decision_owner": "GREG maintainers for reversible development; real Alfonso for reserved actions",
+  "review_trigger": "Hosted CI and next executable #145 reconciliation."
+}

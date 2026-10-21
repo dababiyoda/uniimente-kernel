@@ -1,0 +1,1609 @@
+{
+ "base": "3d2bb1762ff7",
+ "prs": [
+  {
+   "number": 160,
+   "sha": "ef4f5c715fd1",
+   "contains_base": false,
+   "ahead_of_base": 1
+  },
+  {
+   "number": 159,
+   "sha": "e125168be818",
+   "contains_base": true,
+   "ahead_of_base": 77
+  },
+  {
+   "number": 158,
+   "sha": "0f4bc52cc156",
+   "contains_base": true,
+   "ahead_of_base": 122
+  },
+  {
+   "number": 157,
+   "sha": "f66f860a1932",
+   "contains_base": true,
+   "ahead_of_base": 33
+  },
+  {
+   "number": 156,
+   "sha": "62d625c4bc39",
+   "contains_base": true,
+   "ahead_of_base": 75
+  },
+  {
+   "number": 155,
+   "sha": "92bc6e31e0ba",
+   "contains_base": true,
+   "ahead_of_base": 78
+  },
+  {
+   "number": 154,
+   "sha": "d282d2e337c9",
+   "contains_base": true,
+   "ahead_of_base": 48
+  },
+  {
+   "number": 153,
+   "sha": "91703729a64e",
+   "contains_base": true,
+   "ahead_of_base": 82
+  },
+  {
+   "number": 152,
+   "sha": "5ce2f3741753",
+   "contains_base": false,
+   "ahead_of_base": 3
+  },
+  {
+   "number": 151,
+   "sha": "c5801136ff80",
+   "contains_base": true,
+   "ahead_of_base": 66
+  },
+  {
+   "number": 150,
+   "sha": "00b9fe791711",
+   "contains_base": true,
+   "ahead_of_base": 22
+  },
+  {
+   "number": 149,
+   "sha": "1c52ebe12956",
+   "contains_base": true,
+   "ahead_of_base": 22
+  },
+  {
+   "number": 148,
+   "sha": "1aab4132fa4c",
+   "contains_base": true,
+   "ahead_of_base": 22
+  },
+  {
+   "number": 147,
+   "sha": "32003ed00cd9",
+   "contains_base": true,
+   "ahead_of_base": 24
+  },
+  {
+   "number": 146,
+   "sha": "9d9f1f9cb230",
+   "contains_base": true,
+   "ahead_of_base": 4
+  },
+  {
+   "number": 145,
+   "sha": "680a0d438e94",
+   "contains_base": true,
+   "ahead_of_base": 3
+  },
+  {
+   "number": 144,
+   "sha": "f83b31da0f3b",
+   "contains_base": false,
+   "ahead_of_base": 12
+  },
+  {
+   "number": 143,
+   "sha": "aecffb8f7d93",
+   "contains_base": true,
+   "ahead_of_base": 54
+  },
+  {
+   "number": 142,
+   "sha": "3de9f950ec49",
+   "contains_base": true,
+   "ahead_of_base": 2
+  },
+  {
+   "number": 141,
+   "sha": "ebc21301e6af",
+   "contains_base": false,
+   "ahead_of_base": 27
+  },
+  {
+   "number": 140,
+   "sha": "3ced61db403a",
+   "contains_base": true,
+   "ahead_of_base": 1
+  },
+  {
+   "number": 139,
+   "sha": "30d162b6016a",
+   "contains_base": false,
+   "ahead_of_base": 1
+  },
+  {
+   "number": 138,
+   "sha": "11ba6610752c",
+   "contains_base": false,
+   "ahead_of_base": 5
+  }
+ ],
+ "tips": [
+  138,
+  139,
+  141,
+  143,
+  144,
+  145,
+  149,
+  150,
+  152,
+  153,
+  154,
+  157,
+  158,
+  159,
+  160
+ ],
+ "not_on_base": [
+  138,
+  139,
+  141,
+  144,
+  152,
+  160
+ ],
+ "divergent_tip_pairs": [
+  {
+   "tips": [
+    138,
+    139
+   ],
+   "only_138": 118,
+   "only_139": 1,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 1,
+   "sample": [
+    "docs/FOUNDER_INTENT_LEDGER.md"
+   ]
+  },
+  {
+   "tips": [
+    138,
+    143
+   ],
+   "only_138": 5,
+   "only_143": 59,
+   "merge_base": "a4eeb7082011",
+   "conflicting_files": 6,
+   "sample": [
+    "AGENTS.md",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+    "greg/appraisal.py",
+    "tests/unit/test_developmental_inheritance.py",
+    "tests/unit/test_greg_chromebook_install.py"
+   ]
+  },
+  {
+   "tips": [
+    138,
+    144
+   ],
+   "only_138": 118,
+   "only_144": 12,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 2,
+   "sample": [
+    "AGENTS.md",
+    "docs/FOUNDER_INTENT_LEDGER.md"
+   ]
+  },
+  {
+   "tips": [
+    138,
+    145
+   ],
+   "only_138": 5,
+   "only_145": 8,
+   "merge_base": "a4eeb7082011",
+   "conflicting_files": 6,
+   "sample": [
+    "AGENTS.md",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+    "greg/appraisal.py",
+    "tests/unit/test_developmental_inheritance.py",
+    "tests/unit/test_greg_chromebook_install.py"
+   ]
+  },
+  {
+   "tips": [
+    138,
+    149
+   ],
+   "only_138": 5,
+   "only_149": 27,
+   "merge_base": "a4eeb7082011",
+   "conflicting_files": 3,
+   "sample": [
+    "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+    "greg/appraisal.py",
+    "tests/unit/test_developmental_inheritance.py"
+   ]
+  },
+  {
+   "tips": [
+    138,
+    150
+   ],
+   "only_138": 5,
+   "only_150": 27,
+   "merge_base": "a4eeb7082011",
+   "conflicting_files": 3,
+   "sample": [
+    "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+    "greg/appraisal.py",
+    "tests/unit/test_developmental_inheritance.py"
+   ]
+  },
+  {
+   "tips": [
+    138,
+    152
+   ],
+   "only_138": 118,
+   "only_152": 3,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 7,
+   "sample": [
+    ".github/ISSUE_TEMPLATE/agent-implementation-task.md",
+    ".github/copilot-instructions.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/CANONICAL_EXECUTION_ORDER.md",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/UNIIMENTE_FINAL_BUILD_ORDER.md"
+   ]
+  },
+  {
+   "tips": [
+    138,
+    153
+   ],
+   "only_138": 5,
+   "only_153": 87,
+   "merge_base": "a4eeb7082011",
+   "conflicting_files": 5,
+   "sample": [
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+    "greg/appraisal.py",
+    "tests/unit/test_developmental_inheritance.py",
+    "tests/unit/test_greg_chromebook_install.py"
+   ]
+  },
+  {
+   "tips": [
+    138,
+    154
+   ],
+   "only_138": 5,
+   "only_154": 53,
+   "merge_base": "a4eeb7082011",
+   "conflicting_files": 4,
+   "sample": [
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+    "greg/appraisal.py",
+    "tests/unit/test_developmental_inheritance.py"
+   ]
+  },
+  {
+   "tips": [
+    138,
+    157
+   ],
+   "only_138": 5,
+   "only_157": 38,
+   "merge_base": "a4eeb7082011",
+   "conflicting_files": 6,
+   "sample": [
+    "AGENTS.md",
+    "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+    "greg/appraisal.py",
+    "greg/chromebook/install.sh",
+    "greg/path.py",
+    "tests/unit/test_developmental_inheritance.py"
+   ]
+  },
+  {
+   "tips": [
+    138,
+    158
+   ],
+   "only_138": 5,
+   "only_158": 127,
+   "merge_base": "a4eeb7082011",
+   "conflicting_files": 5,
+   "sample": [
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+    "greg/appraisal.py",
+    "tests/unit/test_developmental_inheritance.py",
+    "tests/unit/test_greg_chromebook_install.py"
+   ]
+  },
+  {
+   "tips": [
+    138,
+    159
+   ],
+   "only_138": 5,
+   "only_159": 82,
+   "merge_base": "a4eeb7082011",
+   "conflicting_files": 5,
+   "sample": [
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+    "greg/appraisal.py",
+    "tests/unit/test_developmental_inheritance.py",
+    "tests/unit/test_greg_chromebook_install.py"
+   ]
+  },
+  {
+   "tips": [
+    138,
+    160
+   ],
+   "only_138": 118,
+   "only_160": 1,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 3,
+   "sample": [
+    "closure/integration_registry.py",
+    "egregore/__init__.py",
+    "verifier/v2/criteria.json"
+   ]
+  },
+  {
+   "tips": [
+    139,
+    143
+   ],
+   "only_139": 1,
+   "only_143": 172,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 2,
+   "sample": [
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "requirements-cognition.txt"
+   ]
+  },
+  {
+   "tips": [
+    139,
+    145
+   ],
+   "only_139": 1,
+   "only_145": 121,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 3,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "requirements-cognition.txt"
+   ]
+  },
+  {
+   "tips": [
+    139,
+    149
+   ],
+   "only_139": 1,
+   "only_149": 140,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 3,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "requirements-cognition.txt"
+   ]
+  },
+  {
+   "tips": [
+    139,
+    150
+   ],
+   "only_139": 1,
+   "only_150": 140,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 3,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "requirements-cognition.txt"
+   ]
+  },
+  {
+   "tips": [
+    139,
+    153
+   ],
+   "only_139": 1,
+   "only_153": 200,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 2,
+   "sample": [
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "requirements-cognition.txt"
+   ]
+  },
+  {
+   "tips": [
+    139,
+    154
+   ],
+   "only_139": 1,
+   "only_154": 166,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 3,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "requirements-cognition.txt"
+   ]
+  },
+  {
+   "tips": [
+    139,
+    157
+   ],
+   "only_139": 1,
+   "only_157": 151,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 3,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "requirements-cognition.txt"
+   ]
+  },
+  {
+   "tips": [
+    139,
+    158
+   ],
+   "only_139": 1,
+   "only_158": 240,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 3,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "requirements-cognition.txt"
+   ]
+  },
+  {
+   "tips": [
+    139,
+    159
+   ],
+   "only_139": 1,
+   "only_159": 195,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 3,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "requirements-cognition.txt"
+   ]
+  },
+  {
+   "tips": [
+    141,
+    149
+   ],
+   "only_141": 27,
+   "only_149": 140,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 6,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "docs/collaboration/deliberation-polyintelligence-cortex-20260930.json",
+    "docs/cortex/README.md",
+    "docs/cortex/SEED_EXPERIMENT_REPORT.md",
+    "docs/decisions/ADR-20260930-polyintelligence-cortex-seed.md",
+    "tests/unit/test_cortex_register.py"
+   ]
+  },
+  {
+   "tips": [
+    141,
+    150
+   ],
+   "only_141": 27,
+   "only_150": 140,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 6,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "docs/collaboration/deliberation-polyintelligence-cortex-20260930.json",
+    "docs/cortex/README.md",
+    "docs/cortex/SEED_EXPERIMENT_REPORT.md",
+    "docs/decisions/ADR-20260930-polyintelligence-cortex-seed.md",
+    "tests/unit/test_cortex_register.py"
+   ]
+  },
+  {
+   "tips": [
+    141,
+    154
+   ],
+   "only_141": 27,
+   "only_154": 166,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 39,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "contracts/cortex-intelligence-genome.schema.json",
+    "contracts/cortex-problem-geometry.schema.json",
+    "contracts/cortex-proof-artifact.schema.json",
+    "contracts/cortex-receipt.schema.json",
+    "cortex/contracts.py",
+    "cortex/evaluation/run.py",
+    "cortex/examples.py"
+   ]
+  },
+  {
+   "tips": [
+    141,
+    157
+   ],
+   "only_141": 27,
+   "only_157": 151,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 19,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "contracts/cortex-intelligence-genome.schema.json",
+    "contracts/cortex-problem-geometry.schema.json",
+    "contracts/cortex-proof-artifact.schema.json",
+    "contracts/cortex-receipt.schema.json",
+    "cortex/contracts.py",
+    "cortex/evaluation/run.py",
+    "cortex/examples.py"
+   ]
+  },
+  {
+   "tips": [
+    143,
+    144
+   ],
+   "only_143": 172,
+   "only_144": 12,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 2,
+   "sample": [
+    "AGENTS.md",
+    "docs/FOUNDER_INTENT_LEDGER.md"
+   ]
+  },
+  {
+   "tips": [
+    143,
+    145
+   ],
+   "only_143": 53,
+   "only_145": 2,
+   "merge_base": "3ced61db403a",
+   "conflicting_files": 26,
+   "sample": [
+    ".github/copilot-instructions.md",
+    "AGENTS.md",
+    "docs/BUILD_ORDER.md",
+    "docs/CANONICAL_EXECUTION_ORDER.md",
+    "docs/FOUNDER_EFFECT_COMPILER.md",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/PROJECT_COGNITION_CONTINUITY.md",
+    "docs/UNIIMENTE_FINAL_BUILD_ORDER.md"
+   ]
+  },
+  {
+   "tips": [
+    143,
+    149
+   ],
+   "only_143": 54,
+   "only_149": 22,
+   "merge_base": "3d2bb1762ff7",
+   "conflicting_files": 51,
+   "sample": [
+    ".github/pull_request_template.md",
+    ".github/workflows/canonical-ci.yml",
+    "capabilities/genome.py",
+    "contracts/cortex-intelligence-genome.schema.json",
+    "contracts/cortex-problem-geometry.schema.json",
+    "contracts/cortex-proof-artifact.schema.json",
+    "contracts/cortex-receipt.schema.json",
+    "cortex/contracts.py"
+   ]
+  },
+  {
+   "tips": [
+    143,
+    150
+   ],
+   "only_143": 54,
+   "only_150": 22,
+   "merge_base": "3d2bb1762ff7",
+   "conflicting_files": 49,
+   "sample": [
+    ".github/pull_request_template.md",
+    ".github/workflows/canonical-ci.yml",
+    "capabilities/genome.py",
+    "contracts/cortex-intelligence-genome.schema.json",
+    "contracts/cortex-problem-geometry.schema.json",
+    "contracts/cortex-proof-artifact.schema.json",
+    "contracts/cortex-receipt.schema.json",
+    "cortex/contracts.py"
+   ]
+  },
+  {
+   "tips": [
+    143,
+    152
+   ],
+   "only_143": 170,
+   "only_152": 1,
+   "merge_base": "3378082a792d",
+   "conflicting_files": 1,
+   "sample": [
+    "docs/CANONICAL_EXECUTION_ORDER.md"
+   ]
+  },
+  {
+   "tips": [
+    143,
+    154
+   ],
+   "only_143": 54,
+   "only_154": 48,
+   "merge_base": "3d2bb1762ff7",
+   "conflicting_files": 49,
+   "sample": [
+    ".github/pull_request_template.md",
+    ".github/workflows/canonical-ci.yml",
+    "capabilities/genome.py",
+    "cortex/contracts.py",
+    "cortex/evaluation/crossgeo.py",
+    "cortex/evaluation/run.py",
+    "cortex/genome.py",
+    "cortex/routing.py"
+   ]
+  },
+  {
+   "tips": [
+    143,
+    157
+   ],
+   "only_143": 54,
+   "only_157": 33,
+   "merge_base": "3d2bb1762ff7",
+   "conflicting_files": 57,
+   "sample": [
+    ".github/ISSUE_TEMPLATE/agent-implementation-task.md",
+    ".github/copilot-instructions.md",
+    ".github/pull_request_template.md",
+    ".github/workflows/canonical-ci.yml",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "capabilities/genome.py",
+    "cortex/contracts.py"
+   ]
+  },
+  {
+   "tips": [
+    143,
+    158
+   ],
+   "only_143": 8,
+   "only_158": 76,
+   "merge_base": "68b484bb45a6",
+   "conflicting_files": 7,
+   "sample": [
+    ".github/pull_request_template.md",
+    "docs/BUILD_ORDER.md",
+    "docs/CANONICAL_EXECUTION_ORDER.md",
+    "docs/FOUNDER_EFFECT_COMPILER.md",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/UNIIMENTE_FINAL_BUILD_ORDER.md",
+    "greg/path.json"
+   ]
+  },
+  {
+   "tips": [
+    143,
+    159
+   ],
+   "only_143": 8,
+   "only_159": 31,
+   "merge_base": "68b484bb45a6",
+   "conflicting_files": 6,
+   "sample": [
+    ".github/pull_request_template.md",
+    "docs/BUILD_ORDER.md",
+    "docs/CANONICAL_EXECUTION_ORDER.md",
+    "docs/FOUNDER_EFFECT_COMPILER.md",
+    "docs/UNIIMENTE_FINAL_BUILD_ORDER.md",
+    "greg/cognition/solvers.py"
+   ]
+  },
+  {
+   "tips": [
+    143,
+    160
+   ],
+   "only_143": 172,
+   "only_160": 1,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 3,
+   "sample": [
+    "closure/integration_registry.py",
+    "egregore/__init__.py",
+    "verifier/v2/criteria.json"
+   ]
+  },
+  {
+   "tips": [
+    144,
+    145
+   ],
+   "only_144": 12,
+   "only_145": 121,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 2,
+   "sample": [
+    "AGENTS.md",
+    "docs/FOUNDER_INTENT_LEDGER.md"
+   ]
+  },
+  {
+   "tips": [
+    144,
+    149
+   ],
+   "only_144": 12,
+   "only_149": 140,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 2,
+   "sample": [
+    "AGENTS.md",
+    "docs/FOUNDER_INTENT_LEDGER.md"
+   ]
+  },
+  {
+   "tips": [
+    144,
+    150
+   ],
+   "only_144": 12,
+   "only_150": 140,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 2,
+   "sample": [
+    "AGENTS.md",
+    "docs/FOUNDER_INTENT_LEDGER.md"
+   ]
+  },
+  {
+   "tips": [
+    144,
+    152
+   ],
+   "only_144": 12,
+   "only_152": 3,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 2,
+   "sample": [
+    ".github/copilot-instructions.md",
+    "docs/FOUNDER_INTENT_LEDGER.md"
+   ]
+  },
+  {
+   "tips": [
+    144,
+    153
+   ],
+   "only_144": 12,
+   "only_153": 200,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 2,
+   "sample": [
+    "AGENTS.md",
+    "docs/FOUNDER_INTENT_LEDGER.md"
+   ]
+  },
+  {
+   "tips": [
+    144,
+    154
+   ],
+   "only_144": 12,
+   "only_154": 166,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 2,
+   "sample": [
+    "AGENTS.md",
+    "docs/FOUNDER_INTENT_LEDGER.md"
+   ]
+  },
+  {
+   "tips": [
+    144,
+    157
+   ],
+   "only_144": 12,
+   "only_157": 151,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 3,
+   "sample": [
+    ".github/copilot-instructions.md",
+    "AGENTS.md",
+    "docs/FOUNDER_INTENT_LEDGER.md"
+   ]
+  },
+  {
+   "tips": [
+    144,
+    158
+   ],
+   "only_144": 12,
+   "only_158": 240,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 2,
+   "sample": [
+    "AGENTS.md",
+    "docs/FOUNDER_INTENT_LEDGER.md"
+   ]
+  },
+  {
+   "tips": [
+    144,
+    159
+   ],
+   "only_144": 12,
+   "only_159": 195,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 2,
+   "sample": [
+    "AGENTS.md",
+    "docs/FOUNDER_INTENT_LEDGER.md"
+   ]
+  },
+  {
+   "tips": [
+    145,
+    149
+   ],
+   "only_145": 3,
+   "only_149": 22,
+   "merge_base": "3d2bb1762ff7",
+   "conflicting_files": 32,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "capabilities/genome.py",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/PROJECT_COGNITION_CONTINUITY.md",
+    "docs/collaboration/FULL-MACHINE-CORRECTION-20261001.md",
+    "docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json",
+    "docs/intent/sources/FULL-MACHINE-COMPLETION-CORRECTION-20261001.md",
+    "foundry/systems/__init__.py"
+   ]
+  },
+  {
+   "tips": [
+    145,
+    150
+   ],
+   "only_145": 3,
+   "only_150": 22,
+   "merge_base": "3d2bb1762ff7",
+   "conflicting_files": 30,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "capabilities/genome.py",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/PROJECT_COGNITION_CONTINUITY.md",
+    "docs/collaboration/FULL-MACHINE-CORRECTION-20261001.md",
+    "docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json",
+    "docs/intent/sources/FULL-MACHINE-COMPLETION-CORRECTION-20261001.md",
+    "foundry/systems/__init__.py"
+   ]
+  },
+  {
+   "tips": [
+    145,
+    152
+   ],
+   "only_145": 121,
+   "only_152": 3,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 9,
+   "sample": [
+    ".github/ISSUE_TEMPLATE/agent-implementation-task.md",
+    ".github/copilot-instructions.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/BUILD_ORDER.md",
+    "docs/CANONICAL_EXECUTION_ORDER.md",
+    "docs/FOUNDER_EFFECT_COMPILER.md",
+    "docs/FOUNDER_INTENT_LEDGER.md"
+   ]
+  },
+  {
+   "tips": [
+    145,
+    153
+   ],
+   "only_145": 2,
+   "only_153": 81,
+   "merge_base": "3ced61db403a",
+   "conflicting_files": 20,
+   "sample": [
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/PROJECT_COGNITION_CONTINUITY.md",
+    "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+    "greg/CHROMEBOOK_FIRST_MISSION.md",
+    "greg/asks.py",
+    "greg/chromebook/install.sh",
+    "greg/cli.py",
+    "greg/cognition/contracts.py"
+   ]
+  },
+  {
+   "tips": [
+    145,
+    154
+   ],
+   "only_145": 3,
+   "only_154": 48,
+   "merge_base": "3d2bb1762ff7",
+   "conflicting_files": 44,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "capabilities/genome.py",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/PROJECT_COGNITION_CONTINUITY.md",
+    "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+    "docs/collaboration/FULL-MACHINE-CORRECTION-20261001.md",
+    "docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json",
+    "docs/intent/sources/FULL-MACHINE-COMPLETION-CORRECTION-20261001.md"
+   ]
+  },
+  {
+   "tips": [
+    145,
+    157
+   ],
+   "only_145": 3,
+   "only_157": 33,
+   "merge_base": "3d2bb1762ff7",
+   "conflicting_files": 38,
+   "sample": [
+    ".github/copilot-instructions.md",
+    ".github/workflows/canonical-ci.yml",
+    "AGENTS.md",
+    "capabilities/genome.py",
+    "docs/BUILD_ORDER.md",
+    "docs/CANONICAL_EXECUTION_ORDER.md",
+    "docs/FOUNDER_EFFECT_COMPILER.md",
+    "docs/FOUNDER_INTENT_LEDGER.md"
+   ]
+  },
+  {
+   "tips": [
+    145,
+    158
+   ],
+   "only_145": 2,
+   "only_158": 121,
+   "merge_base": "3ced61db403a",
+   "conflicting_files": 50,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/PROJECT_COGNITION_CONTINUITY.md",
+    "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+    "docs/collaboration/FULL-MACHINE-CORRECTION-20261001.md",
+    "docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json",
+    "docs/intent/sources/FULL-MACHINE-COMPLETION-CORRECTION-20261001.md",
+    "foundry/systems/__init__.py"
+   ]
+  },
+  {
+   "tips": [
+    145,
+    159
+   ],
+   "only_145": 2,
+   "only_159": 76,
+   "merge_base": "3ced61db403a",
+   "conflicting_files": 46,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/PROJECT_COGNITION_CONTINUITY.md",
+    "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+    "docs/collaboration/FULL-MACHINE-CORRECTION-20261001.md",
+    "docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json",
+    "docs/intent/sources/FULL-MACHINE-COMPLETION-CORRECTION-20261001.md",
+    "foundry/systems/__init__.py"
+   ]
+  },
+  {
+   "tips": [
+    145,
+    160
+   ],
+   "only_145": 121,
+   "only_160": 1,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 3,
+   "sample": [
+    "closure/integration_registry.py",
+    "egregore/__init__.py",
+    "verifier/v2/criteria.json"
+   ]
+  },
+  {
+   "tips": [
+    149,
+    152
+   ],
+   "only_149": 140,
+   "only_152": 3,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 10,
+   "sample": [
+    ".github/ISSUE_TEMPLATE/agent-implementation-task.md",
+    ".github/copilot-instructions.md",
+    ".github/pull_request_template.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/BUILD_ORDER.md",
+    "docs/CANONICAL_EXECUTION_ORDER.md",
+    "docs/FOUNDER_EFFECT_COMPILER.md"
+   ]
+  },
+  {
+   "tips": [
+    149,
+    153
+   ],
+   "only_149": 22,
+   "only_153": 82,
+   "merge_base": "3d2bb1762ff7",
+   "conflicting_files": 48,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "capabilities/genome.py",
+    "contracts/cortex-intelligence-genome.schema.json",
+    "contracts/cortex-problem-geometry.schema.json",
+    "contracts/cortex-proof-artifact.schema.json",
+    "contracts/cortex-receipt.schema.json",
+    "cortex/contracts.py",
+    "cortex/evaluation/run.py"
+   ]
+  },
+  {
+   "tips": [
+    149,
+    157
+   ],
+   "only_149": 1,
+   "only_157": 12,
+   "merge_base": "aed2f83e5e35",
+   "conflicting_files": 2,
+   "sample": [
+    "greg/doctor.py",
+    "tests/unit/test_greg_chromebook_doctor.py"
+   ]
+  },
+  {
+   "tips": [
+    149,
+    158
+   ],
+   "only_149": 1,
+   "only_158": 101,
+   "merge_base": "aed2f83e5e35",
+   "conflicting_files": 2,
+   "sample": [
+    "greg/doctor.py",
+    "tests/unit/test_greg_chromebook_doctor.py"
+   ]
+  },
+  {
+   "tips": [
+    149,
+    159
+   ],
+   "only_149": 1,
+   "only_159": 56,
+   "merge_base": "aed2f83e5e35",
+   "conflicting_files": 2,
+   "sample": [
+    "greg/doctor.py",
+    "tests/unit/test_greg_chromebook_doctor.py"
+   ]
+  },
+  {
+   "tips": [
+    149,
+    160
+   ],
+   "only_149": 140,
+   "only_160": 1,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 3,
+   "sample": [
+    "closure/integration_registry.py",
+    "egregore/__init__.py",
+    "verifier/v2/criteria.json"
+   ]
+  },
+  {
+   "tips": [
+    150,
+    152
+   ],
+   "only_150": 140,
+   "only_152": 3,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 10,
+   "sample": [
+    ".github/ISSUE_TEMPLATE/agent-implementation-task.md",
+    ".github/copilot-instructions.md",
+    ".github/pull_request_template.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/BUILD_ORDER.md",
+    "docs/CANONICAL_EXECUTION_ORDER.md",
+    "docs/FOUNDER_EFFECT_COMPILER.md"
+   ]
+  },
+  {
+   "tips": [
+    150,
+    153
+   ],
+   "only_150": 22,
+   "only_153": 82,
+   "merge_base": "3d2bb1762ff7",
+   "conflicting_files": 46,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "capabilities/genome.py",
+    "contracts/cortex-intelligence-genome.schema.json",
+    "contracts/cortex-problem-geometry.schema.json",
+    "contracts/cortex-proof-artifact.schema.json",
+    "contracts/cortex-receipt.schema.json",
+    "cortex/contracts.py",
+    "cortex/evaluation/run.py"
+   ]
+  },
+  {
+   "tips": [
+    150,
+    157
+   ],
+   "only_150": 1,
+   "only_157": 12,
+   "merge_base": "aed2f83e5e35",
+   "conflicting_files": 2,
+   "sample": [
+    "greg/computer.py",
+    "tests/unit/test_computer_use_ready.py"
+   ]
+  },
+  {
+   "tips": [
+    150,
+    160
+   ],
+   "only_150": 140,
+   "only_160": 1,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 3,
+   "sample": [
+    "closure/integration_registry.py",
+    "egregore/__init__.py",
+    "verifier/v2/criteria.json"
+   ]
+  },
+  {
+   "tips": [
+    152,
+    153
+   ],
+   "only_152": 3,
+   "only_153": 200,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 7,
+   "sample": [
+    ".github/ISSUE_TEMPLATE/agent-implementation-task.md",
+    ".github/copilot-instructions.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/CANONICAL_EXECUTION_ORDER.md",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/UNIIMENTE_FINAL_BUILD_ORDER.md"
+   ]
+  },
+  {
+   "tips": [
+    152,
+    154
+   ],
+   "only_152": 3,
+   "only_154": 166,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 10,
+   "sample": [
+    ".github/ISSUE_TEMPLATE/agent-implementation-task.md",
+    ".github/copilot-instructions.md",
+    ".github/pull_request_template.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/BUILD_ORDER.md",
+    "docs/CANONICAL_EXECUTION_ORDER.md",
+    "docs/FOUNDER_EFFECT_COMPILER.md"
+   ]
+  },
+  {
+   "tips": [
+    152,
+    157
+   ],
+   "only_152": 3,
+   "only_157": 151,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 13,
+   "sample": [
+    ".github/ISSUE_TEMPLATE/agent-implementation-task.md",
+    ".github/copilot-instructions.md",
+    ".github/pull_request_template.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/BUILD_ORDER.md",
+    "docs/CANONICAL_EXECUTION_ORDER.md",
+    "docs/FOUNDER_EFFECT_COMPILER.md"
+   ]
+  },
+  {
+   "tips": [
+    152,
+    158
+   ],
+   "only_152": 3,
+   "only_158": 240,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 10,
+   "sample": [
+    ".github/ISSUE_TEMPLATE/agent-implementation-task.md",
+    ".github/copilot-instructions.md",
+    ".github/pull_request_template.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/BUILD_ORDER.md",
+    "docs/CANONICAL_EXECUTION_ORDER.md",
+    "docs/FOUNDER_EFFECT_COMPILER.md"
+   ]
+  },
+  {
+   "tips": [
+    152,
+    159
+   ],
+   "only_152": 3,
+   "only_159": 195,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 10,
+   "sample": [
+    ".github/ISSUE_TEMPLATE/agent-implementation-task.md",
+    ".github/copilot-instructions.md",
+    ".github/pull_request_template.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/BUILD_ORDER.md",
+    "docs/CANONICAL_EXECUTION_ORDER.md",
+    "docs/FOUNDER_EFFECT_COMPILER.md"
+   ]
+  },
+  {
+   "tips": [
+    153,
+    154
+   ],
+   "only_153": 82,
+   "only_154": 48,
+   "merge_base": "3d2bb1762ff7",
+   "conflicting_files": 13,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "capabilities/genome.py",
+    "docs/PROJECT_COGNITION_CONTINUITY.md",
+    "docs/collaboration/deliberation-polyintelligence-cortex-20260930.json",
+    "docs/collaboration/intent-records-kimi-0037.json",
+    "docs/cortex/README.md",
+    "docs/cortex/SEED_EXPERIMENT_REPORT.md",
+    "docs/decisions/ADR-20260930-polyintelligence-cortex-seed.md"
+   ]
+  },
+  {
+   "tips": [
+    153,
+    157
+   ],
+   "only_153": 82,
+   "only_157": 33,
+   "merge_base": "3d2bb1762ff7",
+   "conflicting_files": 43,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "capabilities/genome.py",
+    "cortex/contracts.py",
+    "cortex/routing.py",
+    "docs/PROJECT_COGNITION_CONTINUITY.md",
+    "docs/collaboration/deliberation-polyintelligence-cortex-20260930.json",
+    "docs/cortex/BACKCAST_GPS_CORTEX.md",
+    "docs/cortex/BUILD_PROMPT_TRACEABILITY.json"
+   ]
+  },
+  {
+   "tips": [
+    153,
+    158
+   ],
+   "only_153": 36,
+   "only_158": 76,
+   "merge_base": "68b484bb45a6",
+   "conflicting_files": 1,
+   "sample": [
+    "greg/cognition/bridge.py"
+   ]
+  },
+  {
+   "tips": [
+    153,
+    159
+   ],
+   "only_153": 36,
+   "only_159": 31,
+   "merge_base": "68b484bb45a6",
+   "conflicting_files": 1,
+   "sample": [
+    "greg/cognition/bridge.py"
+   ]
+  },
+  {
+   "tips": [
+    153,
+    160
+   ],
+   "only_153": 200,
+   "only_160": 1,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 3,
+   "sample": [
+    "closure/integration_registry.py",
+    "egregore/__init__.py",
+    "verifier/v2/criteria.json"
+   ]
+  },
+  {
+   "tips": [
+    154,
+    157
+   ],
+   "only_154": 26,
+   "only_157": 11,
+   "merge_base": "1aab4132fa4c",
+   "conflicting_files": 8,
+   "sample": [
+    "cortex/contracts.py",
+    "cortex/routing.py",
+    "docs/cortex/BACKCAST_GPS_CORTEX.md",
+    "docs/cortex/README.md",
+    "greg/genesis.py",
+    "greg/mechanisms.py",
+    "tests/unit/test_cortex_formal_engines.py",
+    "tests/unit/test_cortex_schedule_composition.py"
+   ]
+  },
+  {
+   "tips": [
+    154,
+    158
+   ],
+   "only_154": 26,
+   "only_158": 100,
+   "merge_base": "1aab4132fa4c",
+   "conflicting_files": 48,
+   "sample": [
+    "capabilities/genome.py",
+    "cortex/contracts.py",
+    "cortex/evaluation/crossgeo.py",
+    "cortex/evaluation/run.py",
+    "cortex/genome.py",
+    "cortex/routing.py",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/collaboration/deliberation-polyintelligence-cortex-20260930.json"
+   ]
+  },
+  {
+   "tips": [
+    154,
+    159
+   ],
+   "only_154": 26,
+   "only_159": 55,
+   "merge_base": "1aab4132fa4c",
+   "conflicting_files": 45,
+   "sample": [
+    "capabilities/genome.py",
+    "cortex/contracts.py",
+    "cortex/evaluation/crossgeo.py",
+    "cortex/evaluation/run.py",
+    "cortex/genome.py",
+    "cortex/routing.py",
+    "docs/collaboration/deliberation-polyintelligence-cortex-20260930.json",
+    "docs/cortex/BUILD_PROMPT_TRACEABILITY.json"
+   ]
+  },
+  {
+   "tips": [
+    154,
+    160
+   ],
+   "only_154": 166,
+   "only_160": 1,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 3,
+   "sample": [
+    "closure/integration_registry.py",
+    "egregore/__init__.py",
+    "verifier/v2/criteria.json"
+   ]
+  },
+  {
+   "tips": [
+    157,
+    158
+   ],
+   "only_157": 11,
+   "only_158": 100,
+   "merge_base": "1aab4132fa4c",
+   "conflicting_files": 19,
+   "sample": [
+    "contracts/greg-mission.schema.json",
+    "cortex/contracts.py",
+    "cortex/evaluation/run.py",
+    "cortex/genome.py",
+    "cortex/routing.py",
+    "docs/cortex/README.md",
+    "foundry/owned-source.json",
+    "greg/CHROMEBOOK_FIRST_MISSION.md"
+   ]
+  },
+  {
+   "tips": [
+    157,
+    159
+   ],
+   "only_157": 7,
+   "only_159": 51,
+   "merge_base": "32003ed00cd9",
+   "conflicting_files": 19,
+   "sample": [
+    "cortex/contracts.py",
+    "cortex/evaluation/run.py",
+    "cortex/genome.py",
+    "cortex/routing.py",
+    "docs/cortex/README.md",
+    "foundry/owned-source.json",
+    "foundry/systems/wasm.py",
+    "greg/CHROMEBOOK_FIRST_MISSION.md"
+   ]
+  },
+  {
+   "tips": [
+    157,
+    160
+   ],
+   "only_157": 151,
+   "only_160": 1,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 3,
+   "sample": [
+    "closure/integration_registry.py",
+    "egregore/__init__.py",
+    "verifier/v2/criteria.json"
+   ]
+  },
+  {
+   "tips": [
+    158,
+    159
+   ],
+   "only_158": 54,
+   "only_159": 9,
+   "merge_base": "1aab4132fa4c",
+   "conflicting_files": 24,
+   "sample": [
+    ".github/workflows/canonical-ci.yml",
+    "docs/PROJECT_COGNITION_CONTINUITY.md",
+    "docs/cortex/SEED_GENOME_REQUIREMENTS.json",
+    "foundry/owned-source.json",
+    "greg/appraisal.py",
+    "greg/capabilities.py",
+    "greg/cognition.py",
+    "greg/cognition/bridge.py"
+   ]
+  },
+  {
+   "tips": [
+    158,
+    160
+   ],
+   "only_158": 240,
+   "only_160": 1,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 3,
+   "sample": [
+    "closure/integration_registry.py",
+    "egregore/__init__.py",
+    "verifier/v2/criteria.json"
+   ]
+  },
+  {
+   "tips": [
+    159,
+    160
+   ],
+   "only_159": 195,
+   "only_160": 1,
+   "merge_base": "19fa33c22684",
+   "conflicting_files": 3,
+   "sample": [
+    "closure/integration_registry.py",
+    "egregore/__init__.py",
+    "verifier/v2/criteria.json"
+   ]
+  }
+ ],
+ "unrelated_tip_pairs": [],
+ "reality": "measured from git objects at the given SHAs; titles, intent and quality are not judged",
+ "measured_at": "2026-10-13",
+ "base_label": "PR #137 head before the N3 and Foundry-55 commits (3d2bb17)",
+ "command": "python scripts/lineage_map.py --base 3d2bb17 --prs <open kernel drafts #138-#160 as [{number, sha}]>",
+ "findings": [
+  "Three competing Mind lineages stand on #148 (hands): #158 (Claude) vs #159 (Codex) differ by 54 and 9 commits and conflict in 24 files; #157 (Codex) conflicts with both in 19 cortex/ files. One GREG needs one of them chosen or reconciled; that is a founder decision, not an agent's",
+  "#153 (Kimi cortex 0.4.0) is one file (greg/cognition/bridge.py) away from merging cleanly with #158 and with #159",
+  "Six drafts do not contain #137: #138, #139, #141, #144, #152 (instruction surfaces on main) and #160 (Goal Gravity, opened 2026-10-13 on main). #160 conflicts with every #137-based tip in closure/integration_registry.py, egregore/__init__.py and verifier/v2/criteria.json",
+  "Shared hotspots across most tips: docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json, greg/appraisal.py, tests/unit/test_developmental_inheritance.py, docs/FOUNDER_INTENT_LEDGER.md, AGENTS.md and .github/workflows/canonical-ci.yml; each stacked line will meet #137's 2026-10-13 commits (N3 business case, Foundry-55) there"
+ ]
+}

@@ -1,6 +1,6 @@
 # Integration of #178 into #184: handoff, 2026-10-21
 
-Draft PR: #192 (`claude/greg-integration-178-184-20261021` into #184's branch). No merge, signature,
+Draft PR: #192 (`claude/greg-integration-178-184-20261021` into #184's branch). Candidate: `47229e3b`. No merge, signature,
 deployment, spending, publication, contact or activation is part of this work.
 
 ## Pinned heads and lineage
@@ -8,7 +8,7 @@ deployment, spending, publication, contact or activation is part of this work.
 | Lineage | Head integrated | Notes |
 |---|---|---|
 | #184 `claude/opus-maximus-one-greg-20261014` | `900c6ae`, then `b9150857`, then `1d8fd4c2` | stacked on #178 |
-| #178 `claude/greg-one-machine` | `28dad3a`, then `12f6aea5` | contains #173 through `a48e8fa` and the #137/#168/#138 lineage |
+| #178 `claude/greg-one-machine` | `28dad3a`, then `12f6aea5`, then `e410977d` | contains #173 through `a48e8fa` and the #137/#168/#138 lineage |
 | Merge base | `baf630d9` | |
 | Organs (CI pins) | DALEOBANKS `667439f`, WealthMachine `ec82b80` | unchanged |
 
@@ -47,26 +47,33 @@ the envelope's own variables (no canary, no keys); this sandbox's `SSL_CERT_FILE
 roots, which the envelope refuses by design, so local runs unset the cert variables (recorded per run); CI's
 runner cannot use bubblewrap, so worker-path tests take `supervised` there.
 
-## Validation bound to `b9f6b404`
+## Validation bound to `47229e3b` (the candidate: #184 `1d8fd4c2` and #178 `e410977d` both contained)
 
 | Check | Where | Result |
 |---|---|---|
-| Unit suite | local, `/home/user/evidence-b9f6/unit.log` | 5369 passed, 0 failed, 16 skipped |
-| Integration suite | local | see PR #192 comment |
-| Both whole-machine proofs with real pinned organs, hostile cases | local organ job; CI job 8 | see PR #192 comment |
-| Mutation gates, schema refs, authority singleton, sealed developmental, integrity, verifier | local; CI jobs 2-9 | see PR #192 comment |
+| Full unit and integration suite (bubblewrap unusable on the runner: worker paths run under `supervised`) | CI job 1, run on `47229e3b` | success |
+| Verifier V1-V5 (V2 runs the unit suite again) | CI job 9 | success |
+| Both whole-machine proofs against the pinned organs, hostile cases, DALEOBANKS bridge (organs required, no skips) | CI job 8 | success |
+| Cortex and closure-integrity mutation gates (every mutant caught, including both appraiser answer guards) | CI job 6 | success |
+| Schema refs, one source of authority, sealed developmental, research assembly, OCI rebuild | CI jobs 2, 3, 4, 5, 7 | success |
+| Local sequential run | `/home/user/evidence-4722/summary.txt` | interrupted: the container restarted at 28% of the unit suite; no local result is claimed for this commit |
+| Focused local runs while merging `e410977d` | this host and a simulated host without the envelope | 374 passed; worker paths pass on both hosts |
 
-Earlier candidates' results (`50cad3e1`, `6b0cbfff`) are historical evidence only.
+Historical (not this candidate): `b9f6b404` (#178 `12f6aea5`): CI 9/9 success; local unit suite 5369 passed,
+0 failed, 16 skipped. `6b0cbfff`: CI found 13 failures and one surviving mutant, all fixed (commit `42bfa5ce`).
+`50cad3e1`: local 5264 passed, 6 failed (fixed in `aab2193a`); integration 460 passed, 3 failed (fixed in
+`e96f443f`). Environment: local runs unset the cert-bundle variables this sandbox points outside the system
+roots (recorded per run in `env.txt`).
 
 ## Requirement-to-evidence table (directive of 2026-10-21)
 
 | # | Requirement | State | Evidence |
 |---|---|---|---|
-| 1 | Execute the complete intention; continue unblocked work; one requirement table | IN PROGRESS | this table; item 4 implemented; remaining lanes listed below |
+| 1 | Execute the complete intention; continue unblocked work; one requirement table | PARTIAL | this table; item 4 implemented; the next units are #183/#185/#186/#189 and #187/#188/#191 onto this candidate |
 | 2 | Preserve ambition, build the effect; acquire before inventing | MET for this increment | Landlock and bubblewrap reused, not rebuilt; no new framework |
 | 3 | One integration candidate, bounded ownership, independent review | PARTIAL | one candidate (#192); reviews were adversarial by test and mutation gate, not by a separate agent this run |
 | 4 | Resolve duplication upward | MET for the #178/#184 seams | conflict-decision table above; every retained alternative has a role |
-| 5 | Prove on the exact tree; bind results; no weakened tests | IN PROGRESS | validation table; every test change is listed in the commits and states the stronger or equal assertion |
+| 5 | Prove on the exact tree; bind results; no weakened tests | MET for `47229e3b` (CI); local run interrupted | validation table; every test change is listed in its commit with the equal or stronger assertion it makes |
 | 5 | Demonstrate goal pursuit through cognition, genesis, Hands, organs, interruption, appraisal, learning, changed decision | MET in sandbox | `test_one_machine_ten_steps.py` (steps 1-10, real organ checkouts); synthetic parts: test keys, scripted worker, fixture commerce |
 | 6 | #182 reserved; #9/#10 restricted; device acceptance founder's; commerce inert | HELD | no change to #182 or integrity pins; no #9/#10 work; VEPMC 0 (`vepmc.json`: missing founder_accepted, founder_body) |
 | 7 | Concrete handoff | THIS DOCUMENT | |

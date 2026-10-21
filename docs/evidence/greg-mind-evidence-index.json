@@ -213,6 +213,54 @@
    },
    "version": "1.0.0"
   },
+  "basal_nlms": {
+   "competitor": "exponentially weighted recursive least squares (forgetting 0.995, P0 = 1000 I)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.basal_nlms",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "NICHE_CAPABILITY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.00271,
+   "status": "NICHE_CAPABILITY",
+   "subregions_vs_competitor": {
+    "long_high_dim": {
+     "losses": 7,
+     "n": 9,
+     "p_better": 0.980469,
+     "p_worse": 0.089844,
+     "ties": 0,
+     "wins": 2
+    },
+    "long_low_dim": {
+     "losses": 5,
+     "n": 10,
+     "p_better": 0.623047,
+     "p_worse": 0.623047,
+     "ties": 0,
+     "wins": 5
+    },
+    "short_high_dim": {
+     "losses": 6,
+     "n": 9,
+     "p_better": 0.910156,
+     "p_worse": 0.253906,
+     "ties": 0,
+     "wins": 3
+    },
+    "short_low_dim": {
+     "losses": 2,
+     "n": 2,
+     "p_better": 1.0,
+     "p_worse": 0.25,
+     "ties": 0,
+     "wins": 0
+    }
+   },
+   "version": "1.0.0"
+  },
   "basal_pid": {
    "competitor": "simulation-optimised PI: Nelder-Mead on (log Kc, log Ti) minimising the declared cost on the declared FOPDT model with an independent noise realisation, started from AMIGO",
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14-v2/results.json#genomes.basal_pid",
@@ -257,6 +305,46 @@
     }
    },
    "version": "1.0.2"
+  },
+  "basal_token_bucket": {
+   "competitor": "online bid-price control (fluid approximation over the refill horizon from the last 256 requests' rate and value distribution)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.basal_token_bucket",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.000342,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "heavy_overload": {
+     "losses": 3,
+     "n": 16,
+     "p_better": 0.010635,
+     "p_worse": 0.99791,
+     "ties": 0,
+     "wins": 13
+    },
+    "overload": {
+     "losses": 0,
+     "n": 7,
+     "p_better": 0.007812,
+     "p_worse": 1.0,
+     "ties": 0,
+     "wins": 7
+    },
+    "underload": {
+     "losses": 7,
+     "n": 7,
+     "p_better": 1.0,
+     "p_worse": 0.007812,
+     "ties": 0,
+     "wins": 0
+    }
+   },
+   "version": "1.0.0"
   },
   "bayes_interval": {
    "competitor": "Wilson score interval",
@@ -334,6 +422,78 @@
      "p_worse": 1.0,
      "ties": 7,
      "wins": 1
+    }
+   },
+   "version": "1.0.0"
+  },
+  "binpack_cpsat": {
+   "competitor": "SciPy HiGHS branch-and-cut on the assignment model with the same symmetry breaking and cardinality cut (bins-used objective, 10 s limit)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.binpack_cpsat",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.041921,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "large_items": {
+     "losses": 1,
+     "n": 9,
+     "p_better": 0.75,
+     "p_worse": 0.75,
+     "ties": 7,
+     "wins": 1
+    },
+    "mixed": {
+     "losses": 0,
+     "n": 13,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 13,
+     "wins": 0
+    },
+    "triplet_like": {
+     "losses": 0,
+     "n": 8,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 8,
+     "wins": 0
+    }
+   },
+   "version": "1.0.0"
+  },
+  "blackbox_multistart_lbfgsb": {
+   "competitor": "SciPy differential evolution (rand/1/bin, popsize 10, no polish) at the same budget, #179's blackbox mechanism",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.blackbox_multistart_lbfgsb",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.133712,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "multimodal": {
+     "losses": 15,
+     "n": 20,
+     "p_better": 0.999344,
+     "p_worse": 0.003769,
+     "ties": 2,
+     "wins": 3
+    },
+    "unimodal": {
+     "losses": 0,
+     "n": 10,
+     "p_better": 0.0625,
+     "p_worse": 1.0,
+     "ties": 6,
+     "wins": 4
     }
    },
    "version": "1.0.0"
@@ -478,6 +638,54 @@
     }
    },
    "version": "1.0.1"
+  },
+  "collective_auction": {
+   "competitor": "central planner: SciPy linear_sum_assignment (Jonker-Volgenant) on the expanded slot matrix",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.collective_auction",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "SUPERSEDED",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.030941,
+   "status": "SUPERSEDED",
+   "subregions_vs_competitor": {
+    "ample_dense": {
+     "losses": 0,
+     "n": 8,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 8,
+     "wins": 0
+    },
+    "ample_sparse": {
+     "losses": 0,
+     "n": 6,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 6,
+     "wins": 0
+    },
+    "scarce_dense": {
+     "losses": 0,
+     "n": 15,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 15,
+     "wins": 0
+    },
+    "scarce_sparse": {
+     "losses": 0,
+     "n": 1,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 1,
+     "wins": 0
+    }
+   },
+   "version": "1.0.0"
   },
   "collective_flock": {
    "competitor": "centralized prioritized planning: space-time A* per agent (longest trip first) around earlier agents' reserved trajectories; in agent_dropout and limited_radius the same planner replanned online (stopped and arrived agents reserved first; one coordinator per group of agents linked within the communication radius, groups replanned jointly when they meet)",
@@ -728,6 +936,54 @@
    },
    "version": "1.0.1"
   },
+  "community_louvain": {
+   "competitor": "Clauset-Newman-Moore greedy modularity (networkx.greedy_modularity_communities)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.community_louvain",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.038323,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "unweighted_dense": {
+     "losses": 0,
+     "n": 14,
+     "p_better": 0.000244,
+     "p_worse": 1.0,
+     "ties": 2,
+     "wins": 12
+    },
+    "unweighted_sparse": {
+     "losses": 0,
+     "n": 9,
+     "p_better": 0.001953,
+     "p_worse": 1.0,
+     "ties": 0,
+     "wins": 9
+    },
+    "weighted_dense": {
+     "losses": 0,
+     "n": 4,
+     "p_better": 0.0625,
+     "p_worse": 1.0,
+     "ties": 0,
+     "wins": 4
+    },
+    "weighted_sparse": {
+     "losses": 0,
+     "n": 3,
+     "p_better": 0.125,
+     "p_worse": 1.0,
+     "ties": 0,
+     "wins": 3
+    }
+   },
+   "version": "1.0.0"
+  },
   "control_mpc": {
    "competitor": "infinite-horizon discrete LQR (SciPy DARE) with input clipping",
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.control_mpc",
@@ -848,6 +1104,54 @@
    },
    "version": "1.0.0"
   },
+  "crowd_weighted_vote": {
+   "competitor": "Dawid-Skene EM with per-worker confusion matrices (#179's crowd mechanism, ported)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.crowd_weighted_vote",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.003701,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "dense_binary": {
+     "losses": 1,
+     "n": 2,
+     "p_better": 0.75,
+     "p_worse": 0.75,
+     "ties": 0,
+     "wins": 1
+    },
+    "dense_multiclass": {
+     "losses": 1,
+     "n": 13,
+     "p_better": 0.005859,
+     "p_worse": 0.999512,
+     "ties": 2,
+     "wins": 10
+    },
+    "sparse_binary": {
+     "losses": 0,
+     "n": 3,
+     "p_better": 0.125,
+     "p_worse": 1.0,
+     "ties": 0,
+     "wins": 3
+    },
+    "sparse_multiclass": {
+     "losses": 0,
+     "n": 12,
+     "p_better": 0.000244,
+     "p_worse": 1.0,
+     "ties": 0,
+     "wins": 12
+    }
+   },
+   "version": "1.0.0"
+  },
   "decision_preposterior": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14-v2/results.json#genomes.decision_preposterior",
    "history": [
@@ -907,6 +1211,54 @@
     }
    },
    "version": "1.2.0"
+  },
+  "develop_diffusion": {
+   "competitor": "central structural method: NetworkX Louvain communities, each labelled by its seeds' majority (nearest seed where a community has none)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.develop_diffusion",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "REJECTED",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.012344,
+   "status": "REJECTED",
+   "subregions_vs_competitor": {
+    "few_seeds_dense": {
+     "losses": 12,
+     "n": 14,
+     "p_better": 0.999084,
+     "p_worse": 0.00647,
+     "ties": 0,
+     "wins": 2
+    },
+    "few_seeds_sparse": {
+     "losses": 7,
+     "n": 10,
+     "p_better": 0.945312,
+     "p_worse": 0.171875,
+     "ties": 0,
+     "wins": 3
+    },
+    "more_seeds_dense": {
+     "losses": 1,
+     "n": 5,
+     "p_better": 0.3125,
+     "p_worse": 0.9375,
+     "ties": 1,
+     "wins": 3
+    },
+    "more_seeds_sparse": {
+     "losses": 0,
+     "n": 1,
+     "p_better": 0.5,
+     "p_worse": 1.0,
+     "ties": 0,
+     "wins": 1
+    }
+   },
+   "version": "1.0.0"
   },
   "develop_repair": {
    "competitor": "adaptive centralized replanner: global BFS shortest-path rebuild on its view at every change, reliable pushes; reliable or predeclared-unreliable (crash / stale view)",
@@ -1200,6 +1552,38 @@
    },
    "version": "1.0.0"
   },
+  "graph_node_cut_exact": {
+   "competitor": "flow_maxflow 1.0.1 (admitted DEFAULT) on the node-split translation, in process; independent exact ILP (scipy.optimize.milp, HiGHS) reported beside it",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.graph_node_cut_exact",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.001107,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "beyond_flow_maxflow_bounds": {
+     "losses": 0,
+     "n": 7,
+     "p_better": 0.007812,
+     "p_worse": 1.0,
+     "ties": 0,
+     "wins": 7
+    },
+    "within_flow_maxflow_bounds": {
+     "losses": 0,
+     "n": 23,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 23,
+     "wins": 0
+    }
+   },
+   "version": "1.0.0"
+  },
   "grid_dijkstra": {
    "competitor": "NetworkX bidirectional Dijkstra on the equivalent digraph: the strongest installed implementation that is not this genome's own routine; OR-Tools min-cost flow (one unit, start to goal) and SciPy yen (K = 1) were also measured - the first slower, the second the same compiled Dijkstra; no faster different deployable alternative was found installed",
    "evidence": "docs/evidence/greg-genome-admission/2026-10-16-v4/results.json#genomes.grid_dijkstra",
@@ -1329,6 +1713,46 @@
      "p_worse": 1.0,
      "ties": 8,
      "wins": 0
+    }
+   },
+   "version": "1.0.0"
+  },
+  "maxsat_cpsat": {
+   "competitor": "Z3 Optimize (MaxRes core-guided MaxSAT) with soft constraints",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.maxsat_cpsat",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.023888,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "hard_and_soft": {
+     "losses": 0,
+     "n": 14,
+     "p_better": 0.5,
+     "p_worse": 1.0,
+     "ties": 13,
+     "wins": 1
+    },
+    "soft_only": {
+     "losses": 0,
+     "n": 8,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 8,
+     "wins": 0
+    },
+    "unit_claims": {
+     "losses": 0,
+     "n": 8,
+     "p_better": 0.125,
+     "p_worse": 1.0,
+     "ties": 5,
+     "wins": 3
     }
    },
    "version": "1.0.0"
@@ -1716,6 +2140,38 @@
    },
    "version": "1.0.3"
   },
+  "reconcile_qp": {
+   "competitor": "SciPy SLSQP on the same QP (analytic gradient, ftol 1e-12)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.reconcile_qp",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "NICHE_CAPABILITY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.00335,
+   "status": "NICHE_CAPABILITY",
+   "subregions_vs_competitor": {
+    "balanced_network": {
+     "losses": 0,
+     "n": 23,
+     "p_better": 0.25,
+     "p_worse": 1.0,
+     "ties": 21,
+     "wins": 2
+    },
+    "budget_split": {
+     "losses": 0,
+     "n": 7,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 7,
+     "wins": 0
+    }
+   },
+   "version": "1.0.0"
+  },
   "search_astar": {
    "competitor": "SciPy csgraph Dijkstra (compiled) on the equivalent weighted digraph built with NumPy; replaced NetworkX dijkstra_path (pure Python) in review",
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.search_astar",
@@ -2093,6 +2549,11 @@
    "path": "docs/evidence/greg-genome-admission/2026-10-16-v4/results.json",
    "sha256": "sha256:9927a6fd940046b0af70bb7e9f78f84f58f896719af8487c7c77dfa827643e42",
    "source_commit": "3da09c0382d91c4755725329223359e9c1d62ca4"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
+   "sha256": "sha256:eb7470bac2b5abfb13428bc64178e9e717f1c4917bf54dbb99caa32961dd6367",
+   "source_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6"
   }
  ]
 }

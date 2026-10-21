@@ -42,6 +42,9 @@ MODULES = (
     "greg.cognition.genomes.collective_b",  # L2 batch B: ecology bidding as a priced task auction (Bertsekas)
     "greg.cognition.genomes.developmental_b",  # L4 batch B: graph diffusion (harmonic label propagation)
     "greg.cognition.genomes.developmental_hybrid",  # L4 recombined: central plan audited by the local repair rules
+    "greg.cognition.genomes.formal",        # L3 property-based testing (counterexample search)
+    "greg.cognition.genomes.basal_memory",  # L1 associative memory (Hebbian Hopfield recall)
+    "greg.cognition.genomes.developmental_ca",  # L4 cellular-automaton pattern regeneration
 )
 PROOF_CLASS = "genome_certificate"
 PROOF_FIELDS = ("intelligence_id", "version", "evidence_type", "inputs_digest", "certificate", "limits")

@@ -38,6 +38,10 @@ GENOMES = {
                                       "values; truth is the offline optimum of the generated stream"),
     "develop_diffusion": (SIMULATED, "planted-partition graphs with seeded labels; truth is the generator's hidden "
                                      "classes"),
+    "basal_hopfield": (SIMULATED, "seeded random or biased binary patterns and a cue corrupted by random flips; truth "
+                                  "is the hidden source pattern"),
+    "develop_ca_repair": (SIMULATED, "seeded elementary-CA space-time patterns with erased holes; truth is the hidden "
+                                     "original pattern"),
     "basal_breaker": (SIMULATED, "seeded up/outage dependency processes; truth is the hidden outage tape"),
     "basal_hysteresis": (SIMULATED, "seeded two-level regime signals; truth is the hidden regime tape"),
     "basal_kalman": (SIMULATED, "seeded DWNA target tracks; truth is the hidden true track"),
@@ -75,6 +79,8 @@ GENOMES = {
     "flow_expansion_mcf": (MATHEMATICAL, "generated relay networks; exact optimum"),
     "flow_maxflow": (MATHEMATICAL, "generated digraphs; exact max flow"),
     "flow_reinforce_greedy": (MATHEMATICAL, "generated relay networks; exact optimum"),
+    "formal_property_search": (MATHEMATICAL, "generated integer functions with a planted bug or a bug-free decoy; truth "
+                                             "by construction (a re-executed witness, or no bug)"),
     "game_lp_dual": (MATHEMATICAL, "generated zero-sum games; LP value"),
     "game_minimax": (MATHEMATICAL, "generated zero-sum games; LP value"),
     "graph_matching": (MATHEMATICAL, "generated graphs; exact maximum matching"),

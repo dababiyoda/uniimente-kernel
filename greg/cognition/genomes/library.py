@@ -35,6 +35,8 @@ MODULES = (
     "greg.cognition.genomes.strategic",     # L3 pack C: bimatrix Nash, mechanism DSIC/IR check, fair liveness
     "greg.cognition.genomes.developmental",  # L4 developmental / target-state repair
     "greg.cognition.genomes.competitors",   # L3 promoted competitors of SUPERSEDED genomes (own genomes)
+    "greg.cognition.genomes.solvers_d",     # L3 batch D: MaxSAT, bin packing, reconciliation QP, communities, L-BFGS-B
+    "greg.cognition.genomes.crowd",         # L2 one-step weighted crowd vote (#179 acquisition target)
 )
 PROOF_CLASS = "genome_certificate"
 PROOF_FIELDS = ("intelligence_id", "version", "evidence_type", "inputs_digest", "certificate", "limits")

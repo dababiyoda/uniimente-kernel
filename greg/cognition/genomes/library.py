@@ -37,6 +37,9 @@ MODULES = (
     "greg.cognition.genomes.competitors",   # L3 promoted competitors of SUPERSEDED genomes (own genomes)
     "greg.cognition.genomes.solvers_d",     # L3 batch D: MaxSAT, bin packing, reconciliation QP, communities, L-BFGS-B
     "greg.cognition.genomes.crowd",         # L2 one-step weighted crowd vote (#179 acquisition target)
+    "greg.cognition.genomes.basal_b",       # L1 batch B: token-bucket admission (rate control), NLMS online learner
+    "greg.cognition.genomes.collective_b",  # L2 batch B: ecology bidding as a priced task auction (Bertsekas)
+    "greg.cognition.genomes.developmental_b",  # L4 batch B: graph diffusion (harmonic label propagation)
 )
 PROOF_CLASS = "genome_certificate"
 PROOF_FIELDS = ("intelligence_id", "version", "evidence_type", "inputs_digest", "certificate", "limits")

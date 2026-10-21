@@ -305,10 +305,10 @@
   "PREREGISTRATION.md": {
    "#158": {
     "glob": "docs/evidence/.*/PREREGISTRATION\\.md",
-    "matched": 9,
+    "matched": 10,
     "missing": [],
     "no_declaration": [],
-    "parsed": 9
+    "parsed": 10
    },
    "#179": {
     "glob": "docs/evidence/.*/PREREGISTRATION\\.md",
@@ -19893,6 +19893,40 @@
    ],
    "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/PREREGISTRATION.md",
    "sha256": "sha256:bf6ecfa69b6c294862a59a918303d7704fd8cb1046f0fa48b7853a56a5befc0e"
+  },
+  {
+   "commit": "b33fd678b3c5464499d14f3e9f83212eebe1ea4e",
+   "declared_ranges": [
+    [
+     145,
+     369
+    ],
+    [
+     1500,
+     1529
+    ],
+    [
+     3000,
+     3999
+    ],
+    [
+     4000,
+     4639
+    ]
+   ],
+   "lineage": "#158",
+   "not_in_any_exposure": [
+    [
+     145,
+     369
+    ],
+    [
+     1500,
+     1529
+    ]
+   ],
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v6/PREREGISTRATION.md",
+   "sha256": "sha256:e062fc619e34d3cddd050d9a841e99f5ac642c80f7c961de12c0728739316cd8"
   },
   {
    "commit": "29ea4ffcd380abfa7e99249bff50d56029f8994b",

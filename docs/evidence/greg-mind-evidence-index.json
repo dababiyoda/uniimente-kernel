@@ -3937,8 +3937,8 @@
     "function": "greg/cognition/composition.py::_bayes_then_voi",
     "recipe_entry_sha256": "sha256:634e882fdcaddeb52715ba60992227ac4932ab2cd1e920bd20dc4968e2670487",
     "stage_closures": {
-     "adapter:_genome_solver": "sha256:d71d0b29fc9cc647f95bfb31eada920d2acdf7842a455a1557735f426959f6c8",
-     "adapter:run": "sha256:8aed6431c88c9f1ddf2cbd94f962c7ba02bda5f36d32c765d79ccaf72466d236",
+     "adapter:_genome_solver": "sha256:b7495c95473ce2372082a5f18d518c61e1d99ca306756f2e58a3e084257621e1",
+     "adapter:run": "sha256:88fcab7a5faf3b23c0d0334f6b94626f131d68b06e9759f83949e32878e301ec",
      "decision_preposterior": "sha256:30bdb5dfd71430da041ca8a390ae0e2df7836722fb92da8a978ac3fb1f82e09b",
      "dispatch:SOLVERS": "sha256:c23c4382b10824f20a42dff821493fc5d24b63767185d26dcaacf5ed6f7d8b4c",
      "solvers:information": "sha256:2ddbb1d9f941abbbbd626e003ceb053d2660c44bb894d25b86c92c0dbe1a66b3",
@@ -3969,8 +3969,8 @@
       "function": "greg/cognition/composition.py::_bayes_then_voi",
       "recipe_entry_sha256": "sha256:2001ccba65e7926dc90ef73bef3b502f9d2a5fef0023f826d19db4ad6b5cd904",
       "stage_closures": {
-       "adapter:_genome_solver": "sha256:a72bcac959d16d00b6b38902cb2b2f0af0492e99e60c4225291d48a2b9f29211",
-       "adapter:run": "sha256:ff4ab29289f9afdf030c7a35c56338cdc892c3cd115131679a66db89c5fcdabb",
+       "adapter:_genome_solver": "sha256:7715362da24b696aa29be223412e93cb330a7ecc1b726c2a6577738502d9bcd8",
+       "adapter:run": "sha256:fd62323142f2dfd9085855b160dc671b30dba765d5d75600ffcf631439ca004a",
        "decision_preposterior": "sha256:97de5f508dd92d7876cbea6b22420a66cd1121fa5ae5d4c5430159cc89122f62",
        "dispatch:SOLVERS": "sha256:87fd5beabec36f929914f47d738b76b56a26aae4d2dcc72522d4c2d232afdab4",
        "solvers:information": "sha256:2ddbb1d9f941abbbbd626e003ceb053d2660c44bb894d25b86c92c0dbe1a66b3",
@@ -4133,8 +4133,8 @@
     "function": "greg/cognition/composition.py::_forecast_then_allocate",
     "recipe_entry_sha256": "sha256:31e561336955e7212ba82541728f08a420d3e9c181fbc9b6479fae510731f462",
     "stage_closures": {
-     "adapter:_genome_solver": "sha256:a72bcac959d16d00b6b38902cb2b2f0af0492e99e60c4225291d48a2b9f29211",
-     "adapter:run": "sha256:ff4ab29289f9afdf030c7a35c56338cdc892c3cd115131679a66db89c5fcdabb",
+     "adapter:_genome_solver": "sha256:7715362da24b696aa29be223412e93cb330a7ecc1b726c2a6577738502d9bcd8",
+     "adapter:run": "sha256:fd62323142f2dfd9085855b160dc671b30dba765d5d75600ffcf631439ca004a",
      "dispatch:SOLVERS": "sha256:87fd5beabec36f929914f47d738b76b56a26aae4d2dcc72522d4c2d232afdab4",
      "forecast_quantile": "sha256:94345eac805ad59a35e4a9adc5cea5c221484386a75eba39ca91a5b46b801d89",
      "newsvendor_compile": "sha256:5e75aebfc39f4249f28e9a54495dcbb32676f3c844e87929cd562bd9737e8a7e",
@@ -4178,8 +4178,8 @@
     "function": "greg/cognition/composition.py::_forecast_then_staff",
     "recipe_entry_sha256": "sha256:f48cad7075c61806b180c249be613326abb85f0d2e177fad8145695ea46c69cd",
     "stage_closures": {
-     "adapter:_genome_solver": "sha256:a72bcac959d16d00b6b38902cb2b2f0af0492e99e60c4225291d48a2b9f29211",
-     "adapter:run": "sha256:ff4ab29289f9afdf030c7a35c56338cdc892c3cd115131679a66db89c5fcdabb",
+     "adapter:_genome_solver": "sha256:7715362da24b696aa29be223412e93cb330a7ecc1b726c2a6577738502d9bcd8",
+     "adapter:run": "sha256:fd62323142f2dfd9085855b160dc671b30dba765d5d75600ffcf631439ca004a",
      "dispatch:SOLVERS": "sha256:87fd5beabec36f929914f47d738b76b56a26aae4d2dcc72522d4c2d232afdab4",
      "forecast_quantile": "sha256:e43c24f06353fb719aebc10e4ecf5aec208819691ca822dd26c7c3ce5547eb9a",
      "queue_erlang": "sha256:d727c33ac9f0a9fa1bf204458d6430b5b67d744bdc6bd2371d04bd7e64b960ce"
@@ -4225,8 +4225,8 @@
     "function": "greg/cognition/composition.py::_graph_then_allocate",
     "recipe_entry_sha256": "sha256:8dec62ed97e2b286504f92a47b2a803660f378d13896f2b6885b723860e2346f",
     "stage_closures": {
-     "adapter:_genome_solver": "sha256:d71d0b29fc9cc647f95bfb31eada920d2acdf7842a455a1557735f426959f6c8",
-     "adapter:run": "sha256:8aed6431c88c9f1ddf2cbd94f962c7ba02bda5f36d32c765d79ccaf72466d236",
+     "adapter:_genome_solver": "sha256:b7495c95473ce2372082a5f18d518c61e1d99ca306756f2e58a3e084257621e1",
+     "adapter:run": "sha256:88fcab7a5faf3b23c0d0334f6b94626f131d68b06e9759f83949e32878e301ec",
      "dispatch:SOLVERS": "sha256:c23c4382b10824f20a42dff821493fc5d24b63767185d26dcaacf5ed6f7d8b4c",
      "flow_capacity_plan": "sha256:f99e90914ef86e571897407fa08e0173e5bc121989d8258f582a4fd9e093edcb",
      "flow_maxflow": "sha256:e2df9a6ebbbbbaf400421698e973ee9f767f663ddc4b96cb5077bc044205b3b9",
@@ -4256,8 +4256,8 @@
       "function": "greg/cognition/composition.py::_graph_then_allocate",
       "recipe_entry_sha256": "sha256:587151f8a1d054a471ca1f40ed894f16eed1d8291fe4fe5ae404b1eb7e0e5494",
       "stage_closures": {
-       "adapter:_genome_solver": "sha256:a72bcac959d16d00b6b38902cb2b2f0af0492e99e60c4225291d48a2b9f29211",
-       "adapter:run": "sha256:ff4ab29289f9afdf030c7a35c56338cdc892c3cd115131679a66db89c5fcdabb",
+       "adapter:_genome_solver": "sha256:7715362da24b696aa29be223412e93cb330a7ecc1b726c2a6577738502d9bcd8",
+       "adapter:run": "sha256:fd62323142f2dfd9085855b160dc671b30dba765d5d75600ffcf631439ca004a",
        "dispatch:SOLVERS": "sha256:87fd5beabec36f929914f47d738b76b56a26aae4d2dcc72522d4c2d232afdab4",
        "flow_capacity_plan": "sha256:f044fbe25dd7e45514859e5a6b95d3563eb178434cc846e21588ffe8176e332a",
        "flow_maxflow": "sha256:05634f1e0a8f859f8bc7da21bf13ab5b28411d9145c24d32cd023c1d933738ab",
@@ -4298,8 +4298,8 @@
       "function": "greg/cognition/composition.py::_graph_then_allocate",
       "recipe_entry_sha256": "sha256:8dec62ed97e2b286504f92a47b2a803660f378d13896f2b6885b723860e2346f",
       "stage_closures": {
-       "adapter:_genome_solver": "sha256:a72bcac959d16d00b6b38902cb2b2f0af0492e99e60c4225291d48a2b9f29211",
-       "adapter:run": "sha256:ff4ab29289f9afdf030c7a35c56338cdc892c3cd115131679a66db89c5fcdabb",
+       "adapter:_genome_solver": "sha256:7715362da24b696aa29be223412e93cb330a7ecc1b726c2a6577738502d9bcd8",
+       "adapter:run": "sha256:fd62323142f2dfd9085855b160dc671b30dba765d5d75600ffcf631439ca004a",
        "dispatch:SOLVERS": "sha256:87fd5beabec36f929914f47d738b76b56a26aae4d2dcc72522d4c2d232afdab4",
        "flow_capacity_plan": "sha256:4774d7f44098bd931395d0270d5ad10dd5f17c6b821e0128f562e6452b40c5a7",
        "flow_maxflow": "sha256:e2df9a6ebbbbbaf400421698e973ee9f767f663ddc4b96cb5077bc044205b3b9",
@@ -4601,8 +4601,8 @@
     "function": "greg/cognition/composition.py::_track_then_staff",
     "recipe_entry_sha256": "sha256:62c8d18f116b5210c3ccb9d14e545f54faee78ffc23d1a448cbc8a8f0507cef9",
     "stage_closures": {
-     "adapter:_genome_solver": "sha256:c6d2a3d3eb185db2c7f7aea6e5160737db8bd5ea83b92a30ee4a7e09bfc75929",
-     "adapter:run": "sha256:eb8498e420442fd76989bfb4b2524a2776e7c0f9aaeb854f9878ce4b4ca3fbc1",
+     "adapter:_genome_solver": "sha256:44cbdd2d6f81ff529bcc972d62f214af19e9ebaef8df157eb36274620878426b",
+     "adapter:run": "sha256:105654f1778522a87c6edb8b62c790dd6446134e05147eacbaf4cd3d9b547210",
      "basal_kalman": "sha256:c0a79d1fdde3805035cd65547056584b35e07e97303f1d890275a45a0249ab53",
      "dispatch:SOLVERS": "sha256:87fd5beabec36f929914f47d738b76b56a26aae4d2dcc72522d4c2d232afdab4",
      "queue_erlang": "sha256:d727c33ac9f0a9fa1bf204458d6430b5b67d744bdc6bd2371d04bd7e64b960ce"

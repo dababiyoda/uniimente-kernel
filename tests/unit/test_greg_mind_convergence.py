@@ -1291,3 +1291,26 @@ def test_the_committed_evidence_index_is_what_the_builder_produces(tmp_path, mon
     builder.main()
     assert out.read_bytes() == (ROOT / "docs/evidence/greg-mind-evidence-index.json").read_bytes(), \
         "the committed evidence index is stale: run PYTHONPATH=. python scripts/build_mind_evidence_index.py"
+
+
+def test_adding_an_unrelated_genome_module_does_not_stale_a_genome_stage_recipe():
+    """The genome registry tuple decides only which genome serves a family; each stage family is bound by its own
+    solve closure. A new module stales nothing it cannot reach, while a change to the adapter itself still does."""
+    from greg.cognition import code_binding as CB
+    from greg.cognition import compiler as C
+    now = C.recipe_code("bayes_then_voi")
+
+    def added(p):
+        text = CB.working_tree(p)
+        if p == "greg/cognition/genomes/library.py":
+            text = text.replace("MODULES = (", "MODULES = (\n    \"greg.cognition.genomes.unrelated\",", 1)
+        return text
+    assert C.recipe_code("bayes_then_voi", added)["stage_closures"] == now["stage_closures"]
+
+    def changed(p):
+        text = CB.working_tree(p)
+        if p == "greg/cognition/genomes/library.py":
+            at = text.index("\n", text.index("def run(")) + 1
+            text = text[:at] + "    _edit = 1\n" + text[at:]
+        return text
+    assert C.recipe_code("bayes_then_voi", changed)["stage_closures"]["adapter:run"] != now["stage_closures"]["adapter:run"]

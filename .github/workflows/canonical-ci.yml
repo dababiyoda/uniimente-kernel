@@ -35,7 +35,9 @@ jobs:
     runs-on: ubuntu-latest
     # The suite runs twice here (the full suite, then the institutional verifier's V2 re-run of tests/unit): about
     # 15 + 12 minutes at c360103, 28 of the 30 then allowed, so a few minutes of added tests cancelled the job.
-    timeout-minutes: 45
+    # On 2026-10-21 (#163 at 15ae525) the suite took 25 minutes and the V1-V5 re-run was cancelled 20 minutes in at
+    # 45; #179 raised its limit to 75 for the same growth (a3106f6), ported here.
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
         with:

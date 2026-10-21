@@ -182,19 +182,44 @@ def immune_target() -> Target:
     return Target("immune_detect", collective.IMMUNE_CONFIG_SPACE, dict(collective.IMMUNE_DEFAULT_CONFIG))
 
 
-def immune_split() -> tuple[dict, dict, list[str]]:
-    """Seeded negative-selection instances reserved for P8, disjoint from every admission seed. They come from the
+# Each cycle on this target draws its own split; earlier splits stay reproducible by name. Cycle 2 (2026-10-09) stopped
+# at the stress gate, so its held-out seeds 8000-8059 were never looked at; they stay registered to it.
+IMMUNE_SPLITS = {"cycle-2": (IMMUNE_TRAIN_SEEDS, IMMUNE_HELDOUT_SEEDS)}
+IMMUNE_CURRENT_SPLIT = "cycle-2"
+
+
+def immune_split_seeds(name: str = IMMUNE_CURRENT_SPLIT) -> tuple[tuple, tuple, set]:
+    """A named immune split's train and held-out seeds and the seeds it must avoid, or EvolutionError. Generates
+    nothing: a split is checked before any of its instances exists."""
+    from .genomes import admission
+    if name not in IMMUNE_SPLITS:
+        raise EvolutionError(f"unknown immune split {name!r}")
+    train_seeds, heldout_seeds = IMMUNE_SPLITS[name]
+    reserved = (set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS) | admission.spent_seeds()
+                | {s for other, seeds in IMMUNE_SPLITS.items() if other != name for part in seeds for s in part}
+                | {s for seeds in CR_SPLITS.values() for part in seeds for s in part}
+                | {s for seeds in CR_CANARY_SEEDS.values() for s in seeds})
+    if (reserved & (set(train_seeds) | set(heldout_seeds)) or set(train_seeds) & set(heldout_seeds)
+            or len(set(train_seeds)) != len(train_seeds) or len(set(heldout_seeds)) != len(heldout_seeds)
+            or not (set(train_seeds) | set(heldout_seeds)) <= set(admission.P8_RESERVED)):
+        raise EvolutionError("P8 immune seeds overlap the admission seeds or another P8 split")
+    return train_seeds, heldout_seeds, reserved
+
+
+def immune_split(name: str = IMMUNE_CURRENT_SPLIT) -> tuple[dict, dict, list[str]]:
+    """Seeded negative-selection instances reserved for P8, disjoint from every admission seed, every other P8
+    target's seeds and every other cycle's split on this target (``immune_split_seeds``). They come from the
     Gaussian generator that cycle 2 (2026-10-09) sampled, kept byte-identical when the admission generator gained
-    native regimes (collective.BENCHMARK_REVISION), with that cycle's dimension buckets."""
+    native regimes (collective.BENCHMARK_REVISION), with that cycle's dimension buckets. The excluded list names the
+    admission seeds only, as cycle 2 recorded it."""
     from .genomes import admission, collective
+    train_seeds, heldout_seeds, _ = immune_split_seeds(name)
     reserved = set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS)
-    if reserved & (set(IMMUNE_TRAIN_SEEDS) | set(IMMUNE_HELDOUT_SEEDS)):
-        raise EvolutionError("P8 immune seeds overlap the admission seeds")
 
     def item(seed):
         data, truth = collective.immune_gaussian_instance(seed)
         return f"s{seed}", {"data": data, "truth": truth, "category": collective.immune_dimension_band(data)}
-    return (dict(item(s) for s in IMMUNE_TRAIN_SEEDS), dict(item(s) for s in IMMUNE_HELDOUT_SEEDS),
+    return (dict(item(s) for s in train_seeds), dict(item(s) for s in heldout_seeds),
             sorted(f"s{s}" for s in reserved))
 
 
@@ -255,7 +280,7 @@ def cr_split_seeds(name: str = CR_CURRENT_SPLIT) -> tuple[tuple, tuple, set]:
         raise EvolutionError(f"unknown constraint-release split {name!r}")
     train_seeds, heldout_seeds = CR_SPLITS[name]
     reserved = (set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS) | admission.spent_seeds()
-                | set(IMMUNE_TRAIN_SEEDS) | set(IMMUNE_HELDOUT_SEEDS)
+                | {s for seeds in IMMUNE_SPLITS.values() for part in seeds for s in part}
                 | {s for other, seeds in CR_SPLITS.items() if other != name for part in seeds for s in part}
                 | {s for seeds in CR_CANARY_SEEDS.values() for s in seeds})
     if (reserved & (set(train_seeds) | set(heldout_seeds)) or set(train_seeds) & set(heldout_seeds)
@@ -695,7 +720,7 @@ PRE_FREEZE_HELDOUT = {
     "2026-10-08/cycle-forecast-1": ("forecast_quantile", lambda: set(_FORECASTING_SPLIT(
         COMPLETED_FORECAST_CYCLES["2026-10-08/cycle-forecast-1"]["seed"],
         COMPLETED_FORECAST_CYCLES["2026-10-08/cycle-forecast-1"]["excluded_seeds"])[1])),
-    "2026-10-09/cycle-immune-2": ("immune_detect", lambda: {f"s{s}" for s in IMMUNE_HELDOUT_SEEDS}),
+    "2026-10-09/cycle-immune-2": ("immune_detect", lambda: {f"s{s}" for s in IMMUNE_SPLITS["cycle-2"][1]}),
     "2026-10-14/cycle-cr-3": ("constraint_release", lambda: {f"s{s}" for s in CR_SPLITS["cycle-3"][1]})}
 
 
@@ -741,7 +766,7 @@ def _registered_heldout(target_name: str) -> set:
     if target_name == "constraint_release":
         return {f"s{s}" for _, held in CR_SPLITS.values() for s in held}
     if target_name == "immune_detect":
-        return {f"s{s}" for s in IMMUNE_HELDOUT_SEEDS}
+        return {f"s{s}" for _, held in IMMUNE_SPLITS.values() for s in held}
     return set(_FORECASTING_SPLIT()[1]) | PRE_FREEZE_HELDOUT["2026-10-08/cycle-forecast-1"][1]()
 
 

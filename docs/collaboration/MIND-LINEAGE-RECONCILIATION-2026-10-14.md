@@ -694,3 +694,35 @@ sequential) stay UNEVALUATED as before. The binding was not weakened.
 `tests/unit/test_greg_mind_convergence.py::test_the_pr184_merge_leaves_four_operation_verdicts_awaiting_re_admission`
 records the state and fails once they are re-admitted. Re-admission is a new pre-registered genome-admission run on
 fresh held-out seeds against the merged code (the 2026-10-15-v3 procedure); it has not been run.
+
+## 19. Re-admission of the four operation verdicts on PR #184's tree (2026-10-21)
+
+Section 18's "it has not been run" is kept as written; it was true on 2026-10-16. Next-wave item 2 built the live
+harness section 15 said was missing: `cortex/evaluation/genome_admission/run_operations.py` wraps #155's four
+generators and arms verbatim (dev-seed parity with #155's `BENCHMARKS` is a unit test), declares one change (compute
+limit 100000, the merged native ceiling; #155's 200000 crashes every merged solver), scores every candidate output
+through `greg.cognition.verification.verify`, and runs under the canonical genome-admission rule, with #155's
+`status()` recorded beside it and never routed. A review of the runner found two defects before any held-out draw,
+both fixed with tests in `1d37418`: a negative start aliased spent seeds (`random.Random(-s)` seeds as `s`), and a run
+was not bound to a committed freeze. The run is refused unless its `freeze.json` is committed at HEAD unchanged and
+the tree is clean outside its directory; the evidence index routes a run that was not pre-registered as UNEVALUATED.
+
+Pre-registered at `462bd98` on fresh seeds 2600-2629 (1300-1329 was abandoned before any draw: seed 1311 is a frozen
+cross-geometry item), run once at that commit pinned to one core
+(`docs/evidence/greg-genome-admission/2026-10-21-operations/`):
+
+| Family | Status (routes) | #155's rule | vs baseline | vs #155's competitor |
+|---|---|---|---|---|
+| control | DEFAULT_FOR_GEOMETRY | DEFAULT_FOR_GEOMETRY | 28-2-0 | 30-0-0 |
+| game | DEFAULT_FOR_GEOMETRY | DEFAULT_FOR_GEOMETRY | 30-0-0 | 22-0-8 |
+| information | DEFAULT_FOR_GEOMETRY | DEFAULT_FOR_GEOMETRY | 16-0-14 | 14-0-16 |
+| probabilistic | **EXPERIMENTAL** | EXPERIMENTAL | 16-11-3 (p = 0.22) | 15-12-3 (p = 0.35) |
+
+Control, game and information route again at the closure they were measured on. Probabilistic's 2026-10-14 DEFAULT
+(seeds 1001-1040) did not replicate on fresh seeds; it leaves routing, an outcome the pre-registration put at about
+0.20 and accepted in advance. The arms are #155's, weaker than the library's strongest competitors (`pid_simopt`,
+`game_lp_dual`, `bayes_interval`), so the genome library labels these `operation_readmitted`, never `rule_admitted`.
+The merged control and game solvers are about 50x and 1,600x slower than #155's competitors at the median; the
+verdicts rest on quality. The binding test that recorded section 18's state is replaced by
+`test_the_four_operation_verdicts_are_re_admitted_on_the_merged_solvers`, which also checks that the 2026-10-14
+verdicts, read alone at the merged code, still need re-admission.

@@ -256,19 +256,39 @@ def test_operation_verdicts_are_bound_to_the_solver_code_they_measured():
     assert C.operation_status("swarm", evidence["operations"]["swarm"])[0] == "UNEVALUATED"
 
 
-def test_the_pr184_merge_leaves_four_operation_verdicts_awaiting_re_admission():
-    """Joining this lineage with PR #184 brought #159's native-qualified solvers (greg/cognition/solvers.py and
-    contracts.py), so the control, game, information and probabilistic verdicts were measured on code that has since
-    changed. Code binding routes them as UNEVALUATED until a pre-registered re-admission on fresh held-out seeds
-    measures the merged code; this test records that state and fails, prompting its update, once they are re-admitted."""
+def test_the_four_operation_verdicts_are_re_admitted_on_the_merged_solvers():
+    """Joining this lineage with PR #184 brought #159's native-qualified solvers, so the 2026-10-14 control, game,
+    information and probabilistic verdicts were measured on code that has since changed, and code binding routed them
+    as UNEVALUATED (fourth review, R2: only each solver function changed; #159's helpers and the unchanged contracts
+    functions they reach are newly reached members). Next-wave item 2 re-measured them once on the merged code,
+    pre-registered at 462bd98 on fresh seeds 2600-2629: control, game and information route DEFAULT_FOR_GEOMETRY at
+    the closure they were measured on; probabilistic did not replicate (EXPERIMENTAL) and leaves routing. The
+    2026-10-14 verdicts stay in history and, read alone at the merged code, still need re-admission."""
+    import json
+    import sys
     from greg.cognition import compiler as C
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import build_mind_evidence_index as B
+    run = "docs/evidence/greg-genome-admission/2026-10-21-operations/results.json"
+    lineage = "docs/evidence/greg-genome-admission/2026-10-14/results.json"
+    results, before = json.loads((ROOT / run).read_text()), json.loads((ROOT / lineage).read_text())
+    assert results["pre_registered"] is True and results["source_commit"] == results["freeze_commit"]
+    assert results["source_commit"].startswith("462bd98")
     index = C.evidence_index()
     solver = {"control": "control", "game": "game", "information": "information", "probabilistic": "bayesian"}
-    for family in ("control", "game", "information", "probabilistic"):
-        status, why = C.operation_status(family, index["operations"][family])
+    expected = {"control": "DEFAULT_FOR_GEOMETRY", "game": "DEFAULT_FOR_GEOMETRY",
+                "information": "DEFAULT_FOR_GEOMETRY", "probabilistic": "EXPERIMENTAL"}
+    for family, want in expected.items():
+        row = index["operations"][family]
+        assert (row["evidence"], row["raw_status"]) == (f"{run}#families.{family}", want), family
+        assert [h["evidence"].partition("#")[0] for h in row["history"]][-2:] == [lineage, run], family
+        assert C.operation_status(family, row) == (want, None), family
+        assert C.family_status(family, index)["stale"] is None
+        # the earlier verdict, bound to the code it measured, still reads as stale at the merged code
+        then = dict(row, status="DEFAULT_FOR_GEOMETRY", raw_status="DEFAULT_FOR_GEOMETRY",
+                    code=B._measured_code(family, before["source_commit"]))
+        status, why = C.operation_status(family, then)
         assert status == "UNEVALUATED" and "needs re-admission" in why, (family, why)
-        # fourth review, R2: only the solver function itself changed; the helpers #159 added, and the unchanged
-        # contracts functions they bring in, are newly reached members, never reported as changed
         changed = why.split("changed since: ", 1)[1].split(";", 1)[0]
         assert changed == f"greg/cognition/solvers.py::{solver[family]}", (family, why)
         added = why.split("added to the closure since: ", 1)[1].split(";", 1)[0]

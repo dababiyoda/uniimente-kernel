@@ -118,6 +118,9 @@ OPERATION_RUNS = (
     ("docs/evidence/greg-genome-admission/2026-10-14/results.json", "families", None),
     ("docs/evidence/greg-genome-admission/2026-10-14/results-v2.json", "families", None),
     ("docs/evidence/pr155-crowd-sparse/2026-10-14/results.json", "status", "crowd"),
+    # next-wave item 2: #155's control, game, information and probabilistic re-measured on the merged solvers,
+    # pre-registered at 462bd98 (cortex/evaluation/genome_admission/run_operations.py); last, so it is current
+    ("docs/evidence/greg-genome-admission/2026-10-21-operations/results.json", "families", None),
 )
 # Verdicts measured against a competitor on held-out data; any other label is structural and changes no route.
 MEASURED = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY", "COMPOSITION_ONLY", "EXPERIMENTAL", "SUPERSEDED", "REJECTED")

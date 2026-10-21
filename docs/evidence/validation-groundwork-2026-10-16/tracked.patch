@@ -1,0 +1,43 @@
+diff --git a/greg/body.py b/greg/body.py
+index 5892d41..eb93b23 100644
+--- a/greg/body.py
++++ b/greg/body.py
+@@ -380,6 +380,17 @@ class Body:
+                 return anchor.configure(self.journal, body, digest)
+             except anchor.AnchorError as exc:
+                 raise MissionError(str(exc)) from None
++        if kind == "VALIDATION_GRANT":
++            from foundry.validation import grant as validation_grant
++            try:
++                granted = validation_grant.validate(body)
++            except validation_grant.GrantError as exc:
++                raise MissionError(str(exc)) from None
++            # Expiry, nonce and signer stay on the command.accepted record of the same digest.
++            record = {"grant": granted, "command_digest": digest, "at": iso(self.clock())}
++            self.journal.record("validation.granted", record, key=digest)
++            return {"granted": granted["source_revision"], "max_runs": granted["resources"]["max_runs"],
++                    "grant_digest": digest}
+         if kind == "ROTATE_FOUNDER_KEY":
+             new_hex = body["new_public_key"]
+             old = next(iter(self.enrolled_keys()))
+diff --git a/greg/founder.py b/greg/founder.py
+index 37b42a4..8be1310 100644
+--- a/greg/founder.py
++++ b/greg/founder.py
+@@ -50,12 +50,14 @@ COMMAND_KINDS = (
+     "DEVICE_ENROLL",      # delegate a narrow, expiring subset of kinds to a phone/remote device key
+     "DEVICE_REVOKE",
+     "ANCHOR_CONFIGURE",   # enable/disable RFC 3161 anchoring of the ledger head at a pinned TSA
++    "VALIDATION_GRANT",   # one bounded Foundry validation envelope: exact revision, suite, pins, resources
+ )
+ MAX_TTL = timedelta(days=7)
+ # A device key (e.g. Alfonso's phone) is a delegation, never a second founder: it may only
+ # answer, criticize, pause, resume or stop. Missions, capabilities, key rotation and device
+-# enrollment always need the founder key itself.
+-DEVICE_KINDS = ("DECISION", "CRITIQUE", "LIFECYCLE", "BODY_PAUSE", "BODY_RESUME", "BODY_STOP")
++# enrollment always need the founder key itself. A validation grant may be delegated, but only to a device the
++# founder enrolled for that kind: it authorizes root inside a disposable guest with no credentials, nothing else.
++DEVICE_KINDS = ("DECISION", "CRITIQUE", "LIFECYCLE", "BODY_PAUSE", "BODY_RESUME", "BODY_STOP", "VALIDATION_GRANT")
+ DEVICE_MAX_LIFETIME = timedelta(days=90)
+ READ_SKEW = timedelta(seconds=60)
+ CLOCK_SKEW = timedelta(minutes=5)

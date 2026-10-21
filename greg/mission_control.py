@@ -104,6 +104,20 @@ def _mind() -> dict:
     return {"genomes": out, "counts": counts, "frozen": data.get("freeze_sha256", "")[:16], "source_commit": data.get("source_commit")}
 
 
+def _credentials(home, handles) -> list[dict]:
+    """Every credential GREG holds, by handle and kind; for an OAuth login, what the founder authorized and where it
+    may renew. Values are never read into the page."""
+    from greg import mcp_login
+    from greg.body import Layout
+    from greg.capabilities import SecretBroker
+    broker = SecretBroker(Layout(home).secrets)
+    rows = []
+    for handle in handles:
+        login = mcp_login.record(broker, handle) if handle.startswith("mcp:") else None
+        rows.append({"handle": handle, "kind": "token or key", **(mcp_login.public(login) if login else {})})
+    return rows
+
+
 def _tool_servers(home) -> dict:
     """MCP servers the founder installed under the body's read roots (a directory scan; nothing is started)."""
     from greg.body import Layout
@@ -232,7 +246,8 @@ def projection(console) -> dict:
                                    if m["mission_id"].startswith("m:venture-rehearsal-")) if b],
         "foundry": _foundry(), "mind": _mind(), "read_roots": st.get("permissions", {}).get("read_roots", []),
         "tool_servers": _tool_servers(console.home), "tool_answers": tool_answers,
-        "resilience": _resilience(console),
+        "resilience": _resilience(console), "credentials": _credentials(console.home, st.get("secret_handles", [])),
+        "refused_keys": st.get("refused_model_keys", []),
     }
     out["costs"] = cost_rows(action_rows, out["missions"], out["rehearsals"])
     return out
@@ -378,6 +393,18 @@ def _tool_servers_section(console, p, form) -> str:
            "change anything; its own claims are not trusted. A tool that writes or reaches the network runs as "
            "<code>mcp.act</code>, and only after you approve its exact scope: the folders it may write, the hosts it "
            "may reach through the relay, and the credential handles it receives.</p>")
+    hosted = [c for c in p.get("credentials") or [] if c.get("kind") in ("OAuth login", "registered token")]
+    if hosted:
+        out += ("<h3>Hosted servers GREG holds a login or token for</h3><p class=reality>Their tools as each server "
+                "listed them when you logged in or registered the token (its claim, not trusted). Every call to one "
+                "waits for your approval. Ask in words, naming a page that will show the change: <i>Use the notes "
+                "service to add \"ship the wedge\", then check https://…</i></p>"
+                + _table(["Server", "Handle", "Tools (as the server listed them)"], [
+                    [f"<code>{_e(c['server'])}</code>", f"<code>{_e(c['handle'])}</code> "
+                     f"<span class=muted>{_e(c['kind'])}</span>",
+                     "; ".join(f"<code>{_e(t['name'])}</code>" + (f": {_e(t['description'][:80])}" if t.get("description")
+                                                                  else "") for t in c.get("tools") or []) or "none listed"]
+                    for c in hosted]))
     answers = p.get("tool_answers") or []
     if answers:
         out += ("<h3>Latest answers</h3>" + _table(["Server · tool", "Answer (untrusted data)", "Receipt"], [
@@ -545,6 +572,21 @@ def _authority(console, p, form) -> str:
         ["Founder keys enrolled", _e(p["identity"]["founder_keys"])], ["Delegated devices", _e(len(p["devices"]))],
         ["Read roots", _e(", ".join(p["read_roots"]))], ["Pause file", _e(p["identity"]["pause"])], ["Stop file", _e(p["identity"]["stop"])]])
             + "<h2>Mission envelopes</h2>" + _table(["Mission", "May use without asking", "Ceiling", "Budget", "Expires"], rows)
+            + "<h2>Credentials GREG holds</h2><p class=reality>From this body's secret broker, by name only; values never "
+            "leave it. A credential is used only inside an approved call that names it.</p>"
+            + (_table(["Handle", "Kind", "Server", "Renews at", "Expires", "To revoke"], [
+                [f"<code>{_e(c['handle'])}</code>", _e(c["kind"]), _e(c.get("server") or "—"), _e(c.get("renews_at") or "—"),
+                 _e(_when(c.get("expires_at"))), f"<code>greg secret remove {_e(c['handle'])}</code>"
+                 + (" and remove GREG's access at the service" if c["kind"] == "OAuth login" else
+                    " and revoke the token at the service" if c["kind"] == "registered token" else "")]
+                for c in p.get("credentials", [])]) if p.get("credentials") else "<p class=empty>None.</p>")
+            + ("<h2>Model keys a vendor refused</h2><p class=warn>GREG stopped using each of these routes when the vendor "
+               "refused its key, and will not try it again until a new key is stored.</p>"
+               + _table(["Route", "Refused at", "What to do"], [
+                   [f"<code>{_e(k['route'])}</code>", _e(k["refused_at"]),
+                    "A new key is stored; GREG tries it next." if k["replaced"] else
+                    f"Store a new key: <code>greg secret set {_e(k['handle'] or 'the route key')}</code>"]
+                   for k in p["refused_keys"]]) if p.get("refused_keys") else "")
             + "<h2>Money, kept in separate columns</h2><p class=reality>Booked spend comes from recorded actions. "
             "Provider-measured is what a provider reported. Unknown is booked at the signed cap, never assumed lower. "
             "FIXTURE amounts are rehearsal books and moved no money.</p>"
@@ -554,6 +596,13 @@ def _authority(console, p, form) -> str:
                       for c in p["costs"]])
             + "<p class=muted>Intelligence never creates authority. A recommendation becomes an action only through a signed mission or "
             "decision, and only inside its envelope.</p></section>" + (form.get("stop", "") if isinstance(form, dict) else ""))
+
+
+def _when(epoch) -> str:
+    if not epoch:
+        return "—"
+    from datetime import datetime, timezone
+    return datetime.fromtimestamp(float(epoch), timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
 
 def _night(console, p, form) -> str:

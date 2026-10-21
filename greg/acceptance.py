@@ -25,6 +25,19 @@ def _passed(journal, mission_id: str, check_id: str) -> bool:
     return bool(obs) and bool(obs[-1]["passed"])
 
 
+def _egress(home: Path, config: dict) -> dict:
+    """#26 on this body, from its own relay journal: confined or not, and what the relay allowed and refused."""
+    if not config.get("confined_egress"):
+        return {"confined": False, "chain_intact": False, "allowed": 0, "denied": 0, "identities": []}
+    from foundry.systems.segmentation import Journal as EgressJournal
+    journal = EgressJournal(Path(home) / "egress-journal.jsonl")
+    rows = journal.read()
+    return {"confined": True, "chain_intact": bool(journal.verify()["intact"]),
+            "allowed": sum(1 for r in rows if r.get("verdict") == "ALLOWED"),
+            "denied": sum(1 for r in rows if r.get("verdict") == "DENIED"),
+            "identities": sorted({str(r.get("identity")) for r in rows})}
+
+
 def report(home: str | Path) -> dict:
     from greg import metrics
     from greg.body import Layout, observe, status
@@ -55,6 +68,7 @@ def report(home: str | Path) -> dict:
                 memory = m
         owned = [m for m in verified_first if _passed(journal, m, "owned-preview")]
         retained = [m for m in verified_first if _passed(journal, m, "lesson-retained")]
+    egress = _egress(layout.home, config)
     rows = {r["mission_id"]: r for r in vepmc["missions"]}
     first_row = next((rows[m] for m in verified_first if m in rows), None)
     heartbeat = st.get("background") or {}
@@ -80,6 +94,12 @@ def report(home: str | Path) -> dict:
          "you paused and resumed the body with your key", "7. Founder control"),
         ("revoke_exercised", any(l.get("state") == "ABANDONED" for l in lifecycle),
          "you revoked a mission with your key", "7. Founder control"),
+        ("network_confined", egress["confined"] and egress["chain_intact"] and egress["allowed"] > 0,
+         "the body was created confined, its relay journal chain verifies, and a mission's connection crossed the relay",
+         "1. Install (the installer confines when the doctor finds the kernel filter and namespaces)"),
+        ("undeclared_destination_denied", egress["confined"] and egress["chain_intact"] and egress["denied"] > 0,
+         "the relay refused and journaled a connection to a destination no capability declared",
+         "6a. Render a page (browser.render): Chromium's own background connections are refused at the relay"),
     ]
     tier = ("FOUNDER-DEVICE (ledger evidence; physical ownership and presence are not provable from a ledger)"
             if designated and first_row and first_row.get("founder_body") else
@@ -89,7 +109,8 @@ def report(home: str | Path) -> dict:
            "properties": [{"property": p, "status": "PASS" if v else "NOT_YET", "means": means, "runbook": step}
                           for p, v, means, step in props],
            "passed": sum(1 for _, v, _, _ in props if v), "total": len(props),
-           "first_mission": first_row, "vepmc": vepmc["VEPMC"], "recoveries": recovered, "acceptances": accepted,
+           "first_mission": first_row, "egress": egress, "vepmc": vepmc["VEPMC"], "recoveries": recovered,
+           "acceptances": accepted,
            "runbook": RUNBOOK, "authority_created": False}
     return out
 

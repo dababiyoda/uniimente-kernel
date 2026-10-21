@@ -73,7 +73,7 @@ class Console:
         self.home = Path(home).expanduser().resolve()
         self.layout = Layout(self.home)
         self.key = key
-        self.transport = transport
+        self.transport = self._held(transport)
         self.transport_factory = transport_factory
         self._route_revision = None
         self.csrf = secrets.token_urlsafe(32)
@@ -131,7 +131,20 @@ class Console:
         config = json.loads(self.layout.config.read_text())
         return planner.PlannerContext(read_roots=tuple(Path(r) for r in config["read_roots"]),
                                       capabilities=status(self.home)["capabilities"],
-                                      workspace=self.layout.workspace)
+                                      workspace=self.layout.workspace, hosted=self._hosted())
+
+    def _hosted(self) -> dict:
+        """The hosted MCP servers GREG holds a login or token for, as the founder's words may name them: public
+        fields only (server, tools as listed, renewal host); no value leaves the secret broker."""
+        from greg import mcp_login
+        from greg.capabilities import SecretBroker
+        broker = SecretBroker(self.layout.secrets)
+        out = {}
+        for handle in broker.names():
+            login = mcp_login.record(broker, handle) if handle.startswith("mcp:") else None
+            if login:
+                out[handle[len("mcp:"):]] = {**mcp_login.public(login), "handle": handle}
+        return out
 
     # -- acting (signed files only) -----------------------------------------------------
     def sign(self, kind: str, body: dict) -> Path:
@@ -139,28 +152,59 @@ class Console:
             raise PermissionError("this console has no founder key; restart it with --key to sign")
         return send_signed(self.home, self.key, kind, body)
 
+    @staticmethod
+    def _held(transport):
+        """A key a vendor refuses while drafting here is not offered to that vendor again in this console."""
+        if transport is not None and hasattr(transport, "routes"):
+            from greg import model_keys
+            model_keys.hold(transport)
+        return transport
+
+    def _keys_stamp(self):
+        try:
+            stat = self.layout.secrets.stat()
+        except OSError:
+            return None
+        return stat.st_mtime_ns, stat.st_size
+
     def _refresh_transport(self):
-        """A signed detach also invalidates drafts in an already open console."""
+        """A signed detach also invalidates drafts in an already open console; a newly stored key is picked up."""
         if self.transport_factory is None:
             return
         with observe(self.home, actor="spiffe://uniimente.internal/greg/console-model-reader") as journal:
             from greg.models import effective_route_config
             events = journal.replay("model.configured")
-            revision = events[-1].event_id if events else None
+            revision = (events[-1].event_id if events else None, self._keys_stamp())
             if revision == self._route_revision:
                 return
             base = json.loads(self.layout.config.read_text()).get("models")
             selected = effective_route_config(base, journal)
-        replacement = self.transport_factory(selected)
+        replacement = self._held(self.transport_factory(selected))
         with self.lock:
             self.transport = replacement
             self.proposals.clear()
             self._route_revision = revision
 
+    def _unrefused(self):
+        """The drafting router without a route whose current key its vendor refused (the body's record says so)."""
+        transport = self.transport
+        if transport is None or not hasattr(transport, "routes"):
+            return transport, []
+        from greg import model_keys
+        with observe(self.home, actor="spiffe://uniimente.internal/greg/console-model-reader") as journal:
+            model_keys.bench_refused(transport, [e.payload for e in journal.replay("model.route")])
+        if transport.routes:
+            return transport, []
+        return None, [name for name in transport.health]
+
     def ask(self, text: str) -> str:
         self._refresh_transport()
         revision = self._route_revision
-        proposal = planner.propose(text, self.context(), transport=self.transport)
+        transport, refused = self._unrefused()
+        proposal = planner.propose(text, self.context(), transport=transport)
+        if refused and proposal.get("status") == "NO_ROUTE":
+            proposal["why"] = ("the vendor refused the stored key for " + ", ".join(refused) + "; store a new one "
+                               "(greg secret set <handle>; Mission Control's Authority view names the handle)")
         self._refresh_transport()
         if self._route_revision != revision:
             proposal = {"status": "FAILED", "why": "model route changed during drafting; ask again"}

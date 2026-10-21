@@ -1507,6 +1507,286 @@ that was also wrongly signed.
 - **Negative evidence kept:** none of the namespace-dependent `mcp.act`, `mcp.call` or remote tests run in CI; their
   evidence is local only. CI checks the refusals, the planner, discovery and the CLI.
 
+## Increment 23 (2026-10-15): the founder logs GREG in to a hosted MCP server (OAuth), and approved calls keep it alive
+
+Most hosted MCP servers accept only OAuth, not a pasted token. Now the founder logs GREG in once, and approved calls
+use, and when needed renew, that login.
+
+- **`greg mcp login <name> <url>`** (`greg/mcp_login.py`), run by the founder in a terminal like `greg secret set`.
+  - **The SDK runs the flow.** GREG prints the authorization link; the founder signs in at the service and approves;
+    the service redirects to a one-shot page on `127.0.0.1` that the command serves. Metadata discovery, dynamic
+    client registration, PKCE and the code exchange are the official MCP SDK's `OAuthClientProvider`. GREG adds
+    only broker-backed storage, the loopback page, and a record of the token endpoint.
+  - **The tokens go to the body's secret broker under `mcp:<name>`.** Only the server, the token endpoint's host,
+    the scope and the expiry are ever shown.
+  - **Refused, with one line and nothing stored:** a name that is not a lowercase handle, a URL that is not https,
+    and a token endpoint that is not https on 443.
+- **Using the login is still a decision.** An `mcp.act` naming the handle as `bearer` waits for the founder's
+  approval like any remote call (increment 22).
+- **An expired login renews once, inside the approved call.** GREG's confined client sends one standard refresh
+  (RFC 6749 section 6, with the RFC 8707 resource) to the endpoint recorded at login, through the same door. The
+  renewed tokens, with the refresh token rotated, go back to the broker and appear in nothing GREG records.
+  - Renewal is allowed only at the server's own host or at a host the approved call names in `hosts`, which the
+    decision shows. A login that expired without a refresh token, or that renews at an unnamed host, is refused
+    before anything starts and tells the founder to log in again or name the host.
+- **Found on the way:** a refused login printed a Python traceback; it now prints one line and exits 2. The login
+  test also showed that the container carries both `HTTPS_PROXY` and lowercase `https_proxy`. A login, which runs in
+  the founder's own terminal, follows whichever their environment has.
+
+### Evidence
+
+- **`tests/integration/test_greg_mcp_oauth.py`,** against the official SDK's `MCPServer` with an OAuth
+  authorization server (an in-memory provider that approves at once, standing in for the founder's sign-in) on
+  `https://service.test`, behind the fake CONNECT proxy, with tokens bound to that server
+  (`validate_token_resource`):
+  - the login runs the SDK's full flow, and the simulated browser is redirected only to GREG's loopback page;
+  - an approved call uses the stored token as it is;
+  - after the access token expires and the service forgets it, the next approved call renews once, closes the
+    mission on GREG's own check, and leaves a rotated refresh token in the broker;
+  - none of the four tokens is in any file of the body home except the secret store.
+- **`tests/unit/test_greg_mcp_login.py` (13 tests):**
+  - four refusals before anything starts (renewal at an unnamed host, no refresh token, hosts beyond the server and
+    its renewal, an extra host without a login) and three admitted cases that stop only at the namespace probe;
+  - the shown record has no token;
+  - a renewal rotates what the service sent and keeps the rest;
+  - a plain token is not a login;
+  - bad names and http URLs are refused before any link is opened, and the CLI says so in one line.
+- **Mutants: 6 of 7 fail the tests:** renewal at any host; hosts beyond the server and its renewal; the renewed
+  login not kept; renewed tokens recorded; an expired login used as it is; the shown record carrying a token.
+  The seventh, the refresh without the RFC 8707 resource, is equivalent against the SDK's server, which binds a
+  renewed token to the original grant's resource either way. The parameter stays, because the MCP authorization
+  specification requires clients to send it.
+
+### What this does not cover
+
+- **Not tried against a real hosted service.** No hosted server, account or browser of the founder's was used.
+- **The login runs in the founder's terminal, not behind the relay.** It is the founder's own act, like signing in
+  with their browser.
+- **Credential files** (some servers want a key file) have no path. Remote servers are not yet discovered or
+  proposed from words.
+
+### Five roles and two passes (a credential-acquisition path)
+
+- **Builder:** the whole OAuth flow is the SDK's; GREG owns storage, the loopback page and the renewal rule.
+- **Adversary:**
+  - A malicious service could advertise a token endpoint elsewhere. The endpoint must be https on 443, renewal
+    happens there only when the server's host matches or the approval names it, and the relay enforces the host.
+  - A stolen broker file holds a refresh token. It sits beside every other secret, at mode 0600, hidden from every
+    door program since increment 16.
+- **Operator:** an expired login that cannot renew says exactly what to run next; renewals need no founder action.
+- **Beneficiary representative:** the founder signs in where they already sign in; GREG never sees their password.
+- **Constitutional reviewer:** a login grants nothing by itself; each use is an approved call; the scope is whatever
+  the founder granted at the service's consent screen.
+- **Pass 1.** Advantage: hosted services become usable without pasting long-lived tokens, and renewal keeps
+  overnight missions working. Reverses if renewal widened reach; it cannot, because it adds only the recorded host
+  and only when the approval allows it. Disadvantage: the refresh token lives in the broker; bounded by the
+  existing secret rules, and revocable at the service.
+- **Pass 2.** A service that rotates refresh tokens and a call that fails after renewing could lose the new token;
+  the renewal is stored even when the call fails, for that reason. **Dissent kept:** run the login itself behind
+  the relay on a confined body. Not built: the login is the founder's act in their own terminal, and its browser
+  half cannot be confined by GREG anyway.
+
+## Increment 24 (2026-10-15): Mission Control shows every credential GREG holds
+
+Increments 20 to 23 gave GREG ways to hold credentials (tokens by `mcp:` handle, OAuth logins). The founder could
+see none of them in Mission Control. Now the Authority view lists every credential in the body's secret broker:
+- by handle and kind ("OAuth login" or "token or key");
+- for a login, the server, the host where it may renew and when it expires;
+- how to revoke each one (`greg secret remove <handle>`, and for a login, removing GREG's access at the service).
+
+Values never leave the broker: the page reads only the public part of a login.
+
+Evidence: `tests/integration/test_greg_credentials_view.py`, over real HTTP with the owner's session. A plain token
+and an OAuth login (access, refresh and client secret) are listed with their revoke instructions, and none of the
+four values appears anywhere on the page.
+
+## Increment 25 (2026-10-15): a vendor that is slow, cuts off or refuses the key, over real HTTP; a refused key is benched
+
+The handoff listed as untested here "a vendor that fails slowly, streams partially or rejects the key, over real
+HTTP". Testing it found a product defect in the third case.
+
+- **The three failures, end to end** (`tests/integration/test_greg_vendor_failures.py`): the real Anthropic SDK
+  against a local endpoint that (a) does not answer before the SDK's timeout, (b) sends headers and part of the body
+  and then drops the connection, or (c) answers HTTP 401 `authentication_error`. Each time the founder's mission
+  closes through the vendor that answers (the real OpenAI SDK, also local). The failure keeps its true class: (a)
+  and (b) are outages, (c) is the founder's credential. The test turns the SDK's own retries off so each case is
+  one request; GREG's routes keep the SDK's default retries. GREG's routes do not stream, so "cuts off" is a body
+  that ends before its declared length.
+- **The defect: a refused key was treated as an outage.** The router demotes a failing route and tries it again
+  after a ten-minute cooldown, so a refused key would have been sent again and again. That means repeated failed
+  authentications at the vendor, and the founder would never be told the key needs replacing.
+- **The fix** (`greg/model_keys.py`, wired where the body builds its router; the frozen `greg/models.py` is
+  unchanged):
+  - the refusal is recorded with the key's fingerprint (the first 12 hex digits of its SHA-256, never the key);
+  - the route leaves the router at once, and again after a restart from the record, while it holds that key;
+  - storing a new key gives the route a new fingerprint, and the next body tries it once.
+- **Mission Control** (Authority view) lists each refused key with when it was refused and the command to store a
+  new one, or says a new key is stored and will be tried next.
+
+### Evidence
+
+- The three failure modes above, each closing the original mission (3 tests).
+- **A refused key, over a body's life:**
+  - after the mission closes, a call an hour later (past any cooldown) goes straight to the vendor that answers,
+    and the refusing vendor saw exactly one request;
+  - status and Mission Control name the route, the time and `greg secret set anthropic_api_key`;
+  - no file in the body home contains the key;
+  - after a restart the key is still not sent;
+  - once a new key is stored, status says so and the next body sends the new key, once.
+- **Mutants: 6 of 6 fail the tests:** no bench (the old behavior); benched only after a restart; not benched after a
+  restart; a new key never tried; the key itself recorded; "a new key is stored" said when none is.
+
+### What this does not cover
+
+- The console's own planner route (used when drafting proposals) is a separate router and is not benched by this.
+  Closed in increment 27.
+- A vendor that refuses a key only for some models (403 entitlement) is benched for the route that was refused.
+
+## Increment 26 (2026-10-15): the hosted servers GREG is logged in to, and their tools, in Mission Control
+
+After `greg mcp login`, nothing in Mission Control showed the hosted server or what it offers. Listing its tools
+again would contact the server outside an approved call, so the login now keeps what the server listed when the
+founder logged in: each tool's name, first line of description, required arguments and read-only claim, with the
+time. Mission Control's Command view shows each logged-in hosted server with its handle and those tools, marked as
+the server's claim, not trusted, and as needing approval for every call. Nothing contacts the server to render it.
+
+Evidence:
+- the OAuth integration test now checks that the login kept `add_note` and its required `text`;
+- `tests/integration/test_greg_credentials_view.py` gains a test over real HTTP: the Command view lists the hosted
+  server, its handle and its tool, and no token value.
+
+Not covered: a hosted server used with a plain token (`greg secret set`) is not listed, because GREG never asked it
+for its tools.
+
+## Increment 27 (2026-10-15): the console stops offering a refused key while drafting
+
+Increment 25 left the console's drafting router unbenched: every proposal drafted by a model would have sent the
+refused key to its vendor again. The console cannot write the body's ledger (it reads it while the body runs), so it
+does two things instead:
+
+- before each draft it reads the body's record of refused keys and leaves out any route still holding one;
+- a key refused while drafting in this console is benched in memory for the life of the console. The body records
+  its own refusal the next time it calls that vendor with the same key.
+
+When every route is benched, a request that needs a model gets `NO_ROUTE`, with the reason "the vendor refused the
+stored key", the route names and where to find the handle. Requests that a template answers still draft. Storing a new
+key (`greg secret set`) changes the secret file, so an open console rebuilds its router and tries the new key once.
+
+Evidence (`tests/integration/test_greg_vendor_failures.py`, real SDKs over local HTTP):
+- in one console, the refused key is sent once, the other vendor drafts, and the second draft does not send it again;
+- a new console with nothing in memory still does not send it, because the body recorded the refusal;
+- with only the refusing vendor configured, the draft is `NO_ROUTE` with that reason and no vendor is contacted;
+- after a new key is stored, the open console sends the new key once;
+- a router handed to the console (not rebuilt) is held back after its first refusal.
+
+Mutants: 5 of 5 fail the test (no read of the record, no in-memory bench, no rebuild on a new key, no reason given,
+the handed-in router left unheld).
+
+Not covered: a refusal seen only by the console is not in Mission Control's list until the body meets it.
+
+## Increment 28 (2026-10-15): a hosted server reached with a plain token, registered like a login
+
+Many hosted MCP services hand out a token, not an OAuth flow. Before this, the founder stored it with
+`greg secret set mcp:<name>`. GREG then knew neither which server the token was for nor what that server offered,
+and Mission Control could not show the server. A mistyped token was found out only when an approved call failed.
+
+`greg mcp token <name> <url>` reads the token from a hidden prompt (or stdin), never from the command line. It lists
+the server's tools once with the token, and only if the server accepts it keeps the token, the server's address and
+those tools under `mcp:<name>`. If the server refuses, nothing is stored, and the message carries the error type but
+never the token. From then on:
+- the Authority view shows the handle as a "registered token" for that server, with the instruction to remove it
+  and revoke it at the service;
+- the Command view lists the server and its tools beside the OAuth logins, as the server's claim;
+- an approved `mcp.act` naming the handle sends the token to that server and nothing else. A pasted token is never
+  renewed or aged out by GREG.
+
+This one founder-run listing is the only contact with the server outside an approved call, as with `greg mcp login`.
+
+Evidence (`tests/integration/test_greg_mcp_token.py`, the guarded notes service over TLS behind the fake proxy):
+- an accepted token is kept with its server and `add_note`;
+- a refused token, an empty or spaced token, and an http URL are refused, and nothing is kept;
+- the CLI reads the token from stdin, prints no token, and fails with one line (exit 2) on refusal;
+- an approved mission sends the registered token and closes on its own read of `/notes`; the token is not used
+  before approval and appears in no file outside the secret broker (namespace test: local only, skipped on CI);
+- `tests/integration/test_greg_credentials_view.py` shows a registered token on both views, with no value.
+
+Mutants: 6 of 6 fail the tests: records of the new kind ignored, the bare token stored, a refused token stored, no
+token shape check, registered servers left off the Command view, and the kind mislabeled.
+
+Not covered: a token's own scope at the service is not known to GREG; the founder narrows it there.
+
+## Increment 29 (2026-10-15): the founder's words to an approved call on a hosted server
+
+After increments 22 to 28, a call to a hosted MCP server still had to be signed by hand. The console now holds
+the public part of every login and registered token (server, tools as listed, renewal host; never a value). Words
+that name one of those services as "the <name> service" or "the <name> server" become one `mcp.act` proposal by
+URL:
+- the tool is chosen from the list the service gave at login or registration, so drafting contacts nobody;
+- the one text in quotes fills the tool's one required argument;
+- the approval names the service's host, plus the renewal host when a login renews elsewhere, and the handle.
+
+GREG cannot read a hosted service's disk. So the words must name a page that will show the change; the mission
+closes only when GREG renders that page (`browser.render`, read-only, reaching only that page's host) and finds the
+text. Everything the words do not settle becomes a question, never a guess:
+- no page, two pages, or the server's own address as the page;
+- no quoted text, or a tool needing more than one argument;
+- no tool that fits;
+- a tool that claims to only read.
+
+Evidence:
+- `tests/unit/test_greg_mcp_remote_words.py`: the proposal's exact parameters, check and light cone; the
+  renewal host; each question; and words naming no hosted service are left to other routes.
+- `tests/integration/test_greg_mcp_token.py`, end to end on a confined body against a service that checks the token:
+  the console drafts without contacting the service, the founder signs and approves, the call crosses the relay,
+  and the mission closes on GREG's own render of the board page. The token appears in no file outside the broker.
+  This test needs namespaces and a browser, so it runs locally only.
+
+Mutants: 7 of 7 fail the tests: the console gives the planner no hosted services, the first of several pages is
+used, a read-only claim is ignored, the renewal host is dropped, the server's address is accepted as the page, no
+quoted text is required, and the route is switched off.
+
+On the way, tool matching stopped counting the service's own name in plural form ("notes" matched `list_notes`
+over `add_note`).
+
+Not covered: a change that no page shows (GREG then asks); hosted services with the same name as an installed
+server are routed to the hosted one.
+
+## Increment 30 (2026-10-15): a credential a server reads from a file
+
+Many MCP servers take their credential as a file path rather than a value: a Google service-account key in
+`GOOGLE_APPLICATION_CREDENTIALS`, a kubeconfig, a client certificate. Until now `mcp.act` could pass credentials
+only as environment values, and `greg secret set` kept only one line, so a multi-line key could not be stored at
+all.
+
+- `greg secret set mcp:<name> --from-file <path>` keeps the whole file (text, 64 KiB at most) in the secret broker.
+  Nothing of it is printed, and the original stays where it was, which the output says.
+- A mission names it in `mcp.act`'s `secret_files` (`{"GOOGLE_APPLICATION_CREDENTIALS": "mcp:gcp-key"}`). For the
+  call, GREG writes the value to a 0600 file in a private 0700 directory of the call's workspace. The namespace
+  shows that directory read-only, the variable holds the path, and the directory is removed when the call ends,
+  whatever the outcome.
+- The approval names it as "mcp:gcp-key (as a file)". The receipt lists the variable names only.
+- An environment name may be a value or a file, not both. A remote call takes neither, since its credential is the
+  bearer.
+
+Evidence (`tests/unit/test_greg_mcp_act.py`, through the real namespace): from inside, the server sees an absolute
+path to a 0600 file with the stored value's digest, and writing it fails with "Read-only file system". No file in
+the workspace holds the value after the call, and no `cred-*` directory remains. The approval shows the handle as a
+file. The CLI stores a multi-line key without printing it, and refuses an empty file, a missing file and a non-mcp
+handle.
+
+Mutants: 7 of 7 fail the tests:
+- the directory shown writable;
+- not removed;
+- mode 0644;
+- the value placed in the variable instead of the path;
+- a remote call allowed files;
+- the approval omits the file;
+- a name used both ways.
+
+Not covered: binary credential files (refused), and a server that copies the file elsewhere inside its own
+writable folders. That copy is the server's act within its approved scope; the founder sees the writable folders
+before approving.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

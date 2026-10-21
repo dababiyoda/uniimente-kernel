@@ -26,6 +26,7 @@ import argparse
 from datetime import datetime, timedelta, timezone
 import getpass
 import json
+from urllib.parse import urlsplit
 import os
 from pathlib import Path
 import sys
@@ -69,6 +70,20 @@ def _secret_value(name: str) -> str:
     if not value:
         raise BodyError("no value given; nothing stored")
     return value
+
+
+def _secret_file(path: str) -> str:
+    """A whole credential file (64 KiB at most, text); its contents never reach the command line or the output."""
+    try:
+        data = Path(path).expanduser().read_bytes()
+    except OSError as exc:
+        raise BodyError(f"cannot read {path}: {exc.strerror}") from None
+    if not data.strip() or len(data) > 64 * 1024:
+        raise BodyError("a credential file is non-empty text of at most 64 KiB; nothing stored")
+    try:
+        return data.decode()
+    except UnicodeDecodeError:
+        raise BodyError("a credential file must be text (UTF-8); nothing stored") from None
 
 
 def _drop(home: str, kind: str, body: dict, args) -> Path:
@@ -219,7 +234,10 @@ def main(argv=None) -> int:
     sv2.add_argument("--host", default="127.0.0.1"); sv2.add_argument("--port", type=int, default=8765)
     se = sub.add_parser("secret", help="store a credential for GREG on this body (local; never in the ledger)")
     ses = se.add_subparsers(dest="secret_cmd", required=True)
-    ses.add_parser("set", help="value from a hidden prompt or stdin, never from the command line").add_argument("name")
+    sset = ses.add_parser("set", help="value from a hidden prompt or stdin, never from the command line")
+    sset.add_argument("name")
+    sset.add_argument("--from-file", help="an mcp: credential kept as a whole file (a service-account key, a "
+                                          "kubeconfig); a mission hands it to a server as a file (secret_files)")
     ses.add_parser("remove").add_argument("name")
     ses.add_parser("list", help="handle names only; values are never printed")
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
@@ -237,6 +255,14 @@ def main(argv=None) -> int:
     mcps = mcp.add_subparsers(dest="mcp_cmd", required=True)
     mcl = mcps.add_parser("list", help="the servers found; with --tools, each one's tools (run confined, no network)")
     mcl.add_argument("--tools", action="store_true")
+    mlo = mcps.add_parser("login", help="authorize GREG at a remote MCP server (OAuth; you approve in your browser); "
+                                        "the tokens stay in this body's secret broker under mcp:<name>")
+    mlo.add_argument("name")
+    mlo.add_argument("url")
+    mto = mcps.add_parser("token", help="keep a bearer token a hosted MCP server gave you, with its address and the "
+                                        "tools it lists (read from a hidden prompt or stdin, never the command line)")
+    mto.add_argument("name")
+    mto.add_argument("url")
     doc = sub.add_parser("doctor", help="read-only first-body prerequisites; creates no key, service or body")
     doc.add_argument("--chromebook", action="store_true", required=True)
     fd = sub.add_parser("foundry", help="the Foundry arsenal: completion status, systems, GREG's own graph and reputation")
@@ -634,6 +660,14 @@ def main(argv=None) -> int:
             elif args.name not in known and not mcp_handle(args.name):
                 raise BodyError(f"unknown credential handle {args.name!r}; known: {', '.join(sorted(known))}, "
                                 "or mcp:<name> for an MCP server you installed")
+            elif args.secret_cmd == "set" and getattr(args, "from_file", None):
+                if not mcp_handle(args.name):
+                    raise BodyError("--from-file is for mcp:<name> credentials a server reads as a file")
+                broker.put(args.name, _secret_file(args.from_file))
+                print(json.dumps({"stored": args.name, "where": "this body's secret broker (mode 0600); never the "
+                                  "ledger", "read_by": "only a mission that names it in secret_files or secrets, after "
+                                  "your approval", "original": f"{args.from_file} is unchanged; delete it if this "
+                                  "should be the only copy"}, indent=1))
             elif args.secret_cmd == "set":
                 broker.put(args.name, _secret_value(args.name))
                 print(json.dumps({"stored": args.name, "where": "this body's secret broker (mode 0600); "
@@ -653,6 +687,38 @@ def main(argv=None) -> int:
                 print(json.dumps(improvement.report(journal, journal.ledger), indent=1, default=str))
         elif args.cmd == "status":
             print(json.dumps(status(home), indent=1, default=str))
+        elif args.cmd == "mcp" and args.mcp_cmd == "login":
+            import asyncio
+            import os
+            from greg import mcp_login
+            from greg.capabilities import SecretBroker
+
+            def show(link):
+                print(f"Open this link to authorize GREG at {args.url} (it waits up to 5 minutes):\n{link}",
+                      file=sys.stderr, flush=True)
+            from greg.capabilities import CapabilityError
+            try:
+                out = asyncio.run(mcp_login.login(args.name, args.url, SecretBroker(Layout(home).secrets),
+                                                  open_url=show, cafile=os.environ.get("GREG_EGRESS_CAFILE")))
+            except CapabilityError as exc:
+                raise BodyError(f"not logged in: {exc}") from None
+            print(json.dumps({**out, "next": f"a mission names bearer {out['handle']}; every call still waits for "
+                                             "your approval" + (f", and names {out['renews_at']} in hosts so an "
+                                             "expired login can renew" if out["renews_at"] != urlsplit(args.url).hostname
+                                             else "")}, indent=1))
+        elif args.cmd == "mcp" and args.mcp_cmd == "token":
+            import asyncio
+            import os
+            from greg import mcp_login
+            from greg.capabilities import CapabilityError, SecretBroker
+            try:
+                out = asyncio.run(mcp_login.register_token(args.name, args.url, _secret_value(f"mcp:{args.name}"),
+                                                           SecretBroker(Layout(home).secrets),
+                                                           cafile=os.environ.get("GREG_EGRESS_CAFILE")))
+            except CapabilityError as exc:
+                raise BodyError(f"not registered: {exc}") from None
+            print(json.dumps({**out, "next": f"a mission names bearer {out['handle']}; every call still waits for "
+                                             "your approval"}, indent=1))
         elif args.cmd == "mcp":
             from greg import mcp_tools
             servers = mcp_tools.installed_servers(json.loads(Layout(home).config.read_text())["read_roots"])

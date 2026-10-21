@@ -864,7 +864,7 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                          "app_integration", "external_contact", "mcp:",
                          {"server": "str", "root": "path?", "command": "list?", "url": "str?", "tool": "str",
                           "arguments": "dict?", "readable": "list[path]?", "writable": "list[path]?", "hosts": "list?",
-                          "secrets": "dict?", "bearer": "str?"},
+                          "secrets": "dict?", "secret_files": "dict?", "bearer": "str?"},
                          {"server": "str", "tool": "str", "result": "str|dict", "text": "str",
                           "result_sha256": "str", "trust": "str", "confinement": "dict"},
                          network="signed-hosts", filesystem="named-write", data_classes=("project_sources",),

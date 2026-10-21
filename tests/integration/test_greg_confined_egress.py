@@ -418,6 +418,9 @@ def test_the_browser_renders_behind_the_relay_and_its_page_cannot_reach_anything
     assert {(e["host"], e["verdict"]) for e in mine if e["port"] == page.server_address[1]} == {("127.0.0.1", "ALLOWED")}
     denied = {(e["host"], e["port"]) for e in mine if e["verdict"] == "DENIED"}
     assert ("127.0.0.1", b) in denied and ("beacon.example.com", b) in denied
+    from greg.acceptance import report                               # the device report reads the same journal
+    shown = {p["property"]: p["status"] for p in report(home)["properties"]}
+    assert shown["network_confined"] == "PASS" and shown["undeclared_destination_denied"] == "PASS"
     assert all(e["verdict"] != "ALLOWED" or (e["host"], e["port"]) == ("127.0.0.1", page.server_address[1])
                for e in mine)
 

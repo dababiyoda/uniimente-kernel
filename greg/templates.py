@@ -637,6 +637,59 @@ def mcp_act(*, server: str, root: str, command: list[str], tool: str, arguments:
 TEMPLATES["mcp-act"] = mcp_act
 
 
+REMOTE_EVIDENCE = {
+    "same_service": "a read-after-write through the service's own host: it shows the service's state, not an "
+                    "independent corroboration of it",
+    "separate_host": "a read through a different host than the service's; GREG cannot show that host is independent "
+                     "of the service, so this is not proven independent corroboration",
+}
+
+
+def remote_evidence(url: str, check_url: str) -> str:
+    """Which evidence a page check is: a read-after-write through the same service, or a read through another host."""
+    from urllib.parse import urlsplit
+    service, page = urlsplit(url).hostname or "", urlsplit(check_url).hostname or ""
+    same = page == service or page.endswith("." + service) or service.endswith("." + page) or \
+        page.split(".")[-2:] == service.split(".")[-2:]
+    return "same_service" if same else "separate_host"
+
+
+def mcp_remote_act(*, server: str, url: str, tool: str, arguments: dict, bearer: str | None, check_url: str,
+                   expect_text: str, hosts=(), founder_expression: str | None = None, horizon_days: float = 1) -> dict:
+    """One call to a tool of a hosted MCP server (``mcp.act`` by URL), inside the scope the founder approves.
+
+    A call on someone else's machine cannot be made read-only, so it always waits for the founder's decision, which
+    shows the server, the hosts it may reach and the credential handle. GREG checks the effect itself by rendering a
+    page the founder named (``browser.render``, which reaches only that page's host) and finding the text there; the
+    server's own answer is untrusted data. If the page already shows it, nothing runs."""
+    from urllib.parse import urlsplit
+    digest = hashlib.sha256(json.dumps([url, tool, arguments], sort_keys=True).encode()).hexdigest()[:8]
+    params = {"server": server, "url": url, "tool": tool, "arguments": dict(arguments)}
+    if bearer:
+        params["bearer"] = bearer
+    if hosts:
+        params["hosts"] = [str(h) for h in hosts]
+    page = urlsplit(check_url).hostname
+    return {
+        "mission_id": f"m:mcp-remote-{_slug(server, 20)}-{_slug(tool, 30)}-{digest}",
+        "founder_expression": founder_expression or f"Use the {server} service's {tool}",
+        "intended_effect": f"{check_url} shows {expect_text!r} after the {server} service's {tool}",
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": [{
+            "check_id": "shown", "description": f"GREG renders {check_url} and finds the text "
+                                                f"({REMOTE_EVIDENCE[remote_evidence(url, check_url)]})",
+            "sensor": {"capability": "browser.render", "params": {"url": check_url}, "target": f"web:{page}"},
+            "predicate": {"op": "contains", "field": "text", "value": expect_text}}],
+        "strategies": [{"action_id": "act", "capability": "mcp.act", "params": params, "target": f"mcp:{server}",
+                        "advances": ["shown"],
+                        "rationale": f"the {server} service's {tool}, inside the scope the founder approves"}],
+        "light_cone": {"capabilities": ["mcp.act", "browser.render"], "targets": [f"mcp:{server}", f"web:{page}"],
+                       "max_consequence_class": "read_only", "budget_usd": 0.0, "horizon": _horizon(horizon_days)}}
+
+
+TEMPLATES["mcp-remote-act"] = mcp_remote_act
+
+
 NETWORK_NAME = r"[A-Za-z][A-Za-z0-9_-]{0,31}"
 NETWORK_NUMBER = r"\d+(?:\.\d+)?"
 NETWORK_LINK = re.compile(rf"^(?P<a>{NETWORK_NAME})\s+(?P<how>to|and)\s+(?P<b>{NETWORK_NAME})\s*[:,]?\s*"

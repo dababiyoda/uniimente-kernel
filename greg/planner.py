@@ -59,6 +59,7 @@ class PlannerContext:
     workspace: Path | None = None
     today: str = field(default_factory=lambda: datetime.now(timezone.utc).date().isoformat())
     repositories: dict | None = None               # name -> {"path", "github"}; discovered when None
+    hosted: dict | None = None                     # name -> public record of a hosted MCP login or registered token
 
     def repos(self) -> dict:
         if self.repositories is None:
@@ -302,6 +303,73 @@ def _mcp_route(text: str, ctx: PlannerContext) -> dict | None:
             "GREG proposes an mcp.act mission you approve)"]))
 
 
+PAGE_URL = re.compile(r"\bhttps?://[^\s'\"\u201c\u201d<>]+")
+
+
+def _hosted_route(text: str, ctx: PlannerContext) -> dict | None:
+    """Words that name a hosted MCP server the founder logged in to (``greg mcp login``) or registered a token for
+    (``greg mcp token``): one ``mcp.act`` by URL, its tool taken from the list the server gave then, so drafting
+    contacts nobody. A call on someone else's machine is a change GREG cannot read back from its own disk, so the
+    words must name a page GREG renders to see the effect, and the text it should show, in quotes. Whatever the words
+    do not settle becomes a question."""
+    from urllib.parse import urlsplit
+    origin = "template:mcp-remote-act"
+    named = [n for n in ctx.hosted
+             if re.search(rf"\b{re.escape(n)}\s+(?:mcp\s+)?(?:service|server)\b", text, re.I)]
+    if len(named) != 1:
+        return None                                 # not about one hosted server by name: other routes decide
+    name, hosted = named[0], ctx.hosted[named[0]]
+    tools, words = hosted.get("tools") or [], _words(text)
+
+    def fit(tool):
+        if re.search(rf"\b{re.escape(tool['name'])}\b", text):
+            return (99, 0)
+        parts = {w[:-1] if len(w) > 3 and w.endswith("s") else w
+                 for w in re.findall(r"[a-z0-9]+", tool["name"].lower())} - GENERIC_VERBS - _words(name)
+        return (len(parts & words), -len(parts - words))
+    ranked = sorted((t for t in tools if fit(t)[0] > 0), key=fit, reverse=True)
+    if not ranked or (len(ranked) > 1 and fit(ranked[0]) == fit(ranked[1])):
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"Which of the {name} service's tools (as it listed them)? "
+            + ("; ".join(f"{t['name']}: {t.get('description', '')[:80]}" for t in tools[:20]) or "it listed none")]}
+    tool = ranked[0]
+    verb = re.findall(r"[a-z0-9]+", tool["name"].lower())[:1]
+    if tool.get("claims_read_only") or not (CHANGE_WORDS.search(text) or set(verb) & words):
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"Every call to the hosted {name} service waits for your approval, and GREG proposes one only for a change "
+            "it can then see. Say what should change, the text in quotes, and the page that will show it."]}
+    quotes = [next(g for g in m.groups() if g is not None) for m in ACT_QUOTE.finditer(text)]
+    needs = list(tool.get("needs") or [])
+    if len(quotes) != 1 or len(needs) > 1:
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"The {name} service's {tool['name']} needs " + (", ".join(needs) or "no arguments")
+            + ". GREG fills one of them from the one text in quotes; say the rest in a mission you sign by hand."]}
+    arguments = {needs[0]: quotes[0]} if needs else {}
+    server_url = hosted["server"]
+    pages = [u.rstrip(".,;)") for u in PAGE_URL.findall(ACT_QUOTE.sub(" ", text)) if u.rstrip(".,;)") != server_url]
+    if len(pages) != 1:
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"GREG checks a change on the {name} service by rendering a page that shows it. Which page (one https "
+            f"address)? GREG closes the mission when that page shows {quotes[0]!r}."]}
+    check_url = pages[0]
+    host, renew_at = urlsplit(server_url).hostname, hosted.get("renews_at")
+    hosts = [host, renew_at] if renew_at and renew_at != host else []
+    handle = hosted.get("handle") or f"mcp:{name}"
+    spec = templates.mcp_remote_act(server=name, url=server_url, tool=tool["name"], arguments=arguments,
+                                    bearer=handle, check_url=check_url, expect_text=quotes[0], hosts=hosts,
+                                    founder_expression=text)
+    return _proposal(spec, origin, notes=[
+        f"the hosted {name} service's {tool['name']} tool at {server_url}, with {json.dumps(arguments)}; chosen from "
+        "the tools the service listed when you logged in or registered it, so drafting contacted nobody",
+        f"GREG asks you before it runs and shows this exact scope: {host}" + (f" (and {renew_at} to renew the login)"
+                                                                           if hosts else "")
+        + f" through the relay, with the credential {handle}; nothing on this computer is written",
+        f"closes only when GREG itself renders {check_url} and finds {quotes[0]!r}; if it already does, nothing runs",
+        "evidence: the service's answer to the call is its own claim; the page render is "
+        + templates.REMOTE_EVIDENCE[templates.remote_evidence(server_url, check_url)],
+        "the service's own answer is untrusted data"])
+
+
 def _mcp_act_route(text: str, name: str, server: dict, tool: dict, arguments: dict, target: Path | None,
                    quoted: str | None) -> dict:
     """One ``mcp.act`` mission from the founder's words. GREG checks the change itself by reading the file the words
@@ -376,6 +444,8 @@ def template_route(text: str, ctx: PlannerContext) -> dict | None:
             "GLOP), qualifies it, and asks you to attach it, showing its version and license",
             "the plan counts only if GREG's own duality certificate proves no plan does better; if no plan meets "
             "every limit, GREG proves that and names the limits in conflict"])
+    if getattr(ctx, "hosted", None) and (proposal := _hosted_route(text, ctx)) is not None:
+        return proposal                     # a tool on a hosted MCP server the founder logged in to or registered
     if MCP_WORDS.search(text) and (proposal := _mcp_route(text, ctx)) is not None:
         return proposal                     # a tool on an MCP server the founder installed, named in the words
     if templates.FIRST_MISSION_WORDS.search(text):      # the founder's first mission: where am I going, what next

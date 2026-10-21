@@ -459,6 +459,7 @@ class Body:
             self._heartbeat("PAUSED", [])
             return {"commands": commands, "paused": True}
         self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
+        recovered = self.genesis.recover(now)     # quarantined capabilities may earn back eligibility (sandbox)
         summary = self.engine.tick(now, should_stop=self._stop_now)
         if self._stop_now():
             return {"commands": commands, "missions": summary, "stopped": True}
@@ -470,7 +471,7 @@ class Body:
         transport = (anchor.relay_transport(self.egress, self.layout.workspace / ".anchor")
                      if getattr(self, "egress", None) is not None else None)
         anchored = anchor.anchor_once(self.journal, now, transport=transport) if anchor.due(self.journal, now) else None
-        return {"commands": commands, "missions": summary, "anchor": anchored}
+        return {"commands": commands, "missions": summary, "anchor": anchored, "recovery": recovered}
 
     def _close_out(self, now):
         """Record where each closure happened and have it appraised by a separate process."""

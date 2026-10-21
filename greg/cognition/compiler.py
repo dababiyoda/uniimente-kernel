@@ -33,7 +33,8 @@ HIGH_CONSEQUENCE = ("external_contact", "financial", "irreversible")
 HUMAN_CLASSES = ("normative", "legal", "institutional_acceptance")
 HUMAN_ROLES = ("founder", "operator", "domain_expert", "affected_participant", "auditor", "customer",
                "professional", "regulator")
-STATUS_RANK = {"DEFAULT_FOR_GEOMETRY": 0, "NICHE_CAPABILITY": 1, "UNEVALUATED": 2, "EXPERIMENTAL": 3, "NO_LIFT": 8,
+STATUS_RANK = {"DEFAULT_FOR_GEOMETRY": 0, "NICHE_CAPABILITY": 1, "UNEVALUATED": 2, "CONSTRUCTED_VERIFIED": 2,
+               "EXPERIMENTAL": 3, "NO_LIFT": 8,
                "COMPOSITION_ONLY": 9, "SUPERSEDED": 9, "REJECTED": 9, "FRONTIER_HORIZON": 9}
 EXCLUDED = ("SUPERSEDED", "REJECTED", "FRONTIER_HORIZON", "COMPOSITION_ONLY")
 # Inputs that identify an existing (pre-genome) family's native geometry.
@@ -391,6 +392,63 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
     return rows
 
 
+def constructed_candidates(data: dict, g: CompetencyGeometry, registry) -> list[dict]:
+    """Capabilities Capability Genesis constructed (greg.recombine) that fit this request's inputs.
+
+    An ATTACHED construction is a candidate like any admitted method; a fitting reduction with no
+    attached construction is rejected as *constructible*, so the deficit names a function Genesis
+    can actually form instead of an unbuildable geometry label. Attachment stays a founder act."""
+    from greg import recombine
+    rows = []
+    for reduction in recombine.fits(data):
+        attached = [m.capability_id for m in getattr(registry, "by_function", lambda f: [])(reduction.function)
+                    if m.provider.startswith("composed:") and m.consequence_class == "read_only"
+                    and registry.usable(m.capability_id)[0]]
+        row = {"method": attached[0] if attached else f"constructible:{reduction.function}",
+               "operation": reduction.function, "kind": "constructed", "inputs": list(reduction.inputs),
+               "epistemic_classes": list(reduction.epistemic_classes),
+               "status": "CONSTRUCTED_VERIFIED" if attached else "UNEVALUATED", "rejected": None}
+        if g.geometry and g.geometry not in reduction.epistemic_classes:
+            row["rejected"] = f"native geometry {list(reduction.epistemic_classes)} does not include {g.geometry}"
+        elif not attached:
+            row["rejected"] = "constructible: no attached construction yet (Capability Genesis can form it)"
+            row["constructible"] = True
+        rows.append(row)
+    return rows
+
+
+def _run_constructed(chosen: dict, data: dict, pid: str, registry, receipt: dict, finish):
+    """Invoke an attached, read-only construction; its problem-level certificate is the evidence."""
+    import tempfile
+    from greg.capabilities import CapabilityError, InvocationContext
+    manifest = registry.manifests[chosen["method"]]
+    if manifest.consequence_class != "read_only" or not manifest.provider.startswith("composed:"):
+        receipt["abstentions"].append("ABSTAIN: only a read-only construction may answer inside cognition")
+        return finish("ABSTAIN")
+    request = {key: data[key] for key in chosen["inputs"]}
+    with tempfile.TemporaryDirectory(prefix="greg-constructed-") as tmp:
+        ctx = InvocationContext(workspace=Path(tmp), read_roots=(), secrets=None, manifest=manifest,
+                                target=f"cognition:{pid}")
+        try:
+            out = registry.adapters[manifest.capability_id](request, ctx)
+        except CapabilityError as exc:
+            if str(exc).startswith("capability refused:"):
+                # the mission's two-strike repair re-forms a construction that faults in service
+                receipt["capability_fault"] = {"capability_id": manifest.capability_id, "detail": str(exc)[:300]}
+            receipt["abstentions"].append(f"ABSTAIN: {str(exc)[:300]}")
+            return finish("ABSTAIN")
+    receipt["resource_use"]["stages"] = 1
+    receipt["proof_artifacts"] = [{"type": "certificate", "evidence_type": (out.get("certificate") or {}).get("kind")}]
+    receipt["verification_method"] = (out.get("certificate") or {}).get("checked_by") or \
+        "GREG problem-level certificate, independent of the engine"
+    receipt["confidence_type"] = "certified: exact problem-level certificate"
+    receipt["dissent"].append(f"trust per call: {manifest.provenance.get('baseline', 'see the construction card')}")
+    if out.get("certified") is not True:
+        receipt["abstentions"].append("ABSTAIN: the construction returned no certificate")
+        return finish("ABSTAIN")
+    return finish("ANSWERED", out)
+
+
 def _rank(row: dict, prefer: list, competence: dict) -> tuple:
     status = 0 if row["status"] == "VPL_LIFT" else STATUS_RANK.get(row["status"], 5)
     preferred = 0 if (row["operation"] in prefer or row["method"] in prefer) else 1
@@ -492,7 +550,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                                                "effect_kind": op.effect_kind, "evidence_type": op.evidence_type,
                                                "benchmark": op.benchmark})
     # 3. candidates by native geometry and inputs; frozen negative evidence excludes
-    rows = candidates(data, g, evidence)
+    rows = candidates(data, g, evidence) + constructed_candidates(data, g, registry)
     receipt["methods_considered"] = [r["method"] for r in rows]
     receipt["methods_rejected"] = [{"method": r["method"], "why": r["rejected"]} for r in rows if r["rejected"]]
     receipt["methods_demoted"] = [{"method": r["method"], "why": r["demoted"]} for r in rows if r.get("demoted")]
@@ -507,6 +565,19 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                              "verified": True},
             "search_order": ["attached", "verified_detached", "installed_software", "builder", "founder"],
             "route": "greg.genesis (Capability Genesis) under the enclosing mission's authority"}
+        buildable = [r for r in rows if r.get("constructible")]
+        if buildable:
+            # The Mind names the missing function in a form Capability Genesis can construct.
+            from greg import recombine
+            from greg.genesis import CATALOG
+            found = recombine.chain(buildable[0]["operation"], CATALOG)
+            if found is not None:
+                path, engine = found
+                receipt["capability_deficit"].update({
+                    "function": buildable[0]["operation"], "required_inputs": buildable[0]["inputs"],
+                    "constructible": {"chain": [r.reduction_id for r in path], "engine": engine,
+                                      "alternatives": [r["operation"] for r in buildable[1:]]},
+                    "search_order": ["attached", "verified_detached", "constructed", "builder", "founder"]})
         return finish("CAPABILITY_DEFICIT")
     competence = _settled_competence(journal, g.geometry)
     eligible.sort(key=lambda r: _rank(r, plan["prefer"], competence))
@@ -521,6 +592,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         "no settled outcomes in this journal; admission evidence and cost decide"
     if body.get("execute") is False:
         return finish("PLANNED")
+    if chosen["kind"] == "constructed":
+        return _run_constructed(chosen, data, pid, registry, receipt, finish)
     # 4. execute through the same canonical reason
     if chosen["kind"] == "composition":
         inner = reason({"problem_id": pid, "chain": {"question": g.objective or "compiled", "payload": data}},

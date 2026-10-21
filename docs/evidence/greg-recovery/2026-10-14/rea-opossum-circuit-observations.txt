@@ -1,0 +1,115 @@
+== timer
+278 setTimeout | fn: constructor {"delay_milliseconds": null, "method": "setTimeout"}
+318 setTimeout | fn: None {"delay_milliseconds": null, "method": "setTimeout"}
+733 setTimeout | fn: None {"delay_milliseconds": null, "method": "setTimeout"}
+886 setInterval | fn: healthCheck {"delay_milliseconds": null, "method": "setInterval"}
+== event
+None close | fn: None {"emitter_key": "this", "event_name": "close"}
+None cacheMiss | fn: None {"emitter_key": "this", "event_name": "cacheMiss"}
+None failure | fn: None {"emitter_key": "binding:scope:function:33936:34507:binding:circuit", "event_name": "failure"}
+None halfOpen | fn: None {"emitter_key": "binding:scope:function:14933:15497:binding:circuit", "event_name": "halfOpen"}
+None reject | fn: None {"emitter_key": "this", "event_name": "reject"}
+None success | fn: None {"emitter_key": "this", "event_name": "success"}
+None success | fn: None {"emitter_key": "binding:scope:function:32731:33341:binding:circuit", "event_name": "success"}
+None fallback | fn: None {"emitter_key": "binding:scope:function:33343:33934:binding:circuit", "event_name": "fallback"}
+None timeout | fn: None {"emitter_key": "this", "event_name": "timeout"}
+None fallback | fn: None {"emitter_key": "this", "event_name": "fallback"}
+None open | fn: None {"emitter_key": "this", "event_name": "open"}
+None fire | fn: None {"emitter_key": "this", "event_name": "fire"}
+None semaphoreLocked | fn: None {"emitter_key": "this", "event_name": "semaphoreLocked"}
+None shutdown | fn: None {"emitter_key": "this", "event_name": "shutdown"}
+None coalesceCacheHit | fn: None {"emitter_key": "this", "event_name": "coalesceCacheHit"}
+None coalesceCacheMiss | fn: None {"emitter_key": "this", "event_name": "coalesceCacheMiss"}
+None cacheHit | fn: None {"emitter_key": "this", "event_name": "cacheHit"}
+None failure | fn: None {"emitter_key": "this", "event_name": "failure"}
+None healthCheckFailed | fn: None {"emitter_key": "this", "event_name": "healthCheckFailed"}
+448 None | fn: None {"emitter_key": "this", "event_name": null}
+== listener
+296 on:success | fn: constructor {"emitter_key": "this", "event_name": "success", "method": "on"}
+297 on:failure | fn: constructor {"emitter_key": "this", "event_name": "failure", "method": "on"}
+298 on:fallback | fn: constructor {"emitter_key": "this", "event_name": "fallback", "method": "on"}
+299 on:timeout | fn: constructor {"emitter_key": "this", "event_name": "timeout", "method": "on"}
+300 on:fire | fn: constructor {"emitter_key": "this", "event_name": "fire", "method": "on"}
+301 on:reject | fn: constructor {"emitter_key": "this", "event_name": "reject", "method": "on"}
+302 on:cacheHit | fn: constructor {"emitter_key": "this", "event_name": "cacheHit", "method": "on"}
+303 on:cacheMiss | fn: constructor {"emitter_key": "this", "event_name": "cacheMiss", "method": "on"}
+304 on:coalesceCacheHit | fn: constructor {"emitter_key": "this", "event_name": "coalesceCacheHit", "method": "on"}
+305 on:coalesceCacheMiss | fn: constructor {"emitter_key": "this", "event_name": "coalesceCacheMiss", "method": "on"}
+306 on:open | fn: constructor {"emitter_key": "this", "event_name": "open", "method": "on"}
+307 on:close | fn: constructor {"emitter_key": "this", "event_name": "close", "method": "on"}
+308 on:semaphoreLocked | fn: constructor {"emitter_key": "this", "event_name": "semaphoreLocked", "method": "on"}
+348 on:open | fn: constructor {"emitter_key": "this", "event_name": "open", "method": "on"}
+349 on:success | fn: constructor {"emitter_key": "this", "event_name": "success", "method": "on"}
+448 removeAllListeners | fn: shutdown {"emitter_key": "this", "event_name": null, "method": "removeAllListeners"}
+== writes / schedules-timer / detaches-task
+detaches-task 729 None -> Promise.catch | fn: None inferred high
+writes 733 timeout -> timeout | fn: None inferred high
+writes 587 args -> args | fn: None inferred high
+schedules-timer 278 call -> setTimeout | fn: constructor inferred high
+detaches-task 873 check -> Promise.catch | fn: None inferred high
+schedules-timer 733 call -> setTimeout | fn: None inferred high
+writes 193 args -> args | fn: None inferred high
+schedules-timer 318 call -> setTimeout | fn: None inferred high
+writes 865 interval -> interval | fn: healthCheck inferred high
+writes 735 timeoutError -> timeoutError | fn: None inferred high
+writes 587 fb -> fb | fn: fallback inferred high
+schedules-timer 886 call -> setInterval | fn: healthCheck inferred high
+== functions
+151 CircuitBreaker
+158 isOurError
+172 newStatus
+176 constructor
+190 None
+193 None
+198 None
+279 None
+288 None
+293 increment
+294 None
+306 None
+307 None
+315 _startTimer
+317 None
+318 None
+333 _halfOpen
+349 None
+382 _renewAbortControllerIfNeeded
+397 close
+422 open
+440 shutdown
+466 isShutdown
+474 name
+482 group
+490 pendingClose
+498 closed
+506 opened
+514 halfOpen
+522 status
+531 stats
+535 toJSON
+555 enabled
+563 warmUp
+571 volumeThreshold
+584 fallback
+587 None
+615 fire
+643 call
+729 None
+734 None
+763 None
+786 None
+834 clearCache
+864 healthCheck
+873 check
+874 None
+900 enable
+910 disable
+921 getSignal
+936 getAbortController
+941 handleError
+961 fallback
+981 fail
+1000 resetCoalesce
+1014 buildError
+1022 nextName
+1023 None

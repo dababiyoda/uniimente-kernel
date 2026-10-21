@@ -1217,3 +1217,19 @@ def test_the_immune_cycle_code_is_unchanged_since_cycle_2():
     assert hashlib.sha256(code.encode()).hexdigest() == IMMUNE_CYCLE_CODE_SHA256
     seal = inspect.getsource(E.SealedEvaluator) + inspect.getsource(C.immune_score) + E.RULE
     assert hashlib.sha256(seal.encode()).hexdigest().startswith("8126e28e9f1c")
+
+
+def test_p8_reserves_8600_to_9199_which_no_admission_freeze_or_p8_split_had_used():
+    """Added for cycle 7's design (2026-10-21) before any instance of these seeds was generated: an admission run
+    can no longer choose them, and every earlier P8 split, canary and admission freeze stays outside them."""
+    from greg.cognition.genomes import admission
+    extension = set(range(8600, 9200))
+    assert admission.P8_RESERVED == range(7000, 9200) and extension <= set(admission.P8_RESERVED)
+    used = admission.spent_seeds() | set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS)
+    used |= {s for seeds in (*E.CR_SPLITS.values(), *E.IMMUNE_SPLITS.values()) for part in seeds for s in part}
+    used |= {s for seeds in E.CR_CANARY_SEEDS.values() for s in seeds}
+    assert not used & extension and max(used & set(admission.P8_RESERVED)) < 8600
+    for manifest in E.EVIDENCE.rglob("freeze.json"):
+        split = json.loads(manifest.read_text()).get("inputs", {}).get("split", {})
+        ids = {int(k[1:]) for k in (*split.get("train", []), *split.get("heldout", [])) if k[1:].isdigit()}
+        assert not ids & extension, manifest

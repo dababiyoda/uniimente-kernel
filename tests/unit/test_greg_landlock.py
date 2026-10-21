@@ -132,3 +132,45 @@ print(json.dumps(out))
     assert result.returncode == 0, result.stderr
     observed = json.loads(result.stdout)
     assert all(observed["librt"]) and observed["private_denied"] is True
+
+
+@pytest.mark.parametrize("abi,size,signals,scopes", [
+    (5, 8, "unscoped (Landlock ABI < 6)", []),
+    (6, 24, "scoped to the domain", ["abstract_unix_socket", "signal"])])
+def test_the_ruleset_layout_follows_the_kernels_abi(abi, size, signals, scopes):
+    """Independent review 2026-10-15 (verifier's addition): an ABI 3-5 kernel knows only the 8-byte ruleset, so
+    passing the 24-byte scoped one there would fail every confinement. The version query is simulated; the
+    kernel still confines, and a repository read is denied either way."""
+    support = require_support()
+    if abi > support["abi"]:
+        pytest.skip(f"simulating ABI {abi} needs a kernel that accepts its ruleset")
+    code = Path(__file__).resolve().parents[2]
+    script = """
+import json, sys, tempfile
+sys.path.insert(0, sys.argv[1])
+from greg import isolation
+real, sizes = isolation._libc, []
+
+class Kernel:
+    def __init__(self, libc):
+        self._libc = libc
+    def __getattr__(self, name):
+        return getattr(self._libc, name)
+    def syscall(self, number, *args):
+        if number == 444 and args[0] is None and args[2] == 1:
+            return int(sys.argv[2])                              # the version query
+        if number == 444:
+            sizes.append(args[1])                                # landlock_create_ruleset's attr size
+        return self._libc.syscall(number, *args)
+isolation._libc = lambda: Kernel(real())
+info = isolation.confine(tempfile.mkdtemp(), [], list_code=False)
+try:
+    open(sys.argv[1] + "/greg/isolation.py", "rb").read(1); read = "READ"
+except OSError as exc:
+    read = type(exc).__name__
+print(json.dumps({"sizes": sizes, "signals": info["signals"], "scopes": info["ipc_scopes"], "read": read}))
+"""
+    proc = subprocess.run([sys.executable, "-I", "-c", script, str(code), str(abi)], capture_output=True, text=True,
+                          timeout=60)
+    assert json.loads(proc.stdout) == {"sizes": [size], "signals": signals, "scopes": scopes,
+                                       "read": "PermissionError"}, proc.stdout + proc.stderr

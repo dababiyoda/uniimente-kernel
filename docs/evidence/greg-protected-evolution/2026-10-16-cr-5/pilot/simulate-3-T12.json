@@ -1,0 +1,275 @@
+{
+ "schema": "greg-p8-cr-pilot-simulate/1",
+ "seeds": {
+  "pilot_train": [
+   3000,
+   3119
+  ],
+  "pilot_test": [
+   3180,
+   3199
+  ],
+  "pool": [
+   3200,
+   3499
+  ]
+ },
+ "runs": [
+  {
+   "settings": {
+    "generations": 5,
+    "population": 8,
+    "seed": 20261016,
+    "search": "cover/1",
+    "lhs": 16
+   },
+   "declared_initial": 32,
+   "evaluated": 69,
+   "incumbent_failure_rate": 0.525,
+   "incumbent_train_mean_loss": 0.009274,
+   "candidate": {
+    "id": "cfg-19bcb70fb72e",
+    "config": {
+     "mu": 4,
+     "offspring": 4,
+     "p_extra_mutation": 0.024,
+     "p_extra_mutation_recombined": 0.002,
+     "p_recombine": 0.0,
+     "p_restart": 0.758,
+     "tournament": 1
+    },
+    "train_mean_loss": 0.005074,
+    "p_restart": 0.758
+   },
+   "top_train": [
+    {
+     "id": "cfg-19bcb70fb72e",
+     "ops": [
+      "crossover",
+      "mutate:p_extra_mutation",
+      "mutate:offspring"
+     ],
+     "p_restart": 0.758,
+     "train_mean_loss": 0.005074
+    },
+    {
+     "id": "cfg-1645fec848cc",
+     "ops": [
+      "crossover",
+      "mutate:p_restart"
+     ],
+     "p_restart": 0.598,
+     "train_mean_loss": 0.005199
+    },
+    {
+     "id": "cfg-3c62df958a7e",
+     "ops": [
+      "crossover",
+      "mutate:offspring"
+     ],
+     "p_restart": 0.758,
+     "train_mean_loss": 0.005579
+    },
+    {
+     "id": "cfg-d260eb8eea3d",
+     "ops": [
+      "crossover",
+      "mutate:p_restart"
+     ],
+     "p_restart": 0.758,
+     "train_mean_loss": 0.005727
+    },
+    {
+     "id": "cfg-8885736742fe",
+     "ops": [
+      "crossover",
+      "mutate:tournament"
+     ],
+     "p_restart": 0.758,
+     "train_mean_loss": 0.005968
+    }
+   ],
+   "train_gain": 0.4529,
+   "adversarial": {
+    "lean": {
+     "incumbent": 0.007654,
+     "candidate": 0.007327
+    },
+    "fewval": {
+     "incumbent": 0.014264,
+     "candidate": 0.009731
+    },
+    "all_outputs_verified": true
+   },
+   "pilot_test_look": {
+    "wins": 9,
+    "losses": 5,
+    "ties": 6,
+    "sign_test_p_one_sided": 0.211975,
+    "incumbent_mean_loss": 0.006764,
+    "candidate_mean_loss": 0.002801
+   },
+   "pool": {
+    "mean_loss": 0.007811,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 135,
+     "losses": 87,
+     "ties": 78,
+     "sign_test_p_one_sided": 0.000775
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.447,
+      "retain_rate_at_alpha_over_3": 0.286
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.6905,
+      "retain_rate_at_alpha_over_3": 0.5595
+     }
+    ]
+   },
+   "stages": {
+    "triggered": true,
+    "advances": true,
+    "adversarial_passes": true,
+    "heldout_passes": false,
+    "heldout_passes_bonferroni_3": false
+   },
+   "would_decide": "REJECT"
+  },
+  {
+   "settings": {
+    "generations": 5,
+    "population": 8,
+    "seed": 20261008,
+    "search": "mutate-incumbent/1"
+   },
+   "declared_initial": 0,
+   "evaluated": 40,
+   "incumbent_failure_rate": 0.525,
+   "incumbent_train_mean_loss": 0.009274,
+   "candidate": {
+    "id": "cfg-ecde7e598d3c",
+    "config": {
+     "mu": 8,
+     "offspring": 4,
+     "p_extra_mutation": 0.332,
+     "p_extra_mutation_recombined": 0.496,
+     "p_recombine": 0.3,
+     "p_restart": 0.156,
+     "tournament": 2
+    },
+    "train_mean_loss": 0.005669,
+    "p_restart": 0.156
+   },
+   "top_train": [
+    {
+     "id": "cfg-ecde7e598d3c",
+     "ops": [
+      "crossover",
+      "mutate:p_extra_mutation",
+      "mutate:p_extra_mutation_recombined"
+     ],
+     "p_restart": 0.156,
+     "train_mean_loss": 0.005669
+    },
+    {
+     "id": "cfg-78474c4c58f8",
+     "ops": [
+      "crossover",
+      "mutate:mu",
+      "mutate:p_recombine"
+     ],
+     "p_restart": 0.156,
+     "train_mean_loss": 0.005886
+    },
+    {
+     "id": "cfg-65c8fe841e2f",
+     "ops": [
+      "crossover",
+      "mutate:p_extra_mutation"
+     ],
+     "p_restart": 0.156,
+     "train_mean_loss": 0.006035
+    },
+    {
+     "id": "cfg-ac482bdc4b5c",
+     "ops": [
+      "crossover",
+      "mutate:p_recombine"
+     ],
+     "p_restart": 0.156,
+     "train_mean_loss": 0.006069
+    },
+    {
+     "id": "cfg-61075b31ee42",
+     "ops": [
+      "crossover",
+      "mutate:p_recombine"
+     ],
+     "p_restart": 0.0,
+     "train_mean_loss": 0.006136
+    }
+   ],
+   "train_gain": 0.3887,
+   "adversarial": {
+    "lean": {
+     "incumbent": 0.007654,
+     "candidate": 0.006401
+    },
+    "fewval": {
+     "incumbent": 0.014264,
+     "candidate": 0.009681
+    },
+    "all_outputs_verified": true
+   },
+   "pilot_test_look": {
+    "wins": 5,
+    "losses": 11,
+    "ties": 4,
+    "sign_test_p_one_sided": 0.961594,
+    "incumbent_mean_loss": 0.006764,
+    "candidate_mean_loss": 0.006855
+   },
+   "pool": {
+    "mean_loss": 0.007907,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 120,
+     "losses": 95,
+     "ties": 85,
+     "sign_test_p_one_sided": 0.050726
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.181,
+      "retain_rate_at_alpha_over_3": 0.087
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.314,
+      "retain_rate_at_alpha_over_3": 0.18
+     }
+    ]
+   },
+   "stages": {
+    "triggered": true,
+    "advances": true,
+    "adversarial_passes": true,
+    "heldout_passes": false,
+    "heldout_passes_bonferroni_3": false
+   },
+   "would_decide": "REJECT"
+  }
+ ],
+ "evaluations": 14400,
+ "seconds": 4398.7
+}

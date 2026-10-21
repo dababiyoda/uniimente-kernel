@@ -1632,7 +1632,7 @@ def human_packet(g: CompetencyGeometry, body: dict) -> dict:
 
 
 def run(params, *, registry, journal=None, model_config=None) -> dict:
-    from .cortex import reason
+    from .cortex import _cpu_delta, _cpu_seconds, reason
     started = time.monotonic()
     pid, body = validate(params)
     g = CompetencyGeometry.parse(body.get("geometry", {}))
@@ -1961,9 +1961,10 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     if chosen.get("part"):
         receipt["payload_part"] = chosen["part"]          # the method reads this part of the request: the question
         data = _part_data(data, chosen["part"])
+    cpu_started = _cpu_seconds()
     inner = reason({"problem_id": pid, "operation": chosen["operation"], "data": data, "geometry": geometry_hint,
                     **extra}, registry=registry, journal=journal, model_config=model_config)
-    budget.done("answer", cpu_seconds=(inner.get("compute_cost") or {}).get("cpu_seconds"))
+    budget.done("answer", cpu_seconds=_cpu_delta(cpu_started))
     receipt["intermediate_receipts"] = [inner["receipt_id"]]
     # the executed method's own receipt, whole: settlement credits that method through this compilation
     # (greg.cognition.settlement), and the compile receipt is the link back from the outcome
@@ -2020,16 +2021,17 @@ def _premises_check(pid, operation, claim, hint, verdict, registry, journal, mod
     """An UNSAT negation proves the claim only if the constraints are satisfiable on their own; otherwise every
     property 'holds' vacuously and the claim is PREMISES_INCONSISTENT. The check is required evidence, so the
     thinking budget never prices it away; without room for it the verdict stays undecided."""
-    from .cortex import reason
+    from .cortex import _cpu_delta, _cpu_seconds, reason
     if not claim["constraints"]:
         return {**verdict, "premises": "SATISFIABLE (no constraints)"}
     limit = budget.allot("premises", required=True)
     if limit is None:
         return {**verdict, "premises": f"UNDECIDED ({budget.stops()[-1]['reason']}): the claim may hold vacuously"}
+    cpu_started = _cpu_seconds()
     check = reason({"problem_id": f"{pid}/premises"[:96], "operation": operation, "data": premises(claim),
                     "geometry": {**hint, "latency_limit": limit}, **extra}, registry=registry, journal=journal,
                    model_config=model_config)
-    budget.done("premises", cpu_seconds=(check.get("compute_cost") or {}).get("cpu_seconds"))
+    budget.done("premises", cpu_seconds=_cpu_delta(cpu_started))
     receipt["intermediate_receipts"].append(check["receipt_id"])
     status = check["output"].get("solver_status") if _has_answer(check) else None
     if status == "UNSAT":
@@ -2070,7 +2072,7 @@ def _sensitivity_runs(pid, operation, data, baseline, hint, registry, journal, m
 
     Each re-run is optional cognition: the thinking budget starts it only when the slowest measured run fits in
     what remains. An input it cannot afford is reported as untested, never as robust."""
-    from .cortex import reason
+    from .cortex import _cpu_delta, _cpu_seconds, reason
     keys = [k for k in sorted(data) if _numbers(data[k])][:4]
     base = _numbers(baseline)
     rows, not_run = {}, {}
@@ -2080,10 +2082,11 @@ def _sensitivity_runs(pid, operation, data, baseline, hint, registry, journal, m
             not_run[key] = budget.stops()[-1]["reason"]
             continue
         varied = {**data, key: _scaled(data[key], 1.1)}
+        cpu_started = _cpu_seconds()
         out = reason({"problem_id": f"{pid}/sens/{key}"[:128], "operation": operation, "data": varied,
                       "geometry": {**hint, "latency_limit": limit}, **extra}, registry=registry, journal=journal,
                      model_config=model_config)
-        budget.done(f"sensitivity:{key}", cpu_seconds=(out.get("compute_cost") or {}).get("cpu_seconds"))
+        budget.done(f"sensitivity:{key}", cpu_seconds=_cpu_delta(cpu_started))
         receipt["intermediate_receipts"].append(out["receipt_id"])
         if not _has_answer(out):
             rows[key] = {"state": out["abstention_state"]}

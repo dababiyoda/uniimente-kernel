@@ -90,8 +90,8 @@ MUTANTS = [
   '                      "geometry": {**hint, "latency_limit": limit}, **extra}, registry=registry, journal=journal,',
   '                      "geometry": hint, **extra}, registry=registry, journal=journal,',
   'test_one_budget_covers_the_whole_compiled_decision', BUDGET),
- ('local compute recorded as free', 'greg/cognition/cortex.py',
-  '"cpu_seconds": _cpu_delta(cpu_started),', '"cpu_seconds": 0.0,',
+ ('local compute recorded as free', 'greg/cognition/compiler.py',
+  'budget.done("answer", cpu_seconds=_cpu_delta(cpu_started))', 'budget.done("answer", cpu_seconds=0.0)',
   'test_local_compute_is_measured_not_assumed_free', BUDGET),
  # The Capability Genesis route on the convergence branch: a formed engine is a required step on the same budget.
  ('a formed engine starts on a spent budget', 'greg/cognition/compiler.py',

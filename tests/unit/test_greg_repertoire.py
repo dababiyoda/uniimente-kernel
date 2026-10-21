@@ -152,6 +152,51 @@ def test_crowd_verifier_refutes_a_flip_with_a_matching_flipped_model():
     assert result["checks"]["observers_better_than_chance_on_average"] is False
 
 
+def _self_consistent_forgery(answer, data):
+    """Round-2 review of #179 (N1): claim non-convergence with a one-entry trace and ship any self-consistent model
+    (a near-degenerate prior, symmetric confusions) with posteriors recomputed by one E-step from the raw votes."""
+    import math
+    forged = deepcopy(answer)
+    classes = data["classes"]
+    model = forged["proof"]["model"]
+    model["prior"] = [1e-12, 1 - 1e-12]
+    model["confusion"] = {g: [[.8, .2], [.2, .8]] for g in model["confusion"]}
+    votes = {}
+    for row in data["labels"]:
+        votes.setdefault(str(row["item_id"]), {}).setdefault(str(row["independence_group"]), []).append(row["label"])
+    post = {}
+    for item, groups in votes.items():
+        decided = {g: classes.index(v[0]) for g, v in groups.items() if len(set(v)) == 1 or
+                   sorted(v.count(c) for c in set(v))[-1] != sorted(v.count(c) for c in set(v))[-2]}
+        logs = [math.log(model["prior"][c]) + sum(math.log(model["confusion"][g][c][label])
+                                                   for g, label in decided.items()) for c in range(2)]
+        top = max(logs)
+        total = sum(math.exp(x - top) for x in logs)
+        post[item] = [math.exp(x - top) / total for x in logs]
+    forged["output"]["posteriors"] = {i: post[i] for i in forged["output"]["posteriors"]}
+    forged["output"]["labels"] = {i: (None if forged["output"]["labels"][i] is None else
+                                      classes[max(range(2), key=lambda c: (post[i][c], -c))])
+                                  for i in forged["output"]["labels"]}
+    forged["proof"]["trace"]["em"] = forged["proof"]["trace"]["em"][:1]
+    forged["output"]["iterations"] = 1
+    return forged
+
+
+@pytest.mark.parametrize("seed", range(10))
+def test_crowd_verifier_refutes_a_self_consistent_model_that_claims_non_convergence(seed):
+    """N1: the M-step fixed-point check ran only when the trace showed convergence, so a one-entry trace with any
+    self-consistent model verified. The verifier now re-runs EM from the soft-majority start and compares."""
+    data, truth = crowd(seed=seed, items=30)
+    answer = crowd_label(data, GEOMETRY)
+    assert verify("crowd", data, answer, "collective_trace")["verdict"] == "STRUCTURALLY_VERIFIED"
+    forged = _self_consistent_forgery(answer, data)
+    wrong = sum(forged["output"]["labels"][i] != t for i, t in truth.items())
+    assert wrong > sum(answer["output"]["labels"][i] != t for i, t in truth.items())
+    result = verify("crowd", data, forged, "collective_trace")
+    assert result["verdict"] == "REFUTED"
+    assert result["checks"]["em_rerun_matches_model"] is False
+
+
 def test_robust_pattern_verifier_rederives_flags_when_mad_is_zero():
     """M4: with MAD == 0 the flag check was skipped, so an empty or wrong anomaly list verified."""
     data = {"observations": [0] * 9 + [50, -40, 0.1]}

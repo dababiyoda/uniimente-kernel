@@ -373,6 +373,11 @@ def verify(family, data, answer, proof_class, *, deadline=None):
         checks["labels_are_posterior_argmax"] = all(
             labels[i] is None or labels[i] == classes[max(range(len(classes)), key=lambda c: (p[c], -c))]
             for i, p in post.items())
+        # an abstention is allowed only where the declared posterior threshold abstains (round-3 review of #179,
+        # finding 4: a total abstention verified)
+        minimum = float(data.get("min_posterior", 0.0))
+        checks["abstentions_match_threshold"] = all(
+            (labels.get(i) is None) == (max(p) < minimum) for i, p in post.items())
         tally = {}
         for r in data["labels"]:
             key = (str(r["item_id"]), str(r["independence_group"]))

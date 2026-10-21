@@ -18,6 +18,9 @@ Also fixed: ``CliAgentWorker`` executed its template's bare program name under t
 installed where that PATH does not look (e.g. /usr/local/bin) could never start.
 
 In-process Body with a test clock (SANDBOX) and real worker subprocesses; the founder key is a per-test key.
+
+After the #178 -> #184 merge, a worker the bubblewrap envelope confines runs inside it (the default); this
+Landlock confinement is the floor under the founder's ``supervised`` setting, so these tests run in that mode.
 """
 from __future__ import annotations
 
@@ -61,7 +64,7 @@ def workdir(tmp_path: Path) -> Path:
 def test_a_cli_agent_runs_from_where_the_host_found_it_not_from_the_scrubbed_path(tmp_path):
     worker = agent(tmp_path, 'print("WORK_REPORT: {\\"confidence\\": 0.5}")')
     assert str(tmp_path / "bin") not in workers._worker_env(tmp_path)["PATH"]
-    report = worker.run(order("probe"), workdir(tmp_path))
+    report = worker.run(order("probe"), workdir(tmp_path), confinement="supervised")
     assert report.exit_code == 0 and report.claim == {"confidence": 0.5}, report
 
 
@@ -89,14 +92,14 @@ for kind, path in [("read", {str(secret)!r}), ("read", "/proc/%d/environ" % os.g
         results.append("denied")
 open("out.md", "w").write("\\n".join(results))
 """)
-    report = worker.run(order("probe"), work)
+    report = worker.run(order("probe"), work, confinement="supervised")
     out = (work / "out.md").read_text()
     assert out.splitlines() == ["denied"] * 4, out
     assert "witness-secret" not in out and "canary-value" not in out
     assert not sibling.exists() and not outside.exists()
     assert report.confinement["filesystem"] == "landlock"
     inside_body = [r for r in report.confinement["readable"] if Path(r).is_relative_to(tmp_path / "body")]
-    assert inside_body == [str(work.parent / "probe.prompt.txt")], inside_body   # its own prompt, nothing else
+    assert inside_body == [str(work.parent / "supervised-runtime" / "probe.prompt.txt")], inside_body   # its own prompt, nothing else
 
 
 @pytest.mark.skipif(not LANDLOCK, reason="Landlock ABI >= 3 is not available on this kernel")
@@ -119,7 +122,7 @@ print('WORK_REPORT: {{"confidence": 0.5}}')
 """)
     worker = workers.CliAgentWorker("local-cli", [sys.executable, str(script)], stdin=True)
     work = workdir(tmp_path)
-    report = worker.run(order("probe"), work)
+    report = worker.run(order("probe"), work, confinement="supervised")
     assert report.exit_code == 0, report
     assert (work / "out.md").read_text() == "denied" and not beside.exists()
     assert str(script) in report.confinement["readable"] and report.confinement["filesystem"] == "landlock"
@@ -134,7 +137,7 @@ def test_a_runtime_root_that_would_expose_the_body_home_refuses_the_worker(tmp_p
     worker = workers.CliAgentWorker("probe-agent", ["probe-agent", "-"])
     worker.binary = str(exposed)
     with pytest.raises(workers.WorkerError, match="cannot be confined"):
-        worker.run(order("probe"), work)
+        worker.run(order("probe"), work, confinement="supervised")
 
 
 @pytest.mark.parametrize("name_status, replaced, shared", [

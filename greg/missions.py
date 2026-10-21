@@ -1338,12 +1338,14 @@ class MissionEngine:
                 continue                       # another mission's, answered, withdrawn, unpaid, or recorded before
             evidence = r.get("evidence") if isinstance(r.get("evidence"), dict) else {}
             state = evidence.get("budget") if isinstance(evidence.get("budget"), dict) else None
-            if state is None or (abs(float(state.get("spent_usd", 0.0)) - m.committed_usd) < 1e-9
+            # The ask recorded booked spend and reservations apart (#178); what an approve must fund is their sum.
+            asked_at = float(state.get("spent_usd", 0.0)) + float(state.get("reserved_usd", 0.0)) if state else 0.0
+            if state is None or (abs(asked_at - m.committed_usd) < 1e-9
                                  and state.get("budget_usd") == m.cone.budget_usd):
                 continue
             stale.append((rid, state))
         for rid, state in stale:
-            why = (f"the mission has spent since this paid move was asked (${float(state.get('spent_usd', 0.0)):.2f} "
+            why = (f"the mission has spent since this paid move was asked (${float(state.get('spent_usd', 0.0)) + float(state.get('reserved_usd', 0.0)):.2f} "
                    f"then, ${m.committed_usd:.2f} now): an approve of it could fund nothing, so it is asked again at the "
                    "current spend")
             self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id, "why": why,
@@ -2627,7 +2629,7 @@ class MissionEngine:
         others = [x["action_id"] for x in m.spec["strategies"] if x["action_id"] != s["action_id"]][:5]
         return {"resource": "spend",
                 "evidence": {"policy": [str(r)[:300] for r in outcome.reasons], "routing": routing_decision,
-                             "budget": {"spent_usd": m.committed_usd, "budget_usd": m.cone.budget_usd,
+                             "budget": {"spent_usd": m.spent_usd, "budget_usd": m.cone.budget_usd,
                                         **({"reserved_usd": m.reserved_usd} if m.reserved else {})}},
                 "expected_effect": f"advances {sorted(s['advances'])} if the action succeeds",
                 "uncertainty": f"estimated reliability {routing_decision['reliability']:.2f} from this body's "
@@ -2764,10 +2766,13 @@ class MissionEngine:
             bound_params = {**bound_params, "max_budget_usd": float(s.get("cost_usd", 0.0))}
         # Write-ahead: the exact proposal is on the ledger before the Gate is asked, so a body that dies inside
         # the dispatch finds it again on restart and settles it from the Gate's own record (_recover_dispatch).
+        # The same digest the Gate computes for this act: a paid scope binds the spend state it was dispatched at
+        # (#157 via #184), so the intent's proposal is exactly the Gate's and a pre-approval covers exactly it.
         scope = AuthorityOffice.scope_digest(mission_id=m.mission_id, capability_id=manifest.capability_id,
                                              params=bound_params, target=s["target"],
                                              consequence_class=manifest.consequence_class,
-                                             cost_usd=float(s.get("cost_usd", 0.0)))
+                                             cost_usd=float(s.get("cost_usd", 0.0)),
+                                             spent_usd=m.committed_usd, budget_usd=m.cone.budget_usd)
         self.journal.record("mission.dispatching", {
             "mission_id": m.mission_id, "action_id": aid, "attempt": attempt, "capability": manifest.capability_id,
             "scope_digest": scope, "proposal_id": AuthorityOffice.proposal_id(scope, attempt)},

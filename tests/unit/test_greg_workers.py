@@ -476,8 +476,9 @@ def test_stop_cancels_provider_namespace_and_preserves_uncertain_work_with_no_bl
     with Body(home) as body:
         body.tick()
         action = body.journal.replay("mission.action")[-1].payload
-        assert action["status"] == "UNCERTAIN" and action["cost_usd"] == 1.0, action["reasons"]
-        assert action["cost_reserved"]
+        # The signed cap is held, not booked (#178's reservation model): nothing spent, $1 reserved until reconciled.
+        assert action["status"] == "UNCERTAIN" and action["cost_usd"] == 0.0, action["reasons"]
+        assert action["reserved_usd"] == 1.0
     watcher.join(timeout=1)
     assert marker.exists() and time.monotonic() - started < 10
     summary = json.loads((root / "evidence.json").read_text())["summary"]

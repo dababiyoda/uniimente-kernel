@@ -153,9 +153,18 @@ def _invocation_receipt_bound(ledger, journal, seq, receipt, invocation, *, miss
     params = _handed_params(journal, seq, invocation, mission_id, grant.seq)
     if params is None:
         return False
+    cost = float(invocation.get("cost_usd", 0.0))
     scope = AuthorityOffice.scope_digest(mission_id=mission_id, capability_id=cid, params=params,
-                                         target=target, consequence_class=manifest.consequence_class,
-                                         cost_usd=float(invocation.get("cost_usd", 0.0)))
+                                         target=target, consequence_class=manifest.consequence_class, cost_usd=cost)
+    if cost > 0 and gd.get("scope_digest") != scope:
+        # A paid scope binds the spend state it was dispatched at (#157 via #184). Re-derived here from retained
+        # action records before the grant, never taken from the engine: booked spend plus open reservations.
+        budget = _signed_budget(journal, mission_id, command_digest)
+        if budget is not None:
+            scope = AuthorityOffice.scope_digest(
+                mission_id=mission_id, capability_id=cid, params=params, target=target,
+                consequence_class=manifest.consequence_class, cost_usd=cost,
+                spent_usd=_committed_before(journal, seq, mission_id, grant.seq), budget_usd=budget)
     payload = {"capability": cid, "params": params, "manifest_digest": manifest.digest()}
     proposal_dispatches = [r for r in ledger.by_type("grant_dispatch")
                            if r.seq < closure_seq and r.payload.get("proposal_id") == dd.get("proposal_id")]
@@ -177,6 +186,37 @@ def _invocation_receipt_bound(ledger, journal, seq, receipt, invocation, *, miss
             and wd.get("expected_outcome") == ("observation captured" if observation else
                                                invocation.get("expected_outcome", "strategy executed"))
             and command_digest in wd.get("evidence_refs", []))
+
+
+def _signed_budget(journal: Journal, mission_id: str, command_digest: str):
+    """The budget of the founder-signed mission this appraisal checks (its retained registration)."""
+    for e in journal.replay("mission.registered"):
+        if e.payload.get("mission_id") == mission_id and e.payload.get("command_digest") == command_digest:
+            return float(e.payload["spec"]["light_cone"]["budget_usd"])
+    return None
+
+
+def _committed_before(journal: Journal, seq: dict, mission_id: str, before: int) -> float:
+    """Booked spend plus every unreconciled dispatch at its worst case, as retained before ledger position
+    ``before``: the spend state a paid dispatch's scope binds (re-derived; the engine's fold is not trusted)."""
+    spent, reserved = 0.0, {}
+    signed = {}
+    for e in journal.replay("mission.registered"):
+        if e.payload.get("mission_id") == mission_id:
+            signed = {s["action_id"]: float(s.get("cost_usd", 0.0)) for s in e.payload["spec"].get("strategies", [])}
+    for e in journal.replay("mission.action"):
+        p = e.payload
+        if p.get("mission_id") != mission_id or seq.get(e.event_id, 1 << 60) >= before:
+            continue
+        slot = (p.get("action_id"), p.get("attempt"))
+        if p.get("status") == "UNCERTAIN":
+            # as the fold reads it: a record from before reservations existed holds its signed cost
+            reserved[slot] = float(p["reserved_usd"]) if "reserved_usd" in p else signed.get(p.get("action_id"), 0.0)
+        else:
+            reserved.pop(slot, None)
+            if p.get("status") == "DONE":
+                spent += float(p.get("cost_usd", 0.0) or 0.0)
+    return round(spent + round(sum(reserved.values()), 9), 9)
 
 
 def _instant_or_none(value):

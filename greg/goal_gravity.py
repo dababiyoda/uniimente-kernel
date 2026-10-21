@@ -211,6 +211,7 @@ class FounderFacts:
     refused: dict = field(default_factory=dict)         # digest -> why a signed GOAL / GOAL_CONTROL does not count
     refused_at: dict = field(default_factory=dict)      # digest -> latest body time the body refused that command
     clock_floor: Any = None                             # latest body-clock time an earlier non-acceptance record states
+    restored_at: Any = None                             # latest restore from a backup at this position (#186)
     closed: dict = field(default_factory=dict)          # goal_id -> {status, by, issued_at[, superseded_by]}
     closed_intents: dict = field(default_factory=dict)  # goal intent digest -> issued_at of the signed closure
     stop: dict = field(default_factory=dict)            # goal_id -> last signed stop / resume / change
@@ -273,6 +274,15 @@ def founder_facts(ledger, *, body_id: str | None = None) -> FounderFacts:
                 stated = _when(p.get(field_)) if isinstance(p, dict) else None
                 if stated is not None and (facts.clock_floor is None or stated > facts.clock_floor):
                     facts.clock_floor = stated
+        if kind == "greg.body.restored":
+            # A body restored from a backup (greg/recovery.py) refuses every command issued before the restore
+            # (Body._after_restore): judged here the same way, from this position on. Unreadable: refuse them all,
+            # as the body's own check fails on it.
+            facts.restored_at = _when(p.get("restored_at")) or datetime.max.replace(tzinfo=timezone.utc)
+        elif kind == "greg.device.revoked":
+            # The body's own rule (greg.body.device_delegations): any revocation record removes the device. It only
+            # ever narrows who may sign; a restore voids every delegation this way (#186).
+            devices.pop(p.get("device_key_id"), None)
         if kind == "greg.founder.enrolled":
             if not rooted:                     # only the first enrollment is the root; later ones are data
                 founders[p["key_id"]] = p["public_key"]
@@ -380,6 +390,13 @@ def _accepted(facts: FounderFacts, p: dict, founders: dict, devices: dict, seen_
         accepted_at = _when((auth or {}).get("authorized_at"))
     principal = _verify_envelope(p, founders, devices, facts.body_id, accepted_at)
     if principal is None:
+        return None
+    issued = _when(env.get("issued_at"))
+    if facts.restored_at is not None and (issued is None or issued < facts.restored_at):
+        # Body.apply refuses it (Body._after_restore) and records no acceptance: this record is not one it wrote
+        if ckind in VERIFIED_KINDS or ckind in KEY_KINDS:
+            facts.refused[digest_] = ("issued before this body was restored from a backup: the body refuses it, so "
+                                      "this record spends no nonce and counts for nothing")
         return None
     if not isinstance(p.get("nonce"), str) or p.get("nonce") != env.get("nonce"):
         if ckind in VERIFIED_KINDS or ckind in KEY_KINDS:
@@ -746,6 +763,9 @@ class BodyAttentionStore:
         for rid in self._requests(scope):
             answer = book.answers.get(rid)
             if not (answer and answer.get("answer") in ANSWER and signed_answer(self.signed, rid, answer)):
+                continue
+            if rid in book.withdrawn:
+                # withdrawn after its answer: a restore from a backup voided the approval (#186); it is asked again
                 continue
             # A paid approve funds one run at the spend it named (#157): once that run happened, or the mission
             # spent since, it no longer answers this move and the goal may ask again. A reject answers the move.

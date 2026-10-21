@@ -850,7 +850,7 @@
    "lineage": "pr158",
    "classification": "complementary",
    "disposition": "extended",
-   "note": "present in one lineage only (pr158); kept until PR #184 joined this lineage with the one-machine trunk (#178, #175, #169) on 2026-10-16, which extends these bytes"
+   "note": "present in one lineage only (pr158); kept until PR #184 joined this lineage with the one-machine trunk (#178, #175, #169) on 2026-10-16, which extends these bytes; extended on the restore drill (#186): a body restored from a backup refuses commands issued before the restore, and only the founder key releases the restore hold (directive section 14)"
   },
   {
    "path": "greg/cli.py",

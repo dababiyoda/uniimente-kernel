@@ -23,6 +23,7 @@ OUTAGE = 'tests/unit/test_greg_outage_retry_cognition.py'
 SECRET_FILES = 'tests/integration/test_greg_mcp_secret_files_review.py'
 MEDIA = 'tests/unit/test_greg_media_case.py'
 FABRIC = 'tests/unit/test_greg_task_fabric.py'
+RESTORE = 'tests/unit/test_greg_restore.py'
 MUTANTS = [
  ('optimality not attacked by a second engine', 'greg/cognition/verification.py',
   'checks["optimality_cross_engine"] = better == "unsat"', 'checks["optimality_cross_engine"] = True',
@@ -240,6 +241,49 @@ MUTANTS = [
  ("GREG's copy of an input is read in another encoding", 'greg/workers.py',
   'text = shown.stdout.decode("utf-8")', 'text = shown.stdout.decode("latin-1")',
   'test_inputs_are_decoded_as_utf8_whatever_the_bodys_locale', FABRIC),
+ # Section 14 restore from a tested backup: a restored body holds, and stale authority cannot drive it.
+ ('a restore keeps the device delegations it cannot vouch for', 'greg/recovery.py',
+  '        for kid in devices:', '        for kid in []:',
+  'test_no_device_delegation_from_before_the_restore_is_usable', RESTORE),
+ ('a restore keeps approvals the original may have used', 'greg/recovery.py',
+  '        for rid in approvals:', '        for rid in []:',
+  'test_an_approval_granted_before_the_restore_is_asked_again', RESTORE),
+ ('the engine ignores a voided approval', 'greg/missions.py',
+  'if data.get("voids_approval") and request:', 'if False:',
+  'test_an_approval_granted_before_the_restore_is_asked_again', RESTORE),
+ ('a restored body acts at once', 'greg/recovery.py',
+  'body.journal.record("body.paused", {"reason": RESTORE_HOLD, "restore_id": restore_id}, key=[restore_id, "hold"])',
+  'pass', 'test_a_restored_body_boots_held_and_takes_no_action', RESTORE),
+ ('a command issued before the restore is accepted', 'greg/body.py',
+  'if instant(env["issued_at"]) < instant(restore["restored_at"]):', 'if False:',
+  'test_a_command_issued_before_the_restore_is_refused_however_it_arrives', RESTORE),
+ ('a device releases the restore hold', 'greg/body.py',
+  'if kind == "BODY_RESUME" and principal != "founder" and self._restore_hold():', 'if False:',
+  'test_only_the_founder_key_releases_the_restore_hold', RESTORE),
+ ("the seed's recorded head is not compared", 'greg/recovery.py',
+  'if recorded is not None and head != recorded:', 'if False:',
+  'test_a_tampered_or_inconsistent_seed_never_boots', RESTORE),
+ ('a broken chain is restored', 'greg/recovery.py',
+  'raise RestoreError(f"the restored ledger does not verify: {exc}") from exc', 'return None',
+  'test_a_tampered_or_inconsistent_seed_never_boots', RESTORE),
+ ("the body's layout is not restored", 'greg/recovery.py',
+  '    for d in (layout.inbox, layout.processed, layout.rejected, layout.outbox, layout.workspace):',
+  '    for d in ():', 'test_a_restored_body_boots_held_and_takes_no_action', RESTORE),
+ ('a crafted seed writes outside its target', 'foundry/systems/seed.py',
+  'if Path(rel).is_absolute() or root not in (root / rel).resolve().parents:', 'if False:',
+  'test_a_seed_someone_else_built_cannot_write_outside_or_plant_keys', RESTORE),
+ # The restore meets PR #184's founder-answer re-verification (item 7): its voids hold there too.
+ ("the answer check honours a phone the restore voided", 'greg/goal_gravity.py',
+  '            devices.pop(p.get("device_key_id"), None)\n        if kind == "greg.founder.enrolled":',
+  '            pass\n        if kind == "greg.founder.enrolled":',
+  'test_a_restores_voids_hold_where_founder_answers_are_re_verified[voided_phone]', RESTORE),
+ ('the answer check counts a command issued before the restore', 'greg/goal_gravity.py',
+  '    if facts.restored_at is not None and (issued is None or issued < facts.restored_at):',
+  '    if False:',
+  'test_a_restores_voids_hold_where_founder_answers_are_re_verified[issued_before_the_restore]', RESTORE),
+ ('a goal reads a voided approval as the founder\'s answer', 'greg/goal_gravity.py',
+  '            if rid in book.withdrawn:\n', '            if False:\n',
+  'test_an_approval_the_restore_voided_does_not_answer_a_goal', RESTORE),
 ]
 
 

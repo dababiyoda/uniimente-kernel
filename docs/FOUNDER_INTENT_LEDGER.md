@@ -208,6 +208,17 @@ Progress 2026-10-21 (measured, frozen, negative results kept):
 
 Correction absorbed the same day (comment on #143; draft #144, `INTENT-20261001-open-source-mechanism-harvest`): Capability Genesis forms `graph.shortest_path`, `graph.max_flow` and `lp.optimize` from installed open-source packages (NetworkX, SciPy, OR-Tools) on a Mechanism Card, accepts answers only on GREG's own certificate, and leaves attach with the founder. VEPMC stays the required device proof but no longer stops development. Evidence: `tests/evidence/greg-open-source-genesis-2026-10-01/`. Authority delta: none.
 
+Re-issued 2026-10-13 ([lineage](intent/sources/GREG-SEED-GENOME-DIRECTIVE-REISSUE-2026-10-13-source.md)): byte-identical text with the new opening line "Build this prompt meet and exceed all in this prompt:". It is applied by closing the requirement map's section residuals on the canonical path:
+
+- **§9:** selective-disclosure evidence packages, built from retained receipts. They use the salted-hash disclosures of RFC 9901, include every same-input receipt, and append institutional responses rather than editing them in. `greg cognition package` exports one read-only; nothing is sent.
+- **§5:** a measured characterization harness covering latency, error correction against self-consistent lies, a problem-space ladder and invariance, with Wilson intervals.
+- **§13 and §15:** the verifier cross-checks and evidence-backed legitimacy in #161.
+- **§12:** a thinking-budget controller now governs the compile path. One declared `latency_budget` covers the answer, the premises check and every sensitivity re-run, where each run had previously been handed the whole budget. Required steps are never priced away; an exhausted budget narrows the result. An optional re-run starts only when the slowest measured step fits. Every run and stop is kept with its reason, and cortex receipts record measured CPU seconds. The earlier deferral was wrong: frozen evaluations run at their freeze commits, so changing `cortex.py` on a branch alters no recorded result.
+
+Repeated byte-identically 2026-10-14T04:59:45Z (same whole-message SHA-256, `ee71d7de…`). Repetition adds no authority; it was applied by closing §12.
+
+Evidence: `tests/evidence/seed-genome-residuals-2026-10-13/`. Authority delta: none. VEPMC: 0.
+
 ## Master build directive: asks, business sequence, reality, obsolete code — 2026-09-30
 
 `INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE` ([record](intent/INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE.json), [verbatim sections](intent/sources/MASTER-BUILD-DIRECTIVE-2026-09-30-source.md)): GREG may ask for resources (an account, compute, software, a build, a licensed professional, a human worker), and every ask carries evidence, alternatives, costs, expected effect, uncertainty and authority requirements, with no emotional manipulation, no manufactured urgency and no framing of denial as harm to GREG (section 60; **implemented** as the one path `greg/asks.py`). Business grows one verified loop before a second venture (61); new organizations only for recurring bottlenecks (62); regenerative advantage without dependency or exploitation (63); external reality is the final judge (64). Section 76 lets an obsolete implementation leave the active tree when a placement justifies it, with its intent kept on `greg/path.json` and its history in git; this reconciles, and is recorded against, the Final Build Order's preservation rule. State: active. Authority delta: none; asking grants nothing.

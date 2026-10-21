@@ -280,7 +280,10 @@ def _remove(path: Path) -> None:
 
 
 def _extract(tar: tarfile.TarFile, m: tarfile.TarInfo, rootfs: Path) -> None:
-    name = m.name.lstrip("./").lstrip("/")
+    name = m.name
+    while name.startswith("./"):                                 # strip the "./" prefix only: ".profile" stays
+        name = name[2:]
+    name = name.lstrip("/")
     if not name or any(part == ".." for part in Path(name).parts):
         raise ContainerError(f"layer entry {m.name!r} escapes the root")
     parent = secure_join(rootfs, str(Path(name).parent), follow_last=True)
@@ -360,7 +363,25 @@ def runtime_spec(args: list[str], *, env: list[str], user: tuple[int, int] = (65
     }
 
 
+APPROVAL_ENV = "UNIIMENTE_PRIVILEGED_RUNTIME_HOST"
+
+
+def privileged_runtime_approved() -> bool:
+    """Privileged OCI runtimes run only on a host the founder approved for them, named exactly.
+
+    The founder approves a dedicated, isolated test host (or a CI runner) by setting this variable to that host's
+    name in its own environment. Anywhere else, including the development container where running runc/runsc as root
+    was refused on 2026-09-30, the run is refused before any command is built. Setting it is the founder's decision,
+    never an agent's."""
+    import socket as _socket
+    approved = os.environ.get(APPROVAL_ENV, "")
+    return bool(approved) and approved == _socket.gethostname()
+
+
 def _privileged(cmd: list[str]) -> list[str]:
+    if not privileged_runtime_approved():
+        raise ContainerError(f"privileged OCI runtimes are not approved on this host (set {APPROVAL_ENV} to this "
+                             "host's name only on a dedicated host the founder approved)")
     if os.geteuid() == 0:
         return cmd
     if shutil.which("sudo"):
@@ -387,6 +408,8 @@ def _cleanup(runtime_path: str, state: Path, container_id: str) -> None:
 
 
 def run(bundle: Path, *, runtime_name: str, container_id: str, timeout: int = 120) -> dict:
+    if not privileged_runtime_approved():           # refused before any command or state directory exists
+        raise ContainerError(f"privileged OCI runtimes are not approved on this host ({APPROVAL_ENV})")
     bundle = Path(bundle)
     state = bundle.parent / f".{runtime_name}-state-{container_id}"
     if runtime_name == "runsc":
@@ -411,8 +434,10 @@ def prepare_bundle(layout: Path, bundle: Path, *, args: list[str] | None = None)
     manifest = json.loads((Path(layout) / "blobs" / "sha256" / unpacked["image"].split(":")[1]).read_bytes())
     config = json.loads((Path(layout) / "blobs" / "sha256" / manifest["config"]["digest"].split(":")[1]).read_bytes())
     c = config["config"]
-    spec = runtime_spec(args or (c["Entrypoint"] + c.get("Cmd", [])), env=c["Env"],
-                        user=tuple(int(x) for x in c.get("User", "65534:65534").split(":")),
+    user = tuple(int(x) for x in (c.get("User") or "65534:65534").split(":"))
+    if len(user) != 2 or 0 in user:
+        raise ContainerError("an image that asks to run as root (uid or gid 0) is refused")
+    spec = runtime_spec(args or (c["Entrypoint"] + c.get("Cmd", [])), env=c["Env"], user=user,
                         cwd=c.get("WorkingDir") or "/")
     (bundle / "config.json").write_text(json.dumps(spec, indent=1, sort_keys=True))
     return {"image": unpacked["image"], "bundle": str(bundle)}

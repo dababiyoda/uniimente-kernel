@@ -303,6 +303,8 @@ ANSWER_ONLY_RECORDS = {
                   "when the deliverable is observed.",
     "ACCOUNT_ACCESS": "Your answer is only recorded; it grants nothing. Only `greg secret set` on the body gives "
                       "GREG a credential.",
+    "COMPENSATION": "Your answer is only recorded; GREG reverses, contacts and pays no one for this effect. Undo it "
+                    "yourself if it should not stand.",
     "CAPABILITY_ATTACH": "Approve or Reject only records your answer. Attaching is its own signed command: the "
                          "Attach button beside a verified candidate, or `greg attach <capability_id>`.",
 }

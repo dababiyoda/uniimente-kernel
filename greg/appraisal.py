@@ -46,7 +46,7 @@ from provenance.ledger import EvidenceLedger, sha256_json
 REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
                 "memory.precedents", "artifact.inspect", "cognition.status", "foundry.query", "pipeline.inspect",
                 "worker.appraise", "browser.trace", "daleobanks.outcome",
-                "institution.appraise"}
+                "institution.appraise", "organ.status"}
 REOBSERVABLE.update(cid for cid in BUILTINS if cid.startswith("cognition.") and
                     cid not in ("cognition.semantic", "cognition.compose", "cognition.knowledge"))
 DELIVERING = {"brief.engineering": "greg.briefs", "venture.assess": "greg.ventures"}  # re-rendered from receipts
@@ -91,13 +91,19 @@ def _handed_params(journal: Journal, seq: dict, invocation: dict, mission_id: st
     params = json.loads(json.dumps(invocation.get("params", {})))
     try:
         if invocation.get("bind"):
-            latest = {}
+            latest, passing = {}, {}
             for event in view.replay("mission.action"):
                 data = event.payload
-                if data.get("mission_id") == mission_id and data.get("status") == "DONE" and data.get("receipt"):
-                    latest[data["action_id"]] = data["receipt"]
+                if data.get("mission_id") == mission_id and data.get("status") == "DONE":
+                    latest[data["action_id"]] = data.get("receipt")   # None: reconciled, never an older receipt
+            for event in view.replay("mission.observed"):
+                data = event.payload
+                if data.get("mission_id") == mission_id and data.get("passed") and data.get("receipt"):
+                    passing[data["check_id"]] = data["receipt"]       # a check-sourced edge binds its latest pass
             for edge in invocation["bind"]:
-                record = journal.ledger.find(latest.get(edge["from"]["action_id"], ""))
+                source = edge["from"]
+                held = passing.get(source["check_id"]) if "check_id" in source else latest.get(source["action_id"])
+                record = journal.ledger.find(held or "")
                 if record is None or record.record_type != "receipt" or record.seq >= before:
                     return None
                 _set_path(params, edge["param"], bound_value(edge, record.payload.get("result", {}).get("output")))
@@ -368,7 +374,8 @@ def appraise(request: dict) -> dict:
                                         secrets=None, manifest=manifest,
                                         deliver_root=Path(request["deliver_root"])
                                         if request.get("deliver_root") else None,
-                                        journal=journal if cap in ("memory.precedents", "artifact.inspect", "worker.appraise") or cap.startswith(("cognition.", "pipeline.", "institution.")) else None,
+                                        journal=journal if cap in ("memory.precedents", "artifact.inspect", "worker.appraise", "daleobanks.outcome")
+                                        or cap.startswith(("cognition.", "pipeline.", "institution.", "organ.", "foundry.")) else None,
                                         mission_id=mid,
                                         artifact_root=Path(request["artifact_root"])
                                         if request.get("artifact_root") else None,
@@ -433,6 +440,16 @@ def appraise(request: dict) -> dict:
                     "receipt; exactly-once cannot be re-derived from receipts"
                     if receipt is None and action.get("reconciles") else
                     f"{action['action_id']}: completed action lacks its signed strategy's Gate receipt")
+        # A compensating receipt (mission abandoned or superseded after executing) is its own effect: it may
+        # repeat no other receipt, and each executed action is compensated at most once.
+        compensations = [e.payload for e in journal.replay("mission.compensated")
+                         if e.payload["mission_id"] == mid and e.payload.get("receipt")]
+        compensating = [c["receipt"] for c in compensations]
+        compensated = [c["action_id"] for c in compensations]
+        if len(compensating) != len(set(compensating)) or set(compensating) & set(receipts) \
+                or len(compensated) != len(set(compensated)):
+            once = False
+            findings.append("a compensation repeats a receipt or compensates an action twice")
         checks["exactly_once"] = once
         if len(receipts) != len(set(receipts)):   # only a real duplicate is reported as one
             findings.append("duplicate receipt: one Gate receipt is cited by more than one completed action")

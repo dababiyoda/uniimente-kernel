@@ -27,7 +27,7 @@ import time
 
 import pytest
 
-from greg import metrics, service
+from greg import doctor, metrics, service
 from greg import path as devpath
 from tests.integration.test_greg_body_supervised import (SUPERVISORD, events, heartbeat, history,
                                                          supervisor_endpoint, wait_for)
@@ -135,6 +135,8 @@ def test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_
         vepmc = json.loads(greg("vepmc"))
         row = vepmc["missions"][0]
         assert row["missing"] == [] and vepmc["VEPMC"] == 1, row             # structurally complete, not external
+        # Where it ran is on the ledger: in a build container this reads linux_other, never chromeos_linux.
+        assert row["device_class"] == row["designated_device_class"] == doctor.device_class()
         assert vepmc["external_confirmation_required"]
         assert vepmc["structural_candidate_count"] == 1 and vepmc["founder_tier_count"] == 0
         assert vepmc["evidence_level"] == row["evidence_level"] == metrics.STRUCTURAL_CANDIDATE

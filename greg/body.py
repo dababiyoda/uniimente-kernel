@@ -34,7 +34,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from compiler.ucl_compiler import compile_constitution
 from events.spine import EventSpine
-from greg import anchor, asks, compute, dataplane, doctor, improvement, metrics, models, presence, sop, tribunal
+from greg import anchor, asks, compute, dataplane, doctor, gravity, improvement, metrics, models, presence, sop, tribunal
 from greg.authority import AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityRegistry, SecretBroker
 from greg.founder import FounderAuthError, FounderVerifier, key_id, spent_nonce, validate_device_grant
@@ -272,7 +272,7 @@ def _private_write(path: Path, data: bytes):
 
 
 def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Path | None = None,
-              local_model: str | None = None) -> dict:
+              local_model: str | None = None, confined_egress: bool = False) -> dict:
     """Create a new body directory. Refuses to overwrite an existing body.
 
     ``deliver_root`` is the founder-visible folder where deliverables (briefs,
@@ -302,6 +302,8 @@ def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Pa
               "version": BODY_VERSION}
     if local_model is not None:
         config["models"] = {"order": ["ollama"], "ollama_model": local_model}
+    if confined_egress:
+        config["confined_egress"] = True
     _private_write(layout.config, json.dumps(config, indent=2).encode())
     return config
 
@@ -355,7 +357,39 @@ class Body:
                                     read_roots=tuple(self.config["read_roots"]), genesis=self.genesis,
                                     deliver_root=self.deliver_root, artifact_root=self.layout.artifacts)
         self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
+        self.engine.egress = self._egress_relay()
+        self.engine.selector = self._gravity_order
         return self
+
+    def _gravity_order(self, missions) -> list[str]:
+        """Goal Gravity orders this tick's signed missions; each change of the ranking (order, learned
+        reliability or exclusions) is a ledger fact a verifier can re-derive from the ledger before it.
+
+        A failure here never stops the missions: the engine keeps its static order and every
+        unselected tick is recorded, so it is visible rather than silent."""
+        try:
+            selection = gravity.select(missions, self.journal)
+        except Exception as exc:
+            why = f"{type(exc).__name__}: {exc}"[:300]
+            prior = len(self.journal.replay("gravity.unavailable"))
+            self.journal.record("gravity.unavailable", {"why": why}, key=["unavailable", prior, why])
+            return []
+        recorded = self.journal.replay("gravity.ranked")
+        last = recorded[-1].payload if recorded else None
+        if selection["ranking"] and (last is None or last["ranking"] != selection["ranking"]
+                                     or last["excluded"] != selection["excluded"]):
+            self.journal.record("gravity.ranked", selection, key=["ranked", len(recorded), sha256_json(selection)])
+        return [row["mission_id"] for row in selection["ranking"]]
+
+    def _egress_relay(self):
+        """#26: one relay per body when the founder enabled confined egress; refused (fail closed) where the kernel
+        filter is unavailable, and chained through a mandated proxy when the environment declares one."""
+        if not self.config.get("confined_egress"):
+            return None
+        from foundry.systems.segmentation import Journal as EgressJournal, Relay, policy_from_manifests, \
+            proxy_from_environment
+        return Relay(policy_from_manifests(), EgressJournal(self.layout.home / "egress-journal.jsonl"),
+                     proxy=proxy_from_environment())
 
     def _require_published_head(self):
         """Refuse history rolled back behind the ledger head this body last published (heartbeat.json).
@@ -532,6 +566,7 @@ class Body:
                     return prior[0].payload
                 raise MissionError("the first body is already designated; do not silently replace it")
             record = {"body_id": self.config["body_id"], "platform": os.uname().sysname,
+                      "device_class": doctor.device_class(),   # informational; never part of founder_body
                       "purpose": body["purpose"], "command_digest": digest, "at": iso(self.clock())}
             self.journal.record("body.designated", record, key=[self.config["body_id"], "first"])
             return record
@@ -789,6 +824,7 @@ class Body:
                     "mission_id": mid, "boot_id": getattr(self, "boot_id", None), "pid": os.getpid(),
                     "platform": os.uname().sysname, "body_id": self.config["body_id"],
                     "hosted": getattr(self, "boot_id", None) is not None,
+                    "device_class": doctor.device_class(),   # informational; never part of founder_body
                     "at": iso(now)}, key=[mid, "context"])
             if mid not in appraised:
                 self._appraise_closure(mid, None, now)

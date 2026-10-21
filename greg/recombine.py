@@ -806,7 +806,8 @@ def library(query: str = "", reductions: dict | None = None) -> list[dict]:
 
 def _engine_fault(engine_id: str, exc: CapabilityError) -> CapabilityError:
     if str(exc).startswith("capability refused:"):
-        return CapabilityError(f"capability refused: composed engine {engine_id} faulted: {str(exc)[20:220]}")
+        return CapabilityError(f"capability refused: composed engine {engine_id} faulted: {str(exc)[20:220]}",
+                               failure_class=getattr(exc, "failure_class", None))
     return exc
 
 
@@ -913,6 +914,9 @@ def qualify(path, adapter, manifest, seed: int) -> tuple[bool, dict]:
             answers = adapter.batch([case["input"] for case in cases], ctx)
         except CapabilityError as exc:
             answers = [exc] * len(cases)
+    outage = next((a for a in answers if isinstance(a, CapabilityError) and a.failure_class == "transient"), None)
+    if outage is not None:
+        raise outage                              # the host could not run the engine: no result either way
     engine_calls = 0
     for case, answer in zip(cases, answers):
         if isinstance(answer, Exception):

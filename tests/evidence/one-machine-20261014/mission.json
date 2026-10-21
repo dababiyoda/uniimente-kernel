@@ -1,0 +1,290 @@
+{
+ "mission_id": "m:one-machine-staff-om",
+ "founder_expression": "Solve this with the smallest competent method, form what is missing, consult the organs, have a worker do the real work, survive interruption, and prove it to someone who did not do it.",
+ "intended_effect": "a certified answer, an organ assessment reproduced by a second process, and an independently accepted change that records and re-checks the answer, on one trace",
+ "priority": 75,
+ "closure": {
+  "kind": "bounded"
+ },
+ "constraints": [
+  "nothing is sent, published, merged or paid",
+  "the worker never pushes, merges or commits; GREG commits on a greg/ branch in a private clone",
+  "organ messages are evidence about organ computation, not Kernel consequences"
+ ],
+ "success_checks": [
+  {
+   "check_id": "answered",
+   "description": "a constructed method answered with a problem-level certificate",
+   "sensor": {
+    "capability": "cognition.solve",
+    "target": "cognition:staff-om",
+    "params": {
+     "problem_id": "staff-om",
+     "compile": {
+      "geometry": {
+       "geometry": "optimization"
+      },
+      "data": {
+       "workers": [
+        {
+         "id": "Ana",
+         "capacity": 2,
+         "skills": [
+          "forklift"
+         ]
+        },
+        {
+         "id": "Ben",
+         "capacity": 4,
+         "skills": [
+          "packing",
+          "forklift"
+         ]
+        },
+        {
+         "id": "Cy",
+         "capacity": 3,
+         "skills": [
+          "packing"
+         ]
+        }
+       ],
+       "orders": [
+        {
+         "id": "Dock1",
+         "demand": 4,
+         "skill": "forklift"
+        },
+        {
+         "id": "Dock2",
+         "demand": 3,
+         "skill": "forklift"
+        },
+        {
+         "id": "Line",
+         "demand": 2,
+         "skill": "packing"
+        }
+       ]
+      }
+     }
+    }
+   },
+   "predicate": {
+    "op": "equals",
+    "field": "confidence_type",
+    "value": "certified: exact problem-level certificate"
+   }
+  },
+  {
+   "check_id": "organs-reproduced",
+   "description": "both organ messages verified at the kernel and a second process reproduced the answer",
+   "sensor": {
+    "capability": "organ.status",
+    "target": "organ:daleobanks-wealthmachine",
+    "params": {}
+   },
+   "predicate": {
+    "op": "equals",
+    "field": "verdict",
+    "value": "REPRODUCED"
+   }
+  },
+  {
+   "check_id": "work_accepted",
+   "description": "independent appraisal ACCEPTED the work order",
+   "sensor": {
+    "capability": "worker.appraise",
+    "params": {
+     "order": "record-staff-om"
+    },
+    "target": "work:record-staff-om"
+   },
+   "predicate": {
+    "op": "equals",
+    "field": "verdict",
+    "value": "ACCEPTED"
+   }
+  },
+  {
+   "check_id": "handoff_written",
+   "description": "the review handoff exists for the founder",
+   "sensor": {
+    "capability": "fs.read",
+    "params": {
+     "path": "/tmp/claude-0/omdbg/test_one_signed_mission_runs_t0/body/workspace/m_one-machine-staff-om/handoff-record-staff-om.md"
+    },
+    "target": "fs:handoff-record-staff-om.md"
+   },
+   "predicate": {
+    "op": "contains",
+    "field": "text",
+    "value": "greg/record-staff-om"
+   }
+  }
+ ],
+ "strategies": [
+  {
+   "action_id": "compile",
+   "capability": "cognition.solve",
+   "target": "cognition:staff-om",
+   "params": {
+    "problem_id": "staff-om",
+    "compile": {
+     "geometry": {
+      "geometry": "optimization"
+     },
+     "data": {
+      "workers": [
+       {
+        "id": "Ana",
+        "capacity": 2,
+        "skills": [
+         "forklift"
+        ]
+       },
+       {
+        "id": "Ben",
+        "capacity": 4,
+        "skills": [
+         "packing",
+         "forklift"
+        ]
+       },
+       {
+        "id": "Cy",
+        "capacity": 3,
+        "skills": [
+         "packing"
+        ]
+       }
+      ],
+      "orders": [
+       {
+        "id": "Dock1",
+        "demand": 4,
+        "skill": "forklift"
+       },
+       {
+        "id": "Dock2",
+        "demand": 3,
+        "skill": "forklift"
+       },
+       {
+        "id": "Line",
+        "demand": 2,
+        "skill": "packing"
+       }
+      ]
+     }
+    }
+   },
+   "advances": [
+    "answered"
+   ],
+   "rationale": "compile the problem's geometry to a competent method; construct one if missing"
+  },
+  {
+   "action_id": "organs",
+   "capability": "organ.exchange",
+   "target": "organ:daleobanks-wealthmachine",
+   "params": {
+    "daleobanks_root": "/tmp/claude-0/dale-main",
+    "daleobanks_python": "/tmp/claude-0/dbvenv/bin/python",
+    "wealthmachine_root": "/tmp/claude-0/wmi-main",
+    "wealthmachine_python": "/tmp/claude-0/wvenv/bin/python",
+    "seed": "Financial independence is not selfish. It is protection from systems that profit from dependency. Maybe a budgeting checklist or workshop could help people start."
+   },
+   "advances": [
+    "organs-reproduced"
+   ],
+   "rationale": "ask the organs through their own code over the signed bridge; re-derive in a second process"
+  },
+  {
+   "action_id": "commission",
+   "capability": "worker.commission",
+   "target": "work:record-staff-om",
+   "params": {
+    "order": "record-staff-om",
+    "mode": "repository",
+    "repo": "/tmp/claude-0/omdbg/test_one_signed_mission_runs_t0/data/sandbox",
+    "objective": "Record GREG's certified plan for problem.json in plan/plan.json (the assignment exactly as certified) and add tests/test_plan.py that checks it against problem.json from first principles: every assignment uses an eligible skill, no worker exceeds capacity, no order receives more than its demand, the staffed total equals the plan's claim, and no feasible assignment staffs more (exhaustive search; do not import GREG).",
+    "acceptance": {
+     "run_changed_tests": true,
+     "max_changed_files": 4
+    },
+    "allowed_paths": [
+     "plan/*",
+     "tests/*"
+    ],
+    "provider": "local-cli",
+    "max_budget_usd": 0.05,
+    "timeout_seconds": 300
+   },
+   "bind": [
+    {
+     "param": "context",
+     "from": {
+      "check_id": "answered",
+      "field": "result"
+     },
+     "type": "object",
+     "render": "json",
+     "template": "CERTIFIED_PLAN_JSON:\n{value}",
+     "max_bytes": 16384
+    }
+   ],
+   "requires": [
+    "answered",
+    "organs-reproduced"
+   ],
+   "cost_usd": 0.05,
+   "advances": [
+    "work_accepted"
+   ],
+   "rationale": "Hands act only on a certified answer and a reproduced organ assessment"
+  },
+  {
+   "action_id": "handoff",
+   "capability": "fs.write",
+   "target": "workspace:handoff-record-staff-om.md",
+   "params": {
+    "relative_path": "handoff-record-staff-om.md",
+    "content": "# One-machine mission ready for review: greg/record-staff-om\n\nThe certified answer was recorded and re-checked by an independently ACCEPTED change; the organ assessment was reproduced by a second process. Promotion requires the existing authorized path; GREG holds no push or merge authority.\n"
+   },
+   "advances": [
+    "handoff_written"
+   ],
+   "requires": [
+    "work_accepted"
+   ],
+   "rationale": "continue the parent mission only on an independently accepted result"
+  }
+ ],
+ "light_cone": {
+  "capabilities": [
+   "cognition.solve",
+   "composed.assignment.staffing.*",
+   "acquired.graph.max_flow.*",
+   "organ.exchange",
+   "organ.status",
+   "worker.commission",
+   "worker.appraise",
+   "fs.read",
+   "fs.write"
+  ],
+  "targets": [
+   "cognition:*",
+   "organ:daleobanks-wealthmachine",
+   "work:record-staff-om",
+   "fs:handoff-record-staff-om.md",
+   "workspace:handoff-record-staff-om.md"
+  ],
+  "max_consequence_class": "internal_write",
+  "budget_usd": 0.05,
+  "horizon": "2026-10-22T17:08:16.849203Z"
+ },
+ "auto_attach": {
+  "max_consequence_class": "read_only"
+ }
+}

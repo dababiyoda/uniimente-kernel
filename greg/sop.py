@@ -77,15 +77,21 @@ def verified_appraisals(journal: Journal) -> dict[str, str]:
 
 
 def closed_procedures(journal: Journal) -> dict[str, list]:
-    """mission_id -> ordered capabilities of DONE actions for locally verified closures."""
+    from greg.missions import reconciled
+    """mission_id -> ordered capabilities of receipted DONE actions for locally verified closures.
+
+    A founder-reconciled step is excluded whatever its record shape (either lineage's): the appraiser
+    never re-derived it, so it is not part of a procedure the evidence supports."""
     achieved = {e.payload["mission_id"] for e in journal.replay("mission.achieved")}
     achieved.intersection_update(verified_appraisals(journal))
     steps = defaultdict(list)
     for event in journal.replay("mission.action"):
         data = event.payload
-        if data["mission_id"] in achieved and data["status"] == "DONE":
+        if data["mission_id"] in achieved and data["status"] == "DONE" and data.get("capability") \
+                and not reconciled(data):
             steps[data["mission_id"]].append(data["capability"])
     return dict(steps)
+
 
 
 # -- generalization ---------------------------------------------------------------------------
@@ -426,7 +432,9 @@ def propose(journal: Journal) -> list[dict]:
         record = {"procedure_id": pid, "steps": list(sequence), "occurrences": len(missions),
                   "missions": missions, "actions_per_outcome": len(sequence),
                   "appraisal_events": {mid: appraisals[mid] for mid in missions}, "shape": signed_shape,
-                  "evidence_level": "local separate-process appraisal; external outcome unproven",
+                  "evidence_level": "local separate-process appraisal of receipted steps; founder-reconciled "
+                                    "steps (no receipt) were never appraised and are excluded; external outcome "
+                                    "unproven",
                   "state": "PROPOSED", "promotion": "requires founder SOP_RATIFY"}
         try:
             workflow = generalize([registered[mid].payload["spec"] for mid in missions])

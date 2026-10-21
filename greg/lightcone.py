@@ -106,7 +106,10 @@ class LightCone:
             reasons.append(f"target {target!r} outside scope")
         if _rank(consequence_class) > _rank(self.max_consequence_class):
             reasons.append(f"{consequence_class} exceeds scope ceiling {self.max_consequence_class}")
-        if cost_usd < 0 or spent_usd + cost_usd > self.budget_usd + 1e-9:
+        # A free read-only observation spends and changes nothing, so a cone already spent (a provider that
+        # billed past its bound, a founder-approved overrun) never blinds the mission to its own checks.
+        free_read = cost_usd == 0 and consequence_class == "read_only"
+        if cost_usd < 0 or (spent_usd + cost_usd > self.budget_usd + 1e-9 and not free_read):
             reasons.append(f"cost {cost_usd} with {spent_usd} spent exceeds budget {self.budget_usd}")
         if at >= _instant(self.horizon):
             reasons.append("scope horizon has expired")

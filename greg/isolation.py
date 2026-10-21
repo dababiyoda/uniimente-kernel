@@ -169,6 +169,34 @@ def restrict(grants, libc=None):
         os.close(fd)
 
 
+FILE_RIGHTS = EXECUTE | WRITE_FILE | READ_FILE | TRUNCATE
+
+
+def confine_paths(*, read=(), read_exec=(), write=()) -> int:
+    """Irreversibly confine this process (a forked child about to exec) to explicit paths.
+
+    ``read`` trees are read-only, ``read_exec`` trees read-only and executable, ``write`` trees
+    read/write. Every other path is neither readable nor writable, which is what keeps one
+    organ's process away from another organ's code, the Kernel's sources and the body's home.
+    Missing paths are skipped; installation failure raises."""
+    libc = _libc()
+    abi = libc.syscall(444, None, 0, 1)
+    if abi < 3:
+        raise IsolationError("Landlock ABI >=3 required")
+    grants = {}
+    for paths, access in ((read, READ_FILE | READ_DIR), (read_exec, READ_FILE | READ_DIR | EXECUTE),
+                          (write, ALL_FS)):
+        for path in paths:
+            path = Path(path)
+            if not path.exists():
+                continue
+            path = path.resolve()
+            access_now = grants.get(path, 0) | access
+            grants[path] = access_now if path.is_dir() else access_now & FILE_RIGHTS
+    restrict(grants, libc)
+    return abi
+
+
 # A commissioned frontier worker (greg/workers.py) is a full tool-using agent: it needs the host's installed
 # runtime (its own binary, shells, git, interpreters, certificates) and its provider's network, so its policy is
 # broader than ``confine``'s. What it must never reach is everything else on the body: the Body home (ledger,
@@ -183,6 +211,21 @@ WORKER_DEVICES = ("/dev/null", "/dev/zero", "/dev/full", "/dev/random", "/dev/ur
 WORKER_KERNEL_VIEWS = ("/sys", "/proc/sys")
 WORKER_KERNEL_FILES = ("/proc/cpuinfo", "/proc/meminfo", "/proc/stat", "/proc/loadavg", "/proc/uptime",
                        "/proc/version", "/proc/filesystems", "/proc/self")
+
+
+def _install_tree(tree: Path) -> set:
+    """The install tree above a provider's ``bin`` directory, unless granting it would expose the founder's files.
+
+    A tree that is the user's home or contains it (``~/bin/agent``) is never granted. A tree directly in the home
+    is granted whole only when it is a virtual environment; otherwise (``~/.local``, whose ``share`` and ``state``
+    hold other programs' data and credentials) only its ``lib`` directory is."""
+    home = Path.home().resolve()
+    tree = tree.resolve()
+    if tree == home or tree in home.parents:
+        return set()
+    if tree.parent == home and not (tree / "pyvenv.cfg").is_file():
+        return {tree / "lib"}
+    return {tree}
 
 
 def worker_grants(workdir, *, binaries=(), read_files=()):
@@ -200,7 +243,7 @@ def worker_grants(workdir, *, binaries=(), read_files=()):
         if binary:
             given, real = Path(binary).absolute(), Path(binary).resolve()
             roots |= {given.parent, real.parent}
-            optional.add(real.parent.parent)      # the install tree (a venv, a node prefix), only where it is safe
+            optional |= _install_tree(real.parent.parent)   # a venv or node prefix, only where it is safe
     grants = {}
     for root in sorted(roots | optional):
         if not root.exists():

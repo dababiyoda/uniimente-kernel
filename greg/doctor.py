@@ -21,6 +21,17 @@ def is_crostini(markers=CROSTINI_MARKERS) -> bool:
     return any(Path(marker).exists() for marker in markers)
 
 
+def device_class(markers=CROSTINI_MARKERS) -> str:
+    """The observed kind of device, recorded beside ``platform``. Informational and forgeable (a marker
+    path or a patched interpreter changes it): never an identity, ownership or VEPMC condition."""
+    system = platform.system()
+    if system == "Darwin":
+        return "macos"
+    if system == "Linux":
+        return "chromeos_linux" if is_crostini(markers) else "linux_other"
+    return "other"
+
+
 # Engines are not prerequisites for N1: a missing one makes its functions abstain and GREG asks.
 ENGINE_USES = {
     "z3-solver": ["cognition.solve: cortex formal engine and schedules", "#140 formal operations"],

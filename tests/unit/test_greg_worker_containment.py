@@ -100,6 +100,32 @@ open("out.md", "w").write("\\n".join(results))
 
 
 @pytest.mark.skipif(not LANDLOCK, reason="Landlock ABI >= 3 is not available on this kernel")
+def test_a_worker_declared_as_an_interpreter_and_its_script_starts_and_stays_confined(tmp_path):
+    """A provider declared as ``[python, script.py]`` (one-machine's local CLI): the confined worker can read the
+    script its own argv names, or it cannot even start; it still cannot write beside that script."""
+    tools = tmp_path / "tools"
+    tools.mkdir()
+    script, beside = tools / "worker.py", tools / "started"
+    script.write_text(f"""
+import sys
+sys.stdin.read()
+try:
+    open({str(beside)!r}, "w").write("x")
+    wrote = "WROTE"
+except OSError:
+    wrote = "denied"
+open("out.md", "w").write(wrote)
+print('WORK_REPORT: {{"confidence": 0.5}}')
+""")
+    worker = workers.CliAgentWorker("local-cli", [sys.executable, str(script)], stdin=True)
+    work = workdir(tmp_path)
+    report = worker.run(order("probe"), work)
+    assert report.exit_code == 0, report
+    assert (work / "out.md").read_text() == "denied" and not beside.exists()
+    assert str(script) in report.confinement["readable"] and report.confinement["filesystem"] == "landlock"
+
+
+@pytest.mark.skipif(not LANDLOCK, reason="Landlock ABI >= 3 is not available on this kernel")
 def test_a_runtime_root_that_would_expose_the_body_home_refuses_the_worker(tmp_path):
     work = workdir(tmp_path)
     exposed = tmp_path / "body" / "probe-agent"              # an executable sitting in the Body home itself
@@ -226,3 +252,60 @@ def test_gregs_own_acceptance_run_is_confined_to_the_clone(tmp_path):
     assert not outside.exists()
     assert result["confinement"]["filesystem"] == "landlock"
     assert result["confinement"]["writable"] == [str(clone.resolve())]
+
+
+@pytest.mark.skipif(not LANDLOCK, reason="Landlock ABI >= 3 is not available on this kernel")
+def test_a_worker_cannot_plant_gregs_scratch_directory_to_make_its_own_run_uncertain(tmp_path, monkeypatch):
+    """Merge review of 1e55bbd: GREG's confined acceptance run created a fixed ``.greg-tmp`` in the worker's clone.
+    A worker that planted that name made the run raise before any test started; the error escaped the dispatch,
+    which became UNCERTAIN, reserved the signed cap and asked the founder to reconcile a run that never left
+    the clone. Each run now gets a fresh scratch name, and a clone that cannot host the run fails acceptance."""
+    from tests.unit.test_greg_workers import GOOD, run_mission
+    from greg.body import observe
+    home, _, worker, _, _ = run_mission(tmp_path, monkeypatch, {**GOOD, ".greg-tmp": "planted\n"},
+                                        allowed=("pkg/*", "tests/*", ".greg-tmp"))
+    with observe(home, actor="spiffe://uniimente.internal/test/plant") as journal:
+        commission = [e.payload for e in journal.replay("mission.action")
+                      if e.payload.get("capability") == "worker.commission"]
+        asks = [e.payload["kind"] for e in journal.replay("decision.requested")]
+    assert worker.calls == 1 and [a["status"] for a in commission][:1] != ["UNCERTAIN"], commission
+    assert "RECONCILIATION" not in asks
+
+
+def test_a_clone_that_cannot_host_gregs_acceptance_run_fails_it_rather_than_raising(tmp_path, monkeypatch):
+    def unwritable(*args, **kwargs):
+        raise PermissionError(13, "Permission denied", str(tmp_path))
+    monkeypatch.setattr(workers, "run_isolated", lambda *a, **k: unwritable())
+    [result] = workers.run_tests([["python", "-c", "pass"]], tmp_path, timeout=10)
+    assert result["passed"] is False and "could not run in the worker's clone" in result["tail"]
+
+
+@pytest.mark.skipif(not LANDLOCK, reason="Landlock ABI >= 3 is not available on this kernel")
+def test_a_provider_installed_in_the_founders_home_does_not_open_the_home_to_the_worker(tmp_path, monkeypatch):
+    """Merge review of 1e55bbd: the worker was granted the parent of its binary's directory as an install tree, so
+    a provider in ``~/.local/bin`` (a ``pip install --user`` script) made all of ``~/.local`` readable, and one in
+    ``~/bin`` the whole home. Only a virtual environment directly in the home is granted whole; otherwise only its
+    ``lib`` directory, and never the home or anything containing it."""
+    home = tmp_path / "home"
+    secret = home / ".local/share/keyrings/login.keyring"
+    secret.parent.mkdir(parents=True)
+    secret.write_text("FOUNDER-SECRET")
+    venv = home / "venv"
+    (venv / "bin").mkdir(parents=True)
+    (venv / "pyvenv.cfg").write_text("home = /usr/bin\n")
+    monkeypatch.setenv("HOME", str(home))
+    work = tmp_path / "body" / "workspace" / "repo"
+    work.mkdir(parents=True)
+    for where in (home / ".local/bin", home / "bin"):
+        where.mkdir(parents=True, exist_ok=True)
+        agent = where / "agent"
+        agent.write_text(f"#!{sys.executable}\nimport sys\ntry:\n print('READ:' + open({str(secret)!r}).read())\n"
+                         "except OSError as e:\n print('DENIED')\n")
+        agent.chmod(0o755)
+        granted = set(isolation.worker_grants(work, binaries=[str(agent)]))
+        assert home.resolve() not in granted and (home / ".local").resolve() not in granted
+        preexec, _ = workers._confined(work, str(agent))
+        out = subprocess.run([str(agent)], capture_output=True, text=True, cwd=work, env=workers._worker_env(work),
+                             preexec_fn=preexec, timeout=30).stdout
+        assert out.strip() == "DENIED", (where, out)
+    assert venv.resolve() in set(isolation.worker_grants(work, binaries=[str(venv / "bin" / "python")]))

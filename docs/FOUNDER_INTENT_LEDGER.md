@@ -9,6 +9,12 @@ The founder's OPUS MAXIMUS continuation directive is implemented on draft branch
 - The Mind line is the canonical base. #160 and #132 are joined, and #132's Foundry modules keep the Mind-line modules as registered alternates behind one dispatch rule.
 - #159 is ported. #157's worker isolation is the named next extraction.
 - The executable Founder's First Mission and the five-question Mission Control are on the one mission path. `greg rehearse` runs both without credentials.
+- Increment 3 adds:
+  - discovery by intention;
+  - an opt-in confined `http.get` behind the #26 relay;
+  - money kept in separate columns;
+  - recovery evidence on the Proof view;
+  - a section 13 attack map covering all 14 classes, with three new integrated attacks: disagreeing intelligences, network loss and interrupted construction.
 - State: active. Reality: integration-tested and browser-tested locally. VEPMC remains 0. No authority, spending, publication or merge.
 
 ## CONTRADICTION-0002 Option A: historical reproducibility apart from live constitutional integrity — ruling 2026-08-23, implemented 2026-10-14

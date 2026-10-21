@@ -9,7 +9,8 @@ own cost, which differs per call as a real agent's does. The driver stops the Bo
 where the test SIGKILLs it, then starts it again:
 
 - in-build: inside the builder's call, before any source came back (its spend is unknown);
-- in-verify: the source came back and was recorded; the held-out verification has not finished;
+- in-verify: the source came back and was recorded; the held-out verification has not finished (the restart
+  judges that paid candidate rather than calling the builder again);
 - before-attach: verified and registered VERIFIED; not yet attached;
 - before-resolve: attached; the deficit not yet recorded resolved.
 
@@ -214,7 +215,9 @@ def nothing_half_built_attached(home: Path) -> None:
             assert state["capability_id"] in registered
 
 
-@pytest.mark.parametrize("point, calls_expected", [("in-build", 2), ("in-verify", 2), ("before-attach", 1),
+# in-verify: the source came back, was billed and recorded; the restart judges that paid candidate against the frozen
+# oracle instead of paying a builder again (greg/genesis.py _unjudged_builds), so one builder call, not two.
+@pytest.mark.parametrize("point, calls_expected", [("in-build", 2), ("in-verify", 1), ("before-attach", 1),
                                                   ("before-resolve", 1)],
                          ids=["in-build", "in-verify", "before-attach", "before-resolve"])
 def test_a_body_killed_mid_build_attaches_nothing_half_built_and_charges_each_build_once(tmp_path, point,

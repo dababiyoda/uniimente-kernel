@@ -33,7 +33,9 @@ def correlate(events: list[dict], mission_id: str | None = None) -> dict:
     requested: dict[str, str] = {}
     asked_for: dict[str, str | None] = {}     # request id -> the capability the ask is for
     last_capability: dict[str, str] = {}
-    for e in sorted(events, key=lambda e: (e["at"], e["event_id"])):
+    # A ledger sequence, when the caller has one, is the canonical order: timestamps can come from
+    # different clocks (the body's, an organ's, the dataplane's) and do not order causally.
+    for e in sorted(events, key=lambda e: (e.get("seq", -1), e["at"], e["event_id"])):
         p, kind = e["payload"], _kind(e)
         mid = p.get("mission_id")
         if not mid or (mission_id and mid != mission_id):
@@ -51,7 +53,7 @@ def correlate(events: list[dict], mission_id: str | None = None) -> dict:
             last_capability[mid] = p.get("capability")
             span.update(capability=p.get("capability"), status=p.get("status"), receipt=p.get("receipt"),
                         cost_usd=float(p.get("cost_usd") or 0.0))
-        elif kind == "mission.appraised":
+        elif kind in ("mission.appraised", "organ.appraised"):   # organ.appraised: an organ exchange's own check
             span.update(verdict=p.get("verdict"))
         elif kind in ("mission.blocked", "mission.lifecycle"):
             # A GREG block names its blocker (an ask, a missing capability): it belongs to what it waits on,

@@ -104,6 +104,54 @@ def _mind() -> dict:
     return {"genomes": out, "counts": counts, "frozen": data.get("freeze_sha256", "")[:16], "source_commit": data.get("source_commit")}
 
 
+def cost_rows(actions: list[dict], missions: list[dict], fixtures: list[dict], builds: list[dict] = ()) -> list[dict]:
+    """Per mission, money kept in distinct columns, never netted: the signed budget; what was booked; how much of
+    that a provider measured; how much was booked at the signed cap because the true spend was unknown or not
+    reported; what Capability Genesis builds were billed (part of the booked total: the build budget is carved
+    from the same cone); and fixture amounts that moved no money. Read from recorded facts, never estimated."""
+    rows = {m["mission_id"]: {"mission_id": m["mission_id"], "budget_usd": float(m["cone"].get("budget_usd") or 0),
+                              "booked_usd": 0.0, "measured_usd": 0.0, "unknown_at_cap_usd": 0.0, "build_usd": 0.0,
+                              "fixture_cents": 0, "money_moved": False} for m in missions}
+    for b in builds:
+        row = rows.get(b.get("mission_id"))
+        if row is not None:
+            row["build_usd"] += float(b.get("cost_usd") or 0.0)
+            row["booked_usd"] += float(b.get("cost_usd") or 0.0)
+            if b.get("at_cap"):
+                row["unknown_at_cap_usd"] += float(b.get("cost_usd") or 0.0)
+    for a in actions:
+        row = rows.get(a.get("mission_id"))
+        # A metered dispatch the founder reconciled as not executed keeps its signed cap booked (H.G4).
+        if row is None or a.get("status") not in ("DONE", "RECONCILED_NOT_EXECUTED"):
+            continue
+        cost = float(a.get("cost_usd") or 0.0)
+        row["booked_usd"] += cost
+        basis = a.get("spend_basis")
+        if basis == "provider_reported":
+            row["measured_usd"] += float(a.get("provider_reported_usd") or 0.0)
+        elif basis and basis.startswith("signed_cap"):
+            row["unknown_at_cap_usd"] += cost
+    for f in fixtures:
+        if f.get("mission_id") in rows:
+            rows[f["mission_id"]]["fixture_cents"] += int((f.get("totals") or {}).get("revenue") or 0)
+    return [{k: (round(v, 6) if isinstance(v, float) else v) for k, v in r.items()} for r in rows.values()]
+
+
+def _resilience(console) -> dict:
+    from greg.body import observe
+    from greg import resilience
+    try:
+        with observe(console.home, actor="spiffe://uniimente.internal/greg/mission-control-resilience") as journal:
+            return resilience.summary(journal)
+    except Exception as exc:             # a projection failure is shown, never hidden
+        return {"error": type(exc).__name__}
+
+
+def _books(home, mission_id):
+    from greg.venture_rehearsal import books
+    return books(home, mission_id)
+
+
 def projection(console) -> dict:
     """Everything Mission Control shows, from retained state only."""
     from greg.body import morning_projection, observe, status
@@ -132,8 +180,27 @@ def projection(console) -> dict:
         appraisals = [{"mission_id": e.payload.get("mission_id"), "verdict": e.payload.get("verdict"), "at": e.occurred_at}
                       for e in journal.replay("mission.appraised")][-20:]
         receipts = len(journal.ledger.by_type("receipt")) if hasattr(journal, "ledger") else None
-        events = len(journal.replay())
+        retained = journal.replay()
+        events = len(retained)
+        # Per-mission traces are #44's correlation over retained events: every row is a ledger fact.
+        from foundry.systems import observability
+        from greg import metrics as _metrics
+        order = {r.payload.get("event_id"): r.seq for r in journal.ledger.by_type("event")}
+        traces = {mid: t["spans"][-200:] for mid, t in observability.correlate(
+            [{"type": e.type, "event_id": e.event_id, "payload": e.payload, "seq": order.get(e.event_id, -1),
+              "at": e.payload.get("at") or e.occurred_at} for e in retained])["missions"].items()}
+        sandbox = _metrics.sandbox_whole_machine(journal)
         quarantined = [e.payload for e in journal.replay("capability.quarantined")][-10:]
+        action_rows = [e.payload for e in journal.replay("mission.action")]
+        payer = {e.payload["deficit_id"]: e.payload.get("mission_id") for e in journal.replay("deficit.opened")}
+        build_rows = [{"mission_id": payer.get(e.payload.get("deficit_id")), "cost_usd": e.payload.get("cost_usd")}
+                      for kind in ("genesis.built", "genesis.unbuilt") for e in journal.replay(kind)]
+        # A builder call the body died inside is charged at the ceiling it was given (Genesis._build_spend).
+        settled = {(e.payload["deficit_id"], e.payload.get("build"))
+                   for kind in ("genesis.built", "genesis.build_failed") for e in journal.replay(kind)}
+        build_rows += [{"mission_id": payer.get(e.payload["deficit_id"]), "cost_usd": e.payload.get("reserved_usd"),
+                        "at_cap": True} for e in journal.replay("genesis.build_started")
+                       if (e.payload["deficit_id"], e.payload.get("build")) not in settled]
         toggles = [e.type for e in journal.replay("body.") if e.type in ("greg.body.paused", "greg.body.resumed")]
         signed_pause = bool(toggles) and toggles[-1] == "greg.body.paused"
         from greg.body import crash_loop_hold
@@ -154,7 +221,7 @@ def projection(console) -> dict:
         if age >= 180:
             heartbeat["state"] = f"NOT RUNNING (last seen {int(age // 60)} min ago)"
     active = [m for m in missions if m["status"] not in ("ACHIEVED", "ABANDONED", "FAILED", "STOPPED")]
-    return {
+    out = {
         "identity": {"body_id": st["body_id"], "version": st.get("version"), "boots": st.get("boots"),
                      "founder_keys": len(st["security"]["founder_keys_enrolled"]), "chain_verified": st["security"]["chain_verified"],
                      "background": heartbeat.get("state", "NOT RUNNING"), "signer": console.key is not None,
@@ -171,8 +238,14 @@ def projection(console) -> dict:
         "morning": {k: morning.get(k) for k in ("q1_goals_worked_on", "q3_what_i_did", "q4_intentionally_not_done", "q6_what_failed",
                                                  "q7_surprises", "q9_learned", "q12_decisions_required", "q13_tonight", "claims_not_made")},
         "templates": sorted(templates.TEMPLATES), "dossiers": dossiers, "ventures": ventures,
+        "rehearsals": [b for b in (_books(console.home, m["mission_id"]) for m in missions
+                                   if m["mission_id"].startswith("m:venture-rehearsal-")) if b],
         "foundry": _foundry(), "mind": _mind(), "read_roots": st.get("permissions", {}).get("read_roots", []),
+        "resilience": _resilience(console),
+        "traces": traces, "sandbox_integration": sandbox,
     }
+    out["costs"] = cost_rows(action_rows, out["missions"], out["rehearsals"], build_rows)
+    return out
 
 
 # -- rendering ---------------------------------------------------------------------------------
@@ -337,13 +410,33 @@ def _body_view(console, p, form) -> str:
             "appraises it independently. Workers spend only a signed budget.</p></section>")
 
 
+def _discover_section(console, p, form) -> str:
+    from greg.discover import discover
+    q = (form.get("_query") if isinstance(form, dict) else "") or ""
+    box = ("<section><h2>What outcome do you want?</h2><form method=get action=/mc/organs>"
+           f"<input name=q maxlength=200 value='{_e(q)}' placeholder='e.g. sell a product and reconcile the revenue'>"
+           " <button>Find what helps</button></form><p class=muted>Ranks GREG's mission paths, capabilities and Foundry "
+           "systems by the words they declare (lexical retrieval with a small disclosed synonym map); it finds what the "
+           "words name, it does not judge feasibility.</p>")
+    if not q.strip():
+        return box + "</section>"
+    classes = {c["capability_id"]: c["class"] for c in p["capabilities"]}
+    rows = []
+    for r in discover(q, limit=10):
+        state = classes.get(r["id"], "UNKNOWN") if r["kind"] == "capability" else r["state"]
+        rows.append([_e(r["kind"]), f"<code>{_e(r['id'])}</code><br><span class=muted>{_e(r['title'])}</span>",
+                     _cls(state) if r["kind"] != "mission path" else _e(state),
+                     _e(r.get("gap") or r["how"])[:300], _e(", ".join(r["matched"]))])
+    return box + _table(["Kind", "What", "State here", "How to use it / gap", "Matched"], rows) + "</section>"
+
+
 def _organs(console, p, form) -> str:
     f = p["foundry"]
     rows = [[_e(s["id"]), _e(s["name"]), _cls(s["state"]), f"<code>{_e(s['module'] or '—')}</code>"
              + (f"<br><span class=muted>alternates: {_e(', '.join(s['alternates']))}</span>" if s["alternates"] else ""),
              _e(s["gap"] or s["interface"])] for s in f["systems"]]
     organs = [x.name for x in sorted((KERNEL_ROOT / "organs").glob("*.manifest.yaml"))] if (KERNEL_ROOT / "organs").is_dir() else []
-    return ("<section><h2>Foundry: the 55-system capability factory</h2><div class=grid>"
+    return (_discover_section(console, p, form) + "<section><h2>Foundry: the 55-system capability factory</h2><div class=grid>"
             + "".join(f"<div class=stat><b>{v}</b>{_cls(k)}</div>" for k, v in sorted(f["counts"].items()))
             + f"</div><p class=reality>{_e(f['note'])}</p>" + _table(["#", "System", "State", "Module", "Gap or interface"], rows) + "</section>"
             f"<section><h2>Organ manifests</h2><p>{', '.join(f'<code>{_e(o)}</code>' for o in organs) or '<span class=empty>none</span>'}</p>"
@@ -362,7 +455,17 @@ def _goals(console, p, form) -> str:
 
 
 def _ventures(console, p, form) -> str:
-    return ("<section><h2>Ventures</h2>" + (_table(["Delivered memo"], [[_e(v)] for v in p["ventures"]]) if p["ventures"] else
+    rows = [[_e(b["mission_id"]), _cls("FIXTURE"), _e(f"{(b.get('totals') or {}).get('revenue', '—')} cents"),
+             "balanced" if b.get("equation_holds") and not b.get("error") else _e(b.get("error", "does not balance")),
+             "no"] for b in p["rehearsals"]]
+    rehearsal = ("<section><h2>Commerce rehearsal (FIXTURE)</h2><p>Take your latest First Mission dossier through GREG's "
+                 "governed company loop: offer, a fixture buyer's signed order, delivery, signed acceptance, books reconciled "
+                 "to the cent. Every check is re-observed by the appraisal. The buyer is a published fixture key and no "
+                 "payment rail is called.</p>"
+                 + (_button(console, "/venture-rehearsal", {}, "Prepare the commerce rehearsal", cls="") if p["dossiers"] else
+                    "<p class=empty>Run the Founder's First Mission first; the rehearsal sells its dossier.</p>")
+                 + _table(["Rehearsal", "Mode", "Revenue booked", "Books", "Money moved"], rows) + "</section>")
+    return rehearsal + ("<section><h2>Ventures</h2>" + (_table(["Delivered memo"], [[_e(v)] for v in p["ventures"]]) if p["ventures"] else
             "<p class=empty>No venture memo has been delivered on this body. A <code>venture-assessment</code> mission runs RailScout "
             "and WealthMachine on one signal and delivers a memo; nothing is sent, bought or contacted.</p>")
             + "<p class=reality>Revenue, customers and business validation stay hypotheses until external evidence exists. "
@@ -387,12 +490,52 @@ def _proof(console, p, form) -> str:
         ["Ledger chain", "verified" if p["identity"]["chain_verified"] else "<b class=warn>FAILED</b>"],
         ["External anchors (RFC 3161)", _e(f"{a.get('verified', 0)} verified of {a.get('anchors', 0)}; configured: {a.get('configured')}")],
         ["VEPMC (structural candidates)", f"<b>{_e(v.get('VEPMC', 0))}</b> — {_e(v.get('external_confirmation_required', ''))}"],
-        ["Founder tier", _tier_line(p.get("founder_tier") or {}, v)]])
+        ["Founder tier", _tier_line(p.get("founder_tier") or {}, v)],
+        ["Sandbox whole-machine closures (engineering diagnostic; never VEPMC)",
+         _e(f"{(p.get('sandbox_integration') or {}).get('SANDBOX_WHOLE_MACHINE_CLOSURES', 0)} — "
+            f"{(p.get('sandbox_integration') or {}).get('tier', '')}")]])
             + "</section><section><h2>Independent appraisals</h2>"
             + _table(["Mission", "Verdict", "At"], [[_e(x["mission_id"]), _cls(x["verdict"]), _e(x["at"])] for x in p["appraisals"][::-1]])
-            + "</section><section><h2>Quarantine</h2>"
+            + "</section>" + _traces_section(p.get("traces") or {}) + _resilience_section(p["resilience"])
+            + "<section><h2>Quarantine</h2>"
             + _table(["Capability", "Why"], [[_e(q.get("capability_id")), _e(q.get("reason") or q.get("why") or "")] for q in p["quarantined"]])
             + "</section>")
+
+
+def _traces_section(traces: dict) -> str:
+    """Each mission's trace, drawn from retained events only (Foundry #44 correlation)."""
+    if not traces:
+        return "<section><h2>Mission traces</h2><p class=empty>No mission events retained yet.</p></section>"
+    parts = ["<section><h2>Mission traces</h2><p class=reality>Every row is a retained ledger event: actions, "
+             "observations, organ exchanges, capability formation, decisions and appraisals, in time order.</p>"]
+    for mid, spans in sorted(traces.items()):
+        rows = [[_e(s.get("at", "")[:19]), _e(s["kind"]), _e(s.get("capability") or s.get("request_id") or ""),
+                 _cls(s["verdict"]) if s.get("verdict") else _e(s.get("status") or s.get("answer") or s.get("reason") or ""),
+                 _e(s["event_id"][:16])] for s in spans]
+        parts.append(f"<h3 id='trace-{_e(mid)}'>{_e(mid)}</h3>" + _table(["At", "Kind", "Capability / request",
+                                                                           "Status / verdict", "Event"], rows))
+    return "".join(parts) + "</section>"
+
+
+def _resilience_section(r: dict) -> str:
+    if r.get("error"):
+        return f"<section><h2>Recovery and learning</h2><p class=warn>Projection failed: {_e(r['error'])}</p></section>"
+    e = r.get("episodes", {})
+    def rate(x):
+        return "—" if x is None else f"{x:.0%}"
+    verdicts = [[_e(cap), _cls(v.get("verdict", "")), _e(v.get("failures")), rate(v.get("completion_before")),
+                 rate(v.get("completion_after")), "yes" if v.get("learning_artifact_after_failure") else "no"]
+                for cap, v in sorted((r.get("after_failure") or {}).items())]
+    median = e.get("median_recovery_seconds")
+    unaided = e.get("recovered_without_founder")
+    return ("<section><h2>Recovery and learning</h2>" + _table(["", ""], [
+        ["Failures / recovered / open", _e(f"{e.get('failures', 0)} / {e.get('recovered', 0)} / {e.get('open', 0)}")],
+        ["Median recovery", "—" if median is None else f"{median:.1f} s"],
+        ["Recovered without you", rate(unaided)],
+        ["Warnings", _e("; ".join(r.get("warnings") or []) or "none")]])
+            + "<p class=reality>" + _e(r.get("rule", "")) + "</p>"
+            + _table(["Capability", "After-failure verdict", "Failures", "Completion before", "Completion after",
+                      "Learning recorded"], verdicts) + "</section>")
 
 
 def _authority(console, p, form) -> str:
@@ -402,6 +545,13 @@ def _authority(console, p, form) -> str:
         ["Founder keys enrolled", _e(p["identity"]["founder_keys"])], ["Delegated devices", _e(len(p["devices"]))],
         ["Read roots", _e(", ".join(p["read_roots"]))], ["Pause file", _e(p["identity"]["pause"])], ["Stop file", _e(p["identity"]["stop"])]])
             + "<h2>Mission envelopes</h2>" + _table(["Mission", "May use without asking", "Ceiling", "Budget", "Expires"], rows)
+            + "<h2>Money, kept in separate columns</h2><p class=reality>Booked spend comes from recorded actions. "
+            "Provider-measured is what a provider reported. Unknown is booked at the signed cap, never assumed lower. "
+            "FIXTURE amounts are rehearsal books and moved no money.</p>"
+            + _table(["Mission", "Budget", "Booked", "Provider-measured", "Unknown (booked at cap)", "FIXTURE (no money moved)"],
+                     [[_e(c["mission_id"]), f"${c['budget_usd']:.2f}", f"${c['booked_usd']:.2f}", f"${c['measured_usd']:.2f}",
+                       f"${c['unknown_at_cap_usd']:.2f}", f"{c['fixture_cents']} cents" if c["fixture_cents"] else "—"]
+                      for c in p["costs"]])
             + "<p class=muted>Intelligence never creates authority. A recommendation becomes an action only through a signed mission or "
             "decision, and only inside its envelope.</p></section>" + (form.get("stop", "") if isinstance(form, dict) else ""))
 

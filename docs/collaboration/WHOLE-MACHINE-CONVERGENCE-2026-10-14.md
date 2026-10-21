@@ -96,3 +96,156 @@ Attacking the result as if Pass 1 were deployed:
 ## Rollback
 
 Revert the branch commits. No data migration exists, and every new path is additive. `/classic` keeps the previous front page whole.
+
+## Increment 2 (same day): the whole loop, attacks, and the #26 mechanism
+
+### Product delta
+
+- **First Mission, now six steps.** It runs survey, then selection and composition, then the dossier, then Foundry
+  #31 builds an intact private page of the dossier, then the dossier is retained by digest. Three independent checks
+  must hold: the dossier re-derives, the page is intact, and the bytes are retained.
+- **Memory across missions.** A later First Mission reads earlier dossier receipts from the ledger. It reports what
+  is newly selected, no longer selected or still selected, and the lesson the earlier run retained. This survives
+  restart because it is read from receipts, not a cache.
+- **Commerce rehearsal (FIXTURE).** `greg/venture_rehearsal.py` and Mission Control's Ventures view take the latest
+  dossier through the governed company loop: #49 assemble, #54 fulfill a fixture buyer's signed order, #54 record
+  the signed acceptance, and #49 reconcile the books to the cent. Every check is a Foundry sensor the appraisal
+  re-observes, and an edited book is refused. The buyer is a published test key, no rail is called, and
+  `money_moved` stays false.
+- **`greg rehearse` runs the whole chain:** the First Mission with a simulated crash, the commerce rehearsal, then a
+  second First Mission that compares itself with the first.
+- **`greg acceptance`** is a read-only founder-device report from the body's own ledger. It has 14 properties, each
+  marked PASS or NOT_YET with the runbook step that produces it. It says FOUNDER-DEVICE only for a mission on a
+  designated first body. `greg/CHROMEBOOK_FIRST_MISSION.md` gains steps 4–8 (Mission Control, memory, Ventures,
+  founder control including the phone channel, and acceptance), and the installer now points to them.
+
+### Attacks run through the real body, Gate, Foundry worker and appraisal
+
+These are in `tests/integration/test_greg_adversarial_machine.py`:
+
+- **A lying solver.** A feasible, self-consistent, suboptimal selection, and an inflated value claim, are both caught
+  by the independent profit-DP verifier.
+- **A revoked engine after restart.** A new mission blocks on the capability and never reuses it.
+- **Sources edited mid-mission.** The mission cannot close as ACHIEVED.
+- **Prompt injection in the sources.** Instructions to attach a paid worker, spend, publish and email stay data. The
+  only capability transition is the founder's own attach.
+- **A paid worker outside the signed envelope.** When it is the only route, GREG asks and names the scope; nothing
+  executes. The first version of this test passed vacuously, because a cheaper route was chosen, and was rewritten.
+- **A replayed fixture order and acceptance.** There is no second booking, and the appraisal stays VERIFIED.
+
+### #26 without privilege, and #9/#10 hardening
+
+- **#26** is implemented in `foundry/systems/segmentation.py` and registered as system 26. Components launched
+  through `run_confined` cannot open any socket; the kernel filter denies it. Their only door is a relay that
+  enforces exact per-identity allowlists and journals every decision in a hash chain.
+  - It is exercised on loopback and TEST-NET only. A denied request never connects, and a foreign identity is denied.
+  - It is still PARTIAL: capabilities inside the body process and coding workers are not launched through it yet.
+- **#9 and #10:** a host-name approval gate refuses privileged runtimes before any command is built, and root images
+  are refused. Fixed a real extraction bug: `lstrip("./")` renamed every dotfile in an image. Hostile layers are
+  tested to stay inside the root. Both remain PARTIAL. The dedicated-host specification
+  (`PRIVILEGED-RUNTIME-TEST-HOST-2026-10-14.md`) awaits the founder's choice.
+
+### Measured
+
+- **Rehearsal of the whole chain:** about 60 s on this container. Profiling showed most of the time is the mission
+  engine re-observing every check each tick, and each Foundry worker call costs about 0.35 s of process startup.
+- **A caching attempt failed.** Memoizing the learned-policy readout per ledger head saved about 1 s, because the
+  head moves on almost every event. It was reverted as code that buys nothing.
+- **Browser acceptance:** still 14/14 at both sizes with the six-step mission. The Ventures flow is covered over HTTP.
+
+### Negative evidence and open items
+
+- **One unreproduced block.** A single run during development ended BLOCKED with "no admissible strategy". 39 later
+  runs (24 under pytest, 15 in a stress loop) all reached ACHIEVED, and the cause was not found. It is recorded as
+  an open observation, not explained away.
+- **The rest:** VEPMC is still 0, and #9, #10 and #26 are still PARTIAL. #157 worker OS confinement has not been
+  extracted.
+
+## Increment 3 (same day): discovery, confined fetch, money columns, recovery evidence, and the section 13 map
+
+### Product delta
+
+- **Find machinery by outcome.** The Organs view has a "What outcome do you want?" search. It ranks GREG's mission
+  paths, registered capabilities and the 55 Foundry systems against the founder's words with Okapi BM25 over each
+  item's own declared text (`greg/discover.py`). Every result shows its true state, COMPLETE or PARTIAL with its gap,
+  and the matched terms. A request GREG cannot plan now lists the machinery the words name instead of a dead end.
+  This is lexical retrieval and is stated as such: it finds what the words name and does not judge feasibility.
+- **#26 on the mission path.** On a body initialised with `greg init --confined-egress`, `http.get` runs as a confined
+  child. The kernel filter leaves it no socket of its own, and TLS terminates inside the child. Its one door is the
+  body's relay, which enforces the per-identity allowlist and chains through the environment's mandated proxy with
+  HTTP CONNECT. Every decision is journaled in a hash chain, and the proxy credential is never journaled. The default
+  route is unchanged, and the receipt says which route ran (`egress: confined-relay` or `body-process`).
+- **Money in separate columns.** The Authority view shows, per mission:
+  - the signed budget;
+  - booked spend;
+  - the part a provider measured;
+  - the part booked at the signed cap because the true spend was unknown or out of range;
+  - FIXTURE amounts that moved no money.
+  All come from recorded actions and are never netted (`mission_control.cost_rows`).
+- **Recovery and learning on the Proof view.** The view projects `greg/resilience.py` from the ledger:
+  - failure episodes and median recovery;
+  - the share recovered without the founder;
+  - common-cause and decoupling warnings;
+  - a per-capability after-failure verdict, with the antifragility rule printed beside it.
+  Nothing is claimed beyond the verdict the evidence supports.
+- **Disagreement reaches the founder.** When qualified intelligences disagree on a check, the mission's single ask now
+  carries every view side by side (method, output digest, preview, dissent, `vote_taken: false`). Before this, the
+  ask said only "every strategy is exhausted" (`missions.disagreement`).
+
+### Section 13 attack map
+
+INTEGRATED means the attack runs through a signed mission on a real body (Gate, journal, sensors, appraisal).
+COMPONENT means it runs against the real module, with a real ledger where it has one, but not through one signed
+mission. Three attacks were added this increment; the rest existed and were located, not rewritten.
+
+| Attack class | Test(s) | Level |
+|---|---|---|
+| Compromised or lying cognitive provider | `test_greg_adversarial_machine::test_lying_solver_is_caught_by_the_independent_profit_dp`; `test_greg_recombine::test_a_lying_engine_is_caught_through_the_construction_and_both_are_replaced`; `test_greg_missions::test_genesis_rejects_a_lying_tool_and_escalates` | INTEGRATED |
+| Conflicting outputs from two qualified intelligences | **new** `test_greg_adversarial_machine::test_two_qualified_intelligences_that_disagree_are_shown_side_by_side_never_voted` | INTEGRATED |
+| Malicious page and prompt injection | **new** `test_greg_confined_egress::test_a_malicious_page_fetched_by_a_mission_stays_data`; `test_greg_adversarial_machine::test_prompt_injection_in_sources_stays_data` | INTEGRATED (page fetched by `http.get`; GREG's computer-use browser is not exercised) |
+| Worker modifying its acceptance criteria | `test_greg_workers::test_no_test_change_means_no_acceptance`, `test_appraisal_binds_acceptance_to_the_original_commission`, `test_a_change_to_a_protected_surface_is_never_accepted` | COMPONENT (worker appraisal on a real git clone) |
+| Crash during an unknown external outcome | `test_greg_capabilities::test_crash_after_dispatch_is_uncertain_and_receipts_are_reused`; `test_greg_local_mission::test_lost_host_claim_requires_reconciliation`; `test_greg_first_mission::test_crash_after_survey_resumes_without_repeating_a_completed_step` | INTEGRATED |
+| Duplicate payment or publication | `test_greg_adversarial_machine::test_duplicate_fixture_order_does_not_double_book`; `test_greg_community_journeys::test_journeys_measure_sequences_separate_tiers_and_refuse_duplicate_money` | INTEGRATED (FIXTURE) |
+| Stale community state overwriting a recent event | `test_greg_community_journeys::test_future_or_stale_events_do_not_produce_conversion_or_routing`; `test_egregore_runtime::test_conflicting_source_event_is_retained_then_refused` | COMPONENT |
+| Forged or selectively disclosed evidence package | `test_cognition_disclosure::test_tampering_is_detected_on_the_recipient_side`, `test_a_disagreeing_receipt_over_the_same_input_cannot_be_left_out` | COMPONENT (over real retained receipts) |
+| Revoked capability reused after restart | `test_greg_adversarial_machine::test_revoked_engine_is_not_reused_after_restart` | INTEGRATED |
+| Loss of a vendor, API, network or node | **new** `test_greg_confined_egress::test_network_loss_is_an_unmeasured_world_not_a_failed_goal_and_recovery_needs_no_founder`, `test_sustained_network_loss_escalates_once_instead_of_looping`; `test_greg_models::test_genesis_builds_through_whichever_vendor_is_up_and_records_route_health`; `test_greg_ollama::test_local_model_refusal_is_terminal_and_outage_can_fail_over`; `test_greg_cognition_process::test_cli_composition_survives_sigkill_without_duplicate_computation` | INTEGRATED (network, node); COMPONENT (model vendor) |
+| Profitable action that violates participant rights | `test_lawful_leverage::test_consent_harm_vector_consequence_and_path_are_gates_before_estimation`, `test_a_surface_that_names_third_parties_needs_consent_covering_every_one`; `test_institutional_leverage::test_do_nothing_wins_over_net_harm` | COMPONENT |
+| Local metric improving while the institution degrades | `test_greg_resilience::test_a_local_metric_rising_while_the_system_degrades_is_flagged` (now also a Mission Control warning) | COMPONENT (over a real journal) |
+| Duplicate Kernel, hidden escalation, unapproved activation | `test_greg_cognition::test_no_profile_creates_a_second_authority_or_changes_legacy_digests`; `test_greg_gravity::test_a_sensed_situation_cannot_widen_authority`; `test_greg_recombine::test_without_auto_attach_greg_constructs_nothing_into_service`; `test_greg_adversarial_machine::test_a_paid_worker_outside_the_signed_envelope_never_runs` | INTEGRATED |
+| Interrupted capability construction or self-repair | **new** `test_greg_adversarial_machine::test_an_interrupted_capability_construction_resumes_once_and_serves_nothing_half_built` (process death before and after the attach is journaled); `test_greg_self_repair::test_tampered_capability_is_reformed_after_restart_instead_of_crash_looping` | INTEGRATED (construction); restart only (self-repair) |
+
+What the new attacks showed:
+
+- **Network loss.** A lost network is an unmeasured world, not a failed goal. GREG backs off, takes no action on what
+  it could not measure, and closes on its own when the upstream returns. Both facts appear in the egress journal
+  (UPSTREAM_FAILED, then ALLOWED). If the loss persists it asks once (SENSOR_FAILURE) instead of looping.
+- **Two disagreeing intelligences.** GREG keeps both receipts, takes no vote, cannot close, and asks once. The defect
+  this attack found was that the ask hid the disagreement; it is now fixed.
+- **Interrupted construction.** After process death, a new process finishes the construction exactly once. That
+  means one registration and one attach. The dead process served no answer, and the original mission resumes and
+  closes with certified answers.
+
+### Router disposition (#165, #170)
+
+`capabilities/router.py` arrived on main in #165 and was labelled non-canonical in #170
+(`INTENT-20261014-competency-compiler`).
+
+- Nothing calls it on this branch either.
+- This branch carries the #143 seed-genome lineage. Its Competency Compiler is `greg/cognition/compiler.py`, reached
+  through `cognition.solve` on the mission path.
+- Disposition: RETAIN_AS_EVIDENCE, with no second compiler wired in. Absorbing its hardening invariants (aggregate
+  budget, fewest-mechanism cover, immutable calibration, ledger-before-state) or retiring it remains the founder's
+  decision named in that intent's review trigger.
+
+### Negative evidence and open items (increment 3)
+
+- **A once-only HTTP test failure.** The HTTP First Mission test failed once, in a combined run, at its eight-tick
+  bound. Four later runs passed. The bound is now twelve, and the test asserts the state, so a recurrence names
+  itself. The cause was not found and may share one with the earlier unreproduced BLOCKED run.
+- **Disagreement detection is narrow.** It reads a composition's metaconsensus. Two strategies on different
+  capabilities that disagree without a composition are not compared; each check is still judged by its own sensor.
+- **Coverage gaps.** Five attack classes are covered at component level only. No test kills the process in the
+  middle of a self-repair. The malicious-page attack uses `http.get`, not GREG's computer-use browser.
+- **Measures.** #26 stays PARTIAL: `github.pulls`, the browser capabilities and coding workers are not launched
+  through the relay. #9 and #10 stay PARTIAL pending the founder's host decision. VEPMC is 0.

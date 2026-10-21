@@ -41,6 +41,7 @@ class ActionOutcome:
     receipt_hash: str | None = None
     grant_id: str | None = None
     cost_usd: float = 0.0
+    failure_class: str | None = None     # typed where a capability failure was raised (CapabilityError)
 
 
 class AuthorityOffice:
@@ -168,7 +169,7 @@ class AuthorityOffice:
                                                 cognition_budget=window))
             except CapabilityError as exc:
                 return {"observed_outcome": "capability refused: " + str(exc)[:300], "result_class": "negative",
-                        "output": None, "validation_status": "self_reported"}
+                        "failure_class": exc.failure_class, "output": None, "validation_status": "self_reported"}
             return {"observed_outcome": expected_outcome, "result_class": "positive",
                     "output": bounded(output), "validation_status": "self_reported"}
 
@@ -182,7 +183,8 @@ class AuthorityOffice:
             result = receipt.payload["result"]
             if result.get("result_class") != "positive":
                 return ActionOutcome("REFUSED", [result.get("observed_outcome", "capability failed")],
-                                     receipt_hash=record.receipt_hash, grant_id=grant["grant_id"], **base)
+                                     receipt_hash=record.receipt_hash, grant_id=grant["grant_id"],
+                                     failure_class=result.get("failure_class"), **base)
             return ActionOutcome("DONE", [], output=result.get("output"), receipt_hash=record.receipt_hash,
                                  grant_id=grant["grant_id"], cost_usd=cost_usd, **base)
         if record.state == "reconciliation_required":

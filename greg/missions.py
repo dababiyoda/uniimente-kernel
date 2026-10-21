@@ -1030,9 +1030,11 @@ class MissionEngine:
         return InvocationContext(workspace=self.workspace_root / m.mission_id.replace(":", "_"),
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
-                                 # ledger access: memory, artifacts, cognition and the body's own records; the organ bridge
-                                 # that renders the Mind's receipts into a memo gets a reader that cannot write
-                                 journal=self._ledger_reader() if manifest.capability_id == "venture.assess"
+                                 # ledger access: memory, artifacts, cognition and the body's own records; the organ
+                                 # bridges that render or check the Mind's receipts (the venture memo, DALEOBANKS's
+                                 # claim-by-claim verify) get a reader that cannot write
+                                 journal=self._ledger_reader() if manifest.capability_id in ("venture.assess",
+                                                                                             "daleobanks.verify")
                                  else self.journal if manifest.capability_id in ("memory.precedents", "daleobanks.outcome")
                                  or manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.",
                                                                        "organ.", "foundry.")) else None,

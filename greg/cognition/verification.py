@@ -172,6 +172,30 @@ def _native_numeric_checks(family, data, answer):
         dissent.append(str(exc))
     return checks, dissent
 
+def _restatement_gaps(claim: str, support: list) -> tuple[bool, bool]:
+    """(a figure of the claim is absent from its supporting spans, the claim's polarity differs from theirs)."""
+    def numbers(text):
+        out, token = set(), ""
+        for ch in text.replace(" percent", "%").replace(" per cent", "%") + " ":
+            if ch.isdigit() or (token and ch in ",.%"):
+                token += ch
+            elif token:
+                out.add(token.replace(",", "").rstrip(".,"))
+                token = ""
+        return {n for n in out if n and n[0].isdigit()}
+
+    def negative(text):
+        words = ["".join(ch for ch in w.lower() if ch.isalpha() or ch == "'") for w in text.split()]
+        return any(w in ("not", "no", "never", "none", "nor", "neither", "without", "nobody", "nothing", "cannot")
+                   or w.endswith("n't") for w in words)
+    spans = " ".join(support)
+    # Spans that spell a number out ("twelve percent") are left to the solver's reading; this recheck reads digits.
+    spelled = any(w.strip(".,;:").lower() in ("two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+                                              "eleven", "twelve", "twenty", "thirty", "forty", "fifty", "hundred")
+                  for w in spans.split())
+    return (not spelled and bool(numbers(claim) - numbers(spans))), negative(claim) != negative(spans)
+
+
 def verify(family, data, answer, proof_class):
     checks, dissent, cross = {}, [], {}
     from .catalog import FAMILIES, NATIVE_QUALIFIED
@@ -221,6 +245,7 @@ def verify(family, data, answer, proof_class):
         checks["artifact_sources_match_input"] = artifact["sources"] == [{k:v for k,v in s.items() if k != "text"} for s in data["sources"]]
         checks["artifact_bindings_match_input"] = artifact["bindings"] == data["bindings"]
         checks["artifact_contradictions_match_input"] = artifact["contradictions"] == [b for b in data["bindings"] if b["relationship"] == "contradicts"]
+        checks["artifact_distortions_match_output"] = artifact.get("distortions") == output.get("distortions")
     if family == "exact" and "polynomial" not in data:
         # A separately parsed Decimal evaluator attacks the Fraction solver.
         import ast
@@ -353,6 +378,14 @@ def verify(family, data, answer, proof_class):
         checks["fresh_sources"] = all(datetime.fromisoformat(s["expires_at"].replace("Z", "+00:00")) > datetime.now(timezone.utc) for s in sources.values())
         checks["span_binding"] = all(b["source_id"] in sources and b["quote"] in sources[b["source_id"]]["text"] for b in data["bindings"])
         checks["contradiction_preserved"] = output["contested"] == any(b["relationship"] == "contradicts" for b in data["bindings"])
+        # Written apart from the solver's tokenizer: a restatement whose figures or polarity differ from its supporting
+        # spans may not be reported as unchanged.
+        support = [b["quote"] for b in data["bindings"] if b["relationship"] == "supports"]
+        if support:
+            reported = {c["class"] for c in output.get("distortions") or []}
+            figure_gap, polarity_gap = _restatement_gaps(data["claim"], support)
+            checks["restatement_rechecked"] = (not figure_gap or "figure" in reported) and \
+                (not polarity_gap or "negation" in reported)
         dissent.append("Declared provenance/quality need separate authentication; quote binding does not prove entailment.")
     elif family == "robust_pattern":
         # Recompute the median and MAD with the standard library and re-derive every flag.

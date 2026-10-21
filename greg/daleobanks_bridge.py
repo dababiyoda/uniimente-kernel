@@ -19,7 +19,10 @@ through tweepy). Every attempt is decided and journaled at the relay; without na
 nothing runs.
 
 Capabilities:
-  ``daleobanks.verify``   read_only sensor: DALEOBANKS content checks + GREG claim/source binding
+  ``daleobanks.verify``   read_only sensor: DALEOBANKS content checks + GREG claim/source binding. Given
+                          ``cognition`` (claim name -> problem id), every sentence of the draft must be a claim
+                          that GREG's evidence family answered as written: bound to a supporting span and showing
+                          none of the six detected kinds of change (directive section 16, the media case).
   ``daleobanks.publish``  external_contact: one publish request through DALEOBANKS's gate
   ``daleobanks.outcome``  read_only sensor: projection of this mission's canonical publish receipts
 """
@@ -127,6 +130,32 @@ def _unsupported_numbers(draft: str, source: str) -> list[str]:
     return sorted({n for n in NUMBER.findall(draft) if n.rstrip(".,").replace(",", "") not in normalized})
 
 
+def truth_preservation(text: str, receipts: dict) -> tuple[dict, list[str]]:
+    """The draft against the Mind's restatement receipts: each sentence a claim answered as written."""
+    findings, rest, distortions = [], text, []
+    for name, receipt in receipts.items():
+        claim = (receipt.get("output") or {}).get("claim") or ""
+        if receipt.get("method") != "cognition.evidence":
+            findings.append(f"claim {name}: receipt is from {receipt.get('method')}, not the evidence family")
+            continue
+        if not claim or claim not in rest:
+            findings.append(f"claim {name}: not a sentence of this draft")
+            continue
+        rest = rest.replace(claim, " ", 1)
+        changed = (receipt.get("output") or {}).get("distortions") or []
+        distortions += [{"claim": name, **c} for c in changed]
+        if receipt.get("abstention_state") != "NONE":
+            why = "; ".join(receipt.get("missing_information") or []) or receipt.get("abstention_state")
+            findings.append(f"claim {name} is not supported as written: {why}"[:400])
+    uncovered = " ".join(rest.split())
+    if any(ch.isalnum() for ch in uncovered):
+        findings.append(f"draft text no receipt covers: {uncovered[:200]!r}")
+    return {"checked": True, "claims": len(receipts), "distortions": distortions,
+            "receipts": {k: r.get("receipt_id") for k, r in receipts.items()},
+            "limits": "each claim is span-bound and shows none of the six detected kinds of change; that is not "
+                      "entailment, factual accuracy or acceptance"}, findings
+
+
 def verify(params: dict, ctx: InvocationContext) -> dict:
     """``daleobanks.verify``: DALEOBANKS's content checks + claim/source binding, read-only."""
     draft = _draft(params, ctx)
@@ -148,9 +177,14 @@ def verify(params: dict, ctx: InvocationContext) -> dict:
         findings.append("DALEOBANKS Critic blocking: " + "; ".join(checks["critic"]["blocking_issues"])[:300])
     if float(checks["firewall"].get("risk", 0)) >= 0.5:
         findings.append(f"DALEOBANKS PromptFirewall risk {checks['firewall']['risk']}: {checks['firewall'].get('patterns')}")
+    truth = {"checked": False, "limits": "figures against the source only: no sentence was checked as written"}
+    if params.get("cognition"):
+        from greg.ventures import cognition_receipts
+        truth, problems = truth_preservation(text, cognition_receipts(ctx, params["cognition"]))
+        findings += problems
     return {"present": True, "verdict": "VERIFIED" if not findings else "REJECTED", "findings": findings,
             "draft_sha256": "sha256:" + hashlib.sha256(text.encode()).hexdigest(), "chars": len(text.strip()),
-            "daleobanks": checks, "authority_created": False}
+            "daleobanks": checks, "truth_preservation": truth, "authority_created": False}
 
 
 def publish(params: dict, ctx: InvocationContext) -> dict:

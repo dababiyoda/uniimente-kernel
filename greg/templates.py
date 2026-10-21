@@ -577,6 +577,64 @@ def daleobanks_post(*, daleobanks_root: str, source: str, brief: str, order: str
     }
 
 
+def daleobanks_paraphrase(*, daleobanks_root: str, source: str, draft: str, claims: list,
+                          quality: str = "unverified", python: str | None = None, content_type: str = "reply",
+                          max_chars: int = 600, horizon_days: float = 2, founder_expression: str | None = None) -> dict:
+    """Media case (directive section 16): a DALEOBANKS draft that restates a source, checked claim by claim.
+
+    ``claims`` lists each sentence of the draft with the exact source spans that support it:
+    ``[{"text": sentence, "quotes": [span, ...]}]``. GREG's evidence family answers each claim first
+    (``cognition.solve``, read-only): bound to its spans and showing none of the six detected kinds of change
+    (figures, negation, certainty, scope, direction, named terms). DALEOBANKS's verify then runs its own content
+    checks and requires every sentence of the draft to be a claim the Mind answered as written. Consequence-inert:
+    the light cone holds no publish capability, so nothing can be posted from this mission.
+    """
+    import hashlib
+    from greg.cognition.contracts import digest
+    source_path = Path(source).expanduser().resolve()
+    root = str(Path(daleobanks_root).expanduser().resolve())
+    text = source_path.read_text(encoding="utf-8")
+    thread = hashlib.sha256(Path(draft).expanduser().resolve().read_bytes()).hexdigest()[:12]
+    src = {"id": "source", "text": text, "digest": digest(text), "quality": quality, "expires_at": _horizon(horizon_days),
+           "provenance": f"{source_path} sha256:{hashlib.sha256(text.encode()).hexdigest()}"}
+    ids, checks, strategies = {}, [], []
+    for i, claim in enumerate(claims, 1):
+        if not claim.get("quotes"):
+            raise ValueError(f"claim {i} has no supporting span; every sentence must cite the source")
+        ids[f"c{i}"] = f"media-claim-{thread}-{i}"
+        step = {"capability": "cognition.solve", "target": f"cognition:{ids[f'c{i}']}",
+                "params": {"problem_id": ids[f"c{i}"], "operation": "bind_evidence",
+                           "data": {"claim": claim["text"], "sources": [src],
+                                    "bindings": [{"source_id": "source", "quote": q, "relationship": "supports"}
+                                                 for q in claim["quotes"]]}}}
+        checks.append({"check_id": f"claim_{i}_checked", "description": f"GREG's evidence receipt for claim {i}",
+                       "sensor": step, "predicate": {"op": "equals", "field": "authority_created", "value": False}})
+        strategies.append({"action_id": f"claim-{i}-receipt", **step, "advances": [f"claim_{i}_checked"],
+                           "rationale": "bind the claim to its spans and check what it changes; an abstention is a "
+                                        "truthful answer, not a failure"})
+    verify = {"capability": "daleobanks.verify", "target": "daleobanks:verify",
+              "params": {"daleobanks_root": root, "draft": str(Path(draft).expanduser().resolve()),
+                         "source": str(source_path), "max_chars": max_chars, "content_type": content_type,
+                         "cognition": ids, **({"python": python} if python else {})}}
+    checks.append({"check_id": "paraphrase_verified",
+                   "description": "DALEOBANKS's checks pass and every sentence is a claim answered as written",
+                   "sensor": verify, "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}})
+    strategies.append({"action_id": "verify-paraphrase", **verify, "advances": ["paraphrase_verified"],
+                       "requires": [c["check_id"] for c in checks[:-1]],
+                       "rationale": "DALEOBANKS's own content checks over a draft whose claims GREG has answered"})
+    return {
+        "mission_id": f"m:paraphrase-{thread}",
+        "founder_expression": founder_expression or "DALEOBANKS restates a source without changing what it says",
+        "intended_effect": "a draft that restates its source is checked claim by claim against it; a sentence that "
+                           "changes a figure, a negation, a hedge, a scope, a direction or a name is held back",
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": checks, "strategies": strategies,
+        "light_cone": {"capabilities": ["cognition.solve", "daleobanks.verify", "fs.read"],
+                       "targets": ["cognition:*", "daleobanks:verify"], "max_consequence_class": "read_only",
+                       "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+
+
 def research_post(*, url: str, steps: list[dict], session: str, expect: dict, daleobanks_root: str, brief: str,
                   order: str, workspace_root: Path, budget_usd: float = 2.0, max_chars: int = 280,
                   horizon_days: float = 2, founder_expression: str | None = None, on_challenge: str = "stop") -> dict:

@@ -266,7 +266,7 @@ Re-issued 2026-10-13 ([lineage](intent/sources/GREG-SEED-GENOME-DIRECTIVE-REISSU
 - **§13 and §15:** the verifier cross-checks and evidence-backed legitimacy in #161.
 - **§12:** (superseded 2026-10-14, kept as written: "wiring the budget controller into a runtime optional step is deferred until the next freeze, because the frozen evaluations pin `cortex.py`.") A thinking-budget controller now governs the compile path. One declared `latency_budget` covers the answer, the premises check and every sensitivity re-run, where each run had previously been handed the whole budget. Required steps are never priced away; an exhausted budget narrows the result. An optional re-run starts only when the slowest measured step fits. Every run and stop is kept with its reason, and cortex receipts record measured CPU seconds. The earlier deferral was wrong: frozen evaluations run at their freeze commits, so changing `cortex.py` on a branch alters no recorded result.
 
-Repeated byte-identically 2026-10-14T04:59:45Z (same whole-message SHA-256, `ee71d7de…`). Repetition adds no authority; it was applied by closing §12.
+Repeated byte-identically 2026-10-14T04:59:45Z (same whole-message SHA-256, `ee71d7de…`). Repetition adds no authority; it was applied by closing §12. Repeated byte-identically a third time 2026-10-15T12:21:07Z; applied by closing §16's media case: a DALEOBANKS paraphrase is checked claim by claim against its source, and a sentence that changes a figure, a negation, a hedge, a scope, a direction or a name is held back (`tests/evidence/media-case-convergence-2026-10-15/`).
 
 Evidence: `tests/evidence/seed-genome-residuals-2026-10-13/`. Authority delta: none. VEPMC: 0.
 

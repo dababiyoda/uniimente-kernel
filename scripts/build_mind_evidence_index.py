@@ -141,7 +141,7 @@ ERRATA = {
 }
 
 
-def _measured_code(family: str, commit: str | None) -> dict | None:
+def _measured_code(family: str, commit: str | None, runtime: dict | None = None) -> dict | None:
     """The family's solver as its run dispatched it: the function ``SOLVERS`` bound the family to at the run's
     source commit (resolved statically, review of #179 B1), the digest of that function's source then, and the
     digest of its static dependency closure then (greg.cognition.code_binding). A positive verdict is bound to that
@@ -157,6 +157,11 @@ def _measured_code(family: str, commit: str | None) -> dict | None:
     if commit:
         read = at_commit(commit)
         then = dispatch("greg/cognition/solvers.py", "SOLVERS", family, read)
+        if then is not None and runtime and (runtime.get("path"), runtime.get("function")) == (
+                then.get("path"), then.get("function")):
+            # the run recorded the function SOLVERS held at runtime and it agrees with the static binding: a
+            # non-literal update elsewhere in the table did not rebind this key (round-2 review of #179, N4)
+            then = {**then, "verified_at_runtime": True}
         code["dispatched"] = then
         if then is None or then.get("function") is None:
             return code                    # the run's dispatch cannot be resolved: nothing positive is bound
@@ -167,6 +172,7 @@ def _measured_code(family: str, commit: str | None) -> dict | None:
         measured = closure(then["path"], then["function"], read)              # the executable closure measured
         if measured is not None:
             code["closure_sha256"], code["closure_members"] = measured["sha256"], measured["members"]
+            code["closure_unresolved"] = measured.get("unresolved", [])
     return code
 
 
@@ -329,7 +335,8 @@ def build() -> dict:
                                            "competitor": row.get("competitor"), "baseline": row.get("baseline"),
                                            # the solver code this verdict measured (greg.cognition.compiler
                                            # .operation_status routes a positive verdict only on that code)
-                                           "code": _measured_code(family, data.get("source_commit"))}
+                                           "code": _measured_code(family, data.get("source_commit"),
+                                                                  (data.get("solver_closures") or {}).get(family))}
     return index
 
 

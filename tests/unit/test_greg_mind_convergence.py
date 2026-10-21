@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import ast
 import hashlib
+import json
 from pathlib import Path
 import subprocess
 
@@ -51,6 +52,40 @@ def _imports_module(path: Path, module: str) -> bool:
     return False
 
 
+def _fold(node: ast.AST) -> str | None:
+    """The string a constant expression evaluates to, or None: concatenation, f-strings of constants and
+    ``"sep".join`` / ``"...".format`` of constant arguments. No code is evaluated."""
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        left, right = _fold(node.left), _fold(node.right)
+        return left + right if left is not None and right is not None else None
+    if isinstance(node, ast.JoinedStr):
+        parts = [_fold(v.value if isinstance(v, ast.FormattedValue) else v) for v in node.values]
+        return "".join(parts) if all(p is not None for p in parts) else None
+    if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr in ("join", "format"):
+        base = _fold(node.func.value)
+        if base is None:
+            return None
+        if node.func.attr == "join" and len(node.args) == 1 and isinstance(node.args[0], (ast.List, ast.Tuple)):
+            items = [_fold(e) for e in node.args[0].elts]
+            return base.join(items) if all(i is not None for i in items) else None
+        if node.func.attr == "format" and not node.keywords:
+            items = [_fold(a) for a in node.args]
+            if all(i is not None for i in items):
+                try:
+                    return base.format(*items)
+                except (IndexError, KeyError, ValueError):
+                    return None
+    return None
+
+
+def _folded_strings(tree: ast.AST) -> set[str]:
+    """Every string a constant expression in ``tree`` folds to (round-2 review of #179, L7: a split literal escaped
+    the textual scan)."""
+    return {v for node in ast.walk(tree) if (v := _fold(node)) is not None}
+
+
 def test_one_evolution_controller_is_reachable_from_runtime():
     """greg.cognition.evolution is the controller; the #155 routing-genome mechanism is an isolated alternative
     imported only by its historical runner (and its own tests)."""
@@ -67,6 +102,9 @@ def test_one_evolution_controller_is_reachable_from_runtime():
     named = sorted(str(p.relative_to(ROOT)) for p in sources
                    if "evolution_routing" in p.read_text(errors="replace") and str(p.relative_to(ROOT)) not in allowed)
     assert named == [], named
+    folded = sorted(str(p.relative_to(ROOT)) for p in sources if str(p.relative_to(ROOT)) not in allowed
+                    and any("evolution_routing" in v for v in _folded_strings(ast.parse(p.read_text(errors="ignore")))))
+    assert folded == [], folded
     if "evolution_routing" in (ROOT / "greg/cognition/genome_library.py").read_text():
         tree = ast.parse((ROOT / "greg/cognition/genome_library.py").read_text())
         calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call) and "import" in ast.unparse(n.func)]
@@ -817,13 +855,15 @@ def test_a_rebuilt_index_never_binds_a_function_its_run_did_not_call(monkeypatch
                   if s["path"] == record["evidence"].partition("#")[0])
     if subprocess.run(["git", "cat-file", "-e", f"{commit}^{{commit}}"], cwd=ROOT, capture_output=True).returncode:
         pytest.skip("the measuring commit is not in this clone")
-    honest = B._measured_code("control", commit)
+    runtime = (json.loads((ROOT / record["evidence"].partition("#")[0]).read_text()).get("solver_closures")
+               or {}).get("control")                                  # the run's recorded runtime dispatch (N4)
+    honest = B._measured_code("control", commit, runtime)
     assert honest["function"] == "control" and C.operation_status("control", {**record, "code": honest})[0] == \
         "DEFAULT_FOR_GEOMETRY"
     monkeypatch.setitem(solvers.SOLVERS, "control", solvers.SOLVERS["graph"])        # a later re-pointing
     C.solver_code.cache_clear()
     try:
-        rebuilt = B._measured_code("control", commit)
+        rebuilt = B._measured_code("control", commit, runtime)
         status, why = C.operation_status("control", {**record, "code": rebuilt})
     finally:
         monkeypatch.undo()
@@ -902,4 +942,141 @@ def test_collective_organs_and_derived_chains_read_one_status_on_every_surface()
     assert entries["composition.derived"].admission == "EXPERIMENTAL"
     assert "routes UNEVALUATED" in entries["composition.derived"].detail
     assert lib.admitted_by_provenance()["counts"]["organ_label"] == 0
+
+
+# ---------------------------------------------------------------- round-2 review of PR #179 (N4, N5)
+N4_CASES = {
+    "nested scope shadowing": ({"pkg/__init__.py": "", "pkg/a.py": "def scale(x):\n    return 2 * x\n\n"
+                                "def f(x):\n    def g(scale):\n        return scale\n    return scale(x) + g(1)\n"},
+                               ("pkg/a.py", "return 2 * x", "return 3 * x")),
+    "comprehension shadowing": ({"pkg/__init__.py": "", "pkg/a.py": "def scale(x):\n    return 2 * x\n\n"
+                                 "def f(xs):\n    ys = [scale for scale in xs]\n    return scale(len(ys))\n"},
+                                ("pkg/a.py", "return 2 * x", "return 3 * x")),
+    "helper inside top-level try": ({"pkg/__init__.py": "", "pkg/a.py": "try:\n    import json\n"
+                                     "    def helper(x):\n        return x + 1\nexcept ImportError:\n"
+                                     "    def helper(x):\n        return x\n\ndef f(x):\n    return helper(x)\n"},
+                                    ("pkg/a.py", "return x + 1", "return x + 2")),
+    "helper inside top-level if": ({"pkg/__init__.py": "", "pkg/a.py": "import sys\nif sys.version_info >= (3,):\n"
+                                    "    LIMIT = 5\nelse:\n    LIMIT = 6\n\ndef f(x):\n    return min(x, LIMIT)\n"},
+                                   ("pkg/a.py", "LIMIT = 5", "LIMIT = 7")),
+    "top-level for mutation": ({"pkg/__init__.py": "", "pkg/a.py": "T = {'a': 1}\nfor k in ('b',):\n    T[k] = 2\n\n"
+                                "def f(k):\n    return T[k]\n"}, ("pkg/a.py", "T[k] = 2", "T[k] = 3")),
+    "top-level del mutation": ({"pkg/__init__.py": "", "pkg/a.py": "T = {'a': 1, 'b': 2}\ndel T['b']\n\n"
+                                "def f(k):\n    return T.get(k)\n"}, ("pkg/a.py", "del T['b']", "del T['a']")),
+    "star import": ({"pkg/__init__.py": "", "pkg/b.py": "def helper(x):\n    return x + 1\n",
+                     "pkg/a.py": "from pkg.b import *\n\ndef f(x):\n    return helper(x)\n"},
+                    ("pkg/b.py", "return x + 1", "return x + 2")),
+    "import_module constant": ({"pkg/__init__.py": "", "pkg/b.py": "def helper(x):\n    return x + 1\n",
+                                "pkg/a.py": "import importlib\n\ndef f(x):\n"
+                                            "    m = importlib.import_module('pkg.b')\n    return m.helper(x)\n"},
+                               ("pkg/b.py", "return x + 1", "return x + 2")),
+}
+
+
+@pytest.mark.parametrize("case", sorted(N4_CASES))
+def test_each_round_two_closure_gap_now_changes_the_digest(case):
+    """N4: nested-scope and comprehension shadowing, helpers and constants inside top-level try/if, top-level
+    for/del mutation, star imports and constant import_module left the digest unchanged under a behaviour edit."""
+    from greg.cognition.code_binding import closure
+    files, (path, old, new) = N4_CASES[case]
+    mutated = {**files, path: files[path].replace(old, new, 1)}
+    assert mutated[path] != files[path]
+    before, after = closure("pkg/a.py", "f", files.get), closure("pkg/a.py", "f", mutated.get)
+    assert before is not None and before["sha256"] != after["sha256"], (case, before["members"])
+    assert before["unresolved"] == [], case
+
+
+def test_a_dynamic_import_or_a_non_literal_dispatch_update_binds_nothing_positive():
+    """N4: a non-constant import_module and a comprehension-rebuilt dispatch table cannot be followed statically;
+    a positive verdict bound to either routes as UNEVALUATED with the reason."""
+    import copy
+    from greg.cognition import compiler as C
+    from greg.cognition.code_binding import closure, dispatch
+    files = {"pkg/__init__.py": "", "pkg/a.py": "import importlib\n\ndef f(x, name):\n"
+                                                 "    return importlib.import_module(name).helper(x)\n"}
+    assert closure("pkg/a.py", "f", files.get)["unresolved"]
+    table = {"pkg/__init__.py": "", "pkg/s.py": "def a():\n    return 1\n\ndef b():\n    return 2\n\n"
+                                                "T = {'k': a}\nT.update({k: b for k in ('k',)})\n"}
+    assert dispatch("pkg/s.py", "T", "k", table.get)["unresolved_updates"] == 1
+    index = C.evidence_index()
+    positive = next(f for f, r in index["operations"].items()
+                    if C.operation_status(f, r)[0] in ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY"))
+    row = copy.deepcopy(index["operations"][positive])
+    assert row["code"]["dispatched"].get("verified_at_runtime") is True   # the v3 run recorded its runtime dispatch
+    row["code"]["dispatched"] = {**row["code"]["dispatched"], "unresolved_updates": 1}
+    assert C.operation_status(positive, row)[0] in ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY")
+    row["code"]["dispatched"].pop("verified_at_runtime")                # a run with no runtime record
+    status, why = C.operation_status(positive, row)
+    assert status == "UNEVALUATED" and "non-literal update" in why
+    row = copy.deepcopy(index["operations"][positive])
+    row["code"]["closure_unresolved"] = ["pkg/a.py::f: dynamic import with a non-constant module name"]
+    status, why = C.operation_status(positive, row)
+    assert status == "UNEVALUATED" and "dynamic import" in why
+
+
+def test_a_recipe_binds_the_function_its_run_called_and_stops_at_cortex_reason(monkeypatch):
+    """N5: recipe_code resolved the function from today's OPERATION_RECIPES (re-pointing bound a function the run
+    never called), and its closure reached through cortex.reason into the compiler (568 members; a docstring edit in
+    code_binding staled an honest verdict). It now resolves at the measured tree and stops at the boundary."""
+    from greg.cognition import code_binding as CB
+    from greg.cognition import compiler as C
+    from greg.cognition import composition
+    now = C.recipe_code("forecast_then_staff")
+    assert now["function"].endswith("::_forecast_then_staff")
+    assert not any(k.startswith(("greg/cognition/compiler.py", "greg/cognition/code_binding.py"))
+                   for k in now["closure_members"])
+    assert set(C.RECIPE_BOUNDARY) & set(now["closure_members"])           # hashed, not followed
+    monkeypatch.setitem(composition.OPERATION_RECIPES, "forecast_then_staff", composition.OPERATION_RECIPES[
+        "track_then_staff"])                                             # a later in-memory re-pointing
+    assert C.recipe_code("forecast_then_staff")["function"] == now["function"]   # the tree decides, not the dict
+
+    def edited(path):
+        text = CB.working_tree(path)
+        if path == "greg/cognition/code_binding.py":
+            text = text.replace('def working_tree(path: str) -> str | None:\n',
+                                'def working_tree(path: str) -> str | None:\n    """A docstring edit."""\n', 1)
+        return text
+    assert C.recipe_code("forecast_then_staff", edited)["closure_sha256"] == now["closure_sha256"]
+
+
+def test_a_synthetic_retain_record_changes_no_shipped_configuration(tmp_path):
+    """L9 (round-2 review: the cited test did not exist). P8 only proposes: a RETAIN record written through P8's own
+    record path changes no shipped default configuration, and no runtime module applies a P8 proposal."""
+    import importlib
+    from greg.cognition import evolution
+    before = {name: copy_of(module, constant) for name, (module, constant) in P8_SHIPPED.items()}
+    target = evolution.cr_target()
+    candidate = {**target.incumbent, **{k: v for k, v in list(target.incumbent.items())[:1]}}
+    record = {"decision": "RETAIN", "incumbent": {"id": evolution.config_id(target.incumbent)},
+              "proposal": {"state": "PROPOSED_NOT_APPLIED", "change": {
+                  "module": "greg.cognition.genomes.developmental", "constant": "CR_DEFAULT_CONFIG",
+                  "from": target.incumbent, "to": {**candidate, "synthetic": True}}}}
+    shipped = {m: hashlib.sha256(Path(importlib.import_module(m).__file__).read_bytes()).hexdigest()
+               for m, _ in P8_SHIPPED.values()}
+    written = evolution._finish(record, tmp_path / "cycle-synthetic.json")
+    assert written["authority_created"] is False and (tmp_path / "cycle-synthetic.json").exists()
+    sources = shipped
+    assert {name: copy_of(module, constant) for name, (module, constant) in P8_SHIPPED.items()} == before
+    assert sources == {m: hashlib.sha256(Path(importlib.import_module(m).__file__).read_bytes()).hexdigest()
+                       for m in sources}                       # the shipped source files are untouched
+    for root in ("greg", "cortex", "foundry"):                     # nothing applies a proposal at runtime
+        for path in (ROOT / root).rglob("*.py"):
+            text = path.read_text(encoding="utf-8")
+            assert "setattr(" not in text or "PROPOSED_NOT_APPLIED" not in text, path
+            if path.name != "evolution.py":
+                assert "PROPOSED_NOT_APPLIED" not in text, path
+
+
+def copy_of(module: str, constant: str):
+    import copy
+    import importlib
+    return copy.deepcopy(getattr(importlib.import_module(module), constant))
+
+
+def test_a_split_string_literal_naming_the_alternative_controller_is_caught():
+    """L7 residual: ``'greg.cognition.' + 'evolution_' + 'routing'`` passed the textual scan."""
+    for source in ("import importlib\nm = importlib.import_module('greg.cognition.' + 'evolution_' + 'routing')\n",
+                   "name = ''.join(['greg.cognition.', 'evolution_', 'routing'])\n",
+                   "x = 'evolution_'\nname = f'{\"evolution_\"}routing'\n"):
+        assert any("evolution_routing" in v for v in _folded_strings(ast.parse(source))), source
 

@@ -446,6 +446,26 @@ def verify(family, data, answer, proof_class, *, deadline=None):
         trace = artifact.get("trace") or []
         if family == "swarm":                      # the swarm always spends its whole budget
             checks["evaluation_count_matches_method"] = output["evaluations"] == budget
+        elif data["function"] in closed and len(shift) == len(bounds):
+            # differential evolution may stop early, so no closed form gives its count; it is deterministic from the
+            # declared seed, so re-run the declared method on the verifier's own objective (round-2 review, M5)
+            from scipy.optimize import differential_evolution
+            population = int(data.get("population", 10))
+            per_generation = population * len(bounds)
+            spent, found = 0, math.inf
+
+            def counted(z):
+                nonlocal spent, found
+                spent += 1
+                y = closed[data["function"]]([a - b for a, b in zip(list(z), shift)])
+                found = min(found, y)
+                return y
+            if 4 <= population <= 50 and budget >= 2 * per_generation:
+                differential_evolution(counted, bounds, maxiter=budget // per_generation - 1, popsize=population,
+                                       seed=int(data["seed"]), polish=False, tol=0, atol=0, workers=1,
+                                       updating="immediate")
+                checks["evaluation_count_matches_method"] = output["evaluations"] == spent
+                checks["fitness_matches_method"] = math.isclose(found, output["fitness"], rel_tol=1e-9, abs_tol=1e-12)
         if trace:                                  # the last recorded improvement is the reported best
             checks["trace_consistent"] = (math.isclose(trace[-1]["fitness"], output["fitness"], rel_tol=1e-12,
                                                        abs_tol=1e-15)

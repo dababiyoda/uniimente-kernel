@@ -388,7 +388,8 @@ def solver_code(family: str) -> dict | None:
     rel = path.relative_to(ROOT).as_posix()
     bound = closure(rel, fn.__name__)
     return {"path": rel, "function": fn.__name__, "sha256": function_digest(path.read_text(), fn.__name__),
-            "closure_sha256": bound["sha256"] if bound else None, "closure_members": bound["members"] if bound else {}}
+            "closure_sha256": bound["sha256"] if bound else None, "closure_members": bound["members"] if bound else {},
+            "closure_unresolved": bound["unresolved"] if bound else []}
 
 
 def operation_status(family: str, record: dict) -> tuple[str, str | None]:
@@ -413,6 +414,14 @@ def operation_status(family: str, record: dict) -> tuple[str, str | None]:
         # the family now dispatches to another function than the one its run called (review of #179, B1)
         return "UNEVALUATED", (f"{status} was measured on {code.get('path')}::{code.get('function')}; the family now "
                                f"dispatches to {now.get('path')}::{now.get('function')}; needs re-admission")
+    dispatched = code.get("dispatched") or {}
+    unbound = [*([f"{dispatched['unresolved_updates']} non-literal update(s) of the dispatch table at the run's "
+                  "commit, and the run recorded no runtime dispatch that confirms it"]
+                 if dispatched.get("unresolved_updates") and not dispatched.get("verified_at_runtime") else []),
+               *(code.get("closure_unresolved") or []), *(now.get("closure_unresolved") or [])]
+    if measured is not None and unbound:
+        # code the static closure cannot follow binds nothing positive (round-2 review of #179, N4)
+        return "UNEVALUATED", f"{status} cannot be bound to its code: {'; '.join(unbound)}; needs re-admission"
     if measured is None:
         return "UNEVALUATED", (f"{status} is bound to the solver's entry function only "
                                f"({code.get('sha256') or 'not recorded'}), not its dependency closure; "
@@ -425,21 +434,30 @@ def operation_status(family: str, record: dict) -> tuple[str, str | None]:
     return status, None
 
 
+RECIPE_BOUNDARY = frozenset({"greg/cognition/cortex.py::reason", "greg/cognition/bridge.py::reason_cortex"})
+
+
 def recipe_code(recipe: str, read=None) -> dict | None:
     """The executable a recipe verdict measured: the dependency closure of the function that runs the recipe
     (its operation-recipe function, or ``run`` for a template recipe) plus the digest of its RECIPES entry."""
     import hashlib
     import json as _json
     from . import code_binding
-    from .composition import OPERATION_RECIPES, RECIPES
+    from .composition import RECIPES
     read = read or code_binding.working_tree
-    fn = OPERATION_RECIPES.get(recipe)
-    bound = code_binding.closure("greg/cognition/composition.py", fn.__name__ if fn else "run", read)
+    # the function OPERATION_RECIPES bound the recipe to in that tree, never today's (round-2 review, N5 / B1)
+    then = code_binding.dispatch("greg/cognition/composition.py", "OPERATION_RECIPES", recipe, read)
+    function = "run" if then is None else then.get("function")     # no operation recipe then: the template runner
+    if function is None:
+        return None
+    # the stages run through cortex.reason, whose solvers carry their own bindings: hash it, do not follow it
+    bound = code_binding.closure((then or {}).get("path") or "greg/cognition/composition.py", function, read,
+                                 stop=RECIPE_BOUNDARY)
     if bound is None:
         return None
     entry = "sha256:" + hashlib.sha256(_json.dumps(RECIPES.get(recipe), sort_keys=True).encode()).hexdigest()
     return {"function": bound["entry"], "closure_sha256": bound["sha256"], "closure_members": bound["members"],
-            "recipe_entry_sha256": entry}
+            "closure_unresolved": bound["unresolved"], "dispatched": then, "recipe_entry_sha256": entry}
 
 
 @lru_cache(maxsize=None)
@@ -456,6 +474,11 @@ def recipe_stale(recipe: str, verdict: dict) -> str | None:
     if not code.get("closure_sha256"):
         return "the recipe code it measured is not recorded (absent from git at the run's source commit); " \
                "needs re-measurement"
+    unbound = [*code.get("closure_unresolved", []),
+               *([f"{code['dispatched']['unresolved_updates']} non-literal update(s) of OPERATION_RECIPES"]
+                 if (code.get("dispatched") or {}).get("unresolved_updates") else [])]
+    if unbound:
+        return f"the recipe code it measured cannot be bound: {'; '.join(unbound)}; needs re-measurement"
     if code["closure_sha256"] + "|" + code.get("recipe_entry_sha256", "") != _recipe_code_now(recipe):
         return f"measured on recipe code {code['closure_sha256']}; the recipe code has changed; needs re-measurement"
     return None

@@ -197,6 +197,20 @@ def test_crowd_verifier_refutes_a_self_consistent_model_that_claims_non_converge
     assert result["checks"]["em_rerun_matches_model"] is False
 
 
+@pytest.mark.parametrize("function", ["sphere", "rastrigin", "ackley", "rosenbrock", "griewank"])
+def test_blackbox_verifier_refutes_an_under_reported_evaluation_count(function):
+    """M5 residual (round-2 review of #179): differential evolution may stop early, so the count had no check and an
+    under-reported count verified. The verifier re-runs the declared method from its seed on its own objective."""
+    import json
+    data = {"function": function, "shift": [0.3, -0.2, 0.1], "bounds": [[-5, 5]] * 3, "budget": 1200, "seed": 7}
+    answer = json.loads(json.dumps(evolve_blackbox(data, GEOMETRY), default=float))   # as the worker returns it
+    assert verify("blackbox", data, answer, "collective_trace")["verdict"] == "STRUCTURALLY_VERIFIED"
+    forged = deepcopy(answer)
+    forged["output"]["evaluations"] -= answer["output"]["evaluations"] // 4
+    result = verify("blackbox", data, forged, "collective_trace")
+    assert result["verdict"] == "REFUTED" and result["checks"]["evaluation_count_matches_method"] is False
+
+
 def test_robust_pattern_verifier_rederives_flags_when_mad_is_zero():
     """M4: with MAD == 0 the flag check was skipped, so an empty or wrong anomaly list verified."""
     data = {"observations": [0] * 9 + [50, -40, 0.1]}

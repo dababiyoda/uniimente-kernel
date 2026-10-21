@@ -157,11 +157,16 @@ def _measured_code(family: str, commit: str | None, runtime: dict | None = None)
     if commit:
         read = at_commit(commit)
         then = dispatch("greg/cognition/solvers.py", "SOLVERS", family, read)
-        if then is not None and runtime and (runtime.get("path"), runtime.get("function")) == (
-                then.get("path"), then.get("function")):
-            # the run recorded the function SOLVERS held at runtime and it agrees with the static binding: a
-            # non-literal update elsewhere in the table did not rebind this key (round-2 review of #179, N4)
-            then = {**then, "verified_at_runtime": True}
+        if then is not None and runtime:
+            if (runtime.get("path"), runtime.get("function")) == (then.get("path"), then.get("function")):
+                # the run recorded the function SOLVERS held at runtime and it agrees with the static binding: a
+                # non-literal update elsewhere in the table did not rebind this key (round-2 review of #179, N4)
+                then = {**then, "verified_at_runtime": True}
+            else:
+                # the run called something else than the static reading says: bind nothing (round-3 review,
+                # finding 2)
+                then = {**then, "runtime_disagrees": {"path": runtime.get("path"),
+                                                      "function": runtime.get("function")}}
         code["dispatched"] = then
         if then is None or then.get("function") is None:
             return code                    # the run's dispatch cannot be resolved: nothing positive is bound

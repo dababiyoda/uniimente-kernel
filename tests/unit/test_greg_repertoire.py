@@ -211,6 +211,21 @@ def test_blackbox_verifier_refutes_an_under_reported_evaluation_count(function):
     assert result["verdict"] == "REFUTED" and result["checks"]["evaluation_count_matches_method"] is False
 
 
+@pytest.mark.parametrize("seed", range(10))
+def test_crowd_verifier_refutes_a_total_abstention(seed):
+    """Round-3 review of #179 (finding 4): the honest model and posteriors with every label None verified."""
+    data, _ = crowd(seed=seed, items=30)
+    answer = crowd_label(data, GEOMETRY)
+    forged = deepcopy(answer)
+    forged["output"]["labels"] = {i: None for i in forged["output"]["labels"]}
+    forged["output"]["abstained"] = sorted(forged["output"]["labels"])
+    result = verify("crowd", data, forged, "collective_trace")
+    assert result["verdict"] == "REFUTED" and result["checks"]["abstentions_match_threshold"] is False
+    strict = {**data, "min_posterior": 0.999999}                      # an honest abstention still verifies
+    honest = crowd_label(strict, GEOMETRY)
+    assert verify("crowd", strict, honest, "collective_trace")["verdict"] == "STRUCTURALLY_VERIFIED"
+
+
 def test_robust_pattern_verifier_rederives_flags_when_mad_is_zero():
     """M4: with MAD == 0 the flag check was skipped, so an empty or wrong anomaly list verified."""
     data = {"observations": [0] * 9 + [50, -40, 0.1]}

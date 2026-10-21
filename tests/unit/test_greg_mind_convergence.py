@@ -1046,11 +1046,12 @@ def test_a_synthetic_retain_record_changes_no_shipped_configuration(tmp_path):
     from greg.cognition import evolution
     before = {name: copy_of(module, constant) for name, (module, constant) in P8_SHIPPED.items()}
     target = evolution.cr_target()
-    candidate = {**target.incumbent, **{k: v for k, v in list(target.incumbent.items())[:1]}}
+    candidate = {**target.incumbent, "p_restart": 0.5 if target.incumbent.get("p_restart") != 0.5 else 0.25}
+    assert candidate != target.incumbent                       # a real configuration change (round-3 review, L9)
     record = {"decision": "RETAIN", "incumbent": {"id": evolution.config_id(target.incumbent)},
               "proposal": {"state": "PROPOSED_NOT_APPLIED", "change": {
                   "module": "greg.cognition.genomes.developmental", "constant": "CR_DEFAULT_CONFIG",
-                  "from": target.incumbent, "to": {**candidate, "synthetic": True}}}}
+                  "from": target.incumbent, "to": candidate}}}
     shipped = {m: hashlib.sha256(Path(importlib.import_module(m).__file__).read_bytes()).hexdigest()
                for m, _ in P8_SHIPPED.values()}
     written = evolution._finish(record, tmp_path / "cycle-synthetic.json")
@@ -1074,9 +1075,120 @@ def copy_of(module: str, constant: str):
 
 
 def test_a_split_string_literal_naming_the_alternative_controller_is_caught():
-    """L7 residual: ``'greg.cognition.' + 'evolution_' + 'routing'`` passed the textual scan."""
+    """L7 residual: ``'greg.cognition.' + 'evolution_' + 'routing'`` passed the textual scan. Stated limit (round-3
+    review): a static scan cannot follow names built at runtime (variables, ``%`` formatting, slicing); the
+    runtime guarantee is that ``evolution_routing`` is never imported by a runtime module, checked here statically
+    for every form that folds to a constant."""
     for source in ("import importlib\nm = importlib.import_module('greg.cognition.' + 'evolution_' + 'routing')\n",
                    "name = ''.join(['greg.cognition.', 'evolution_', 'routing'])\n",
                    "x = 'evolution_'\nname = f'{\"evolution_\"}routing'\n"):
         assert any("evolution_routing" in v for v in _folded_strings(ast.parse(source))), source
+
+
+# ---------------------------------------------------------------- round-3 re-verification of PR #179
+def test_a_stage_solver_change_stales_its_recipe_binding():
+    """Finding 1: the recipe closure stops at cortex.reason, so an edit inside a stage genome (Erlang C under
+    track_then_staff) left the recipe digest unchanged. Every genome that can serve a stage operation is bound."""
+    from greg.cognition import code_binding as CB
+    from greg.cognition import compiler as C
+    now = C.recipe_code("track_then_staff")
+    assert {"queue_erlang", "basal_kalman"} <= set(now["stage_closures"])
+
+    def edited(path):
+        text = CB.working_tree(path)
+        if path == "greg/cognition/genomes/solvers_b.py":
+            head = "def erlang_solve("
+            start = text.index(head)
+            body = text.index("\n", text.index("):", start)) + 1
+            text = text[:body] + "    _behaviour_edit = 1\n" + text[body:]
+        return text
+    changed = C.recipe_code("track_then_staff", edited)
+    assert changed["stage_closures"]["queue_erlang"] != now["stage_closures"]["queue_erlang"]
+    assert changed["closure_sha256"] == now["closure_sha256"]        # the recipe's own code is unchanged
+    verdict = {"code": {k: changed[k] for k in ("closure_sha256", "recipe_entry_sha256", "stage_closures")}}
+    assert C.recipe_stale("track_then_staff", verdict) is not None
+
+
+ROUND3_DISPATCH = {
+    "for-loop rebind": "for _k in ('control',):\n    T[_k] = b\n",
+    "augmented update": "T |= {'control': b}\n",
+    "pop and setdefault": "T.pop('control')\nT.setdefault('control', b)\n",
+    "mutating helper": "def _patch():\n    T['control'] = b\n\n_patch()\n",
+    "if-block rebind": "if True:\n    T['control'] = b\n",
+    "__setitem__": "T.__setitem__('control', b)\n",
+}
+
+
+@pytest.mark.parametrize("case", sorted(ROUND3_DISPATCH))
+def test_every_other_touch_of_a_dispatch_table_is_unresolved(case):
+    """Finding 2: these forms were read with unresolved_updates 0, so a static binding could name a function the
+    table no longer holds."""
+    from greg.cognition.code_binding import dispatch
+    text = "def a():\n    return 1\n\ndef b():\n    return 2\n\nT = {'control': a}\n" + ROUND3_DISPATCH[case]
+    got = dispatch("pkg/s.py", "T", "control", {"pkg/__init__.py": "", "pkg/s.py": text}.get)
+    assert got["unresolved_updates"] >= 1, (case, got)
+
+
+def test_a_runtime_dispatch_that_disagrees_binds_nothing():
+    """Finding 2: a recorded runtime dispatch that disagreed with the static reading was ignored."""
+    import copy
+    from greg.cognition import compiler as C
+    index = C.evidence_index()
+    row = copy.deepcopy(index["operations"]["control"])
+    assert C.operation_status("control", row)[0] == "DEFAULT_FOR_GEOMETRY"
+    row["code"]["dispatched"] = {k: v for k, v in row["code"]["dispatched"].items() if k != "verified_at_runtime"}
+    row["code"]["dispatched"]["runtime_disagrees"] = {"path": "greg/cognition/solvers.py", "function": "game"}
+    status, why = C.operation_status("control", row)
+    assert status == "UNEVALUATED" and "at runtime" in why
+
+
+# ---------------------------------------------------------------- round-4 re-verification of PR #179
+def test_operation_family_and_organ_stages_are_bound_into_their_recipes():
+    """Finding A: stages served through SOLVERS (bayes_then_voi's information and probabilistic,
+    graph_then_allocate's optimize) and the template recipes' cortex-organ stages were unbound."""
+    from greg.cognition import code_binding as CB
+    from greg.cognition import compiler as C
+    from greg.cognition.composition import RECIPES
+    for recipe in RECIPES:
+        stages = C.recipe_code(recipe)["stage_closures"]
+        assert stages and all(v is not None for v in stages.values()), (recipe, stages)
+    now = C.recipe_code("bayes_then_voi")
+    assert {"solvers:information", "solvers:probabilistic"} <= set(now["stage_closures"])
+
+    def edited(path):
+        text = CB.working_tree(path)
+        if path == "greg/cognition/solvers.py":
+            start = text.index("def information(")
+            body = text.index("\n", text.index("):", start)) + 1
+            text = text[:body] + "    _behaviour_edit = 1\n" + text[body:]
+        return text
+    changed = C.recipe_code("bayes_then_voi", edited)
+    assert changed["stage_closures"]["solvers:information"] != now["stage_closures"]["solvers:information"]
+    verdict = {"code": {k: changed[k] for k in ("closure_sha256", "recipe_entry_sha256", "stage_closures")}}
+    assert C.recipe_stale("bayes_then_voi", verdict) is not None
+    for recipe in ("estimate_then_optimize", "identify_then_optimize"):
+        assert any(k.startswith("organ:") for k in C.recipe_code(recipe)["stage_closures"]), recipe
+
+
+ROUND4_DISPATCH = {
+    "pop assigned": "_ = T.pop('control')\n", "setdefault assigned": "_ = T.setdefault('control', b)\n",
+    "alias": "_t = T\n_t['control'] = b\n", "helper taking the table": "def h(t):\n    t['control'] = b\n\nh(T)\n",
+    "dict.update": "dict.update(T, control=b)\n", "dict.__setitem__": "dict.__setitem__(T, 'control', b)\n",
+    "globals": "globals()['T']['control'] = b\n", "lambda helper": "f = lambda: T.update(control=b)\nf()\n",
+    "class body": "class C:\n    T['control'] = b\n", "list display": "[T.update(control=b)]\n",
+    "assert": "assert T.update(control=b) is None\n", "map": "list(map(T.__setitem__, ['control'], [b]))\n",
+}
+
+
+@pytest.mark.parametrize("case", sorted(ROUND4_DISPATCH))
+def test_any_other_statement_naming_a_dispatch_table_is_unresolved(case):
+    """Finding B: dispatch() fails closed: any module-level statement outside the recognised literal forms that
+    names the table, as a name or a string, counts as an unresolved update."""
+    from greg.cognition.code_binding import dispatch
+    text = "def a():\n    return 1\n\ndef b():\n    return 2\n\nT = {'control': a}\n" + ROUND4_DISPATCH[case]
+    got = dispatch("pkg/s.py", "T", "control", {"pkg/__init__.py": "", "pkg/s.py": text}.get)
+    assert got["unresolved_updates"] >= 1, (case, got)
+    clean = dispatch("pkg/s.py", "T", "control", {"pkg/__init__.py": "", "pkg/s.py": text.split("T = {")[0] +
+                                                  "T = {'control': a}\nT['other'] = b\n"}.get)
+    assert clean["unresolved_updates"] == 0 and clean["function"] == "a"
 

@@ -8,16 +8,30 @@ this check keeps them out of what is released.
     python scripts/check_release_exclusions.py --archive A.tar    # a release artifact (tar, tar.gz, zip, whl)
 
 A file is blocked when any of these holds, at any depth of nested archives:
-* its content digest equals a listed file's sha256, before or after gzip decompression (a renamed copy);
+* its content digest equals a listed file's sha256, before or after decoding (gzip, xz, lzma-alone, bz2, zlib,
+  base64, UTF-16) - a renamed, recompressed or re-encoded copy;
+* it parses as JSON whose canonical form (sorted keys, compact) equals a listed file's parsed content (a minified or
+  reformatted copy, under any extension);
 * its path ends with a listed path (any prefix, any depth);
-* its text (JSON, JSONL, log, CSV or plain text, gzip-decompressed when needed) carries a listed data marker.
+* its text, after decoding, carries a listed data marker - except Python source (``.py``), which names the
+  families and suites legitimately; a renamed data copy is caught by digest instead (round-4 review, finding D).
+
+Out of scope, stated rather than hidden (round-3 and round-4 reviews of #179): values re-encoded into another
+format (a Python literal, a CSV re-export, a subset of rows), and any encoding not decoded above. Those need human
+review of what a release contains.
 
 Exit 1 names every finding. It never edits, moves or deletes a file.
 """
 from __future__ import annotations
 
 import argparse
+import base64
+import functools
+import binascii
+import bz2
 import gzip
+import lzma
+import zlib
 import hashlib
 import io
 import json
@@ -29,7 +43,6 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 LIST = ROOT / "docs/collaboration/RELEASE-EXCLUSIONS.json"
-TEXT = (".json", ".jsonl", ".log", ".csv", ".txt", ".tsv")
 MAX_DEPTH = 8
 
 
@@ -52,6 +65,66 @@ def _gunzip(data: bytes) -> bytes | None:
         return gzip.decompress(data)
     except (OSError, EOFError):
         return None
+
+
+def _decode_once(data: bytes) -> bytes | None:
+    """One decoding layer: gzip, xz or lzma-alone, bz2, zlib, base64 or UTF-16; None when none applies."""
+    if data[:2] == b"\x1f\x8b":
+        return _gunzip(data)
+    if data[:6] == b"\xfd7zXZ\x00" or data[:1] == b"\x5d":
+        try:
+            return lzma.decompress(data)                  # FORMAT_AUTO reads xz and lzma-alone
+        except lzma.LZMAError:
+            pass
+    if data[:3] == b"BZh":
+        try:
+            return bz2.decompress(data)
+        except (OSError, ValueError):
+            return None
+    if data[:1] == b"\x78" and len(data) > 2 and (data[0] * 256 + data[1]) % 31 == 0:
+        try:
+            return zlib.decompress(data)
+        except zlib.error:
+            pass
+    if data[:2] in (b"\xff\xfe", b"\xfe\xff"):
+        try:
+            return data.decode("utf-16").encode("utf-8")
+        except UnicodeDecodeError:
+            return None
+    compact = b"".join(data.split())
+    alphabet = set(b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=-_")
+    if len(compact) >= 16 and len(compact) % 4 == 0 and set(compact) <= alphabet:
+        try:
+            urlsafe = b"-" in compact or b"_" in compact
+            decoded = (base64.urlsafe_b64decode(compact) if urlsafe else base64.b64decode(compact, validate=True))
+            if decoded:
+                return decoded
+        except (binascii.Error, ValueError):
+            pass
+    return None
+
+
+def _decompressed(data: bytes) -> list[bytes]:
+    """``data`` and every decoding layer beneath it (at most six layers)."""
+    out, current = [data], data
+    for _ in range(6):
+        nxt = _decode_once(current)
+        if nxt is None or nxt == current:
+            break
+        out.append(nxt)
+        current = nxt
+    return out
+
+
+def _canonical(data: bytes) -> str | None:
+    """Digest of the parsed JSON's canonical form, or None when ``data`` is not one JSON document."""
+    if not data or data.lstrip()[:1] not in (b"{", b"["):
+        return None
+    try:
+        value = json.loads(data)
+    except (ValueError, UnicodeDecodeError, RecursionError):
+        return None
+    return "json:" + hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
 def packaged() -> set[str]:
@@ -95,31 +168,37 @@ def members(archive: Path) -> set[str]:
 def _findings(path: str, data: bytes, listed: dict) -> list[str]:
     digests, paths, markers = listed["digests"], listed["paths"], listed["markers"]
     found = []
-    for variant in (data, _gunzip(data)):
-        if variant is not None and _digest(variant) in digests:
-            found.append(f"{path}: content of {digests[_digest(variant)]}")
-            break
+    variants = _decompressed(data)
+    for variant in variants:
+        for key in (_digest(variant), _canonical(variant)):
+            if key is not None and key in digests:
+                found.append(f"{path}: content of {digests[key]}")
+                break
+        else:
+            continue
+        break
     leaf = path.split("!")[-1]
     for listed_path in paths:
         if leaf == listed_path or leaf.endswith("/" + listed_path):
             found.append(f"{path}: path {listed_path}")
-    text_like = leaf.lower().endswith(TEXT) or leaf.lower().endswith(tuple(t + ".gz" for t in TEXT))
-    if text_like:
-        text = (_gunzip(data) or data).decode("utf-8", "replace")
-        hits = sorted({m for m in markers if m in text})
-        if hits:
-            found.append(f"{path}: data markers {', '.join(hits)}")
+    hits = [] if leaf.endswith(".py") else sorted({m for m in markers for v in variants if m.encode() in v})
+    if hits:
+        found.append(f"{path}: data markers {', '.join(hits)}")
     return found
 
 
+@functools.lru_cache(maxsize=None)
 def _listed() -> dict:
     record = _list()
     digests = {e["sha256"]: e["path"] for e in record["paths"] if e.get("sha256")}
-    for e in record["paths"]:              # the decompressed content of a listed .gz is the same data
-        if e["path"].endswith(".gz"):
-            raw = _gunzip((ROOT / e["path"]).read_bytes()) if (ROOT / e["path"]).exists() else None
-            if raw is not None:
-                digests[_digest(raw)] = e["path"]
+    for e in record["paths"]:              # decompressed and canonical-JSON forms of a listed file are the same data
+        file = ROOT / e["path"]
+        if not file.exists():
+            continue
+        for variant in _decompressed(file.read_bytes()):
+            digests.setdefault(_digest(variant), e["path"])
+            if (canonical := _canonical(variant)) is not None:
+                digests.setdefault(canonical, e["path"])
     markers = {m for ms in record.get("markers", {}).values() for m in ms}
     return {"digests": digests, "paths": sorted(excluded()), "markers": markers}
 

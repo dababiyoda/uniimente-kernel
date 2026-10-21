@@ -72,7 +72,11 @@ def compile_problem(params):
 def _cpu_seconds():
     """CPU seconds of this thread plus every child process the body has waited for (directive section 12: count
     local compute even when it costs no tokens). ``None`` where the platform offers no resource accounting; peak
-    memory cannot be split per call this way and stays unmeasured."""
+    memory cannot be split per call this way and stays unmeasured.
+
+    The compiler measures each inner run with these, around its call to ``reason``, never inside it: a measured
+    recipe lift binds the code closure of ``reason`` (greg.cognition.code_binding), so editing ``reason`` to count
+    CPU would leave every measured lift stale until it is re-measured."""
     try:
         import resource
     except ImportError:
@@ -187,7 +191,7 @@ def reason(params, *, registry, journal=None, model_config=None, forced_family=N
         from .bridge import reason_cortex
         return reason_cortex(params, registry=registry, journal=journal, model_config=model_config,
                              forced=forced_family)
-    started, cpu_started = time.monotonic(), _cpu_seconds()
+    started = time.monotonic()
     geometry, consequences = compile_problem(params)
     rows = candidates(params, geometry, registry, journal)
     eligible = [r for r in rows if r["eligible"] and (forced_family is None or r["family"] == forced_family)]
@@ -268,11 +272,7 @@ def reason(params, *, registry, journal=None, model_config=None, forced_family=N
         falsification_condition="independent recomputation, invalid assumptions, counterexample or observed outcome contradicts this receipt",
         abstention_state=state, missing_information=missing,
         compute_cost={"operation_ceiling": geometry.compute_limit, "memory_ceiling_bytes": 2 * 1024**3,
-                      "model_calls": int(bool(answer and chosen["family"] == "semantic")), "energy": "unmeasured",
-                      "cpu_seconds": _cpu_delta(cpu_started),
-                      "cpu_scope": ("this thread plus child processes waited for during the call: the solver and "
-                                    "verifier, and any child another thread reaped meanwhile"),
-                      "peak_memory": "unmeasured"},
+                      "model_calls": int(bool(answer and chosen["family"] == "semantic")), "energy": "unmeasured"},
         money_cost=0.0, latency=time.monotonic() - started, evaluator="greg.cognition.verification/0.1.0", evaluator_result=evaluator,
         formal_validity=answer.get("formal_validity", "NOT_APPLICABLE") if answer else "NOT_APPLICABLE",
         reason_code=reason_code, outcome_state="ANSWERED_WITHIN_SCOPE" if state == "NONE" else "ESCALATE" if state == "HUMAN_REVIEW_REQUIRED" else "CONDITIONAL_RESULT" if state == "WORLD_UNVERIFIED" else "ABSTAIN",

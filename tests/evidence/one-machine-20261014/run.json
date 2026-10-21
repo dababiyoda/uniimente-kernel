@@ -1,11 +1,11 @@
 {
  "mission_id": "m:one-machine-staff-om",
- "ledger_head": "sha256:17afd4963f6b74274eb17ef472845172abd57ff328b4261876ec02b1807bd6c7",
+ "ledger_head": "sha256:b7bbdb79bf45a5b27b80a01f6c3a7df91f865287a74f267271a13984e9ce7eaa",
  "worker_dispatches": [
   "UNCERTAIN",
   "DONE"
  ],
- "reconciliation_request": "req-6a204cea3d720c5a95824cb7",
+ "reconciliation_request": "req-dc1b6038eaf61ecaaa9e6771",
  "spend_approvals": [
   "req-b5f11b8d6573052bc79d4846",
   "req-375e042ec4414653f81cb7de"

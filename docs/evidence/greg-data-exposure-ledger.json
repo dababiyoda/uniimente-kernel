@@ -216,7 +216,7 @@
  },
  "counts": {
   "by_lineage": {
-   "#158": 299,
+   "#158": 302,
    "#179": 40,
    "both": 42
   },
@@ -224,9 +224,9 @@
    "P8 held-out": 7,
    "admission held-out": 112,
    "canary": 1,
-   "dev": 207,
+   "dev": 209,
    "held-out": 38,
-   "review-pilot": 10,
+   "review-pilot": 11,
    "train": 6
   },
   "by_role_and_lineage": {
@@ -235,15 +235,15 @@
    "admission held-out / #158": 79,
    "admission held-out / #179": 33,
    "canary / #158": 1,
-   "dev / #158": 184,
+   "dev / #158": 186,
    "dev / both": 23,
    "held-out / #158": 13,
    "held-out / #179": 6,
    "held-out / both": 19,
-   "review-pilot / #158": 10,
+   "review-pilot / #158": 11,
    "train / #158": 6
   },
-  "exposures": 381,
+  "exposures": 384,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -12719,6 +12719,88 @@
   },
   {
    "artifact": {
+    "commit": "c3156edb7f0337a77714ae59388fe512d22d1f8d",
+    "path": "docs/evidence/greg-repair-hybrid/2026-10-21-exploratory/dev.json",
+    "sha256": "sha256:69206dea038f74c3743aecc597f40015c95599c5c24258cb797af0959f2012e4"
+   },
+   "exposure_commit": "c3156edb7f0337a77714ae59388fe512d22d1f8d",
+   "family": "develop_repair_hybrid",
+   "generator": {
+    "code_sha256": "sha256:7ea2eba38cdbb527337e2949a7d8844c4b8d5400f371fb6058c400a48bdd4496",
+    "commit": "c3156edb7f0337a77714ae59388fe512d22d1f8d",
+    "delegates": [],
+    "function": "repair_instance",
+    "key": "greg.cognition.genomes.developmental:repair_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.developmental",
+    "module_file_sha256": "sha256:8931548d13775e92d591b439bd9d4423465ec193daa8cdbd372b2acb7018e388",
+    "prng": [
+     "Random(f'genome:develop_repair:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#158|docs/evidence/greg-repair-hybrid/2026-10-21-exploratory/dev.json|dev|develop_repair_hybrid|-",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "the run's per-item outcomes are recorded in this file",
+   "n": 10,
+   "present_in": [
+    "#158"
+   ],
+   "program": "repair hybrid exploratory",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "c76592c1cf4ce8302a473c2d0f5e6631c25b85cb",
+    "path": "docs/evidence/greg-repair-hybrid/2026-10-21-exploratory/review.json",
+    "sha256": "sha256:d66677e3fd9b955b75e0d698b58513ef4e44a52d707fd56641b3c7232baaa2a8"
+   },
+   "exposure_commit": "c76592c1cf4ce8302a473c2d0f5e6631c25b85cb",
+   "family": "develop_repair_hybrid",
+   "generator": {
+    "code_sha256": "sha256:7ea2eba38cdbb527337e2949a7d8844c4b8d5400f371fb6058c400a48bdd4496",
+    "commit": "c76592c1cf4ce8302a473c2d0f5e6631c25b85cb",
+    "delegates": [],
+    "function": "repair_instance",
+    "key": "greg.cognition.genomes.developmental:repair_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.developmental",
+    "module_file_sha256": "sha256:8931548d13775e92d591b439bd9d4423465ec193daa8cdbd372b2acb7018e388",
+    "prng": [
+     "Random(f'genome:develop_repair:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#158|docs/evidence/greg-repair-hybrid/2026-10-21-exploratory/review.json|review-pilot|develop_repair_hybrid|-",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "the run's per-item outcomes are recorded in this file",
+   "n": 640,
+   "present_in": [
+    "#158"
+   ],
+   "program": "repair hybrid exploratory",
+   "role": "review-pilot",
+   "seeds": [
+    [
+     4000,
+     4639
+    ]
+   ]
+  },
+  {
+   "artifact": {
     "commit": "HEAD",
     "line_commits": [
      "4d99fb024239fbb219667bda98842e1ea40d84fc"
@@ -13569,6 +13651,54 @@
     [
      0,
      0
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "c3156edb7f0337a77714ae59388fe512d22d1f8d",
+    "line_commits": [
+     "c3156edb7f0337a77714ae59388fe512d22d1f8d"
+    ],
+    "lines": [
+     23
+    ],
+    "path": "tests/unit/test_genomes_developmental_hybrid.py",
+    "sha256": "sha256:55764b3b658c5063733579aa645b1616ac31ab04e39c6a89a80909ae0678aa05"
+   },
+   "exposure_commit": "c3156edb7f0337a77714ae59388fe512d22d1f8d",
+   "family": null,
+   "generator": {
+    "code_sha256": "sha256:7ea2eba38cdbb527337e2949a7d8844c4b8d5400f371fb6058c400a48bdd4496",
+    "commit": "c3156edb7f0337a77714ae59388fe512d22d1f8d",
+    "delegates": [],
+    "function": "repair_instance",
+    "key": "greg.cognition.genomes.developmental:repair_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.developmental",
+    "module_file_sha256": "sha256:8931548d13775e92d591b439bd9d4423465ec193daa8cdbd372b2acb7018e388",
+    "prng": [
+     "Random(f'genome:develop_repair:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#158|tests/unit/test_genomes_developmental_hybrid.py|dev|-|greg.cognition.genomes.developmental:repair_instance:23",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 10,
+   "part": "greg.cognition.genomes.developmental:repair_instance:23",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
     ]
    ]
   },
@@ -15824,11 +15954,11 @@
      355,
      362,
      382,
-     1185,
-     1201
+     1189,
+     1205
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:03915dcbaadb198bb73b79e8bb4250fc71f96251369faf34891b9e56a1d55330"
+    "sha256": "sha256:1b94d4d021f11c27f4a34cd5a75cd607a9b147cc535db2a6b8de209ae2259925"
    },
    "exposure_commit": "ba06e46d3af517675b9be6162ee4806ec304d604",
    "family": null,
@@ -15869,7 +15999,7 @@
      561
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:03915dcbaadb198bb73b79e8bb4250fc71f96251369faf34891b9e56a1d55330"
+    "sha256": "sha256:1b94d4d021f11c27f4a34cd5a75cd607a9b147cc535db2a6b8de209ae2259925"
    },
    "exposure_commit": "278f8abdb1553c37f9de2712bee8eef96a7476e1",
    "family": null,
@@ -15934,10 +16064,10 @@
      522,
      548,
      550,
-     1074
+     1078
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:03915dcbaadb198bb73b79e8bb4250fc71f96251369faf34891b9e56a1d55330"
+    "sha256": "sha256:1b94d4d021f11c27f4a34cd5a75cd607a9b147cc535db2a6b8de209ae2259925"
    },
    "exposure_commit": "bb65d6fd7c6b13a80ed30f9c947bbd0e2da8b6f5",
    "family": null,
@@ -15985,7 +16115,7 @@
      300
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:03915dcbaadb198bb73b79e8bb4250fc71f96251369faf34891b9e56a1d55330"
+    "sha256": "sha256:1b94d4d021f11c27f4a34cd5a75cd607a9b147cc535db2a6b8de209ae2259925"
    },
    "exposure_commit": "3a4a24eaf445776ae8f460c357010e08c83568f6",
    "family": null,
@@ -16030,10 +16160,10 @@
      "079e717696e8f7b37eb0a1d421a5c2c61753bde6"
     ],
     "lines": [
-     1043
+     1047
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:03915dcbaadb198bb73b79e8bb4250fc71f96251369faf34891b9e56a1d55330"
+    "sha256": "sha256:1b94d4d021f11c27f4a34cd5a75cd607a9b147cc535db2a6b8de209ae2259925"
    },
    "exposure_commit": "079e717696e8f7b37eb0a1d421a5c2c61753bde6",
    "family": "assignment_lsa",
@@ -16051,14 +16181,14 @@
     ],
     "resolved": true
    },
-   "id": "#158|tests/unit/test_greg_competency_compiler.py|dev|assignment_lsa|greg.cognition.genomes.graph_or:assignment_instance:1043",
+   "id": "#158|tests/unit/test_greg_competency_compiler.py|dev|assignment_lsa|greg.cognition.genomes.graph_or:assignment_instance:1047",
    "lineages": [
     "#158"
    ],
    "looked_at": true,
    "looked_at_basis": "a test asserts on these instances",
    "n": 1,
-   "part": "greg.cognition.genomes.graph_or:assignment_instance:1043",
+   "part": "greg.cognition.genomes.graph_or:assignment_instance:1047",
    "present_in": [
     "#158"
    ],
@@ -16083,7 +16213,7 @@
      807
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:03915dcbaadb198bb73b79e8bb4250fc71f96251369faf34891b9e56a1d55330"
+    "sha256": "sha256:1b94d4d021f11c27f4a34cd5a75cd607a9b147cc535db2a6b8de209ae2259925"
    },
    "exposure_commit": "278f8abdb1553c37f9de2712bee8eef96a7476e1",
    "family": "basal_hysteresis",
@@ -16131,7 +16261,7 @@
      798
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:03915dcbaadb198bb73b79e8bb4250fc71f96251369faf34891b9e56a1d55330"
+    "sha256": "sha256:1b94d4d021f11c27f4a34cd5a75cd607a9b147cc535db2a6b8de209ae2259925"
    },
    "exposure_commit": "00450872b594dcb9c6b20a694f9d9f728f30bd71",
    "family": "basal_pid",
@@ -16176,10 +16306,10 @@
      "00450872b594dcb9c6b20a694f9d9f728f30bd71"
     ],
     "lines": [
-     895
+     898
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:03915dcbaadb198bb73b79e8bb4250fc71f96251369faf34891b9e56a1d55330"
+    "sha256": "sha256:1b94d4d021f11c27f4a34cd5a75cd607a9b147cc535db2a6b8de209ae2259925"
    },
    "exposure_commit": "00450872b594dcb9c6b20a694f9d9f728f30bd71",
    "family": "causal_backdoor",
@@ -16198,14 +16328,14 @@
     ],
     "resolved": true
    },
-   "id": "#158|tests/unit/test_greg_competency_compiler.py|dev|causal_backdoor|greg.cognition.genomes.solvers_c:causal_instance:895",
+   "id": "#158|tests/unit/test_greg_competency_compiler.py|dev|causal_backdoor|greg.cognition.genomes.solvers_c:causal_instance:898",
    "lineages": [
     "#158"
    ],
    "looked_at": true,
    "looked_at_basis": "a test asserts on these instances",
    "n": 1,
-   "part": "greg.cognition.genomes.solvers_c:causal_instance:895",
+   "part": "greg.cognition.genomes.solvers_c:causal_instance:898",
    "present_in": [
     "#158"
    ],
@@ -16225,10 +16355,10 @@
      "00450872b594dcb9c6b20a694f9d9f728f30bd71"
     ],
     "lines": [
-     965
+     968
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:03915dcbaadb198bb73b79e8bb4250fc71f96251369faf34891b9e56a1d55330"
+    "sha256": "sha256:1b94d4d021f11c27f4a34cd5a75cd607a9b147cc535db2a6b8de209ae2259925"
    },
    "exposure_commit": "00450872b594dcb9c6b20a694f9d9f728f30bd71",
    "family": "develop_repair",
@@ -16246,14 +16376,14 @@
     ],
     "resolved": true
    },
-   "id": "#158|tests/unit/test_greg_competency_compiler.py|dev|develop_repair|greg.cognition.genomes.developmental:repair_instance:965",
+   "id": "#158|tests/unit/test_greg_competency_compiler.py|dev|develop_repair|greg.cognition.genomes.developmental:repair_instance:968",
    "lineages": [
     "#158"
    ],
    "looked_at": true,
    "looked_at_basis": "a test asserts on these instances",
    "n": 1,
-   "part": "greg.cognition.genomes.developmental:repair_instance:965",
+   "part": "greg.cognition.genomes.developmental:repair_instance:968",
    "present_in": [
     "#158"
    ],
@@ -16281,14 +16411,14 @@
      658,
      710,
      746,
-     919,
-     1024,
-     1060,
-     1104,
-     1145
+     922,
+     1028,
+     1064,
+     1108,
+     1149
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:03915dcbaadb198bb73b79e8bb4250fc71f96251369faf34891b9e56a1d55330"
+    "sha256": "sha256:1b94d4d021f11c27f4a34cd5a75cd607a9b147cc535db2a6b8de209ae2259925"
    },
    "exposure_commit": "81fdd2ee7024d9ff0a3875eb99887fbe2ae36cdf",
    "family": "flow_expansion_mcf",

@@ -129,6 +129,7 @@
     "cortex/evaluation/freeze-v0.2.1.json",
     "cortex/evaluation/generators.py",
     "cortex/evaluation/genome_admission/__init__.py",
+    "cortex/evaluation/genome_admission/freeze-ops-v3.json",
     "cortex/evaluation/genome_admission/freeze-v1.json",
     "cortex/evaluation/genome_admission/freeze-v2.json",
     "cortex/evaluation/genome_admission/prereg-ops-v3.json",

@@ -312,6 +312,8 @@ def build() -> dict:
             history = (index["operations"].get(family) or {}).get("history", []) + [{"evidence": pointer,
                                                                                         "status": raw}]
             routed, erratum = ERRATA.get((family, raw), (raw if raw in MEASURED else "UNEVALUATED", None))
+            if data.get("pre_registered") is False:     # a re-admission run its runner could not bind to a commit
+                routed, erratum = "UNEVALUATED", "the run was not pre-registered: its freeze was not committed first"
             index["operations"][family] = {"status": routed, "raw_status": raw,
                                            **({"erratum": erratum} if erratum else {}),
                                            "measured": raw in MEASURED, "evidence": pointer, "history": history,

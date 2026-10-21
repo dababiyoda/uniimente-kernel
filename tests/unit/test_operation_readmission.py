@@ -111,6 +111,79 @@ def test_a_freeze_refuses_spent_development_p8_and_pr155_seeds_and_an_existing_f
         R.main(["--freeze", "r1", "--heldout-start", "9100"])
 
 
+def test_a_negative_start_cannot_alias_refused_seeds(tmp_path, monkeypatch):
+    """random.Random(-s) is seeded exactly as random.Random(s), so a negative start would redraw #155's spent
+    instances (-1030..-1001 alias 1001-1030) or a development seed (-38 reaches -9). The freeze refuses any negative
+    seed, and a run re-checks the frozen seeds."""
+    import random
+    assert random.Random(-1011).random() == random.Random(1011).random()
+    monkeypatch.setattr(R, "EVIDENCE", tmp_path)
+    for start in (-1030, -38, -1):
+        with pytest.raises(SystemExit, match="negative seeds"):
+            R.main(["--freeze", f"neg{start}", "--heldout-start", str(start)])
+        assert not (tmp_path / f"neg{start}").exists()
+    assert R.refusals(range(-1030, -1000)) and R.refusals(range(-38, -8))
+    assert R.refusals(range(9000, 9030)) == []
+
+
+def _git(repo, *args):
+    return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *args], cwd=repo, check=True,
+                          capture_output=True, text=True).stdout.strip()
+
+
+def test_a_run_inside_the_repository_is_bound_to_its_committed_pre_registration(tmp_path, monkeypatch):
+    """Only a run directory inside the repository can be cited by the evidence index, so only there is the binding
+    enforced: an uncommitted or edited freeze, or uncommitted changes elsewhere, refuse the run; a committed freeze in
+    a clean tree runs, and source_commit is the commit that added the freeze. Seeds a later freeze spent are refused
+    unless they are this run's own."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    (repo / "README").write_text("x\n")
+    _git(repo, "add", "README")
+    _git(repo, "commit", "-qm", "base")
+    evidence = repo / "evidence"
+    monkeypatch.setattr(R, "REPO", repo)
+    monkeypatch.setattr(R, "EVIDENCE", evidence)
+    monkeypatch.setattr(admission, "EVIDENCE", evidence)
+    monkeypatch.setattr(admission, "evaluate", lambda item, heldout: [])
+    monkeypatch.setattr(admission, "decide",
+                        lambda item, rows: ("EXPERIMENTAL", {"vs_baseline": {}, "vs_competitor": {}}))
+    monkeypatch.setattr(R, "smoke", lambda family, seed: {"verifier": "STRUCTURALLY_VERIFIED"})
+    monkeypatch.setattr(R, "rule_155", lambda rows: {"status": "EXPERIMENTAL"})
+    R.main(["--freeze", "ops", "--heldout-start", "9000"])
+    with pytest.raises(SystemExit, match="commit freeze.json"):
+        R.main(["--run", "ops"])
+    _git(repo, "add", "evidence/ops/freeze.json")
+    _git(repo, "commit", "-qm", "pre-register ops")
+    prereg = _git(repo, "rev-parse", "HEAD")
+    (repo / "README").write_text("edited after the pre-registration\n")
+    with pytest.raises(SystemExit, match="outside the run directory"):
+        R.main(["--run", "ops"])
+    _git(repo, "checkout", "-q", "README")
+    manifest = evidence / "ops" / "freeze.json"
+    pristine = manifest.read_text()
+    manifest.write_text(pristine.replace('"frozen_at": "', '"frozen_at": "edited '))
+    with pytest.raises(SystemExit, match="differs from the committed"):
+        R.main(["--run", "ops"])
+    manifest.write_text(pristine)
+    later = evidence / "later"                                   # a later freeze spending this run's seeds
+    later.mkdir()
+    (later / "freeze.json").write_text(json.dumps({"inputs": {"heldout_seeds": [9005]}}))
+    _git(repo, "add", "evidence/later/freeze.json")
+    _git(repo, "commit", "-qm", "a later freeze")
+    with pytest.raises(SystemExit, match="spent by an earlier admission freeze"):
+        R.main(["--run", "ops"])
+    _git(repo, "rm", "-q", "evidence/later/freeze.json")
+    _git(repo, "commit", "-qm", "drop it")
+    report = R.run("ops")
+    head = _git(repo, "rev-parse", "HEAD")
+    assert (report["pre_registered"], report["source_commit"], report["freeze_commit"]) == (True, head, prereg)
+    assert report["seed_refusals"] == [] and report["freeze_sha256"] == R._sha(manifest)
+    outside = R.preregistration(tmp_path / "elsewhere")
+    assert outside == {"pre_registered": False, "reason": "the run directory is outside the repository"}
+
+
 def test_a_re_admission_freeze_spends_its_seeds_for_every_later_admission(tmp_path, monkeypatch):
     """spent_seeds() scans the genome harness's evidence tree, where this runner writes its freeze: once frozen, its
     seeds are refused by a later re-admission and by the genome harness alike."""

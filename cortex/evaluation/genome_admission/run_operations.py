@@ -44,6 +44,7 @@ from typing import Any, Callable
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
+REPO = ROOT                             # the git repository whose HEAD pre-registers a run (a test may point it elsewhere)
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -295,17 +296,51 @@ def smoke(family: str, seed: int) -> dict:
             "receipt_id": receipt["receipt_id"]}
 
 
+def refusals(heldout, exclude: Path | None = None) -> list[str]:
+    """Why these held-out seeds may not be used: development, P8-reserved, spent by another admission freeze
+    (``exclude`` is this run's own directory) or drawn by a #155 run. A negative seed is refused outright, because
+    ``random.Random(-s)`` is seeded exactly as ``random.Random(s)`` and would redraw a refused instance."""
+    seeds = set(heldout)
+    out = [f"negative seeds ({min(seeds)}): random.Random(-s) draws the same instances as s"] if min(seeds) < 0 else []
+    refused = {"development": set(admission.DEV_SEEDS), "P8-reserved": set(admission.P8_RESERVED),
+               "spent by an earlier admission freeze": admission.spent_seeds(exclude),
+               "drawn by a #155 run": set(PR155_SEEDS)}
+    return out + [f"{why} ({min(used & seeds)}-{max(used & seeds)})" for why, used in refused.items() if used & seeds]
+
+
+def preregistration(target: Path) -> dict:
+    """Bind a run to its pre-registration. A run directory inside the repository is the only kind the evidence index
+    can cite, so there the freeze must be committed at HEAD unchanged and the tree clean outside the run directory, or
+    the run is refused: the results' source_commit is then the commit that pre-registered them. A directory outside
+    the repository (a test's) is recorded as not pre-registered."""
+    try:
+        rel = target.resolve().relative_to(REPO.resolve()).as_posix()
+    except ValueError:
+        return {"pre_registered": False, "reason": "the run directory is outside the repository"}
+
+    def git(*args):
+        return subprocess.run(["git", *args], cwd=REPO, capture_output=True, text=True)
+
+    manifest = f"{rel}/freeze.json"
+    if git("cat-file", "-e", f"HEAD:{manifest}").returncode:
+        raise SystemExit("NOT_PRE_REGISTERED: commit freeze.json before the run")
+    if git("diff", "--quiet", "HEAD", "--", manifest).returncode:
+        raise SystemExit("NOT_PRE_REGISTERED: freeze.json differs from the committed pre-registration")
+    dirty = [line for line in git("status", "--porcelain", "--untracked-files=all").stdout.splitlines()
+             if not line[3:].strip('"').startswith(f"{rel}/")]
+    if dirty:
+        raise SystemExit(f"NOT_PRE_REGISTERED: uncommitted changes outside the run directory ({dirty[0][3:]})")
+    added = git("log", "--diff-filter=A", "-1", "--format=%H", "--", manifest).stdout.strip()
+    return {"pre_registered": True, "freeze_commit": added}
+
+
 def freeze(run_id: str, start: int) -> Path:
     target = EVIDENCE / run_id
     manifest = target / "freeze.json"
     if manifest.exists():
         raise SystemExit("refusing to overwrite an existing re-admission freeze; use a new run id")
     heldout = tuple(range(start, start + HELDOUT_N))
-    refused = {"development": set(admission.DEV_SEEDS), "P8-reserved": set(admission.P8_RESERVED),
-               "spent by an earlier admission freeze": admission.spent_seeds(),
-               "drawn by a #155 run": set(PR155_SEEDS)}
-    clash = [f"{why} ({min(seeds & set(heldout))}-{max(seeds & set(heldout))})" for why, seeds in refused.items()
-             if seeds & set(heldout)]
+    clash = refusals(heldout)
     if clash:
         raise SystemExit(f"held-out seeds refused, {'; '.join(clash)}: choose fresh ones")
     target.mkdir(parents=True, exist_ok=True)
@@ -322,9 +357,14 @@ def run(run_id: str) -> dict:
         raise SystemExit("FROZEN_INPUT_CHANGED: re-admission results cannot be reported")
     if (target / "results.json").exists():
         raise SystemExit("refusing to overwrite re-admission results")
+    binding = preregistration(target)
+    clash = refusals(heldout, exclude=target)
+    if clash and binding["pre_registered"]:
+        raise SystemExit(f"held-out seeds refused, {'; '.join(clash)}")
     # "families", never "genomes": the evidence index reads this file through OPERATION_RUNS, not as a genome run
     report = {"schema": SCHEMA, "freeze_sha256": _sha(target / "freeze.json"),
-              "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
+              "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip(),
+              **binding, "seed_refusals": clash,
               "platform": platform.platform(), "python": sys.version.split()[0], "rule": admission.RULE,
               "rule_155": RULE_155, "geometry": GEOMETRY, "families": {}}
     for family in frozen["inputs"]["families"]:

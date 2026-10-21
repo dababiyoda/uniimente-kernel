@@ -799,6 +799,8 @@ def test_admitted_labels_are_reported_by_provenance_and_practitioner_ties_are_vi
         if kind == "rule_admitted":           # only #158's pre-registered genome admissions count as admissions
             assert all("greg-genome-admission/2026-10-1" in r and not r.startswith(genome_library.LINEAGE_ADMISSION_DIR)
                        for r in e.evidence_refs), e
+        if kind == "operation_readmitted":    # a pre-registered re-admission run's own directory
+            assert all(genome_library.OPERATION_READMISSION.match(r) for r in e.evidence_refs), e
         if e.source in ("composition_recipe", "cortex_organ"):
             assert kind in ("recipe_lift", "organ_label")
     f7 = evidence_index()["recipes"]["graph_then_allocate"]

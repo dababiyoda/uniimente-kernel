@@ -27,6 +27,8 @@
       "arrived_via_inbox": true,
       "chain_intact": true,
       "checks_rederived_from_receipts": true,
+      "closure_evidence_bound": true,
+      "closure_matches_signed_rule": true,
       "deliveries_bound_to_evidence": true,
       "exactly_once": true,
       "founder_signature_verified": true,
@@ -35,12 +37,12 @@
       "world_reobserved": true
     },
     "findings": [],
-    "head": "sha256:608e7012864e4d8a3d739e3d3c49de7d1db2501dc58c598cce9caf1094496c6d",
+    "head": "sha256:6fa84449992dce3be93975ae08b40cd80c33930e74868031b307b91fd5383834",
     "limits": "shares reviewed Kernel code; not an independent implementation",
     "mission_id": "m:one-machine-staff-om",
     "verdict": "VERIFIED"
   },
-  "ledger_head": "sha256:608e7012864e4d8a3d739e3d3c49de7d1db2501dc58c598cce9caf1094496c6d",
+  "ledger_head": "sha256:6fa84449992dce3be93975ae08b40cd80c33930e74868031b307b91fd5383834",
   "mission_id": "m:one-machine-staff-om",
   "sandbox_whole_machine": [
     {

@@ -785,11 +785,13 @@ class Genesis:
         engines are probed before the constructions that depend on them. Identity-changing quarantines
         (pins, code, missing source) are never probed: the same identity cannot be re-earned."""
         results = []
+        formed = [m for m in self.registry.manifests.values()
+                  if is_formed(m) and self.registry.state.get(m.capability_id) == "QUARANTINED"]
+        if not formed:                                     # every replay re-verifies the whole ledger chain:
+            return results                                 # a healthy body pays nothing for recovery each tick
         probes = [e.payload for e in self.journal.replay("capability.probe")]
         stopped = {(e.payload["capability_id"], e.payload["incident"])
                    for e in self.journal.replay("capability.recovery_stopped")}
-        formed = [m for m in self.registry.manifests.values()
-                  if is_formed(m) and self.registry.state.get(m.capability_id) == "QUARANTINED"]
         for manifest in sorted(formed, key=lambda m: (m.provider.startswith("composed:"), m.capability_id)):
             cid = manifest.capability_id
             if self.registry.state.get(cid) != "QUARANTINED":
@@ -890,6 +892,8 @@ class Genesis:
         engine = self.construction_engine(function)
         if engine:
             targets |= {m.capability_id for m in self.registry.by_function(engine)}
+        if not any(self.registry.state.get(cid) == "VERIFIED" for cid in targets):
+            return []                                      # nothing re-admittable; skip the full-ledger replay
         return [f"{e.payload['capability_id']}@{e.payload['incident']}" for e in self.journal.replay("capability.state")
                 if e.payload["capability_id"] in targets and e.payload.get("by") == RECOVERED_BY
                 and self.registry.state.get(e.payload["capability_id"]) == "VERIFIED"]

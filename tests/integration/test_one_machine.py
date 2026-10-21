@@ -119,6 +119,27 @@ def done(rows, action_id):
     return [a for a in rows if a["action_id"] == action_id and a["status"] == "DONE"]
 
 
+def worker_processes(worker: Path) -> list[int]:
+    """Live processes running ``worker``, read from /proc: the test observes the confined worker from outside
+    (where Landlock confines workers, the worker can write nothing but its own clone)."""
+    found = []
+    for proc in Path("/proc").iterdir():
+        if proc.name.isdigit():
+            try:
+                argv = (proc / "cmdline").read_bytes().split(b"\0")
+            except OSError:
+                continue
+            if str(worker).encode() in argv[:2]:      # executing the script (the body only names it later)
+                found.append(int(proc.name))
+    return found
+
+
+def dispatches(home: Path, mid: str, action_id: str) -> list[str]:
+    """GREG's own record of each dispatch of one strategy (a founder reconciliation is not a dispatch)."""
+    return [a["status"] for a in facts(home, mid)["actions"] if a["action_id"] == action_id
+            and a.get("route") != "founder_reconciliation" and "reconciles" not in a]
+
+
 def alive(pid: int) -> bool:
     try:
         os.kill(pid, 0)
@@ -139,7 +160,6 @@ def test_one_signed_mission_runs_the_whole_machine_across_processes(tmp_path):
     tools.mkdir()
     worker = tools / "worker.py"
     shutil.copy(KERNEL / "tests" / "one_machine_worker.py", worker)
-    runs = tools / "runs.log"
     home, _, _, _ = make_body(tmp_path, read_roots=[data, *organ_roots(organs)], worker_confinement="supervised")
     key = tmp_path / "founder.pem"
     log = tmp_path / "body.log"
@@ -156,8 +176,8 @@ def test_one_signed_mission_runs_the_whole_machine_across_processes(tmp_path):
     # 2-5. A body process runs Mind, Genesis and Organs, then commissions the worker, which holds.
     (tools / "HOLD").touch()
     body = start_body(home, worker, log)
-    started = wait_for(lambda: (tools / "started").exists() and (tools / "started").read_text(), timeout=300,
-                       what="the worker to start", body=body, log=log)
+    started = wait_for(lambda: worker_processes(worker), timeout=300, what="the worker to start", body=body,
+                       log=log)
     seen = facts(home, mid)
     assert done(seen["actions"], "organs") and done(seen["actions"], "compile")
     assert {d["function"] for d in seen["deficits"]} == {"assignment.staffing", "graph.max_flow"}
@@ -168,18 +188,20 @@ def test_one_signed_mission_runs_the_whole_machine_across_processes(tmp_path):
     assert not done(seen["actions"], "commission")
 
     # 6. Kill the body mid-work. The worker dies with it (PR_SET_PDEATHSIG), leaving no receipt.
-    worker_pid = int(started)
+    [worker_pid] = started
     os.kill(body.pid, signal.SIGKILL)
     body.wait(timeout=30)
     wait_for(lambda: not alive(worker_pid), timeout=30, what="the worker to die with the body")
-    assert len(runs.read_text().splitlines()) == 1
+    # Killed mid-dispatch: no outcome is recorded yet (the restart finds the open dispatch and records it UNCERTAIN).
+    assert dispatches(home, mid, "commission") == [] and not worker_processes(worker)
     (tools / "HOLD").unlink()
 
     body = start_body(home, worker, log)
     request = wait_for(lambda: [r for r in facts(home, mid)["requests"] if r["kind"] == "RECONCILIATION"],
                        timeout=180, what="a reconciliation request", body=body, log=log)[-1]
     time.sleep(2)                                               # the body keeps ticking; it must not retry blind
-    assert len(runs.read_text().splitlines()) == 1, "an uncertain commission was retried without the founder"
+    assert dispatches(home, mid, "commission") == ["UNCERTAIN"] and not worker_processes(worker), \
+        "an uncertain commission was retried without the founder"
     order = spec["strategies"][2]["params"]["order"]
     order_dir = Layout(home).workspace / mid.replace(":", "_") / "work-orders" / order
     assert not (order_dir / "evidence.json").exists()          # the founder's evidence: it never completed
@@ -196,7 +218,7 @@ def test_one_signed_mission_runs_the_whole_machine_across_processes(tmp_path):
     assert len(done(closed["actions"], "commission")) == 1
     assert [a["status"] for a in closed["actions"] if a["action_id"] == "commission"].count(
         "RECONCILED_NOT_EXECUTED") == 1
-    assert len(runs.read_text().splitlines()) == 2              # once interrupted, once after reconciliation
+    assert dispatches(home, mid, "commission") == ["UNCERTAIN", "DONE"]   # interrupted, then once after reconciling
     assert closed["recovered"], "the restart was recorded as a recovery"
     [commission] = done(closed["actions"], "commission")
     supervision = json.loads((order_dir / "evidence.json").read_text())["summary"]["worker"]["isolation"]
@@ -279,7 +301,7 @@ def test_one_signed_mission_runs_the_whole_machine_across_processes(tmp_path):
                                                          indent=1, default=str) + "\n")
             (out / "mission.json").write_text(json.dumps(spec, indent=1) + "\n")
             (out / "run.json").write_text(json.dumps({
-                "mission_id": mid, "ledger_head": journal.ledger.head, "worker_runs": runs.read_text().splitlines(),
+                "mission_id": mid, "ledger_head": journal.ledger.head, "worker_dispatches": dispatches(home, mid, "commission"),
                 "reconciliation_request": request["request_id"], "boots": len(journal.replay("body.booted")),
                 "recoveries": len(journal.replay("body.recovered")), "later_mission": second["mission_id"],
                 "later_method": receipts[-1]["method_or_composition_selected"], "formed": formed,

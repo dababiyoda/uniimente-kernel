@@ -16,7 +16,7 @@ edits the reviewed record. It becomes, explicitly and traceably:
 """
 from __future__ import annotations
 
-from greg import anchor, asks
+from greg import anchor, asks, sop
 from greg.journal import Journal, iso, utcnow
 from provenance.ledger import sha256_json
 
@@ -86,6 +86,7 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
     from greg import presence
     reviews = [e.payload for e in all_events if e.type == "greg.tribunal.reported"]
     since = presence._t(reviews[-1]["at"]) if reviews and reviews[-1].get("at") else None
+    usage = sop.model_usage(journal)
     report = {
         "reality_status": "RETAINED_EVIDENCE_PROJECTION",
         "window": {"after_event": previous, "events": len(events)},
@@ -113,6 +114,8 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
                         "external_anchor": anchor.summary(journal),
                         "receipts": [a["receipt"] for a in done if a.get("receipt")]},
         "q9_learned": {"capabilities_acquired": by("deficit.resolved"), "sops_proposed": by("sop.proposed"),
+                       "sops_awaiting_ratification": sop.awaiting_ratification(journal),
+                       "sops_compounding": sop.trend(journal)["compounding"],
                        "critiques_applied": [c["critique_id"] for c in critiques]},
         "q10_retain": sorted({a["capability"] for a in done if a.get("capability")}),
         "q11_change": [{"regression_id": r["regression_id"], "description": r["description"]} for r in regressions],
@@ -123,7 +126,10 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
                     "founder_decisions_requested": len(by("decision.requested")),
                     "asks_with_wording_withheld": len(by("ask.wording_withheld")),
                     "founder_commands_accepted": len(by("command.accepted")),
-                    "model_calls": 0, "verified_mission_closures": len(by("mission.achieved")),
+                    "model_calls": usage["model_calls"], "model_cost_usd": usage["model_cost_usd"],
+                    "model_cost_known": usage["cost_known"],
+                    "model_route_attempts_recorded": usage["model_route_attempts_recorded"],
+                    "verified_mission_closures": len(by("mission.achieved")),
                     "spend_usd": round(sum(a.get("cost_usd", 0.0) for a in done), 6)},
         "claims_not_made": ["no external business outcome", "no Mac verification unless recorded by the Mac package",
                             "no model output treated as evidence",

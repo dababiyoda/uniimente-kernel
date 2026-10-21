@@ -53,7 +53,15 @@ COMMAND_KINDS = (
     "GOAL",               # authorize (or supersede) a persistent Goal Gravity goal bound to signed missions
     "GOAL_CONTROL",       # stop/resume/lower/never/mute/ask-before/forget/revoke one admitted goal
     "REALIZATION",        # bind observed values to one retained forecast receipt: evidence only, no consequence
+    "TREASURY_REQUIREMENTS",  # per-tier obligation and reserve amounts for one venture's books; moves no money
+    "FOUNDER_TIER",       # the signing key attests passphrase custody; grants nothing (greg/metrics.py founder_tier)
 )
+# FOUNDER_TIER's only body. The CLI signs it only from a passphrase-encrypted key file (``greg founder attest``,
+# and ``greg body designate`` when the key is protected), so the supported tools never sign it for a
+# --no-passphrase key, a test fixture's key or the ``greg rehearse`` throwaway key. It is the key holder's claim,
+# not verified custody: the body cannot see how a key is stored, and any holder of an enrolled key, protected or
+# not, can sign this body directly (greg/metrics.py founder_tier states the residual).
+FOUNDER_TIER_BODY = {"key_custody": "passphrase"}
 MAX_TTL = timedelta(days=7)
 # A device key (e.g. Alfonso's phone) is a delegation, never a second founder: it may only
 # answer, criticize, pause, resume or stop. Missions, goals, capabilities, key rotation and

@@ -10,6 +10,8 @@ DELIVERY = "sha256:" + "b" * 64
 ACCEPTANCE = "sha256:" + "c" * 64
 OUTCOME = "sha256:" + "d" * 64
 RECONCILIATION = "sha256:" + "e" * 64
+CUSTOMER_RECORD = "sha256:" + "1" * 64
+PROCESSOR_RECORD = "sha256:" + "2" * 64
 
 
 def case(**overrides):
@@ -19,6 +21,10 @@ def case(**overrides):
         delivery_receipt_hash=DELIVERY, outcome_verified_by="external_receipt",
         outcome_detail="test operator accepted parsed-record.json",
         resolution="retained",
+        # only an observed customer and live processor-observed money can be external verification
+        customer_mode="observed", money_mode="observed",
+        customer_observation={"source": "crm.example", "record_ref": CUSTOMER_RECORD},
+        money_observation={"source": "stripe", "record_ref": PROCESSOR_RECORD, "livemode": True},
     )
     values.update(overrides)
     return CustomerCase(**values)
@@ -46,8 +52,19 @@ def test_closed_case_and_reconciliation_produce_external_outcome():
     assert result.contribution_margin_usd == 300.0
     assert result.accepted_delivery and result.externally_verified
     assert set(result.receipt_refs) == {
-        PAYMENT, DELIVERY, ACCEPTANCE, OUTCOME, RECONCILIATION,
+        PAYMENT, DELIVERY, ACCEPTANCE, OUTCOME, RECONCILIATION, CUSTOMER_RECORD, PROCESSOR_RECORD,
     }
+
+
+@pytest.mark.parametrize("overrides", [
+    {"customer_mode": "synthetic"},
+    {"money_mode": "synthetic"},
+    {"money_observation": {"source": "stripe", "record_ref": PROCESSOR_RECORD, "livemode": False}},
+    {"money_observation": {"source": "stripe-emulator", "record_ref": PROCESSOR_RECORD, "livemode": True}},
+])
+def test_synthetic_customer_or_money_is_never_external_verification(overrides):
+    with pytest.raises(AdvantageRefused, match="synthetic"):
+        external_outcome_from_case(case(**overrides), reconciliation())
 
 
 def test_activity_before_resolution_is_not_validation():

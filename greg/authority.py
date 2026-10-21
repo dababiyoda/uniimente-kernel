@@ -83,6 +83,15 @@ class AuthorityOffice:
                                    f"that {manifest.target_from} would contact")
         return None
 
+    @staticmethod
+    def proposal_id(scope: str, attempt) -> str:
+        """The one proposal (hence at most one Gate dispatch) of this exact scope at this attempt."""
+        return "greg-" + sha256_json({"scope": scope, "attempt": attempt})[7:39]
+
+    def prior(self, proposal_id: str):
+        """Retained dispatch claim and receipt of this exact proposal: what the Gate itself recorded."""
+        return self._prior(proposal_id)
+
     def _prior(self, proposal_id: str):
         """Retained dispatch/receipt for this exact proposal, if any (crash recovery)."""
         claims = [r for r in self.ledger.by_type("grant_dispatch") if r.payload.get("proposal_id") == proposal_id]
@@ -95,12 +104,16 @@ class AuthorityOffice:
     def act(self, *, mission_id: str, cone: LightCone, command_digest: str, manifest: CapabilityManifest,
             adapter, ctx: InvocationContext, params: dict, target: str, cost_usd: float,
             expected_outcome: str, evidence_refs: list, attempt, spent_usd: float,
-            approved_scopes: set, evidence_confidence: float = 1.0) -> ActionOutcome:
+            approved_scopes: set, evidence_confidence: float = 1.0,
+            signed_scopes: frozenset = frozenset()) -> ActionOutcome:
+        """``signed_scopes``: exact scopes the founder-signed mission itself pre-approves (its
+        ``pre_approved_steps``). They admit that one action past the light cone only; a constitutional
+        requirement for a human is still answered by an exact-scope founder DECISION alone."""
         consequence = manifest.consequence_class
         scope = self.scope_digest(mission_id=mission_id, capability_id=manifest.capability_id, params=params,
                                   target=target, consequence_class=consequence, cost_usd=cost_usd,
                                   spent_usd=spent_usd, budget_usd=cone.budget_usd)
-        proposal_id = "greg-" + sha256_json({"scope": scope, "attempt": attempt})[7:39]
+        proposal_id = self.proposal_id(scope, attempt)
         base = dict(proposal_id=proposal_id, scope_digest=scope)
 
         refused = self.precheck(manifest, target=target, params=params)
@@ -126,7 +139,7 @@ class AuthorityOffice:
                 return ActionOutcome("UNCERTAIN", ["retained legacy dispatch; no receipt or blind retry"], **old_base)
         outside = cone.admits(capability=manifest.capability_id, target=target, consequence_class=consequence,
                               cost_usd=cost_usd, spent_usd=spent_usd)
-        if outside and scope not in approved_scopes:
+        if outside and scope not in approved_scopes and scope not in signed_scopes:
             return ActionOutcome("OUTSIDE_SCOPE", outside, **base)
 
         claim, receipt = self._prior(proposal_id)
@@ -134,8 +147,9 @@ class AuthorityOffice:
             return ActionOutcome("DONE", ["retained receipt reused after restart"], output=receipt.payload["result"].get("output"),
                                  receipt_hash=receipt.hash, grant_id=receipt.payload.get("grant_id"),
                                  cost_usd=cost_usd, **base)
-        if claim is not None:
-            return ActionOutcome("UNCERTAIN", ["dispatch claimed without receipt; outcome unknown"], **base)
+        if claim is not None:  # the dispatch the claim names, so its reconciliation settles exactly that one
+            return ActionOutcome("UNCERTAIN", ["dispatch claimed without receipt; outcome unknown"],
+                                 grant_id=claim.payload.get("grant_id"), **base)
 
         worker = self.passports.issue(kind="agent", creator="greg-authority-office", owner_organ="uniimente-kernel",
                                       legal_principal=PRINCIPAL, declared_capabilities=[manifest.capability_id],
@@ -167,7 +181,9 @@ class AuthorityOffice:
         self.ledger.append("event", {"type": "greg.authority.grant_issued", "grant_id": grant["grant_id"],
                                      "proposal_id": proposal_id, "scope_digest": scope,
                                      "authority_ref": command_digest, "cone": cone.to_dict(),
-                                     "founder_approved_scope": scope in approved_scopes})
+                                     "founder_approved_scope": scope in approved_scopes,
+                                     **({"pre_approved_in_signed_mission": True}
+                                        if outside and scope in signed_scopes else {})})
 
         def execute(p):
             try:

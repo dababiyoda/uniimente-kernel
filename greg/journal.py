@@ -60,7 +60,7 @@ class Journal:
                       event_id=event_id, payload=data, causal_parent=causal_parent, sensitivity=sensitivity)
         accepted = self.spine.emit(event)
         if accepted is None:  # already durable: return the retained fact
-            return next(e for e in self.spine.replay("greg." + kind) if e.event_id == event.event_id)
+            return self.spine.latest(event.event_id)
         return accepted
 
     def retained(self, kind: str, key: object) -> Event | None:
@@ -68,16 +68,14 @@ class Journal:
         return self._retained(fact_id(kind, key))
 
     def _retained(self, event_id: str) -> Event | None:
-        for record in reversed(self.ledger.records):
-            if record.record_type == "event" and record.payload.get("event_id") == event_id:
-                return EventSpine._event_from_payload(record.payload)
-        return None
+        return self.spine.latest(event_id)
 
     def replay(self, kind_prefix: str = "") -> list[Event]:
         return self.spine.replay("greg." + kind_prefix)
 
+    def positions(self, kind_prefix: str = ""):
+        """event_id -> position in replay(kind_prefix), without replaying history (read-only)."""
+        return self.spine.positions("greg." + kind_prefix)
+
     def event_hash(self, event_id: str) -> str | None:
-        for record in reversed(self.ledger.records):
-            if record.record_type == "event" and record.payload.get("event_id") == event_id:
-                return record.hash
-        return None
+        return self.spine.record_hash(event_id)

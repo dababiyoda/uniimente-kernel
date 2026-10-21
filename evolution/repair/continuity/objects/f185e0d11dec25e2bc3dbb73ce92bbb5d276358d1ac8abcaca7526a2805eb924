@@ -1,0 +1,61 @@
+# Permanently non-delegable matters. No autonomy level, grant, workflow, or agent
+# may ever hold these. They always require Alfonso, or Alfonso plus dual control.
+version: "1.0.0"
+
+reserved:
+  constitutional_amendment:
+    requires: [alfonso]
+    ceremony: constitution/amendment-policy.ucl
+  shutdown_override:
+    requires: [alfonso]
+    note: Components may never delay, condition, or resist shutdown.
+  controlling_ownership_sale_or_pledge:
+    requires: [alfonso]
+  material_debt:
+    requires: [alfonso]
+  equity_issuance:
+    requires: [alfonso]
+  unrestricted_capital_movement:
+    requires: [alfonso]
+  merger_or_acquisition_approval:
+    requires: [alfonso]
+  political_commitments_in_alfonsos_name:
+    requires: [alfonso]
+  irreversible_sensitive_disclosures:
+    requires: [alfonso]
+  family_custody_marriage_estate_decisions:
+    requires: [alfonso]
+  removal_of_participant_rights:
+    requires: [alfonso]
+    note: Rank 1. Absolutely prohibited, not merely reserved.
+  unlawful_conduct:
+    requires: []
+    note: Absolutely prohibited. No one may authorize.
+  physical_harm:
+    requires: []
+    note: Absolutely prohibited. No one may authorize.
+  expansion_of_uniimentes_own_sovereignty:
+    requires: []
+    note: Absolutely prohibited. The institution may disarm but never self-arm.
+  signing_contracts_or_legal_agreements:
+    requires: [alfonso]
+  spending_above_predefined_thresholds:
+    requires: [alfonso]
+    thresholds_ref: capital/allocation-policy.yaml
+  public_performance_claims_or_marketing_promises:
+    requires: [alfonso]
+  regulated_data_or_activities:
+    requires: [alfonso, compliance_signoff]
+  charter_kill_condition_or_core_mission_change:
+    requires: [alfonso]
+  creating_child_agents_with_broad_or_persistent_authority:
+    requires: [alfonso]
+  weakening_monitoring_logging_or_kill_switches:
+    requires: []
+    note: Absolutely prohibited.
+  entering_new_segments_geographies_or_jurisdictions:
+    requires: [alfonso]
+  accepting_significant_liability_or_debt:
+    requires: [alfonso]
+  public_crisis_communications_or_legal_responses:
+    requires: [alfonso]

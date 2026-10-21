@@ -106,7 +106,7 @@
     ]
    }
   ],
-  "equality_digest": "sha256:3712a7bb014ed9d4f148ba957f417322954682d446f29262a497a8508fccb1d1",
+  "equality_digest": "sha256:531b9cd33b2330463049bd961350ad1e54573ca6c1846edbe4cf77bac2400327",
   "equivalences": [
    {
     "a": "greg.cognition.genomes.collective:flock_dropout_instance",
@@ -199,7 +199,7 @@
     ]
    }
   ],
-  "generators_sampled": 57,
+  "generators_sampled": 61,
   "sample_seeds": [
    0,
    1,
@@ -216,7 +216,7 @@
  },
  "counts": {
   "by_lineage": {
-   "#158": 274,
+   "#158": 276,
    "#179": 40,
    "both": 42
   },
@@ -224,7 +224,7 @@
    "P8 held-out": 7,
    "admission held-out": 101,
    "canary": 1,
-   "dev": 194,
+   "dev": 196,
    "held-out": 38,
    "review-pilot": 9,
    "train": 6
@@ -235,7 +235,7 @@
    "admission held-out / #158": 68,
    "admission held-out / #179": 33,
    "canary / #158": 1,
-   "dev / #158": 171,
+   "dev / #158": 173,
    "dev / both": 23,
    "held-out / #158": 13,
    "held-out / #179": 6,
@@ -243,7 +243,7 @@
    "review-pilot / #158": 9,
    "train / #158": 6
   },
-  "exposures": 356,
+  "exposures": 358,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -12782,6 +12782,96 @@
     [
      3000,
      3199
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "ec665c2873e4165c83e9dd379c9381116c1db1b2",
+    "line_commits": [
+     "ec665c2873e4165c83e9dd379c9381116c1db1b2"
+    ],
+    "lines": [
+     349,
+     350
+    ],
+    "path": "tests/unit/test_genomes_l124.py",
+    "sha256": "sha256:eb37c731b10e48f44af4980bef8711a4906c6c92c78c78b94955f42b054b4cb8"
+   },
+   "exposure_commit": "ec665c2873e4165c83e9dd379c9381116c1db1b2",
+   "family": null,
+   "generator": {
+    "commit": "ec665c2873e4165c83e9dd379c9381116c1db1b2",
+    "key": "ITEMS[family].instance",
+    "kind": "code",
+    "resolved": false,
+    "why": "receiver not resolved statically"
+   },
+   "id": "#158|tests/unit/test_genomes_l124.py|dev|-|?:ITEMS[family].instance:349",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 1,
+   "part": "?:ITEMS[family].instance:349",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     9401,
+     9401
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "ec665c2873e4165c83e9dd379c9381116c1db1b2",
+    "line_commits": [
+     "ec665c2873e4165c83e9dd379c9381116c1db1b2"
+    ],
+    "lines": [
+     241
+    ],
+    "path": "tests/unit/test_genomes_l124.py",
+    "sha256": "sha256:eb37c731b10e48f44af4980bef8711a4906c6c92c78c78b94955f42b054b4cb8"
+   },
+   "exposure_commit": "ec665c2873e4165c83e9dd379c9381116c1db1b2",
+   "family": "collective_auction",
+   "generator": {
+    "code_sha256": "sha256:a23c2a2cfd0ac22dcc7b56e7250a7aba6313269a4ca01728142003f166a89ba6",
+    "commit": "ec665c2873e4165c83e9dd379c9381116c1db1b2",
+    "delegates": [],
+    "function": "auction_instance",
+    "key": "greg.cognition.genomes.collective_b:auction_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.collective_b",
+    "module_file_sha256": "sha256:9c72407b6d7e1c009795fc3bd273e35560bd5d1f758b8b68c3760beb740ed30f",
+    "prng": [
+     "Random(f'genome:collective_auction:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#158|tests/unit/test_genomes_l124.py|dev|collective_auction|greg.cognition.genomes.collective_b:auction_instance:241",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 10,
+   "part": "greg.cognition.genomes.collective_b:auction_instance:241",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
     ]
    ]
   },

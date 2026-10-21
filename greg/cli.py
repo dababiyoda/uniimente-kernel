@@ -1,0 +1,671 @@
+"""GREG's face (developer mode): one command, one persistent institution.
+
+    greg init --read-root ~/Projects          create this computer's body
+    greg founder keygen --key ~/.greg-founder.pem   (on Alfonso's own device)
+    greg founder enroll --pubkey HEX          trust-on-first-use enrollment
+    greg mission submit mission.json --key K  signed goal -> inbox; the body runs it
+    greg status | greg decisions | greg morning
+    greg decide REQUEST_ID approve|reject --key K
+    greg critique EVENT_ID --verdict reject --evidence-type founder_judgment --text ... --key K
+    greg pause|resume|stop --key K            (or: greg stop --local, touching STOP)
+    greg run                                  the host loop (normally started by the supervisor)
+    greg service install --platform macos|linux|supervisord [--remote]
+    greg body designate --key K                   founder signs the intended first body
+    greg device enroll --pubkey HEX --label phone --key K   delegate a narrow key to a phone
+    greg serve                                   loopback remote channel for the phone
+    greg anchor configure --tsa-url URL --roots ROOTS.pem --key K   timestamp the ledger head externally
+    greg anchor export --roots R.pem --out W.json   witness bundle kept OUTSIDE GREG
+    greg anchor verify --witness W.json --roots R.pem   rewrite/rollback of witnessed history exits 3
+
+The CLI never opens the ledger as a writer while the body runs: commands are
+signed files dropped into the body inbox, so any interface can close at any time.
+"""
+from __future__ import annotations
+
+import argparse
+from datetime import timedelta
+import getpass
+import json
+import os
+from pathlib import Path
+import sys
+
+from greg import service
+from greg.body import (Body, BodyError, Layout, init_body, morning_projection, observe, send_signed,
+                       status)
+from greg.founder import generate_founder_key, load_founder_key
+from greg.tribunal import mark_reviewed, morning_report
+from provenance.ledger import WriterConflict
+
+DEFAULT_HOME = os.environ.get("GREG_HOME", str(Path.home() / ".uniimente" / "greg"))
+
+
+def _passphrase(args) -> bytes | None:
+    env = os.environ.get("GREG_FOUNDER_PASSPHRASE")
+    if env is not None:
+        return env.encode() or None
+    if getattr(args, "no_passphrase", False):
+        return None
+    return getpass.getpass("founder key passphrase: ").encode() or None
+
+
+def _known_handles() -> set:
+    """Credential handles something in GREG declares; a typo must not store an unused secret."""
+    from greg.capabilities import BUILTINS
+    return {h for manifest, _ in BUILTINS.values() for h in manifest.credentials} | {"anthropic_api_key",
+                                                                                    "openai_api_key"}
+
+
+def _secret_value(name: str) -> str:
+    """From a hidden prompt, or piped stdin; never from the command line (shell history, ps)."""
+    value = getpass.getpass(f"value for {name} (hidden): ") if sys.stdin.isatty() else sys.stdin.readline()
+    value = value.strip()
+    if not value:
+        raise BodyError("no value given; nothing stored")
+    return value
+
+
+def _drop(home: str, kind: str, body: dict, args) -> Path:
+    key = load_founder_key(args.key, _passphrase(args))
+    return send_signed(home, key, kind, body, ttl=timedelta(hours=getattr(args, "ttl_hours", 24)))
+
+
+def _slot_value(declared: dict, assignment: str):
+    name, sep, raw = assignment.partition("=")
+    if not sep or name not in declared:
+        raise BodyError(f"--set takes SLOT=VALUE for one of {sorted(declared)}; got {assignment!r}")
+    kind = declared[name]["type"]
+    try:
+        value = {"integer": int, "number": float, "string": str}.get(kind, lambda v: {"true": True, "false": False}[v])(raw)
+    except (KeyError, ValueError):
+        raise BodyError(f"slot {name} takes a {kind}; got {raw!r}") from None
+    return name, value
+
+
+def _sop(home: str, args) -> dict:
+    """``greg sop``: reads retained history; ratify and run only drop founder-signed commands."""
+    from greg import sop
+    from greg.planner import authority_summary
+    from greg.capabilities import BUILTINS
+    with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+        proposals = {e.payload["procedure_id"]: e.payload for e in journal.replay("sop.proposed")}
+        accepted = sop.ratified(journal)
+        measured = {p["procedure_id"]: p for p in sop.trend(journal)["procedures"]}
+        waiting = sop.awaiting_ratification(journal)
+    if args.sop_cmd in ("list", "trend"):
+        if args.sop_cmd == "trend":
+            return {"procedures": list(measured.values())}
+        return {"awaiting_ratification": waiting,
+                "ratified": [{"procedure_id": pid, "steps": r["record"]["steps"],
+                              "slots": sorted(r["record"].get("workflow", {}).get("slots", {})),
+                              "pre_approved": [s["action_id"] for s in r["record"].get("pre_approved_steps", [])],
+                              "compounding": measured.get(pid, {}).get("compounding", False),
+                              **({"why_not": measured[pid]["why_not"]} if measured.get(pid, {}).get("why_not") else {})}
+                             for pid, r in accepted.items()]}
+    pid = args.procedure_id
+    if pid not in proposals:
+        raise BodyError(f"no SOP {pid}; known: {sorted(proposals)}")
+    if args.sop_cmd == "show":
+        return {"proposal": proposals[pid], "ratified": accepted.get(pid, {}).get("record"),
+                "trend": measured.get(pid)}
+    if args.sop_cmd == "ratify":
+        if pid in accepted:
+            raise BodyError(f"{pid} is already ratified")
+        body = {"procedure_id": pid, **({"pre_approve": args.pre_approve} if args.pre_approve else {})}
+        offered = {s["action_id"] for s in proposals[pid].get("pre_approvable", [])}
+        if set(args.pre_approve) - offered:
+            raise BodyError(f"only these steps can be pre-approved: {sorted(offered)}")
+        return {"dropped": str(_drop(home, "SOP_RATIFY", body, args))}
+    if pid not in accepted:
+        raise BodyError(f"{pid} is not ratified; ratify it first (greg sop ratify {pid})")
+    record = accepted[pid]["record"]
+    declared = record.get("workflow", {}).get("slots", {})
+    try:
+        spec = sop.instantiate(record, dict(_slot_value(declared, a) for a in args.set),
+                               horizon_days=args.horizon_days, venture=args.venture)
+    except sop.SopError as exc:
+        raise BodyError(str(exc)) from None
+    summary = authority_summary(spec, [{"capability_id": cid, "consequence_class": m.consequence_class}
+                                       for cid, (m, _) in BUILTINS.items()])
+    if args.print_only:
+        return {"mission": spec, "signing_lets_greg": summary}
+    return {"dropped": str(_drop(home, "MISSION", spec, args)), "signing_lets_greg": summary}
+
+
+def _model_builder(secrets, config):
+    """Builder factory for ``run --builder models``: every reachable model route behind one router."""
+    from greg.builders import BuildError, ModelBuilder
+    from greg.models import ModelRouter, available_routes
+    routes, unavailable = available_routes(secrets, config=config.get("models"))
+    if not routes:
+        raise BuildError(f"no model route is available: {unavailable}")
+    return ModelBuilder(ModelRouter(routes))
+
+
+def main(argv=None) -> int:
+    p = argparse.ArgumentParser(prog="greg", description="GREG: persistent personal agentic operating layer")
+    p.add_argument("--home", default=DEFAULT_HOME)
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    s = sub.add_parser("init"); s.add_argument("--read-root", action="append", default=[])
+    s.add_argument("--deliver-root", help="founder-visible folder for deliverables (default: <home>/deliveries)")
+    s.add_argument("--local-model", help="opt in to an already installed Ollama model for the one GREG router")
+    f = sub.add_parser("founder"); fs = f.add_subparsers(dest="founder_cmd", required=True)
+    k = fs.add_parser("keygen"); k.add_argument("--key", required=True); k.add_argument("--no-passphrase", action="store_true")
+    e = fs.add_parser("enroll"); e.add_argument("--pubkey", required=True)
+    b = sub.add_parser("body", help="founder designation of the first physical execution body")
+    bs = b.add_subparsers(dest="body_cmd", required=True)
+    bd = bs.add_parser("designate"); bd.add_argument("--key", required=True)
+    bd.add_argument("--no-passphrase", action="store_true"); bd.add_argument("--ttl-hours", type=int, default=24)
+    ms = sub.add_parser("model", help="founder-signed cognition route swap on the one body ledger")
+    mss = ms.add_subparsers(dest="model_cmd", required=True)
+    select = mss.add_parser("set"); select.add_argument("--route", action="append", default=[],
+                                                        choices=["ollama", "anthropic", "openai", "claude-code"])
+    select.add_argument("--local-model"); select.add_argument("--off", action="store_true")
+    select.add_argument("--key", required=True); select.add_argument("--no-passphrase", action="store_true")
+
+    for name in ("mission", "decide", "critique", "pause", "resume", "stop", "attach", "detach", "lifecycle",
+                 "accept"):
+        q = sub.add_parser(name)
+        q.add_argument("--key")
+        q.add_argument("--no-passphrase", action="store_true")
+        q.add_argument("--ttl-hours", type=int, default=24)
+        if name == "mission":
+            q.add_argument("action", choices=["submit", "new"])
+            q.add_argument("target", help="mission JSON file (submit) or template name (new)")
+            q.add_argument("--repo", action="append", default=[], help="role=path (repo-guardian, integration-watch)")
+            q.add_argument("--pin"); q.add_argument("--version", dest="pkg_version")
+            q.add_argument("--cadence-seconds", type=int, default=None, help="standing missions (default per template)")
+            q.add_argument("--text"); q.add_argument("--must-contain")
+            q.add_argument("--local", action="append", default=[], help="name=path (engineering-brief)")
+            q.add_argument("--github", action="append", default=[], help="owner/name (engineering-brief)")
+            q.add_argument("--daily", action="store_true", help="engineering-brief: standing daily mission")
+            q.add_argument("--preauthorize-delivery", action="store_true",
+                           help="engineering-brief, venture-assessment: sign delivery into the cone (no approval stop)")
+            q.add_argument("--stale-days", type=int, default=14)
+            q.add_argument("--railscout", help="venture-assessment: RailScout checkout")
+            q.add_argument("--wmi", help="venture-assessment: WealthMachineIntelligence checkout")
+            q.add_argument("--manifest", help="venture-assessment: RailScout signal manifest (JSON)")
+            q.add_argument("--source-root", help="venture-assessment: directory holding the manifest's sources")
+            q.add_argument("--standing", action="store_true",
+                           help="venture-assessment: keep watching; re-assess whenever the evidence changes")
+            q.add_argument("--file", help="verify-download: the file to verify (inside a read root)")
+            q.add_argument("--sha256", help="verify-download: the published SHA-256 (64 hex)")
+            q.add_argument("--max-words", type=int, help="word-limit: the most words the file may have")
+            q.add_argument("--function", help="human-work: professional.<field> or human.<task>")
+            q.add_argument("--purpose", help="human-work: what the work is for, in your words")
+            q.add_argument("--deliverable", default="deliverable.pdf",
+                           help="human-work: file name the person's deliverable is saved as in the mission folder")
+            q.add_argument("--case", help="business-case: a short case name (becomes the payment reference)")
+            q.add_argument("--buyer", help="business-case: the named buyer or stakeholder")
+            q.add_argument("--offer", help="business-case: what is offered")
+            q.add_argument("--price", help="business-case: price, e.g. 250 or 249.99")
+            q.add_argument("--currency", default="USD", help="business-case: three-letter currency code")
+            q.add_argument("--acceptance", help="business-case: the acceptance terms, fixed before anything runs")
+            q.add_argument("--venture", help="business-case: the venture this case serves (short lowercase name)")
+            q.add_argument("--approve-writes", action="store_true",
+                           help="business-case: ask before GREG drafts the offer or writes the settlement")
+            q.add_argument("--task", help="shared-work: the work, in your words")
+            q.add_argument("--person", help="shared-work: the named person who will do it")
+            q.add_argument("--relationship", choices=["contract", "employment"],
+                           help="shared-work: the engagement you arrange and pay yourself")
+            q.add_argument("--statement", default="statement.csv",
+                           help="business-case: file name of the payment statement you export into the case folder")
+            q.add_argument("--print-only", action="store_true", help="show the mission without signing")
+        if name == "accept":
+            q.add_argument("event_id"); q.add_argument("--text", default="accepted after morning review")
+        if name == "decide":
+            q.add_argument("request_id"); q.add_argument("answer"); q.add_argument("--reason", default="")
+        if name == "critique":
+            q.add_argument("event_id"); q.add_argument("--verdict", required=True)
+            q.add_argument("--evidence-type", required=True); q.add_argument("--text", required=True)
+            q.add_argument("--exclude-strategy", action="store_true"); q.add_argument("--regression")
+            q.add_argument("--missed", action="append", default=None,
+                           help="brief label: a key the brief should have flagged (owner/repo#N or local:NAME)")
+            q.add_argument("--noise", action="append", default=None,
+                           help="brief label: a flagged key that was not worth your attention")
+            q.add_argument("--claim-failing", action="append", default=None,
+                           help="failure claim: owner/repo#N was failing and the brief missed it (GREG verifies it)")
+        if name == "stop":
+            q.add_argument("--local", action="store_true")
+        if name in ("attach", "detach"):
+            q.add_argument("capability_id")
+        if name == "lifecycle":
+            q.add_argument("mission_id"); q.add_argument("state"); q.add_argument("--reason", default="")
+
+    d = sub.add_parser("device", help="delegate a narrow, expiring key to a phone (founder-signed)")
+    ds = d.add_subparsers(dest="device_cmd", required=True)
+    de = ds.add_parser("enroll"); de.add_argument("--pubkey", required=True); de.add_argument("--label", required=True)
+    de.add_argument("--kinds", default="DECISION,CRITIQUE,BODY_PAUSE,BODY_RESUME,BODY_STOP")
+    de.add_argument("--days", type=int, default=30)
+    dr = ds.add_parser("revoke"); dr.add_argument("device_key_id")
+    for q in (de, dr):
+        q.add_argument("--key", required=True); q.add_argument("--no-passphrase", action="store_true")
+        q.add_argument("--ttl-hours", type=int, default=24)
+    an = sub.add_parser("anchor", help="RFC 3161 time anchoring of the ledger head")
+    ans = an.add_subparsers(dest="anchor_cmd", required=True)
+    ac = ans.add_parser("configure", help="founder-signed: timestamp the ledger head at this TSA")
+    ac.add_argument("--tsa-url", required=True)
+    ac.add_argument("--roots", required=True, help="PEM file pinning the TSA root certificate(s)")
+    ac.add_argument("--interval-minutes", type=int, default=60)
+    ad = ans.add_parser("disable", help="founder-signed: stop anchoring")
+    for q in (ac, ad):
+        q.add_argument("--key", required=True); q.add_argument("--no-passphrase", action="store_true")
+        q.add_argument("--ttl-hours", type=int, default=24)
+    av = ans.add_parser("verify", help="check the ledger; with --witness, against state kept outside GREG")
+    av.add_argument("--witness", help="witness bundle exported earlier and retained outside GREG")
+    av.add_argument("--roots", help="TSA root PEM held by the verifier (required with --witness)")
+    ae = ans.add_parser("export", help="write/extend a witness bundle to keep outside GREG (read-only on the ledger)")
+    ae.add_argument("--roots", required=True, help="TSA root PEM held by the verifier, not read from the ledger")
+    ae.add_argument("--out", required=True, help="witness bundle path outside GREG's home; extended append-only")
+    sv2 = sub.add_parser("serve", help="remote channel for the phone (loopback; expose via tailscale serve)")
+    sv2.add_argument("--host", default="127.0.0.1"); sv2.add_argument("--port", type=int, default=8765)
+    se = sub.add_parser("secret", help="store a credential for GREG on this body (local; never in the ledger)")
+    ses = se.add_subparsers(dest="secret_cmd", required=True)
+    ses.add_parser("set", help="value from a hidden prompt or stdin, never from the command line").add_argument("name")
+    ses.add_parser("remove").add_argument("name")
+    ses.add_parser("list", help="handle names only; values are never printed")
+    st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
+    st.add_argument("--local", action="store_true", required=True)
+    sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
+    sub.add_parser("path", help="where GREG stands on its developmental path: active node, gate, exit evidence, horizons")
+    tr = sub.add_parser("treasury", help="venture books: verified revenue through your waterfall (node N7); moves no money")
+    trs = tr.add_subparsers(dest="treasury_cmd", required=True)
+    trs.add_parser("books", help="per venture: verified revenue, obligations and reserves, reinvestable surplus, transfers")
+    trset = trs.add_parser("set", help="founder-signed: per-tier amounts for one venture and currency")
+    trset.add_argument("--venture", required=True); trset.add_argument("--currency", default="USD")
+    trset.add_argument("--tier", action="append", default=[], metavar="TIER=AMOUNT",
+                       help="a tier of capital/allocation-policy.yaml and its amount, e.g. taxes_and_binding_legal_obligations=300")
+    trset.add_argument("--key", required=True); trset.add_argument("--no-passphrase", action="store_true")
+    trset.add_argument("--ttl-hours", type=int, default=24)
+    so = sub.add_parser("sop", help="standard operating procedures learned from verified closures (node N4)")
+    sos = so.add_subparsers(dest="sop_cmd", required=True)
+    sos.add_parser("list", help="proposed and ratified procedures, and whether each is compounding")
+    sos.add_parser("trend", help="interventions, model calls and model cost per verified outcome, before and after")
+    sosh = sos.add_parser("show", help="one procedure: its evidence, workflow slots and what may be pre-approved")
+    sosh.add_argument("procedure_id")
+    sor = sos.add_parser("ratify", help="founder-signed: register a proposed procedure")
+    sor.add_argument("procedure_id")
+    sor.add_argument("--pre-approve", action="append", default=[], metavar="STEP",
+                     help="a step you approved in every verified run; future runs carry it in their signed cone")
+    sou = sos.add_parser("run", help="founder-signed: one run of a ratified procedure, with zero model calls")
+    sou.add_argument("procedure_id")
+    sou.add_argument("--set", action="append", default=[], metavar="SLOT=VALUE", help="a value for one slot")
+    sou.add_argument("--horizon-days", type=float, default=None)
+    sou.add_argument("--venture", help="run the procedure for another venture (a capability transplant)")
+    sou.add_argument("--print-only", action="store_true", help="show the mission without signing")
+    for q in (sor, sou):
+        q.add_argument("--key"); q.add_argument("--no-passphrase", action="store_true")
+        q.add_argument("--ttl-hours", type=int, default=24)
+    pr = sub.add_parser("presence", help="was the body actually running: measured availability, absences, late work")
+    pr.add_argument("--hours", type=float, default=72.0)
+    doc = sub.add_parser("doctor", help="read-only first-body prerequisites; creates no key, service or body")
+    doc.add_argument("--chromebook", action="store_true", required=True)
+    fd = sub.add_parser("foundry", help="the Foundry arsenal: completion status, systems, GREG's own graph and reputation")
+    fds = fd.add_subparsers(dest="foundry_cmd", required=True)
+    fds.add_parser("status", help="N of 55 systems complete; every outstanding obligation")
+    fdr = fds.add_parser("run", help="run one system's reproducible exercise"); fdr.add_argument("system", type=int)
+    fdw = fds.add_parser("why", help="causal ancestry of a GREG event (knowledge graph over the ledger)")
+    fdw.add_argument("event_id")
+    fds.add_parser("reputation", help="capability reputation from appraised GREG closures")
+    fdt = fds.add_parser("trace", help="one correlated trace per mission: decisions, actions, costs, outcomes")
+    fdt.add_argument("--mission")
+    fdc = fds.add_parser("changed", help="why a GREG metric changed across a split time")
+    fdc.add_argument("metric"); fdc.add_argument("--split", required=True, help="ISO time dividing before/after")
+    fdb = fds.add_parser("seed", help="Institutional Seed: content-addressed backup of this body (private keys excluded)")
+    fdb.add_argument("--out", required=True, help="seed store directory, outside the body home")
+    sub.add_parser("learning", help="brief corrections per labelled brief, and every learned change kept, rejected or reverted")
+    c = sub.add_parser("console", help="the founder console on http://127.0.0.1:PORT")
+    c.add_argument("--key", help="founder key; without it the console is read-only")
+    c.add_argument("--no-passphrase", action="store_true"); c.add_argument("--port", type=int, default=8766)
+    c.add_argument("--no-model", action="store_true", help="plan with templates only (no model calls)")
+    m = sub.add_parser("morning"); m.add_argument("--mark-reviewed", action="store_true")
+    r = sub.add_parser("run"); r.add_argument("--tick-seconds", type=float, default=30.0)
+    r.add_argument("--max-ticks", type=int)
+    r.add_argument("--builder", choices=["none", "claude-code", "models"], default="none",
+                   help="Capability Genesis builder: claude-code (local CLI) or models (every reachable route: "
+                        "local Ollama, Anthropic API, OpenAI API, Claude Code, with failover). Spends only a mission's signed "
+                        "build budget")
+    r.add_argument("--clear-stop", action="store_true",
+                   help="remove a previous local STOP file (a deliberate human restart)")
+    sv = sub.add_parser("service"); svs = sv.add_subparsers(dest="service_cmd", required=True)
+    si = svs.add_parser("install"); si.add_argument("--platform", required=True, choices=["macos", "linux", "supervisord"])
+    si.add_argument("--target-dir")
+    si.add_argument("--remote", action="store_true", help="the phone channel (greg serve) instead of the body")
+    si.add_argument("--builder", choices=["none", "claude-code", "models"], default="none",
+                    help="let the installed body build and repair capabilities (spends only signed build budgets)")
+    args = p.parse_args(argv)
+    home = args.home
+
+    try:
+        if args.cmd == "init":
+            print(json.dumps(init_body(home, read_roots=args.read_root or [str(Path.home())],
+                                       deliver_root=args.deliver_root, local_model=args.local_model), indent=1))
+        elif args.cmd == "founder" and args.founder_cmd == "keygen":
+            print(generate_founder_key(args.key, _passphrase(args)))
+        elif args.cmd == "founder" and args.founder_cmd == "enroll":
+            with Body(home) as body:
+                print(json.dumps(body.enroll_founder(args.pubkey), indent=1))
+        elif args.cmd == "mission":
+            if args.action == "submit":
+                spec = json.loads(Path(args.target).read_text())
+            else:
+                from greg import templates
+                if args.target in ("repo-guardian", "integration-watch"):
+                    spec = templates.TEMPLATES[args.target](repositories=dict(r.split("=", 1) for r in args.repo),
+                                                   expected_pin=args.pin, expected_version=args.pkg_version,
+                                                   cadence_seconds=args.cadence_seconds or 21600)
+                elif args.target == "workspace-note":
+                    note = Layout(home).workspace / "m_first-note" / "note.txt"
+                    spec = templates.workspace_note(text=args.text, must_contain=args.must_contain,
+                                                    workspace_file=note)
+                elif args.target == "verify-download":
+                    spec = templates.verify_download(file=Path(args.file), sha256=args.sha256,
+                                                     workspace_root=Layout(home).workspace)
+                elif args.target == "word-limit":
+                    spec = templates.word_limit(file=Path(args.file), max_words=args.max_words,
+                                                workspace_root=Layout(home).workspace)
+                elif args.target == "business-case":
+                    missing = [f for f in ("case", "buyer", "offer", "price", "acceptance") if not getattr(args, f)]
+                    if missing:
+                        raise BodyError("business-case needs " + ", ".join("--" + f for f in missing))
+                    spec = templates.business_case(case=args.case, buyer=args.buyer, offer=args.offer,
+                                                   price=args.price, currency=args.currency,
+                                                   acceptance=args.acceptance, statement=args.statement,
+                                                   workspace_root=Layout(home).workspace, venture=args.venture,
+                                                   approve_writes=args.approve_writes)
+                elif args.target == "shared-work":
+                    missing = [f for f in ("task", "person", "relationship", "function", "acceptance")
+                               if not getattr(args, f)]
+                    if missing:
+                        raise BodyError("shared-work needs " + ", ".join("--" + f for f in missing))
+                    spec = templates.shared_work(task=args.task, person=args.person, relationship=args.relationship,
+                                                 function=args.function, deliverable=args.deliverable,
+                                                 acceptance=args.acceptance, workspace_root=Layout(home).workspace)
+                elif args.target == "human-work":
+                    if not (args.function and args.purpose):
+                        raise BodyError("human-work needs --function and --purpose")
+                    spec = templates.human_work(function=args.function, purpose=args.purpose,
+                                                deliverable=args.deliverable, workspace_root=Layout(home).workspace)
+                elif args.target == "engineering-brief":
+                    spec = templates.engineering_brief(local=dict(r.split("=", 1) for r in args.local),
+                                                       github=args.github, daily=args.daily,
+                                                       preauthorize_delivery=args.preauthorize_delivery,
+                                                       stale_days=args.stale_days)
+                elif args.target == "venture-assessment":
+                    missing = [f for f in ("railscout", "wmi", "manifest", "source_root") if not getattr(args, f)]
+                    if missing:
+                        raise BodyError(f"venture-assessment needs --{', --'.join(m.replace('_', '-') for m in missing)}")
+                    spec = templates.venture_assessment(railscout_root=args.railscout, wmi_root=args.wmi,
+                                                        manifest=args.manifest, source_root=args.source_root,
+                                                        preauthorize_delivery=args.preauthorize_delivery,
+                                                        standing=args.standing,
+                                                        cadence_seconds=args.cadence_seconds or 3600)
+                else:
+                    raise BodyError(f"unknown template {args.target}; known: {sorted(templates.TEMPLATES)}")
+            from greg.missions import validate_mission
+            validate_mission(spec)
+            if getattr(args, "print_only", False):
+                print(json.dumps(spec, indent=1))
+            else:
+                print(_drop(home, "MISSION", spec, args))
+        elif args.cmd == "accept":
+            print(_drop(home, "CRITIQUE", {"target_event_id": args.event_id, "verdict": "accept",
+                                           "evidence_type": "founder_judgment", "text": args.text}, args))
+        elif args.cmd == "body" and args.body_cmd == "designate":
+            print(_drop(home, "BODY_DESIGNATE", {"purpose": "first_founder_body"}, args))
+        elif args.cmd == "model" and args.model_cmd == "set":
+            from greg.models import validate_route_selection
+            if args.off and (args.route or args.local_model):
+                raise BodyError("--off cannot be combined with --route or --local-model")
+            if not args.off and not args.route:
+                raise BodyError("name one or more --route, or use --off")
+            selection = validate_route_selection({"order": args.route,
+                                                  **({"ollama_model": args.local_model}
+                                                     if args.local_model is not None else {})})
+            print(_drop(home, "MODEL_ROUTE_SET", selection, args))
+        elif args.cmd in ("vepmc", "routing"):
+            from greg import metrics, routing
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                data = metrics.vepmc(journal) if args.cmd == "vepmc" else routing.routing_knowledge(journal)
+            print(json.dumps(data, indent=1))
+        elif args.cmd == "path":
+            from greg import path as devpath
+            if Layout(home).ledger.exists():
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    data = devpath.position(journal)
+            else:
+                data = devpath.position(None)
+            print(json.dumps(data, indent=1))
+        elif args.cmd == "treasury":
+            from greg import venture_books
+            if args.treasury_cmd == "books":
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    print(json.dumps({"books": venture_books.books(journal),
+                                      "transfers": venture_books.transfers(journal)}, indent=1))
+            else:
+                pairs = [t.partition("=") for t in args.tier]
+                if not pairs or any(not sep for _, sep, _ in pairs):
+                    raise BodyError("name each tier as --tier TIER=AMOUNT")
+                try:
+                    body = venture_books.validate_requirements({"venture": args.venture,
+                                                                "currency": args.currency.upper(),
+                                                                "requirements": {k: v for k, _, v in pairs}})
+                except venture_books.BooksError as exc:
+                    raise BodyError(str(exc)) from None
+                print(_drop(home, "TREASURY_REQUIREMENTS", body, args))
+        elif args.cmd == "sop":
+            print(json.dumps(_sop(home, args), indent=1))
+        elif args.cmd == "presence":
+            from datetime import datetime, timezone
+            from greg import presence
+            now = datetime.now(timezone.utc)
+            try:
+                heartbeat = json.loads(Layout(home).heartbeat.read_text())
+            except (OSError, ValueError):
+                heartbeat = None
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                data = presence.summary(journal, now=now, since=now - timedelta(hours=args.hours),
+                                        heartbeat=heartbeat)
+            print(json.dumps(data, indent=1))
+        elif args.cmd == "foundry":
+            from foundry import completion
+            if args.foundry_cmd == "status":
+                print(json.dumps(completion.status(), indent=1))
+            elif args.foundry_cmd == "run":
+                print(json.dumps(completion.run(args.system), indent=1, default=str))
+            elif args.foundry_cmd == "seed":
+                from foundry.systems import seed
+                out = Path(args.out).expanduser().resolve()
+                if Path(home).resolve() in (out, *out.parents):
+                    raise BodyError("the seed must live outside the body it backs up")
+                print(json.dumps(seed.make_seed(Path(home), out), indent=1))
+            else:
+                from foundry.systems import graph, reputation
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    events = [{"type": e.type, "event_id": e.event_id, "payload": e.payload,
+                               "at": e.payload.get("at") or e.occurred_at} for e in journal.replay("")]
+                if args.foundry_cmd in ("trace", "changed"):
+                    from foundry.systems import observability
+                    if args.foundry_cmd == "trace":
+                        data = observability.correlate(events, args.mission)
+                        data["metrics"] = observability.metrics(events)
+                    else:
+                        data = observability.why_changed(events, args.metric, split=args.split)
+                    print(json.dumps(data, indent=1, default=str))
+                elif args.foundry_cmd == "why":
+                    g = graph.from_greg(events)
+                    node = next((n for n in g.nodes if n.endswith(args.event_id)), None)
+                    if node is None:
+                        raise BodyError(f"no graph node for event {args.event_id}")
+                    print(json.dumps({"node": node, "causes": g.why(node), "effects": g.impact(node)}, indent=1))
+                else:
+                    from datetime import datetime, timezone
+                    now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+                    print(json.dumps(reputation.score(reputation.from_greg(events), now=now), indent=1))
+        elif args.cmd == "decide":
+            print(_drop(home, "DECISION", {"request_id": args.request_id, "answer": args.answer,
+                                           "reason": args.reason}, args))
+        elif args.cmd == "critique":
+            body = {"target_event_id": args.event_id, "verdict": args.verdict,
+                    "evidence_type": args.evidence_type, "text": args.text}
+            if args.exclude_strategy:
+                body["exclude_strategy"] = True
+            if args.regression:
+                body["regression"] = args.regression
+            if args.missed is not None or args.noise is not None:
+                body["attention"] = {"missed": args.missed or [], "noise": args.noise or []}
+            if args.claim_failing:
+                body["failure_claim"] = {"missed_failing": args.claim_failing}
+            print(_drop(home, "CRITIQUE", body, args))
+        elif args.cmd in ("pause", "resume"):
+            print(_drop(home, "BODY_" + args.cmd.upper(), {}, args))
+        elif args.cmd == "stop":
+            if args.local:  # physical/OS-level authority over this machine always works
+                Layout(home).stop_file.touch()
+                print("STOP file written; the body exits at its next check")
+            else:
+                print(_drop(home, "BODY_STOP", {}, args))
+        elif args.cmd in ("attach", "detach"):
+            print(_drop(home, "CAPABILITY_" + args.cmd.upper(), {"capability_id": args.capability_id}, args))
+        elif args.cmd == "lifecycle":
+            print(_drop(home, "LIFECYCLE", {"mission_id": args.mission_id, "state": args.state,
+                                            "reason": args.reason}, args))
+        elif args.cmd == "console":
+            from greg import planner
+            from greg.capabilities import SecretBroker
+            from greg.console import Console, serve
+            key = load_founder_key(args.key, _passphrase(args)) if args.key else None
+            layout = Layout(home)
+            models_config = None
+            if layout.config.is_file():
+                with observe(home, actor="spiffe://uniimente.internal/greg/model-reader") as journal:
+                    from greg.models import effective_route_config
+                    models_config = effective_route_config(json.loads(layout.config.read_text()).get("models"), journal)
+            transport = None if args.no_model else planner.default_transport(SecretBroker(layout.secrets),
+                                                                            config=models_config)
+            replacement = (None if args.no_model else
+                           lambda selection: planner.default_transport(SecretBroker(layout.secrets), config=selection))
+            server = serve(Console(home, key=key, transport=transport, transport_factory=replacement), port=args.port)
+            print(f"GREG console on http://127.0.0.1:{args.port}  (model route: "
+                  f"{transport.name if transport else 'off'}; {'signing enabled' if key else 'read-only'}). "
+                  "Ctrl-C closes the console; the body keeps running.", flush=True)
+            try:
+                server.serve_forever()
+            except KeyboardInterrupt:
+                pass
+            finally:
+                server.server_close()
+        elif args.cmd == "device" and args.device_cmd == "enroll":
+            from datetime import datetime, timezone
+            expires = datetime.now(timezone.utc) + timedelta(days=args.days)
+            print(_drop(home, "DEVICE_ENROLL", {"public_key": args.pubkey, "label": args.label,
+                                                "kinds": [k.strip() for k in args.kinds.split(",") if k.strip()],
+                                                "expires_at": expires.isoformat().replace("+00:00", "Z")}, args))
+        elif args.cmd == "device" and args.device_cmd == "revoke":
+            print(_drop(home, "DEVICE_REVOKE", {"device_key_id": args.device_key_id}, args))
+        elif args.cmd == "anchor" and args.anchor_cmd == "configure":
+            print(_drop(home, "ANCHOR_CONFIGURE", {"tsa_url": args.tsa_url,
+                                                   "tsa_roots_pem": Path(args.roots).read_text(),
+                                                   "interval_minutes": args.interval_minutes}, args))
+        elif args.cmd == "anchor" and args.anchor_cmd == "disable":
+            print(_drop(home, "ANCHOR_CONFIGURE", {"tsa_url": None}, args))
+        elif args.cmd == "anchor" and args.anchor_cmd == "verify":
+            from greg import anchor
+            if args.witness:
+                if not args.roots:
+                    raise BodyError("--witness needs --roots: the verifier supplies its own TSA root")
+                bundle = json.loads(Path(args.witness).read_text())
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    report = anchor.verify_witness(journal, bundle, Path(args.roots).read_text())
+                print(json.dumps(report, indent=1, default=str))
+                return 0 if report["verdict"] == "VERIFIED" else 3
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                report = anchor.verify(journal)
+            print(json.dumps(report, indent=1, default=str))
+            return 0 if report["chain_intact"] and not report["rewritten"] and not report["invalid"] else 3
+        elif args.cmd == "anchor" and args.anchor_cmd == "export":
+            from greg import anchor
+            out = Path(args.out).expanduser().resolve()
+            if Path(home).expanduser().resolve() in out.parents:
+                raise BodyError("the witness must live outside GREG's home, or GREG's rewrite domain covers it")
+            existing = json.loads(out.read_text()) if out.exists() else None
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                try:
+                    result = anchor.export_witness(journal, Path(args.roots).read_text(), existing)
+                except anchor.AnchorError as exc:
+                    raise BodyError(str(exc)) from None
+            tmp = out.with_suffix(out.suffix + ".tmp")
+            tmp.write_text(json.dumps(result["bundle"], indent=1) + "\n")
+            tmp.replace(out)
+            print(json.dumps({"witness": str(out), "admitted": result["admitted"], "rejected": result["rejected"],
+                              "witnessed_heads": len(result["bundle"]["witnesses"])}, indent=1))
+        elif args.cmd == "serve":
+            from greg.remote import serve
+            print(f"greg remote channel on http://{args.host}:{args.port} (loopback only). For the phone: "
+                  f"tailscale serve --bg --https=443 http://{args.host}:{args.port}", flush=True)
+            return serve(home, args.host, args.port)
+        elif args.cmd == "secret":
+            from greg.capabilities import SecretBroker
+            broker, known = SecretBroker(Layout(home).secrets), _known_handles()
+            if args.secret_cmd == "list":
+                print(json.dumps({"stored": broker.names(), "known_handles": sorted(known)}, indent=1))
+            elif args.name not in known:
+                raise BodyError(f"unknown credential handle {args.name!r}; known: {', '.join(sorted(known))}")
+            elif args.secret_cmd == "set":
+                broker.put(args.name, _secret_value(args.name))
+                print(json.dumps({"stored": args.name, "where": "this body's secret broker (mode 0600); "
+                                  "never the ledger", "read_by": "only capabilities that declare this handle"}, indent=1))
+            else:
+                print(json.dumps({"removed": args.name if broker.remove(args.name) else None}, indent=1))
+        elif args.cmd == "start":
+            stop = Layout(home).stop_file
+            prior = stop.read_text() if stop.exists() else None
+            stop.unlink(missing_ok=True)
+            restart = ("launchctl kickstart gui/$(id -u)/" + service.LABEL if sys.platform == "darwin"
+                       else "systemctl --user start greg-body.service")
+            print(json.dumps({"cleared_stop": prior, "next": restart + "  (or start the supervisor unit)"}, indent=1))
+        elif args.cmd == "learning":
+            from greg import improvement
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli") as journal:
+                print(json.dumps(improvement.report(journal, journal.ledger), indent=1, default=str))
+        elif args.cmd == "status":
+            print(json.dumps(status(home), indent=1, default=str))
+        elif args.cmd == "doctor":
+            from greg.doctor import chromebook
+            report = chromebook()
+            print(json.dumps(report, indent=1))
+            return 0 if report["ready_for_linux_service"] else 2
+        elif args.cmd == "decisions":
+            print(json.dumps(status(home)["decisions_required"], indent=1))
+        elif args.cmd == "morning":
+            if args.mark_reviewed:  # advancing the review window writes history: the body must be stopped
+                try:
+                    with Body(home) as body:
+                        report = morning_report(body.journal, body.engine)
+                        mark_reviewed(body.journal, report)
+                except WriterConflict:
+                    raise BodyError("the body is running and owns the ledger; read the report without "
+                                    "--mark-reviewed, or accept/critique the closure (signed) instead")
+            else:
+                report = morning_projection(home)
+            print(json.dumps(report, indent=1, default=str))
+        elif args.cmd == "run":
+            if args.clear_stop:
+                Layout(home).stop_file.unlink(missing_ok=True)
+            builder = None
+            if args.builder == "claude-code":
+                from greg.builders import ClaudeCodeBuilder
+                builder = ClaudeCodeBuilder()
+            elif args.builder == "models":
+                builder = _model_builder
+            return Body(home, builder=builder).run(tick_seconds=args.tick_seconds, max_ticks=args.max_ticks)
+        elif args.cmd == "service":
+            target = service.install(Path(home), args.platform, remote=args.remote, builder=args.builder,
+                                     target_dir=Path(args.target_dir) if args.target_dir else None)
+            print(json.dumps({"written": str(target), "loaded": False,
+                              "to_load": service.load_instructions(args.platform, target)}, indent=1))
+        return 0
+    except BodyError as exc:
+        print(f"greg: {exc}", file=sys.stderr)
+        return 2

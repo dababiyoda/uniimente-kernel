@@ -1,0 +1,42 @@
+{
+ "command": "python -m foundry.completion --run 11",
+ "name": "WebAssembly components",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "budget_differential": {
+   "agree": 200,
+   "both_refused": 0,
+   "disagree": 0,
+   "first_disagreement": null
+  },
+  "component": {
+   "rule": {
+    "params": [
+     "base_price",
+     "cost_per_unit",
+     "customer_tier",
+     "units"
+    ],
+    "result": "f64"
+   }
+  },
+  "declared_wasi_instantiates": true,
+  "pricing_differential": {
+   "agree": 200,
+   "both_refused": 0,
+   "disagree": 0,
+   "first_disagreement": null
+  },
+  "refusals": {
+   "declared_but_host_forbids": "host policy does not allow import net.connect",
+   "runaway_loop_out_of_fuel": "trap: error while executing at wasm backtrace:",
+   "tampered_bytes": "module bytes do not match the manifest hash",
+   "undeclared_wasi_import": "module imports wasi_snapshot_preview1.fd_write, which its manifest does not declare"
+  },
+  "value": {
+   "value": 270.0
+  }
+ },
+ "result_sha256": "sha256:2bb3856f0a1fecd5d817a1d15affb0b899ea2f95a0b2c411946e7605f735959f",
+ "system": 11
+}

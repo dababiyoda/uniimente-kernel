@@ -94,7 +94,7 @@ Freshness of 1600-1629, checked 2026-10-21 on branch `lane/absent-search` (base 
 
 ## Development disclosure (seeds 0-9 only; none of this is admission evidence)
 
-`admission --dev FAMILY` outputs, final code (commit `539bbdde`):
+`admission --dev FAMILY` outputs on the code of commit `539bbdde` (`e758b7ab` later changed only the declared evidence type of `search_mcts`, from simulation to heuristic_trace, so that its mathematical world label holds; no behaviour changed):
 
 | Family | Status if held-out matched | vs baseline (W-L-T, p) | vs competitor (W-L-T, p) | Median latency cand / base / comp (s) | Correct / wrong / abstain (cand; base; comp) |
 |---|---|---|---|---|---|

@@ -314,6 +314,14 @@ jobs:
           organs/daleobanks-venv/bin/pip install -q -r organs/daleobanks/requirements.txt
           python -m venv organs/wealthmachine-venv
           organs/wealthmachine-venv/bin/pip install -q -r organs/wealthmachine/requirements.txt
+      - name: Provision worker namespace isolation (bubblewrap) for the ten-step proof's Hands step
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q bubblewrap
+          if bwrap --unshare-user --unshare-pid --unshare-net --die-with-parent --ro-bind / / -- /usr/bin/true; then
+            echo "bubblewrap namespaces: usable"
+          else
+            echo "bubblewrap namespaces: NOT usable on this runner; the ten-step proof skips and says why"
+          fi
       - name: Whole-machine mission, organ capabilities and hostile cases (organs required, no skips)
         working-directory: kernel
         env:
@@ -324,7 +332,11 @@ jobs:
           UNIIMENTE_WEALTHMACHINE_ROOT: "${{ github.workspace }}/organs/wealthmachine"
           UNIIMENTE_WEALTHMACHINE_PYTHON: "${{ github.workspace }}/organs/wealthmachine-venv/bin/python"
           UNIIMENTE_ONE_MACHINE_EVIDENCE: "${{ github.workspace }}/one-machine-evidence"
-        run: python -m pytest -q -rs tests/integration/test_one_machine.py tests/integration/test_one_machine_attacks.py tests/unit/test_greg_organs.py tests/unit/test_greg_organ_bridge.py tests/unit/test_greg_bind_from_check.py tests/unit/test_greg_model_identity_policy.py
+          # The ten-step proof uses the real organ checkouts only when these name them (else stand-ins).
+          GREG_TEST_DALEOBANKS: "${{ github.workspace }}/organs/daleobanks"
+          GREG_TEST_WMI: "${{ github.workspace }}/organs/wealthmachine"
+          GREG_ONE_MACHINE_EVIDENCE: "${{ github.workspace }}/one-machine-evidence/ten-steps"
+        run: python -m pytest -q -rs tests/integration/test_one_machine.py tests/integration/test_one_machine_ten_steps.py tests/integration/test_one_machine_attacks.py tests/unit/test_greg_organs.py tests/unit/test_greg_organ_bridge.py tests/unit/test_greg_daleobanks_bridge.py tests/unit/test_greg_bind_from_check.py tests/unit/test_greg_model_identity_policy.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -44,6 +44,9 @@ P6_RUNS = (
     ("docs/evidence/greg-composition-lift/2026-10-14/results-v2.json", {"F2b": "identify_then_optimize"}),
     ("docs/evidence/greg-composition-lift/2026-10-14/results-v3.json", {}),
     ("docs/evidence/greg-composition-lift/2026-10-14-v5/results-v5.json", {"F8": "track_then_staff"}),
+    # F7 with flow_expansion_mcf (2026-10-16): the admitted single genome against the recipe on v4's held-out
+    # items, a declared re-use. It measures no recipe lift, so it replaces no recipe verdict; it is a listed source.
+    ("docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/results-v6.json", {}),
 )
 # In finish order; the last decides. PR #155's decisive retest (NO_GAIN, 2026-10-14) follows #158's (REGRESSION,
 # 2026-10-08); both are kept in ``history`` and neither is a gain, so the default stays shadow.

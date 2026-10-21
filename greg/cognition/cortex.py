@@ -69,6 +69,28 @@ def compile_problem(params):
     return geometry, consequence
 
 
+def _cpu_seconds():
+    """CPU seconds of this thread plus every child process the body has waited for (directive section 12: count
+    local compute even when it costs no tokens). ``None`` where the platform offers no resource accounting; peak
+    memory cannot be split per call this way and stays unmeasured.
+
+    The compiler measures each inner run with these, around its call to ``reason``, never inside it: a measured
+    recipe lift binds the code closure of ``reason`` (greg.cognition.code_binding), so editing ``reason`` to count
+    CPU would leave every measured lift stale until it is re-measured."""
+    try:
+        import resource
+    except ImportError:
+        return None
+    own = resource.getrusage(getattr(resource, "RUSAGE_THREAD", resource.RUSAGE_SELF))
+    kids = resource.getrusage(resource.RUSAGE_CHILDREN)
+    return own.ru_utime + own.ru_stime + kids.ru_utime + kids.ru_stime
+
+
+def _cpu_delta(started):
+    now = _cpu_seconds()
+    return round(now - started, 4) if started is not None and now is not None else "unmeasured"
+
+
 def geometry_key(geometry):
     fields = ("epistemic_class", "domain", "objective_type", "static_or_sequential", "discrete_or_continuous", "graph_structure", "consequence_class")
     return digest({k: getattr(geometry, k) for k in fields})

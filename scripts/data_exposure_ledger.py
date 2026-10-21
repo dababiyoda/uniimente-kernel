@@ -634,6 +634,29 @@ def p8_pilots(src: Source) -> list[dict]:
     return out
 
 
+def exploratory_runs(src: Source) -> list[dict]:
+    """Declared exploratory measurements outside admission and P8 (``docs/evidence/greg-repair-hybrid/*/*.json``
+    with schema ``greg-repair-hybrid-exploratory/1``): every item the run scored, under the generator it drew from.
+    Development seeds 0-9 are role dev; any other run is review-pilot (looked at, never held-out again)."""
+    out = []
+    for path in src.paths(r"docs/evidence/greg-repair-hybrid/[^/]+/[^/]+\.json"):
+        doc = load_json(src.commit, path)
+        if not (isinstance(doc, dict) and str(doc.get("schema", "")).startswith("greg-repair-hybrid-exploratory/")):
+            continue
+        seeds = sorted({r["seed"] for r in doc.get("items", []) if isinstance(r, dict) and type(r.get("seed")) is int})
+        if not seeds:
+            continue
+        commit = src.added(path)
+        art = {"path": path, "commit": commit, "sha256": blob_sha(src.commit, path)}
+        out.append(_record(lineage=src.lineage, program="repair hybrid exploratory", artifact=art, commit=commit,
+                           role="dev" if set(seeds) <= set(SAMPLE_SEEDS) else "review-pilot",
+                           family="develop_repair_hybrid",
+                           generator=function_identity(commit, "greg.cognition.genomes.developmental",
+                                                       "repair_instance"),
+                           seeds=seeds, looked_at=True, basis="the run's per-item outcomes are recorded in this file"))
+    return out
+
+
 # --- generic freezes and pre-registrations (P6, P4, cortex seed, crossgeo, #155/#179 runs)
 
 PROGRAMS = (("composition_lift", "P6"), ("learned_routing", "P4"), ("seed_genome", "cortex seed genome"),
@@ -1221,6 +1244,7 @@ def build() -> dict:
 
     records, unparsed = [], []
     records += admission_genomes(s158, results) + p8_cycles(s158, results) + p8_canaries(s158) + p8_pilots(s158)
+    records += exploratory_runs(s158)
     g158, u158 = generic_freezes(s158, results, [])
     records += g158
     unparsed += u158

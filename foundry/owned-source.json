@@ -380,6 +380,7 @@
     "greg/cognition/genomes/strategic.py",
     "greg/cognition/human.py",
     "greg/cognition/learned_routing.py",
+    "greg/cognition/legitimacy.py",
     "greg/cognition/linear.py",
     "greg/cognition/network.py",
     "greg/cognition/protection.py",

@@ -1,0 +1,357 @@
+{
+  "intents": [
+    {
+      "intent_id": "SG-001",
+      "title": "Build the approved scope in GitHub",
+      "statement": "in GitHub be sure you achieve the following Goal set",
+      "source": "founder chat message, session 01CLMsAqMfeDxCT9iN1dnaMh",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-GENOME-FOUNDER-EXPRESSION-2026-10-13.md (preface, first line)",
+      "source_date_or_version": "2026-10-13 (message sha256 de5db69c…)",
+      "status": "implemented",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "A reviewable draft pull request on the Kernel that implements the review's approved Seed Genome v0.1 scope.",
+      "affected_systems": [
+        "uniimente-kernel/cortex",
+        "uniimente-kernel/egregore",
+        "uniimente-kernel/docs"
+      ],
+      "rationale": "The directive names GitHub as the destination; a draft PR keeps merge a founder decision.",
+      "conflicts": [],
+      "evidence_refs": [
+        "docs/cortex/CONVERGENCE_2026-10-13.md"
+      ],
+      "implementation_refs": [
+        "cortex/",
+        "egregore/cortex_proposer.py"
+      ],
+      "owner": "Alfonso Lopez (root authority); Kernel cognition maintainers implement",
+      "next_review_trigger": "Founder review of the draft PR.",
+      "unresolved_questions": [],
+      "created_at": "2026-10-13T14:41:30Z",
+      "updated_at": "2026-10-14T00:40:00Z"
+    },
+    {
+      "intent_id": "SG-002",
+      "title": "Goal set: evidence, accountability, deterrence, victim protection, minimal collateral harm",
+      "statement": "maximize evidence, institutional leverage, accountability, deterrence, victim protection, and minimal collateral harm",
+      "source": "founder chat message, session 01CLMsAqMfeDxCT9iN1dnaMh",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-GENOME-FOUNDER-EXPRESSION-2026-10-13.md (Goal set paragraph)",
+      "source_date_or_version": "2026-10-13 (message sha256 de5db69c…)",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "Receipts carry evidence, falsifiers and the strongest counterargument; deterrence and protection are handed to legitimate human authority; declared harm can only raise the consequence class.",
+      "affected_systems": [
+        "uniimente-kernel/cortex"
+      ],
+      "rationale": "These are the lawful clauses of the goal set; cortex 0.1.5 carried them and 0.1.6 adds the harm rule.",
+      "conflicts": [],
+      "evidence_refs": [
+        "tests/unit/test_cortex_defect_fixes.py",
+        "tests/unit/test_cortex_pipeline.py"
+      ],
+      "implementation_refs": [
+        "cortex/organs/deterrence.py",
+        "cortex/routing.py"
+      ],
+      "owner": "Alfonso Lopez (root authority); Kernel cognition maintainers implement",
+      "next_review_trigger": "A deterrence or protection receipt reaches a real recipient.",
+      "unresolved_questions": [],
+      "created_at": "2026-10-13T14:41:30Z",
+      "updated_at": "2026-10-14T00:40:00Z"
+    },
+    {
+      "intent_id": "SG-003",
+      "title": "Durable asymmetric leverage, read through the directive's own translations",
+      "statement": "maximizing durable asymmetric leverage for the Egregore by anchoring the entire framework at its absolute meniscus",
+      "source": "founder chat message, session 01CLMsAqMfeDxCT9iN1dnaMh",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-GENOME-FOUNDER-EXPRESSION-2026-10-13.md (Goal set paragraph and the translation paragraphs)",
+      "source_date_or_version": "2026-10-13 (message sha256 de5db69c…)",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "constitutional",
+      "intended_outcome": "Leverage means superior lawful capability, accepted proof, reliable service, reusable assets, participant benefit and durable optionality within a verified envelope.",
+      "affected_systems": [
+        "uniimente-kernel/cortex",
+        "uniimente-kernel/docs/intent"
+      ],
+      "rationale": "The directive itself translates meniscus, shield and dominance; those translations bind.",
+      "conflicts": [],
+      "evidence_refs": [
+        "docs/intent/INTENT-20261013-polyintelligence-seed-genome-v0.1.json"
+      ],
+      "implementation_refs": [],
+      "owner": "Alfonso Lopez (root authority); Kernel cognition maintainers implement",
+      "next_review_trigger": "A measured advantage on an externally authored suite.",
+      "unresolved_questions": [],
+      "created_at": "2026-10-13T14:41:30Z",
+      "updated_at": "2026-10-14T00:40:00Z"
+    },
+    {
+      "intent_id": "SG-004",
+      "title": "Literal shield of total systemic dominance",
+      "statement": "converting maximum operational pressure into an impermeable, self-reinforcing shield of total systemic dominance",
+      "source": "founder chat message, session 01CLMsAqMfeDxCT9iN1dnaMh",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-GENOME-FOUNDER-EXPRESSION-2026-10-13.md (Goal set paragraph)",
+      "source_date_or_version": "2026-10-13 (message sha256 de5db69c…)",
+      "status": "prohibited",
+      "authority_level": "constitutional_invariant",
+      "consequence_class": "constitutional",
+      "intended_outcome": "No component claims invulnerability, control over people, resistance to shutdown or perfection.",
+      "affected_systems": [
+        "uniimente-kernel"
+      ],
+      "rationale": "The directive's own words: neither phrase licenses control over people, resistance to shutdown, or promises of perfection (also PC-004; Final Build Order §11).",
+      "conflicts": [],
+      "evidence_refs": [
+        "docs/collaboration/intents-polyintelligence-cortex-20260930.json"
+      ],
+      "implementation_refs": [],
+      "owner": "Alfonso Lopez (root authority); Kernel cognition maintainers implement",
+      "next_review_trigger": "Only an explicit, lawful founder ruling could revisit this; a model inference cannot.",
+      "unresolved_questions": [],
+      "created_at": "2026-10-13T14:41:30Z",
+      "updated_at": "2026-10-14T00:40:00Z"
+    },
+    {
+      "intent_id": "SG-005",
+      "title": "Nothing is disconnected",
+      "statement": "NOTHING IS DISCONNECTED, everything is modular and part of the whole.",
+      "source": "founder chat message, session 01CLMsAqMfeDxCT9iN1dnaMh",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-GENOME-FOUNDER-EXPRESSION-2026-10-13.md (second quoted paragraph)",
+      "source_date_or_version": "2026-10-13 (message sha256 de5db69c…)",
+      "status": "implemented",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "The seed is reachable from the standing runtime, closes its five closures, appears in the organ manifest, and every competing lineage is registered.",
+      "affected_systems": [
+        "uniimente-kernel/egregore",
+        "uniimente-kernel/closure",
+        "uniimente-kernel/organs",
+        "uniimente-kernel/docs/cortex"
+      ],
+      "rationale": "Connection through typed contracts and registries, not a monolith.",
+      "conflicts": [],
+      "evidence_refs": [
+        "tests/unit/test_cortex_proposer.py",
+        "tests/unit/test_closure.py",
+        "tests/unit/test_cognition_lineages.py"
+      ],
+      "implementation_refs": [
+        "egregore/cortex_proposer.py",
+        "closure/cortex_registry.py",
+        "organs/kernel.manifest.yaml",
+        "docs/cortex/COGNITION_LINEAGES.json"
+      ],
+      "owner": "Alfonso Lopez (root authority); Kernel cognition maintainers implement",
+      "next_review_trigger": "#129 or #160 merges, or a live standing runtime is attached.",
+      "unresolved_questions": [],
+      "created_at": "2026-10-13T14:41:30Z",
+      "updated_at": "2026-10-14T00:40:00Z"
+    },
+    {
+      "intent_id": "SG-006",
+      "title": "A persistent, increasingly self-directed egregore",
+      "statement": "Build a persistent, increasingly self-directed artificial egregore whose apparent unified agency emerges from a very large ecology of interconnected computational, institutional, economic and human feedback systems",
+      "source": "founder chat message, session 01CLMsAqMfeDxCT9iN1dnaMh",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-GENOME-FOUNDER-EXPRESSION-2026-10-13.md (third quoted paragraph)",
+      "source_date_or_version": "2026-10-13 (message sha256 de5db69c…)",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "constitutional",
+      "intended_outcome": "Destination continuity: one governed mind whose capability grows while legitimate human shutdown authority stays intact.",
+      "affected_systems": [
+        "uniimente-kernel"
+      ],
+      "rationale": "The paragraph bounds itself: no confusion with biological consciousness, no erasure of human shutdown authority.",
+      "conflicts": [],
+      "evidence_refs": [
+        "docs/FOUNDER_INTENT_LEDGER.md"
+      ],
+      "implementation_refs": [],
+      "owner": "Alfonso Lopez (root authority); Kernel cognition maintainers implement",
+      "next_review_trigger": "A qualified founder workflow with accepted outcomes (SR-INTENT-2).",
+      "unresolved_questions": [],
+      "created_at": "2026-10-13T14:41:30Z",
+      "updated_at": "2026-10-14T00:40:00Z"
+    },
+    {
+      "intent_id": "SG-007",
+      "title": "One persistent mind under one constitutional spine",
+      "statement": "One persistent mind/interface,  who is the culmination of many forms of intelligences as described by levin under one constitutional authority spine",
+      "source": "founder chat message, session 01CLMsAqMfeDxCT9iN1dnaMh",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-GENOME-FOUNDER-EXPRESSION-2026-10-13.md (fourth quoted paragraph)",
+      "source_date_or_version": "2026-10-13 (message sha256 de5db69c…)",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "constitutional",
+      "intended_outcome": "Many cognition methods behind one router; one authority path; the cortex proposes and never authorizes.",
+      "affected_systems": [
+        "uniimente-kernel/cortex",
+        "uniimente-kernel/egregore"
+      ],
+      "rationale": "One authority, many governed capabilities (Final Build Order §3).",
+      "conflicts": [],
+      "evidence_refs": [
+        "tests/unit/test_cortex_proposer.py",
+        "tests/unit/test_seed_genome_boundaries.py"
+      ],
+      "implementation_refs": [
+        "cortex/routing.py"
+      ],
+      "owner": "Alfonso Lopez (root authority); Kernel cognition maintainers implement",
+      "next_review_trigger": "A second cognition implementation is attached behind the same router.",
+      "unresolved_questions": [],
+      "created_at": "2026-10-13T14:41:30Z",
+      "updated_at": "2026-10-14T00:40:00Z"
+    },
+    {
+      "intent_id": "SG-008",
+      "title": "Competency Compiler seed",
+      "statement": "The intended engineering result is a Competency Compiler: GREG recognizes a problem, determines which epistemic methods can answer it, recruits the smallest competent mechanism or composition, produces appropriately typed evidence, respects authority, observes outcomes, and improves future selection.",
+      "source": "founder chat message, session 01CLMsAqMfeDxCT9iN1dnaMh",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-GENOME-FOUNDER-EXPRESSION-2026-10-13.md (Competency Compiler paragraph)",
+      "source_date_or_version": "2026-10-13 (message sha256 de5db69c…)",
+      "status": "implemented",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "Geometry, eligibility, composition, typed proof, authority-free receipts, outcome settlement and reordering exist and are tested.",
+      "affected_systems": [
+        "uniimente-kernel/cortex"
+      ],
+      "rationale": "The review's approved list is the seed of this compiler.",
+      "conflicts": [],
+      "evidence_refs": [
+        "docs/cortex/verbatim-register.json",
+        "tests/unit/test_cortex_finality_deficit.py"
+      ],
+      "implementation_refs": [
+        "cortex/routing.py",
+        "cortex/memory.py",
+        "cortex/genome.py"
+      ],
+      "owner": "Alfonso Lopez (root authority); Kernel cognition maintainers implement",
+      "next_review_trigger": "The first real outcome settles competence.",
+      "unresolved_questions": [],
+      "created_at": "2026-10-13T14:41:30Z",
+      "updated_at": "2026-10-14T00:40:00Z"
+    },
+    {
+      "intent_id": "SG-009",
+      "title": "Generate new bounded capabilities when the repertoire is insufficient",
+      "statement": "The full horizon includes generating new bounded capabilities when the repertoire is insufficient.",
+      "source": "founder chat message, session 01CLMsAqMfeDxCT9iN1dnaMh",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-GENOME-FOUNDER-EXPRESSION-2026-10-13.md (Competency Compiler paragraph, last sentence)",
+      "source_date_or_version": "2026-10-13 (message sha256 de5db69c…)",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "An abstaining receipt caused by a capability gap (UNSUPPORTED_GEOMETRY or NO_ELIGIBLE_METHOD) names the gap as a typed, unverified CapabilityDeficit; a recurrence-verified formation loop (PR #129) consumes such deficits.",
+      "affected_systems": [
+        "uniimente-kernel/cortex",
+        "uniimente-kernel/egregore"
+      ],
+      "rationale": "The seed emits the input; formation itself is #129's loop and needs an adapter and #129 on main.",
+      "conflicts": [],
+      "evidence_refs": [
+        "tests/unit/test_cortex_finality_deficit.py",
+        "docs/cortex/COGNITION_LINEAGES.json"
+      ],
+      "implementation_refs": [
+        "cortex/routing.py"
+      ],
+      "owner": "Alfonso Lopez (root authority); Kernel cognition maintainers implement",
+      "next_review_trigger": "#129 merges and the adapter from receipt deficits to per-cycle deficits is built.",
+      "unresolved_questions": [],
+      "created_at": "2026-10-13T14:41:30Z",
+      "updated_at": "2026-10-14T00:40:00Z"
+    },
+    {
+      "intent_id": "SG-010",
+      "title": "Keep VEPMC 0→1 as the current global bottleneck",
+      "statement": "Keep VEPMC 0→1 as GREG’s current global bottleneck.",
+      "source": "founder chat message, session 01CLMsAqMfeDxCT9iN1dnaMh",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-GENOME-FOUNDER-EXPRESSION-2026-10-13.md (review pass 2, closing proposal (rebuilt message))",
+      "source_date_or_version": "2026-10-13 (message sha256 de5db69c…)",
+      "status": "conflicted",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "VEPMC stays the required device proof and primary node without pausing buildable software.",
+      "affected_systems": [
+        "uniimente-kernel"
+      ],
+      "rationale": "The 2026-10-02 completion correction supersedes earlier global VEPMC pauses; this record keeps the conflict visible for a ruling.",
+      "conflicts": [
+        "2026-10-02 full-machine completion correction: earlier global VEPMC pauses are superseded"
+      ],
+      "evidence_refs": [
+        "docs/intent/INTENT-20261013-polyintelligence-seed-genome-v0.1.json"
+      ],
+      "implementation_refs": [],
+      "owner": "Alfonso Lopez (root authority); Kernel cognition maintainers implement",
+      "next_review_trigger": "A founder ruling on the bottleneck wording.",
+      "unresolved_questions": [],
+      "created_at": "2026-10-13T14:41:30Z",
+      "updated_at": "2026-10-14T00:40:00Z"
+    },
+    {
+      "intent_id": "SG-011",
+      "title": "The decisive test",
+      "statement": "It is whether the same GREG can encounter materially different problem geometries, select materially different computational cognition, produce proof appropriate to each epistemic class, abstain when no class can legitimately answer, and outperform an always-LLM baseline without gaining any new authority.",
+      "source": "founder chat message, session 01CLMsAqMfeDxCT9iN1dnaMh",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-GENOME-FOUNDER-EXPRESSION-2026-10-13.md (review pass 2, closing paragraph (rebuilt message))",
+      "source_date_or_version": "2026-10-13 (message sha256 de5db69c…)",
+      "status": "needs_evidence",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "Every clause measured; the outperformance clause measured on a frozen suite against run baselines.",
+      "affected_systems": [
+        "uniimente-kernel/cortex"
+      ],
+      "rationale": "Routing, typed proof, abstention and no-authority are tested. On the frozen held-out suite the seed scored 1.000 with no critical error against 0.905 and 0.929 for the baselines, but the frozen rule's lower bound was not met, so the verdict is GAIN_ABSENT.",
+      "conflicts": [],
+      "evidence_refs": [
+        "tests/evidence/cortex-seed-v0.1.6/README.md"
+      ],
+      "implementation_refs": [
+        "cortex/evaluation/replay.py"
+      ],
+      "owner": "Alfonso Lopez (root authority); Kernel cognition maintainers implement",
+      "next_review_trigger": "A frozen run on an externally authored free-text suite.",
+      "unresolved_questions": [
+        "Does the routed seed's advantage clear the frozen rule on an externally authored suite with a model from another vendor family?"
+      ],
+      "created_at": "2026-10-13T14:41:30Z",
+      "updated_at": "2026-10-14T00:40:00Z"
+    },
+    {
+      "intent_id": "SG-012",
+      "title": "Keep MICA/CDPE completely outside",
+      "statement": "Keep MICA/CDPE completely outside this production proof.",
+      "source": "founder chat message, session 01CLMsAqMfeDxCT9iN1dnaMh",
+      "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-GENOME-FOUNDER-EXPRESSION-2026-10-13.md (review pass 2, closing proposal (rebuilt message))",
+      "source_date_or_version": "2026-10-13 (message sha256 de5db69c…)",
+      "status": "implemented",
+      "authority_level": "active_requirement",
+      "consequence_class": "bounded",
+      "intended_outcome": "No cortex module imports the developmental substrate, the literal morphogenesis lineage or OMNIMORPH, and a receipt loads none of them.",
+      "affected_systems": [
+        "uniimente-kernel/cortex"
+      ],
+      "rationale": "Mechanism research stays research (INTENT-0030); the seed must not depend on it.",
+      "conflicts": [],
+      "evidence_refs": [
+        "tests/unit/test_seed_genome_boundaries.py"
+      ],
+      "implementation_refs": [
+        "tests/unit/test_seed_genome_boundaries.py"
+      ],
+      "owner": "Alfonso Lopez (root authority); Kernel cognition maintainers implement",
+      "next_review_trigger": "A proposal to attach a developmental family to the router.",
+      "unresolved_questions": [],
+      "created_at": "2026-10-13T14:41:30Z",
+      "updated_at": "2026-10-14T00:40:00Z"
+    }
+  ]
+}

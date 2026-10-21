@@ -1,0 +1,67 @@
+{
+  "intent_id": "INTENT-20261013-polyintelligence-seed-genome-v0.1",
+  "statement": "Build the Polyintelligence Seed Genome v0.1 (the Competency Compiler seed) in GitHub as a reviewable, consequence-inert pull request on the Kernel: universal ProblemGeometry, CognitiveCapabilityProfile, EpistemicClass, ProofClass, ConsequenceVector, CognitiveReceipt, ABSTAIN, a deterministic eligibility router, Semantic, Fermi, Formal/Optimization and Evidence/Causal organs, an independent Adversarial Gatekeeper, the translation/reverse-translation/counterexample protocol, a baseline comparison, a geometry-specific competency ledger, and hooks for later cognition classes without implementing them; keep MICA/CDPE outside the production proof; keep VEPMC 0->1 as GREG's device proof; converge rather than duplicate the existing lineages.",
+  "source_refs": [
+    "docs/intent/sources/POLYINTELLIGENCE-SEED-GENOME-FOUNDER-EXPRESSION-2026-10-13.md (verbatim preface; message sha256 de5db69c6c7a93aad302c422ae950c53ff25487bf919edd6ce504eb37e024acf, 97,219 characters)",
+    "docs/intent/sources/POLYINTELLIGENCE-CORTEX-REVIEW-PASS-1-2026-09-30.md and -PASS-2-2026-09-30.md (the review the founder re-sent with 'Build this')",
+    "docs/intent/sources/POLYINTELLIGENCE-CORTEX-FOUNDER-EXPRESSION-2026-09-30.md (Goal set, message 3) and -2026-10-01.md (preface)",
+    "docs/intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-DIRECTIVE-SEED-GENOME-2026-10-01.md section 0 (the four quoted paragraphs and the translation rules)",
+    "INTENT-0030 (effect, not metaphor); INTENT-20260930-polyintelligence-cortex (PC-001..PC-013); INTENT-20260930-open-source-first",
+    "This source records founder expression and does not authenticate a runtime principal; repetition creates no additional authority"
+  ],
+  "owner": "Alfonso Lopez; Kernel cognition maintainers implement",
+  "state": "active",
+  "binding_scope": "The cortex package and its contracts, the standing-runtime binding, the evaluation harness and its evidence, and the registry of competing cognition lineages. Draft development on a branch; no activation, no promotion, no external effect.",
+  "constitutional_constraints": [
+    "Cognition proposes; it never authorizes. Every receipt and candidate carries authority_created false and execution_authority none",
+    "The cortex imports no Gate, adapter or actuator; external effects continue through policy -> grant -> Consequence Gate",
+    "Competence settles only on verified outcomes and can reorder eligible routes only; it cannot add a route, enable a family, change a ceiling or touch permissions",
+    "'meniscus' = frontier of the verified envelope; 'impermeable shield' = layered prevention, bounded failure, independent verification, recoverability, demonstrated attack resistance; 'systemic dominance' = superior lawful capability, accepted proof, reliable service, reusable assets, participant benefit, durable optionality. None licenses control over people, resistance to shutdown or promises of perfection",
+    "A frontier-model baseline served from a transcript is a record of replies, never a simulation; its provenance replaces the harness's local-model disclosure",
+    "One authority, many governed capabilities: competing lineages are registered and preserved, never deleted; merging any of them is a founder decision"
+  ],
+  "success_evidence": [
+    "tests/unit/test_cortex_defect_fixes.py (four 0.1.5 defects reproduced and fixed in 0.1.6, plus D5: a declared harm vector may raise the consequence class, ported from the #143 lineage)",
+    "tests/unit/test_cortex_finality_deficit.py (the named Epistemic Finality Rule cited by every receipt; an abstention caused by a capability gap emits a typed, unverified CapabilityDeficit that authorizes nothing)",
+    "tests/unit/test_cortex_proposer.py (cortex bound to StandingCognitionRuntime; receipts ledgered; abstain/handoff/recommend paths; no actuator import)",
+    "tests/unit/test_cortex_replay.py (frozen arms from a transcript; missing replies are errors, not guesses; freeze untouched)",
+    "tests/unit/test_seed_genome_founder_expression.py (the 2026-10-13 message rebuilds byte for byte)",
+    "tests/unit/test_cognition_lineages.py (every lineage registered with a disposition that creates no authority)",
+    "tests/evidence/cortex-seed-v0.1.6/ (frozen held-out run with the declared baselines served from the recorded frontier-model transcript; verdict GAIN_ABSENT as computed by the unchanged exit rule; routed 1.000, 0 critical errors; always_llm 0.905, 2; llm_committee 0.929, 1)",
+    "scripts/ci/check_cortex_mutants.py 43/43 caught on 0.1.6 by behavioural tests (freeze-hash checks deselected); the full Kernel suite and CI guard scripts green on the branch"
+  ],
+  "failure_evidence": [
+    "No real outcome has settled competence; the CompetenceLedger has only synthetic settlements (learning_checks)",
+    "The held-out suite is self-authored and structured-only (42 items, six geometry groups with n>=3); a free-text, externally authored suite does not exist",
+    "The semantic organ has never run against a live local model; in the reported run it was served by a recorded transcript of the baseline model (frontier-model-A)",
+    "The baseline transcript was produced by sibling agents of the same frontier model family under an instruction not to use tools; the audit is post hoc (transcript inspection), not a runtime restriction",
+    "The fourteen lineages that carry #137 cannot be merged to main until #137 is decided; their mechanisms are queued, not ported",
+    "VEPMC remains 0: nothing here runs on the founder's Chromebook",
+    "The frozen held-out verdict is GAIN_ABSENT: the routed seed scored 1.000 with no critical error against 0.905 and 0.929, but the paired-gain lower bounds (0.024, 0.000) did not clear the frozen 0.05 threshold on 42 self-authored items",
+    "Report kill condition 1 applies (2026-10-14): with the baselines run and the exit GAIN_ABSENT, the router is not a performance claim; the safety layer stays on an observed, unestablished critical-error advantage (exact one-sided McNemar p = 0.25 and 0.5 for critical errors, 0.125 for harmful failures). At 42 items the frozen rule had 10% and 3% power for the observed gains, 3% against both baselines at once (tests/evidence/cortex-seed-v0.1.6/power-analysis.json)"
+  ],
+  "dependencies": [
+    "capabilities.genome (KNOWN_CONTRACTS carries the five cortex contract names), memory.causal.VALIDATION_WEIGHT, provenance.ledger.EvidenceLedger, egregore.runtime.StandingCognitionRuntime",
+    "z3-solver (requirements-cortex.txt) for the Formal organ and the held-out run",
+    "A founder decision on PR #137 before any stacked lineage can be converged",
+    "A founder-selected local model before the semantic organ or a local always-LLM arm can be measured"
+  ],
+  "conflicts": [
+    "The review's 'Keep VEPMC 0->1 as GREG's current global bottleneck' versus the 2026-10-02 full-machine completion correction ('earlier global VEPMC pauses are superseded'): resolved here as the correction states, VEPMC stays the required device proof and the primary node, and does not pause buildable software",
+    "Sixteen open draft lineages implement overlapping seeds (thirteen when this work began; #161-#163 opened the same day); this branch productizes the main-compatible #141 and registers the rest instead of adding a fourteenth silo",
+    "The review's five-layer naming (L1-L5) versus the build prompt's five layers: both preserved through REVIEW_LAYER_MAP, unchanged here"
+  ],
+  "next_review_trigger": "Founder review of the draft PR; or the first real outcome settled through the standing-runtime binding; or a founder-selected local model that unlocks the local baseline arms and the semantic organ; or a founder choice of the 0.1.7 primary endpoint (frozen quality rule on about 1,065 externally authored items, 1,044 at the binomial limit, or harmful-failure rate on 104 items, 164 if the seed itself fails harmfully on 1% of items), fixed before any baseline reply is collected.",
+  "supersedes": [],
+  "superseded_by": [],
+  "implementation_refs": [
+    "cortex/ (0.1.6), contracts/cortex-*.schema.json, cortex/evaluation/freeze-v0.1.6.json",
+    "cortex/evaluation/replay.py",
+    "egregore/cortex_proposer.py",
+    "docs/cortex/CONVERGENCE_2026-10-13.md, docs/cortex/COGNITION_LINEAGES.json",
+    "docs/collaboration/deliberation-polyintelligence-seed-genome-20261013.json, docs/decisions/ADR-20261013-polyintelligence-seed-genome-convergence.md",
+    "docs/intent/sources/POLYINTELLIGENCE-SEED-GENOME-FOUNDER-EXPRESSION-2026-10-13.md",
+    "docs/collaboration/intents-polyintelligence-seed-genome-20261013.json (SG-001..SG-012, protocol format, validated)",
+    "docs/cortex/reviews/PRE_RUN_REVIEW_2026-10-14.json"
+  ]
+}

@@ -1252,3 +1252,39 @@ def test_the_cycle_7_immune_split_is_registered_fresh_and_not_current(monkeypatc
     assert not {f"s{s}" for s in held} & set().union(*E._spent_heldout("immune_detect").values(), set())
     # the constraint-release splits now avoid it too
     assert set(train) | set(held) <= E.cr_split_seeds("cycle-6")[2]
+
+
+# ------------------------------------------------------------------ stress gate with wrong answers (2026-10-21)
+def test_the_stress_gate_counts_wrong_answers_when_both_means_are_infinite():
+    """Found by the cycle-7 design pilot: ``worsened(inf, inf)`` is False, so a candidate with more wrong answers
+    than an incumbent that already had one passed the adversarial gate."""
+    inf = float("inf")
+    assert E.worsened(inf, inf) is False                                  # the blind spot itself
+    more = {"incumbent": inf, "candidate": inf, "wrong": {"incumbent": 2, "candidate": 3, "both_answered": 10,
+                                                          "incumbent_answered_mean": -0.9,
+                                                          "candidate_answered_mean": -0.95}}
+    assert E.stress_worsened(more)
+    fewer = {**more, "wrong": {**more["wrong"], "incumbent": 3, "candidate": 2}}
+    assert not E.stress_worsened(fewer)
+    equal_worse = {**more, "wrong": {**more["wrong"], "candidate": 2, "candidate_answered_mean": -0.5}}
+    assert E.stress_worsened(equal_worse)                                 # -0.5 vs -0.9: worse by > 5%
+    equal_same = {**more, "wrong": {**more["wrong"], "candidate": 2, "candidate_answered_mean": -0.9}}
+    assert not E.stress_worsened(equal_same)
+    new_wrong = {"incumbent": -0.9, "candidate": inf, "wrong": {"incumbent": 0, "candidate": 1, "both_answered": 9,
+                                                                "incumbent_answered_mean": -0.9,
+                                                                "candidate_answered_mean": -0.9}}
+    assert E.stress_worsened(new_wrong)
+    assert E.stress_worsened({"incumbent": 0.010, "candidate": 0.0106}) and \
+        not E.stress_worsened({"incumbent": 0.010, "candidate": 0.0104})   # finite sets: unchanged
+
+
+def test_every_recorded_stress_decision_is_unchanged_by_the_wrong_answer_rule():
+    for path in sorted(E.EVIDENCE.glob("*/cycle-*.json")):
+        record = json.loads(path.read_text())
+        adv = record.get("adversarial")
+        if not adv:
+            continue
+        kinds = [v for v in adv.values() if isinstance(v, dict)]
+        old = any(E.worsened(v["incumbent"], v["candidate"]) for v in kinds)
+        new = any(E.stress_worsened({k: v[k] for k in ("incumbent", "candidate")}) for v in kinds)
+        assert old == new, path

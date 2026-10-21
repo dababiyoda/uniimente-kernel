@@ -586,6 +586,20 @@ def worsened(incumbent: float, candidate: float, tolerance: float = STRESS_TOLER
     return candidate > incumbent + tolerance * abs(incumbent)
 
 
+def stress_worsened(kind: dict) -> bool:
+    """One stress set's verdict. More wrong answers (infinite losses) than the incumbent is worse. With equal wrong
+    answers the means are both infinite, so ``worsened`` alone never fired (found by the cycle-7 design pilot,
+    2026-10-21: a candidate with 3 wrong answers against the incumbent's 2 passed). Fewer wrong answers is better;
+    equal counts compare the items both answered under the same 5% tolerance."""
+    wrong = kind.get("wrong")
+    if wrong is None:
+        return worsened(kind["incumbent"], kind["candidate"])
+    if wrong["candidate"] != wrong["incumbent"]:
+        return wrong["candidate"] > wrong["incumbent"]
+    # equal wrong answers: compare the items both answered, under the same tolerance
+    return wrong["both_answered"] > 0 and worsened(wrong["incumbent_answered_mean"], wrong["candidate_answered_mean"])
+
+
 def outputs_verified(verify, items: dict, outputs: dict) -> bool:
     """Every ANSWER verifies independently. An abstention (output None) is not an answer and is not verified;
     the sealed score already rates it below a correct answer."""
@@ -1054,10 +1068,17 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
         ki = [inc_s[k] for k in inc_s if k.startswith(kind)]
         kc = [cand_s[k] for k in cand_s if k.startswith(kind)]
         adversarial[kind] = {"incumbent": round(statistics.fmean(ki), 6), "candidate": round(statistics.fmean(kc), 6)}
+        if any(math.isinf(v) for v in ki + kc):        # wrong answers: the means alone cannot rank them
+            finite = [(a, b) for a, b in zip(ki, kc) if not (math.isinf(a) or math.isinf(b))]
+            adversarial[kind]["wrong"] = {"incumbent": sum(map(math.isinf, ki)), "candidate": sum(map(math.isinf, kc)),
+                                          "both_answered": len(finite),
+                                          "incumbent_answered_mean": round(statistics.fmean(a for a, _ in finite), 6)
+                                          if finite else None,
+                                          "candidate_answered_mean": round(statistics.fmean(b for _, b in finite), 6)
+                                          if finite else None}
     adversarial["all_outputs_verified"] = verified
     record["adversarial"] = adversarial
-    if not verified or any(worsened(v["incumbent"], v["candidate"])
-                           for k, v in adversarial.items() if isinstance(v, dict)):
+    if not verified or any(stress_worsened(v) for k, v in adversarial.items() if isinstance(v, dict)):
         record["decision"] = "REJECT"
         record["reason"] = "adversarial evaluation failed"
         return finish()

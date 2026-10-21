@@ -10,10 +10,13 @@ Exit status 1 if any mutant survives or no longer applies.
 """
 from __future__ import annotations
 
+import os
+import queue
 import shutil
 import subprocess
 import sys
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -404,30 +407,47 @@ GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("recovery", RECOVERY_TESTS, RECOVERY_MUTANTS), ("seed ports", PORT_TESTS, PORT_MUTANTS)]
 
 
+def _run_one(work: Path, group: str, tests: list, name: str, rel: str, old: str, new: str) -> tuple[bool, str]:
+    """Apply one mutant in this worker's scratch copy, run its tests, restore the file."""
+    path = work / rel
+    source = path.read_text(encoding="utf-8")
+    if source.count(old) != 1:
+        return False, f"STALE    [{group}] {name}: pattern not found exactly once in {rel}"
+    path.write_text(source.replace(old, new), encoding="utf-8")
+    try:
+        run = subprocess.run([sys.executable, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", *tests],
+                             cwd=work, capture_output=True, text=True)
+    finally:
+        path.write_text(source, encoding="utf-8")
+    caught = run.returncode != 0
+    tail = (run.stdout.strip().splitlines() or ["(no output)"])[-1]
+    return caught, f"{'CAUGHT ' if caught else 'SURVIVED'} [{group}] {name}: {tail}"
+
+
 def main() -> int:
-    bad = total = 0
+    # Mutants run in parallel, one scratch copy of the repository per worker (a mutant never meets another's
+    # edit); the report keeps the declared order. CORTEX_MUTANT_WORKERS overrides the worker count.
+    mutants = [(g, t, *m) for g, t, ms in GROUPS for m in ms]
+    workers = max(1, int(os.environ.get("CORTEX_MUTANT_WORKERS") or os.cpu_count() or 1))
     with tempfile.TemporaryDirectory(prefix="cortex-mutants-") as tmp:
-        work = Path(tmp) / "repo"
-        shutil.copytree(ROOT, work, ignore=shutil.ignore_patterns(".git", "__pycache__", ".pytest_cache"))
-        for group, tests, name, rel, old, new in [(g, t, *m) for g, t, ms in GROUPS for m in ms]:
-            total += 1
-            path = work / rel
-            source = path.read_text(encoding="utf-8")
-            if source.count(old) != 1:
-                print(f"STALE    [{group}] {name}: pattern not found exactly once in {rel}")
-                bad += 1
-                continue
-            path.write_text(source.replace(old, new), encoding="utf-8")
+        copies: queue.Queue = queue.Queue()
+        for i in range(min(workers, len(mutants))):
+            work = Path(tmp) / f"repo{i}"
+            shutil.copytree(ROOT, work, ignore=shutil.ignore_patterns(".git", "__pycache__", ".pytest_cache"))
+            copies.put(work)
+
+        def one(mutant):
+            work = copies.get()
             try:
-                run = subprocess.run([sys.executable, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", *tests],
-                                     cwd=work, capture_output=True, text=True)
+                return _run_one(work, *mutant)
             finally:
-                path.write_text(source, encoding="utf-8")
-            caught = run.returncode != 0
-            tail = (run.stdout.strip().splitlines() or ["(no output)"])[-1]
-            print(f"{'CAUGHT ' if caught else 'SURVIVED'} [{group}] {name}: {tail}")
-            bad += not caught
-    print(f"{total} mutants, {bad} survived or stale")
+                copies.put(work)
+        with ThreadPoolExecutor(max_workers=copies.qsize()) as pool:
+            results = list(pool.map(one, mutants))
+    for _, line in results:
+        print(line)
+    bad = sum(not caught for caught, _ in results)
+    print(f"{len(results)} mutants, {bad} survived or stale")
     return 1 if bad else 0
 
 

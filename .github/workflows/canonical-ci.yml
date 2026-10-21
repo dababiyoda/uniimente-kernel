@@ -190,7 +190,8 @@ jobs:
   cortex_seed:
     name: "6 · Cortex seed experiment (Z3 + CP-SAT, frozen evaluation)"
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 150 mutants run in parallel, one repository copy per core (about 11 minutes on 4 cores); headroom for the rest
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

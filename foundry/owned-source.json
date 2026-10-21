@@ -439,6 +439,7 @@
     "greg/cognition/protection.py",
     "greg/cognition/repertoire.py",
     "greg/cognition/reserved.py",
+    "greg/cognition/restatement.py",
     "greg/cognition/seed_compat.py",
     "greg/cognition/seed_evaluation.py",
     "greg/cognition/seed_path.py",

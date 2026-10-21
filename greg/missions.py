@@ -1039,7 +1039,9 @@ class MissionEngine:
                                  or manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.",
                                                                        "organ.", "foundry.")) else None,
                                  artifact_root=self.artifact_root, stop_check=self._stop_check,
-                                 capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
+                                 # eligibility view for the Mind, and for the evaluator that asks it
+                                 capability_registry=self.registry if manifest.capability_id.startswith("cognition.")
+                                 or manifest.capability_id == "worker.appraise" else None,
                                  cognition_model=getattr(self, "cognition_model", None),
                                  egress=getattr(self, "egress", None) if manifest.capability_id in CONFINED_EGRESS else None,
                                  worker_confinement=getattr(self, "worker_confinement", "required"))

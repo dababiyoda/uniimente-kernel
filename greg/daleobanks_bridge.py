@@ -36,6 +36,8 @@ import re
 import subprocess
 
 from greg.capabilities import CapabilityError, InvocationContext, _inside
+# The sentence-by-sentence rule is shared with the Task Fabric's evaluator (worker.appraise).
+from greg.cognition.restatement import coverage as truth_preservation
 
 SCRIPT = r'''
 import asyncio, json, sys
@@ -128,32 +130,6 @@ def _unsupported_numbers(draft: str, source: str) -> list[str]:
     """Every figure in the draft must literally appear in the source it is bound to."""
     normalized = source.replace(",", "")
     return sorted({n for n in NUMBER.findall(draft) if n.rstrip(".,").replace(",", "") not in normalized})
-
-
-def truth_preservation(text: str, receipts: dict) -> tuple[dict, list[str]]:
-    """The draft against the Mind's restatement receipts: each sentence a claim answered as written."""
-    findings, rest, distortions = [], text, []
-    for name, receipt in receipts.items():
-        claim = (receipt.get("output") or {}).get("claim") or ""
-        if receipt.get("method") != "cognition.evidence":
-            findings.append(f"claim {name}: receipt is from {receipt.get('method')}, not the evidence family")
-            continue
-        if not claim or claim not in rest:
-            findings.append(f"claim {name}: not a sentence of this draft")
-            continue
-        rest = rest.replace(claim, " ", 1)
-        changed = (receipt.get("output") or {}).get("distortions") or []
-        distortions += [{"claim": name, **c} for c in changed]
-        if receipt.get("abstention_state") != "NONE":
-            why = "; ".join(receipt.get("missing_information") or []) or receipt.get("abstention_state")
-            findings.append(f"claim {name} is not supported as written: {why}"[:400])
-    uncovered = " ".join(rest.split())
-    if any(ch.isalnum() for ch in uncovered):
-        findings.append(f"draft text no receipt covers: {uncovered[:200]!r}")
-    return {"checked": True, "claims": len(receipts), "distortions": distortions,
-            "receipts": {k: r.get("receipt_id") for k, r in receipts.items()},
-            "limits": "each claim is span-bound and shows none of the six detected kinds of change; that is not "
-                      "entailment, factual accuracy or acceptance"}, findings
 
 
 def verify(params: dict, ctx: InvocationContext) -> dict:

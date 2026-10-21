@@ -99,3 +99,52 @@ def test_a_clean_archive_passes(tmp_path):
     _tar(archive, [("pkg/module.py", b"print('ok')\n"), ("pkg/data.json", b'{"a": 1}')], mode="w:gz")
     assert C.scan_archive(archive) == [] and C.main(["--archive", str(archive)]) == 0
 
+
+def test_recompressed_and_minified_copies_are_blocked(tmp_path):
+    """Round-3 review of #179 (finding 3): an xz- or bz2-compressed listed file and minified JSON under a .dat
+    extension passed. Members are decompressed (gzip, xz, bz2) and JSON is compared in canonical form."""
+    import bz2
+    import lzma
+    path, data = _excluded()
+    gz = next(e["path"] for e in LIST["paths"] if e["path"].endswith(".json.gz"))
+    raw = (ROOT / gz).read_bytes()
+    import gzip
+    extract = gzip.decompress(raw)
+    members = [("a/data.xz", lzma.compress(data)), ("b/data.bz2", bz2.compress(data)),
+               ("c/extract.bin.xz", lzma.compress(extract)),
+               ("d/blob.dat", json.dumps(json.loads(data), separators=(",", ":")).encode())]
+    for name, content in members:
+        archive = tmp_path / (name.replace("/", "_") + ".tar")
+        _tar(archive, [(name, content)])
+        assert C.scan_archive(archive), name
+        assert C.main(["--archive", str(archive)]) == 1, name
+
+
+def test_the_check_states_what_it_cannot_catch():
+    assert "Out of scope" in (ROOT / "scripts/check_release_exclusions.py").read_text()
+
+
+def test_lzma_alone_zlib_base64_and_utf16_copies_are_blocked(tmp_path):
+    """Round-4 review of #179 (finding C): these four encodings of a listed file passed."""
+    import base64
+    import lzma
+    import zlib
+    path, data = _excluded()
+    encodings = {"alone.lzma": lzma.compress(data, format=lzma.FORMAT_ALONE), "z.zlib": zlib.compress(data),
+                 "b64.txt": base64.b64encode(data), "u16.txt": data.decode("utf-8").encode("utf-16")}
+    for name, content in encodings.items():
+        archive = tmp_path / f"{name}.tar"
+        _tar(archive, [(f"x/{name}", content)])
+        assert C.scan_archive(archive), name
+
+
+def test_python_source_alone_never_blocks_a_release(tmp_path):
+    """Round-4 review of #179 (finding D): the marker scan flagged ordinary source naming the suites, so a tag
+    archive without any listed data file was still blocked. Python source is exempt from the marker rule."""
+    tracked = subprocess.run(["git", "ls-files", "*.py"], cwd=ROOT, capture_output=True, text=True).stdout.split()
+    archive = tmp_path / "source.tar"
+    with tarfile.open(archive, "w") as t:
+        for rel in tracked:
+            t.add(ROOT / rel, arcname=f"release/{rel}")
+    assert C.scan_archive(archive) == []
+

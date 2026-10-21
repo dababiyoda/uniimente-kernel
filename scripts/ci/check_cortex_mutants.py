@@ -374,6 +374,25 @@ CLOSURE_INTEGRITY_MUTANTS = [
      '    if False:\n        raise BodyError(f"{what} needs your founder key'),
 ]
 
+# 2026-10-21: #173's interruption guards (appraiser retry bound, Genesis build reservation), pinned by the review of
+# the PR #184 port branch (f63f218), carried onto #173's code. Each survived the suites that existed before.
+INTERRUPTION_TESTS = ["tests/unit/test_greg_genesis_build_reservation.py", "tests/unit/test_greg_appraisal_retry_bound.py"]
+INTERRUPTION_MUTANTS = [
+    ("an interrupted call by a builder with no ceiling is charged nothing", "greg/genesis.py",
+     '"reserved_usd": min(self.builder_cap, remaining) if self.builder_cap is not None else remaining,',
+     '"reserved_usd": min(self.builder_cap, remaining) if self.builder_cap is not None else 0.0,'),
+    ("the appraiser's read-only restore completes an unresolved auto-attach", "greg/genesis.py",
+     "        if record:\n            self._finish_attaches()", "        self._finish_attaches()"),
+    ("the third unavailable appraisal waits a tick for its final verdict", "greg/body.py",
+     '        if attempt >= APPRAISAL_ATTEMPTS:\n            self.journal.record("mission.appraised"',
+     '        if False:\n            self.journal.record("mission.appraised"'),
+    ("a build budget left only by binary rounding is not used up", "greg/genesis.py",
+     'round(contract["build_budget_usd"] - spent, 6) <= 0', 'contract["build_budget_usd"] - spent <= 0'),
+    ("a cone left only by binary rounding buys another call", "greg/genesis.py",
+     'remaining = round(min(contract["build_budget_usd"] - spent, cone_left - (spent - spent_at_entry)), 6)',
+     'remaining = min(contract["build_budget_usd"] - spent, cone_left - (spent - spent_at_entry))'),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS),
           ("mind construction", MIND_CONSTRUCTION_TESTS, MIND_CONSTRUCTION_MUTANTS),
@@ -383,7 +402,8 @@ GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("evidence chain at commit", COMMIT_CHAIN_TESTS, COMMIT_CHAIN_MUTANTS),
           ("founder tier", FOUNDER_TIER_TESTS, FOUNDER_TIER_MUTANTS),
           ("founder tier (body)", FOUNDER_TIER_BODY_TESTS, FOUNDER_TIER_BODY_MUTANTS),
-          ("closure integrity", CLOSURE_INTEGRITY_TESTS, CLOSURE_INTEGRITY_MUTANTS)]
+          ("closure integrity", CLOSURE_INTEGRITY_TESTS, CLOSURE_INTEGRITY_MUTANTS),
+          ("interruption", INTERRUPTION_TESTS, INTERRUPTION_MUTANTS)]
 
 
 def main() -> int:

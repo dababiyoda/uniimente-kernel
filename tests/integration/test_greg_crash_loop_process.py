@@ -3,9 +3,10 @@
 The Body runs as its own OS process through the canonical main loop (Body.run, what `greg run` runs), with one
 extra read-only sensor capability whose adapter kills the process (os._exit) every time a mission observes it, so
 every restart dies inside its first tick, as a supervisor would see it. After CRASH_LOOP_BOOTS such deaths, the
-next start holds: the sensor is never called again, the process stays up with a HELD heartbeat, and the hold is
-the breaker's record, not a founder command. The founder's signed BODY_RESUME lifts it, and the body acts again
-(and dies again: the defect it was holding against is still there).
+next start holds: the sensor is never called again, the process stays up with a HELD heartbeat and measures
+nothing, the hold is the breaker's record, not a founder command, and it raises one founder ask. The founder's
+signed BODY_RESUME lifts it and withdraws the ask, and the body acts again (and dies again: the defect it was
+holding against is still there).
 
 The founder key is a per-test Ed25519 key, not Alfonso's; the capability is a test double.
 """
@@ -19,7 +20,7 @@ import subprocess
 import sys
 import time
 
-from greg.body import BREAKER, CRASH_LOOP_BOOTS, Body, Layout, observe
+from greg.body import BREAKER, CRASH_LOOP_BOOTS, HOLD_ASK, Body, Layout, observe
 from tests.greg_fixtures import drop, make_body, mission, signed
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -125,3 +126,6 @@ def test_a_body_that_dies_on_every_tick_holds_after_the_limit_until_the_founder_
         assert len(hold["unfinished_boots"]) == CRASH_LOOP_BOOTS and "command_digest" not in hold
         assert len([e for e in b.journal.replay("body.resumed")]) == 1
         assert len([e for e in b.journal.replay("body.booted") if e.payload.get("main_loop")]) == CRASH_LOOP_BOOTS + 1
+        assert b.journal.replay("compute.telemetry") == [], "the held life measured nothing; the others died in tick 1"
+        [ask] = [e.payload for e in b.journal.replay("decision.requested") if e.payload["kind"] == HOLD_ASK]
+        assert [e.payload["request_id"] for e in b.journal.replay("decision.withdrawn")] == [ask["request_id"]]

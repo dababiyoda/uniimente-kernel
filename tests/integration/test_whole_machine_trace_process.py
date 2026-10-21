@@ -3,8 +3,10 @@
 The same founder-signed mission and GOAL as tests/integration/test_whole_machine_trace.py (Goal, Mind, Organs,
 Body, Action, Evidence, Outcome, Learning, Updated Goal), but the Body is its own OS process: the founder
 approves through `greg decide` (a separate process), evidence after the outcome enters while the Body is stopped
-(one ledger writer), and the founder reads the chain with the `greg foundry trace` CLI. The organs are the
-stand-ins of tests/unit/test_greg_ventures.py with the real organs' entry points.
+(one ledger writer), and the founder reads the chain with the `greg foundry` CLI: `trace` (every action and its
+booked cost, the decision answered before the approved write, the appraiser's verdict), `why` (the verified
+outcome's causes: every receipt and the founder's approve) and `changed` (why the blocks metric moved). The organs
+are the stand-ins of tests/unit/test_greg_ventures.py with the real organs' entry points.
 
 The founder key is a per-test Ed25519 key, not Alfonso's.
 """
@@ -21,7 +23,7 @@ import time
 from egregore.goals import GoalRegistry
 from greg import goal_gravity as gg, routing
 from greg.body import Body, Layout, ingest_external, observe
-from tests.integration.test_whole_machine_trace import WholeWorld
+from tests.integration.test_whole_machine_trace import WholeWorld, founder_trace
 from tests.unit.test_greg_goal_gravity import GOAL, MID, expected_w2_request
 from tests.unit.test_greg_ventures import organs  # noqa: F401  (pytest fixture: stand-in organs under data/)
 
@@ -116,11 +118,38 @@ def test_one_mission_runs_all_nine_links_on_a_real_body_process(tmp_path, organs
         assert all(b.ledger.find(a["receipt"]).record_type == "receipt" for a in actions.values())
         assert gg.ledger_closure(b.journal)["ok"]
         knowledge = {r["capability"]: r for r in routing.routing_knowledge(b.journal)}
-    for capability in ("cognition.seed.solve", "venture.assess", "fs.write"):
-        assert knowledge[capability]["done"] >= 1
-    trace = greg(home, "foundry", "trace", "--mission", MID).stdout
-    for needle in ("cognition.seed.solve", "venture.assess", "fs.write", rid):
-        assert needle in trace
+        booked = {e.event_id: float(e.payload.get("cost_usd") or 0.0) for e in b.journal.replay("mission.action")
+                  if e.payload["mission_id"] == MID}
+        appraised = [(e.event_id, e.payload["verdict"]) for e in b.journal.replay("mission.appraised")
+                     if e.payload["mission_id"] == MID]
+        blocked = [e.event_id for e in b.journal.replay("mission.blocked") if e.payload["mission_id"] == MID]
+    for capability in ("cognition.seed.solve", "venture.assess", "fs.write"):   # credited by the VERIFIED verdict
+        assert knowledge[capability]["verified"] >= 1, knowledge.get(capability)
+
+    trace = json.loads(greg(home, "foundry", "trace", "--mission", MID).stdout)   # the founder interface
+    spans = trace["missions"][MID]["spans"]
+    acted = {s["capability"] for s in spans if s["kind"] == "mission.action" and s["status"] == "DONE"}
+    assert {"cognition.seed.solve", "venture.assess", "fs.write"} <= acted, acted
+    founder_trace(spans, rid, actions["w2"]["receipt"])
+    # costs: every action the ledger booked, at the cost the Gate booked (a free mission inside its $0 signed budget)
+    assert {s["event_id"]: s["cost_usd"] for s in spans if s["kind"] == "mission.action"} == booked
+    assert trace["metrics"]["cost_usd"] == round(sum(booked.values()), 4)
+    # outcome: the separate appraiser's verdicts, as retained
+    assert [(s["event_id"], s["verdict"]) for s in spans if s["kind"] == "mission.appraised"] == appraised
+    assert appraised and appraised[-1][1] == "VERIFIED" and trace["metrics"]["verified_rate"] == 1.0
+    # why: the verified outcome's causes are the receipts of every action before it and the founder's approve
+    why = {c["node"]: c["kind"] for c in json.loads(greg(home, "foundry", "why", appraised[-1][0]).stdout)["causes"]}
+    assert why.get("authority:" + rid) == "Authority", why
+    verified = next(i for i, s in enumerate(spans) if s["event_id"] == appraised[-1][0])
+    covered = {"receipt:" + s["receipt"] for s in spans[:verified]
+               if s["kind"] == "mission.action" and s["status"] == "DONE"}
+    assert "receipt:" + actions["w2"]["receipt"] in covered and len(covered) >= 4, covered
+    assert {node for node, kind in why.items() if kind == "Receipt"} == covered, why
+    # why a metric moved: blocks fell when the founder answered, and the block was the write awaiting approval
+    answered = next(s for s in spans if s["kind"] == "decision.answered" and s["request_id"] == rid)
+    moved = json.loads(greg(home, "foundry", "changed", "blocks", "--split", answered["at"]).stdout)
+    assert (moved["before"], moved["after"], moved["direction"]) == (len(blocked), 0, "down"), moved
+    assert [(d["mission_id"], d["capability"], d["events"]) for d in moved["drivers"]] == [(MID, "fs.write", blocked)]
 
 
 def _records(home: Path, record_type: str) -> list[dict]:

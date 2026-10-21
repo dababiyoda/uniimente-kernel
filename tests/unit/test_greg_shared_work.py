@@ -166,6 +166,49 @@ def test_a_refusal_is_honored_and_never_asked_again(tmp_path, stage):
         body.close()
 
 
+class Died(Exception):
+    """The body process ending between two appends (a power loss, a SIGKILL)."""
+
+
+@pytest.mark.parametrize("dies_before", ["decision.withdrawn", "mission.strategy_excluded", "mission.unblocked"])
+def test_a_refusal_cut_short_by_a_crash_is_finished_by_the_next_tick(tmp_path, dies_before):
+    """_honor_refusal appends refusal_honored, decision.withdrawn, strategy_excluded, mission.unblocked. A body
+    that died after the first of them could not finish it: re-observing the refusal tried to re-record
+    refusal_honored with new content, which the ledger refuses, and after the withdrawal the blocker waited on a
+    request nothing can answer. The next tick finishes that one refusal, exactly as it would have ended."""
+    home, key, body_id, clock, body, mid, folder = start(tmp_path)
+    try:
+        assert asks(body, mid)[-1]["action_id"] == "agree-terms"
+        (folder / "declined.txt").write_text(f"Dana declines {REF}: no capacity this month\n")
+        record = body.journal.record
+
+        def dying(kind, data, **kw):
+            if kind == dies_before:
+                raise Died(kind)
+            return record(kind, data, **kw)
+        body.journal.record = dying
+        with pytest.raises(Died):
+            tick(body, clock, 4)
+    finally:
+        body.close()
+    body = Body(home, clock=clock).open()                 # the supervisor restarts it
+    try:
+        body.boot()
+        tick(body, clock, 3, 1)
+        [honored] = [e.payload for e in body.journal.replay("human.refusal_honored")]
+        rid = honored["request_id"]
+        assert [e.payload["request_id"] for e in body.journal.replay("decision.withdrawn")] == [rid]
+        [excluded] = [e.payload for e in body.journal.replay("mission.strategy_excluded")]
+        assert excluded["action_id"] == "agree-terms" and excluded["reason"].startswith("declined by the person: ")
+        assert [(e.payload["resolved"] or {}).get("request_id") for e in body.journal.replay("mission.unblocked")
+                if e.payload["mission_id"] == mid] == [rid]
+        [choice] = asks(body, mid, "NO_STRATEGY")             # the next move is Alfonso's, as without the crash
+        assert choice["why_now"].startswith("the person declined agree-terms; that refusal stands")
+        assert [a["action_id"] for a in asks(body, mid)] == ["agree-terms"]   # nothing more is asked of them
+    finally:
+        body.close()
+
+
 def test_delivered_work_wins_over_a_late_refusal_note(tmp_path):
     home, key, body_id, clock, body, mid, folder = start(tmp_path)
     try:

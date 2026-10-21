@@ -4,7 +4,7 @@
   "title": "Whole-machine acceptance missions A-L (directive 2026-10-13 section 33)",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version", "source", "tier_reading", "missions"],
+  "required": ["version", "source", "tier_reading", "body_process_tests", "missions"],
   "properties": {
     "version": {"const": "acceptance-missions/1"},
     "source": {
@@ -27,6 +27,10 @@
         "BODY_VERIFIED": {"type": "string", "minLength": 1},
         "beyond_tests": {"type": "string", "minLength": 1}
       }
+    },
+    "body_process_tests": {
+      "description": "Test files that drive a real Body process. A BODY_VERIFIED requirement or trace link must cite a node in one of them that statically starts the process.",
+      "type": "array", "minItems": 1, "items": {"$ref": "#/$defs/body_process_test"}
     },
     "missions": {"type": "array", "minItems": 12, "maxItems": 12, "items": {"$ref": "#/$defs/mission"}}
   },
@@ -77,6 +81,16 @@
         "buildable_now": {"type": "boolean"},
         "dependency": {"enum": ["none", "founder", "credential", "external", "technical", "legal", "physical"]},
         "next": {"type": "string", "minLength": 1}
+      }
+    },
+    "body_process_test": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "starts"],
+      "properties": {
+        "file": {"type": "string", "pattern": "^tests/.+\\.py$"},
+        "starts": {"enum": ["greg run", "supervisord", "Body.run driver"]},
+        "note": {"type": "string"}
       }
     },
     "link": {

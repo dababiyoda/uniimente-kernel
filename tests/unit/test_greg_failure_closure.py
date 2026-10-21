@@ -81,6 +81,27 @@ def test_settlement_hears_each_failure_once_and_reconciles_idempotently(tmp_path
         body.close()
 
 
+def test_a_run_dependent_inner_request_never_settles_one_claim_twice(tmp_path, monkeypatch):
+    """A claim's identity is its signed sensor params, not the inner request's digest. Before the thinking-budget
+    fix the first step's latency limit carried planning time into that digest; any run-dependent field there must
+    still settle each failure once, so this test injects one on every allotment."""
+    from greg.cognition import budget
+    original, calls = budget.Controller.allot, []
+
+    def drifting(self, step, *, required):
+        limit = original(self, step, required=required)
+        calls.append(step)
+        return None if limit is None else limit - 1e-6 * len(calls)
+    monkeypatch.setattr(budget.Controller, "allot", drifting)
+    body, *_ = run(tmp_path, [blackbox("m:f-one", 1, 0.0), blackbox("m:okay", 3, 1e6)], ticks=7)
+    try:
+        assert len(calls) > 2                                             # the claim was re-observed
+        outcomes = settlement.measured_outcomes(body.journal)
+        assert sorted((o["mission_id"], o["correct"]) for o in outcomes) == [("m:f-one", False), ("m:okay", True)]
+    finally:
+        body.close()
+
+
 def test_a_verified_failure_is_never_read_as_a_success(tmp_path):
     body, *_ = run(tmp_path, [blackbox("m:fails", 1, 0.0)])
     try:

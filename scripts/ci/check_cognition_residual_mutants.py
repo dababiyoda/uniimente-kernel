@@ -219,7 +219,7 @@ MUTANTS = [
  ('a re-observed failure settles again', 'greg/cognition/settlement.py',
   '"input_digest": digest(check["sensor"].get("params", {})), "problem_id": receipt["problem_id"]}',
   '"input_digest": receipt["input_digest"], "problem_id": receipt["problem_id"]}',
-  'test_settlement_hears_each_failure_once_and_reconciles_idempotently', FAILURES),
+  'test_a_run_dependent_inner_request_never_settles_one_claim_twice', FAILURES),
  ('a forged failure is taken on its word', 'greg/appraisal.py',
   '            if passed == unmet:', '            if not passed and not unmet:',
   'test_a_forged_failure_closure_on_a_passing_mission_is_refuted', FAILURES),

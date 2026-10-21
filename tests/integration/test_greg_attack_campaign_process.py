@@ -253,13 +253,28 @@ def verdicts(home: Path, mid: str) -> list[str]:
         return [journal.ledger.find(r).payload["result"]["output"]["verdict"] for r in receipts]
 
 
-def test_one_live_body_contains_a_hostile_worker_a_substituted_evaluator_and_revoked_authority(tmp_path):
-    if not isolation.available().get("available"):
+# Cert-bundle variables a host may point outside the system certificate roots; the envelope refuses those by design
+# (tests/unit/test_greg_worker_isolation.py), so the envelope run gives its body none.
+CERT_ENV = ("SSL_CERT_FILE", "SSL_CERT_DIR", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE", "NODE_EXTRA_CA_CERTS")
+
+
+@pytest.mark.parametrize("confinement", ["supervised", "required"])
+def test_one_live_body_contains_a_hostile_worker_a_substituted_evaluator_and_revoked_authority(tmp_path, confinement):
+    """``supervised``: the founder's setting, where #178's Landlock grants are the floor. ``required``: the default,
+    #184's bubblewrap envelope (its own PID, user and mount namespaces). The same hostile worker, evaluator
+    substitution and revoked phone run against each; each asserts what its mechanism guarantees."""
+    if confinement == "supervised" and not isolation.available().get("available"):
         pytest.skip("Landlock ABI >= 3 is not available on this kernel; worker confinement cannot be exercised")
+    if confinement == "required":
+        from greg import worker_isolation
+        try:
+            worker_isolation._backend(require_bubblewrap=True)
+        except worker_isolation.WorkerIsolationError as exc:
+            pytest.skip(f"no bubblewrap envelope on this host: {exc}")
     data = tmp_path / "data"
     data.mkdir()
     repo = _repo(data)
-    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data], worker_confinement=confinement)
     log, canary = tmp_path / "body.log", "canary-" + os.urandom(8).hex()
     sibling, legit_note = workspace(home, "m:legit") / "taken.txt", workspace(home, "m:legit") / "n.txt"
     asked_note = workspace(home, "m:ask") / "n.txt"
@@ -269,15 +284,20 @@ def test_one_live_body_contains_a_hostile_worker_a_substituted_evaluator_and_rev
                                                          sibling=str(sibling), source=str(ROOT / "greg" / "founder.py")))
     (bin_dir / "codex").chmod(0o755)
     env = {**ENV, "PATH": f"{bin_dir}:{os.environ.get('PATH', '/usr/bin:/bin')}", "GREG_CANARY": canary}
+    if confinement == "required":
+        env = {k: v for k, v in env.items() if k not in CERT_ENV}
+    # Supervised: the hostile worker is an unreviewed CLI (``local-cli``, declared by tests/one_machine_body.py), so
+    # the envelope refuses it and the Landlock floor is what confines it. Required: it poses as the reviewed codex.
+    worker = {"provider": "local-cli"} if confinement == "supervised" else {}
 
     phone = generate_founder_key(tmp_path / "phone.pem", None)
     expires = stamp(datetime.now(timezone.utc) + timedelta(days=30))
     drop(home, sign_command(key, "DEVICE_ENROLL", {"public_key": phone, "label": "phone", "kinds": ["DECISION"],
                                                    "expires_at": expires}, body_id=body_id), "a-phone.json")
-    drop(home, sign_command(key, "MISSION", worker_mission("m:escape", "esc", {
+    drop(home, sign_command(key, "MISSION", worker_mission("m:escape", "esc", {**worker,
         "mode": "document", "objective": "ESCAPE-PROBE: write report.md", "inputs": [],
         "acceptance": {"output": "report.md"}, "allowed_paths": ["report.md"]}), body_id=body_id), "b-escape.json")
-    drop(home, sign_command(key, "MISSION", worker_mission("m:subst", "sub", {
+    drop(home, sign_command(key, "MISSION", worker_mission("m:subst", "sub", {**worker,
         "mode": "repository", "repo": str(repo), "objective": "SUBSTITUTE: add sub() to pkg/calc.py",
         "acceptance": {"tests": [["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", "tests/test_calc.py"]],
                        "max_changed_files": 4},
@@ -290,7 +310,11 @@ def test_one_live_body_contains_a_hostile_worker_a_substituted_evaluator_and_rev
         strategies=[write_strategy("w", "n.txt", "approved", ["n"])], capabilities=["fs.read"], ceiling="read_only"),
         body_id=body_id), "e-ask.json")                                  # the write is outside the cone: it asks
 
-    body = start(home, log, env=env)
+    if confinement == "supervised":
+        body = subprocess.Popen([sys.executable, "-m", "tests.one_machine_body", str(home), str(bin_dir / "codex"), "1"],
+                                cwd=ROOT, env=env, stdout=log.open("a"), stderr=subprocess.STDOUT)
+    else:
+        body = start(home, log, env=env)
     try:
         achieved = lambda: {a["mission_id"] for a in events(home, "mission.achieved")}
         wait_for(lambda: {"m:escape", "m:legit"} <= achieved(), timeout=120, what="the escape order and legit closing")
@@ -318,17 +342,30 @@ def test_one_live_body_contains_a_hostile_worker_a_substituted_evaluator_and_rev
     device = (home / "device_ed25519.pem").read_text()
     with Body(home) as b:
         assert b.ledger.verify_chain()[0]
-        # Worker escape: every attempt denied by the OS; nothing it aimed at leaked or landed.
-        assert len(attempts) == 7 and [a["result"] for a in attempts] == ["denied"] * 7, attempts
+        # Worker escape: nothing it aimed at leaked or landed.
+        assert len(attempts) == 7, attempts
         retained = report + (order_root / "change.patch").read_text() + (order_root / "evidence.json").read_text()
         assert witness not in retained and device not in retained and canary not in retained
         assert not sibling.exists() and not (home / "inbox" / "z-worker.json").exists()
         assert "z-worker.json" not in rejected(home) and not (home / "inbox" / "processed" / "z-worker.json").exists()
         evidence = json.loads((order_root / "evidence.json").read_text())
-        assert evidence["summary"]["worker"]["confinement"]["filesystem"] == "landlock"
-        inside_home = [r for r in evidence["summary"]["worker"]["confinement"]["readable"]
-                       if Path(r).is_relative_to(home.resolve())]
-        assert inside_home == [str(order_root.resolve() / "esc.prompt.txt")], inside_home   # its own prompt only
+        if confinement == "supervised":      # Landlock: every attempt denied by the OS
+            assert [a["result"] for a in attempts] == ["denied"] * 7, attempts
+            assert evidence["summary"]["worker"]["confinement"]["filesystem"] == "landlock"
+            readable = evidence["summary"]["worker"]["confinement"]["readable"]
+            inside_home = [r for r in readable if Path(r).is_relative_to(home.resolve())]
+            assert inside_home == [str(order_root.resolve() / "supervised-runtime" / "esc.prompt.txt")], inside_home  # own prompt only
+        else:
+            # The envelope: every file attempt denied. The parent process the worker can see is the namespace's
+            # own, so its environment is readable and holds only the envelope's sanitized variables.
+            [environ] = [a for a in attempts if a["path"].endswith("/environ")]
+            assert all(a["result"] == "denied" for a in attempts if a is not environ), attempts
+            names = {kv.split("=", 1)[0] for kv in (environ.get("leaked") or "").split("\x00") if "=" in kv}
+            assert canary not in (environ.get("leaked") or "") and "GREG_CANARY" not in names, names
+            assert evidence["summary"]["worker"]["confinement"] == {"filesystem": "os-confined",
+                                                                    "mechanism": "bubblewrap"}
+            readable = evidence["summary"]["worker"]["isolation"]["read_roots"]
+            assert not [r for r in readable if Path(r).is_relative_to(home.resolve())], readable  # nothing of the body
         assert appraisal(b, "m:escape")["verdict"] == "ACCEPTED"      # its legitimate deliverable still closed
         # Evaluator substitution: the weakened test is caught; the wrong sub() never closes its mission.
         verdict = appraisal(b, "m:subst")

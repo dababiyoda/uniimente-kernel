@@ -113,7 +113,7 @@ def test_a_kill_before_the_block_reuses_the_open_question_and_its_answer_release
     assert [r["request_id"] for r in _reconciliations(home, clock)] == [open_question["request_id"]]
     with Body(home, clock=clock) as body:
         m = body.engine.book.missions[mid]
-        assert m.blocker["request_id"] == open_question["request_id"] and m.spent_usd == 0.05
+        assert m.blocker["request_id"] == open_question["request_id"] and m.spent_usd == 0.0 and m.committed_usd == 0.05
     drop(home, signed(key, body_id, "DECISION", {"request_id": open_question["request_id"],
                                                  "answer": "reconcile_not_executed"}))
     _run(home, clock, 1)

@@ -141,13 +141,17 @@ def _bubblewrap_argv(binary: str, read_paths: list[Path], cwd: Path | None = Non
             "--disable-userns", "--die-with-parent", "--new-session", "--cap-drop", "ALL"]
     if not network:
         argv.append("--unshare-net")
+    if cwd is not None and runtime is not None:
+        # The private /tmp first: mounted after the read paths it would hide every one under /tmp (a provider
+        # binary or a granted read root there would vanish, and the worker fail to start).
+        argv += ["--bind", str(runtime / "tmp"), "/tmp"]
     for path in read_paths:
         argv += ["--ro-bind", str(path), str(path)]
     for target, link in symlinks:
         argv += ["--symlink", target, link]
     argv += ["--proc", "/proc", "--dev", "/dev"]
     if cwd is not None and runtime is not None:
-        argv += ["--bind", str(runtime / "tmp"), "/tmp", "--tmpfs", str(cwd.parent),
+        argv += ["--tmpfs", str(cwd.parent),
                  "--bind", str(cwd), str(cwd),
                  "--bind", str(runtime), str(runtime), "--chdir", str(cwd)]
         metadata = cwd / ".git"

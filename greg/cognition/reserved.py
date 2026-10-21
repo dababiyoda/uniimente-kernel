@@ -25,7 +25,9 @@ from __future__ import annotations
 
 EXECUTED_ON_GREG = {
     "cortex.graph.search": (("cognition.graph", "cognition.search", "cognition.search_astar", "cognition.grid_dijkstra"),
-                            "Dijkstra shortest path (networkx), weighted-grid A* and SciPy csgraph grid Dijkstra"),
+                            "Dijkstra shortest path (networkx), weighted-grid A* and SciPy csgraph grid Dijkstra; "
+                            "cognition.formal_property_search is counterexample search over a typed expression "
+                            "language, a different mechanism, not a graph search"),
     "cortex.control.feedback": (("cognition.control", "cognition.basal_pid", "cognition.control_mpc",
                                  "cognition.pid_simopt"),
                                 "clamped PID step, SIMC PI tuning, simulation-optimised PI tuning and box-constrained "
@@ -61,10 +63,12 @@ EXECUTED_ON_GREG = {
                                     "MAX-MIN ant system with evaporating pheromone on symmetric TSP"),
     "cortex.collective.slime_network": (("cognition.collective_physarum",),
                                         "Physarum flux-conductance network design"),
-    "cortex.developmental.evolutionary": (("cognition.evolutionary", "greg.cognition.evolution:cycle"),
-                                          "differential evolution over a bounded vector and P8 mutation/crossover "
-                                          "of closed configuration spaces under a sealed evaluator; programs are "
-                                          "not evolved"),
+    "cortex.developmental.evolutionary": (("cognition.evolutionary", "greg.cognition.evolution:cycle",
+                                           "cognition.evo_ga_factored", "cognition.evo_map_elites"),
+                                          "differential evolution over a bounded vector, P8 mutation/crossover "
+                                          "of closed configuration spaces under a sealed evaluator, a generational "
+                                          "GA on factored binary objectives and MAP-Elites quality-diversity "
+                                          "archives; programs are not evolved"),
     "cortex.developmental.program_synthesis": (("cognition.synth_cegis",),
                                                "counterexample-guided synthesis of a fixed template's bounded "
                                                "integer parameters"),

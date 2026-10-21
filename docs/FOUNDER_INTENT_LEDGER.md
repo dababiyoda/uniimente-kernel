@@ -66,6 +66,15 @@ Track B update, 2026-10-16 (record sections 1, 3, 7 and 8): #158 is merged at `1
   (4-0, too few discordant items), `robust_pattern` rises to DEFAULT, and `collective` reads EXPERIMENTAL, as its
   erratum said (record section 18).
 
+Track B update, 2026-10-21 (round-2 re-verification by the #158 session; record section 19):
+- **Crowd verifier:** it re-runs EM, so a claimed non-convergence no longer skips the check. This was a high finding.
+- **One status on every surface:** organ labels, recipe lifts and #155's lineage verdicts are notes, not admissions.
+  41 labels are rule-admitted.
+- **Release check:** it blocks by digest, path suffix or data marker, inside nested archives.
+- **Closure binding:** it follows scopes, guarded definitions, star imports and constant dynamic imports. Code
+  it cannot follow binds nothing positive. Recipes bind at the measured tree and stop at `cortex.reason`.
+- **Merge:** #158 is merged at `463a9d0`.
+
 Authority delta: none.
 
 ## Full Polyintelligence Mind + lawful asymmetric advantage continuation — 2026-10-07

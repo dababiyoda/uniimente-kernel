@@ -1,3 +1,5 @@
+> **Team entry:** Before new or resumed work, read [the pinned founder Discussion](https://github.com/dababiyoda/uniimente-kernel/discussions/89), follow [START_HERE](docs/collaboration/START_HERE.md), and refresh [work claims and handoffs](https://github.com/dababiyoda/uniimente-kernel/issues/96). Check relevant open branches and PRs before editing; searching only `main` is insufficient. Record your actual session identity, bounded scope, base/head, overlap split, acceptance evidence and integration destination. A claim coordinates work; it grants no authority.
+
 # UNIIMENTE Permanent Operating Order
 
 Read and obey, in this order:

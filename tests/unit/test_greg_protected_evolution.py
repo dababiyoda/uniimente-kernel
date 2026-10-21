@@ -1226,10 +1226,29 @@ def test_p8_reserves_8600_to_9199_which_no_admission_freeze_or_p8_split_had_used
     extension = set(range(8600, 9200))
     assert admission.P8_RESERVED == range(7000, 9200) and extension <= set(admission.P8_RESERVED)
     used = admission.spent_seeds() | set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS)
-    used |= {s for seeds in (*E.CR_SPLITS.values(), *E.IMMUNE_SPLITS.values()) for part in seeds for s in part}
+    used |= {s for name, seeds in (*E.CR_SPLITS.items(), *E.IMMUNE_SPLITS.items()) if name != "cycle-7"
+             for part in seeds for s in part}                           # cycle 7's immune split is what it is for
     used |= {s for seeds in E.CR_CANARY_SEEDS.values() for s in seeds}
     assert not used & extension and max(used & set(admission.P8_RESERVED)) < 8600
     for manifest in E.EVIDENCE.rglob("freeze.json"):
         split = json.loads(manifest.read_text()).get("inputs", {}).get("split", {})
         ids = {int(k[1:]) for k in (*split.get("train", []), *split.get("heldout", [])) if k[1:].isdigit()}
         assert not ids & extension, manifest
+
+
+def test_the_cycle_7_immune_split_is_registered_fresh_and_not_current(monkeypatch):
+    from greg.cognition.genomes import admission, collective
+
+    def refuse(seed):
+        raise AssertionError(f"generated instance {seed}")
+    monkeypatch.setattr(collective, "immune_gaussian_instance", refuse)
+    train, held, reserved = E.immune_split_seeds("cycle-7")
+    assert (train, held) == (tuple(range(8600, 8720)), tuple(range(8720, 8840)))
+    assert set(E.IMMUNE_SPLITS["cycle-2"][0]) | set(E.IMMUNE_SPLITS["cycle-2"][1]) <= reserved
+    assert set(train) | set(held) <= set(admission.P8_RESERVED) and not (set(train) | set(held)) & reserved
+    assert not (set(train) | set(held)) & set(range(3000, 4000))       # no review seed of any pilot
+    assert E.IMMUNE_CURRENT_SPLIT == "cycle-2"                          # the pilot judged it NOT_VIABLE
+    assert {f"s{s}" for s in held} <= E._registered_heldout("immune_detect")   # a test run never looks at it
+    assert not {f"s{s}" for s in held} & set().union(*E._spent_heldout("immune_detect").values(), set())
+    # the constraint-release splits now avoid it too
+    assert set(train) | set(held) <= E.cr_split_seeds("cycle-6")[2]

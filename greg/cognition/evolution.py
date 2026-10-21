@@ -184,7 +184,12 @@ def immune_target() -> Target:
 
 # Each cycle on this target draws its own split; earlier splits stay reproducible by name. Cycle 2 (2026-10-09) stopped
 # at the stress gate, so its held-out seeds 8000-8059 were never looked at; they stay registered to it.
-IMMUNE_SPLITS = {"cycle-2": (IMMUNE_TRAIN_SEEDS, IMMUNE_HELDOUT_SEEDS)}
+# Cycle 7 (designed 2026-10-21, NOT current): 120 train and 120 held-out seeds in the 8600-9199 extension, the sizes
+# the review-seed pilot scored best (docs/evidence/greg-protected-evolution/2026-10-21-immune-7). That pilot judged the
+# target NOT_VIABLE under the frozen rule by its declared threshold, so the split is registered (its seeds are reserved
+# and checked) but IMMUNE_CURRENT_SPLIT stays "cycle-2"; making "cycle-7" current is the session owner's decision.
+IMMUNE_SPLITS = {"cycle-2": (IMMUNE_TRAIN_SEEDS, IMMUNE_HELDOUT_SEEDS),
+                 "cycle-7": (tuple(range(8600, 8720)), tuple(range(8720, 8840)))}
 IMMUNE_CURRENT_SPLIT = "cycle-2"
 
 

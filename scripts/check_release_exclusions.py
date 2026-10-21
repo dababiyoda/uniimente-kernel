@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import functools
 import binascii
 import bz2
 import gzip
@@ -186,6 +187,7 @@ def _findings(path: str, data: bytes, listed: dict) -> list[str]:
     return found
 
 
+@functools.lru_cache(maxsize=None)
 def _listed() -> dict:
     record = _list()
     digests = {e["sha256"]: e["path"] for e in record["paths"] if e.get("sha256")}

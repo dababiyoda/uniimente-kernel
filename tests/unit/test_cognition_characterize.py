@@ -18,7 +18,9 @@ def test_measured_dimensions_and_declared_not_applicable_ones(report):
         assert family["generalization"]["invariant"] == family["generalization"]["n"] > 0
         assert family["problem_space"]["largest_correct_size"] is not None
         assert family["responsiveness"]["p50_seconds"] > 0
-    assert "optimality_cross_engine" in report["families"]["optimization"]["correlated_failure_evidence"]["cross_checks"]
+    correlated = report["families"]["optimization"]["correlated_failure_evidence"]
+    assert correlated["certificates"] == ["z3: different engine from the solver (Z3 against CP-SAT)"]
+    assert sum(correlated["certificate_outcomes"].values()) > 0 and "REFUTED" not in correlated["certificate_outcomes"]
     assert set(report["not_applicable"]) == {"memory_depth", "persistence", "prediction_horizon", "adaptability",
                                              "cooperation", "higher_scale_coherence"}
     assert all(reason for reason in report["not_applicable"].values())

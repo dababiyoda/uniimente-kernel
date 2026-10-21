@@ -334,9 +334,9 @@ def hybrid_vouch_only(data):
             "actions": planner["actions"] + sent, "steps": inp["steps"]}
 
 
-def _genome():
+def _genome(family):
     return IntelligenceGenome(
-        intelligence_id="developmental.repair.plan_audit_fallback", version=VERSION, family="develop_repair_hybrid",
+        intelligence_id="developmental.repair.plan_audit_fallback", version=VERSION, family=family,
         layer=4, buildability="BUILDABLE_NOW", lineage=LINEAGE, operation="target_state_repair_hybrid",
         epistemic_class="physical",
         subgeometry="hold a source-region -> sink-region transport target on a damaged 4-neighbour lattice that "
@@ -401,7 +401,7 @@ def _genome():
 
 INTELLIGENCES = [
     Executable(
-        genome=_genome(), solve=hybrid_solve, verify=hybrid_verify, instance=dv.repair_instance,
+        genome=_genome(family="develop_repair_hybrid"), solve=hybrid_solve, verify=hybrid_verify, instance=dv.repair_instance,
         score=dv.repair_score, baseline=hybrid_local_only, competitor=dv.repair_central_replanner,
         subregion=hybrid_subregion, tolerance=1e-9,
         notes={"ablations": "hybrid_naive_switch (heartbeat switch, no audit, no probe) and hybrid_vouch_only "

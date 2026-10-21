@@ -980,10 +980,11 @@ def test_a_cortex_organ_reading_one_part_of_a_genome_request_does_not_answer_it(
         r = compile_on(lacking)
         assert r["state"] == "ABSTAIN", shape
         assert [(m["method"], m["missing_inputs"]) for m in r["missing_information"]] == \
-            [("cognition.develop_repair", ["blocked"])], shape
+            [("cognition.develop_repair", ["blocked"]),                # its recombined hybrid reads the same inputs
+             ("cognition.develop_repair_hybrid", ["blocked"])], shape
     why = {m["method"]: m["why"] for m in compile_on(data)["methods_rejected"]}
     assert "answers a relaxation" in why["cognition.cortex.semantic"]
-    assert "['cognition.develop_repair']" in why["cognition.cortex.semantic"]
+    assert "['cognition.develop_repair', 'cognition.develop_repair_hybrid']" in why["cognition.cortex.semantic"]
     # a declaration that excludes the fuller method leaves the organ its question; an organ alone is untouched
     assert compile_on(data, {"geometry": "semantic"})["method_or_composition_selected"] == "cognition.cortex.semantic"
     assert compile_on({"sources": data["sources"]})["method_or_composition_selected"] == "cognition.cortex.semantic"

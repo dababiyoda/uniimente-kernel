@@ -630,7 +630,6 @@ def test_the_operator_scripts_read_counted_answers(tmp_path):
     """greg_hands_proof answer finds the ask a mission still waits on although an uncounted row names it, and the
     mission trace lists that row apart from the founder's answers."""
     import importlib.util
-    import sys as _sys
     root = Path(__file__).resolve().parents[2]
     w = blocked(tmp_path)
     forge(w, row(w.rid, w.mid, "approve", FORGED), key=w.rid)

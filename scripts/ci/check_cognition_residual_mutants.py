@@ -26,6 +26,8 @@ FABRIC = 'tests/unit/test_greg_task_fabric.py'
 RESTORE = 'tests/unit/test_greg_restore.py'
 FAILURES = 'tests/unit/test_greg_failure_closure.py'
 ADVERSARIAL = 'tests/integration/test_greg_adversarial_machine.py'
+RECONCILIATION = 'tests/unit/test_greg_mission_reconciliation.py'
+RESERVATION = 'tests/unit/test_greg_reservation_release.py'
 MUTANTS = [
  ('optimality not attacked by a second engine', 'greg/cognition/verification.py',
   'checks["optimality_cross_engine"] = better == "unsat"', 'checks["optimality_cross_engine"] = True',
@@ -333,6 +335,56 @@ MUTANTS = [
   '"verdict": ("VERIFIED_UNMET" if unmet else "VERIFIED") if verified else "REFUTED",',
   '"verdict": "VERIFIED" if verified else "REFUTED",',
   'test_a_verified_failure_is_never_read_as_a_success', FAILURES),
+ # Unknown completion of a paid WorkOrder (#173 H.G4 and H.G11): the port branch's review (522eb87..1876401).
+ ('the engine appraisal sensor is handed the writable journal', 'greg/missions.py',
+  '"worker.appraise")\n'
+  '                                 else self.journal if manifest.capability_id in ("memory.precedents", "daleobanks.outcome")',
+  '"no.such.capability")\n'
+  '                                 else self.journal if manifest.capability_id in ("memory.precedents", "daleobanks.outcome", "worker.appraise")',
+  'test_the_engine_sensor_reads_receipts_through_a_reader_that_cannot_write', RECONCILIATION),
+ ('the engine appraisal sensor runs without the ledger', 'greg/missions.py',
+  '"worker.appraise")\n'
+  '                                 else self.journal if manifest.capability_id in ("memory.precedents", "daleobanks.outcome")',
+  '"no.such.capability")\n'
+  '                                 else self.journal if manifest.capability_id in ("memory.precedents", "daleobanks.outcome")',
+  'test_a_body_lost_after_the_work_order_evidence_but_before_its_receipt_is_recommissioned_not_closed',
+  RECONCILIATION),
+ ('a metered not-executed answer releases the cap', 'greg/missions.py',
+  'booked = executed or capability in METERED_SPEND', 'booked = executed',
+  'test_an_interrupted_paid_worker_reconciled_not_executed_books_its_cap_and_the_budget_bounds_a_rerun',
+  RECONCILIATION),
+ ('the ask tells the founder a metered "not executed" books nothing', 'greg/missions.py',
+  '"reconcile_not_executed": reserved if metered else 0.0}', '"reconcile_not_executed": 0.0}',
+  'test_an_interrupted_paid_worker_reconciled_not_executed_books_its_cap_and_the_budget_bounds_a_rerun',
+  RECONCILIATION),
+ ('a not-executed booking is not folded into spend', 'greg/missions.py',
+  '                m.spent_usd += data.get("cost_usd", 0.0)   # a metered run\'s unmeasured spend; 0.0 otherwise',
+  '                pass', 'test_a_metered_reconciled_not_executed_booking_replaces_the_hold_once', RESERVATION),
+ ('the settlement books from the strategy, not the dispatched capability', 'greg/missions.py',
+  '        capability = m.blocker.get("capability") or dispatch.get("capability") or strategy.get("capability")',
+  '        capability = strategy.get("capability")',
+  'test_a_function_named_paid_strategy_is_disclosed_and_booked_from_the_dispatched_capability', RECONCILIATION),
+ ('the ask discloses from the strategy, not the dispatched capability', 'greg/missions.py',
+  '        capability = record.get("capability") or getattr(manifest, "capability_id", None)',
+  '        capability = next((x.get("capability") for x in m.spec["strategies"] if x["action_id"] == aid), None)',
+  'test_a_function_named_paid_strategy_is_disclosed_and_booked_from_the_dispatched_capability', RECONCILIATION),
+ ('every ask names attempt 0', 'greg/missions.py',
+  'dispatch = {"attempt": attempt, "proposal_id": record.get("proposal_id"), "grant_id": record.get("grant_id")}',
+  'dispatch = {"attempt": 0, "proposal_id": record.get("proposal_id"), "grant_id": record.get("grant_id")}',
+  'test_a_function_named_paid_strategy_is_disclosed_and_booked_from_the_dispatched_capability', RECONCILIATION),
+ ('an undisclosed not-executed answer books the metered cap', 'greg/missions.py',
+  'if not executed and booked and disclosed != worst:', 'if False:',
+  'test_a_legacy_ask_answered_not_executed_is_asked_again_with_the_booking_before_anything_is_booked',
+  RECONCILIATION),
+ ('the second question is the answered one', 'greg/missions.py',
+  'instance=dispatch if terms is None else {**dispatch, "terms": terms},', 'instance=dispatch,',
+  'test_a_legacy_ask_answered_not_executed_is_asked_again_with_the_booking_before_anything_is_booked',
+  RECONCILIATION),
+ ("a receipted interrupt's provider report is dropped", 'greg/missions.py',
+  'settled.update(cost_cap_usd=worst, provider_reported_usd=reported, spend_basis="signed_cap: " + (',
+  'settled.update(cost_cap_usd=worst, provider_reported_usd=None, spend_basis="signed_cap: " + (',
+  'test_a_receipted_interrupt_carries_its_provider_report_into_the_settlement[reconcile_not_executed]',
+  RECONCILIATION),
 ]
 
 

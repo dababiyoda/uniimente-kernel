@@ -2182,6 +2182,32 @@ class MissionEngine:
             self._block(m, blocker)
             return None, True
 
+    def _reask_reconciliation(self, m: MissionState, aid: str, uncertain: dict, capability: str | None,
+                              now: datetime, why: str, *, terms: str | None = None) -> dict:
+        """The retained answer cannot settle the dispatch ``uncertain`` (its UNCERTAIN record): lift the block and ask
+        about that dispatch again, with what each answer books. ``terms`` salts the request, so a second question
+        about the same dispatch is not the one already answered."""
+        self._unblock(m, why)
+        self.book.rebuild()
+        m = self.book.missions[m.mission_id]
+        dispatch = {"attempt": uncertain["attempt"], "proposal_id": uncertain.get("proposal_id"),
+                    "grant_id": uncertain.get("grant_id")}
+        reserved = m.reserved.get((aid, uncertain["attempt"]), signed_cost(m.spec, aid))
+        recommendation, booked_by_answer = reconciliation_terms(capability, reserved)
+        again = self._request(m, kind="RECONCILIATION", scope_digest=uncertain.get("scope_digest") or "",
+                              action_id=aid, why="an action may or may not have executed before an interruption",
+                              recommendation=recommendation,
+                              alternatives=["reconcile_executed", "reconcile_not_executed"],
+                              requested={"action_id": aid, **dispatch}, now=now,
+                              instance=dispatch if terms is None else {**dispatch, "terms": terms},
+                              evidence={"dispatch": dispatch, "reasons": list(uncertain.get("reasons", []))[:3],
+                                        "reserved_usd": reserved, "booked_usd_by_answer": booked_by_answer})
+        self._block(m, {"type": "reconciliation", "request_id": again, "action_id": aid, **dispatch,
+                        "scope_digest": uncertain.get("scope_digest"), "capability": capability,
+                        "why": "uncertain completion; no blind retry",
+                        "reconsider": "founder reconciliation decision"})
+        return {"state": "BLOCKED", "blocker": m.blocker}
+
     def _record_reconciliation(self, m: MissionState, now: datetime) -> dict | None:
         """Record the founder's answer about one UNCERTAIN dispatch (the blocker's request), for a live mission
         or one that ended while the question was open. Returns a state when the founder must be asked again.
@@ -2201,26 +2227,9 @@ class MissionEngine:
                         if e.payload.get("request_id") == rid]
             latest = uncertain[-1].payload
             if answered and answered[0] < seq[uncertain[-1].event_id]:
-                self._unblock(m, "the retained reconciliation answered an earlier dispatch; asking about this one")
-                self.book.rebuild()
-                m = self.book.missions[m.mission_id]
-                dispatch = {"attempt": latest["attempt"], "proposal_id": latest.get("proposal_id"),
-                            "grant_id": latest.get("grant_id")}
-                reserved = m.reserved.get((aid, latest["attempt"]), signed_cost(m.spec, aid))
-                recommendation, booked_by_answer = reconciliation_terms(latest.get("capability"), reserved)
-                again = self._request(m, kind="RECONCILIATION", scope_digest=latest.get("scope_digest") or "",
-                                      action_id=aid,
-                                      why="an action may or may not have executed before an interruption",
-                                      recommendation=recommendation,
-                                      alternatives=["reconcile_executed", "reconcile_not_executed"],
-                                      requested={"action_id": aid, **dispatch}, now=now, instance=dispatch,
-                                      evidence={"dispatch": dispatch, "reasons": list(latest.get("reasons", []))[:3],
-                                                "reserved_usd": reserved, "booked_usd_by_answer": booked_by_answer})
-                self._block(m, {"type": "reconciliation", "request_id": again, "action_id": aid, **dispatch,
-                                "scope_digest": latest.get("scope_digest"), "capability": latest.get("capability"),
-                                "why": "uncertain completion; no blind retry",
-                                "reconsider": "founder reconciliation decision"})
-                return {"state": "BLOCKED", "blocker": m.blocker}
+                return self._reask_reconciliation(m, aid, latest, latest.get("capability"), now,
+                                                  "the retained reconciliation answered an earlier dispatch; asking "
+                                                  "about this one")
         attempt = m.blocker.get("attempt", m.attempts.get(aid, 1) - 1)
         # The record reconciles the UNCERTAIN dispatch of this attempt: it names the capability that dispatch
         # actually used (a strategy may name only a function), never the strategy's spec.
@@ -2235,6 +2244,24 @@ class MissionEngine:
         # collected: "not executed" settles the effect, not the money, so its unmeasured spend is booked at the
         # signed cap instead of being released as zero (acceptance H.G4).
         booked = executed or capability in METERED_SPEND
+        disclosed = (((self.book.requests.get(rid) or {}).get("evidence") or {})
+                     .get("booked_usd_by_answer") or {}).get(answer)
+        if not executed and booked and disclosed != worst:
+            # Asked before the disclosure (code from before H.G4): the founder answered "not executed" without being
+            # told it keeps a metered cap booked, so that answer books nothing on its own. Ask once more about this
+            # dispatch, with the terms; the cap stays reserved as unknown spend meanwhile. ("Executed" booked the cap
+            # under the old rule too, so its answer was given on the terms it settles at.)
+            return self._reask_reconciliation(m, aid, {**dispatch, "attempt": attempt}, capability, now,
+                                              "the answered reconciliation did not state what it books; asking "
+                                              "again with the terms", terms="booked_usd_by_answer")
+        # A receipted interrupt (a cancellable worker stopped itself, its report collected) carries the provider's
+        # report: stated as given, though an interrupted run's report does not bound what it spent.
+        receipt = self.office.ledger.find(dispatch["receipt"]) if dispatch.get("receipt") else None
+        reported = metered_spend(capability, (receipt.payload.get("result") or {}).get("output"), worst)[
+            "provider_reported_usd"] if receipt is not None and receipt.record_type == "receipt" \
+            and capability in METERED_SPEND else None
+        measured = None if reported is None else (f"its receipted run reported ${reported:.2f} before it was "
+                                                  "interrupted, which does not bound what an interrupted run spent")
         settled = {"mission_id": m.mission_id, "action_id": aid, "attempt": attempt,
                    "status": "DONE" if executed else "RECONCILED_NOT_EXECUTED",
                    "capability": capability, "route": "founder_reconciliation",
@@ -2244,14 +2271,15 @@ class MissionEngine:
             settled.update(reconciles={k: m.blocker.get(k) for k in ("request_id", "proposal_id", "grant_id")},
                            scope_digest=m.blocker.get("scope_digest"))
         if executed:       # it executed, but its spend was never measured: book the signed cap
-            settled.update(cost_cap_usd=worst, provider_reported_usd=None,
+            settled.update(cost_cap_usd=worst, provider_reported_usd=reported,
                            spend_basis="signed_cap: founder reconciled the dispatch as executed; "
-                                       "its spend was never measured")
+                                       + (measured or "its spend was never measured"))
         elif booked:
-            settled.update(cost_cap_usd=worst, provider_reported_usd=None,
-                           spend_basis="signed_cap: the dispatch was claimed and never receipted, so whether its "
-                                       "metered provider ran (the body may have stopped before it started) and what "
-                                       "it spent are unknown; not executed settles its effect, not that possible spend")
+            settled.update(cost_cap_usd=worst, provider_reported_usd=reported, spend_basis="signed_cap: " + (
+                measured or ("its receipted run was interrupted with no provider report" if receipt is not None
+                             else "the dispatch was claimed and never receipted")
+                + ", so whether its metered provider ran (the body may have stopped before it started) and what it "
+                  "spent are unknown") + "; not executed settles its effect, not that possible spend")
         self.journal.record("mission.action", settled, key=[m.mission_id, aid, "reconciled", rid])
         return None
 

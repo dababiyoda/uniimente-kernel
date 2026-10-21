@@ -83,7 +83,10 @@ def test_a_kill_before_the_question_is_asked_leads_to_the_question_not_a_second_
     assert len(calls) == 2 and (ws / "note.txt").read_text() == "hello"   # the one retry, after the answer
 
 
-def test_a_kill_before_the_block_reuses_the_open_question_and_its_answer_releases_the_held_cap(tmp_path, monkeypatch):
+def test_a_kill_before_the_block_reuses_the_open_question_and_its_answer_books_the_metered_cap(tmp_path, monkeypatch):
+    """Superseded rule (before #173 H.G4), kept as lineage: the "not executed" answer released attempt 0's held cap
+    and one retry fit the signed $0.05 budget. worker.commission is metered, so the answer now replaces the hold by a
+    booking of its signed cap: the retry exceeds the budget and runs only on the founder's approval."""
     home, key, body_id, _ = make_body(tmp_path)
     mid = "m:priced-kill"
     ws = workspace(home, mid)

@@ -40,7 +40,9 @@ def test_an_interrupted_priced_action_holds_its_cap_until_reconciled():
     assert m.committed_usd == 0.05 and m.reserved_usd == 0.05 and m.spent_usd == 0.0
 
 
-def test_reconciled_not_executed_releases_the_cap_so_the_one_retry_fits_the_signed_budget():
+def test_a_legacy_reconciled_not_executed_record_at_zero_releases_the_cap_so_the_one_retry_fits():
+    """Legacy-record pin: settlements written before #173 H.G4 carry cost_usd 0.0 and still fold to the old totals.
+    The engine no longer writes this shape for a metered capability (see the next test)."""
     book, mid = _book(0.05)
     book.fold("mission.action", _uncertain(0.05))
     book.fold("mission.action", {"mission_id": mid, "action_id": "commission", "attempt": 0,
@@ -49,6 +51,19 @@ def test_reconciled_not_executed_releases_the_cap_so_the_one_retry_fits_the_sign
     m = book.missions[mid]
     assert m.spent_usd == 0.0 and m.committed_usd == 0.0 and m.attempts["commission"] == 1
     assert m.committed_usd + 0.05 <= m.cone.budget_usd
+
+
+def test_a_metered_reconciled_not_executed_booking_replaces_the_hold_once():
+    """#173 H.G4: the engine settles a metered "not executed" at its signed cap: the hold is replaced by that
+    booking, never released and never counted twice."""
+    book, mid = _book(0.05)
+    book.fold("mission.action", _uncertain(0.05))
+    book.fold("mission.action", {"mission_id": mid, "action_id": "commission", "attempt": 0,
+                                 "status": "RECONCILED_NOT_EXECUTED", "route": "founder_reconciliation",
+                                 "reasons": ["founder reconciliation: reconcile_not_executed"], "cost_usd": 0.05,
+                                 "cost_cap_usd": 0.05, "provider_reported_usd": None})
+    m = book.missions[mid]
+    assert (m.spent_usd, m.reserved, m.committed_usd, m.attempts["commission"]) == (0.05, {}, 0.05, 1)
 
 
 def test_reconciled_executed_books_the_cap_once_not_twice():

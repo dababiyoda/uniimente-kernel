@@ -45,6 +45,8 @@ MODULES = (
     "greg.cognition.genomes.formal",        # L3 property-based testing (counterexample search)
     "greg.cognition.genomes.basal_memory",  # L1 associative memory (Hebbian Hopfield recall)
     "greg.cognition.genomes.developmental_ca",  # L4 cellular-automaton pattern regeneration
+    "greg.cognition.genomes.evolutionary",  # L3 genetic algorithm (factored binary) and MAP-Elites quality-diversity
+    "greg.cognition.genomes.centrality",    # L3 exact top-k betweenness-critical nodes (batched sparse Brandes)
 )
 PROOF_CLASS = "genome_certificate"
 PROOF_FIELDS = ("intelligence_id", "version", "evidence_type", "inputs_digest", "certificate", "limits")

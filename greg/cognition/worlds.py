@@ -102,6 +102,12 @@ GENOMES = {
     "synth_cegis": (MATHEMATICAL, "planted bounded synthesis tasks; exhaustive check"),
     "verify_liveness": (MATHEMATICAL, "declared transition systems; exhaustive check"),
     "verify_modelcheck": (MATHEMATICAL, "declared transition systems; exhaustive check"),
+    "evo_ga_factored": (MATHEMATICAL, "generated factored landscapes (NK, deceptive traps); exact optimum for traps "
+                                      "(by construction) and adjacent NK (dynamic programming), the sum of table "
+                                      "maxima for random NK"),
+    "evo_map_elites": (MATHEMATICAL, "declared planar arms; QD-score over the exactly computed reachable cells"),
+    "graph_betweenness_topk": (MATHEMATICAL, "generated graphs; exact betweenness by an independent reference "
+                                             "Brandes"),
 }
 
 # P6 composition-lift families, as each frozen run's own ``limits`` describes them.

@@ -314,8 +314,8 @@ def _ask_details(r: dict) -> str:
                                        "verifies.</b> GREG does not act on it; answer again to confirm.",
             "refused_at_acceptance": f"<br><b>Your signed answer ({answer}) does not apply to this ask{why}.</b> "
                                      "GREG does not act on it; this ask waits for your answer.",
-        }.get(cause, f"<br><b>The ledger holds an answer ({answer}) with no signed decision of yours behind "
-                     "it.</b> GREG does not act on it; this ask waits for your answer."))
+        }.get(cause, f"<br><b>The ledger holds an answer ({answer}) that no decision this body accepted and "
+                     "verified stands behind.</b> GREG does not act on it; this ask waits for your answer."))
     if r.get("answer_effect"):
         parts.append("<br><b>What your answer does:</b> " + _e(r["answer_effect"]))
     if r.get("expected_effect"):

@@ -1262,7 +1262,7 @@
   },
   "develop_repair": {
    "competitor": "adaptive centralized replanner: global BFS shortest-path rebuild on its view at every change, reliable pushes; reliable or predeclared-unreliable (crash / stale view)",
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14-v2/results.json#genomes.develop_repair",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v6/results.json#genomes.develop_repair",
    "history": [
     {
      "run": "2026-10-13-v1",
@@ -1273,9 +1273,14 @@
      "run": "2026-10-14-v2",
      "status": "NICHE_CAPABILITY",
      "version": "1.1.1"
+    },
+    {
+     "run": "2026-10-21-v6",
+     "status": "NICHE_CAPABILITY",
+     "version": "1.1.2"
     }
    ],
-   "median_seconds": 0.026847,
+   "median_seconds": 0.027451,
    "status": "NICHE_CAPABILITY",
    "subregions_vs_competitor": {
     "reliable_controller": {
@@ -1295,7 +1300,47 @@
      "wins": 7
     }
    },
-   "version": "1.1.1"
+   "version": "1.1.2"
+  },
+  "develop_repair_hybrid": {
+   "competitor": "adaptive centralized replanner alone (repair_central_replanner)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v6/results.json#genomes.develop_repair_hybrid",
+   "history": [
+    {
+     "run": "2026-10-21-v6",
+     "status": "NICHE_CAPABILITY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.084921,
+   "status": "NICHE_CAPABILITY",
+   "subregions_vs_competitor": {
+    "crashed_controller": {
+     "losses": 0,
+     "n": 5,
+     "p_better": 0.0625,
+     "p_worse": 1.0,
+     "ties": 1,
+     "wins": 4
+    },
+    "reliable_controller": {
+     "losses": 0,
+     "n": 15,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 15,
+     "wins": 0
+    },
+    "stale_controller": {
+     "losses": 7,
+     "n": 10,
+     "p_better": 0.945312,
+     "p_worse": 0.171875,
+     "ties": 0,
+     "wins": 3
+    }
+   },
+   "version": "1.0.0"
   },
   "dp_knapsack": {
    "competitor": "OR-Tools KnapsackSolver, branch and bound (the library's dedicated 0/1 knapsack solver; replaced CP-SAT, a general CP model, in review)",
@@ -2554,6 +2599,11 @@
    "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
    "sha256": "sha256:eb7470bac2b5abfb13428bc64178e9e717f1c4917bf54dbb99caa32961dd6367",
    "source_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v6/results.json",
+   "sha256": "sha256:2d3d965c4ce5ec97a54d654ec7d4900d28fa70d1be11f1fb924e362ae27a86f8",
+   "source_commit": "f33cb2a921689570ae4401da7b9884be252ba476"
   }
  ]
 }

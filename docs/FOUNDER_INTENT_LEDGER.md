@@ -48,6 +48,14 @@ Progress 2026-10-21 (measured; negative results kept):
   - It fails E2b, losing 37-126 to the replanner on stale controllers, as its declaration warned: the woken standby's message cost is already paid when the planner recovers.
   - Ablations show that the audit removes the false claims and that the fallback restores function.
   - A blocked repair mission resumed on the founder-attached hybrid through Capability Genesis, and its answer was verified (test key). This is exploratory evidence, not admission; admission v6 is drafted for seeds 1500-1529 and not frozen.
+- **Genome admission v6** ([evidence](evidence/greg-genome-admission/2026-10-21-v6/README.md)): pre-registered at `b33fd678`, frozen at `f33cb2a9` and run once on seeds 1500-1529.
+  - `develop_repair` 1.1.2 is NICHE_CAPABILITY and replicates v2: 7-23 against the replanner.
+  - `develop_repair_hybrid` 1.0.0 is NICHE_CAPABILITY:
+    - 23-7 against the local rules;
+    - 7-7, with 16 ties, against the replanner, with 0 wrong answers against the replanner's 3;
+    - not DEFAULT because it is about 92x slower than the replanner;
+    - the stale-controller weakness replicates (3-7).
+  - 45 of 59 genomes are admitted, every one with current-version evidence. None is attached.
 
 ## Convergence of the two Mind lineages — 2026-10-14
 

@@ -148,3 +148,30 @@ def test_python_source_alone_never_blocks_a_release(tmp_path):
             t.add(ROOT / rel, arcname=f"release/{rel}")
     assert C.scan_archive(archive) == []
 
+
+
+def test_an_edited_data_copy_named_like_python_source_is_blocked(tmp_path):
+    """Round-5 review of #179 (N1): the ``.py`` exemption let an edited copy of listed data through, and parsing
+    as Python is no test, because JSON parses as Python. Only tracked source, byte for byte, is exempt."""
+    data = json.loads((ROOT / "cortex/evaluation/composition_lift/suite-v4.json").read_text())
+    data["extra"] = 1
+    edited = json.dumps(data).encode()
+    for name in ("x.py", "x.txt", "x.json"):
+        _tar(tmp_path / f"{name}.tar", [(name, edited)])
+        assert C.scan_archive(tmp_path / f"{name}.tar"), name
+    source = "cortex/evaluation/composition_lift/run_v2.py"
+    _tar(tmp_path / "src.tar", [(source, (ROOT / source).read_bytes())])
+    assert C.scan_archive(tmp_path / "src.tar") == []
+
+
+def test_a_release_of_every_unlisted_tracked_file_passes(tmp_path):
+    """Round-5 review of #179 (N2): the exclusion list carries the markers it scans for, so a data-free tag archive
+    was still blocked. The list itself, byte for byte, is exempt from the marker rule."""
+    listed = {e["path"] for e in LIST["paths"]}
+    tracked = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT, capture_output=True).stdout.decode().split("\0")
+    members = [(p, (ROOT / p).read_bytes()) for p in tracked if p and p not in listed and (ROOT / p).is_file()]
+    _tar(tmp_path / "tag.tar", members)
+    assert C.scan_archive(tmp_path / "tag.tar") == []
+    edited = (ROOT / "docs/collaboration/RELEASE-EXCLUSIONS.json").read_bytes() + b" "
+    _tar(tmp_path / "list.tar", [("RELEASE-EXCLUSIONS.json", edited)])
+    assert C.scan_archive(tmp_path / "list.tar")                         # only the exact list is exempt

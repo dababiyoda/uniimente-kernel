@@ -495,12 +495,37 @@ def _stage_closures(recipe: str, read) -> dict:
             bound = (code_binding.closure(then["path"], then["function"], read)
                      if then and then.get("path") and then.get("function") else None)
             out[f"solvers:{family}"] = None if bound is None else bound["sha256"]
+    if any(not k.startswith("solvers:") for k in out):
+        # genome stages run through the runtime adapter, not the bound solve (round-5 review of #179, N4)
+        for path, name in (("greg/cognition/solvers.py", "_genome_solver"), ("greg/cognition/genomes/library.py", "run")):
+            bound = code_binding.closure(path, name, read)
+            out[f"adapter:{name}"] = None if bound is None else bound["sha256"]
+    if out:
+        # every statement that can rebind a SOLVERS key, the forms dispatch() cannot resolve included (N4)
+        out["dispatch:SOLVERS"] = code_binding.table_statements("greg/cognition/solvers.py", "SOLVERS", read)
     # problem-path stages served by cortex organs (template recipes); an unmapped class binds None (fails closed)
     for klass in entry.get("stage_classes") or ():
         for path, name in STAGE_ORGANS.get(klass, ((None, None),)):
             bound = code_binding.closure(path, name, read) if path else None
             out[f"organ:{klass}:{name}"] = None if bound is None else bound["sha256"]
+    if entry.get("stage_classes"):
+        # the route policy that picks a stage's organ, and every organ the cortex router can instantiate, derived
+        # from cortex.routing rather than a hand copy: an edit to any of them stales a template recipe (N4)
+        for path, name in [("cortex/routing.py", "_route_parts"), *_router_organs()]:
+            bound = code_binding.closure(path, name, read)
+            out[f"route:{name}"] = None if bound is None else bound["sha256"]
     return out
+
+
+def _router_organs() -> list[tuple[str, str]]:
+    """(path, class) of every organ class cortex.routing imports, today."""
+    import inspect
+    import cortex.routing as routing
+    out = set()
+    for name, obj in vars(routing).items():
+        if isinstance(obj, type) and name.endswith("Organ") and obj.__module__.startswith("cortex.organs"):
+            out.add((Path(inspect.getsourcefile(obj)).resolve().relative_to(ROOT).as_posix(), obj.__name__))
+    return sorted(out)
 
 
 # The cortex organs that can serve a template recipe's problem-path stage class (cortex.routing's organ set).

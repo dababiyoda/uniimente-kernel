@@ -360,6 +360,12 @@ def dispatch(path: str, table: str, key: str, read: Reader = working_tree) -> di
         for sub in ast.walk(node):
             if isinstance(sub, ast.Constant) and sub.value == table:
                 return True
+            # ``globals().update(T=...)`` and ``sys.modules[__name__].T`` name the table without a Name node
+            # (round-5 review of #179, N5)
+            if isinstance(sub, ast.keyword) and sub.arg == table:
+                return True
+            if isinstance(sub, ast.Attribute) and sub.attr == table:
+                return True
             if not (isinstance(sub, ast.Name) and sub.id == table):
                 continue
             up = parents.get(sub)
@@ -388,6 +394,9 @@ def dispatch(path: str, table: str, key: str, read: Reader = working_tree) -> di
         elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute) \
                 and _base(node.value.func) == table and node.value.func.attr == "update" and node.value.args:
             arg = node.value.args[0]
+            if node.value.keywords or len(node.value.args) > 1:
+                # ``T.update({}, k=g)`` and ``T.update({...}, **{...})`` bind keys outside the literal (N5)
+                unresolved += 1
             if isinstance(arg, ast.Dict):
                 found = from_literal(arg, path, names, defs)
             elif isinstance(arg, ast.Name) and arg.id in names:
@@ -404,9 +413,16 @@ def dispatch(path: str, table: str, key: str, read: Reader = working_tree) -> di
                     unresolved += 1
             else:
                 unresolved += 1
-        elif not (isinstance(node, ast.Assign) and all(isinstance(t, ast.Subscript) and _base(t) == table
-                                                       and isinstance(t.slice, ast.Constant) for t in node.targets)) \
-                and names_table(node):
+        elif isinstance(node, ast.Assign) and all(isinstance(t, ast.Subscript) and _base(t) == table
+                                                  and isinstance(t.slice, ast.Constant) for t in node.targets):
+            # a literal ``T[k] = f`` for another key: benign unless its value or its targets do more than name a
+            # function - ``T['j'] = T.pop('k') and g``, ``T['j'] = h(T)`` (round-5 review of #179, N5) - or a target
+            # reaches into an entry (``T['k'].__code__ = ...`` is not this form: its target is an attribute)
+            if names_table(node.value) or any(not isinstance(t.value, ast.Name) for t in node.targets):
+                unresolved += 1
+        elif names_table(node) or (isinstance(node, (ast.Assign, ast.AugAssign, ast.AnnAssign, ast.Delete)) and any(
+                _base(t) == table for t in (node.targets if isinstance(node, (ast.Assign, ast.Delete))
+                                           else [node.target]))):
             # fail closed (round-4 review of #179, finding B): any other module-level statement that names the
             # table, as a name or as a string (``globals()['T']``), may rebind a key - a loop, an if-block, ``|=``,
             # ``pop``, an alias, a helper taking the table, ``dict.update(T, ...)``, a class body, a lambda. A
@@ -417,6 +433,26 @@ def dispatch(path: str, table: str, key: str, read: Reader = working_tree) -> di
     if bound is None:
         return None
     return {**bound, "unresolved_updates": unresolved}
+
+
+def table_statements(path: str, table: str, read: Reader = working_tree) -> str | None:
+    """sha256 of every module-level statement in ``path`` that names ``table`` in any way (as a name, a string, a
+    keyword or an attribute), in order. A binding that includes it changes whenever any statement that could
+    rebind a key of the table changes, including the forms ``dispatch`` cannot resolve (round-5 review of #179,
+    N4: an appended ``T.update({k: v for ...})`` rerouted a stage without changing any bound closure)."""
+    text = read(path)
+    if text is None:
+        return None
+    tree = ast.parse(text)
+    hits = []
+    for node in tree.body:
+        for sub in ast.walk(node):
+            if (isinstance(sub, ast.Name) and sub.id == table) or (isinstance(sub, ast.Constant) and sub.value == table) \
+                    or (isinstance(sub, ast.keyword) and sub.arg == table) \
+                    or (isinstance(sub, ast.Attribute) and sub.attr == table):
+                hits.append(_segment(text, node))
+                break
+    return "sha256:" + hashlib.sha256("\n".join(hits).encode()).hexdigest()
 
 
 def closure(path: str, name: str, read: Reader = working_tree, stop: frozenset = frozenset()) -> dict | None:

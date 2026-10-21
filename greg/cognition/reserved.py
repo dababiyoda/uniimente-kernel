@@ -24,8 +24,12 @@ implements its reserved mechanism well. Nothing here registers, enables, attache
 from __future__ import annotations
 
 EXECUTED_ON_GREG = {
-    "cortex.graph.search": (("cognition.graph", "cognition.search", "cognition.search_astar", "cognition.grid_dijkstra"),
-                            "Dijkstra shortest path (networkx), weighted-grid A* and SciPy csgraph grid Dijkstra"),
+    "cortex.graph.search": (("cognition.graph", "cognition.search", "cognition.search_astar", "cognition.grid_dijkstra",
+                             "cognition.search_ida_star"),
+                            "Dijkstra shortest path (networkx), weighted-grid A* and SciPy csgraph grid Dijkstra, and "
+                            "memory-bounded IDA* on implicit sliding-puzzle state graphs; cognition.search_beam "
+                            "(beam search over flow-shop insertion sequences) and cognition.search_mcts (UCT game-tree "
+                            "search for Hex moves) are different search mechanisms, not graph path search"),
     "cortex.control.feedback": (("cognition.control", "cognition.basal_pid", "cognition.control_mpc",
                                  "cognition.pid_simopt"),
                                 "clamped PID step, SIMC PI tuning, simulation-optimised PI tuning and box-constrained "

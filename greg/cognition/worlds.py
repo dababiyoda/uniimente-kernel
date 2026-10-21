@@ -93,6 +93,10 @@ GENOMES = {
     "queue_erlang": (MATHEMATICAL, "declared M/M/c parameters; exact Erlang C"),
     "reconcile_qp": (MATHEMATICAL, "generated noisy balances; exact QP optimum by exhaustive face enumeration"),
     "search_astar": (MATHEMATICAL, "generated weighted grids; exact shortest path"),
+    "search_beam": (MATHEMATICAL, "generated flow-shop instances; quality is the makespan against Taillard's lower "
+                                  "bound"),
+    "search_ida_star": (MATHEMATICAL, "generated sliding-tile positions; exact shortest plan by exhaustive search"),
+    "search_mcts": (MATHEMATICAL, "Hex positions from seeded random play; exact winning moves by exhaustive solve"),
     "synth_cegis": (MATHEMATICAL, "planted bounded synthesis tasks; exhaustive check"),
     "verify_liveness": (MATHEMATICAL, "declared transition systems; exhaustive check"),
     "verify_modelcheck": (MATHEMATICAL, "declared transition systems; exhaustive check"),

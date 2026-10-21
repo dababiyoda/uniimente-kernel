@@ -42,6 +42,7 @@ MODULES = (
     "greg.cognition.genomes.collective_b",  # L2 batch B: ecology bidding as a priced task auction (Bertsekas)
     "greg.cognition.genomes.developmental_b",  # L4 batch B: graph diffusion (harmonic label propagation)
     "greg.cognition.genomes.developmental_hybrid",  # L4 recombined: central plan audited by the local repair rules
+    "greg.cognition.genomes.search",        # L3 search: IDA* (memory-bounded optimal), beam (flow shop), MCTS (Hex)
 )
 PROOF_CLASS = "genome_certificate"
 PROOF_FIELDS = ("intelligence_id", "version", "evidence_type", "inputs_digest", "certificate", "limits")

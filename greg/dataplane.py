@@ -8,6 +8,33 @@ the inbox is a command, and nothing here writes to the inbox or grants scope.
 Instruction-shaped text is flagged and quarantined from any planner that would
 otherwise quote it as guidance. The flag is a heuristic aid; the guarantee is
 structural (the authority plane accepts only signed founder commands).
+
+Patterns are matched on every way the text can be read, folded by
+identity.text.fold: what a person sees (terminal escape sequences and invisible
+code points removed, NFKC, Cyrillic/Greek/Armenian look-alike letters folded,
+case-folded, whitespace runs and line breaks collapsed to one space; a
+whitespace-like control is read both as nothing and as a break), and what a
+model may read but a person does not see (tag characters read as the ASCII they
+shadow, a run of variation selectors as the bytes it encodes, an escape
+sequence's own text). The invisible set (identity.text.INVISIBLE) is derived
+from Unicode properties, not hand-listed. The stored content and its
+content_sha256 are always of the original.
+
+Quarantine follows PR #13's scoring (sdk-python/uniimente_kernel/prompt_firewall.py:
+0.4 per instruction pattern, 0.3 for invisible characters, 0.2 for a role marker,
+blocked at 0.4): an instruction pattern quarantines; concealing invisible
+characters together with a role marker quarantine; either of those alone only
+flags. Ordinary text therefore stays usable evidence: a "System: Ubuntu 22.04" or
+"Tool: pytest" header line, ANSI-coloured logs, ZWNJ in Persian or Indic words,
+ZWJ in emoji sequences, emoji presentation and ideographic variation selectors,
+subdivision flags, a leading BOM, a soft hyphen inside a word, and bidi marks in
+right-to-left text. Those orthographic uses are not counted as concealing; every
+other invisible code point is. Role markers cover line-leading "system:" (also
+as a markdown heading, bold or block quote), "[system]"/"[INST]", ChatML and
+similar special tokens ("<|im_start|>"), and Llama "<<SYS>>".
+Mechanism from PR #13 sdk-python/uniimente_kernel/prompt_firewall.py
+(_INVISIBLE_RE, _ROLE_MARKER_RE, sanitize, scan); GREG's outbound ask screen
+(greg/asks.py) uses the same character set.
 """
 from __future__ import annotations
 
@@ -16,6 +43,7 @@ import re
 import unicodedata
 
 from greg.journal import Journal, iso, utcnow
+from identity.text import INVISIBLE, VARIATION_SELECTORS, drop_invisible, fold
 
 INSTRUCTION_PATTERNS = [
     r"ignore (all |your |the )?(previous|prior|above) instructions",
@@ -27,10 +55,119 @@ INSTRUCTION_PATTERNS = [
 ]
 _COMPILED = [re.compile(p, re.IGNORECASE) for p in INSTRUCTION_PATTERNS]
 MAX_RETAINED = 8000
+HIDDEN = "invisible-characters"
+ROLE = "role-marker"
+
+# Terminal escape sequences (ECMA-48, 7-bit forms): CSI, OSC up to BEL or ST, and the other two-byte escapes.
+# A terminal draws none of their bytes, so a person reading a log sees only the text around them. The 8-bit
+# C1 forms (U+009B, U+009D) are not recognised: in Unicode text they are just invisible controls.
+_ANSI = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]"
+                   r"|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)"
+                   r"|\x1b[@-Z\\-_]")
+# Invisible code points that some renderers draw as a break (VT, FF, FS..US, NEL): read both ways.
+_BREAKS = re.compile("[" + "".join(re.escape(chr(cp)) for cp in sorted(INVISIBLE) if chr(cp).isspace()) + "]")
+# Hidden text: tag characters U+E0020-E007E shadow ASCII; a run of variation selectors encodes bytes
+# (VS1-16 = 0-15, VS17-256 = 16-255).
+_SMUGGLED = re.compile("[\U000e0020-\U000e007e]+|[︀-️\U000e0100-\U000e01ef]{2,}")
+_ROLES = r"(?:system|assistant|developer|tool)"
+_ROLE_MARKER = re.compile(
+    rf"^[ \t>]*(?:#{{1,6}}[ \t]*)?(?:\*\*|__|\*|_)?[ \t]*{_ROLES}[ \t]*(?:\*\*|__|\*|_)?[ \t]*:"
+    rf"|^[ \t>]*\[[ \t]*/?(?:{_ROLES}|inst|sys)[ \t]*\]"
+    r"|<\|[ \t]*(?:im_start|im_end|im_sep|endoftext|start_header_id|end_header_id|eot_id"
+    r"|system|assistant|user|developer|tool)[ \t]*\|>"
+    r"|<<[ \t]*/?sys[ \t]*>>", re.MULTILINE)
+# Scripts whose orthography uses ZWNJ/ZWJ between letters: Arabic (Persian, Urdu), Syriac, Thaana, N'Ko,
+# the Indic scripts and Sinhala, Myanmar, Khmer, Mongolian, Arabic presentation forms, Hanifi Rohingya,
+# Brahmi to Grantha.
+_JOINING_SCRIPTS = ((0x0600, 0x08FF), (0x0900, 0x0DFF), (0x1000, 0x109F), (0x1780, 0x18AF), (0xA8E0, 0xA8FF),
+                    (0xA9E0, 0xA9FF), (0xAA60, 0xAA7F), (0xFB50, 0xFDFF), (0xFE70, 0xFEFC), (0x10D00, 0x10D3F),
+                    (0x11000, 0x1135F))
+_EMOJI_TAG_SEQUENCE = re.compile("\U0001f3f4[\U000e0030-\U000e0039\U000e0061-\U000e007a]{2,6}\U000e007f")
+_KEYCAP = re.compile("[0-9#*][︎️]⃣")
+
+
+def visible(text: str) -> str:
+    """What a reader sees: escape sequences and invisible characters removed, NFKC (invisible removed again
+    after). Layout (spaces, tabs, line breaks) is kept."""
+    return drop_invisible(unicodedata.normalize("NFKC", drop_invisible(_ANSI.sub("", text))))
+
+
+def _unsmuggle(match: re.Match) -> str:
+    run = match.group(0)
+    if 0xE0020 <= ord(run[0]) <= 0xE007E:
+        return "".join(chr(ord(ch) - 0xE0000) for ch in run)
+    data = bytes(ord(ch) - 0xFE00 if ord(ch) <= 0xFE0F else ord(ch) - 0xE0100 + 16 for ch in run)
+    return data.decode("utf-8", errors="ignore")
+
+
+def _readings(text: str) -> set[str]:
+    """Each way ``text`` may be read, folded, line structure kept (for role markers)."""
+    shown = _ANSI.sub("", text)
+    readings = {fold(shown), fold(_BREAKS.sub("\n", shown))}
+    if _SMUGGLED.search(text) or _ANSI.search(text):
+        readings.add(fold(_SMUGGLED.sub(_unsmuggle, text)))      # the escape sequences' own text kept
+    return readings
+
+
+def _joining_letter(ch: str) -> bool:
+    return bool(ch) and unicodedata.category(ch)[0] in "LM" and \
+        any(low <= ord(ch) <= high for low, high in _JOINING_SCRIPTS)
+
+
+def _pictograph(ch: str) -> bool:
+    return bool(ch) and (unicodedata.category(ch) == "So" or 0x1F000 <= ord(ch) <= 0x1FAFF)
+
+
+def _pictograph_before(text: str, i: int) -> bool:
+    i -= 1
+    while i >= 0 and (text[i] in "︎️" or 0x1F3FB <= ord(text[i]) <= 0x1F3FF):
+        i -= 1
+    return i >= 0 and _pictograph(text[i])
+
+
+def concealing(text: str) -> list[str]:
+    """Invisible code points that conceal, as 'U+XXXX'. Not counted: terminal escape sequences, and the
+    orthographic uses ordinary text needs (see the module docstring)."""
+    text = _ANSI.sub("", text)
+    exempt = {i for rx in (_EMOJI_TAG_SEQUENCE, _KEYCAP) for m in rx.finditer(text) for i in range(*m.span())}
+    right_to_left = any(unicodedata.bidirectional(ch) in ("R", "AL") and unicodedata.category(ch)[0] == "L"
+                        for ch in text)
+    found = []
+    for i, ch in enumerate(text):
+        cp = ord(ch)
+        if cp not in INVISIBLE or i in exempt:
+            continue
+        before = text[i - 1] if i else ""
+        after = text[i + 1] if i + 1 < len(text) else ""
+        if cp == 0x200D and _pictograph_before(text, i) and _pictograph(after):
+            continue                                           # emoji ZWJ sequence
+        if cp in (0x200C, 0x200D) and _joining_letter(before) and _joining_letter(after):
+            continue                                           # ZWNJ/ZWJ inside a word that uses it
+        if cp in VARIATION_SELECTORS and before and ord(before) > 0x7F and ord(before) not in INVISIBLE \
+                and unicodedata.category(before)[0] in "LNPS" and not (after and ord(after) in VARIATION_SELECTORS):
+            continue                                           # one selector after a non-ASCII base
+        if (cp == 0xFEFF and i == 0) or (cp == 0xAD and before.isalpha() and after.isalpha()) \
+                or (cp in (0x200E, 0x200F, 0x061C) and right_to_left):
+            continue                                           # BOM, soft hyphen, bidi mark in RTL text
+        found.append(f"U+{cp:04X}")
+    return found
 
 
 def instruction_shaped(text: str) -> list[str]:
-    return [p.pattern for p in _COMPILED if p.search(text)]
+    readings = _readings(text)
+    collapsed = [" ".join(r.split()) for r in readings]
+    flags = [p.pattern for p in _COMPILED if any(p.search(r) for r in collapsed)]
+    if concealing(text):
+        flags.append(HIDDEN)
+    if any(_ROLE_MARKER.search(r) for r in readings):
+        flags.append(ROLE)
+    return flags
+
+
+def quarantines(flags) -> bool:
+    """An instruction pattern, or concealing characters together with a role marker. Either alone flags."""
+    flags = set(flags)
+    return bool(flags - {HIDDEN, ROLE}) or {HIDDEN, ROLE} <= flags
 
 
 def ingest(journal: Journal, *, source: str, content: str, channel: str) -> dict:
@@ -48,7 +185,7 @@ def ingest(journal: Journal, *, source: str, content: str, channel: str) -> dict
     record = {"source": source[:500], "channel": channel[:100],
               "content_sha256": hashlib.sha256(content.encode()).hexdigest(),
               "content": content[:MAX_RETAINED], "truncated": len(content) > MAX_RETAINED,
-              "trust": "untrusted", "instruction_flags": flags, "quarantined": bool(flags),
+              "trust": "untrusted", "instruction_flags": flags, "quarantined": quarantines(flags),
               "may_command": False, "may_grant": False, "at": iso(utcnow())}
     journal.record("external.ingested", record, key=[source, record["content_sha256"]], sensitivity="confidential")
     return record

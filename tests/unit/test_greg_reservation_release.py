@@ -35,7 +35,9 @@ def _uncertain(cap):
 def test_an_interrupted_priced_action_holds_its_cap_until_reconciled():
     book, mid = _book(0.05)
     book.fold("mission.action", _uncertain(0.05))
-    assert book.missions[mid].spent_usd == 0.05
+    # #173's model (merge of e410977): the held cap is a reservation the budget counts, not booked spend.
+    m = book.missions[mid]
+    assert m.committed_usd == 0.05 and m.reserved_usd == 0.05 and m.spent_usd == 0.0
 
 
 def test_reconciled_not_executed_releases_the_cap_so_the_one_retry_fits_the_signed_budget():
@@ -45,8 +47,8 @@ def test_reconciled_not_executed_releases_the_cap_so_the_one_retry_fits_the_sign
                                  "status": "RECONCILED_NOT_EXECUTED", "route": "founder_reconciliation",
                                  "reasons": ["founder reconciliation: reconcile_not_executed"], "cost_usd": 0.0})
     m = book.missions[mid]
-    assert m.spent_usd == 0.0 and m.attempts["commission"] == 1
-    assert m.spent_usd + 0.05 <= m.cone.budget_usd
+    assert m.spent_usd == 0.0 and m.committed_usd == 0.0 and m.attempts["commission"] == 1
+    assert m.committed_usd + 0.05 <= m.cone.budget_usd
 
 
 def test_reconciled_executed_books_the_cap_once_not_twice():
@@ -56,7 +58,7 @@ def test_reconciled_executed_books_the_cap_once_not_twice():
                                  "route": "founder_reconciliation", "receipt": None,
                                  "reasons": ["founder reconciliation: reconcile_executed"], "cost_usd": 0.05,
                                  "cost_cap_usd": 0.05, "spend_basis": "signed_cap: founder reconciled executed"})
-    assert round(book.missions[mid].spent_usd, 6) == 0.05
+    assert round(book.missions[mid].spent_usd, 6) == 0.05 and round(book.missions[mid].committed_usd, 6) == 0.05
 
 
 def test_a_later_attempts_reservation_is_independent_of_an_earlier_settled_one():
@@ -65,4 +67,5 @@ def test_a_later_attempts_reservation_is_independent_of_an_earlier_settled_one()
     book.fold("mission.action", {"mission_id": mid, "action_id": "commission", "attempt": 0,
                                  "status": "RECONCILED_NOT_EXECUTED", "reasons": [], "cost_usd": 0.0})
     book.fold("mission.action", {**_uncertain(0.05), "attempt": 1})
-    assert book.missions[mid].spent_usd == 0.05
+    m = book.missions[mid]
+    assert m.committed_usd == 0.05 and m.reserved == {("commission", 1): 0.05} and m.spent_usd == 0.0

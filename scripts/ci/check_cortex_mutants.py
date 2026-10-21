@@ -291,12 +291,99 @@ GOAL_FORMATION_MUTANTS = [
      "        if gid not in facts.admitted:\n            continue\n        state"),
 ]
 
+# 2026-10-14 installed-body merge: appends verify only new history (e2440a6); a Gate commit verifies all of it.
+COMMIT_CHAIN_TESTS = ["tests/unit/test_consequence_gate.py", "tests/unit/test_ledger_incremental_verification.py"]
+COMMIT_CHAIN_MUTANTS = [
+    ("a Gate commit trusts the incremental check on altered history", "provenance/ledger.py",
+     "ok, reason = self.verify_chain() if record_type in COMMIT_RECORD_TYPES else self.verify_incremental()",
+     "ok, reason = self.verify_incremental()"),
+]
+
+# 2026-10-14 installed-body merge (#137 verifier): a test-key closure is structural evidence, never the founder's path.
+FOUNDER_TIER_TESTS = ["tests/unit/test_greg_founder_tier.py", "tests/unit/test_greg_business_case.py",
+                      "tests/unit/test_developmental_inheritance.py"]
+FOUNDER_TIER_MUTANTS = [
+    ("a structural closure moves the founder's path", "greg/path.py",
+     "    met = bool(structural and passed)\n", "    met = bool(structural)\n"),
+    ("an unattested key reaches the founder tier", "greg/metrics.py",
+     "        elif key not in attested:\n            why = NOT_FOUNDER_TIER\n",
+     "        elif False:\n            why = NOT_FOUNDER_TIER\n"),
+    ("an attestation reaches back to earlier missions", "greg/metrics.py",
+     "        elif attested[key] > seq[event.event_id]:", "        elif False:"),
+    ("the CLI attests an unprotected key", "greg/cli.py",
+     "    if passphrase is None and require:\n        raise BodyError(NO_FOUNDER_TIER)",
+     "    if False:\n        raise BodyError(NO_FOUNDER_TIER)"),
+    # #138 port (673726a, on the one rule): N1 and N2 move the path only at the founder tier.
+    ("N1 counts a test-key VEPMC closure", "greg/path.py",
+     "    passed, refused = _at_founder_tier(journal, {m: [m] for m in counted})\n",
+     "    passed, refused = counted, {}\n"),
+    ("N2 counts a test-key genesis closure", "greg/path.py",
+     '    passed, refused = _at_founder_tier(journal, {c["mission_id"]: [c["mission_id"]] for c in closures})\n',
+     '    passed, refused = [c["mission_id"] for c in closures], {}\n'),
+]
+
+# The VEPMC row's own label, through the real product path (a supervised body, both key kinds).
+FOUNDER_TIER_BODY_TESTS = ["tests/integration/test_greg_vepmc_path.py"]
+FOUNDER_TIER_BODY_MUTANTS = [
+    ("a VEPMC row labels itself founder-tier without its signer's attestation", "greg/metrics.py",
+     "FOUNDER_TIER if tier.get(\"tier\") == FOUNDER_TIER else STRUCTURAL_CANDIDATE",
+     "FOUNDER_TIER"),
+]
+
+# 2026-10-14 installed-body review: closure integrity. Each guard below was a reproduced defect.
+CLOSURE_INTEGRITY_TESTS = ["tests/unit/test_greg_closure_integrity.py", "tests/unit/test_greg_human_work_latency.py",
+                           "tests/unit/test_greg_capabilities.py"]
+CLOSURE_INTEGRITY_MUTANTS = [
+    ("the appraiser trusts the engine's asks instead of the signed cone", "greg/appraisal.py",
+     "                if (outside or human) and not _approved_before(",
+     "                if False and not _approved_before("),
+    ("the appraiser accepts an approval no founder DECISION carries", "greg/appraisal.py",
+     '                and _decision_signed(journal, ledger, seq, answer[0], answer[1], data["request_id"], at_seq)):',
+     "                and True):"),
+    ("a signed pre-approval admits every strategy of its capability and class", "greg/missions.py",
+     '        p["action_id"] == strategy["action_id"] and p["capability"] == manifest.capability_id\n'
+     '        and p["target"] == strategy["target"] and p["consequence_class"] == manifest.consequence_class\n',
+     '        p["capability"] == manifest.capability_id\n'
+     '        and p["consequence_class"] == manifest.consequence_class\n'),
+    ("the appraiser counts an answer the founder fold does not", "greg/appraisal.py",
+     "        answers = {rid: answer for rid, answer in answers.items() if rid in counted}",
+     "        answers = dict(answers)"),
+    ("a handoff picks the file fs.write overwrites", "greg/capabilities.py",
+     "    if ctx.target != named:", "    if False:"),
+    ("N3 counts a statement GREG wrote", "greg/path.py",
+     '        missing += [f"greg_wrote_human_evidence:{aid}" for aid in _greg_wrote_human_evidence(journal, mid, spec)]\n'
+     '        human = [',
+     "        human = ["),
+    ("N3 counts a declined step as observed work", "greg/path.py",
+     '        if [h["request_id"] for h in human if not withdrawn.get(h["request_id"], "").startswith(OBSERVED)]:',
+     '        if [h["request_id"] for h in human if h["request_id"] not in withdrawn]:'),
+    ("an external node passes on its ledger predicate alone", "greg/path.py",
+     '            if node["evidence_source"] == "external" and passed and not measured.get("external_evidence"):',
+     "            if False:"),
+    ("a decision closes a scope renewal", "greg/missions.py",
+     '        if request["kind"] in NOT_ANSWERABLE:\n            raise MissionError(NOT_ANSWERABLE[request["kind"]])',
+     '        if False:\n            raise MissionError(NOT_ANSWERABLE[request["kind"]])'),
+    ("only fs.read deliverables are noticed early", "greg/missions.py",
+     '            if manifest is None or manifest.consequence_class != "read_only" or not isinstance(path, str):',
+     '            if sensor.get("capability") != "fs.read" or not isinstance(path, str):'),
+    ("an SOP run keeps the taught directory in its signed text", "greg/sop.py",
+     '            if prefix and "/" in value and not _names_directory(prefix.group(1), value):',
+     "            if False:"),
+    ("a signing command without a key crashes", "greg/cli.py",
+     '    if not getattr(args, "key", None):\n        raise BodyError(f"{what} needs your founder key',
+     '    if False:\n        raise BodyError(f"{what} needs your founder key'),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS),
           ("mind construction", MIND_CONSTRUCTION_TESTS, MIND_CONSTRUCTION_MUTANTS),
           ("recovery", RECOVERY_TESTS, RECOVERY_MUTANTS),
           ("capability perception", CAPABILITY_PERCEPTION_TESTS, CAPABILITY_PERCEPTION_MUTANTS),
-          ("goal-requested formation", GOAL_FORMATION_TESTS, GOAL_FORMATION_MUTANTS)]
+          ("goal-requested formation", GOAL_FORMATION_TESTS, GOAL_FORMATION_MUTANTS),
+          ("evidence chain at commit", COMMIT_CHAIN_TESTS, COMMIT_CHAIN_MUTANTS),
+          ("founder tier", FOUNDER_TIER_TESTS, FOUNDER_TIER_MUTANTS),
+          ("founder tier (body)", FOUNDER_TIER_BODY_TESTS, FOUNDER_TIER_BODY_MUTANTS),
+          ("closure integrity", CLOSURE_INTEGRITY_TESTS, CLOSURE_INTEGRITY_MUTANTS)]
 
 
 def main() -> int:

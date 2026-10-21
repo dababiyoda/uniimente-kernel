@@ -378,7 +378,12 @@ def test_a_faithful_worker_drafted_post_waits_for_the_founder_and_nothing_is_pos
 
 def test_the_evaluator_gets_the_bodys_registry_and_no_ledger(tmp_path, monkeypatch):
     run = run_post(tmp_path, monkeypatch, files(FAITHFUL))
-    assert run.context.capability_registry is run.registry and run.context.journal is None
+    # Merge of #178 e410977: worker.appraise binds the order to its canonical commission receipt (#173 H.G11), so it
+    # reads the ledger, through the reader that cannot write (greg.ventures.LedgerReader); still no journal.
+    from greg.ventures import LedgerReader
+    assert run.context.capability_registry is run.registry and isinstance(run.context.journal, LedgerReader)
+    assert not any(hasattr(run.context.journal, a) for a in ("record", "append", "replay"))
+    assert not hasattr(run.context.journal.ledger, "append")
 
 
 def test_without_bound_claims_the_post_mission_is_the_figure_only_floor():

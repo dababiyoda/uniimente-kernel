@@ -248,10 +248,11 @@ class Console:
         return pid
 
     def attach(self, request_id: str, capability_id: str) -> Path:
-        """Sign CAPABILITY_ATTACH only for a verified candidate that an open capability ask names."""
+        """Sign CAPABILITY_ATTACH only for a verified candidate an open capability ask names, or one a
+        blocked mission is still waiting on after its ask was answered (``status()["attach_waiting"]``)."""
         st = status(self.home)
         open_asks = {r["request_id"]: r for r in st["decisions_required"]}
-        waiting = {w["capability_id"] for w in st.get("attach_waiting", [])}   # an answered ask's mission (#168)
+        waiting = {w["capability_id"] for w in st.get("attach_waiting", [])}
         if capability_id not in {c["capability_id"] for c in _attachable(open_asks.get(request_id, {}))} | waiting:
             raise ValueError("that capability is not a verified candidate of an open capability ask")
         return self.sign("CAPABILITY_ATTACH", {"capability_id": capability_id})
@@ -524,12 +525,17 @@ def home_parts(console: Console) -> dict:
                if egress.get("confined") else "<span class=warn>network not confined</span>")
     add("header", f"<h1>GREG</h1><p class=muted>Body {_e(st['body_id'])} · {body_state} · {signer} · "
            f"chain {'verified' if st['security']['chain_verified'] else '<b class=warn>FAILED</b>'} · {network}</p>")
+    tier = st.get("founder_tier") or {}
+    if tier and not tier.get("enrolled_key_attested"):
+        add("founder_tier", "<section class=warn><b>Founder tier: not attested.</b> " + _e(tier.get("consequence", ""))
+            + ". Run <code>" + _e(tier.get("how", "")) + "</code> once.</section>")
     for message in console.flash[-3:]:
         add("flash", f"<section class=ok>{_e(message)}</section>")
     console.flash.clear()
     vepmc = snap["vepmc"]
     add("stats", "<section><div class=grid>"
-               f"<div class=stat><b>{vepmc['VEPMC']}</b>verified persistent closures</div>"
+               f"<div class=stat><b>{vepmc['VEPMC']}</b>structural candidates (VEPMC; ledger checks only)</div>"
+               f"<div class=stat><b>{vepmc.get('founder_tier_count', 0)}</b>at the founder tier</div>"
                f"<div class=stat><b>{len(snap['missions'])}</b>missions</div>"
                f"<div class=stat><b>{len(st['decisions_required'])}</b>decisions waiting</div>"
                f"<div class=stat><b>{len(snap['deliveries'])}</b>recent deliveries</div></div></section>")
@@ -552,7 +558,8 @@ def home_parts(console: Console) -> dict:
                 # Answering changes nothing for the mission; only the file does. No button to mistake for it.
                 actions = "<span class=muted>Nothing to click: save the file, and GREG notices it.</span>"
             else:
-                actions = (approve +
+                # An ask no DECISION closes (asks.NOT_ANSWERABLE) gets no answer buttons; its row says what does.
+                actions = "" if r.get("answerable") is False else (approve +
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reject"}, "Reject",
                              cls="secondary", disabled=not can)) if r["kind"] != "RECONCILIATION" else (
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reconcile_executed"},
@@ -661,7 +668,7 @@ def render_mission_control(console: Console, view: str = "overview", query: str 
         raise FileNotFoundError(view)
     parts = home_parts(console)
     parts["_query"] = query[:200]
-    body = parts.get("flash", "") + mission_control.render_view(console, view, parts)
+    body = parts.get("flash", "") + parts.get("founder_tier", "") + mission_control.render_view(console, view, parts)
     body += "<p class=muted><a href=/classic>Classic page</a> · <a href=/morning>Morning report</a> · <a href=/api/mc>JSON</a></p>"
     return _page("GREG Mission Control", f"<style>{mission_control.STYLE_EXTRA}</style>" + body,
                  refresh=view == "overview")
@@ -731,7 +738,7 @@ def render_delivery(console: Console, name: str) -> bytes:
 def render_morning(console: Console) -> bytes:
     report = morning_projection(console.home)
     keep = {k: report[k] for k in ("q1_goals_worked_on", "q3_what_i_did", "q6_what_failed", "q7_surprises",
-                                   "q12_decisions_required", "q13_tonight", "goal_gravity", "metrics",
+                                   "q9_learned", "q12_decisions_required", "q13_tonight", "goal_gravity", "metrics",
                                    "claims_not_made")}
     return _page("GREG morning", "<p><a href=/>Back</a></p><section><h2>Morning report</h2><pre>"
                  + _e(json.dumps(keep, indent=1, default=str)) + "</pre></section>")

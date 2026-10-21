@@ -54,14 +54,176 @@ class BodyError(RuntimeError):
     pass
 
 
+def founder_keys(journal: Journal) -> dict[str, str]:
+    """Current founder keys from the one retained enrollment/rotation history (#138 b8a0ccd)."""
+    keys = {}
+    for event in journal.replay("founder."):
+        data = event.payload
+        if event.type == "greg.founder.enrolled":
+            keys[data["key_id"]] = data["public_key"]
+        elif event.type == "greg.founder.key_rotated":
+            keys.pop(data["old_key_id"], None)
+            keys[data["new_key_id"]] = data["new_public_key"]
+    return keys
+
+
+# Crash-loop breaker (acceptance H.G5). supervisord, systemd and launchd restart a crashing body forever. Once
+# CRASH_LOOP_BOOTS main-loop boots in a row (no clean stop between them) ended without a clean stop within
+# CRASH_LOOP_WINDOW_SECONDS, the next boot holds the body: it keeps running, stays observable and reads its inbox,
+# ticks no mission, and raises one founder ask. Only a signed BODY_RESUME lifts the hold (RESUME_LIFTS: the founder
+# key, or a device key delegated BODY_RESUME, greg/founder.py DEVICE_KINDS). The hold is the breaker's own record,
+# never shown as the founder's.
+CRASH_LOOP_BOOTS = 5          # above deliberate use: the founder runbook kill -9s a body three times in minutes
+CRASH_LOOP_WINDOW_SECONDS = 600
+BREAKER = "crash-loop breaker"
+RESUME_LIFTS = "a signed BODY_RESUME: the founder key, or a device key the founder delegated BODY_RESUME to"
+HOLD_ASK = "CRASH_LOOP_HOLD"  # no DECISION answers it (greg/missions.py NOT_ANSWERABLE); BODY_RESUME withdraws it
+
+# The separate-process appraiser (greg/appraisal.py) judges a closure VERIFIED or REFUTED. A run killed, timed out
+# or without a readable verdict judged nothing (acceptance H.G7): it is one unavailable attempt, retried on a later
+# tick, and after APPRAISAL_ATTEMPTS of them the closure is recorded appraised UNAVAILABLE (final, never VERIFIED).
+APPRAISER_VERDICTS = ("VERIFIED", "VERIFIED_UNMET", "REFUTED")   # VERIFIED_UNMET: a verified failure closure (#189)
+APPRAISAL_ATTEMPTS = 3
+APPRAISAL_TIMEOUT_SECONDS = 120
+
+
+def unfinished_main_loop_boots(journal: Journal, now: datetime) -> list[str]:
+    """Main-loop boots in a row that never recorded a clean stop, within the window.
+
+    The run restarts at a pause or resume, and at a main-loop boot that recorded a clean stop: "in a row" means
+    no clean stop between them. Only boots made by ``Body.run`` count: an embedded or test host that opens the body
+    and boots it without the main loop is not a process lifetime under a supervisor."""
+    stopped = {e.payload["boot_id"] for e in journal.replay("body.stopped")}
+    recent: list[dict] = []
+    for event in journal.replay("body."):
+        if event.type in ("greg.body.paused", "greg.body.resumed"):
+            recent = []
+        elif event.type == "greg.body.booted" and event.payload.get("main_loop"):
+            if event.payload["boot_id"] in stopped:
+                recent = []           # a clean lifetime ends the run
+            else:
+                recent.append(event.payload)
+    floor = now - timedelta(seconds=CRASH_LOOP_WINDOW_SECONDS)
+    return [b["boot_id"] for b in recent if datetime.fromisoformat(b["at"].replace("Z", "+00:00")) >= floor]
+
+
+def crash_loop_hold(journal: Journal) -> dict | None:
+    """The breaker's hold when it is the pause in force; None otherwise (a founder pause is not a hold)."""
+    toggles = [e for e in journal.replay("body.") if e.type in ("greg.body.paused", "greg.body.resumed")]
+    last = toggles[-1] if toggles else None
+    if last is not None and last.type == "greg.body.paused" and last.payload.get("by") == BREAKER:
+        return last.payload
+    return None
+
+
+def body_pauses(journal: Journal, *, pause_file: bool) -> list[dict]:
+    """Every body-level pause in force, each with what lifts it: the active constraint of every active mission."""
+    toggles = [e for e in journal.replay("body.") if e.type in ("greg.body.paused", "greg.body.resumed")]
+    out = []
+    if toggles and toggles[-1].type == "greg.body.paused":
+        hold = toggles[-1].payload
+        out.append({"by": BREAKER, "why": hold.get("why"), "lifted_by": RESUME_LIFTS} if hold.get("by") == BREAKER
+                   else {"by": "body paused (signed BODY_PAUSE)", "lifted_by": RESUME_LIFTS})
+    if pause_file:
+        out.append({"by": "PAUSE file in the body home", "lifted_by": "removing that file on this machine"})
+    return out
+
+
+def hold_ask(hold: dict) -> dict:
+    """The one founder ask a crash-loop hold raises, derived only from the hold record (greg/asks.py contract).
+
+    Asking grants nothing: no DECISION answers it, and only a signed BODY_RESUME lifts the hold (which withdraws
+    this ask). Deterministic, so a boot after a crash between the hold and its ask records the same ask."""
+    boot_id = hold["boot_id"]
+    return {"request_id": "req-hold-" + sha256_json({"crash_loop_hold": boot_id})[7:23], "kind": HOLD_ASK,
+            "mission_id": None, "action_id": None, "scope_digest": sha256_json({"crash_loop_hold": boot_id}),
+            "why_now": hold["why"],
+            "recommendation": "read the repeated failure in the body's error log (logs/body.err.log in the body "
+                              "home under launchd or supervisord; journalctl --user under systemd), fix its "
+                              "cause, then sign BODY_RESUME",
+            "alternatives": ["fix the cause, then sign BODY_RESUME (greg resume, or Resume in Mission Control)",
+                             f"sign BODY_RESUME as is: if the cause remains, the breaker holds again after "
+                             f"{CRASH_LOOP_BOOTS} more unfinished boots",
+                             "sign BODY_STOP: the body exits and its supervisor does not restart it",
+                             "do nothing: the body stays held"],
+            "authority_requested": {"body": "resume (a signed BODY_RESUME)", "spend": "none"},
+            "consequence_of_no_response": "the body stays held: it reads its inbox and runs no mission step; "
+                                          "missions stay durable",
+            "evidence": {"hold_boot_id": boot_id, "unfinished_boots": hold.get("unfinished_boots", []),
+                         "window_seconds": hold.get("window_seconds")},
+            "created_at": hold["at"], "reality_status": "RECORDED_LOCAL_MESSAGE"}
+
+
+# What a paused or held body contains instead of exiting (Body._contained, Body._set_aside), and how each clears.
+# Neither clearing lifts anything: only a signed BODY_RESUME lifts a pause or a hold.
+FAULT_CLEARS = ("fix the cause named by error and site; while it lasts it is recorded again at each boot, and a "
+                "body that is not paused exits on it (the breaker counts that boot)")
+FAULTED_CLEARS = ("not accepted as a command: read the file, sign the command again if you meant one, then remove "
+                  "the file this entry names, on this machine")
+FAULTED_APPLIED_CLEARS = ("accepted and applied (the ledger has it); only moving the file to inbox/processed failed: "
+                          "do not sign it again; remove the file this entry names, on this machine")
+FAULTED_UNREADABLE_CLEARS = ("inbox/faulted cannot be listed: restore its permissions on this machine; until then "
+                             "files set aside there are not shown")
+
+
+FAULTED_SUFFIX = ".faulted"   # a file set aside in place when inbox/faulted cannot take it: outside the *.json read
+
+
+def contained_faults(journal: Journal, layout: "Layout") -> list[dict]:
+    """The faults a paused or held body contained and that still stand, each with how to clear it (greg status).
+
+    A turn fault stands for the latest boot until a resume (each boot records it again while its cause lasts,
+    and a running body exits on it instead). A file set aside stands while it is in inbox/faulted, recorded or
+    not (the body moves it before it records it)."""
+    turn: list[dict] = []
+    for event in journal.replay("body."):
+        if event.type in ("greg.body.booted", "greg.body.resumed"):
+            turn = []
+        elif event.type == "greg.body.fault_contained":
+            turn.append({"fault": "turn", **{k: event.payload.get(k) for k in ("error", "site", "state", "boot_id",
+                                                                               "at")},
+                         "clear_with": FAULT_CLEARS})
+    recorded = {e.payload["kept_as"]: e.payload for e in journal.replay("command.faulted")}
+    files, unreadable = [], []
+    try:
+        files = [f"inbox/faulted/{p.name}" for p in sorted(layout.faulted.iterdir())] if layout.faulted.is_dir() else []
+    except OSError as exc:   # the case a set-aside falls back from; status must still answer
+        unreadable = [{"fault": "inbox/faulted unreadable", "error": f"{type(exc).__name__}: {exc}"[:300],
+                       "clear_with": FAULTED_UNREADABLE_CLEARS}]
+    files += [f"inbox/{p.name}" for p in sorted(layout.inbox.glob("*" + FAULTED_SUFFIX))]   # set aside in place
+    return turn + unreadable + [{"fault": "inbox file set aside", "file": name,
+                    **{k: (recorded.get(name) or {}).get(k) for k in ("sha256", "error", "state", "at")},
+                    **({"applied": True} if (recorded.get(name) or {}).get("applied") else {}),
+                    "clear_with": FAULTED_APPLIED_CLEARS if (recorded.get(name) or {}).get("applied")
+                    else FAULTED_CLEARS} for name in files]
+
+
 def device_delegations(journal: Journal) -> dict[str, dict]:
     """Currently delegated device keys (enrolled by the founder key, not revoked).
-    Expiry is enforced at verification time, so an expired delegation is listed but unusable."""
-    devices = {}
+    Expiry is enforced at verification time, so an expired delegation is listed but unusable.
+
+    A key delegated again after a revocation carries ``signed_not_before``: this body's clock when it recorded the
+    re-delegation (``at``). A command whose ``issued_at`` is earlier never verifies again (FounderVerifier), so
+    neither a token signed under the revoked delegation nor one signed while the key stood revoked reactivates.
+    The anchor is that processing time, not the enrollment envelope's ``issued_at``: the founder may sign the
+    re-delegation before the revocation, and an envelope anchor would then reactivate tokens signed between that
+    envelope and the revocation; subtracting the founder clock-skew allowance (five minutes) would reactivate
+    tokens signed in the five minutes before the re-delegation. The body records a re-delegation only after the
+    revocation and after the founder signed it, so on one clock the processing time is the latest of these
+    instants and refuses every token they refuse (a founder clock ahead of the body's, within the allowed skew,
+    is the exception). Its cost: a command signed after the founder signed the
+    re-delegation but before this body recorded it, or by a device whose clock runs behind this body's, is
+    refused and must be signed again. A token whoever held the key forward-dated is not one this rule can tell
+    from a new one: re-delegate only a key that was not compromised; a compromised device gets a new key.
+    greg.appraisal._devices_before re-derives the same rule."""
+    devices, revoked = {}, set()
     for event in journal.replay("device."):
         if event.type == "greg.device.enrolled":
-            devices[event.payload["device_key_id"]] = event.payload
+            kid = event.payload["device_key_id"]
+            devices[kid] = ({**event.payload, "signed_not_before": event.payload["at"]} if kid in revoked
+                            else event.payload)
         elif event.type == "greg.device.revoked":
+            revoked.add(event.payload["device_key_id"])
             devices.pop(event.payload["device_key_id"], None)
     return devices
 
@@ -94,6 +256,7 @@ class Layout:
         self.inbox = self.home / "inbox"
         self.processed = self.inbox / "processed"
         self.rejected = self.inbox / "rejected"
+        self.faulted = self.inbox / "faulted"   # files a paused or held body could not ingest; made when needed
         self.outbox = self.home / "outbox"
         self.workspace = self.home / "workspace"
         self.artifacts = self.home / "artifacts"
@@ -190,6 +353,7 @@ class Body:
         if self.compiled.constitution_hash != self.config["constitution_hash"]:
             raise BodyError("Constitution changed since this body was created; an explicit founder-approved "
                             "migration is required (history is bound to the old constitution)")
+        self._require_published_head()
         # One writer. A final line torn by power loss or SIGKILL was never acknowledged:
         # quarantine its bytes and continue instead of crash-looping under the supervisor.
         self.ledger = EvidenceLedger(self.compiled.constitution_hash, str(self.layout.ledger), tail="quarantine")
@@ -261,6 +425,43 @@ class Body:
     def _egress_relay(self):
         return egress_relay(self.layout.home, self.config)
 
+    def _require_published_head(self):
+        """Refuse history rolled back behind the ledger head this body last published (heartbeat.json).
+
+        Recovery stage 2 (workflows/shutdown-recovery.yaml) needs the chain valid up to the sealed head, and on
+        failure no normal-state restoration. The heartbeat names the head of the last turn, or the clean stop, of
+        the previous process. That record was fsynced into the ledger before the heartbeat was written, and a
+        torn-tail quarantine only removes bytes no append acknowledged, so it is in every honest history of this
+        body. A ledger without it was truncated, restored from an older copy or forked; it is refused before
+        anything is written to it, on every start, until a person on this machine restores the history or removes
+        the heartbeat. Whatever state the heartbeat reports counts alike: RUNNING after a SIGKILL or power loss,
+        STOPPED after a clean stop, PAUSED or HELD (the tests pin RUNNING and STOPPED, and a truncated ledger; a
+        PAUSED or HELD heartbeat and a deleted ledger take the same path but are not tested on their own).
+
+        Window: Body.run writes the heartbeat once per turn, so the head it names trails the ledger by the records
+        appended since: at most one turn's, or a boot's and its first turn's. A rollback that removes only those
+        records is not detected here. A guard against rollback by accident or a stale copy, not against someone
+        who can rewrite both files (greg/anchor.py witnesses cover that). An unreadable heartbeat is not evidence
+        (presence). Cost: a start reads and verifies the whole chain twice, here and in the writer's own open."""
+        try:
+            published = json.loads(self.layout.heartbeat.read_text()).get("ledger_head")
+        except (OSError, ValueError, AttributeError):
+            return
+        if not isinstance(published, str):
+            return
+        if self.layout.ledger.exists():
+            reader = EvidenceLedger(self.compiled.constitution_hash, str(self.layout.ledger), read_only=True,
+                                    tail="ignore")
+            try:
+                if reader.find(published) is not None:
+                    return
+            finally:
+                reader.close()
+        raise BodyError(f"the ledger head {published} this body last published (heartbeat.json) is not in this "
+                        "ledger: its history was rolled back, truncated or replaced. The body stays down and "
+                        "writes nothing; restore the ledger that contains that head, or, if this history is the "
+                        "one to keep, remove heartbeat.json on this machine")
+
     def _refresh_builder(self):
         """Replace the model adapter, never the mission engine, ledger or authority office."""
         if self._builder_factory is not None:
@@ -301,15 +502,7 @@ class Body:
 
     # -- founder identity ----------------------------------------------------------
     def enrolled_keys(self) -> dict[str, str]:
-        keys = {}
-        for event in self.journal.replay("founder."):
-            data = event.payload
-            if event.type == "greg.founder.enrolled":
-                keys[data["key_id"]] = data["public_key"]
-            elif event.type == "greg.founder.key_rotated":
-                keys.pop(data["old_key_id"], None)
-                keys[data["new_key_id"]] = data["new_public_key"]
-        return keys
+        return founder_keys(self.journal)
 
     def enroll_founder(self, public_hex: str) -> dict:
         """Trust-on-first-use by whoever controls this body's filesystem."""
@@ -435,6 +628,14 @@ class Body:
             return {"paused": True}
         if kind == "BODY_RESUME":
             self.journal.record("body.resumed", {"command_digest": digest}, key=digest)
+            answered = {e.payload["request_id"] for e in self.journal.replay("decision.")
+                        if e.type in ("greg.decision.answered", "greg.decision.withdrawn")}
+            for ask in self.journal.replay("decision.requested"):   # the resume lifted the hold its ask was about
+                rid = ask.payload["request_id"]
+                if ask.payload.get("kind") == HOLD_ASK and rid not in answered:
+                    self.journal.record("decision.withdrawn", {
+                        "request_id": rid, "mission_id": None, "why": "a signed BODY_RESUME lifted the hold",
+                        "evidence": {"command_digest": digest}, "at": iso(self.clock())}, key=[rid, "withdrawn"])
             return {"paused": False}
         if kind == "BODY_DESIGNATE":
             if body != {"purpose": "first_founder_body"}:
@@ -467,6 +668,17 @@ class Body:
             return compute.enroll_node(self.journal, body, digest)
         if kind == "SOP_RATIFY":
             return sop.ratify(self.journal, body, digest)
+        if kind == "FOUNDER_TIER":               # founder key only (DEVICE_KINDS excludes it)
+            from greg.founder import FOUNDER_TIER_BODY
+            if body != FOUNDER_TIER_BODY:
+                raise MissionError(f"a founder-tier attestation is exactly {FOUNDER_TIER_BODY}")
+            # The accepted command (its signer and key id) is the record greg.metrics.founder_tier reads.
+            return {**FOUNDER_TIER_BODY, "authority_changed": False}
+        if kind == "TREASURY_REQUIREMENTS":      # founder key only (DEVICE_KINDS excludes it)
+            from greg.venture_books import validate_requirements
+            declared = validate_requirements(body)
+            self.journal.record("treasury.requirements", {**declared, "command_digest": digest}, key=digest)
+            return {**declared, "money_moved": False, "authority_changed": False}
         if kind == "MODEL_ROUTE_SET":
             selection = models.validate_route_selection(body)
             self.journal.record("model.configured", {"selection": selection, "command_digest": digest}, key=digest)
@@ -522,36 +734,118 @@ class Body:
 
     def ingest_inbox(self, *, only_kind: str | None = None) -> list[dict]:
         results = []
+        stuck = self.__dict__.setdefault("_stuck", set())   # files this process could neither ingest nor set aside
         for path in sorted(self.layout.inbox.glob("*.json")):
-            envelope = None
+            if path.name in stuck:
+                continue
             try:
-                envelope = json.loads(path.read_text())
-                if only_kind is not None and (not isinstance(envelope, dict) or envelope.get("kind") != only_kind):
+                outcome = self._ingest_one(path, only_kind=only_kind)
+                if outcome is None:       # another kind while only ``only_kind`` is read: left for the next turn
                     continue
-                outcome = self.apply(envelope, channel="inbox")
-                shutil.move(str(path), self.layout.processed / path.name)
-            except (FounderAuthError, MissionError, ValueError, KeyError, TypeError,
-                    tribunal.CritiqueError) as exc:
-                raw = path.read_bytes()
-                consumed = getattr(exc, "consumed", None)
-                key = [path.name, sha256_json(raw.hex())]
-                # When and which command it refused, by the body's clock: an acceptance of the same command
-                # claiming an earlier time is a backdated record (greg.goal_gravity.founder_facts). Recorded once,
-                # so a retry after a crash finds the retained refusal instead of a different time.
-                if self.journal.retained("command.rejected", key) is None:
-                    self.journal.record("command.rejected", {
-                        "file": path.name, "sha256": sha256_json(raw.hex()),
-                        "reason": f"{type(exc).__name__}: {exc}"[:500], "instruction_status": "data_only",
-                        "at": iso(self.clock()),
-                        **({"digest": sha256_json(envelope)} if isinstance(envelope, dict) else {}),
-                        **({"consumed": consumed} if consumed else {})}, key=key)
-                shutil.move(str(path), self.layout.rejected / path.name)
-                outcome = {"status": "REJECTED", "file": path.name, "reason": str(exc)[:300]}
+            except Exception as exc:   # anywhere in the file's handling, its rejection path included
+                if not self.paused():
+                    raise     # a running body exits on it: its supervisor restarts it and the breaker counts the boot
+                try:
+                    outcome = self._set_aside(path, exc)
+                except Exception as failed:
+                    # it can be neither read nor moved (a name too long to extend, no permission): skip it for the
+                    # life of this process, so the files behind it, a signed resume among them, are still read
+                    stuck.add(path.name)
+                    outcome = self._stuck_file(path, exc, failed)
             results.append(outcome)
         return results
 
+    def _stuck_file(self, path: Path, exc: Exception, failed: Exception) -> dict:
+        error = f"{type(exc).__name__}: {exc}"[:300] + f"; set-aside failed: {type(failed).__name__}: {failed}"[:200]
+        site = f"inbox file {path.name[:120]} (skipped by this process)"
+        digest = sha256_json({"error": type(failed).__name__, "site": site})
+        try:
+            self.journal.record("body.fault_contained", {
+                "boot_id": getattr(self, "boot_id", None), "fault_digest": digest, "error": error, "site": site,
+                "state": "HELD" if crash_loop_hold(self.journal) else "PAUSED",
+                "inbox_waiting": sorted(p.name for p in self.layout.inbox.glob("*.json")), "at": iso(self.clock()),
+                "action": "contained: the file stays in the inbox, unread, and this process reads the files behind "
+                          "it; it is tried again after a restart"},
+                key=[getattr(self, "boot_id", None), digest])
+        except Exception:
+            pass   # the skip stands even when the ledger cannot take the record; the heartbeat still shows HELD
+        return {"status": "SKIPPED", "file": path.name, "reason": error}
+
+    def _ingest_one(self, path: Path, *, only_kind: str | None = None) -> dict | None:
+        """Apply one inbox file, or reject it as data. None: it is not ``only_kind`` and stays for a later turn."""
+        envelope = None
+        try:
+            envelope = json.loads(path.read_text())
+            if only_kind is not None and (not isinstance(envelope, dict) or envelope.get("kind") != only_kind):
+                return None
+            outcome = self.apply(envelope, channel="inbox")
+        except (FounderAuthError, MissionError, ValueError, KeyError, TypeError,
+                tribunal.CritiqueError) as exc:
+            raw = path.read_bytes()
+            consumed = getattr(exc, "consumed", None)
+            # the reason is part of the fact: the same file rejected again for another reason (re-dropped after the
+            # state that refused it changed) is a second rejection, not a reused fact identity the ledger refuses
+            # (which crashed the body)
+            key = [path.name, sha256_json(raw.hex()), sha256_json(f"{type(exc).__name__}: {exc}")]
+            # When and which command it refused, by the body's clock: an acceptance of the same command claiming an
+            # earlier time is a backdated record (greg.goal_gravity.founder_facts). Recorded once, so a retry after a
+            # crash finds the retained refusal instead of a different time.
+            if self.journal.retained("command.rejected", key) is None:
+                self.journal.record("command.rejected", {
+                    "file": path.name, "sha256": sha256_json(raw.hex()),
+                    "reason": f"{type(exc).__name__}: {exc}"[:500], "instruction_status": "data_only",
+                    "at": iso(self.clock()),
+                    **({"digest": sha256_json(envelope)} if isinstance(envelope, dict) else {}),
+                    **({"consumed": consumed} if consumed else {})}, key=key)
+            shutil.move(str(path), self.layout.rejected / path.name)
+            return {"status": "REJECTED", "file": path.name, "reason": str(exc)[:300]}
+        try:
+            shutil.move(str(path), self.layout.processed / path.name)
+        except OSError as exc:
+            exc.applied = outcome     # the command was accepted and applied; only its file could not be filed
+            raise
+        return outcome
+
+    def _set_aside(self, path: Path, exc: Exception) -> dict:
+        """An inbox file whose ingestion raised while the body is paused or held: kept under inbox/faulted, unread.
+
+        The inbox is read in name order, so one such file failed every turn and kept every later file, a signed
+        BODY_RESUME among them, from ever being read: the held body could not be resumed. It is moved aside byte
+        for byte (never deleted, never accepted as a command) and recorded once with its digest and error, and the
+        turn goes on to the next file. Setting a file aside lifts nothing; only a valid signed command does."""
+        try:
+            raw = path.read_bytes()
+        except OSError:
+            raw = None
+        recorded = {e.payload["kept_as"] for e in self.journal.replay("command.faulted")}
+        try:
+            self.layout.faulted.mkdir(exist_ok=True)
+            target = self.layout.faulted / path.name
+            if target.exists() or f"inbox/faulted/{target.name}" in recorded:
+                # never overwrite a file set aside earlier, nor reuse the name of one recorded (and since removed)
+                target = target.with_name(f"{path.stem}.{secrets.token_hex(4)}{path.suffix}")
+            shutil.move(str(path), target)       # first, so a crash before the record loses no bytes
+            kept_as = f"inbox/faulted/{target.name}"
+        except OSError:
+            # inbox/faulted cannot take it (missing permission, a file in its place): set it aside in place, out of
+            # the *.json read, so it still cannot keep a later signed command from being read
+            target = path.with_name(f"{path.name}.{secrets.token_hex(4)}{FAULTED_SUFFIX}")
+            path.rename(target)
+            kept_as = f"inbox/{target.name}"
+        applied = getattr(exc, "applied", None)
+        record = {"file": path.name, "kept_as": kept_as,
+                  "sha256": sha256_json(raw.hex()) if raw is not None else None,
+                  "error": f"{type(exc).__name__}: {exc}"[:500], "boot_id": getattr(self, "boot_id", None),
+                  "state": "HELD" if crash_loop_hold(self.journal) else "PAUSED", "at": iso(self.clock()),
+                  "instruction_status": "applied" if applied else "data_only",
+                  **({"applied": True} if applied else {})}
+        self.journal.record("command.faulted", record, key=[kept_as, "faulted"])
+        return {"status": "SET_ASIDE", "file": path.name, "kept_as": kept_as, "reason": record["error"][:300],
+                **({"applied": applied} if applied else {})}
+
     # -- lifecycle -----------------------------------------------------------------
-    def boot(self) -> dict:
+    def boot(self, *, main_loop: bool = False) -> dict:
+        crashed = unfinished_main_loop_boots(self.journal, self.clock()) if main_loop else []
         boots = self.journal.replay("body.booted")
         stops = {e.payload["boot_id"] for e in self.journal.replay("body.stopped")}
         unfinished = [b.payload["boot_id"] for b in boots if b.payload["boot_id"] not in stops]
@@ -567,12 +861,27 @@ class Body:
             last = None
         if last is not None:
             record["previous_heartbeat"] = last
+        if main_loop:
+            record["main_loop"] = True
         self.journal.record("body.booted", record, key=boot_id)
         if unfinished:
             self.journal.record("body.recovered", {"boot_id": boot_id, "previous_unfinished_boots": unfinished,
                                                    "action": "missions reconstructed from retained history; "
                                                              "uncertain dispatches reconcile, never blind-retry"},
                                 key=[boot_id, "recovered"])
+        if len(crashed) >= CRASH_LOOP_BOOTS and not self.paused():   # a pause in force (yours or a hold) stays
+            hold = {"by": BREAKER, "boot_id": boot_id, "unfinished_boots": crashed,
+                    "window_seconds": CRASH_LOOP_WINDOW_SECONDS, "at": iso(self.clock()),
+                    "why": f"{len(crashed)} main-loop boots in a row ended without a clean stop within "
+                           f"{CRASH_LOOP_WINDOW_SECONDS} s; no mission runs until a signed BODY_RESUME",
+                    "lifted_by": RESUME_LIFTS}
+            self.journal.record("body.paused", hold, key=[boot_id, "crash-loop"])
+            record["held"] = hold["why"]
+        hold = crash_loop_hold(self.journal)
+        if hold is not None:   # one ask per hold; re-derived here, so a crash between the two records loses none
+            ask = hold_ask(hold)
+            if all(e.payload["request_id"] != ask["request_id"] for e in self.journal.replay("decision.requested")):
+                asks.record(self.journal, ask)
         self.boot_id = boot_id
         return record
 
@@ -582,8 +891,9 @@ class Body:
         if self.stop_requested:
             return {"commands": commands, "stopped": True}
         if self.paused():
-            self._heartbeat("PAUSED", [])
-            return {"commands": commands, "paused": True}
+            hold = crash_loop_hold(self.journal)
+            self._heartbeat("HELD" if hold else "PAUSED", [])
+            return {"commands": commands, "paused": True, **({"held": hold["why"]} if hold else {})}
         # Goal Gravity first, so an awake goal's pulled observation is stepped in this same tick. Without a
         # founder-signed goal on the ledger it does no work and writes nothing (None).
         from greg import goal_gravity
@@ -623,14 +933,44 @@ class Body:
                     "device_class": doctor.device_class(),   # informational; never part of founder_body
                     "at": iso(now)}, key=[mid, "context"])
             if mid not in appraised:
-                verdict = self.appraise(mid)
-                self.journal.record("mission.appraised", verdict, key=[mid, "appraised", verdict["head"]])
+                self._appraise_closure(mid, None, now)
         judged = {e.payload.get("closure_event") for e in self.journal.replay("mission.appraised")}
         for event in self.journal.replay("mission.held") + self.journal.replay("mission.unmet"):
             if event.event_id not in judged:
-                mid = event.payload["mission_id"]
-                verdict = self.appraise(mid, closure_event=event.event_id)
-                self.journal.record("mission.appraised", verdict, key=[mid, "appraised", event.event_id])
+                self._appraise_closure(event.payload["mission_id"], event.event_id, now)
+
+    def _appraise_closure(self, mid: str, closure_event: str | None, now):
+        """One appraiser run for one closure, recorded; a run that gave no verdict is retried on a later tick.
+
+        The appraiser is a separate process. When it is killed, times out or writes no readable verdict, it judged
+        nothing, so nothing is recorded as its verdict (acceptance H.G7): the run is one unavailable attempt and
+        the closure is appraised again on the next tick. After APPRAISAL_ATTEMPTS such runs the closure is recorded
+        appraised UNAVAILABLE, which is final: it is never VERIFIED and the closure is not appraised again."""
+        unavailable = [e.payload for e in self.journal.replay("mission.appraisal_unavailable")
+                       if e.payload["mission_id"] == mid and e.payload.get("closure_event") == closure_event]
+        prior = [u["why"] for u in unavailable]
+        if len(prior) >= APPRAISAL_ATTEMPTS:
+            # the body died between the last unavailable run and its final record: finish it, run nothing more
+            last = unavailable[-1]
+            self.journal.record("mission.appraised", {
+                "mission_id": mid, "head": last["head"], "verdict": "UNAVAILABLE", "checks": {},
+                "findings": prior, "appraiser": "separate process", "attempts": len(prior),
+                **({"closure_event": closure_event} if closure_event else {})},
+                key=[mid, "appraised", closure_event or last["head"]])
+            return
+        verdict = self.appraise(mid, closure_event=closure_event)
+        key = [mid, "appraised", closure_event or verdict["head"]]
+        if verdict["verdict"] in APPRAISER_VERDICTS:
+            self.journal.record("mission.appraised", verdict, key=key)
+            return
+        attempt, why = len(prior) + 1, verdict["findings"][0]
+        self.journal.record("mission.appraisal_unavailable", {
+            "mission_id": mid, **({"closure_event": closure_event} if closure_event else {}), "attempt": attempt,
+            "of": APPRAISAL_ATTEMPTS, "head": verdict["head"], "why": why, "boot_id": getattr(self, "boot_id", None),
+            "at": iso(now)}, key=[mid, closure_event, "appraisal_unavailable", attempt])
+        if attempt >= APPRAISAL_ATTEMPTS:
+            self.journal.record("mission.appraised", {**verdict, "attempts": attempt, "findings": prior + [why]},
+                                key=key)
 
     def appraisal_request(self, mission_id: str, *, closure_event: str | None = None) -> dict:
         """What the separate appraiser re-derives from: the head, the scope, and the postures the original ran in
@@ -652,22 +992,70 @@ class Body:
         request = self.appraisal_request(mission_id, closure_event=closure_event)
         env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1",
                "PYTHONPATH": os.pathsep.join([str(KERNEL_ROOT)] + [p for p in sys.path if "-packages" in p])}
-        child = subprocess.run([sys.executable, "-m", "greg.appraisal"], input=json.dumps(request),
-                               capture_output=True, text=True, timeout=120, env=env, cwd=KERNEL_ROOT)
-        if child.returncode:
-            return {"mission_id": mission_id, "head": request["head"], "verdict": "APPRAISAL_FAILED",
-                    "checks": {}, "findings": [child.stderr[-500:]], "appraiser": "separate process",
+        def unavailable(why: str) -> dict:   # the appraiser judged nothing: not a verdict (see _appraise_closure)
+            return {"mission_id": mission_id, "head": request["head"], "verdict": "UNAVAILABLE",
+                    "checks": {}, "findings": [why[:600]], "appraiser": "separate process",
                     **({"closure_event": closure_event} if closure_event else {})}
-        return json.loads(child.stdout)
+        try:
+            child = subprocess.run([sys.executable, "-m", "greg.appraisal"], input=json.dumps(request),
+                                   capture_output=True, text=True, timeout=APPRAISAL_TIMEOUT_SECONDS, env=env,
+                                   cwd=KERNEL_ROOT)
+        except subprocess.TimeoutExpired as exc:   # subprocess.run killed it; a hung appraiser never crashes the body
+            return unavailable(f"the appraiser gave no verdict within {exc.timeout:g} s and was killed")
+        if child.returncode:
+            return unavailable(f"the appraiser exited {child.returncode} without a verdict: {child.stderr[-500:]}")
+        try:
+            verdict = json.loads(child.stdout)
+        except ValueError:
+            return unavailable("the appraiser exited 0 without a readable verdict")
+        if not isinstance(verdict, dict) or verdict.get("verdict") not in APPRAISER_VERDICTS:
+            return unavailable("the appraiser exited 0 without a readable verdict")
+        return verdict
 
     def next_wake(self, tick_seconds: float) -> float:
+        """Seconds until the next turn: a full tick, or sooner when a mission the next tick steps is due.
+
+        Only a mission the engine will step pulls the wake forward. A paused or held body steps none, and a
+        LIFECYCLE-paused or blocked mission is not stepped toward its observation (MissionEngine._step returns
+        before it schedules one), so its past next_observe_at stays past: counted as due, it turned the loop
+        every 0.05 s, running the whole tick and sampling telemetry about once a second."""
+        if self.paused():
+            return tick_seconds
         now = self.clock()
         horizon = now + timedelta(seconds=tick_seconds)
         for m in self.engine.book.missions.values():
-            if m.next_observe_at and m.status not in ("ACHIEVED", "ABANDONED", "SUPERSEDED") and not m.blocker:
+            if m.next_observe_at and m.status not in ("ACHIEVED", "ABANDONED", "SUPERSEDED") and not m.blocker \
+                    and not m.paused:
                 at = datetime.fromisoformat(m.next_observe_at.replace("Z", "+00:00"))
                 horizon = min(horizon, max(at, now))
         return max(0.05, (horizon - now).total_seconds())
+
+    def _contained(self, work, *args):
+        """One piece of the work a paused or held body still does each turn (read its inbox, note a gap).
+
+        A failure there would otherwise kill every restart with no further signal (a held body exists because
+        restarts did not help). While the body is paused or held it is recorded once per boot and failure site,
+        and the body stays up, observable and reading its inbox; None is returned. A body that is not paused
+        fails as before: the process dies, the supervisor restarts it and the breaker counts the boot."""
+        try:
+            return work(*args)
+        except Exception as exc:
+            if not self.paused():
+                raise
+            import traceback
+            frames = traceback.extract_tb(exc.__traceback__)
+            site = f"{Path(frames[-1].filename).name}:{frames[-1].lineno} {frames[-1].name}" if frames else "unknown"
+            digest = sha256_json({"error": type(exc).__name__, "site": site})
+            if all(e.payload["boot_id"] != self.boot_id or e.payload["fault_digest"] != digest
+                   for e in self.journal.replay("body.fault_contained")):
+                self.journal.record("body.fault_contained", {
+                    "boot_id": self.boot_id, "fault_digest": digest, "error": f"{type(exc).__name__}: {exc}"[:500],
+                    "site": site, "state": "HELD" if crash_loop_hold(self.journal) else "PAUSED",
+                    "inbox_waiting": sorted(p.name for p in self.layout.inbox.glob("*.json")),
+                    "at": iso(self.clock()), "action": "contained: the paused body stays up, observable and "
+                                                       "reading its inbox; recorded once per boot and site"},
+                    key=[self.boot_id, digest])
+            return None
 
     def _heartbeat(self, state: str, summary: list):
         data = {"pid": os.getpid(), "boot_id": getattr(self, "boot_id", None), "at": iso(self.clock()),
@@ -688,34 +1076,45 @@ class Body:
         reason = "unknown"
         self.open()
         try:
-            self.boot()
-            ticks = 0
+            self.boot(main_loop=True)
+            ticks = active = 0
             last_seen = None
             while True:
                 if self.layout.stop_file.exists():
                     reason = "local STOP file"
                     break
+                waiting = set(self.layout.inbox.glob("*.json"))   # one still here after this turn wakes nothing
                 seen = (self.clock(), self.monotonic())
                 if last_seen is not None:
-                    presence.note_gap(self.journal, self.boot_id, last_seen, seen)
+                    self._contained(presence.note_gap, self.journal, self.boot_id, last_seen, seen)
                 last_seen = seen
-                result = self.tick()
+                result = self._contained(self.tick)
+                if result is None:                # a paused body's turn failed, contained: it is still paused
+                    hold = crash_loop_hold(self.journal)
+                    result = {"paused": True, **({"held": hold["why"]} if hold else {})}
                 if self.stop_requested:
                     reason = "founder BODY_STOP or signal"
                     break
                 ticks += 1
-                if ticks % telemetry_every == 1:
-                    compute.record_telemetry(self.journal, self.layout.home)
-                    compute.recommend(self.journal)
-                    presence.recommend(self.journal, now=self.clock(),
-                                       platform_hint="chromeos" if doctor.is_crostini() else None)
-                self._heartbeat("PAUSED" if result.get("paused") else "RUNNING", result.get("missions", []))
+                idle = bool(result.get("paused"))  # paused or held: no mission steps, so nothing is measured or due
+                if not idle:
+                    active += 1
+                    if active % telemetry_every == 1:
+                        compute.record_telemetry(self.journal, self.layout.home)
+                        compute.recommend(self.journal)
+                        presence.recommend(self.journal, now=self.clock(),
+                                           platform_hint="chromeos" if doctor.is_crostini() else None)
+                self._heartbeat("HELD" if result.get("held") else "PAUSED" if result.get("paused") else "RUNNING",
+                                result.get("missions", []))
                 if max_ticks is not None and ticks >= max_ticks:
                     reason = "max_ticks reached"
                     break
+                # A paused or held body, or a paused mission, serves no due observation, so it waits a full tick
+                # instead of spinning on one (next_wake); a new inbox file (a signed resume, say) or a stop wakes
+                # the body sooner.
                 deadline = time.monotonic() + self.next_wake(tick_seconds)
                 while time.monotonic() < deadline and not self.stop_requested:
-                    if self.layout.stop_file.exists() or any(self.layout.inbox.glob("*.json")):
+                    if self.layout.stop_file.exists() or set(self.layout.inbox.glob("*.json")) - waiting:
                         break
                     time.sleep(min(0.2, max(0.0, deadline - time.monotonic())))
             self.journal.record("body.stopped", {"boot_id": self.boot_id, "reason": reason,
@@ -806,6 +1205,30 @@ def _attach_waiting(journal, achieved: set) -> list[dict]:
     return list(waiting.values())
 
 
+def _attach_waiting(journal, achieved: set) -> list[dict]:
+    """Verified capabilities Genesis is waiting for the founder to attach, whatever the ask's answer.
+
+    An Approve on a capability ask only records an answer (greg/asks.py); attaching is its own signed
+    command. Derived from the ledger, so a mission stays unblockable from the console after an answer
+    given here or on the phone (which can never attach)."""
+    mission_of = {e.payload["deficit_id"]: e.payload.get("mission_id") for e in journal.replay("deficit.opened")}
+    resolved = {e.payload["deficit_id"] for e in journal.replay("deficit.resolved")}
+    latest = {}
+    for e in journal.replay("capability.state"):
+        latest[e.payload["capability_id"]] = e.payload["state"]
+    waiting = {}
+    for e in journal.replay("deficit.awaiting_attach"):
+        p = e.payload
+        mission_id = mission_of.get(p["deficit_id"])
+        if p["deficit_id"] in resolved or mission_id in achieved or latest.get(p["capability_id"]) in (
+                "ATTACHED", "QUARANTINED", "DETACHED"):
+            continue
+        waiting[(p["deficit_id"], p["capability_id"])] = {"deficit_id": p["deficit_id"],
+                                                          "capability_id": p["capability_id"],
+                                                          "mission_id": mission_id, "why": p.get("why")}
+    return list(waiting.values())
+
+
 def status(home: str | Path) -> dict:
     """Read-only projection for the founder; safe while the body runs."""
     layout = Layout(home)
@@ -825,7 +1248,7 @@ def status(home: str | Path) -> dict:
         requests = asks.open_requests(journal.replay("decision.") + journal.replay("mission.achieved")
                                       + journal.replay("mission.lifecycle"), counted=book.answers,
                                       uncounted=book.unverified, pending=inbox_digests(layout))
-        founder = [e.payload["key_id"] for e in journal.replay("founder.enrolled")]
+        founder = list(founder_keys(journal))     # rotation honored: only the currently enrolled keys
         boots = journal.replay("body.booted")
         # The same states the body uses: catalog initial state, then every recorded transition.
         from greg.cognition.catalog import initial_state
@@ -836,8 +1259,13 @@ def status(home: str | Path) -> dict:
             if event.payload["capability_id"] in registry.manifests:
                 registry.set_state(event.payload["capability_id"], event.payload["state"])
         ok, chain = ledger.verify_chain()
+        from greg.missions import MissionBook, active_constraint
+        book = MissionBook(journal)
+        paused = body_pauses(journal, pause_file=layout.pause_file.exists())
         missions = [{"mission_id": mid, "intended_effect": spec["intended_effect"],
-                     "closure": spec["closure"]["kind"], "achieved": mid in achieved}
+                     "closure": spec["closure"]["kind"], "achieved": mid in achieved,
+                     "active_constraint": active_constraint(book.missions[mid], book, body_paused=paused)
+                     if mid in book.missions else None}
                     for mid, spec in registered.items()]
         from greg import goal_gravity
         return {
@@ -847,7 +1275,9 @@ def status(home: str | Path) -> dict:
                          "devices": [{k: d[k] for k in ("device_key_id", "label", "kinds", "expires_at")}
                                      for d in device_delegations(journal).values()],
                          "stop_file_present": layout.stop_file.exists(),
-                         "pause_file_present": layout.pause_file.exists()},
+                         "pause_file_present": layout.pause_file.exists(),
+                         "crash_loop_hold": (crash_loop_hold(journal) or {}).get("why"),
+                         "contained_faults": contained_faults(journal, layout)},
             # Missions and persistent goals are different objects: missions under "missions" (and under
             # "goals", the legacy key older phone/Mac clients read), founder-signed Goal Gravity goals under
             # "gravity". Neither key is ambiguous once "keys" is read.
@@ -868,6 +1298,7 @@ def status(home: str | Path) -> dict:
             "external_items_quarantined": sum(1 for e in journal.replay("external.ingested")
                                               if e.payload["quarantined"]),
             "single_bottleneck_metric": metrics.vepmc(journal),
+            "founder_tier": metrics.tier_status(journal, founder),
             "external_anchor": anchor.summary(journal),
             "egress": _egress_summary(layout.home, config),
             "presence": presence.summary(journal, now=utcnow(), since=utcnow() - presence.REVIEW_WINDOW,

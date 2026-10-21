@@ -404,7 +404,8 @@ def test_one_machine_ten_steps_on_one_body_with_real_processes(tmp_path):
                                if a["mission_id"] == slow_id and a["action_id"] == "commission-worker"]
         assert [a["status"] for a in commissions()] == ["UNCERTAIN"], commissions()
         assert "dispatch claimed without receipt" in commissions()[0]["reasons"][0]
-        assert commissions()[0]["cost_reserved"] is True and commissions()[0]["cost_usd"] == 0.01   # unknown spend: cap held
+        # unknown spend: the cap is reserved against the budget, nothing booked (#173's model, merge of e410977)
+        assert commissions()[0]["reserved_usd"] == 0.01 and commissions()[0]["cost_usd"] == 0.0
         assert not (slow_root / "evidence.json").exists() and len(asked) == 1, "no blind re-run, one question"
         ep.decide(asked[0]["request_id"], "reconcile_not_executed")       # the founder states it did not finish
         appraisal = ep.run_to_closure(slow_id, timeout=240, answered={asked[0]["request_id"]})

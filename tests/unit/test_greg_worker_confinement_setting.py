@@ -14,6 +14,7 @@ import sys
 
 import pytest
 
+from greg import isolation as landlock
 from greg import templates, workers
 from greg import worker_isolation as isolation
 from greg.body import Body, Layout, init_body
@@ -21,7 +22,10 @@ from tests.greg_fixtures import Clock, drop, make_body, signed
 
 AGENT = '''import sys
 from pathlib import Path
-Path(sys.argv[1]).write_text("ran with the body's reach")     # outside the clone: only an unconfined worker can
+try:
+    Path(sys.argv[1]).write_text("ran with the body's reach")  # outside the clone: only an unconfined worker can
+except OSError:
+    pass                                                          # Landlock refused it (#173 grants, supervised)
 sys.stdin.read()
 Path("pkg/calc.py").write_text("def add(a, b):\\n    return a + b\\n\\n\\ndef sub(a, b):\\n    return a - b\\n")
 Path("tests").mkdir(exist_ok=True)
@@ -132,10 +136,19 @@ def test_supervised_runs_the_worker_and_says_exactly_what_was_not_confined(tmp_p
     summary = json.loads(evidence.read_text())["summary"]
     assert summary["status"] == "COMPLETED" and summary["commit"]
     iso = summary["worker"]["isolation"]
-    assert iso["mode"] == "supervised" and iso["filesystem"].startswith("NOT OS-confined")
-    assert iso["network"].startswith("NOT isolated") and "unreviewed" in iso["envelope_refused"]
-    # The evidence is true: the worker did reach outside its clone.
-    assert marker.exists()
+    assert iso["mode"] == "supervised" and iso["network"].startswith("NOT isolated")
+    assert "unreviewed" in iso["envelope_refused"]
+    if landlock.available().get("available"):
+        # Merge of #178 e410977: the stronger confinement applies. The envelope refused this worker, so #173's
+        # Landlock grants confine it; the evidence says so, and it is true: the write outside its clone failed.
+        assert iso["filesystem"].startswith("Landlock-confined") and iso["landlock"]["filesystem"] == "landlock"
+        assert summary["worker"]["confinement"]["filesystem"] == "landlock"
+        assert summary["worker"]["supervision"]["filesystem"].startswith("Landlock-confined")
+        assert not marker.exists()
+    else:
+        # No Landlock either: the evidence is true, the worker did reach outside its clone.
+        assert iso["filesystem"].startswith("NOT OS-confined")
+        assert marker.exists()
     # Acceptance still ran in the envelope, because this host provides it.
     assert summary["greg_tests_passed"]
     assert all(t["confinement"].startswith("envelope") for t in summary["greg_tests"])
@@ -177,7 +190,12 @@ def test_acceptance_without_an_envelope_follows_the_setting_and_never_opens_the_
     elif result["confinement"] == "refused":          # this host has no network filter either: refused, not run
         assert "network isolation unavailable" in result["tail"]
     else:
-        assert result["confinement"].startswith("supervised") and "NOT confined" in result["confinement"]
+        # Without the envelope the stronger confinement still applies: #173's Landlock where the host has it.
+        confined = landlock.available().get("available")
+        assert result["confinement"].startswith("supervised") and (
+            "Landlock-confined to the clone" in result["confinement"] if confined
+            else "NOT confined" in result["confinement"])
+        assert (result["landlock"] or {}).get("filesystem") == ("landlock" if confined else "none")
         assert result["passed"], result["tail"]        # the socket was refused: the network stayed closed
 
 

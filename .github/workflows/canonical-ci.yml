@@ -41,9 +41,11 @@ jobs:
     # The limit bounds a hung run; it is not a speed target. Track B (#180 e4674f9) raised it from 30 when the unit
     # suite ran twice here (full suite, then verifier V2): 24 of 30 minutes at #179 c6c4d74, and four stacked heads
     # cancelled inside the verifier on 2026-10-15 with the suite green (17-19 minutes under load). Verifier V2 now
-    # runs once, in job 9 (44f7c35); this job still carries the full suite, the worker-isolation regressions and the
-    # mutation checks, so the 45-minute bound is kept.
-    timeout-minutes: 45
+    # runs once, in job 9 (44f7c35). Hosted runners differ in speed: on 2026-10-15 the suite took 11 min on one
+    # (a48e8fa) and 17.5 min on another (349e732); with 45 the whole job took 34.5 and 38.5 min on slow runners
+    # (#173). This job still carries the full suite, the worker-isolation regressions and the mutation checks, so 60
+    # leaves room for the suite to keep growing on a slow runner without hiding a hang for long.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -160,11 +162,20 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The integrity check reads every committed version of its record files:
+          # a genesis key never changes and no signed record is removed.
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: No second Constitution, Gate, identity or authority registry
         run: python scripts/ci/check_authority_singleton.py
+      - run: pip install "cryptography>=41"
+      - name: Live constitutional integrity (CONTRADICTION-0002 Option A; only founder-signed authorizations count)
+        # Fails, naming each artifact and the founder's exact steps, when a protected
+        # artifact differs from what an enrolled founder key authorized.
+        run: python -m governance.integrity --check
 
   sealed:
     name: "4 · Developmental work stays sealed"

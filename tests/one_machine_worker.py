@@ -9,9 +9,10 @@ It does real, inspectable work from the bound context: it records the certified 
 test that re-checks it against ``problem.json`` from first principles, including an exhaustive
 search that no feasible assignment staffs more. It does not import GREG.
 
-Test control (files next to this script, outside any clone):
-  HOLD      present -> write ``started`` with this pid, then wait to be killed
-  runs.log  one line per invocation, so the test can count executions
+Test control: a file next to this script, outside any clone, read only.
+  HOLD      present -> stay in progress until killed (the test finds this process in /proc)
+The worker writes nothing outside its clone: where Landlock confines workers it could not, and the
+test observes it from outside instead (its process, and GREG's own dispatch records).
 """
 import json
 import os
@@ -63,10 +64,7 @@ def test_no_feasible_assignment_staffs_more():
 
 def main() -> int:
     prompt = sys.stdin.read()
-    with open(HERE / "runs.log", "a") as log:
-        log.write(f"{os.getpid()} {time.time()}\n")
     if (HERE / "HOLD").exists():
-        (HERE / "started").write_text(str(os.getpid()))
         time.sleep(600)                      # in progress until the body (and so this process) is killed
         return 3
     if MARK not in prompt:

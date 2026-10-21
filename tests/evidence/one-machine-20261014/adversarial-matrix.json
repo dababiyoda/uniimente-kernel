@@ -490,6 +490,29 @@
       "tests": [
         "tests/unit/test_greg_goal_gravity_merge.py::test_a_goal_does_not_claim_to_hold_after_gregs_compensation_undid_its_effect"
       ]
+    },
+    {
+      "attack": "a worker plants GREG's acceptance scratch name in its clone",
+      "expected": "GREG's own acceptance run uses a fresh scratch name; the dispatch is never made uncertain and no reconciliation is asked",
+      "tests": [
+        "tests/unit/test_greg_worker_containment.py::test_a_worker_cannot_plant_gregs_scratch_directory_to_make_its_own_run_uncertain",
+        "tests/unit/test_greg_worker_containment.py::test_a_clone_that_cannot_host_gregs_acceptance_run_fails_it_rather_than_raising"
+      ]
+    },
+    {
+      "attack": "a provider installed in the founder's home opens the home to the worker",
+      "expected": "the confined worker cannot read the home or ~/.local; only a virtual environment or an install tree's lib is granted",
+      "tests": [
+        "tests/unit/test_greg_worker_containment.py::test_a_provider_installed_in_the_founders_home_does_not_open_the_home_to_the_worker"
+      ]
+    },
+    {
+      "attack": "kill the body inside a paid builder call, then spend the cone",
+      "expected": "the interrupted call stays reserved on the cone at its ceiling; a paid action past what remains asks the founder",
+      "tests": [
+        "tests/unit/test_greg_build_cone_booking.py::test_a_build_the_body_died_inside_stays_reserved_on_the_cone_and_paid_actions_past_it_ask",
+        "tests/unit/test_greg_build_cone_booking.py::test_a_build_is_carved_only_from_what_the_open_reservations_leave"
+      ]
     }
   ],
   "observed": "see observed-run.json: the pytest outcome of every listed test on the recorded code head, with live organs and Landlock required (regenerate: python scripts/observe_adversarial_matrix.py)"

@@ -1,6 +1,9 @@
 {
  "vepmc": {
   "VEPMC": 0,
+  "structural_candidate_count": 0,
+  "founder_tier_count": 0,
+  "evidence_level": "NONE",
   "missions": [
    {
     "mission_id": "m:one-machine-staff-om",
@@ -9,7 +12,7 @@
     "interface_detached": true,
     "persistent_runtime": true,
     "real_capability": true,
-    "approval_boundary": false,
+    "approval_boundary": true,
     "interruption_survived": true,
     "appraised_verified": true,
     "founder_accepted": false,
@@ -19,10 +22,10 @@
     "fixture_evidence": false,
     "counts": false,
     "missing": [
-     "approval_boundary",
      "founder_accepted",
      "founder_body"
-    ]
+    ],
+    "evidence_level": "NONE"
    },
    {
     "mission_id": "m:compiled-staff-later",
@@ -45,7 +48,8 @@
      "interruption_survived",
      "founder_accepted",
      "founder_body"
-    ]
+    ],
+    "evidence_level": "NONE"
    }
   ],
   "conditions": [

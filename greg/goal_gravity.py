@@ -122,7 +122,9 @@ def asks_for_move(r: dict, scope: dict) -> bool:
         mission_id=scope["mission_id"], capability_id=scope["capability"],
         params=scope["strategy"].get("params", {}), target=scope["target"],
         consequence_class=scope["consequence_class"], cost_usd=scope["cost_usd"],
-        spent_usd=budget["spent_usd"], budget_usd=budget.get("budget_usd"))
+        # the Gate binds booked spend plus reservations of unknown outcomes (#173 ``committed_usd``)
+        spent_usd=round(float(budget["spent_usd"]) + float(budget.get("reserved_usd", 0.0)), 9),
+        budget_usd=budget.get("budget_usd"))
 
 
 # A goal plan node may require a function rather than one implementation: ``"<function>@function"`` is

@@ -187,6 +187,51 @@ A workflow then reviewed the joined system. Five lenses (projection, asks, sensi
 
 The three rejected findings were real behaviour but not defects of the join (two are the `bind` gap above, now closed with it).
 
+### 6f. The base moved again: Missions A–L and worker confinement (2026-10-21)
+
+`1e55bbd` merges base `834701e` (81 commits, #173 head `a48e8fa`). Thirteen files conflicted; both sides are kept. Where the two lineages solved the same problem, the base's mechanism is canonical and this branch's residual behaviour is kept on top of it.
+
+| Area | Canonical (base) | Kept from this branch |
+|---|---|---|
+| Reconciliation | Each request names its dispatch (attempt, proposal, grant); the reserved signed cap is booked | One recorder for live and ended missions; the dispatch's own capability on the record; a re-ask when a retained blocker's answer predates the latest dispatch |
+| Appraisal | Per-receipt binding window | Compensation uniqueness; reconciled steps count only behind the founder's answer; the appraiser re-derives check-sourced bindings |
+| Inputs | Appraised handoffs; inline resolution | `MissionEngine._inputs` is the one hold rule for the loop and for asking ahead |
+| Workers | Landlock confinement (I.G6) | #157 supervision. The merge exposed one defect: a provider declared as `[interpreter, script]` could not read its own script and never started. The scripts its argv names are now granted read-only, with a regression test |
+| Metrics | Founder tier (#138) | Fixture exclusion and device class; the nine conditions unchanged |
+
+Two base tests were updated to this trunk. The http.get manifest now declares the `egress` route field. Foundry System 26 has a module here (confined egress), so the "no module" example became System 10.
+
+The one-machine worker double now writes nothing outside its clone, because confinement forbids it. The tests observe it from outside: in `/proc`, and through GREG's dispatch records.
+
+### 6g. Third base move: the build books, metered spend and the appraiser's rule on reconciled closures (2026-10-21)
+
+This merge brings in base `ddcab38` (31 commits). The base's decisions are canonical here. Where a base rule changed what this trunk's tests expected, the test now follows the base, and each change is stated below.
+
+| Area | Canonical (base) | Kept from this branch, and what changed |
+|---|---|---|
+| Genesis spend (H.G7) | Every builder call is reserved at its ceiling before it starts. A build that fails or is interrupted stays booked. | When a paid candidate was left unjudged by an outage or a kill, it is judged against the frozen oracle before any builder is paid again. In the in-verify kill case this means one builder call instead of the base's two. The oracle still gates what is attached, and every call is still on the books once. |
+| Metered spend (H.G4) | If the founder answers "not executed" on a metered dispatch, its signed cap stays booked. | In the whole-machine run, the rerun now exceeds the $0.05 budget, so GREG asks the founder for that exact spend. An overspent cone passes only a free read-only observation, so the free handoff write is also asked for. The test answers both requests. The signed budget was not widened. |
+| Reconciled closures | If a DONE step was reconciled by the founder with no receipt, the appraiser refutes the closure. | The exception this branch briefly added is reverted. The SOP test now uses one reconciled mission and three receipted ones. The reconciled mission never reaches a procedure. |
+
+Rejected: widening the template's budget so the rerun fits. It would hide H.G4 from the one test that exercises it across processes.
+
+### 6h. Adversarial review of the second and third base merges (2026-10-21)
+
+The review was a workflow. Four area finders worked over the combined diffs of `1e55bbd` and `8be3909`, and each area had a skeptic told to refute every finding. They raised 14 findings, three of them the same defect found from different areas. The skeptics upheld eight distinct defects and refuted three as older than either merge. Each upheld defect now has a test that fails before its fix and passes after it.
+
+| # | Upheld defect | Fix |
+|---|---|---|
+| 1 | **Build reservations missing from the cone (high).** A builder call the body died inside stayed charged to the build budget at its ceiling (H.G7), but the cone booked builds only on `genesis.built` or `genesis.unbuilt`. A later paid action ran past the signed budget with no ask. | `MissionBook.fold` reserves each `build_started` on the payer's cone until it settles (`test_greg_build_cone_booking.py`). |
+| 2 | **Builds ignored held money (high).** Genesis sized a build from `spent_usd`, ignoring money held for a dispatch of unknown outcome. Every other admission uses `committed_usd`. | Genesis uses `committed_usd`. |
+| 3 | **A planted name made a run "unknown" (high).** GREG's confined acceptance run created a fixed `.greg-tmp` inside the worker's clone. A worker that planted that name made the run raise before any test started. The dispatch became UNCERTAIN, booked the full cap and asked the founder to reconcile a run that never left the clone. | Each run gets a fresh `mkdtemp` name. A clone that cannot host the run fails acceptance instead of raising (`test_greg_worker_containment.py`). |
+| 4 | **The worker could read the founder's home (medium).** The worker was granted the parent of its binary's directory, so a provider in `~/.local/bin` exposed all of `~/.local`, and one in `~/bin` exposed the whole home. The skeptic reproduced a credential read. The defect is the base's grant logic, not the join. | `isolation._install_tree` never grants the home or anything containing it. A tree directly in the home is granted whole only when it is a virtual environment; otherwise only its `lib` is. |
+| 5 | **Founder views showed $0 that the engine had booked (medium).** Mission Control's cost rows and the morning report's spend dropped the cap booked on a metered "not executed" and the charge for an interrupted build, while the engine asked for spend approval. | Both now book them, the cost rows in the unknown-at-cap column. |
+| 6 | **Fixture closures moved the founder's path (medium).** VEPMC (this trunk) refuses fixture evidence, but the base's path predicates N3, N4 and N6 read the nine conditions directly. | Each predicate names the fixture evidence as missing (`test_greg_founder_tier.py`). |
+| 7 | **The re-ask left out a warning (low).** The re-ask for a retained blocker did not say that "not executed" still books a metered cap. | Both RECONCILIATION asks take their wording and per-answer booking from `missions.reconciliation_terms`. The re-ask path itself is not exercised end to end. |
+| 8 | **Resilience counted unreceipted completions (low).** Resilience counted a founder's "it executed" (no receipt) as a completion, while routing counts it as neither success nor failure. | Resilience skips it in the outcomes, episodes and concentration. |
+
+Refuted as predating both merges: build attempts restarted by kills (each restarted call is booked and stays inside the signed budget); the appraiser's spend re-admission counting DONE only; a resilience variant of item 8 in the spend area.
+
 ## 7. Gap map (seven investigators and a critic) and what was closed
 
 | Rank | Gap | Status on this trunk |

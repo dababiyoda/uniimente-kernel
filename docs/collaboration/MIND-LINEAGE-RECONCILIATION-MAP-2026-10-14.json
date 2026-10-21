@@ -1157,8 +1157,8 @@
    "path": "greg/path.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "modified",
+   "note": "present in one lineage only (pr158); since modified by the merge of #178 e410977 into PR #184, which carried #173's founder-tier gate (N1/N2 move the path only at the founder tier, 289d89f5 and the #138 port) and external-evidence/human-work rules"
   },
   {
    "path": "greg/resilience.py",
@@ -1437,8 +1437,8 @@
    "path": "tests/unit/test_greg_resilience.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "modified",
+   "note": "present in one lineage only (pr158); since modified by the merge of #178 e410977 into PR #184, which carried #173's dispatch-outcome counting (a founder's settlement of an UNCERTAIN dispatch is counted once)"
   },
   {
    "path": "tests/unit/test_lawful_leverage.py",

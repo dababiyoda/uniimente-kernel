@@ -68,6 +68,8 @@ GENOMES = {
     "game_lp_dual": (MATHEMATICAL, "generated zero-sum games; LP value"),
     "game_minimax": (MATHEMATICAL, "generated zero-sum games; LP value"),
     "graph_matching": (MATHEMATICAL, "generated graphs; exact maximum matching"),
+    "graph_node_cut_exact": (MATHEMATICAL, "generated dependency-like digraphs; exact minimum vertex cut "
+                                           "(Menger augmenting paths)"),
     "grid_dijkstra": (MATHEMATICAL, "generated weighted grids; exact shortest path"),
     "info_experiment": (MATHEMATICAL, "a declared prior and likelihood tables; scenarios drawn from that prior"),
     "knapsack_bnb": (MATHEMATICAL, "generated knapsack instances; exact optimum"),

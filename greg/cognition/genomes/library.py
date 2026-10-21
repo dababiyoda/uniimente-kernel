@@ -24,6 +24,7 @@ from .contract import Executable, GenomeError
 # module path -> layer it implements (documentation; each genome declares its own layer)
 MODULES = (
     "greg.cognition.genomes.flow",          # L3 graph max-flow / min-cut; capacity expansion compiler
+    "greg.cognition.genomes.node_cut",      # L3 exact minimum S-T vertex cut with a Menger certificate
     "greg.cognition.genomes.forecasting",   # L3 time-series forecasting with calibrated quantiles
     "greg.cognition.genomes.decision",      # L3 decision analysis (preposterior / value of information)
     "greg.cognition.genomes.basal",         # L1 basal / primitive intelligences

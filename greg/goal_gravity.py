@@ -82,6 +82,12 @@ APPROVE_MEANS = ("standing approval of this exact scope for the mission's lifeti
                  "critique or pause or abandon the mission. It is not a one-time execution")
 
 
+# A goal plan node may require a function rather than one implementation: ``"<function>@function"`` is
+# present when any registered implementation of the function is usable, and a woken goal missing it asks
+# Genesis to form it (``_form_requested``).
+FUNCTION_VERSION = "function"
+
+
 class _Genomes:
     """egregore.gps capability view over GREG's one CapabilityRegistry (present = registered + usable)."""
 
@@ -89,6 +95,9 @@ class _Genomes:
         self.registry = registry
 
     def get(self, name, version):
+        if version == FUNCTION_VERSION:
+            return next((m for m in self.registry.by_function(name) if self.registry.usable(m.capability_id)[0]),
+                        None)
         m = self.registry.manifests.get(name)
         return m if m is not None and m.version == version and self.registry.usable(name)[0] else None
 
@@ -1025,7 +1034,8 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
             cid = (p.get("manifest") or {}).get("capability_id") or p.get("capability_id")
             manifest = body.registry.manifests.get(cid)
             if manifest is not None and p.get("state") in CAPABILITY_USABLE:
-                for mid, waiting in _blocked_on(body, book, manifest.function):
+                for mid, waiting in _blocked_on(body, book, manifest.function) \
+                        + _goal_formations(body, manifest.function):
                     latest[(mid, f"capability:{waiting}")] = (rec.payload["event_id"], p.get("at") or rec.ts_utc,
                                                               rec.hash, p["state"], "attributed")
         elif t == "greg.external.ingested" and not p.get("quarantined"):
@@ -1064,6 +1074,82 @@ def _blocked_on(body, book: MissionBook, function: str) -> list[tuple[str, str]]
         if function in (waiting, engine):
             out.append((mid, waiting))
     return out
+
+
+def _goal_formations(body, function: str) -> list[tuple[str, str]]:
+    """(mission, function) for open deficits a goal asked Genesis to form, on ``function`` directly or on a
+    construction whose engine provides it: their mission is not blocked, but the goal waits on them."""
+    genesis = getattr(body, "genesis", None)
+    if genesis is None:
+        return []
+    resolved = {e.payload["deficit_id"] for e in body.journal.replay("deficit.resolved")}
+    out = set()
+    for e in body.journal.replay("deficit.opened"):
+        p = e.payload
+        if p.get("requested_by_goal") and p["deficit_id"] not in resolved \
+                and function in (p["function"], genesis.construction_engine(p["function"])):
+            out.add((p["mission_id"], p["function"]))
+    return sorted(out)
+
+
+def _form_requested(body, reg: GoalRegistry, facts: FounderFacts, woken, at: datetime) -> list[dict]:
+    """A woken goal whose active plan node requires ``<function>@function`` that no usable implementation
+    serves asks Genesis to form it, under the first open, unpaused mission the goal binds.
+
+    Formation only (``Genesis.form_for_goal``): the result is VERIFIED and waits for your signed attach;
+    no auto_attach, no builder, no spend, no scope. A function a person performs (``asks.human_work``),
+    one Genesis cannot form without a builder, a revoked capability and a stopped goal are left alone."""
+    genesis = getattr(body, "genesis", None)
+    if genesis is None:
+        return []
+    book = body.engine.book
+    out = []
+    for gid in woken:
+        if gid not in facts.admitted or facts.stopped(gid) is not None:
+            continue
+        state = reg.state(gid)
+        revoked = set(state.preferences.get("revoked_capabilities", []))
+        for cap in state.missing_capabilities:
+            function, _, version = cap.partition("@")
+            if version != FUNCTION_VERSION or cap in revoked or not genesis.formable(function) \
+                    or asks.human_work(function) is not None:
+                continue
+            mission = next((m for mid in sorted(reg.get(gid).authority.get("missions", []))
+                            if (m := book.missions.get(mid)) is not None and m.status not in TERMINAL
+                            and not m.paused), None)
+            if mission is None:
+                continue
+            found = genesis.form_for_goal(goal_id=gid, mission=mission, function=function, now=at,
+                                          purpose=f"goal {gid[:23]} plan node {state.active_node_id} requires "
+                                                  f"{function}")
+            out.append({"goal_id": gid, "function": function, "mission_id": mission.mission_id,
+                        "serving": found.capability_id if found is not None else None})
+    return out
+
+
+def _close_goal_formations(body, at: datetime) -> list[str]:
+    """Resolve each open goal-requested deficit once an attached, usable implementation serves its function
+    (attached by your signed command): the goal's plan then reads the function present."""
+    genesis = getattr(body, "genesis", None)
+    if genesis is None:
+        return []
+    resolved = {e.payload["deficit_id"] for e in body.journal.replay("deficit.resolved")}
+    closed = []
+    for e in body.journal.replay("deficit.opened"):
+        p = e.payload
+        if not p.get("requested_by_goal") or p["deficit_id"] in resolved:
+            continue
+        serving = genesis.find_attached(p["function"])
+        if serving is None:
+            continue
+        body.journal.record("deficit.resolved", {"deficit_id": p["deficit_id"],
+                                                 "capability_id": serving.capability_id,
+                                                 "mission_id": p["mission_id"],
+                                                 "resume": f"goal {p['requested_by_goal']}", "at": iso(at)},
+                            key=[p["deficit_id"], "resolved"])
+        resolved.add(p["deficit_id"])
+        closed.append(p["deficit_id"])
+    return closed
 
 
 def _sensor_receipt(ledger, gate: dict, m, check: dict, receipt_hash: str):
@@ -1162,6 +1248,9 @@ def _tick(body, now: datetime) -> dict:
     extra = {"pulls_released": released} if released else {}
     refusals = _settle(body, reg, facts, at)
     signals, end = _sense(body, loop, held.cursor)
+    closed = _close_goal_formations(body, at)    # after sensing: the attach that closes one still wakes its goal
+    if closed:
+        extra["formations_closed"] = closed
     reopened = _reopen(reg, facts, signals, at)
     if not (signals or reg.due_for_review(at) or reg.by_status("awake")):
         held.cursor = end
@@ -1171,6 +1260,8 @@ def _tick(body, now: datetime) -> dict:
                      evidence_confidence=1.0)   # an upper bound only: body mode derives it from world evidence
     held.cursor = end                              # advanced only after the turn succeeded
     pulled = _activate(body, held, turn, at)
+    formed = _form_requested(body, reg, facts, turn.woken, at)
+    extra.update({"formation_requested": formed} if formed else {})
     return {"state": turn.status, "turn_id": turn.turn_id, "woken": list(turn.woken), "missions_pulled": pulled,
             "asked": list(held.store.asked), "wake_refused": [w["goal_id"] for w in turn.wake_refused],
             "quarantined": quarantined, "refusals_mirrored": refusals, "reopened": reopened, **extra}

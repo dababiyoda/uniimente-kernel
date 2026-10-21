@@ -343,6 +343,26 @@ CAPABILITY_PERCEPTION_MUTANTS = [
      'rec.hash, p["state"], "attributed")', 'rec.hash, p["state"] != "QUARANTINED", "attributed")'),
 ]
 
+GOAL_FORMATION_TESTS = ["tests/integration/test_greg_goal_requests_formation.py"]
+GOAL_FORMATION_MUTANTS = [
+    ("a goal's formation request rides the mission's auto_attach", "greg/genesis.py",
+     "request.\n        if self._form_only:", "request.\n        if False:"),
+    ("a goal's formation request commissions the builder", "greg/genesis.py",
+     "        if self._form_only:\n            self._route(deficit_id, \"builder\"",
+     "        if False:\n            self._route(deficit_id, \"builder\""),
+    ("a goal does not perceive the formation it asked for", "greg/goal_gravity.py",
+     "            out.add((p[\"mission_id\"], p[\"function\"]))\n    return sorted(out)",
+     "            out.add((p[\"mission_id\"], p[\"function\"]))\n    return []"),
+    ("an attached implementation never closes the goal's deficit", "greg/goal_gravity.py",
+     "        serving = genesis.find_attached(p[\"function\"])\n        if serving is None:",
+     "        serving = genesis.find_attached(p[\"function\"])\n        if True:"),
+    ("a function requirement never reads present", "greg/goal_gravity.py",
+     "        if version == FUNCTION_VERSION:", "        if False:"),
+    ("a stopped goal still asks for formation", "greg/goal_gravity.py",
+     "        if gid not in facts.admitted or facts.stopped(gid) is not None:\n            continue\n        state",
+     "        if gid not in facts.admitted:\n            continue\n        state"),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS),
           ("mind construction", MIND_CONSTRUCTION_TESTS, MIND_CONSTRUCTION_MUTANTS),
@@ -351,7 +371,8 @@ GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("founder tier", FOUNDER_TIER_TESTS, FOUNDER_TIER_MUTANTS),
           ("founder tier (body)", FOUNDER_TIER_BODY_TESTS, FOUNDER_TIER_BODY_MUTANTS),
           ("closure integrity", CLOSURE_INTEGRITY_TESTS, CLOSURE_INTEGRITY_MUTANTS),
-          ("capability perception", CAPABILITY_PERCEPTION_TESTS, CAPABILITY_PERCEPTION_MUTANTS)]
+          ("capability perception", CAPABILITY_PERCEPTION_TESTS, CAPABILITY_PERCEPTION_MUTANTS),
+          ("goal-requested formation", GOAL_FORMATION_TESTS, GOAL_FORMATION_MUTANTS)]
 
 
 def main() -> int:

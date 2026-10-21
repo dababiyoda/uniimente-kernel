@@ -12,7 +12,7 @@
     "interface_detached": true,
     "persistent_runtime": true,
     "real_capability": true,
-    "approval_boundary": false,
+    "approval_boundary": true,
     "interruption_survived": true,
     "appraised_verified": true,
     "founder_accepted": false,
@@ -22,7 +22,6 @@
     "fixture_evidence": false,
     "counts": false,
     "missing": [
-     "approval_boundary",
      "founder_accepted",
      "founder_body"
     ],

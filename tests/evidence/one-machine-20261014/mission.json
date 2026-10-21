@@ -112,7 +112,7 @@
    "sensor": {
     "capability": "fs.read",
     "params": {
-     "path": "/tmp/pytest-of-root/pytest-1199/test_one_signed_mission_runs_t0/body/workspace/m_one-machine-staff-om/handoff-record-staff-om.md"
+     "path": "/tmp/claude-0/omdbg/test_one_signed_mission_runs_t0/body/workspace/m_one-machine-staff-om/handoff-record-staff-om.md"
     },
     "target": "fs:handoff-record-staff-om.md"
    },
@@ -207,7 +207,7 @@
    "params": {
     "order": "record-staff-om",
     "mode": "repository",
-    "repo": "/tmp/pytest-of-root/pytest-1199/test_one_signed_mission_runs_t0/data/sandbox",
+    "repo": "/tmp/claude-0/omdbg/test_one_signed_mission_runs_t0/data/sandbox",
     "objective": "Record GREG's certified plan for problem.json in plan/plan.json (the assignment exactly as certified) and add tests/test_plan.py that checks it against problem.json from first principles: every assignment uses an eligible skill, no worker exceeds capacity, no order receives more than its demand, the staffed total equals the plan's claim, and no feasible assignment staffs more (exhaustive search; do not import GREG).",
     "acceptance": {
      "run_changed_tests": true,
@@ -282,7 +282,7 @@
   ],
   "max_consequence_class": "internal_write",
   "budget_usd": 0.05,
-  "horizon": "2026-10-22T12:41:16.593498Z"
+  "horizon": "2026-10-22T14:13:57.287369Z"
  },
  "auto_attach": {
   "max_consequence_class": "read_only"

@@ -159,6 +159,14 @@ def test_no_test_fixture_or_pilot_touches_a_held_out_seed_of_the_same_generator(
     assert not held & (declared - set(range(10))), "a declared development range overlaps held-out data"
 
 
+def test_the_l124_review_range_is_declared_in_its_readme_and_disjoint_from_other_declared_ranges():
+    assert L.DECLARED_DEV_RANGES[(9400, 9439)] == "docs/evidence/greg-genome-l124-absent-2026-10-21/README.md"
+    assert "9400-9439" in (ROOT / L.DECLARED_DEV_RANGES[(9400, 9439)]).read_text()
+    spans = sorted(L.DECLARED_DEV_RANGES)
+    assert all(a[1] < b[0] for a, b in zip(spans, spans[1:])), "declared development ranges overlap"
+    assert not any(lo <= s <= hi for lo, hi in L.FORBIDDEN for s in range(9400, 9440))
+
+
 def test_counts_add_up_and_every_role_is_known():
     recs = LEDGER["exposures"]
     assert LEDGER["counts"]["exposures"] == len(recs) == len({r["id"] for r in recs})

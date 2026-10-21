@@ -233,8 +233,11 @@ CR_HELDOUT_SEEDS = tuple(range(7300, 7390))
 # held-out items (a review-seed pilot measured that 90 leaves a real advantage kept about half the time).
 CR_SPLITS = {"cycle-3": (CR_TRAIN_SEEDS, CR_HELDOUT_SEEDS),
              "cycle-4": (tuple(range(7400, 7460)), tuple(range(7500, 7590))),
-             "cycle-5": (tuple(range(7600, 7660)), tuple(range(7700, 7880)))}
-CR_CURRENT_SPLIT = "cycle-5"
+             "cycle-5": (tuple(range(7600, 7660)), tuple(range(7700, 7880))),
+             # cycle 6 (pre-registered 2026-10-21): 120 train and 240 held-out items, the sizes two review-seed pilots
+             # chose by rules declared before each ran (docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot)
+             "cycle-6": (tuple(range(7880, 8000)), tuple(range(8060, 8300)))}
+CR_CURRENT_SPLIT = "cycle-6"
 
 
 def cr_target() -> Target:

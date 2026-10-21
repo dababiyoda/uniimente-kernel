@@ -1099,7 +1099,6 @@ def test_the_cycle_5_split_is_fresh_and_checked_without_generating_an_instance(m
     def refuse(seed):
         raise AssertionError(f"generated instance {seed}")
     monkeypatch.setattr(D, "constraint_release_instance", refuse)
-    assert E.CR_CURRENT_SPLIT == "cycle-5"
     train, held, reserved = E.cr_split_seeds("cycle-5")
     assert (train, held) == (tuple(range(7600, 7660)), tuple(range(7700, 7880)))     # the pre-registered split
     earlier = {s for name in ("cycle-3", "cycle-4") for part in E.CR_SPLITS[name] for s in part}
@@ -1128,6 +1127,26 @@ def test_the_cycle_5_split_is_fresh_and_checked_without_generating_an_instance(m
 
 # instance generation, truths, stress sets and method, byte-identical at cycle 4's commit 2cbb43d and at c8d1fd3
 GENERATION_CODE_SHA256 = "e3c174b08e368a831f5c13f7ffc1e7ba3bc7e14862443b699e0822aa99b7cb41"
+
+
+def test_the_cycle_6_split_is_fresh_and_checked_without_generating_an_instance(monkeypatch):
+    from greg.cognition.genomes import admission, developmental as D
+
+    def refuse(seed):
+        raise AssertionError(f"generated instance {seed}")
+    monkeypatch.setattr(D, "constraint_release_instance", refuse)
+    assert E.CR_CURRENT_SPLIT == "cycle-6"
+    train, held, reserved = E.cr_split_seeds("cycle-6")
+    assert (train, held) == (tuple(range(7880, 8000)), tuple(range(8060, 8300)))    # the pre-registered split
+    earlier = {s for name in ("cycle-3", "cycle-4", "cycle-5") for part in E.CR_SPLITS[name] for s in part}
+    others = earlier | set(E.IMMUNE_TRAIN_SEEDS) | set(E.IMMUNE_HELDOUT_SEEDS) | set(admission.DEV_SEEDS) | \
+        set(admission.HELDOUT_SEEDS) | admission.spent_seeds()
+    assert others <= reserved and not (set(train) | set(held)) & others
+    assert set(train) | set(held) <= set(admission.P8_RESERVED) and not set(held) & set(range(3000, 4000))
+    # its freeze (2026-10-16-cr-6) is committed and the cycle looked once, so the split is spent
+    spent = E._spent_heldout("constraint_release")
+    assert any("2026-10-16-cr-6" in key for key, ids in spent.items() if {f"s{s}" for s in held} <= set(ids))
+    assert {f"s{s}" for s in held} <= E._registered_heldout("constraint_release")
 
 
 def test_earlier_constraint_release_splits_and_the_seal_code_are_unchanged():

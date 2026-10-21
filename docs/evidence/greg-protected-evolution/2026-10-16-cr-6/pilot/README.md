@@ -59,3 +59,32 @@ held-out step.
 3. **Held-out size:** 240. Pilot 1 shows 240 retains more often than 180 under every rule.
 4. The rule, the gates and the thresholds are unchanged. Whatever the pilot shows, it is disclosed in cycle 6's
    pre-registration.
+
+## Pilot 2 result (2026-10-21)
+
+Files: `lineages-U1.json` (train 3500-3619) and `lineages-U2.json` (train 3620-3739), each 3 search seeds, pool
+3740-3999; `summary-2.json`.
+
+| Rule | P(RETAIN) n=180 | n=240 | by train set (n=180) |
+|---|---:|---:|---|
+| mean/1 | 0.562 | **0.632** | 0.297, 0.828 |
+| netwins/1 | 0.686 | 0.784 | 0.544, 0.829 |
+| trimmed/1 | 0.634 | 0.719 | 0.436, 0.833 |
+| median/1 | 0.616 | 0.685 | 0.346, 0.885 |
+| signtest/1, stress-signtest/1 | 0.502 | 0.558 | 0.175, 0.829 |
+| stress-mean/1 | as mean/1 | | |
+
+**Applied as declared:**
+- **Train size: 120.** `mean/1` at n = 240 is 0.632, above pilot 1's 0.614, and neither 120-item set falls below
+  0.229.
+- **Selection: `mean/1`.** `netwins/1` beats it by 0.124 in pilot 2, but lost by 0.353 in pilot 1. The declared bar
+  was at least 0.10 in both pilots.
+
+**What this does not show:**
+- **The train-size gain is small.** 0.632 against 0.614 rests on 6 and 9 simulated cycles, and cycle 5's pilot found
+  the opposite direction (0.592 for 120 items against 0.699 for 60, three runs each). The honest reading is that
+  train size between 60 and 120 has no measurable effect. 120 is used because the declared rule says so.
+- **The rule ranking is unstable between pilots.** `netwins/1` is last in pilot 1 and first in pilot 2. No selection
+  rule is shown to be better than `mean/1`.
+- **What is stable:** the outcome depends mostly on the train draw (0.23 to 0.87 across five train sets), and
+  restart-heavy picks are the ones that retain.

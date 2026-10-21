@@ -95,6 +95,25 @@ def test_required_steps_are_never_priced_away_and_optional_ones_must_fit_their_m
     assert Controller(5, clock=clock).allot("x", required=False) == 5   # no measurement yet: nothing to price
 
 
+def test_planning_time_before_the_first_step_never_reaches_its_limit():
+    """The first step's limit travels inside the inner request, hence inside the settled claim's input digest; if
+    planning time reached it, one answer re-observed after a restart would settle twice
+    (tests/integration/test_greg_whole_machine_trace.py)."""
+    limits = []
+    for planning in (0.0, 0.0137, 2.5):
+        clock = Clock()
+        b = Controller(20, clock=clock)
+        clock.now = planning
+        limits.append(b.allot("answer", required=True))
+        clock.now += 3
+        b.done("answer")
+        assert b.remaining() == pytest.approx(17) and b.summary()["spent_s"] == pytest.approx(3)
+    assert limits == [20, 20, 20]
+    ticking = iter(x / 1e6 for x in range(10**6))                # a real clock moves between any two reads
+    assert Controller(20, clock=lambda: next(ticking)).allot("answer", required=True) == 20
+    assert Controller(20, clock=Clock()).summary()["spent_s"] == 0.0
+
+
 def test_one_budget_covers_the_whole_compiled_decision(registry, timed, monkeypatch):
     r = compile_(registry, {**SENSITIVE, "latency_budget": 40}, MODEL)
     assert r["state"] == "WORLD_UNVERIFIED" and isinstance(r["result"], dict)

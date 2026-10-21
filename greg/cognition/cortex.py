@@ -12,7 +12,7 @@ import time
 
 from .catalog import FAMILIES, NATIVE_QUALIFIED
 from .contracts import (CognitionError, CognitiveCapabilityProfile, CognitiveReceipt, ConsequenceVector,
-                        ProblemGeometry, canonical, digest, strict_data, retained_data)
+                        ProblemGeometry, canonical, digest, outcome_state_for, strict_data, retained_data)
 from .verification import metaconsensus, verify
 from .budget import ThinkingBudget, validate_request
 from cortex.outcomes import classify_greg
@@ -176,7 +176,7 @@ def independent_verify(family, data, answer, proof_class, geometry):
 
 
 def reason(params, *, registry, journal=None, model_config=None, forced_family=None,
-           caller_window=None, shared_deadline=None, shared_compute_limit=None):
+           caller_window=None, shared_deadline=None, shared_compute_limit=None, trusted_clock=False):
     if isinstance(params, dict) and "compile" in params:
         # Layer 5 Competency Compiler: geometry -> smallest competent method or composition, run back
         # through this same entry; constitutional pre-filter and human route before any optimisation.
@@ -195,7 +195,8 @@ def reason(params, *, registry, journal=None, model_config=None, forced_family=N
         from .bridge import reason_cortex
         return reason_cortex(params, registry=registry, journal=journal, model_config=model_config,
                              forced=forced_family, caller_window=caller_window,
-                             shared_deadline=shared_deadline, shared_compute_limit=shared_compute_limit)
+                             shared_deadline=shared_deadline, shared_compute_limit=shared_compute_limit,
+                             trusted_clock=trusted_clock)
     started, cpu_started = time.monotonic(), _cpu_seconds()
     geometry, consequences = compile_problem(params)
     rows = candidates(params, geometry, registry, journal)
@@ -309,7 +310,7 @@ def reason(params, *, registry, journal=None, model_config=None, forced_family=N
         evaluator_result=evaluator,
         authority_refs=authority_refs, reason_code=reason_code, stopping_reason=budget_plan["stop_reason"],
         formal_validity=answer.get("formal_validity", "NOT_APPLICABLE") if answer else "NOT_APPLICABLE",
-        outcome_state="ANSWERED_WITHIN_SCOPE" if state == "NONE" else "ESCALATE" if state == "HUMAN_REVIEW_REQUIRED" else "CONDITIONAL_RESULT" if state == "WORLD_UNVERIFIED" else "ABSTAIN",
+        outcome_state=outcome_state_for(state),
         model_provenance=answer.get("proof", {}).get("model_provenance") if answer else None,
         formalization_coverage={"represented": params["data"].get("requirements", []), "omissions": list(geometry.omitted_conditions),
                                 "review": "encoded property only; general completeness undecidable"},
@@ -328,8 +329,13 @@ def solve(params, ctx):
     if family.startswith("cortex.") and isinstance(params, dict) and "problem" in params:
         forced = ctx.manifest.capability_id   # a signed mission may pin one cortex organ
     try:
-        return reason(params, registry=ctx.capability_registry or registry_view(ctx.journal), journal=ctx.journal,
-                      model_config=ctx.cognition_model, forced_family=forced, caller_window=ctx.cognition_budget)
+        # A signed mission decides now: a forwarded mandate's expiry is judged at the body clock (cortex 0.2.2),
+        # on every route the request takes to the cortex.
+        from .bridge import signed_path
+        with signed_path():
+            return reason(params, registry=ctx.capability_registry or registry_view(ctx.journal),
+                          journal=ctx.journal, model_config=ctx.cognition_model, forced_family=forced,
+                          caller_window=ctx.cognition_budget)
     except (CognitionError, TypeError, ValueError, KeyError) as exc:
         raise CapabilityError(f"invalid cognitive request: {exc}") from exc
 
@@ -346,13 +352,15 @@ def compose(params, ctx):
     registry = ctx.capability_registry or registry_view(ctx.journal)
     shared_deadline = time.monotonic() + min(30, ctx.cognition_budget.latency_ceiling_seconds if ctx.cognition_budget else 30)
     remaining_compute = min(100000, ctx.cognition_budget.compute_ceiling_operations if ctx.cognition_budget else 100000)
+    from .bridge import signed_path
     try:
         receipts = []
         for request in params["requests"]:
             allocated = min(remaining_compute, request.get("geometry", {}).get("compute_limit", 10000))
-            child = reason(request, registry=registry, journal=ctx.journal, model_config=ctx.cognition_model,
-                           caller_window=ctx.cognition_budget, shared_deadline=shared_deadline,
-                           shared_compute_limit=allocated)
+            with signed_path():   # a signed mission decides now, through composition too (cortex 0.2.2)
+                child = reason(request, registry=registry, journal=ctx.journal, model_config=ctx.cognition_model,
+                               caller_window=ctx.cognition_budget, shared_deadline=shared_deadline,
+                               shared_compute_limit=allocated)
             receipts.append(child)
             if child.get("compute_cost", {}).get("budget_plan", {}).get("seed_attempted"):
                 remaining_compute -= allocated  # reserve ceiling; actual operations remain unknown

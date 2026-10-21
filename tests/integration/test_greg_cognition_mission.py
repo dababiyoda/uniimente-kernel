@@ -274,7 +274,11 @@ def test_a_re_digested_compile_receipt_must_list_its_selected_receipt():
 def test_a_world_unverified_compile_settles_no_competence_although_its_organ_answered(tmp_path):
     """Review 2026-10-14: a high-consequence compile that runs a cortex organ ends WORLD_UNVERIFIED while the
     organ's own receipt answered NONE and verified. Only the compile-state check keeps that conditional result out
-    of settlement, and no test pinned it. The mission is achieved and appraised; nothing is credited."""
+    of settlement, and no test pinned it. The mission is achieved and appraised; nothing is credited.
+
+    Cortex 0.2.2 forwards the compile's declared class to the organ, so a financial class now escalates there and
+    the organ no longer answers. The case this test pins (the compile conditional, its organ answered) is a high
+    harm the cortex's own rule does not raise to a class: a reputation harm of 0.6 under internal_write."""
     from greg.cognition.contracts import digest
     from greg.cognition.settlement import _compiled, measured_outcomes
     saas = {"target": {"name": "spend", "unit": "USD/year"},
@@ -282,8 +286,9 @@ def test_a_world_unverified_compile_settles_no_competence_although_its_organ_ans
                           {"name": "price", "unit": "USD/count/month", "low": 20, "high": 35}],
             "expression": ["*", "seats", "price"]}
     home, key, body_id, _ = make_body(tmp_path)
-    params = {"problem_id": "real:conditional", "compile": {"geometry": {"consequence_class": "financial"},
-                                                            "data": {"estimation_model": saas}}}
+    params = {"problem_id": "real:conditional", "compile": {"geometry": {"consequence_class": "internal_write"},
+                                                            "data": {"estimation_model": saas},
+                                                            "consequence": {"reputation": 0.6}}}
     spec = mission("m:conditional", checks=[{
         "check_id": "conditional", "description": "the compiled estimate is a conditional result",
         "sensor": {"capability": "cognition.solve", "target": "cognition:conditional", "params": params},

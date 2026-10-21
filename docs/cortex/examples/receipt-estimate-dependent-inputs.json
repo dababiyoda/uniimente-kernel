@@ -68,6 +68,8 @@
     "note": "mandatory checks are never traded for cost; only optional deeper cognition is gated on its chance of changing the decision",
     "policy": "cortex-thinking-budget/0.1"
   },
+  "capability_deficit": null,
+  "coverage": "complete",
   "created_at": "2026-09-30T00:00:00Z",
   "disposition": {
     "kind": "recommend",
@@ -133,7 +135,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.291448,
+    "seconds": 0.305697,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -270,7 +272,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 0.28818,
+          "seconds": 0.300822,
           "solver_calls": 0,
           "usd": 0.0
         },
@@ -417,12 +419,16 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:40c0c47b4e9ff4848aacd410827d1dc339ede32eef27794e03c5009d9ec258a9",
+  "receipt_id": "sha256:6f71ad39b41ed0832a3c9a3071eff1c668351d1b0510b3c71d7ff514c16133a2",
   "route": {
     "attempts": [],
     "composition": false,
+    "dropped_by_cap": [],
     "formal_plan": null,
-    "policy": "cortex-route-policy/0.2.1",
+    "part_geometries": {
+      "cortex.estimation.fermi@0.1.0": "estimate"
+    },
+    "policy": "cortex-route-policy/0.2.2",
     "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
     "selected": [
       "cortex.estimation.fermi@0.1.0"
@@ -462,8 +468,8 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.2.1",
-    "policy": "cortex-route-policy/0.2.1",
+    "cortex": "0.2.2",
+    "policy": "cortex-route-policy/0.2.2",
     "routes": {
       "cortex.estimation.fermi@0.1.0": "0.1.0"
     }

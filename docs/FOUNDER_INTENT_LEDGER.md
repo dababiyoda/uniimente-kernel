@@ -2,6 +2,27 @@
 
 # Founder Intent Ledger
 
+## Seed Cortex 0.2.2 on GREG's path, stacked on #184 — 2026-10-21
+
+Faithful summary, not verbatim and not founder authentication. Repetition adds no authority.
+
+| Required field | INTENT-20261021-seed-cortex-on-greg-path |
+| --- | --- |
+| statement | Bring the Seed Cortex 0.1.6 repairs (#167) onto GREG's mission path, verify every further finding independently, and leave the line sound for the first measured capability dividend |
+| source_refs | 2026-10-13 founder directive (sha256 `de5db69c...`, preserved on #167); `INTENT-20261019-UPWARD-ASCENT` (#190); the "Resume" of 2026-10-21 |
+| owner | Alfonso Lopez; cortex and GREG cognition maintainers implement |
+| state | active |
+| binding_scope | `cortex/` 0.2.2, `greg/cognition/` bridge, compiler, seed path and evaluation harnesses; draft PR stacked on #184 |
+| constitutional_constraints | cognition proposes and never authorizes; no new authority, spend, contact or merge; one authority, many governed capabilities; preserve every superseded freeze and result |
+| success_evidence | `tests/unit/test_cortex_seed_ports.py`, `tests/unit/test_greg_seed_port_paths.py` (fail on `900c6ae`; the adversarial review's 19 findings each fail on `1f1e688`); 65 new mutants caught; held-out routed quality 0.964 with 0 critical errors unchanged; crossgeo development and selection dispositions unchanged; seed replay 120/120 at `freeze-v12.json` |
+| failure_evidence | none of the repairs shows a gain on the frozen suites (they close failure classes the suites do not contain); model baselines not run (no local model) |
+| dependencies | #184 (base); #167 (source lineage); the capability dividend PR that follows |
+| conflicts | a contradicted declaration: Genesis deficit here, abstention in 0.1.6; a deficit verified within one receipt here, by recurrence in 0.1.6 (founder decisions, recorded in `docs/cortex/SEED_CORTEX_PORT_0.2.2.md`) |
+| next_review_trigger | founder review of the draft PR; the dividend PR's pre-registered run |
+| supersedes | none (0.2.1 and `freeze-v11.json` kept as lineage) |
+| superseded_by | none |
+| implementation_refs | `docs/cortex/SEED_CORTEX_PORT_0.2.2.md`, `docs/cortex/seed-cortex-port-0.2.2.json` |
+
 ## FABLE 5.1 OPUS MAXIMUS: one GREG, stacked on #178 — 2026-10-15
 
 `INTENT-20261014-FABLE-OPUS-MAXIMUS` ([record](intent/INTENT-20261014-FABLE-OPUS-MAXIMUS.json), [verbatim prompt](intent/sources/FABLE-5-1-MASTER-BUILD-PROMPT-2026-10-14-source.md)): the greatest technically defensible realization of BODY + ORGANS + MIND on one canonical reviewable trunk, with no parallel GREG. Deliverables A-L are in [`opus-maximus/`](opus-maximus/). Convergence decision: [stack on #178](collaboration/deliberation-opus-maximus-converge-on-178-20261015.json) instead of running a second trunk.

@@ -1169,3 +1169,8 @@ def test_a_formed_answer_carries_its_own_receipt_and_poor_settled_outcomes_demot
     assert demoted["state"] == "ANSWERED" and demoted["method_or_composition_selected"] == SCIPY
     assert [d["method"] for d in demoted["methods_demoted"]] == [SCIPY]
     assert any(d.startswith(f"{SCIPY}: settled outcomes on this body: 1 of 12") for d in demoted["dissent"])
+    # the compile receipt itself carries the basis and the dissent (whole-machine trace gap, #158, 2026-10-21)
+    assert demoted["conditional_competence_basis"][SCIPY] == {"settled": 12, "correct": 1, "laplace": 0.1429}
+    assert inner["strongest_counterargument"] in demoted["dissent"]
+    assert r["conditional_competence_basis"][SCIPY] == "no settled outcomes in this journal"
+    assert inner["strongest_counterargument"] in r["dissent"]

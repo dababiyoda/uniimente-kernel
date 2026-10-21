@@ -47,6 +47,12 @@ P6_RUNS = (
     # F7 with flow_expansion_mcf (2026-10-16): the admitted single genome against the recipe on v4's held-out
     # items, a declared re-use. It measures no recipe lift, so it replaces no recipe verdict; it is a listed source.
     ("docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/results-v6.json", {}),
+    # P6 converged v1 (2026-10-21): the synthetic families re-measured on the converged tree, fresh held-out seeds,
+    # against the strongest single available (constituents plus flow_expansion_mcf on F3). Its verdicts bind the
+    # recipe code at its freeze commit and decide, since it is the latest measurement of these recipes.
+    ("docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json",
+     {"F1": "estimate_then_optimize", "F2R": "identify_then_optimize", "F3": "graph_then_allocate",
+      "F4": "bayes_then_voi"}),
 )
 # In finish order; the last decides. PR #155's decisive retest (NO_GAIN, 2026-10-14) follows #158's (REGRESSION,
 # 2026-10-08); both are kept in ``history`` and neither is a gain, so the default stays shadow.
@@ -71,6 +77,22 @@ def _git(commit: str | None, path: str) -> str | None:
         return None
     out = subprocess.run(["git", "show", f"{commit}:{path}"], cwd=ROOT, capture_output=True, text=True)
     return out.stdout if out.returncode == 0 else None
+
+
+# A run whose report omitted its limits block declares them in a sidecar committed after the run, never by
+# rewriting the frozen report (P6 converged v1, 2026-10-21).
+LIMITS_SIDECARS = {"docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json":
+                   "docs/evidence/greg-composition-lift/2026-10-21-converged/limits-converged-v1.json"}
+
+
+def run_limits(rel: str) -> list[str]:
+    """The frozen run's own limits: its report's block, else its declared sidecar's."""
+    data = json.loads((ROOT / rel).read_text())
+    if "limits" in data:
+        return data["limits"]
+    sidecar = json.loads((ROOT / LIMITS_SIDECARS[rel]).read_text())
+    assert sidecar["of"] == rel and sidecar["added_after_run"] is True
+    return sidecar["limits"]
 
 
 def p6_instances(data: dict, family: str) -> set:

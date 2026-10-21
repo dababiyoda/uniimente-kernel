@@ -44,6 +44,7 @@ import subprocess
 import sys
 import time
 
+from greg import evidence_strength
 from greg.capabilities import CapabilityError, InvocationContext, _inside, run_isolated
 
 # Surfaces a worker may never change on its own: authority, permission semantics, approval
@@ -53,6 +54,7 @@ PROTECTED_SURFACES = (
     "policy/*", "constitution/*", "authority/*", "identity/*", "provenance/*", "contracts/*",
     "greg/authority.py", "greg/founder.py", "greg/lightcone.py", "greg/appraisal.py", "greg/workers.py",
     "greg/capabilities.py", "greg/body.py", "greg/missions.py", "greg/genesis.py", "greg/asks.py",
+    "greg/evidence_strength.py", "foundry/systems/repair.py",
     "AGENTS.md", "CLAUDE.md", "*/AGENTS.md", "*/CLAUDE.md", "docs/FOUNDER_*", "docs/intent/*",
     ".github/*", "tools/offline_test.py", "conftest.py",
 )
@@ -590,7 +592,7 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
         verdict = "REJECTED"
     elif spend["status"] == "unknown":
         findings.append(spend["reason"])
-    with_tests = []
+    with_tests, strength = [], None
     import tempfile
     with tempfile.TemporaryDirectory(prefix="greg-appraise-") as tmp:
         fresh = Path(tmp) / "fresh"
@@ -624,12 +626,33 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
             findings.append("more files changed than the order allows")
             verdict = "REJECTED"
         if order["mode"] == "repository":
-            with_tests = run_tests(acceptance_commands(order["acceptance"], names), fresh,
-                                   timeout=min(int(order["timeout_seconds"]), 1200))
+            # Sealed oracle: what the founder named as the judge is judged as it was at the base.
+            base_files = set(_git(fresh, "ls-tree", "-r", "--name-only", base).stdout.split())
+            tampered = sorted(n for n in names if n in evidence_strength.sealed_paths(order["acceptance"], base_files))
+            if tampered:
+                findings.append(f"the patch edits its sealed acceptance oracle {tampered}; the founder's version "
+                                "is what was run")
+                verdict = "REJECTED"
+                _git(fresh, "checkout", "--quiet", base, "--", *tampered)
+            timeout = min(int(order["timeout_seconds"]), 1200)
+            with_tests = run_tests(acceptance_commands(order["acceptance"], names), fresh, timeout=timeout)
             failed = [t for t in with_tests if not t["passed"]]
             if failed:
                 findings.append(f"{len(failed)} acceptance command(s) failed in the independent clone")
                 verdict = "REJECTED"
+            # The worker's own tests are acceptance only if they can tell its change from no change
+            # and from a corrupted version of it.
+            authored = evidence_strength.worker_tests(names)
+            if verdict == "ACCEPTED" and order["acceptance"].get("run_changed_tests") and authored:
+                base_clone = Path(tmp) / "base"
+                private_clone(repo, summary["base_commit"], base_clone)
+                strength = evidence_strength.judge(
+                    fresh=fresh, base_clone=base_clone, patch=Path(tmp) / "change.patch", base=base, names=names,
+                    command=acceptance_commands({"run_changed_tests": True}, names)[-1], git=_git,
+                    run_tests=run_tests, timeout=min(timeout, 300))
+                if strength["findings"]:
+                    findings.extend(strength["findings"])
+                    verdict = "REJECTED"
         else:
             out = fresh / order["acceptance"]["output"]
             if not out.is_file():
@@ -646,5 +669,5 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
             "independence": "fresh clone of the source at the recorded base, retained patch re-applied, "
                             "acceptance re-run with no network; worker claim and collector tests not used",
             "worker": summary.get("worker", {}).get("identity"), "receipt_binding": receipt_binding,
-            "spend": spend,
+            "spend": spend, "evidence_strength": strength and {k: v for k, v in strength.items() if k != "findings"},
             "authority_created": False}

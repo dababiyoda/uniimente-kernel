@@ -198,4 +198,4 @@ def test_optimization_verifier_requires_the_bound_to_meet_an_optimal_objective()
     forged["proof"]["solution"] = forged["output"]["solution"]
     forged["output"]["objective_value"] = 32.0
     result = verify("optimization", data, forged, "optimization_certificate")
-    assert result["verdict"] == "REFUTED" and result["checks"]["optimality_bound_met"] is False
+    assert result["verdict"] == "REFUTED" and result["checks"]["optimal_objective_meets_its_bound"] is False

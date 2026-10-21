@@ -31,6 +31,18 @@ Admission rule (``RULE``; recorded in every evidence file):
                     wrong answers and either significantly better quality or no worse than 1.25x the
                     competitor's median latency.
 Latency is wall-clock in this container; the rule uses medians so one slow run cannot flip it.
+
+Diagnostics (recorded since 2026-10-16; reported, never inputs to ``decide`` or the rule):
+* per call, the calling thread's CPU time (``time.thread_time``) as ``cpu_seconds`` beside the wall-clock
+  ``seconds``; its window encloses the wall-clock window, which is unchanged. It counts only the calling thread:
+  work a method does on other threads or in other processes (a solver's worker threads, a multithreaded BLAS) is
+  not in it, so it can understate such a method's cost;
+* per genome, each arm's median CPU seconds (``diagnostics.median_cpu_seconds``);
+* in the results header, the host's load at the start and end of the run (``host_load``: /proc/loadavg, this
+  process's CPU affinity and the other Python processes by state).
+A loaded host inflates wall-clock latency, unevenly across arms; these fields let a reader see how loaded the
+host was and compare the CPU clock. Results written before 2026-10-16 (admission v1-v3) carry none of them, and
+every reader here accepts both shapes.
 """
 from __future__ import annotations
 
@@ -39,6 +51,7 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import platform
 import statistics
@@ -77,31 +90,42 @@ def sign_test(wins: int, losses: int) -> float:
     return 1.0 if n == 0 else sum(math.comb(n, k) for k in range(wins, n + 1)) / 2 ** n
 
 
+# Each call is timed twice: wall-clock seconds (``time.perf_counter``, the rule's latency) and the calling thread's
+# CPU seconds (``time.thread_time``, a reported diagnostic). The CPU clock is read before the wall clock starts and
+# after it stops, so the wall-clock window is the one admission always measured.
 def _candidate(item, data):
+    cpu = time.thread_time()
     started = time.perf_counter()
     try:
         out = item.solve(data, {"latency_s": 5.0, "compute": 100000})
     except (GenomeError, ValueError, TypeError, KeyError, ZeroDivisionError) as exc:
-        return None, time.perf_counter() - started, {"error": f"{type(exc).__name__}: {str(exc)[:200]}"}
+        seconds = time.perf_counter() - started
+        cpu = time.thread_time() - cpu
+        return None, seconds, cpu, {"error": f"{type(exc).__name__}: {str(exc)[:200]}"}
     seconds = time.perf_counter() - started
+    cpu = time.thread_time() - cpu
     if out["status"] != "ANSWER":
-        return None, seconds, {"status": out["status"], "missing": out["missing"]}
+        return None, seconds, cpu, {"status": out["status"], "missing": out["missing"]}
     try:
         checks = item.verify(data, out["output"], out["certificate"])
     except Exception as exc:          # a verifier crash is a failed check, never a pass
         checks = {"verifier_error": False, "detail": f"{type(exc).__name__}"}
     refuted = not all(bool(v) for k, v in checks.items() if k != "detail")
-    return out["output"], seconds, {"refuted": refuted, "checks": {k: bool(v) for k, v in checks.items()
-                                                                     if k != "detail"}}
+    return out["output"], seconds, cpu, {"refuted": refuted, "checks": {k: bool(v) for k, v in checks.items()
+                                                                          if k != "detail"}}
 
 
 def _arm(fn, data):
+    cpu = time.thread_time()
     started = time.perf_counter()
     try:
         out = fn(data)
     except (GenomeError, ValueError, TypeError, KeyError, ZeroDivisionError) as exc:
-        return None, time.perf_counter() - started, {"error": f"{type(exc).__name__}: {str(exc)[:200]}"}
-    return out, time.perf_counter() - started, {}
+        seconds = time.perf_counter() - started
+        cpu = time.thread_time() - cpu
+        return None, seconds, cpu, {"error": f"{type(exc).__name__}: {str(exc)[:200]}"}
+    seconds = time.perf_counter() - started
+    return out, seconds, time.thread_time() - cpu, {}
 
 
 def evaluate(item, seeds) -> list[dict]:
@@ -111,9 +135,9 @@ def evaluate(item, seeds) -> list[dict]:
         row = {"seed": seed, "subregion": item.subregion(data) if item.subregion else None, "arms": {}}
         for arm in ("candidate", "baseline", "competitor"):
             if arm == "candidate":
-                out, seconds, info = _candidate(item, data)
+                out, seconds, cpu, info = _candidate(item, data)
             else:
-                out, seconds, info = _arm(getattr(item, arm), data)
+                out, seconds, cpu, info = _arm(getattr(item, arm), data)
             s = item.score(data, truth, out)
             if s["category"] not in CATEGORIES:
                 raise GenomeError(f"{item.genome.intelligence_id}: score category {s['category']!r}")
@@ -121,7 +145,8 @@ def evaluate(item, seeds) -> list[dict]:
                 # A refuted answer is a false answer: strictly worse than abstaining, never a win.
                 s = {"quality": float(item.score(data, truth, None)["quality"]) - 1.0, "category": "wrong"}
             row["arms"][arm] = {"quality": float(s["quality"]), "category": s["category"],
-                                "seconds": round(seconds, 6), **({"refuted": True} if info.get("refuted") else {}),
+                                "seconds": round(seconds, 6), "cpu_seconds": round(cpu, 6),   # cpu: diagnostic
+                                **({"refuted": True} if info.get("refuted") else {}),
                                 **({"info": info} if info else {})}
         rows.append(row)
     return rows
@@ -175,6 +200,73 @@ def decide(item, rows) -> tuple[str, dict]:
     if not getattr(item, "competitor_deployable", True):
         detail["competitor_role"] = "reference upper bound (not deployable): gap reported, never superseding"
     return status, detail
+
+
+DIAGNOSTICS = ("reported diagnostics, never inputs to the admission decision: the rule decides on wall-clock "
+               "medians only. cpu_seconds is the calling thread's CPU time per call (time.thread_time; work on "
+               "other threads or processes is not in it); diagnostics.median_cpu_seconds is its median per arm; "
+               "host_load is the host's load at the start and end of the run")
+
+
+def diagnostics(rows) -> dict:
+    """Per arm, the median thread CPU seconds of ``rows``: reported beside the wall-clock medians ``decide`` uses,
+    never an input to it. Rows written before these diagnostics existed (admission v1-v3) have no ``cpu_seconds``;
+    their medians are None, never a mix of measured and missing calls."""
+    medians = {}
+    for arm in ("candidate", "baseline", "competitor"):
+        values = [r["arms"][arm].get("cpu_seconds") for r in rows]
+        medians[arm] = (round(statistics.median(values), 6) if values and all(v is not None for v in values)
+                        else None)
+    return {"median_cpu_seconds": medians, "note": DIAGNOSTICS}
+
+
+def _python_processes(cpus: set, proc: Path) -> dict | None:
+    """Other Python processes on this host, counted by the state of their main thread, and how many running ones
+    last ran on one of ``cpus``. A process is Python when its command name (<proc>/<pid>/stat) or the program it
+    was started as (the first word of <proc>/<pid>/cmdline, the interpreter for a script run by its #! line)
+    starts with "python". None without a readable ``proc``."""
+    me = os.getpid()
+    try:
+        pids = [p for p in os.listdir(proc) if p.isdigit() and int(p) != me]
+    except OSError:
+        return None
+    states, on_ours = {}, 0
+    for pid in pids:
+        try:
+            stat = (proc / pid / "stat").read_text()
+            name = stat[stat.index("(") + 1:stat.rindex(")")]
+            fields = stat[stat.rindex(")") + 2:].split()       # fields[0] is field 3 (state), fields[36] field 39
+            program = Path((proc / pid / "cmdline").read_bytes().split(b"\0")[0].decode(errors="replace")).name
+        except (OSError, ValueError):                          # the process exited while it was being read
+            continue
+        if not fields or not (name.startswith("python") or program.startswith("python")):
+            continue
+        states[fields[0]] = states.get(fields[0], 0) + 1
+        if fields[0] == "R" and len(fields) > 36 and fields[36].isdigit() and int(fields[36]) in cpus:
+            on_ours += 1
+    return {"count": sum(states.values()), "by_state": dict(sorted(states.items())),
+            "running_last_on_our_cpus": on_ours}
+
+
+def host_load(proc: Path = Path("/proc")) -> dict:
+    """How loaded the host is now: /proc/loadavg, this process's CPU affinity and the other Python processes. A
+    reported diagnostic (a loaded host inflates wall-clock latency, unevenly across arms), never an input to the
+    admission decision. A field this host cannot report is None."""
+    out = {"at": datetime.now(timezone.utc).isoformat()}
+    try:
+        one, five, fifteen, entities = (proc / "loadavg").read_text().split()[:4]
+        runnable, total = entities.split("/")
+        out["loadavg"] = {"1m": float(one), "5m": float(five), "15m": float(fifteen), "runnable": int(runnable),
+                          "entities": int(total)}
+    except (OSError, ValueError):
+        out["loadavg"] = None
+    try:
+        affinity = sorted(os.sched_getaffinity(0))
+    except (AttributeError, OSError):
+        affinity = None
+    out["cpu_affinity"], out["cpu_count"] = affinity, os.cpu_count()
+    out["other_python_processes"] = _python_processes(set(affinity or ()), proc)
+    return out
 
 
 def spent_seeds(exclude: Path | None = None) -> set[int]:
@@ -231,6 +323,52 @@ def inputs(families, heldout=HELDOUT_SEEDS) -> dict:
             "dependencies": dependency_versions()}
 
 
+def source_dirty(paths, root: Path = ROOT) -> list[str]:
+    """The frozen files whose bytes are not their blob at HEAD (modified, staged, untracked or absent from HEAD);
+    every path when git cannot tell. The freeze digests bind the bytes a run executes; this binds them to the
+    recorded ``source_commit``, as P8's ``source_dirty`` does (2026-10-15 independent review)."""
+    paths = sorted(paths)
+    try:
+        tree = subprocess.run(["git", "ls-tree", "-r", "-z", "HEAD", "--", *paths], cwd=root,
+                              capture_output=True, check=True).stdout
+        work = subprocess.run(["git", "hash-object", "--", *paths], cwd=root, capture_output=True, text=True,
+                              check=True).stdout.split()
+    except (OSError, subprocess.CalledProcessError):
+        return paths
+    committed = {}
+    for entry in filter(None, tree.split(b"\0")):
+        meta, _, name = entry.partition(b"\t")
+        committed[name.decode()] = meta.split()[2].decode()
+    return [p for p, blob in zip(paths, work) if committed.get(p) != blob] if len(work) == len(paths) else paths
+
+
+def report_header(target: Path, frozen: dict) -> dict:
+    """What results.json records about the run before any genome result: the freeze, the commit, whether the
+    frozen files were the committed ones and the host's load as the run starts (a diagnostic; ``close_report`` adds
+    the load at the end)."""
+    return {"schema": "greg-genome-admission/1", "freeze_sha256": _sha(target / "freeze.json"),
+            "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
+            "source_dirty": source_dirty(frozen["inputs"]["code"]),
+            "platform": platform.platform(), "python": sys.version.split()[0], "rule": RULE,
+            "diagnostics": DIAGNOSTICS, "host_load": {"start": host_load()}, "genomes": {}}
+
+
+def genome_entry(item, rows, status: str, detail: dict, canonical: dict) -> dict:
+    """One genome's entry in results.json: the decision and its detail (``decide``), the per-arm CPU diagnostics
+    (never an input to the decision), the canonical-path smoke and every held-out row."""
+    return {"intelligence_id": item.genome.intelligence_id, "layer": item.genome.layer,
+            "version": item.genome.version, "baseline": item.genome.baseline, "competitor": item.genome.competitor,
+            "status": status, **detail, "diagnostics": diagnostics(rows), "canonical_path": canonical,
+            "heldout": rows}
+
+
+def close_report(report: dict) -> dict:
+    """The end of a run: its finishing time and the host's load as it ends (a diagnostic)."""
+    report["finished_at"] = datetime.now(timezone.utc).isoformat()
+    report.setdefault("host_load", {})["end"] = host_load()
+    return report
+
+
 def smoke(family: str, seed: int = HELDOUT_SEEDS[0]) -> dict:
     """One held-out instance through GREG's canonical cognition path, family attached for evaluation only."""
     from greg.cognition.cortex import reason, registry_view
@@ -261,10 +399,12 @@ def main(argv=None):
     families = sorted(library.executables())
     if args.dev:
         item = library.executables()[args.dev]
+        start = host_load()
         rows = evaluate(item, DEV_SEEDS)
         status, detail = decide(item, rows)
         print(json.dumps({"family": args.dev, "partition": "dev", "status_if_heldout_matched": status,
-                          **detail}, indent=1))
+                          **detail, "diagnostics": diagnostics(rows),
+                          "host_load": {"start": start, "end": host_load()}}, indent=1))
         return
     if args.freeze:
         target = EVIDENCE / args.freeze
@@ -295,9 +435,7 @@ def main(argv=None):
         raise SystemExit("FROZEN_INPUT_CHANGED: admission results cannot be reported")
     if (target / "results.json").exists():
         raise SystemExit("refusing to overwrite admission results")
-    report = {"schema": "greg-genome-admission/1", "freeze_sha256": _sha(target / "freeze.json"),
-              "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
-              "platform": platform.platform(), "python": sys.version.split()[0], "rule": RULE, "genomes": {}}
+    report = report_header(target, frozen)
     for family in chosen:
         item = library.executables()[family]
         rows = evaluate(item, heldout)
@@ -308,13 +446,10 @@ def main(argv=None):
             canonical = {"state": "SMOKE_FAILED", "error": f"{type(exc).__name__}: {str(exc)[:300]}"}
         if canonical.get("verifier") not in ("STRUCTURALLY_VERIFIED", None) or canonical.get("state") == "SMOKE_FAILED":
             status = {"DEFAULT_FOR_GEOMETRY": "NICHE_CAPABILITY"}.get(status, status)
-        report["genomes"][family] = {"intelligence_id": item.genome.intelligence_id, "layer": item.genome.layer,
-                                     "version": item.genome.version, "baseline": item.genome.baseline,
-                                     "competitor": item.genome.competitor, "status": status, **detail,
-                                     "canonical_path": canonical, "heldout": rows}
+        report["genomes"][family] = genome_entry(item, rows, status, detail, canonical)
         print(json.dumps({"family": family, "status": status, "vs_baseline": detail["vs_baseline"],
                           "vs_competitor": detail["vs_competitor"]}), flush=True)
-    report["finished_at"] = datetime.now(timezone.utc).isoformat()
+    close_report(report)
     (target / "results.json").write_text(json.dumps(report, indent=1) + "\n")
     print(json.dumps({f: g["status"] for f, g in report["genomes"].items()}, indent=1))
 

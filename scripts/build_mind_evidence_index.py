@@ -155,6 +155,11 @@ OPERATION_RUNS = (
     # from it binds only where the static dispatch has no unresolved update (greg.cognition.compiler
     # .operation_status, round-2 review of #179, N4)
     ("docs/evidence/greg-genome-admission/2026-10-21-operations/results.json", "families", None),
+    # the same four families re-measured on the joined tree, pre-registered at 244b652c and frozen at 3520efe6
+    # (seeds 5920-5949; finished 2026-10-22 05:56 UTC); last, so it is current for them. It recorded the solver
+    # function each family's candidate calls reached (solver_closures), which a positive verdict needs while
+    # SOLVERS takes non-literal updates
+    ("docs/evidence/greg-genome-admission/2026-10-22-joined-operations/results.json", "families", None),
 )
 # Verdicts measured against a competitor on held-out data; any other label is structural and changes no route.
 MEASURED = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY", "COMPOSITION_ONLY", "EXPERIMENTAL", "SUPERSEDED", "REJECTED")

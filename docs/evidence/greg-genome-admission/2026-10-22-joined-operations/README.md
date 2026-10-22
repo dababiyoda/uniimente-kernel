@@ -65,9 +65,11 @@ information as UNEVALUATED ("recorded no runtime dispatch") and probabilistic as
   clipped MLE 17-6-7 (p = 0.017) and was not distinguishable from Jeffreys, 13-10-7 (p = 0.34). Under the canonical
   rule a candidate that beats its baseline, is not beaten by its competitor and is more than 1.25x slower than it
   (0.060 ms against 0.001 ms, inline arithmetic) is NICHE_CAPABILITY. #155's rule, which does not route, reads
-  DEFAULT_FOR_GEOMETRY. Across the three independent fresh-seed runs probabilistic reads DEFAULT (2026-10-14, #155's
-  rule), EXPERIMENTAL (2026-10-21) and NICHE_CAPABILITY (here): a family near a rule boundary, as the 2026-10-21
-  pre-registration predicted (DEFAULT about 0.35, NICHE about 0.45, EXPERIMENTAL about 0.20). It is not re-run.
+  DEFAULT_FOR_GEOMETRY. Across the four fresh-seed runs probabilistic reads DEFAULT (2026-10-14, seeds 1001-1040,
+  #155's rule, 29-10 and 26-13), DEFAULT (2026-10-16 v3, seeds 5001-5040, #155's rule, 26-10 and 24-12), EXPERIMENTAL
+  (2026-10-21, seeds 2600-2629, canonical rule) and NICHE_CAPABILITY (here, canonical rule): a family near a rule
+  boundary, within the range the 2026-10-21 pre-registration simulated for the canonical rule at n = 30 (DEFAULT
+  about 0.35, NICHE about 0.45, EXPERIMENTAL about 0.20). It is not re-run.
 - **What this is not:** a strongest-competitor admission. The arms are #155's (P-only, pure maximin, always acquire,
   Jeffreys), weaker than the genome library's `pid_simopt`, `game_lp_dual` and `bayes_interval`.
 - **Latency:** the control candidate's median was 7.2 ms here against 1.96 ms in the 2026-10-21 run (Python 3.13.16,

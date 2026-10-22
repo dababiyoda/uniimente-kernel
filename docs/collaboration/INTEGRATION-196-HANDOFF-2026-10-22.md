@@ -139,6 +139,20 @@ Organs: DALEOBANKS `667439f`, WealthMachine `ec82b80` (CI pins, unchanged; neith
   - power 0.935 at 24 stress per objective and 20 holdout per cell;
   - declared the last experiment in this line; a NO_GAIN closes it.
 
+- **Fresh-receiver test:** `session_01Jwps9aYCMfYFNh66iMMJaB` resumed the #197/#199 handoff read-only from
+  the durable records alone ([#96 comment 6341046052](https://github.com/dababiyoda/uniimente-kernel/issues/96#issuecomment-6341046052)).
+  - Its first action was correct, it needed no founder reconstruction, and the Chromebook drift guard passed
+    18/18 at `950c61e6`, with a negative control.
+  - Two frictions it reported are now fixed in the docs: START_HERE step 4 says to read the board's newest
+    comments (the connector's comment pages start with the oldest), and RECEIPT.md says `integration.branch`
+    names the destination, not the work branch.
+  - Limits: one receiver; the task was read-only, and its dispatch named the board, so finding the board unaided
+    was not tested.
+- **#201's review findings 5a, 5b, 6** (routed here): fixed at `af6fdfe1` with three failing-first tests. A
+  member kept only as a prefix no longer settles a check by a miss. A value holding such a member, or a list at
+  the 1,000-item limit, is never bound as whole. An incomplete output still decides its own `complete` field.
+  Other settled fields stay the capability's to name in `decided`.
+
 ## Self-review
 
 This is one agent working through five lenses. It is not independent review.

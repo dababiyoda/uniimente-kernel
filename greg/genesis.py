@@ -137,7 +137,7 @@ CATALOG = {
     "document.text": {
         "description": "The words of a PDF in reading order, whitespace-normalized (text drawn in a standard font; "
                        "no OCR of scanned images)",
-        "oracle": documents.oracle_document_text, "output_field": "text",
+        "oracle": documents.oracle_document_text, "output_field": "text", "derive": documents.find_phrase,
         "candidates": (Candidate("pdftotext", ("{binary}", "-enc", "UTF-8", "-q", "{file}", "-"), "words"),),
     },
     # Open-source packages (founder correction 2026-10-01, #144): installed engines, never installed by GREG.
@@ -482,8 +482,12 @@ def catalog_adapter(function: str, candidate: Candidate, binary: str):
         proc = run_isolated(argv, cwd=ctx.workspace)
         if proc.returncode:
             raise CapabilityError(f"{candidate.binary_name} exited {proc.returncode}")
+        if len(proc.stdout) > mechanisms.MAX_OUTPUT:
+            raise CapabilityError(f"capability refused: {candidate.binary_name} output exceeds "
+                                  f"{mechanisms.MAX_OUTPUT} bytes")
         value = PARSERS[candidate.parse](proc.stdout.decode("utf-8", errors="replace"))
-        return {spec["output_field"]: value, "path": str(path)}
+        return {spec["output_field"]: value, "path": str(path), **(spec["derive"](value, params)
+                                                                    if spec.get("derive") else {})}
     return adapter
 
 

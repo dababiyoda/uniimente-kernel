@@ -77,3 +77,19 @@ def oracle_document_text(seed: int) -> list[dict]:
         cases.append({"name": f"case{index}.pdf", "data": write_pdf(pages, compress=bool(index % 2)),
                       "expected": expected})
     return cases
+
+
+def find_phrase(text: str, params: dict) -> dict:
+    """Evaluate ``params['phrase']`` over the whole extraction, not over a receipt's bounded prefix.
+
+    A receipt keeps only a prefix of long text (``authority.bounded``), and a predicate on that prefix can miss a
+    phrase past it ('contains' false) or miss a forbidden one ('not_contains' true). The reader therefore answers
+    the question on every word it extracted; the receipt records the answer and the text's digest and length."""
+    import hashlib
+    phrase = params.get("phrase")
+    out = {"words": len(text.split()), "text_sha256": hashlib.sha256(text.encode()).hexdigest()}
+    if isinstance(phrase, str) and phrase.split():
+        needle = " ".join(phrase.split())
+        count = text.count(needle)
+        out.update({"phrase": needle, "found": count > 0, "occurrences": count})
+    return out

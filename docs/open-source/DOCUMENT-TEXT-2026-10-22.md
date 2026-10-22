@@ -23,6 +23,13 @@ Open-Source Metabolism workstream, increment 2. Session `session_013k41DnwrjzpXL
 5. It attaches pdftotext under the mission's signed read-only scope.
 6. The mission closes on the document's own words.
 
+For documents longer than a receipt keeps (16 KiB), the check names the phrase. The reader judges it over every word it extracted, so a receipt's bounded prefix never decides the result:
+
+```json
+{"sensor": {"function": "document.text", "params": {"path": "~/docs/lease.pdf", "phrase": "renewal term is twelve months"}},
+ "predicate": {"op": "equals", "field": "found", "value": true}}
+```
+
 A PDF that says otherwise does not close the mission. A path outside the read roots is refused by the acquired reader itself.
 
 **Binary licenses:** acquired system binaries now carry a license read from Debian's machine-readable copyright files (DEP-5) instead of `license not inspected by GREG`. This closes #201's residual 1.
@@ -78,6 +85,28 @@ An undeterminable or unclassified binary license keeps today's behaviour, and it
 - a PDF check closes a mission when the document does not contain the phrase;
 - or the reader returns words outside the read roots;
 - or a binary under a known not-open license attaches under a mission scope.
+
+## Review of bd7e3f9 (a separate agent in this same session, so not independent)
+
+Each finding below is fixed in the next commit with a test that fails before the fix, and each has a mutant.
+
+1. **Serious: an AGPL term was hidden by any unclassified term beside it.** `_worst` ranks unclassified highest, and 346 of 833 DEP-5 files on this host contain an unclassified term.
+   - A binary is now held when **any** term is network copyleft or not open.
+   - Spellings added: SPDX (`AGPL-3.0+`, `AGPL-3.0-or-later`, `SSPL-1`, `BUSL-1.1`) and Debian's `non-free` and `proprietary`.
+   - Across the host's 833 copyright files, the hold fires on none: no false positives here.
+2. **Serious: a receipt keeps a 16 KiB prefix of long text, and predicates read only that prefix.** A phrase after the prefix was missed, and a forbidden one would have been missed too. `document.text` now answers `phrase` over the whole extraction (`found`, `occurrences`, `words`, `text_sha256`).
+   - Plain `contains` / `not_contains` on `text` still reads the prefix (`missions._field`). That is an integrator-owned seam; a patch is proposed on #96.
+3. **Moderate: binary output was unbounded.** It is now refused above `mechanisms.MAX_OUTPUT` (4 MB).
+4. **Minor: a binary card said FOUNDER_REVIEW but attached.** Its verdict now matches the behaviour: UNCLASSIFIED_PRIOR_BEHAVIOUR.
+5. **Minor: DEP-5's `, and` binds loosest.** The reader follows that precedence.
+
+The reviewer also confirmed:
+- 0 oracle mismatches over 2,400 PDFs;
+- read roots are resolved through symlinks;
+- the binary hash is re-checked on every call;
+- `dpkg` parsing falls back to None, safely.
+
+It noted that lines longer than the page are dropped by pdftotext. The oracle's longest line (10 words) is near that edge.
 
 ## Limits
 

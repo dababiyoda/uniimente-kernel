@@ -145,3 +145,81 @@ def test_on_a_body_without_dpkg_the_card_says_the_license_was_not_readable(monke
     monkeypatch.setattr(shutil, "which", lambda name: None)
     assert licensing.system_binary("/usr/bin/pdftotext") is None
     assert "not readable" in genesis_mod._binary_license("/usr/bin/pdftotext")["license"]
+
+
+# -- review of bd7e3f9 (separate agent, same session): each test below failed or was missing before its fix -----
+
+def _long_pdf(tail_line: str) -> bytes:
+    filler = [[" ".join(["proof", "settlement", "notice", "delivery", "party", "shall", "net", "due"])] * 40] * 8
+    return documents.write_pdf(filler + [[tail_line]], compress=True)     # about 18 KiB of words before the tail
+
+
+def found_check(path, phrase, expected=True):
+    return {"check_id": "found", "description": f"{path.name} {'states' if expected else 'never states'} {phrase!r}",
+            "sensor": {"function": "document.text", "params": {"path": str(path), "phrase": phrase},
+                       "target": f"fs:{path.name}"},
+            "predicate": {"op": "equals", "field": "found", "value": expected}}
+
+
+def test_a_phrase_past_the_receipt_prefix_is_found_over_the_whole_document(tmp_path):
+    home, key, body_id, data = make_body(tmp_path)
+    lease = data / "long.pdf"
+    lease.write_bytes(_long_pdf("The renewal term is twelve months."))
+    submit(home, key, body_id, "MISSION", mission("m:long", checks=[found_check(lease, "renewal term is twelve months")],
+                                                  strategies=[], **SCOPE))
+    missions, _ = run(home, Clock(), ticks=4)
+    assert missions["m:long"].status == "ACHIEVED"
+    [observed] = [e for e in events(home, "mission.observed") if e["mission_id"] == "m:long"][-1:]
+    assert observed["passed"] is True
+
+
+def test_a_forbidden_phrase_past_the_receipt_prefix_is_not_missed(tmp_path):
+    home, key, body_id, data = make_body(tmp_path)
+    lease = data / "long.pdf"
+    lease.write_bytes(_long_pdf("Either party may terminate without notice."))
+    submit(home, key, body_id, "MISSION", mission("m:never", checks=[found_check(lease, "terminate without notice",
+                                                                                 expected=False)],
+                                                  strategies=[], **SCOPE))
+    missions, _ = run(home, Clock(), ticks=4)
+    assert missions["m:never"].status != "ACHIEVED"                   # the clause is there, after 16 KiB
+
+
+def test_an_oversized_extraction_is_refused(tmp_path, monkeypatch):
+    from greg import mechanisms
+    monkeypatch.setattr(mechanisms, "MAX_OUTPUT", 64)
+    home, key, body_id, data = make_body(tmp_path)
+    lease = data / "lease.pdf"
+    lease.write_bytes(documents.write_pdf(LEASE * 4))
+    submit(home, key, body_id, "MISSION", mission("m:big", checks=[pdf_check(lease, "renewal term")],
+                                                  strategies=[], **SCOPE))
+    missions, _ = run(home, Clock(), ticks=4)
+    assert missions["m:big"].status != "ACHIEVED"
+    [verified] = [e for e in events(home, "genesis.verified") if e["capability_id"].endswith("pdftotext")]
+    assert not verified["passed"] and verified["report"]["failures"]      # refused at qualification, not trusted
+
+
+def test_a_network_copyleft_term_holds_a_binary_whatever_else_is_unclassified():
+    text = ("Format: x\n\nFiles: *\nCopyright: a\nLicense: AGPL-3+\n\n"
+            "Files: doc/*\nCopyright: b\nLicense: Some-Unknown-Doc-License\n")
+    parsed = licensing.dep5(text)
+    assert parsed["class"] == licensing.UNKNOWN and licensing._held_terms(parsed["terms"])
+
+    class Manifest:
+        provider = "installed:/usr/bin/tool"
+        provenance = {"license_assessment": {"class": parsed["class"], "parts": [{"terms": parsed["terms"]}],
+                                             "reason": "AGPL-3+"}}
+    assert licensing.attach_check(Manifest())[0] is False
+
+
+@pytest.mark.parametrize("name, cls", [
+    ("AGPL-3.0-or-later", licensing.NETWORK_COPYLEFT), ("AGPL-3.0+", licensing.NETWORK_COPYLEFT),
+    ("SSPL-1", licensing.NOT_OPEN), ("BUSL-1.1", licensing.NOT_OPEN), ("non-free", licensing.NOT_OPEN),
+    ("GPL-1+ or Artistic, and BSD-3-clause", licensing.WEAK_COPYLEFT)])
+def test_dep5_reads_spdx_spellings_not_open_names_and_comma_precedence(name, cls):
+    assert licensing._debian_class(name) == cls
+
+
+def test_an_unclassified_binary_card_says_it_keeps_prior_behaviour():
+    a = licensing.system_binary(genesis_mod.installed_binary("pdftotext"))
+    if a is not None:
+        assert a["auto_attach"] is True and a["held"] is False

@@ -304,20 +304,36 @@ DEBIAN = {"gpl-2": STRONG_COPYLEFT, "gpl-2+": STRONG_COPYLEFT, "gpl-3": STRONG_C
           "bsd-3-clause": PERMISSIVE, "bsd-4-clause": PERMISSIVE, "bsd-4-clause-uc": PERMISSIVE,
           "public-domain": PERMISSIVE, "cc0-1.0": PERMISSIVE, "psf-2": PERMISSIVE, "x11": PERMISSIVE,
           "fsfap": PERMISSIVE, "fsful": PERMISSIVE, "fsfullr": PERMISSIVE, "gfdl-1.3+": WEAK_COPYLEFT,
+          "non-free": NOT_OPEN, "proprietary": NOT_OPEN, "sspl-1": NOT_OPEN, "sspl-1.0": NOT_OPEN,
+          "busl-1.1": NOT_OPEN, "elastic-2.0": NOT_OPEN, "cc-by-nc-4.0": NOT_OPEN, "cc-by-nc-sa-4.0": NOT_OPEN,
           "gfdl": WEAK_COPYLEFT, "gfdl-ni": WEAK_COPYLEFT, "gfdl-niv-1.3": WEAK_COPYLEFT, "gfdl-niv-1.3+": WEAK_COPYLEFT,
           "artistic": WEAK_COPYLEFT, "artistic-2.0": PERMISSIVE, "gpl-1": STRONG_COPYLEFT, "gpl-1+": STRONG_COPYLEFT, "gfdl-1.2+": WEAK_COPYLEFT, "gfdl-1.3": WEAK_COPYLEFT}
 DPKG_TIMEOUT = 5
 
 
+def _name_class(name: str) -> str:
+    """One DEP-5 short name: Debian's spelling first, then the SPDX identifier ('AGPL-3.0+' as AGPL-3.0)."""
+    key = re.split(r"\s+with\s+", name, flags=re.I)[0].strip().lower()
+    return DEBIAN.get(key) or SPDX_CLASS.get(key) or SPDX_CLASS.get(key.rstrip("+")) or UNKNOWN
+
+
 def _debian_class(expression: str) -> str:
-    """A DEP-5 License short-name expression: 'or' takes the best alternative, 'and' the worst; 'with ... exception'
+    """A DEP-5 License short-name expression: 'or' takes the best alternative, 'and' the worst, and ', and' binds
+    loosest ('GPL-1+ or Artistic, and BSD-3-clause' is (GPL-1+ or Artistic) and BSD-3-clause). 'with ... exception'
     keeps the base license's class (Debian names many exceptions; GREG does not downgrade on an unknown one)."""
-    best = []
-    for alternative in re.split(r"\s+or\s+", expression.strip(), flags=re.I):
-        parts = [p.strip() for p in re.split(r"\s+and\s+|,\s*", alternative, flags=re.I) if p.strip()]
-        classes = [DEBIAN.get(re.split(r"\s+with\s+", p, flags=re.I)[0].strip().lower(), UNKNOWN) for p in parts]
-        best.append(_worst(classes))
-    return _best(best)
+    groups = []
+    for group in re.split(r",\s*and\s+", expression.strip(), flags=re.I):
+        best = []
+        for alternative in re.split(r"\s+or\s+", group.strip(), flags=re.I):
+            parts = [p.strip() for p in re.split(r"\s+and\s+|,\s*", alternative, flags=re.I) if p.strip()]
+            best.append(_worst([_name_class(p) for p in parts]))
+        groups.append(_best(best))
+    return _worst(groups)
+
+
+def _held_terms(terms) -> list:
+    """Terms that hold a binary: a known network-copyleft or not-open license, whatever else is unclassified."""
+    return [t for t in terms if t["class"] in (NETWORK_COPYLEFT, NOT_OPEN)]
 
 
 def dep5(text: str) -> dict | None:
@@ -366,12 +382,17 @@ def system_binary(binary: str) -> dict | None:
             {"distribution": f"{package} (dpkg)", "basis": "copyright file missing or not DEP-5",
              "expression": "UNREAD", "class": UNKNOWN, "terms": []})
     worst = part["class"]
+    held = _held_terms(part["terms"])
     cleared = ORDER.index(worst) <= ORDER.index(CLEARED_UP_TO)
-    return {"verdict": ("CLEARED" if worst == PERMISSIVE else "CLEARED_WITH_OBLIGATIONS") if cleared
-            else "FOUNDER_REVIEW", "class": worst, "auto_attach": cleared,
-            "reason": "every declared license is cleared for GREG's use" if cleared else
-            f"{part['distribution']}: {part['expression'][:200]} ({worst.replace('_', ' ')}, {part['basis']})",
-            "obligations": [OBLIGATIONS[worst]], "parts": [part], "policy": "binary: as for packages",
+    verdict = ("FOUNDER_REVIEW" if held else ("CLEARED" if worst == PERMISSIVE else "CLEARED_WITH_OBLIGATIONS")
+               if cleared else "UNCLASSIFIED_PRIOR_BEHAVIOUR")
+    reason = ("; ".join(f"{t['id']} ({t['class'].replace('_', ' ')})" for t in held) if held else
+              "every declared license is cleared for GREG's use" if cleared else
+              f"{part['distribution']}: some declared license is not classified by GREG; attach behaviour is as "
+              "before licenses were read")
+    return {"verdict": verdict, "class": worst, "held": bool(held), "auto_attach": not held, "reason": reason[:400],
+            "obligations": sorted({OBLIGATIONS[t["class"]] for t in part["terms"]} or {OBLIGATIONS[worst]}),
+            "parts": [part], "policy": "binary: held on any known network-copyleft or not-open term",
             "parser": "dpkg-query + DEP-5 (GREG reader)", "limits": LIMITS}
 
 
@@ -387,6 +408,8 @@ def attach_check(manifest) -> tuple[bool, str]:
         return auto_attach_allowed(provenance)
     if manifest.provider.startswith("installed:"):
         assessment = provenance.get("license_assessment")
-        if isinstance(assessment, dict) and assessment.get("class") in (NETWORK_COPYLEFT, NOT_OPEN):
+        if isinstance(assessment, dict) and (assessment.get("held") or assessment.get("class") in (NETWORK_COPYLEFT, NOT_OPEN)
+                                             or any(_held_terms(p.get("terms") or [])
+                                                    for p in assessment.get("parts") or [])):
             return False, assessment.get("reason", "")
     return True, ""

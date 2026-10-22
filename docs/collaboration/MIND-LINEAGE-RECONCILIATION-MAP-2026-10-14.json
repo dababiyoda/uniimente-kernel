@@ -2333,8 +2333,8 @@
    "path": "scripts/data_exposure_ledger.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet); 2026-10-21 on #179: tree-aware (#158's tree is the map's pinned commit, #179's is HEAD); #158 adopted #179's change at 93667efc, identical again"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet); 2026-10-21 on #179: tree-aware (#158's tree is the map's pinned commit, #179's is HEAD); #158 adopted #179's change at 93667efc, identical again; 2026-10-22 on #202 (antifragility v3): extended with an antifragility collector (section-14 frozen workloads, stress = train, holdout = held-out), so it differs from #158's bytes"
   },
   {
    "path": "scripts/greg_whole_machine_trace.py",

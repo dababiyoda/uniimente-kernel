@@ -1298,40 +1298,45 @@
   },
   "convex_qp_dual": {
    "competitor": "SciPy minimize(method='trust-constr') with exact gradient and Hessian, gtol 1e-10 (OSQP is not installed)",
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-v8/results.json#genomes.convex_qp_dual",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-v9/results.json#genomes.convex_qp_dual",
    "history": [
     {
      "run": "2026-10-22-v8",
      "status": "NICHE_CAPABILITY",
      "version": "1.0.0"
+    },
+    {
+     "run": "2026-10-22-v9",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
     }
    ],
-   "median_seconds": 0.002402,
-   "status": "NICHE_CAPABILITY",
+   "median_seconds": 0.002508,
+   "status": "DEFAULT_FOR_GEOMETRY",
    "subregions_vs_competitor": {
     "ill_conditioned": {
      "losses": 0,
      "n": 16,
-     "p_better": 0.003906,
+     "p_better": 0.000122,
      "p_worse": 1.0,
-     "ties": 8,
-     "wins": 8
+     "ties": 3,
+     "wins": 13
     },
     "many_constraints": {
      "losses": 0,
-     "n": 8,
-     "p_better": 0.003906,
+     "n": 3,
+     "p_better": 0.125,
      "p_worse": 1.0,
      "ties": 0,
-     "wins": 8
+     "wins": 3
     },
     "well_conditioned": {
      "losses": 0,
-     "n": 6,
-     "p_better": 0.0625,
+     "n": 11,
+     "p_better": 0.007812,
      "p_worse": 1.0,
-     "ties": 2,
-     "wins": 4
+     "ties": 4,
+     "wins": 7
     }
    },
    "version": "1.0.0"
@@ -3598,6 +3603,11 @@
    "path": "docs/evidence/greg-genome-admission/2026-10-22-v8/results.json",
    "sha256": "sha256:b77ab04e15b03b63ab5edca6fd3a4a5d7bbf72c7aedd8bcc5aca03e0d8fd551f",
    "source_commit": "bc966a186f87e4a38d96ec1db63069220e052898"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-22-v9/results.json",
+   "sha256": "sha256:00f6f7c1c75c34fc27551f8e11492794dbd16ee252bb0c0e25224f28734947ef",
+   "source_commit": "11a8e318e121c187fe93d4007128b41e1c9e5342"
   }
  ]
 }

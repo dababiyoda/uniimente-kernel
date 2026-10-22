@@ -124,6 +124,13 @@ GENOMES = {
                                            "exact solution by enumerating every vertex simplex"),
     "game_stackelberg_commit": (MATHEMATICAL, "generated security, inspection and random games; leader optimum by "
                                               "independent HiGHS linear programs"),
+    "evo_novelty_search": (MATHEMATICAL, "generated grid mazes of declared kinds (deceptive by design or not); exact "
+                                         "maze distance field by BFS"),
+    "hyper_select_lowlevel": (MATHEMATICAL, "planted zero-slack bin-packing instances; optimum known by construction "
+                                            "(equal to the volume bound)"),
+    "develop_differentiate": (MATHEMATICAL, "generated graphs (geometric, small-world, holed grids, random); exact "
+                                            "pattern check, CP-SAT reference leader optimum and exact component "
+                                            "radii"),
 }
 
 # P6 composition-lift families, as each frozen run's own ``limits`` describes them.

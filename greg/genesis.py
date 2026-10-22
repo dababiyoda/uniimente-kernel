@@ -1788,9 +1788,9 @@ class Genesis:
                                "platform": sys.platform})
 
     def _attach(self, mission, manifest: CapabilityManifest, deficit_id: str, now, offered: list | None = None):
-        # Founder-signed pre-authorization only: read-only, and inside the cone. Never for a goal's request. A capability
-        # formed for cognition (directive section 24) is attached only by the founder's own command, never under a
-        # mission scope. ``offered`` collects what a cognition search pass found for the founder.
+        # Founder-signed pre-authorization only: read-only, and inside the cone. A capability formed for cognition
+        # (directive section 24) is attached only by the founder's own command, never under a mission scope.
+        # ``offered`` collects what a cognition search pass found for the founder. Never for a goal's request.
         if self._form_only:
             self.journal.record("deficit.awaiting_attach", {
                 "deficit_id": deficit_id, "capability_id": manifest.capability_id,

@@ -174,6 +174,12 @@ OSS_MUTANTS = [
 # Frontier leap 2026-10-13 (RECOMBINE, #164): a construction is controlled by its own certificate and lifecycle.
 RECOMBINE_TESTS = ["tests/unit/test_greg_recombine.py"]
 RECOMBINE_MUTANTS = [
+    ("a portfolio that skips a prerequisite is certified", "greg/recombine.py",
+     "    if missing:\n        raise ReductionError(f\"the chosen set is not closed", "    if False:\n        raise ReductionError(f\"the chosen set is not closed"),
+    ("a portfolio below the funding bound is certified", "greg/recombine.py",
+     "    if profit != gain - funded:", "    if False:"),
+    ("funding along a made-up edge is accepted", "greg/recombine.py",
+     "        elif (u, v) not in requires:", "        elif False:"),
     ("repair re-admits the construction that failed in service", "greg/genesis.py",
      'if repair and repair.get("capability_id") == manifest.capability_id:\n            self._route(deficit_id, "constructed"',
      'if False:\n            self._route(deficit_id, "constructed"'),
@@ -330,6 +336,71 @@ CLOSURE_INTEGRITY_MUTANTS = [
      '    if False:\n        raise BodyError(f"{what} needs your founder key'),
 ]
 
+# 2026-10-15: capability formation is perception for Goal Gravity (a blocked goal wakes when what it waits on changes).
+CAPABILITY_PERCEPTION_TESTS = ["tests/integration/test_greg_capability_wakes_goal.py"]
+CAPABILITY_PERCEPTION_MUTANTS = [
+    ("a capability change is invisible to Goal Gravity", "greg/goal_gravity.py",
+     'elif t in ("greg.capability.registered", "greg.capability.state"):', "elif False:"),
+    ("a blocked construction does not perceive its engine", "greg/goal_gravity.py",
+     "        if function in (waiting, engine):", "        if function == waiting:"),
+    ("a capability state is flattened to available or not", "greg/goal_gravity.py",
+     'rec.hash, p["state"], "attributed")', 'rec.hash, p["state"] != "QUARANTINED", "attributed")'),
+]
+
+GOAL_FORMATION_TESTS = ["tests/integration/test_greg_goal_requests_formation.py"]
+GOAL_FORMATION_MUTANTS = [
+    ("a goal's formation request rides the mission's auto_attach", "greg/genesis.py",
+     "request.\n        if self._form_only:", "request.\n        if False:"),
+    ("a goal's formation request commissions the builder", "greg/genesis.py",
+     "        if self._form_only:\n            self._route(deficit_id, \"builder\"",
+     "        if False:\n            self._route(deficit_id, \"builder\""),
+    ("a goal does not perceive the formation it asked for", "greg/goal_gravity.py",
+     "            out.add((p[\"mission_id\"], p[\"function\"]))\n    return sorted(out)",
+     "            out.add((p[\"mission_id\"], p[\"function\"]))\n    return []"),
+    ("an attached implementation never closes the goal's deficit", "greg/goal_gravity.py",
+     "        serving = genesis.find_attached(p[\"function\"])\n        if serving is None:",
+     "        serving = genesis.find_attached(p[\"function\"])\n        if True:"),
+    ("a function requirement never reads present", "greg/goal_gravity.py",
+     "        if version == FUNCTION_VERSION:", "        if False:"),
+    ("a stopped goal still asks for formation", "greg/goal_gravity.py",
+     "        if gid not in facts.admitted or facts.stopped(gid) is not None:\n            continue\n        state",
+     "        if gid not in facts.admitted:\n            continue\n        state"),
+]
+
+PORTFOLIO_WORDS_TESTS = ["tests/unit/test_greg_portfolio_words.py"]
+PORTFOLIO_WORDS_MUTANTS = [
+    ("a cost is read as earnings", "greg/templates.py",
+     'value[m["name"]] = -amount if m["verb"].lower() == "costs" else amount', 'value[m["name"]] = amount'),
+    ("an unread portfolio sentence is silently dropped", "greg/templates.py",
+     "    if unread:\n        raise ValueError(\"GREG could not read: \" + \"; \".join(repr(u[:80]) for u in unread[:5])"
+     "\n                         + \". Write 'Offer1",
+     "    if False:\n        raise ValueError(\"GREG could not read: \" + \"; \".join(repr(u[:80]) for u in unread[:5])"
+     "\n                         + \". Write 'Offer1"),
+    ("a prerequisite with no value is accepted", "greg/templates.py",
+     "    if unknown:\n        raise ValueError(f\"{', '.join(unknown)}", "    if False:\n        raise ValueError(f\"{', '.join(unknown)}"),
+    ("the planner never reads a portfolio", "greg/planner.py",
+     "if PORTFOLIO.search(text) and PORTFOLIO_NEEDS.search(text):", "if False:"),
+]
+
+BUDGETED_TESTS = ["tests/unit/test_greg_budgeted_selection.py"]
+BUDGETED_MUTANTS = [
+    ("a head that searches in rounds is run as a single call", "greg/recombine.py",
+     "        if path[0].rounds:\n            return in_rounds(", "        if False:\n            return in_rounds("),
+    ("the proof tree need not partition the plans", "greg/recombine.py",
+     'if sorted(node.get("in", [])) != sorted(fix_in) or sorted(node.get("out", [])) != sorted(fix_out):',
+     'if False:'),
+    ("a branch closed by its bound is not checked against the answer", "greg/recombine.py",
+     "            if bound > profit:\n                raise ReductionError(\"a branch closed by its bound",
+     "            if False:\n                raise ReductionError(\"a branch closed by its bound"),
+    ("a node's funding certificate is not re-proved", "greg/recombine.py",
+     "node_answer = certify_selection(normalize_selection(sub), {",
+     "node_answer = (lambda q, a: a)(normalize_selection(sub), {"),
+    ("a rounds reduction may sit inside a chain", "greg/recombine.py",
+     "    if any(r.rounds for r in path[1:]):", "    if False:"),
+    ("a stated budget is ignored", "greg/templates.py",
+     'function = "selection.budgeted" if "budget" in params else "selection.closure"', 'function = "selection.closure"'),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS),
           ("mind construction", MIND_CONSTRUCTION_TESTS, MIND_CONSTRUCTION_MUTANTS),
@@ -337,7 +408,11 @@ GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("evidence chain at commit", COMMIT_CHAIN_TESTS, COMMIT_CHAIN_MUTANTS),
           ("founder tier", FOUNDER_TIER_TESTS, FOUNDER_TIER_MUTANTS),
           ("founder tier (body)", FOUNDER_TIER_BODY_TESTS, FOUNDER_TIER_BODY_MUTANTS),
-          ("closure integrity", CLOSURE_INTEGRITY_TESTS, CLOSURE_INTEGRITY_MUTANTS)]
+          ("closure integrity", CLOSURE_INTEGRITY_TESTS, CLOSURE_INTEGRITY_MUTANTS),
+          ("capability perception", CAPABILITY_PERCEPTION_TESTS, CAPABILITY_PERCEPTION_MUTANTS),
+          ("goal-requested formation", GOAL_FORMATION_TESTS, GOAL_FORMATION_MUTANTS),
+          ("portfolio words", PORTFOLIO_WORDS_TESTS, PORTFOLIO_WORDS_MUTANTS),
+          ("budgeted selection", BUDGETED_TESTS, BUDGETED_MUTANTS)]
 
 
 def main() -> int:

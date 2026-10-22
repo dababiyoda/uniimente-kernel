@@ -146,6 +146,37 @@ founder key can be.
 | superseded_by | None |
 | implementation_refs | `evolution/repair/continuity/`, `evolution/repair/subjects.py`, `evolution/repair/harness.py`, `governance/integrity/`, Canonical CI job 3 |
 
+## Frontier leap, continued: portfolio under a spending cap — 2026-10-21
+
+Same intent. "Spend at most N." now turns a portfolio question into `selection.budgeted`. GREG solves it with a branch-and-bound whose every node is a `selection.closure` problem answered by the qualified max-flow engine. It accepts the plan only when its own check of the whole search tree, from the original items, proves that no plan within the cap earns more.
+
+Matched baseline: trimming the uncapped plan is wrong in 11.9% of 2,000 capped shared-cost portfolios and leaves 8.6% of the profit behind.
+
+Evidence: [README](evidence/greg-budgeted-selection/2026-10-21/README.md). State: active. Authority delta: none. VEPMC: 0.
+
+## Frontier leap, continued: portfolio questions in plain words — 2026-10-21
+
+Same intent, read against `INTENT-20261019-UPWARD-ASCENT`. The founder types which offers earn what, which cost what, and which need which. GREG reads it without a model, constructs `selection.closure` over a max-flow engine the founder attaches, and answers with what to take, the profit, and what was left out and why, under its own certificate.
+
+Matched baseline: on shared-fixed-cost portfolios a standalone greedy rule is wrong in 38% of 2,000 instances and leaves 38.6% of the profit behind. On uniform random portfolios it is wrong in 1.6%.
+
+Evidence: [README](evidence/greg-portfolio-words/2026-10-21/README.md). State: active. Authority delta: none. VEPMC: 0.
+
+## Frontier leap, continued: a goal asks for the capability its plan requires — 2026-10-15
+
+Same intent. A founder-signed goal whose plan node requires `<function>@function` that GREG lacks now asks Capability Genesis to form it under the goal's signed mission. This is formation only: each verified result waits for your signed attach, no builder is commissioned, no mission is blocked, and the goal's deficit closes when an attached implementation serves it.
+
+Evidence: [README](evidence/greg-goal-formation/2026-10-15/README.md). State: active. Authority delta: none. VEPMC: 0.
+
+## Frontier leap, continued: portfolio decisions and capability perception — 2026-10-15
+
+Same intent (`INTENT-20261013-FRONTIER-LEAP-RECOMBINE`; the directive was re-issued verbatim and its founder instructions A–D stay preserved in that record). Built:
+
+- `selection.closure`: which projects or offers to take when some require others, constructed over the max-flow engine with a funding proof checked from the original items.
+- Goal Gravity now perceives capability formation, recovery, attachment and quarantine as observations about the missions waiting on them, so a blocked goal wakes when what it waits on changes. Timing only.
+
+Evidence: [README](evidence/greg-selection/2026-10-15/README.md). State: active. Authority delta: none. VEPMC: 0.
+
 ## Frontier leap: Capability Genesis constructs new capabilities (RECOMBINE) — 2026-10-13
 
 `INTENT-20261013-FRONTIER-LEAP-RECOMBINE` ([record](intent/INTENT-20261013-FRONTIER-LEAP-RECOMBINE.json), [full directive, verbatim](intent/sources/FRONTIER-LEAP-DIRECTIVE-2026-10-13-source.md)): stop treating Capability Genesis as part replacement and make it construct new, integrated capabilities from harvested mechanisms, on GREG's one path. Founder instructions A-D are preserved verbatim in the record's `founder_quotations` and in the source file. They are read under INTENT-0030. "Meniscus", "impermeable shield" and "systemic dominance" keep the 2026-10-07 executable interpretation. They authorize no crossing of legal boundaries, no coercion and no immunity from shutdown.

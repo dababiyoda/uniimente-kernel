@@ -216,15 +216,15 @@
  },
  "counts": {
   "by_lineage": {
-   "#158": 380,
+   "#158": 383,
    "#179": 40,
    "both": 42
   },
   "by_role": {
    "P8 held-out": 7,
-   "admission held-out": 138,
+   "admission held-out": 139,
    "canary": 1,
-   "dev": 261,
+   "dev": 263,
    "held-out": 38,
    "review-pilot": 11,
    "train": 6
@@ -232,10 +232,10 @@
   "by_role_and_lineage": {
    "P8 held-out / #158": 6,
    "P8 held-out / #179": 1,
-   "admission held-out / #158": 105,
+   "admission held-out / #158": 106,
    "admission held-out / #179": 33,
    "canary / #158": 1,
-   "dev / #158": 238,
+   "dev / #158": 240,
    "dev / both": 23,
    "held-out / #158": 13,
    "held-out / #179": 6,
@@ -243,7 +243,7 @@
    "review-pilot / #158": 11,
    "train / #158": 6
   },
-  "exposures": 462,
+  "exposures": 465,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -305,10 +305,10 @@
   "PREREGISTRATION.md": {
    "#158": {
     "glob": "docs/evidence/.*/PREREGISTRATION\\.md",
-    "matched": 12,
+    "matched": 13,
     "missing": [],
     "no_declaration": [],
-    "parsed": 12
+    "parsed": 13
    },
    "#179": {
     "glob": "docs/evidence/.*/PREREGISTRATION\\.md",
@@ -321,10 +321,10 @@
   "admission freezes (#158 form)": {
    "#158": {
     "glob": "docs/evidence/greg-genome-admission/[^/]+/freeze\\.json",
-    "matched": 8,
+    "matched": 9,
     "missing": [],
     "no_declaration": [],
-    "parsed": 8
+    "parsed": 9
    },
    "#179": {
     "glob": "docs/evidence/greg-genome-admission/[^/]+/freeze\\.json",
@@ -13492,6 +13492,94 @@
   },
   {
    "artifact": {
+    "commit": "11a8e318e121c187fe93d4007128b41e1c9e5342",
+    "path": "docs/evidence/greg-genome-admission/2026-10-22-v9/freeze.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:6082091af5aac13a5e6dd0a3103d52a5b414749108a658495ce838cd4cecaa36"
+   },
+   "exposure_commit": "11a8e318e121c187fe93d4007128b41e1c9e5342",
+   "family": "convex_qp_dual",
+   "generator": {
+    "code_sha256": "sha256:b401049ab042b2fa8d0e4a5b5719ba7187782c116efe1903f8cc7f28664bc9eb",
+    "commit": "11a8e318e121c187fe93d4007128b41e1c9e5342",
+    "delegates": [],
+    "function": "cqp_instance",
+    "key": "greg.cognition.genomes.formal_b:cqp_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.formal_b",
+    "module_file_sha256": "sha256:2f7c3165d6cfa0b71c3add780c215a2125602de88ca65abe36289da178614433",
+    "prng": [
+     "Random(f'genome:convex_qp_dual:{seed}')",
+     "default_rng(r.getrandbits(63))"
+    ],
+    "resolved": true
+   },
+   "id": "#158|docs/evidence/greg-genome-admission/2026-10-22-v9/freeze.json|admission held-out|convex_qp_dual|heldout",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": false,
+   "looked_at_basis": "no results file binds this freeze's digest",
+   "n": 30,
+   "part": "heldout",
+   "present_in": [
+    "#158"
+   ],
+   "program": "admission",
+   "role": "admission held-out",
+   "seeds": [
+    [
+     1800,
+     1829
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "11a8e318e121c187fe93d4007128b41e1c9e5342",
+    "path": "docs/evidence/greg-genome-admission/2026-10-22-v9/freeze.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:6082091af5aac13a5e6dd0a3103d52a5b414749108a658495ce838cd4cecaa36"
+   },
+   "exposure_commit": "11a8e318e121c187fe93d4007128b41e1c9e5342",
+   "family": "convex_qp_dual",
+   "generator": {
+    "code_sha256": "sha256:b401049ab042b2fa8d0e4a5b5719ba7187782c116efe1903f8cc7f28664bc9eb",
+    "commit": "11a8e318e121c187fe93d4007128b41e1c9e5342",
+    "delegates": [],
+    "function": "cqp_instance",
+    "key": "greg.cognition.genomes.formal_b:cqp_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.formal_b",
+    "module_file_sha256": "sha256:2f7c3165d6cfa0b71c3add780c215a2125602de88ca65abe36289da178614433",
+    "prng": [
+     "Random(f'genome:convex_qp_dual:{seed}')",
+     "default_rng(r.getrandbits(63))"
+    ],
+    "resolved": true
+   },
+   "id": "#158|docs/evidence/greg-genome-admission/2026-10-22-v9/freeze.json|dev|convex_qp_dual|dev",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "development seeds are run by builders (admission --dev) by protocol",
+   "n": 10,
+   "part": "dev",
+   "present_in": [
+    "#158"
+   ],
+   "program": "admission",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
     "commit": "3283f851c2cae9d1003b4db083dcace6933455d7",
     "path": "docs/evidence/greg-protected-evolution/2026-10-08/cycle-forecast-1.json",
     "read_at": "HEAD",
@@ -19159,6 +19247,55 @@
   },
   {
    "artifact": {
+    "commit": "93bf43a3df48aea9a23bdd0830af60a2610bf316",
+    "line_commits": [
+     "93bf43a3df48aea9a23bdd0830af60a2610bf316"
+    ],
+    "lines": [
+     14
+    ],
+    "path": "tests/unit/test_greg_cognition_large_request.py",
+    "sha256": "sha256:3219741b072191755236151030cfbefc34e5f3d9ccd7e813553c91c35b19d772"
+   },
+   "exposure_commit": "93bf43a3df48aea9a23bdd0830af60a2610bf316",
+   "family": "convex_qp_dual",
+   "generator": {
+    "code_sha256": "sha256:b401049ab042b2fa8d0e4a5b5719ba7187782c116efe1903f8cc7f28664bc9eb",
+    "commit": "93bf43a3df48aea9a23bdd0830af60a2610bf316",
+    "delegates": [],
+    "function": "cqp_instance",
+    "key": "greg.cognition.genomes.formal_b:cqp_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.formal_b",
+    "module_file_sha256": "sha256:2f7c3165d6cfa0b71c3add780c215a2125602de88ca65abe36289da178614433",
+    "prng": [
+     "Random(f'genome:convex_qp_dual:{seed}')",
+     "default_rng(r.getrandbits(63))"
+    ],
+    "resolved": true
+   },
+   "id": "#158|tests/unit/test_greg_cognition_large_request.py|dev|convex_qp_dual|greg.cognition.genomes.formal_b:cqp_instance:14",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 1,
+   "part": "greg.cognition.genomes.formal_b:cqp_instance:14",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     5,
+     5
+    ]
+   ]
+  },
+  {
+   "artifact": {
     "commit": "3283f851c2cae9d1003b4db083dcace6933455d7",
     "line_commits": [
      "079e717696e8f7b37eb0a1d421a5c2c61753bde6",
@@ -23532,6 +23669,68 @@
    ],
    "path": "docs/evidence/greg-genome-admission/2026-10-22-v8/PREREGISTRATION.md",
    "sha256": "sha256:3c9525d0133f7c4ea41e6b0cebd4f75198affb53a861da8f3f07bcdcd663f3c9"
+  },
+  {
+   "commit": "ce760f7a069e8ccc49433f0a143e571f4969ed31",
+   "declared_ranges": [
+    [
+     500,
+     511
+    ],
+    [
+     1000,
+     1005
+    ],
+    [
+     1000,
+     1029
+    ],
+    [
+     1001,
+     1040
+    ],
+    [
+     1100,
+     1129
+    ],
+    [
+     1800,
+     1829
+    ],
+    [
+     2001,
+     2040
+    ],
+    [
+     3001,
+     3040
+    ],
+    [
+     5001,
+     5040
+    ]
+   ],
+   "lineage": "#158",
+   "not_in_any_exposure": [
+    [
+     500,
+     511
+    ],
+    [
+     1001,
+     1040
+    ],
+    [
+     2001,
+     2040
+    ],
+    [
+     5001,
+     5040
+    ]
+   ],
+   "path": "docs/evidence/greg-genome-admission/2026-10-22-v9/PREREGISTRATION.md",
+   "sha256": "sha256:ba696de69de3ded0b5b059a664328634b30ed452b4bfe561b3dcb7823866d8fa"
   },
   {
    "commit": "29ea4ffcd380abfa7e99249bff50d56029f8994b",

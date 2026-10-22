@@ -292,11 +292,27 @@ def test_the_appraiser_refuses_a_receipt_that_claims_more_than_its_evidence(rece
     assert any(expected in f for f in verdict["findings"]), verdict["findings"]
 
 
+def _honest_envelope(summary):
+    """The receipt of a run inside the bubblewrap envelope: the worker and every acceptance record."""
+    summary["worker"]["isolation"] = dict(ENVELOPE)
+    summary["worker"]["confinement"] = {"filesystem": "bubblewrap envelope"}
+    tier = workers.confinement_tier(ENVELOPE)
+    summary["worker"].update(**tier)
+    summary["worker"]["confinement"].update(**tier)
+    for test in summary["greg_tests"]:
+        test.update(confinement="envelope: private filesystem, PID and network namespaces", landlock=None,
+                    isolation=dict(ENVELOPE), **tier)
+
+
 @pytest.mark.parametrize("where", ["worker", "acceptance"])
 def test_a_required_body_refuses_a_receipt_below_the_envelope(receipt, tmp_path, where):
     home, root, write = receipt
 
     def mutate(summary):
+        # The rest of the receipt is an honest envelope run, whatever this host gave the shared run: on a host with
+        # neither bubblewrap nor Landlock the real receipt is below the envelope everywhere, and each of the two
+        # required-body checks would hide the other's removal (CI job 1 found it).
+        _honest_envelope(summary)
         if where == "worker":    # a consistent, honest supervised-with-Landlock receipt: honest, but not allowed
             record = {"filesystem": "landlock", "abi": 7, "signals": SCOPED}
             _forge_supervised(summary, landlock_record=record)

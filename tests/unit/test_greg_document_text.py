@@ -16,8 +16,14 @@ from greg.body import Body
 from tests.greg_fixtures import Clock, make_body, mission, note_check
 from tests.unit.test_greg_missions import events, run, submit
 
-pytestmark = pytest.mark.skipif(genesis_mod.installed_binary("pdftotext") is None,
-                                reason="pdftotext not installed on this body; genesis would correctly escalate")
+import os
+
+# Only the tests that run the acquired reader need poppler. Where CI provisions it (GREG_REQUIRE_PDFTOTEXT=1), a
+# missing binary fails instead of skipping, so the mutation gate never passes on skipped tests.
+if os.environ.get("GREG_REQUIRE_PDFTOTEXT") == "1" and genesis_mod.installed_binary("pdftotext") is None:
+    raise RuntimeError("GREG_REQUIRE_PDFTOTEXT=1 but pdftotext is not installed")
+needs_pdftotext = pytest.mark.skipif(genesis_mod.installed_binary("pdftotext") is None,
+                                     reason="pdftotext not installed on this body; genesis would correctly escalate")
 
 LEASE = [["Residential lease between the parties."], ["The renewal term is twelve months", "with notice due net thirty."]]
 SCOPE = dict(capabilities=["fs.read", "acquired.document.text.*"], ceiling="read_only", auto_attach=True)
@@ -29,6 +35,7 @@ def pdf_check(path, phrase):
             "predicate": {"op": "contains", "field": "text", "value": phrase}}
 
 
+@needs_pdftotext
 def test_a_mission_checks_a_fact_inside_a_pdf_by_acquiring_installed_software(tmp_path):
     home, key, body_id, data = make_body(tmp_path)
     lease = data / "lease.pdf"
@@ -51,6 +58,7 @@ def test_a_mission_checks_a_fact_inside_a_pdf_by_acquiring_installed_software(tm
         assert "GPL" in manifest.provenance["license"]
 
 
+@needs_pdftotext
 def test_a_pdf_that_does_not_state_the_fact_does_not_close_the_mission(tmp_path):
     home, key, body_id, data = make_body(tmp_path)
     lease = data / "lease.pdf"
@@ -62,6 +70,7 @@ def test_a_pdf_that_does_not_state_the_fact_does_not_close_the_mission(tmp_path)
     assert events(home, "deficit.resolved")              # the reader was acquired; the document says otherwise
 
 
+@needs_pdftotext
 def test_the_baseline_reads_bytes_and_cannot_see_the_words_of_a_compressed_pdf(tmp_path):
     home, key, body_id, data = make_body(tmp_path)
     lease = data / "lease.pdf"
@@ -74,6 +83,7 @@ def test_the_baseline_reads_bytes_and_cannot_see_the_words_of_a_compressed_pdf(t
     assert observed["capability"] == "fs.read" and observed["passed"] is False   # it read the bytes; no words
 
 
+@needs_pdftotext
 def test_a_pdf_outside_the_read_roots_is_refused_by_the_acquired_reader(tmp_path):
     home, key, body_id, data = make_body(tmp_path)
     outside = tmp_path / "elsewhere"
@@ -87,6 +97,7 @@ def test_a_pdf_outside_the_read_roots_is_refused_by_the_acquired_reader(tmp_path
     assert any("outside permitted roots" in e["detail"] for e in events(home, "mission.observed"))
 
 
+@needs_pdftotext
 def test_the_oracle_rejects_a_reader_that_drops_words(tmp_path, monkeypatch):
     monkeypatch.setitem(genesis_mod.PARSERS, "words", lambda out: " ".join(out.split()[:-1]))
     home, key, body_id, data = make_body(tmp_path)
@@ -161,6 +172,7 @@ def found_check(path, phrase, expected=True):
             "predicate": {"op": "equals", "field": "found", "value": expected}}
 
 
+@needs_pdftotext
 def test_a_phrase_past_the_receipt_prefix_is_found_over_the_whole_document(tmp_path):
     home, key, body_id, data = make_body(tmp_path)
     lease = data / "long.pdf"
@@ -173,6 +185,7 @@ def test_a_phrase_past_the_receipt_prefix_is_found_over_the_whole_document(tmp_p
     assert observed["passed"] is True
 
 
+@needs_pdftotext
 def test_a_forbidden_phrase_past_the_receipt_prefix_is_not_missed(tmp_path):
     home, key, body_id, data = make_body(tmp_path)
     lease = data / "long.pdf"
@@ -184,6 +197,7 @@ def test_a_forbidden_phrase_past_the_receipt_prefix_is_not_missed(tmp_path):
     assert missions["m:never"].status != "ACHIEVED"                   # the clause is there, after 16 KiB
 
 
+@needs_pdftotext
 def test_an_oversized_extraction_is_refused(tmp_path, monkeypatch):
     from greg import mechanisms
     monkeypatch.setattr(mechanisms, "MAX_OUTPUT", 64)
@@ -219,6 +233,7 @@ def test_dep5_reads_spdx_spellings_not_open_names_and_comma_precedence(name, cls
     assert licensing._debian_class(name) == cls
 
 
+@needs_pdftotext
 def test_an_unclassified_binary_card_says_it_keeps_prior_behaviour():
     a = licensing.system_binary(genesis_mod.installed_binary("pdftotext"))
     if a is not None:
@@ -232,6 +247,7 @@ def test_an_unclassified_binary_card_says_it_keeps_prior_behaviour():
 SCANNED = [["Residential lease between the parties."], documents.SCAN, ["Signed by both parties."]]
 
 
+@needs_pdftotext
 def test_a_scanned_page_never_proves_a_phrase_absent(tmp_path):
     home, key, body_id, data = make_body(tmp_path)
     lease = data / "scanned.pdf"
@@ -248,6 +264,7 @@ def test_a_scanned_page_never_proves_a_phrase_absent(tmp_path):
     assert output["complete"] is False and output["pages_without_text"] == [2] and output["found"] is None
 
 
+@needs_pdftotext
 def test_a_phrase_found_on_a_text_page_of_a_partly_scanned_pdf_is_still_found(tmp_path):
     home, key, body_id, data = make_body(tmp_path)
     lease = data / "scanned.pdf"
@@ -258,6 +275,7 @@ def test_a_phrase_found_on_a_text_page_of_a_partly_scanned_pdf_is_still_found(tm
     assert missions["m:hit"].status == "ACHIEVED"           # a hit on a page that has text is proof
 
 
+@needs_pdftotext
 def test_the_oracle_rejects_a_reader_that_claims_a_scanned_page_was_read(tmp_path, monkeypatch):
     monkeypatch.setattr(documents, "coverage", lambda raw: {"pages": 1, "pages_without_text": [], "complete": True})
     home, key, body_id, data = make_body(tmp_path)

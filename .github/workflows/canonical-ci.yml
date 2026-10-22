@@ -216,9 +216,17 @@ jobs:
           python-version: "3.11"
       # requirements-cognition adds NetworkX and SciPy: the open-source engines genesis qualifies.
       - run: pip install -r requirements-dev.txt -r requirements-cortex.txt -r requirements-cognition.txt
+      # pdftotext (poppler-utils) is the system binary document.text acquires (#201). Without it the document tests
+      # skip and their mutants survive (run 39729783774), so it is provisioned and then required, never skipped.
+      - name: Provision poppler-utils (the acquired document reader)
+        run: sudo apt-get update -q && sudo apt-get install -y -q poppler-utils
       - name: Cortex tests with the solvers and open-source engines present (no skips)
-        run: python -m pytest -q tests/unit/test_cortex_gates_genome.py tests/unit/test_cortex_routes.py tests/unit/test_cortex_pipeline.py tests/unit/test_cortex_traceability.py tests/unit/test_cortex_register.py tests/unit/test_cortex_formal_engines.py tests/unit/test_cortex_schedule_composition.py tests/unit/test_cortex_crossgeo.py tests/unit/test_greg_cortex_bridge.py tests/integration/test_greg_cortex_mission.py tests/unit/test_greg_open_source_genesis.py
+        env:
+          GREG_REQUIRE_PDFTOTEXT: "1"
+        run: python -m pytest -q tests/unit/test_cortex_gates_genome.py tests/unit/test_cortex_routes.py tests/unit/test_cortex_pipeline.py tests/unit/test_cortex_traceability.py tests/unit/test_cortex_register.py tests/unit/test_cortex_formal_engines.py tests/unit/test_cortex_schedule_composition.py tests/unit/test_cortex_crossgeo.py tests/unit/test_greg_cortex_bridge.py tests/integration/test_greg_cortex_mission.py tests/unit/test_greg_open_source_genesis.py tests/unit/test_greg_document_text.py tests/unit/test_greg_license_qualification.py
       - name: Mutation check (every safeguard-removing mutant must be caught)
+        env:
+          GREG_REQUIRE_PDFTOTEXT: "1"
         run: python scripts/ci/check_cortex_mutants.py
       - name: Canonical GREG seed-path cognition, signed authority and process recovery
         run: python -m pytest -q tests/unit/test_greg_cognition_seed_path.py tests/unit/test_greg_seed_compat.py tests/integration/test_greg_cognition_process.py

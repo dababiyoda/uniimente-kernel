@@ -360,6 +360,7 @@
     "greg/cognition/genomes/collective_b.py",
     "greg/cognition/genomes/competitors.py",
     "greg/cognition/genomes/contract.py",
+    "greg/cognition/genomes/control_b.py",
     "greg/cognition/genomes/crowd.py",
     "greg/cognition/genomes/decision.py",
     "greg/cognition/genomes/developmental.py",

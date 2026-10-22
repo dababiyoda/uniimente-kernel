@@ -64,7 +64,11 @@ def test_the_freeze_refuses_to_overwrite(monkeypatch, tmp_path):
     assert existing.read_text() == "{}"
 
 
-def test_measure_reports_every_family_and_the_sparse_geometry_on_development_seeds():
+def test_measure_reports_every_family_and_the_sparse_geometry_on_development_seeds(monkeypatch):
+    # The merged solvers (#184) refuse a compute_limit above 100000 (solvers._work); #155's run.py declares 200000.
+    # #184's own re-admission makes this one declared change (run_operations.py GEOMETRY), and so does this
+    # development-seed measure on the joined tree (#196). The frozen v3 results keep the geometry they ran with.
+    monkeypatch.setattr(V1, "GEOMETRY", {**V1.GEOMETRY, "compute_limit": 100000})
     measured = R.measure(seeds=range(1, 3))           # development seeds only; never the held-out range
     assert set(R.BENCHMARKS) | set(V1.STRUCTURAL) == set(measured["families"])
     for family in R.BENCHMARKS:

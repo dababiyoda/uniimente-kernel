@@ -7,6 +7,8 @@ APPRAISAL = "tests/unit/test_greg_workers.py::test_appraisal_binds_acceptance_to
 FREEZE = "tests/unit/test_greg_worker_containment.py::"
 FROZEN = FREEZE + "test_helpers_the_runner_and_shadowing_modules_are_part_of_the_frozen_evaluator"
 NAMED = FREEZE + "test_scripts_and_configuration_are_frozen_but_named_code_is_not"
+TIER = "tests/unit/test_greg_confinement_tier.py::"
+OVERCLAIM = TIER + "test_the_appraiser_refuses_a_receipt_that_claims_more_than_its_evidence"
 MUTANTS = [
     ("canonical commission binding", "greg/workers.py", "if ctx.journal is not None:", "if False:", APPRAISAL),
     ("worker world reobservation", "greg/appraisal.py", '"worker.appraise", "browser.trace"', '"browser.trace"',
@@ -37,6 +39,36 @@ MUTANTS = [
     ("evaluator: shared files never override a rejection", "greg/workers.py",
      'if evaluator["shared"] and verdict == "ACCEPTED":', 'if evaluator["shared"]:',
      FREEZE + "test_a_project_file_change_never_turns_a_rejection_into_a_founder_decision"),
+    # Graduated confinement (R2-A): each claim check of worker.appraise and the one tier derivation.
+    ("tier: a stronger claimed tier", "greg/workers.py", 'TIER_RANK[tier] > TIER_RANK[derived["tier"]]', "False",
+     OVERCLAIM),
+    ("tier: a different Landlock ABI", "greg/workers.py",
+     'claim["landlock_abi"] != derived["landlock_abi"]', "False", OVERCLAIM),
+    ("tier: claimed signal scoping", "greg/workers.py",
+     'if claim.get("signals_scoped") is True and not derived["signals_scoped"]:', "if False:", OVERCLAIM),
+    ("tier: evidence scoping beyond its ABI", "greg/workers.py",
+     'isolation.signals_record(isolation.SCOPE_SIGNAL) and not derived["signals_scoped"]:', "False:", OVERCLAIM),
+    ("tier: an unknown tier", "greg/workers.py", "tier not in CONFINEMENT_TIERS", "False", OVERCLAIM),
+    ("tier: implied by the confinement record", "greg/workers.py",
+     '{"tier": implied, **record}', "record", OVERCLAIM),
+    ("tier: acceptance records checked", "greg/workers.py",
+     'findings += _claim_findings(f"acceptance record {index}", test, test_evidence)', "pass", OVERCLAIM),
+    ("tier: overclaims reject", "greg/workers.py", "    if overclaims:\n        findings += overclaims\n"
+     "        verdict = \"REJECTED\"", "    if overclaims:\n        findings += overclaims", OVERCLAIM),
+    ("tier: required body, worker", "greg/workers.py",
+     'if required and derived["tier"] in ("landlock", "supervised_unconfined"):', "if False:",
+     TIER + "test_a_required_body_refuses_a_receipt_below_the_envelope"),
+    ("tier: required body, acceptance", "greg/workers.py",
+     'if required and tests[-1]["tier"] in ("landlock", "supervised_unconfined"):', "if False:",
+     TIER + "test_a_required_body_refuses_a_receipt_below_the_envelope"),
+    ("tier: an old receipt is not refused for absence", "greg/workers.py",
+     "if tier is not None and tier not in CONFINEMENT_TIERS", "if tier not in CONFINEMENT_TIERS",
+     TIER + "test_an_old_receipt_without_tiers_still_appraises_from_its_evidence"),
+    ("tier: scoping needs ABI >= 6", "greg/workers.py", "and bool(isolation.signal_scope(abi)))", ")",
+     TIER + "test_the_tier_is_derived_from_the_evidence_alone"),
+    ("tier: never a provider's claim", "greg/workers.py", "    tier = confinement_tier(report.isolation if isinstance(",
+     "    tier = confinement_tier(report.isolation if True or isinstance(",
+     TIER + "test_a_provider_greg_did_not_launch_never_records_the_tier_it_claims"),
 ]
 
 def main():

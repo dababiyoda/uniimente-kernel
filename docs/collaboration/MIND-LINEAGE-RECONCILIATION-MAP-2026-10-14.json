@@ -2130,8 +2130,8 @@
    "path": "greg/cognition/genomes/library.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); kept at 98a2ab0c, then extended by #158's own admission v8 (9a354321: five genome modules registered), joined on #196; the bytes equal #158's later head 21ae7f5a"
   },
   {
    "path": "greg/cognition/genomes/node_cut.py",
@@ -2200,8 +2200,8 @@
    "path": "greg/cognition/reserved.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); kept at 98a2ab0c, then changed by #158 itself (96e0fc1a, 66360494, 9dc91c68, 15924810, 3483dd83), joined on #196; the bytes equal #158's later head 21ae7f5a"
   },
   {
    "path": "greg/cognition/settlement.py",
@@ -2480,8 +2480,8 @@
    "path": "tests/unit/test_cognition_optimization_certificates.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab; kept at 98a2ab0c, then changed by #158 itself (93bf43a3), joined on #196; the bytes equal #158's later head 21ae7f5a"
   },
   {
    "path": "tests/unit/test_cognition_seed_gates.py",

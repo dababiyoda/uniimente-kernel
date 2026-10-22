@@ -39,6 +39,7 @@ that was 13 PRs, plus the deltas listed under Pending.
 | #168 (contains #137's 3 later commits) | `0fd430f3` | merged via `wip/join-168`; three seams resolved toward the stronger mechanism (verified answers on the path surface, founder tier for met-ahead, the sealed oracle over a weakened evaluator) | `1b48ab7f`, joined at the merge after `5d9a43c7`; owned source `a07cdc3e` |
 | #201 evidence-soundness patch (`session_013k41DnwrjzpXL33r3j9BgB`) | `cb5d8647`; follow-up `962fdd3a` | applied; the refusal watch marks inconclusive observations | `3d2f9cc4`, `8d0a2303` |
 | Construction decision (relaxation fix) | `7276de8f` | merged | `8befbc71`, loop map `78da0332` |
+| One mission across all 15 steps; a precondition-held mission resumes when the world satisfies it (dispatched worker) | `cab84e87` | merged after review: the engine change withdraws a NO_STRATEGY ask only for strategies its own retained evidence names as precondition-held, once every such precondition is observed passing; 16 mutation anchors intact; regression test fails on the old engine | the join after `d52b09d7` |
 | #202 antifragility v3 and v3b (both NO_GAIN; mechanism off by default, `KEY="dimension"`) | `47ac8d5f` | merged; the line is closed as pre-registered | `79ac8c6f` |
 | #158 admission v8 (15 genomes) | `9a354321` | merged; CI job 1 limit 75 -> 90 min (the job took 65 min at `78da0332`); index and ledger regenerated | `55edb401`, `813ca188` |
 | #158 stdin transport fix (requests above the 128 KiB argv cap reach the solver) | `93bf43a3` | merged; the joined tree's thinking-budget check is kept before the new 1 MiB ceiling | `bf7c5fec` |
@@ -115,6 +116,7 @@ that was 13 PRs, plus the deltas listed under Pending.
 | `55edb401` | genome, condition-competence, compiler, settlement, index, path and admission suites (local) | 2723 passed, 2 skipped |
 | `bf7c5fec` | CI job 6 gates (local): cortex, seed-path and residual tests; three mutation gates; Seed Genome; migrated-seed replay; held-out run | 803 passed; cortex mutants 192/192, cognition boundary 6/6, residual 86/86 caught; Seed Genome 100/100 matched, 0 hard failures; replay 120/120; held-out accepted by the freeze manifest, INCONCLUSIVE only for want of a local model (as in CI) |
 | `4dac1608` | the same suites plus cognition and cortex (local) | 3582 passed, 5 skipped |
+| join of `cab84e87` | the 15-step mission, `test_one_machine.py` and mission, precondition, Goal Gravity, appraisal, restore and incomplete-evidence suites, with real organs (DALEOBANKS `667439f`, WealthMachine `ec82b80`) and bubblewrap (local) | 749 passed, 4 skipped; three mutants (wake, attach gate, organ binding removed) each fail the 15-step test (worker's run) |
 
 Organs: DALEOBANKS `667439f`, WealthMachine `ec82b80` (CI pins, unchanged; neither organ moved its pinned code).
 
@@ -190,7 +192,10 @@ This is one agent working through five lenses. It is not independent review.
    antifragility NO_GAIN three times; F3 NO_LIFT; probabilistic reads differently in two runs; construction outcomes
    reorder compiles, but there is no positive dividend yet; one load-sensitive test failure that passes on rerun.
 7. **Remaining engineering work.**
-   - One mission across all 15 steps (`LOOP-15-MAP-2026-10-22.md`; today three episodes).
+   - Done at the join of `cab84e87`: one founder-signed goal and mission cross all 15 steps
+     (`tests/integration/test_one_mission_fifteen_steps.py`, CI job 8). Its honest gaps are listed in the test's `GAPS`:
+     the observation enters through the stopped-body intake, the organs do not carry the staffing figures into
+     WealthMachine's assessment, and the changed decision comes from a kept capability, not reordered outcomes.
    - A positive construction dividend: realized outcomes bound to construction receipts, so a certified construction
      can settle as wrong.
    - Antifragility: closed. v3b was NO_GAIN by its frozen rule (best cell 3-0, no preference fired; B1 beats every

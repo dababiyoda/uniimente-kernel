@@ -148,9 +148,21 @@ def test_a_spent_budget_narrows_the_result_instead_of_skipping_required_evidence
 
 
 def test_local_compute_is_measured_not_assumed_free(registry, monkeypatch):
-    # The compiler measures each inner run around its call to reason, never inside it: a measured recipe lift binds
-    # the code closure of reason, so counting CPU there would leave every measured lift stale (test_greg_mind_
-    # convergence: test_recipe_lifts_bind_the_recipe_code_they_measured).
+    # Both are measured. reason prices its own call on its receipt (#192), so a direct capability call is never free;
+    # the compiler measures each inner run around its call to reason (Track B). On the joined tree reason's code
+    # closure differs from the one Track B's recipe lifts measured (the grant window as well as this counter), so
+    # those lifts re-measure on the joined code (test_greg_mind_convergence: test_recipe_lifts_bind_...).
+    roomy = {"latency_limit": 30}
+    r = cortex.reason({"problem_id": "cpu", "operation": "optimize", "data": dict(MODEL), "geometry": roomy},
+                      registry=registry)
+    assert r["output"] is not None
+    cost = r["compute_cost"]
+    assert cost["cpu_seconds"] > 0 and cost["peak_memory"] == "unmeasured" and cost["energy"] == "unmeasured"
+    with monkeypatch.context() as m:
+        m.setattr(cortex, "_cpu_seconds", lambda: None)
+        direct_blind = cortex.reason({"problem_id": "cpu2", "operation": "optimize", "data": dict(MODEL),
+                                      "geometry": roomy}, registry=registry)
+    assert direct_blind["compute_cost"]["cpu_seconds"] == "unmeasured" and direct_blind["output"] == r["output"]
     compiled = compile_(registry, {"geometry": "optimization", "consequence_class": "internal_write"}, MODEL)
     assert compiled["state"] == "ANSWERED"
     budget = compiled["resource_use"]["budget"]

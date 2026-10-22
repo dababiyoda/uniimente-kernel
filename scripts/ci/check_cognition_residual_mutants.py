@@ -95,6 +95,10 @@ MUTANTS = [
   '                      "geometry": {**hint, "latency_limit": limit}, **extra}, registry=registry, journal=journal,',
   '                      "geometry": hint, **extra}, registry=registry, journal=journal,',
   'test_one_budget_covers_the_whole_compiled_decision', BUDGET),
+ # #192's receipt-level counter, kept on the joined tree beside Track B's compiler-level one (2026-10-22 join review)
+ ('a direct capability call is priced as free', 'greg/cognition/cortex.py',
+  '"cpu_seconds": _cpu_delta(cpu_started),', '"cpu_seconds": 0.0,',
+  'test_local_compute_is_measured_not_assumed_free', BUDGET),
  ('local compute recorded as free', 'greg/cognition/compiler.py',
   'budget.done("answer", cpu_seconds=_cpu_delta(cpu_started))', 'budget.done("answer", cpu_seconds=0.0)',
   'test_local_compute_is_measured_not_assumed_free', BUDGET),

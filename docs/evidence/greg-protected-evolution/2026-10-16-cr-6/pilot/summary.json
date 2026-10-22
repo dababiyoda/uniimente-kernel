@@ -1,0 +1,227 @@
+{
+ "files": [
+  "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/lineages-T1.json",
+  "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/lineages-T2.json",
+  "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/lineages-T3.json"
+ ],
+ "cycles": 9,
+ "train_sets": [
+  [
+   3500,
+   3559
+  ],
+  [
+   3560,
+   3619
+  ],
+  [
+   3620,
+   3679
+  ]
+ ],
+ "rules": {
+  "mean/1": {
+   "advances": 9,
+   "stress_passes": 9,
+   "restart_heavy": 5,
+   "same_as_mean_rule": 9,
+   "p_retain_n180_alpha": 0.554,
+   "p_retain_n180_target_4": 0.419,
+   "p_retain_n180_programme_6": 0.381,
+   "p_retain_n240_alpha": 0.614,
+   "p_retain_n240_target_4": 0.512,
+   "p_retain_n240_programme_6": 0.48,
+   "per_cycle_n180_alpha": [
+    0.0095,
+    0.108,
+    0.57,
+    0.772,
+    0.0575,
+    0.8725,
+    0.951,
+    0.9025,
+    0.741
+   ],
+   "ungated_n180_alpha": 0.554,
+   "by_train_set_n180_alpha": {
+    "3500-3559": 0.229,
+    "3560-3619": 0.567,
+    "3620-3679": 0.865
+   }
+  },
+  "median/1": {
+   "advances": 9,
+   "stress_passes": 7,
+   "restart_heavy": 4,
+   "same_as_mean_rule": 1,
+   "p_retain_n180_alpha": 0.496,
+   "p_retain_n180_target_4": 0.362,
+   "p_retain_n180_programme_6": 0.323,
+   "p_retain_n240_alpha": 0.559,
+   "p_retain_n240_target_4": 0.446,
+   "p_retain_n240_programme_6": 0.412,
+   "per_cycle_n180_alpha": [
+    0.455,
+    0.108,
+    0.5885,
+    0.9025,
+    0.9025,
+    0.67,
+    0.0,
+    0.0,
+    0.8385
+   ],
+   "ungated_n180_alpha": 0.513,
+   "by_train_set_n180_alpha": {
+    "3500-3559": 0.384,
+    "3560-3619": 0.825,
+    "3620-3679": 0.28
+   }
+  },
+  "trimmed/1": {
+   "advances": 9,
+   "stress_passes": 9,
+   "restart_heavy": 5,
+   "same_as_mean_rule": 7,
+   "p_retain_n180_alpha": 0.548,
+   "p_retain_n180_target_4": 0.418,
+   "p_retain_n180_programme_6": 0.381,
+   "p_retain_n240_alpha": 0.607,
+   "p_retain_n240_target_4": 0.51,
+   "p_retain_n240_programme_6": 0.478,
+   "per_cycle_n180_alpha": [
+    0.0095,
+    0.041,
+    0.57,
+    0.772,
+    0.0755,
+    0.8725,
+    0.951,
+    0.9025,
+    0.741
+   ],
+   "ungated_n180_alpha": 0.548,
+   "by_train_set_n180_alpha": {
+    "3500-3559": 0.207,
+    "3560-3619": 0.573,
+    "3620-3679": 0.865
+   }
+  },
+  "signtest/1": {
+   "advances": 9,
+   "stress_passes": 6,
+   "restart_heavy": 3,
+   "same_as_mean_rule": 2,
+   "p_retain_n180_alpha": 0.201,
+   "p_retain_n180_target_4": 0.125,
+   "p_retain_n180_programme_6": 0.108,
+   "p_retain_n240_alpha": 0.231,
+   "p_retain_n240_target_4": 0.162,
+   "p_retain_n240_programme_6": 0.145,
+   "per_cycle_n180_alpha": [
+    0.1005,
+    0.1005,
+    0.093,
+    0.772,
+    0.0575,
+    0.6865,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "ungated_n180_alpha": 0.318,
+   "by_train_set_n180_alpha": {
+    "3500-3559": 0.098,
+    "3560-3619": 0.505,
+    "3620-3679": 0.0
+   }
+  },
+  "netwins/1": {
+   "advances": 9,
+   "stress_passes": 6,
+   "restart_heavy": 3,
+   "same_as_mean_rule": 2,
+   "p_retain_n180_alpha": 0.201,
+   "p_retain_n180_target_4": 0.125,
+   "p_retain_n180_programme_6": 0.108,
+   "p_retain_n240_alpha": 0.231,
+   "p_retain_n240_target_4": 0.162,
+   "p_retain_n240_programme_6": 0.145,
+   "per_cycle_n180_alpha": [
+    0.1005,
+    0.1005,
+    0.093,
+    0.772,
+    0.0575,
+    0.6865,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "ungated_n180_alpha": 0.318,
+   "by_train_set_n180_alpha": {
+    "3500-3559": 0.098,
+    "3560-3619": 0.505,
+    "3620-3679": 0.0
+   }
+  },
+  "stress-mean/1": {
+   "advances": 9,
+   "stress_passes": 9,
+   "restart_heavy": 5,
+   "same_as_mean_rule": 9,
+   "p_retain_n180_alpha": 0.554,
+   "p_retain_n180_target_4": 0.419,
+   "p_retain_n180_programme_6": 0.381,
+   "p_retain_n240_alpha": 0.614,
+   "p_retain_n240_target_4": 0.512,
+   "p_retain_n240_programme_6": 0.48,
+   "per_cycle_n180_alpha": [
+    0.0095,
+    0.108,
+    0.57,
+    0.772,
+    0.0575,
+    0.8725,
+    0.951,
+    0.9025,
+    0.741
+   ],
+   "ungated_n180_alpha": 0.554,
+   "by_train_set_n180_alpha": {
+    "3500-3559": 0.229,
+    "3560-3619": 0.567,
+    "3620-3679": 0.865
+   }
+  },
+  "stress-signtest/1": {
+   "advances": 9,
+   "stress_passes": 9,
+   "restart_heavy": 4,
+   "same_as_mean_rule": 3,
+   "p_retain_n180_alpha": 0.343,
+   "p_retain_n180_target_4": 0.209,
+   "p_retain_n180_programme_6": 0.18,
+   "p_retain_n240_alpha": 0.396,
+   "p_retain_n240_target_4": 0.273,
+   "p_retain_n240_programme_6": 0.245,
+   "per_cycle_n180_alpha": [
+    0.1005,
+    0.1005,
+    0.093,
+    0.772,
+    0.0575,
+    0.6865,
+    0.4325,
+    0.099,
+    0.741
+   ],
+   "ungated_n180_alpha": 0.343,
+   "by_train_set_n180_alpha": {
+    "3500-3559": 0.098,
+    "3560-3619": 0.505,
+    "3620-3679": 0.424
+   }
+  }
+ }
+}

@@ -28,6 +28,17 @@ class _Rules(ctypes.Structure):
     _fields_ = [("handled_access_fs", ctypes.c_uint64)]
 
 
+class _ScopedRules(ctypes.Structure):
+    """The ruleset attribute from ABI 6: network access left unhandled (unchanged), IPC scoped to the domain."""
+    _fields_ = [("handled_access_fs", ctypes.c_uint64), ("handled_access_net", ctypes.c_uint64),
+                ("scoped", ctypes.c_uint64)]
+
+
+# ABI >= 6: a confined process may neither signal a process outside its Landlock domain (the parent, PID 1, any
+# host process) nor connect to an abstract UNIX socket created outside it. (#158 af258bf, review of #179 L5)
+SCOPE_ABSTRACT_UNIX_SOCKET, SCOPE_SIGNAL = 1, 2
+
+
 class _Path(ctypes.Structure):
     _pack_ = 1
     _fields_ = [("allowed_access", ctypes.c_uint64), ("parent_fd", ctypes.c_int32)]
@@ -51,15 +62,16 @@ def available():
         return {"available": False, "abi": None, "reason": str(exc)}
 
 
-def confine(root, public_files):
-    """Irreversibly confine this disposable process. Installation failure raises."""
+def confine(root, public_files, *, list_code: bool = True):
+    """Irreversibly confine this disposable process. Installation failure raises. ``list_code=False`` withholds
+    even directory listing of the repository (the P8 sandbox imports everything it runs before confinement)."""
     libc = _libc()
     abi = libc.syscall(444, None, 0, 1)
     if abi < 3:
         raise IsolationError("Landlock ABI >=3 required; caller/provider execution remains refused")
     root = Path(root).resolve(strict=True)
     code = Path(__file__).resolve().parents[1]
-    grants = {root: ALL_FS, code: READ_DIR}
+    grants = {root: ALL_FS, **({code: READ_DIR} if list_code else {})}
     for file in public_files:
         file = Path(file)
         if file.resolve(strict=True) != file or file.stat().st_nlink != 1 or not file.is_file():
@@ -82,13 +94,19 @@ def confine(root, public_files):
                                           for p in (user_site, code, root)):
             grants[directory] = grants.get(directory, 0) | READ_FILE | READ_DIR
     # C runtime libraries an extension module imported after confinement may link against (CI:
-    # librt.so.1). Exact public library files, never a whole host library directory.
+    # librt.so.1). Exact public library files, never a whole host library directory. One grant path:
+    # the 2026-10-14 Mind-lineage convergence unified #158's 1ea2209 (glibc family) and #155's bfb9c04
+    # (this superset with the ancestor guard above).
     for base in (Path("/lib"), Path("/lib64"), Path("/usr/lib"), Path("/usr/lib64")):
         for sub in ("", "x86_64-linux-gnu/", "aarch64-linux-gnu/"):
             for name in RUNTIME_LIBRARIES:
                 for path in base.glob(sub + name):
                     if path.is_file():
                         grants[path.resolve()] = grants.get(path.resolve(), 0) | READ_FILE
+    # A virtual environment's interpreter reads pyvenv.cfg at startup: a confined worker's child interpreter needs it.
+    venv_config = Path(sys.prefix).resolve() / "pyvenv.cfg"
+    if sys.prefix != sys.base_prefix and venv_config.is_file():
+        grants[venv_config] = READ_FILE
     # Already-loaded ELF dependencies are explicit public runtime files.
     # No /proc hierarchy is granted; this read happens before confinement.
     for line in Path("/proc/self/maps").read_text().splitlines():
@@ -115,7 +133,14 @@ def confine(root, public_files):
                             "aarch64-linux-gnu/ld-linux*.so*"):
                 for path in base.glob(pattern):
                     grants[path.resolve()] = READ_FILE | EXECUTE
-    attr = _Rules(ALL_FS)
+    # landlock_restrict_self confines the calling thread (and what it later creates) only: a thread that already
+    # exists would keep unconfined access, so a multi-threaded caller is refused rather than half-confined.
+    threads = len(os.listdir("/proc/self/task"))
+    if threads != 1:
+        raise IsolationError(f"Landlock confines the calling thread only; {threads} threads exist (start numeric "
+                             f"libraries single-threaded, e.g. OPENBLAS_NUM_THREADS=1, before confining)")
+    scoped = abi >= 6
+    attr = _ScopedRules(ALL_FS, 0, SCOPE_ABSTRACT_UNIX_SOCKET | SCOPE_SIGNAL) if scoped else _Rules(ALL_FS)
     fd = libc.syscall(444, ctypes.byref(attr), ctypes.sizeof(attr), 0)
     if fd < 0:
         raise IsolationError(f"Landlock ruleset creation failed errno={ctypes.get_errno()}")
@@ -135,4 +160,7 @@ def confine(root, public_files):
     finally:
         os.close(fd)
     return {"filesystem": "landlock", "abi": abi, "arbitrary_source": "refused",
-            "scope": "published source/runtime read-only; staged store read/write"}
+            "scope": "published source/runtime read-only; staged store read/write",
+            "repository_listing": "allowed" if list_code else "denied",
+            "signals": "scoped to the domain" if scoped else "unscoped (Landlock ABI < 6)",
+            "ipc_scopes": ["abstract_unix_socket", "signal"] if scoped else [], "threads": threads}

@@ -1,0 +1,9105 @@
+{
+ "finished_at": "2026-10-14T16:24:12.593061+00:00",
+ "freeze": {
+  "frozen_at": "2026-10-14T16:23:41.042779+00:00",
+  "inputs": {
+   "cortex/evaluation/data/sndlib_networks.json.gz": "sha256:f9b1d3d45ba9a70e8d2d6dc1db0a674eb21a7bb7559bb6ae7d2debcf65e7fc47",
+   "cortex/evaluation/pr155_f7_audit/audit.py": "sha256:955c0a90802a8e5ee735692d9af87cf1b1ce22fcf776fa162d9947945cb69a38",
+   "docs/evidence/greg-composition-lift/2026-10-14-v4/results-v4.json": "sha256:43e7469c3eb2230439979b7ef1570d29658151aa86449a60c4640240c31e545c"
+  }
+ },
+ "incomplete": [],
+ "items": [
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 71
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 42
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 62
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    }
+   },
+   "budget": 2660,
+   "independent_optimum": 73,
+   "item_id": "F7-atlanta-0",
+   "recorded_truth": 73,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 67
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 67
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 67
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 67
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 67
+    }
+   },
+   "budget": 2700,
+   "independent_optimum": 67,
+   "item_id": "F7-atlanta-1",
+   "recorded_truth": 67,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 72
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 67
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 72
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 72
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 72
+    }
+   },
+   "budget": 2660,
+   "independent_optimum": 72,
+   "item_id": "F7-atlanta-2",
+   "recorded_truth": 72,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 62
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 62
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 62
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 62
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 62
+    }
+   },
+   "budget": 2700,
+   "independent_optimum": 62,
+   "item_id": "F7-atlanta-3",
+   "recorded_truth": 62,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 62
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    }
+   },
+   "budget": 1980,
+   "independent_optimum": 64,
+   "item_id": "F7-atlanta-4",
+   "recorded_truth": 64,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    }
+   },
+   "budget": 1980,
+   "independent_optimum": 65,
+   "item_id": "F7-atlanta-5",
+   "recorded_truth": 65,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    }
+   },
+   "budget": 1320,
+   "independent_optimum": 60,
+   "item_id": "F7-atlanta-6",
+   "recorded_truth": 60,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 34
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 35
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    }
+   },
+   "budget": 5060,
+   "independent_optimum": 48,
+   "item_id": "F7-atlanta-7",
+   "recorded_truth": 48,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    }
+   },
+   "budget": 1320,
+   "independent_optimum": 59,
+   "item_id": "F7-atlanta-8",
+   "recorded_truth": 59,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 33
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    }
+   },
+   "budget": 5860,
+   "independent_optimum": 54,
+   "item_id": "F7-atlanta-9",
+   "recorded_truth": 54,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "optimize_flow_blind": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    }
+   },
+   "budget": 60,
+   "independent_optimum": 54,
+   "item_id": "F7-cost266-0",
+   "recorded_truth": 54,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "optimize_flow_blind": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    }
+   },
+   "budget": 60,
+   "independent_optimum": 54,
+   "item_id": "F7-cost266-1",
+   "recorded_truth": 54,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 12,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "optimize_flow_blind": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    }
+   },
+   "budget": 80,
+   "independent_optimum": 44,
+   "item_id": "F7-cost266-2",
+   "recorded_truth": 44,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 12,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 33
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 24
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    }
+   },
+   "budget": 80,
+   "independent_optimum": 44,
+   "item_id": "F7-cost266-3",
+   "recorded_truth": 44,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    }
+   },
+   "budget": 100,
+   "independent_optimum": 54,
+   "item_id": "F7-cost266-4",
+   "recorded_truth": 54,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    }
+   },
+   "budget": 100,
+   "independent_optimum": 58,
+   "item_id": "F7-cost266-5",
+   "recorded_truth": 58,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    }
+   },
+   "budget": 160,
+   "independent_optimum": 66,
+   "item_id": "F7-cost266-6",
+   "recorded_truth": 66,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 56
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    }
+   },
+   "budget": 160,
+   "independent_optimum": 61,
+   "item_id": "F7-cost266-7",
+   "recorded_truth": 61,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 34
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 18
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    }
+   },
+   "budget": 60,
+   "independent_optimum": 38,
+   "item_id": "F7-cost266-8",
+   "recorded_truth": 38,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 36
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 18
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    }
+   },
+   "budget": 60,
+   "independent_optimum": 38,
+   "item_id": "F7-cost266-9",
+   "recorded_truth": 38,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 6,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "optimize_flow_blind": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    }
+   },
+   "budget": 40,
+   "independent_optimum": 60,
+   "item_id": "F7-dfn-bwin-0",
+   "recorded_truth": 60,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    }
+   },
+   "budget": 40,
+   "independent_optimum": 63,
+   "item_id": "F7-dfn-bwin-1",
+   "recorded_truth": 63,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 56
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    }
+   },
+   "budget": 80,
+   "independent_optimum": 61,
+   "item_id": "F7-dfn-bwin-2",
+   "recorded_truth": 61,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    }
+   },
+   "budget": 40,
+   "independent_optimum": 63,
+   "item_id": "F7-dfn-bwin-3",
+   "recorded_truth": 63,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 6,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "optimize_flow_blind": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    }
+   },
+   "budget": 40,
+   "independent_optimum": 60,
+   "item_id": "F7-dfn-bwin-4",
+   "recorded_truth": 60,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 6,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    }
+   },
+   "budget": 100,
+   "independent_optimum": 63,
+   "item_id": "F7-dfn-bwin-5",
+   "recorded_truth": 63,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    }
+   },
+   "budget": 60,
+   "independent_optimum": 60,
+   "item_id": "F7-dfn-bwin-6",
+   "recorded_truth": 60,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    }
+   },
+   "budget": 80,
+   "independent_optimum": 61,
+   "item_id": "F7-dfn-bwin-7",
+   "recorded_truth": 61,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    }
+   },
+   "budget": 60,
+   "independent_optimum": 60,
+   "item_id": "F7-dfn-bwin-8",
+   "recorded_truth": 60,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    }
+   },
+   "budget": 80,
+   "independent_optimum": 63,
+   "item_id": "F7-dfn-bwin-9",
+   "recorded_truth": 63,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    }
+   },
+   "budget": 60,
+   "independent_optimum": 57,
+   "item_id": "F7-dfn-gwin-0",
+   "recorded_truth": 57,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "optimize_flow_blind": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    }
+   },
+   "budget": 40,
+   "independent_optimum": 54,
+   "item_id": "F7-dfn-gwin-1",
+   "recorded_truth": 54,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 34
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    }
+   },
+   "budget": 80,
+   "independent_optimum": 52,
+   "item_id": "F7-dfn-gwin-2",
+   "recorded_truth": 52,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 34
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    }
+   },
+   "budget": 80,
+   "independent_optimum": 52,
+   "item_id": "F7-dfn-gwin-3",
+   "recorded_truth": 52,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 50
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    }
+   },
+   "budget": 120,
+   "independent_optimum": 63,
+   "item_id": "F7-dfn-gwin-4",
+   "recorded_truth": 63,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 40
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    }
+   },
+   "budget": 100,
+   "independent_optimum": 58,
+   "item_id": "F7-dfn-gwin-5",
+   "recorded_truth": 58,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    }
+   },
+   "budget": 100,
+   "independent_optimum": 61,
+   "item_id": "F7-dfn-gwin-6",
+   "recorded_truth": 61,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 35
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    }
+   },
+   "budget": 100,
+   "independent_optimum": 55,
+   "item_id": "F7-dfn-gwin-7",
+   "recorded_truth": 55,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "optimize_flow_blind": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    }
+   },
+   "budget": 40,
+   "independent_optimum": 54,
+   "item_id": "F7-dfn-gwin-8",
+   "recorded_truth": 54,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 26
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 40
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    }
+   },
+   "budget": 120,
+   "independent_optimum": 45,
+   "item_id": "F7-dfn-gwin-9",
+   "recorded_truth": 45,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    }
+   },
+   "budget": 2020,
+   "independent_optimum": 68,
+   "item_id": "F7-france-0",
+   "recorded_truth": 68,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 82
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 81
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 62
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 82
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 82
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 82
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 82
+    }
+   },
+   "budget": 2400,
+   "independent_optimum": 82,
+   "item_id": "F7-france-1",
+   "recorded_truth": 82,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 78
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 71
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 67
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 78
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 78
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 77
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 78
+    }
+   },
+   "budget": 2800,
+   "independent_optimum": 78,
+   "item_id": "F7-france-2",
+   "recorded_truth": 78,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 56
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    }
+   },
+   "budget": 4140,
+   "independent_optimum": 65,
+   "item_id": "F7-france-3",
+   "recorded_truth": 65,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 80
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 80
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 75
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 80
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 80
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 80
+    }
+   },
+   "budget": 3360,
+   "independent_optimum": 80,
+   "item_id": "F7-france-4",
+   "recorded_truth": 80,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    }
+   },
+   "budget": 1000,
+   "independent_optimum": 68,
+   "item_id": "F7-france-5",
+   "recorded_truth": 68,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 40
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    }
+   },
+   "budget": 2540,
+   "independent_optimum": 60,
+   "item_id": "F7-france-6",
+   "recorded_truth": 60,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 67
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 67
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 67
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 56
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 67
+    }
+   },
+   "budget": 6160,
+   "independent_optimum": 67,
+   "item_id": "F7-france-7",
+   "recorded_truth": 67,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 42
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 62
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    }
+   },
+   "budget": 3020,
+   "independent_optimum": 66,
+   "item_id": "F7-france-8",
+   "recorded_truth": 66,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 67
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 62
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    }
+   },
+   "budget": 2960,
+   "independent_optimum": 68,
+   "item_id": "F7-france-9",
+   "recorded_truth": 68,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    }
+   },
+   "budget": 100,
+   "independent_optimum": 58,
+   "item_id": "F7-geant-0",
+   "recorded_truth": 58,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    }
+   },
+   "budget": 200,
+   "independent_optimum": 76,
+   "item_id": "F7-geant-1",
+   "recorded_truth": 76,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    }
+   },
+   "budget": 180,
+   "independent_optimum": 52,
+   "item_id": "F7-geant-2",
+   "recorded_truth": 52,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 29
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 29
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 26
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 29
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 29
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 29
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 29
+    }
+   },
+   "budget": 1300,
+   "independent_optimum": 29,
+   "item_id": "F7-geant-3",
+   "recorded_truth": 29,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 42
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    }
+   },
+   "budget": 80,
+   "independent_optimum": 58,
+   "item_id": "F7-geant-4",
+   "recorded_truth": 58,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 53
+    }
+   },
+   "budget": 460,
+   "independent_optimum": 53,
+   "item_id": "F7-geant-5",
+   "recorded_truth": 53,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 40
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    }
+   },
+   "budget": 180,
+   "independent_optimum": 63,
+   "item_id": "F7-geant-6",
+   "recorded_truth": 63,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 50
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 50
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 50
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 50
+    }
+   },
+   "budget": 420,
+   "independent_optimum": 50,
+   "item_id": "F7-geant-7",
+   "recorded_truth": 50,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 24
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 31
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    }
+   },
+   "budget": 340,
+   "independent_optimum": 38,
+   "item_id": "F7-geant-8",
+   "recorded_truth": 38,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 40
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 28
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    }
+   },
+   "budget": 460,
+   "independent_optimum": 43,
+   "item_id": "F7-geant-9",
+   "recorded_truth": 43,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 12,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "optimize_flow_blind": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    }
+   },
+   "budget": 20,
+   "independent_optimum": 65,
+   "item_id": "F7-germany50-0",
+   "recorded_truth": 65,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 56
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    }
+   },
+   "budget": 40,
+   "independent_optimum": 64,
+   "item_id": "F7-germany50-1",
+   "recorded_truth": 64,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 71
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 70
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 71
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 71
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 56
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 71
+    }
+   },
+   "budget": 160,
+   "independent_optimum": 71,
+   "item_id": "F7-germany50-2",
+   "recorded_truth": 71,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 40
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 41
+    }
+   },
+   "budget": 40,
+   "independent_optimum": 41,
+   "item_id": "F7-germany50-3",
+   "recorded_truth": 41,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 12,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 40
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    }
+   },
+   "budget": 40,
+   "independent_optimum": 59,
+   "item_id": "F7-germany50-4",
+   "recorded_truth": 59,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 40
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    }
+   },
+   "budget": 80,
+   "independent_optimum": 48,
+   "item_id": "F7-germany50-5",
+   "recorded_truth": 48,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 12,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    }
+   },
+   "budget": 20,
+   "independent_optimum": 65,
+   "item_id": "F7-germany50-6",
+   "recorded_truth": 65,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 33
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    }
+   },
+   "budget": 100,
+   "independent_optimum": 55,
+   "item_id": "F7-germany50-7",
+   "recorded_truth": 55,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    }
+   },
+   "budget": 60,
+   "independent_optimum": 57,
+   "item_id": "F7-germany50-8",
+   "recorded_truth": 57,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 35
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    }
+   },
+   "budget": 120,
+   "independent_optimum": 61,
+   "item_id": "F7-germany50-9",
+   "recorded_truth": 61,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "optimize_flow_blind": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    }
+   },
+   "budget": 780,
+   "independent_optimum": 55,
+   "item_id": "F7-giul39-0",
+   "recorded_truth": 55,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 42
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    }
+   },
+   "budget": 4020,
+   "independent_optimum": 59,
+   "item_id": "F7-giul39-1",
+   "recorded_truth": 59,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 27
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 40
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    }
+   },
+   "budget": 5020,
+   "independent_optimum": 55,
+   "item_id": "F7-giul39-2",
+   "recorded_truth": 55,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 56
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 50
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    }
+   },
+   "budget": 5800,
+   "independent_optimum": 66,
+   "item_id": "F7-giul39-3",
+   "recorded_truth": 66,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 56
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    }
+   },
+   "budget": 4240,
+   "independent_optimum": 68,
+   "item_id": "F7-giul39-4",
+   "recorded_truth": 68,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 62
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 62
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 62
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 62
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 42
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 62
+    }
+   },
+   "budget": 4100,
+   "independent_optimum": 62,
+   "item_id": "F7-giul39-5",
+   "recorded_truth": 62,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 56
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 56
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 56
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 56
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 40
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 56
+    }
+   },
+   "budget": 4020,
+   "independent_optimum": 56,
+   "item_id": "F7-giul39-6",
+   "recorded_truth": 56,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 40
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    }
+   },
+   "budget": 4240,
+   "independent_optimum": 57,
+   "item_id": "F7-giul39-7",
+   "recorded_truth": 57,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 13,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 29
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    }
+   },
+   "budget": 6580,
+   "independent_optimum": 63,
+   "item_id": "F7-giul39-8",
+   "recorded_truth": 63,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 42
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    }
+   },
+   "budget": 5800,
+   "independent_optimum": 64,
+   "item_id": "F7-giul39-9",
+   "recorded_truth": 64,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    }
+   },
+   "budget": 80,
+   "independent_optimum": 59,
+   "item_id": "F7-janos-us-0",
+   "recorded_truth": 59,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    }
+   },
+   "budget": 80,
+   "independent_optimum": 59,
+   "item_id": "F7-janos-us-1",
+   "recorded_truth": 59,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 12,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 29
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 29
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 9
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 29
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 29
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 29
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 29
+    }
+   },
+   "budget": 980,
+   "independent_optimum": 29,
+   "item_id": "F7-janos-us-2",
+   "recorded_truth": 29,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 12,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 29
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 29
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 9
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 29
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 29
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 29
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 29
+    }
+   },
+   "budget": 980,
+   "independent_optimum": 29,
+   "item_id": "F7-janos-us-3",
+   "recorded_truth": 29,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 34
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 34
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 17
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 34
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 34
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 34
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 34
+    }
+   },
+   "budget": 120,
+   "independent_optimum": 34,
+   "item_id": "F7-janos-us-4",
+   "recorded_truth": 34,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 33
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 33
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 16
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 33
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 33
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 33
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 33
+    }
+   },
+   "budget": 120,
+   "independent_optimum": 33,
+   "item_id": "F7-janos-us-5",
+   "recorded_truth": 33,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    }
+   },
+   "budget": 300,
+   "independent_optimum": 60,
+   "item_id": "F7-janos-us-6",
+   "recorded_truth": 60,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    }
+   },
+   "budget": 300,
+   "independent_optimum": 63,
+   "item_id": "F7-janos-us-7",
+   "recorded_truth": 63,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 31
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 49
+    }
+   },
+   "budget": 440,
+   "independent_optimum": 49,
+   "item_id": "F7-janos-us-8",
+   "recorded_truth": 49,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 31
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 49
+    }
+   },
+   "budget": 440,
+   "independent_optimum": 49,
+   "item_id": "F7-janos-us-9",
+   "recorded_truth": 49,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "optimize_flow_blind": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    }
+   },
+   "budget": 40,
+   "independent_optimum": 55,
+   "item_id": "F7-janos-us-ca-0",
+   "recorded_truth": 55,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "optimize_flow_blind": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    }
+   },
+   "budget": 40,
+   "independent_optimum": 55,
+   "item_id": "F7-janos-us-ca-1",
+   "recorded_truth": 55,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    }
+   },
+   "budget": 100,
+   "independent_optimum": 48,
+   "item_id": "F7-janos-us-ca-2",
+   "recorded_truth": 48,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    }
+   },
+   "budget": 100,
+   "independent_optimum": 48,
+   "item_id": "F7-janos-us-ca-3",
+   "recorded_truth": 48,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 33
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    }
+   },
+   "budget": 80,
+   "independent_optimum": 43,
+   "item_id": "F7-janos-us-ca-4",
+   "recorded_truth": 43,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 28
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    }
+   },
+   "budget": 80,
+   "independent_optimum": 38,
+   "item_id": "F7-janos-us-ca-5",
+   "recorded_truth": 38,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "optimize_flow_blind": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    }
+   },
+   "budget": 60,
+   "independent_optimum": 32,
+   "item_id": "F7-janos-us-ca-6",
+   "recorded_truth": 32,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "optimize_flow_blind": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    }
+   },
+   "budget": 60,
+   "independent_optimum": 32,
+   "item_id": "F7-janos-us-ca-7",
+   "recorded_truth": 32,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 30
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    }
+   },
+   "budget": 60,
+   "independent_optimum": 44,
+   "item_id": "F7-janos-us-ca-8",
+   "recorded_truth": 44,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 29
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    }
+   },
+   "budget": 60,
+   "independent_optimum": 43,
+   "item_id": "F7-janos-us-ca-9",
+   "recorded_truth": 43,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    }
+   },
+   "budget": 1480,
+   "independent_optimum": 66,
+   "item_id": "F7-newyork-0",
+   "recorded_truth": 66,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 70
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 70
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 70
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 70
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 70
+    }
+   },
+   "budget": 2800,
+   "independent_optimum": 70,
+   "item_id": "F7-newyork-1",
+   "recorded_truth": 70,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 42
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    }
+   },
+   "budget": 1480,
+   "independent_optimum": 61,
+   "item_id": "F7-newyork-2",
+   "recorded_truth": 61,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 78
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 78
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 69
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 78
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 78
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 69
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 78
+    }
+   },
+   "budget": 2800,
+   "independent_optimum": 78,
+   "item_id": "F7-newyork-3",
+   "recorded_truth": 78,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 78
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 78
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 62
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 78
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 78
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 67
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 78
+    }
+   },
+   "budget": 2160,
+   "independent_optimum": 78,
+   "item_id": "F7-newyork-4",
+   "recorded_truth": 78,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 74
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 74
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 74
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 74
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 74
+    }
+   },
+   "budget": 1960,
+   "independent_optimum": 74,
+   "item_id": "F7-newyork-5",
+   "recorded_truth": 74,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    }
+   },
+   "budget": 1960,
+   "independent_optimum": 66,
+   "item_id": "F7-newyork-6",
+   "recorded_truth": 66,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 74
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 74
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 74
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 74
+    }
+   },
+   "budget": 3720,
+   "independent_optimum": 74,
+   "item_id": "F7-newyork-7",
+   "recorded_truth": 74,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 71
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    }
+   },
+   "budget": 3720,
+   "independent_optimum": 73,
+   "item_id": "F7-newyork-8",
+   "recorded_truth": 73,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    }
+   },
+   "budget": 1400,
+   "independent_optimum": 64,
+   "item_id": "F7-newyork-9",
+   "recorded_truth": 64,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 42
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 20
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 40
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 46
+    }
+   },
+   "budget": 200,
+   "independent_optimum": 46,
+   "item_id": "F7-nobel-eu-0",
+   "recorded_truth": 46,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    }
+   },
+   "budget": 80,
+   "independent_optimum": 63,
+   "item_id": "F7-nobel-eu-1",
+   "recorded_truth": 63,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 28
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    }
+   },
+   "budget": 280,
+   "independent_optimum": 45,
+   "item_id": "F7-nobel-eu-2",
+   "recorded_truth": 45,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 79
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 71
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 62
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 79
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 79
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 77
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 79
+    }
+   },
+   "budget": 80,
+   "independent_optimum": 79,
+   "item_id": "F7-nobel-eu-3",
+   "recorded_truth": 79,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    }
+   },
+   "budget": 100,
+   "independent_optimum": 65,
+   "item_id": "F7-nobel-eu-4",
+   "recorded_truth": 65,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 71
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 71
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 71
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 71
+    }
+   },
+   "budget": 160,
+   "independent_optimum": 71,
+   "item_id": "F7-nobel-eu-5",
+   "recorded_truth": 71,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 75
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 40
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    }
+   },
+   "budget": 160,
+   "independent_optimum": 76,
+   "item_id": "F7-nobel-eu-6",
+   "recorded_truth": 76,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 30
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 48
+    }
+   },
+   "budget": 160,
+   "independent_optimum": 48,
+   "item_id": "F7-nobel-eu-7",
+   "recorded_truth": 48,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 12,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 34
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 55
+    }
+   },
+   "budget": 280,
+   "independent_optimum": 55,
+   "item_id": "F7-nobel-eu-8",
+   "recorded_truth": 55,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    }
+   },
+   "budget": 60,
+   "independent_optimum": 66,
+   "item_id": "F7-nobel-eu-9",
+   "recorded_truth": 66,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 81
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 81
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 81
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 81
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 81
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 81
+    }
+   },
+   "budget": 100,
+   "independent_optimum": 81,
+   "item_id": "F7-nobel-us-0",
+   "recorded_truth": 81,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 75
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 75
+    },
+    "optimize_flow_blind": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 75
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 75
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 75
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 72
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 75
+    }
+   },
+   "budget": 100,
+   "independent_optimum": 75,
+   "item_id": "F7-nobel-us-1",
+   "recorded_truth": 75,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    }
+   },
+   "budget": 180,
+   "independent_optimum": 63,
+   "item_id": "F7-nobel-us-2",
+   "recorded_truth": 63,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 70
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 70
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 70
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 70
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 70
+    }
+   },
+   "budget": 300,
+   "independent_optimum": 70,
+   "item_id": "F7-nobel-us-3",
+   "recorded_truth": 70,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 56
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    }
+   },
+   "budget": 240,
+   "independent_optimum": 65,
+   "item_id": "F7-nobel-us-4",
+   "recorded_truth": 65,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 79
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 78
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 72
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 79
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 79
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 72
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 79
+    }
+   },
+   "budget": 180,
+   "independent_optimum": 79,
+   "item_id": "F7-nobel-us-5",
+   "recorded_truth": 79,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 69
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 69
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 71
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    }
+   },
+   "budget": 100,
+   "independent_optimum": 73,
+   "item_id": "F7-nobel-us-6",
+   "recorded_truth": 73,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    }
+   },
+   "budget": 360,
+   "independent_optimum": 57,
+   "item_id": "F7-nobel-us-7",
+   "recorded_truth": 57,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 65
+    }
+   },
+   "budget": 200,
+   "independent_optimum": 65,
+   "item_id": "F7-nobel-us-8",
+   "recorded_truth": 65,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 39
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    }
+   },
+   "budget": 440,
+   "independent_optimum": 47,
+   "item_id": "F7-nobel-us-9",
+   "recorded_truth": 47,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 12,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 18
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 38
+    }
+   },
+   "budget": 10200,
+   "independent_optimum": 38,
+   "item_id": "F7-norway-0",
+   "recorded_truth": 38,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    }
+   },
+   "budget": 7900,
+   "independent_optimum": 57,
+   "item_id": "F7-norway-1",
+   "recorded_truth": 57,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 56
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 56
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 56
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 56
+    }
+   },
+   "budget": 9200,
+   "independent_optimum": 56,
+   "item_id": "F7-norway-2",
+   "recorded_truth": 56,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 23
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 32
+    }
+   },
+   "budget": 7480,
+   "independent_optimum": 32,
+   "item_id": "F7-norway-3",
+   "recorded_truth": 32,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 50
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 50
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 50
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 50
+    }
+   },
+   "budget": 3680,
+   "independent_optimum": 50,
+   "item_id": "F7-norway-4",
+   "recorded_truth": 50,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 22
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 42
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 44
+    }
+   },
+   "budget": 9140,
+   "independent_optimum": 44,
+   "item_id": "F7-norway-5",
+   "recorded_truth": 44,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 35
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    }
+   },
+   "budget": 5180,
+   "independent_optimum": 60,
+   "item_id": "F7-norway-6",
+   "recorded_truth": 60,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 17
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 37
+    }
+   },
+   "budget": 5100,
+   "independent_optimum": 37,
+   "item_id": "F7-norway-7",
+   "recorded_truth": 37,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "optimize_flow_blind": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 51
+    }
+   },
+   "budget": 1220,
+   "independent_optimum": 51,
+   "item_id": "F7-norway-8",
+   "recorded_truth": 51,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    }
+   },
+   "budget": 1840,
+   "independent_optimum": 52,
+   "item_id": "F7-norway-9",
+   "recorded_truth": 52,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 6,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 84
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 81
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 80
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 84
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 84
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 80
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 84
+    }
+   },
+   "budget": 80,
+   "independent_optimum": 84,
+   "item_id": "F7-pdh-0",
+   "recorded_truth": 84,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 87
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 87
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 67
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 87
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 87
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 87
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 87
+    }
+   },
+   "budget": 40,
+   "independent_optimum": 87,
+   "item_id": "F7-pdh-1",
+   "recorded_truth": 87,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 85
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 85
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 69
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 85
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 85
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 85
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 85
+    }
+   },
+   "budget": 40,
+   "independent_optimum": 85,
+   "item_id": "F7-pdh-2",
+   "recorded_truth": 85,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 6,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 77
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 77
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 77
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 77
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 77
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 77
+    }
+   },
+   "budget": 40,
+   "independent_optimum": 77,
+   "item_id": "F7-pdh-3",
+   "recorded_truth": 77,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 6,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 80
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 80
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 75
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 80
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 80
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 76
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 80
+    }
+   },
+   "budget": 60,
+   "independent_optimum": 80,
+   "item_id": "F7-pdh-4",
+   "recorded_truth": 80,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    },
+    "optimize_flow_blind": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    }
+   },
+   "budget": 40,
+   "independent_optimum": 76,
+   "item_id": "F7-pdh-5",
+   "recorded_truth": 76,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 6,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 62
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 76
+    }
+   },
+   "budget": 80,
+   "independent_optimum": 76,
+   "item_id": "F7-pdh-6",
+   "recorded_truth": 76,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 62
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 62
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    }
+   },
+   "budget": 60,
+   "independent_optimum": 68,
+   "item_id": "F7-pdh-7",
+   "recorded_truth": 68,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 6,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 58
+    }
+   },
+   "budget": 60,
+   "independent_optimum": 58,
+   "item_id": "F7-pdh-8",
+   "recorded_truth": 58,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 74
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 74
+    },
+    "optimize_flow_blind": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 74
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 74
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 74
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 74
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 74
+    }
+   },
+   "budget": 40,
+   "independent_optimum": 74,
+   "item_id": "F7-pdh-9",
+   "recorded_truth": 74,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 44
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    }
+   },
+   "budget": 7860,
+   "independent_optimum": 57,
+   "item_id": "F7-pioro40-0",
+   "recorded_truth": 57,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 34
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 42
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    }
+   },
+   "budget": 2760,
+   "independent_optimum": 47,
+   "item_id": "F7-pioro40-1",
+   "recorded_truth": 47,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 17
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 37
+    }
+   },
+   "budget": 2400,
+   "independent_optimum": 37,
+   "item_id": "F7-pioro40-2",
+   "recorded_truth": 37,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 12,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 27
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 27
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 16
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 27
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 27
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 27
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 27
+    }
+   },
+   "budget": 6320,
+   "independent_optimum": 27,
+   "item_id": "F7-pioro40-3",
+   "recorded_truth": 27,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 35
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    }
+   },
+   "budget": 4940,
+   "independent_optimum": 54,
+   "item_id": "F7-pioro40-4",
+   "recorded_truth": 54,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    }
+   },
+   "budget": 2240,
+   "independent_optimum": 52,
+   "item_id": "F7-pioro40-5",
+   "recorded_truth": 52,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 12,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 33
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 31
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    }
+   },
+   "budget": 6280,
+   "independent_optimum": 45,
+   "item_id": "F7-pioro40-6",
+   "recorded_truth": 45,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 27
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    }
+   },
+   "budget": 1600,
+   "independent_optimum": 47,
+   "item_id": "F7-pioro40-7",
+   "recorded_truth": 47,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 13,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 30
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 30
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 10
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 30
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 30
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 30
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 30
+    }
+   },
+   "budget": 7760,
+   "independent_optimum": 30,
+   "item_id": "F7-pioro40-8",
+   "recorded_truth": 30,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 37
+    }
+   },
+   "budget": 5120,
+   "independent_optimum": 37,
+   "item_id": "F7-pioro40-9",
+   "recorded_truth": 37,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 26
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 42
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 45
+    }
+   },
+   "budget": 8560,
+   "independent_optimum": 45,
+   "item_id": "F7-sun-0",
+   "recorded_truth": 45,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    }
+   },
+   "budget": 2180,
+   "independent_optimum": 57,
+   "item_id": "F7-sun-1",
+   "recorded_truth": 57,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 54
+    }
+   },
+   "budget": 4320,
+   "independent_optimum": 54,
+   "item_id": "F7-sun-2",
+   "recorded_truth": 54,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    }
+   },
+   "budget": 2900,
+   "independent_optimum": 52,
+   "item_id": "F7-sun-3",
+   "recorded_truth": 52,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "optimize_flow_blind": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 43
+    }
+   },
+   "budget": 260,
+   "independent_optimum": 43,
+   "item_id": "F7-sun-4",
+   "recorded_truth": 43,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    }
+   },
+   "budget": 7040,
+   "independent_optimum": 64,
+   "item_id": "F7-sun-5",
+   "recorded_truth": 64,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 16,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 50
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 50
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 13
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 50
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 50
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 33
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 50
+    }
+   },
+   "budget": 8980,
+   "independent_optimum": 50,
+   "item_id": "F7-sun-6",
+   "recorded_truth": 50,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 24
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 24
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 9
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 24
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 24
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 24
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 24
+    }
+   },
+   "budget": 6680,
+   "independent_optimum": 24,
+   "item_id": "F7-sun-7",
+   "recorded_truth": 24,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 40
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 26
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    }
+   },
+   "budget": 3740,
+   "independent_optimum": 47,
+   "item_id": "F7-sun-8",
+   "recorded_truth": 47,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 23
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 36
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 41
+    }
+   },
+   "budget": 780,
+   "independent_optimum": 41,
+   "item_id": "F7-sun-9",
+   "recorded_truth": 41,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 33
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    }
+   },
+   "budget": 2680,
+   "independent_optimum": 57,
+   "item_id": "F7-ta1-0",
+   "recorded_truth": 57,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 6,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 62
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 66
+    }
+   },
+   "budget": 1100,
+   "independent_optimum": 66,
+   "item_id": "F7-ta1-1",
+   "recorded_truth": 66,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 64
+    }
+   },
+   "budget": 1880,
+   "independent_optimum": 64,
+   "item_id": "F7-ta1-2",
+   "recorded_truth": 64,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 6,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    }
+   },
+   "budget": 1440,
+   "independent_optimum": 61,
+   "item_id": "F7-ta1-3",
+   "recorded_truth": 61,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 67
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 50
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 68
+    }
+   },
+   "budget": 2960,
+   "independent_optimum": 68,
+   "item_id": "F7-ta1-4",
+   "recorded_truth": 68,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 38
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 61
+    }
+   },
+   "budget": 1880,
+   "independent_optimum": 61,
+   "item_id": "F7-ta1-5",
+   "recorded_truth": 61,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 69
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 69
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 69
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 69
+    }
+   },
+   "budget": 1400,
+   "independent_optimum": 69,
+   "item_id": "F7-ta1-6",
+   "recorded_truth": 69,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 61
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 63
+    }
+   },
+   "budget": 1400,
+   "independent_optimum": 63,
+   "item_id": "F7-ta1-7",
+   "recorded_truth": 63,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 72
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 63
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 50
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 72
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 72
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 70
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 72
+    }
+   },
+   "budget": 2700,
+   "independent_optimum": 72,
+   "item_id": "F7-ta1-8",
+   "recorded_truth": 72,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 64
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 71
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    }
+   },
+   "budget": 2700,
+   "independent_optimum": 73,
+   "item_id": "F7-ta1-9",
+   "recorded_truth": 73,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 72
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 71
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 67
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 72
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 72
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 67
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 72
+    }
+   },
+   "budget": 2100,
+   "independent_optimum": 72,
+   "item_id": "F7-ta2-0",
+   "recorded_truth": 72,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 72
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 68
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 67
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    }
+   },
+   "budget": 2100,
+   "independent_optimum": 73,
+   "item_id": "F7-ta2-1",
+   "recorded_truth": 73,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 40
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 57
+    }
+   },
+   "budget": 3440,
+   "independent_optimum": 57,
+   "item_id": "F7-ta2-2",
+   "recorded_truth": 57,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 6,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 56
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 36
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 56
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 56
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 56
+    }
+   },
+   "budget": 4680,
+   "independent_optimum": 56,
+   "item_id": "F7-ta2-3",
+   "recorded_truth": 56,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 7,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 31
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 53
+    }
+   },
+   "budget": 2000,
+   "independent_optimum": 53,
+   "item_id": "F7-ta2-4",
+   "recorded_truth": 53,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 20
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 35
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 46
+    }
+   },
+   "budget": 6000,
+   "independent_optimum": 46,
+   "item_id": "F7-ta2-5",
+   "recorded_truth": 46,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 45
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 49
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 59
+    }
+   },
+   "budget": 3020,
+   "independent_optimum": 59,
+   "item_id": "F7-ta2-6",
+   "recorded_truth": 59,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 21
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 41
+    }
+   },
+   "budget": 2240,
+   "independent_optimum": 41,
+   "item_id": "F7-ta2-7",
+   "recorded_truth": 41,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 27
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 27
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 47
+    }
+   },
+   "budget": 5480,
+   "independent_optimum": 47,
+   "item_id": "F7-ta2-8",
+   "recorded_truth": 47,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 10,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 20
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 46
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 36
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 46
+    }
+   },
+   "budget": 3600,
+   "independent_optimum": 46,
+   "item_id": "F7-ta2-9",
+   "recorded_truth": 46,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 55
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 73
+    }
+   },
+   "budget": 2140,
+   "independent_optimum": 73,
+   "item_id": "F7-zib54-0",
+   "recorded_truth": 73,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 72
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 70
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 54
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 72
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 72
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 72
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 72
+    }
+   },
+   "budget": 2140,
+   "independent_optimum": 72,
+   "item_id": "F7-zib54-1",
+   "recorded_truth": 72,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 53
+    }
+   },
+   "budget": 3620,
+   "independent_optimum": 53,
+   "item_id": "F7-zib54-2",
+   "recorded_truth": 53,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 9,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 36
+    },
+    "graph_alone_greedy": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 36
+    },
+    "optimize_flow_blind": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 36
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 36
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 36
+    },
+    "shortest_path_upgrade": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 36
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 36
+    }
+   },
+   "budget": 3020,
+   "independent_optimum": 36,
+   "item_id": "F7-zib54-3",
+   "recorded_truth": 36,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 8,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 58
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 51
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 47
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 60
+    }
+   },
+   "budget": 3620,
+   "independent_optimum": 60,
+   "item_id": "F7-zib54-4",
+   "recorded_truth": 60,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 14,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 48
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 32
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 52
+    }
+   },
+   "budget": 5840,
+   "independent_optimum": 52,
+   "item_id": "F7-zib54-5",
+   "recorded_truth": 52,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 14,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 50
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 20
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 53
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 31
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 53
+    }
+   },
+   "budget": 4400,
+   "independent_optimum": 53,
+   "item_id": "F7-zib54-6",
+   "recorded_truth": 53,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 11,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 42
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 37
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 29
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 42
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 42
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 41
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 42
+    }
+   },
+   "budget": 2680,
+   "independent_optimum": 42,
+   "item_id": "F7-zib54-7",
+   "recorded_truth": 42,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 13,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 34
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 30
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 18
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 34
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 34
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 33
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 34
+    }
+   },
+   "budget": 1440,
+   "independent_optimum": 34,
+   "item_id": "F7-zib54-8",
+   "recorded_truth": 34,
+   "truth_agrees": true
+  },
+  {
+   "arcs": 13,
+   "arms": {
+    "compiled": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 34
+    },
+    "graph_alone_greedy": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 29
+    },
+    "optimize_flow_blind": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 18
+    },
+    "parametric_min_cost_flow": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 34
+    },
+    "routed_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 34
+    },
+    "shortest_path_upgrade": {
+     "outcome": "suboptimal",
+     "reproduces": true,
+     "throughput": 33
+    },
+    "static_composition": {
+     "outcome": "optimal",
+     "reproduces": true,
+     "throughput": 34
+    }
+   },
+   "budget": 1440,
+   "independent_optimum": 34,
+   "item_id": "F7-zib54-9",
+   "recorded_truth": 34,
+   "truth_agrees": true
+  }
+ ],
+ "items_audited": 200,
+ "outcomes_independent": {
+  "compiled": {
+   "optimal": 200
+  },
+  "graph_alone_greedy": {
+   "optimal": 108,
+   "suboptimal": 92
+  },
+  "optimize_flow_blind": {
+   "optimal": 19,
+   "suboptimal": 181
+  },
+  "parametric_min_cost_flow": {
+   "optimal": 200
+  },
+  "routed_composition": {
+   "optimal": 200
+  },
+  "shortest_path_upgrade": {
+   "optimal": 70,
+   "suboptimal": 130
+  },
+  "static_composition": {
+   "optimal": 200
+  }
+ },
+ "outcomes_recorded_per_item": {
+  "compiled": {
+   "optimal": 200
+  },
+  "graph_alone_greedy": {
+   "optimal": 108,
+   "suboptimal": 92
+  },
+  "optimize_flow_blind": {
+   "optimal": 19,
+   "suboptimal": 181
+  },
+  "parametric_min_cost_flow": {
+   "optimal": 200
+  },
+  "routed_composition": {
+   "optimal": 200
+  },
+  "shortest_path_upgrade": {
+   "optimal": 70,
+   "suboptimal": 130
+  },
+  "static_composition": {
+   "optimal": 200
+  }
+ },
+ "outcomes_recorded_summary": {
+  "compiled": {
+   "optimal": 200
+  },
+  "graph_alone_greedy": {
+   "optimal": 108,
+   "suboptimal": 92
+  },
+  "optimize_flow_blind": {
+   "optimal": 19,
+   "suboptimal": 181
+  },
+  "parametric_min_cost_flow": {
+   "optimal": 200
+  },
+  "routed_composition": {
+   "optimal": 200
+  },
+  "shortest_path_upgrade": {
+   "optimal": 70,
+   "suboptimal": 130
+  },
+  "static_composition": {
+   "optimal": 200
+  }
+ },
+ "problems": [],
+ "python": "3.11.15",
+ "rule": {
+  "CONFIRMED": "every held-out item rebuilt and identity-checked; independent HiGHS optimum equals the recorded truth on every item; every arm's recorded outcome and throughput reproduce under the independent max-flow rescoring",
+  "INCOMPLETE": "any item that cannot be rebuilt or identity-checked, or any MILP that does not reach proven optimality with an integral value",
+  "REFUTED": "any item whose recorded truth differs from the independent optimum, or any arm whose recorded outcome or throughput does not reproduce"
+ },
+ "schema": "pr155-f7-audit/1",
+ "source_commit": "49b2d589de515b9e8d478f620dd41ad939267d44",
+ "summary_reproduces": true,
+ "truth_agreement": 200,
+ "verdict": "CONFIRMED"
+}

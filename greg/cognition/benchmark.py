@@ -1,4 +1,11 @@
-"""Frozen cross-geometry assessment. Missing LLM baselines never imply superiority."""
+"""Frozen cross-geometry assessment. Missing LLM baselines never imply superiority.
+
+Suite v2 (``frozen-suite-v2.json``) supersedes v1 operationally and keeps v1 on disk: v1 passed 22/22 at
+3ced61d and 11/22 after the 4baf534 convergence, because (a) cataloguing never attaches the P5+ families
+on a body and (b) an unimplemented operation now abstains as UNKNOWN_GEOMETRY before eligibility. The
+assessment measures the catalogued repertoire, so it attaches every catalogued family in an
+evaluation-only registry view (``EVALUATION_ATTACH``); a body's attach state is untouched.
+"""
 from __future__ import annotations
 
 import json
@@ -9,16 +16,21 @@ from .contracts import digest
 from .cortex import reason, registry_view
 
 
-SUITE = Path(__file__).resolve().parents[2] / "examples" / "cognition" / "frozen-suite.json"
-# Frozen expectations contradicted by a later canonical rule. The suite file stays byte-identical; each
-# reconciliation is reported with the frozen expectation, the rule that replaced it and where it is enforced.
-RECONCILED = {
-    "unknown:capability-deficit": {
-        "expected": {"method": "none", "state": "ABSTAIN"},
-        "rule": "an operation GREG cannot classify abstains as UNKNOWN_GEOMETRY (cortex seed activation rules, "
-                "#145, converged in 4baf534) instead of reporting a capability deficit",
-        "enforced_by": "tests/unit/test_greg_cognition.py::test_missing_model_detached_solver_and_unknown_geometry_are_deficits"},
-}
+SUITE = Path(__file__).resolve().parents[2] / "examples" / "cognition" / "frozen-suite-v2.json"
+SUITE_V1 = SUITE.with_name("frozen-suite.json")
+
+
+def assessment_registry():
+    """Evaluation-only view: every catalogued cognition family attached; nothing persists or reaches a body."""
+    from .catalog import FAMILIES
+    registry = registry_view()
+    attached = []
+    for family in FAMILIES:
+        cid = "cognition." + family
+        if cid in registry.manifests and registry.state[cid] != "ATTACHED":
+            registry.set_state(cid, "ATTACHED")
+            attached.append(cid)
+    return registry, sorted(attached)
 
 
 def score(receipt, case, *, require_method=True):
@@ -29,30 +41,15 @@ def score(receipt, case, *, require_method=True):
     return all(output.get(k) == v for k, v in expected.get("output", {}).items())
 
 
-def evaluation_view():
-    """Measure solver correctness, not activation: a throwaway in-memory projection in which every built and
-    VERIFIED cognition family is attached. The body's registry and journal are untouched; on a fresh body
-    those families abstain with CAPABILITY_DEFICIT until the founder attaches them (tests/unit/test_greg_cognition.py)."""
-    registry = registry_view()
-    attached = sorted(cid for cid in registry.manifests
-                      if cid.startswith("cognition.") and registry.state[cid] == "VERIFIED")
-    for cid in attached:
-        registry.set_state(cid, "ATTACHED")
-    return registry, attached
-
-
 def assess(*, suite=SUITE, baselines=None):
     raw = json.loads(Path(suite).read_text())
-    registry, evaluation_attached = evaluation_view()
+    registry, evaluation_attach = assessment_registry()
     rows = []
     baseline_rows = {name: [] for name in (baselines or {})}
     for case in raw["cases"]:
         receipt = reason(case["request"], registry=registry)
-        judged = {**case, "expected": RECONCILED[case["id"]]["expected"]} if case["id"] in RECONCILED else case
-        rows.append({"id": case["id"], "correct": score(receipt, judged), "method": receipt["method"],
-                     "state": receipt["abstention_state"], "latency": receipt["latency"], "cost_usd": receipt["money_cost"],
-                     **({"reconciled": {"frozen_expected": case["expected"], **RECONCILED[case["id"]]}}
-                        if case["id"] in RECONCILED else {})})
+        rows.append({"id": case["id"], "correct": score(receipt, case), "method": receipt["method"],
+                     "state": receipt["abstention_state"], "latency": receipt["latency"], "cost_usd": receipt["money_cost"]})
         for name, baseline in (baselines or {}).items():
             started = time.monotonic()
             try:
@@ -64,9 +61,8 @@ def assess(*, suite=SUITE, baselines=None):
                                         "cost_usd": answer.get("money_cost"), "authorship": answer.get("method")})
     measured = (set(raw["baseline_required_for_superiority"]) <= set(baseline_rows) and
                 all(all(r["cost_usd"] is not None for r in b) for b in baseline_rows.values()))
-    return {"suite_digest": digest(raw), "cases": rows, "correct": sum(r["correct"] for r in rows), "total": len(rows),
-            "registry_view": {"kind": "evaluation-only in-memory attach of built, VERIFIED families",
-                              "attached_for_evaluation": evaluation_attached, "body_registry_changed": False},
+    return {"suite_digest": digest(raw), "suite": Path(suite).name, "evaluation_attach": evaluation_attach,
+            "cases": rows, "correct": sum(r["correct"] for r in rows), "total": len(rows),
             "baselines": baseline_rows, "superiority_status": "COMPARISON_REQUIRES_PREDECLARED_ACCEPTANCE" if measured else "UNMEASURED",
             "cross_geometry_regret": None, "characterization": {"responsiveness": "per-case measured latency",
                 "memory_depth": "canonical receipt/mission history; restart integration tested separately",

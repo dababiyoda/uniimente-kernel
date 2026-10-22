@@ -106,7 +106,7 @@ def fermi(data, geometry):
     return result(out, proof)
 
 
-def _model(data, *, integers=False):
+def _model(data, *, integers=False, strict=False):
     variables, constraints = data["variables"], data["constraints"]
     if not isinstance(variables, dict) or not 1 <= len(variables) <= 64:
         raise CognitionError("bounded named variables required")
@@ -122,7 +122,8 @@ def _model(data, *, integers=False):
         if low > high:
             raise CognitionError("invalid variable bounds")
     for c in constraints:
-        if c["op"] not in ("<=", ">=", "==", "!=") or not set(c["coefficients"]) <= set(variables):
+        ops = ("<=", ">=", "==", "!=", "<", ">") if strict else ("<=", ">=", "==", "!=")
+        if c["op"] not in ops or not set(c["coefficients"]) <= set(variables):
             raise CognitionError("invalid linear constraint")
         for x in [*c["coefficients"].values(), c["rhs"]]:
             (integer(x, low=-1000000, high=1000000) if integers else number(x))
@@ -131,7 +132,7 @@ def _model(data, *, integers=False):
 
 def formal(data, geometry):
     import z3
-    variables, constraints = _model(data)
+    variables, constraints = _model(data, strict=True)      # strict < and > over the reals (exact negations)
     solver = z3.Solver()
     solver.set(timeout=max(1, int(geometry["latency_limit"] * 800)))
     solver.set(rlimit=geometry["compute_limit"])
@@ -143,7 +144,7 @@ def formal(data, geometry):
         lhs = sum(z3.RealVal(str(v)) * vs[n] for n, v in c["coefficients"].items())
         rhs = z3.RealVal(str(c["rhs"]))
         expr = {"<=": lambda: lhs <= rhs, ">=": lambda: lhs >= rhs, "==": lambda: lhs == rhs,
-                "!=": lambda: lhs != rhs}[c["op"]]()
+                "!=": lambda: lhs != rhs, "<": lambda: lhs < rhs, ">": lambda: lhs > rhs}[c["op"]]()
         solver.assert_and_track(expr, f"constraint_{i}")
         descriptions.append(f"sum({c['coefficients']}) {c['op']} {c['rhs']}")
     status = solver.check()
@@ -175,6 +176,12 @@ def optimization(data, geometry):
         raise CognitionError("unknown objective variable")
     for v in objective["coefficients"].values():
         integer(v, low=-1000000, high=1000000)
+    # every objective value, bound and gap a receipt can carry must fit its 1e12 number ceiling: refused here with the
+    # reason, not answered and then rejected by the verifier's contract as a non-answer (review V7)
+    low = sum(min(v * variables[n][0], v * variables[n][1]) for n, v in objective["coefficients"].items())
+    high = sum(max(v * variables[n][0], v * variables[n][1]) for n, v in objective["coefficients"].items())
+    if max(-low, high, high - low) > 1e12:
+        raise CognitionError(f"objective range [{low}, {high}] exceeds the receipt's 1e12 number ceiling; rescale it")
     expr = sum(v * vs[n] for n, v in objective["coefficients"].items())
     if objective["sense"] == "min":
         model.minimize(expr)
@@ -446,5 +453,18 @@ SOLVERS = {"evidence": __import__("greg.cognition.evidence", fromlist=["assess"]
 SOLVERS.update({"collective": quorum, "evolutionary": evolutionary})
 from .protection import assess as protection
 SOLVERS["protection"] = protection
+
+
+def _genome_solver(family):
+    def solve(data, geometry):
+        from .genomes import library
+        return library.run(family, data, geometry)
+    return solve
+
+
+from .genomes.library import catalog_families as _genome_families  # noqa: E402
+SOLVERS.update({family: _genome_solver(family) for family in _genome_families()})
+# PR #155 lineage repertoire (robust_pattern, crowd, swarm, blackbox); names are disjoint from the genome
+# library's families (checked in tests/unit/test_greg_mind_convergence.py).
 from .repertoire import REPERTOIRE
 SOLVERS.update(REPERTOIRE)

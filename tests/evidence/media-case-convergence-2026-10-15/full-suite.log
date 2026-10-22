@@ -1,0 +1,352 @@
+........................................................................ [  1%]
+......ss.........................................................s...... [  3%]
+.........................s............ss................................ [  5%]
+........................................................................ [  7%]
+........................................................................ [  9%]
+........................................................................ [ 11%]
+........................................................................ [ 13%]
+........................................................................ [ 15%]
+........................................................................ [ 16%]
+........................................................................ [ 18%]
+........................................................................ [ 20%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 26%]
+....................................................................F... [ 28%]
+........................................................................ [ 30%]
+........................................................................ [ 31%]
+........................................................................ [ 33%]
+........................................................................ [ 35%]
+........................................................................ [ 37%]
+........................................................................ [ 39%]
+........................................................................ [ 41%]
+........................................................................ [ 43%]
+........................................................................ [ 45%]
+........................................................................ [ 46%]
+........................................................................ [ 48%]
+........................................................................ [ 50%]
+........................................................................ [ 52%]
+........................................................................ [ 54%]
+........................................................................ [ 56%]
+........................................................................ [ 58%]
+........................................................................ [ 60%]
+.......................................................s....s..s........ [ 61%]
+........................................................................ [ 63%]
+........................................................................ [ 65%]
+..........................sss........................................... [ 67%]
+.............................................F.......................... [ 69%]
+........................................................................ [ 71%]
+.............................F.......................................... [ 73%]
+..............................F..s...........................s.......... [ 75%]
+........................................................................ [ 76%]
+..................................F..................................... [ 78%]
+........................................................................ [ 80%]
+.......................................................s.........s...... [ 82%]
+........................................................................ [ 84%]
+........................................................................ [ 86%]
+........................................................................ [ 88%]
+........................................................................ [ 90%]
+........................................................................ [ 91%]
+........................................................................ [ 93%]
+........................................................................ [ 95%]
+...................................ssss................................. [ 97%]
+........................................................................ [ 99%]
+.......................                                                  [100%]
+=================================== FAILURES ===================================
+__________ test_mcp_tools_run_behind_kernel_identity_policy_and_gate ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-526/test_mcp_tools_run_behind_kern0')
+
+    def test_mcp_tools_run_behind_kernel_identity_policy_and_gate(tmp_path):
+        result = mcp_gateway.exercise(tmp_path)
+        assert result["quote"] == 270.0 and result["failed_over_from"] == ["eco-a"]
+        assert result["cross_checked_with"] == "uniimente-foundry", "two independent providers agree"
+        assert result["provider_claims_send_is_read_only"] is True, "the provider lies; the policy decides"
+        assert result["provider_calls_before_grant"] == 0 and result["provider_calls_after"] == 1
+        assert set(result["refusals"]) == {"unknown_caller", "unlisted_tool", "send_without_grant", "grant_replayed"}
+        assert all(result["refusals"].values()) and result["chain_ok"]
+        # One reviewed first-party read-only recipe now reaches retained machine
+        # state; unreviewed provider/source refusal is exercised separately.
+>       bounded = foundry_bridge.query({"system": 28, "op": "foundry_tool", "args": {
+            "tool": "foundry_query", "args": {"system": 43, "op": "check_approval_boundary", "args_json": "{}"}}},
+            _ctx(tmp_path, "foundry.query"))
+
+tests/unit/test_foundry_systems.py:608:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+greg/foundry_bridge.py:141: in query
+    return _call(params, ctx, "QUERY_OPS")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+greg/foundry_bridge.py:80: in _call
+    return _execute(request, ctx, table, root, workspace, env, KERNEL_ROOT, _no_network_preexec)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+request = '{"system": 28, "op": "foundry_tool", "table": "QUERY_OPS", "args": {"tool": "foundry_query", "args": {"system": 43, "...", "args_json": "{}"}}, "root": "/tmp/pytest-of-root/pytest-526/test_mcp_tools_run_behind_kern0/ws/foundry/system-28"}'
+ctx = InvocationContext(workspace=PosixPath('/tmp/pytest-of-root/pytest-526/test_mcp_tools_run_behind_kern0/ws'), read_roots...='', authority_ref='', grant_id='', policy_version='', stop_check=None, capability_registry=None, cognition_model=None)
+table = 'QUERY_OPS'
+root = PosixPath('/tmp/pytest-of-root/pytest-526/test_mcp_tools_run_behind_kern0/ws/foundry/system-28')
+workspace = PosixPath('/tmp/pytest-of-root/pytest-526/test_mcp_tools_run_behind_kern0/ws')
+env = {'PATH': '/usr/bin:/bin', 'LANG': 'C.UTF-8', 'HOME': '/tmp/pytest-of-root/pytest-526/test_mcp_tools_run_behind_kern0/ws', 'PYTHONPATH': '/tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/wtm', ...}
+kernel_root = PosixPath('/tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/wtm')
+preexec = <function _no_network_preexec at 0x7f477cd4ede0>
+
+    def _execute(request, ctx, table, root, workspace, env, kernel_root, preexec):
+        from greg.foundry_state import stage, commit
+        params = json.loads(request)
+        system, op = params["system"], params["op"]
+        with tempfile.TemporaryDirectory(prefix="greg-foundry-", dir=workspace) as temporary:
+            staged = Path(temporary) / "stores"
+            before = stage(root.parent, staged)
+            with open(Path(temporary) / "request.json", "w+b") as inp, \
+                    open(Path(temporary) / "result.json", "w+b") as out, \
+                    open(Path(temporary) / "error.txt", "w+b") as err:
+                payload = json.loads(request)
+                payload["scratch"] = temporary
+                payload["root"] = str(staged / root.name)
+                inp.write(json.dumps(payload).encode()); inp.seek(0)
+                proc = subprocess.Popen([sys.executable, "-s", "-m", "greg.foundry_worker"],
+                                        cwd=kernel_root, env=env, stdin=inp, stdout=out, stderr=err,
+                                        preexec_fn=preexec, start_new_session=True, close_fds=True)
+                deadline = time.monotonic() + 30
+                try:
+                    while proc.poll() is None:
+                        if ctx.stop_check and ctx.stop_check():
+                            raise CapabilityError("foundry worker stopped by canonical revocation/pause")
+                        if time.monotonic() >= deadline:
+                            raise CapabilityError("foundry worker exceeded 30 second wall budget")
+                        time.sleep(0.02)
+                    out.seek(0)
+                    raw = out.read(1048577)
+                    if proc.returncode or len(raw) > 1048576:
+                        raise CapabilityError(f"system {system} refused {op}: worker exit {proc.returncode}")
+                    answer = json.loads(raw)
+                    if "error" in answer:
+>                       raise CapabilityError(f"system {system} refused {op}: {answer['error']}")
+E                       greg.capabilities.CapabilityError: system 28 refused foundry_tool: ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+
+greg/foundry_bridge.py:117: CapabilityError
+----------------------------- Captured stderr call -----------------------------
+Tool 'price_quote' raised an unexpected exception
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/venvconv/lib/python3.11/site-packages/mcp/server/mcpserver/tools/base.py", line 179, in run
+    result = await self.fn_metadata.call_fn(self.fn, self.is_async, validated, pass_directly)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/venvconv/lib/python3.11/site-packages/mcp/server/mcpserver/utilities/func_metadata.py", line 164, in call_fn
+    return await anyio.to_thread.run_sync(functools.partial(fn, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/venvconv/lib/python3.11/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/venvconv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/venvconv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/wtm/foundry/mcp/ecosystem_server.py", line 30, in price_quote
+    raise RuntimeError("provider outage")
+RuntimeError: provider outage
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/venvconv/lib/python3.11/site-packages/mcp/server/mcpserver/server.py", line 442, in _handle_call_tool
+    return await self.call_tool(params.name, params.arguments or {}, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/venvconv/lib/python3.11/site-packages/mcp/server/mcpserver/server.py", line 548, in call_tool
+    return await self._tool_manager.call_tool(name, arguments, context, convert_result=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/venvconv/lib/python3.11/site-packages/mcp/server/mcpserver/tools/tool_manager.py", line 87, in call_tool
+    return await tool.run(arguments, context, convert_result=convert_result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/venvconv/lib/python3.11/site-packages/mcp/server/mcpserver/tools/base.py", line 213, in run
+    raise UnexpectedToolError(f"Error executing tool {self.name}") from exc
+mcp.server.mcpserver.exceptions.UnexpectedToolError: Error executing tool price_quote
+_____ test_restricted_dsl_verifier_runs_but_ratification_is_still_required _____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-526/test_restricted_dsl_verifier_r0')
+
+    def test_restricted_dsl_verifier_runs_but_ratification_is_still_required(tmp_path):
+        from foundry.systems import promotion
+        source = "max(base_price * units * (1 - 0.05 * customer_tier), cost_per_unit * units * 1.1)"
+        result = foundry_bridge.query({"system": 16, "op": "dry_run", "args": {
+            "candidate": promotion.candidate(source), "context": promotion.context()}}, context(tmp_path, "foundry.query"))
+        assert result["result"]["status"] == "BLOCKED"
+>       assert result["result"]["blocked_at"] == "ratification"
+E       AssertionError: assert 'verification' == 'ratification'
+E
+E         - ratification
+E         ?  --
+E         + verification
+E         ? ++
+
+tests/unit/test_greg_foundry_worker.py:108: AssertionError
+____ test_landlock_inherits_into_exact_reviewed_dsl_and_packaging_children _____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-526/test_landlock_inherits_into_ex0')
+
+    def test_landlock_inherits_into_exact_reviewed_dsl_and_packaging_children(tmp_path):
+        require_support()
+        from foundry.systems import promotion
+        source = "max(base_price * units * (1 - 0.05 * customer_tier), cost_per_unit * units * 1.1)"
+        out = foundry_bridge.query({"system": 16, "op": "dry_run", "args": {
+            "candidate": promotion.candidate(source), "context": promotion.context()}},
+            context(tmp_path, "foundry.query"))
+        assert out["execution"]["filesystem"] == "landlock"
+        verification = next(s for s in out["result"]["stages"] if s["stage"] == "verification")
+>       assert verification["passed"]
+E       assert False
+
+tests/unit/test_greg_landlock.py:98: AssertionError
+__ test_first_party_mcp_reaches_actual_retained_machine_state_without_writes ___
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-526/test_first_party_mcp_reaches_a0')
+
+    def test_first_party_mcp_reaches_actual_retained_machine_state_without_writes(tmp_path):
+        ctx = context(tmp_path)
+        produced = foundry_bridge.apply({"system": 35, "op": "produce", "args": {"canon": canon()}}, ctx)
+>       queried = foundry_bridge.query({"system": 28, "op": "foundry_tool", "args": {
+            "tool": "foundry_query", "args": {"system": 35, "op": "inspect",
+                                            "args_json": json.dumps({"manifest": produced["result"]["manifest"]})}}},
+            context(tmp_path, "foundry.query"))
+
+tests/unit/test_greg_mcp_worker.py:15:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+greg/foundry_bridge.py:141: in query
+    return _call(params, ctx, "QUERY_OPS")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+greg/foundry_bridge.py:80: in _call
+    return _execute(request, ctx, table, root, workspace, env, KERNEL_ROOT, _no_network_preexec)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+request = '{"system": 28, "op": "foundry_tool", "table": "QUERY_OPS", "args": {"tool": "foundry_query", "args": {"system": 35, "...e3b05135f6abbc0\\"}"}}, "root": "/tmp/pytest-of-root/pytest-526/test_first_party_mcp_reaches_a0/ws/foundry/system-28"}'
+ctx = InvocationContext(workspace=PosixPath('/tmp/pytest-of-root/pytest-526/test_first_party_mcp_reaches_a0/ws'), read_roots...='', authority_ref='', grant_id='', policy_version='', stop_check=None, capability_registry=None, cognition_model=None)
+table = 'QUERY_OPS'
+root = PosixPath('/tmp/pytest-of-root/pytest-526/test_first_party_mcp_reaches_a0/ws/foundry/system-28')
+workspace = PosixPath('/tmp/pytest-of-root/pytest-526/test_first_party_mcp_reaches_a0/ws')
+env = {'PATH': '/usr/bin:/bin', 'LANG': 'C.UTF-8', 'HOME': '/tmp/pytest-of-root/pytest-526/test_first_party_mcp_reaches_a0/ws', 'PYTHONPATH': '/tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/wtm', ...}
+kernel_root = PosixPath('/tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/wtm')
+preexec = <function _no_network_preexec at 0x7f477cd4ede0>
+
+    def _execute(request, ctx, table, root, workspace, env, kernel_root, preexec):
+        from greg.foundry_state import stage, commit
+        params = json.loads(request)
+        system, op = params["system"], params["op"]
+        with tempfile.TemporaryDirectory(prefix="greg-foundry-", dir=workspace) as temporary:
+            staged = Path(temporary) / "stores"
+            before = stage(root.parent, staged)
+            with open(Path(temporary) / "request.json", "w+b") as inp, \
+                    open(Path(temporary) / "result.json", "w+b") as out, \
+                    open(Path(temporary) / "error.txt", "w+b") as err:
+                payload = json.loads(request)
+                payload["scratch"] = temporary
+                payload["root"] = str(staged / root.name)
+                inp.write(json.dumps(payload).encode()); inp.seek(0)
+                proc = subprocess.Popen([sys.executable, "-s", "-m", "greg.foundry_worker"],
+                                        cwd=kernel_root, env=env, stdin=inp, stdout=out, stderr=err,
+                                        preexec_fn=preexec, start_new_session=True, close_fds=True)
+                deadline = time.monotonic() + 30
+                try:
+                    while proc.poll() is None:
+                        if ctx.stop_check and ctx.stop_check():
+                            raise CapabilityError("foundry worker stopped by canonical revocation/pause")
+                        if time.monotonic() >= deadline:
+                            raise CapabilityError("foundry worker exceeded 30 second wall budget")
+                        time.sleep(0.02)
+                    out.seek(0)
+                    raw = out.read(1048577)
+                    if proc.returncode or len(raw) > 1048576:
+                        raise CapabilityError(f"system {system} refused {op}: worker exit {proc.returncode}")
+                    answer = json.loads(raw)
+                    if "error" in answer:
+>                       raise CapabilityError(f"system {system} refused {op}: {answer['error']}")
+E                       greg.capabilities.CapabilityError: system 28 refused foundry_tool: ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+
+greg/foundry_bridge.py:117: CapabilityError
+________ test_guarded_owned_bundle_rebuilds_in_fixed_independent_child _________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-526/test_guarded_owned_bundle_rebu0')
+
+    def test_guarded_owned_bundle_rebuilds_in_fixed_independent_child(tmp_path):
+        ctx = context(tmp_path)
+        created = foundry_bridge.apply({"system": 53, "op": "build"}, ctx)
+        assert created["result"]["files"] == len(source_files())
+        bundle = ctx.workspace / "foundry" / "system-53" / created["result"]["bundle"]
+        assert hashlib.sha256(bundle.read_bytes()).hexdigest() == created["result"]["sha256"]
+        with tarfile.open(bundle, "r:gz") as archive:
+            names = archive.getnames()
+            manifest = json.load(archive.extractfile("BUILD-MANIFEST.json"))
+        assert "foundry/systems/community.py" in names
+        assert "greg/foundry_protocol_worker.py" in names
+        assert set(names) == set(manifest["files"]) | {"BUILD-MANIFEST.json"}
+>       verified = foundry_bridge.apply({"system": 53, "op": "verify"}, ctx)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/unit/test_greg_packaging.py:28:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+greg/foundry_bridge.py:145: in apply
+    return _call(params, ctx, "APPLY_OPS")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+greg/foundry_bridge.py:80: in _call
+    return _execute(request, ctx, table, root, workspace, env, KERNEL_ROOT, _no_network_preexec)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+request = '{"system": 53, "op": "verify", "table": "APPLY_OPS", "args": {}, "root": "/tmp/pytest-of-root/pytest-526/test_guarded_owned_bundle_rebu0/ws/foundry/system-53"}'
+ctx = InvocationContext(workspace=PosixPath('/tmp/pytest-of-root/pytest-526/test_guarded_owned_bundle_rebu0/ws'), read_roots...='', authority_ref='', grant_id='', policy_version='', stop_check=None, capability_registry=None, cognition_model=None)
+table = 'APPLY_OPS'
+root = PosixPath('/tmp/pytest-of-root/pytest-526/test_guarded_owned_bundle_rebu0/ws/foundry/system-53')
+workspace = PosixPath('/tmp/pytest-of-root/pytest-526/test_guarded_owned_bundle_rebu0/ws')
+env = {'PATH': '/usr/bin:/bin', 'LANG': 'C.UTF-8', 'HOME': '/tmp/pytest-of-root/pytest-526/test_guarded_owned_bundle_rebu0/ws', 'PYTHONPATH': '/tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/wtm', ...}
+kernel_root = PosixPath('/tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/wtm')
+preexec = <function _no_network_preexec at 0x7f477cd4ede0>
+
+    def _execute(request, ctx, table, root, workspace, env, kernel_root, preexec):
+        from greg.foundry_state import stage, commit
+        params = json.loads(request)
+        system, op = params["system"], params["op"]
+        with tempfile.TemporaryDirectory(prefix="greg-foundry-", dir=workspace) as temporary:
+            staged = Path(temporary) / "stores"
+            before = stage(root.parent, staged)
+            with open(Path(temporary) / "request.json", "w+b") as inp, \
+                    open(Path(temporary) / "result.json", "w+b") as out, \
+                    open(Path(temporary) / "error.txt", "w+b") as err:
+                payload = json.loads(request)
+                payload["scratch"] = temporary
+                payload["root"] = str(staged / root.name)
+                inp.write(json.dumps(payload).encode()); inp.seek(0)
+                proc = subprocess.Popen([sys.executable, "-s", "-m", "greg.foundry_worker"],
+                                        cwd=kernel_root, env=env, stdin=inp, stdout=out, stderr=err,
+                                        preexec_fn=preexec, start_new_session=True, close_fds=True)
+                deadline = time.monotonic() + 30
+                try:
+                    while proc.poll() is None:
+                        if ctx.stop_check and ctx.stop_check():
+                            raise CapabilityError("foundry worker stopped by canonical revocation/pause")
+                        if time.monotonic() >= deadline:
+                            raise CapabilityError("foundry worker exceeded 30 second wall budget")
+                        time.sleep(0.02)
+                    out.seek(0)
+                    raw = out.read(1048577)
+                    if proc.returncode or len(raw) > 1048576:
+                        raise CapabilityError(f"system {system} refused {op}: worker exit {proc.returncode}")
+                    answer = json.loads(raw)
+                    if "error" in answer:
+>                       raise CapabilityError(f"system {system} refused {op}: {answer['error']}")
+E                       greg.capabilities.CapabilityError: system 53 refused verify: BuildError: e "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+E                         File "<frozen importlib._bootstrap>", line 980, in exec_module
+E                         File "<frozen site>", line 642, in <module>
+E                         File "<frozen site>", line 625, in main
+E                         File "<frozen site>", line 543, in venv
+E                       PermissionError: [Errno 13] Permission den
+
+greg/foundry_bridge.py:117: CapabilityError
+=========================== short test summary info ============================
+FAILED tests/unit/test_foundry_systems.py::test_mcp_tools_run_behind_kernel_identity_policy_and_gate
+FAILED tests/unit/test_greg_foundry_worker.py::test_restricted_dsl_verifier_runs_but_ratification_is_still_required
+FAILED tests/unit/test_greg_landlock.py::test_landlock_inherits_into_exact_reviewed_dsl_and_packaging_children
+FAILED tests/unit/test_greg_mcp_worker.py::test_first_party_mcp_reaches_actual_retained_machine_state_without_writes
+FAILED tests/unit/test_greg_packaging.py::test_guarded_owned_bundle_rebuilds_in_fixed_independent_child
+5 failed, 3814 passed, 24 skipped in 867.33s (0:14:27)
+rc=1

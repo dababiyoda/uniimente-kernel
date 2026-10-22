@@ -901,6 +901,9 @@ class MissionBook:
             self._requested(data, event_id)
         elif kind == "decision.withdrawn":
             self.withdrawn[data["request_id"]] = data
+            request = self.requests.get(data["request_id"])
+            if data.get("voids_approval") and request:   # a restore from a backup: the approval is asked again
+                m.approved_scopes.discard(request["scope_digest"])
         elif kind == "decision.answered":
             self._answered(data)
 
@@ -1253,15 +1256,20 @@ class MissionEngine:
         return InvocationContext(workspace=self.workspace_root / m.mission_id.replace(":", "_"),
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
-                                 # ledger access: memory, artifacts, cognition and the body's own records; the organ bridge
-                                 # that renders the Mind's receipts into a memo gets a reader that cannot write
-                                 journal=self._ledger_reader() if manifest.capability_id == "venture.assess"
-                                 else self.journal if manifest.capability_id in (
-                                     "memory.precedents", "daleobanks.outcome", "worker.appraise")
+                                 # ledger access: memory, artifacts, cognition and the body's own records. The organ
+                                 # bridges that render or check against the Mind's receipts (the venture memo, the
+                                 # DALEOBANKS restatement) and the evaluator that binds a retained WorkOrder to its
+                                 # commission receipt get a reader that cannot write
+                                 journal=self._ledger_reader() if manifest.capability_id in ("venture.assess",
+                                                                                             "daleobanks.verify",
+                                                                                             "worker.appraise")
+                                 else self.journal if manifest.capability_id in ("memory.precedents", "daleobanks.outcome")
                                  or manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.",
                                                                        "organ.", "foundry.")) else None,
                                  artifact_root=self.artifact_root, stop_check=self._stop_check,
-                                 capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
+                                 # eligibility view for the Mind, and for the evaluator that asks it
+                                 capability_registry=self.registry if manifest.capability_id.startswith("cognition.")
+                                 or manifest.capability_id == "worker.appraise" else None,
                                  cognition_model=getattr(self, "cognition_model", None),
                                  egress=getattr(self, "egress", None) if manifest.capability_id in CONFINED_EGRESS else None,
                                  worker_confinement=getattr(self, "worker_confinement", "required"))
@@ -2824,6 +2832,16 @@ class MissionEngine:
                                           **({"held_by_precondition": held} if held else {}),
                                           **({"tradeoffs": tradeoffs} if tradeoffs else {}),
                                           **({"disagreement": split} if split else {})})
+            if m.actions_done and not held:
+                # Every admissible strategy ran and these signed checks still fail: a failure closure. The
+                # separate process appraises it as it does an achievement, so settlement hears failures too.
+                # Qualified intelligences that disagree are not a measured failure: GREG keeps every view and does
+                # not vote, so it closes on neither (the ask above carries the disagreement to the founder).
+                if not split:
+                    self.journal.record("mission.unmet", {
+                        "mission_id": m.mission_id, "failing_checks": sorted(failing), "actions_done": m.actions_done,
+                        "closure_rule": "every admissible strategy ran; these signed checks re-observed failing",
+                        "at": iso(now)}, key=[m.mission_id, "unmet", m.actions_done])
             self._block(m, {"type": "decision", "request_id": rid, "why": "no admissible strategy",
                             "failing_checks": sorted(failing), "reconsider": "founder revises mission"})
             return {"state": "BLOCKED", "blocker": m.blocker}

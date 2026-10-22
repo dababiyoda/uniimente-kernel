@@ -1106,9 +1106,12 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                 _lazy("greg.mcp_tools", "act")),
     "daleobanks.verify": (_builtin("daleobanks.verify", "media.verify_draft",
                                    "DALEOBANKS EthicsGuard/Critic/PromptFirewall on a draft plus figure-to-source "
-                                   "binding (DALEOBANKS code, DALEOBANKS interpreter)", "cli", "read_only",
+                                   "binding (DALEOBANKS code, DALEOBANKS interpreter); with ``cognition``, every "
+                                   "sentence must be a claim GREG's evidence family answered as written",
+                                   "cli", "read_only",
                                    "daleobanks:", {"daleobanks_root": "path", "draft": "path", "source": "path",
-                                                   "python": "path?", "max_chars": "int?"},
+                                                   "python": "path?", "max_chars": "int?", "cognition": "dict?",
+                                                   "content_type": "str?"},
                                    {"verdict": "str", "findings": "list", "draft_sha256": "str"},
                                    filesystem="read-scoped", binaries=(sys.executable,), retry_safe=True,
                                    data_classes=("project_sources",), tests=("tests/unit/test_greg_daleobanks_bridge.py",),

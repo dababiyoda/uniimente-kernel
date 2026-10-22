@@ -41,9 +41,12 @@ jobs:
     # The limit bounds a hung run; it is not a speed target. Verifier V2 now runs once, in job 9 (44f7c35); this
     # job still carries the full suite, the worker-isolation regressions and the mutation checks. Hosted runners
     # differ in speed: on 2026-10-15 the suite took 11 min on one (a48e8fa) and 17.5 min on another (349e732), and
-    # whole jobs took 34.5 and 38.5 min on slow runners. 60 leaves room for the suite to keep growing on a slow
-    # runner without hiding a hang for long (#178).
-    timeout-minutes: 60
+    # whole jobs took 34.5 and 38.5 min on slow runners (#178). On the Track B line, where the suite still ran
+    # twice here, it took about 15 + 12 minutes at c360103, and at 0067be6 the full suite alone took 25 minutes
+    # (the V2 re-run was then cancelled 20 minutes in at the 45-minute limit, run 39614663399): growth from the
+    # review rounds' regression tests, not a hang (#180). This job now carries both lineages' tests, so it keeps
+    # the larger of the two limits; 75 leaves headroom without hiding a hang for long.
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
         with:
@@ -106,7 +109,9 @@ jobs:
     name: "9 · Institutional verifier V1-V5"
     runs-on: ubuntu-latest
     # Same rationale as job 1 (#180): V2 re-runs tests/unit, which Track B's Mind tests enlarged; bounds a hung run.
-    timeout-minutes: 45
+    # On the joined tree (#196) V2 covers both lineages' tests/unit: 25 min in #192's job 9, 29m10s inside Track B's
+    # job 1; 60 keeps that union clear of the limit.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -199,8 +204,11 @@ jobs:
   cortex_seed:
     name: "6 · Cortex seed experiment (Z3 + CP-SAT, frozen evaluation)"
     runs-on: ubuntu-latest
-    # 150 mutants run in parallel, one repository copy per core (about 11 minutes on 4 cores); headroom for the rest
-    timeout-minutes: 35
+    # 150 mutants run in parallel, one repository copy per core (about 11 minutes on 4 cores, #194).
+    # The joined tree (#196) runs both lineages' mutants: the whole job took 18m04s at 47229e3b (#192, run 39645058690)
+    # and 15.5 min at af50537b (#196 before Track B); Track B's residual step alone took 6m04s at 93badaff (run
+    # 39688750571) and now runs the union plus #192's baseline pass. 40 bounds a hung run with that union's headroom.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -216,9 +224,9 @@ jobs:
         run: python -m pytest -q tests/unit/test_greg_cognition_seed_path.py tests/unit/test_greg_seed_compat.py tests/integration/test_greg_cognition_process.py
       - name: GREG cognition boundary mutation check
         run: python scripts/ci/check_greg_cognition_mutants.py
-      - name: Residual safeguards (cross-engine certificates, legitimacy, disclosure packages, characterization, thinking budget, venture case) and their mutation check
+      - name: Residual safeguards (cross-engine certificates, legitimacy, disclosure packages, characterization, thinking budget, venture and media cases, the Task Fabric evaluator, restore from a tested backup, failure closures) and their mutation check
         run: |
-          python -m pytest -q tests/unit/test_cognition_residual_safeguards.py tests/unit/test_cognition_disclosure.py tests/unit/test_cognition_characterize.py tests/unit/test_cognition_thinking_budget.py tests/unit/test_greg_ventures.py
+          python -m pytest -q tests/unit/test_cognition_residual_safeguards.py tests/unit/test_cognition_disclosure.py tests/unit/test_cognition_characterize.py tests/unit/test_cognition_thinking_budget.py tests/unit/test_greg_ventures.py tests/unit/test_greg_media_case.py tests/unit/test_greg_task_fabric.py tests/unit/test_greg_restore.py tests/unit/test_greg_failure_closure.py
           python scripts/ci/check_cognition_residual_mutants.py
       - name: Seed Genome 120-case frozen engineering comparison
         run: python -m cortex.evaluation.seed_genome.run --out seed-genome-results.json

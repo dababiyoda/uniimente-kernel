@@ -12,6 +12,9 @@ import sys
 
 import pytest
 
+# Held-out seeds here sit at 9400+: on the joined tree (#196) Track B reserves 7000-9199 for P8
+# (greg/cognition/genomes/admission.py P8_RESERVED), which #192's runner tests had used as fresh.
+
 from cortex.evaluation.genome_admission import run as run155
 from cortex.evaluation.genome_admission import run_operations as R
 from greg.cognition.contracts import CognitionError
@@ -99,16 +102,16 @@ def test_a_freeze_refuses_spent_development_p8_and_pr155_seeds_and_an_existing_f
         assert not (tmp_path / f"r-{start}").exists()
     with pytest.raises(SystemExit, match="--heldout-start"):
         R.main(["--freeze", "r-default"])
-    R.main(["--freeze", "r1", "--heldout-start", "9000"])
+    R.main(["--freeze", "r1", "--heldout-start", "9400"])
     frozen = json.loads((tmp_path / "r1" / "freeze.json").read_text())
-    assert frozen["inputs"]["heldout_seeds"] == list(range(9000, 9030))
+    assert frozen["inputs"]["heldout_seeds"] == list(range(9400, 9430))
     assert (frozen["inputs"]["rule"], frozen["inputs"]["rule_155"]) == (admission.RULE, R.RULE_155)
     assert frozen["inputs"]["geometry"] == R.GEOMETRY and frozen["inputs"]["families"] == list(R.FAMILIES)
     assert {R.RUNNER, "cortex/evaluation/genome_admission/run.py", "greg/cognition/genomes/admission.py",
             "greg/cognition/solvers.py", "greg/cognition/contracts.py", "greg/cognition/verification.py",
             "greg/cognition/worker.py", "greg/cognition/cortex.py"} <= set(frozen["inputs"]["code"])
     with pytest.raises(SystemExit, match="existing re-admission freeze"):
-        R.main(["--freeze", "r1", "--heldout-start", "9100"])
+        R.main(["--freeze", "r1", "--heldout-start", "9500"])
 
 
 def test_a_negative_start_cannot_alias_refused_seeds(tmp_path, monkeypatch):
@@ -123,7 +126,7 @@ def test_a_negative_start_cannot_alias_refused_seeds(tmp_path, monkeypatch):
             R.main(["--freeze", f"neg{start}", "--heldout-start", str(start)])
         assert not (tmp_path / f"neg{start}").exists()
     assert R.refusals(range(-1030, -1000)) and R.refusals(range(-38, -8))
-    assert R.refusals(range(9000, 9030)) == []
+    assert R.refusals(range(9400, 9430)) == []
 
 
 def _git(repo, *args):
@@ -151,7 +154,7 @@ def test_a_run_inside_the_repository_is_bound_to_its_committed_pre_registration(
                         lambda item, rows: ("EXPERIMENTAL", {"vs_baseline": {}, "vs_competitor": {}}))
     monkeypatch.setattr(R, "smoke", lambda family, seed: {"verifier": "STRUCTURALLY_VERIFIED"})
     monkeypatch.setattr(R, "rule_155", lambda rows: {"status": "EXPERIMENTAL"})
-    R.main(["--freeze", "ops", "--heldout-start", "9000"])
+    R.main(["--freeze", "ops", "--heldout-start", "9400"])
     with pytest.raises(SystemExit, match="commit freeze.json"):
         R.main(["--run", "ops"])
     _git(repo, "add", "evidence/ops/freeze.json")
@@ -169,7 +172,7 @@ def test_a_run_inside_the_repository_is_bound_to_its_committed_pre_registration(
     manifest.write_text(pristine)
     later = evidence / "later"                                   # a later freeze spending this run's seeds
     later.mkdir()
-    (later / "freeze.json").write_text(json.dumps({"inputs": {"heldout_seeds": [9005]}}))
+    (later / "freeze.json").write_text(json.dumps({"inputs": {"heldout_seeds": [9405]}}))
     _git(repo, "add", "evidence/later/freeze.json")
     _git(repo, "commit", "-qm", "a later freeze")
     with pytest.raises(SystemExit, match="spent by an earlier admission freeze"):
@@ -189,19 +192,19 @@ def test_a_re_admission_freeze_spends_its_seeds_for_every_later_admission(tmp_pa
     seeds are refused by a later re-admission and by the genome harness alike."""
     monkeypatch.setattr(R, "EVIDENCE", tmp_path)
     monkeypatch.setattr(admission, "EVIDENCE", tmp_path)
-    R.main(["--freeze", "ops", "--heldout-start", "9000"])
-    assert set(range(9000, 9030)) <= admission.spent_seeds()
+    R.main(["--freeze", "ops", "--heldout-start", "9400"])
+    assert set(range(9400, 9430)) <= admission.spent_seeds()
     with pytest.raises(SystemExit, match="spent by an earlier admission freeze"):
-        R.main(["--freeze", "ops-2", "--heldout-start", "9015"])
+        R.main(["--freeze", "ops-2", "--heldout-start", "9415"])
     with pytest.raises(SystemExit, match="spent"):
-        admission.main(["--freeze", "genome-2", "--only", "flow_maxflow", "--heldout-start", "9010"])
+        admission.main(["--freeze", "genome-2", "--only", "flow_maxflow", "--heldout-start", "9410"])
 
 
 def test_the_run_refuses_changed_frozen_inputs_and_never_overwrites_results(tmp_path, monkeypatch):
     """--run reproduces the freeze's inputs or refuses (a hashed file edited after the freeze, a tampered digest or
     protocol field); it refuses an existing results.json and leaves it untouched."""
     monkeypatch.setattr(R, "EVIDENCE", tmp_path)
-    R.main(["--freeze", "r1", "--heldout-start", "9000"])
+    R.main(["--freeze", "r1", "--heldout-start", "9400"])
     path = tmp_path / "r1" / "freeze.json"
     pristine = path.read_text()
     sha = R._sha

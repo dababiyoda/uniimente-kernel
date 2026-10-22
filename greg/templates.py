@@ -741,51 +741,133 @@ def browser_task(*, url: str, steps: list[dict], session: str, expect: dict, hor
 
 
 def daleobanks_post(*, daleobanks_root: str, source: str, brief: str, order: str, budget_usd: float = 2.0,
-                    max_chars: int = 280, horizon_days: float = 2, founder_expression: str | None = None) -> dict:
+                    max_chars: int = 280, horizon_days: float = 2, founder_expression: str | None = None,
+                    bound_claims: bool = True, quality: str = "unverified", python: str | None = None) -> dict:
     """GREG -> research/content worker -> DALEOBANKS verification -> publish request through both gates.
 
     The draft is written by a temporary worker from a read-only source; DALEOBANKS's own checks plus
     figure-to-source binding must pass before the publish request may run (``requires``). Publishing is
     external_contact: outside this cone, so it stops for a founder decision; even when approved,
     DALEOBANKS's LIVE kill switch and credentials decide, and a dry-run is reported as a block.
+
+    With ``bound_claims`` (the default), the worker also lists each sentence with the source spans that support
+    it, and the Task Fabric's evaluator (``worker.appraise``) asks the Mind about every sentence against GREG's
+    own copy of the source: the publish request also requires that appraisal. ``quality`` is the signer's
+    declaration about the source. ``bound_claims=False`` keeps the figure-only floor.
     """
     source = str(Path(source).expanduser().resolve())
     root = str(Path(daleobanks_root).expanduser().resolve())
-    draft_name = "post.txt"
+    draft_name, claims_name = "post.txt", "post.claims.json"
+    contract = {"claims": claims_name, "quality": quality, "expires_at": _horizon(horizon_days)}
+    acceptance = {"output": draft_name,
+                  "criteria": f"<= {max_chars} characters; no figures absent from the source; no "
+                              "hype, no calls to buy; not a proposal (no pilot/KPI language)"}
+    objective = (f"{brief} Write the post as plain text, at most {max_chars} characters, "
+                 "stating only facts present in the input; every number must appear in the input.")
+    checks = [{"check_id": "draft_verified", "description": "DALEOBANKS checks and source binding pass",
+               "sensor": {"capability": "daleobanks.verify",
+                          "params": {"daleobanks_root": root, "source": source, "max_chars": max_chars,
+                                     "draft": f"work-orders/{order}/work/{draft_name}",
+                                     **({"python": python} if python else {})},
+                          "target": "daleobanks:verify"},
+               "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}}]
+    if bound_claims:
+        acceptance["bound_claims"] = contract
+        objective += (" Keep the source's hedges, negations, scope, direction and names; list each sentence's "
+                      f"supporting spans in {claims_name}.")
+        checks.append({"check_id": "draft_appraised",
+                       "description": "the Task Fabric's evaluator: every sentence is a claim the Mind answered "
+                                      "as written against GREG's copy of the source",
+                       "sensor": {"capability": "worker.appraise",
+                                  "params": {"order": order, "bound_claims": contract}, "target": f"work:{order}"},
+                       "predicate": {"op": "equals", "field": "verdict", "value": "ACCEPTED"}})
+    gates = [c["check_id"] for c in checks]
+    publish = {"daleobanks_root": root, "draft": f"work-orders/{order}/work/{draft_name}",
+               **({"python": python} if python else {})}
     return {
         "mission_id": f"m:media-{_slug(order)}",
         "founder_expression": founder_expression or f"DALEOBANKS: {brief}",
         "intended_effect": "a source-bound post is drafted, verified by DALEOBANKS and submitted to its publishing "
                            "gate; the truthful outcome (posted or blocked) returns to GREG",
         "priority": 50, "closure": {"kind": "bounded"},
-        "success_checks": [
-            {"check_id": "draft_verified", "description": "DALEOBANKS checks and source binding pass",
-             "sensor": {"capability": "daleobanks.verify",
-                        "params": {"daleobanks_root": root, "source": source, "max_chars": max_chars,
-                                   "draft": f"work-orders/{order}/work/{draft_name}"},
-                        "target": "daleobanks:verify"},
-             "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}},
+        "success_checks": checks + [
             {"check_id": "publish_outcome_known", "description": "DALEOBANKS's ledger holds the request's outcome",
              "sensor": {"capability": "daleobanks.outcome", "params": {}, "target": "daleobanks:outcome"},
              "predicate": {"op": "equals", "field": "requested", "value": True}}],
         "strategies": [
             {"action_id": "draft-post", "capability": "worker.commission", "target": f"work:{order}",
-             "params": {"order": order, "mode": "document", "inputs": [source],
-                        "objective": f"{brief} Write the post as plain text, at most {max_chars} characters, "
-                                     "stating only facts present in the input; every number must appear in the input.",
-                        "acceptance": {"output": draft_name,
-                                       "criteria": f"<= {max_chars} characters; no figures absent from the source; no "
-                                                   "hype, no calls to buy; not a proposal (no pilot/KPI language)"},
-                        "allowed_paths": [draft_name], "max_budget_usd": budget_usd, "timeout_seconds": 600},
-             "cost_usd": budget_usd, "advances": ["draft_verified"],
-             "rationale": "research/content work by a temporary worker; DALEOBANKS verifies it"},
+             "params": {"order": order, "mode": "document", "inputs": [source], "objective": objective,
+                        "acceptance": acceptance,
+                        "allowed_paths": [draft_name] + ([claims_name] if bound_claims else []),
+                        "max_budget_usd": budget_usd, "timeout_seconds": 600},
+             "cost_usd": budget_usd, "advances": gates,
+             "rationale": "research/content work by a temporary worker; DALEOBANKS verifies it"
+                          + ("; the Mind appraises every sentence" if bound_claims else "")},
             {"action_id": "request-publish", "capability": "daleobanks.publish", "target": "daleobanks:publish",
-             "params": {"daleobanks_root": root, "draft": f"work-orders/{order}/work/{draft_name}"},
-             "advances": ["publish_outcome_known"], "requires": ["draft_verified"],
+             "params": publish, "advances": ["publish_outcome_known"], "requires": gates,
              "rationale": "publishing is external contact: founder decision, then DALEOBANKS's own LIVE gate"}],
-        "light_cone": {"capabilities": ["worker.commission", "daleobanks.verify", "daleobanks.outcome"],
+        "light_cone": {"capabilities": ["worker.commission", "daleobanks.verify", "daleobanks.outcome"]
+                                       + (["worker.appraise"] if bound_claims else []),
                        "targets": [f"work:{order}", "daleobanks:*"], "max_consequence_class": "internal_write",
                        "budget_usd": budget_usd, "horizon": _horizon(horizon_days)},
+    }
+
+
+def daleobanks_paraphrase(*, daleobanks_root: str, source: str, draft: str, claims: list,
+                          quality: str = "unverified", python: str | None = None, content_type: str = "reply",
+                          max_chars: int = 600, horizon_days: float = 2, founder_expression: str | None = None) -> dict:
+    """Media case (directive section 16): a DALEOBANKS draft that restates a source, checked claim by claim.
+
+    ``claims`` lists each sentence of the draft with the exact source spans that support it:
+    ``[{"text": sentence, "quotes": [span, ...]}]``. GREG's evidence family answers each claim first
+    (``cognition.solve``, read-only): bound to its spans and showing none of the six detected kinds of change
+    (figures, negation, certainty, scope, direction, named terms). DALEOBANKS's verify then runs its own content
+    checks and requires every sentence of the draft to be a claim the Mind answered as written. Consequence-inert:
+    the light cone holds no publish capability, so nothing can be posted from this mission.
+    """
+    import hashlib
+    from greg.cognition.contracts import digest
+    source_path = Path(source).expanduser().resolve()
+    root = str(Path(daleobanks_root).expanduser().resolve())
+    text = source_path.read_text(encoding="utf-8")
+    thread = hashlib.sha256(Path(draft).expanduser().resolve().read_bytes()).hexdigest()[:12]
+    src = {"id": "source", "text": text, "digest": digest(text), "quality": quality, "expires_at": _horizon(horizon_days),
+           "provenance": f"{source_path} sha256:{hashlib.sha256(text.encode()).hexdigest()}"}
+    ids, checks, strategies = {}, [], []
+    for i, claim in enumerate(claims, 1):
+        if not claim.get("quotes"):
+            raise ValueError(f"claim {i} has no supporting span; every sentence must cite the source")
+        ids[f"c{i}"] = f"media-claim-{thread}-{i}"
+        step = {"capability": "cognition.solve", "target": f"cognition:{ids[f'c{i}']}",
+                "params": {"problem_id": ids[f"c{i}"], "operation": "bind_evidence",
+                           "data": {"claim": claim["text"], "sources": [src],
+                                    "bindings": [{"source_id": "source", "quote": q, "relationship": "supports"}
+                                                 for q in claim["quotes"]]}}}
+        checks.append({"check_id": f"claim_{i}_checked", "description": f"GREG's evidence receipt for claim {i}",
+                       "sensor": step, "predicate": {"op": "equals", "field": "authority_created", "value": False}})
+        strategies.append({"action_id": f"claim-{i}-receipt", **step, "advances": [f"claim_{i}_checked"],
+                           "rationale": "bind the claim to its spans and check what it changes; an abstention is a "
+                                        "truthful answer, not a failure"})
+    verify = {"capability": "daleobanks.verify", "target": "daleobanks:verify",
+              "params": {"daleobanks_root": root, "draft": str(Path(draft).expanduser().resolve()),
+                         "source": str(source_path), "max_chars": max_chars, "content_type": content_type,
+                         "cognition": ids, **({"python": python} if python else {})}}
+    checks.append({"check_id": "paraphrase_verified",
+                   "description": "DALEOBANKS's checks pass and every sentence is a claim answered as written",
+                   "sensor": verify, "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}})
+    strategies.append({"action_id": "verify-paraphrase", **verify, "advances": ["paraphrase_verified"],
+                       "requires": [c["check_id"] for c in checks[:-1]],
+                       "rationale": "DALEOBANKS's own content checks over a draft whose claims GREG has answered"})
+    return {
+        "mission_id": f"m:paraphrase-{thread}",
+        "founder_expression": founder_expression or "DALEOBANKS restates a source without changing what it says",
+        "intended_effect": "a draft that restates its source is checked claim by claim against it; a sentence that "
+                           "changes a figure, a negation, a hedge, a scope, a direction or a name is held back",
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": checks, "strategies": strategies,
+        "light_cone": {"capabilities": ["cognition.solve", "daleobanks.verify", "fs.read"],
+                       "targets": ["cognition:*", "daleobanks:verify"], "max_consequence_class": "read_only",
+                       "budget_usd": 0, "horizon": _horizon(horizon_days)},
     }
 
 

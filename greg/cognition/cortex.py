@@ -75,7 +75,13 @@ def compile_problem(params):
 def _cpu_seconds():
     """CPU seconds of this thread plus every child process the body has waited for (directive section 12: count
     local compute even when it costs no tokens). ``None`` where the platform offers no resource accounting; peak
-    memory cannot be split per call this way and stays unmeasured."""
+    memory cannot be split per call this way and stays unmeasured.
+
+    The compiler measures each inner run with these, around its call to ``reason``, and records it on the budget's
+    steps. ``reason`` also records its own call's CPU on its receipt, so a direct capability call is never priced
+    as free. A measured recipe lift binds the code closure of ``reason`` (greg.cognition.code_binding), so any edit
+    to ``reason`` (its thinking budget and this accounting included) leaves every measured lift stale until it is
+    re-measured."""
     try:
         import resource
     except ImportError:
@@ -163,8 +169,10 @@ def _semantic(data, geometry, model_config):
 
 def independent_verify(family, data, answer, proof_class, geometry):
     from greg.capabilities import run_isolated
-    payload = canonical({"family": family, "data": data, "answer": answer,
-                         "proof_class": proof_class, "geometry": asdict(geometry)})
+    # the deadline is the caller's (wall clock, which the worker shares): its certificate spends only what is left of
+    # this budget after the worker's own start-up, which the worker cannot time
+    payload = canonical({"family": family, "data": data, "answer": answer, "proof_class": proof_class,
+                         "geometry": asdict(geometry), "deadline": time.time() + geometry.latency_limit})
     proc = run_isolated([sys.executable, "-I", str(Path(__file__).with_name("worker.py")), "verify", payload],
                         cwd=ROOT, timeout=geometry.latency_limit)
     if proc.returncode or len(proc.stdout) > 256 * 1024:

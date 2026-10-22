@@ -1193,12 +1193,12 @@ class Genesis:
                      if self.registry.usable(m.capability_id)[0]]
         offered = []
         found = self._search_cognition(mission, function, deficit_id, record, mechanisms, contract, seed, repair, now,
-                                       offered)
+                                       offered, fitting)
         self._offer(deficit_id, offered, fitting, tried)
         return found
 
     def _search_cognition(self, mission, function, deficit_id, record, matched, contract, seed, repair, now,
-                          offered: list):
+                          offered: list, fitting=()):
         for named in record["named_by_compiler"]:
             self._route(deficit_id, "frozen_evidence", f"the compiler names {named['mechanism']} (in place of "
                                                        f"{named['supersedes']}) from frozen held-out evidence", None)
@@ -1209,7 +1209,7 @@ class Genesis:
                 return self._attach(mission, manifest, deficit_id, now, offered)
         self._route(deficit_id, "verified_detached", "none", None)
         # 3. the registered repertoire: the simplest route is a family GREG already has
-        offered += self._genome_library(deficit_id, record)
+        offered += self._genome_library(deficit_id, record, fitting)
         if offered:
             self._route(deficit_id, "installed_package", "not searched: a registered intelligence fits this geometry; "
                                                          "attaching it is the simpler route", None)
@@ -1238,14 +1238,17 @@ class Genesis:
                 return found
         return self._builder_route(mission, function, deficit_id, now, contract, repair, offered)
 
-    def _genome_library(self, deficit_id: str, record: dict) -> list[str]:
+    def _genome_library(self, deficit_id: str, record: dict, fitting=()) -> list[str]:
         """Registered intelligences whose native geometry and inputs fit the residual; returns attach candidates.
 
         The rows and their verdicts are the Competency Compiler's own (``compiler.family_rows``: native epistemic
         class, every native input present, composition stage, frozen admission status, and a relaxation of a fuller
-        fitting method), so Genesis offers exactly the families the compiler would route to once attached. A
-        registered, withheld (VERIFIED) family is reported for the founder to attach; GREG never attaches it.
-        Detached, quarantined or unregistered families are reported, not offered."""
+        fitting method), so Genesis offers exactly the families the compiler would route to once attached. A request
+        in a one-part recipe's shape (``{"capacity_network": {...}}``) names only its part, whose inputs the residual
+        does not carry: the compiler fitted families to the part, and its own fitting operation rows (``fitting``)
+        that the family rows cannot see are offered the same way. A registered, withheld (VERIFIED) family is
+        reported for the founder to attach; GREG never attaches it. Detached, quarantined or unregistered families
+        are reported, not offered."""
         from greg.cognition import catalog, compiler
         from greg.cognition.genomes import library
         provided, declared = set(record["required_inputs"]), record["geometry"]
@@ -1261,29 +1264,49 @@ class Genesis:
                             cid)
                 noted = True
                 continue
-            state = self.registry.state.get(cid)
-            why = ("not registered on this body" if state is None
-                   else "founder-detached; explicit attach required" if state == "DETACHED"
-                   else f"attached ({self.registry.usable(cid)[1]})" if state == "ATTACHED"
-                   else f"state {state}" if state != "VERIFIED" else None)
+            why = self._not_offered(cid)
             if why:
                 self._route(deficit_id, "genome_library", f"{cid} fits but is not a candidate: {why}", cid)
                 noted = True
                 continue
             found.append(cid)
-            self._route(deficit_id, "genome_library", f"attach candidate: {cid} ({row['status']}) fits by native class "
+            # a frozen status that persists from another version of the code (negative evidence awaiting a
+            # re-admission) is labelled with the version it was measured at, never presented as this version's
+            stale = row.get("stale_measurements") if not row.get("stale_evidence") else None
+            at = {"admission_version": stale["version_measured"], "current_version": stale["version_current"]} \
+                if stale else {}
+            label = row["status"] + (f", measured at version {at['admission_version']}" if at else "")
+            self._route(deficit_id, "genome_library", f"attach candidate: {cid} ({label}) fits by native class "
                                                       f"and inputs {row['inputs']}; registered and withheld; GREG "
                                                       "does not attach it", cid)
             self.journal.record("deficit.awaiting_attach", {
-                "deficit_id": deficit_id, "capability_id": cid, "admission_status": row["status"],
+                "deficit_id": deficit_id, "capability_id": cid, "admission_status": row["status"], **at,
                 "why": "a registered, withheld intelligence fits the residual geometry; attaching it is the "
                        "founder's decision"}, key=[deficit_id, "await", cid, row["status"]])
+        # operation rows the compiler fitted to the request's one typed part: its row, not the residual's input names,
+        # decides (the family rows above decide every family they see)
+        for cid in dict.fromkeys(r["method"] for r in fitting or ()
+                                 if r["kind"] == "operation" and r["method"] not in fits):
+            why = self._not_offered(cid)
+            if why:
+                self._route(deficit_id, "genome_library", f"{cid} fits the request's part but is not a candidate: "
+                                                          f"{why}", cid)
+                noted = True
+                continue
+            found.append(cid)
+            self._route(deficit_id, "genome_library", f"attach candidate: {cid} fits the request's one typed part by "
+                                                      "the compiler's own row; registered and withheld; GREG does not "
+                                                      "attach it", cid)
+            self.journal.record("deficit.awaiting_attach", {
+                "deficit_id": deficit_id, "capability_id": cid,
+                "why": "a registered, withheld intelligence fits the request's part; attaching it is the founder's "
+                       "decision"}, key=[deficit_id, "await", cid, "part"])
         near = []
         if declared:                    # reported, never offered: the same geometry, some of the inputs
             genomes = library.executables()
             for family, (_, operations, classes, _, _) in sorted(catalog.FAMILIES.items()):
                 cid = "cognition." + family
-                if declared not in classes or cid in fits:
+                if declared not in classes or cid in fits or cid in found:
                     continue
                 needs = ([tuple(genomes[family].genome.required_inputs)] if family in genomes
                          else [compiler.NATIVE_INPUTS[op] for op in operations if op in compiler.NATIVE_INPUTS])
@@ -1297,6 +1320,14 @@ class Genesis:
                                                       f"{'of geometry ' + declared + ' ' if declared else ''}takes "
                                                       f"its native inputs from {shown(sorted(provided))}", None)
         return found
+
+    def _not_offered(self, cid: str) -> str | None:
+        """Why a fitting registered intelligence is not an attach candidate on this body, else None (withheld)."""
+        state = self.registry.state.get(cid)
+        return ("not registered on this body" if state is None
+                else "founder-detached; explicit attach required" if state == "DETACHED"
+                else f"attached ({self.registry.usable(cid)[1]})" if state == "ATTACHED"
+                else f"state {state}" if state != "VERIFIED" else None)
 
     @staticmethod
     def _fits(record: dict):

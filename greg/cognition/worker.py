@@ -7,6 +7,20 @@ import os
 from pathlib import Path
 import resource
 import sys
+import time
+
+# The verifier's certificate may spend what is left of its caller's budget: the request's ``deadline`` (wall-clock
+# seconds, so it counts this process's start-up, which this process cannot time: 60-140 ms of fork, network filter and
+# interpreter before this line on one core of a shared machine, 2026-10-15, and 200-400 ms with three other busy
+# processes on the core), and never more than the latency limit timed from here. The reserve is for what follows the
+# certificate's first budget test: importing Z3 when it passes, then returning the answer (its emit, this process's
+# exit and the caller's parse took 40-50 ms there, and 120-155 ms with the core shared four ways). Those slow down with
+# the machine, as this process's own imports below do, and took 0.7-0.9 times as long as them; so the reserve is twice
+# those imports, and never under VERIFY_RESERVE_SECONDS. With the core shared three or four ways, a fixed 0.25 s timed
+# out 7 of 16 verifications at a 1.3 s limit (a little budget passed the first test, then the Z3 import outlasted the
+# reserve); this reserve timed out none, as did a worker that never runs the certificate.
+STARTED = time.monotonic()
+VERIFY_RESERVE_SECONDS = 0.25
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -100,7 +114,13 @@ def main():
     try:
         if family == "verify":
             from greg.cognition.verification import verify
-            answer = verify(request["family"], request["data"], request["answer"], request["proof_class"])
+            # the certificate gets what is left of the budget, less the reserve: an answer that verifies is never
+            # lost to a check it cannot afford
+            reserve = max(VERIFY_RESERVE_SECONDS, 2 * (time.monotonic() - STARTED))
+            deadline = min(STARTED + request["geometry"]["latency_limit"],
+                           time.monotonic() + request.get("deadline", math.inf) - time.time())
+            answer = verify(request["family"], request["data"], request["answer"], request["proof_class"],
+                            deadline=deadline - reserve)
             answer["execution_contract"] = "separate network-denied process, scrubbed environment, bounded CPU/RAM"
         else:
             answer = SOLVERS[family](request["data"], request["geometry"])

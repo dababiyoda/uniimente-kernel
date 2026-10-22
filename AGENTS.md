@@ -1,3 +1,5 @@
+> **Team entry:** Before new or resumed work, read [the pinned founder Discussion](https://github.com/dababiyoda/uniimente-kernel/discussions/89), follow [START_HERE](docs/collaboration/START_HERE.md), and refresh [work claims and handoffs](https://github.com/dababiyoda/uniimente-kernel/issues/96). Check relevant open branches and PRs before editing; searching only `main` is insufficient. Record your actual session identity, bounded scope, base/head, overlap split, acceptance evidence and integration destination. A claim coordinates work; it grants no authority. From a cloud session, where the github.com page is unreachable and the GitHub connector has no Discussion tool, read it with `curl -sS https://api.github.com/repos/dababiyoda/uniimente-kernel/discussions/89` (public REST API, no credential).
+
 > **Cognition continuity:** also read `docs/PROJECT_COGNITION_CONTINUITY.md` for continuous source ingestion, context checksum, repository registry, propagation receipts, and the anti-context-loss test.
 
 # UNIIMENTE Agent Entry Contract
@@ -122,6 +124,6 @@ This changes implementation selection, not Kernel consequence authority.
 
 ## GREG body (2026-09-25)
 
-Converged GREG path (2026-09-30): `claude/uniimente-greg-reconciliation-39syff` until merged; lineage dispositions in `docs/collaboration/GREG-RECONCILIATION-2026-09-30.md`. Stack new GREG work on it, not on #122 or the Chromebook line separately.
+Integration candidate (2026-10-22): the branch named on work board #96 (today `claude/greg-full-machine-completion-whgiee`, draft #196). It carries the 2026-09-30 converged path `claude/uniimente-greg-reconciliation-39syff` (#137) through #178 and its descendants; lineage dispositions in `docs/collaboration/GREG-RECONCILIATION-2026-09-30.md`. Stack new GREG work on the board's candidate, not on #137, #122 or the Chromebook line separately.
 
 The product runtime is `greg/` (persistent body, signed founder commands, missions, Capability Genesis, morning tribunal) under `INTENT-2026-09-25-EGREGORE-ECOLOGY`. It composes the canonical Gate, ledger and spine and owns no policy. Read `greg/README.md` and `docs/collaboration/GREG-BODY-DECISION-2026-09-25.md` before changing it.

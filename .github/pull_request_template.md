@@ -123,3 +123,13 @@ Do not manufacture consensus. Record the strongest remaining objection and the e
 - [ ] Experiment
 
 Decision owner and rationale:
+
+## Coordination and handoff receipt
+
+For work governed by the collaboration protocol, copy the version-2 example from
+[RECEIPT.md](../docs/collaboration/RECEIPT.md) into this PR body, replace placeholders,
+and rebind base/head after each push. Declare actual session identity, files/interfaces,
+overlap search and acknowledged split, integration destination, validation, limitations,
+rollback and receiver acknowledgment. Unknown owner stays explicitly unassigned.
+Do not claim independent review from five-lens self-review.
+

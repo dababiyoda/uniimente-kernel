@@ -337,12 +337,10 @@ def artifact_output(result: dict, artifact_root, *, source: str = "source"):
         raise Unbound(f"{source}'s whole output was not kept: {why or 'no artifact address'}")
     if artifact_root is None:
         raise Unbound(f"{source}'s whole output is in an artifact store this engine cannot read")
-    from greg.artifacts import ArtifactStore
-    from greg.authority import OUTPUT_ARTIFACT_BYTES, bounded
+    from greg.authority import bounded, output_store
     from greg.capabilities import CapabilityError
     try:
-        whole = json.loads(ArtifactStore(artifact_root, max_object_bytes=OUTPUT_ARTIFACT_BYTES)
-                           .read(record["address"]).decode())
+        whole = json.loads(output_store(artifact_root).read(record["address"]).decode())
     except CapabilityError as exc:
         raise Unbound(f"{source}'s whole output {record['address'][:19]} cannot be used: {exc}") from None
     except ValueError:

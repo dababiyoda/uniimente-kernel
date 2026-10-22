@@ -246,6 +246,16 @@ def bounded(value):
 
 
 OUTPUT_ARTIFACT_BYTES = 1024 * 1024   # the whole output kept beside a cut receipt (the cognition request ceiling)
+OUTPUT_ARTIFACT_DIR = "outputs"        # their own root, so kept outputs never spend the quota artifact.store imports use
+
+
+def output_store(artifact_root):
+    """The store kept outputs live in: a separate root under the body's artifact store, with its own quota. When it
+    is full, outputs are no longer kept (the receipt says so); imports through artifact.store are never refused for
+    it."""
+    from pathlib import Path
+    from greg.artifacts import ArtifactStore
+    return ArtifactStore(Path(artifact_root) / OUTPUT_ARTIFACT_DIR, max_object_bytes=OUTPUT_ARTIFACT_BYTES)
 
 
 def keep_output(output, artifact_root):
@@ -263,10 +273,9 @@ def keep_output(output, artifact_root):
         return kept, None
     if artifact_root is None:
         return kept, {"address": None, "unavailable": "this body has no artifact store"}
-    from greg.artifacts import ArtifactStore
     try:
         data = json.dumps(output, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()
-        address, _ = ArtifactStore(artifact_root, max_object_bytes=OUTPUT_ARTIFACT_BYTES).put(data)
+        address, _ = output_store(artifact_root).put(data)
     except (TypeError, ValueError, CapabilityError, OSError) as exc:
         return kept, {"address": None, "unavailable": "whole output not kept: " + str(exc)[:200]}
     return kept, {"address": address, "bytes": len(data), "encoding": "canonical-json"}

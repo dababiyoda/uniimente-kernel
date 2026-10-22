@@ -62,6 +62,6 @@ The change reuses the body's content-addressed artifact store (`greg/artifacts.p
 ## Limits
 
 - The whole output must be JSON-serialisable and at most 1 MiB as canonical JSON. A larger output keeps only its cut form, with the reason recorded.
-- Kept outputs share the store's quota (512 objects, 64 MiB) with `artifact.store` imports. A body that cuts many large outputs can exhaust it. After that, later outputs record `unavailable` and `artifact.store` refuses until the founder reviews it. There is no garbage collection.
+- Kept outputs live in their own root (`artifacts/outputs`, `authority.output_store`) with its own quota (512 objects, 64 MiB), so they never spend the quota `artifact.store` imports use. This was changed in review: in the first version they shared it, and sensors re-observing large, changing outputs could have made imports refuse until founder review (`test_kept_outputs_never_spend_the_import_quota`). Once the outputs store is full, later outputs record `unavailable` and their cut values cannot be bound. There is no garbage collection.
 - A bound value up to 1 MiB enters the next action's params, and so whatever the Gate and mission records keep of those params. The ledger grows accordingly.
 - Receipts written before this change carry no `output_artifact`. Their cut values stay unbindable.

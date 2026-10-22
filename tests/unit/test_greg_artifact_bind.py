@@ -12,7 +12,7 @@ import json
 import pytest
 
 from greg.artifacts import ArtifactStore
-from greg.authority import RECEIPT_TEXT_LIMIT, keep_output
+from greg.authority import RECEIPT_TEXT_LIMIT, keep_output, output_store
 from greg.body import Body
 from greg.missions import MissionError, Unbound, artifact_output, bound_value, validate_mission
 from tests.greg_fixtures import Clock, drop, make_body, mission, signed, workspace
@@ -58,7 +58,7 @@ def test_an_uncut_output_records_no_artifact_and_binds_as_before(tmp_path):
 @pytest.mark.parametrize("damage", ["missing", "tampered", "foreign"])
 def test_a_missing_or_altered_artifact_is_unbound_never_a_prefix(tmp_path, damage):
     result = receipt_result({"text": BIG}, tmp_path)
-    path = ArtifactStore(tmp_path).path(result["output_artifact"]["address"])
+    path = output_store(tmp_path).path(result["output_artifact"]["address"])
     if damage == "missing":
         path.unlink()
     elif damage == "tampered":
@@ -178,7 +178,7 @@ def test_a_tampered_artifact_holds_the_strategy_and_never_writes_a_prefix(tmp_pa
             if any(a["action_id"] == "read-a" and a["status"] == "DONE" for a in actions(body)):
                 break
         receipt = body.office.ledger.find(next(a for a in actions(body) if a["action_id"] == "read-a")["receipt"])
-        path = ArtifactStore(home / "artifacts").path(receipt.payload["result"]["output_artifact"]["address"])
+        path = output_store(home / "artifacts").path(receipt.payload["result"]["output_artifact"]["address"])
         path.chmod(0o600)
         path.write_bytes(b"{}")
         states = tick(body, clock, 6)
@@ -203,3 +203,17 @@ def test_restart_binds_the_same_whole_value(tmp_path):
         write = next(a for a in actions(body) if a["action_id"] == "write-b" and a["status"] == "DONE")
     assert states[-1] == "ACHIEVED"
     assert (root / "b.txt").read_text() == BIG and write["bindings"][0]["from_artifact"]
+
+
+def test_kept_outputs_never_spend_the_import_quota(tmp_path, monkeypatch):
+    """Sensors re-observe large, changing outputs every tick. Kept in the import store, they would fill its quota and
+    make artifact.store refuse imports until founder review; in their own root a full store only stops keeping
+    outputs, and the receipt says why."""
+    import greg.artifacts as artifacts
+    monkeypatch.setattr(artifacts, "MAX_OBJECTS", 2)
+    for i in range(2):
+        assert receipt_result({"text": BIG + str(i)}, tmp_path)["output_artifact"]["address"]
+    full = receipt_result({"text": BIG + "full"}, tmp_path)["output_artifact"]
+    assert full["address"] is None and "quota" in full["unavailable"]
+    assert not list((tmp_path / "sha256").glob("*/*"))           # the import store is untouched
+    assert ArtifactStore(tmp_path).put(b"an import")[0].startswith("sha256:")

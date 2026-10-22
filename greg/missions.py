@@ -26,13 +26,14 @@ import os
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-from greg.authority import ActionOutcome, AuthorityOffice
+from greg.authority import RECEIPT_LIST_LIMIT, ActionOutcome, AuthorityOffice
 from greg.capabilities import CapabilityError, InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
 from greg import asks, improvement, routing
@@ -420,6 +421,19 @@ def _field(output, path: str):
     return value
 
 
+def _cut(output, path: str) -> dict | None:
+    """What ``authority.bounded`` cut from the field ``_field`` reads, or None when the field is whole."""
+    value = output
+    for part in path.split(".") if path else []:
+        value = value[part] if isinstance(value, dict) else value[int(part)]
+    if isinstance(value, dict) and value.get("truncated") is True and isinstance(value.get("prefix"), str):
+        return {"kind": "text", "kept": len(value["prefix"]), "length": value.get("length"),
+                "sha256": value.get("sha256")}
+    if isinstance(value, list) and len(value) >= RECEIPT_LIST_LIMIT:
+        return {"kind": "list", "kept": len(value), "length": None}
+    return None
+
+
 def unanswered(output) -> str | None:
     """Why a cognitive sensor receipt carries no answer; None when it answered or refuted.
 
@@ -457,6 +471,39 @@ def measured(observation: dict) -> bool:
     return not str(observation.get("detail", "")).startswith("sensor ")
 
 
+def _judge_bounded(op: str, expected, value, whole: dict | None):
+    """Decide a predicate on bounded evidence (``authority.bounded``) only where the kept part proves the answer.
+
+    ``whole`` describes what was cut: long text keeps a prefix plus the whole string's sha256 and length, so
+    ``equals`` and ``count_gte`` are decided exactly; a list at RECEIPT_LIST_LIMIT may have been cut with no
+    marker. A hit in the kept part is a hit in the whole; nothing else follows from a part. Returns None when the
+    evidence is whole and the ordinary rules apply."""
+    if whole is None:
+        return None
+    cut = (f"evidence truncated: {whole['kept']} of {whole['length']} characters kept" if whole["kind"] == "text"
+           else f"evidence truncated: a list at the receipt limit of {whole['kept']} items may be longer")
+    if op in ("contains", "not_contains"):
+        hit = expected in value if isinstance(value, (str, list)) else False
+    if op == "contains":
+        return (True, f"contains {expected!r} (in the kept part)") if hit else (False, f"contains {expected!r} "
+                                                                               f"undecided; {cut}")
+    if op == "not_contains":
+        return False, (f"not contains {expected!r} is false: it is in the kept part" if hit
+                       else f"not contains {expected!r} undecided; {cut}")
+    if op == "equals":
+        if whole["kind"] == "text" and isinstance(expected, str):
+            same = (len(expected) == whole["length"]
+                    and hashlib.sha256(expected.encode()).hexdigest() == whole["sha256"])
+            return same, f"equals by digest of the whole text ({whole['length']} characters)"
+        return False, f"equals undecided; {cut}"
+    if op == "count_gte":
+        if whole["kind"] == "text":
+            return whole["length"] >= expected, f"len {whole['length']} {op} {expected} (whole text)"
+        return (True, f"len >= {whole['kept']} {op} {expected}") if expected <= whole["kept"] else (
+            False, f"len {op} {expected} undecided; {cut}")
+    return None
+
+
 def evaluate_predicate(predicate: dict, output) -> tuple[bool, str]:
     op = predicate["op"]
     try:
@@ -468,6 +515,9 @@ def evaluate_predicate(predicate: dict, output) -> tuple[bool, str]:
         return True, "present"
     if op == "absent":
         return False, "present"
+    decided = _judge_bounded(op, expected, value, _cut(output, predicate.get("field", "")))
+    if decided is not None:
+        return decided
     if op == "equals":
         return value == expected, f"{value!r} == {expected!r}"
     if op == "contains":

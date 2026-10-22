@@ -229,6 +229,7 @@ class AuthorityOffice:
 
 
 RECEIPT_TEXT_LIMIT = 16 * 1024
+RECEIPT_LIST_LIMIT = 1000          # a longer list keeps its first items and no marker: predicates must allow for that
 
 
 def bounded(value):
@@ -240,7 +241,7 @@ def bounded(value):
     if isinstance(value, dict):
         return {k: bounded(v) for k, v in value.items()}
     if isinstance(value, list):
-        return [bounded(v) for v in value[:1000]]
+        return [bounded(v) for v in value[:RECEIPT_LIST_LIMIT]]
     return value
 
 

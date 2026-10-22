@@ -68,7 +68,8 @@ def search_path(path: list) -> list:
 TARGETS = {"forecast_quantile": ("greg.cognition.genomes.forecasting", "solve_with", ()),
            "immune_detect": ("greg.cognition.genomes.collective", "immune_solve_with",
                              ("numpy", "numpy.linalg", "numpy.random")),
-           "constraint_release": ("greg.cognition.genomes.developmental", "constraint_release_solve_with", ())}
+           "constraint_release": ("greg.cognition.genomes.developmental", "constraint_release_solve_with", ()),
+           "develop_repair": ("greg.cognition.genomes.developmental", "repair_solve_with", ())}
 
 
 def executed() -> dict:

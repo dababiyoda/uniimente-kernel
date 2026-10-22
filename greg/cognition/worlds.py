@@ -32,6 +32,16 @@ GENOMES = {
     # simulated worlds: truth is a hidden state, parameter or outcome of a seeded generator
     "basal_bandit": (SIMULATED, "seeded Bernoulli reward processes; truth is the generator's hidden arm means"),
     "basal_bayes_filter": (SIMULATED, "seeded two-level regime signals; truth is the hidden regime tape"),
+    "basal_nlms": (SIMULATED, "seeded linear streams (stationary, drifting, switching, heavy-tailed noise, correlated "
+                              "features); truth is the generator's realised targets"),
+    "basal_token_bucket": (SIMULATED, "seeded arrival processes (Poisson, bursty, diurnal) with sampled request "
+                                      "values; truth is the offline optimum of the generated stream"),
+    "develop_diffusion": (SIMULATED, "planted-partition graphs with seeded labels; truth is the generator's hidden "
+                                     "classes"),
+    "basal_hopfield": (SIMULATED, "seeded random or biased binary patterns and a cue corrupted by random flips; truth "
+                                  "is the hidden source pattern"),
+    "develop_ca_repair": (SIMULATED, "seeded elementary-CA space-time patterns with erased holes; truth is the hidden "
+                                     "original pattern"),
     "basal_breaker": (SIMULATED, "seeded up/outage dependency processes; truth is the hidden outage tape"),
     "basal_hysteresis": (SIMULATED, "seeded two-level regime signals; truth is the hidden regime tape"),
     "basal_kalman": (SIMULATED, "seeded DWNA target tracks; truth is the hidden true track"),
@@ -47,6 +57,8 @@ GENOMES = {
     "control_mpc": (SIMULATED, "simulated double-integrator plant"),
     "crowd_weighted_vote": (SIMULATED, "simulated crowds of seeded worker types; truth is the hidden item labels"),
     "develop_repair": (SIMULATED, "simulated TARGET_FORM_001 lattices with seeded damage and controller failures"),
+    "develop_repair_hybrid": (SIMULATED, "develop_repair's simulated TARGET_FORM_001 lattices (same generator) with "
+                                         "seeded damage and controller failures"),
     "mech_vcg": (SIMULATED, "synthetic bidder values and simulated bidding behaviour"),
     "pid_simopt": (SIMULATED, "seeded FOPDT plant simulations"),
     # mathematical instances: the instance is the problem; truth is computed from it independently
@@ -55,6 +67,8 @@ GENOMES = {
     "binpack_cpsat": (MATHEMATICAL, "planted bin-packing instances; optimum known by construction"),
     "blackbox_multistart_lbfgsb": (MATHEMATICAL, "declared shifted test objectives; known minimum"),
     "collective_aco": (MATHEMATICAL, "generated TSP instances; Held-Karp or reference tours"),
+    "collective_auction": (MATHEMATICAL, "generated task-agent value matrices; exact optimum by the transportation "
+                                         "LP"),
     "community_louvain": (MATHEMATICAL, "planted stochastic block models; quality is the recomputed modularity"),
     "collective_physarum": (MATHEMATICAL, "generated Steiner network instances; reference heuristics"),
     "critical_path": (MATHEMATICAL, "generated project networks; exact longest path"),
@@ -65,9 +79,13 @@ GENOMES = {
     "flow_expansion_mcf": (MATHEMATICAL, "generated relay networks; exact optimum"),
     "flow_maxflow": (MATHEMATICAL, "generated digraphs; exact max flow"),
     "flow_reinforce_greedy": (MATHEMATICAL, "generated relay networks; exact optimum"),
+    "formal_property_search": (MATHEMATICAL, "generated integer functions with a planted bug or a bug-free decoy; truth "
+                                             "by construction (a re-executed witness, or no bug)"),
     "game_lp_dual": (MATHEMATICAL, "generated zero-sum games; LP value"),
     "game_minimax": (MATHEMATICAL, "generated zero-sum games; LP value"),
     "graph_matching": (MATHEMATICAL, "generated graphs; exact maximum matching"),
+    "graph_node_cut_exact": (MATHEMATICAL, "generated dependency-like digraphs; exact minimum vertex cut "
+                                           "(Menger augmenting paths)"),
     "grid_dijkstra": (MATHEMATICAL, "generated weighted grids; exact shortest path"),
     "info_experiment": (MATHEMATICAL, "a declared prior and likelihood tables; scenarios drawn from that prior"),
     "knapsack_bnb": (MATHEMATICAL, "generated knapsack instances; exact optimum"),
@@ -81,9 +99,19 @@ GENOMES = {
     "queue_erlang": (MATHEMATICAL, "declared M/M/c parameters; exact Erlang C"),
     "reconcile_qp": (MATHEMATICAL, "generated noisy balances; exact QP optimum by exhaustive face enumeration"),
     "search_astar": (MATHEMATICAL, "generated weighted grids; exact shortest path"),
+    "search_beam": (MATHEMATICAL, "generated flow-shop instances; quality is the makespan against Taillard's lower "
+                                  "bound"),
+    "search_ida_star": (MATHEMATICAL, "generated sliding-tile positions; exact shortest plan by exhaustive search"),
+    "search_mcts": (MATHEMATICAL, "Hex positions from seeded random play; exact winning moves by exhaustive solve"),
     "synth_cegis": (MATHEMATICAL, "planted bounded synthesis tasks; exhaustive check"),
     "verify_liveness": (MATHEMATICAL, "declared transition systems; exhaustive check"),
     "verify_modelcheck": (MATHEMATICAL, "declared transition systems; exhaustive check"),
+    "evo_ga_factored": (MATHEMATICAL, "generated factored landscapes (NK, deceptive traps); exact optimum for traps "
+                                      "(by construction) and adjacent NK (dynamic programming), the sum of table "
+                                      "maxima for random NK"),
+    "evo_map_elites": (MATHEMATICAL, "declared planar arms; QD-score over the exactly computed reachable cells"),
+    "graph_betweenness_topk": (MATHEMATICAL, "generated graphs; exact betweenness by an independent reference "
+                                             "Brandes"),
 }
 
 # P6 composition-lift families, as each frozen run's own ``limits`` describes them.

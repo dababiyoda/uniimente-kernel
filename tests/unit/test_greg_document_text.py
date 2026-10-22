@@ -272,7 +272,9 @@ def test_a_phrase_found_on_a_text_page_of_a_partly_scanned_pdf_is_still_found(tm
     submit(home, key, body_id, "MISSION", mission("m:hit", checks=[found_check(lease, "Signed by both parties")],
                                                   strategies=[], **SCOPE))
     missions, _ = run(home, Clock(), ticks=4)
-    assert missions["m:hit"].status == "ACHIEVED"           # a hit on a page that has text is proof
+    seen = [(e["passed"], e["detail"][:160]) for e in events(home, "mission.observed")]
+    checked = [(e["capability_id"], e["passed"], e["report"].get("failures")) for e in events(home, "genesis.verified")]
+    assert missions["m:hit"].status == "ACHIEVED", (seen, checked)    # a hit on a page that has text is proof
 
 
 @needs_pdftotext

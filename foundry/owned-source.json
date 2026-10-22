@@ -527,6 +527,7 @@
     "greg/discover.py",
     "greg/doctor.py",
     "greg/egress.py",
+    "greg/evidence_strength.py",
     "greg/founder.py",
     "greg/foundry_bridge.py",
     "greg/foundry_protocol_worker.py",

@@ -1313,7 +1313,8 @@ def _path_summary(journal: Journal) -> dict:
     active = where["active"] or {}
     return {"achieved": where["achieved"], "active": active.get("id"), "title": active.get("title"),
             "gate": active.get("gate"), "measurement": active.get("measurement"),
-            "next": (where["next"] or {}).get("id"), "pull_forward_seams": where["pull_forward_seams"]}
+            "next": (where["next"] or {}).get("id"), "pull_forward_seams": where["pull_forward_seams"],
+            "met_ahead": [n["id"] for n in where["met_ahead"]]}
 
 
 def ingest_external(home: str | Path, *, source: str, content: str, channel: str) -> dict:

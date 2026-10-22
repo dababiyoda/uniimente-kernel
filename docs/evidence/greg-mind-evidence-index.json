@@ -4455,14 +4455,15 @@
     "dispatched": {
      "function": "control",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 1
+     "unresolved_updates": 1,
+     "verified_at_runtime": true
     },
     "function": "control",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:9c9259c12600522842d0f4abfd56137a77e4ef8ec86f6ae6010de3ef7789dddf"
    },
    "competitor": "P-only kp=2",
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-operations/results.json#families.control",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/results.json#families.control",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.control",
@@ -4474,6 +4475,10 @@
     },
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-21-operations/results.json#families.control",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    },
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/results.json#families.control",
      "status": "DEFAULT_FOR_GEOMETRY"
     }
    ],
@@ -4736,14 +4741,15 @@
     "dispatched": {
      "function": "game",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 1
+     "unresolved_updates": 1,
+     "verified_at_runtime": true
     },
     "function": "game",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:504ab651f26ef264bdca5775afb53d2884f411470505f0caf05b3332923eaa2e"
    },
    "competitor": "pure maximin",
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-operations/results.json#families.game",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/results.json#families.game",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.game",
@@ -4755,6 +4761,10 @@
     },
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-21-operations/results.json#families.game",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    },
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/results.json#families.game",
      "status": "DEFAULT_FOR_GEOMETRY"
     }
    ],
@@ -4853,14 +4863,15 @@
     "dispatched": {
      "function": "information",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 1
+     "unresolved_updates": 1,
+     "verified_at_runtime": true
     },
     "function": "information",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:7d9806fb6cc6765b466c0ae3232ec38822b3c78c783300f0876a07b94ab3b0c1"
    },
    "competitor": "always acquire",
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-operations/results.json#families.information",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/results.json#families.information",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.information",
@@ -4872,6 +4883,10 @@
     },
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-21-operations/results.json#families.information",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    },
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/results.json#families.information",
      "status": "DEFAULT_FOR_GEOMETRY"
     }
    ],
@@ -5011,14 +5026,15 @@
     "dispatched": {
      "function": "bayesian",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 1
+     "unresolved_updates": 1,
+     "verified_at_runtime": true
     },
     "function": "bayesian",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:fb2079aa57bacf4e58bde86d30e6047db7fb4006c3a464593300e4d1957dbe38"
    },
    "competitor": "Jeffreys posterior mean",
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-operations/results.json#families.probabilistic",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/results.json#families.probabilistic",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.probabilistic",
@@ -5031,11 +5047,15 @@
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-21-operations/results.json#families.probabilistic",
      "status": "EXPERIMENTAL"
+    },
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/results.json#families.probabilistic",
+     "status": "NICHE_CAPABILITY"
     }
    ],
    "measured": true,
-   "raw_status": "EXPERIMENTAL",
-   "status": "EXPERIMENTAL"
+   "raw_status": "NICHE_CAPABILITY",
+   "status": "NICHE_CAPABILITY"
   },
   "protection": {
    "baseline": null,
@@ -6442,6 +6462,11 @@
    "path": "docs/evidence/greg-genome-admission/2026-10-21-operations/results.json",
    "sha256": "sha256:3977c8e54e3557f6062aaa1fdaefd590e22b8449bba615e0b8ed2e95b9cb11a8",
    "source_commit": "462bd98180fb6dc44a85237605524406167e08d6"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/results.json",
+   "sha256": "sha256:2940940d7b5e436cda693a36ed33dd86980d7ff72ee6522d5f4bde7fe27c95c3",
+   "source_commit": "3520efe6197f53898193731a2f0b98b35978c2ae"
   }
  ]
 }

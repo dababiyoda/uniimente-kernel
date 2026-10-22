@@ -6,6 +6,7 @@
     greg founder public --key K               print the public half of your key (writes no body state)
     greg mission submit mission.json --key K  signed goal -> inbox; the body runs it
     greg status | greg decisions | greg morning
+    greg intake --source feed://ops --channel ops < note.txt   untrusted data for the running body (never a command)
     greg decide REQUEST_ID approve|reject --key K
     greg critique EVENT_ID --verdict reject --evidence-type founder_judgment --text ... --key K
     greg pause|resume|stop --key K            (or: greg stop --local, touching STOP)
@@ -472,6 +473,10 @@ def main(argv=None) -> int:
                                           "kubeconfig); a mission hands it to a server as a file (secret_files)")
     ses.add_parser("remove").add_argument("name")
     ses.add_parser("list", help="handle names only; values are never printed")
+    it = sub.add_parser("intake", help="hand the body one untrusted observation (stdin or --file); it reads it on "
+                                       "its next tick as data, never as a command")
+    it.add_argument("--source", required=True); it.add_argument("--channel", required=True)
+    it.add_argument("--file", help="read the content from this file instead of stdin")
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
@@ -1041,6 +1046,12 @@ def main(argv=None) -> int:
                                   "never the ledger", "read_by": "only capabilities that declare this handle"}, indent=1))
             else:
                 print(json.dumps({"removed": args.name if broker.remove(args.name) else None}, indent=1))
+        elif args.cmd == "intake":
+            from greg.body import drop_intake
+            content = Path(args.file).read_text() if args.file else sys.stdin.read()
+            dropped = drop_intake(home, source=args.source, channel=args.channel, content=content)
+            print(json.dumps({"dropped": str(dropped), "authority": "none: data only, read on the body's next tick"},
+                             indent=1))
         elif args.cmd == "start":
             stop = Layout(home).stop_file
             prior = stop.read_text() if stop.exists() else None

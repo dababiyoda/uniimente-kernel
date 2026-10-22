@@ -210,6 +210,11 @@ This is one agent working through five lenses. It is not independent review.
      (`tests/integration/test_one_mission_fifteen_steps.py`, CI job 8). Its honest gaps are listed in the test's `GAPS`:
      the observation enters through the stopped-body intake, the organs do not carry the staffing figures into
      WealthMachine's assessment, and the changed decision comes from a kept capability, not reordered outcomes.
+   - Closed since: the **live intake**. A running body now reads untrusted observations dropped into `intake/`
+     (`greg intake --source S --channel C`) on its next tick, as data only (`Body.ingest_intake`,
+     `tests/unit/test_greg_live_intake.py`). In the 15-step mission the observation now arrives with the body
+     running, with no restart. Disabling the read fails 8 of the 9 unit tests and the 15-step mission. Remaining
+     on step 2: the drop is local, so no connector delivers an outside feed.
    - A positive construction dividend: realized outcomes bound to construction receipts, so a certified construction
      can settle as wrong.
    - Antifragility: closed. v3b was NO_GAIN by its frozen rule (best cell 3-0, no preference fired; B1 beats every

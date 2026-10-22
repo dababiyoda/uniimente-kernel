@@ -99,8 +99,8 @@ Path("tests/test_plan.py").write_text(TEST)
 print('WORK_REPORT: {"changed": ["plan/plan.json", "tests/test_plan.py"], "tests_run": [], "unresolved": [], "confidence": 0.9}')
 '''
 GAPS = {
-    2: "the observation enters through the stopped-body intake (greg.body.ingest_external, the data plane's only "
-       "local path): a running body has no live intake channel. The wake is timing only: it changes when the "
+    2: "the observation is a local file drop (greg intake): a local process stands in for an external feed, and no "
+       "connector delivers it from outside the host. The wake is timing only: it changes when the "
        "mission observes, never what it may do",
     9: "DALEOBANKS takes in the whole bound seed (its own ledger counts its characters) but its refinery builds the "
        "packet from the seed's thesis, so the staffing figures do not reach WealthMachine's assessment; the organs run "
@@ -257,7 +257,7 @@ def test_one_mission_crosses_all_fifteen_steps(tmp_path, capsys):
 
     from greg import goal_gravity as gg
     from greg import templates
-    from greg.body import Body, Layout, ingest_external, observe
+    from greg.body import Body, Layout, observe
     from greg.capabilities import BUILTINS
     from greg.founder import generate_founder_key, load_founder_key
     from greg.missions import MissionBook, bound_value
@@ -301,16 +301,20 @@ def test_one_mission_crosses_all_fifteen_steps(tmp_path, capsys):
     time.sleep(4)
     assert not passing(home, "demand") and not statuses(home, "compile"), "a restart alone moved the mission"
     assert [a["kind"] for a in asks(home)] == ["NO_STRATEGY"], "the restart re-asked"
-    stop(home, body, greg)
 
-    # ---- the observation arrives through the untrusted data plane (stopped-body intake) ----------------------
-    ingest_external(home, source="feed://ops", content=OBSERVATION, channel="ops")
-    intake = [e for e in ev(home, "external.ingested") if e["content"] == OBSERVATION][0]
+    # ---- the observation arrives through the untrusted data plane while the body runs (live intake) ----------
+    boots_before = len(ev(home, "body.booted"))
+    note = tmp_path / "observation.txt"
+    note.write_text(OBSERVATION)
+    dropped = greg(home, "intake", "--source", "feed://ops", "--channel", "ops", "--file", str(note))
+    assert dropped.returncode == 0, dropped.stderr
+    intake = W(lambda: [e for e in ev(home, "external.ingested") if e["content"] == OBSERVATION],
+               "the running body to read the observation from its intake", body)[0]
     assert intake["may_command"] is False and intake["quarantined"] is False
 
     # ---- P3: the goal wakes and pulls the mission; Mind, deficit, Genesis, founder attach, organs, Hands ------
-    body = start_body(home, worker, log)
     W(lambda: ev(home, "genesis.verified"), "the first qualified capability", body)
+    assert len(ev(home, "body.booted")) == boots_before, "the observation needed a restart to arrive"
     intruder = tmp_path / "intruder.pem"
     generate_founder_key(intruder, None)
     first = ev(home, "genesis.verified")[0]["capability_id"]
@@ -374,11 +378,11 @@ def test_one_mission_crosses_all_fifteen_steps(tmp_path, capsys):
     seq = lambda e: index["events"][e["event_id"]]["seq"]                 # noqa: E731
     steps = {}
 
-    # 1. persisted goal and mission, across three SIGKILL/stop restarts
+    # 1. persisted goal and mission, across SIGKILL and stop restarts
     registered = ev(home, "mission.registered", mission_id=MID)
     accepted = {a["kind"]: a for a in ev(home, "command.accepted") if a["kind"] in ("MISSION", "GOAL")}
     boots = ev(home, "body.booted")
-    assert len(registered) == 1 and set(accepted) == {"MISSION", "GOAL"} and len(boots) >= 5
+    assert len(registered) == 1 and set(accepted) == {"MISSION", "GOAL"} and len(boots) >= 4
     assert ev(home, "body.recovered"), "a SIGKILL restart was not recorded as a recovery"
     steps[1] = {"name": "founder-authorized goal persisted", "events": [ref(registered[0]), ref(accepted["MISSION"]),
                                                                         ref(accepted["GOAL"])],
@@ -402,6 +406,7 @@ def test_one_mission_crosses_all_fifteen_steps(tmp_path, capsys):
     steps[2] = {"name": "an observation wakes the goal, which drives the mission",
                 "events": [ref(intake), ref(pulls[0]), ref(seen[0]), ref(withdrawn[0]), ref(unblocked[0])],
                 "records": {"egregore.gravity_turn (woken)": {"seq": turns[0]["seq"]}},
+                "intake": "live: dropped with `greg intake` while the body ran; read on its next tick, no restart",
                 "controls": ["request on file for ~4 body-minutes: no observation, no compile",
                              "SIGKILL and restart alone: no observation, no compile, no re-ask"]}
 

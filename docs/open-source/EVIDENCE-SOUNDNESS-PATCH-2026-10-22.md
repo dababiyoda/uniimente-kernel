@@ -77,3 +77,34 @@ every caller (missions, appraisal, Goal Gravity) is unchanged.
 - **There is no general full-value predicate service.** `document.text`'s `phrase` parameter is the
   whole-document path for PDFs. For other long outputs the sound route is the same pattern: the capability
   answers the question over the whole value and the receipt keeps the answer.
+
+## Follow-up: fields a capability declares decided (review finding 2b), 2026-10-22
+
+**Observed in CI.** The integration owner applied the patch on #196 at `3d2f9cc4`. #201's CI runs on its
+merge with #196, so it now has both the patch and `document.text`'s coverage report. Canonical CI job 6 on
+`09b60e2` (run 39737759626) then failed
+`test_a_phrase_found_on_a_text_page_of_a_partly_scanned_pdf_is_still_found`. The recorded observation was:
+
+    sensor inconclusive (incomplete evidence): insufficient evidence: True == True;
+    the capability reported its observation incomplete
+
+The judge treats every field of an output with `"complete": false` as monotone-only, so `found == True` is
+INSUFFICIENT. A phrase found on a page that has text is in the document, whatever the scanned pages hold.
+The mission therefore waited forever on a proved fact. This is the independent review's finding 2b, and it
+reproduces on the merge of `465b3de` with #196 `3b7f443` in two tests.
+
+**Contract.** An output may name fields in `"decided"`. `document.text` does this only for `found`, and only
+on a hit. On an incomplete output, a named field that holds a value is judged whole. `decided` never vouches
+for:
+- a value of `None`;
+- an unnamed field;
+- a non-list `decided`;
+- a list cut at the receipt's item limit.
+
+`decided` is written by GREG's own adapter code (`documents.find_phrase`), not by the binary. A capability
+that lies about its own output is still the appraiser's and the oracle's problem, as before.
+
+**Patch:** `patches/missions-decided-fields.patch`. It changes `greg/missions.py` (7 lines) and
+`tests/unit/test_greg_incomplete_evidence.py` (3 tests). It applies to #196 at `3b7f443` and not to #201,
+which does not carry the first patch. `greg/missions.py` is the integration owner's file, so the patch is
+delivered here and not applied on any pushed branch.

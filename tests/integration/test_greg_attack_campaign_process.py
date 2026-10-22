@@ -299,11 +299,13 @@ def test_one_live_body_contains_a_hostile_worker_a_substituted_evaluator_and_rev
     # The hostile binary sits in a temporary directory, which the bubblewrap envelope's private /tmp hides from a
     # reviewed provider, so this body registers its "codex" unreviewed: the envelope refuses it, the founder's
     # supervised setting lets it run, and #173's Landlock grants confine it (merge of #178 e410977 into PR #184).
+    # The body is a real process running the loop `greg run` runs (greg/cli.py: Body(home, ...).run(...)), as a
+    # Body.run driver, so the acceptance reader sees the real Body process this node drives (I.I3 BODY_VERIFIED).
     driver = ("import sys; sys.path.insert(0, sys.argv[1]); from greg import workers; "
               "workers.PROVIDERS['codex'] = workers.CliAgentWorker('codex', ['codex', 'exec', '--full-auto', '-']); "
-              "from greg.cli import main; sys.exit(main(sys.argv[2:]))")
-    body = subprocess.Popen([sys.executable, "-c", driver, str(ROOT), "--home", str(home), "run", "--tick-seconds",
-                             "0.1"], cwd=ROOT, env=env, stdout=log.open("a"), stderr=subprocess.STDOUT)
+              "from greg.body import Body; sys.exit(Body(sys.argv[2]).run(tick_seconds=0.1))")
+    body = subprocess.Popen([sys.executable, "-c", driver, str(ROOT), str(home)], cwd=ROOT, env=env,
+                            stdout=log.open("a"), stderr=subprocess.STDOUT)
     try:
         achieved = lambda: {a["mission_id"] for a in events(home, "mission.achieved")}
         wait_for(lambda: {"m:escape", "m:legit"} <= achieved(), timeout=120, what="the escape order and legit closing")

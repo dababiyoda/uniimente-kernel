@@ -140,20 +140,51 @@ class Service:
         driver.write_text(DRIVER)
         args = (["console", "--key", str(keyfile), "--no-passphrase", "--no-model", "--port", str(self.port)]
                 if kind == "console" else ["serve", "--port", str(self.port)])
+        log = tmp_path / f"{kind}-{point}-{self.port}.log"
         self.proc = subprocess.Popen([sys.executable, str(driver), str(ROOT), str(home), point, str(self.marker),
                                       "--home", str(home), *args], cwd=ROOT, env=ENV,
-                                     stdout=(tmp_path / f"{kind}.log").open("a"), stderr=subprocess.STDOUT)
-        wait_for(lambda: request(self.port, "GET", "/" if kind == "console" else "/api/hello", timeout=2)[0] == 200,
-                 what=f"the {kind} service")
+                                     stdout=log.open("a"), stderr=subprocess.STDOUT)
+        self.owner, self.cookie = "/", ""
+        if kind == "console":
+            self._enter(log)
+        else:
+            wait_for(lambda: request(self.port, "GET", "/api/hello", timeout=2)[0] == 200, what="the remote service")
+
+    def _enter(self, log: Path) -> None:
+        """Open the single-use private link `greg console` prints, once, as the founder does (PR #184's console):
+        without it the console answers nothing private, and the link grants no second session."""
+        link = wait_for(lambda: re.search(r"http://127\.0\.0\.1:\d+(/owner/[^?\s]+)\?access=(\S+)", log.read_text()),
+                        what="the console's private link")
+        self.owner, access = link.group(1), link.group(2)
+        assert request(self.port, "GET", "/")[0] == 403, "the console answered without its private link"
+        assert request(self.port, "GET", self.owner)[0] == 403, "the owner path answered without the session"
+        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=30)
+        try:
+            conn.request("GET", f"{self.owner}?access={access}")
+            response = conn.getresponse()
+            response.read()
+            assert response.status == 303, response.status
+            self.cookie = response.getheader("Set-Cookie", "").split(";", 1)[0]
+        finally:
+            conn.close()
+        assert self.cookie, "opening the private link established no owner session"
+        reused = request(self.port, "GET", f"{self.owner}?access={access}")
+        assert reused[0] == 403, "the private link worked twice"
+
+    def page(self, path: str = "") -> tuple[int, bytes]:
+        return request(self.port, "GET", self.owner + path, headers={"Cookie": self.cookie})
 
     def decide(self, request_id: str, envelope: dict | None):
         """The founder's approval, as each interface sends it: a console form, or the phone's signed envelope."""
         if self.kind == "console":
-            page = request(self.port, "GET", "/")[1].decode()
-            csrf = re.search(r"name=csrf value='([^']+)'", page).group(1)
-            form = urlencode({"csrf": csrf, "request_id": request_id, "answer": "approve"}).encode()
-            return request(self.port, "POST", "/decide", form,
-                           {"Content-Type": "application/x-www-form-urlencoded"})
+            found = None
+            for path in ("", "classic"):
+                status, page = self.page(path)
+                assert status == 200, (status, page[:200])
+                found = found or re.search(r"name=csrf value='([^']+)'", page.decode())
+            form = urlencode({"csrf": found.group(1), "request_id": request_id, "answer": "approve"}).encode()
+            return request(self.port, "POST", self.owner + "decide", form,
+                           {"Content-Type": "application/x-www-form-urlencoded", "Cookie": self.cookie})
         return request(self.port, "POST", "/api/command", json.dumps(envelope).encode(),
                        {"Content-Type": "application/json"})
 

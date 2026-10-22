@@ -25,8 +25,8 @@ contains #189 `93badaff` and #179 `866d4770`, merged into `claude/antifragility-
 | Generator, objectives, τ, strata | **Byte-identical to #189** (`tests/evidence/antifragility-2026-10-15/experiment.py`, sha256 `f51d8799…`). The harness imports `instance`, `FUNCTIONS`, `TOLERANCE` and `STRATA` from that file, and the freeze records its digest. |
 | τ | sphere 0.5, ackley 2.0, griewank 0.3, rosenbrock 200, rastrigin 60, in both strata. Unchanged. |
 | Strata | LOW: 10 dimensions, budget 5,000. HIGH: 20 dimensions, budget 10,000. Unchanged. |
-| Stress | **36 HIGH-stratum signed missions.** #189's seeds 500-511 come first, in their original order and cycling the five functions, followed by fresh seeds 512-535 continuing the cycle. #189's 12 are a strict prefix. |
-| Holdout | **Fresh: seeds 2000-2009 × 5 functions × 2 strata = 100 instances.** They are disjoint from the pilot (0-5), the stress (500-535), #189's holdout (1000-1005) and the failure-closure tests (0-10, 99). |
+| Stress | **36 HIGH-stratum signed missions.** #189's seeds 500-511 come first, in their original order and cycling the five functions, followed by fresh seeds 6010-6033 continuing the cycle. #189's 12 are a strict prefix. |
+| Holdout | **Fresh: seeds 6000-6009 × 5 functions × 2 strata = 100 instances.** They are disjoint from the pilot (0-5), the stress (500-511, 6010-6033), #189's holdout (1000-1005) and the failure-closure tests (0-10, 99). The fresh bands come from 6000-6999, which the integration owner assigned on the joined tree, and avoid #179's 6501-6840. Each exposure is recorded in `docs/evidence/greg-data-exposure-ledger.json`. |
 | Already seen, disclosed | Seeds 0-5 informed τ (#189). They also gave this design's feasibility pilot and power analysis (`pilot_seeds_0_5.json`, `power_from_pilot.txt`). Seeds 500-511 and 1000-1005 were run by #189. |
 
 ## 2. The learning mechanism under test

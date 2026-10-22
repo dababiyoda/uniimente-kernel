@@ -27,8 +27,10 @@ _spec.loader.exec_module(v189)
 FUNCTIONS, TOLERANCE, STRATA, instance, request, mission_for = (
     v189.FUNCTIONS, v189.TOLERANCE, v189.STRATA, v189.instance, v189.request, v189.mission_for)
 
-STRESS_SEEDS = range(500, 536)            # #189's 500-511 first, in their order, then 512-535 continuing the cycle
-HOLDOUT_SEEDS = range(2000, 2010)
+# #189's 500-511 first, in their order, then 24 fresh seeds continuing the function cycle. Fresh seeds come from
+# 6000-6999, the band the integration owner assigned on the joined tree (#96, 2026-10-22); #179's 6501-6840 avoided.
+STRESS_SEEDS = tuple(range(500, 512)) + tuple(range(6010, 6034))
+HOLDOUT_SEEDS = range(6000, 6010)
 INCUMBENTS = ("cognition.swarm", "cognition.blackbox")
 ALTERNATIVE = "cognition.blackbox_multistart_lbfgsb"
 ATTACHED = INCUMBENTS + (ALTERNATIVE,)    # founder-attached (per-run test key) in every arm

@@ -5,8 +5,8 @@ Deliverable H. This is the operator card for the founder. The full install path 
 ## 1. Install on the first body
 
 ```bash
-git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
-git checkout claude/opus-maximus-one-greg-20261014      # this review branch; not main
+git clone -b claude/greg-full-machine-completion-whgiee https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
+git checkout claude/greg-full-machine-completion-whgiee   # the review candidate named in greg/chromebook/REVIEW_BRANCH; use main once merged
 bash greg/chromebook/install.sh                         # doctor, init, keygen, enroll, service, designate
 greg doctor --chromebook                                # must say ready_for_linux_service: true
 ```

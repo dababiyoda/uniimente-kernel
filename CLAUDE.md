@@ -2,6 +2,21 @@
 
 # UNIIMENTE Permanent Operating Order
 
+## Controlling founder completion correction — 2026-10-02
+
+**BODY + ORGANS + MIND = GREG / UNIIMENTE is the fixed completion boundary.**
+The complete currently achievable autonomous machine must be implemented and integrated before Alfonso's sustained use, critique and refinement phase.
+
+Reconstruct that whole boundary; identify the highest-priority unfinished dependency; build the smallest rigorous increment needed to advance it; prove it; integrate it; automatically resume the parent objective and the next unblocked requirement. Repeat until all currently achievable requirements are executable and integrated. A seed, experiment, sandbox, benchmark, registry, PR, smallest falsifiable build or VEPMC milestone is a sequencing or evidence unit, never the project stopping condition. A narrow PR does not narrow the machine.
+
+Never convert not implemented into not intended, future family into permanent omission, sandboxed into complete, registered into implemented, seed into final architecture, a tested component into a complete system, or any milestone into the total product definition. Do not replace feasible executable machinery with placeholders or architecture prose.
+
+An item may wait only for an inherently founder-only action, genuine external dependency, or demonstrated technology limit. Preserve the destination and build the strongest defensible approximation/backcast for a technology limit. Finish every unrelated buildable item while that item waits. Founder-use evidence may remain pending without stopping software completion. Stage gates apply to the affected integration, activation or claim; they do not globally prohibit reversible implementation.
+
+Preserve failures, dissent and useful historical mechanisms. Keep one canonical runtime and authority path. Implementation creates no merge, deployment, activation, expenditure, publishing or contact authority; existing signed gates, consent, budgets, pause, revocation and shutdown remain effective.
+
+Controlling source: `docs/intent/sources/FULL-MACHINE-COMPLETION-CORRECTION-20261002.md`; trace and source-access limits: `docs/intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json`. Apply `docs/RECURSIVE_COLLABORATION_PROTOCOL.md`. A successful experiment must automatically return to the parent founder objective.
+
 **Foundry delivery scope (2026-09-27):** `docs/intent/INTENT-2026-09-27-FOUNDRY-55.json` keeps all 55 numbered systems as active obligations; each needs executable GREG/Foundry integration, tests and reproducible evidence before completion can be claimed. Catalog status and a plan do not suffice. Hardware for the first founder-owned body remains open because Alfonso owns no Mac. This changes no constitutional or external-effect authority.
 
 ## Latest founder correction — BUILD THE REAL PRODUCT
@@ -12,7 +27,7 @@ Alfonso's repeated correction is that experiments, simulations, architecture doc
 
 Treat the entire historical repository as mechanism substrate. Extract what works, preserve negative evidence, recombine complementary mechanisms, retire duplicate active paths, acquire commodity capabilities before rebuilding them, and attach the residual capability to the canonical GREG path.
 
-**Required end-of-session proof:** state the concrete new thing the actual GREG can do now that it could not do before. If there is no product delta, explain the external blocker; do not substitute another cathedral of plans.
+**Required proof at every handoff:** state the concrete new thing the actual GREG can do now that it could not do before. If there is no product delta, explain the external blocker; do not substitute another cathedral of plans. Since 2026-10-02 this proof is a handoff record, not a stopping condition: after it, continue with the next unblocked requirement of the full machine.
 
 
 Read and obey, in this order:

@@ -290,6 +290,11 @@ def record(journal: Journal, message: dict, *, quoted=()) -> dict:
                                                              + ("options", "alternatives", "evidence")
                                                              if f in message}},
                        key=[message["request_id"], "withheld"])
+    if "resource" in shown:
+        # Directive section 13: a resource ask is a consequential proposal. Its case is composed from
+        # what the founder sees, so withheld wording never reaches it.
+        from greg import advantage
+        shown = {**shown, "advantage": advantage.from_ask(shown)}
     journal.record("decision.requested", shown, key=message["request_id"])
     return shown
 
@@ -310,7 +315,7 @@ def surface(request: dict) -> dict:
     """The fields every founder surface (console, phone, status, morning report) shows."""
     keys = ("request_id", "kind", "mission_id", "resource", "why_now", "recommendation", "expected_effect",
             "options", "alternatives", "uncertainty", "authority_requested", "evidence",
-            "consequence_of_no_response", "deadline", "deadline_evidence", "wording_withheld")
+            "consequence_of_no_response", "deadline", "deadline_evidence", "wording_withheld", "advantage")
     shown = {k: request[k] for k in keys if k in request}
     if request.get("kind") in ANSWER_ONLY_RECORDS:
         shown["answer_effect"] = ANSWER_ONLY_RECORDS[request["kind"]]

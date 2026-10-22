@@ -1,0 +1,20 @@
+{
+ "schema": "greg-shadow-vs-static/0.1",
+ "declaration": {
+  "generator": "greg.cognition.routing_eval/0.1",
+  "split": {
+   "development": 30,
+   "heldout": 60
+  },
+  "loss": "1.0 if wrong, else min(latency_s, 5) / 5; hard failures counted separately",
+  "learning": "CompetenceLedger settles both engines' development outcomes (internally_observed, weight 0.6)",
+  "verdict": "GAIN if relative gain >= 0.10 and paired 95% lower bound > 0; NO_GAIN if the interval lies within +-0.01 of zero or the policies never differ; else INCONCLUSIVE"
+ },
+ "seed": 20261014,
+ "suite_digest": "sha256:d1d8084cf3782edd4bae9ca20847dc2d9c65561ad54cb3125109bb3d549c339a",
+ "items": {
+  "development": 30,
+  "heldout": 60
+ },
+ "frozen_at": "2026-10-14T11:05:26Z"
+}

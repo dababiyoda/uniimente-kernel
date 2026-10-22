@@ -217,14 +217,14 @@
  "counts": {
   "by_lineage": {
    "#158": 331,
-   "#179": 81,
+   "#179": 89,
    "both": 42
   },
   "by_role": {
    "P8 held-out": 7,
-   "admission held-out": 127,
+   "admission held-out": 131,
    "canary": 1,
-   "dev": 235,
+   "dev": 239,
    "held-out": 66,
    "review-pilot": 11,
    "train": 7
@@ -233,10 +233,10 @@
    "P8 held-out / #158": 6,
    "P8 held-out / #179": 1,
    "admission held-out / #158": 90,
-   "admission held-out / #179": 37,
+   "admission held-out / #179": 41,
    "canary / #158": 1,
    "dev / #158": 204,
-   "dev / #179": 8,
+   "dev / #179": 12,
    "dev / both": 23,
    "held-out / #158": 13,
    "held-out / #179": 34,
@@ -245,7 +245,7 @@
    "train / #158": 6,
    "train / #179": 1
   },
-  "exposures": 454,
+  "exposures": 462,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -314,10 +314,10 @@
    },
    "#179": {
     "glob": "docs/evidence/.*/PREREGISTRATION\\.md",
-    "matched": 1,
+    "matched": 2,
     "missing": [],
     "no_declaration": [],
-    "parsed": 1
+    "parsed": 2
    }
   },
   "admission freezes (#158 form)": {
@@ -330,10 +330,10 @@
    },
    "#179": {
     "glob": "docs/evidence/greg-genome-admission/[^/]+/freeze\\.json",
-    "matched": 1,
+    "matched": 2,
     "missing": [],
     "no_declaration": [],
-    "parsed": 1
+    "parsed": 2
    }
   },
   "admission freezes (#179 operation form)": {
@@ -21720,6 +21720,294 @@
   },
   {
    "artifact": {
+    "commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+    "path": "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/freeze.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:2ac00db205b232c38eb01fe9f077480387af73985d4a8882cfea299c8986ea23"
+   },
+   "exposure_commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+   "family": "control",
+   "generator": {
+    "commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+    "key": "genome:control",
+    "kind": "code",
+    "resolved": false,
+    "why": "no Executable(family=...) with an instance generator at the run commit"
+   },
+   "id": "#179|docs/evidence/greg-genome-admission/2026-10-22-joined-operations/freeze.json|admission held-out|control|heldout",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-22-joined-operations/results.json",
+   "n": 30,
+   "part": "heldout",
+   "present_in": [
+    "#179"
+   ],
+   "program": "admission",
+   "role": "admission held-out",
+   "seeds": [
+    [
+     5920,
+     5949
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+    "path": "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/freeze.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:2ac00db205b232c38eb01fe9f077480387af73985d4a8882cfea299c8986ea23"
+   },
+   "exposure_commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+   "family": "game",
+   "generator": {
+    "commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+    "key": "genome:game",
+    "kind": "code",
+    "resolved": false,
+    "why": "no Executable(family=...) with an instance generator at the run commit"
+   },
+   "id": "#179|docs/evidence/greg-genome-admission/2026-10-22-joined-operations/freeze.json|admission held-out|game|heldout",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-22-joined-operations/results.json",
+   "n": 30,
+   "part": "heldout",
+   "present_in": [
+    "#179"
+   ],
+   "program": "admission",
+   "role": "admission held-out",
+   "seeds": [
+    [
+     5920,
+     5949
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+    "path": "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/freeze.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:2ac00db205b232c38eb01fe9f077480387af73985d4a8882cfea299c8986ea23"
+   },
+   "exposure_commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+   "family": "information",
+   "generator": {
+    "commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+    "key": "genome:information",
+    "kind": "code",
+    "resolved": false,
+    "why": "no Executable(family=...) with an instance generator at the run commit"
+   },
+   "id": "#179|docs/evidence/greg-genome-admission/2026-10-22-joined-operations/freeze.json|admission held-out|information|heldout",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-22-joined-operations/results.json",
+   "n": 30,
+   "part": "heldout",
+   "present_in": [
+    "#179"
+   ],
+   "program": "admission",
+   "role": "admission held-out",
+   "seeds": [
+    [
+     5920,
+     5949
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+    "path": "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/freeze.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:2ac00db205b232c38eb01fe9f077480387af73985d4a8882cfea299c8986ea23"
+   },
+   "exposure_commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+   "family": "probabilistic",
+   "generator": {
+    "commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+    "key": "genome:probabilistic",
+    "kind": "code",
+    "resolved": false,
+    "why": "no Executable(family=...) with an instance generator at the run commit"
+   },
+   "id": "#179|docs/evidence/greg-genome-admission/2026-10-22-joined-operations/freeze.json|admission held-out|probabilistic|heldout",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-22-joined-operations/results.json",
+   "n": 30,
+   "part": "heldout",
+   "present_in": [
+    "#179"
+   ],
+   "program": "admission",
+   "role": "admission held-out",
+   "seeds": [
+    [
+     5920,
+     5949
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+    "path": "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/freeze.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:2ac00db205b232c38eb01fe9f077480387af73985d4a8882cfea299c8986ea23"
+   },
+   "exposure_commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+   "family": "control",
+   "generator": {
+    "commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+    "key": "genome:control",
+    "kind": "code",
+    "resolved": false,
+    "why": "no Executable(family=...) with an instance generator at the run commit"
+   },
+   "id": "#179|docs/evidence/greg-genome-admission/2026-10-22-joined-operations/freeze.json|dev|control|dev",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "development seeds are run by builders (admission --dev) by protocol",
+   "n": 10,
+   "part": "dev",
+   "present_in": [
+    "#179"
+   ],
+   "program": "admission",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+    "path": "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/freeze.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:2ac00db205b232c38eb01fe9f077480387af73985d4a8882cfea299c8986ea23"
+   },
+   "exposure_commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+   "family": "game",
+   "generator": {
+    "commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+    "key": "genome:game",
+    "kind": "code",
+    "resolved": false,
+    "why": "no Executable(family=...) with an instance generator at the run commit"
+   },
+   "id": "#179|docs/evidence/greg-genome-admission/2026-10-22-joined-operations/freeze.json|dev|game|dev",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "development seeds are run by builders (admission --dev) by protocol",
+   "n": 10,
+   "part": "dev",
+   "present_in": [
+    "#179"
+   ],
+   "program": "admission",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+    "path": "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/freeze.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:2ac00db205b232c38eb01fe9f077480387af73985d4a8882cfea299c8986ea23"
+   },
+   "exposure_commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+   "family": "information",
+   "generator": {
+    "commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+    "key": "genome:information",
+    "kind": "code",
+    "resolved": false,
+    "why": "no Executable(family=...) with an instance generator at the run commit"
+   },
+   "id": "#179|docs/evidence/greg-genome-admission/2026-10-22-joined-operations/freeze.json|dev|information|dev",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "development seeds are run by builders (admission --dev) by protocol",
+   "n": 10,
+   "part": "dev",
+   "present_in": [
+    "#179"
+   ],
+   "program": "admission",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+    "path": "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/freeze.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:2ac00db205b232c38eb01fe9f077480387af73985d4a8882cfea299c8986ea23"
+   },
+   "exposure_commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+   "family": "probabilistic",
+   "generator": {
+    "commit": "3520efe6197f53898193731a2f0b98b35978c2ae",
+    "key": "genome:probabilistic",
+    "kind": "code",
+    "resolved": false,
+    "why": "no Executable(family=...) with an instance generator at the run commit"
+   },
+   "id": "#179|docs/evidence/greg-genome-admission/2026-10-22-joined-operations/freeze.json|dev|probabilistic|dev",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "development seeds are run by builders (admission --dev) by protocol",
+   "n": 10,
+   "part": "dev",
+   "present_in": [
+    "#179"
+   ],
+   "program": "admission",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
     "commit": "12c8eb1614d93826cfc6ad1896ca5395d6c9eb23",
     "path": "tests/evidence/antifragility-2026-10-15/workload.json",
     "sha256": "sha256:c1a6a1b64992b20795ef08abb0dbeb19263395248d1add6256b4bb335581c79e"
@@ -22670,7 +22958,7 @@
      56
     ],
     "path": "tests/unit/test_operation_readmission.py",
-    "sha256": "sha256:f47a6ce35e404dcebee60f1eb7adc46447d3e84c337e0b9ff60918f689f50044"
+    "sha256": "sha256:3a9b6d68f077ef4ebce8961dbb087b1d3416a91dbafc93326b87b4e82b77504c"
    },
    "exposure_commit": "c5e85bfda82a0c7be6a2e2b7fbf1f39527a8f6d7",
    "family": null,
@@ -23473,6 +23761,60 @@
    ],
    "path": "docs/evidence/greg-genome-admission/2026-10-21-operations/PREREGISTRATION.md",
    "sha256": "sha256:a2e0f2c52bff6fa9b42202235133ddb5fd4398bc6633e69631f47f9629f7cb9f"
+  },
+  {
+   "commit": "244b652c9165a11d9ba4cfaa36f0431e44697945",
+   "declared_ranges": [
+    [
+     1001,
+     1040
+    ],
+    [
+     2001,
+     2040
+    ],
+    [
+     2600,
+     2629
+    ],
+    [
+     3000,
+     3999
+    ],
+    [
+     3001,
+     3040
+    ],
+    [
+     4000,
+     4999
+    ],
+    [
+     5100,
+     5999
+    ],
+    [
+     5920,
+     5949
+    ]
+   ],
+   "lineage": "#179",
+   "not_in_any_exposure": [
+    [
+     3000,
+     3999
+    ],
+    [
+     4000,
+     4999
+    ],
+    [
+     5100,
+     5999
+    ]
+   ],
+   "path": "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/PREREGISTRATION.md",
+   "sha256": "sha256:db94a4bd5d0552266a85d72fcf87a1d243ed7973acc90badf61d3751ab1e3bf5"
   }
  ],
  "reservations": {

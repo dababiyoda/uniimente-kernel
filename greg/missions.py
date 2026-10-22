@@ -26,6 +26,7 @@ import os
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -323,9 +324,15 @@ def bound_value(edge: dict, output):
     """The typed, size-bounded value one edge carries from a receipt's output."""
     source = edge["from"].get("action_id") or "check " + str(edge["from"].get("check_id"))
     try:
-        value = _field(output, edge["from"]["field"])
+        value = _raw_field(output, edge["from"]["field"])
     except KeyError:
         raise Unbound(f"{source} output has no {edge['from']['field']}") from None
+    except LookupError as exc:
+        raise Unbound(f"{source}: {exc}") from None
+    if _cut(value):
+        # the receipt kept a prefix; binding it would hand the next action part of a value as if it were whole
+        raise Unbound(f"{source}.{edge['from']['field']} was kept as its first {len(value['prefix'])} of "
+                      f"{value['length']} characters; a prefix is not bound as the whole value")
     kinds = BIND_TYPES[edge["type"]]
     if not isinstance(value, kinds) or (edge["type"] in ("number", "integer") and isinstance(value, bool)):
         raise Unbound(f"{source}.{edge['from']['field']} is not {edge['type']}")
@@ -368,7 +375,7 @@ def metered_spend(capability_id: str, output, cap_usd: float) -> dict:
     if field_path is not None and isinstance(output, dict):
         try:
             reported = _field(output, field_path)
-        except KeyError:
+        except LookupError:            # KeyError included
             reported = None
     if isinstance(reported, bool) or not isinstance(reported, (int, float)) or reported != reported:
         return {"cost_usd": cap, "cost_cap_usd": cap, "spend_basis": "signed_cap" if field_path is None
@@ -406,18 +413,42 @@ def signed_cost(spec: dict, action_id: str) -> float:
     return float(strategy.get("cost_usd", 0.0)) if strategy else 0.0
 
 
-def _field(output, path: str):
+# authority.bounded keeps receipts small: a long string becomes its first RECEIPT_TEXT_LIMIT characters plus
+# its digest and length, and a list keeps its first RECEIPT_LIST_LIMIT items with no marker at all (receipts
+# written before this change included). A predicate reads only what was kept, so it decides only what the kept
+# part can prove; everything else is INSUFFICIENT, never FALSE or TRUE.
+RECEIPT_LIST_LIMIT = 1000
+TRUE, FALSE, INSUFFICIENT = "TRUE", "FALSE", "INSUFFICIENT"
+INSUFFICIENT_EVIDENCE = "insufficient evidence: "
+
+
+def _cut(value) -> dict | None:
+    """The bounded form of a long string as authority.bounded writes it, or None for a whole value."""
+    if isinstance(value, dict) and value.get("truncated") is True \
+            and set(value) == {"prefix", "truncated", "sha256", "length"} and isinstance(value["prefix"], str) \
+            and isinstance(value["length"], int) and value["length"] > len(value["prefix"]):
+        return value
+    return None
+
+
+def _raw_field(output, path: str):
     value = output
     for part in path.split(".") if path else []:
         if isinstance(value, dict) and part in value:
             value = value[part]
         elif isinstance(value, list) and part.isdigit() and int(part) < len(value):
             value = value[int(part)]
+        elif isinstance(value, list) and part.isdigit() and len(value) == RECEIPT_LIST_LIMIT:
+            raise LookupError(f"item {part} of {path} lies past the {RECEIPT_LIST_LIMIT} items a receipt keeps")
         else:
             raise KeyError(path)
-    if isinstance(value, dict) and value.get("truncated"):
-        value = value["prefix"]
     return value
+
+
+def _field(output, path: str):
+    value = _raw_field(output, path)
+    cut = _cut(value)
+    return cut["prefix"] if cut else value
 
 
 def unanswered(output) -> str | None:
@@ -457,30 +488,85 @@ def measured(observation: dict) -> bool:
     return not str(observation.get("detail", "")).startswith("sensor ")
 
 
-def evaluate_predicate(predicate: dict, output) -> tuple[bool, str]:
+def judge(predicate: dict, output) -> tuple[str, str]:
+    """TRUE, FALSE or INSUFFICIENT: what the retained output proves about one predicate.
+
+    A whole value is judged as before. From a kept prefix (a long string, or a list at the receipt's item limit)
+    only monotone facts follow: a phrase or item found in the prefix is in the whole (contains TRUE, not_contains
+    FALSE), and a long string's equality is decided by its digest and length. A miss proves nothing. An output
+    that declares itself incomplete (``"complete": false``, e.g. a PDF page with no text layer) gets the same
+    treatment for every field: more data could only add to it."""
     op = predicate["op"]
+    path = predicate.get("field", "")
     try:
-        value = _field(output, predicate.get("field", ""))
+        value = _raw_field(output, path)
     except KeyError:
-        return (op == "absent"), f"field {predicate.get('field')!r} absent"
+        return (TRUE if op == "absent" else FALSE), f"field {path!r} absent"
+    except LookupError as exc:
+        return INSUFFICIENT, str(exc)
     expected = predicate.get("value")
     if op == "exists":
-        return True, "present"
+        return TRUE, "present"
     if op == "absent":
-        return False, "present"
+        return FALSE, "present"
+    cut = _cut(value)
+    if cut:
+        text, length = cut["prefix"], cut["length"]
+        kept = f"first {len(text)} of {length} characters kept"
+        if op == "equals":
+            same = isinstance(expected, str) and len(expected) == length \
+                and hashlib.sha256(expected.encode()).hexdigest() == cut["sha256"]
+            return (TRUE if same else FALSE), f"equals {expected!r:.60} by digest of all {length} characters"
+        if op == "count_gte":
+            return (TRUE if length >= expected else FALSE), f"len {length} >= {expected}"
+        if op in ("gte", "lte"):
+            return FALSE, "not numeric"
+        if op in ("contains", "not_contains"):
+            if isinstance(expected, str) and expected in text:
+                return (TRUE if op == "contains" else FALSE), f"{expected!r:.60} found in the kept prefix"
+            return INSUFFICIENT, f"{op} {expected!r:.60}: not in the {kept}; the rest was not retained"
+        raise MissionError(f"unknown predicate op {op!r}")
+    verdict, detail = _judge_whole(op, value, expected)
+    partial = isinstance(value, list) and len(value) == RECEIPT_LIST_LIMIT and op in (
+        "equals", "contains", "not_contains", "count_gte")
+    declared = isinstance(output, dict) and output.get("complete") is False
+    if partial or declared:
+        monotone = (op == "contains" and verdict == TRUE) or (op == "not_contains" and verdict == FALSE) \
+            or (op == "count_gte" and verdict == TRUE) \
+            or (op == "equals" and verdict == FALSE and partial and not declared and isinstance(expected, list)
+                and expected[:RECEIPT_LIST_LIMIT] != value)
+        if not monotone:
+            why = (f"the list was kept to its first {RECEIPT_LIST_LIMIT} items" if partial
+                   else "the capability reported its observation incomplete")
+            return INSUFFICIENT, f"{detail}; {why}"
+    return verdict, detail
+
+
+def _judge_whole(op, value, expected) -> tuple[str, str]:
+    def as_verdict(ok):
+        return TRUE if ok else FALSE
     if op == "equals":
-        return value == expected, f"{value!r} == {expected!r}"
+        return as_verdict(value == expected), f"{value!r:.200} == {expected!r:.200}"
     if op == "contains":
-        return (expected in value) if isinstance(value, (str, list)) else False, f"contains {expected!r}"
+        return as_verdict((expected in value) if isinstance(value, (str, list)) else False), f"contains {expected!r}"
     if op == "not_contains":
-        return (expected not in value) if isinstance(value, (str, list)) else False, f"not contains {expected!r}"
+        return as_verdict((expected not in value) if isinstance(value, (str, list)) else False), \
+            f"not contains {expected!r}"
     if op in ("gte", "lte"):
         if not isinstance(value, (int, float)) or isinstance(value, bool):
-            return False, "not numeric"
-        return (value >= expected if op == "gte" else value <= expected), f"{value} {op} {expected}"
+            return FALSE, "not numeric"
+        return as_verdict(value >= expected if op == "gte" else value <= expected), f"{value} {op} {expected}"
     if op == "count_gte":
-        return (len(value) >= expected) if isinstance(value, (list, str)) else False, f"len {op} {expected}"
+        return as_verdict((len(value) >= expected) if isinstance(value, (list, str)) else False), \
+            f"len {op} {expected}"
     raise MissionError(f"unknown predicate op {op!r}")
+
+
+def evaluate_predicate(predicate: dict, output) -> tuple[bool, str]:
+    """Passed only on proof. INSUFFICIENT is not passed, and its detail starts with INSUFFICIENT_EVIDENCE so the
+    mission treats it as an unmeasured check (re-observe, then ask), never as a strategy that failed."""
+    verdict, detail = judge(predicate, output)
+    return verdict == TRUE, (INSUFFICIENT_EVIDENCE + detail) if verdict == INSUFFICIENT else detail
 
 
 @dataclass
@@ -2051,6 +2137,11 @@ class MissionEngine:
                     self.capability_faults[check["check_id"]] = (manifest, detail, sensor.get("params", {}))
             else:
                 passed, detail = evaluate_predicate(check["predicate"], outcome.output)
+                if detail.startswith(INSUFFICIENT_EVIDENCE):
+                    # The retained output cannot decide the check: the world was not measured. The sensor
+                    # retry path re-observes and then asks the founder; no strategy is blamed.
+                    detail = f"sensor inconclusive (incomplete evidence): {detail}"
+                    sensor_errors.add(check["check_id"])
                 fault = outcome.output.get("capability_fault") if isinstance(outcome.output, dict) else None
                 if not passed and isinstance(fault, dict) and self.genesis is not None \
                         and fault.get("capability_id") in self.registry.manifests:
@@ -2200,8 +2291,12 @@ class MissionEngine:
         if outcome.status != "DONE":
             return None
         passed, detail = evaluate_predicate(watch["predicate"], outcome.output)
+        # Evidence that cannot decide whether the person declined is recorded as inconclusive. A refusal is never
+        # assumed: GREG keeps waiting, and the row says the observation did not decide it.
+        inconclusive = detail.startswith(INSUFFICIENT_EVIDENCE)
         self.journal.record("human.refusal_observed", {"mission_id": m.mission_id, "action_id": strategy["action_id"],
-                                                       "declined": passed, "detail": detail[:300],
+                                                       "declined": passed, "inconclusive": inconclusive,
+                                                       "detail": detail[:300],
                                                        "receipt": outcome.receipt_hash, "at": iso(now)},
                             key=[m.mission_id, strategy["action_id"], outcome.proposal_id])
         return (detail, outcome.receipt_hash) if passed else None

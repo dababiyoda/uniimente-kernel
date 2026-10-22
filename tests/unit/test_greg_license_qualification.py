@@ -144,6 +144,12 @@ def test_a_package_whose_license_is_not_cleared_waits_for_the_founder_and_says_w
         verified = next(e.payload for e in body.journal.replay("genesis.verified")
                         if e.payload["capability_id"] == "acquired.graph.shortest_path.networkx")
         assert verified["passed"] and verified["mechanism"]["license_assessment"]["verdict"] == "FOUNDER_REVIEW"
+        # the founder's own attach request shows the assessment (integrator condition, #96 6332987196)
+        [ask] = [e.payload for e in body.journal.replay("decision.requested")
+                 if e.payload["kind"] == "CAPABILITY_ATTACH"]
+        [held] = [c for c in ask["evidence"]["registered"]
+                  if c["capability_id"] == "acquired.graph.shortest_path.networkx"]
+        assert held["mechanism"]["license_assessment"]["verdict"] == "FOUNDER_REVIEW"
         body.apply(signed(key, body_id, "CAPABILITY_ATTACH",
                           {"capability_id": "acquired.graph.shortest_path.networkx"}))
         assert body.tick()["missions"][0]["state"] == "ACHIEVED"
@@ -226,3 +232,12 @@ def test_an_unrecognised_short_name_beside_a_classifier_is_informational_not_blo
     assert licensing.declared(lgpl)["class"] == licensing.WEAK_COPYLEFT
     parent = FakeDist("oauth", classifiers=["License :: OSI Approved", "License :: OSI Approved :: BSD License"])
     assert licensing.declared(parent)["class"] == licensing.PERMISSIVE
+
+
+
+def test_mission_control_shows_the_license_verdict_on_the_attach_request(tmp_path, monkeypatch):
+    from greg.console import Console, render_home
+    body, key, body_id, clock, states = _run_route(tmp_path, monkeypatch, "BUSL-1.1")
+    body.__exit__(None, None, None)
+    page = render_home(Console(tmp_path / "body", key=key)).decode()
+    assert "Attach acquired.graph.shortest_path.networkx" in page and "BUSL-1.1 (FOUNDER_REVIEW)" in page

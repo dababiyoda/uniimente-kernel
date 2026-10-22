@@ -130,8 +130,21 @@ GREG_MUTANTS = [
 ]
 # Founder correction 2026-10-01 (#144): open-source engines are supply, GREG's certificate is the control.
 OSS_TESTS = ["tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_greg_linear_genesis.py",
-             "tests/unit/test_greg_cognition.py"]
+             "tests/unit/test_greg_cognition.py", "tests/unit/test_greg_license_qualification.py"]
 OSS_MUTANTS = [
+    # license qualification (directive 2026-10-22, 5.3 and 6): legally qualified is a separate state
+    ("an uncleared license still auto-attaches", "greg/genesis.py",
+     "allowed = (not cognition and licensed", "allowed = (not cognition and True"),
+    ("an engine dependency attaches whatever its license", "greg/genesis.py",
+     "allowed = (licensed and mission.spec", "allowed = (True and mission.spec"),
+    ("an unclassified or restricted license is cleared", "greg/licensing.py",
+     "cleared = ORDER.index(worst) <= ORDER.index(CLEARED_UP_TO)", "cleared = True"),
+    ("AND takes the most permissive term", "greg/licensing.py",
+     "        return _worst(values)\n\n    def disjunction():", "        return _best(values)\n\n    def disjunction():"),
+    ("a card without an assessment is cleared", "greg/licensing.py",
+     'return False, "no license assessment on its Mechanism Card"', 'return True, ""'),
+    ("a stricter License field beside a classifier is ignored", "greg/licensing.py",
+     "ORDER.index(text_class) > ORDER.index(cls):", "False:"),
     ("certificate skips edge feasibility", "greg/cognition/network.py",
      "if exact[b] > exact[a] + w + tolerance(exact[a] + w):", "if False:"),
     ("certificate trusts claimed unreachability", "greg/cognition/network.py",

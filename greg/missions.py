@@ -1019,7 +1019,9 @@ def _mechanism_summary(provenance: dict) -> dict:
     return {k: provenance.get(k) for k in ("distribution", "version", "license", "upstream", "package_digest",
                                            "primitive", "competence", "common_mode", "acquisition", "limits")} | {
         "qualification": {"cases": qualification.get("cases"), "failures": len(qualification.get("failures", [])),
-                          "oracle": qualification.get("oracle"), "scale_probe": qualification.get("scale_probe")}}
+                          "oracle": qualification.get("oracle"), "scale_probe": qualification.get("scale_probe")},
+        "license_assessment": {k: (provenance.get("license_assessment") or {}).get(k)
+                               for k in ("verdict", "class", "reason", "obligations")}}
 
 
 class MissionEngine:

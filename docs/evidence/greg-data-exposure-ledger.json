@@ -217,14 +217,14 @@
  "counts": {
   "by_lineage": {
    "#158": 331,
-   "#179": 139,
+   "#179": 140,
    "both": 42
   },
   "by_role": {
    "P8 held-out": 7,
    "admission held-out": 147,
    "canary": 1,
-   "dev": 269,
+   "dev": 270,
    "held-out": 68,
    "review-pilot": 11,
    "train": 9
@@ -236,7 +236,7 @@
    "admission held-out / #179": 57,
    "canary / #158": 1,
    "dev / #158": 204,
-   "dev / #179": 42,
+   "dev / #179": 43,
    "dev / both": 23,
    "held-out / #158": 13,
    "held-out / #179": 36,
@@ -245,7 +245,7 @@
    "train / #158": 6,
    "train / #179": 3
   },
-  "exposures": 512,
+  "exposures": 513,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -25126,6 +25126,45 @@
     [
      3,
      3
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "32196c390a2179408bca5793ab1d0cbc253d4f1b",
+    "line_commits": [
+     "32196c390a2179408bca5793ab1d0cbc253d4f1b"
+    ],
+    "lines": [
+     18
+    ],
+    "path": "tests/unit/test_greg_large_inline_mission.py",
+    "sha256": "sha256:41636f815ba7fa5fb545bd2aa81c9e05ee515ed5bc7035575bb20530b005edd0"
+   },
+   "exposure_commit": "32196c390a2179408bca5793ab1d0cbc253d4f1b",
+   "family": null,
+   "generator": {
+    "commit": "32196c390a2179408bca5793ab1d0cbc253d4f1b",
+    "key": "item.instance",
+    "kind": "code",
+    "resolved": false,
+    "why": "receiver not resolved statically"
+   },
+   "id": "#179|tests/unit/test_greg_large_inline_mission.py|dev|-|?:item.instance:18",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 1,
+   "part": "?:item.instance:18",
+   "present_in": [],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     5,
+     5
     ]
    ]
   },

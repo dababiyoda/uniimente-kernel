@@ -162,6 +162,20 @@ def confine(root, public_files, *, list_code: bool = True):
             "signals": "scoped to the domain" if scoped else "unscoped (Landlock ABI < 6)"}
 
 
+def signal_scope(abi) -> int:
+    """``SCOPE_SIGNAL`` where the kernel has it (Landlock ABI >= 6), else 0.
+
+    A process GREG confines on a worker's behalf (the worker itself, or its patch's tests in GREG's acceptance run)
+    has the body's UID and, in supervised mode, no PID namespace: unscoped, it could SIGSTOP or SIGKILL the body
+    and freeze its timeout, founder STOP and budget handling. Scoped, it can signal only processes in its own
+    Landlock domain (its own children), never the body that supervises it (#173 scoping, merge review of e410977)."""
+    return SCOPE_SIGNAL if isinstance(abi, int) and abi >= 6 else 0
+
+
+def signals_record(scope: int) -> str:
+    return "scoped to the domain" if scope & SCOPE_SIGNAL else "unscoped (Landlock ABI < 6)"
+
+
 def restrict(grants, libc=None, *, scope: int = 0):
     """Irreversibly apply a Landlock ruleset of ``{path: access}`` grants to this process.
 

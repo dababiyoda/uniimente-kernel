@@ -572,3 +572,61 @@ def test_a_helper_or_runner_substitute_never_closes_its_mission(tmp_path, monkey
     assert verdict["verdict"] == "REJECTED", verdict
     assert any("frozen evaluator" in f for f in verdict["findings"]), verdict
     assert verdict["independent_tests"] and all(t["passed"] for t in verdict["independent_tests"]), verdict
+
+
+# -- merge review of e410977 into PR #184: a supervised, Landlock-confined run never signals the body ---------------
+# Same UID and, supervised, no PID namespace: before the fix the worker (or its patch's tests in GREG's acceptance
+# run) could SIGSTOP the body and freeze its timeout, founder STOP and budget handling. Signal 0 probes the same
+# permission without stopping anything.
+
+SIGNAL_SCOPED = LANDLOCK and isolation.available().get("abi", 0) >= 6
+
+
+@pytest.mark.skipif(not SIGNAL_SCOPED, reason="Landlock signal scoping needs ABI >= 6")
+def test_a_supervised_confined_worker_cannot_signal_the_body(tmp_path):
+    worker = agent(tmp_path, f"""
+import os, sys
+sys.stdin.read()
+try:
+    os.kill({os.getpid()}, 0)
+    result = "allowed"
+except PermissionError:
+    result = "denied"
+open("out.md", "w").write(result)
+print('WORK_REPORT: {{"confidence": 0.5}}')
+""")
+    work = workdir(tmp_path)
+    report = worker.run(order("probe"), work, confinement="supervised")
+    assert (work / "out.md").read_text() == "denied", report
+    assert report.confinement["signals"] == "scoped to the domain"
+    assert "signals scoped to the domain" in report.isolation["filesystem"]
+
+
+@pytest.mark.skipif(not SIGNAL_SCOPED, reason="Landlock signal scoping needs ABI >= 6")
+def test_gregs_supervised_acceptance_run_cannot_signal_the_body(tmp_path, monkeypatch):
+    clone = tmp_path / "clone"
+    clone.mkdir()
+    _no_envelope(monkeypatch)
+    [result] = workers.run_tests([["python", "-c", f"import os; os.kill({os.getpid()}, 0)"]], clone, timeout=60,
+                                 confinement="supervised")
+    assert not result["passed"] and "PermissionError" in result["tail"], result["tail"]
+    assert result["landlock"]["signals"] == "scoped to the domain"
+    assert result["confinement"].endswith("signals scoped to the domain"), result["confinement"]
+
+
+def test_a_timed_out_supervised_acceptance_run_is_never_recorded_as_the_envelope(tmp_path, monkeypatch):
+    """Merge review of e410977: the supervised record was set only after run_isolated returned, so a run that timed
+    out kept the default 'envelope: private filesystem, PID and network namespaces' for a run outside it."""
+    clone = tmp_path / "clone"
+    clone.mkdir()
+    _no_envelope(monkeypatch)
+    monkeypatch.setattr(workers, "host_has_envelope", lambda: False, raising=False)
+    [result] = workers.run_tests([["python", "-c", "import time; time.sleep(30)"]], clone, timeout=2,
+                                 confinement="supervised")
+    assert result["returncode"] == -1 and "timed out" in result["tail"], result
+    assert result["confinement"].startswith("supervised"), result["confinement"]
+    if LANDLOCK:
+        assert "Landlock-confined" in result["confinement"] and result["landlock"]["filesystem"] == "landlock"
+    else:
+        assert "NOT confined" in result["confinement"]
+    assert not list(clone.glob(".greg-tmp-*")), "the run's scratch directory is removed even on a timeout"

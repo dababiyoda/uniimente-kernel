@@ -365,7 +365,8 @@ REFUSALS = {b"F": "filesystem confinement unavailable; command refused",
             b"N": "network isolation unavailable; command refused"}
 
 
-def _isolating_preexec(install_filter, confine: dict | None, refused_fd: int, *, grants=None, libc=None):
+def _isolating_preexec(install_filter, confine: dict | None, refused_fd: int, *, grants=None, libc=None,
+                       scope: int = 0):
     """Fail closed without an exit status: a command's own exit 97 or 98 must never read as a refusal
     (nor a refusal as a command that ran). The child writes why to a close-on-exec pipe only the body
     holds, then raises, so the command never executes and Popen reports the failure to the parent."""
@@ -379,7 +380,7 @@ def _isolating_preexec(install_filter, confine: dict | None, refused_fd: int, *,
                 if confine is not None:
                     confine_paths(**confine)
                 if grants is not None:
-                    restrict(grants, libc)         # precomputed in the body: the child only makes syscalls
+                    restrict(grants, libc, scope=scope)   # precomputed in the body: the child only makes syscalls
             except Exception:
                 os.write(refused_fd, b"F")         # never run a confined command unconfined
                 raise
@@ -415,7 +416,7 @@ def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout
     it runs as before. The returned process carries ``confinement`` either way.
     """
     env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "HOME": str(cwd), **(extra_env or {})}
-    confinement, grants, libc = None, None, None
+    confinement, grants, libc, scope = None, None, None, 0
     if confine_to is not None:
         # Code GREG runs on a worker's behalf (its patch's tests): confined like the worker itself.
         status = isolation.available()
@@ -428,13 +429,31 @@ def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout
             # GREG's own acceptance run fail before the command starts.
             scratch = Path(tempfile.mkdtemp(prefix=".greg-tmp-", dir=confine_to))
             env["TMPDIR"] = str(scratch)
+            scope = isolation.signal_scope(status["abi"])   # the patch's code never signals the body (ABI >= 6)
             confinement = {"filesystem": "landlock", "abi": status["abi"],
-                           "writable": [str(Path(confine_to).resolve())]}
+                           "writable": [str(Path(confine_to).resolve())], "signals": isolation.signals_record(scope)}
         else:
             confinement = {"filesystem": "none",
                            "reason": status.get("reason") or f"Landlock ABI {status.get('abi')} below 3"}
     if confine is not None and sys.platform == "darwin":
         raise CapabilityError("filesystem confinement unavailable on this host; command refused")
+    proc = None
+    try:
+        proc = _run_isolated_spawn(argv, cwd=cwd, env=env, timeout=timeout, input_bytes=input_bytes,
+                                   stop_check=stop_check, isolate_network=isolate_network, confine=confine,
+                                   grants=grants, libc=libc, scope=scope)
+    except subprocess.TimeoutExpired as exc:
+        exc.confinement = confinement      # a timed-out run still says how it was confined (merge review e410977)
+        raise
+    finally:
+        if confinement and confinement.get("filesystem") == "landlock":
+            shutil.rmtree(env["TMPDIR"], ignore_errors=True)
+    proc.confinement = confinement
+    return proc
+
+
+def _run_isolated_spawn(argv, *, cwd, env, timeout, input_bytes, stop_check, isolate_network, confine, grants, libc,
+                        scope):
     proc = None
     if isolate_network and sys.platform == "darwin":
         if not Path("/usr/bin/sandbox-exec").exists():
@@ -447,7 +466,8 @@ def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout
         refused_r, refused_w = os.pipe()          # close-on-exec: the command itself never holds it
         try:
             proc = _spawn(argv, cwd=cwd, env=env, timeout=timeout, input_bytes=input_bytes, stop_check=stop_check,
-                          preexec=_isolating_preexec(install_filter, confine, refused_w, grants=grants, libc=libc),
+                          preexec=_isolating_preexec(install_filter, confine, refused_w, grants=grants, libc=libc,
+                                                     scope=scope),
                           refused=refused_r)
         finally:
             os.close(refused_r)
@@ -455,9 +475,6 @@ def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout
     if proc is None:
         proc = _spawn(argv, cwd=cwd, env=env, timeout=timeout, input_bytes=input_bytes, stop_check=stop_check,
                       preexec=None, refused=None)
-    proc.confinement = confinement
-    if confinement and confinement.get("filesystem") == "landlock":
-        shutil.rmtree(env["TMPDIR"], ignore_errors=True)
     return proc
 
 

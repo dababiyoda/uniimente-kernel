@@ -457,12 +457,15 @@ def _confined(cwd: Path, binary, read_files=()) -> tuple:
     except isolation.IsolationError as exc:
         raise WorkerError(f"the worker cannot be confined, so it is refused: {exc}") from None
 
+    scope = isolation.signal_scope(status["abi"])   # it never signals the body that supervises it (ABI >= 6)
+
     def preexec():
         _die_with_body()
-        isolation.restrict(grants, libc)
+        isolation.restrict(grants, libc, scope=scope)
 
     return preexec, {"filesystem": "landlock", "abi": status["abi"], "writable": [str(cwd)],
-                     "readable": sorted(str(p) for p in grants if p != cwd.resolve())}
+                     "readable": sorted(str(p) for p in grants if p != cwd.resolve()),
+                     "signals": isolation.signals_record(scope)}
 
 
 def _worker_env(workspace: Path) -> dict:
@@ -550,7 +553,8 @@ def _landlock_supervised(envelope: dict, cwd: Path, binary, read_files=()) -> di
                                             "readable": list(evidence.get("read_roots", [])),
                                             "writable": list(evidence.get("write_roots", []))}}
     preexec, landlock = _confined(cwd, binary, read_files=read_files)
-    filesystem = (f"Landlock-confined: reads the host runtime, writes only {cwd} (same UID as the body)"
+    filesystem = (f"Landlock-confined: reads the host runtime, writes only {cwd} (same UID as the body; signals "
+                  f"{landlock.get('signals')})"
                   if landlock.get("filesystem") == "landlock" else evidence.get("filesystem"))
     return {**envelope, "preexec_fn": preexec, "confinement": landlock,
             "evidence": {**evidence, "filesystem": filesystem, "landlock": landlock}}
@@ -885,6 +889,14 @@ def collect_changes(clone: Path, base_commit: str) -> tuple[list[str], bytes]:
     return sorted(names), patch
 
 
+def _supervised_acceptance(landlock: dict | None) -> str:
+    """The record of a supervised acceptance run: what run_isolated applied, or (not yet known) NOT confined."""
+    if (landlock or {}).get("filesystem") == "landlock":
+        return ("supervised: network denied, environment scrubbed, filesystem Landlock-confined to the clone, "
+                f"signals {landlock.get('signals')}")
+    return "supervised: network denied, environment scrubbed, filesystem NOT confined"
+
+
 def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None, confinement: str = "required") -> list[dict]:
     """Execute generated acceptance in a private filesystem/PID/network envelope, never as unconfined GREG.
 
@@ -910,14 +922,20 @@ def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None, confinem
                 # Acceptance the envelope cannot host is only acceptance on a host without it.
                 if confinement_mode(confinement) != "supervised" or not envelope_cannot_confine(exc):
                     raise
-                proc = run_isolated(argv, cwd=cwd, isolate_network=True, timeout=timeout, stop_check=stop_check,
-                                    confine_to=cwd,
-                                    extra_env={"PATH": f"{Path(sys.executable).parent}:/usr/bin:/bin",
-                                               "PYTHONDONTWRITEBYTECODE": "1"})
+                # Never the envelope's description for a run outside it, even when the run times out (merge review
+                # of e410977): the supervised record is set before the run and refined by what run_isolated applied.
+                mode = _supervised_acceptance(None)
+                try:
+                    proc = run_isolated(argv, cwd=cwd, isolate_network=True, timeout=timeout, stop_check=stop_check,
+                                        confine_to=cwd,
+                                        extra_env={"PATH": f"{Path(sys.executable).parent}:/usr/bin:/bin",
+                                                   "PYTHONDONTWRITEBYTECODE": "1"})
+                except subprocess.TimeoutExpired as exc:
+                    landlock = getattr(exc, "confinement", None)
+                    mode = _supervised_acceptance(landlock)
+                    raise
                 landlock = getattr(proc, "confinement", None)
-                mode = ("supervised: network denied, environment scrubbed, filesystem Landlock-confined to the clone"
-                        if (landlock or {}).get("filesystem") == "landlock" else
-                        "supervised: network denied, environment scrubbed, filesystem NOT confined")
+                mode = _supervised_acceptance(landlock)
             else:
                 envelope["env"]["PYTHONDONTWRITEBYTECODE"] = "1"
                 proc = supervised_run(envelope["argv"], cwd=cwd, timeout=timeout, capture_output=True,

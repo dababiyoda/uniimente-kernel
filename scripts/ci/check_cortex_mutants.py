@@ -393,6 +393,58 @@ INTERRUPTION_MUTANTS = [
      'remaining = min(contract["build_budget_usd"] - spent, cone_left - (spent - spent_at_entry))'),
 ]
 
+# 2026-10-22: the review of the merge of #178 e410977 into PR #184 (conv-m178e). Each mutant reverts one fix; on the
+# merge tip the pinning test failed (acceptance soundness, the console's H.G7 half, signal scoping, the timed-out
+# acceptance record, a receipted overspend, the appraiser's H.G4 re-derivation, a billed failure across a kill).
+ACCEPTANCE_READER_TESTS = ["tests/unit/test_acceptance_harness.py::test_the_manifest_and_contract_are_sound_against_this_tree"]
+ACCEPTANCE_READER_MUTANTS = [
+    ("a python -c Body.run driver is not seen as a real Body process", "acceptance/__init__.py",
+     'script = 2 if const[1:2] == ["-c"] else 1', "script = 1"),
+]
+CONSOLE_LINK_TESTS = ["tests/integration/test_greg_inbox_writer_kill_process.py::"
+                      "test_a_service_killed_while_writing_a_decision_leaves_no_partial_command_and_it_applies_once"
+                      "[console-after-rename]"]
+CONSOLE_LINK_MUTANTS = [
+    ("the console's private link works more than once", "greg/console.py",
+     "            self._bootstrap = None\n            return True", "            return True"),
+]
+_CONTAIN = "tests/unit/test_greg_worker_containment.py::"
+SIGNAL_SCOPE_TESTS = [_CONTAIN + "test_a_supervised_confined_worker_cannot_signal_the_body",
+                      _CONTAIN + "test_gregs_supervised_acceptance_run_cannot_signal_the_body",
+                      _CONTAIN + "test_a_timed_out_supervised_acceptance_run_is_never_recorded_as_the_envelope"]
+SIGNAL_SCOPE_MUTANTS = [
+    ("a supervised Landlock worker may signal the body", "greg/workers.py",
+     "isolation.restrict(grants, libc, scope=scope)", "isolation.restrict(grants, libc)"),
+    ("GREG's confined acceptance run may signal the body", "greg/capabilities.py",
+     "restrict(grants, libc, scope=scope)   # precomputed", "restrict(grants, libc)   # precomputed"),
+    ("a timed-out supervised acceptance run keeps an unconfined record", "greg/workers.py",
+     "                    mode = _supervised_acceptance(landlock)\n                    raise",
+     "                    raise"),
+]
+_RECON = "tests/unit/test_greg_mission_reconciliation.py::"
+RECONCILED_MONEY_TESTS = [_RECON + "test_a_receipted_interrupt_that_reported_spending_over_its_cap_books_what_it_reported",
+                          _RECON + "test_the_appraiser_refutes_a_closure_that_released_a_metered_not_executed_cap_and_retried",
+                          _RECON + "test_the_appraiser_verifies_a_closure_that_kept_the_metered_cap_booked"]
+RECONCILED_MONEY_MUTANTS = [
+    ("a receipted interrupt's report over its cap is settled at the cap", "greg/missions.py",
+     "if booked and reported is not None and reported > worst + 1e-9:", "if False:"),
+    ("the appraiser takes a reconciliation's booking from the engine", "greg/appraisal.py",
+     '                if cost < required - 1e-9:\n                    approvals_ok = False',
+     '                if False:\n                    approvals_ok = False'),
+    ("the appraiser leaves a booked reconciliation out of spend so far", "greg/appraisal.py",
+     'if action.get("route") == "founder_reconciliation":', "if False:"),
+]
+BILLED_FAILURE_TESTS = ["tests/unit/test_greg_genesis_build_reservation.py::"
+                        "test_a_billed_failure_survives_a_kill_between_its_two_records_and_the_budget_bounds_the_next_call"]
+BILLED_FAILURE_MUTANTS = [
+    ("a billed failure's bill does not settle its call", "greg/genesis.py",
+     'SETTLES_BUILD = ("genesis.built", "genesis.unbuilt", "genesis.build_failed")',
+     'SETTLES_BUILD = ("genesis.built", "genesis.build_failed")'),
+    ("a billed failure's bill is never recorded", "greg/genesis.py",
+     "                    if cost:   # billed although no candidate came back",
+     "                    if False:   # billed although no candidate came back"),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS),
           ("mind construction", MIND_CONSTRUCTION_TESTS, MIND_CONSTRUCTION_MUTANTS),
@@ -403,7 +455,12 @@ GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("founder tier", FOUNDER_TIER_TESTS, FOUNDER_TIER_MUTANTS),
           ("founder tier (body)", FOUNDER_TIER_BODY_TESTS, FOUNDER_TIER_BODY_MUTANTS),
           ("closure integrity", CLOSURE_INTEGRITY_TESTS, CLOSURE_INTEGRITY_MUTANTS),
-          ("interruption", INTERRUPTION_TESTS, INTERRUPTION_MUTANTS)]
+          ("interruption", INTERRUPTION_TESTS, INTERRUPTION_MUTANTS),
+          ("acceptance reader", ACCEPTANCE_READER_TESTS, ACCEPTANCE_READER_MUTANTS),
+          ("console private link", CONSOLE_LINK_TESTS, CONSOLE_LINK_MUTANTS),
+          ("signal scoping", SIGNAL_SCOPE_TESTS, SIGNAL_SCOPE_MUTANTS),
+          ("reconciled money", RECONCILED_MONEY_TESTS, RECONCILED_MONEY_MUTANTS),
+          ("billed failure", BILLED_FAILURE_TESTS, BILLED_FAILURE_MUTANTS)]
 
 
 def main() -> int:

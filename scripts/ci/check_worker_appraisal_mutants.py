@@ -56,10 +56,10 @@ MUTANTS = [
     ("tier: overclaims reject", "greg/workers.py", "    if overclaims:\n        findings += overclaims\n"
      "        verdict = \"REJECTED\"", "    if overclaims:\n        findings += overclaims", OVERCLAIM),
     ("tier: required body, worker", "greg/workers.py",
-     'if required and derived["tier"] in ("landlock", "supervised_unconfined"):', "if False:",
+     'if required and from_evidence["tier"] in ("landlock", "supervised_unconfined"):', "if False:",
      TIER + "test_a_required_body_refuses_a_receipt_below_the_envelope"),
     ("tier: required body, acceptance", "greg/workers.py",
-     'if required and tests[-1]["tier"] in ("landlock", "supervised_unconfined"):', "if False:",
+     'if required and any(t["tier"] in ("landlock", "supervised_unconfined") for t in tiers):', "if False:",
      TIER + "test_a_required_body_refuses_a_receipt_below_the_envelope"),
     ("tier: an old receipt is not refused for absence", "greg/workers.py",
      "if tier is not None and tier not in CONFINEMENT_TIERS", "if tier not in CONFINEMENT_TIERS",
@@ -69,6 +69,30 @@ MUTANTS = [
     ("tier: never a provider's claim", "greg/workers.py", "    tier = confinement_tier(report.isolation if isinstance(",
      "    tier = confinement_tier(report.isolation if True or isinstance(",
      TIER + "test_a_provider_greg_did_not_launch_never_records_the_tier_it_claims"),
+    # Review of ee6b496: acceptance records are checked against the mode GREG wrote beside them, an in-process
+    # provider's own isolation is never re-derived, malformed records reject, and both canonical bindings hold.
+    ("tier: acceptance isolation against its written mode", "greg/workers.py",
+     'if paths[0] != paths[1] and paths != ("envelope", None) or (', "if False and (",
+     TIER + "test_an_acceptance_record_whose_isolation_contradicts_its_written_mode_is_refused"),
+    ("tier: required body, acceptance written mode", "greg/workers.py",
+     'any(t["tier"] in ("landlock", "supervised_unconfined") for t in tiers)',
+     'tiers[0]["tier"] in ("landlock", "supervised_unconfined")',
+     TIER + "test_a_required_body_refuses_a_supervised_acceptance_mode_with_empty_isolation"),
+    ("tier: an in-process provider's isolation is not re-derived", "greg/workers.py",
+     'if worker.get("tier") == "not_reported" else from_evidence', "if False else from_evidence",
+     TIER + "test_a_provider_greg_did_not_launch_never_records_the_tier_it_claims"),
+    ("tier: required body judges the evidence, not a claimed downgrade", "greg/workers.py",
+     'if required and from_evidence["tier"] in', 'if required and derived["tier"] in',
+     TIER + "test_a_claimed_downgrade_to_not_reported_does_not_hide_a_supervised_worker"),
+    ("tier: malformed acceptance records reject", "greg/workers.py",
+     "if not isinstance(records, list) or not all(isinstance(t, dict) for t in records):", "if False:",
+     TIER + "test_malformed_acceptance_records_reject_and_never_crash"),
+    ("tier: canonical worker tier binding", "greg/workers.py",
+     'for field in ("isolation", "tier", "landlock_abi", "signals_scoped"):', "for field in ():",
+     TIER + "test_a_consistent_rewrite_is_refused_against_the_canonical_receipt"),
+    ("tier: canonical acceptance records binding", "greg/workers.py",
+     'if canonical.get("greg_tests") != summary.get("greg_tests"):', "if False:",
+     TIER + "test_a_consistent_rewrite_is_refused_against_the_canonical_receipt"),
 ]
 
 def main():

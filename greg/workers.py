@@ -171,17 +171,30 @@ def confinement_tier(evidence) -> dict:
     return {"tier": tier, "landlock_abi": abi, "signals_scoped": scoped}
 
 
-def _acceptance_evidence(record: dict) -> dict:
-    """The isolation evidence of one acceptance run: as recorded, or, for a record from before tiers were recorded,
-    rebuilt from the mode and Landlock record GREG wrote then (``run_tests``)."""
-    if isinstance(record.get("isolation"), dict):
-        return record["isolation"]
+def _written_evidence(record: dict) -> dict:
+    """The isolation evidence implied by the confinement mode string and Landlock record ``run_tests`` wrote for one
+    acceptance run (all a record from before tiers were recorded carries)."""
     mode = str(record.get("confinement") or "")
     if mode.startswith("envelope"):
         return {"status": "prepared", "filesystem": "os-confined", "mechanism": "bubblewrap"}
     if mode.startswith("supervised"):
         return {"mode": "supervised", "landlock": record.get("landlock")}
     return {"status": "refused"} if mode == "refused" else {}
+
+
+def _acceptance_evidence(record: dict) -> dict:
+    """The isolation evidence of one acceptance run: as recorded, or, for a record from before tiers were recorded,
+    rebuilt from the mode and Landlock record GREG wrote then (``run_tests``)."""
+    return record["isolation"] if isinstance(record.get("isolation"), dict) else _written_evidence(record)
+
+
+def _path(evidence: dict) -> str | None:
+    """Which ``run_tests`` path an isolation record describes: the envelope, the supervised fallback, or a refusal."""
+    if evidence.get("mode") == "supervised":
+        return "supervised"
+    if evidence.get("status") in _REFUSED_EVIDENCE:
+        return "refused"
+    return "envelope" if evidence.get("status") == "prepared" else None
 
 
 def _claim_findings(where: str, claim: dict, evidence: dict) -> list[str]:
@@ -210,27 +223,49 @@ def _claim_findings(where: str, claim: dict, evidence: dict) -> list[str]:
 def tier_findings(summary: dict, confinement: str) -> tuple[list[str], dict]:
     """``worker.appraise``'s check of a receipt's confinement claims (R2-A): every claimed tier (the worker block,
     its confinement record, each acceptance record) against the tier its own recorded evidence supports, and, on a
-    ``required`` body, any supervised fallback at all. A receipt from before tiers were recorded claims nothing
-    but what its confinement record implies; its tier is derived from its evidence, never refused for absence."""
+    ``required`` body, any supervised fallback at all. An acceptance record's isolation must describe the run its
+    mode string names; malformed acceptance records reject (never a crash). A receipt from before tiers were recorded
+    claims nothing but what its confinement record implies; its tier is derived from its evidence, never refused for
+    absence."""
     worker = summary.get("worker") if isinstance(summary.get("worker"), dict) else {}
     evidence = worker.get("isolation") if isinstance(worker.get("isolation"), dict) else {}
     record = worker.get("confinement") if isinstance(worker.get("confinement"), dict) else {}
     implied = {"bubblewrap envelope": "envelope", "landlock": "landlock"}.get(record.get("filesystem"))
     findings = _claim_findings("the receipt's worker block", worker, evidence)
     findings += _claim_findings("the worker's confinement record", {"tier": implied, **record}, evidence)
-    derived = confinement_tier(evidence)
+    from_evidence = confinement_tier(evidence)
+    # ``not_reported``: commission found no process GREG launched, so the worker's isolation is the provider's own
+    # report, not GREG's evidence; the appraiser never re-derives a stronger tier from it (a downgrade is no overclaim).
+    derived = ({"tier": "not_reported", "landlock_abi": None, "signals_scoped": None}
+               if worker.get("tier") == "not_reported" else from_evidence)
     required = confinement_mode(confinement) == "required"
-    if required and derived["tier"] in ("landlock", "supervised_unconfined"):
+    if required and from_evidence["tier"] in ("landlock", "supervised_unconfined"):
         findings.append(f"this body requires the envelope, but the worker ran under the supervised fallback "
-                        f"(tier {derived['tier']!r})")
+                        f"(tier {from_evidence['tier']!r})")
+    records = summary.get("greg_tests") if summary.get("greg_tests") is not None else []
+    if not isinstance(records, list) or not all(isinstance(t, dict) for t in records):
+        return findings + ["the receipt's acceptance records (greg_tests) are malformed"], {
+            "worker": derived, "greg_tests": []}
     tests = []
-    for index, test in enumerate(t for t in summary.get("greg_tests") or [] if isinstance(t, dict)):
+    for index, test in enumerate(records):
         test_evidence = _acceptance_evidence(test)
         findings += _claim_findings(f"acceptance record {index}", test, test_evidence)
-        tests.append(confinement_tier(test_evidence))
-        if required and tests[-1]["tier"] in ("landlock", "supervised_unconfined"):
+        tiers = [confinement_tier(test_evidence)]
+        if test.get("confinement") is not None and isinstance(test.get("isolation"), dict):
+            # The mode string and Landlock record run_tests wrote beside the isolation evidence describe the same run;
+            # a record whose isolation names another path (or another Landlock grant) is not one GREG wrote. Evidence
+            # naming no path under an envelope mode (a test double's envelope) claims less, and ranks as it derives.
+            written = _written_evidence(test)
+            tiers.append(confinement_tier(written))
+            paths = (_path(written), _path(test_evidence))
+            if paths[0] != paths[1] and paths != ("envelope", None) or (
+                    paths[0] == "supervised" and tiers[0] != tiers[1]):
+                findings.append(f"acceptance record {index}'s isolation evidence (tier {tiers[0]['tier']!r}) "
+                                f"disagrees with the confinement mode GREG wrote beside it (tier {tiers[1]['tier']!r})")
+        tests.append(min(tiers, key=lambda t: TIER_RANK[t["tier"]]))
+        if required and any(t["tier"] in ("landlock", "supervised_unconfined") for t in tiers):
             findings.append(f"this body requires the envelope, but acceptance record {index} ran under the "
-                            f"supervised fallback (tier {tests[-1]['tier']!r})")
+                            f"supervised fallback")
     return findings, {"worker": derived, "greg_tests": tests}
 
 
@@ -1586,6 +1621,10 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
                 return {"order": order_name, "verdict": "REJECTED",
                         "findings": findings + [f"retained worker {field} differs from the canonical commission "
                                                 "receipt"]}
+        if canonical.get("greg_tests") != summary.get("greg_tests"):
+            return {"order": order_name, "verdict": "REJECTED",
+                    "findings": findings + ["retained acceptance records (greg_tests) differ from the canonical "
+                                            "commission receipt"]}
         receipt_binding = "frozen work order and collected artifact bound to canonical commission receipt"
     if summary.get("status") not in ("COMPLETED", "NO_CHANGE"):
         findings.append(f"worker collection did not complete: {summary.get('status')}")

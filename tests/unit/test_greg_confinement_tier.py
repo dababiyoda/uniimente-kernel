@@ -303,7 +303,8 @@ def test_a_required_body_refuses_a_receipt_below_the_envelope(receipt, tmp_path,
             summary["worker"].update(**workers.confinement_tier(summary["worker"]["isolation"]))
         else:
             for test in summary["greg_tests"]:
-                test.update(isolation={"mode": "supervised", "landlock": None}, tier="supervised_unconfined",
+                test.update(confinement=workers._supervised_acceptance(None), landlock=None,
+                            isolation={"mode": "supervised", "landlock": None}, tier="supervised_unconfined",
                             landlock_abi=None, signals_scoped=None)
     write(mutate)
     verdict = _appraise(home, root, "required", tmp_path)
@@ -379,3 +380,131 @@ def test_a_provider_greg_did_not_launch_never_records_the_tier_it_claims(tmp_pat
     root = Layout(home).workspace / spec["mission_id"].replace(":", "_") / "work-orders" / "add-sub"
     worker = json.loads((root / "evidence.json").read_text())["summary"]["worker"]
     assert (worker["tier"], worker["confinement"]["tier"]) == ("not_reported", "not_reported")
+    # The appraiser never re-derives the provider's own claimed isolation (still stored) as the envelope.
+    assert worker["isolation"] == ENVELOPE
+    for body in ("required", "supervised"):
+        assert _appraise(home, root, body, tmp_path)["confinement"]["receipt"]["worker"] == {
+            "tier": "not_reported", "landlock_abi": None, "signals_scoped": None}
+
+
+# -- review of ee6b496: claims checked against everything GREG wrote, never a crash, bound to the canonical receipt --
+
+def _supervised_mode(summary, *, isolation, tier):
+    for test in summary["greg_tests"]:
+        test.update(confinement=workers._supervised_acceptance(None), landlock={"filesystem": "none",
+                    "reason": "no Landlock"}, isolation=isolation, tier=tier, landlock_abi=None, signals_scoped=None)
+
+
+@pytest.mark.parametrize("body", ["supervised", "required"])
+def test_an_acceptance_record_whose_isolation_contradicts_its_written_mode_is_refused(receipt, tmp_path, body):
+    home, root, write = receipt
+    write(lambda s: _supervised_mode(s, isolation=dict(ENVELOPE), tier="envelope"))
+    verdict = _appraise(home, root, body, tmp_path)
+    assert verdict["verdict"] == "REJECTED"
+    assert any("disagrees with the confinement mode GREG wrote" in f for f in verdict["findings"]), verdict
+    assert {t["tier"] for t in verdict["confinement"]["receipt"]["greg_tests"]} == {"supervised_unconfined"}
+
+
+def test_a_required_body_refuses_a_supervised_acceptance_mode_with_empty_isolation(receipt, tmp_path):
+    home, root, write = receipt
+    write(lambda s: _supervised_mode(s, isolation={}, tier="not_reported"))
+    verdict = _appraise(home, root, "required", tmp_path)
+    assert verdict["verdict"] == "REJECTED"
+    assert any("requires the envelope, but acceptance record 0" in f for f in verdict["findings"]), verdict
+
+
+def test_a_claimed_downgrade_to_not_reported_does_not_hide_a_supervised_worker(receipt, tmp_path):
+    home, root, write = receipt
+
+    def downgrade(summary):
+        _forge_supervised(summary)
+        summary["worker"].update(tier="not_reported", landlock_abi=None, signals_scoped=None)
+        summary["worker"]["confinement"].update(tier="not_reported")
+    write(downgrade)
+    verdict = _appraise(home, root, "required", tmp_path)
+    assert verdict["verdict"] == "REJECTED"
+    assert any("requires the envelope, but the worker ran under the supervised fallback" in f
+               for f in verdict["findings"]), verdict
+
+
+@pytest.mark.parametrize("value", [5, True, 1.5, "records", {"tier": "envelope"}, [5], [{}, None]])
+def test_malformed_acceptance_records_reject_and_never_crash(receipt, tmp_path, value):
+    home, root, write = receipt
+    write(lambda s: s.update(greg_tests=value))
+    verdict = _appraise(home, root, "supervised", tmp_path)
+    assert verdict["verdict"] == "REJECTED"
+    assert "the receipt's acceptance records (greg_tests) are malformed" in verdict["findings"], verdict
+
+
+def _appraise_journaled(home: Path, root: Path, evidence: dict) -> dict:
+    """``worker.appraise`` as the Body runs it: bound to the canonical commission receipt on the ledger."""
+    from greg.capabilities import BUILTINS, InvocationContext
+    config = json.loads(Layout(home).config.read_text())
+    with Body(home) as body:
+        ctx = InvocationContext(workspace=root.parents[1], read_roots=tuple(Path(r) for r in config["read_roots"]),
+                                secrets=None, manifest=BUILTINS["worker.appraise"][0], journal=body.journal,
+                                mission_id=evidence["order"]["mission_id"], worker_confinement="supervised")
+        return workers.appraise({"order": "add-sub"}, ctx)
+
+
+def _consistent_rewrite(summary):
+    """A self-consistent tier rewrite no claim check can see: the tier the host did not give, with its evidence."""
+    if summary["worker"]["tier"] == "envelope":
+        _forge_supervised(summary, landlock_record={"filesystem": "landlock", "abi": 7, "signals": SCOPED})
+        tests = {"confinement": workers._supervised_acceptance({"filesystem": "landlock", "signals": SCOPED}),
+                 "landlock": {"filesystem": "landlock", "abi": 7, "signals": SCOPED}}
+        tests["isolation"] = {"mode": "supervised", "landlock": tests["landlock"]}
+    else:
+        summary["worker"]["isolation"] = dict(ENVELOPE)
+        summary["worker"]["confinement"] = {"filesystem": "bubblewrap envelope"}
+        tests = {"confinement": "envelope: private filesystem, PID and network namespaces", "landlock": None,
+                 "isolation": dict(ENVELOPE)}
+    summary["worker"].update(**workers.confinement_tier(summary["worker"]["isolation"]))
+    summary["worker"]["confinement"].update(**workers.confinement_tier(summary["worker"]["isolation"]))
+    return tests
+
+
+@pytest.mark.parametrize("what", ["worker", "acceptance"])
+def test_a_consistent_rewrite_is_refused_against_the_canonical_receipt(receipt, order, tmp_path, what):
+    home, root, write = receipt
+    original = order[2]
+    assert _appraise_journaled(home, root, original)["verdict"] == "ACCEPTED"
+
+    def rewrite(summary):
+        tests = _consistent_rewrite(copy.deepcopy(summary)) if what == "acceptance" else _consistent_rewrite(summary)
+        if what == "acceptance":
+            for test in summary["greg_tests"]:
+                test.update(**tests, **workers.confinement_tier(tests["isolation"]))
+    write(rewrite)
+    forged = json.loads((root / "evidence.json").read_text())["summary"]
+    # No claim check sees it: the standalone appraiser finds the forged receipt self-consistent.
+    assert not any("tier" in f or "disagrees" in f for f in _appraise(home, root, "supervised", tmp_path)["findings"])
+    verdict = _appraise_journaled(home, root, {"order": original["order"], "summary": forged})
+    assert verdict["verdict"] == "REJECTED"
+    expected = "retained worker isolation differs" if what == "worker" else "retained acceptance records (greg_tests)"
+    assert any(expected in f for f in verdict["findings"]), verdict["findings"]
+
+
+ENVELOPE_MODE, LANDLOCK7 = "envelope: private filesystem, PID and network namespaces", {
+    "filesystem": "landlock", "abi": 7, "signals": SCOPED}
+
+
+@pytest.mark.parametrize("record,disagrees,tier", [
+    ({"confinement": ENVELOPE_MODE, "isolation": ENVELOPE}, False, "envelope"),
+    # a test double's envelope names no path: it claims less, ranks as it derives, and is no contradiction
+    ({"confinement": ENVELOPE_MODE, "isolation": {"mechanism": "scripted-test-envelope"}}, False, "not_reported"),
+    ({"confinement": "supervised: ...", "landlock": LANDLOCK7,
+      "isolation": {"mode": "supervised", "landlock": LANDLOCK7}}, False, "landlock"),
+    ({"confinement": "refused", "isolation": {"status": "refused"}}, False, "refused"),
+    ({"confinement": "supervised: ...", "landlock": None, "isolation": ENVELOPE}, True, "supervised_unconfined"),
+    ({"confinement": "supervised: ...", "landlock": None, "isolation": {}}, True, "not_reported"),
+    ({"confinement": "supervised: ...", "landlock": None,
+      "isolation": {"mode": "supervised", "landlock": LANDLOCK7}}, True, "supervised_unconfined"),
+    ({"confinement": "refused", "isolation": ENVELOPE}, True, "refused"),
+    ({"confinement": ENVELOPE_MODE, "isolation": {"mode": "supervised", "landlock": None}}, True,
+     "supervised_unconfined"),
+])
+def test_each_acceptance_record_is_checked_against_the_mode_greg_wrote_beside_it(record, disagrees, tier):
+    findings, tiers = workers.tier_findings({"greg_tests": [record]}, "supervised")
+    assert any("disagrees with the confinement mode" in f for f in findings) is disagrees, findings
+    assert tiers["greg_tests"] == [{**tiers["greg_tests"][0], "tier": tier}]

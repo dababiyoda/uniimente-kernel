@@ -206,8 +206,9 @@ class AuthorityOffice:
             except CapabilityError as exc:
                 return {"observed_outcome": "capability refused: " + str(exc)[:300], "result_class": "negative",
                         "failure_class": exc.failure_class, "output": None, "validation_status": "self_reported"}
+            kept, whole = keep_output(output, ctx.artifact_root)
             return {"observed_outcome": expected_outcome, "result_class": "positive",
-                    "output": bounded(output), "validation_status": "self_reported"}
+                    "output": kept, "validation_status": "self_reported", **({"output_artifact": whole} if whole else {})}
 
         def approver(p, reasons):
             return (scope in approved_scopes, "founder-signed decision for exact scope"
@@ -242,6 +243,33 @@ def bounded(value):
     if isinstance(value, list):
         return [bounded(v) for v in value[:1000]]
     return value
+
+
+OUTPUT_ARTIFACT_BYTES = 1024 * 1024   # the whole output kept beside a cut receipt (the cognition request ceiling)
+
+
+def keep_output(output, artifact_root):
+    """What a receipt keeps of an action's output, and where the whole output went when the bound cut it.
+
+    The one place an output is cut for a receipt. When ``bounded`` would cut it (a string past RECEIPT_TEXT_LIMIT, a
+    list past its item limit), the whole output is kept, as canonical JSON, in the body's content-addressed artifact
+    store, and the receipt records that address beside the cut wrappers, which stay exactly as before. The store holds
+    bytes, not authority: a bind reads them back only by the address the ledger recorded, re-hashed on read
+    (greg/missions.py ``artifact_output``). When the body has no store, or the output cannot be kept there, the
+    receipt says so, and only the cut form exists: nothing downstream may stand a prefix in for it."""
+    import json
+    kept = bounded(output)
+    if kept == output:
+        return kept, None
+    if artifact_root is None:
+        return kept, {"address": None, "unavailable": "this body has no artifact store"}
+    from greg.artifacts import ArtifactStore
+    try:
+        data = json.dumps(output, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()
+        address, _ = ArtifactStore(artifact_root, max_object_bytes=OUTPUT_ARTIFACT_BYTES).put(data)
+    except (TypeError, ValueError, CapabilityError, OSError) as exc:
+        return kept, {"address": None, "unavailable": "whole output not kept: " + str(exc)[:200]}
+    return kept, {"address": address, "bytes": len(data), "encoding": "canonical-json"}
 
 
 def now() -> datetime:

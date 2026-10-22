@@ -162,6 +162,8 @@ def pre_approved(spec: dict, strategy: dict, manifest) -> bool:
 BIND_TYPES = {"string": (str,), "number": (int, float), "integer": (int,), "boolean": (bool,),
               "object": (dict,), "array": (list,)}
 DEFAULT_BIND_BYTES = 16 * 1024
+RECEIPT_BIND_MAX = 64 * 1024                 # the most a value kept in a receipt may carry
+DEFAULT_ARTIFACT_BIND_BYTES = 1024 * 1024    # the artifact route (by: artifact): the cognition request ceiling
 
 
 def exact_reach(capability_id: str, params: dict) -> dict:
@@ -276,6 +278,9 @@ def _validate_bindings(strategy: dict, actions: set):
         else:
             raise MissionError(f"strategy {strategy['action_id']} binds {edge['param']}, which is also signed "
                                "statically; one source per param")
+        if edge.get("by") != "artifact" and edge.get("max_bytes", 0) > RECEIPT_BIND_MAX:
+            raise MissionError(f"strategy {strategy['action_id']} binds {edge['param']} with max_bytes over "
+                               f"{RECEIPT_BIND_MAX}: a value that large comes only by artifact")
         template = edge.get("template")
         if template is not None and template.count("{value}") != 1:
             raise MissionError("a binding template needs exactly one {value} placeholder")
@@ -320,20 +325,51 @@ def _set_path(params: dict, path: str, value):
     node[parts[-1]] = value
 
 
-def bound_value(edge: dict, output):
-    """The typed, size-bounded value one edge carries from a receipt's output."""
-    source = edge["from"].get("action_id") or "check " + str(edge["from"].get("check_id"))
+def artifact_output(result: dict, artifact_root, *, source: str = "source"):
+    """The whole output behind a receipt ``result`` whose output the receipt bound cut, or None when the receipt
+    kept it whole (no ``output_artifact``). Read only by the address the ledger recorded, re-hashed on read, and
+    checked to cut to exactly the output the receipt kept. Anything else raises Unbound: never a prefix."""
+    record = result.get("output_artifact")
+    if record is None:
+        return None
+    if not isinstance(record, dict) or not record.get("address"):
+        why = record.get("unavailable") if isinstance(record, dict) else None
+        raise Unbound(f"{source}'s whole output was not kept: {why or 'no artifact address'}")
+    if artifact_root is None:
+        raise Unbound(f"{source}'s whole output is in an artifact store this engine cannot read")
+    from greg.artifacts import ArtifactStore
+    from greg.authority import OUTPUT_ARTIFACT_BYTES, bounded
+    from greg.capabilities import CapabilityError
     try:
-        value = _raw_field(output, edge["from"]["field"])
+        whole = json.loads(ArtifactStore(artifact_root, max_object_bytes=OUTPUT_ARTIFACT_BYTES)
+                           .read(record["address"]).decode())
+    except CapabilityError as exc:
+        raise Unbound(f"{source}'s whole output {record['address'][:19]} cannot be used: {exc}") from None
+    except ValueError:
+        raise Unbound(f"{source}'s whole output {record['address'][:19]} is not the JSON it was kept as") from None
+    if bounded(whole) != result.get("output"):
+        raise Unbound(f"{source}'s artifact {record['address'][:19]} is not the output its receipt kept")
+    return whole
+
+
+def bound_value(edge: dict, output, whole=None):
+    """The typed, size-bounded value one edge carries from a receipt's output. ``whole``: the receipt's whole
+    output read back from the artifact store (``artifact_output``), used only by an edge that opted in with
+    ``by: artifact``; every other edge reads the kept output and refuses a cut value."""
+    source = edge["from"].get("action_id") or "check " + str(edge["from"].get("check_id"))
+    by_artifact = edge.get("by") == "artifact"
+    from_whole = by_artifact and whole is not None   # re-hashed against the receipt's recorded address
+    try:
+        value = _raw_field(whole if from_whole else output, edge["from"]["field"])
     except KeyError:
         raise Unbound(f"{source} output has no {edge['from']['field']}") from None
     except LookupError as exc:
         raise Unbound(f"{source}: {exc}") from None
-    if _cut(value):
+    if not from_whole and _cut(value):
         # the receipt kept a prefix; binding it would hand the next action part of a value as if it were whole
         raise Unbound(f"{source}.{edge['from']['field']} was kept as its first {len(value['prefix'])} of "
                       f"{value['length']} characters; a prefix is not bound as the whole value")
-    held = _held_back(value)
+    held = None if from_whole else _held_back(value)
     if held:
         # a cut string or a list at the item limit inside the value: binding it would hand the next action a
         # wrapper or a shortened list in place of the whole (#201 review, 5b)
@@ -346,8 +382,9 @@ def bound_value(edge: dict, output):
     if edge.get("template") is not None:
         value = edge["template"].replace("{value}", value if isinstance(value, str) else json.dumps(value))
     size = len(json.dumps(value, ensure_ascii=False).encode())
-    if size > edge.get("max_bytes", DEFAULT_BIND_BYTES):
-        raise Unbound(f"bound value of {size} bytes exceeds {edge.get('max_bytes', DEFAULT_BIND_BYTES)}")
+    limit = edge.get("max_bytes", DEFAULT_ARTIFACT_BIND_BYTES if by_artifact else DEFAULT_BIND_BYTES)
+    if size > limit:
+        raise Unbound(f"bound value of {size} bytes exceeds {limit}")
     return value
 
 
@@ -2040,11 +2077,14 @@ class MissionEngine:
             record = self.office.ledger.find(receipt)
             if record is None or record.record_type != "receipt":
                 raise Unbound(f"{source} receipt {receipt[:19]} is not on the ledger")
-            value = bound_value(edge, record.payload.get("result", {}).get("output"))
+            result = record.payload.get("result", {})
+            whole = artifact_output(result, self.artifact_root, source=source) if edge.get("by") == "artifact" else None
+            value = bound_value(edge, result.get("output"), whole)
             _set_path(params, edge["param"], value)
             bindings.append({"param": edge["param"], ("from_check" if "check_id" in edge["from"] else "from_action"): source,
                              "from_receipt": receipt,
-                             "field": edge["from"]["field"], "value_sha256": sha256_json({"v": value})})
+                             "field": edge["from"]["field"], "value_sha256": sha256_json({"v": value}),
+                             **({"from_artifact": result["output_artifact"]["address"]} if whole is not None else {})})
             sources.append(receipt)
         return params, bindings, sources
 

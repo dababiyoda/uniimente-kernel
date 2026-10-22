@@ -1,0 +1,37 @@
+{
+ "failure": {
+  "metric": "F1 under the false-alarm tolerance vs the per-feature z-score baseline",
+  "rate": 0.4,
+  "trigger": 0.25,
+  "incumbent_mean_train_loss": Infinity
+ },
+ "candidate": {
+  "id": "cfg-7e4fdadb262f",
+  "config": {
+   "alarm_fraction": 0.866,
+   "calibration_folds": 3,
+   "detectors": 3000,
+   "scale_set": [
+    1.0
+   ],
+   "uniform_share": 0.492,
+   "whitening": "full"
+  },
+  "train_mean_loss": -0.493303
+ },
+ "adversarial": {
+  "scarce": {
+   "incumbent": -0.271043,
+   "candidate": Infinity
+  },
+  "strict": {
+   "incumbent": Infinity,
+   "candidate": Infinity
+  },
+  "all_outputs_verified": false
+ },
+ "heldout": null,
+ "decision": "REJECT",
+ "reason": "adversarial evaluation failed"
+}
+exit=0

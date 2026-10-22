@@ -1,0 +1,36 @@
+{
+ "failure": {
+  "metric": "normalised tardiness gap to the exact optimum on held-out cases vs random-restart search with the same budget and retain rule",
+  "rate": 0.25,
+  "trigger": 0.25,
+  "incumbent_mean_train_loss": 0.006599
+ },
+ "candidate": {
+  "id": "cfg-86c2f27f6580",
+  "config": {
+   "mu": 4,
+   "offspring": 4,
+   "p_extra_mutation": 0.259,
+   "p_extra_mutation_recombined": 0.5,
+   "p_recombine": 0.13,
+   "p_restart": 0.0,
+   "tournament": 2
+  },
+  "train_mean_loss": 0.005283
+ },
+ "adversarial": {
+  "fewval": {
+   "incumbent": 0.010402,
+   "candidate": 0.011054
+  },
+  "lean": {
+   "incumbent": 0.00769,
+   "candidate": 0.00641
+  },
+  "all_outputs_verified": true
+ },
+ "heldout": null,
+ "decision": "REJECT",
+ "reason": "adversarial evaluation failed"
+}
+exit=0

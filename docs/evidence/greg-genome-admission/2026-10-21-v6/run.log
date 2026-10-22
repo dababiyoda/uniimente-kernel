@@ -1,0 +1,10 @@
+{"family": "develop_repair", "status": "NICHE_CAPABILITY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 7, "losses": 23, "ties": 0, "p_better": 0.999285, "p_worse": 0.002611}}
+{"family": "develop_repair_hybrid", "status": "NICHE_CAPABILITY", "vs_baseline": {"wins": 23, "losses": 7, "ties": 0, "p_better": 0.002611, "p_worse": 0.999285}, "vs_competitor": {"wins": 7, "losses": 7, "ties": 16, "p_better": 0.604736, "p_worse": 0.604736}}
+{
+ "develop_repair": "NICHE_CAPABILITY",
+ "develop_repair_hybrid": "NICHE_CAPABILITY"
+}
+
+real	0m9.067s
+user	0m8.812s
+sys	0m0.132s

@@ -1,0 +1,243 @@
+{
+  "schema": "greg-mind-lineage-source-manifest/0.1",
+  "decided": "2026-10-14",
+  "decision_source": "docs/intent/sources/MIND-LINEAGE-CONVERGENCE-2026-10-14-source.md",
+  "rule": "A frozen artifact is identified by (source commit, original repository-relative path, sha256 of its content). It is authoritative only in its original commit context. Nothing listed here is renamed, regenerated or rewritten; any namespaced copy must be labelled a byte-identical archival copy and carry the digest below.",
+  "common_base": "92bc6e31e0baa8fd507833e0f272b4a5e532e4d3",
+  "pinned_base_branch_for_pr158": "claude/greg-mind-base-92bc6e3",
+  "lineages": {
+    "pr158": {
+      "pr": 158,
+      "branch": "claude/greg-polyintelligence-mind",
+      "head": "7e0daaf08838fb6a7a6ecf7ced9c1c61d187122e",
+      "snapshot_branch": "claude/lineage-snapshot-pr158-7e0daaf",
+      "session": "session_01GRT2jX7cQXwvMkn64ZgvLk (\"Polyintelligence Mind continuation\")"
+    },
+    "pr155": {
+      "pr": 155,
+      "branch": "claude/greg-one-mind-converged",
+      "head": "ba8d990a676ccb6e0ef6fea3a69d38dd1abe1069",
+      "snapshot_branch": "claude/lineage-snapshot-pr155-ba8d990",
+      "session": "session_01PEaK7HUWUCp5NGKJBrdK8p (\"Ready\")"
+    }
+  },
+  "frozen_path_collisions": [
+    {
+      "path": "cortex/evaluation/composition_lift/run_v2.py",
+      "role": "P6 v2 harness",
+      "lineages": {
+        "pr158": {
+          "added_in": "1ec8df53ed70271860968c5015887ffa3239f6c7",
+          "last_changed_in": "07350d4bc7637e85e5439640cd3ab250278e7e1a",
+          "sha256": "5f89a32f4607bbc567a328a346176ec48dc2182226290e8ac022d39666e650e3",
+          "bytes": 30536,
+          "retrieve": "git show 07350d4bc7637e85e5439640cd3ab250278e7e1a:cortex/evaluation/composition_lift/run_v2.py"
+        },
+        "pr155": {
+          "added_in": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
+          "last_changed_in": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
+          "sha256": "d9278939e9097aaf01b9c0b9fa451905472ec82046eb4fb11196b579a5338d4d",
+          "bytes": 9743,
+          "retrieve": "git show 6e3f35db180d95ea156c04a1cea056e8e070fefb:cortex/evaluation/composition_lift/run_v2.py"
+        }
+      }
+    },
+    {
+      "path": "cortex/evaluation/composition_lift/run_v3.py",
+      "role": "P6 v3 harness",
+      "lineages": {
+        "pr158": {
+          "added_in": "dd9bccc98ae7b05e0d92c37b009f1ab6d995d29a",
+          "last_changed_in": "dd9bccc98ae7b05e0d92c37b009f1ab6d995d29a",
+          "sha256": "2053a30ab4d6e60d658a33cc4d1ad66585840ab9def5db7a3f645116b22b4058",
+          "bytes": 23395,
+          "retrieve": "git show dd9bccc98ae7b05e0d92c37b009f1ab6d995d29a:cortex/evaluation/composition_lift/run_v3.py"
+        },
+        "pr155": {
+          "added_in": "d1e233f3cceef44a239dfefa02a029001eacbe8d",
+          "last_changed_in": "d1e233f3cceef44a239dfefa02a029001eacbe8d",
+          "sha256": "4d667a349d72e9a3d5510f68c39ff021e840f2189e9c2d6429a990ded477a911",
+          "bytes": 13571,
+          "retrieve": "git show d1e233f3cceef44a239dfefa02a029001eacbe8d:cortex/evaluation/composition_lift/run_v3.py"
+        }
+      }
+    },
+    {
+      "path": "cortex/evaluation/composition_lift/freeze-v2.json",
+      "role": "P6 v2 freeze manifest",
+      "lineages": {
+        "pr158": {
+          "added_in": "1ec8df53ed70271860968c5015887ffa3239f6c7",
+          "last_changed_in": "07350d4bc7637e85e5439640cd3ab250278e7e1a",
+          "sha256": "d05105c6dd3cf429e4083fa2d5d6a395c387ac444c6816f173435a1df746a067",
+          "bytes": 6977,
+          "retrieve": "git show 07350d4bc7637e85e5439640cd3ab250278e7e1a:cortex/evaluation/composition_lift/freeze-v2.json"
+        },
+        "pr155": {
+          "added_in": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
+          "last_changed_in": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
+          "sha256": "6da8c8493b2f6ad551a73c7f3948e10e29bf387058a5d499edf84ada26623fc7",
+          "bytes": 2418,
+          "retrieve": "git show 6e3f35db180d95ea156c04a1cea056e8e070fefb:cortex/evaluation/composition_lift/freeze-v2.json"
+        }
+      }
+    },
+    {
+      "path": "cortex/evaluation/composition_lift/freeze-v3.json",
+      "role": "P6 v3 freeze manifest",
+      "lineages": {
+        "pr158": {
+          "added_in": "5acda2c4e226d34a2d305a12c9c182a2ea45d79a",
+          "last_changed_in": "5acda2c4e226d34a2d305a12c9c182a2ea45d79a",
+          "sha256": "af90173537c84af31e1619dcc2c90660597cf3192611b22be28108d65fb80f58",
+          "bytes": 15320,
+          "retrieve": "git show 5acda2c4e226d34a2d305a12c9c182a2ea45d79a:cortex/evaluation/composition_lift/freeze-v3.json"
+        },
+        "pr155": {
+          "added_in": "b99daba9df4d539b0a1dcb87d8fb882227f5c36a",
+          "last_changed_in": "b99daba9df4d539b0a1dcb87d8fb882227f5c36a",
+          "sha256": "8da4ca74bc6905ae0946f2a00111ff26fb6db09396c18a79dca360a7892b9633",
+          "bytes": 1860,
+          "retrieve": "git show b99daba9df4d539b0a1dcb87d8fb882227f5c36a:cortex/evaluation/composition_lift/freeze-v3.json"
+        }
+      }
+    },
+    {
+      "path": "cortex/evaluation/learned_routing/run_v3.py",
+      "role": "P4 v3 harness",
+      "lineages": {
+        "pr158": {
+          "added_in": "5475f75ae7d47b090e0cb8a1eb55fe909fe4c580",
+          "last_changed_in": "5475f75ae7d47b090e0cb8a1eb55fe909fe4c580",
+          "sha256": "f5493f5a8d29e62ec77f62fbc755c27029eca31a169cdfc2d39ce9e37794bea2",
+          "bytes": 15493,
+          "retrieve": "git show 5475f75ae7d47b090e0cb8a1eb55fe909fe4c580:cortex/evaluation/learned_routing/run_v3.py"
+        },
+        "pr155": {
+          "added_in": "6ce50cf1d3312a38e0ce79e02e953e20e322ac57",
+          "last_changed_in": "6ce50cf1d3312a38e0ce79e02e953e20e322ac57",
+          "sha256": "8f7142fdca134e205e8579b4e2c8a35a5a602fdb9a244389b799bbb2c29925a5",
+          "bytes": 8125,
+          "retrieve": "git show 6ce50cf1d3312a38e0ce79e02e953e20e322ac57:cortex/evaluation/learned_routing/run_v3.py"
+        }
+      }
+    },
+    {
+      "path": "cortex/evaluation/learned_routing/suite-v3.json",
+      "role": "P4 v3 frozen suite",
+      "lineages": {
+        "pr158": {
+          "added_in": "5475f75ae7d47b090e0cb8a1eb55fe909fe4c580",
+          "last_changed_in": "5475f75ae7d47b090e0cb8a1eb55fe909fe4c580",
+          "sha256": "8146dc72e231acd584c56c26a035a0a653f54e2579a20efa8da9e453523b4b6e",
+          "bytes": 2434063,
+          "retrieve": "git show 5475f75ae7d47b090e0cb8a1eb55fe909fe4c580:cortex/evaluation/learned_routing/suite-v3.json"
+        },
+        "pr155": {
+          "added_in": "e2ea4c18c6b09bf8b3c28eee3120ec3da6e35ebc",
+          "last_changed_in": "e2ea4c18c6b09bf8b3c28eee3120ec3da6e35ebc",
+          "sha256": "9dd97ac31dd3eab7a05d343a7cf5115c7301f1494af8b56b50e50c72f60a49ff",
+          "bytes": 1040150,
+          "retrieve": "git show e2ea4c18c6b09bf8b3c28eee3120ec3da6e35ebc:cortex/evaluation/learned_routing/suite-v3.json"
+        }
+      }
+    },
+    {
+      "path": "cortex/evaluation/learned_routing/freeze-v3.json",
+      "role": "P4 v3 freeze manifest",
+      "lineages": {
+        "pr158": {
+          "added_in": "5475f75ae7d47b090e0cb8a1eb55fe909fe4c580",
+          "last_changed_in": "5475f75ae7d47b090e0cb8a1eb55fe909fe4c580",
+          "sha256": "2edd3d1aba9bd9d27ace126081885b6b3cf7c0df1c5961e12e0484214af366c1",
+          "bytes": 2441,
+          "retrieve": "git show 5475f75ae7d47b090e0cb8a1eb55fe909fe4c580:cortex/evaluation/learned_routing/freeze-v3.json"
+        },
+        "pr155": {
+          "added_in": "e2ea4c18c6b09bf8b3c28eee3120ec3da6e35ebc",
+          "last_changed_in": "e2ea4c18c6b09bf8b3c28eee3120ec3da6e35ebc",
+          "sha256": "2c8df0ee9b50203a71b0182932bb54f81cc724d95ff0ccfa6481bed988fc9681",
+          "bytes": 2201,
+          "retrieve": "git show e2ea4c18c6b09bf8b3c28eee3120ec3da6e35ebc:cortex/evaluation/learned_routing/freeze-v3.json"
+        }
+      }
+    },
+    {
+      "path": "docs/evidence/greg-protected-evolution/2026-10-14/README.md",
+      "role": "P8 evidence README",
+      "lineages": {
+        "pr158": {
+          "added_in": "02660c82a2db562bc70a1302f497467529013aa2",
+          "last_changed_in": "02660c82a2db562bc70a1302f497467529013aa2",
+          "sha256": "f6759fb4b1bef9b6bcf99f8c7c8d8744df05a39b95fbbd643d42faefaa248f7c",
+          "bytes": 3281,
+          "retrieve": "git show 02660c82a2db562bc70a1302f497467529013aa2:docs/evidence/greg-protected-evolution/2026-10-14/README.md"
+        },
+        "pr155": {
+          "added_in": "c0fb7ee393a8fd987bbf78730c8d197229f5a526",
+          "last_changed_in": "c0fb7ee393a8fd987bbf78730c8d197229f5a526",
+          "sha256": "65c72ce1ee531c11077c39330142e41dcc23c34fe4e94a6859d42dfe3e64131d",
+          "bytes": 2778,
+          "retrieve": "git show c0fb7ee393a8fd987bbf78730c8d197229f5a526:docs/evidence/greg-protected-evolution/2026-10-14/README.md"
+        }
+      }
+    }
+  ],
+  "shared_directory_without_path_collision": {
+    "docs/evidence/greg-protected-evolution/2026-10-14/": {
+      "pr158_only": [
+        "cycle-cr-3.json",
+        "cycle-cr-3.log"
+      ],
+      "pr155_only": [
+        "results.json"
+      ],
+      "both": [
+        "README.md (collision above)"
+      ]
+    }
+  },
+  "name_collisions_without_path_collision": [
+    "Both lineages call a run 'admission v2': pr158 docs/evidence/greg-genome-admission/2026-10-14-v2/ (held-out seeds 1100-1129, frozen at 8e37cd8) and pr155 docs/evidence/greg-genome-admission/2026-10-14/ (results-v2.json). Both call a run 'P4 v3', 'P6 v2', 'P6 v3' and 'P8'. Cite a run by lineage and commit, never by its short name alone."
+  ],
+  "evidence_directories": {
+    "pr158": [
+      "docs/evidence",
+      "docs/evidence/greg-composition-lift/2026-10-08",
+      "docs/evidence/greg-composition-lift/2026-10-14-accounting",
+      "docs/evidence/greg-composition-lift/2026-10-14-v3",
+      "docs/evidence/greg-composition-lift/2026-10-14-v4",
+      "docs/evidence/greg-genome-admission/2026-10-13-v1",
+      "docs/evidence/greg-genome-admission/2026-10-14-v2",
+      "docs/evidence/greg-learned-routing/2026-10-08",
+      "docs/evidence/greg-polyintelligence-mind/2026-10-07",
+      "docs/evidence/greg-protected-evolution/2026-10-08",
+      "docs/evidence/greg-protected-evolution/2026-10-09",
+      "docs/evidence/greg-protected-evolution/2026-10-14"
+    ],
+    "pr155": [
+      "docs/evidence/greg-composition-lift/2026-10-14",
+      "docs/evidence/greg-developmental-sweep/2026-10-14",
+      "docs/evidence/greg-genome-admission/2026-10-14",
+      "docs/evidence/greg-learned-routing/2026-10-07",
+      "docs/evidence/greg-protected-evolution/2026-10-14",
+      "verifier/runs/"
+    ]
+  },
+  "coordination_rule": "Neither session overwrites, regenerates, renames or silently supersedes the other's frozen evidence. New evaluations use uniquely identified paths that name their lineage or run id. Shared live-code conflicts are resolved in the dedicated convergence PR by comparative evidence, not branch priority. Neither lineage is automatically canonical.",
+  "post_decision_2026-10-16": {
+    "note": "Appended 2026-10-16 after the round-2 review of #179 (L1); the decision-time heads and directories above are unchanged.",
+    "pr155_final_head": "ef5f078013b549a51458dc9f6b5f34b324ea70b0",
+    "pr155_evidence_directories_added_after_decision": [
+      "docs/evidence/pr155-crowd-sparse/2026-10-14"
+    ],
+    "pr158_evidence_directories_added_after_decision": [
+      "docs/evidence/greg-composition-lift/2026-10-14-v5",
+      "docs/evidence/greg-genome-admission/2026-10-15-v3",
+      "docs/evidence/greg-protected-evolution/2026-10-15-cr-4",
+      "docs/evidence/greg-composition-lift/2026-10-16-f7-mcf",
+      "docs/evidence/greg-protected-evolution/2026-10-16-cr-5",
+      "docs/evidence/greg-genome-admission/2026-10-16-v4"
+    ]
+  }
+}

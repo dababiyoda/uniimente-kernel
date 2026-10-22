@@ -211,7 +211,8 @@ def test_composition_families_are_declared_as_the_frozen_runs_describe_them_and_
         return "BUILT" if recipe_stale(recipe, record) else label
     for recipe in ("estimate_then_optimize", "identify_then_optimize", "bayes_then_voi"):    # F1, F2R, F4
         assert rows[f"recipe.{recipe}"]["label"] == expected(recipe, "SIMULATED"), recipe
-    assert rows["recipe.estimate_then_optimize"]["label"] == "UNRESOLVED"                     # converged v1 decides
+    # P6 joined v1 decides F1 on the joined code: 35-0 with no false answer (converged v1 had one and read UNRESOLVED)
+    assert rows["recipe.estimate_then_optimize"]["label"] == "SIMULATED"
     assert rows["recipe.graph_then_allocate"]["label"] == "UNRESOLVED"
     for recipe in ("forecast_then_staff", "graph_then_allocate", "track_then_staff"):        # F6, F7, F8: real data
         assert rows[f"recipe.{recipe}"]["label"] == expected(recipe, "HELDOUT_SUPPORTED"), recipe

@@ -286,9 +286,15 @@ class Controller:
         self.started = None
         self.ledger, self.costs, self.cpu = [], [], []
         self._open = None
+        # A grant window is an absolute deadline, and planning spends it as surely as the steps do, so in window
+        # mode the clock starts here, read before the window's bounds so remaining() never exceeds what the grant
+        # still allows. Started at the first allotment, a construction or a formed engine (which run on allot
+        # alone, with no inner ThinkingBudget) could run after the grant expired, and every limit overstated it.
+        opened = clock() if caller_window is not None or shared_deadline is not None else None
         self.window = window_limit(caller_window, shared_deadline)
         self.inner = {}
         if self.window is not None:
+            self.started = opened
             self.total = min(self.total, self.window["seconds"])
             self.inner = {"caller_window": caller_window, "shared_deadline": time.monotonic() + self.total,
                           "shared_compute_limit": shared_compute_limit}

@@ -375,6 +375,7 @@
     "greg/cognition/code_binding.py",
     "greg/cognition/compiler.py",
     "greg/cognition/composition.py",
+    "greg/cognition/condition_competence.py",
     "greg/cognition/conditional_competence.py",
     "greg/cognition/contracts.py",
     "greg/cognition/cortex.py",

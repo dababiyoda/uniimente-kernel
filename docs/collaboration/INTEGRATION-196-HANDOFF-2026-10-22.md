@@ -215,8 +215,14 @@ This is one agent working through five lenses. It is not independent review.
      `tests/unit/test_greg_live_intake.py`). In the 15-step mission the observation now arrives with the body
      running, with no restart. Disabling the read fails 8 of the 9 unit tests and the 15-step mission. Remaining
      on step 2: the drop is local, so no connector delivers an outside feed.
-   - A positive construction dividend: realized outcomes bound to construction receipts, so a certified construction
-     can settle as wrong.
+   - A positive construction dividend. **Mechanism built at `4c7a3a97`** (dispatched worker, reviewed and joined
+     here; note `CONSTRUCTION-REALIZATION-2026-10-22.md`): a founder-signed REALIZATION of the objective a
+     construction's answer promised settles it wrong in the world when it falls short by more than 5% of the
+     promise. In a test, 10 synthetic realizations, 6 of them short, reordered a later compile by the Fisher rule;
+     with realizations disabled the choice does not change. **The dividend itself is not measured.** No real
+     realized outcome is reachable from this container: a realized portfolio profit or staffing result exists only
+     after a founder executes a plan in the world, and GREG has executed none (VEPMC 0). A pre-registered run waits
+     on the founder's first real portfolio or staffing decision, reported with `greg realize`.
    - Antifragility: closed. v3b was NO_GAIN by its frozen rule (best cell 3-0, no preference fired; B1 beats every
      learned arm); no v3c.
    - Per-geometry pooling of settled competence (a stated limitation).

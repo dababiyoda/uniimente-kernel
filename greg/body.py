@@ -609,16 +609,18 @@ class Body:
             self.engine.lifecycle(body, digest)
             return {"mission_id": body["mission_id"], "state": body["state"]}
         if kind == "REALIZATION":
-            # evidence only: the observed values of one retained forecast, labelled by source; it scores the
-            # forecaster's calibration and changes no mission, capability or authority
+            # evidence only: the observed values of one retained forecast, or the realized objective of one
+            # construction answer, labelled by source; it scores the method's calibration or world competence and
+            # changes no mission, capability or authority
             from greg.cognition.settlement import record_realization
             if set(body) - {"receipt", "realized", "source", "note"}:
                 raise MissionError("a realization takes receipt, realized, source and note")
             payload = record_realization(self.journal, receipt=body.get("receipt"), realized=body.get("realized"),
                                          source=body.get("source", "founder_reported"), note=body.get("note", ""),
                                          command_digest=digest)
-            return {"receipt": payload["receipt"], "cognitive_receipt": payload["cognitive_receipt"],
-                    **({"compile_receipt": payload["compile_receipt"]} if "compile_receipt" in payload else {})}
+            return {"receipt": payload["receipt"], "cognitive_receipt": payload.get("cognitive_receipt"),
+                    **({"compile_receipt": payload["compile_receipt"]} if "compile_receipt" in payload else {}),
+                    **({"met": payload["met"]} if "met" in payload else {})}
         if kind == "CRITIQUE":
             record = tribunal.critique(self.journal, self.engine, body, digest)
             if record.get("epistemic"):   # founder evidence advances the held-out learning loop now

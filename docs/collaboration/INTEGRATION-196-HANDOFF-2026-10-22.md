@@ -220,8 +220,16 @@ This is one agent working through five lenses. It is not independent review.
    - Antifragility: closed. v3b was NO_GAIN by its frozen rule (best cell 3-0, no preference fired; B1 beats every
      learned arm); no v3c.
    - Per-geometry pooling of settled competence (a stated limitation).
-   - A signed mission binds at most 16 KiB of inline data (`missions.DEFAULT_BIND_BYTES`), so a founder mission cannot
-     yet carry the large QPs the solver now accepts; it needs a by-reference input path.
+   - ~~A signed mission binds at most 16 KiB of inline data, so a founder mission cannot yet carry the large QPs the
+     solver now accepts; it needs a by-reference input path.~~ **Corrected by measurement at `048a8ca4`:** a
+     founder-signed mission carrying a 509 KB `convex_qp_dual` request inline (development seed 5) registered, solved
+     and closed ACHIEVED. `DEFAULT_BIND_BYTES` limits only a value bound from one action's receipt into another
+     (receipts keep 16 KiB strings and 1,000 list items), and such a cut value is now refused (#201 review 5b). The
+     remaining needs are:
+     - large values passed between actions by artifact reference;
+     - the ledger cost of large inline missions. That one mission grew the ledger 3.2 MB: the 1 MB spec holds the
+       request twice (sensor and strategy), and the ledger keeps the spec three times (`command.accepted` keeps both
+       the body and the signed envelope, and `mission.registered` keeps it again).
    - A third probabilistic operation run.
 8. **Irreducible founder or external actions.**
    - Founder-device acceptance on the Chromebook (`FOUNDER-ACTIONS-2026-10-22.md` §1). VEPMC moves only on it.

@@ -67,3 +67,36 @@ def test_a_shadow_is_due_only_after_a_settled_failure_and_within_the_ceiling():
     assert cc.shadow_due("optimization|d11-30", 1, 0)
     assert not cc.shadow_due("optimization|d11-30", 1, cc.SHADOW_CEILING_PER_CELL)
     assert not cc.shadow_due(None, 3, 0)
+    assert not cc.shadow_due("optimization|d11-30", 1, 0, fired=True)      # a decided cell spends no more
+
+
+def test_no_shadow_runs_in_the_control_arm(monkeypatch):
+    monkeypatch.setattr(cc, "MODE", "off")
+    assert not cc.shadow_due("optimization|d11-30", 1, 0)
+
+
+def test_the_output_adapter_is_an_exact_rename():
+    assert cc.output_adapter({"x": [0.1, 0.2], "value": 0.05}, {"evaluations_used": 900}) == {
+        "candidate": [0.1, 0.2], "fitness": 0.05, "evaluations": 900}
+
+
+def test_the_pooled_ablation_shares_one_cell(monkeypatch):
+    monkeypatch.setattr(cc, "MODE", "pooled")
+    assert cc.condition_key("optimization", _req(5)) == cc.condition_key("optimization", _req(20)) == "optimization|all"
+    assert cc.condition_key("optimization", _req(31)) is None
+
+
+def test_a_shadow_trial_is_inert_verified_and_budget_bounded():
+    rec = cc.shadow_trial(_req(3))
+    assert rec["inert"] and rec["authority_created"] is False and rec["verified"]
+    assert 1 <= rec["evaluations"] <= 3000 and rec["fitness"] is not None
+    refused = cc.shadow_trial({**_req(3), "bounds": [[-1, 1], [-2, 2], [-1, 1]]})
+    assert refused["fitness"] is None and not refused["verified"] and "error" in refused
+
+
+def test_a_pair_uses_the_signed_predicate_and_an_unverified_shadow_never_passes():
+    check = {"predicate": {"op": "lte", "field": "result.fitness", "value": 0.3}}
+    ok = cc.pair(check, False, {"verified": True, "fitness": 0.1}, "optimization|d11-30", "c1")
+    assert ok["alternative_pass"] and not ok["incumbent_pass"]
+    assert not cc.pair(check, False, {"verified": True, "fitness": 0.5}, "c", "c2")["alternative_pass"]
+    assert not cc.pair(check, False, {"verified": False, "fitness": 0.1}, "c", "c3")["alternative_pass"]

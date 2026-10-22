@@ -32,6 +32,12 @@ INCUMBENT = "cognition.swarm"
 ALTERNATIVE = "cognition.blackbox_multistart_lbfgsb"
 ADMITTED_ENVELOPE = "2-10 dimensions (genome admission v5, seeds 1400-1429)"
 SHUFFLE_SEED = "antifragility-v3-shuffle"
+ALTERNATIVE_FAMILY = "blackbox_multistart_lbfgsb"
+ALTERNATIVE_VERSION = "1.0.0"
+# The pre-registered arms: "on" (LEARN, PRE), "off" (CONTROL: no shadow pairing read, no preference), "pooled"
+# (ablation A: one cell for every covered dimension), "shuffled" (ablation S: stress pairs assigned to a band by a
+# seeded fair coin). Set only by the experiment harness and tests; production keeps "on".
+MODE = "on"
 
 
 def dimension(data: dict) -> int | None:
@@ -40,10 +46,13 @@ def dimension(data: dict) -> int | None:
 
 
 def condition_key(geometry: str, data: dict) -> str | None:
-    """The cell a request falls in, or None when the request declares no dimension the bands cover."""
+    """The cell a request falls in, or None when the request declares no dimension the bands cover. Under the pooled
+    ablation every covered dimension shares one cell."""
     d = dimension(data)
-    if d is None:
+    if d is None or d > BANDS[-1][0]:
         return None
+    if MODE == "pooled":
+        return f"{geometry}|all"
     for edge, label in BANDS:
         if d <= edge:
             return f"{geometry}|{label}"
@@ -116,7 +125,50 @@ def preference(cell: str | None, evidence: dict) -> dict | None:
                       "not a re-admission") if fired else None}
 
 
-def shadow_due(cell: str | None, incumbent_unmet_in_cell: int, shadows_in_cell: int) -> bool:
-    """A shadow trial is due when the incumbent has at least one settled VERIFIED_UNMET outcome in this cell and the
-    cell's shadow ceiling is not spent."""
-    return cell is not None and incumbent_unmet_in_cell >= 1 and shadows_in_cell < SHADOW_CEILING_PER_CELL
+def shadow_due(cell: str | None, incumbent_unmet_in_cell: int, shadows_in_cell: int, fired: bool = False) -> bool:
+    """A shadow trial is due when the incumbent has at least one settled VERIFIED_UNMET outcome in this cell, the
+    cell's shadow ceiling is not spent, and the cell has not already decided (a fired preference needs no more
+    shadows)."""
+    return (MODE != "off" and cell is not None and not fired and incumbent_unmet_in_cell >= 1
+            and shadows_in_cell < SHADOW_CEILING_PER_CELL)
+
+
+def output_adapter(native_output: dict, certificate: dict) -> dict:
+    """The multistart genome's answer -> the black-box request's answer shape, an exact rename: x -> candidate,
+    value -> fitness, evaluations_used -> evaluations. The genome's own receipt keeps its native output."""
+    return {"candidate": list(native_output["x"]), "fitness": native_output["value"],
+            "evaluations": int(certificate["evaluations_used"])}
+
+
+def shadow_trial(data: dict) -> dict:
+    """Run the alternative on the same request through the adapter, inert: its answer is recorded, never returned.
+    The genome gets exactly the request's own evaluation budget. Its own independent verifier checks the answer; a
+    refused, unverified or failed trial records no fitness (and so cannot pass any predicate)."""
+    import time
+    from .genomes import library
+    started = time.monotonic()
+    record = {"policy": POLICY, "method": ALTERNATIVE, "family": ALTERNATIVE_FAMILY, "version": ALTERNATIVE_VERSION,
+              "inert": True, "authority_created": False, "fitness": None, "evaluations": 0, "verified": False}
+    try:
+        native = adapter(data)
+        out = library.run(ALTERNATIVE_FAMILY, native, {"latency_limit": 3600, "compute_limit": native["evaluations"]})
+        checks = library.check(ALTERNATIVE_FAMILY, native, out["output"], out["proof"]) if out["output"] else {}
+        record["evaluations"] = int((out["proof"].get("certificate") or {}).get("evaluations_used") or 0)
+        record["verified"] = out["status"] == "ANSWER" and bool(checks) and all(checks.values())
+        if record["verified"]:
+            record["fitness"] = out["output"]["value"]
+        record["checks"] = checks
+    except Exception as exc:                       # a refused or failed trial is recorded, never raised
+        record["error"] = f"{type(exc).__name__}: {exc}"[:300]
+    record["seconds"] = round(time.monotonic() - started, 3)
+    return record
+
+
+def pair(check: dict, incumbent_passed: bool, shadow: dict, cell: str, claim: str) -> dict:
+    """One paired observation: the shadow judged by the same signed check predicate as the incumbent's answer."""
+    from greg.missions import evaluate_predicate
+    alt_ok = False
+    if shadow.get("verified") and shadow.get("fitness") is not None:
+        alt_ok, _ = evaluate_predicate(check["predicate"], {"result": {"fitness": shadow["fitness"]}})
+    return {"cell": cell, "claim": claim, "incumbent_pass": bool(incumbent_passed), "alternative_pass": bool(alt_ok),
+            "shadow_evaluations": shadow.get("evaluations", 0), "shadow_seconds": shadow.get("seconds", 0.0)}

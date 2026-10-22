@@ -1,0 +1,116 @@
+{
+ "record_id": "SR002-GATE-HARDENING-01",
+ "kind": "continuity divergence record: not a subject binding, not an amendment, not authority",
+ "status": "RECORDED_PENDING_FOUNDER_AUTHORIZATION",
+ "subject_id": "sr002-0.1.0",
+ "subject_source_commit": "07af5758197501662df81ff05e2b34ce8224a322",
+ "artifact": "policy/consequence_gate.py",
+ "pinned_sha256": "1c189be5af884932ed2115557b5a285883a2c6045af183c7f6f65a0815a06f2e",
+ "hardened_sha256": "732607ba97130fc9a95d842ada22b276138151884dda8434219e070ae482ef61",
+ "hardening": [
+  {
+   "port": "#55 commit-window escalation",
+   "effect": "refuse at commit unless policy is ALLOW, or REQUIRE_HUMAN covered by a human approval held for this exact proposal; bind consequence class, capability and principal into the grant; refuse any authority-relevant proposal change after admission",
+   "sha256_after": "15bee53b28928c585827556175af1b4caae399b9ec562f626305b77f2f0885a0"
+  },
+  {
+   "port": "#21 stale evidence at commit",
+   "effect": "a Gate holding an evidence register resolves every evidence ref to a contract-valid evidence packet and refuses unknown or stale evidence at evaluation and again at commit",
+   "sha256_after": "490ded58ea9605d4cd02d8eddbeb7d2b16bbbba7f175c0ff5c8d8eb815c14ac6"
+  },
+  {
+   "port": "#12 child-grant subset",
+   "effect": "GrantIssuer refuses a child grant of an unknown, revoked, expired or consumed parent, or one exceeding the parent's permitted actions, spending limit, counterparties, legal actor or prohibitions; children inherit prohibitions and never outlive the parent",
+   "sha256_after": "812384a85552f8b449bb9d8eadffb43a07a43b23b4beb3cd62b45e60e2115fab"
+  },
+  {
+   "port": "#55 follow-up: frozen admission copy",
+   "effect": "the Gate deep-copies the proposal at admission and witnesses, claims, executes and records that copy; a change to the caller's object is refused at commit and again inside the ledger lock before the dispatch claim; an uncanonicalisable proposal is refused instead of raising; proposal_id joins the commit-window digest",
+   "sha256_after": "69622372948fd206f46f79a1ce44af92707ffda5c9576ca11e5794b9fdf47976"
+  },
+  {
+   "port": "#12 follow-up: sealed issuer records, lineage, delegation",
+   "effect": "GrantIssuer keeps sealed records and hands out copies (get, get_meta) or a published copy it refreshes on revocation, so a holder's edit is an altered grant; every ancestor must be known, unrevoked, unexpired and unconsumed at minting, admission and commit; children together hold at most the parent's limit and the parent spends only what it has not delegated; a child may not raise the consequence class or change the action class or objective; revocation propagates to descendants; costs must be finite and non-negative",
+   "sha256_after": "732607ba97130fc9a95d842ada22b276138151884dda8434219e070ae482ef61"
+  }
+ ],
+ "evidence_register": {
+  "status": "UNARMED_ON_CANONICAL_PATHS",
+  "statement": "The #21 refusal of unknown or stale evidence runs only in a ConsequenceGate constructed with evidence=<register>. No production construction passes one, so on every canonical path (GREG AuthorityOffice, closure registries, egregore sandboxes and missions, foundry kernel_stack) evidence refs are still opaque digests checked for presence only, exactly as on 4b0de6a. The hard rule is unarmed there until a register is wired; this record claims no stale-evidence protection for those paths.",
+  "armed_at": [],
+  "unarmed_constructions": [
+   "closure/kernel_registry.py",
+   "closure/commercial_registry.py",
+   "greg/authority.py",
+   "egregore/goal_chase_sandbox.py",
+   "egregore/local_mission.py",
+   "foundry/systems/kernel_stack.py"
+  ],
+  "content_addressed_refs": "A ref of the form sha256:<64 hex> (the form every in-repo producer emits: adapters/daleobanks_opportunity.py, greg/authority.py command digests, closure probes) resolves to the one register packet whose raw_content_hash it is; none, or several different packets, refuses (policy/engine.py evidence_freshness_reasons). A packet-id ref still must equal the packet's packet_id. Relative to a Gate without a register this still refuses more and authorizes nothing new.",
+  "to_arm": "Give the canonical Gate a register of contracts/evidence.schema.json packets whose raw_content_hash covers the refs its producers emit (GREG's command digest needs a packet or an explicit typed exemption), then list the construction in armed_at in the same commit; tests/unit/test_consequence_gate.py::test_the_record_lists_every_gate_that_holds_an_evidence_register checks the list against the code."
+ },
+ "direction": "subtractive only: every change refuses more and authorizes nothing new",
+ "why_the_pin_is_left": [
+  "evolution/repair/subjects.py: subject bindings are reviewed source commitments, not fingerprints measured from running code; tests/unit/test_shared_compatibility.py::test_changed_source_fails_instead_of_learning_a_new_fingerprint",
+  "SR-002 succession (b6bb71f lineage) cited a founder ruling; constitution/amendment-policy.ucl reserves ratification to alfonso and forbids agent or workflow amendment",
+  "docs/decisions/SR001-COMPAT-01.json rejects recomputed seals as laundering drift into acceptance",
+  "FOUNDER_INTENT_LEDGER SR-INTENT-3: chat or workflow text never authenticates Alfonso; this record was produced by an agent workflow and carries no founder authority"
+ ],
+ "observable_effect": [
+  "SR002.matches(repository root) is False: a recorded live reading, never gated on; FROZEN and SR001 were already non-matching live",
+  "SR002.matches() reads the frozen SR-002 copies (evolution/repair/continuity) and is True; ReplacementExperiment(subject=SR002) reports continuity.unchanged True on history, with continuity.live.matches_subject False",
+  "the 13 dependent tests below pass on frozen history; a tampered frozen copy fails each of them (tests/unit/test_repair_continuity_history.py::test_a_tampered_copy_fails_the_thirteen_dependent_tests)",
+  "python -m governance.integrity --check exits 1 and names exactly one artifact, policy/consequence_gate.py (authorized 1c189be5..., observed 732607ba...), with the founder steps below"
+ ],
+ "historical_tripwire": {
+  "status": "RETIRED_PER_CONTRADICTION_0002_OPTION_A",
+  "ruling": "FOUNDER-RULING-2026-08-23 (docs/deliberations/FOUNDER-RULING-2026-08-23-infinite-goal-chase.md): \"Do not use the historical experiment as the live tripwire.\"",
+  "what_changed": "The SR002 subject binding and the Package 3 harness read byte-identical frozen copies materialised from git at each binding's source commit. No pinned digest moved; SR002, SR001, FROZEN and SPEC_SHA256 are unchanged.",
+  "what_it_no_longer_says": "Before, these 13 tests went red when a reviewed continuity artifact changed in the live tree. They now answer only whether the historical subject reproduces; they say nothing about whether the live gate is authorized."
+ },
+ "live_integrity": {
+  "mechanism": "governance/integrity (manifest.json, founder-keys.json, authorizations.json)",
+  "check": "python -m governance.integrity --check",
+  "ci": ".github/workflows/canonical-ci.yml job 3, One source of authority",
+  "expected_exit_until_founder_signs": 1,
+  "founder_key_enrolled_when_recorded": false,
+  "pending_founder_authorization": [
+   {
+    "artifact": "policy/consequence_gate.py",
+    "authorized_sha256": "1c189be5af884932ed2115557b5a285883a2c6045af183c7f6f65a0815a06f2e",
+    "observed_sha256": "732607ba97130fc9a95d842ada22b276138151884dda8434219e070ae482ef61",
+    "decision": "authorize the hardened bytes, or reject and restore the pinned bytes"
+   }
+  ],
+  "founder_steps": [
+   "python -m greg founder keygen --key ~/.greg-founder.pem   (once, on your own device; or reuse your GREG founder key)",
+   "python -m governance.integrity enroll --key ~/.greg-founder.pem --label alfonso   then commit governance/integrity/founder-keys.json yourself (trust on first use)",
+   "python -m governance.integrity authorize --artifact policy/consequence_gate.py --sha256 732607ba97130fc9a95d842ada22b276138151884dda8434219e070ae482ef61 --key ~/.greg-founder.pem --reason \"<why>\"   then commit governance/integrity/authorizations.json",
+   "python -m governance.integrity --check   (exit 0)",
+   "or reject: restore policy/consequence_gate.py to sha256 1c189be5af884932ed2115557b5a285883a2c6045af183c7f6f65a0815a06f2e"
+  ],
+  "suite_guard": "tests/unit/test_governance_integrity.py::test_every_live_finding_is_carried_by_a_decision_record fails if any live finding is not listed here with its exact observed digest"
+ },
+ "dependent_tests": [
+  "tests/unit/test_repair_adapters.py::test_identity_authority_and_shutdown_survive_the_component_being_absent",
+  "tests/unit/test_repair_harness.py::test_governance_and_continuity_held_while_the_function_was_absent",
+  "tests/unit/test_repair_harness.py::test_continuity_is_unchanged_before_during_and_after",
+  "tests/unit/test_repair_harness.py::test_selection_reports_the_two_questions_separately",
+  "tests/unit/test_repair_harness.py::test_installation_is_verified_by_the_blind_detector",
+  "tests/unit/test_repair_harness.py::test_installation_scope_is_stated_and_the_live_path_is_untouched",
+  "tests/unit/test_repair_harness.py::test_rollback_restores_the_original_and_the_original_survived",
+  "tests/unit/test_repair_harness.py::test_the_capsule_records_the_whole_cycle",
+  "tests/unit/test_repair_harness.py::test_the_ledger_chain_verifies_and_is_append_only",
+  "tests/unit/test_repair_harness.py::test_the_r3_prediction_is_recorded_as_wrong",
+  "tests/unit/test_repair_harness.py::test_module_entry_point_emits_a_valid_record_and_exits_zero",
+  "tests/unit/test_shared_compatibility.py::test_current_binding_does_not_revalidate_the_old_subject",
+  "tests/unit/test_shared_compatibility.py::test_changed_source_fails_instead_of_learning_a_new_fingerprint"
+ ],
+ "other_pins_moved": [
+  "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json and cortex/evaluation/composition_lift/freeze-v3.json hash policy/consequence_gate.py and policy/engine.py in their frozen inputs; a later --run of those freezes reports FROZEN_INPUT_CHANGED by design. Their documented path is a new run id, not an edit of the freeze.",
+  "tests/evidence/adoption-20260910/package-012-source-manifest.json records the pre-#21 digest of contracts/evidence.schema.json (9fbda9f1...); it is historical evidence of that package and is not rewritten."
+ ],
+ "resolution": "Alfonso signs an INTEGRITY_AUTHORIZE for policy/consequence_gate.py 1c189be5... -> 732607ba... with his enrolled founder key (the live check then exits 0), or rejects the hardening and the gate returns to the pinned bytes. Either way the sealed experiment keeps reading SR-002 history. A successor subject binding SR-003 for evaluations of the hardened gate stays available as a separate founder-ratified act; it is no longer needed to turn tests green, and no pinned digest is re-measured.",
+ "kill_condition": "any SR002 artifact other than policy/consequence_gate.py drifts, or the gate drifts from hardened_sha256, without this record changing in the same commit (enforced by test_every_live_finding_is_carried_by_a_decision_record and by CI job 3); or any frozen continuity copy stops hashing to its name",
+ "authority_note": "This record changes no continuity reference and grants nothing. SR002 is unchanged."
+}

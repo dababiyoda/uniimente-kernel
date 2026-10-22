@@ -121,3 +121,33 @@ When the work originates in a metaphorical or science-fiction founder statement,
 - evidence that would falsify the claimed effect.
 
 The canonical ledger should ultimately become machine-readable. Until that implementation lands, issues and ADRs must use these fields verbatim.
+
+## INTENT-20261021-PROFESSIONAL-PARALLEL-TEAM
+
+- **Statement:** All entering agents must discover Alfonso's SOP/protocols through Discussions and work accurately in parallel as a professional development team.
+- **Source:** Alfonso's 2026-10-21 repository-audit continuation; exact message retained in [team-entry decision](collaboration/TEAM-ENTRY-DECISION-2026-10-21.md).
+- **Owner:** Alfonso for adoption; named implementer/integrator per bounded task.
+- **State:** active.
+- **Binding scope:** contributor entry, current work claims, overlap handling, verified integration and handoffs; all participating repositories/clients are intended consumers, rollout pending.
+- **Constitutional constraints:** existing authority, privacy, evidence, refusal and consequence controls remain binding; no merge, activation or settings authority follows.
+- **Success evidence:** two fresh sessions find the correct instructions and claims, agree a nonoverlapping split and resume a handoff without founder reconstruction; NOT_RUN.
+- **Failure evidence:** duplicated active owners, stale-base rework, frozen-evidence overwrite or increased founder reconstruction.
+- **Dependencies:** authorized adoption of entry patch, authenticated Discussion update and explicit client/organ adoption.
+- **Conflicts:** no outcome conflict identified; competing integration ownership remains unresolved and is not assigned here.
+- **Next review trigger:** adoption, first fresh-session collision/handoff failure, or five completed pilot PRs.
+- **Supersedes:** none; extends the existing bootstrap and pinned Discussion.
+- **Superseded by:** none.
+- **Implementation refs:** [team entry](collaboration/START_HERE.md), AGENTS.md and CLAUDE.md; draft until adopted.
+
+# Collaboration rollout continuation — 2026-10-21
+
+INTENT-20261021-COMPLETE-COLLABORATION: Alfonso's follow-up, “Complete it and improve
+it. Comprehensively,” extends the entry repair through one consolidated SOP/checker,
+consumer entry pointers, independent review and behavioral verification. Status:
+active; implementation and adoption remain distinct. Full machine completion stays
+BODY + ORGANS + MIND. Exact lineage, limits, owner and review triggers are in
+[the rollout intent record](collaboration/FOUNDER-INTENTS-ROLLOUT-2026-10-21.json),
+with a linked [two-pass decision](collaboration/DELIBERATION-ROLLOUT-2026-10-21.json).
+No earlier intent is silently superseded; existing merge, credential and live-effect
+restrictions remain. Current evidence is in collaboration/VALIDATION.md.
+

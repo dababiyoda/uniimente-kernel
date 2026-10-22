@@ -407,3 +407,34 @@ def test_on_the_real_daleobanks_its_own_checks_pass_a_distorted_draft_and_the_mi
     assert run.checks["draft_appraised"] is False and run.publish_asked is False
     good = run_post(tmp_path / "good", monkeypatch, files(FAITHFUL), daleobanks=root)
     assert good.checks["draft_appraised"] is True and good.publish_asked is True
+
+
+class LinkedClaims(Scripted):
+    """Test double: writes the deliverable, and makes its claims file a symlink to a host file it names."""
+
+    def __init__(self, files: dict, target: Path):
+        super().__init__(files)
+        self.target = target
+
+    def run(self, order, cwd):
+        report = super().run(order, cwd)
+        (cwd / "post.claims.json").unlink(missing_ok=True)
+        os.symlink(self.target, cwd / "post.claims.json")
+        return report
+
+
+@pytest.mark.parametrize("target", ["host-file", "/proc/self/mem"])
+def test_a_claims_file_that_leaves_the_clone_is_never_read(tmp_path, monkeypatch, target):
+    """#184 reads a worker-written deliverable only inside the fresh clone. Joined with #185, the claims file the Mind
+    checks is a second worker-written file, held to the same rule: a symlink out of the clone is refused unread,
+    and a host file that cannot be read rejects instead of raising."""
+    host = tmp_path / "outside" / "claims.json"
+    host.parent.mkdir()
+    host.write_text(files(FAITHFUL)["post.claims.json"])          # a host file that parses as faithful claims
+    link = host if target == "host-file" else Path(target)
+    monkeypatch.setitem(workers.PROVIDERS, "scripted", LinkedClaims(files(FAITHFUL), link))
+    workers.commission(order(tmp_path), ctx(tmp_path, "worker.commission"))
+    out = workers.appraise({"order": "depot-note", "bound_claims": CONTRACT}, ctx(tmp_path, "worker.appraise"))
+    assert out["verdict"] == "REJECTED"
+    assert any("leaves the private workspace" in f for f in out["findings"]), out["findings"]
+    assert not out.get("cognition_receipts")                      # nothing the host file says reached the Mind

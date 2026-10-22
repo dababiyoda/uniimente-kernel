@@ -236,6 +236,10 @@ MUTANTS = [
  ('the engine hands the evaluator no registry', 'greg/missions.py',
   'or manifest.capability_id == "worker.appraise" else None,', 'else None,',
   'test_the_evaluator_gets_the_bodys_registry_and_no_ledger', FABRIC),
+ # 2026-10-22 join review: the claims file is held to #184's containment rule (a symlink out of the clone is not read)
+ ('a claims file outside the clone is read', 'greg/workers.py',
+  'claims_file = _inside(fresh / spec["claims"], (fresh,))', 'claims_file = fresh / spec["claims"]',
+  'test_a_claims_file_that_leaves_the_clone_is_never_read', FABRIC),
  ('the lease omits what the worker is judged by', 'greg/workers.py',
   '             "acceptance": order.acceptance,\n', '',
   'test_the_lease_names_the_acceptance_contract_and_its_evaluator', FABRIC),

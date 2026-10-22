@@ -1162,13 +1162,20 @@ def _mind_appraisal(order_name: str, order: dict, spec: dict, fresh: Path, base:
     unchecked = {"checked": False, "limits": "no sentence was checked as written"}
     if not out.is_file():
         return unchecked, [], {}
-    claims_file = fresh / spec["claims"]
+    # The claims file is a second worker-written file: read it only inside the fresh clone, as the deliverable is
+    # (#184). A symlink out of the clone would hand the Mind a host file as the worker's bindings.
+    try:
+        claims_file = _inside(fresh / spec["claims"], (fresh,))
+    except CapabilityError:
+        return unchecked, [f"claims file {spec['claims']} leaves the private workspace: it is not read"], {}
     if not claims_file.is_file():
         return unchecked, [f"claims file {spec['claims']} is missing: no sentence of the deliverable can be checked"], {}
     try:
         document, raw_claims = out.read_text(encoding="utf-8"), claims_file.read_text(encoding="utf-8")
     except UnicodeDecodeError:
         return unchecked, ["the deliverable or its claims file is not UTF-8 text"], {}
+    except OSError as exc:
+        return unchecked, [f"the deliverable or its claims file cannot be read ({type(exc).__name__})"], {}
     names = [Path(p).name for p in order["inputs"]]
     if not names or len(set(names)) != len(names):
         return unchecked, ["the order's inputs need distinct file names for GREG's copies to be checked"], {}

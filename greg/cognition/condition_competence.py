@@ -98,7 +98,9 @@ def cell_evidence(pairs: Iterable[dict], *, shuffle: bool = False) -> dict:
             continue
         seen.add(p["claim"])
         cell = p["cell"]
-        if shuffle:
+        if MODE == "pooled":
+            cell = cell.split("|", 1)[0] + "|all"
+        elif shuffle:
             geometry = cell.split("|", 1)[0]
             cell = f"{geometry}|{BANDS[rnd.randrange(len(BANDS))][1]}"
         c = cells.setdefault(cell, {"pairs": 0, "alternative_only": 0, "incumbent_only": 0})
@@ -172,3 +174,24 @@ def pair(check: dict, incumbent_passed: bool, shadow: dict, cell: str, claim: st
         alt_ok, _ = evaluate_predicate(check["predicate"], {"result": {"fitness": shadow["fitness"]}})
     return {"cell": cell, "claim": claim, "incumbent_pass": bool(incumbent_passed), "alternative_pass": bool(alt_ok),
             "shadow_evaluations": shadow.get("evaluations", 0), "shadow_seconds": shadow.get("seconds", 0.0)}
+
+
+def pairs_from(journal) -> list[dict]:
+    """Every settled paired observation on this body, one per signed claim (settlement deduplicates claims)."""
+    from . import settlement
+    return [{**o["condition_pair"], "claim": settlement._outcome_identity(o)}
+            for o in settlement.measured_outcomes(journal) if o.get("condition_pair")]
+
+
+def evidence_from(journal) -> dict:
+    """The cell evidence this arm reads: none under CONTROL ("off"), shuffled under ablation S."""
+    if MODE == "off" or journal is None:
+        return {}
+    return cell_evidence(pairs_from(journal), shuffle=MODE == "shuffled")
+
+
+def incumbent_unmet(journal, cell: str) -> int:
+    """Settled VERIFIED_UNMET outcomes of the incumbent in this cell (true dimension, whatever the arm)."""
+    from . import settlement
+    return sum(1 for o in settlement.measured_outcomes(journal)
+               if o.get("condition_cell") == cell and o["method"] == INCUMBENT and not o["correct"])

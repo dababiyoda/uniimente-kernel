@@ -50,7 +50,7 @@ any run. #189's author warned that keying on scale is chosen with hindsight, so 
   - it is recorded on the receipt;
   - it never becomes the mission's answer.
 - **Bounds:**
-  - at most 36 shadow trials per cell;
+  - at most 36 shadow trials per cell, and none once the cell's preference has fired (a decided cell spends no more);
   - each one gets at most the request's own evaluation budget;
   - every shadow evaluation and second is counted as repair cost.
 - **Pairing:** at settlement, the shadow result is judged by the same signed check predicate as the incumbent's
@@ -86,10 +86,12 @@ any run. #189's author warned that keying on scale is chosen with hindsight, so 
 | CONTROL | the same stressed journal | off (no cell preference, no shadow pairing read) |
 | A, pooled | the same stressed journal | on, with a single cell for all dimensions |
 | S, shuffled condition | the same stressed journal | on. When the evidence is read, each stress mission's settled pair is assigned to a band by a seeded fair coin (seed `antifragility-v3-shuffle`), independent of its dimension. Holdout requests are still keyed by their true dimension. All 36 stress missions are HIGH, so permuting their identical keys would be vacuous; the coin is the real test of whether the key carries the signal. |
-| B1, compute-matched | none | off. The incumbent's evaluation budget on HIGH holdout instances is raised so that B1's total evaluations equal LEARN's holdout evaluations plus the stress shadow evaluations |
+| B1, compute-matched | none | off. The incumbent's evaluation budget on every HIGH holdout instance is raised to ⌊(LEARN's measured holdout evaluations, shadows included, + the stress shadow evaluations − 50 × the LOW budget) / 50⌋, so B1's declared total equals LEARN's measured total |
 | B2, best-of-both | none | off. Both fits on every instance, and the better verified answer kept. A 2× compute reference, not a kill rule |
 
-Holdout instances are compiled directly, so holdout outcomes never feed learning (as in #189).
+Holdout instances are compiled directly, so holdout outcomes never feed learning (as in #189). The arms run in this
+order on one machine: PRE, LEARN, CONTROL, A, S, B1, B2. One stressed journal serves LEARN, CONTROL, A and S: every
+stress mission is HIGH, so the pooled and keyed cells receive identical pairs and identical shadow triggers.
 
 **Measured per arm and per cell:**
 - passes;
@@ -124,6 +126,8 @@ Evaluated in this order.
    - no stratum × function cell passes fewer instances under LEARN than under PRE;
    - a one-sided exact sign test on the LEARN vs CONTROL holdout discordant pairs gives p < 0.05.
 6. **INCONCLUSIVE** if the counts satisfy 5 but the sign test does not.
+7. **NO_GAIN** otherwise: the totals pass 2-4 but some stratum × function cell passes fewer instances under LEARN
+   than under PRE.
 
 The stress damage, shadow cost, recovery cost and latency are reported beside every verdict. NO_GAIN is kept if that is the result. No rule, seed, τ or ceiling changes after a run.
 

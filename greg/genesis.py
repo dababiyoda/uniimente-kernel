@@ -465,6 +465,48 @@ def package_adapter(function: str, candidate: PackageCandidate):
     return adapter
 
 
+# An acquired binary runs under ceilings it cannot raise: its stdout and stderr go to files in the
+# workspace, and RLIMIT_FSIZE stops it at the first byte past the output ceiling (SIGXFSZ), so an oversized
+# answer is refused without ever being buffered; RLIMIT_AS bounds its memory (a decompression bomb). The
+# limiter is the standard library's ``resource`` applied in a child of the isolated process, then ``execv``.
+BINARY_MEMORY = 2 * 1024 ** 3
+_LIMITER = (
+    "import os, resource, signal, sys\n"
+    "signal.signal(signal.SIGXFSZ, signal.SIG_DFL)\n"     # Python ignores it; the binary must die at the ceiling
+    "out, err, cap, mem = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])\n"
+    "for fd, path in ((1, out), (2, err)):\n"
+    "    f = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)\n"
+    "    os.dup2(f, fd)\n"
+    "    os.close(f)\n"
+    "resource.setrlimit(resource.RLIMIT_FSIZE, (cap, cap))\n"
+    "try:\n"
+    "    resource.setrlimit(resource.RLIMIT_AS, (mem, mem))\n"
+    "except (ValueError, OSError):\n"
+    "    pass\n"
+    "os.execv(sys.argv[5], sys.argv[5:])\n")
+
+
+def _run_bounded(argv: list, workspace: Path, name: str) -> tuple[int, bytes, str]:
+    """Run one acquired binary under the output and memory ceilings; (returncode, stdout, stderr tail)."""
+    import secrets
+    import signal
+    tag = secrets.token_hex(8)
+    out, err = workspace / f".out-{tag}", workspace / f".err-{tag}"
+    try:
+        proc = run_isolated([sys.executable, "-I", "-c", _LIMITER, str(out), str(err), str(mechanisms.MAX_OUTPUT + 1),
+                             str(BINARY_MEMORY), *argv], cwd=workspace)
+        size = out.stat().st_size if out.exists() else 0
+        if proc.returncode == -signal.SIGXFSZ or size > mechanisms.MAX_OUTPUT:
+            raise CapabilityError(f"capability refused: {name} output exceeds {mechanisms.MAX_OUTPUT} bytes "
+                                  "(stopped at the ceiling, never buffered)")
+        stdout = out.read_bytes() if out.exists() else b""
+        tail = err.read_bytes()[-400:] if err.exists() else b""      # also at most the ceiling
+        return proc.returncode, stdout, tail.decode("utf-8", errors="replace")
+    finally:
+        out.unlink(missing_ok=True)
+        err.unlink(missing_ok=True)
+
+
 def catalog_adapter(function: str, candidate: Candidate, binary: str):
     """Adapter bound to one verified binary; re-checked against its content hash."""
     spec = CATALOG[function]
@@ -479,14 +521,12 @@ def catalog_adapter(function: str, candidate: Candidate, binary: str):
             raise CapabilityError("installed binary changed since verification; quarantine required")
         ctx.workspace.mkdir(parents=True, exist_ok=True)
         argv = [binary if t == "{binary}" else str(path) if t == "{file}" else t for t in candidate.argv]
-        proc = run_isolated(argv, cwd=ctx.workspace)
-        if proc.returncode:
-            raise CapabilityError(f"{candidate.binary_name} exited {proc.returncode}")
-        if len(proc.stdout) > mechanisms.MAX_OUTPUT:
-            raise CapabilityError(f"capability refused: {candidate.binary_name} output exceeds "
-                                  f"{mechanisms.MAX_OUTPUT} bytes")
-        value = PARSERS[candidate.parse](proc.stdout.decode("utf-8", errors="replace"))
-        return {spec["output_field"]: value, "path": str(path), **(spec["derive"](value, params)
+        returncode, stdout, stderr = _run_bounded(argv, ctx.workspace, candidate.binary_name)
+        if returncode:
+            raise CapabilityError(f"{candidate.binary_name} exited {returncode}: {stderr[-200:]}".rstrip(": "))
+        raw = stdout.decode("utf-8", errors="replace")
+        value = PARSERS[candidate.parse](raw)
+        return {spec["output_field"]: value, "path": str(path), **(spec["derive"](value, params, raw)
                                                                     if spec.get("derive") else {})}
     return adapter
 
@@ -1825,7 +1865,8 @@ class Genesis:
                 path = tmp / case["name"]
                 path.write_bytes(case["data"])
                 try:
-                    got = adapter({"path": str(path)}, ctx)[spec["output_field"]]
+                    output = adapter({"path": str(path)}, ctx)
+                    got = output[spec["output_field"]]
                 except subprocess.TimeoutExpired:   # the host, not the binary: no verdict either way
                     raise CapabilityError(f"verifying {candidate.binary_name} timed out",
                                           failure_class="transient") from None
@@ -1836,6 +1877,10 @@ class Genesis:
                     continue
                 if got != case["expected"]:
                     failures.append({"case": case["name"], "got": str(got)[:80], "expected": str(case["expected"])[:80]})
+                elif "complete" in case and output.get("complete") is not case["complete"]:
+                    # a reader must also say when it could not read everything (a page with no text layer)
+                    failures.append({"case": case["name"], "complete": output.get("complete"),
+                                     "expected_complete": case["complete"]})
         return (not failures, {"cases": len(vectors), "failures": failures, "isolation": "no-network subprocess",
                                "platform": sys.platform})
 

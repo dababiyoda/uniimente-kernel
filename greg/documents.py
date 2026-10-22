@@ -8,7 +8,9 @@ if the words it extracts, whitespace-normalized, equal the words written, on eve
 
 This proves extraction on PDFs of this shape: text drawn in a standard font, in reading order. Scanned images
 (which need OCR), embedded or subset fonts without a usable encoding, right-to-left scripts and multi-column
-layouts are not covered by the oracle and are not claimed.
+layouts are not covered by the oracle and are not claimed. What the oracle does require is that a reader say so:
+a page that yields no text (a scanned image, or a blank page; the reader cannot tell which) makes the extraction
+``complete: false``, and a phrase it did not find there is unknown, never absent.
 """
 from __future__ import annotations
 
@@ -23,26 +25,35 @@ def _escape(text: str) -> str:
     return text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
 
-def write_pdf(pages: list[list[str]], *, compress: bool = False) -> bytes:
+# An 8x8 grey image: what a scanner leaves on a page, pixels and no text layer.
+SCAN = bytes((x * 31 + y * 17) % 256 for y in range(8) for x in range(8))
+
+
+def write_pdf(pages: list, *, compress: bool = False) -> bytes:
     """A valid PDF whose page i draws the lines pages[i], top to bottom, in Helvetica (Flate-compressed
-    content streams when ``compress``, as most real PDFs are)."""
+    content streams when ``compress``, as most real PDFs are). A page given as ``SCAN`` is an image only."""
     objects: list[bytes] = []
     kids = []
-    font_id = 3 + 2 * len(pages)
+    font_id, image_id = 3 + 2 * len(pages), 4 + 2 * len(pages)
     for index, lines in enumerate(pages):
         page_id, content_id = 3 + 2 * index, 4 + 2 * index
         kids.append(f"{page_id} 0 R")
-        ops = ["BT", "/F1 12 Tf", "16 TL", "72 720 Td"]
-        for line in lines:
-            ops += [f"({_escape(line)}) Tj", "T*"]
-        ops.append("ET")
+        if lines is SCAN:
+            ops = ["q", "468 0 0 648 72 72 cm", "/Im1 Do", "Q"]
+        else:
+            ops = ["BT", "/F1 12 Tf", "16 TL", "72 720 Td"]
+            for line in lines:
+                ops += [f"({_escape(line)}) Tj", "T*"]
+            ops.append("ET")
         stream = "\n".join(ops).encode("latin-1")
         flate = b" /Filter /FlateDecode" if compress else b""
         stream = zlib.compress(stream) if compress else stream
         objects.append(f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 {font_id} "
-                       f"0 R >> >> /Contents {content_id} 0 R >>".encode())
+                       f"0 R >> /XObject << /Im1 {image_id} 0 R >> >> /Contents {content_id} 0 R >>".encode())
         objects.append(b"<< /Length " + str(len(stream)).encode() + flate + b" >>\nstream\n" + stream + b"\nendstream")
     objects.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>")
+    objects.append(b"<< /Type /XObject /Subtype /Image /Width 8 /Height 8 /ColorSpace /DeviceGray "
+                   b"/BitsPerComponent 8 /Length 64 >>\nstream\n" + SCAN + b"\nendstream")
     head = [b"<< /Type /Catalog /Pages 2 0 R >>",
             f"<< /Type /Pages /Kids [{' '.join(kids)}] /Count {len(pages)} >>".encode()]
     body = head + objects
@@ -59,8 +70,9 @@ def write_pdf(pages: list[list[str]], *, compress: bool = False) -> bytes:
 
 
 def oracle_document_text(seed: int) -> list[dict]:
-    """Six PDFs, alternately plain and compressed: one line, several lines, several pages, an empty page,
-    punctuation, a long page."""
+    """Seven PDFs, alternately plain and compressed: one line, several lines, several pages, an empty page,
+    punctuation, a long page, and a scanned page between two text pages. A reader qualifies only if it also
+    reports the two cases with a page it read no text from as incomplete."""
     rng = random.Random(seed)
 
     def line(n):
@@ -70,26 +82,44 @@ def oracle_document_text(seed: int) -> list[dict]:
               [[line(4) for _ in range(3)] for _ in range(rng.randint(2, 4))],
               [[], [line(6)]],
               [["Total due: 50% net thirty (renewal) back\\slash."]],
-              [[line(10) for _ in range(30)]]]
+              [[line(10) for _ in range(30)]],
+              [[line(5)], SCAN, [line(5)]]]
     cases = []
     for index, pages in enumerate(shapes):
-        expected = " ".join(word for page in pages for text in page for word in text.split())
+        text_pages = [page for page in pages if page is not SCAN]
+        expected = " ".join(word for page in text_pages for text in page for word in text.split())
+        complete = all(page is not SCAN and any(text.split() for text in page) for page in pages)
         cases.append({"name": f"case{index}.pdf", "data": write_pdf(pages, compress=bool(index % 2)),
-                      "expected": expected})
+                      "expected": expected, "complete": complete})
     return cases
 
 
-def find_phrase(text: str, params: dict) -> dict:
+def coverage(raw: str) -> dict:
+    """Which pages the extraction holds text for. pdftotext ends every page with a form feed."""
+    pages = raw.split("\f")
+    if pages and not pages[-1].strip():
+        pages = pages[:-1]
+    empty = [number for number, page in enumerate(pages, start=1) if not page.split()]
+    return {"pages": len(pages), "pages_without_text": empty[:100],
+            "complete": bool(pages) and not empty}
+
+
+def find_phrase(text: str, params: dict, raw: str | None = None) -> dict:
     """Evaluate ``params['phrase']`` over the whole extraction, not over a receipt's bounded prefix.
 
     A receipt keeps only a prefix of long text (``authority.bounded``), and a predicate on that prefix can miss a
     phrase past it ('contains' false) or miss a forbidden one ('not_contains' true). The reader therefore answers
-    the question on every word it extracted; the receipt records the answer and the text's digest and length."""
+    the question on every word it extracted; the receipt records the answer and the text's digest and length.
+
+    Absence is claimed only over a complete extraction. A page with no text layer may hold the phrase as pixels,
+    so there ``found`` is None (unknown): a check for the phrase fails, and so does a check for its absence."""
     import hashlib
     phrase = params.get("phrase")
-    out = {"words": len(text.split()), "text_sha256": hashlib.sha256(text.encode()).hexdigest()}
+    seen = coverage(raw if raw is not None else text)
+    out = {"words": len(text.split()), "text_sha256": hashlib.sha256(text.encode()).hexdigest(), **seen}
     if isinstance(phrase, str) and phrase.split():
         needle = " ".join(phrase.split())
         count = text.count(needle)
-        out.update({"phrase": needle, "found": count > 0, "occurrences": count})
+        out.update({"phrase": needle, "found": True if count else (False if seen["complete"] else None),
+                    "occurrences": count})
     return out

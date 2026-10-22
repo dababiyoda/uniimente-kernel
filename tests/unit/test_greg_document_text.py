@@ -42,7 +42,7 @@ def test_a_mission_checks_a_fact_inside_a_pdf_by_acquiring_installed_software(tm
     [resolved] = events(home, "deficit.resolved")
     assert resolved["capability_id"] == "acquired.document.text.pdftotext"
     [verified] = [e for e in events(home, "genesis.verified") if e["capability_id"].endswith("pdftotext")]
-    assert verified["passed"] and verified["report"]["failures"] == [] and verified["report"]["cases"] == 6
+    assert verified["passed"] and verified["report"]["failures"] == [] and verified["report"]["cases"] == 7
     with Body(home) as body:
         manifest = body.registry.manifests["acquired.document.text.pdftotext"]
     license_ = manifest.provenance.get("license_assessment")
@@ -223,3 +223,88 @@ def test_an_unclassified_binary_card_says_it_keeps_prior_behaviour():
     a = licensing.system_binary(genesis_mod.installed_binary("pdftotext"))
     if a is not None:
         assert a["auto_attach"] is True and a["held"] is False
+
+
+# -- directive of 2026-10-22, section VI-VIII: incomplete extraction and containment ------------------------------
+# Each test below fails on fe82005: a scanned page was read as "phrase absent", and a binary's output was fully
+# buffered before its size was checked, with no memory ceiling.
+
+SCANNED = [["Residential lease between the parties."], documents.SCAN, ["Signed by both parties."]]
+
+
+def test_a_scanned_page_never_proves_a_phrase_absent(tmp_path):
+    home, key, body_id, data = make_body(tmp_path)
+    lease = data / "scanned.pdf"
+    lease.write_bytes(documents.write_pdf(SCANNED, compress=True))
+    submit(home, key, body_id, "MISSION", mission("m:scan", checks=[found_check(lease, "terminate without notice",
+                                                                                expected=False)],
+                                                  strategies=[], **SCOPE))
+    missions, _ = run(home, Clock(), ticks=4)
+    assert missions["m:scan"].status != "ACHIEVED"          # page 2 is pixels; the clause could be there
+    with Body(home) as body:
+        receipt = [r for r in body.ledger.by_type("receipt")
+                   if (r.payload.get("result") or {}).get("output", {}).get("phrase")][-1]
+    output = receipt.payload["result"]["output"]
+    assert output["complete"] is False and output["pages_without_text"] == [2] and output["found"] is None
+
+
+def test_a_phrase_found_on_a_text_page_of_a_partly_scanned_pdf_is_still_found(tmp_path):
+    home, key, body_id, data = make_body(tmp_path)
+    lease = data / "scanned.pdf"
+    lease.write_bytes(documents.write_pdf(SCANNED, compress=True))
+    submit(home, key, body_id, "MISSION", mission("m:hit", checks=[found_check(lease, "Signed by both parties")],
+                                                  strategies=[], **SCOPE))
+    missions, _ = run(home, Clock(), ticks=4)
+    assert missions["m:hit"].status == "ACHIEVED"           # a hit on a page that has text is proof
+
+
+def test_the_oracle_rejects_a_reader_that_claims_a_scanned_page_was_read(tmp_path, monkeypatch):
+    monkeypatch.setattr(documents, "coverage", lambda raw: {"pages": 1, "pages_without_text": [], "complete": True})
+    home, key, body_id, data = make_body(tmp_path)
+    lease = data / "lease.pdf"
+    lease.write_bytes(documents.write_pdf(LEASE, compress=True))
+    submit(home, key, body_id, "MISSION", mission("m:lease", checks=[pdf_check(lease, "renewal term is twelve months")],
+                                                  strategies=[], **SCOPE))
+    missions, _ = run(home, Clock(), ticks=4)
+    assert missions["m:lease"].status != "ACHIEVED"
+    [verified] = [e for e in events(home, "genesis.verified") if e["capability_id"].endswith("pdftotext")]
+    assert not verified["passed"]
+    assert {f["case"] for f in verified["report"]["failures"]} == {"case3.pdf", "case6.pdf"}
+
+
+def _adapter(tmp_path, binary, argv):
+    from greg.capabilities import CapabilityManifest, InvocationContext
+    candidate = genesis_mod.Candidate("probe", argv, "words")
+    adapter = genesis_mod.catalog_adapter("document.text", candidate, binary)
+    target = tmp_path / "in.pdf"
+    target.write_bytes(b"%PDF-1.4\n")
+    ctx = InvocationContext(workspace=tmp_path / "ws", read_roots=(tmp_path,), secrets=None,
+                            manifest=CapabilityManifest.__new__(CapabilityManifest))
+    object.__setattr__(ctx.manifest, "provenance", {})
+    return lambda: adapter({"path": str(target)}, ctx), tmp_path / "ws"
+
+
+def test_an_oversized_output_is_stopped_at_the_ceiling_without_being_buffered(tmp_path):
+    import sys
+    import time
+    from greg.capabilities import CapabilityError
+    flood = "import sys, time; sys.stdout.buffer.write(b'x' * (8 << 20)); sys.stdout.flush(); time.sleep(25)"
+    call, workspace = _adapter(tmp_path, sys.executable, ("{binary}", "-I", "-c", flood))
+    started = time.monotonic()
+    with pytest.raises(CapabilityError, match="never buffered"):
+        call()
+    assert time.monotonic() - started < 20                  # killed at 4 MiB, not after the writer finished
+    assert not any(workspace.glob(".out-*"))                # the spool is removed
+
+
+def test_an_acquired_binary_runs_under_a_memory_ceiling_and_reports_its_stderr(tmp_path):
+    import sys
+    from greg.capabilities import CapabilityError
+    if not sys.platform.startswith("linux"):
+        pytest.skip("RLIMIT_AS is enforced on Linux")
+    probe = "import resource,sys; print(resource.getrlimit(resource.RLIMIT_AS)[0]); sys.stderr.write('done-x')"
+    call, _ = _adapter(tmp_path, sys.executable, ("{binary}", "-I", "-c", probe))
+    assert call()["text"] == str(genesis_mod.BINARY_MEMORY)
+    failing, _ = _adapter(tmp_path, sys.executable, ("{binary}", "-I", "-c", "import sys; sys.exit('bad-pdf-x')"))
+    with pytest.raises(CapabilityError, match="bad-pdf-x"):
+        failing()

@@ -1552,8 +1552,14 @@ def one_machine(*, problem_id: str, data: dict, sandbox_repo: str, organs: dict,
              "advances": ["organs-reproduced"],
              "rationale": "ask the organs through their own code over the signed bridge; re-derive in a second process"},
             {"action_id": "commission", "capability": "worker.commission", "target": f"work:{order}",
+             # Worker-independent acceptance (R1-A): the recorded plan must be the certified answer bound below, and
+             # the appraiser re-derives it from problem.json at the base; a worker's own test cannot vouch for it.
              "params": {"order": order, "mode": "repository", "repo": repo, "objective": objective,
-                        "acceptance": {"run_changed_tests": True, "max_changed_files": 4},
+                        "acceptance": {"run_changed_tests": True, "max_changed_files": 4,
+                                       "bound_artifacts": [{"path": "plan/plan.json", "label": "CERTIFIED_PLAN_JSON",
+                                                            "keys": ["assignment", "staffed"]}],
+                                       "verifiers": [{"name": "assignment.staffing", "artifact": "plan/plan.json",
+                                                      "problem": "problem.json"}]},
                         "allowed_paths": ["plan/*", "tests/*"], "provider": provider,
                         "max_budget_usd": worker_budget_usd, "timeout_seconds": 300},
              # the exact certified answer that satisfied "answered", which may come from the re-observation

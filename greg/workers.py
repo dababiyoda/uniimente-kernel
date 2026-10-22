@@ -56,6 +56,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
 
@@ -79,6 +80,7 @@ PROTECTED_SURFACES = (
     "AGENTS.md", "CLAUDE.md", "*/AGENTS.md", "*/CLAUDE.md", "docs/FOUNDER_*", "docs/intent/*",
     ".github/*", "tools/offline_test.py", "conftest.py",
     "greg/worker_isolation.py", "greg/isolation.py", "greg/console.py", "greg/remote.py",
+    "greg/artifact_verifiers.py",
 )
 MODES = ("repository", "document")
 MAX_PATCH = 512 * 1024
@@ -280,6 +282,8 @@ class WorkOrder:
         inputs = tuple(str(_inside(Path(p), ctx.read_roots + (ctx.workspace,))) for p in params.get("inputs", []))
         if "bound_claims" in acceptance:
             bound_claims(acceptance, mode, allowed_paths, inputs)
+        if "bound_artifacts" in acceptance or "verifiers" in acceptance:
+            acceptance_bindings(acceptance, mode, allowed_paths)
         provider = str(params.get("provider", "claude-code"))
         if provider not in PROVIDERS:
             raise WorkerError(f"unknown worker provider {provider!r}; known: {sorted(PROVIDERS)}")
@@ -373,6 +377,48 @@ def bound_claims(acceptance: dict, mode: str, allowed_paths, inputs=None) -> dic
 
 
 # -- providers ---------------------------------------------------------------------------
+
+LABEL = re.compile(r"^[A-Z][A-Z0-9_]{0,63}$")
+MAX_BINDINGS = 8
+
+
+def acceptance_bindings(acceptance: dict, mode: str, allowed_paths) -> None:
+    """Refuse a malformed R1-A declaration: ``bound_artifacts`` (a delivered JSON file must equal a value the order's
+    frozen context carries after ``LABEL:``, on ``keys`` or whole) and ``verifiers`` (a reviewed verifier from
+    ``greg.artifact_verifiers`` runs on the delivered file against a problem file read at the base commit)."""
+    from greg.artifact_verifiers import VERIFIERS
+    if mode != "repository":
+        raise WorkerError("acceptance.bound_artifacts and acceptance.verifiers apply to repository work orders")
+
+    def relative(path, what):
+        if (not isinstance(path, str) or not path or path.startswith("/") or ".." in path.split("/")
+                or posixpath.normpath(path) != path):
+            raise WorkerError(f"{what} must be a normalized relative path inside the clone")
+
+    def entries(field, keys):
+        value = acceptance.get(field, [])
+        if not isinstance(value, list) or len(value) > MAX_BINDINGS or not all(
+                isinstance(e, dict) and set(e) <= keys for e in value):
+            raise WorkerError(f"acceptance.{field} must be a list of at most {MAX_BINDINGS} objects with {sorted(keys)}")
+        return value
+    for bound in entries("bound_artifacts", {"path", "label", "keys"}):
+        relative(bound.get("path"), "a bound artifact's path")
+        if not allowed(bound["path"], allowed_paths):
+            raise WorkerError("a bound artifact must be on the order's writable surface")
+        if not isinstance(bound.get("label"), str) or not LABEL.match(bound["label"]):
+            raise WorkerError("a bound artifact's label must be an upper-case name")
+        keys = bound.get("keys")
+        if keys is not None and (not isinstance(keys, list) or not keys
+                                 or not all(isinstance(k, str) and k for k in keys)):
+            raise WorkerError("a bound artifact's keys must be a non-empty list of names")
+    for verifier in entries("verifiers", {"name", "artifact", "problem"}):
+        if verifier.get("name") not in VERIFIERS:
+            raise WorkerError(f"unknown artifact verifier {verifier.get('name')!r}; known: {sorted(VERIFIERS)}")
+        relative(verifier.get("artifact"), "a verified artifact's path")
+        relative(verifier.get("problem"), "a verifier's problem path")
+        if not allowed(verifier["artifact"], allowed_paths):
+            raise WorkerError("a verified artifact must be on the order's writable surface")
+
 
 def worker_prompt(order: WorkOrder) -> str:
     lines = [
@@ -1187,6 +1233,150 @@ def scope_findings(names: list[str], order_allowed: tuple, max_files: int | None
             "too_many_files": bool(max_files) and len(names) > int(max_files)}
 
 
+# -- worker-independent acceptance (R1-A, #190) ---------------------------------------------
+# Three refusals recombined onto the frozen evaluator above: a worker's changed tests must fail on the recorded base
+# (#173's freeze stops it replacing its judge; this stops it writing a judge that proves nothing); a delivered artifact
+# the order binds must equal the value the mission handed the order (the one_machine ``CERTIFIED_PLAN_JSON`` bind);
+# a named reviewed verifier re-derives the artifact (#178's ``verify_one_machine`` check, run by the appraiser). All
+# three read GREG's own copies, taken from the fresh clone and the base commit before any worker code runs there.
+
+def _test_side(path: str) -> bool:
+    """A test file by pytest's default names, or any file in a test directory (its helpers and data)."""
+    return any(fnmatchcase(posixpath.basename(path), p) for p in TEST_FILES) or bool(
+        set(path.split("/")[:-1]) & set(TEST_DIRS))
+
+
+def delivered_inputs(fresh: Path, base: str, acceptance: dict, name_status: str) -> dict:
+    """GREG's copies, from the fresh clone's index (the retained patch as applied) and the base commit.
+
+    ``tests``: the test files the patch added or changed; ``test_side``: their bytes and those of every other changed
+    file in a test directory; ``artifacts`` and ``problems``: what ``bound_artifacts`` and ``verifiers`` name. A path
+    that is absent, or a symbolic link (judged as its target elsewhere), is ``None``: never followed, never trusted."""
+    changed = [(s[:1], p) for s, _, p in (line.partition("\t") for line in name_status.splitlines()) if p]
+    side = sorted(p for s, p in changed if s in ("A", "M", "T") and _test_side(p))
+    staged = {}
+    for entry in _git(fresh, "ls-files", "-s", "-z").stdout.split("\0"):
+        meta, _, path = entry.partition("\t")
+        if path:
+            staged[path] = meta.split(" ", 1)[0]
+
+    def blob(spec: str, path: str, mode: str | None):
+        if mode is None or mode == "120000":
+            return None
+        shown = _git(fresh, "show", spec, check=False, text=False)
+        return None if shown.returncode else shown.stdout
+    base_modes = {}
+    problems = sorted({v["problem"] for v in acceptance.get("verifiers", [])})
+    if problems:
+        for entry in _git(fresh, "ls-tree", "-r", "-z", base, "--", *problems).stdout.split("\0"):
+            meta, _, path = entry.partition("\t")
+            if path:
+                base_modes[path] = meta.split(" ", 1)[0]
+    artifacts = {b["path"] for b in acceptance.get("bound_artifacts", [])} | {
+        v["artifact"] for v in acceptance.get("verifiers", [])}
+    return {"tests": [p for p in side if any(fnmatchcase(posixpath.basename(p), t) for t in TEST_FILES)],
+            "test_side": {p: blob(":" + p, p, staged.get(p)) for p in side},
+            "artifacts": {p: blob(":" + p, p, staged.get(p)) for p in sorted(artifacts)},
+            "problems": {p: blob(f"{base}:{p}", p, base_modes.get(p)) for p in problems}}
+
+
+def bound_artifact_findings(acceptance: dict, context: str, delivered: dict) -> list[str]:
+    """Each ``bound_artifacts`` entry: the delivered file equals the bound value (``keys`` or whole), canonical JSON."""
+    from greg.artifact_verifiers import canonical
+    findings, missing = [], object()
+    for bound in acceptance.get("bound_artifacts", []):
+        path, label, keys = bound["path"], bound["label"], bound.get("keys")
+        mark = label + ":\n"
+        if context.count(mark) != 1:
+            findings.append(f"{path}: the order binds it to {label}, but its frozen context carries "
+                            f"{'no' if mark not in context else 'more than one'} {label} value")
+            continue
+        try:
+            value = json.JSONDecoder().raw_decode(context.split(mark, 1)[1])[0]
+        except ValueError:
+            findings.append(f"{path}: the {label} value in the order's frozen context is not JSON")
+            continue
+        data = delivered["artifacts"].get(path)
+        try:
+            artifact = json.loads(data) if data is not None else missing
+        except (ValueError, UnicodeDecodeError):
+            artifact = missing
+        if artifact is missing:
+            findings.append(f"{path} is missing, a symbolic link or not JSON in GREG's clone; the order binds it to "
+                            f"the {label} value")
+            continue
+        for key in keys or [None]:
+            want = value if key is None else value.get(key, missing) if isinstance(value, dict) else missing
+            got = artifact if key is None else artifact.get(key, missing) if isinstance(artifact, dict) else missing
+            if want is missing:
+                findings.append(f"{path}: the bound {label} value has no {key!r}")
+            elif got is missing or canonical(got) != canonical(want):
+                findings.append(f"{path} does not equal the {label} value this mission bound"
+                                + (f" on {key!r}" if key else "") + ": delivered "
+                                + ("nothing" if got is missing else canonical(got)[:160])
+                                + f", bound {canonical(want)[:160]}")
+    return findings
+
+
+def rederivation_findings(acceptance: dict, delivered: dict) -> list[str]:
+    """Each named reviewed verifier, run on GREG's copies of the artifact and of the problem at the base."""
+    from greg.artifact_verifiers import VERIFIERS
+    findings = []
+    for verifier in acceptance.get("verifiers", []):
+        name, artifact, problem = verifier["name"], verifier["artifact"], verifier["problem"]
+        check = VERIFIERS.get(name)
+        parsed = []
+        for path, data, where in ((artifact, delivered["artifacts"].get(artifact), "GREG's clone"),
+                                  (problem, delivered["problems"].get(problem), "the recorded base")):
+            try:
+                parsed.append(json.loads(data))
+            except (TypeError, ValueError, UnicodeDecodeError):
+                findings.append(f"verifier {name}: {path} is missing, a symbolic link or not JSON in {where}")
+        if check is None:
+            findings.append(f"verifier {name} is not a reviewed verifier")
+        elif len(parsed) == 2:
+            findings += [f"verifier {name} on {artifact}: {f}" for f in check(*parsed)]
+    return findings
+
+
+def base_tree(fresh: Path, base: str, dest: Path, files: dict) -> None:
+    """GREG's copy of the recorded base, plus the worker's test-side files, for the discrimination run."""
+    import io
+    archive = _git(fresh, "archive", "--format=tar", base, text=False).stdout
+    dest.mkdir(parents=True)
+    with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
+        tar.extractall(dest, filter="data")
+    for rel, data in files.items():
+        target = _inside(dest / rel, (dest,))
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if target.is_symlink() or target.is_file():
+            target.unlink()
+        target.write_bytes(data)
+
+
+def discrimination_findings(tree: Path | None, delivered: dict, *, timeout: int, stop_check=None,
+                            confinement: str = "required") -> tuple[list[str], dict | None]:
+    """One run: the worker's changed test files on the recorded base (with its test-side files, without the rest of
+    its change). They must fail there (pytest exit 1 or 2); a test that passes on the base proves nothing about the
+    change. It runs in the same envelope or confinement as acceptance."""
+    tests = delivered["tests"] if delivered else []
+    if not tests:
+        return [], None
+    linked = sorted(p for p, data in delivered["test_side"].items() if data is None)
+    if linked or tree is None:
+        return [f"the worker's test-side files {linked} are symbolic links or unreadable; their base run cannot be "
+                "judged"], None
+    [result] = run_tests([["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", *tests]], tree,
+                         timeout=timeout, stop_check=stop_check, confinement=confinement)
+    if result["returncode"] in (1, 2):
+        return [], result
+    if result["passed"]:
+        return [f"the worker's tests {tests} pass on the recorded base without its change: they prove nothing "
+                "about it"], result
+    return [f"the worker's tests {tests} could not be judged on the recorded base (exit {result['returncode']}, "
+            f"{result['confinement']}): {result['tail'][-200:]}"], result
+
+
 # -- the capability adapter ---------------------------------------------------------------
 
 def _order_dir(ctx: InvocationContext, order: str) -> Path:
@@ -1406,7 +1596,9 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
     claim and GREG's first test run are ignored. Verdicts: ABSENT, ACCEPTED, REJECTED (including a patch
     that replaced its own evaluator: a named acceptance test, its helpers, an executed script, pytest
     configuration, interpreter hooks or a module shadowing the runner or the code under test,
-    ``evaluator_findings``), NEEDS_FOUNDER_DECISION (protected surface, or a project file that can configure
+    ``evaluator_findings``; changed tests that pass on the recorded base, ``discrimination_findings``; a delivered
+    artifact that differs from the value the order binds, ``bound_artifact_findings``; or one a named reviewed verifier
+    refutes, ``rederivation_findings``), NEEDS_FOUNDER_DECISION (protected surface, or a project file that can configure
     the runner, touched: capability may grow, authority may not; never overriding a rejection).
 
     A document order with ``bound_claims`` is accepted only if every sentence of the deliverable is a claim the Mind
@@ -1516,22 +1708,42 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
             findings.append("more files changed than the order allows")
             verdict = "REJECTED"
         evaluator = {"replaced": [], "shared": []}
+        delivered, tree, base_run = None, None, None
         if order["mode"] == "repository":
+            name_status = _git(fresh, "diff", "--cached", "--name-status", "--no-renames", base).stdout
             evaluator = evaluator_findings(
-                _git(fresh, "diff", "--cached", "--name-status", "--no-renames", base).stdout, order["acceptance"],
+                name_status, order["acceptance"],
                 base_files=_git(fresh, "ls-tree", "-r", "-z", "--name-only", base).stdout.split("\0")[:-1],
                 files=_git(fresh, "ls-files", "-z").stdout.split("\0")[:-1])
             if evaluator["replaced"]:
                 findings.append(f"the worker changed the frozen evaluator it is judged by: {evaluator['replaced']}")
                 verdict = "REJECTED"
+            # R1-A: GREG's copies, taken before the acceptance run executes any worker code in the clone.
+            delivered = delivered_inputs(fresh, base, order["acceptance"], name_status)
+            if delivered["tests"] and None not in delivered["test_side"].values():
+                tree = Path(tmp) / "base"
+                base_tree(fresh, base, tree, delivered["test_side"])
         if order["mode"] == "repository":
+            timeout = min(int(order["timeout_seconds"]), 1200)
             with_tests = run_tests(acceptance_commands(order["acceptance"], names), fresh,
-                                   timeout=min(int(order["timeout_seconds"]), 1200), stop_check=ctx.stop_check,
+                                   timeout=timeout, stop_check=ctx.stop_check,
                                    confinement=ctx.worker_confinement)
             failed = [t for t in with_tests if not t["passed"]]
             if failed:
                 findings.append(f"{len(failed)} acceptance command(s) failed in the independent clone")
                 verdict = "REJECTED"
+            unbound = (bound_artifact_findings(order["acceptance"], order.get("context", ""), delivered)
+                       + rederivation_findings(order["acceptance"], delivered))
+            if unbound:
+                findings += unbound
+                verdict = "REJECTED"
+            if verdict == "ACCEPTED":          # the one extra run, only for a patch nothing else has refused
+                undiscriminating, base_run = discrimination_findings(tree, delivered, timeout=timeout,
+                                                                     stop_check=ctx.stop_check,
+                                                                     confinement=ctx.worker_confinement)
+                if undiscriminating:
+                    findings += undiscriminating
+                    verdict = "REJECTED"
         else:
             try:
                 out = _inside(fresh / order["acceptance"]["output"], (fresh,))
@@ -1568,8 +1780,11 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
     return {"order": order_name, "verdict": verdict, "findings": findings, "changed_files": names,
             "patch_sha256": summary["patch_sha256"], "branch": summary.get("branch"), "commit": summary.get("commit"),
             "independent_tests": [{k: t[k] for k in ("argv", "returncode", "passed", "seconds")} for t in with_tests],
+            "base_run": {k: base_run[k] for k in ("argv", "returncode", "passed", "seconds")} if base_run else None,
             "independence": "fresh clone of the source at the recorded base, retained patch re-applied, "
-                            "acceptance re-run with no network; worker claim and collector tests not used",
+                            "acceptance re-run with no network; worker claim and collector tests not used; "
+                            "changed tests must fail on GREG's copy of the base; bound artifacts and named "
+                            "verifiers read from GREG's copies",
             "worker": summary.get("worker", {}).get("identity"), "receipt_binding": receipt_binding,
             "spend": spend, **mind,
             "authority_created": False}

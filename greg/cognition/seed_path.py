@@ -156,7 +156,27 @@ def solve(params, ctx):
             if r['input_digest'] != sha256_json(p):
                 raise CapabilityError('problem ID already bound; use a new version')
             return r
-    r = evaluate_problem(p, stop_check=ctx.stop_check)
+    serving = p
+    budget = None
+    if ctx.cognition_budget is not None:
+        from .budget import ThinkingBudget
+        from .contracts import ProblemGeometry
+        if p['budget_ms'] < 50:
+            raise CapabilityError('BUDGET_EXHAUSTED: enclosing seed deadline cannot support verification')
+        budget = ThinkingBudget(ProblemGeometry(latency_limit=min(30, p['budget_ms'] / 1000)),
+                                family="seed_path", started=time.monotonic(), caller_window=ctx.cognition_budget)
+        milliseconds = min(p['budget_ms'], int(budget.remaining() * 1000))
+        if milliseconds < 50:
+            raise CapabilityError('BUDGET_EXHAUSTED: enclosing seed deadline cannot support verification')
+        serving = {**p, 'budget_ms': milliseconds}
+    r = evaluate_problem(serving, stop_check=ctx.stop_check)
+    if budget is not None:
+        if budget.remaining() <= 0:
+            raise CapabilityError('BUDGET_EXHAUSTED: enclosing seed deadline exceeded')
+        r['input_digest'] = sha256_json(p)
+        r['serving_budget_ms'] = serving['budget_ms']
+        r['budget_projection'] = {'grant_id': budget.window.grant_id, 'new_authority': False,
+                                  'limits': 'deadline narrowed; existing seed independently verifies within this ceiling'}
     from cortex.seed.projections import enrich
     enrich(p, r)
     r.update({'receipt_id': sha256_json({'mission': ctx.mission_id, 'problem': p}),
@@ -165,6 +185,21 @@ def solve(params, ctx):
     ctx.journal.record('cognition.receipt', r, key=key, sensitivity='confidential')
     return r
 
+
+
+RAN_OUTCOMES = ('ANSWERED_WITHIN_SCOPE', 'CONDITIONAL_RESULT')
+
+
+def claim_ran(claim) -> bool:
+    """A claim ran when its method answered (in scope or conditionally) and its verification is valid."""
+    return claim.get('outcome') in RAN_OUTCOMES and bool((claim.get('verification') or {}).get('valid'))
+
+
+def _method_ref(claim, receipt) -> dict:
+    return {'method': claim['method'], 'geometry': claim['geometry'],
+            'native_version': (claim.get('result') or {}).get('version'),
+            'model_digest': (claim.get('result') or {}).get('model_digest'),
+            'verifier_digest': receipt.payload['verifier_digest']}
 
 def settle(params, ctx):
     """Append a signed, attributable observation. A declaration is never independent evidence."""
@@ -194,11 +229,11 @@ def settle(params, ctx):
     outcome = {**params, 'authority_ref': ctx.authority_ref, 'authority_created': False,
                'score_status': 'reported assessment; not authenticated performance',
                'verification_scope': 'computational integrity only' if params['tier'] == 'computation_verified' else 'reported observation',
-               'methods': [{'method': c['method'], 'geometry': c['geometry'],
-                    'native_version': (c.get('result') or {}).get('version'),
-                    'model_digest': (c.get('result') or {}).get('model_digest'),
-                    'verifier_digest': receipt.payload['verifier_digest']}
-                    for c in receipt.payload['claims']],
+               # 0.2.2 (verified 2026-10-21): only a claim that ran and was verified is credited; the others
+               # are listed, never silently dropped and never counted as an observation.
+               'methods': [_method_ref(c, receipt) for c in receipt.payload['claims'] if claim_ran(c)],
+               'unexecuted_methods': [_method_ref(c, receipt) for c in receipt.payload['claims']
+                                      if not claim_ran(c)],
                'attribution': 'reported contribution, not proven causal credit'}
     retained = [e.payload for e in ctx.journal.replay('cognition.outcome')]
     prior = next((o for o in retained if o['outcome_id'] == params['outcome_id']), None)

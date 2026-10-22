@@ -61,7 +61,7 @@ def from_greg(events) -> list[dict]:
     for e in events:
         kind, p = e["type"].removeprefix("greg."), e["payload"]
         if kind == "mission.action" and p.get("status") == "DONE":
-            used.setdefault(p["mission_id"], set()).add(p["capability"])
+            used.setdefault(p["mission_id"], set()).add(p.get("capability") or "?")   # legacy records name none
         elif kind == "mission.appraised":
             for capability in sorted(used.get(p["mission_id"], ())):
                 records.append({"subject": capability, "context": "greg", "verdict": p["verdict"],

@@ -22,7 +22,7 @@ import urllib.parse
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 
-from greg.capabilities import CapabilityError, CapabilityManifest, InvocationContext
+from greg.capabilities import CapabilityError, CapabilityManifest, InvocationContext, InvocationBudgetWindow
 from greg.lightcone import LightCone
 from policy.consequence_gate import ConsequenceGate, GrantIssuer
 from policy.engine import Proposal, Verdict, evaluate
@@ -41,6 +41,7 @@ class ActionOutcome:
     receipt_hash: str | None = None
     grant_id: str | None = None
     cost_usd: float = 0.0
+    failure_class: str | None = None     # typed where a capability failure was raised (CapabilityError)
 
 
 class AuthorityOffice:
@@ -52,9 +53,44 @@ class AuthorityOffice:
 
     @staticmethod
     def scope_digest(*, mission_id: str, capability_id: str, params: dict, target: str,
-                     consequence_class: str, cost_usd: float) -> str:
-        return sha256_json({"mission_id": mission_id, "capability": capability_id, "params": params,
-                            "target": target, "consequence_class": consequence_class, "cost_usd": cost_usd})
+                     consequence_class: str, cost_usd: float, spent_usd: float = 0.0,
+                     budget_usd: float | None = None) -> str:
+        material = {"mission_id": mission_id, "capability": capability_id, "params": params,
+                    "target": target, "consequence_class": consequence_class, "cost_usd": cost_usd}
+        if cost_usd > 0 and budget_usd is not None:
+            # Extracted from #157: approval of one paid attempt cannot also approve another attempt after known
+            # spend, or an unknown-spend reservation, changed the remaining mandate. Free reads keep their
+            # stable exact scope.
+            material["paid_budget_state"] = {"spent_usd": spent_usd, "budget_usd": budget_usd}
+        return sha256_json(material)
+
+    @staticmethod
+    def precheck(manifest: CapabilityManifest, *, target: str, params: dict) -> tuple[str, str] | None:
+        """(status, reason) when this capability cannot act on this target here, before any cone or approval
+        question: unavailable on this body, or a target its manifest does not admit. None when it can.
+
+        ``act`` returns these before it reaches the cone, so a mission never asks about such an act; asking the
+        founder about it ahead of the mission's loop (``MissionEngine._askable``) applies the same test."""
+        ok, why = manifest.available()
+        if not ok:
+            return "UNAVAILABLE", why
+        if not target.startswith(manifest.target_prefix):
+            return "REFUSED", f"target {target!r} outside capability prefix {manifest.target_prefix!r}"
+        if manifest.target_from:  # the founder-signed target must name the host actually contacted
+            host = urllib.parse.urlsplit(str(params.get(manifest.target_from, ""))).hostname or ""
+            if target != manifest.target_prefix + host:
+                return "REFUSED", (f"target {target!r} does not name the host {host!r} "
+                                   f"that {manifest.target_from} would contact")
+        return None
+
+    @staticmethod
+    def proposal_id(scope: str, attempt) -> str:
+        """The one proposal (hence at most one Gate dispatch) of this exact scope at this attempt."""
+        return "greg-" + sha256_json({"scope": scope, "attempt": attempt})[7:39]
+
+    def prior(self, proposal_id: str):
+        """Retained dispatch claim and receipt of this exact proposal: what the Gate itself recorded."""
+        return self._prior(proposal_id)
 
     def _prior(self, proposal_id: str):
         """Retained dispatch/receipt for this exact proposal, if any (crash recovery)."""
@@ -68,27 +104,42 @@ class AuthorityOffice:
     def act(self, *, mission_id: str, cone: LightCone, command_digest: str, manifest: CapabilityManifest,
             adapter, ctx: InvocationContext, params: dict, target: str, cost_usd: float,
             expected_outcome: str, evidence_refs: list, attempt, spent_usd: float,
-            approved_scopes: set, evidence_confidence: float = 1.0) -> ActionOutcome:
+            approved_scopes: set, evidence_confidence: float = 1.0,
+            signed_scopes: frozenset = frozenset()) -> ActionOutcome:
+        """``signed_scopes``: exact scopes the founder-signed mission itself pre-approves (its
+        ``pre_approved_steps``). They admit that one action past the light cone only; a constitutional
+        requirement for a human is still answered by an exact-scope founder DECISION alone."""
         consequence = manifest.consequence_class
         scope = self.scope_digest(mission_id=mission_id, capability_id=manifest.capability_id, params=params,
-                                  target=target, consequence_class=consequence, cost_usd=cost_usd)
-        proposal_id = "greg-" + sha256_json({"scope": scope, "attempt": attempt})[7:39]
+                                  target=target, consequence_class=consequence, cost_usd=cost_usd,
+                                  spent_usd=spent_usd, budget_usd=cone.budget_usd)
+        proposal_id = self.proposal_id(scope, attempt)
         base = dict(proposal_id=proposal_id, scope_digest=scope)
 
-        ok, why = manifest.available()
-        if not ok:
-            return ActionOutcome("UNAVAILABLE", [why], **base)
-        if not target.startswith(manifest.target_prefix):
-            return ActionOutcome("REFUSED", [f"target {target!r} outside capability prefix "
-                                             f"{manifest.target_prefix!r}"], **base)
-        if manifest.target_from:  # the founder-signed target must name the host actually contacted
-            host = urllib.parse.urlsplit(str(params.get(manifest.target_from, ""))).hostname or ""
-            if target != manifest.target_prefix + host:
-                return ActionOutcome("REFUSED", [f"target {target!r} does not name the host {host!r} "
-                                                 f"that {manifest.target_from} would contact"], **base)
+        refused = self.precheck(manifest, target=target, params=params)
+        if refused is not None:
+            return ActionOutcome(refused[0], [refused[1]], **base)
+        # Exactly-once recovery for a body stopped between a paid dispatch or receipt and the mission projection
+        # under the earlier scope form: only a retained exact legacy dispatch is used; legacy approvals grant
+        # no new action.
+        legacy_scope = self.scope_digest(mission_id=mission_id, capability_id=manifest.capability_id, params=params,
+                                         target=target, consequence_class=consequence, cost_usd=cost_usd)
+        if legacy_scope != scope:
+            legacy_id = "greg-" + sha256_json({"scope": legacy_scope, "attempt": attempt})[7:39]
+            old_claim, old_receipt = self._prior(legacy_id)
+            old_base = dict(proposal_id=legacy_id, scope_digest=legacy_scope)
+            if old_receipt is not None:
+                result = old_receipt.payload["result"]
+                positive = result.get("result_class") == "positive"
+                return ActionOutcome("DONE" if positive else "REFUSED", ["retained legacy receipt; no redispatch"],
+                                     output=result.get("output"), receipt_hash=old_receipt.hash,
+                                     grant_id=old_receipt.payload.get("grant_id"),
+                                     cost_usd=cost_usd if positive else 0.0, **old_base)
+            if old_claim is not None:
+                return ActionOutcome("UNCERTAIN", ["retained legacy dispatch; no receipt or blind retry"], **old_base)
         outside = cone.admits(capability=manifest.capability_id, target=target, consequence_class=consequence,
                               cost_usd=cost_usd, spent_usd=spent_usd)
-        if outside and scope not in approved_scopes:
+        if outside and scope not in approved_scopes and scope not in signed_scopes:
             return ActionOutcome("OUTSIDE_SCOPE", outside, **base)
 
         claim, receipt = self._prior(proposal_id)
@@ -96,8 +147,9 @@ class AuthorityOffice:
             return ActionOutcome("DONE", ["retained receipt reused after restart"], output=receipt.payload["result"].get("output"),
                                  receipt_hash=receipt.hash, grant_id=receipt.payload.get("grant_id"),
                                  cost_usd=cost_usd, **base)
-        if claim is not None:
-            return ActionOutcome("UNCERTAIN", ["dispatch claimed without receipt; outcome unknown"], **base)
+        if claim is not None:  # the dispatch the claim names, so its reconciliation settles exactly that one
+            return ActionOutcome("UNCERTAIN", ["dispatch claimed without receipt; outcome unknown"],
+                                 grant_id=claim.payload.get("grant_id"), **base)
 
         worker = self.passports.issue(kind="agent", creator="greg-authority-office", owner_organ="uniimente-kernel",
                                       legal_principal=PRINCIPAL, declared_capabilities=[manifest.capability_id],
@@ -129,16 +181,32 @@ class AuthorityOffice:
         self.ledger.append("event", {"type": "greg.authority.grant_issued", "grant_id": grant["grant_id"],
                                      "proposal_id": proposal_id, "scope_digest": scope,
                                      "authority_ref": command_digest, "cone": cone.to_dict(),
-                                     "founder_approved_scope": scope in approved_scopes})
+                                     "founder_approved_scope": scope in approved_scopes,
+                                     **({"pre_approved_in_signed_mission": True}
+                                        if outside and scope in signed_scopes else {})})
 
         def execute(p):
             try:
+                # Limits are projected from the current canonical dispatch. The
+                # projection is not a grant and cannot replenish reserved spend.
+                window = None
+                if manifest.capability_id.startswith("cognition."):
+                    dispatch, _ = self._prior(proposal_id)
+                    window = InvocationBudgetWindow(
+                        horizon=cone.horizon, grant_expires_at=grant["expires_at"],
+                        remaining_money_usd=max(0.0, cone.budget_usd - spent_usd - cost_usd),
+                        authority_ref=command_digest, grant_id=grant["grant_id"],
+                        grant_digest=sha256_json(grant), mission_id=mission_id,
+                        scope_digest=scope, proposal_id=proposal_id,
+                        witness_id=dispatch.payload.get("witness_id") if dispatch else None,
+                        dispatch_effect_digest=dispatch.payload.get("effect_digest") if dispatch else None)
                 output = adapter(params, replace(ctx, target=target, mission_id=mission_id,
                                                 authority_ref=command_digest, grant_id=grant['grant_id'],
-                                                policy_version=self.compiled.constitution_version))
+                                                policy_version=self.compiled.constitution_version,
+                                                cognition_budget=window))
             except CapabilityError as exc:
                 return {"observed_outcome": "capability refused: " + str(exc)[:300], "result_class": "negative",
-                        "output": None, "validation_status": "self_reported"}
+                        "failure_class": exc.failure_class, "output": None, "validation_status": "self_reported"}
             return {"observed_outcome": expected_outcome, "result_class": "positive",
                     "output": bounded(output), "validation_status": "self_reported"}
 
@@ -152,7 +220,8 @@ class AuthorityOffice:
             result = receipt.payload["result"]
             if result.get("result_class") != "positive":
                 return ActionOutcome("REFUSED", [result.get("observed_outcome", "capability failed")],
-                                     receipt_hash=record.receipt_hash, grant_id=grant["grant_id"], **base)
+                                     receipt_hash=record.receipt_hash, grant_id=grant["grant_id"],
+                                     failure_class=result.get("failure_class"), **base)
             return ActionOutcome("DONE", [], output=result.get("output"), receipt_hash=record.receipt_hash,
                                  grant_id=grant["grant_id"], cost_usd=cost_usd, **base)
         if record.state == "reconciliation_required":

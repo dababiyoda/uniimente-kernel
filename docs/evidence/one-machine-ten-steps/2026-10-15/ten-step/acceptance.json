@@ -1,0 +1,103 @@
+{
+ "kind": "greg-founder-device-acceptance/1",
+ "at": "2026-10-15T13:56:26+00:00",
+ "body_id": "body-65f0eb239fbcc7e9",
+ "home": "/tmp/pytest-of-root/pytest-182/test_one_machine_ten_steps_on_0/body",
+ "reality": "LOCAL (not a founder-designated body run; not founder-device evidence)",
+ "chain": "verified",
+ "properties": [
+  {
+   "property": "ledger_chain_verified",
+   "status": "PASS",
+   "means": "the hash chain of every retained record verifies",
+   "runbook": "\u2014"
+  },
+  {
+   "property": "founder_key_enrolled",
+   "status": "PASS",
+   "means": "a founder key is enrolled",
+   "runbook": "1. Install"
+  },
+  {
+   "property": "first_body_designated",
+   "status": "NOT_YET",
+   "means": "a founder-signed first-body designation is on this ledger",
+   "runbook": "1. Install (step 8/8)"
+  },
+  {
+   "property": "supervised_runtime",
+   "status": "NOT_YET",
+   "means": "the supervised body reports a heartbeat",
+   "runbook": "1. Install (service)"
+  },
+  {
+   "property": "engine_attached_by_founder",
+   "status": "NOT_YET",
+   "means": "you attached the exact selection engine with your key",
+   "runbook": "4. First Mission: Attach in Mission Control"
+  },
+  {
+   "property": "first_mission_verified",
+   "status": "NOT_YET",
+   "means": "a First Mission closed and its appraisal re-derived it",
+   "runbook": "4. First Mission"
+  },
+  {
+   "property": "foundry_private_page",
+   "status": "NOT_YET",
+   "means": "Foundry #31 holds the dossier's intact private page",
+   "runbook": "4. First Mission"
+  },
+  {
+   "property": "lesson_retained",
+   "status": "NOT_YET",
+   "means": "the dossier's bytes are retained by digest",
+   "runbook": "4. First Mission"
+  },
+  {
+   "property": "interruption_survived",
+   "status": "NOT_YET",
+   "means": "the First Mission crossed a body recovery (kill -9) before closing",
+   "runbook": "4. First Mission: kill -9"
+  },
+  {
+   "property": "founder_accepted",
+   "status": "NOT_YET",
+   "means": "you accepted the result",
+   "runbook": "4. Accept"
+  },
+  {
+   "property": "memory_across_missions",
+   "status": "NOT_YET",
+   "means": "a later First Mission compared itself with an earlier one",
+   "runbook": "5. Run the First Mission again"
+  },
+  {
+   "property": "commerce_rehearsal_verified",
+   "status": "NOT_YET",
+   "means": "the FIXTURE commerce loop closed and re-verified",
+   "runbook": "6. Ventures"
+  },
+  {
+   "property": "pause_and_resume_exercised",
+   "status": "PASS",
+   "means": "you paused and resumed the body with your key",
+   "runbook": "7. Founder control"
+  },
+  {
+   "property": "revoke_exercised",
+   "status": "NOT_YET",
+   "means": "you revoked a mission with your key",
+   "runbook": "7. Founder control"
+  }
+ ],
+ "passed": 3,
+ "total": 14,
+ "first_mission": null,
+ "vepmc": 0,
+ "recoveries": 3,
+ "acceptances": 0,
+ "runbook": "greg/CHROMEBOOK_FIRST_MISSION.md",
+ "authority_created": false,
+ "kept_at": "/tmp/pytest-of-root/pytest-182/test_one_machine_ten_steps_on_0/Deliveries/acceptance/2026-10-15T135626+0000.json"
+}

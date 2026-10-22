@@ -62,6 +62,7 @@ function renderDecisions(list) {
     if (r.expected_effect) card.append(el("p", "Expected effect: " + r.expected_effect));
     for (const o of r.options || []) card.append(el("p", `• ${o.option} — ${o.cost} — ${o.expected_effect}`, "muted"));
     if (r.uncertainty) card.append(el("p", "Uncertainty: " + r.uncertainty, "muted"));
+    if (r.answerable === false) { box.append(card); continue; }   // e.g. SCOPE_RENEWAL: a new signed MISSION renews it
     const reason = el("input"); reason.placeholder = "reason (optional)"; reason.setAttribute("aria-label", "reason");
     const approve = el("button", "Approve"); approve.className = "approve";
     const reject = el("button", "Reject"); reject.className = "reject";
@@ -77,7 +78,12 @@ async function refresh() {
     const status = (await api("/api/status")).data;
     const hb = status.background || {};
     $("state").textContent = `${hb.state || "unknown"} · boots ${status.boots} · chain ${status.security.chain_verified ? "verified" : "BROKEN"}`;
-    $("goals").replaceChildren(...status.goals.map((g) => el("li", `${g.mission_id}: ${g.achieved ? "achieved" : g.closure}`)));
+    $("goals").replaceChildren(...(status.missions || status.goals).map((g) => el("li", `${g.mission_id}: ${g.achieved ? "achieved" : g.closure}`)));
+    // Persistent Goal Gravity goals (founder-signed GOAL commands): read-only here; the missions act.
+    $("gravity").replaceChildren(...(status.gravity?.goals || []).map((g) =>
+      el("li", `${g.desired_state} — ${g.stop_label || g.status}` +
+        (g.open_requests.length ? ` · ${g.open_requests.length} decision(s) above` : "") +
+        ` · missions ${g.missions.join(", ")}`)));
     $("cognition").replaceChildren(...(status.cognition?.receipts || []).map((r) => {
       const item = el("li", `${r.problem_id}: ${r.answered ? "checked conditional result" : "needs evidence or review"}. ${r.next_step}`);
       const detail = el("details", "");

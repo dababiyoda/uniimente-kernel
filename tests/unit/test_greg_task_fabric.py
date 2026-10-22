@@ -72,6 +72,16 @@ def order(tmp_path, *, contract=CONTRACT, allowed=("post.txt", "post.claims.json
             "provider": "scripted", "max_budget_usd": 1.0, "timeout_seconds": 60}
 
 
+def rewrite_record(evidence, edit):
+    """Edit the retained order and keep its recorded digests consistent: the attacker who can rewrite evidence.json
+    rewrites the digests beside it too. #192's frozen-digest check alone then passes; the signed contract (#185)
+    is what must still refuse."""
+    record = json.loads(evidence.read_text())
+    edit(record["order"])
+    record["order_digest"] = record["summary"]["order_digest"] = workers.WorkOrder(**record["order"]).digest()
+    evidence.write_text(json.dumps(record))
+
+
 def commission_and_appraise(tmp_path, monkeypatch, worker_files, *, signed_contract=CONTRACT, registry=None, **kw):
     monkeypatch.setitem(workers.PROVIDERS, "scripted", Scripted(worker_files))
     workers.commission(order(tmp_path, **kw), ctx(tmp_path, "worker.commission"))
@@ -161,9 +171,16 @@ def test_the_signed_contract_applies_when_the_record_is_edited(tmp_path, monkeyp
     monkeypatch.setitem(workers.PROVIDERS, "scripted", Scripted(files(hedge)))
     workers.commission(order(tmp_path), ctx(tmp_path, "worker.commission"))
     evidence = tmp_path / "ws" / "work-orders" / "depot-note" / "evidence.json"
-    record = json.loads(evidence.read_text())
+    pristine = evidence.read_text()
+    # a plain edit breaks the record's frozen digest (#192) and is refused before any evaluation
+    record = json.loads(pristine)
     del record["order"]["acceptance"]["bound_claims"]
     evidence.write_text(json.dumps(record))
+    out = workers.appraise({"order": "depot-note", "bound_claims": CONTRACT}, ctx(tmp_path, "worker.appraise"))
+    assert out["verdict"] == "REJECTED" and out["findings"] == ["retained work order does not match its frozen digest"]
+    # an edit that also rewrites the digests passes that check; the contract signed into the mission still applies
+    evidence.write_text(pristine)
+    rewrite_record(evidence, lambda o: o["acceptance"].pop("bound_claims"))
     out = workers.appraise({"order": "depot-note", "bound_claims": CONTRACT}, ctx(tmp_path, "worker.appraise"))
     assert out["verdict"] == "REJECTED"
     assert any("differs from the one this mission signed" in f for f in out["findings"])
@@ -174,11 +191,11 @@ def test_an_edited_record_rejects_even_a_faithful_document(tmp_path, monkeypatch
     monkeypatch.setitem(workers.PROVIDERS, "scripted", Scripted(files(FAITHFUL)))
     workers.commission(order(tmp_path), ctx(tmp_path, "worker.commission"))
     evidence = tmp_path / "ws" / "work-orders" / "depot-note" / "evidence.json"
-    record = json.loads(evidence.read_text())
-    record["order"]["acceptance"]["bound_claims"]["quality"] = "primary"
-    evidence.write_text(json.dumps(record))
+    # the digests are rewritten with the edit, so the signed-contract comparison is what refuses (#185 on #192)
+    rewrite_record(evidence, lambda o: o["acceptance"]["bound_claims"].update(quality="primary"))
     out = workers.appraise({"order": "depot-note", "bound_claims": CONTRACT}, ctx(tmp_path, "worker.appraise"))
     assert out["verdict"] == "REJECTED"
+    assert any("differs from the one this mission signed" in f for f in out["findings"])
 
 
 def test_a_quarantined_evidence_family_cannot_accept_a_document(tmp_path, monkeypatch):
@@ -358,8 +375,12 @@ def test_a_faithful_worker_drafted_post_waits_for_the_founder_and_nothing_is_pos
 
 
 def test_the_evaluator_gets_the_bodys_registry_and_no_ledger(tmp_path, monkeypatch):
+    """No ledger it can write (#185). Joined with #192 (H.G11) the evaluator reads one: it binds a retained work
+    order to its canonical commission receipt, through a handle that offers only ``ledger.by_type``."""
+    from greg.ventures import LedgerReader
     run = run_post(tmp_path, monkeypatch, files(FAITHFUL))
-    assert run.context.capability_registry is run.registry and run.context.journal is None
+    assert run.context.capability_registry is run.registry and isinstance(run.context.journal, LedgerReader)
+    assert not hasattr(run.context.journal, "record") and not hasattr(run.context.journal.ledger, "append")
 
 
 def test_without_bound_claims_the_post_mission_is_the_figure_only_floor():
@@ -386,3 +407,34 @@ def test_on_the_real_daleobanks_its_own_checks_pass_a_distorted_draft_and_the_mi
     assert run.checks["draft_appraised"] is False and run.publish_asked is False
     good = run_post(tmp_path / "good", monkeypatch, files(FAITHFUL), daleobanks=root)
     assert good.checks["draft_appraised"] is True and good.publish_asked is True
+
+
+class LinkedClaims(Scripted):
+    """Test double: writes the deliverable, and makes its claims file a symlink to a host file it names."""
+
+    def __init__(self, files: dict, target: Path):
+        super().__init__(files)
+        self.target = target
+
+    def run(self, order, cwd):
+        report = super().run(order, cwd)
+        (cwd / "post.claims.json").unlink(missing_ok=True)
+        os.symlink(self.target, cwd / "post.claims.json")
+        return report
+
+
+@pytest.mark.parametrize("target", ["host-file", "/proc/self/mem"])
+def test_a_claims_file_that_leaves_the_clone_is_never_read(tmp_path, monkeypatch, target):
+    """#184 reads a worker-written deliverable only inside the fresh clone. Joined with #185, the claims file the Mind
+    checks is a second worker-written file, held to the same rule: a symlink out of the clone is refused unread,
+    and a host file that cannot be read rejects instead of raising."""
+    host = tmp_path / "outside" / "claims.json"
+    host.parent.mkdir()
+    host.write_text(files(FAITHFUL)["post.claims.json"])          # a host file that parses as faithful claims
+    link = host if target == "host-file" else Path(target)
+    monkeypatch.setitem(workers.PROVIDERS, "scripted", LinkedClaims(files(FAITHFUL), link))
+    workers.commission(order(tmp_path), ctx(tmp_path, "worker.commission"))
+    out = workers.appraise({"order": "depot-note", "bound_claims": CONTRACT}, ctx(tmp_path, "worker.appraise"))
+    assert out["verdict"] == "REJECTED"
+    assert any("leaves the private workspace" in f for f in out["findings"]), out["findings"]
+    assert not out.get("cognition_receipts")                      # nothing the host file says reached the Mind

@@ -636,7 +636,7 @@ def test_teams_intersect_authority_spend_nothing_extra_and_dissolve(tmp_path):
 
 
 def test_repair_writes_a_failing_test_finds_the_minimal_patch_and_records_the_procedure(tmp_path):
-    result = repair.exercise(tmp_path)
+    result = repair.exercise_fixture(tmp_path)
     assert result["regression_before"] == "1 failed" and result["after_passed"]
     assert result["chosen"] == "line 7: drop '- 1'" and "range(remainder)" in result["diff"]
     assert result["tied"], "localization could not separate the lines; the tie was searched, not truncated"
@@ -653,3 +653,513 @@ def test_owned_build_is_reproducible_and_runs_from_the_bundle(tmp_path):
     assert result["identical_across_processes"] and result["verify"] and result["one_byte_changes_hash"]
     assert result["smoke"]["ran_from_bundle"], result["smoke"]
     assert result["toolchain_pins"] == ["PyYAML", "cryptography", "jsonschema", "pytest"]
+
+
+# -- increment 6: owned web --------------------------------------------------------------
+
+from foundry.systems import webserver
+
+
+def test_owned_site_serves_provable_pages_and_guards_portals(tmp_path):
+    result = webserver.exercise(tmp_path)
+    assert result["served"] == 200 and result["version"] == "2" and result["etag_is_content_hash"]
+    assert all(result["third_party_verification"].values()), "a stranger with the public key can verify the page"
+    assert result["forged_body_verification"]["body_matches_leaf"] is False
+    assert result["history"] == ["add outcome", "launch"]
+    assert result["not_modified"] == 304 and result["traversal"] == 400 and result["tampered_page"] == 500
+    assert result["portal"] == {"own": 200, "other_customer": 403, "no_token": 401, "expired": 403, "forged": 403}
+    assert result["public_bind_refused"]
+    site = webserver.Site(tmp_path / "s2", key_seed=bytes(32 * [5]))
+    with pytest.raises(webserver.SiteError, match="reason and evidence"):
+        site.publish("/x.html", "x", reason="", evidence=[])
+    rendered = foundry_bridge.query({"system": 31, "op": "render", "args": {"path": "/missing", "now": 0}},
+                                    _ctx(tmp_path, "foundry.query"))
+    assert rendered["result"]["status"] == 404
+
+
+# -- increment 8 (part): cognitive router -------------------------------------------------
+
+from foundry.systems import cognitive_router
+
+
+def test_cognitive_router_ranks_by_verified_evidence_and_keeps_governance(tmp_path):
+    result = cognitive_router.exercise(tmp_path)
+    assert result["by_quality"][0] == "anthropic:opus" and result["by_cost"][0] == "local:llama"
+    assert result["local_only"] == ["local:llama"], "a local-only request never reaches a contracted vendor"
+    assert result["after_provider_loss"] == ["openai:gpt", "local:llama"] and result["memory_kept_after_loss"]
+    assert result["failover_answered_by"] == "openai:gpt" and result["failover_tried"] == ["failed", "ok"]
+    assert result["refusals"]["refusal_is_terminal"] == "Refusal", "a declined request is never re-asked elsewhere"
+    assert "nothing_fits_budget_and_privacy" in result["refusals"]
+    # dominance: a route worse on every axis never leads the order even under its favourable priority
+    r = tmp_path / "dom"
+    cognitive_router.declare(r, "a", provider="p", privacy="public", price_per_call_usd=0.01)
+    cognitive_router.declare(r, "b", provider="p", privacy="public", price_per_call_usd=0.02)
+    now = "2026-10-13T00:00:00Z"
+    for n in range(6):
+        cognitive_router.observe(r, "a", task="t", verdict="VERIFIED", cost_usd=0.01, latency_s=1.0, at=now, evidence=f"a{n}")
+        cognitive_router.observe(r, "b", task="t", verdict="VERIFIED" if n < 2 else "REFUTED", cost_usd=0.02, latency_s=3.0,
+                                 at=now, evidence=f"b{n}")
+    d = cognitive_router.choose(r, task="t", privacy="public", priority="cost", now=now)
+    assert d["order"] == ["a", "b"] and d["dominated"] == ["b"]
+    with pytest.raises(cognitive_router.RouterPolicyError):
+        cognitive_router.declare(r, "c", provider="p", privacy="secret")
+    out = foundry_bridge.query({"system": 25, "op": "routes", "args": {"now": now}}, _ctx(tmp_path, "foundry.query"))
+    assert out["result"] == {}, "a fresh mission workspace has no routes until declared"
+
+
+# -- increment 7 (part): rabbit hole engine and path attribution ----------------------------
+
+from foundry.systems import attribution, rabbit_hole
+
+
+def test_rabbit_hole_routes_by_observed_doors_and_never_offers_weak_or_dark_nodes(tmp_path):
+    result = rabbit_hole.exercise(tmp_path)
+    assert result["territory_valid"] and "dark_pattern" in result["refusals"]
+    assert result["routed_from_entry"] == "pod-basics", "the door visitors actually completed and bought through leads"
+    assert result["alternatives"] == ["disputes"], "the other door is still offered, not hidden"
+    assert result["weak_node_never_offered"] and result["from_disputes"] == "audit-kit"
+    assert result["owned_ground"].startswith("portal:") and result["exit_ramp_always_present"] and result["depth_cap_stops"]
+    stats = result["door_stats"]["why-proof->pod-basics"]
+    assert stats["good"] <= stats["taken"], "a visitor counts once however well the visit went"
+    assert 0 < rabbit_hole.door_value(stats) <= 1.0
+    r2 = tmp_path / "t2"
+    rabbit_hole.demo_territory(r2)
+    rabbit_hole.observe(r2, session="s", kind="consume", node_id="why-proof", at="t")
+    rabbit_hole.observe(r2, session="s", kind="leave", node_id="why-proof", at="t")
+    with pytest.raises(rabbit_hole.RabbitHoleError, match="already left"):
+        rabbit_hole.observe(r2, session="s", kind="consume", node_id="pod-basics", at="t")
+    rec = foundry_bridge.query({"system": 50, "op": "recommend", "args": {"session": "nobody", "now": "t"}},
+                               _ctx(tmp_path, "foundry.query"))
+    assert rec["result"]["node"] is None and "exit_ramp" in rec["result"], "an empty territory routes nowhere, honestly"
+
+
+def test_attribution_measures_paths_and_refuses_small_sample_stories(tmp_path):
+    result = attribution.exercise(tmp_path)
+    assert result["sessions"] == 24 and result["conversions"] == 10
+    assert result["top_path"] == ["why-proof", "pod-basics", "audit-kit", "offer"]
+    assert result["top_path_lower_bound"] < result["top_path_rate"], "reported with its uncertainty"
+    assert result["single_session_path_lower_bound"] < 0.25, "one converting session is not a 100% path"
+    assert result["attribution_sums_to_conversions"] and result["disputes_attracts_but_does_not_convert"]
+    assert result["by_source"]["owned-newsletter"]["rate_lower_bound"] > result["by_source"]["platform-x"]["rate_lower_bound"]
+    # the #34 engine measures the #50 engine's own log through the bridge (sibling store)
+    ws = tmp_path / "ws" / "foundry"
+    rabbit_hole.demo_territory(ws / "system-50")
+    for i in range(3):
+        rabbit_hole.observe(ws / "system-50", session=f"s{i}", kind="consume", node_id="why-proof", at="t")
+        rabbit_hole.observe(ws / "system-50", session=f"s{i}", kind="consume", node_id="pod-basics", at="t")
+        rabbit_hole.observe(ws / "system-50", session=f"s{i}", kind="buy" if i else "leave", node_id="pod-basics", at="t")
+    measured = foundry_bridge.query({"system": 34, "op": "report_territory", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert measured["result"]["sessions"] == 3 and measured["result"]["conversions"] == 2
+    assert attribution.wilson_lower(0, 0) == 0.0 and attribution.report([])["removal"]["attribution"] == {}
+
+
+# -- increment 8 (part): payments on the rail's own SDK -----------------------------------------
+
+from foundry.systems import payments
+
+
+def test_payments_trace_every_charge_to_delivery_and_grant_and_reconcile_to_the_cent(tmp_path):
+    result = payments.exercise(tmp_path)
+    assert result["settled"] == "settled" and result["idempotent_retry_same_intent"]
+    assert result["declined"]["status"] == "declined" and result["metered_settled"] == "settled" and result["usage_billed"]
+    assert result["reconciled_to_processor"] and result["books_balance"]
+    assert result["reserve_after_refund_cents"] < result["reserve_cents"] + 7000, "a refund draws the dispute reserve first"
+    assert set(result["refusals"]) == {"live_key", "no_delivery_receipt", "no_grant", "grant_for_other_case",
+                                       "forged_grant", "grant_from_another_gate", "altered_grant", "amount_above_grant",
+                                       "grant_reused", "double_charge_same_case", "metered_mismatch", "refund_over_charge",
+                                       "refund_without_reason"}
+    assert all(result["refusals"].values())
+    assert result["every_charge_receipted_by_the_gate"], "only the governing Gate's grants move money, each once"
+    # the emulator itself refuses a non-test key and an idempotency key reused for a different request
+    server, emu = payments.start_emulator()
+    try:
+        status, body = emu.handle("POST", "/v1/payment_intents", {"amount": "100", "confirm": "true"}, "k1")
+        assert status == 200
+        assert emu.handle("POST", "/v1/refunds", {"payment_intent": body["id"]}, "k1")[0] == 400
+        assert emu.handle("POST", "/v1/payment_intents", {"amount": "0"}, None)[0] == 400
+    finally:
+        server.shutdown(); server.server_close()
+    books = foundry_bridge.query({"system": 38, "op": "books", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert books["result"]["balances"] == {}, "a fresh workspace has empty books; charging is never a free op"
+
+
+# -- increment 8 (part): markets whose rules are code ---------------------------------------------
+
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+from foundry.systems import agent_commerce, marketplace
+from greg.founder import public_bytes
+
+
+def test_marketplace_matches_by_sealed_second_price_and_settles_only_through_verification(tmp_path):
+    result = marketplace.exercise(tmp_path)
+    big = result["big"]
+    assert big["winner"] == "party:alpha" and big["winning_bid_cents"] == 80000 and big["price_cents"] == 95000
+    assert result["cheapest_bid_did_not_win"] and result["paid_second_price_not_own_bid"]
+    assert "newcomer ceiling" in big["excluded"]["party:newcomer"] and "never revealed" in big["excluded"]["party:delta"]
+    assert result["no_reveal_on_record"] and result["truthful_bidding_dominant"]
+    assert result["strict"]["winner"] == "party:alpha" and result["sole_eligible_bidder_paid_ceiling"]
+    assert "below the buyer's minimum" in result["strict"]["excluded"]["party:gamma"]
+    assert result["standing"]["party:alpha"][0] == "rated" and result["standing"]["party:gamma"][2] == 1
+    assert result["settlement"]["status"] == "settled" and result["settlement"]["take_cents"] == 4750
+    assert result["settlement"]["supplier_payable_cents"] + result["settlement"]["take_cents"] == 95000
+    assert result["refuted_never_charged"] and result["books"]["equation_holds"] and result["books"]["cash_plus_reserve_matches_processor"]
+    assert set(result["refusals"]) >= {"self_dealing", "duplicate_commit", "reveal_before_close", "bid_after_close", "reveal_mismatch",
+                                       "verify_by_supplier", "settle_before_verification", "settle_refuted", "forged_signature",
+                                       "unenrolled_signer", "untyped_contract", "settle_grant_for_other_match",
+                                       "settle_forged_grant", "settle_twice"}
+    assert all(result["refusals"].values()), "every attack named is refused with a reason"
+    # a sole unrated bidder cannot be paid more than the newcomer ceiling even when the buyer's ceiling is higher
+    root = tmp_path / "fresh"
+    buyer, seller = Ed25519PrivateKey.from_private_bytes(bytes(32 * [1])), Ed25519PrivateKey.from_private_bytes(bytes(32 * [2]))
+    marketplace.enroll(root, "b", public_bytes(buyer.public_key()).hex())
+    marketplace.enroll(root, "s", public_bytes(seller.public_key()).hex())
+    marketplace.post_request(root, marketplace.sign(buyer, {"request_id": "r", "buyer": "b", "produces": "evidence", "ceiling_cents": 90000,
+                                                            "closes_at": "2026-10-13T10:00:00Z", "verification_methods": ["human_review"],
+                                                            "min_reputation": None}))
+    marketplace.commit_bid(root, marketplace.sign(seller, {"request_id": "r", "supplier": "s",
+                                                           "commitment": marketplace.commitment("r", "s", 30000, "x")}), now="2026-10-13T09:00:00Z")
+    marketplace.reveal_bid(root, marketplace.sign(seller, {"request_id": "r", "supplier": "s", "amount_cents": 30000, "nonce": "x"}),
+                           now="2026-10-13T10:00:00Z")
+    awarded = marketplace.award(root, "r", now="2026-10-13T10:00:00Z")
+    assert awarded["status"] == "unfilled" and "newcomer ceiling" in awarded["excluded"]["s"]
+    board = foundry_bridge.query({"system": 37, "op": "board", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert board["result"]["requests"] == [] and board["result"]["rules"] == marketplace.DEFAULT_RULES
+    with pytest.raises(CapabilityError, match="refused"):
+        foundry_bridge.apply({"system": 37, "op": "award", "args": {"request_id": "nope", "now": "2026-10-13T10:00:00Z"}},
+                             _ctx(tmp_path, "foundry.apply"))
+
+
+def test_agent_commerce_sells_by_card_402_and_processor_verified_receipts(tmp_path):
+    result = agent_commerce.exercise(tmp_path)
+    assert result["published"]["skills"] == 2 and result["discovered"][0]["grants_access"] is False
+    assert result["card_served"] and all(result["card_proof"].values()), "the served card is provably the seller's"
+    assert result["quote_cents"] == 39200 and result["buyer_recomputes_same_quote"]
+    assert result["challenge_status"] == 402 and result["redeemed"] == 200
+    assert result["receipt_signature_verifies"] and result["forged_receipt_rejected"] and result["delivery_in_cas"]
+    assert result["confirmed"] == "confirmed" and result["undeliverable"] == {"status": 409, "refunded_cents": 108000}
+    assert result["receipts_without_verification_earn_nothing"] and result["declined_card_yields_no_payment"]
+    assert result["standing"]["report"]["incidents"] == 1 and result["standing"]["audit"]["effective_outcomes"] == 1.0
+    assert result["stray_swept"] == {"swept_cents": 39300, "payments": 2}, "under- and mis-paid money goes back to the payer"
+    assert result["reconciled_to_processor"] and result["books_balance"] and result["refunds_due_after_sweep"] == 0
+    assert set(result["refusals"]) >= {"unpriced_skill", "untyped_contract", "buyer_overrides_constant", "no_grant", "grant_for_other_order",
+                                       "replay_same_payment", "replay_under_new_order", "underpaid", "payment_bound_to_other_order",
+                                       "unknown_payment", "expired_challenge", "confirm_by_seller", "confirm_before_delivery",
+                                       "forged_grant", "grant_from_another_gate"}
+    assert all(result["refusals"].values())
+    assert result["every_delivery_receipted_by_the_gate"]
+    assert "replay refused" in result["refusals"]["replay_under_new_order"]
+    orders = foundry_bridge.query({"system": 54, "op": "orders", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert orders["result"]["orders"] == [], "a fresh workspace has sold nothing"
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 54, "op": "redeem", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+
+
+# -- governed implementation pluralism (convergence of #132 foundry-55 with the #158 line) ---------
+
+from foundry import systems as foundry_systems
+
+
+def test_alternates_stay_reachable_through_the_bridge_by_rule_or_by_name(tmp_path):
+    # both lineages answer through the same system number; the canonical module backs the evidence
+    assert foundry_systems.implementations(34) == ("attribution", "journeys")
+    assert foundry_systems.implementations(50) == ("rabbit_hole", "journeys")
+    with pytest.raises(foundry_systems.OperationError, match="no apply op"):
+        foundry_systems.operation(31, "APPLY_OPS", "inspect")   # a query op never answers on the write table
+    # the #158-line journeys report, selected by name, reads the shared observed-event store through the bridge
+    out = foundry_bridge.query({"system": 34, "op": "journeys.report", "args": {"tier": "observed"}},
+                               _ctx(tmp_path, "foundry.query"))
+    assert out["result"]["events"] == 0
+    same = foundry_bridge.query({"system": 34, "op": "report", "implementation": "journeys", "args": {"tier": "observed"}},
+                                _ctx(tmp_path, "foundry.query"))
+    assert same["result"] == out["result"]
+    rendered = foundry_bridge.query({"system": 31, "op": "render", "args": {"path": "/missing", "now": 0}},
+                                    _ctx(tmp_path, "foundry.query"))
+    assert rendered["result"]["status"] == 404
+
+
+def test_contract_rejects_undeclared_or_overclaimed_alternates():
+    rows = completion.contract()
+    hidden = {**rows, 31: {k: v for k, v in rows[31].items() if k != "alternates"}}
+    assert any("system 31: alternates [] differ from the registry ['portal']" in p
+               for p in completion.audit(hidden, rerun=False))
+    overclaimed = {**rows, 37: {**rows[37], "alternates": [{**rows[37]["alternates"][0], "state": "COMPLETE"}]}}
+    assert any("must be PARTIAL or OUTSTANDING" in p for p in completion.audit(overclaimed, rerun=False))
+    bad_tier = {**rows, 25: {**rows[25], "evidence_tier": "PRODUCTION"}}
+    assert any("not in the directive vocabulary" in p for p in completion.audit(bad_tier, rerun=False))
+
+
+# -- increment 8 (part): the embassy on a wire -----------------------------------------------------
+
+from foundry.systems import embassy_wire
+
+
+def test_embassy_wire_admits_by_challenge_verifies_before_acceptance_and_exposes_no_interior(tmp_path):
+    result = embassy_wire.exercise(tmp_path)
+    assert result["card_served"] and all(result["card_proof"].values())
+    assert set(result["methods_exposed"]) == set(embassy_wire.METHODS) and len(result["methods_exposed"]) == 7
+    assert result["admitted_ceiling"] == "internal_write" and result["admitted_budget_usd"] == 0.0
+    assert result["negotiation"] == {"countered": "countered", "counter_cents": 500, "then": "accepted"}
+    assert result["accepted"] == {"status": "accepted", "verification": "VERIFIED", "method": "deterministic_invariant"}
+    assert result["receipt_verifies"] and result["sort_accepted"] == "accepted" and result["classify_accepted"] == "accepted"
+    assert result["undecidable"] == {"status": "claimed", "verdict": "UNDECIDABLE"} and result["undecidable_earned_no_verdict"]
+    assert result["rejected"]["status"] == "rejected" and result["rejected"]["suspended"] and result["refuted_task_reopened"]
+    assert result["standing"]["loki@embassy:factor"]["incidents"] == 1 and result["standing"]["atlas@embassy:factor"]["incidents"] == 0
+    assert result["ledger"]["admitted"] == 3 and result["ledger"]["routed_through_gate"] >= 8, "every claim and submission crossed the gate"
+    assert result["books"] == {"equation_holds": True, "payable_to_agents_cents": 950}
+    assert set(result["refusals"]) >= {"interior_path", "foundry_op_over_the_wire", "unsigned_before_admission", "card_not_signed_by_its_key",
+                                       "wrong_audience", "expired_nonce", "replayed_nonce", "replayed_sequence", "forged_request_signature",
+                                       "unknown_method_signed", "claim_already_claimed_task", "submit_unclaimed", "submit_twice",
+                                       "claim_while_suspended"}
+    assert all(result["refusals"].values())
+    # the acceptance checks are invariants, not trust: a plausible-looking wrong factorization is refuted
+    assert embassy_wire.verify_result("factor", {"n": 221}, {"factors": [1, 221]})["verdict"] == "REFUTED"
+    assert embassy_wire.verify_result("factor", {"n": 221}, {"factors": [17, 13]})["verdict"] == "REFUTED", "canonical order is part of the contract"
+    assert embassy_wire.verify_result("sort", {"items": [2, 1]}, {"sorted": [1, 2, 2]})["verdict"] == "REFUTED"
+    with pytest.raises(embassy_wire.RpcError):
+        embassy_wire.verify_result("mine", {}, {})
+    assert embassy_wire.Embassy.verify_receipt("00" * 32, {"task_id": "t", "signature": "00" * 64}) is False
+    tasks = foundry_bridge.query({"system": 29, "op": "tasks", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert tasks["result"]["tasks"] == [], "a fresh workspace has no embassy work posted"
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 29, "op": "post_task", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+
+
+# -- increment 8 (part): commissioning agents in isolated branches -----------------------------------
+
+from foundry.systems import commissioning
+
+
+def test_commissioning_freezes_contracts_isolates_branches_and_proposes_only_green_changes(tmp_path):
+    result = commissioning.exercise(tmp_path)
+    vat = result["vat"]
+    assert vat["status"] == "proposed" and vat["rounds"][0][1] == "red" and vat["rounds"][1][1] == "green"
+    assert vat["rounds"][0][2] == ["tests/held_out/test_vat_rounding.py::test_half_rounds_up",
+                                   "tests/held_out/test_vat_rounding.py::test_negative_rate_refused"], "the public tests passed; the held-out ones decided"
+    assert all(f.startswith("held-out or public test failed: test_") for f in vat["feedback_named_tests_not_bodies"])
+    assert vat["proposal_files"] == ["README.md", "pkg/tax.py", "tests/test_vat.py"] and vat["held_out_not_in_proposal"]
+    assert vat["held_out_matches_contract"] and vat["secret_scrubbed_from_ci"] and vat["body_from_repo_template"] and vat["merged"] is False
+    assert result["cone_breach"]["status"] == "abandoned" and len(result["cone_breach"]["problems"]) == 2
+    assert result["shell"]["problems"] == ["pkg/tax.py: names subprocess"]
+    assert result["nodocs"]["status"] == "abandoned" and result["nodocs"]["tests_green"], "green tests without the required docs is not a proposal"
+    assert result["branches_kept"] == ["commission/cone", "commission/nodocs", "commission/shell", "commission/vat"]
+    assert result["main_untouched"] and result["main_tree_unchanged"]
+    sdk = result["agent_sdk"]
+    assert sdk["configured"] and "Bash" not in sdk["allowed_tools"] and sdk["permission_mode"] == "acceptEdits" and sdk["live_route_run"] is False
+    assert all(result["refusals"].values()) and set(result["refusals"]) == {"refreeze", "contract_without_held_out", "run_unfrozen"}
+    # the screen alone
+    assert commissioning.screen({"../escape.py": ""}, ["x.py"]) and commissioning.screen({"x.py": "import os\nos.environ['A']"}, ["x.py"])
+    assert commissioning.screen({"x.py": "def f():\n    return 1\n"}, ["x.py"]) == []
+    with pytest.raises(commissioning.CommissionError, match="not a git repository"):
+        commissioning.Commission(tmp_path / "e", tmp_path / "not-a-repo")
+    # the SDK builder refuses to run without the CLI rather than pretending
+    builder = commissioning.AgentSDKBuilder(cli_path=None)
+    builder.available = lambda: False
+    with pytest.raises(commissioning.CommissionError, match="cannot run here"):
+        builder.build({"contract": {}, "worktree": str(tmp_path)}, None)
+    listing = foundry_bridge.query({"system": 51, "op": "commissions", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert listing["result"]["commissions"] == []
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 51, "op": "run", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+
+
+# -- increment 8 (part): an owned instance on the fediverse ------------------------------------------
+
+from foundry.systems import federation
+
+
+def test_federation_owns_actors_verifies_signatures_and_moves_accounts_with_followers(tmp_path):
+    result = federation.exercise(tmp_path)
+    assert result["webfinger"] == {"status": 200, "self_link_is_actor": True, "unknown": 404}
+    assert result["follow"] == {"delivered": True, "alpha_followers": 1, "beta_following_confirmed": True}
+    pub = result["publish"]
+    assert pub["delivered_to_reader"] and pub["remote_outbox_items"] == 1 and pub["inbox_verified_signer"]
+    assert pub["dead_inbox_dead_lettered"] and pub["dead_letters"] == 1, "a dead follower is dead-lettered, not dropped"
+    assert result["refusals"] == {"unsigned": 401, "digest_mismatch": 401, "forged_key_claim": 401, "create_from_unfollowed_actor": 403,
+                                  "replayed_after_window": 401, "unfetchable_key": 401}
+    port = result["portability"]
+    assert port["export_verifies"] and port["tampered_export_rejected"] and port["forged_import"].startswith("export bundle signature")
+    assert port["move_without_alias"].startswith("the new actor does not name this one")
+    assert port["new_actor_also_known_as_old"] and port["old_actor_moved_to_new"] and port["move_delivered_to_follower"]
+    assert port["follower_now_follows_new"] and port["new_instance_followers"] == [True] and port["old_instance_lost_follower"]
+    assert port["publish_after_move_refused"] and port["post_from_new_instance_reached_follower"]
+    assert "dead_lettered" in result["alpha_journal_kinds"] and result["private_key_in_export"] is False
+    # the digest and signature helpers stand alone
+    assert federation._digest(b"x") == "SHA-256=" + __import__("base64").b64encode(__import__("hashlib").sha256(b"x").digest()).decode()
+    inst = federation.Instance(tmp_path / "solo", clock=lambda: "2026-10-13T15:00:00Z")
+    ok, why, _ = inst.verify_request("POST", "/users/a/inbox", {}, b"{}")
+    assert not ok and why == "unsigned"
+    ok, why, _ = inst.verify_request("POST", "/users/a/inbox", {"Signature": "garbage"}, b"{}")
+    assert not ok and "malformed" in why
+    actors = foundry_bridge.query({"system": 33, "op": "actors", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert actors["result"]["actors"] == []
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 33, "op": "publish", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+
+
+# -- increment 8 (part): the owned community -----------------------------------------------------------
+
+from foundry.systems import commons as community
+
+
+def test_community_holds_identity_history_and_exports_under_signed_rules(tmp_path):
+    result = community.exercise(tmp_path)
+    assert result["members"] == 5 and result["linked_actor_verified"] and result["posts"] == 9 and result["rate_limit_resets"]
+    assert result["reports"] == [1, 2, 3] and result["held_at_third_report"] and result["released_can_post"] and result["tombstone_keeps_hash"]
+    assert result["alice_rated_by_four_helpful_marks"] and result["supporter_tier_from_settled_charge"] and result["feed_served_with_provenance"]
+    assert result["member_export"] == {"verifies": True, "posts": 6, "received": 3, "reports_made": 1}, "exported before the fourth mark"
+    full = result["full_export"]
+    assert full["verifies"] and full["tampered_rejected"] and full["members"] == 4 and full["posts"] == 9 and full["private_keys_absent"]
+    assert result["platform_import"] == {"invitations_added": 2, "invitations_total": 2, "invited_member_claimed": True}
+    assert set(result["refusals"]) >= {"join_twice", "join_forged", "link_actor_without_alias", "rate_limit", "reply_to_unknown", "non_member_post",
+                                       "forged_member_signature", "self_mark", "duplicate_reaction", "post_while_held", "moderate_without_role",
+                                       "moderator_cannot_promote", "react_to_tombstone", "tier_on_declined_charge", "tier_on_claimed_charge"}
+    assert all(result["refusals"].values())
+    # a bad platform export is refused, and a fresh community has only its owner
+    key = Ed25519PrivateKey.from_private_bytes(bytes(32 * [7]))
+    c = community.Community(tmp_path / "fresh", name="x", key_seed=bytes(32 * [8]), owner_public_hex=public_bytes(key.public_key()).hex())
+    with pytest.raises(community.CommunityError, match="Account address"):
+        c.import_followers_csv("name,url\nx,y\n", source="other", now="2026-10-13T15:00:00Z")
+    assert [m["role"] for m in c._state()["members"].values()] == ["owner"]
+    members = foundry_bridge.query({"system": 32, "op": "members", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert members["result"]["members"] == []
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 32, "op": "post", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+
+
+# -- increment 8 (part): the media engine -----------------------------------------------------------
+
+from foundry.systems import media_engine as media
+
+
+def test_media_engine_renders_from_canon_with_disclosure_and_signed_provenance(tmp_path):
+    result = media.exercise(tmp_path)
+    assert result["image"]["width"] == 640 and result["image"]["format"] == "PNG" and result["image_bg_is_canon_bg"] and result["image_mark_is_canon_accent"]
+    assert result["audio"] == {"duration_s": 3.0, "sample_rate": 22050, "channels": 1, "peak": 19660}
+    assert result["video"] == {"width": 320, "height": 180, "frames": 36, "has_audio": True, "video_codec": "h264"}, "decoded, not assumed"
+    assert result["video_first_frame_near_canon_bg"]
+    assert result["interactive"] == {"self_contained": True, "has_disclosure": True, "interactive_steps": 3}
+    assert result["every_manifest_discloses"] and result["ingredients_trace_to_canon"] and result["assets_indexed"] == 4
+    assert result["verify_image"] == {"hash_matches": True, "signature_ok": True, "disclosed": True}
+    assert result["verify_substituted_bytes"]["hash_matches"] is False and result["verify_tampered_manifest"]["signature_ok"] is False
+    assert set(result["refusals"]) == {"canon_without_disclosure_rule", "canon_without_palette", "brief_without_title", "brief_omitting_disclosure",
+                                       "unknown_kind", "unknown_note", "odd_video_dimensions"} and all(result["refusals"].values())
+    # the engine's own checks and the bridge
+    engine = media.Engine(tmp_path / "ws" / "foundry" / "system-35" / "engine", key_seed=bytes(32 * [3]), clock=lambda: "t",
+                          canon=media.canon_from_persona(media.demo_persona(), palette={"bg": "#000000", "fg": "#ffffff", "accent": "#ff0000"},
+                                                         mark="X", editorial_rules=list(media.REQUIRED_EDITORIAL_RULES)))
+    png = engine.render_image({"title": "t", "size": (64, 32)})
+    assert engine.inspect("image", png)["bg_pixel"] == [0, 0, 0]
+    produced = engine.produce("interactive", {"title": "t", "lines": ["a"]})
+    verified = foundry_bridge.query({"system": 35, "op": "verify", "args": {"asset": produced["asset"], "manifest": produced["manifest_address"]}},
+                                    _ctx(tmp_path, "foundry.query"))
+    assert verified["result"] == {"hash_matches": True, "signature_ok": True, "disclosed": True}, "GREG can verify an asset through the bridge"
+    assets = foundry_bridge.query({"system": 35, "op": "assets", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert [a["kind"] for a in assets["result"]["assets"]] == ["interactive"]
+    # this engine renders only as an operator act under a ratified canon: it declares no write op, and its
+    # qualified name is refused. The #158 co-implementation's deterministic local "produce" stays reachable
+    # under a foundry.apply grant (the policy split is recorded for the founder in the convergence ADR).
+    assert media.APPLY_OPS == {}
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 35, "op": "produce", "implementation": "media_engine", "args": {}},
+                             _ctx(tmp_path, "foundry.apply"))
+    # Convergence: the Mind-line alternate (#35 ``media``) owns ``produce`` as a mission-gated internal write,
+    # and it still refuses production without a canon.
+    with pytest.raises(CapabilityError, match="canon"):
+        foundry_bridge.apply({"system": 35, "op": "produce", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+    # "<implementation>.<op>" names the canonical engine explicitly, and it declares no write op
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 35, "op": "media_engine.produce", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+
+
+# -- increment 8 (part): the company loop end to end ------------------------------------------------
+
+from foundry.systems import company_loop
+
+
+def test_company_loop_runs_charter_to_kill_with_owned_distribution_products_finance_and_memory(tmp_path):
+    result = company_loop.exercise(tmp_path)
+    assert result["charter_ratified"] and result["followers_on_owned_actor"] == 2
+    w1, w2, w3 = result["cycles"]
+    assert w1["published"] == ["why-proof", "pod-basics", "audit-kit"] and result["weak_node_refused_at_publish"]
+    assert w1["impressions"] == 6 and w1["owned_relationships"] == 3 and w1["useful_actions"] == {"completed_node": 4, "joined_community": 1, "purchased": 2}
+    assert w1["informed_return"] == 1.75 and w1["closure"] == "CLOSED" and w1["revenue_cents"] == 18000 and w1["surplus_usd"] == 165.0
+    assert w1["treasury_policy_version"] == 1 and w1["treasury_reconciled"] and w1["decision"] == "continue"
+    assert w2["closure"] == "FALSELY_CLOSED" and w2["decision"] == "revise" and w2["treasury_policy_version"] is None, "no surplus, no allocation"
+    assert w3["decision"] == "kill" and result["killed"] and result["memory_cycles"] == 3
+    assert result["plan_after_cycle1"]["action"] == "continue" and result["plan_after_cycle1"]["least_attributed_node"] == "disputes"
+    assert result["plan_after_kill"]["action"] == "stopped"
+    assert result["owned_copies_in_outbox"] == 9 and result["reader_inbox_posts"] == 9 and result["every_post_discloses"]
+    assert result["assets_with_provenance"] == 11 and result["community_members"] == 2 and result["community_export_verifies"]
+    assert result["books"] == {"reconciled_to_processor": True, "equation_holds": True, "gross_cents": 18000}
+    assert result["ledger"] == {"foundry.charter_submitted": 1, "foundry.charter_ratified": 1, "foundry.distribution_evaluated": 3}
+    assert set(result["refusals"]) == {"publish_before_ratification", "off_topic_draft", "undisclosed_draft", "prohibited_pattern", "escalation_topic",
+                                       "escalation_topic_even_if_allowed", "cycle_after_kill", "publish_after_kill"} and all(result["refusals"].values())
+    assert company_loop.plan_from_memory({"cycles": [], "kill": None})["action"] == "start"
+    plan = foundry_bridge.query({"system": 49, "op": "plan", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert plan["result"]["action"] == "start", "a fresh workspace has no company memory"
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 49, "op": "cycle", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+
+
+def test_convergent_implementations_dispatch_by_declared_op_deterministically():
+    from foundry.systems import ALTERNATES, SYSTEMS, implementation_for
+    # Canonical declares 'verify' on #35; the Mind-line alternate alone declares 'produce'.
+    assert implementation_for(35, "verify") == SYSTEMS[35] == "media_engine"
+    assert implementation_for(35, "produce") == "media"
+    # An op both declare stays canonical; the alternate is reachable only by name.
+    assert implementation_for(34, "report") == SYSTEMS[34] == "attribution"
+    assert implementation_for(34, "report", "journeys") == "journeys"
+    # An op nobody declares stays canonical so the canonical module refuses it.
+    assert implementation_for(32, "no-such-op") == SYSTEMS[32]
+    with pytest.raises(KeyError):
+        implementation_for(32, "ingest", "offers")          # not a registered implementation of #32
+    assert all(isinstance(v, tuple) and v for v in ALTERNATES.values())
+
+
+def test_every_system_the_contract_promises_to_greg_stays_registered():
+    # A convergence merge once adopted a registry that had dropped #9 ("oci") while the contract row still
+    # promised GREG "foundry.query inspect (system9)": the signed Body was refused at dispatch. Every row whose
+    # interface names a GREG capability must resolve, and every lineage's registered module stays reachable.
+    from foundry.systems import ALTERNATES, SYSTEMS, module
+    for sid, row in completion.contract().items():
+        interface = str(row.get("interface", ""))
+        if "foundry.query" in interface or "foundry.apply" in interface:
+            assert sid in SYSTEMS, f"system {sid} is promised to GREG but not registered"
+            assert module(sid).__name__ == f"foundry.systems.{SYSTEMS[sid]}"
+    assert SYSTEMS[9] == "oci" and not ALTERNATES.get(9)
+
+
+def test_alternate_evidence_is_rederived_and_a_forged_record_fails(tmp_path, monkeypatch):
+    rows = completion.contract()
+    alt = rows[35]["alternates"][0]
+    assert alt["module"] == "foundry/systems/media.py" and alt["evidence"] == "foundry/evidence/alternates/system-35-media.json"
+    assert completion._alternate_problems(35, rows[35], "system 35") == []
+    forged = json.loads((completion.ROOT / alt["evidence"]).read_text())
+    forged["result_sha256"] = "sha256:" + "0" * 64
+    (tmp_path / "forged.json").write_text(json.dumps(forged))
+    monkeypatch.setattr(completion, "ROOT", tmp_path)
+    for path in [alt["module"]] + alt.get("existing", []) + alt.get("tests", []) + alt.get("implementation", []):
+        if ":" not in path:
+            (tmp_path / path).parent.mkdir(parents=True, exist_ok=True)
+            (tmp_path / path).write_text("")
+    row = {**rows[35], "alternates": [{**alt, "evidence": "forged.json"}]}
+    assert any("does not reproduce" in p for p in completion._alternate_problems(35, row, "system 35"))
+    with pytest.raises(KeyError, match="not registered for Foundry system 35"):
+        completion.run(35, "portal")
+
+
+def test_every_composition_path_follows_the_one_dispatch_rule(tmp_path):
+    from foundry.systems import OperationError, any_operation, linking, op_class, shell, teams, workflows
+    # composition callers reach an alternate's op by its unique bare name...
+    assert op_class(35, "inspect") == "read_only" and op_class(35, "produce") == "internal_write"
+    assert any_operation(32, "summary") is foundry_systems.operation(32, "QUERY_OPS", "summary")
+    # ...an op the canonical module declares stays canonical, and a qualified name selects the alternate
+    assert any_operation(34, "report") is foundry_systems.operation(34, "QUERY_OPS", "attribution.report")
+    assert any_operation(34, "journeys.report") is foundry_systems.module(34, "journeys").QUERY_OPS["report"]
+    assert linking._op_class(34, "report") == "read_only"
+    with pytest.raises(KeyError):
+        any_operation(26, "anything")                 # an unregistered system stays a KeyError
+    with pytest.raises(OperationError, match="no op"):
+        any_operation(35, "nope")
+    assert shell and teams and workflows              # each resolves through implementation_for at call time

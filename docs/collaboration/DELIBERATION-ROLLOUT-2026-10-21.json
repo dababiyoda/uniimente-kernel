@@ -1,0 +1,302 @@
+{
+  "decision_id": "DECISION-20261021-COLLABORATION-ROLLOUT",
+  "title": "Consolidate and exercise the cross-repository collaboration package",
+  "problem": "Entry repair #193 and receipt bootstrap #95 are unmerged separate drafts; declarations omit identity and overlap, consumer pointers are stale.",
+  "founder_intent_refs": [
+    "INTENT-20261021-COMPLETE-COLLABORATION",
+    "INTENT-20261021-PROFESSIONAL-PARALLEL-TEAM"
+  ],
+  "baseline": "Existing pinned Discussion #89, issue #96, proposed #95 metadata v1 and draft #193 entry links; published Claude work shows duplicate compiler and colliding frozen evaluation paths.",
+  "alternatives": [
+    {
+      "name": "Pointer-only",
+      "description": "Keep only entry links and ordinary review.",
+      "advantages": [
+        "Least maintenance and no CI burden"
+      ],
+      "disadvantages": [
+        "Does not flag stale revisions or incomplete handoffs mechanically"
+      ],
+      "revival_evidence": "Pilot process overhead exceeds rework saved."
+    },
+    {
+      "name": "Central transactional task service",
+      "description": "Mandatory atomic leases and server-side authoritative task scheduler.",
+      "advantages": [
+        "Can serialize competing writes in enrolled clients"
+      ],
+      "disadvantages": [
+        "New availability and authentication infrastructure; does not cover clients outside service; overlaps product runtime responsibilities"
+      ],
+      "revival_evidence": "Measured claim races persist after acknowledged splits and justify a separate authorized design."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Continue current drafts and manual founder reconstruction.",
+    "advantages": [
+      "No new process or maintenance"
+    ],
+    "disadvantages": [
+      "Confirmed discoverability and duplicate-work failure remains"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Complete the real entry-to-handoff loop; preserve Body + Organs + Mind.",
+      "material_concerns": [
+        "Do not redefine complete as files created."
+      ],
+      "evidence_refs": [
+        "#95@8d62edf0",
+        "#193@66e4d3d9",
+        "issue #96"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Reuse #95 validator and #193 routing as one versioned package.",
+      "material_concerns": [
+        "Do not install a second runtime or synchronization authority."
+      ],
+      "evidence_refs": [
+        "#95@8d62edf0",
+        "#193@66e4d3d9",
+        "issue #96"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Require session, scope, overlap disposition and acknowledgment declarations.",
+      "material_concerns": [
+        "Metadata remains forgeable; branch protection and real review remain distinct."
+      ],
+      "evidence_refs": [
+        "#95@8d62edf0",
+        "#193@66e4d3d9",
+        "issue #96"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "One guide, short client pointers, existing consumer PRs, bounded five-PR pilot.",
+      "material_concerns": [
+        "Stale branches and excessive ceremony can cause more rework."
+      ],
+      "evidence_refs": [
+        "#95@8d62edf0",
+        "#193@66e4d3d9",
+        "issue #96"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Retain first failures, unavailable sources and unacknowledged ownership.",
+      "material_concerns": [
+        "Never label model rehearsal as external Claude adoption."
+      ],
+      "evidence_refs": [
+        "#95@8d62edf0",
+        "#193@66e4d3d9",
+        "issue #96"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Prior metadata checker passes 24 tests but lacks worker identity and overlap fields.",
+      "tier": "unit_test",
+      "reference": "Independent protocol_review session, exact #95 inline workflow and tests",
+      "finding": "24 tests passed; stale AGENTS revision and nonexistent review links accepted; see VALIDATION.md."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Declarations alone prove coordinated teamwork.",
+      "tier": "other",
+      "reference": "Prior duplicate compiler #165/#170 and #155/#158 evaluation collisions",
+      "finding": "Rejected: published work and metadata acceptance do not establish exclusive claims, comprehension or independent review."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Discover the same intended outcome and existing work; implement non-overlapping packages; transfer exact source/evidence without founder reconstruction.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Single reusable guide and metadata validator.",
+        "amplified_value": "Consistent boot and handoff across repositories without duplicating runtime governance."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "A central guide can drift or become unreachable.",
+        "severity": "medium",
+        "response_type": "protective",
+        "redesigned_response": "Pin consumers to immutable revisions; preserve Discussion and board as routing, not copied policy."
+      },
+      {
+        "id": "D2",
+        "statement": "Claim notices can race, lie or hide semantic duplication.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Require scoped session declarations, inspected references and explicit split acknowledgment; pause overlapping edits and require human/peer review."
+      },
+      {
+        "id": "D3",
+        "statement": "Old rollout branches can overwrite newer instructions.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Build updated trees from current defaults, preserve old branch ancestry and current file suffixes; compare final diffs."
+      },
+      {
+        "id": "D4",
+        "statement": "New receipt obligations can create bureaucracy and a fragile mandatory check.",
+        "severity": "medium",
+        "response_type": "learning",
+        "redesigned_response": "Reuse one metadata-only workflow, no new lock service; stage with optional checks, five-PR measurement and pointer-only rollback."
+      },
+      {
+        "id": "D5",
+        "statement": "Fresh model exercises can be misrepresented as live Claude coordination.",
+        "severity": "medium",
+        "response_type": "protective",
+        "redesigned_response": "Label rehearsal separately and retain external-client acceptance as unverified until actual sessions acknowledge."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Fragmented drafts: low adoption and repeated context reconstruction.",
+      "do_nothing": "No cost but leaves known failures.",
+      "simplest_viable_alternative": "Pointer-only is cheapest and remains rollback if measured burden exceeds benefit.",
+      "strongest_competing_architecture": "Atomic central task service can improve exclusion but adds availability, credential and authority cost; not justified by this install.",
+      "reversible_experiment": "Consolidate existing package, upgrade receipt, stage pins, run independent review and fresh-session sandbox exercises; measure five completed PRs."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Central transactional task service",
+        "rejection_reason": "Creates another service and apparent lock authority without enrolling all clients.",
+        "revival_evidence": "Measured collisions after explicit acknowledgment plus an authorized ownership/design decision."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack centralization, forged acknowledgments, stale pins, legacy instructions, adoption claims and ceremony. Five perspectives are parent self-review; separate test/code reviewer evidence is identified independently.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "gaming",
+        "statement": "A session can fabricate acknowledgment references or edit its own workflow.",
+        "strengthening_response": "Label check metadata only; verify references and trusted workflow at integration; do not treat green as permission."
+      },
+      {
+        "id": "N2",
+        "category": "dependency",
+        "statement": "Pinned consumer workflow remains a dependency on the kernel source commit.",
+        "strengthening_response": "Retain immutable source; adopt kernel before consumers; repin through reviewed PR; no hidden network fetch from agent hooks."
+      },
+      {
+        "id": "N3",
+        "category": "comprehensibility",
+        "statement": "Two prior drafts and a growing guide confuse current versus historical instructions.",
+        "strengthening_response": "One current START_HERE with six SOPs; historical #95 referenced only for provenance; short entry pointers; explicit rollout table."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Pin consumers to immutable revisions; preserve Discussion and board as routing, not copied policy.",
+        "owner": "Receiving reviewer / integration maintainer",
+        "review_trigger": "First collision, unavailable source, or fifth pilot PR"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Require scoped session declarations, inspected references and explicit split acknowledgment; pause overlapping edits and require human/peer review.",
+        "owner": "Receiving reviewer / integration maintainer",
+        "review_trigger": "First collision, unavailable source, or fifth pilot PR"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "resolved",
+        "rationale": "Build updated trees from current defaults, preserve old branch ancestry and current file suffixes; compare final diffs.",
+        "owner": "Implementing maintainer",
+        "review_trigger": "Final diff review"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "experiment",
+        "rationale": "Reuse one metadata-only workflow, no new lock service; stage with optional checks, five-PR measurement and pointer-only rollback.",
+        "owner": "Receiving reviewer / integration maintainer",
+        "review_trigger": "First collision, unavailable source, or fifth pilot PR"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "Label rehearsal separately and retain external-client acceptance as unverified until actual sessions acknowledge.",
+        "owner": "Receiving reviewer / integration maintainer",
+        "review_trigger": "First collision, unavailable source, or fifth pilot PR"
+      }
+    ],
+    "final_design": "Consolidated guide + v2 metadata validator + tested hostility cases + immutable consumer pointers + per-surface adoption receipts. No new runtime locks, scheduler or product trunk. Exactly two strengthening passes for this new rollout decision, linked to the prior entry decision.",
+    "residual_risks": [
+      {
+        "risk": "Unenrolled clients ignore instructions; existing Claude conversations and local edits remain invisible.",
+        "mitigation": "Explicit actual-client boot/claim/handoff acknowledgment; no global success claim.",
+        "owner": "Client owner / Alfonso",
+        "review_trigger": "Each client/session enrollment"
+      },
+      {
+        "risk": "Metadata and review references can be false or stale.",
+        "mitigation": "Receiver checks exact heads and actual source/evidence; protections remain independent.",
+        "owner": "Integration reviewer",
+        "review_trigger": "Each intake batch"
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Five named perspectives are self-review, not five independent reviewers. Adversarial objection is retained; independent scoped review and rehearsals are recorded in VALIDATION.md, never converted into authorization.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not call this enforcement or complete adoption from green metadata checks.",
+        "rationale": "No atomic lock, authenticated acknowledgment or external client visibility.",
+        "evidence_threshold": "Actual enrolled sessions demonstrate collision split and receiver resume on adopted revisions.",
+        "owner": "Receiving maintainer",
+        "review_trigger": "Before project-wide operational-completion claim"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "approved",
+    "approver": "Alfonso Lopez: Complete it and improve it. Comprehensively; authorizes preparation and reversible implementation, not unrelated live effects or bypass of merge/access gates."
+  },
+  "migration_plan": "Stage consolidated kernel #193; retain #95 history and designate it provenance; refresh four existing consumer drafts preserving current default instructions, add remaining scoped fork pointers; review before adoption; publish prepared Discussion addendum when authenticated; enroll existing sessions and measure pilot.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Remove only newly required status rule before removing any workflow.",
+      "Close unadopted drafts or revert scoped adopted pointers/workflow; preserve negative evidence and decision records.",
+      "Use pointer-only guide if receipt overhead exceeds observed benefit; preserve current runtime, history and authority controls."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Any loss of current repository instructions or evidence.",
+    "Any implication that a coordination claim grants execution authority.",
+    "Five completed PRs show more process cost than rework prevented."
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Alfonso Lopez / authorized reviewing maintainer",
+  "review_trigger": "Before adoption, first real-client collision/handoff, and five completed coordinated PRs"
+}

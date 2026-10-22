@@ -3,23 +3,71 @@
  "name": "Graphics, audio, video, and game engines",
  "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
  "result": {
-  "deduplicated": true,
-  "formats": [
-   "image/svg+xml",
-   "image/png",
-   "audio/wav",
-   "video/x-msvideo",
-   "text/html"
-  ],
-  "manifest": "sha256:0e1a02cc859b69878459b723e12a0a26a9a14657be47799495456f3fc8dccfd0",
-  "verified": {
-   "assets": 5,
-   "authority_created": false,
-   "canon_id": "owned-note-v1",
-   "intact": true,
-   "manifest": "sha256:0e1a02cc859b69878459b723e12a0a26a9a14657be47799495456f3fc8dccfd0"
-  }
+  "assets_indexed": 4,
+  "audio": {
+   "channels": 1,
+   "duration_s": 3.0,
+   "peak": 19660,
+   "sample_rate": 22050
+  },
+  "every_manifest_discloses": true,
+  "image": {
+   "bg_pixel": [
+    11,
+    31,
+    58
+   ],
+   "format": "PNG",
+   "height": 360,
+   "mark_pixel": [
+    227,
+    167,
+    47
+   ],
+   "width": 640
+  },
+  "image_bg_is_canon_bg": true,
+  "image_mark_is_canon_accent": true,
+  "ingredients_trace_to_canon": true,
+  "interactive": {
+   "has_disclosure": true,
+   "interactive_steps": 3,
+   "self_contained": true
+  },
+  "interactive_sha256": "sha256:d6c8f4a239916f2078d7463e76f1dd83e9c7f19b0542072a04fe9fc2f53f612e",
+  "refusals": {
+   "brief_omitting_disclosure": "the synthetic-identity disclosure is not optional in any asset",
+   "brief_without_title": "a brief names its title",
+   "canon_without_disclosure_rule": "editorial constitution lacks synthetic_identity_disclosed; the engine will not r",
+   "canon_without_palette": "canon missing palette; palette missing bg; palette missing fg; palette missing a",
+   "odd_video_dimensions": "video dimensions must be even for yuv420p",
+   "unknown_kind": "kind must be one of ('image', 'audio', 'video', 'interactive')",
+   "unknown_note": "unknown notes ['H9']"
+  },
+  "verify_image": {
+   "disclosed": true,
+   "hash_matches": true,
+   "signature_ok": true
+  },
+  "verify_substituted_bytes": {
+   "disclosed": true,
+   "hash_matches": false,
+   "signature_ok": true
+  },
+  "verify_tampered_manifest": {
+   "disclosed": false,
+   "hash_matches": true,
+   "signature_ok": false
+  },
+  "video": {
+   "frames": 36,
+   "has_audio": true,
+   "height": 180,
+   "video_codec": "h264",
+   "width": 320
+  },
+  "video_first_frame_near_canon_bg": true
  },
- "result_sha256": "sha256:4a33557b2516c7e1bcbb712f90a68cf229a25612379b1586997f501f08194d6b",
+ "result_sha256": "sha256:eb6a3dc57619905019d7ad5c105d9725c65758a6d8cb3094e5fabd13ab1f38aa",
  "system": 35
 }

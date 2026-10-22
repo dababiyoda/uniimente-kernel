@@ -12,12 +12,19 @@ authorities therefore stand between a draft and a platform:
 Either may block. A block is returned truthfully with DALEOBANKS's own hash-chained ledger
 entries as evidence; a dry-run identifier is never reported as a post.
 
+On a body with confined egress (#26) DALEOBANKS's interpreter runs in a bubblewrap network
+namespace whose only way out is the body relay's door: ``daleobanks.verify`` may reach
+nothing, ``daleobanks.publish`` only the platform API hosts its manifest declares (the X API,
+through tweepy). Every attempt is decided and journaled at the relay; without namespaces
+nothing runs.
+
 Capabilities:
   ``daleobanks.verify``   read_only sensor: DALEOBANKS content checks + GREG claim/source binding. Given
                           ``cognition`` (claim name -> problem id), every sentence of the draft must be a claim
                           that GREG's evidence family answered as written: bound to a supporting span and showing
                           none of the six detected kinds of change (directive section 16, the media case).
   ``daleobanks.publish``  external_contact: one publish request through DALEOBANKS's gate
+  ``daleobanks.outcome``  read_only sensor: projection of this mission's canonical publish receipts
 """
 from __future__ import annotations
 
@@ -51,15 +58,39 @@ if request["action"] == "publish":
     out["kill_switch_armed"] = bool(get_kill_switch().armed)
     mux = SocialMultiplexer()
     out["platforms"] = sorted(mux.enabled_platforms())
-    results = asyncio.run(mux.publish(draft, kind="post", metadata={"greg_mission": request["mission_id"],
-                                                                     "greg_grant": request["grant_id"]}))
-    out["results"] = {k: {"post_id": v.post_id, "dry_run": v.dry_run} for k, v in results.items()}
     ledger = DecisionLedger()
+    before = len(ledger.replay())
+    metadata = {"greg_mission": request["mission_id"], "greg_grant": request["grant_id"]}
+    if request.get("daleobanks_grant"):
+        metadata.update(capability_grant_id=request["daleobanks_grant"], draft_id=request["draft_id"])
+    results = asyncio.run(mux.publish(draft, kind="post", metadata=metadata))
+    out["results"] = {k: {"post_id": v.post_id, "dry_run": v.dry_run} for k, v in results.items()}
+    out["publish_gated"] = [{"platform": (e.get("payload") or {}).get("platform"),
+                             "reason": (e.get("payload") or {}).get("reason"),
+                             "capability_grant_id": (e.get("payload") or {}).get("capability_grant_id")}
+                            for e in ledger.replay()[before:] if e.get("event") == "publish_gated"]
     ok = ledger.verify_chain()
     out["ledger"] = {"path": ledger.path, "chain_ok": ok if isinstance(ok, bool) else ok[0],
                      "tail": [{k: e.get(k) for k in ("seq", "event", "payload", "hash")} for e in ledger.replay()[-6:]]}
 print(json.dumps(out, default=str))
 '''
+
+
+_GRANT_REF = re.compile(r"[A-Za-z0-9_.:-]{1,128}")
+
+
+def _daleobanks_grant(params: dict) -> dict:
+    """The DALEOBANKS CapabilityGrant a human approved in DALEOBANKS, and the draft it names, as the founder signed
+    them in the mission's params. GREG forwards the reference only; DALEOBANKS validates and consumes it at its own
+    gate. GREG never mints, widens or stores a DALEOBANKS grant. Both or neither."""
+    grant, draft = params.get("daleobanks_grant"), params.get("draft_id")
+    if grant is None and draft is None:
+        return {}
+    if not (isinstance(grant, str) and isinstance(draft, str) and _GRANT_REF.fullmatch(grant)
+            and _GRANT_REF.fullmatch(draft)):
+        raise CapabilityError("daleobanks_grant and draft_id go together, as DALEOBANKS identifiers "
+                              "(letters, digits and . _ : -, at most 128)")
+    return {"daleobanks_grant": grant, "draft_id": draft}
 
 
 def _draft(params: dict, ctx: InvocationContext) -> Path:
@@ -79,15 +110,41 @@ def _run(params: dict, ctx: InvocationContext, action: str) -> dict:
            "LEDGER_PATH": str(ledger), "PYTHONPATH": str(root)}
     # LIVE and platform credentials are DALEOBANKS's own arming; GREG never sets or forwards them.
     request = {"draft": str(draft), "action": action, "mission_id": ctx.mission_id, "grant_id": ctx.grant_id,
-               "content_type": params.get("content_type", "reply")}
-    proc = subprocess.run([str(python), "-c", SCRIPT], input=json.dumps(request), capture_output=True, text=True,
-                          cwd=root, env=env, timeout=120)
+               "content_type": params.get("content_type", "reply"), **_daleobanks_grant(params)}
+    argv = [str(python), "-c", SCRIPT]
+    if ctx.egress is None:
+        proc = subprocess.run(argv, input=json.dumps(request), capture_output=True, text=True, cwd=root, env=env,
+                              timeout=120)
+    else:
+        proc = _behind_door(argv, request, env, ctx, root=root, ledger_dir=ledger.parent, draft=draft)
     if proc.returncode:
         raise CapabilityError("DALEOBANKS refused or failed: " + (proc.stderr or proc.stdout)[-400:])
     try:
         return json.loads(proc.stdout.strip().splitlines()[-1])
     except (json.JSONDecodeError, IndexError) as exc:
         raise CapabilityError("DALEOBANKS produced unreadable output") from exc
+
+
+def _behind_door(argv: list, request: dict, env: dict, ctx: InvocationContext, *, root: Path, ledger_dir: Path,
+                 draft: Path):
+    """DALEOBANKS's interpreter in a network namespace whose only way out is the relay, allowlisted for exactly the
+    hosts this capability's manifest declares (none for verify). Its ledger directory is the one writable place."""
+    import sys
+    from foundry.systems.relay_door import Door, door_argv, namespace_argv
+    from foundry.systems.segmentation import Relay
+    from greg.worker_isolation import WorkerIsolationError, _backend
+    try:
+        _backend(require_bubblewrap=True)
+    except WorkerIsolationError as exc:
+        raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}") from None
+    identity, hosts = ctx.manifest.capability_id, tuple(ctx.manifest.egress_allowlist or ())
+    scoped = Relay({identity: {"allow": [[h, 443] for h in hosts], "external": bool(hosts)}}, ctx.egress.journal,
+                   connect=ctx.egress.connect, proxy=ctx.egress.proxy)
+    interpreter = str(Path(argv[0]).resolve().parent.parent)     # the venv's base Python may live under $HOME
+    namespace = namespace_argv(writable=[ledger_dir], readonly=[root, draft, interpreter], chdir=root)
+    with Door(scoped, identity) as door:
+        return subprocess.run(namespace + door_argv(sys.executable, door.fd, argv), pass_fds=[door.fd],
+                              input=json.dumps(request), capture_output=True, text=True, env=env, timeout=120)
 
 
 NUMBER = re.compile(r"\d[\d,.]*%?")
@@ -134,30 +191,76 @@ def publish(params: dict, ctx: InvocationContext) -> dict:
     """``daleobanks.publish``: one publish request through DALEOBANKS's own gate; truthful outcome."""
     result = _run(params, ctx, "publish")
     posted = {k: v for k, v in result.get("results", {}).items() if not v["dry_run"]}
+    gated = [g for g in result.get("publish_gated", []) or [] if isinstance(g, dict)]
     if posted:
         status, why = "PUBLISHED", "DALEOBANKS reported live platform identifiers"
     elif not result.get("kill_switch_armed"):
         status, why = "BLOCKED_BY_DALEOBANKS", ("DALEOBANKS kill switch is disarmed (LIVE=false): the request "
                                                 "was ledgered and dry-run; nothing was posted")
+    elif gated:
+        # DALEOBANKS's own publish authority (or its rate governor) refused, and ledgered why: report exactly that.
+        reasons = sorted({str(g.get("reason")) for g in gated})
+        why = "DALEOBANKS gated the publish (" + ", ".join(reasons) + "); it was dry-run and nothing was posted"
+        if "no_capability_grant" in reasons:
+            why += (": no DALEOBANKS grant reached its gate. A live post needs a grant a human approved in DALEOBANKS "
+                    "for this exact draft, named in the founder-signed mission as daleobanks_grant and draft_id")
+        status = "BLOCKED_BY_DALEOBANKS"
     else:
-        status, why = "BLOCKED_BY_DALEOBANKS", "armed, but rate governor or credentials kept every platform in dry-run"
+        status, why = "BLOCKED_BY_DALEOBANKS", ("armed and no gate recorded a refusal, yet every platform stayed in "
+                                                "dry-run (no platform credentials or client): nothing was posted")
     return {"status": status, "why": why, "published": posted, "dry_run": result.get("results", {}),
+            "publish_gated": gated,
             "platforms": result.get("platforms", []), "kill_switch_armed": result.get("kill_switch_armed"),
             "daleobanks_ledger": result.get("ledger"), "checks": {k: result[k] for k in ("ethics", "critic")},
             "authority_created": False}
 
 
-def publish_status(params: dict, ctx: InvocationContext) -> dict:
-    """``daleobanks.outcome`` (read-only sensor): read DALEOBANKS's ledger for this mission's request."""
+def _organ_hashes(ctx: InvocationContext) -> set | None:
+    """Entry hashes present in the workspace organ file; None when it is absent or unreadable."""
     ledger = _inside(ctx.workspace / "daleobanks" / "decision_ledger.jsonl", (ctx.workspace,))
-    if not ledger.is_file():
-        return {"requested": False, "outcome": "NONE"}
-    entries = [json.loads(line) for line in ledger.read_text().splitlines() if line.strip()]
-    results = [e for e in entries if e.get("event") == "publish_result"]
-    attempts = [e for e in entries if e.get("event") == "publish_attempt"]
-    if not results:
-        return {"requested": bool(attempts), "outcome": "UNKNOWN", "entries": len(entries)}
-    live = [r for r in results if not r["payload"].get("dry_run")]
-    return {"requested": True, "outcome": "PUBLISHED" if live else "BLOCKED_DRY_RUN", "attempts": len(attempts),
-            "results": [r["payload"] for r in results], "entries": len(entries),
-            "last_hash": entries[-1].get("hash")}
+    try:
+        return {json.loads(line).get("hash") for line in ledger.read_text().splitlines() if line.strip()}
+    except (OSError, ValueError, AttributeError):
+        return None
+
+
+def publish_status(params: dict, ctx: InvocationContext) -> dict:
+    """``daleobanks.outcome`` (read-only sensor): a projection of this mission's canonical publish receipts.
+
+    The outcome comes only from Gate receipts of ``daleobanks.publish`` actions of this mission. The
+    workspace organ ledger is writable by any signed workspace write, so it can only lower
+    ``organ_consistent`` (a witnessed entry missing or rewritten); it never adds a fact. No receipted
+    publish -> no outcome. Limit: a bound receipt proves the Gate ran the publish step at the
+    founder-signed checkout and interpreter and retained what that code printed. It does not prove the
+    code there is DALEOBANKS's reviewed gate (the root and interpreter are signed parameters, not pinned
+    code), nor that a post exists (no platform read-back exists).
+    """
+    if ctx.journal is None or not ctx.mission_id:
+        raise CapabilityError("daleobanks.outcome projects one mission's canonical publish receipts; journal required")
+    bound, unwitnessed = [], 0
+    for event in ctx.journal.replay("mission.action"):
+        p = event.payload
+        if p.get("mission_id") != ctx.mission_id or p.get("capability") != "daleobanks.publish" \
+                or p.get("status") != "DONE":
+            continue
+        record = ctx.journal.ledger.find(p["receipt"]) if p.get("receipt") else None
+        result = record.payload.get("result", {}) if record is not None and record.record_type == "receipt" else {}
+        if result.get("result_class") == "positive" and isinstance(result.get("output"), dict):
+            bound.append((record.hash, result["output"]))
+        else:
+            unwitnessed += 1    # e.g. founder reconcile_executed: executed, but its outcome was never retained
+    if not bound:
+        return {"requested": False, "outcome": "NONE", "unwitnessed_actions": unwitnessed}
+    witnessed, chains_ok = set(), True
+    for _, output in bound:
+        organ = output.get("daleobanks_ledger") or {}
+        chains_ok = chains_ok and organ.get("chain_ok") is True
+        witnessed |= {e["hash"] for e in organ.get("tail") or [] if isinstance(e, dict) and e.get("hash")}
+    present = _organ_hashes(ctx)
+    last = bound[-1][1]
+    return {"requested": True, "outcome": "PUBLISHED" if last.get("status") == "PUBLISHED" else "BLOCKED_DRY_RUN",
+            "statuses": [o.get("status") for _, o in bound], "bound_receipts": [h for h, _ in bound],
+            "unwitnessed_actions": unwitnessed,
+            "organ_consistent": chains_ok and present is not None and witnessed <= present,
+            "basis": "canonical daleobanks.publish receipts of the code at the signed root and interpreter; "
+                     "its self-report, no platform read-back"}

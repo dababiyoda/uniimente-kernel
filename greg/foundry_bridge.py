@@ -27,14 +27,21 @@ from greg.capabilities import CapabilityError, InvocationContext
 def _call(params, ctx: InvocationContext, table: str) -> dict:
     if ctx.stop_check and ctx.stop_check():
         raise CapabilityError("foundry worker stopped by canonical revocation/pause")
-    from foundry.systems import module
+    from foundry.systems import implementation_for, module
     try:
         system = int(params["system"])
         op = str(params["op"])
     except (KeyError, TypeError, ValueError):
         raise CapabilityError("foundry call needs integer 'system' and string 'op'") from None
+    implementation = params.get("implementation")
+    if implementation is not None and not isinstance(implementation, str):
+        raise CapabilityError("foundry 'implementation' names a registered module")
+    if implementation is None and "." in op:
+        # "<implementation>.<op>" names one registered implementation explicitly (same as 'implementation')
+        implementation, op = op.split(".", 1)
     try:
-        ops = getattr(module(system), table)
+        implementation = implementation_for(system, op, implementation)
+        ops = getattr(module(system, implementation), table)
     except KeyError as exc:
         raise CapabilityError(str(exc)) from None
     if op not in ops:
@@ -48,7 +55,7 @@ def _call(params, ctx: InvocationContext, table: str) -> dict:
     if source_execution(params):
         raise CapabilityError("caller source execution requires OS filesystem confinement")
     root = Path(ctx.workspace) / "foundry" / f"system-{system:02d}"
-    request = json.dumps({"system": system, "op": op, "table": table,
+    request = json.dumps({"system": system, "op": op, "table": table, "implementation": implementation,
                           "args": dict(params.get("args") or {}), "root": str(root.resolve())}, allow_nan=False)
     if len(request.encode()) > 131072:
         raise CapabilityError("foundry request exceeds 128 KiB")
@@ -83,13 +90,54 @@ def _call(params, ctx: InvocationContext, table: str) -> dict:
         os.close(lock)
 
 
+def _canonical_states(ctx) -> set:
+    """The store states this mission's canonical facts admit ({"absent"} before any apply).
+
+    Read in ledger order over this mission's foundry.apply actions and compensations: a receipted DONE
+    admits exactly its state_after. Before publishing, every apply records the digest it is about to
+    commit (``foundry.committing``, a write-ahead fact). A founder reconciliation of an interrupted apply
+    as executed admits only that digest, or the unchanged prior state if the commit never happened, so an
+    edit made while the founder deliberates is never accepted as canonical."""
+    mid = ctx.mission_id
+    states, committing = {"absent"}, None
+    for event in ctx.journal.replay(""):
+        p = event.payload
+        if p.get("mission_id") != mid:
+            continue
+        if event.type == "greg.foundry.committing":
+            committing = p
+            continue
+        if event.type not in ("greg.mission.action", "greg.mission.compensated") \
+                or p.get("capability") != "foundry.apply":
+            continue
+        if p.get("status") != "DONE":
+            if p.get("status") != "UNCERTAIN":
+                committing = None             # refused or unavailable: nothing it staged was published
+            continue
+        if p.get("receipt"):
+            record = ctx.journal.ledger.find(p["receipt"])
+            output = record.payload.get("result", {}).get("output") if record and record.record_type == "receipt" \
+                else None
+            states = {(output.get("execution") or {}).get("state_after") if isinstance(output, dict) else None}
+        elif p.get("route") == "founder_reconciliation" and committing is not None:
+            states = {committing["after"], committing["before"]} & (states | {committing["after"]})
+        committing = None
+    return states
+
+
 def _execute(request, ctx, table, root, workspace, env, kernel_root, preexec):
-    from greg.foundry_state import stage, commit
+    from greg.foundry_state import commit, fingerprint, stage
     params = json.loads(request)
     system, op = params["system"], params["op"]
     with tempfile.TemporaryDirectory(prefix="greg-foundry-", dir=workspace) as temporary:
         staged = Path(temporary) / "stores"
         before = stage(root.parent, staged)
+        # The store is a projection of this mission's Gate receipts: an edit outside foundry.apply is never
+        # served (query) nor laundered into a new receipted state (apply). Standalone callers pass no journal.
+        if ctx.journal is not None and ctx.mission_id and before not in (expected := _canonical_states(ctx)):
+            raise CapabilityError(f"Foundry store {before} is not a state this mission's canonical foundry.apply "
+                                  f"facts admit ({', '.join(sorted(str(x) for x in expected))}); refused",
+                                  failure_class="verifier_insufficient")
         with open(Path(temporary) / "request.json", "w+b") as inp, \
                 open(Path(temporary) / "result.json", "w+b") as out, \
                 open(Path(temporary) / "error.txt", "w+b") as err:
@@ -117,8 +165,15 @@ def _execute(request, ctx, table, root, workspace, env, kernel_root, preexec):
                     raise CapabilityError(f"system {system} refused {op}: {answer['error']}")
                 if ctx.stop_check and ctx.stop_check():
                     raise CapabilityError("canonical revocation/pause before Foundry commit")
+                if table == "APPLY_OPS" and ctx.journal is not None and ctx.mission_id:
+                    # Write-ahead: what this apply is about to publish, so a founder reconciliation of an
+                    # interruption can admit exactly that state and nothing else.
+                    staged_after = fingerprint(staged)
+                    ctx.journal.record("foundry.committing", {"mission_id": ctx.mission_id, "before": before,
+                                                              "after": staged_after, "target": ctx.target},
+                                       key=[ctx.mission_id, "foundry-committing", before, staged_after])
                 after = commit(staged, root.parent, before) if table == "APPLY_OPS" else before
-                return {"system": system, "op": op, "result": answer["result"],
+                return {"system": system, "op": op, "implementation": params["implementation"], "result": answer["result"],
                         "execution": {"process": "disposable", "network": "seccomp-denied",
                                       "filesystem": answer.get("isolation", {}).get("filesystem", "reviewed-code-python-guard"),
                                       "landlock_abi": answer.get("isolation", {}).get("abi"),

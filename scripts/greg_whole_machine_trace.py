@@ -182,8 +182,13 @@ MISSION_CLASSES = {
         "jobs": [("canonical-ci.yml", "tests"), ("canonical-ci.yml", "contracts"), ("canonical-ci.yml", "sealed"),
                  ("canonical-ci.yml", "cortex_seed"), ("canonical-ci.yml", "research_line")],
     },
-    "m:ci-plan-body": {
-        "package": ("greg", "greg"),
+    # Mission 2 was the body package ``greg`` (47 modules on #179's tree). On the joined tree (#196) it has 69, past
+    # cognition.optimization's declared model ceiling of 64 variables (greg/cognition/solvers.py ``_model``), where
+    # the compiler abstains (MODEL_INVALID) instead of answering: that case is kept as an executable control
+    # (tests/integration/test_greg_whole_machine_trace.py). The standing runtime ``egregore`` is the natural package
+    # within the ceiling.
+    "m:ci-plan-runtime": {
+        "package": ("egregore", "egregore"),
         "groups": [("greg-unit-body", ["tests/unit/test_greg_[!c]*.py"], ["requirements-dev"]),
                    ("kernel-unit", ["tests/unit/test_[!cg]*.py"], ["requirements-dev"]),
                    ("integration-other", ["tests/integration/test_[!g]*.py"], ["requirements-dev"])],
@@ -524,7 +529,7 @@ def run(out_dir: Path | None = None, state_dir: Path | None = None, *, keep_stat
     notes = {"state_dir": "temporary (deleted unless --keep-state)", "clock": f"accelerated: +{TICK_ADVANCE_SECONDS}s "
              "per tick, persisted across worker processes; otherwise the canonical Body.boot/Body.tick loop"}
     home, key, body_id, _ = make_body(tmp)               # canonical fixture: real Ed25519 test key, enrolled
-    M1, M2, MQ = "m:ci-plan-cognition", "m:ci-plan-body", "m:ci-policy-question"
+    M1, M2, MQ = "m:ci-plan-cognition", "m:ci-plan-runtime", "m:ci-policy-question"
     in1 = mission_inputs(M1)
     spec1 = ci_plan_mission(M1, in1)
     schema_errors = [e.message for e in Draft202012Validator(MISSION_SCHEMA).iter_errors(spec1)]

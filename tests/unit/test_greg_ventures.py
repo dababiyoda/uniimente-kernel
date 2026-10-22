@@ -309,6 +309,101 @@ def test_counterevidence_travels_on_the_wire():
     assert all("cheaper" not in e for e in packet["evidence"])
 
 
+def _namespaces_or_skip():
+    from greg.worker_isolation import WorkerIsolationError, _backend
+    try:
+        _backend(require_bubblewrap=True)
+    except WorkerIsolationError as exc:
+        pytest.skip(f"no bubblewrap network namespaces here: {exc}")
+
+
+PROBE = r'''
+import json, socket, sys
+try:
+    socket.create_connection(("127.0.0.1", int(sys.argv[1])), timeout=2).close()
+    out = "REACHED"
+except OSError as exc:
+    out = type(exc).__name__
+print(json.dumps({"result": out, "interfaces": sorted(name for _, name in socket.if_nameindex())}))
+'''
+
+
+def test_a_confined_organ_has_no_network_at_all(tmp_path):
+    """#26: an appraisal needs no network, so on a confined body an organ runs in a namespace with no door. The same
+    probe that reaches a listener on the body's loopback unconfined reaches nothing confined, and sees only lo."""
+    import socket
+    _namespaces_or_skip()
+    listener = socket.create_server(("127.0.0.1", 0))
+    port = str(listener.getsockname()[1])
+    try:
+        free = ventures._organ(PROBE, {}, port, cwd=tmp_path)
+        confined = ventures._organ(PROBE, {}, port, cwd=tmp_path, confined=True)
+    finally:
+        listener.close()
+    assert free["result"] == "REACHED"
+    assert confined["result"] in ("ConnectionRefusedError", "OSError") and confined["interfaces"] == ["lo"]
+
+
+def test_a_confined_body_assesses_and_its_appraiser_re_derives_inside_the_same_confinement(tmp_path, organs):
+    """The stand-in RailScout reports which network interfaces it sees. The signed mission's assessment and the
+    separate appraiser's re-run must agree on it: an appraiser that re-ran the organ unconfined would see the body's
+    interfaces, its receipt would differ, and the appraisal would be REFUTED."""
+    from greg.body import init_body
+    from greg.founder import generate_founder_key, load_founder_key
+    _namespaces_or_skip()
+    stub = Path(organs["railscout_root"]) / "railscout" / "appraise.py"
+    stub.write_text(stub.read_text().replace(
+        '    return {"appraisal": appraisal, "receipt_sha256": hashlib.sha256(body).hexdigest()}',
+        '    import socket\n'
+        '    seen = sorted(name for _, name in socket.if_nameindex())\n'
+        '    return {"appraisal": appraisal, "receipt_sha256": hashlib.sha256(body).hexdigest(), "interfaces": seen}'))
+    home = tmp_path / "body"
+    config = init_body(home, read_roots=[str(tmp_path / "data")], confined_egress=True)
+    public = generate_founder_key(tmp_path / "founder.pem", None)
+    with Body(home) as body:
+        body.enroll_founder(public)
+    key, body_id = load_founder_key(tmp_path / "founder.pem", None), config["body_id"]
+    spec = venture_assessment(**organs)
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        clock.advance(30)
+        assert body.tick()["missions"][0]["state"] == "WAITING"
+        body.engine.book.rebuild()
+        request = body.engine.book.open_requests()[0]
+    drop(home, signed(key, body_id, "DECISION", {"request_id": request["request_id"], "answer": "approve"}))
+    with Body(home, clock=clock) as body:
+        states = _tick(body, clock, 3)
+        appraisal = body.journal.replay("mission.appraised")[-1].payload
+        receipts = [r.payload["result"].get("output") for r in body.ledger.by_type("receipt")]
+    assert states[:2] == ["ACTED", "ACHIEVED"]
+    assert appraisal["verdict"] == "VERIFIED", appraisal["findings"]
+    assessed = next(r for r in receipts if isinstance(r, dict) and "inputs" in r and "railscout" in r["inputs"])
+    assert assessed["inputs"]["railscout"]["interfaces"] == ["lo"]          # the organ ran with no network
+
+
+@pytest.mark.skipif(not (os.environ.get("GREG_TEST_RAILSCOUT") and os.environ.get("GREG_TEST_WMI")),
+                    reason="set GREG_TEST_RAILSCOUT and GREG_TEST_WMI to real organ checkouts")
+def test_real_organs_assess_unchanged_with_no_network(tmp_path):
+    """The real RailScout appraiser and WealthMachine intake run in a namespace with no network and give the same
+    assessment; the appraiser's confined re-run reproduces it."""
+    _namespaces_or_skip()
+    rs, wmi = Path(os.environ["GREG_TEST_RAILSCOUT"]), Path(os.environ["GREG_TEST_WMI"])
+    signal = rs / "examples" / "project-source-packet"
+    params = {"railscout_root": str(rs), "wmi_root": str(wmi), "manifest": str(signal / "manifest.json"),
+              "source_root": str(signal)}
+    free = ventures.assess(params, _ctx(tmp_path / "free", [rs, wmi]))
+    ctx = _ctx(tmp_path / "confined", [rs, wmi])
+    ctx.egress = object()                                   # a confined body: organs get no network at all
+    confined = ventures.assess(params, ctx)
+    assert {k: confined[k] for k in ("verdict", "engine_verdict", "railscout_status")} == \
+           {k: free[k] for k in ("verdict", "engine_verdict", "railscout_status")}
+    assert confined["inputs"]["railscout"] == free["inputs"]["railscout"]
+    ok, detail = ventures.verify_delivery(confined, ctx.deliver_root, confined=True)
+    assert ok, detail
+
+
 # -- the Mind inside the memo: a revenue figure may not outrun its causal support (directive section 16) ----
 
 ECONOMICS = {"revenue": {"factors": [{"name": "brokers", "low": 20, "central": 60, "high": 150, "units": {"broker": 1}},

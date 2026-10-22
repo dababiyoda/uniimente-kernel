@@ -31,8 +31,11 @@ def _kind(e: dict) -> str:
 def correlate(events: list[dict], mission_id: str | None = None) -> dict:
     traces: dict[str, list] = defaultdict(list)
     requested: dict[str, str] = {}
+    asked_for: dict[str, str | None] = {}     # request id -> the capability the ask is for
     last_capability: dict[str, str] = {}
-    for e in sorted(events, key=lambda e: (e["at"], e["event_id"])):
+    # A ledger sequence, when the caller has one, is the canonical order: timestamps can come from
+    # different clocks (the body's, an organ's, the dataplane's) and do not order causally.
+    for e in sorted(events, key=lambda e: (e.get("seq", -1), e["at"], e["event_id"])):
         p, kind = e["payload"], _kind(e)
         mid = p.get("mission_id")
         if not mid or (mission_id and mid != mission_id):
@@ -41,6 +44,7 @@ def correlate(events: list[dict], mission_id: str | None = None) -> dict:
         if kind == "decision.requested":
             requested[p["request_id"]] = e["at"]
             span.update(request_id=p["request_id"], capability=(p.get("authority_requested") or {}).get("capability"))
+            asked_for[p["request_id"]] = span["capability"]
         elif kind == "decision.answered":
             asked = requested.get(p["request_id"])
             span.update(request_id=p["request_id"], answer=p.get("answer"),
@@ -49,10 +53,16 @@ def correlate(events: list[dict], mission_id: str | None = None) -> dict:
             last_capability[mid] = p.get("capability")
             span.update(capability=p.get("capability"), status=p.get("status"), receipt=p.get("receipt"),
                         cost_usd=float(p.get("cost_usd") or 0.0))
-        elif kind == "mission.appraised":
+        elif kind in ("mission.appraised", "organ.appraised"):   # organ.appraised: an organ exchange's own check
             span.update(verdict=p.get("verdict"))
         elif kind in ("mission.blocked", "mission.lifecycle"):
-            span.update(reason=p.get("reason") or p.get("state"))
+            # A GREG block names its blocker (an ask, a missing capability): it belongs to what it waits on,
+            # not to whatever capability happened to act last.
+            blocker = p.get("blocker") or {}
+            span.update(reason=p.get("reason") or p.get("state") or blocker.get("type"))
+            waits_on = asked_for.get(blocker.get("request_id")) or blocker.get("capability_id")
+            if waits_on:
+                span["capability"] = waits_on
         if kind in ("mission.achieved", "mission.appraised", "mission.blocked") and "capability" not in span:
             span["capability"] = p.get("capability") or last_capability.get(mid)
         traces[mid].append(span)

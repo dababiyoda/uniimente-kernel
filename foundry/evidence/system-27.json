@@ -23,7 +23,7 @@
    "untyped_contract": "x names untyped contracts ['made-up']"
   },
   "stale_after_ttl": 0,
-  "static_entries": 27,
+  "static_entries": 28,
   "static_seeded": [
    "spiffe://uniimente.internal/organ/daleobanks",
    "spiffe://uniimente.internal/organ/constitutional-controller",
@@ -31,6 +31,6 @@
   ],
   "use_without_grant": "refused"
  },
- "result_sha256": "sha256:8843abdfda642a49d67fdf3d058f5944cc04e0c5b14dea397e1fa506affd1d45",
+ "result_sha256": "sha256:43ba04da2ab94aa380ae2376faf1205000bd5fe8cc289db2783ebbb2c68c6cba",
  "system": 27
 }

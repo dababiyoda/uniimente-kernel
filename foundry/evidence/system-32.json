@@ -1,0 +1,66 @@
+{
+ "command": "python -m foundry.completion --run 32",
+ "name": "Owned social networks",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "alice_rated_by_four_helpful_marks": true,
+  "feed_served_with_provenance": true,
+  "full_export": {
+   "members": 4,
+   "moderation_acts": 4,
+   "posts": 9,
+   "private_keys_absent": true,
+   "tampered_rejected": true,
+   "verifies": true
+  },
+  "held_at_third_report": true,
+  "linked_actor_verified": true,
+  "member_export": {
+   "posts": 6,
+   "received": 3,
+   "reports_made": 1,
+   "verifies": true
+  },
+  "members": 5,
+  "platform_import": {
+   "invitations_added": 2,
+   "invitations_total": 2,
+   "invited_member_claimed": true
+  },
+  "posts": 9,
+  "rate_limit_resets": true,
+  "refusals": {
+   "duplicate_reaction": "already reacted that way",
+   "forged_member_signature": "signature does not verify against the member's key",
+   "join_forged": "signature does not verify against the member's key",
+   "join_twice": "ed25519:84fd5f5b89c148192c03e735 is already a member",
+   "link_actor_without_alias": "the actor does not name this member key in alsoKnownAs; link refused",
+   "moderate_without_role": "moderation needs the moderator or owner role",
+   "moderator_cannot_promote": "only the owner promotes, and only members",
+   "non_member_post": "'ed25519:9a92d2b54a9a5402de3e65a0' is not a member",
+   "post_while_held": "ed25519:a4c0fca223ffb80869737658 is held: 3 open reports; awaiting a moderator",
+   "rate_limit": "rate limit: 5 posts per 1:00:00",
+   "react_to_tombstone": "no such post",
+   "reply_to_unknown": "reply to an unknown post",
+   "self_mark": "a member does not mark their own post",
+   "tier_on_claimed_charge": "no settled charge c-nope on the rail; a tier is not granted on a claim",
+   "tier_on_declined_charge": "no settled charge c-bob on the rail; a tier is not granted on a claim"
+  },
+  "released_can_post": true,
+  "reports": [
+   1,
+   2,
+   3
+  ],
+  "standing": {
+   "ed25519:84fd5f5b89c148192c03e735": [
+    "rated",
+    4.0
+   ]
+  },
+  "supporter_tier_from_settled_charge": true,
+  "tombstone_keeps_hash": true
+ },
+ "result_sha256": "sha256:28cfa17d3e9d7de2df226136233e66ff577ca9b69187ec04fd0de75954630702",
+ "system": 32
+}

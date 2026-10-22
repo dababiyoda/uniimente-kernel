@@ -107,6 +107,9 @@ def instantiate(wasm: bytes, manifest: dict):
     import wasmtime
     config = wasmtime.Config()
     config.consume_fuel = True
+    # GREG appraises in child processes. An inherited native parallel compiler
+    # pool can retain locks whose threads no longer exist after fork.
+    config.parallel_compilation = False
     engine = wasmtime.Engine(config)
     module = wasmtime.Module(engine, wasm)
     if hashlib.sha256(wasm).hexdigest() != manifest["wasm_sha256"]:

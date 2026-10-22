@@ -5,7 +5,9 @@ The installer (install.sh), the `greg` command it writes, the founder console in
 console, then `greg vepmc`, `greg morning`, `greg presence --hours 2` and `greg path`. Then, still without a model: "Verify <file> against
 sha256 <hex>" and "Confirm <draft> is at most 50 words", each needing a capability GREG lacks
 (Capability Genesis acquires and verifies one), each interrupted by kill -9 while it waits for
-approval, each accepted: `greg path` moves N1 -> N2 -> N3 on ledger evidence alone.
+approval, each accepted: the ledger shows the N1 and N2 exits structurally met, and `greg path`
+stays at N1, because a --no-passphrase key never reaches the founder tier (#138, 673726a, on the
+one founder-tier rule; N1's kill condition is "a closure counted with a test key").
 
 What stands in for the Chromebook: this Linux container (`--allow-other-linux`), supervisord in
 place of the systemd user unit (same command, restart-on-crash, stay stopped after STOP), a
@@ -25,11 +27,11 @@ import time
 
 import pytest
 
-from greg import service
+from greg import doctor, metrics, service
 from greg import path as devpath
 from tests.integration.test_greg_body_supervised import (SUPERVISORD, events, heartbeat, history,
                                                          supervisor_endpoint, wait_for)
-from tests.integration.test_greg_product_path import free_port, http
+from tests.integration.test_greg_product_path import enter_console, free_port, http
 
 ROOT = Path(__file__).resolve().parents[2]
 INSTALL = ROOT / "greg/chromebook/install.sh"
@@ -61,6 +63,14 @@ def test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_
         assert out.returncode == 0, out.stderr[-2000:]
         return out.stdout
 
+    # #26: the installer confines GREG's network whenever this machine can, and says which it did.
+    from greg import doctor
+    confinable = doctor.confined_egress()["available"]
+    egress = json.loads(greg("status"))["egress"]
+    assert egress["confined"] is confinable
+    assert ("Network: confined." in installed.stdout) is confinable
+    assert confinable or "cannot confine GREG's network" in installed.stdout
+
     # The systemd user unit, played by supervisord: same program, restarts a crash, honours STOP.
     conf = tmp_path / "supervisord.conf"
     (home / "logs").mkdir(exist_ok=True)              # what `greg service install` creates; journald on systemd
@@ -77,15 +87,7 @@ def test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_
         proc = subprocess.Popen([str(bin_dir / "greg"), "console", "--key", str(key), "--no-passphrase", "--no-model",
                                  "--port", str(port)], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                 text=True)
-        deadline = time.time() + 30
-        while time.time() < deadline:
-            try:
-                http(port, "/")
-                return proc
-            except OSError:
-                assert proc.poll() is None, proc.stdout.read()
-                time.sleep(0.2)
-        raise AssertionError("console did not start")
+        return enter_console(proc, port)
 
     def close(proc):
         proc.terminate()
@@ -133,14 +135,21 @@ def test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_
         vepmc = json.loads(greg("vepmc"))
         row = vepmc["missions"][0]
         assert row["missing"] == [] and vepmc["VEPMC"] == 1, row             # structurally complete, not external
+        # Where it ran is on the ledger: in a build container this reads linux_other, never chromeos_linux.
+        assert row["device_class"] == row["designated_device_class"] == doctor.device_class()
         assert vepmc["external_confirmation_required"]
+        assert vepmc["structural_candidate_count"] == 1 and vepmc["founder_tier_count"] == 0
+        assert vepmc["evidence_level"] == row["evidence_level"] == metrics.STRUCTURAL_CANDIDATE
         assert [a["status"] for a in events(home, "mission.action")].count("DONE") == 1   # delivered once
         morning = json.loads(greg("morning"))
         assert morning["q0_was_i_present"]["absences"]
         presence = json.loads(greg("presence", "--hours", "2"))
         assert "process_lost" in {a["cause"] for a in presence["absences"]}   # the kill -9, bounded by a heartbeat
         path = json.loads(greg("path"))
-        assert "N1" in path["achieved"] and path["active"]["id"] == "N2"     # the GPS moves on ledger evidence
+        assert path["achieved"] == ["N0"] and path["active"]["id"] == "N1"
+        assert path["active"]["measurement"]["structurally_met"]
+        assert not path["active"]["measurement"]["met"]    # a rehearsal key cannot clear the founder's gate
+        assert path["active"]["measurement"]["not_founder_tier"] == {row["mission_id"]: metrics.NOT_FOUNDER_TIER}
 
         # N2 on the same body, still without a model: a mission that needs a capability GREG lacks.
         download = src / "downloads" / "tool.tar.gz"
@@ -175,7 +184,7 @@ def test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_
         vepmc = json.loads(greg("vepmc"))
         assert vepmc["VEPMC"] == 2 and all(r["counts"] for r in vepmc["missions"])
         path = json.loads(greg("path"))
-        assert path["achieved"][-1] == "N2" and path["active"]["id"] == "N3"   # novel capability closure, measured
+        assert path["achieved"] == ["N0"] and path["active"]["id"] == "N1"   # novel capability measured, not counted
 
         # A second genesis closure on an unrelated function (word counting), before any claim of generality.
         draft = src / "drafts" / "essay.md"
@@ -206,7 +215,9 @@ def test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_
             genesis = devpath.PREDICATES["genesis_closure"](journal)
         finally:
             ledger.close()
-        assert genesis["value"] == 2 and genesis["distinct_capabilities"] == 2, genesis
+        assert genesis["structural_value"] == 2 and genesis["structural_distinct_capabilities"] == 2, genesis
+        assert genesis["structurally_met"] and not genesis["met"] and genesis["value"] == 0
+        assert genesis["evidence_level"] == metrics.STRUCTURAL_CANDIDATE and len(genesis["not_founder_tier"]) == 2
 
         # To stop: greg stop --local (a deliberate stop stays stopped).
         greg("stop", "--local")
@@ -219,3 +230,19 @@ def test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_
             supervisor.wait(timeout=20)
         except subprocess.TimeoutExpired:
             supervisor.kill()
+
+
+def test_the_founder_can_decline_network_confinement_at_install(tmp_path):
+    env = {**os.environ, "HOME": str(tmp_path / "home")}
+    env.pop("GREG_FOUNDER_PASSPHRASE", None)
+    (tmp_path / "home").mkdir()
+    home, bin_dir = tmp_path / "body", tmp_path / "bin"
+    installed = subprocess.run(
+        ["bash", str(INSTALL), "--allow-other-linux", "--no-service", "--skip-deps", "--no-passphrase",
+         "--no-confined-egress", "--python", sys.executable, "--home", str(home), "--key", str(tmp_path / "k.pem"),
+         "--bin-dir", str(bin_dir), "--read-root", str(tmp_path / "src"), "--deliver-root", str(tmp_path / "out")],
+        capture_output=True, text=True, env=env, timeout=300)
+    assert installed.returncode == 0, installed.stdout[-2000:] + installed.stderr[-2000:]
+    assert "Network confinement skipped (--no-confined-egress)." in installed.stdout
+    status = subprocess.run([str(bin_dir / "greg"), "status"], capture_output=True, text=True, env=env, timeout=120)
+    assert json.loads(status.stdout)["egress"]["confined"] is False

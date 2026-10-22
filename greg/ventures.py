@@ -62,16 +62,29 @@ print(json.dumps(OpportunityIntakeService().evaluate_packet(json.load(sys.stdin)
 """
 
 
-def _organ(script: str, stdin: dict, *args: str, cwd: Path) -> dict:
-    """Run one organ in its own process: no GREG secrets, keys or ledger reach it."""
+def _organ(script: str, stdin: dict, *args: str, cwd: Path, confined: bool = False) -> dict:
+    """Run one organ in its own process: no GREG secrets, keys or ledger reach it.
+
+    ``confined`` (a body with confined egress, #26): an appraisal needs no network, so the organ runs in a bubblewrap
+    network namespace with no door at all, its checkouts read-only. Without namespaces nothing runs (fail closed)."""
     # A fresh bytecode cache per run: a stale .pyc (same size, same mtime second) must
     # never let a re-run execute code other than the organ's current source.
     with tempfile.TemporaryDirectory(prefix="greg-organ-pyc-") as pycache:
         env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "PYTHONHASHSEED": "0",
                "HOME": str(cwd), "LANG": "C.UTF-8", "PYTHONPYCACHEPREFIX": pycache}
+        argv = [sys.executable, "-s", "-c", script, *args]
+        if confined:
+            from foundry.systems.relay_door import namespace_argv
+            from greg.worker_isolation import WorkerIsolationError, _backend
+            try:
+                _backend(require_bubblewrap=True)
+            except WorkerIsolationError as exc:
+                raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}") from None
+            argv = namespace_argv(writable=[pycache], readonly=[cwd, *(a for a in args if Path(a).is_absolute())],
+                                  chdir=cwd) + argv
         try:
-            done = subprocess.run([sys.executable, "-s", "-c", script, *args], input=json.dumps(stdin),
-                                  capture_output=True, text=True, timeout=ORGAN_TIMEOUT_SECONDS, cwd=cwd, env=env)
+            done = subprocess.run(argv, input=json.dumps(stdin), capture_output=True, text=True,
+                                  timeout=ORGAN_TIMEOUT_SECONDS, cwd=cwd, env=env)
         except subprocess.TimeoutExpired:
             raise CapabilityError(f"organ timed out after {ORGAN_TIMEOUT_SECONDS}s") from None
     if done.returncode != 0:
@@ -180,6 +193,8 @@ def revenue_conclusion(revenue: dict | None, causal: dict | None) -> dict:
 
 
 def _render_revenue(inputs: dict) -> list[str]:
+    if "revenue" not in inputs:
+        return []   # a memo receipted before the revenue section existed renders exactly as it was receipted
     receipts, conclusion = inputs.get("cognition") or {}, inputs["revenue"]
     lines = ["## Revenue (GREG's own cognition; read-only)", "", f"**{conclusion['kind']}** — {conclusion['why']}."]
     revenue, causal = receipts.get("revenue"), receipts.get("causal")
@@ -269,6 +284,7 @@ def render(inputs: dict) -> str:
               f"- Wire packet `{inputs['packet']['id']}` sent under the kernel identity; assessment adapted under "
               f"the wealthmachine identity; execution authority {inputs['canonical']['assessment_execution_authority']}",
               f"- Signal: manifest {inputs['manifest_sha256']}",
+              *([f"- Economics: {inputs['economics_sha256'] or 'none stated'}"] if "economics_sha256" in inputs else []),
               f"- Renderer {RENDERER}", ""]
     return "\n".join(lines)
 
@@ -317,9 +333,12 @@ def assess(params, ctx: InvocationContext) -> dict:
     p = _paths(params, ctx)
     manifest_bytes = p["manifest"].read_bytes()
     manifest = json.loads(manifest_bytes.decode("utf-8"))
-    receipt = _organ(_RAILSCOUT, manifest, str(p["railscout_root"]), str(p["source_root"]), cwd=p["railscout_root"])
+    confined = ctx.egress is not None
+    receipt = _organ(_RAILSCOUT, manifest, str(p["railscout_root"]), str(p["source_root"]), cwd=p["railscout_root"],
+                     confined=confined)
     packet = packet_from_appraisal(receipt)
-    assessment = _organ(_WEALTHMACHINE, packet, str(p["wmi_root"]), str(KERNEL_ROOT), cwd=p["wmi_root"])
+    assessment = _organ(_WEALTHMACHINE, packet, str(p["wmi_root"]), str(KERNEL_ROOT), cwd=p["wmi_root"],
+                        confined=confined)
     verdict, why = binding_verdict(receipt["appraisal"]["status"], assessment["go_no_go"])
     receipts = cognition_receipts(ctx, params["cognition"]) if params.get("cognition") else None
     inputs = {"renderer": RENDERER, "manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
@@ -331,16 +350,33 @@ def assess(params, ctx: InvocationContext) -> dict:
               "flip": flip_condition(receipt["appraisal"], assessment["go_no_go"], verdict),
               "organs": {"railscout_head": _git_head(p["railscout_root"]), "wmi_head": _git_head(p["wmi_root"])},
               "paths": {k: str(v) for k, v in p.items()}}
+    if "economics_sha256" in params:
+        # the economics the revenue section is computed from (None: none stated); a memo from other economics is
+        # a different memo, delivered beside it, never in its place
+        inputs["economics_sha256"] = params["economics_sha256"]
     text = render(inputs)
-    path = _deliver(text, ctx, f"venture-{receipt['receipt_sha256'][:16]}")
+    basis = inputs.get("economics_sha256")
+    path = _deliver(text, ctx, f"venture-{receipt['receipt_sha256'][:16]}" + (f"-{basis[7:15]}" if basis else ""))
     return {"path": str(path), "sha256": hashlib.sha256(text.encode()).hexdigest(), "bytes": len(text.encode()),
             "inputs": inputs, "inputs_digest": inputs_digest(inputs), "verdict": verdict,
             "railscout_status": receipt["appraisal"]["status"], "engine_verdict": assessment["go_no_go"],
             "manifest_sha256": inputs["manifest_sha256"]}
 
 
+def _same_economics(text: str, params: dict) -> bool:
+    """A memo answers this mission only if it was computed from the economics the mission was signed with. A
+    mission signed before economics were bound (no ``economics_sha256``) keeps matching by manifest alone; a memo
+    rendered before they were bound states none."""
+    if "economics_sha256" not in params:
+        return True
+    basis = params["economics_sha256"]
+    if basis is None:
+        return "- Economics: " not in text or "- Economics: none stated" in text
+    return f"- Economics: {basis}\n" in text
+
+
 def status(params, ctx: InvocationContext) -> dict:
-    """Sensor: has an assessment been delivered for this manifest's current receipt?"""
+    """Sensor: has an assessment been delivered for this manifest's current receipt and the signed economics?"""
     manifest = _inside(Path(params["manifest"]), ctx.read_roots)
     digest = hashlib.sha256(manifest.read_bytes()).hexdigest()
     folder = Path(ctx.deliver_root).resolve() / "ventures" if ctx.deliver_root else None
@@ -348,13 +384,13 @@ def status(params, ctx: InvocationContext) -> dict:
     marker = f"manifest {digest}"
     for path in found:
         text = path.read_text(encoding="utf-8")
-        if marker in text:
+        if marker in text and _same_economics(text, params):
             verdict = text.split("**Binding verdict: ", 1)[1].split("**", 1)[0]
             return {"assessed": True, "verdict": verdict, "path": path.name, "manifest_sha256": digest}
     return {"assessed": False, "verdict": None, "path": None, "manifest_sha256": digest}
 
 
-def verify_delivery(output: dict, deliver_root: Path | None, ledger=None) -> tuple[bool, str]:
+def verify_delivery(output: dict, deliver_root: Path | None, ledger=None, *, confined: bool = False) -> tuple[bool, str]:
     """Appraiser: the memo is the render of its receipt, and both organs reproduce the receipt."""
     if not isinstance(output, dict) or "inputs" not in output:
         return False, "receipt does not retain the assessment inputs"
@@ -375,7 +411,10 @@ def verify_delivery(output: dict, deliver_root: Path | None, ledger=None) -> tup
                                         inputs["binding"]["verdict"]):
         return False, "the stated verdict-change condition is not derived from the organ outputs"
     receipts = inputs.get("cognition") or {}
-    if inputs.get("revenue") != revenue_conclusion(receipts.get("revenue"), receipts.get("causal")):
+    # Every memo assessed since the revenue section carries a conclusion; one receipted before it carries neither a
+    # conclusion nor cognition receipts, and states no revenue figure to hold to the rule.
+    if (receipts or "revenue" in inputs) and \
+            inputs.get("revenue") != revenue_conclusion(receipts.get("revenue"), receipts.get("causal")):
         return False, "the revenue conclusion is not the rule applied to the cognition receipts"
     from greg.cognition.settlement import _valid_receipt
     for role, receipt in receipts.items():
@@ -391,13 +430,13 @@ def verify_delivery(output: dict, deliver_root: Path | None, ledger=None) -> tup
             return False, "the signal manifest changed since the assessment"
         manifest = json.loads(manifest_bytes.decode("utf-8"))
         again = _organ(_RAILSCOUT, manifest, str(paths["railscout_root"]), str(paths["source_root"]),
-                       cwd=paths["railscout_root"])
+                       cwd=paths["railscout_root"], confined=confined)
         if again != inputs["railscout"]:
             return False, "RailScout does not reproduce the receipted appraisal (sources or manifest changed)"
         if packet_from_appraisal(again) != inputs["packet"]:
             return False, "the packet is not the deterministic mapping of the appraisal"
         engine = _organ(_WEALTHMACHINE, inputs["packet"], str(paths["wmi_root"]), str(KERNEL_ROOT),
-                        cwd=paths["wmi_root"])
+                        cwd=paths["wmi_root"], confined=confined)
     except (CapabilityError, OSError, ValueError) as exc:
         return False, f"organ re-run failed: {exc}"
     if any(engine[k] != inputs["assessment"][k] for k in STABLE_ASSESSMENT):

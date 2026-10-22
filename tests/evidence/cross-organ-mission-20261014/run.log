@@ -1,0 +1,36 @@
+{
+  "what_happened": [
+    "bridge.signal_observed",
+    "bridge.opportunity_adapted",
+    "bridge.assessment_adapted",
+    "bridge.assessment_appraised"
+  ],
+  "components": [
+    "daleobanks",
+    "kernel",
+    "kernel-appraiser",
+    "wealthmachine"
+  ],
+  "authorized": "no consequence was requested; nothing required authorization",
+  "executed_externally": false,
+  "accepted_by_recipient": null,
+  "outcome_verified": "internally_appraised",
+  "remaining_obligations": [
+    "founder approval of the recommended next action",
+    "unresolved packet fields: ['governing_bottleneck']"
+  ],
+  "resources": {
+    "daleobanks_seconds": 0.0663,
+    "wealthmachine_seconds": 0.0621,
+    "reported_spend_usd": 0.0,
+    "spend_verified": "no paid calls were made by this script"
+  },
+  "ledger_chain_ok": true,
+  "ledger_chain_detail": "chain intact: 8 records",
+  "unknowns": [
+    "whether any buyer wants the offer",
+    "whether the founder approves",
+    "real-world effect of the recommended validation action"
+  ]
+}
+RESULT: PASS

@@ -2,6 +2,27 @@
 
 # Founder Intent Ledger
 
+## Seed Cortex 0.2.2 on GREG's path, stacked on #184 — 2026-10-21
+
+Faithful summary, not verbatim and not founder authentication. Repetition adds no authority.
+
+| Required field | INTENT-20261021-seed-cortex-on-greg-path |
+| --- | --- |
+| statement | Bring the Seed Cortex 0.1.6 repairs (#167) onto GREG's mission path, verify every further finding independently, and leave the line sound for the first measured capability dividend |
+| source_refs | 2026-10-13 founder directive (sha256 `de5db69c...`, preserved on #167); `INTENT-20261019-UPWARD-ASCENT` (#190); the "Resume" of 2026-10-21 |
+| owner | Alfonso Lopez; cortex and GREG cognition maintainers implement |
+| state | active |
+| binding_scope | `cortex/` 0.2.2, `greg/cognition/` bridge, compiler, seed path and evaluation harnesses; draft PR stacked on #184 |
+| constitutional_constraints | cognition proposes and never authorizes; no new authority, spend, contact or merge; one authority, many governed capabilities; preserve every superseded freeze and result |
+| success_evidence | `tests/unit/test_cortex_seed_ports.py`, `tests/unit/test_greg_seed_port_paths.py` (fail on `900c6ae`; the adversarial review's 19 findings each fail on `1f1e688`); 65 new mutants caught; held-out routed quality 0.964 with 0 critical errors unchanged; crossgeo development and selection dispositions unchanged; seed replay 120/120 at `freeze-v12.json` |
+| failure_evidence | none of the repairs shows a gain on the frozen suites (they close failure classes the suites do not contain); model baselines not run (no local model) |
+| dependencies | #184 (base); #167 (source lineage); the capability dividend PR that follows |
+| conflicts | a contradicted declaration: Genesis deficit here, abstention in 0.1.6; a deficit verified within one receipt here, by recurrence in 0.1.6 (founder decisions, recorded in `docs/cortex/SEED_CORTEX_PORT_0.2.2.md`) |
+| next_review_trigger | founder review of the draft PR; the dividend PR's pre-registered run |
+| supersedes | none (0.2.1 and `freeze-v11.json` kept as lineage) |
+| superseded_by | none |
+| implementation_refs | `docs/cortex/SEED_CORTEX_PORT_0.2.2.md`, `docs/cortex/seed-cortex-port-0.2.2.json` |
+
 ## Mind to its maximum: successor pilot, evaluator audit, five layers — 2026-10-21
 
 `INTENT-20261021-MIND-MAXIMUM-CONTINUATION` ([record](intent/INTENT-20261021-MIND-MAXIMUM-CONTINUATION.json), [verbatim source](intent/sources/MIND-MAXIMUM-CONTINUATION-2026-10-21-source.md)): continue the complete five-layer Mind to its maximum defensible capability. "Do not stop at P8."
@@ -56,6 +77,40 @@ Progress 2026-10-21 (measured; negative results kept):
     - not DEFAULT because it is about 92x slower than the replanner;
     - the stale-controller weakness replicates (3-7).
   - 45 of 59 genomes are admitted, every one with current-version evidence. None is attached.
+- **Genome admission v7** ([evidence](evidence/greg-genome-admission/2026-10-21-v7/README.md)): nine new genomes from three parallel lanes, each built for an ABSENT coverage item. Pre-registered at `b1ee3f97`, frozen at `568c4b7b`, run once on seeds 1600-1629.
+  - **DEFAULT (5):**
+    - IDA\* (under a declared memory budget);
+    - NEH-insertion beam search (beats warm-started CP-SAT 14-3; Iterated Greedy was not compared);
+    - MAP-Elites (against a competitor weak by construction);
+    - exact top-k betweenness (ties NetworkX, faster);
+    - local-rule CA regeneration (0-2 against Z3 entailment, not significant, at 1/40 the latency).
+  - **EXPERIMENTAL (2):**
+    - the GA: 19-10 against hill climbing, not significant. It wins rugged NK 15-0 and loses deceptive traps 0-15 against CP-SAT.
+    - MCTS: it ties flat Monte Carlo 28 of 30.
+  - **SUPERSEDED (2):**
+    - property-based search: Z3 finds every counterexample;
+    - Hopfield recall: exact nearest neighbour is the ceiling.
+  - 50 of 68 genomes are admitted. None is attached.
+
+## FABLE 5.1 OPUS MAXIMUS: one GREG, stacked on #178 — 2026-10-15
+
+`INTENT-20261014-FABLE-OPUS-MAXIMUS` ([record](intent/INTENT-20261014-FABLE-OPUS-MAXIMUS.json), [verbatim prompt](intent/sources/FABLE-5-1-MASTER-BUILD-PROMPT-2026-10-14-source.md)): the greatest technically defensible realization of BODY + ORGANS + MIND on one canonical reviewable trunk, with no parallel GREG. Deliverables A-L are in [`opus-maximus/`](opus-maximus/). Convergence decision: [stack on #178](collaboration/deliberation-opus-maximus-converge-on-178-20261015.json) instead of running a second trunk.
+
+- **Merged:** #178 (one-machine trunk, through `baf630d`: its second review and the Goal Gravity merge fixes), #175 `0ae4c94` (Goal Gravity bound to the body), the Track B Mind line at #181 `79c38f8` (with #179 and #180: #155 and #158 converged, the venture case on real organs) and #169 at `ebfc5f7` (confined egress by default; paid routes, `browser.session`, anchoring and the DALEOBANKS bridge behind the relay; MCP tools, read-only by construction or writing only what the founder approves, local or hosted, by login or plain token, with a credential a server reads from a file, and from the founder's words; device acceptance read from the body's relay journal; Foundry #52 repairing a copied source tree inside the worker envelope). #178's mission ordering and #175's persistent goals both run. #169's confined model child now keeps #178's model policy: only the founder's priced allowlist, never the provider-chosen `default`.
+- **Defects found by the merged suites and fixed:** a Goal Gravity name collision (86 failing tests); a reconciliation that left an interrupted attempt's signed cap held, which stalled #178's whole-machine test, and booked it twice when "executed"; resilience dropping reconciled interruptions; three of #178's attack tests failing since the #178 merge; an organ exchange that kept the body's network on a confined body and whose appraisal the #169 merge broke; #178's independent verifier omitting the body's worker posture, which CI found on a host without bubblewrap.
+- **An adversarial review of this branch, fixed:** 12 findings, each reproduced by a separate skeptic. A body killed between an uncertain run's record and its question no longer retries it blind on restart; supervision now covers only workers the envelope cannot confine at all; a workspace acceptance script runs inside the envelope; the confined organ exchange gets no network on the mission path; a receipt states supervision only when it happened; and a goal's ask for a paid move, or for an `mcp.act` call, is exactly the ask the mission would make, reach shown. Four were fixed by #178's second review (two of them carried here onto the confined model path); each of the rest has a test that fails without its fix.
+- **A second adversarial review, of those fixes and merges, fixed:** 14 findings, 13 confirmed by a separate skeptic, 1 rejected. A kill in the uncertain window during Goal Gravity preparation, or behind another blocker, no longer leads to a blind retry; a crash between a reconciliation's record and its unblock no longer crash-loops; a founder's answer to a question from before #178's per-attempt salting is kept; provider binaries cannot be shadowed by a file in the worker's clone; a supervised Mac body's appraisal re-runs acceptance. A goal keeps its ask, its signed reject and its evidence when the mission spends, and says that a paid approve funds one run (#157), not a standing one; it no longer asks about a move its body cannot run. A Claude Code CLI failure is booked at what it cost, and its refusal is final, as the real CLI exits 1 on both (Seed Genome freeze-v10). Each has a test that fails without its fix.
+- **A third adversarial review, fixed:** 12 findings, 9 confirmed by a separate skeptic. One paid approval now funds exactly one run, even a run that books $0; a paid ask the mission's spend has overtaken is withdrawn and asked again, so every open ask is one an approve can run; a goal no longer takes a used-up approve as the founder's answer. Claude Code's verbose output, unknown costs, built-in model fallback and error reasons are handled (Seed Genome freeze-v11).
+- **A fourth adversarial review, of the Track B merge and #169's secret files, fixed:** 16 findings, 15 confirmed by a separate skeptic, 1 rejected. An attached construction now meets every compile route's rules: a high-consequence answer needs a formal model and stays conditional, and its call draws on the decision's thinking budget. The compile and chain routes carry the caller's grant window. A venture memo answers only the mission whose economics it was computed from. A mission held by a host outage resumes when the founder attaches a mechanism during the back-off. A credential handed to an MCP server as a file never reaches the ledger or a readable workspace, and an earlier action's output cannot choose it. Each has a test that fails without its fix.
+- **A fifth adversarial review, of #169's `ebfc5f7` merge, fixed in two rounds:** 8 findings in #169's newest code (6 reproduced by a separate skeptic, 2 here, 1 refuted), then 9 in the fixes (4 reproduced by a skeptic, 5 confirmed here, 2 refuted, 3 accepted and recorded). What code under repair leaves behind (a FIFO, a socket, a link, a flood of sparse files, a rewritten report) can no longer hang, steer or stall Foundry #52's repair; its recorded evidence reproduces again and no record claims a CI re-run its row does not get. The device acceptance report counts only what its properties claim, names who made the connections, and survives a torn or damaged relay journal line; a page on another tenant or address is never labelled the service's own; the acceptance procedure points to the steps that produce its evidence, including installing Chromium in the Linux container. Each has a test that fails without its fix.
+- **The Mind joined to the machine (Track B):** one tree now carries the converged Mind and the one-machine trunk, both whole-machine proofs pass on it with the real organs, and every mutation gate catches all its mutants. Track B's code binding keeps four operation verdicts (control, game, information, probabilistic) UNEVALUATED until they are re-admitted on the merged code; nothing was weakened to make them pass.
+- **Founder decision made executable with a safe default:** worker confinement is the founder's `greg init` choice, `required` by default, `supervised` by opt-in.
+- **Invention (field B):** proof-carrying standing reconciliation. A founder-signed mission may let GREG settle an interruption it can prove was consequence-inert (the script worker: no network, no credentials, no paid route, writes only inside a discarded clone), at most twice per action. Measured on a real in-flight SIGKILL: founder questions 1 to 0, duplicate consequences 0 (ten-step proof steps 7b and 7c).
+- **Proof:** the ten-step proof and #178's one-mission test both pass on one tree with real DALEOBANKS and WealthMachine code.
+- **Next-wave items 2 and 7 (2026-10-21):** #155's four operation verdicts were re-measured once on the merged solvers, pre-registered at `462bd98` on fresh seeds 2600-2629: control, game and information route DEFAULT again; probabilistic did not replicate and is EXPERIMENTAL, out of routing (`evidence/greg-genome-admission/2026-10-21-operations/`). A `decision.answered` row now moves a mission only as the record re-derived from a founder-signed DECISION at its own acceptance; a three-lens review of that change found 16 defects, all fixed with tests, among them a refused answer that could be revived by a backdated acceptance and an unsigned ask that could redirect the founder's approve (ADR-GOAL-GRAVITY-002).
+- **Founder correction of 2026-10-19 (#190, `INTENT-20261019-UPWARD-ASCENT`, on #190's branch):** convergence is incomplete until every material overlap is recombined into a measured capability on GREG's path; the full vision is the acceptance floor. Applied here: #173's head `27a57cb` was inspected against this tree (about 100 commits not contained, not 20 as recorded; the convergence map is corrected). Seven defects it fixed exist on this branch's path and are ported first. The first capability dividend selected is a worker-independent acceptance check that recombines #173's evaluator freeze, #178's independent re-derivation and this branch's appraiser. Second is graduated worker confinement, with #173's Landlock grants as the floor under `supervised`. Each comes with a pre-declared threshold, floors and an ablation.
+- **Open founder decisions:** VEPMC device and acceptance; organ pin upgrade; the canonical Goal Gravity runtime; contacting brokers for the freight proof-of-delivery cell; merge of this branch.
+- State: active. Reality: INTEGRATION and SANDBOX-WHOLE-MACHINE. VEPMC 0. No authority, spending, publication, contact or merge.
 
 ## Convergence of the two Mind lineages — 2026-10-14
 
@@ -156,6 +211,144 @@ Track B update, 2026-10-21 (composition and metacognition lane; record section 2
   - a formed mechanism's compile receipt carries its competence basis and dissent.
 
 Authority delta: none.
+
+## Whole-machine convergence and the Founder's First Mission — 2026-10-14
+
+The founder's OPUS MAXIMUS continuation directive is implemented on draft branch `claude/greg-whole-machine-convergence`; see `collaboration/WHOLE-MACHINE-CONVERGENCE-2026-10-14.md`. The section 16 handoff (nine items, with a recorded mission trace) is `collaboration/WHOLE-MACHINE-HANDOFF-2026-10-14.md`.
+
+- The Mind line is the canonical base. #160 and #132 are joined, and #132's Foundry modules keep the Mind-line modules as registered alternates behind one dispatch rule.
+- #159 is ported.
+- #157's worker isolation is extracted (increment 4):
+  - workers and their acceptance tests run in bubblewrap envelopes or not at all;
+  - GREG's git never runs a worker-planted hook or filter;
+  - an interrupted worker is reconciled as UNCERTAIN.
+- The console signs only for its owner (increment 5). Before, any local process, including a worker with provider networking, could get a MISSION signed with the founder's key; this was reproduced, and is now refused.
+- The executable Founder's First Mission and the five-question Mission Control are on the one mission path. `greg rehearse` runs both without credentials.
+- Increment 3 adds:
+  - discovery by intention;
+  - an opt-in confined `http.get` behind the #26 relay;
+  - money kept in separate columns;
+  - recovery evidence on the Proof view;
+  - a section 13 attack map covering all 14 classes, with three new integrated attacks: disagreeing intelligences, network loss and interrupted construction.
+- Increments 6 and 7 bring the last three section 13 classes onto signed missions: stale community state, a profitable action that violates participant rights, and a local gain that damages the whole. Two were real holes on the mission path:
+  - an offer with pressured copy for unlicensed content could be published straight onto Foundry #54, around the company's editorial constitution; it is now refused at publication and at sale;
+  - the engine oscillated forever between a strategy that broke safety and one that broke throughput; it now blames the one that broke a passing check and asks the founder to decide the trade-off.
+- Increment 8 puts the browser (`browser.render`) and coding workers behind the #26 relay. They run in a bubblewrap network namespace whose only way out is a door to the relay, and every request is allowlisted and journaled. #26 stays PARTIAL: `browser.session`, the paid model routes, anchoring and the DALEOBANKS bridge remain outside, and confinement is opt-in.
+- Increment 10 puts the Playwright `browser.session` behind the same relay. On the way it found and closed two leaks in the unconfined browser: a page's WebSocket bypassed the allowlist, and the allowlist ignored ports. #26 stays PARTIAL: the paid model routes, anchoring and the DALEOBANKS bridge remain outside, and confinement is opt-in.
+- Increment 11 puts the paid model routes behind the same relay. On a confined body, the Anthropic and OpenAI SDKs, which hold the founder's key, run in a network namespace that reaches only their provider. The Claude Code CLI runs behind its own door. The builder and the console both receive the relay. #26 stays PARTIAL: anchoring and the DALEOBANKS bridge remain outside, and confinement is opt-in.
+- Increment 12 puts anchoring and the DALEOBANKS bridge behind the relay. On a confined body every mission-path egress now crosses the relay or has none. DALEOBANKS's real organ runs inside the namespace. #26 stays PARTIAL only because confinement is opt-in.
+- Increment 13 corrects increment 12. The venture organs, the appraiser's re-run of them and the Claude Code Genesis builder were still outside the relay; they are now confined. The founder's installer creates the body confined whenever the machine can, and says so. On the way, `git.inspect` was found running repository-configured code, and that is now prevented. #26 stays PARTIAL until this is observed on the founder's Chromebook.
+- Increment 14 ports #168's third runbook defect: a person's step now says which file and folder GREG reads, and stays on every surface after an answer until the work is seen.
+- Increment 15 tests two recovery paths end to end that had been tested only in parts. A body killed in the middle of a self-repair, including one killed during a ledger append, finishes the repair exactly once after restart. When one model vendor is down, Genesis builds through the other over the real SDKs, the original mission closes, and the outage survives a restart as routing evidence. No code changed; each test fails against a mutant of the recovery it covers.
+- Increment 16 closes a path to the founder's authority root. Every confined program (browser, model SDK child, Claude Code CLI, DALEOBANKS, venture organs) could read the founder's signing key and the body's secrets and ledger, and the Claude Code routes had the founder's home writable. The one namespace now hides the founder's home, every body home and the repository's `.git`, showing again only GREG's runtime and the paths each caller names; the CLI gets a private home holding only its login. Seed Genome freeze-v7 records the `greg/models.py` change; the evaluation is unchanged.
+- Increment 17 gives GREG the MCP ecosystem's tools without rebuilding them: a signed mission can call a tool on any stdio MCP server the founder installs (`mcp.call`). The server runs in the hardened namespace with no network and a read-only filesystem, so the call cannot change anything whatever the server claims; the official time and git servers ran through it, and the git server's commit was refused by the operating system. Servers that need the network, consequential tools and remote transport remain open (#28 PARTIAL).
+- Increment 18 puts those tools within the founder's words: GREG finds the MCP servers installed under its read roots, lists their tools confined, and turns "use the git server to show the status of ~/src/kernel" into one read-only mission, asking instead of guessing whatever the words do not settle. Mission Control shows the installed servers, their tools and the latest answers as untrusted data with receipts.
+- Increment 19 extends those tools to npm-installed servers (the official filesystem server read through a signed mission and could not write), lets the founder give a server launch arguments in `greg-mcp.json`, and fixes a gateway defect that recorded a server's own structured answer as nothing.
+- Increment 20 lets those tools change things, inside exactly what the founder approves. A tool that writes or reaches the network runs as `mcp.act` (class external_contact): the mission stops for the founder's decision, the request shows the folders it may write, the hosts it may reach through the relay and the credential handles it receives, and only that scope runs. Everything else stays read-only, every other host is refused, and a credential's value never enters GREG's records. The official filesystem server wrote an approved folder and was refused elsewhere by the operating system. Remote transport, other credential forms and words-to-act proposals remain open (#28 PARTIAL).
+- Increment 21 puts those changes within the founder's words: *Use the notes server to append "ship the wedge" to ~/src/notes/plan.md* becomes one `mcp.act` proposal that may write that file's folder and nothing else, with no network and no credentials. It waits for the founder's approval, which Mission Control now shows with its exact scope, and closes only when GREG reads the file itself and finds the text. On the way, the signing summary stopped reading unknown capabilities as read-only.
+- Increment 22 reaches remote MCP servers by URL, the way most hosted services now offer their tools. Every remote call is an approved `mcp.act`, since GREG cannot make a call on someone else's machine read-only. The decision shows the server, its one host and the credential handle. GREG's own client runs confined, its only way out a relay allowing that host, with the token by handle in its environment and in nothing GREG records. OAuth flows, discovery and proposals from words remain open (#28 PARTIAL).
+- Increment 23 lets the founder log GREG in to a hosted MCP server with OAuth (`greg mcp login`): the official SDK runs the flow, the founder approves at the service, and the tokens stay in the body's secret broker. Approved calls use the login; an expired one renews once inside the approved call, only at the server's host or a host the approval names, and the rotated tokens never enter GREG's records. Not yet tried against a real hosted service.
+- Increment 24 shows the founder, in Mission Control's Authority view, every credential GREG holds: by name and kind, for a login the server, renewal host and expiry, and how to revoke each. Values never leave the secret broker.
+- Increment 25 tests a model vendor that is slow, cuts its answer off or refuses the key, over real HTTP through the real SDKs: the mission closes through the vendor that answers each time. It found that a refused key was retried like an outage forever; a refused key is now benched until the founder stores a new one, and Mission Control says which key and what to run.
+- Increment 26 shows, in Mission Control, the hosted servers GREG is logged in to and the tools each listed at login, as the server's claim, without contacting it again.
+- Increment 27 extends the refused-key bench to the console: drafting a mission no longer sends a refused key to its vendor, and when no other model is available the console says which key to replace.
+- Increment 28 lets the founder register a hosted MCP server that uses a plain token (`greg mcp token`): GREG keeps the token only if the server accepts it, records the server and the tools it listed, shows them in Mission Control, and sends the token only inside an approved call to that server.
+- Increment 29 puts those hosted servers within the founder's words: *Use the notes service to add "ship the wedge", then check https://…/board* becomes one approved `mcp.act` by URL, its tool chosen from the list the service gave at login so drafting contacts nobody, and the mission closes only when GREG renders the named page and finds the text. Whatever the words do not settle is asked.
+- Increment 30 serves MCP servers that read their credential from a file (a service-account key, a kubeconfig): `greg secret set mcp:<name> --from-file <path>` keeps the whole file in the secret broker, and an approved `mcp.act` naming it in `secret_files` gives the server a private 0600 file, shown read-only, at the path in the named variable, removed when the call ends. The approval names it as a file.
+- State: active. Reality: integration-tested and browser-tested locally. VEPMC remains 0. No authority, spending, publication or merge.
+
+## CONTRADICTION-0002 Option A: historical reproducibility apart from live constitutional integrity — ruling 2026-08-23, implemented 2026-10-14
+
+Source, preserved verbatim:
+[FOUNDER-RULING-2026-08-23](deliberations/FOUNDER-RULING-2026-08-23-infinite-goal-chase.md)
+(byte-identical to the file on #87; its header and "How this ruling is
+discharged" table were written by the #87 agent and describe #87's tree). The
+file is a record of what the founder wrote. It authenticates nothing and
+carries no authority beyond its own text; in particular it is not an
+authorization for any artifact change, which only a signature by an enrolled
+founder key can be.
+
+| Required field | INTENT-CONTRADICTION-0002-A |
+| --- | --- |
+| statement | "Separate historical reproducibility from live constitutional integrity. Freeze byte-identical historical copies of the twelve continuity artifacts used by the sealed experiment. ... Create a separate live constitutional-integrity mechanism whose purpose is to detect unauthorized changes to constitutional/authority artifacts. Do not use the historical experiment as the live tripwire. ... Do not update an old historical hash merely to make current implementation pass." |
+| source_refs | FOUNDER-RULING-2026-08-23 (file above); #87 a70905c (first implementation, path-string authorization); verifier verdict on #87 (re-home governance/integrity; Ed25519 founder envelope, never a path or caller string) |
+| owner | Alfonso (ratification); Kernel evolution owners (history); Kernel governance owners (live check) |
+| state | active |
+| binding_scope | Package 3 continuity readings and the live constitutional-integrity check; no grant, policy or Gate behaviour |
+| constitutional_constraints | Only a signature by Alfonso's enrolled founder key authenticates him; no pinned historical hash is re-measured; the two mechanisms do not import each other |
+| success_evidence | `evolution/repair/continuity/` reproduces FROZEN, SR-001 and SR-002 and the sealed Package 3 evidence record; `python -m governance.integrity --check` names every unauthorized artifact; tests `test_repair_continuity_history.py`, `test_governance_integrity.py` |
+| failure_evidence | A tampered frozen copy, a forged/replayed/unsigned authorization, an unenrolled signer, a changed committed genesis or a removed/reordered committed record must fail (tested); no founder key enrolled yet, so nothing can be authorized today |
+| dependencies | Alfonso enrolls his own public key (his commit) before any authorization exists |
+| conflicts | #87's `Amendment.authorization` path string is superseded by signed envelopes; #87's per-path frozen copies would trip `check_authority_singleton`, so the store is content-addressed |
+| next_review_trigger | First founder enrollment, or the first founder-signed `INTEGRITY_AUTHORIZE` |
+| supersedes | The SR-002 subject binding as live tripwire (the 13 SR002 dependent tests now read history) |
+| superseded_by | None |
+| implementation_refs | `evolution/repair/continuity/`, `evolution/repair/subjects.py`, `evolution/repair/harness.py`, `governance/integrity/`, Canonical CI job 3 |
+
+## Frontier leap, continued: portfolio under a spending cap — 2026-10-21
+
+Same intent. "Spend at most N." now turns a portfolio question into `selection.budgeted`. GREG solves it with a branch-and-bound whose every node is a `selection.closure` problem answered by the qualified max-flow engine. It accepts the plan only when its own check of the whole search tree, from the original items, proves that no plan within the cap earns more.
+
+Matched baseline: trimming the uncapped plan is wrong in 11.9% of 2,000 capped shared-cost portfolios and leaves 8.6% of the profit behind.
+
+Evidence: [README](evidence/greg-budgeted-selection/2026-10-21/README.md). State: active. Authority delta: none. VEPMC: 0.
+
+## Frontier leap, continued: portfolio questions in plain words — 2026-10-21
+
+Same intent, read against `INTENT-20261019-UPWARD-ASCENT`. The founder types which offers earn what, which cost what, and which need which. GREG reads it without a model, constructs `selection.closure` over a max-flow engine the founder attaches, and answers with what to take, the profit, and what was left out and why, under its own certificate.
+
+Matched baseline: on shared-fixed-cost portfolios a standalone greedy rule is wrong in 38% of 2,000 instances and leaves 38.6% of the profit behind. On uniform random portfolios it is wrong in 1.6%.
+
+Evidence: [README](evidence/greg-portfolio-words/2026-10-21/README.md). State: active. Authority delta: none. VEPMC: 0.
+
+## Frontier leap, continued: a goal asks for the capability its plan requires — 2026-10-15
+
+Same intent. A founder-signed goal whose plan node requires `<function>@function` that GREG lacks now asks Capability Genesis to form it under the goal's signed mission. This is formation only: each verified result waits for your signed attach, no builder is commissioned, no mission is blocked, and the goal's deficit closes when an attached implementation serves it.
+
+Evidence: [README](evidence/greg-goal-formation/2026-10-15/README.md). State: active. Authority delta: none. VEPMC: 0.
+
+## Frontier leap, continued: portfolio decisions and capability perception — 2026-10-15
+
+Same intent (`INTENT-20261013-FRONTIER-LEAP-RECOMBINE`; the directive was re-issued verbatim and its founder instructions A–D stay preserved in that record). Built:
+
+- `selection.closure`: which projects or offers to take when some require others, constructed over the max-flow engine with a funding proof checked from the original items.
+- Goal Gravity now perceives capability formation, recovery, attachment and quarantine as observations about the missions waiting on them, so a blocked goal wakes when what it waits on changes. Timing only.
+
+Evidence: [README](evidence/greg-selection/2026-10-15/README.md). State: active. Authority delta: none. VEPMC: 0.
+
+## Frontier leap: Capability Genesis constructs new capabilities (RECOMBINE) — 2026-10-13
+
+`INTENT-20261013-FRONTIER-LEAP-RECOMBINE` ([record](intent/INTENT-20261013-FRONTIER-LEAP-RECOMBINE.json), [full directive, verbatim](intent/sources/FRONTIER-LEAP-DIRECTIVE-2026-10-13-source.md)): stop treating Capability Genesis as part replacement and make it construct new, integrated capabilities from harvested mechanisms, on GREG's one path. Founder instructions A-D are preserved verbatim in the record's `founder_quotations` and in the source file. They are read under INTENT-0030. "Meniscus", "impermeable shield" and "systemic dominance" keep the 2026-10-07 executable interpretation. They authorize no crossing of legal boundaries, no coercion and no immunity from shutdown.
+
+What was built:
+
+- **Construction route.** `greg/recombine.py` adds certificate-carrying reductions. `greg/genesis.py` gains a `constructed` rung between `verified_detached` and `builder`. A function with no catalog entry is reduced onto an engine GREG already qualifies (maximum flow, LP). The engine is itself acquired by the same ladder when missing. Every answer is re-proved in the original problem's terms.
+- **First functions.** `assignment.staffing` (with a Hall/Koenig bottleneck), `assignment.matching` (chained through staffing) and `project.crash` (time-cost LP; an impossible deadline is proved without any engine).
+- **Mechanism Cards.** Every reduction carries a card with all twenty directive fields, searchable and deduplicated by content digest.
+- **Authority.** Constructions are read-only. They attach only by founder command or a signed read-only `auto_attach`. They stop when their engine is detached or quarantined, are quarantined when their reduction code changes, and are re-formed over a different engine when the engine lies.
+
+Reconciliation: no third mission engine, router or genesis was created. Kernel PR #129's `egregore/genesis.py` is the standing-cognition-slot loop (proposer/evaluator parts). `greg/genesis.py` stays the canonical mission-capability genesis. Convergence of the two is recorded as open work, and nothing was deleted.
+
+Evidence: [README](evidence/greg-recombine/2026-10-13/README.md). State: active. Authority delta: none. VEPMC: 0.
+
+Progress 2026-10-14 ([evidence](evidence/greg-mind-constructs/2026-10-14/README.md)). The Mind and Capability Genesis now close one loop on the canonical path:
+
+1. The Competency Compiler recognizes a problem whose inputs fit a reduction. Its deficit names that constructible function, not an unbuildable geometry label.
+2. Genesis constructs it under the mission's signed scope.
+3. The Mind answers with the construction's certificate.
+4. The independent appraiser re-derives the answer through a read-only restore and returns VERIFIED.
+5. A construction that faults while the Mind uses it is repaired by the same two-strike mechanism.
+
+Unsigned missions ask first for the engine, then for the construction, and never self-attach. Authority delta: none.
+
+Progress 2026-10-14, second entry ([evidence](evidence/greg-recovery/2026-10-14/README.md), [card](mechanisms/MC-0002-governed-half-open-recovery.md)): governed recovery. A real REA run on opossum 10.0.0 (Apache-2.0) extracted the circuit breaker's half-open re-admission. It was mutated so that:
+
+- the probe runs in the sandbox on a fresh frozen-oracle seed;
+- success restores eligibility, never authority;
+- the wait backs off exponentially, and flapping stops recovery;
+- engines are probed before the constructions built on them.
+
+A function lost to transient faults now returns, and its mission closes without founder attention. The same work fixed a pre-existing crash, reproduced on #173: a de-duplicated re-escalation, then a repeated qualification fact, crashed every later tick. Authority delta: none.
 
 ## Full Polyintelligence Mind + lawful asymmetric advantage continuation — 2026-10-07
 
@@ -320,11 +513,37 @@ Re-issued 2026-10-13 ([lineage](intent/sources/GREG-SEED-GENOME-DIRECTIVE-REISSU
 - **§9:** selective-disclosure evidence packages, built from retained receipts. They use the salted-hash disclosures of RFC 9901, include every same-input receipt, and append institutional responses rather than editing them in. `greg cognition package` exports one read-only; nothing is sent.
 - **§5:** a measured characterization harness covering latency, error correction against self-consistent lies, a problem-space ladder and invariance, with Wilson intervals.
 - **§13 and §15:** the verifier cross-checks and evidence-backed legitimacy in #161.
-- **§12:** a thinking-budget controller now governs the compile path. One declared `latency_budget` covers the answer, the premises check and every sensitivity re-run, where each run had previously been handed the whole budget. Required steps are never priced away; an exhausted budget narrows the result. An optional re-run starts only when the slowest measured step fits. Every run and stop is kept with its reason, and cortex receipts record measured CPU seconds. The earlier deferral was wrong: frozen evaluations run at their freeze commits, so changing `cortex.py` on a branch alters no recorded result.
+- **§12:** (superseded 2026-10-14, kept as written: "wiring the budget controller into a runtime optional step is deferred until the next freeze, because the frozen evaluations pin `cortex.py`.") A thinking-budget controller now governs the compile path. One declared `latency_budget` covers the answer, the premises check and every sensitivity re-run, where each run had previously been handed the whole budget. Required steps are never priced away; an exhausted budget narrows the result. An optional re-run starts only when the slowest measured step fits. Every run and stop is kept with its reason, and cortex receipts record measured CPU seconds. The earlier deferral was wrong: frozen evaluations run at their freeze commits, so changing `cortex.py` on a branch alters no recorded result.
 
 Repeated byte-identically 2026-10-14T04:59:45Z (same whole-message SHA-256, `ee71d7de…`). Repetition adds no authority; it was applied by closing §12. Repeated byte-identically a third time 2026-10-15T12:21:07Z; applied by closing §16's media case: a DALEOBANKS paraphrase is checked claim by claim against its source, and a sentence that changes a figure, a negation, a hedge, a scope, a direction or a name is held back (`tests/evidence/media-case-convergence-2026-10-15/`). Sent a fourth time 2026-10-15T17:32:27Z with the new opening line "Continue building, and achieving EVERYTHING IN THE PROMPT:" (whole message `9b9eed0c…`; the rest byte-identical to `ee71d7de…`); applied by §14's pre-registered antifragility test, which found that settled competence heard successes only, and by the fix: independently appraised failure closures.
 
 Evidence: `tests/evidence/seed-genome-residuals-2026-10-13/`. Authority delta: none. VEPMC: 0.
+
+## Master build directive and current gate repair — 2026-09-30
+
+The two September 30 master-directive records (this one and the next) describe complementary scopes of the same intended destination: gate-proof repairs and resource requests. Neither creates a second authority or goal owner; their original source lineages remain distinct.
+
+`INTENT-20260930-MASTER-BUILD-GATE` preserves the current session's full
+effect horizon and extends the existing convergence/inheritance records. It
+does not replace the 34 horizons in `greg/path.json`, the 55 Foundry obligations,
+or the founder's authority. [Normalized record](intent/INTENT-20260930-MASTER-BUILD-GATE.json),
+[source coverage](collaboration/SOURCE-COVERAGE-20260930-PROOF-INTEGRITY.json),
+and [build/evidence report](collaboration/GREG-GATE-REPAIR-20260930.md).
+
+The independent appraiser's earlier VERIFIED claim is falsified for a signed
+mission with no observations and a missing required file. Its intended effect
+remains active; the current repair requires complete, correctly bound closure
+evidence. The installer's earlier success claim is falsified when a public
+companion file names a different key from the actual signer. The current repair
+checks correspondence and active enrollment, including signed key rotation.
+
+These are implementation/evidence corrections, not destination changes. Exactly
+one operational node remains primary: N1, externally verified VEPMC 0 -> 1.
+The Chromebook is the candidate under the preserved September 26 hardware
+correction; actual Linux availability, founder key custody, installation and
+acceptance still require a real run. No local test increments that milestone. The latest Claude rehearsal nonetheless advanced `greg path` to N2 on a container/test-key structural closure. This implementation assumption is superseded: retain the structural candidate and all later horizons, but keep N1 primary until external exit evidence is represented through an authenticated contract. That contract is not implemented; no boolean flag or local count substitutes for it. (#138, b8a0ccd and 673726a, PR-author record.)
+
+**Port onto the installed-body line (2026-10-14).** The appraisal repair (closure-bound evidence, re-expressed for pipeline-resolved parameters) and the signer-enrollment repair are ported as #138 built them. The N1/N2 structural-candidate gate is ported onto the one founder-tier rule that already gates N3, N4, N6 and N7 (`greg/metrics.py` `founder_tier`), not as a hardcoded `met=False`: a closure signed with a test key, a fixture's key or a `--no-passphrase` rehearsal stays `STRUCTURAL_CANDIDATE` and never moves `greg path`; one signed by the enrolled founder key after it attested passphrase custody moves it. Reason: the hardcoded gate meant no evidence, not even Alfonso's genuine Body-1 run, could ever clear N1 (both #138 verifiers flagged it as a founder decision). The founder tier is not the authenticated external contract #138 asked for: trust on first use remains (whoever controls the body's filesystem enrolls the key), and the ledger still cannot prove whose machine or key it is. **Founder decision open:** whether a founder-tier closure plus Alfonso's own signed acceptance suffices for N1, or N1 waits for an external-verification contract. Authority delta: none; the tier grants nothing.
 
 ## Master build directive: asks, business sequence, reality, obsolete code — 2026-09-30
 
@@ -420,6 +639,25 @@ documents are proposals/aspirations. Repetition creates no additional authority.
 | implementation_refs | Shared events/, provenance/, adapters/, contracts/, policy/consequence_gate.py; linked organ shims | Existing anatomy retained; no new whole-machine runtime | Refusal paths and draft-only handoff |
 
 
+## INTENT-20261013-GOAL-GRAVITY — 2026-10-13
+
+Goal Gravity + Experiential Intelligence + Asymmetry Production Line. The founder's
+2026-10-13 directive (verbatim: `docs/intent/sources/GOAL-GRAVITY-DIRECTIVE-2026-10-13-source.md`)
+compiles to one behavioral property of the canonical standing runtime: an authorized
+persistent goal is an attractor for relevant perception, backcasting, preparation,
+capability formation and Gate-governed action. Record: `docs/intent/INTENT-20261013-GOAL-GRAVITY.md`
+(machine-readable `.json` validates against the skill schema). State: **active**,
+`active_requirement`, consequence class `material`. Implementation: `egregore/gravity.py`
+and its sibling modules on `main`'s runtime; decision record
+`docs/decisions/ADR-GOAL-GRAVITY-001.md`; deliberation
+`docs/collaboration/deliberation-goal-gravity-2026-10-13.json`. Evidence tier at
+recording: IMPLEMENTED / UNIT-TESTED / INTEGRATION-TESTED on synthetic ledgers; not
+externally verified, not founder-accepted. The dated identifier is used because the
+numeric `INTENT-00NN` series (0029–0037) is allocated across unmerged draft branches.
+Overlapping unmerged mechanisms (#158 `greg/gravity.py`, #114/#137 `greg/missions.py`,
+#93/#97/#109 Goal Chase) are preserved as substrate; their reconciliation is a founder
+merge decision, never a silent replacement.
+
 UNIIMENTE must never silently lose a founder intention, contributor objection, negative result, or superseded design.
 
 Every material intention discovered in chats, documents, issues, pull requests, repositories, or operating evidence must be normalized into an Intent Record and assigned exactly one lifecycle state:
@@ -514,6 +752,36 @@ When the work originates in a metaphorical or science-fiction founder statement,
 - evidence that would falsify the claimed effect.
 
 The canonical ledger should ultimately become machine-readable. Until that implementation lands, issues and ADRs must use these fields verbatim.
+
+## INTENT-20261021-PROFESSIONAL-PARALLEL-TEAM
+
+- **Statement:** All entering agents must discover Alfonso's SOP/protocols through Discussions and work accurately in parallel as a professional development team.
+- **Source:** Alfonso's 2026-10-21 repository-audit continuation; exact message retained in [team-entry decision](collaboration/TEAM-ENTRY-DECISION-2026-10-21.md).
+- **Owner:** Alfonso for adoption; named implementer/integrator per bounded task.
+- **State:** active.
+- **Binding scope:** contributor entry, current work claims, overlap handling, verified integration and handoffs; all participating repositories/clients are intended consumers, rollout pending.
+- **Constitutional constraints:** existing authority, privacy, evidence, refusal and consequence controls remain binding; no merge, activation or settings authority follows.
+- **Success evidence:** two fresh sessions find the correct instructions and claims, agree a nonoverlapping split and resume a handoff without founder reconstruction; NOT_RUN.
+- **Failure evidence:** duplicated active owners, stale-base rework, frozen-evidence overwrite or increased founder reconstruction.
+- **Dependencies:** authorized adoption of entry patch, authenticated Discussion update and explicit client/organ adoption.
+- **Conflicts:** no outcome conflict identified; competing integration ownership remains unresolved and is not assigned here.
+- **Next review trigger:** adoption, first fresh-session collision/handoff failure, or five completed pilot PRs.
+- **Supersedes:** none; extends the existing bootstrap and pinned Discussion.
+- **Superseded by:** none.
+- **Implementation refs:** [team entry](collaboration/START_HERE.md), AGENTS.md and CLAUDE.md; draft until adopted.
+
+# Collaboration rollout continuation — 2026-10-21
+
+INTENT-20261021-COMPLETE-COLLABORATION: Alfonso's follow-up, “Complete it and improve
+it. Comprehensively,” extends the entry repair through one consolidated SOP/checker,
+consumer entry pointers, independent review and behavioral verification. Status:
+active; implementation and adoption remain distinct. Full machine completion stays
+BODY + ORGANS + MIND. Exact lineage, limits, owner and review triggers are in
+[the rollout intent record](collaboration/FOUNDER-INTENTS-ROLLOUT-2026-10-21.json),
+with a linked [two-pass decision](collaboration/DELIBERATION-ROLLOUT-2026-10-21.json).
+No earlier intent is silently superseded; existing merge, credential and live-effect
+restrictions remain. Current evidence is in collaboration/VALIDATION.md.
+
 
 ## Seed Genome integration — October 1, 2026
 

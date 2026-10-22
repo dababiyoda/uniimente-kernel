@@ -16,8 +16,8 @@ Founder directive 2026-10-07, section 19. The loop it implements toward:
            HOLD                  no defensible route: retain the current state
       -> receipt; the asset the cycle should leave; the next bottleneck.
 
-Dormant goals stay preserved: a situation naming a paused or blocked mission yields a wake proposal (the
-founder's lifecycle decision), never an automatic resume. The objective is option density (earlier
+Dormant (founder-paused) goals stay preserved: a situation naming a paused or blocked mission yields a wake proposal
+(the founder's lifecycle decision), never an automatic resume. The objective is option density (earlier
 sight, prepared resources, lawful timing), never a claim of controlling luck. This module writes no
 ledger event, executes nothing, contacts no one, spends nothing and creates no authority.
 """
@@ -93,27 +93,43 @@ def validate(situation: dict, now: datetime | None = None) -> dict:
     return situation
 
 
+LABELS = {"paused": "founder-paused missions (a signed LIFECYCLE pause); only the founder resumes them",
+          "dormant": "the #158 contract's name for the same founder-paused missions, preserved for existing "
+                     "readers in the 'dormant' list, wake.was and named_mission_state; 'paused' (wake.was_label, "
+                     "named_mission_label) is the unambiguous label, because in egregore Goal Gravity 'dormant' "
+                     "means a sleeping, wakeable goal, which a founder-paused mission is not"}
+LEGACY = {"paused": "dormant"}   # label -> the preserved #158 value
+
+
 def _goals(journal, mission_id: str | None) -> dict:
-    """Active, dormant (paused) and blocked missions from the canonical journal; read-only."""
+    """Active, founder-paused and blocked missions from the canonical journal; read-only.
+
+    The #158 contract is preserved: founder-paused missions are listed under ``dormant`` and reported as
+    ``dormant`` in ``wake.was`` and ``named_mission_state``. The label ``paused`` is added alongside (the
+    ``paused`` list, ``wake.was_label``, ``named_mission_label``), because in egregore Goal Gravity
+    ``dormant`` means a sleeping goal that evidence may wake."""
     if journal is None:
-        return {"source": "no body ledger here", "active": [], "dormant": [], "blocked": [], "wake": None}
+        return {"source": "no body ledger here", "active": [], "paused": [], "dormant": [], "blocked": [],
+                "wake": None, "labels": LABELS}
     from greg.missions import MissionBook
     book = MissionBook(journal)
-    rows = {"active": [], "dormant": [], "blocked": []}
+    rows = {"active": [], "paused": [], "blocked": []}
     for mid, m in sorted(book.missions.items()):
         if m.status != "ACTIVE":
             continue
-        key = "dormant" if m.paused else "blocked" if m.blocker else "active"
+        key = "paused" if m.paused else "blocked" if m.blocker else "active"
         rows[key].append({"mission_id": mid, "blocker": m.blocker, "rung": m.rung})
     wake = None
     if mission_id:
         state = next((k for k, v in rows.items() for r in v if r["mission_id"] == mission_id), None)
-        if state in ("dormant", "blocked"):
-            wake = {"mission_id": mission_id, "was": state,
+        if state in ("paused", "blocked"):
+            wake = {"mission_id": mission_id, "was": LEGACY.get(state, state), "was_label": state,
                     "proposal": "the situation bears on this goal; resuming it is the founder's signed lifecycle "
                                 "decision", "automatic_resume": False}
-        rows["named_mission_state"] = state or "UNKNOWN_TO_THIS_LEDGER"
-    return {"source": "greg.missions.MissionBook projection", **rows, "wake": wake}
+        rows["named_mission_state"] = LEGACY.get(state, state) if state else "UNKNOWN_TO_THIS_LEDGER"
+        rows["named_mission_label"] = state or "UNKNOWN_TO_THIS_LEDGER"
+    return {"source": "greg.missions.MissionBook projection", **rows, "dormant": rows["paused"], "wake": wake,
+            "labels": LABELS}
 
 
 CLASS_ORDER = lawful_leverage.CONSEQUENCE
@@ -358,3 +374,72 @@ def step(situation: dict, *, journal=None, registry=None, path_data: dict | None
     result["receipt_id"] = digest({k: v for k, v in result.items() if k != "receipt_id"})
     return result
 
+
+
+# -- Goal Gravity on the Body path: which signed mission the engine attends to first ---------------
+
+SELECTION_SCHEMA = "greg-goal-gravity-selection/0.1"
+SELECTION_RULE = ("founder-signed priority first; then the learned reliability of the mission's strategy "
+                  "capabilities (routing track record), a tiebreak only; then mission id")
+
+
+def select(missions, journal) -> dict:
+    """Rank the founder-signed missions the engine will step this tick, in the order it steps them.
+
+    Authority-neutral by construction: it orders only missions the founder already signed, each inside
+    its own light cone, and every ACTIVE mission is still stepped (paused ones are listed as excluded,
+    terminal ones are omitted). It narrows nothing and widens nothing. Engaging only the top candidate,
+    leaving the rest dormant, would change what runs: that is reserved for a founder ruling
+    (ADR-GOAL-GRAVITY-001), as is the choice between this path and egregore.GoalGravityLoop."""
+    from greg import routing
+    from greg.missions import TERMINAL
+    record = routing.track_record(journal)
+    ranking, excluded = [], []
+    for m in missions:
+        if m.status in TERMINAL:
+            continue
+        if m.paused:
+            excluded.append({"mission_id": m.mission_id, "reason": "paused by the founder"})
+            continue
+        capabilities = sorted({s["capability"] for s in m.spec.get("strategies", []) if s.get("capability")})
+        learned = [routing.reliability(record.get(c)) for c in capabilities]
+        ranking.append({"mission_id": m.mission_id, "priority": m.spec.get("priority", 0),
+                        "reliability": round(sum(learned) / len(learned), 4) if learned else 0.5})
+    ranking.sort(key=lambda r: (-r["priority"], -r["reliability"], r["mission_id"]))
+    return {"schema": SELECTION_SCHEMA, "rule": SELECTION_RULE, "ranking": ranking,
+            "excluded": sorted(excluded, key=lambda r: r["mission_id"]),
+            "selected": ranking[0]["mission_id"] if ranking else None,
+            "engagement": "ordering only: every signed ACTIVE mission is still stepped each tick",
+            "authority_created": False}
+
+
+class _Prefix:
+    """The journal as it stood just before one ledger position: what Goal Gravity saw when it ranked."""
+
+    def __init__(self, journal, before_seq: int):
+        self._journal = journal
+        self._seq = {r.payload.get("event_id"): r.seq for r in journal.ledger.by_type("event")}
+        self._before = before_seq
+        self.ledger = journal.ledger
+
+    def replay(self, kind_prefix: str = ""):
+        return [e for e in self._journal.replay(kind_prefix) if self._seq.get(e.event_id, 1 << 60) < self._before]
+
+
+def rederive(journal, ranked_event) -> dict:
+    """Re-run the selection over the journal prefix the recorded ranking was computed from."""
+    from greg.missions import MissionBook
+    seq = next(r.seq for r in journal.ledger.by_type("event") if r.payload.get("event_id") == ranked_event.event_id)
+    prefix = _Prefix(journal, seq)
+    book = MissionBook(prefix)
+    return select(sorted(book.missions.values(), key=lambda m: m.mission_id), prefix)
+
+
+def consistent(journal, ranked_event) -> list[str]:
+    """Why a recorded selection is not what the rule produces from the ledger it was computed over (empty: it
+    is). Membership, signed priorities, paused exclusions and learned reliability are all re-derived; the
+    recorded fact must equal the re-derivation exactly."""
+    recorded = ranked_event.payload
+    again = rederive(journal, ranked_event)
+    return [f"recorded {field} differs from the re-derived one" for field in ("ranking", "excluded", "selected")
+            if recorded.get(field) != again[field]]

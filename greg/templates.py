@@ -197,9 +197,16 @@ def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, sou
     digest = hashlib.sha256(Path(resolved["manifest"]).read_bytes()).hexdigest()
     thread = hashlib.sha256(resolved["manifest"].encode()).hexdigest()[:12]
     stated = read_economics(resolved["manifest"], economics)
+    # The memo's revenue section is computed from these economics: the memo, its cognition questions, the mission
+    # and the check that it was delivered are all bound to them, so a memo built from other (or no) economics on
+    # the same signal never closes this mission.
+    basis = "sha256:" + hashlib.sha256(json.dumps(stated, sort_keys=True, separators=(",", ":")).encode()
+                                       ).hexdigest() if stated else None
+    suffix = f"-{basis[7:15]}" if basis else ""
+    resolved = {**resolved, "economics_sha256": basis}
     cognition, checks = [], []
     if stated:
-        ids = {"revenue": f"venture-revenue-{thread}", "causal": f"venture-causal-{thread}"}
+        ids = {"revenue": f"venture-revenue-{thread}{suffix}", "causal": f"venture-causal-{thread}{suffix}"}
         asks = {"revenue": ("estimate", stated["revenue"], "revenue_estimated",
                             {"op": "equals", "field": "abstention_state", "value": "NONE"},
                             "GREG's own revenue range from the stated factors, with units and the dominant uncertainty"),
@@ -222,7 +229,7 @@ def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, sou
     capabilities = ["venture.status", "fs.read"] + (["venture.assess"] if preauthorize_delivery else []) \
         + (["cognition.solve"] if cognition else [])
     return {
-        "mission_id": f"m:venture-watch-{thread}" if standing else f"m:venture-{digest[:12]}",
+        "mission_id": f"m:venture-watch-{thread}{suffix}" if standing else f"m:venture-{digest[:12]}{suffix}",
         "founder_expression": "Take this signal, find out whether it is a real business, and tell me what to do "
                               "next. Do not act on it; do not let a score outrun the evidence.",
         "intended_effect": "a source-bound venture decision memo for this signal is waiting for Alfonso, with "
@@ -234,13 +241,54 @@ def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, sou
         "closure": {"kind": "infinite", "cadence_seconds": cadence_seconds} if standing else {"kind": "bounded"},
         "success_checks": checks + [{"check_id": "assessed", "description": "a memo exists for the current evidence",
                                      "sensor": {"capability": "venture.status",
-                                                "params": {"manifest": resolved["manifest"]},
+                                                "params": {"manifest": resolved["manifest"],
+                                                           "economics_sha256": basis},
                                                 "target": "deliver:ventures"},
                                      "predicate": {"op": "equals", "field": "assessed", "value": True}}],
         "strategies": cognition + [delivery],
         "light_cone": {"capabilities": capabilities, "targets": ["deliver:*", "fs:*"] + (["cognition:*"] if cognition else []),
                        "max_consequence_class": "internal_write" if preauthorize_delivery else "read_only",
                        "budget_usd": 0, "horizon": _horizon(30 if standing else horizon_days)},
+    }
+
+
+def organ_exchange(*, daleobanks_root: str, wmi_root: str, signal: str, preauthorize_delivery: bool = False,
+                   legal_principal: str = "alfonso_lopez", horizon_days: float = 2) -> dict:
+    """One signal through two organs with authenticated messages, led by GREG (Bridge A, both organs real).
+
+    DALEOBANKS senses and signs; WealthMachine verifies, assesses and signs back; DALEOBANKS verifies and
+    records. GREG carries each leg, checks each signature, adapts both messages to the canonical contracts
+    and delivers one memo whose verdict may not outrun the evidence. Nothing is sent, published, bought or
+    contacted; the memo stops at your approval unless delivery is signed into the cone.
+    """
+    import hashlib
+    resolved = {k: str(Path(v).expanduser().resolve()) for k, v in
+                {"daleobanks_root": daleobanks_root, "wmi_root": wmi_root, "signal": signal}.items()}
+    digest = hashlib.sha256(Path(resolved["signal"]).read_bytes()).hexdigest()
+    params = {**resolved, "legal_principal": legal_principal}
+    delivery = {"action_id": "exchange", "capability": "organs.exchange", "params": params,
+                "target": "deliver:organs", "advances": ["exchanged"],
+                "expected_outcome": "one memo in the delivery root; no external act",
+                "rationale": "run both organs on the signal with signed messages; deliver one memo for Alfonso"}
+    capabilities = ["organs.exchange_status", "fs.read"] + (["organs.exchange"] if preauthorize_delivery else [])
+    return {
+        "mission_id": f"m:organs-{digest[:12]}",
+        "founder_expression": "Run this signal through DALEOBANKS and WealthMachine as two organs that must "
+                              "authenticate to each other, and tell me what they conclude. Do not act on it.",
+        "intended_effect": "a memo for Alfonso carrying both organs' verified messages, the canonical "
+                           "fields they could not evidence, and a verdict capped by that evidence",
+        "beneficiaries": ["Alfonso"],
+        "unacceptable_outcomes": ["contacting anyone", "spending", "publishing", "an unverified organ message",
+                                  "a go verdict on unevidenced fields"],
+        "priority": 65, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "exchanged", "description": "a memo exists for this signal",
+                            "sensor": {"capability": "organs.exchange_status", "params": {"signal": resolved["signal"]},
+                                       "target": "deliver:organs"},
+                            "predicate": {"op": "equals", "field": "exchanged", "value": True}}],
+        "strategies": [delivery],
+        "light_cone": {"capabilities": capabilities, "targets": ["deliver:*", "fs:*"],
+                       "max_consequence_class": "internal_write" if preauthorize_delivery else "read_only",
+                       "budget_usd": 0, "horizon": _horizon(horizon_days)},
     }
 
 
@@ -355,9 +403,221 @@ def human_work(*, function: str, purpose: str, workspace_root: Path, deliverable
     }
 
 
+RELATIONSHIPS = ("contract", "employment")
+
+
+def shared_work(*, task: str, person: str, relationship: str, function: str, deliverable: str, acceptance: str,
+                workspace_root: Path, horizon_days: float = 30) -> dict:
+    """One piece of work done by Alfonso, GREG and a named person together (developmental node N6).
+
+    GREG writes the handoff; the person agrees to the terms and does the work; Alfonso reviews
+    it; GREG records the outcome. GREG contacts, hires and pays no one: Alfonso sends the handoff
+    and engages and pays the person under the relationship he names here. Each step of the
+    person's is one ``HUMAN_WORK`` ask that closes only when its evidence is observed in the
+    case folder. The person may decline at any time before delivering: a ``declined.txt``
+    carrying the reference is honored as legitimate, so GREG withdraws its ask, never asks that
+    step again in this mission and asks Alfonso how to proceed. That the person is real and the
+    relationship lawful is attested by Alfonso's acceptance of the closure, not provable here.
+    """
+    if not asks_human_work(function) or function == "human.founder_review" \
+            or not re.fullmatch(r"[a-z0-9_.-]{3,80}", function):
+        raise ValueError("function is the person's work: professional.<field> or human.<task> (lowercase)")
+    if relationship not in RELATIONSHIPS:
+        raise ValueError(f"relationship is one of {RELATIONSHIPS}: a lawful engagement Alfonso makes himself")
+    task, person, acceptance = (" ".join(str(v).split()) for v in (task, person, acceptance))
+    for name, value, limit in (("task", task, 300), ("person", person, 200), ("acceptance", acceptance, 1000)):
+        if not value or len(value) > limit:
+            raise ValueError(f"{name} is required (at most {limit} characters)")
+    name = Path(deliverable).name
+    if not name or name != deliverable or name.startswith(".") or name in SHARED_WORK_FILES:
+        raise ValueError("deliverable is a plain file name placed in the case folder")
+    slug = re.sub(r"[^a-z0-9]+", "-", task.lower()).strip("-")[:40].strip("-")
+    if len(slug) < 3:
+        raise ValueError("task needs at least three letters or digits")
+    mission_id, ref = f"m:shared-{slug}", f"WORK-{slug.upper()}"
+    folder = Path(workspace_root) / mission_id.replace(":", "_")
+
+    def read(check_id, file, description, predicate):
+        return {"check_id": check_id, "description": description,
+                "sensor": {"capability": "fs.read", "params": {"path": str(folder / file)}, "target": f"fs:{file}"},
+                "predicate": predicate}
+    declined = {"sensor": {"capability": "fs.read", "params": {"path": str(folder / "declined.txt")},
+                           "target": "fs:declined.txt"},
+                "predicate": {"op": "contains", "field": "text", "value": ref}}
+    handoff = (f"# Work handoff {ref}\n\nTask: {task}\nFor: {person}, under a {relationship} that Alfonso Lopez "
+               f"arranges and pays directly\nDeliverable: {name}, placed in the case folder\nAcceptance: "
+               f"{acceptance}\n\nYour written agreement to these terms, carrying {ref}, is kept as consent.txt.\n"
+               "You may decline at any time before delivering. If you do, nothing more is asked of you for "
+               "this work.\nGREG, Alfonso's software, wrote this handoff; it contacts and pays no one.\n")
+    target = "person:" + (re.sub(r"[^a-z0-9]+", "-", person.lower()).strip("-")[:60] or "named")
+    return {
+        "mission_id": mission_id,
+        "founder_expression": f"Do {task} with {person} under a {relationship}; {name} is accepted when: {acceptance}",
+        "intended_effect": "the work is agreed, delivered, reviewed by Alfonso and recorded, with the person free to "
+                           "decline; GREG writes only the handoff and the outcome record",
+        "priority": 55, "closure": {"kind": "bounded", "cadence_seconds": 3600},
+        "success_checks": [
+            read("handoff_written", "handoff.md", "GREG's handoff names the task, terms and reference",
+                 {"op": "contains", "field": "text", "value": ref}),
+            read("consent_recorded", "consent.txt", f"{person}'s written agreement carries {ref}",
+                 {"op": "contains", "field": "text", "value": ref}),
+            read("deliverable_received", name, f"{name} is in the case folder",
+                 {"op": "equals", "field": "exists", "value": True}),
+            read("founder_review", "review.txt", f"Alfonso accepted the deliverable: ACCEPT {ref}",
+                 {"op": "contains", "field": "text", "value": f"ACCEPT {ref}"}),
+            read("outcome_recorded", "outcome.md", "GREG recorded the outcome",
+                 {"op": "contains", "field": "text", "value": ref})],
+        "strategies": [
+            {"action_id": "write-handoff", "capability": "fs.write",
+             "params": {"relative_path": "handoff.md", "content": handoff}, "target": "workspace:handoff.md",
+             "advances": ["handoff_written"], "rationale": "the person learns the task, terms and their right to decline"},
+            {"action_id": "agree-terms", "function": "human.agree_terms", "target": target,
+             "advances": ["consent_recorded"], "requires": ["handoff_written"], "declined_if": declined,
+             "rationale": f"Alfonso sends the handoff to {person} and saves their written agreement"},
+            {"action_id": "do-the-work", "function": function, "target": target,
+             "advances": ["deliverable_received"], "requires": ["consent_recorded"], "declined_if": declined,
+             "rationale": f"{person} does {task} and the deliverable is saved to the case folder"},
+            {"action_id": "review", "function": "human.founder_review", "target": "person:alfonso",
+             "advances": ["founder_review"], "requires": ["deliverable_received"],
+             "rationale": f"Alfonso checks {name} against the acceptance terms and writes ACCEPT {ref} or what "
+                          "to revise"},
+            {"action_id": "record-outcome", "capability": "fs.write",
+             "params": {"relative_path": "outcome.md",
+                        "content": f"# Outcome {ref}\n\n{person} delivered {name} for: {task}, under a "
+                                   f"{relationship}. Alfonso reviewed it against: {acceptance}\n"},
+             "target": "workspace:outcome.md", "advances": ["outcome_recorded"],
+             "requires": ["consent_recorded", "deliverable_received", "founder_review"],
+             "rationale": "the agreed, delivered and reviewed work is recorded"}],
+        "light_cone": {"capabilities": ["fs.read", "fs.write"], "targets": ["fs:*", "workspace:*", "person:*"],
+                       "max_consequence_class": "internal_write", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+
+
+SHARED_WORK_FILES = ("handoff.md", "consent.txt", "review.txt", "outcome.md", "declined.txt")
+
+
+def asks_human_work(function) -> bool:
+    from greg.asks import human_work
+    return human_work(function) is not None
+
+
+def business_case(*, case: str, buyer: str, offer: str, price: str, currency: str, acceptance: str,
+                  workspace_root: Path, statement: str = "statement.csv", columns: dict | None = None,
+                  minor_units: bool = False, horizon_days: float = 45, venture: str | None = None,
+                  approve_writes: bool = False) -> dict:
+    """One customer case through the Kernel's commercial order, as a founder-signed mission (node N3).
+
+    problem -> buyer -> offer -> payment -> delivery -> customer outcome (business/commercial_loop.py).
+    GREG drafts the offer and writes the settlement record inside its workspace; every act that
+    reaches a person outside the body is ``human.*`` work (one costed ask each, no contact, no
+    spend). Payment counts only when ``business.reconcile`` finds exactly one posting of the signed
+    amount and currency carrying the case reference in the statement Alfonso exports. Each stage
+    ``requires`` the one before it, and the settlement record requires payment, delivery and the
+    buyer's confirmation, so nothing is recorded as settled out of order.
+
+    ``venture`` names the business the case serves (books and transfer are measured per venture).
+    ``approve_writes`` keeps GREG's cone read-only, so drafting the offer and writing the settlement
+    each stop for Alfonso's approval; a procedure he later ratifies may pre-approve them.
+    """
+    amount = business_loop_amount(price)
+    if venture is not None and not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,40}", venture):
+        raise ValueError("venture is a short lowercase name (letters, digits, hyphens)")
+    currency = currency.strip().upper()
+    if not re.fullmatch(r"[A-Z]{3}", currency):
+        raise ValueError("currency is a three-letter code such as USD")
+    for name, value in (("buyer", buyer), ("offer", offer), ("acceptance", acceptance)):
+        if not str(value).strip():
+            raise ValueError(f"{name} must be stated before the case is signed")
+    if Path(statement).name != statement or statement.startswith("."):
+        raise ValueError("statement is a plain file name in this mission's folder")
+    slug = re.sub(r"[^a-z0-9]+", "-", case.lower()).strip("-")[:40]
+    if len(slug) < 3:
+        raise ValueError("case needs a short name of at least 3 letters or digits")
+    mission_id = f"m:case-{slug}"
+    ref = f"CASE-{slug.upper()}"
+    folder = Path(workspace_root) / mission_id.replace(":", "_")
+
+    def evidence(check_id, name, description):
+        path = folder / name
+        return {"check_id": check_id, "description": description,
+                "sensor": {"capability": "fs.read", "params": {"path": str(path)}, "target": f"fs:{name}"},
+                "predicate": {"op": "contains", "field": "text", "value": ref}}
+
+    offer_text = (f"# Offer {ref}\n\nFor: {buyer}\nOffer: {offer}\nPrice: {amount} {currency}\n"
+                  f"Accepted when: {acceptance}\nPay with the reference {ref} so the payment can be reconciled.\n")
+    settlement = (f"{ref} settled: {amount} {currency} from {buyer}, reconciled against {statement}; "
+                  "delivered and confirmed by the buyer\n")
+    return {
+        "mission_id": mission_id,
+        "founder_expression": (f"Run case {ref}: offer {offer} to {buyer} at {amount} {currency}; "
+                               f"accepted when {acceptance}."),
+        "intended_effect": (f"{buyer} receives {offer}, confirms it met the acceptance terms, and {amount} {currency} "
+                            "is reconciled to the cent; GREG itself contacts, charges and pays no one"),
+        "priority": 70, "closure": {"kind": "bounded", "cadence_seconds": 3600},
+        "success_checks": [
+            evidence("offer_drafted", "offer.md", "the offer names buyer, price and the precommitted acceptance terms"),
+            evidence("buyer_accepted", "acceptance.txt", f"{buyer}'s written acceptance, carrying {ref}"),
+            {"check_id": "paid", "description": f"exactly one posting of {amount} {currency} carrying {ref}",
+             "sensor": {"capability": "business.reconcile",
+                        "params": {"path": str(folder / statement), "amount": str(amount), "currency": currency,
+                                   "reference": ref, **({"columns": columns} if columns else {}),
+                                   **({"minor_units": True} if minor_units else {})},
+                        "target": f"fs:{statement}"},
+             "predicate": {"op": "equals", "field": "matched", "value": True}},
+            evidence("delivered", "delivery.txt", f"a delivery record for {ref}"),
+            evidence("outcome_confirmed", "outcome.txt", f"{buyer}'s confirmation that the acceptance terms were met"),
+            evidence("settled", "settlement.md", "GREG's settlement record, written only after the stages above"),
+        ],
+        "strategies": [
+            {"action_id": "draft-offer", "capability": "fs.write", "target": "workspace:offer.md",
+             "params": {"relative_path": "offer.md", "content": offer_text}, "advances": ["offer_drafted"],
+             "rationale": "draft the offer inside the workspace; sending it is a person's act"},
+            {"action_id": "send-offer", "function": "human.send_offer", "target": "person:human.send_offer",
+             "requires": ["offer_drafted"], "advances": ["buyer_accepted"],
+             "rationale": f"you send offer.md to {buyer} and save their written acceptance as acceptance.txt"},
+            {"action_id": "collect-payment", "function": "human.collect_payment",
+             "target": "person:human.collect_payment", "requires": ["buyer_accepted"], "advances": ["paid"],
+             "rationale": f"{buyer} pays with the reference {ref}; you export the statement as {statement}"},
+            {"action_id": "deliver", "function": "human.deliver", "target": "person:human.deliver",
+             "requires": ["paid"], "advances": ["delivered"],
+             "rationale": f"deliver {offer} and save a delivery record carrying {ref} as delivery.txt"},
+            {"action_id": "confirm-outcome", "function": "human.confirm_outcome",
+             "target": "person:human.confirm_outcome", "requires": ["delivered"], "advances": ["outcome_confirmed"],
+             "rationale": f"{buyer} confirms the acceptance terms were met; save it carrying {ref} as outcome.txt"},
+            {"action_id": "record-settlement", "capability": "fs.write", "target": "workspace:settlement.md",
+             "params": {"relative_path": "settlement.md", "content": settlement},
+             "requires": ["paid", "delivered", "outcome_confirmed"], "advances": ["settled"],
+             "rationale": "record the settlement only after payment, delivery and confirmation are all observed"},
+        ],
+        "light_cone": {"capabilities": ["fs.read", "business.reconcile"] if approve_writes else
+                       ["fs.read", "fs.write", "business.reconcile"],
+                       "targets": ["fs:*", "workspace:*", "person:*"],
+                       "max_consequence_class": "read_only" if approve_writes else "internal_write",
+                       "budget_usd": 0, "horizon": _horizon(horizon_days)},
+        **({"venture": venture} if venture else {}),
+        "provenance": {"origin": "template:business-case", "planner": "greg.templates/1",
+                       "inputs": {"reference": ref, "buyer": " ".join(buyer.split()), "offer": " ".join(offer.split()),
+                                  "price": str(amount), "currency": currency,
+                                  "acceptance": " ".join(acceptance.split())}},
+    }
+
+
+def business_loop_amount(price) -> str:
+    """A signed price as a plain decimal string with at most two places, never a float."""
+    from decimal import Decimal, InvalidOperation
+    try:
+        value = Decimal(str(price).strip())
+    except InvalidOperation:
+        raise ValueError("price must be a number such as 250 or 249.99") from None
+    if not value.is_finite() or value <= 0 or value.as_tuple().exponent < -2:
+        raise ValueError("price must be positive with at most two decimal places")
+    return f"{value:.2f}"
+
+
 TEMPLATES = {"repo-guardian": repo_guardian, "integration-watch": integration_watch, "workspace-note": workspace_note,
              "engineering-brief": engineering_brief, "venture-assessment": venture_assessment,
-             "verify-download": verify_download, "word-limit": word_limit, "human-work": human_work}
+             "verify-download": verify_download, "word-limit": word_limit, "human-work": human_work,
+             "business-case": business_case, "shared-work": shared_work}
 
 
 def cognitive_problem(problem: dict, *, horizon_days=2) -> dict:
@@ -392,7 +652,7 @@ def _slug(text: str, limit: int = 40) -> str:
 def code_change(*, repo: str, objective: str, order: str | None = None, allowed_paths: list[str] | None = None,
                 tests: list[list[str]] | None = None, budget_usd: float = 3.0, provider: str = "claude-code",
                 timeout_seconds: int = 1200, horizon_days: float = 2, founder_expression: str | None = None,
-                workspace_root: Path | None = None) -> dict:
+                workspace_root: Path | None = None, script: str | None = None) -> dict:
     """Software work through a temporary coding worker; GREG appraises it independently, then hands off.
 
     1. ``worker.commission`` (internal_write, spends at most ``budget_usd``): a real worker edits a private
@@ -400,6 +660,8 @@ def code_change(*, repo: str, objective: str, order: str | None = None, allowed_
     2. ``worker.appraise`` (read-only sensor): fresh clone, patch re-applied, scope and protected-surface
        checks, acceptance re-run. Only ``ACCEPTED`` closes the check; a protected surface yields a
        founder decision, never acceptance.
+    ``script`` (with ``provider="script"``): the founder-signed program that does the work instead of a
+    model-backed worker; it runs in the same confined envelope with no network (``greg.workers.ScriptWorker``).
     3. The handoff note is written only after acceptance (``requires``): the parent mission continues on
        the appraised result. Push, PR and merge stay with the existing authorized path.
     """
@@ -431,7 +693,8 @@ def code_change(*, repo: str, objective: str, order: str | None = None, allowed_
             {"action_id": "commission-worker", "capability": "worker.commission", "target": f"work:{order}",
              "params": {"order": order, "mode": "repository", "repo": repo_path, "objective": objective,
                         "acceptance": acceptance, "allowed_paths": allowed_paths, "provider": provider,
-                        "max_budget_usd": budget_usd, "timeout_seconds": timeout_seconds},
+                        "max_budget_usd": budget_usd, "timeout_seconds": timeout_seconds,
+                        **({"context": script} if script else {})},
              "cost_usd": budget_usd, "advances": ["work_accepted"],
              "rationale": "software-development work: commission a temporary coding worker under a bounded lease",
              "expected_outcome": "a committed change on a greg/ branch in a private clone, with evidence"},
@@ -703,6 +966,137 @@ def schedule_in_words(*, text: str, horizon_days: float = 2) -> dict:
 TEMPLATES["schedule-in-words"] = schedule_in_words
 
 
+def mcp_tool(*, server: str, root: str, command: list[str], tool: str, arguments: dict, readable=(),
+             expect: dict | None = None, founder_expression: str | None = None, horizon_days: float = 1) -> dict:
+    """Ask one tool of an MCP server the founder installed (``mcp.call``), read-only by construction.
+
+    The server runs confined with no network and a read-only filesystem, so whatever the tool does, nothing changes.
+    The check passes when the server answers (or, with ``expect``, when its answer meets that predicate); the answer
+    itself is kept with the observation's receipt, as untrusted external data."""
+    digest = hashlib.sha256(json.dumps([tool, arguments], sort_keys=True).encode()).hexdigest()[:8]
+    params = {"server": server, "root": str(root), "command": [str(c) for c in command], "tool": tool,
+              "arguments": dict(arguments)}
+    if readable:
+        params["readable"] = [str(r) for r in readable]
+    return {
+        "mission_id": f"m:mcp-{_slug(server, 20)}-{_slug(tool, 30)}-{digest}",
+        "founder_expression": founder_expression or f"Ask the {server} server: {tool}",
+        "intended_effect": f"the {server} server's {tool} tool answers, and the answer is kept with its receipt",
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": [{
+            "check_id": "answered", "description": f"the {server} server's {tool} answered",
+            "sensor": {"capability": "mcp.call", "params": params, "target": f"mcp:{server}"},
+            "predicate": expect or {"op": "exists", "field": "text"}}],
+        "strategies": [],
+        "light_cone": {"capabilities": ["mcp.call"], "targets": [f"mcp:{server}"],
+                       "max_consequence_class": "read_only", "budget_usd": 0.0, "horizon": _horizon(horizon_days)}}
+
+
+TEMPLATES["mcp-tool"] = mcp_tool
+
+
+def mcp_act(*, server: str, root: str, command: list[str], tool: str, arguments: dict, writable: list,
+            check_path: str, expect: dict, readable=(), founder_expression: str | None = None,
+            horizon_days: float = 1) -> dict:
+    """One change by a tool of an MCP server the founder installed (``mcp.act``), inside the scope they approve.
+
+    The light cone stops at read-only, so the act always waits for the founder's decision on its exact scope: the
+    paths it may write (everything else stays read-only), no network, no credentials. GREG checks the effect itself
+    by reading ``check_path``; the server's own answer is untrusted data. If the effect is already there, nothing
+    runs."""
+    digest = hashlib.sha256(json.dumps([tool, arguments, writable], sort_keys=True).encode()).hexdigest()[:8]
+    params = {"server": server, "root": str(root), "command": [str(c) for c in command], "tool": tool,
+              "arguments": dict(arguments), "writable": [str(w) for w in writable]}
+    if readable:
+        params["readable"] = [str(r) for r in readable]
+    name = Path(check_path).name
+    return {
+        "mission_id": f"m:mcp-act-{_slug(server, 20)}-{_slug(tool, 30)}-{digest}",
+        "founder_expression": founder_expression or f"Use the {server} server's {tool}",
+        "intended_effect": f"{check_path} shows the change made by the {server} server's {tool}; nothing outside "
+                           f"{', '.join(params['writable'])} changes",
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": [{
+            "check_id": "changed", "description": f"GREG reads {name} and finds the change",
+            "sensor": {"capability": "fs.read", "params": {"path": str(check_path)}, "target": f"fs:{name}"},
+            "predicate": expect}],
+        "strategies": [{"action_id": "act", "capability": "mcp.act", "params": params, "target": f"mcp:{server}",
+                        "advances": ["changed"],
+                        "rationale": f"the {server} server's {tool}, inside the scope the founder approves"}],
+        "light_cone": {"capabilities": ["mcp.act", "fs.read"], "targets": [f"mcp:{server}", f"fs:{name}"],
+                       "max_consequence_class": "read_only", "budget_usd": 0.0, "horizon": _horizon(horizon_days)}}
+
+
+TEMPLATES["mcp-act"] = mcp_act
+
+
+REMOTE_EVIDENCE = {
+    "same_service": "a read-after-write through the service's own host: it shows the service's state, not an "
+                    "independent corroboration of it",
+    "separate_host": "a read through a different host than the service's; GREG cannot show that host is independent "
+                     "of the service, so this is not proven independent corroboration",
+}
+
+
+def remote_evidence(url: str, check_url: str) -> str:
+    """Which evidence a page check is: a read-after-write through the same service, or a read through another host.
+
+    Same service only when the page is on the service's own host or a name under it. Without a public-suffix list,
+    sharing the last two labels proves nothing (``alice.github.io`` and ``mallory.github.io``, ``evil.co.uk``), and
+    neither does a parent name, so every other case gets the cautious label, which claims no independence either."""
+    import ipaddress
+    from urllib.parse import urlsplit
+    service = (urlsplit(url).hostname or "").rstrip(".")
+    page = (urlsplit(check_url).hostname or "").rstrip(".")
+    if not service or not page:
+        return "separate_host"
+    if page == service:
+        return "same_service"
+    for host in (service, page):
+        try:
+            ipaddress.ip_address(host)
+            return "separate_host"      # an address is the same service only when it is the same address
+        except ValueError:
+            pass
+    return "same_service" if service.count(".") >= 1 and page.endswith("." + service) else "separate_host"
+
+
+def mcp_remote_act(*, server: str, url: str, tool: str, arguments: dict, bearer: str | None, check_url: str,
+                   expect_text: str, hosts=(), founder_expression: str | None = None, horizon_days: float = 1) -> dict:
+    """One call to a tool of a hosted MCP server (``mcp.act`` by URL), inside the scope the founder approves.
+
+    A call on someone else's machine cannot be made read-only, so it always waits for the founder's decision, which
+    shows the server, the hosts it may reach and the credential handle. GREG checks the effect itself by rendering a
+    page the founder named (``browser.render``, which reaches only that page's host) and finding the text there; the
+    server's own answer is untrusted data. If the page already shows it, nothing runs."""
+    from urllib.parse import urlsplit
+    digest = hashlib.sha256(json.dumps([url, tool, arguments], sort_keys=True).encode()).hexdigest()[:8]
+    params = {"server": server, "url": url, "tool": tool, "arguments": dict(arguments)}
+    if bearer:
+        params["bearer"] = bearer
+    if hosts:
+        params["hosts"] = [str(h) for h in hosts]
+    page = urlsplit(check_url).hostname
+    return {
+        "mission_id": f"m:mcp-remote-{_slug(server, 20)}-{_slug(tool, 30)}-{digest}",
+        "founder_expression": founder_expression or f"Use the {server} service's {tool}",
+        "intended_effect": f"{check_url} shows {expect_text!r} after the {server} service's {tool}",
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": [{
+            "check_id": "shown", "description": f"GREG renders {check_url} and finds the text "
+                                                f"({REMOTE_EVIDENCE[remote_evidence(url, check_url)]})",
+            "sensor": {"capability": "browser.render", "params": {"url": check_url}, "target": f"web:{page}"},
+            "predicate": {"op": "contains", "field": "text", "value": expect_text}}],
+        "strategies": [{"action_id": "act", "capability": "mcp.act", "params": params, "target": f"mcp:{server}",
+                        "advances": ["shown"],
+                        "rationale": f"the {server} service's {tool}, inside the scope the founder approves"}],
+        "light_cone": {"capabilities": ["mcp.act", "browser.render"], "targets": [f"mcp:{server}", f"web:{page}"],
+                       "max_consequence_class": "read_only", "budget_usd": 0.0, "horizon": _horizon(horizon_days)}}
+
+
+TEMPLATES["mcp-remote-act"] = mcp_remote_act
+
+
 NETWORK_NAME = r"[A-Za-z][A-Za-z0-9_-]{0,31}"
 NETWORK_NUMBER = r"\d+(?:\.\d+)?"
 NETWORK_LINK = re.compile(rf"^(?P<a>{NETWORK_NAME})\s+(?P<how>to|and)\s+(?P<b>{NETWORK_NAME})\s*[:,]?\s*"
@@ -884,3 +1278,393 @@ def plan_in_words(*, text: str, horizon_days: float = 2, auto_attach: bool = Fal
 
 
 TEMPLATES["plan-in-words"] = plan_in_words
+
+
+def constructed_question(*, function: str, params: dict, horizon_days: float = 2, auto_attach: bool = False) -> dict:
+    """A question for a function GREG has no engine for, answered by a capability it constructs.
+
+    Genesis reduces the question onto an engine it can already certify (maximum flow, linear
+    programming), acquiring that engine first if needed, qualifies the construction on the
+    function's own brute-force oracle through the real engine, and asks you to attach it unless
+    this signed mission pre-authorizes a read-only attach. Every answer carries a certificate in
+    your problem's own terms (for staffing: the orders and the only workers who could serve them).
+    Read-only: nobody is assigned, scheduled or paid.
+    """
+    from greg.genesis import CATALOG
+    from greg.recombine import REDUCTIONS, chain
+
+    found = chain(function, CATALOG)
+    if found is None:
+        raise ValueError(f"GREG has no reduction chain for {function!r}; known: {sorted(REDUCTIONS)}")
+    path, engine = found
+    REDUCTIONS[function].normalize(params)          # refuse a malformed question before it is signed
+    digest = hashlib.sha256(json.dumps([function, params], sort_keys=True).encode()).hexdigest()[:10]
+    step = {"function": function, "params": params, "target": f"cognition:{function}-{digest}"}
+    spec = {
+        "mission_id": f"m:constructed-{digest}",
+        "founder_expression": f"{function}: {json.dumps(params, sort_keys=True)[:3000]}",
+        "intended_effect": f"{REDUCTIONS[function].description}, with a certificate GREG checks itself",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "certified-answer", "description": "an answer whose optimality (or "
+                            "impossibility) GREG proves in the problem's own terms, independent of the engine",
+                            "sensor": step, "predicate": {"op": "equals", "field": "certified", "value": True}}],
+        "strategies": [{"action_id": "solve", **step, "advances": ["certified-answer"],
+                        "rationale": "construct the function by certified reduction (read-only): "
+                                     + " -> ".join([r.function for r in path] + [engine])}],
+        "light_cone": {"capabilities": [f"composed.{function}.*", f"acquired.{engine}.*"],
+                       "targets": ["cognition:*"], "max_consequence_class": "read_only", "budget_usd": 0,
+                       "horizon": _horizon(horizon_days)},
+    }
+    if auto_attach:
+        spec["auto_attach"] = {"max_consequence_class": "read_only"}
+    return spec
+
+
+TEMPLATES["constructed-question"] = constructed_question
+
+
+PORTFOLIO_NAME = r"[A-Za-z0-9][A-Za-z0-9_.-]{0,39}"
+PORTFOLIO_AMOUNT = r"\$?(?P<n>\d{1,3}(?:,\d{3})+|\d+)(?P<fraction>\.\d+)?"
+PORTFOLIO_VALUE = re.compile(rf"^(?P<name>{PORTFOLIO_NAME})\s+(?P<verb>earns|pays|returns|makes|brings in|is worth|"
+                             rf"costs)\s+{PORTFOLIO_AMOUNT}(?:\s+[A-Za-z$€£/ ]{{1,24}})?$", re.I)
+PORTFOLIO_NEEDS = re.compile(rf"^(?P<name>{PORTFOLIO_NAME})\s+(?:needs|requires|depends on)\s+(?P<rest>.+)$", re.I)
+PORTFOLIO_BUDGET = re.compile(rf"^(?:spend at most|(?:the |my )?budget(?: is|:)?|i can spend(?: at most)?)\s+"
+                              rf"{PORTFOLIO_AMOUNT}(?:\s+[A-Za-z$€£/ ]{{1,24}})?$", re.I)
+PORTFOLIO_QUESTION = re.compile(r"^(?:which|what|should|choose|pick|decide)\b", re.I)
+
+
+def read_portfolio_words(text: str) -> dict:
+    """The controlled portfolio language, read without a model. Unread sentences stop the plan.
+
+    ``Offer1 earns 5.`` or ``Platform costs 6.`` (whole amounts, an optional $, thousands commas and a
+    trailing unit word); ``Offer1 needs Platform and Audit.`` (also "requires", "depends on"); at most
+    one question such as ``Which should I build?``; optionally one cap on what the costs may total:
+    ``Spend at most 10.`` (also "Budget: 10.", "I can spend 10."). Amounts are taken in one unit you choose."""
+    sentences = [s.strip() for s in re.split(r"\.(?=\s|$)|[!?;\n]+", text) if s.strip()]
+    value, needs, unread, questions, budget = {}, [], [], 0, None
+    for sentence in sentences:
+        if PORTFOLIO_QUESTION.match(sentence):
+            questions += 1
+        elif m := PORTFOLIO_BUDGET.match(sentence):
+            if m["fraction"]:
+                raise ValueError(f"{sentence!r}: the budget must be a whole number in the same unit as the values")
+            if budget is not None:
+                raise ValueError("state the budget once")
+            budget = int(m["n"].replace(",", ""))
+        elif m := PORTFOLIO_VALUE.match(sentence):
+            if m["fraction"]:
+                raise ValueError(f"{sentence!r}: amounts must be whole numbers in one unit (say 1250, not 1.25k)")
+            if m["name"] in value:
+                raise ValueError(f"{m['name']} is given a value twice; state each item's value once")
+            amount = int(m["n"].replace(",", ""))
+            value[m["name"]] = -amount if m["verb"].lower() == "costs" else amount
+        elif m := PORTFOLIO_NEEDS.match(sentence):
+            names = [n.strip() for n in re.split(r",\s*(?:and\s+)?|\s+and\s+", m["rest"]) if n.strip()]
+            bad = [n for n in names if not re.fullmatch(PORTFOLIO_NAME, n)]
+            if bad or not names:
+                unread.append(sentence)
+                continue
+            needs += [[m["name"], n] for n in names]
+        else:
+            unread.append(sentence)
+    if unread:
+        raise ValueError("GREG could not read: " + "; ".join(repr(u[:80]) for u in unread[:5])
+                         + ". Write 'Offer1 earns 5.', 'Platform costs 6.' and 'Offer1 needs Platform.'")
+    if questions > 1:
+        raise ValueError("ask one portfolio question at a time")
+    if not any(v > 0 for v in value.values()):
+        raise ValueError("state at least one item that earns something ('Offer1 earns 5.')")
+    unknown = sorted({n for pair in needs for n in pair if n not in value})
+    if unknown:
+        raise ValueError(f"{', '.join(unknown)} {'is' if len(unknown) == 1 else 'are'} needed but never given a "
+                         f"value: add '{unknown[0]} costs N.' (or 'earns N.', or 'costs 0.')")
+    params = {"items": [{"id": n, "value": v} for n, v in value.items()], "requires": needs}
+    return params if budget is None else {**params, "budget": budget}
+
+
+def portfolio_in_words(*, text: str, horizon_days: float = 2, auto_attach: bool = False) -> dict:
+    """Which offers, projects or investments to take when some need others first, in plain controlled words.
+
+    GREG has no portfolio engine: Genesis constructs ``selection.closure`` by Picard's reduction onto a
+    maximum-flow engine it qualifies (acquiring that engine first if needed, which you attach). The
+    answer names what to take, the profit, what was left out and why, and counts only on GREG's own
+    funding certificate, checked against your items alone. Read-only: nothing is bought or started.
+    """
+    if not text.strip() or len(text) > 4000:
+        raise ValueError("a portfolio question of 1-4000 characters is required")
+    from greg.recombine import REDUCTIONS
+    params = read_portfolio_words(text)
+    function = "selection.budgeted" if "budget" in params else "selection.closure"
+    REDUCTIONS[function].normalize(params)                     # refuse a malformed question before it is signed
+    spec = constructed_question(function=function, params=params, horizon_days=horizon_days,
+                                auto_attach=auto_attach)
+    digest = hashlib.sha256(json.dumps(params, sort_keys=True).encode()).hexdigest()[:10]
+    return {**spec, "mission_id": f"m:portfolio-{digest}", "founder_expression": text,
+            "intended_effect": "which items to take when some need others first"
+                               + (f", spending at most {params['budget']} on costs" if "budget" in params else "")
+                               + ": the most profitable set that includes every prerequisite, with what was left "
+                                 "out and why, proved by GREG's own certificate"}
+
+
+TEMPLATES["portfolio-in-words"] = portfolio_in_words
+
+
+FIRST_MISSION_WORDS = re.compile(r"\b(first mission|where (?:am i|i am) (?:trying to go|going)|highest[- ]value "
+                                 r"(?:work|opportunit)|what should (?:greg|you) (?:work on|do) next)\b", re.I)
+
+
+def first_mission(*, kernel_root: str, effort_budget: int = 8, run: str | None = None, horizon_days: float = 1,
+                  founder_expression: str | None = None) -> dict:
+    """The Founder's First Mission: one signed mission across Mind, Hands, Foundry and appraisal.
+
+    survey (read the authorized sources, reconstruct the objective, route founder-only items to the
+    decision queue) -> select (``cognition.dp_knapsack``: exact selection under the signed effort
+    budget, with its own verifier) and compose (which existing machinery advances each candidate,
+    and what is missing) -> dossier (one private deliverable to the founder's delivery root) ->
+    ``institution.appraise`` as the success sensor: an independent re-survey, a different exact
+    algorithm and a greedy replay. Steps hand typed outputs to each other through ``bind`` edges,
+    so nobody relays data by hand and a crash resumes from retained receipts without repeating
+    a completed step. Nothing is sent, published, spent or merged.
+    """
+    if not isinstance(effort_budget, int) or isinstance(effort_budget, bool) or not 1 <= effort_budget <= 200:
+        raise ValueError("effort_budget is an integer in [1, 200]")
+    root = str(Path(kernel_root).expanduser().resolve())
+    run = run or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M")
+    digest = hashlib.sha256(json.dumps([root, effort_budget, run]).encode()).hexdigest()[:10]
+    mission_id = f"m:first-mission-{digest}"
+    canon_id = f"first-mission-{digest}"
+    base = {"kernel_root": root}
+    return {
+        "mission_id": mission_id,
+        "founder_expression": founder_expression or (
+            "Understand where I am trying to go, find the highest-value unfinished work you can advance now, "
+            "compare the ways to do it, produce something useful, verify it and tell me what is next."),
+        "intended_effect": "one private dossier whose objective, selection, composition and next step an "
+                           "independent appraisal re-derives from the sources",
+        "priority": 70, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "dossier-verified",
+                            "description": "an independent re-survey and a different exact algorithm reproduce the "
+                                           "dossier's objective, optimal selection and baseline",
+                            "sensor": {"capability": "institution.appraise", "target": "institution:first-mission",
+                                       "params": base},
+                            "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}},
+                           {"check_id": "owned-preview",
+                            "description": "the Foundry's owned-page system holds an intact, receipted private page of the dossier",
+                            "sensor": {"capability": "foundry.query", "target": "foundry:first-mission",
+                                       "params": {"system": 31, "op": "inspect", "args": {"name": canon_id}}},
+                            "predicate": {"op": "equals", "field": "result.intact", "value": True}},
+                           {"check_id": "lesson-retained",
+                            "description": "the dossier's exact bytes are retained in the body's content-addressed memory",
+                            "sensor": {"capability": "institution.appraise", "target": "institution:first-mission",
+                                       "params": {**base, "require_retained": True}},
+                            "predicate": {"op": "equals", "field": "retained", "value": True}}],
+        "strategies": [
+            {"action_id": "survey", "capability": "institution.survey", "target": "institution:first-mission",
+             "params": {**base, "effort_budget": effort_budget}, "advances": ["dossier-verified"],
+             "rationale": "read GREG's own path and Foundry contract; founder-only items go to the decision queue"},
+            {"action_id": "select", "capability": "cognition.dp_knapsack", "target": f"cognition:first-mission-{digest}",
+             "params": {"problem_id": f"first-mission-{digest}", "operation": "knapsack_01_select"},
+             "bind": [{"param": "data", "from": {"action_id": "survey", "field": "knapsack"}, "type": "object"}],
+             "advances": ["dossier-verified"],
+             "rationale": "exact 0/1 selection under the signed effort budget; the genome verifies itself"},
+            {"action_id": "compose", "capability": "institution.compose", "target": "institution:first-mission",
+             "params": dict(base),
+             "bind": [{"param": "candidates", "from": {"action_id": "survey", "field": "candidates"}, "type": "array", "max_bytes": 65536}],
+             "advances": ["dossier-verified"],
+             "rationale": "start from existing capabilities and Foundry systems; name each CapabilityDeficit"},
+            {"action_id": "dossier", "capability": "institution.dossier", "target": "deliver:first-mission",
+             "params": {"canon_id": canon_id},
+             "bind": [{"param": "survey", "from": {"action_id": "survey", "field": ""}, "type": "object", "max_bytes": 65536},
+                      {"param": "selection", "from": {"action_id": "select", "field": "output"}, "type": "object", "max_bytes": 65536},
+                      {"param": "composition", "from": {"action_id": "compose", "field": ""}, "type": "object", "max_bytes": 65536}],
+             "advances": ["dossier-verified"],
+             "rationale": "one private deliverable to the founder; nothing is sent, published, spent or merged"},
+            {"action_id": "owned-page", "capability": "foundry.apply", "target": "foundry:first-mission",
+             "params": {"system": 31, "op": "build", "args": {"reason": "Founder's First Mission dossier, private preview"}},
+             "bind": [{"param": "args.canon", "from": {"action_id": "dossier", "field": "canon"}, "type": "object"}],
+             "advances": ["owned-preview"],
+             "rationale": "Foundry #31 renders a versioned, content-addressed private page; nothing is publicly served"},
+            {"action_id": "retain", "capability": "artifact.store", "target": "artifact:first-mission",
+             "params": {"namespace": "first-mission"},
+             "bind": [{"param": "path", "from": {"action_id": "dossier", "field": "workspace_copy"}, "type": "string"}],
+             "advances": ["lesson-retained"],
+             "rationale": "keep the dossier and its lesson by digest; the next First Mission compares against it"}],
+        "light_cone": {"capabilities": ["institution.survey", "institution.compose", "institution.dossier",
+                                        "institution.appraise", "cognition.dp_knapsack", "foundry.apply",
+                                        "foundry.query", "artifact.store"],
+                       "targets": ["institution:*", "cognition:*", "deliver:*", "foundry:first-mission",
+                                   "artifact:first-mission"],
+                       "max_consequence_class": "internal_write", "budget_usd": 0,
+                       "horizon": _horizon(horizon_days)},
+    }
+
+
+TEMPLATES["first-mission"] = first_mission
+
+
+def compiled_question(*, problem_id: str, data: dict, geometry: dict | None = None, objective: str = "",
+                      allow_construction: bool = False, horizon_days: float = 2) -> dict:
+    """A problem for the Competency Compiler (Layer 5), which may need a capability GREG constructs.
+
+    The Mind recognizes the problem's shape. When no admitted method fits but a reduction does, its
+    CapabilityDeficit names that function; Capability Genesis constructs it over an engine it already
+    certifies and, only if you sign ``allow_construction``, attaches it read-only inside this mission's
+    light cone (the construction and its engine are named there). The Mind then answers with the
+    construction's problem-level certificate. Without that signature GREG asks you to attach.
+    Read-only: nobody is assigned, scheduled or paid.
+    """
+    from greg.genesis import CATALOG
+    from greg.recombine import chain, fits
+
+    if not isinstance(problem_id, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}", problem_id):
+        raise ValueError("problem_id must be 1-64 letters, digits or _.:-")
+    params = {"problem_id": problem_id, "compile": {"geometry": dict(geometry or {"geometry": "optimization"}),
+                                                    "data": data}}
+    if objective:
+        params["compile"]["geometry"].setdefault("objective", objective[:300])
+    target = f"cognition:{problem_id}"
+    capabilities = ["cognition.solve"]
+    if allow_construction:
+        for reduction in fits(data):
+            found = chain(reduction.function, CATALOG)
+            if found:
+                capabilities += [f"composed.{reduction.function}.*", f"acquired.{found[1]}.*"]
+    spec = {
+        "mission_id": f"m:compiled-{problem_id}"[:96],
+        "founder_expression": objective or f"answer {problem_id} with the smallest competent method",
+        "intended_effect": "an answer from the smallest competent method, with typed evidence GREG checks itself",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "answered", "description": "a competent method answered with its evidence",
+                            "sensor": {"capability": "cognition.solve", "target": target, "params": params},
+                            "predicate": {"op": "equals", "field": "state", "value": "ANSWERED"}}],
+        "strategies": [{"action_id": "compile", "capability": "cognition.solve", "target": target, "params": params,
+                        "advances": ["answered"], "rationale": "compile the problem's geometry to a competent method"}],
+        "light_cone": {"capabilities": list(dict.fromkeys(capabilities)), "targets": ["cognition:*"],
+                       "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+    if allow_construction:
+        spec["auto_attach"] = {"max_consequence_class": "read_only"}
+    return spec
+
+
+TEMPLATES["compiled-question"] = compiled_question
+TEMPLATES["organ-exchange"] = organ_exchange
+
+
+def one_machine(*, problem_id: str, data: dict, sandbox_repo: str, organs: dict, seed: str,
+                provider: str = "claude-code", worker_budget_usd: float = 0.05, horizon_days: float = 1,
+                workspace_root: Path | None = None, founder_expression: str | None = None) -> dict:
+    """One signed mission through Mind, Genesis, Organs and Hands, closed by independent appraisal.
+
+    Composes existing capabilities only; each step hands typed outputs to the next through ``bind``:
+
+    1. ``cognition.solve``: the Competency Compiler recognizes the problem. When no admitted method
+       fits but a certified reduction does, its CapabilityDeficit names the function; Capability
+       Genesis constructs it and attaches it read-only inside this cone (``auto_attach``). The answer
+       carries a problem-level certificate GREG checks from the original problem.
+    2. ``organ.exchange``: DALEOBANKS and WealthMachine run their own code, sign their messages and
+       are verified at the kernel; a second WealthMachine process re-derives the assessment.
+    3. ``worker.commission``: only after (1) and (2) are observed passing, a worker receives the
+       certified answer (bound from the receipt, never relayed by hand) and records it with a test in
+       a private clone of ``sandbox_repo``; GREG runs the acceptance itself with no network.
+    4. ``worker.appraise`` (sensor): fresh clone, patch re-applied, scope checks, acceptance re-run.
+    5. A handoff note is written only after the work is ACCEPTED.
+
+    ``organs`` names ``daleobanks_root``, ``daleobanks_python``, ``wealthmachine_root`` and
+    ``wealthmachine_python``, all inside the body's read roots. Nothing is sent, published, merged
+    or paid; the worker's signed cap is the only spend bound and a local worker spends nothing.
+    """
+    from greg.cognition.compiler import CERTIFIED
+    from greg.genesis import CATALOG
+    from greg.organs import TARGET
+    from greg.recombine import chain, fits
+
+    if not isinstance(problem_id, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,47}", problem_id):
+        raise ValueError("problem_id must be 1-48 letters, digits or _.:-")
+    organ_keys = ("daleobanks_root", "daleobanks_python", "wealthmachine_root", "wealthmachine_python")
+    missing = set(organ_keys) - set(organs)
+    if missing:
+        raise ValueError(f"organs is missing {sorted(missing)}")
+    repo = str(Path(sandbox_repo).expanduser().resolve())
+    order = _slug(f"record-{problem_id}", 30)
+    mission_id = f"m:one-machine-{problem_id}"[:96]
+    handoff = f"handoff-{order}.md"
+    handoff_path = str(Path(workspace_root or ".").resolve() / mission_id.replace(":", "_") / handoff)
+    compile_params = {"problem_id": problem_id, "compile": {"geometry": {"geometry": "optimization"}, "data": data}}
+    capabilities = ["cognition.solve"]
+    for reduction in fits(data):
+        found = chain(reduction.function, CATALOG)
+        if found:
+            capabilities += [f"composed.{reduction.function}.*", f"acquired.{found[1]}.*"]
+    objective = ("Record GREG's certified plan for problem.json in plan/plan.json (the assignment exactly as "
+                 "certified) and add tests/test_plan.py that checks it against problem.json from first principles: "
+                 "every assignment uses an eligible skill, no worker exceeds capacity, no order receives more than "
+                 "its demand, the staffed total equals the plan's claim, and no feasible assignment staffs more "
+                 "(exhaustive search; do not import GREG).")
+    return {
+        "mission_id": mission_id,
+        "founder_expression": founder_expression or (
+            "Solve this with the smallest competent method, form what is missing, consult the organs, have a "
+            "worker do the real work, survive interruption, and prove it to someone who did not do it."),
+        "intended_effect": "a certified answer, an organ assessment reproduced by a second process, and an "
+                           "independently accepted change that records and re-checks the answer, on one trace",
+        "priority": 75, "closure": {"kind": "bounded"},
+        "constraints": ["nothing is sent, published, merged or paid",
+                        "the worker never pushes, merges or commits; GREG commits on a greg/ branch in a private clone",
+                        "organ messages are evidence about organ computation, not Kernel consequences"],
+        "success_checks": [
+            # The label the worker is handed ("CERTIFIED_PLAN_JSON") must be what this gate guarantees:
+            # the compiler sets this confidence type only for an ANSWER that carries a problem-level
+            # certificate GREG checked, never for a composition, an estimate or a model-backed trace.
+            {"check_id": "answered", "description": "a constructed method answered with a problem-level certificate",
+             "sensor": {"capability": "cognition.solve", "target": f"cognition:{problem_id}", "params": compile_params},
+             "predicate": {"op": "equals", "field": "confidence_type", "value": CERTIFIED}},
+            {"check_id": "organs-reproduced",
+             "description": "both organ messages verified at the kernel and a second process reproduced the answer",
+             "sensor": {"capability": "organ.status", "target": TARGET, "params": {}},
+             "predicate": {"op": "equals", "field": "verdict", "value": "REPRODUCED"}},
+            {"check_id": "work_accepted", "description": "independent appraisal ACCEPTED the work order",
+             "sensor": {"capability": "worker.appraise", "params": {"order": order}, "target": f"work:{order}"},
+             "predicate": {"op": "equals", "field": "verdict", "value": "ACCEPTED"}},
+            {"check_id": "handoff_written", "description": "the review handoff exists for the founder",
+             "sensor": {"capability": "fs.read", "params": {"path": handoff_path}, "target": f"fs:{handoff}"},
+             "predicate": {"op": "contains", "field": "text", "value": f"greg/{order}"}}],
+        "strategies": [
+            {"action_id": "compile", "capability": "cognition.solve", "target": f"cognition:{problem_id}",
+             "params": compile_params, "advances": ["answered"],
+             "rationale": "compile the problem's geometry to a competent method; construct one if missing"},
+            {"action_id": "organs", "capability": "organ.exchange", "target": TARGET,
+             "params": {**{k: str(organs[k]) for k in organ_keys}, "seed": seed},
+             "advances": ["organs-reproduced"],
+             "rationale": "ask the organs through their own code over the signed bridge; re-derive in a second process"},
+            {"action_id": "commission", "capability": "worker.commission", "target": f"work:{order}",
+             "params": {"order": order, "mode": "repository", "repo": repo, "objective": objective,
+                        "acceptance": {"run_changed_tests": True, "max_changed_files": 4},
+                        "allowed_paths": ["plan/*", "tests/*"], "provider": provider,
+                        "max_budget_usd": worker_budget_usd, "timeout_seconds": 300},
+             # the exact certified answer that satisfied "answered", which may come from the re-observation
+             # after Genesis attached the construction rather than from the compile action's first receipt
+             "bind": [{"param": "context", "from": {"check_id": "answered", "field": "result"}, "type": "object",
+                       "render": "json", "template": "CERTIFIED_PLAN_JSON:\n{value}", "max_bytes": 16384}],
+             "requires": ["answered", "organs-reproduced"], "cost_usd": worker_budget_usd,
+             "advances": ["work_accepted"],
+             "rationale": "Hands act only on a certified answer and a reproduced organ assessment"},
+            {"action_id": "handoff", "capability": "fs.write", "target": f"workspace:{handoff}",
+             "params": {"relative_path": handoff,
+                        "content": f"# One-machine mission ready for review: greg/{order}\n\nThe certified answer "
+                                   "was recorded and re-checked by an independently ACCEPTED change; the organ "
+                                   "assessment was reproduced by a second process. Promotion requires the existing "
+                                   "authorized path; GREG holds no push or merge authority.\n"},
+             "advances": ["handoff_written"], "requires": ["work_accepted"],
+             "rationale": "continue the parent mission only on an independently accepted result"}],
+        "light_cone": {"capabilities": list(dict.fromkeys(capabilities + [
+                           "organ.exchange", "organ.status", "worker.commission", "worker.appraise",
+                           "fs.read", "fs.write"])),
+                       "targets": ["cognition:*", TARGET, f"work:{order}", f"fs:{handoff}", f"workspace:{handoff}"],
+                       "max_consequence_class": "internal_write", "budget_usd": worker_budget_usd,
+                       "horizon": _horizon(horizon_days)},
+        "auto_attach": {"max_consequence_class": "read_only"},
+    }
+
+
+TEMPLATES["one-machine"] = one_machine

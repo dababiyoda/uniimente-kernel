@@ -1,3 +1,5 @@
+> **Team entry:** Before new or resumed work, read [the pinned founder Discussion](https://github.com/dababiyoda/uniimente-kernel/discussions/89), follow [START_HERE](docs/collaboration/START_HERE.md), and refresh [work claims and handoffs](https://github.com/dababiyoda/uniimente-kernel/issues/96). Check relevant open branches and PRs before editing; searching only `main` is insufficient. Record your actual session identity, bounded scope, base/head, overlap split, acceptance evidence and integration destination. A claim coordinates work; it grants no authority. From a cloud session, where the github.com page is unreachable and the GitHub connector has no Discussion tool, read it with `curl -sS https://api.github.com/repos/dababiyoda/uniimente-kernel/discussions/89` (public REST API, no credential).
+
 ## Full-machine completion — controlling correction, October 1, 2026
 
 **BODY + ORGANS + MIND = GREG / UNIIMENTE** is the fixed completion boundary. Read `docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json` and its verbatim source. Reconstruct the whole boundary, implement the highest-priority unfinished dependency in rigorous increments, prove and integrate each increment, then automatically resume the parent objective and the next unblocked requirement. Seeds, experiments, sandboxes, benchmarks, PRs and VEPMC are intermediate sequencing/evidence units; none may narrow the machine or stop unrelated feasible implementation. A future-family label preserves its obligation. Registered is not implemented; a tested component is not an integrated machine.
@@ -23,6 +25,7 @@ Treat the entire historical repository as mechanism substrate. Extract what work
 
 Read and obey, in this order:
 
+- @docs/intent/INTENT-20261019-UPWARD-ASCENT.md
 - @docs/PROJECT_COGNITION_SOP.md
 - @docs/PROJECT_SOURCE_CENSUS_2026-09-26.md
 
@@ -83,3 +86,4 @@ Historical literal-morphogenesis work is preserved as research, mechanisms, test
 - Adapters (`adapters/`) declare field mappings, information lost/added and
   assumptions explicitly. No silent translation. No fabricated fields. No authority
   inflation.
+

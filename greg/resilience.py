@@ -27,14 +27,30 @@ import statistics
 
 # The mission engine's own failure vocabulary (greg/authority.py, greg/routing.py): a capability that ran
 # and failed is REFUSED with a receipt (negative result_class); UNAVAILABLE, UNCERTAIN and
-# RECONCILED_NOT_EXECUTED are failures in any case. A REFUSED without a receipt is a policy or scope refusal,
-# not the capability's failure. FAILED and ERROR are kept for organs and synthetic journals that use them.
+# RECONCILED_NOT_EXECUTED are failures in any case, but one dispatch counts once: the settlement of an UNCERTAIN
+# already counted is skipped (greg.routing.dispatch_outcomes). A REFUSED without a receipt is a policy or scope
+# refusal, not the capability's failure. FAILED and ERROR are kept for organs and synthetic journals that use them.
 FAILED_ACTIONS = ("FAILED", "ERROR", "UNCERTAIN", "UNAVAILABLE", "RECONCILED_NOT_EXECUTED")
 
 
 def failed(payload: dict) -> bool:
     status = payload.get("status")
     return status in FAILED_ACTIONS or (status == "REFUSED" and bool(payload.get("receipt")))
+
+
+def _acts(journal) -> list:
+    """Capability acts in time order, one record per dispatched attempt.
+
+    Resilience measures execution: an interrupted dispatch (UNCERTAIN) is a failure episode whatever the founder
+    later states about it. A reconciliation is a later statement about the same (mission, action, attempt), so
+    where that attempt's UNCERTAIN record is retained the statement is not counted again: "not executed" is not a
+    second failure and a receiptless "executed" is not a completion. A reconciliation whose UNCERTAIN record is
+    absent (older ledgers) is the only record of its attempt and is kept."""
+    from greg.routing import founder_reconciled
+    events = _events(journal, "mission.action")
+    key = lambda p: (p.get("mission_id"), p.get("action_id"), p.get("attempt"))
+    interrupted = {key(e.payload or {}) for e in events if (e.payload or {}).get("status") == "UNCERTAIN"}
+    return [e for e in events if not (founder_reconciled(e.payload or {}) and key(e.payload or {}) in interrupted)]
 
 
 def _lever_capability(lever) -> str | None:
@@ -60,9 +76,24 @@ def _events(journal, prefix):
     return sorted(journal.replay(prefix), key=_at)
 
 
+def _outcomes(journal):
+    """mission.action records in time order, each dispatch's outcome once (greg.routing.dispatch_outcomes). The
+    settlement is matched in ledger order: it carries no ``at`` of its own, so a time sort could put it first."""
+    from greg.routing import dispatch_outcomes
+    return sorted((e for e in dispatch_outcomes(journal.replay("mission.action")) if not _founder_done(e.payload)),
+                  key=_at)
+
+
+def _founder_done(payload: dict) -> bool:
+    """A founder's statement that an UNCERTAIN dispatch executed: no receipt, so never a completion GREG measured
+    (greg.routing.founder_reconciled; routing's track record counts it as neither success nor failure)."""
+    from greg.routing import founder_reconciled
+    return payload.get("status") == "DONE" and founder_reconciled(payload)
+
+
 def episodes(journal) -> list[dict]:
     """Failure -> recovery episodes per (mission, check), in time order."""
-    actions = _events(journal, "mission.action")
+    actions = _acts(journal)
     answers = _events(journal, "decision.answered")
     state, open_, recovered_before, out = {}, {}, defaultdict(int), []
     for event in _events(journal, "mission.observed"):
@@ -76,12 +107,12 @@ def episodes(journal) -> list[dict]:
             ep = open_.pop(key)
             start = ep["failed_at"]
             ran = [a.payload for a in actions if a.payload.get("mission_id") == key[0] and start <= _at(a) <= when
-                   and a.payload.get("status") == "DONE"]
+                   and a.payload.get("status") == "DONE" and not _founder_done(a.payload)]
             founder = any(a.payload.get("mission_id") == key[0] and start <= _at(a) <= when for a in answers)
             out.append({**ep, "recovered_at": when, "seconds": (when - start).total_seconds(),
                         "founder_intervened": founder,
                         "recovery_actions": sorted({r["action_id"] for r in ran}),
-                        "recovery_capabilities": sorted({r.get("capability", "?") for r in ran})})
+                        "recovery_capabilities": sorted({r.get("capability") or "?" for r in ran})})
             recovered_before[key] += 1
         state[key] = "passing" if p["passed"] else "failing"
     for ep in open_.values():
@@ -91,10 +122,10 @@ def episodes(journal) -> list[dict]:
 
 
 def common_causes(journal, window: timedelta = timedelta(hours=1)) -> list[dict]:
-    failures = [e for e in _events(journal, "mission.action") if failed(e.payload)]
+    failures = [e for e in _outcomes(journal) if failed(e.payload)]
     by_cap = defaultdict(list)
     for e in failures:
-        by_cap[e.payload.get("capability", "?")].append(e)
+        by_cap[e.payload.get("capability") or "?"].append(e)
     out = []
     for cap, events in sorted(by_cap.items()):
         for i, first in enumerate(events):
@@ -110,8 +141,8 @@ def common_causes(journal, window: timedelta = timedelta(hours=1)) -> list[dict]
 def concentration(journal) -> dict:
     done = defaultdict(int)
     for e in journal.replay("mission.action"):
-        if e.payload.get("status") == "DONE":
-            done[e.payload.get("capability", "?")] += 1
+        if e.payload.get("status") == "DONE" and not _founder_done(e.payload):
+            done[e.payload.get("capability") or "?"] += 1
     total = sum(done.values())
     if not total:
         return {"completed_actions": 0, "herfindahl": None, "top": None}
@@ -124,10 +155,10 @@ def concentration(journal) -> dict:
 def after_failure(journal) -> dict:
     """Per capability: completion rate of the WINDOW actions after each failure vs the WINDOW before."""
     by_cap = defaultdict(list)
-    for e in _events(journal, "mission.action"):
+    for e in _outcomes(journal):
         status = e.payload.get("status")
         if status == "DONE" or failed(e.payload):
-            by_cap[e.payload.get("capability", "?")].append(
+            by_cap[e.payload.get("capability") or "?"].append(
                 (_at(e), status == "DONE", (e.payload.get("mission_id"), e.payload.get("action_id"))))
     learned = [(_at(e), kind, e.payload or {}) for kind in LEARNING_EVENTS for e in journal.replay(kind)]
     # an exclusion counts only through the critique it cites: critique_ref -> critique.recorded ->
@@ -193,10 +224,10 @@ def decoupling_from_journal(journal) -> list[dict]:
     origin = min(whole_days)
     whole = [((d - origin).days, statistics.fmean(v)) for d, v in sorted(whole_days.items())]
     per_cap = defaultdict(lambda: defaultdict(list))
-    for e in journal.replay("mission.action"):
+    for e in _outcomes(journal):
         status = e.payload.get("status")
         if status == "DONE" or failed(e.payload):
-            per_cap[e.payload.get("capability", "?")][_at(e).date()].append(1.0 if status == "DONE" else 0.0)
+            per_cap[e.payload.get("capability") or "?"][_at(e).date()].append(1.0 if status == "DONE" else 0.0)
     out = []
     for cap, days in sorted(per_cap.items()):
         local = [((d - origin).days, statistics.fmean(v)) for d, v in sorted(days.items())]

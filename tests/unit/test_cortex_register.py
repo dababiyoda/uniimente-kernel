@@ -134,3 +134,41 @@ def test_collaboration_records_are_consistent_and_resolvable():
                            + record.get("success_evidence", [])):
             assert (ROOT / path.replace("cortex-*.schema.json", "cortex-receipt.schema.json")).exists(), \
                 (record.get("intent_id"), path)
+
+
+class TestFounderExpression20261001:
+    """The 2026-10-01 message re-pasted the whole review after a short preface.
+    The source file records the preface and the exact differences instead of a
+    third copy; the message must rebuild byte for byte from preserved files."""
+
+    SOURCE = ROOT / "docs/intent/sources/POLYINTELLIGENCE-CORTEX-FOUNDER-EXPRESSION-2026-10-01.md"
+    SHA256 = "4432e84027fc906e9c0bb77e3c0d93be863f4fff17e9a5d515254c45cae768e8"
+
+    def _preface(self):
+        text = self.SOURCE.read_text(encoding="utf-8")
+        return text.split("=== BEGIN VERBATIM TEXT ===\n", 1)[1].split("\n=== END VERBATIM TEXT ===", 1)[0]
+
+    def test_message_rebuilds_byte_for_byte(self):
+        import hashlib
+        old, new = "I reran the review", "In the review"
+        assert BODIES["A"].startswith(old)
+        message = (self._preface() + "\n\n" + new + BODIES["A"][len(old):]
+                   + "\n" + BODIES["B"].rstrip("\n"))
+        assert len(message) == 93728
+        assert hashlib.sha256(message.encode("utf-8")).hexdigest() == self.SHA256
+        assert self.SHA256 in self.SOURCE.read_text(encoding="utf-8")
+
+    def test_preface_is_preserved_as_written(self):
+        preface = self._preface()
+        assert preface.startswith("FOLLOW ALL INSTRUCTIONS VERBATIM MEET THE  LEVEL")
+        assert "EXCEEED" in preface and "NOTHING IS DISCONNECTED" in preface
+
+
+def test_build_directive_20261001_is_byte_exact():
+    import hashlib
+    text = (ROOT / "docs/intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-DIRECTIVE-SEED-GENOME-2026-10-01.md"
+            ).read_text(encoding="utf-8")
+    body = text.split("=== BEGIN VERBATIM TEXT ===\n", 1)[1].rsplit("\n=== END VERBATIM TEXT ===", 1)[0]
+    assert len(body) == 87094
+    assert hashlib.sha256(body.encode("utf-8")).hexdigest() == \
+        "3a18620e43e3e38496ad916a5426591e56ce78d6c915f71cc73b4a793cc8d342"

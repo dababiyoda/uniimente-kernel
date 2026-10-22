@@ -29,8 +29,8 @@ otherwise GitHub cannot be reached over HTTPS and the brief says so in its Gaps 
 ```bash
 PY=$(for p in python3.13 python3.12 python3.11 python3; do command -v $p >/dev/null && $p -c 'import sys; sys.exit(sys.version_info < (3, 11))' 2>/dev/null && echo $p && break; done); echo "${PY:?no Python 3.11+ found}"
 mkdir -p ~/src && cd ~/src
-git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
-git checkout codex/one-greg-vepmc-convergence
+git clone -b claude/greg-full-machine-completion-whgiee https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
+git checkout claude/greg-full-machine-completion-whgiee   # the review candidate named in greg/chromebook/REVIEW_BRANCH; use main once merged
 $PY -m venv ~/.uniimente/venv && ~/.uniimente/venv/bin/pip install -r requirements-dev.txt
 echo 'alias greg="$HOME/.uniimente/venv/bin/python -m greg"' >> ~/.zshrc && source ~/.zshrc   # survives the reboot in step 4
 greg --help | head -1                                 # usage: greg ...
@@ -69,7 +69,7 @@ runs, without a builder, and records why.
 ## 3. Ask GREG, sign, close the window
 
 ```bash
-greg console --key ~/.greg-founder.pem --no-model     # http://127.0.0.1:8766
+greg console --key ~/.greg-founder.pem --no-model     # open the private link it prints (127.0.0.1:8766)
 ```
 
 In the browser, type: *"Brief me on the state of my repositories."* Review the proposal:

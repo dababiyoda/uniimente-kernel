@@ -2,7 +2,7 @@
 
 The intended first body is the computer Alfonso actually owns. This is a
 **developmental** run through ChromeOS's Linux environment (Crostini), not a
-claim that it has been run on his Chromebook. The iPhone can become a remote
+claim that it has been run on their Chromebook. The iPhone can become a remote
 interface after its transport has been tested on these devices; it cannot
 replace the persistent Linux process. No model key, paid API, public posting or
 community data is required for this bounded local mission.
@@ -35,8 +35,9 @@ checks to diagnose the local runtime. The diagnostic creates no key or body.
 
 ```bash
 sudo apt install -y python3 python3-venv git          # once; skip if already installed
+sudo apt install -y bubblewrap   # optional: only coding workers need it; without it worker.commission refuses
 mkdir -p ~/src && cd ~/src
-git clone -b claude/uniimente-greg-reconciliation-39syff https://github.com/dababiyoda/uniimente-kernel
+git clone -b claude/greg-full-machine-completion-whgiee https://github.com/dababiyoda/uniimente-kernel
 cd uniimente-kernel && bash greg/chromebook/install.sh
 ```
 
@@ -44,8 +45,18 @@ cd uniimente-kernel && bash greg/chromebook/install.sh
 venv, writes a `greg` command to `~/.local/bin`, runs the doctor, creates the
 body, creates your key (you type the passphrase; the script never sees it),
 enrolls it, enables `greg-body.service`, and asks you to sign the designation of
-this machine as your first body. Re-running it changes nothing that is already
-done. Then skip to step 2. The manual steps below do the same thing by hand.
+this machine as your first body. Re-running preserves your body, keys, enrollment
+and accepted designation. It rewrites the command wrapper and default service
+configuration; review any customized service before rerunning. Then skip to step
+2. The manual steps below do the same thing by hand.
+
+The installer derives the public key from your actual signing key and checks it
+against any companion `.pub` file and the body's current enrollment. A mismatch
+stops before service installation or designation; it keeps existing keys and
+enrollment intact. To inspect your public key locally, use
+`greg founder public --key ~/.greg-founder.pem` (GREG asks for the passphrase).
+After an authorized key rotation, use the newly enrolled key. An enabled service
+and a queued designation are setup states; inspect `greg status` before a mission.
 
 It also installs GREG's open-source reasoning engines (Z3, OR-Tools, SciPy, NetworkX,
 SymPy; about 550 MB, binary wheels only) and prints how many are present. If your
@@ -57,7 +68,7 @@ missing; add `--no-engines` to skip the step. N1 needs none of them.
 ```bash
 mkdir -p ~/src && cd ~/src
 git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
-git checkout claude/uniimente-greg-reconciliation-39syff   # the one converged GREG branch; use main once merged
+git checkout claude/greg-full-machine-completion-whgiee   # the review candidate named in greg/chromebook/REVIEW_BRANCH; use main once merged
 python3 -m venv ~/.uniimente/venv
 ~/.uniimente/venv/bin/pip install -r requirements-dev.txt
 ~/.uniimente/venv/bin/pip install --only-binary=:all: -r requirements-cognition.txt   # optional engines
@@ -87,7 +98,19 @@ Choose your own passphrase; do not give the private key to an agent. Make sure
 you recognize the new body ID and that this is the device you intend to use.
 The next command queues a founder-signed **designation**, which the body must
 accept before your first mission. It does not grant GREG new capabilities or
-permissions.
+permissions. Because your key is protected by your passphrase, the same command
+also queues a **founder-tier attestation**: the ledger's record that the holder of
+the key signing your missions claims it is passphrase-protected. The `greg` commands
+make that claim only after decrypting a protected key file, so a test key or a
+`--no-passphrase` rehearsal never gets it by accident. It is a claim, not proof: the
+body sees only your public key, and anything that can read an enrolled private key
+could sign the same attestation itself. Keep your key file protected and never give
+it to an agent. It grants nothing either. Without it, every closure,
+your first one (N1) included, stays a *structural candidate* and never moves
+`greg path`. If you rotate
+your key, or your body was designated before this existed, run
+`greg founder attest --key ~/.greg-founder.pem` once, before signing the missions
+that should count.
 
 ```bash
 greg service install --platform linux
@@ -112,7 +135,7 @@ description is at
 greg console --key ~/.greg-founder.pem --no-model
 ```
 
-Open `http://localhost:8766/` in the Chromebook's Chrome browser. ChromeOS
+Open the private link `greg console` prints (it works once) in the Chromebook's Chrome browser. ChromeOS
 forwards local Linux ports into its browser. Ask **“Brief me on the state of my
 repositories.”** Review the proposed read and delivery scope, sign it, then
 close the browser tab and press Ctrl-C in the Terminal. The service should
@@ -129,7 +152,11 @@ then choose **Accept result** or reject it truthfully. Run:
 greg vepmc
 greg morning
 greg presence --hours 2
+greg acceptance > ~/GREG/acceptance.json
 ```
+
+`greg acceptance` reads only this body's ledger. It names the exact code commit it ran, and its
+`code_identified` property passes only on a clean checkout of one named commit. Keep the file with the brief.
 
 If GitHub refused some reads (rate limit, or a private repository), the brief lists
 those gaps and GREG asks **once** for access, with the evidence and a no-cost option.
@@ -141,9 +168,20 @@ Chromebook is Alfonso's or that Alfonso was physically present. A real founder
 run and inspection are required before anyone reports an externally verified
 VEPMC increase. A fixture with a test key never counts.
 
+`greg vepmc` keeps `VEPMC` as the compatibility name of `structural_candidate_count`;
+each row's `evidence_level` says `STRUCTURAL_CANDIDATE` or, when the mission was signed
+with your attested key, `FOUNDER_TIER` (`founder_tier_count`). `greg path` leaves N1
+only on a founder-tier closure; a `--no-passphrase` rehearsal that satisfies all nine
+ledger checks stays at N1 with `structurally_met: true`. Neither level is an external
+verification: the ledger still cannot prove this Chromebook or this key is yours, nor
+that the key is protected (the founder tier records the key holder's claim), so your
+inspection and acceptance remain the external check. This does not stop the
+signed mission runtime or delete later capability nodes.
+
 ## After the first closure: the second node (N2), still without a model
 
-`greg path` now shows N2: a closure that needed a capability GREG did not have. Put a file you
+If your first closure was signed at the founder tier, `greg path` now shows N2: a closure that
+needed a capability GREG did not have. Put a file you
 downloaded (with its published SHA-256) under `~/src`, then ask in the console:
 **"Verify ~/src/<file> against sha256 <the 64 hex characters>"**. GREG has no hashing
 capability, so it finds the installed `sha256sum`, checks it against a frozen oracle before
@@ -157,6 +195,165 @@ The same route with an open-source engine, if the engines installed: ask
 GREG finds the installed LP engine, shows its version and license, and waits for your Attach.
 It then returns the plan with the price of each limit, accepted only on its own duality
 certificate.
+
+## The third node (N3): one business case, with you doing every outward act
+
+GREG can now carry one customer case through the Kernel's commercial order (offer, acceptance,
+payment, delivery, the buyer's confirmation, settlement) as a mission you sign. Before anything
+runs, the signed mission fixes the buyer, the price and the acceptance terms:
+
+```bash
+greg mission new business-case --case "lease review 01" --buyer "Acme Property LLC" \
+  --offer "a reviewed lease summary" --price 250 --currency USD \
+  --acceptance "summary delivered within 5 business days" --key ~/.greg-founder.pem
+```
+
+- GREG drafts `offer.md` in the case folder (`greg status` shows the path). It carries a case
+  reference, for example `CASE-LEASE-REVIEW-01`, which the buyer puts on the payment.
+- **You** send the offer, collect payment, deliver, and ask the buyer to confirm. Each step is
+  one costed ask in the console and on your phone. GREG contacts, charges and pays no one; an
+  answer to these asks is only a record.
+- You save the evidence into the case folder:
+  - `acceptance.txt`: the buyer's written acceptance;
+  - `statement.csv`: an export from your payment account. Its columns default to
+    `description,amount,currency`; a different export can be mapped in the signed mission.
+  - `delivery.txt`: the delivery record;
+  - `outcome.txt`: the buyer's confirmation.
+
+  Each file carries the reference.
+- **Payment counts only when exactly one posting matches the signed amount and currency to the
+  cent and carries the reference.** A short or duplicate payment never counts.
+- The settlement record is written only after payment, delivery and the buyer's confirmation
+  are all observed. The separate appraiser re-checks that order.
+
+`greg path` measures N3 from the ledger: a founder-signed case on this body, payment reconciled,
+every outward step done by a person and observed (a step the person declined does not count),
+GREG's own actions internal only and never a write to a file a person's step is measured by (a
+statement GREG wrote is not a payment), appraised VERIFIED and
+accepted by you, signed with your key at the founder tier (a case signed with a test key or a
+`--no-passphrase` rehearsal shows as `structurally_met` with `evidence_level: STRUCTURAL_CANDIDATE`
+and never moves the path). Your acceptance is what attests the buyer is real; the ledger cannot prove it.
+What no build session can supply: a real buyer and their consent, the legal operator, and your
+payment account.
+
+## The fourth node (N4): a procedure you ratify stops costing you attention
+
+After GREG closes the same kind of mission three times (for example three `word-limit` checks),
+it proposes a standard procedure. Nothing changes until you ratify it.
+
+```bash
+greg sop list                                   # proposals waiting for you, and their inputs
+greg sop show <procedure-id>                    # the evidence, the workflow, what may be pre-approved
+greg sop ratify <procedure-id> --pre-approve file-record --key ~/.greg-founder.pem
+greg sop run <procedure-id> --set path="$HOME/src/drafts/essay.md" --set words=500 --key ~/.greg-founder.pem
+greg sop trend                                  # before and after, per verified outcome
+```
+
+- **The workflow is learned only from what you signed.** It is rebuilt from the verified runs:
+  - anything that differed between them becomes an input (above, the file and the limit);
+  - checks, capabilities and the light cone must have matched in every run, or no procedure is
+    proposed.
+- **A run uses no model, and you still sign every run.**
+- **`--pre-approve` is limited.** It applies only to steps you approved in every one of those
+  runs, internal at most and free:
+  - each run you sign names that one step as pre-approved, so it does not stop to ask you;
+  - the cone itself is not widened, so every step you did not pre-approve still asks;
+  - contact with the outside world and any spend always ask.
+- **`greg path` measures N4 from the ledger.** It is met when three runs of the ratified
+  procedure:
+  - closed on this body, each appraised VERIFIED, none rejected or abandoned;
+  - asked you less per verified outcome than the runs that taught it;
+  - used no more model spend;
+  - and every closure it rests on (the three that taught it and the three runs) was signed at the
+    founder tier; otherwise it is a structural candidate only.
+
+## The fifth node (N5): where `greg path` stops for now
+
+N5 (a broader worker ecology and temporary organizations) has no ledger predicate yet, so
+`greg path` stops at N5 whatever you do next: a node without a measurement is never counted as
+passed. N6 and N7 below are still measured, one node at a time:
+
+```bash
+greg path --node N6        # its own measurement; it says the path stops at N5
+greg path --node N7
+```
+
+That reading is reported, not counted: it moves `greg path` only once N5 can be measured.
+
+## The seventh node (N7): a second venture, and books that pay obligations first
+
+Name the venture on each case. If you want to approve GREG's own writes in a new business, add
+`--approve-writes`:
+
+```bash
+greg mission new business-case --venture leases --approve-writes --case "lease review 01" ... --key ~/.greg-founder.pem
+```
+
+After three verified cases, ratify the procedure GREG proposes, pre-approving its two writes. Then
+run it for a second venture:
+
+```bash
+greg sop ratify <procedure-id> --pre-approve draft-offer --pre-approve record-settlement --key ~/.greg-founder.pem
+greg sop run <procedure-id> --venture audits --set reference=CASE-AUDIT-01 --set buyer="..." \
+  --set offer="..." --set price=300.00 --set acceptance="..." --key ~/.greg-founder.pem
+```
+
+Sign what each venture owes before any surplus counts. Tier names come from
+`capital/allocation-policy.yaml`:
+
+```bash
+greg treasury set --venture audits --currency USD \
+  --tier taxes_and_binding_legal_obligations=120 \
+  --tier emergency_liquidity_and_operating_reserves=80 --key ~/.greg-founder.pem
+greg treasury books
+```
+
+- **Revenue counts only from cases that closed N3:** paid to the cent, people did every outward
+  act, appraised VERIFIED and accepted by you.
+- **Surplus is what remains** after every tier above reinvestment is fully funded.
+- **GREG moves and allocates no money;** these are books.
+- **`greg path --node N7` measures N7** (the path itself stops at N5 for now). It is met when a
+  procedure taught by one venture made at least two closed cases in another cheaper or faster per
+  outcome, and that venture's books show surplus, with every closure that rests on signed at the
+  founder tier.
+- **Your judgment remains:** whether the second venture could stand alone.
+
+## The sixth node (N6): one piece of work with a named person
+
+When work needs a person (a designer, a bookkeeper, a lawyer), sign a mission that names them, the
+relationship you arrange and pay yourself (`contract` or `employment`), the deliverable and the
+acceptance terms:
+
+```bash
+greg mission new shared-work --task "Design the GREG logo" --person "Dana Reyes" \
+  --relationship contract --function human.design_logo --deliverable logo.png \
+  --acceptance "a square PNG, 1024 px, two colors" --key ~/.greg-founder.pem
+```
+
+- GREG writes `handoff.md` first, with the task, the terms, a reference such as
+  `WORK-DESIGN-THE-GREG-LOGO` and the person's right to decline. **You** send it; GREG contacts,
+  hires and pays no one.
+- You save into the case folder, in order:
+  - `consent.txt`: their written agreement, carrying the reference;
+  - their deliverable;
+  - `review.txt`: `ACCEPT <reference>`, or what to revise (the mission waits).
+
+  GREG then writes `outcome.md`.
+- **A refusal is honored.** If they decline, save `declined.txt` with the reference:
+  - GREG withdraws its ask and never asks that step again;
+  - it asks you to choose: name someone else in a new mission, do it yourself, or abandon.
+
+`greg path --node N6` measures N6 from the ledger (the path itself stops at N5 for now). It needs:
+
+- the handoff written before anything was asked;
+- every step of the person's, and your review, observed;
+- GREG's own actions internal only, and none of them a write to a file the person's steps are
+  measured by;
+- the closure appraised VERIFIED and accepted by you;
+- the mission signed with your key at the founder tier.
+
+Your acceptance is what attests that the person is real and the relationship lawful; N6's gate stays
+external evidence, and the ledger measures only its own side.
 
 ## 3. What "persistent" means on this Chromebook
 
@@ -188,3 +385,92 @@ To stop: `greg stop --local`, then
 
 The original Mac instructions are retained in [`FIRST_MISSION.md`](FIRST_MISSION.md)
 for other environments and historical evidence; no Mac is required here.
+
+## 4. The Founder's First Mission in Mission Control
+
+`greg console --key ~/.greg-founder.pem --no-model`, then open the private link it prints. The first page is
+Mission Control. It answers what GREG is, what it can do on this body now, what it is doing, what you can
+command and what needs your authority. Put the kernel checkout GREG should read under `~/src` (for example
+`git clone https://github.com/dababiyoda/uniimente-kernel ~/src/uniimente-kernel`), then:
+
+1. **Prepare the Founder's First Mission** with an effort budget (8 is a good start). Review exactly what
+   signing allows: read-only survey, selection and composition; one private dossier into `~/GREG/first-mission/`;
+   a private Foundry page; the dossier kept by digest. Budget $0. Sign.
+2. GREG stops once and asks you to **Attach `cognition.dp_knapsack`**, its exact selection engine. That ask is
+   the approval boundary: attaching is your decision. Attach it from the front page.
+3. While it works, run `greg status`, note the PID and `kill -9 <PID>`. The service restarts the body. Nothing
+   is repeated: every completed step is a retained receipt, and the next one binds its input from it.
+4. When it closes, open the dossier from the front page. **Accept result** or reject it truthfully.
+
+`greg vepmc` then shows whether this closure meets every condition on your designated body. Only you can judge
+the dossier; GREG's appraisal only proves it re-derives from the sources.
+
+## 5. Run it again (memory)
+
+Run the First Mission a second time, after you or another agent change the repository. Its dossier gains
+"What changed since last time" and the lesson retained by the first run. That comparison comes from the ledger,
+so it survives restarts.
+
+## 6. Ventures: the commerce rehearsal (FIXTURE)
+
+In **Ventures**, prepare the commerce rehearsal. It sells your latest dossier through GREG's company loop to a
+fixture buyer: offer, signed order, delivery, signed acceptance and books reconciled to the cent. The buyer is a
+published test key and no payment rail is called. It shows the machinery cooperating; it is not evidence that
+anyone would buy anything.
+
+## 6a. Give GREG a tool you install (optional)
+
+GREG can use tools from MCP servers you install, without anyone rebuilding them. A server runs with no network and a
+read-only view of what the mission names, so nothing it does can change anything you own.
+
+```bash
+sudo apt install -y python3-venv
+python3 -m venv ~/src/tools/git && ~/src/tools/git/bin/pip install mcp-server-git
+```
+
+In Mission Control, **Command → Tool servers you installed** now lists `git`; **List its tools** shows what it offers.
+Then ask in words, for example *Use the git server to show the status of ~/src/uniimente-kernel*. Review the
+proposal (read-only, nothing to approve beyond observing), sign it, and the answer appears under **Latest answers**,
+marked as untrusted data with its receipt. Ask it to commit and GREG asks for the commit message, which it does not
+guess from your words. A commit could not happen anyway: the repository is read-only to the server, and git's own
+"Read-only file system" error is what a write gets. `greg mcp list --tools` shows the same in a terminal. A server that needs launch arguments (the filesystem server takes the folders it may serve) reads them
+from a `greg-mcp.json` beside it: `{"args": ["/home/<you>/src/notes"], "readable": ["/home/<you>/src/notes"]}`.
+
+A tool that changes something (writes a file, posts to a service) runs only as an `mcp.act` mission, and GREG
+stops and asks you first. The request shows the folders it may write, the hosts it may reach through the relay
+and the credential handles it receives (`greg secret set mcp:<name>`, or `--from-file <path>` for a server that
+reads a key file, such as a service-account JSON); approve exactly that, or reject. Everything
+else stays read-only. For a change to a file, say it with the text in quotes, for example *Use the notes server to
+append "call the broker" to ~/src/notes/plan.md*: GREG proposes the mission, asks before it runs, and closes it
+only when it reads the file itself and finds the text. Words do not grant hosts or credentials; those missions are
+signed by hand.
+
+A hosted MCP server (a URL rather than something installed) works the same way, and every call to it waits for
+you: the decision names the server, its one host and the credential handle. If the service signs in with OAuth,
+run `greg mcp login <name> <url>` and approve GREG in your browser; if it gave you a token instead, run
+`greg mcp token <name> <url>` and paste it at the hidden prompt. GREG keeps it only if the server accepts it, and
+Mission Control then lists the server and the tools it offered. Either way, grant only what the service lets you narrow, because an approved call can
+do whatever the login permits. Then ask in words, naming a page that will show the change:
+*Use the notes service to add "ship the wedge", then check https://notes.example.com/board*. GREG picks the tool
+from the list the service gave at login, asks for your approval, and closes the mission only when it renders that
+page and finds the text. Rendering a page needs Chromium inside the Linux container (`sudo apt install -y chromium`);
+ChromeOS's own Chrome is outside it.
+
+## 7. Founder control
+
+From Mission Control, **Pause GREG (signed)** then **Resume**; prepare any mission and **Revoke** it before it
+acts; **Stop GREG** writes the local stop file (`greg start --local` to run again). From the phone, the existing
+channel stays the route: `greg serve` plus `tailscale serve --bg --https=443 http://127.0.0.1:8765`, with a
+delegated, expiring device key (`greg device enroll`). The phone reads status and decisions and signs commands;
+it never holds your founder key.
+
+## 8. Record what actually happened
+
+```bash
+greg acceptance
+```
+
+It reads this body's own ledger (read-only) and reports each property as PASS or NOT_YET with the step above
+that produces it, and keeps a copy in `~/GREG/acceptance/`. It says FOUNDER-DEVICE only when the mission ran on
+your designated first body; a ledger still cannot prove who held the keyboard. Send that file with your
+judgment of the dossier: that is the founder-device evidence nothing in a sandbox can supply.

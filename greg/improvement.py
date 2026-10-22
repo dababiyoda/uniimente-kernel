@@ -129,8 +129,8 @@ def _payloads(journal: Journal, kind: str) -> list[dict]:
     return [e.payload for e in journal.replay(kind)]
 
 
-def _order(journal: Journal) -> dict:
-    return {e.event_id: i for i, e in enumerate(journal.replay())}
+def _order(journal: Journal):
+    return journal.positions()  # == {e.event_id: i for i, e in enumerate(journal.replay())}
 
 
 def _decided(journal: Journal) -> dict[str, dict]:
@@ -337,15 +337,27 @@ def _recently_lost(journal: Journal, lever: str, candidate: dict, current: dict,
     return False
 
 
+def _rank(field: str, value) -> int:
+    """Position on the field's behavioral axis: thresholds ascending, ``None`` (never flag) last."""
+    ordered = sorted(briefs.ATTENTION_SPACE[field], key=lambda v: (v is None, 0 if v is None else v))
+    return ordered.index(value) if value in ordered else len(ordered)
+
+
 def _derive(cases: list[dict], current: dict) -> tuple[dict | None, dict]:
-    """Smallest change in the attention space that strictly reduces errors on the training cases."""
+    """Smallest change in the attention space that strictly reduces errors on the training cases.
+
+    Among equally accurate candidates: fewest fields changed, then the fewest steps along each field's
+    ordered axis, so a label that calls one small dirty checkout noise moves ``uncommitted_min`` one step
+    (1 -> 5), not as far as the space allows (1 -> 20, which would also hide checkouts nobody labelled).
+    Text order is only the last tie-break."""
     base = sum(errors(current, c) for c in cases)
     best, best_key = None, None
     fields = sorted(briefs.ATTENTION_SPACE)
     for values in product(*(briefs.ATTENTION_SPACE[f] for f in fields)):
         policy = dict(zip(fields, values))
         err = sum(errors(policy, c) for c in cases)
-        key = (err, sum(policy[f] != current[f] for f in fields), repr(sorted(policy.items())))
+        key = (err, sum(policy[f] != current[f] for f in fields),
+               sum(abs(_rank(f, policy[f]) - _rank(f, current[f])) for f in fields), repr(sorted(policy.items())))
         if err < base and (best_key is None or key < best_key):
             best, best_key = policy, key
     return best, {"current_errors": base, "candidate_errors": None if best is None else best_key[0],

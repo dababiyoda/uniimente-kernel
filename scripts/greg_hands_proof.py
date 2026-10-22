@@ -124,10 +124,9 @@ def cmd_run_and_kill(args):
 def cmd_answer(args):
     home = Path(args.home).resolve()
     with Body(home) as body:
-        requests = [e.payload for e in body.journal.replay("decision.requested")
-                    if e.payload["kind"] == args.kind]
-        answered = {e.payload["request_id"] for e in body.journal.replay("decision.answered")}
-    pending = [r for r in requests if r["request_id"] not in answered]
+        # the mission book's open asks: counted answers close one, an uncounted row or a withdrawal does not
+        # leave a closed ask open, and a withdrawn ask is never offered
+        pending = [r for r in body.engine.book.open_requests() if r["kind"] == args.kind]
     if not pending:
         raise SystemExit(f"no open {args.kind} request")
     envelope = _drop(home, "DECISION", {"request_id": pending[-1]["request_id"], "answer": args.answer,

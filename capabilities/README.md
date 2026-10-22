@@ -41,3 +41,32 @@ instantiate.
 ## Orthogonal closures
 
 Verified by `closure/kernel_registry.py` → module `capabilities`.
+
+## Capability Router — non-canonical alternative (§4.14 sketch)
+
+> **Not the Competency Compiler.** The canonical candidate is the GREG seed-genome lineage (Kernel draft PR #143). This module is retained as an alternative mechanism and evidence; nothing calls it, and it must not be wired in as a second Competency Compiler. Convergence or retirement is a founder decision.
+
+`router.py` — `CapabilityRouter` answers "which mechanism can actually know
+this?":
+
+1. Map the problem class to the epistemic methods able to answer it.
+2. Recruit the smallest competent registered genome or composition inside
+   the genome's envelope and the problem's consequence and budget limits.
+3. Type the evidence the problem should expect (`external_fact`,
+   `hypothesis`, `estimate`, …).
+4. Route human-only questions (authorization, legal) to a person.
+5. Calibrate from independently verified outcomes.
+6. When nothing is competent, emit a `CapabilityDeficit` carrying the
+   doctrine's resolution order.
+
+Founder lineage: `docs/intent/INTENT-20261014-competency-compiler.json`.
+
+Invariants:
+
+- A simulation never answers a demand question.
+- No mechanism may claim a human-only method.
+- A mechanism cannot grade itself.
+- Routing confers no execution authority.
+- A deficit authorizes nothing.
+
+Proof: `tests/unit/test_capability_router.py`.

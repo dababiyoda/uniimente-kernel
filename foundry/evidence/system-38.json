@@ -1,0 +1,53 @@
+{
+ "command": "python -m foundry.completion --run 38",
+ "name": "Payment systems",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "books_balance": true,
+  "books_vs_processor": {
+   "books": {
+    "fees_cents": 4845,
+    "gross_cents": 165000,
+    "net_cents": 130155,
+    "refunds_cents": 30000
+   },
+   "processor": {
+    "fees_cents": 4845,
+    "gross_cents": 165000,
+    "net_cents": 130155,
+    "refunds_cents": 30000
+   }
+  },
+  "declined": {
+   "decline_code": "card_declined",
+   "status": "declined"
+  },
+  "every_charge_receipted_by_the_gate": true,
+  "fee_cents": 2640,
+  "idempotent_retry_same_intent": true,
+  "metered_settled": "settled",
+  "reconciled_to_processor": true,
+  "refund": 30000,
+  "refusals": {
+   "altered_grant": "grant not honoured: not a grant the governing Consequence Gate issued ",
+   "amount_above_grant": "grant not honoured: the grant is bound to a different effect (case or ",
+   "double_charge_same_case": "case c1 is already charged; refunds are the only way back",
+   "forged_grant": "grant not honoured: not a grant the governing Consequence Gate issued ",
+   "grant_for_other_case": "a charge needs a Consequence Gate grant issued for this exact case",
+   "grant_from_another_gate": "grant not honoured: not a grant the governing Consequence Gate issued ",
+   "grant_reused": "grant not honoured: the single-use grant is already used",
+   "live_key": "only a test-mode key (sk_test_...) may be used here; live mode is a fo",
+   "metered_mismatch": "metered amount 75000 does not match charge 1",
+   "no_delivery_receipt": "a charge needs the delivery receipt hash it bills for",
+   "no_grant": "a charge needs a Consequence Gate grant issued for this exact case",
+   "refund_over_charge": "rail refused the refund: charge_already_refunded",
+   "refund_without_reason": "a refund needs a recorded reason"
+  },
+  "reserve_after_refund_cents": 7280,
+  "reserve_cents": 8736,
+  "settled": "settled",
+  "usage_billed": true
+ },
+ "result_sha256": "sha256:cd189100ed0ff3a33c49c770e7da99838494a26a9f47da39ead391c38b2ac209",
+ "system": 38
+}

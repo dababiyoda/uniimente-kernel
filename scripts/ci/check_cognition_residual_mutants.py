@@ -16,11 +16,23 @@ DISCLOSURE = 'tests/unit/test_cognition_disclosure.py'
 CHARACTERIZE = 'tests/unit/test_cognition_characterize.py'
 BUDGET = 'tests/unit/test_cognition_thinking_budget.py'
 VENTURES = 'tests/unit/test_greg_ventures.py'
+CONSTRUCTED = 'tests/unit/test_greg_constructed_route_rules.py'
+WINDOW = 'tests/unit/test_cognition_compile_grant_window.py'
+ECONOMICS_BINDING = 'tests/unit/test_greg_ventures_economics_binding.py'
+OUTAGE = 'tests/unit/test_greg_outage_retry_cognition.py'
+SECRET_FILES = 'tests/integration/test_greg_mcp_secret_files_review.py'
 MEDIA = 'tests/unit/test_greg_media_case.py'
 FABRIC = 'tests/unit/test_greg_task_fabric.py'
 RESTORE = 'tests/unit/test_greg_restore.py'
 FAILURES = 'tests/unit/test_greg_failure_closure.py'
+CONSTRUCTION_SETTLED = 'tests/unit/test_greg_construction_settlement.py'
 MUTANTS = [
+ ('a construction answer is never settled', 'greg/cognition/settlement.py',
+  'built = _constructed(receipt, constructed) if compiled is None else None', 'built = None',
+  'test_a_constructions_verified_answer_settles_once_and_reaches_the_compilers_counts', CONSTRUCTION_SETTLED),
+ ('any compile receipt is credited as a construction', 'greg/cognition/settlement.py',
+  '            or value.get("method_or_composition_selected") not in constructed\n', '',
+  'test_a_compile_receipt_naming_anything_but_a_registered_construction_credits_nothing', CONSTRUCTION_SETTLED),
  ('optimality not attacked by a second engine', 'greg/cognition/verification.py',
   'certificate["status"] != "REFUTED")', 'True)',
   'test_a_feasible_but_not_optimal_claim_is_refuted_by_a_second_engine'),
@@ -90,6 +102,10 @@ MUTANTS = [
   '                      "geometry": {**hint, "latency_limit": limit}, **extra}, registry=registry, journal=journal,',
   '                      "geometry": hint, **extra}, registry=registry, journal=journal,',
   'test_one_budget_covers_the_whole_compiled_decision', BUDGET),
+ # #192's receipt-level counter, kept on the joined tree beside Track B's compiler-level one (2026-10-22 join review)
+ ('a direct capability call is priced as free', 'greg/cognition/cortex.py',
+  '"cpu_seconds": _cpu_delta(cpu_started),', '"cpu_seconds": 0.0,',
+  'test_local_compute_is_measured_not_assumed_free', BUDGET),
  ('local compute recorded as free', 'greg/cognition/compiler.py',
   'budget.done("answer", cpu_seconds=_cpu_delta(cpu_started))', 'budget.done("answer", cpu_seconds=0.0)',
   'test_local_compute_is_measured_not_assumed_free', BUDGET),
@@ -106,6 +122,39 @@ MUTANTS = [
  ('a formed engine\'s overrun is hidden', 'greg/cognition/compiler.py',
   '            if spent > limit:', '            if False:',
   'test_a_formed_mechanism_is_a_required_step_on_the_same_budget', BUDGET),
+ # Fourth review of the Track B merge: a construction answering inside the compiler meets every compile route's rules.
+ ('a construction answers a high-consequence request without a formal model', 'greg/cognition/compiler.py',
+  '        return finish("FORMALIZATION_INCOMPLETE")\n    request = {key: data[key] for key in chosen["inputs"]}',
+  '    request = {key: data[key] for key in chosen["inputs"]}',
+  'test_a_high_consequence_construction_answer_needs_a_formal_model_and_is_conditional', CONSTRUCTED),
+ ('a high-consequence construction answer is labelled ANSWERED', 'greg/cognition/compiler.py',
+  'return finish("WORLD_UNVERIFIED" if high else "ANSWERED", out)', 'return finish("ANSWERED", out)',
+  'test_a_high_consequence_construction_answer_needs_a_formal_model_and_is_conditional', CONSTRUCTED),
+ ('a construction runs off the decision budget', 'greg/cognition/compiler.py',
+  'finish, high=high, budget=budget,', 'finish, high=high, budget=None,',
+  'test_the_construction_call_is_a_required_step_on_the_decision_budget', CONSTRUCTED),
+ ('the implied geometry ignores constructions', 'greg/cognition/compiler.py',
+  '                      + constructed_candidates(data, replace(g, geometry=None), registry)\n', '',
+  'test_the_implied_geometry_counts_a_construction_the_declaration_excludes', CONSTRUCTED),
+ # The compile and chain routes carry the caller's grant window into every inner run (COG-5).
+ ('the compile route drops the caller window', 'greg/cognition/cortex.py',
+  'model_config=model_config,\n                            caller_window=caller_window, shared_deadline=shared_deadline,\n'
+  '                            shared_compute_limit=shared_compute_limit)', 'model_config=model_config)',
+  'test_an_expired_grant_runs_no_mechanism_on_the_compile_route', WINDOW),
+ ('the window does not bound the compiled decision', 'greg/cognition/budget.py',
+  '            self.total = min(self.total, self.window["seconds"])', '            pass',
+  'test_a_live_grant_is_named_on_the_compiled_answer_and_bounds_the_decision', WINDOW),
+ ('the compiled answer runs outside the live grant', 'greg/cognition/compiler.py',
+  '**extra}, registry=registry, journal=journal, model_config=model_config, **budget.inner)',
+  '**extra}, registry=registry, journal=journal, model_config=model_config)',
+  'test_a_live_grant_is_named_on_the_compiled_answer_and_bounds_the_decision', WINDOW),
+ ('the compiled decision ignores the grant horizon and expiry', 'greg/cognition/budget.py',
+  'for bound in ("horizon", "grant_expires_at"):', 'for bound in ():',
+  'test_an_expired_grant_runs_no_mechanism_on_the_compile_route', WINDOW),
+ ('a chain stage runs outside the caller window', 'greg/cognition/composition.py',
+  'kw = dict(registry=registry, journal=journal, model_config=model_config, **inner)',
+  'kw = dict(registry=registry, journal=journal, model_config=model_config)',
+  'test_the_chain_route_carries_the_window_into_every_stage', WINDOW),
  # Section 16 venture case (carried from #143): a revenue figure may not outrun its causal support.
  ('a revenue conclusion drawn from any causal receipt', 'greg/ventures.py',
   '    identified = bool(causal and causal.get("abstention_state") == "NONE"',
@@ -117,6 +166,38 @@ MUTANTS = [
  ('an off-ledger receipt is accepted in a memo', 'greg/ventures.py',
   'if ledger is not None and not any(', 'if False and not any(',
   'test_identified_randomized_support_is_stated_with_its_assumptions_and_a_forged_receipt_is_refuted', VENTURES),
+ ('a memo from other economics closes a venture mission', 'greg/ventures.py',
+  'if marker in text and _same_economics(text, params):', 'if marker in text:',
+  'test_a_memo_from_other_economics_does_not_close_a_mission', ECONOMICS_BINDING),
+ ('venture missions with different economics share their cognition questions', 'greg/templates.py',
+  'ids = {"revenue": f"venture-revenue-{thread}{suffix}", "causal": f"venture-causal-{thread}{suffix}"}',
+  'ids = {"revenue": f"venture-revenue-{thread}", "causal": f"venture-causal-{thread}"}',
+  'test_missions_with_different_economics_are_different_missions_with_their_own_questions', ECONOMICS_BINDING),
+ ('an outage retry forgets the compile deficit', 'greg/missions.py',
+  '                blocker["deficit"] = deficit', '                pass',
+  'test_a_mechanism_attached_during_an_outage_backoff_serves_the_waiting_mission[True]', OUTAGE),
+ ('Genesis marks as tried what became usable after the compile', 'greg/genesis.py',
+  '        tried = compiler_tried(deficit)', '        tried = None',
+  'test_a_mechanism_attached_during_an_outage_backoff_serves_the_waiting_mission[True]', OUTAGE),
+ # mcp.act's secret_files (#169 46719e4): credentials stay out of records, readable workspaces and bindings.
+ ('a server echoing its key writes it into the ledger', 'greg/mcp_tools.py',
+  '        tail = _scrub(log.read_text(errors="replace"), handed)[-300:].strip() if log.exists() else ""\n'
+  '        what = _scrub(str(cause) if isinstance(cause, GatewayError) else f"{type(cause).__name__}: {cause}", handed)\n'
+  '        what, tail = _scrub(" ".join(what.split()), handed), _scrub(" ".join(tail.split()), handed)[-200:]',
+  '        tail = log.read_text(errors="replace")[-300:].strip() if log.exists() else ""\n'
+  '        what = str(cause) if isinstance(cause, GatewayError) else f"{type(cause).__name__}: {cause}"\n'
+  '        what, tail = " ".join(what.split()), " ".join(tail.split())[-200:]',
+  'test_a_failed_call_scrubs_the_key_from_its_error_and_stderr_on_any_host', SECRET_FILES),
+ ('a killed call leaves its key file in the workspace', 'greg/body.py',
+  'removed = sweep_leftovers(self.layout.workspace)', 'removed = []',
+  'test_the_body_removes_call_leftovers_when_it_opens_and_keeps_everything_else', SECRET_FILES),
+ ('an earlier output chooses the credential file', 'greg/pipeline.py',
+  '"secrets", "secret_files", "bearer", "hosts", "writable"})', '"secrets", "bearer", "hosts", "writable"})',
+  'test_an_earlier_actions_output_cannot_choose_a_servers_reach[secret_files]', SECRET_FILES),
+ ('a malformed scope is asked about instead of refused', 'greg/missions.py',
+  '            if problem is not None:          # refused before anyone is asked: the signed scope cannot run as written',
+  '            if False:',
+  'test_a_malformed_secret_files_is_refused_before_anyone_is_asked[malformed2]', SECRET_FILES),
  ('the organ bridge is handed the writable journal', 'greg/missions.py',
   'journal=self._ledger_reader() if manifest.capability_id in ("venture.assess",',
   'journal=self.journal if manifest.capability_id in ("venture.assess",',
@@ -145,8 +226,9 @@ MUTANTS = [
   'journal=self.journal if manifest.capability_id in ("venture.assess",',
   'test_a_faithful_paraphrase_is_verified_claim_by_claim', MEDIA),
  # Section 16 Task Fabric: the evaluator of a worker's document asks the Mind about every sentence.
+ # On the joined tree the evaluator reads a deliverable only after HEAD's workspace confinement (_inside) admits it.
  ('the evaluator never asks the Mind', 'greg/workers.py',
-  '            if spec is not None:', '            if False:',
+  '            if spec is not None and out is not None:', '            if False:',
   'test_a_document_that_changes_what_its_input_says_is_rejected_with_the_minds_reason', FABRIC),
  ("the inputs are read from the worker's tree", 'greg/workers.py',
   'shown = _git(fresh, "show", f"{base}:inputs/{name}", check=False, text=False)',
@@ -165,6 +247,10 @@ MUTANTS = [
  ('the engine hands the evaluator no registry', 'greg/missions.py',
   'or manifest.capability_id == "worker.appraise" else None,', 'else None,',
   'test_the_evaluator_gets_the_bodys_registry_and_no_ledger', FABRIC),
+ # 2026-10-22 join review: the claims file is held to #184's containment rule (a symlink out of the clone is not read)
+ ('a claims file outside the clone is read', 'greg/workers.py',
+  'claims_file = _inside(fresh / spec["claims"], (fresh,))', 'claims_file = fresh / spec["claims"]',
+  'test_a_claims_file_that_leaves_the_clone_is_never_read', FABRIC),
  ('the lease omits what the worker is judged by', 'greg/workers.py',
   '             "acceptance": order.acceptance,\n', '',
   'test_the_lease_names_the_acceptance_contract_and_its_evaluator', FABRIC),
@@ -238,6 +324,21 @@ def main():
     with tempfile.TemporaryDirectory(prefix='greg-residual-mutants-') as temp:
         repo = Path(temp) / 'repo'
         shutil.copytree(ROOT, repo, ignore=shutil.ignore_patterns('.git', '__pycache__', '.pytest_cache'))
+        # A mutant is caught only by a test that passes without it: a test already failing would "catch" anything.
+        nodes = sorted({f'{tests[0] if tests else TESTS}::{test}' for _, _, _, _, test, *tests in MUTANTS})
+        clean = subprocess.run([sys.executable, '-m', 'pytest', '-q', '-rs', '-p', 'no:cacheprovider', *nodes],
+                               cwd=repo, env={**os.environ, 'PYTHONPATH': str(repo)}, capture_output=True, text=True,
+                               timeout=1800)
+        if clean.returncode != 0:
+            print('BASELINE_FAILS: the targeted tests must pass on the unmutated tree first')
+            print('\n'.join(line for line in clean.stdout.splitlines() if line.startswith(('FAILED', 'ERROR'))))
+            return 1
+        # A test that skips on this host cannot catch its mutant here either: say so, instead of a survivor.
+        skipped = [line for line in clean.stdout.splitlines() if line.startswith('SKIPPED')]
+        if skipped:
+            print('BASELINE_SKIPPED: every targeted test must run on this host; these skip, so their mutants are unguarded')
+            print('\n'.join(skipped))
+            return 1
         for name, rel, old, new, test, *tests in MUTANTS:
             target = tests[0] if tests else TESTS
             path = repo / rel

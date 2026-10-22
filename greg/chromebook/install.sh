@@ -2,12 +2,13 @@
 # One command from a fresh clone to a designated, supervised GREG Body 1 inside
 # ChromeOS's Linux environment (Crostini).
 #
-#   git clone -b claude/uniimente-greg-reconciliation-39syff https://github.com/dababiyoda/uniimente-kernel
+#   git clone -b claude/greg-full-machine-completion-whgiee https://github.com/dababiyoda/uniimente-kernel
 #   cd uniimente-kernel && bash greg/chromebook/install.sh
 #
 # It only composes existing greg commands (doctor, init, founder keygen/enroll,
-# service install, body designate). Every step is idempotent: re-running it skips
-# what is done. It never handles your passphrase (greg asks for it directly), never
+# service install, body designate). Re-running preserves the body's identity,
+# history, enrollment and designation; it refreshes the wrapper and service files.
+# It never handles your passphrase (greg asks for it directly), never
 # uses sudo, and grants GREG no capability or permission. Designation names this
 # machine as your first body; it is accepted by the running body, not by this script.
 #
@@ -35,6 +36,7 @@ SKIP_DEPS=0
 NO_PASSPHRASE=0
 ALLOW_OTHER_LINUX=0
 ENGINES=1
+CONFINE=1
 
 usage() {
   cat <<'EOF'
@@ -49,6 +51,7 @@ Usage: bash greg/chromebook/install.sh [options]
   --no-service          do not install/enable the systemd user service (development only)
   --skip-deps           use the chosen interpreter as is, no venv or pip (development only)
   --no-engines          skip the open-source reasoning engines (Z3, OR-Tools, SciPy, NetworkX, SymPy)
+  --no-confined-egress  do not confine GREG's network behind its egress relay (on by default when this machine can)
   --no-passphrase       UNPROTECTED founder key (tests only; never for Alfonso's key)
   --allow-other-linux   run outside ChromeOS Linux (the body will not be your Chromebook)
 EOF
@@ -66,6 +69,7 @@ while [ $# -gt 0 ]; do
     --no-service) SERVICE="no"; shift ;;
     --skip-deps) SKIP_DEPS=1; shift ;;
     --no-engines) ENGINES=0; shift ;;
+    --no-confined-egress) CONFINE=0; shift ;;
     --no-passphrase) NO_PASSPHRASE=1; shift ;;
     --allow-other-linux) ALLOW_OTHER_LINUX=1; shift ;;
     -h|--help) usage; exit 0 ;;
@@ -98,6 +102,13 @@ done
 [ -n "$PY" ] || fail "No Python 3.11+ found. In the Linux terminal: sudo apt install -y python3 python3-venv git" 11
 command -v git >/dev/null 2>&1 || fail "git is missing. In the Linux terminal: sudo apt install -y git" 11
 echo "Using $PY ($("$PY" -c 'import sys; print(sys.version.split()[0])'))"
+# The acceptance report binds to this commit (greg acceptance: code.commit); the review candidate is named in
+# greg/chromebook/REVIEW_BRANCH.
+CODE_COMMIT="$(git -C "$REPO" -c core.fsmonitor=false rev-parse HEAD 2>/dev/null || echo unknown)"
+CODE_BRANCH="$(git -C "$REPO" -c core.fsmonitor=false rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+REVIEW_BRANCH="$(cat "$REPO/greg/chromebook/REVIEW_BRANCH" 2>/dev/null || echo unknown)"
+echo "Installing code $CODE_COMMIT (branch $CODE_BRANCH)."
+[ "$CODE_BRANCH" = "$REVIEW_BRANCH" ] || echo "NOTE: the review candidate is $REVIEW_BRANCH; this checkout is $CODE_BRANCH."
 
 step "3/8 Environment"
 if [ "$SKIP_DEPS" = 1 ]; then
@@ -153,11 +164,22 @@ printf '%s' "$DOCTOR" | "$GREG_PY" -c 'import json,sys; e=json.load(sys.stdin).g
 
 step "6/8 Body"
 mkdir -p "$READ_ROOT" "$DELIVER_ROOT"
+# #26: GREG's network is confined behind its egress relay whenever this machine can do it (doctor probe).
+CONFINABLE="$(printf '%s' "$DOCTOR" | "$GREG_PY" -c 'import json,sys; print(1 if json.load(sys.stdin).get("confined_egress", {}).get("available") else 0)' || echo 0)"
+INIT_FLAGS=()
+if [ "$CONFINE" = 1 ] && [ "$CONFINABLE" = 1 ]; then INIT_FLAGS+=(--confined-egress); fi
 if [ -f "$GREG_HOME_DIR/body.json" ]; then
   echo "A body already exists at $GREG_HOME_DIR; keeping it."
 else
-  "$GREG" init --read-root "$READ_ROOT" --deliver-root "$DELIVER_ROOT" >/dev/null
+  "$GREG" init --read-root "$READ_ROOT" --deliver-root "$DELIVER_ROOT" "${INIT_FLAGS[@]}" >/dev/null
   echo "Created a body at $GREG_HOME_DIR (reads $READ_ROOT, delivers into $DELIVER_ROOT)."
+  if [ "${#INIT_FLAGS[@]}" -gt 0 ]; then
+    echo "Network: confined. Every connection GREG makes is decided by its egress relay and journaled."
+  elif [ "$CONFINE" = 1 ]; then
+    printf '%s' "$DOCTOR" | "$GREG_PY" -c 'import json,sys; e=json.load(sys.stdin).get("confined_egress", {}); print("WARNING: this machine cannot confine GREG'"'"'s network (%s). The body runs unconfined; to fix: %s, then create the body again." % (e.get("why"), e.get("fix")))' || true
+  else
+    echo "Network confinement skipped (--no-confined-egress)."
+  fi
 fi
 
 status_field() {  # $1: python expression over the status dict
@@ -167,19 +189,34 @@ status_field() {  # $1: python expression over the status dict
 step "7/8 Your founder key"
 KEYGEN_FLAGS=()
 [ "$NO_PASSPHRASE" = 1 ] && KEYGEN_FLAGS+=(--no-passphrase) && echo "WARNING: --no-passphrase leaves the key unprotected (tests only)."
+# The public key is derived from the actual signing key (#138 b8a0ccd); a companion .pub that names another
+# key, or a key that is not this body's currently enrolled founder key, stops before service or designation.
 if [ -f "$KEY" ]; then
   echo "Keeping your existing key at $KEY."
+  PUBLIC="$("$GREG" founder public --key "$KEY" "${KEYGEN_FLAGS[@]}")"
 else
   echo "Choose a passphrase you will remember; GREG cannot recover it. Never give this key to an agent."
-  "$GREG" founder keygen --key "$KEY" "${KEYGEN_FLAGS[@]}" > "$KEY.pub"
+  mkdir -p "$(dirname "$KEY")"
+  PUBLIC="$("$GREG" founder keygen --key "$KEY" "${KEYGEN_FLAGS[@]}")"
+fi
+if [ -e "$KEY.pub" ]; then
+  [ "$(cat "$KEY.pub")" = "$PUBLIC" ] || fail "The public companion $KEY.pub does not match $KEY. Keeping both unchanged; resolve the mismatch before enrolling or starting the body." 14
+else
+  printf '%s\n' "$PUBLIC" > "$KEY.pub"
   chmod 644 "$KEY.pub"
 fi
+SIGNER_ID="$(PYTHONPATH="$REPO${PYTHONPATH:+:$PYTHONPATH}" "$GREG_PY" -c 'from greg.founder import key_id; import sys; print(key_id(sys.argv[1]))' "$PUBLIC")"
 ENROLLED="$(status_field 'len(s.get("security", {}).get("founder_keys_enrolled", []))')"
+[ -n "$ENROLLED" ] || fail "Cannot inspect this body's founder enrollment; keeping it unchanged. Resolve greg status before continuing." 14
 if [ "${ENROLLED:-0}" -gt 0 ] 2>/dev/null; then
+  ACTIVE_KEYS="$(status_field '" ".join(s.get("security", {}).get("founder_keys_enrolled", []))')"
+  case " $ACTIVE_KEYS " in
+    *" $SIGNER_ID "*) ;;
+    *) fail "The key $KEY is not this body's currently enrolled founder key. Keeping enrollment unchanged; use the enrolled key or an explicitly signed key rotation." 14 ;;
+  esac
   echo "A founder key is already enrolled."
 else
-  [ -s "$KEY.pub" ] || fail "Found $KEY but not $KEY.pub. Enroll it yourself: greg founder enroll --pubkey <hex printed when it was created>" 14
-  "$GREG" founder enroll --pubkey "$(cat "$KEY.pub")" >/dev/null
+  "$GREG" founder enroll --pubkey "$PUBLIC" >/dev/null
   echo "Enrolled your public key."
 fi
 
@@ -188,13 +225,34 @@ if [ "$SERVICE" = "yes" ]; then
   "$GREG" service install --platform linux >/dev/null
   systemctl --user daemon-reload
   systemctl --user enable --now greg-body.service
-  echo "greg-body.service is enabled and running (it restarts GREG after a crash while Linux runs)."
+  if [ "$(status_field 's.get("security", {}).get("stop_file_present", False)')" = "True" ]; then
+    echo "greg-body.service is enabled; the founder's persisted STOP remains active. The body is stopped until you explicitly start it."
+  else
+    echo "greg-body.service is enabled; inspect greg status to confirm the body is running. It restarts GREG after a crash while Linux runs."
+  fi
 else
   echo "Skipping the service (--no-service). Start the body yourself with: greg run"
 fi
 DESIGNATED="$(status_field 'len(s.get("designation", []))')"
 if [ "${DESIGNATED:-0}" -gt 0 ] 2>/dev/null; then
   echo "This body is already designated as your first body."
+  # A body designated before FOUNDER_TIER existed (or whose attestation was lost) stays silently unattested:
+  # every closure would remain a structural candidate. Offer the attestation; never for an unprotected key.
+  ATTESTED="$(status_field 's.get("founder_tier", {}).get("enrolled_key_attested", False)')"
+  if [ "$ATTESTED" = "True" ]; then
+    echo "Your founder key has claimed the founder tier on this body."
+  elif ls "$GREG_HOME_DIR"/inbox/*founder_tier*.json >/dev/null 2>&1; then
+    echo "A signed founder-tier attestation is already waiting in the inbox for the body to accept."
+  elif [ "$NO_PASSPHRASE" = 1 ]; then
+    echo "Founder tier: not attested. An unprotected (--no-passphrase) key never claims it; its closures stay structural candidates."
+  else
+    echo "Founder tier: not attested, so no closure would move greg path. Sign the attestation (your passphrase again):"
+    if "$GREG" founder attest --key "$KEY" >/dev/null; then
+      echo "Founder-tier attestation queued; the running body accepts it on its next tick."
+    else
+      echo "Not attested. Run later: greg founder attest --key $KEY"
+    fi
+  fi
 elif ls "$GREG_HOME_DIR"/inbox/*body_designate*.json >/dev/null 2>&1; then
   echo "A signed designation is already waiting in the inbox for the body to accept."
 else
@@ -205,12 +263,14 @@ fi
 
 cat <<EOF
 
-GREG is installed. Next, the first mission (greg/CHROMEBOOK_FIRST_MISSION.md, step 2):
-  greg console --key $KEY --no-model     then open http://localhost:8766/ in Chrome
+GREG's developmental files are installed. Designation must be accepted by the body before the first mission; this is not a verified Chromebook run.
+Open Mission Control (greg/CHROMEBOOK_FIRST_MISSION.md, steps 2 and 4):
+  greg console --key $KEY --no-model     then open the private link it prints in Chrome
   Ask: "Brief me on the state of my repositories." Review, sign, close the tab.
   greg status        note the PID, then: kill -9 <PID>   (the service restarts GREG)
   Approve the one waiting delivery in the console, read the brief in $DELIVER_ROOT/briefs/, accept or reject it.
   greg vepmc ; greg morning ; greg presence --hours 2 ; greg path
+Then the Founder's First Mission from Mission Control (step 4), and: greg acceptance
 To stop: greg stop --local && systemctl --user stop greg-body.service
 To run again after a stop: greg start --local && systemctl --user start greg-body.service
 EOF

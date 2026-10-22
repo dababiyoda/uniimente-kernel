@@ -57,12 +57,14 @@ settles like any method's.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 import hashlib
 import json
 import os
 from pathlib import Path
 import random
 import stat
+import subprocess
 import sys
 import tempfile
 import time
@@ -70,7 +72,7 @@ import time
 from greg.capabilities import (CapabilityError, CapabilityManifest, InvocationContext, installed_binary,
                                run_isolated)
 from greg.artifacts import ArtifactStore
-from greg import builders, mechanisms
+from greg import builders, mechanisms, recombine
 from greg.cognition import assignment, linear, network
 from greg.journal import Journal, iso
 from greg.mechanisms import PackageCandidate
@@ -294,6 +296,16 @@ def cognition_record(function: str, deficit: dict | None = None) -> dict:
     return record
 
 
+def compiler_tried(deficit) -> list[list[str]] | None:
+    """The formed mechanisms the compile that reported this deficit ran and got no certified answer from
+    (``compiler._formed_tried``), as ``[capability_id, digest]`` pairs, else None (a deficit that does not say)."""
+    rows = deficit.get("tried") if isinstance(deficit, dict) else None
+    if not isinstance(rows, list):
+        return None
+    return [[r[0], r[1]] for r in rows[:MAX_INPUTS] if isinstance(r, (list, tuple)) and len(r) == 2
+            and all(isinstance(x, str) and 0 < len(x) <= 200 for x in r)]
+
+
 def compiler_fitting(deficit) -> list[dict] | None:
     """The methods the compiler found fitting the request (``compiler.fitting``: genome families, cortex organs,
     compositions), as its capability deficit reports them, else None (a deficit the compiler did not report). The
@@ -378,18 +390,21 @@ def run_formed(manifest, adapter, data: dict) -> dict:
 
 
 def package_adapter(function: str, candidate: PackageCandidate):
-    """Adapter bound to one qualified package; re-pinned and certificate-checked on every call."""
+    """Adapter bound to one qualified package; re-pinned and certificate-checked on every call.
+
+    ``adapter.batch`` answers many requests in one isolated run under the same pin check, and
+    certifies each answer separately; a refused answer is returned in its place, never hidden."""
     spec = CATALOG[function]
 
-    def adapter(params, ctx: InvocationContext):
-        request = spec["normalize"](params)          # competence is enforced before the engine sees anything
+    def pinned(ctx):
         prov = ctx.manifest.provenance
         dist = mechanisms.installed(candidate.distribution)
         if dist is None or dist.version != prov["version"] \
                 or mechanisms.digest(dist, candidate.digest_paths)[0] != prov["package_digest"]:
             raise CapabilityError("capability refused: package changed since qualification; quarantine required")
-        [claim] = mechanisms.run(candidate, spec["runners"][candidate.runner], [request],
-                                 location=prov["location"], version=prov["version"])
+        return prov
+
+    def settle(request, claim, prov):
         if "error" in claim:
             raise CapabilityError(f"capability refused: package {candidate.distribution} raised "
                                   f"{claim['error'][:200]}")
@@ -408,6 +423,37 @@ def package_adapter(function: str, candidate: PackageCandidate):
         answer.pop("follow_up", None)
         return {**answer, "engine": f"{candidate.distribution} {prov['version']}", "license": prov["license"],
                 "authority_created": False}
+
+    def adapter(params, ctx: InvocationContext):
+        request = spec["normalize"](params)          # competence is enforced before the engine sees anything
+        prov = pinned(ctx)
+        [claim] = mechanisms.run(candidate, spec["runners"][candidate.runner], [request],
+                                 location=prov["location"], version=prov["version"])
+        return settle(request, claim, prov)
+
+    def batch(params_list, ctx: InvocationContext) -> list:
+        requests = []
+        for params in params_list:
+            try:
+                requests.append(spec["normalize"](params))
+            except CapabilityError as exc:
+                requests.append(exc)
+        prov = pinned(ctx)
+        valid = [r for r in requests if not isinstance(r, Exception)]
+        claims = iter(mechanisms.run(candidate, spec["runners"][candidate.runner], valid, location=prov["location"],
+                                     version=prov["version"], cpu_seconds=60) if valid else [])
+        out = []
+        for request in requests:
+            if isinstance(request, Exception):
+                out.append(request)
+                continue
+            try:
+                out.append(settle(request, next(claims), prov))
+            except CapabilityError as exc:
+                out.append(exc)
+        return out
+
+    adapter.batch = batch
     return adapter
 
 
@@ -446,6 +492,8 @@ def qualify_package(function: str, candidate: PackageCandidate, card: dict, seed
         claims = mechanisms.run(candidate, spec["runners"][candidate.runner], requests, location=card["location"],
                                 version=card["version"], cpu_seconds=60)
     except CapabilityError as exc:
+        if exc.failure_class == "transient":
+            raise                                 # the host could not run it: no result either way
         report["failures"].append({"case": "all", "error": str(exc)[:300]})
         return False, report
     wall = time.perf_counter() - started
@@ -468,6 +516,8 @@ def qualify_package(function: str, candidate: PackageCandidate, card: dict, seed
             extras = mechanisms.run(candidate, spec["runners"][candidate.runner], flat, location=card["location"],
                                     version=card["version"], cpu_seconds=60)
         except CapabilityError as exc:
+            if exc.failure_class == "transient":
+                raise
             extras = [{"error": str(exc)}] * len(flat)
         position = 0
         for i in pending:
@@ -501,19 +551,46 @@ def qualify_package(function: str, candidate: PackageCandidate, card: dict, seed
     return not report["failures"] and report["scale_probe"]["certified"], report
 
 
-FORMED = ("built:", "installed:")      # providers Genesis formed, and therefore can re-form
+FORMED = ("built:", "installed:", "composed:")   # providers Genesis formed, and therefore can re-form
+AUTO_ATTACH = "founder-signed mission auto_attach (read_only)"   # Genesis._attach, the one attach it records itself
 FAULT_MARKERS = ("capability refused: built capability", "capability refused: installed binary changed",
-                 "capability refused: package")
+                 "capability refused: package", "capability refused: composed")
+
+
+RECOVERABLE = ("failed in service",)      # quarantine reasons that leave the capability's identity intact
+RECOVERY_BASE = timedelta(minutes=15)    # first probe after a quarantine; doubles per failed probe and per fault
+RECOVERY_CAP = timedelta(hours=24)
+RECOVERY_MAX_FAILED_PROBES = 5
+RECOVERY_MAX_QUARANTINES = 3            # more in-service quarantines than this is flapping: the founder decides
+RECOVERED_BY = "recovery probe (sandbox, fresh frozen-oracle seed)"
+
+
+class _ProbeView:
+    """Registry view for one sandbox probe: the construction may call its pinned engine even while that
+    engine is only VERIFIED. Nothing else differs; nothing is attached; service adapters never see it."""
+
+    def __init__(self, registry, engine_id: str):
+        self._registry, self._engine_id = registry, engine_id
+        self.manifests, self.adapters, self.state = registry.manifests, registry.adapters, registry.state
+
+    def usable(self, capability_id: str):
+        if capability_id == self._engine_id and self.state.get(capability_id) in ("ATTACHED", "VERIFIED"):
+            return True, "sandbox probe"
+        return self._registry.usable(capability_id)
 
 
 def is_formed(manifest) -> bool:
     return manifest.provider.startswith(FORMED)
 
 
-def is_capability_fault(manifest, reason: str) -> bool:
-    """A failure of the capability itself, not of the world it reads (missing file, scope)."""
+def is_capability_fault(manifest, reason: str, failure_class: str | None = None) -> bool:
+    """A failure of the capability itself, not of the world it reads (missing file, scope) nor of the
+    host it runs on (timeout, unavailable isolation). Decided by the failure's type where one was
+    recorded; the message markers below serve only retained records written before types existed."""
     if not is_formed(manifest):
         return False
+    if failure_class is not None:
+        return failure_class == "executor_error"
     binary = Path(manifest.binaries[0]).name if manifest.binaries else None
     return any(m in reason for m in FAULT_MARKERS) or bool(binary and f"capability refused: {binary} exited" in reason)
 
@@ -528,6 +605,7 @@ class Genesis:
         self.builder_cap = getattr(builder, "max_budget_usd", None)   # the builder's own ceiling, never ratcheted
         self.store = self.workspace_root.parent / "capabilities" / "built"   # content-addressed built sources
         self.objects = ArtifactStore(self.store, legacy_source_suffix=".py")  # preserve existing bodies' paths
+        self._form_only = None   # goal id while forming on a goal's request (form_for_goal)
 
     # -- queries used by the mission engine --------------------------------------
     def find_attached(self, function: str):
@@ -537,8 +615,26 @@ class Genesis:
                 return manifest
         return None
 
+    def construction_engine(self, function: str):
+        """The catalogued engine function a constructible function reduces to, else None."""
+        found = recombine.chain(function, CATALOG)
+        return found[1] if found else None
+
+    def construction_ready(self, function: str) -> bool:
+        """True once: the engine is attached and no construction over it was formed yet (none to wait on)."""
+        engine_function = self.construction_engine(function)
+        engine = self.find_attached(engine_function) if engine_function else None
+        if engine is None:
+            return False
+        return not any(m.provider.startswith("composed:")
+                       and m.provenance.get("target_capability_id") == engine.capability_id
+                       for m in self.registry.by_function(function))
+
     # -- restart: rebuild acquired adapters from retained provenance -------------
-    def restore(self):
+    def restore(self, *, record: bool = True):
+        """Re-register formed capabilities; ``record=False`` (independent appraisal over a read-only
+        ledger) applies the same pin and digest checks but writes nothing."""
+        self._recording = record
         states = {}
         for event in self.journal.replay("capability."):
             data = event.payload
@@ -561,12 +657,15 @@ class Genesis:
                 self.registry.register(manifest, builders.built_adapter(origin["contract"], path, origin["source_sha256"]),
                                        state=state if intact else "QUARANTINED")
                 if not intact and state != "QUARANTINED":
-                    self.journal.record("capability.state", {"capability_id": cid, "state": "QUARANTINED",
+                    self._restore_note({"capability_id": cid, "state": "QUARANTINED",
                                                              "why": "built source missing or changed since verification"},
                                         key=[cid, "quarantine", origin["source_sha256"]])
                 continue
             if origin.get("kind") == "package":
                 self._restore_package(cid, manifest, origin, state)
+                continue
+            if origin.get("kind") == "composed":
+                self._restore_composed(cid, manifest, origin, state)
                 continue
             binary = manifest.binaries[0]
             candidate = Candidate(origin["binary_name"], tuple(origin["argv"]), origin["parse"])
@@ -575,9 +674,34 @@ class Genesis:
             self.registry.register(manifest, catalog_adapter(origin["function"], candidate, binary),
                                    state=state if intact else "QUARANTINED")
             if not intact and state != "QUARANTINED":
-                self.journal.record("capability.state", {"capability_id": cid, "state": "QUARANTINED",
+                self._restore_note({"capability_id": cid, "state": "QUARANTINED",
                                                          "why": "binary missing or changed since verification"},
                                     key=[cid, "quarantine", manifest.provenance.get("binary_sha256")])
+        if record:
+            self._finish_attaches()
+
+    def _finish_attaches(self):
+        """Resolve the deficit of an auto-attach the body died inside (acceptance H.G7).
+
+        ``_attach`` records two facts in turn: the capability ATTACHED, then its deficit resolved. A body killed
+        between them restarts with the capability serving the mission and its deficit open for good, since a
+        function with an attached capability is never resolved again (and the closure would not count as formed
+        by genesis, greg/path.py). The second fact is completed from the first, dated when the attach happened."""
+        resolved = {e.payload["deficit_id"] for e in self.journal.replay("deficit.resolved")}
+        for event in self.journal.replay("capability.state"):
+            data = event.payload
+            if data.get("state") == "ATTACHED" and data.get("by") == AUTO_ATTACH and data.get("deficit_id") \
+                    and data["deficit_id"] not in resolved:
+                self.journal.record("deficit.resolved", {
+                    "deficit_id": data["deficit_id"], "capability_id": data["capability_id"],
+                    "mission_id": data["mission_id"], "resume": "original mission", "at": event.occurred_at,
+                    "completed_at_restart": "the body stopped between the attach and this record"},
+                    key=[data["deficit_id"], "resolved"])
+                resolved.add(data["deficit_id"])
+
+    def _restore_note(self, payload, key):
+        if getattr(self, "_recording", True):
+            self.journal.record("capability.state", payload, key=key)
 
     def _restore_package(self, cid, manifest, origin, state):
         """A qualified package is trusted again only if its pinned files and shared dependencies are unchanged."""
@@ -600,8 +724,25 @@ class Genesis:
         adapter = package_adapter(origin["function"], candidate) if candidate else (lambda params, ctx: None)
         self.registry.register(manifest, adapter, state="QUARANTINED" if why else state)
         if why and state != "QUARANTINED":
-            self.journal.record("capability.state", {"capability_id": cid, "state": "QUARANTINED", "why": why},
+            self._restore_note({"capability_id": cid, "state": "QUARANTINED", "why": why},
                                 key=[cid, "quarantine", manifest.provenance.get("package_digest"), why])
+
+    def _restore_composed(self, cid, manifest, origin, state):
+        """A constructed capability is trusted again only with the same reduction code over the same engine."""
+        found = recombine.chain(origin["function"], CATALOG)
+        why = None
+        if found is None or [r.reduction_id for r in found[0]] != origin["chain"]:
+            why = "the reduction chain no longer resolves as qualified"
+        elif recombine.chain_digest(found[0]) != origin["chain_digest"]:
+            why = "reduction code changed since qualification"
+        elif origin["target_capability_id"] not in self.registry.manifests:
+            why = "the engine it was qualified over is no longer registered"
+        path = found[0] if found else []
+        self.registry.register(manifest, recombine.composed_adapter(path, self.registry),
+                               state="QUARANTINED" if why else state)
+        if why and state != "QUARANTINED":
+            self._restore_note({"capability_id": cid, "state": "QUARANTINED", "why": why},
+                                key=[cid, "quarantine", origin["chain_digest"], why])
 
     # -- the loop -------------------------------------------------------------------
     def _deficit_for(self, mission_id: str, function: str):
@@ -629,12 +770,173 @@ class Genesis:
         self.journal.record("capability.state", {"capability_id": capability_id, "state": "QUARANTINED",
                                                  "why": "failed in service: " + failure[:300],
                                                  "by": "self-repair (repeated capability fault)",
-                                                 "mission_id": mission.mission_id},
+                                                 "mission_id": mission.mission_id, "incident": incident,
+                                                 "at": iso(now)},
                             key=[capability_id, "quarantine", incident])
+        engine_id = manifest.provenance.get("target_capability_id") if manifest.provider.startswith("composed:") \
+            else None
+        if engine_id and f"composed engine {engine_id} faulted" in failure \
+                and self.registry.state.get(engine_id) == "ATTACHED":
+            # The fault was the engine's, observed through the constructed capability: the engine is
+            # quarantined with the same evidence, so re-forming acquires a different provider for it.
+            self.registry.set_state(engine_id, "QUARANTINED")
+            self.journal.record("capability.state", {"capability_id": engine_id, "state": "QUARANTINED",
+                                                     "why": "failed in service inside " + capability_id + ": "
+                                                            + failure[:300],
+                                                     "by": "self-repair (repeated capability fault)",
+                                                     "mission_id": mission.mission_id, "incident": incident,
+                                                     "at": iso(now)},
+                                key=[engine_id, "quarantine", incident])
         return self.resolve(mission=mission, function=manifest.function, now=now,
                             purpose=f"self-repair of {capability_id}",
                             repair={"capability_id": capability_id, "failure": failure[:300],
                                     "replay_path": params.get("path")})
+
+    # -- recovery: a quarantined capability earns back eligibility, never authority ------------
+    def _quarantines(self, capability_id: str) -> list[dict]:
+        return [e.payload for e in self.journal.replay("capability.state")
+                if e.payload["capability_id"] == capability_id and e.payload["state"] == "QUARANTINED"]
+
+    def recover(self, now) -> list[dict]:
+        """Half-open recovery for capabilities quarantined by an in-service fault.
+
+        Donor mechanism (opossum 10.0.0, analysed with REA and read in source): after a fixed reset
+        timeout the breaker lets the next *live* call through; success closes it, failure re-opens it.
+        Mutations: the probe runs in the sandbox on a fresh frozen-oracle seed, never on live work;
+        success restores eligibility (VERIFIED), never authority (ATTACHED); the wait doubles with each
+        failed probe and each prior quarantine; flapping stops recovery for the founder to decide;
+        engines are probed before the constructions that depend on them. Identity-changing quarantines
+        (pins, code, missing source) are never probed: the same identity cannot be re-earned."""
+        results = []
+        formed = [m for m in self.registry.manifests.values()
+                  if is_formed(m) and self.registry.state.get(m.capability_id) == "QUARANTINED"]
+        if not formed:                                     # every replay re-verifies the whole ledger chain:
+            return results                                 # a healthy body pays nothing for recovery each tick
+        probes = [e.payload for e in self.journal.replay("capability.probe")]
+        stopped = {(e.payload["capability_id"], e.payload["incident"])
+                   for e in self.journal.replay("capability.recovery_stopped")}
+        for manifest in sorted(formed, key=lambda m: (m.provider.startswith("composed:"), m.capability_id)):
+            cid = manifest.capability_id
+            if self.registry.state.get(cid) != "QUARANTINED":
+                continue
+            history = self._quarantines(cid)
+            last = history[-1] if history else {}
+            if not str(last.get("why", "")).startswith(RECOVERABLE) or not last.get("incident"):
+                continue                                   # identity changed, or quarantined before recovery existed
+            incident = last["incident"]
+            if (cid, incident) in stopped:
+                continue
+            failed = [p for p in probes if p["capability_id"] == cid and p["incident"] == incident and not p["passed"]]
+            faults = [q for q in history if str(q.get("why", "")).startswith(RECOVERABLE)]
+            # Outages deferring the current attempt: each doubles the wait, and a persistent one goes to the founder.
+            deferred = [d for d in self.journal.replay("capability.deferred_probe")
+                        if d.payload["capability_id"] == cid and d.payload["incident"] == incident]
+            outages = [d for d in deferred if d.payload["attempt"] == len(failed) + 1]
+            why_stop = ("flapping: quarantined in service %d times" % len(faults)
+                        if len(faults) > RECOVERY_MAX_QUARANTINES
+                        else "%d recovery probes failed" % len(failed) if len(failed) >= RECOVERY_MAX_FAILED_PROBES
+                        else None)
+            if why_stop:
+                self.journal.record("capability.recovery_stopped", {
+                    "capability_id": cid, "incident": incident, "why": why_stop,
+                    "next": "the founder decides: re-attach, detach, or replace", "at": iso(now)},
+                    key=[cid, incident, "recovery-stopped"])
+                results.append({"capability_id": cid, "result": "stopped", "why": why_stop})
+                continue
+            wait = min(RECOVERY_BASE * 2 ** (len(failed) + len(faults) + len(outages) - 1), RECOVERY_CAP)
+            since = datetime.fromisoformat(last["at"].replace("Z", "+00:00"))
+            for latest in ([failed[-1]] if failed else []) + ([deferred[-1].payload] if deferred else []):
+                since = max(since, datetime.fromisoformat(latest["at"].replace("Z", "+00:00")))
+            if now < since + wait:
+                continue
+            attempt = len(failed) + 1
+            seed = int(sha256_json({"probe": cid, "incident": incident, "attempt": attempt})[7:15], 16)
+            try:
+                outcome = self._probe(manifest, seed)
+            except CapabilityError as exc:
+                if exc.failure_class != "transient":
+                    raise
+                # The host could not run the probe (a runner timeout, isolation unavailable): no evidence
+                # either way. Not a failed probe; the same attempt runs after a doubled wait (at most a day).
+                # An outage never stops recovery: a QUARANTINED capability cannot be re-attached by hand.
+                self.journal.record("capability.deferred_probe", {
+                    "capability_id": cid, "incident": incident, "attempt": attempt, "why": str(exc)[:300],
+                    "failure_class": exc.failure_class, "at": iso(now)},
+                    key=[cid, incident, attempt, "deferred", len(deferred)])
+                results.append({"capability_id": cid, "result": "probe deferred: host outage", "attempt": attempt})
+                continue
+            if outcome is None:                            # a dependency has not recovered yet: not a failure
+                results.append({"capability_id": cid, "result": "waiting on its engine"})
+                continue
+            passed, report = outcome
+            self.journal.record("capability.probe", {
+                "capability_id": cid, "incident": incident, "attempt": attempt, "passed": passed, "report": report,
+                "seed": seed, "waited_seconds": int(wait.total_seconds()), "at": iso(now),
+                "mechanism": "half-open probe in the sandbox on a fresh frozen-oracle seed (opossum-derived, mutated)"},
+                key=[cid, incident, attempt])
+            if passed:
+                self.registry.set_state(cid, "VERIFIED")
+                self.journal.record("capability.state", {
+                    "capability_id": cid, "state": "VERIFIED", "by": RECOVERED_BY, "incident": incident,
+                    "at": iso(now), "authority": "eligibility only; attach still needs the founder or a signed "
+                                                 "mission scope"}, key=[cid, "recovered", incident])
+            results.append({"capability_id": cid, "result": "recovered" if passed else "probe failed",
+                            "attempt": attempt})
+        return results
+
+    def _probe(self, manifest, seed: int):
+        """The capability's own qualification, re-run in isolation. None: a dependency is not ready yet."""
+        origin = next((e.payload["origin"] for e in reversed(self.journal.replay("capability.registered"))
+                       if e.payload["manifest"]["capability_id"] == manifest.capability_id), {})
+        prov = manifest.provenance
+        if origin.get("kind") == "package":
+            candidate = next((c for c in CATALOG.get(origin["function"], {}).get("candidates", ())
+                              if isinstance(c, PackageCandidate) and c.runner == origin["runner"]), None)
+            dist = mechanisms.installed(origin["distribution"]) if candidate else None
+            if dist is None or dist.version != prov.get("version") \
+                    or mechanisms.digest(dist, candidate.digest_paths)[0] != prov.get("package_digest"):
+                return False, {"identity": "the pinned package is missing or changed; this identity cannot recover"}
+            return qualify_package(origin["function"], candidate, mechanisms.card(candidate, origin["function"], dist),
+                                   seed)
+        if origin.get("kind") == "composed":
+            found = recombine.chain(origin["function"], CATALOG)
+            if found is None or recombine.chain_digest(found[0]) != origin["chain_digest"]:
+                return False, {"identity": "the reduction code changed; this identity cannot recover"}
+            engine_id = origin["target_capability_id"]
+            if self.registry.state.get(engine_id) not in ("ATTACHED", "VERIFIED"):
+                return None
+            view = _ProbeView(self.registry, engine_id)    # the probe may call its own engine; service may not
+            return recombine.qualify(found[0], recombine.composed_adapter(found[0], view), manifest, seed)
+        return False, {"identity": "no recovery probe for this kind of formed capability yet"}
+
+    def recovered_for(self, function: str) -> list[str]:
+        """Recovery keys (capability@incident) of capabilities this function can be re-admitted through."""
+        targets = {m.capability_id for m in self.registry.by_function(function)}
+        engine = self.construction_engine(function)
+        if engine:
+            targets |= {m.capability_id for m in self.registry.by_function(engine)}
+        if not any(self.registry.state.get(cid) == "VERIFIED" for cid in targets):
+            return []                                      # nothing re-admittable; skip the full-ledger replay
+        return [f"{e.payload['capability_id']}@{e.payload['incident']}" for e in self.journal.replay("capability.state")
+                if e.payload["capability_id"] in targets and e.payload.get("by") == RECOVERED_BY
+                and self.registry.state.get(e.payload["capability_id"]) == "VERIFIED"]
+
+    def _attach_dependency(self, mission, manifest, dependent: str, now) -> bool:
+        """Attach the exact engine a construction is pinned to, under the same signed scope, or ask."""
+        if self._form_only:
+            return False
+        allowed = (mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"
+                   and manifest.consequence_class == "read_only"
+                   and mission.cone._capability_inside(manifest.capability_id))
+        if not allowed:
+            return False
+        self.registry.set_state(manifest.capability_id, "ATTACHED")
+        self.journal.record("capability.state", {"capability_id": manifest.capability_id, "state": "ATTACHED",
+                                                 "by": "founder-signed mission auto_attach (read_only), engine of "
+                                                       + dependent, "mission_id": mission.mission_id,
+                                                 "at": iso(now)},
+                            key=[manifest.capability_id, "attached", mission.mission_id, dependent])
+        return True
 
     def attach_candidates(self, mission_id: str, function: str) -> list[str]:
         """Capabilities the latest search pass for a cognition (mission, function) offered, registered and still
@@ -703,6 +1005,24 @@ class Genesis:
         self.journal.record("deficit.candidates", {"deficit_id": deficit_id, **found, "pass": len(passes)},
                             key=[deficit_id, "candidates", len(passes)])
 
+    def formable(self, function: str) -> bool:
+        """True when Genesis can form ``function`` without a builder: a catalogued tool or package, or a
+        certified reduction chain onto one (what a goal's plan may ask to have formed)."""
+        return function in CATALOG or self.construction_engine(function) is not None
+
+    def form_for_goal(self, *, goal_id: str, mission, function: str, purpose: str, now):
+        """Form ``function`` because a founder-signed goal's plan requires it, under one of its signed missions.
+
+        Formation only: every verified result waits for the founder's CAPABILITY_ATTACH (no mission
+        auto_attach applies, no engine is attached for it) and no builder is commissioned, so no build
+        budget is spent on a goal's behalf. Returns the attached manifest when one already serves."""
+        prior = self._form_only
+        self._form_only = goal_id
+        try:
+            return self.resolve(mission=mission, function=function, purpose=purpose, now=now)
+        finally:
+            self._form_only = prior
+
     def resolve(self, *, mission, function: str, purpose: str, now, repair: dict | None = None,
                 deficit: dict | None = None):
         found = self.find_attached(function)
@@ -726,7 +1046,11 @@ class Genesis:
                       "vector_digest": sha256_json([{k: (v.hex() if isinstance(v, bytes) else v)
                                                      for k, v in c.items()} for c in spec["oracle"](seed)])
                       if spec else None}
-        if spec is None and contract is not None:
+        reduction = recombine.REDUCTIONS.get(function)
+        if spec is None and reduction is not None:
+            acceptance = {"oracle": f"reduction:{reduction.reduction_id}", "seed": seed,
+                          "vector_digest": sha256_json(reduction.oracle(seed))}
+        elif spec is None and contract is not None:
             acceptance = {"oracle": "founder-signed mission contract", "public_examples": len(contract["examples"]),
                           "held_out_vectors": len(contract["held_out"]),
                           "vector_digest": sha256_json([contract["examples"], contract["held_out"]])}
@@ -745,16 +1069,35 @@ class Genesis:
             if spec and spec.get("kind") == "package":
                 opened["search_order"] = ["attached", "verified_detached", "existing_project", "installed_package",
                                           "builder", "founder"]
+            elif spec is None and reduction is not None:
+                opened["search_order"] = ["attached", "verified_detached", "constructed", "builder", "founder"]
             if repair is not None:
                 opened["repair"] = repair
+            if self._form_only:
+                opened["requested_by_goal"] = self._form_only
             self.journal.record("deficit.opened", opened, key=deficit_id)
 
         # 2. registered but detached
         for manifest in self.registry.by_function(function):
             if self.registry.state[manifest.capability_id] == "VERIFIED":
+                engine_id = manifest.provenance.get("target_capability_id") \
+                    if manifest.provider.startswith("composed:") else None
+                if engine_id and self.registry.state.get(engine_id) != "ATTACHED":
+                    engine = self.registry.manifests.get(engine_id)
+                    if engine is None or self.registry.state.get(engine_id) != "VERIFIED" \
+                            or not self._attach_dependency(mission, engine, manifest.capability_id, now):
+                        self._route(deficit_id, "verified_detached", f"its engine {engine_id} is not attached",
+                                    manifest.capability_id)
+                        continue
                 self._route(deficit_id, "verified_detached", "found", manifest.capability_id)
                 return self._attach(mission, manifest, deficit_id, now)
         self._route(deficit_id, "verified_detached", "none", None)
+
+        if spec is None and reduction is not None:
+            found = self._recombine_route(mission, function, deficit_id, seed, repair, now)
+            if found is not False:
+                return found
+            return self._builder_route(mission, function, deficit_id, now, contract, repair)
 
         if spec is None:
             self._route(deficit_id, "installed_software", "no catalogued installed tool or oracle for this function",
@@ -780,7 +1123,17 @@ class Genesis:
                 self._route(deficit_id, "installed_software", "founder-detached; explicit attach required",
                             manifest.capability_id)
                 continue
-            passed, report = self._verify(function, candidate, binary, seed, manifest)
+            if self._recorded_qualification(deficit_id, manifest.capability_id) is not None:
+                self._route(deficit_id, "installed_software", f"{candidate.binary_name} was verified earlier on this "
+                            "deficit (recorded; not re-run)", manifest.capability_id)
+                continue
+            try:
+                passed, report = self._verify(function, candidate, binary, seed, manifest)
+            except CapabilityError as exc:
+                if exc.failure_class == "transient":
+                    self._route(deficit_id, "installed_software", f"{candidate.binary_name} not evaluated: host "
+                                f"outage ({str(exc)[:200]})", None)
+                raise
             self.journal.record("genesis.verified", {"deficit_id": deficit_id, "capability_id": manifest.capability_id,
                                                      "passed": passed, "report": report,
                                                      "verifier": "frozen oracle, independent of candidate"},
@@ -832,8 +1185,12 @@ class Genesis:
         fitting = compiler_fitting(deficit)
         if fitting is None:
             fitting = self._family_fitting(record)
-        tried = [[m.capability_id, m.digest()] for m in self._formed_for(record)
-                 if self.registry.usable(m.capability_id)[0]]
+        # the formed mechanisms the compile ran with no certified answer (its deficit says which), else those usable
+        # now, for a deficit recorded before compiles reported them
+        tried = compiler_tried(deficit)
+        if tried is None:
+            tried = [[m.capability_id, m.digest()] for m in self._formed_for(record)
+                     if self.registry.usable(m.capability_id)[0]]
         offered = []
         found = self._search_cognition(mission, function, deficit_id, record, mechanisms, contract, seed, repair, now,
                                        offered, fitting)
@@ -1037,7 +1394,19 @@ class Genesis:
                                                              "preferred (the founder may re-attach it)",
                             manifest.capability_id)
                 continue
-            passed, report = qualify_package(function, candidate, card, seed)
+            prior = self._recorded_qualification(deficit_id, manifest.capability_id, card["package_digest"])
+            if prior is not None:
+                self._route(deficit_id, "installed_package", f"{candidate.distribution} "
+                            f"{'qualified' if prior['passed'] else 'failed qualification'} earlier on this deficit "
+                            "(recorded; not re-run)", manifest.capability_id)
+                continue
+            try:
+                passed, report = qualify_package(function, candidate, card, seed)
+            except CapabilityError as exc:
+                if exc.failure_class == "transient":
+                    self._route(deficit_id, "installed_package", f"{candidate.distribution} not evaluated: host "
+                                f"outage ({str(exc)[:200]})", None)
+                raise
             self.journal.record("genesis.verified", {"deficit_id": deficit_id, "capability_id": manifest.capability_id,
                                                      "passed": passed, "report": report, "mechanism": card,
                                                      "verifier": "frozen oracle and GREG certificate, independent of "
@@ -1056,6 +1425,99 @@ class Genesis:
             self._route(deficit_id, "installed_package", "acquired", manifest.capability_id)
             return self._attach(mission, manifest, deficit_id, now, offered)
         return False
+
+    def _recombine_route(self, mission, function, deficit_id, seed, repair, now):
+        """Construct the function by certified reduction onto an engine GREG already trusts (RECOMBINE).
+
+        Returns the attached manifest, None while it (or its engine) awaits the founder's attach,
+        or False when no constructed capability qualified (the caller continues to the builder)."""
+        found = recombine.chain(function, CATALOG)
+        if found is None:
+            self._route(deficit_id, "constructed", "no reduction chain ends at a catalogued engine", None)
+            return False
+        path, engine_function = found
+        self._route(deficit_id, "constructed", "chain " + " -> ".join([r.function for r in path] + [engine_function]),
+                    None)
+        engine = self.find_attached(engine_function)
+        if engine is None:
+            # The engine is itself a deficit, searched by the same ladder and recorded with this lineage.
+            engine = self.resolve(mission=mission, function=engine_function, now=now,
+                                  purpose=f"engine for constructed {function} ({deficit_id})")
+        if engine is None:
+            self._route(deficit_id, "constructed", f"engine {engine_function} is not attached yet", None)
+            return None
+        manifest = self._composed_manifest(function, path, engine, deficit_id)
+        if self.registry.state.get(manifest.capability_id) == "DETACHED":
+            self._route(deficit_id, "constructed", "founder-detached; explicit attach required", manifest.capability_id)
+            return False
+        if repair and repair.get("capability_id") == manifest.capability_id:
+            self._route(deficit_id, "constructed", "this construction failed in service; a different engine is "
+                                                   "required (the founder may re-attach it)", manifest.capability_id)
+            return False
+        prior = self._recorded_qualification(deficit_id, manifest.capability_id)
+        if prior is not None:
+            self._route(deficit_id, "constructed", f"{'qualified' if prior['passed'] else 'failed qualification'} "
+                        "earlier on this deficit (recorded; not re-run)", manifest.capability_id)
+            return False
+        adapter = recombine.composed_adapter(path, self.registry)
+        try:
+            passed, report = recombine.qualify(path, adapter, manifest, seed)
+        except CapabilityError as exc:
+            if exc.failure_class == "transient":
+                self._route(deficit_id, "constructed", f"not evaluated: host outage ({str(exc)[:200]})",
+                            manifest.capability_id)
+            raise
+        self.journal.record("genesis.verified", {"deficit_id": deficit_id, "capability_id": manifest.capability_id,
+                                                 "passed": passed, "report": report,
+                                                 "mechanism": [r.card | {"reduction_id": r.reduction_id}
+                                                               for r in path],
+                                                 "verifier": "frozen brute-force oracle of the constructed function "
+                                                             "and GREG's problem-level certificate, independent of "
+                                                             "the engine"},
+                            key=[deficit_id, manifest.capability_id, manifest.provenance["chain_digest"]])
+        if not passed:
+            self._route(deficit_id, "constructed", "failed qualification", manifest.capability_id)
+            return False
+        manifest = self._composed_manifest(function, path, engine, deficit_id, report)
+        self.registry.register(manifest, adapter, state="VERIFIED")
+        self.journal.record("capability.registered", {
+            "manifest": manifest.to_dict(), "state": "VERIFIED", "deficit_id": deficit_id,
+            "origin": {"kind": "composed", "function": function, "chain": [r.reduction_id for r in path],
+                       "chain_digest": manifest.provenance["chain_digest"],
+                       "target_capability_id": engine.capability_id}},
+            key=[manifest.capability_id, manifest.digest()])
+        self._route(deficit_id, "constructed", "constructed and verified", manifest.capability_id)
+        return self._attach(mission, manifest, deficit_id, now)
+
+    def _composed_manifest(self, function, path, engine, deficit_id, report=None) -> CapabilityManifest:
+        head, digest = path[0], recombine.chain_digest(path)
+        if engine.consequence_class != "read_only":
+            raise CapabilityError("a constructed capability may only compose read-only engines")
+        return CapabilityManifest(
+            capability_id=f"composed.{function}.{engine.capability_id.rsplit('.', 1)[-1]}.{digest[:10]}",
+            version="1.0.0", provider="composed:" + "+".join(r.reduction_id for r in path), function=function,
+            description=head.description[:300], route="internal", consequence_class="read_only", inputs=head.inputs,
+            outputs={"certified": "bool", "certificate": "dict"}, target_prefix="cognition:", filesystem="none",
+            retry_safe=True, tests=(f"frozen-oracle:{function}", "certificate:every-call"),
+            strengthens=("capability_formation", "proof", "compounding"),
+            provenance={"mode": "RECOMBINE", "chain": [r.reduction_id for r in path], "chain_digest": digest,
+                        "source_digests": {r.reduction_id: recombine.source_digest(r) for r in path},
+                        "target_capability_id": engine.capability_id, "target_manifest_digest": engine.digest(),
+                        "engine_function": engine.function, "deficit_id": deficit_id,
+                        "baseline": head.baseline, "cards": [r.card for r in path],
+                        "builder": "none: constructed by certified reduction from GREG's reduction library",
+                        "license": "GREG code; the engine keeps its own license (see its manifest)",
+                        **({"qualification": report} if report else {})})
+
+    def _recorded_qualification(self, deficit_id: str, capability_id: str, digest: str | None = None):
+        """A qualification already recorded on this deficit is reused, never re-run: the ledger holds one
+        fact per (deficit, candidate), and re-running it would only repeat the same evidence."""
+        for event in reversed(self.journal.replay("genesis.verified")):
+            p = event.payload
+            if p["deficit_id"] == deficit_id and p["capability_id"] == capability_id and \
+                    (digest is None or (p.get("mechanism") or {}).get("package_digest") == digest):
+                return p
+        return None
 
     def _package_manifest(self, function, candidate: PackageCandidate, card: dict, deficit_id: str,
                           report: dict | None = None) -> CapabilityManifest:
@@ -1092,6 +1554,11 @@ class Genesis:
 
     def _builder_route(self, mission, function, deficit_id, now, contract=None, repair=None, offered=None):
         """Commission the residual capability against the founder-frozen contract, verify, register."""
+        if self._form_only:
+            self._route(deficit_id, "builder", f"goal {self._form_only[:23]} asked for formation: a goal never "
+                                               "commissions a builder or spends a build budget", None)
+            self._route(deficit_id, "founder", "escalated", None)
+            return None
         if self.builder is None or contract is None:
             why = ("no builder attached (coding agent/human/model not connected)" if self.builder is None
                    else "the mission declares no contract for this function; nothing to build against")
@@ -1102,10 +1569,22 @@ class Genesis:
         # generation: a capability that keeps breaking cannot spend past what the founder signed.
         generations = {e.payload["deficit_id"] for e in self.journal.replay("deficit.opened")
                        if e.payload["mission_id"] == mission.mission_id and e.payload["function"] == function}
-        spent = sum(e.payload.get("cost_usd") or 0.0 for e in self.journal.replay("genesis.built")
-                    if e.payload["deficit_id"] in generations | {deficit_id})
-        if contract["build_budget_usd"] <= 0 or spent >= contract["build_budget_usd"]:
+        # Spend: every reported bill (a candidate or none) and every build that started and never settled.
+        spent = self._build_spend(generations | {deficit_id})
+        # A paid candidate an outage left unjudged is judged first and never paid for again; judging costs
+        # nothing, so it is judged even when its own bill used up the budget.
+        pending = self._unjudged_builds(deficit_id)
+        if not pending and (contract["build_budget_usd"] <= 0 or round(contract["build_budget_usd"] - spent, 6) <= 0):
             self._route(deficit_id, "builder", "no founder-signed build budget remains", None)
+            self._route(deficit_id, "founder", "escalated", None)
+            return None
+        # The build budget is carved from the light cone, which actions spend too: a build never takes more
+        # than the cone has left (MissionBook books every build on it). What is left excludes every open
+        # reservation too: an uncertain dispatch at its worst case and a build the body died inside.
+        cone_left = mission.cone.budget_usd - getattr(mission, "committed_usd", getattr(mission, "spent_usd", 0.0))
+        spent_at_entry = spent
+        if not pending and cone_left <= 0:
+            self._route(deficit_id, "builder", "the mission's light cone has no budget left for a build", None)
             self._route(deficit_id, "founder", "escalated", None)
             return None
         request = {"function": function, "description": contract["description"],
@@ -1115,28 +1594,67 @@ class Genesis:
                      "it must handle arbitrary real input without raising"] if repair else None)
         replay = self._replay_text(repair)
         self.store.mkdir(parents=True, exist_ok=True)
-        for attempt in (1, 2):
-            remaining = contract["build_budget_usd"] - spent
-            if remaining <= 0:   # re-checked per attempt: every attempt is spend
-                self._route(deficit_id, "builder", "no founder-signed build budget remains", None)
-                break
-            if self.builder_cap is not None:   # per attempt: this function's remaining signed budget
-                self.builder.max_budget_usd = min(self.builder_cap, remaining)
-            try:
-                built = self.builder.build(request, feedback)
-            except Exception as exc:  # the builder is untrusted; its failure is evidence
-                self._route(deficit_id, "builder", f"attempt {attempt} failed: {type(exc).__name__}: {exc}"[:300], None)
-                break
-            spent += float(built.get("cost_usd") or 0.0)
-            source = built["source"]
-            digest = hashlib.sha256(source.encode()).hexdigest()
-            self.journal.record("genesis.built", {
-                "deficit_id": deficit_id, "attempt": attempt, "builder": built["builder"],
-                "prompt_sha256": built.get("prompt_sha256"), "source_sha256": digest,
-                "cost_usd": built.get("cost_usd"), "sees": "description, signature, public examples only",
-                "served_model": built.get("served_model"), "routes_tried": built.get("routes_tried"),
-                **({"model_digest": built["model_digest"]} if built.get("model_digest") else {})},
-                key=[deficit_id, attempt, digest])
+        try:
+            builders.isolation_ready()          # an outage defers here, before any paid attempt
+        except CapabilityError as exc:
+            self._route(deficit_id, "builder", f"not attempted: host outage ({str(exc)[:200]})", None)
+            raise
+        used = max([e.payload.get("attempt") or 0 for kind in ("genesis.built", "genesis.unbuilt", "genesis.build_failed")
+                    for e in self.journal.replay(kind) if e.payload["deficit_id"] == deficit_id], default=0)
+        slots = [a for _, a in pending] + list(range(used + 1, 3))   # never more than two attempts per deficit
+        for attempt in slots:
+            again = bool(pending)
+            if again:
+                built, attempt = pending.pop(0)
+                source = built["source"]
+                digest = hashlib.sha256(source.encode()).hexdigest()
+            else:
+                remaining = round(min(contract["build_budget_usd"] - spent, cone_left - (spent - spent_at_entry)), 6)
+                if remaining <= 0:   # re-checked per attempt: every attempt is spend
+                    self._route(deficit_id, "builder", "no founder-signed build budget remains", None)
+                    break
+                if self.builder_cap is not None:   # per attempt: this function's remaining signed budget
+                    self.builder.max_budget_usd = min(self.builder_cap, remaining)
+                # Each builder call is its own fact, numbered per deficit, so a call made again after a restart is
+                # charged again and never collides with the call before it. Its start is recorded first, with the
+                # most it may spend: a call interrupted inside the builder never reports its cost, and _build_spend
+                # charges it at that ceiling instead of at zero (acceptance H.G7).
+                build = 1 + sum(1 for e in self.journal.replay("genesis.build_started")
+                                if e.payload["deficit_id"] == deficit_id)
+                self.journal.record("genesis.build_started", {
+                    "deficit_id": deficit_id, "build": build, "attempt": attempt,
+                    "builder": getattr(self.builder, "identity", type(self.builder).__name__),
+                    "reserved_usd": min(self.builder_cap, remaining) if self.builder_cap is not None else remaining,
+                    "reserved_as": "the builder's per-call ceiling" if self.builder_cap is not None
+                                   else "what remains of the signed build budget (the builder declares no ceiling)"},
+                    key=[deficit_id, "build_started", build])
+                try:
+                    built = self.builder.build(request, feedback)
+                except Exception as exc:  # the builder is untrusted; its failure is evidence
+                    why = f"attempt {attempt} failed: {type(exc).__name__}: {exc}"[:300]
+                    self.journal.record("genesis.build_failed", {"deficit_id": deficit_id, "build": build,
+                                                                 "attempt": attempt,
+                                                                 "error": f"{type(exc).__name__}: {exc}"[:300]},
+                                        key=[deficit_id, "build_failed", build])
+                    cost = getattr(exc, "cost_usd", None)
+                    if cost:   # billed although no candidate came back (e.g. a withheld substituted answer)
+                        self.journal.record("genesis.unbuilt", {"deficit_id": deficit_id, "build": build,
+                                                                "attempt": attempt, "cost_usd": cost, "why": why,
+                                                                "at": iso(now)})
+                    self._route(deficit_id, "builder", why, None)
+                    break
+                spent += float(built.get("cost_usd") or 0.0)
+                source = built["source"]
+                digest = hashlib.sha256(source.encode()).hexdigest()
+                self.journal.record("genesis.built", {
+                    "deficit_id": deficit_id, "build": build, "attempt": attempt, "builder": built["builder"],
+                    "prompt_sha256": built.get("prompt_sha256"), "source_sha256": digest,
+                    "cost_usd": built.get("cost_usd"), "sees": "description, signature, public examples only",
+                    "served_model": built.get("served_model"), "routes_tried": built.get("routes_tried"),
+                    **({"model_digest": built["model_digest"]} if built.get("model_digest") else {}),
+                    # the model identity evidence: what was asked for and whether another model answered
+                    **{k: built[k] for k in ("requested_model", "substituted") if built.get(k) is not None}},
+                    key=[deficit_id, "built", build])
             problems = builders.screen(source)
             path = self.objects.path("sha256:" + digest)
             if not problems:
@@ -1154,15 +1672,26 @@ class Genesis:
                         raise CapabilityError("built-source path is not a regular file or symlink")
                     path.rename(path.with_name(f"{path.name}.unverified-{actual[:16]}"))
                     self.objects.put(source.encode())
-            public_ok, public = (False, {}) if problems else builders.verify(path, contract["examples"])
-            passed, report = (False, {"screen": problems}) if problems else builders.verify(
-                path, contract["examples"] + contract["held_out"])
+            try:
+                public_ok, public = (False, {}) if problems else builders.verify(path, contract["examples"])
+                passed, report = (False, {"screen": problems}) if problems else builders.verify(
+                    path, contract["examples"] + contract["held_out"])
+            except CapabilityError as exc:      # a host outage: no verdict; the paid candidate is judged later
+                self._route(deficit_id, "builder", f"attempt {attempt} not judged: host outage ({str(exc)[:160]})",
+                            None)
+                raise
             report = {"screen": problems, "public": public, "cases": report.get("cases"),
                       "failed_cases": len(report.get("failures", [])), "isolation": report.get("isolation")}
             if passed and replay is not None:  # must not repeat the predecessor's failure on the live input
                 try:
                     replayed = builders.execute(path, [replay])[0]
+                except subprocess.TimeoutExpired as exc:
+                    builders.isolation_ready()       # raises (no verdict) only when the host cannot run either
+                    replayed = {"ok": False, "error": f"did not finish within {exc.timeout}s on the live input "
+                                                      "while the host was healthy"}
                 except CapabilityError as exc:
+                    if exc.failure_class == "transient":
+                        raise
                     replayed = {"ok": False, "error": str(exc)[:200]}
                 report["service_replay"] = {"passed": bool(replayed.get("ok")),
                                             "error": None if replayed.get("ok") else str(replayed.get("error"))[:200]}
@@ -1204,6 +1733,34 @@ class Genesis:
             self._route(deficit_id, "builder", f"attempt {attempt} failed verification", None)
         self._route(deficit_id, "founder", "escalated", None)
         return None
+
+    def _unjudged_builds(self, deficit_id: str) -> list[tuple[dict, int]]:
+        """Paid candidates of this deficit that an outage left without a verdict, with their retained source."""
+        judged = {e.payload["capability_id"] for e in self.journal.replay("genesis.verified")
+                  if e.payload["deficit_id"] == deficit_id}
+        out = []
+        for event in self.journal.replay("genesis.built"):
+            p = event.payload
+            if p["deficit_id"] != deficit_id or f"built:{p['source_sha256']}" in judged:
+                continue
+            try:
+                data = self.objects.read("sha256:" + p["source_sha256"])     # digest-checked, no symlinks
+            except CapabilityError:
+                continue                       # unretained or changed: never judged from other bytes
+            out.append(({**p, "source": data.decode("utf-8", errors="replace")}, p["attempt"]))
+        return out
+
+    def _build_spend(self, deficits: set) -> float:
+        """What builds charged against the signed build budget of these deficits: each reported cost, and each
+        build that started and never settled (the body died inside the builder's call) at its reserved ceiling."""
+        settled = {(e.payload["deficit_id"], e.payload.get("build"))
+                   for kind in ("genesis.built", "genesis.build_failed") for e in self.journal.replay(kind)}
+        # Reported: every billed call, a candidate (genesis.built) or none (genesis.unbuilt: billed and failed).
+        reported = sum(e.payload.get("cost_usd") or 0.0 for kind in ("genesis.built", "genesis.unbuilt")
+                       for e in self.journal.replay(kind) if e.payload["deficit_id"] in deficits)
+        return reported + sum(e.payload["reserved_usd"] for e in self.journal.replay("genesis.build_started")
+                              if e.payload["deficit_id"] in deficits
+                              and (e.payload["deficit_id"], e.payload["build"]) not in settled)
 
     def _built_manifest(self, function, contract, built, digest, deficit_id, report) -> CapabilityManifest:
         return CapabilityManifest(
@@ -1248,7 +1805,12 @@ class Genesis:
                 path.write_bytes(case["data"])
                 try:
                     got = adapter({"path": str(path)}, ctx)[spec["output_field"]]
+                except subprocess.TimeoutExpired:   # the host, not the binary: no verdict either way
+                    raise CapabilityError(f"verifying {candidate.binary_name} timed out",
+                                          failure_class="transient") from None
                 except Exception as exc:  # candidate failure is evidence, not a crash
+                    if isinstance(exc, CapabilityError) and exc.failure_class == "transient":
+                        raise
                     failures.append({"case": case["name"], "error": type(exc).__name__})
                     continue
                 if got != case["expected"]:
@@ -1259,7 +1821,15 @@ class Genesis:
     def _attach(self, mission, manifest: CapabilityManifest, deficit_id: str, now, offered: list | None = None):
         # Founder-signed pre-authorization only: read-only, and inside the cone. A capability formed for cognition
         # (directive section 24) is attached only by the founder's own command, never under a mission scope.
-        # ``offered`` collects what a cognition search pass found for the founder.
+        # ``offered`` collects what a cognition search pass found for the founder. Never for a goal's request.
+        if self._form_only:
+            self.journal.record("deficit.awaiting_attach", {
+                "deficit_id": deficit_id, "capability_id": manifest.capability_id,
+                "why": f"formed because goal {self._form_only[:23]} requires {manifest.function}; attaching is "
+                       "your signed CAPABILITY_ATTACH"}, key=[deficit_id, "await", manifest.capability_id])
+            if offered is not None:
+                offered.append(manifest.capability_id)
+            return None
         cognition = manifest.function.startswith("cognition.")
         allowed = (not cognition and mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"
                    and manifest.consequence_class == "read_only"
@@ -1275,7 +1845,7 @@ class Genesis:
             return None
         self.registry.set_state(manifest.capability_id, "ATTACHED")
         self.journal.record("capability.state", {"capability_id": manifest.capability_id, "state": "ATTACHED",
-                                                 "by": "founder-signed mission auto_attach (read_only)",
+                                                 "by": AUTO_ATTACH,
                                                  "mission_id": mission.mission_id, "deficit_id": deficit_id},
                             key=[manifest.capability_id, "attached", mission.mission_id, deficit_id])
         self.journal.record("deficit.resolved", {"deficit_id": deficit_id, "capability_id": manifest.capability_id,

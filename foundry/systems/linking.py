@@ -32,8 +32,8 @@ class LinkError(ValueError):
 
 
 def _op_class(system: int, op: str) -> str:
-    from foundry.systems import module
-    mod = module(system)
+    from foundry.systems import module_for
+    mod = module_for(system, op)
     if op in mod.QUERY_OPS:
         return "read_only"
     if op in mod.APPLY_OPS:
@@ -93,7 +93,7 @@ def link(stages: list[dict], *, initial: dict | None = None, registry_root: Path
 
 def run(plan: dict, root: Path, *, ceiling: str, initial: dict | None = None) -> dict:
     """Execute a linked plan under an authority ceiling; each stage gets its own store."""
-    from foundry.systems import module
+    from foundry.systems import module_for
     relinked = link(plan["stages"], initial=initial)
     if relinked["plan_hash"] != plan["plan_hash"]:
         raise LinkError("plan changed after linking")
@@ -102,7 +102,7 @@ def run(plan: dict, root: Path, *, ceiling: str, initial: dict | None = None) ->
     ctx, trace = dict(initial or {}), []
     for i, stage in enumerate(plan["stages"]):
         name = stage.get("name") or f"stage-{i}"
-        mod = module(int(stage["system"]))
+        mod = module_for(int(stage["system"]), stage["op"])
         op = mod.QUERY_OPS.get(stage["op"]) or mod.APPLY_OPS[stage["op"]]
         args = json.loads(json.dumps(stage.get("args", {})))
         for arg, key in stage.get("bind", {}).items():

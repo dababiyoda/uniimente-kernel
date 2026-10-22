@@ -3,6 +3,7 @@
     greg init --read-root ~/Projects          create this computer's body
     greg founder keygen --key ~/.greg-founder.pem   (on Alfonso's own device)
     greg founder enroll --pubkey HEX          trust-on-first-use enrollment
+    greg founder public --key K               print the public half of your key (writes no body state)
     greg mission submit mission.json --key K  signed goal -> inbox; the body runs it
     greg status | greg decisions | greg morning
     greg decide REQUEST_ID approve|reject --key K
@@ -10,12 +11,18 @@
     greg pause|resume|stop --key K            (or: greg stop --local, touching STOP)
     greg run                                  the host loop (normally started by the supervisor)
     greg service install --platform macos|linux|supervisord [--remote]
-    greg body designate --key K                   founder signs the intended first body
+    greg body designate --key K                   founder signs the intended first body (and, with a
+                                                  passphrase-protected key, the founder-tier attestation)
+    greg founder attest --key K                   founder-tier attestation alone (e.g. after key rotation)
     greg device enroll --pubkey HEX --label phone --key K   delegate a narrow key to a phone
     greg serve                                   loopback remote channel for the phone
     greg anchor configure --tsa-url URL --roots ROOTS.pem --key K   timestamp the ledger head externally
     greg anchor export --roots R.pem --out W.json   witness bundle kept OUTSIDE GREG
     greg anchor verify --witness W.json --roots R.pem   rewrite/rollback of witnessed history exits 3
+    greg gravity authorize --from-mission M --key K   a persistent goal derived from a signed mission
+    greg gravity authorize --from-mission M --print-only > g.json; greg gravity authorize g.json --key K
+    greg gravity authorize g.json --supersedes GOAL --key K   replace an admitted goal (the old one is kept)
+    greg gravity goals | greg gravity evidence GOAL   read-only; greg gravity control GOAL --kind stop_pushing --value true --key K
 
 The CLI never opens the ledger as a writer while the body runs: commands are
 signed files dropped into the body inbox, so any interface can close at any time.
@@ -26,6 +33,7 @@ import argparse
 from datetime import datetime, timedelta, timezone
 import getpass
 import json
+from urllib.parse import urlsplit
 import os
 from pathlib import Path
 import sys
@@ -33,7 +41,7 @@ import sys
 from greg import service
 from greg.body import (Body, BodyError, Layout, init_body, morning_projection, observe, send_signed,
                        status)
-from greg.founder import generate_founder_key, load_founder_key
+from greg.founder import generate_founder_key, load_founder_key, public_bytes
 from greg.tribunal import mark_reviewed, morning_report
 from provenance.ledger import WriterConflict
 
@@ -56,6 +64,12 @@ def _known_handles() -> set:
                                                                                     "openai_api_key"}
 
 
+def mcp_handle(name: str) -> bool:
+    """A handle the founder names for an MCP server's credential; a mission's mcp.act releases it by this name."""
+    from greg.mcp_tools import HANDLE
+    return bool(HANDLE.fullmatch(name))
+
+
 def _secret_value(name: str) -> str:
     """From a hidden prompt, or piped stdin; never from the command line (shell history, ps)."""
     value = getpass.getpass(f"value for {name} (hidden): ") if sys.stdin.isatty() else sys.stdin.readline()
@@ -65,16 +79,211 @@ def _secret_value(name: str) -> str:
     return value
 
 
+def _secret_file(path: str) -> str:
+    """A whole credential file (64 KiB at most, text); its contents never reach the command line or the output."""
+    try:
+        with Path(path).expanduser().open("rb") as fh:
+            data = fh.read(64 * 1024 + 1)       # never more than the ceiling plus one byte, whatever the source is
+    except OSError as exc:
+        raise BodyError(f"cannot read {path}: {exc.strerror}") from None
+    if not data.strip() or len(data) > 64 * 1024:
+        raise BodyError("a credential file is non-empty text of at most 64 KiB; nothing stored")
+    try:
+        return data.decode()
+    except UnicodeDecodeError:
+        raise BodyError("a credential file must be text (UTF-8); nothing stored") from None
+
+
+def _key_file(args, kind: str | None) -> str:
+    """The founder key file a signing command names, or a plain refusal (never a traceback)."""
+    what = f"signing {kind}" if kind else "this command"
+    if not getattr(args, "key", None):
+        raise BodyError(f"{what} needs your founder key: add --key ~/.greg-founder.pem"
+                        + (" (or --print-only to review it unsigned)" if hasattr(args, "print_only") else ""))
+    if not Path(args.key).expanduser().is_file():
+        raise BodyError(f"no founder key file at {args.key}; the installer creates ~/.greg-founder.pem")
+    return str(Path(args.key).expanduser())
+
+
 def _drop(home: str, kind: str, body: dict, args) -> Path:
-    key = load_founder_key(args.key, _passphrase(args))
+    key = load_founder_key(_key_file(args, kind), _passphrase(args))
     return send_signed(home, key, kind, body, ttl=timedelta(hours=getattr(args, "ttl_hours", 24)))
 
 
-def _model_builder(secrets, config):
-    """Builder factory for ``run --builder models``: every reachable model route behind one router."""
+def _json_or_text(value):
+    if value is None:
+        return None
+    try:
+        return json.loads(value)
+    except ValueError:
+        return value
+
+
+def _goal_id(home: str, prefix: str) -> str:
+    from egregore.goals import GoalRegistry
+    if not Layout(home).ledger.exists():
+        raise BodyError("this body has no ledger yet")
+    with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+        matches = [g for g in GoalRegistry(ledger=journal.ledger, quarantine_unhydratable=True).goals()
+                   if g == prefix or g.startswith(prefix)]
+    if len(matches) != 1:
+        raise BodyError(f"no single goal matches {prefix!r} ({len(matches)} match)")
+    return matches[0]
+
+
+def _gravity_action(home: str, args) -> None:
+    """``greg gravity goals | authorize | control | evidence``: read-only views, or signed founder commands
+    dropped into the inbox. Nothing here opens the ledger as a writer."""
+    from greg import goal_gravity
+    from greg.missions import MissionError
+    if args.action in ("goals", "evidence"):
+        if not Layout(home).ledger.exists():
+            raise BodyError("this body has no ledger yet")
+        with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+            try:
+                data = (goal_gravity.projection(journal) if args.action == "goals"
+                        else goal_gravity.evidence(journal, args.target or ""))
+            except MissionError as exc:
+                raise BodyError(str(exc)) from exc
+        print(json.dumps(data, indent=1, default=str))
+        return
+    if args.action == "authorize":
+        notes = {}
+        if args.from_mission:
+            from greg.capabilities import BUILTINS
+            if not Layout(home).ledger.exists():
+                raise BodyError("this body has no ledger yet")
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                try:   # only a registration a verified founder MISSION signs, for exactly that spec
+                    spec = goal_gravity.signed_mission_spec(journal, args.from_mission)
+                except MissionError as exc:
+                    raise BodyError(f"no signed mission {args.from_mission} on this body: {exc}") from exc
+            derived = goal_gravity.goal_from_mission(spec, {mf.capability_id: mf for mf, _ in BUILTINS.values()})
+            body = derived.pop("goal_command")
+            notes = derived
+        elif args.target:
+            body = json.loads(Path(args.target).read_text())
+            if isinstance(body, dict) and body.get("kind") == "GOAL" and isinstance(body.get("body"), dict):
+                body = body["body"]                     # the reviewed output of --print-only, as printed
+            elif isinstance(body, dict):
+                body = body.get("goal_command", body)
+        else:
+            raise BodyError("authorize needs a GOAL JSON file or --from-mission MISSION_ID")
+        if args.supersedes:
+            if not isinstance(body, dict) or not isinstance(body.get("goal"), dict):
+                raise BodyError("--supersedes needs a GOAL body with a 'goal' object")
+            body = {**body, "goal": {**body["goal"], "supersedes": _goal_id(home, args.supersedes)}}
+        if args.print_only:
+            print(json.dumps({"kind": "GOAL", "body": body, **notes}, indent=1))
+            return
+        if not args.key:
+            raise BodyError("authorize needs --key to sign, or --print-only to review first")
+        print(json.dumps({"dropped": str(_drop(home, "GOAL", body, args)), **notes}, indent=1))
+        return
+    if not args.target or not args.kind:
+        raise BodyError("control needs a goal id and --kind")
+    if args.kind not in goal_gravity.CONTROL_KINDS:
+        raise BodyError(f"--kind must be one of {', '.join(goal_gravity.CONTROL_KINDS)}")
+    if not args.key:
+        raise BodyError("control needs --key (a delegated phone key may only narrow a goal)")
+    body = {"goal_id": _goal_id(home, args.target), "kind": args.kind, "reason": args.reason or args.kind}
+    if args.value is not None:
+        body["value"] = _json_or_text(args.value)
+    print(_drop(home, "GOAL_CONTROL", body, args))
+
+
+NO_FOUNDER_TIER = ("the founder tier needs a passphrase-protected founder key: a --no-passphrase key is for tests "
+                   "and rehearsals, and its closures never move the founder's path (greg path)")
+
+
+def _drop_attested(home: str, kind: str, body: dict, args, *, require: bool = False) -> list:
+    """Sign ``kind`` and, when the key file is passphrase-encrypted, a FOUNDER_TIER attestation with it.
+
+    Loading succeeds with a passphrase only for an encrypted PKCS8 file, so the attestation states a
+    fact this process just checked; it grants nothing (greg/metrics.py founder_tier). An unprotected
+    key signs ``kind`` alone, or is refused when ``require`` (``greg founder attest``).
+    """
+    from greg.founder import FOUNDER_TIER_BODY
+    keyfile = _key_file(args, kind or "FOUNDER_TIER")
+    passphrase = _passphrase(args)
+    if passphrase is None and require:
+        raise BodyError(NO_FOUNDER_TIER)
+    key = load_founder_key(keyfile, passphrase)
+    ttl = timedelta(hours=getattr(args, "ttl_hours", 24))
+    dropped = [send_signed(home, key, kind, body, ttl=ttl)] if kind else []
+    if passphrase is not None:
+        dropped.append(send_signed(home, key, "FOUNDER_TIER", dict(FOUNDER_TIER_BODY), ttl=ttl))
+    return dropped
+
+
+def _slot_value(declared: dict, assignment: str):
+    name, sep, raw = assignment.partition("=")
+    if not sep or name not in declared:
+        raise BodyError(f"--set takes SLOT=VALUE for one of {sorted(declared)}; got {assignment!r}")
+    kind = declared[name]["type"]
+    try:
+        value = {"integer": int, "number": float, "string": str}.get(kind, lambda v: {"true": True, "false": False}[v])(raw)
+    except (KeyError, ValueError):
+        raise BodyError(f"slot {name} takes a {kind}; got {raw!r}") from None
+    return name, value
+
+
+def _sop(home: str, args) -> dict:
+    """``greg sop``: reads retained history; ratify and run only drop founder-signed commands."""
+    from greg import sop
+    from greg.planner import authority_summary
+    from greg.capabilities import BUILTINS
+    with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+        proposals = {e.payload["procedure_id"]: e.payload for e in journal.replay("sop.proposed")}
+        accepted = sop.ratified(journal)
+        measured = {p["procedure_id"]: p for p in sop.trend(journal)["procedures"]}
+        waiting = sop.awaiting_ratification(journal)
+    if args.sop_cmd in ("list", "trend"):
+        if args.sop_cmd == "trend":
+            return {"procedures": list(measured.values())}
+        return {"awaiting_ratification": waiting,
+                "ratified": [{"procedure_id": pid, "steps": r["record"]["steps"],
+                              "slots": sorted(r["record"].get("workflow", {}).get("slots", {})),
+                              "pre_approved": [s["action_id"] for s in r["record"].get("pre_approved_steps", [])],
+                              "compounding": measured.get(pid, {}).get("compounding", False),
+                              **({"why_not": measured[pid]["why_not"]} if measured.get(pid, {}).get("why_not") else {})}
+                             for pid, r in accepted.items()]}
+    pid = args.procedure_id
+    if pid not in proposals:
+        raise BodyError(f"no SOP {pid}; known: {sorted(proposals)}")
+    if args.sop_cmd == "show":
+        return {"proposal": proposals[pid], "ratified": accepted.get(pid, {}).get("record"),
+                "trend": measured.get(pid)}
+    if args.sop_cmd == "ratify":
+        if pid in accepted:
+            raise BodyError(f"{pid} is already ratified")
+        body = {"procedure_id": pid, **({"pre_approve": args.pre_approve} if args.pre_approve else {})}
+        offered = {s["action_id"] for s in proposals[pid].get("pre_approvable", [])}
+        if set(args.pre_approve) - offered:
+            raise BodyError(f"only these steps can be pre-approved: {sorted(offered)}")
+        return {"dropped": str(_drop(home, "SOP_RATIFY", body, args))}
+    if pid not in accepted:
+        raise BodyError(f"{pid} is not ratified; ratify it first (greg sop ratify {pid})")
+    record = accepted[pid]["record"]
+    declared = record.get("workflow", {}).get("slots", {})
+    try:
+        spec = sop.instantiate(record, dict(_slot_value(declared, a) for a in args.set),
+                               horizon_days=args.horizon_days, venture=args.venture)
+    except sop.SopError as exc:
+        raise BodyError(str(exc)) from None
+    summary = authority_summary(spec, [{"capability_id": cid, "consequence_class": m.consequence_class}
+                                       for cid, (m, _) in BUILTINS.items()])
+    if args.print_only:
+        return {"mission": spec, "signing_lets_greg": summary}
+    return {"dropped": str(_drop(home, "MISSION", spec, args)), "signing_lets_greg": summary}
+
+
+def _model_builder(secrets, config, egress=None):
+    """Builder factory for ``run --builder models``: every reachable model route behind one router (behind the body's
+    #26 relay when confined egress is on)."""
     from greg.builders import BuildError, ModelBuilder
     from greg.models import ModelRouter, available_routes
-    routes, unavailable = available_routes(secrets, config=config.get("models"))
+    routes, unavailable = available_routes(secrets, config=config.get("models"), egress=egress)
     if not routes:
         raise BuildError(f"no model route is available: {unavailable}")
     return ModelBuilder(ModelRouter(routes))
@@ -88,9 +297,19 @@ def main(argv=None) -> int:
     s = sub.add_parser("init"); s.add_argument("--read-root", action="append", default=[])
     s.add_argument("--deliver-root", help="founder-visible folder for deliverables (default: <home>/deliveries)")
     s.add_argument("--local-model", help="opt in to an already installed Ollama model for the one GREG router")
+    s.add_argument("--confined-egress", action="store_true",
+                   help="run network capabilities as confined components behind the #26 egress relay (Linux)")
+    s.add_argument("--worker-confinement", choices=("required", "supervised"), default="required",
+                   help="required (default): refuse a worker the bubblewrap envelope cannot confine. supervised: run "
+                        "it under process supervision instead; its filesystem and network are NOT confined")
     f = sub.add_parser("founder"); fs = f.add_subparsers(dest="founder_cmd", required=True)
     k = fs.add_parser("keygen"); k.add_argument("--key", required=True); k.add_argument("--no-passphrase", action="store_true")
+    fp = fs.add_parser("public", help="read the public half of your founder key; writes no body state")
+    fp.add_argument("--key", required=True); fp.add_argument("--no-passphrase", action="store_true")
     e = fs.add_parser("enroll"); e.add_argument("--pubkey", required=True)
+    at = fs.add_parser("attest", help="sign a founder-tier attestation from a passphrase-protected key (grants nothing)")
+    at.add_argument("--key", required=True); at.add_argument("--no-passphrase", action="store_true")
+    at.add_argument("--ttl-hours", type=int, default=24)
     b = sub.add_parser("body", help="founder designation of the first physical execution body")
     bs = b.add_subparsers(dest="body_cmd", required=True)
     bd = bs.add_parser("designate"); bd.add_argument("--key", required=True)
@@ -157,6 +376,8 @@ def main(argv=None) -> int:
             q.add_argument("--wmi", help="venture-assessment: WealthMachineIntelligence checkout")
             q.add_argument("--manifest", help="venture-assessment: RailScout signal manifest (JSON)")
             q.add_argument("--source-root", help="venture-assessment: directory holding the manifest's sources")
+            q.add_argument("--daleobanks", help="organ-exchange: DALEOBANKS checkout")
+            q.add_argument("--signal", help="organ-exchange: signal JSON file ({text, topic, ...}) inside a read root")
             q.add_argument("--standing", action="store_true",
                            help="venture-assessment: keep watching; re-assess whenever the evidence changes")
             q.add_argument("--file", help="verify-download: the file to verify (inside a read root)")
@@ -166,6 +387,21 @@ def main(argv=None) -> int:
             q.add_argument("--purpose", help="human-work: what the work is for, in your words")
             q.add_argument("--deliverable", default="deliverable.pdf",
                            help="human-work: file name the person's deliverable is saved as in the mission folder")
+            q.add_argument("--case", help="business-case: a short case name (becomes the payment reference)")
+            q.add_argument("--buyer", help="business-case: the named buyer or stakeholder")
+            q.add_argument("--offer", help="business-case: what is offered")
+            q.add_argument("--price", help="business-case: price, e.g. 250 or 249.99")
+            q.add_argument("--currency", default="USD", help="business-case: three-letter currency code")
+            q.add_argument("--acceptance", help="business-case: the acceptance terms, fixed before anything runs")
+            q.add_argument("--venture", help="business-case: the venture this case serves (short lowercase name)")
+            q.add_argument("--approve-writes", action="store_true",
+                           help="business-case: ask before GREG drafts the offer or writes the settlement")
+            q.add_argument("--task", help="shared-work: the work, in your words")
+            q.add_argument("--person", help="shared-work: the named person who will do it")
+            q.add_argument("--relationship", choices=["contract", "employment"],
+                           help="shared-work: the engagement you arrange and pay yourself")
+            q.add_argument("--statement", default="statement.csv",
+                           help="business-case: file name of the payment statement you export into the case folder")
             q.add_argument("--print-only", action="store_true", help="show the mission without signing")
             q.add_argument("--problem", help="cognition: bounded problem JSON to review and sign")
         if name == "accept":
@@ -225,20 +461,80 @@ def main(argv=None) -> int:
     sv2.add_argument("--host", default="127.0.0.1"); sv2.add_argument("--port", type=int, default=8765)
     se = sub.add_parser("secret", help="store a credential for GREG on this body (local; never in the ledger)")
     ses = se.add_subparsers(dest="secret_cmd", required=True)
-    ses.add_parser("set", help="value from a hidden prompt or stdin, never from the command line").add_argument("name")
+    sset = ses.add_parser("set", help="value from a hidden prompt or stdin, never from the command line")
+    sset.add_argument("name")
+    sset.add_argument("--from-file", help="an mcp: credential kept as a whole file (a service-account key, a "
+                                          "kubeconfig); a mission hands it to a server as a file (secret_files)")
     ses.add_parser("remove").add_argument("name")
     ses.add_parser("list", help="handle names only; values are never printed")
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
-    sub.add_parser("path", help="where GREG stands on its developmental path: active node, gate, exit evidence, horizons")
+    pp = sub.add_parser("path", help="where GREG stands on its developmental path: active node, gate, exit evidence, horizons")
+    pp.add_argument("--node", help="read one node's own measurement (e.g. N6), even past where the path stops")
+    tr = sub.add_parser("treasury", help="venture books: verified revenue through your waterfall (node N7); moves no money")
+    trs = tr.add_subparsers(dest="treasury_cmd", required=True)
+    trs.add_parser("books", help="per venture: verified revenue, obligations and reserves, reinvestable surplus, transfers")
+    trset = trs.add_parser("set", help="founder-signed: per-tier amounts for one venture and currency")
+    trset.add_argument("--venture", required=True); trset.add_argument("--currency", default="USD")
+    trset.add_argument("--tier", action="append", default=[], metavar="TIER=AMOUNT",
+                       help="a tier of capital/allocation-policy.yaml and its amount, e.g. taxes_and_binding_legal_obligations=300")
+    trset.add_argument("--key", required=True); trset.add_argument("--no-passphrase", action="store_true")
+    trset.add_argument("--ttl-hours", type=int, default=24)
+    so = sub.add_parser("sop", help="standard operating procedures learned from verified closures (node N4)")
+    sos = so.add_subparsers(dest="sop_cmd", required=True)
+    sos.add_parser("list", help="proposed and ratified procedures, and whether each is compounding")
+    sos.add_parser("trend", help="interventions, model calls and model cost per verified outcome, before and after")
+    sosh = sos.add_parser("show", help="one procedure: its evidence, workflow slots and what may be pre-approved")
+    sosh.add_argument("procedure_id")
+    sor = sos.add_parser("ratify", help="founder-signed: register a proposed procedure")
+    sor.add_argument("procedure_id")
+    sor.add_argument("--pre-approve", action="append", default=[], metavar="STEP",
+                     help="a step you approved in every verified run; future runs carry it in their signed cone")
+    sou = sos.add_parser("run", help="founder-signed: one run of a ratified procedure, with zero model calls")
+    sou.add_argument("procedure_id")
+    sou.add_argument("--set", action="append", default=[], metavar="SLOT=VALUE", help="a value for one slot")
+    sou.add_argument("--horizon-days", type=float, default=None)
+    sou.add_argument("--venture", help="run the procedure for another venture (a capability transplant)")
+    sou.add_argument("--print-only", action="store_true", help="show the mission without signing")
+    for q in (sor, sou):
+        q.add_argument("--key"); q.add_argument("--no-passphrase", action="store_true")
+        q.add_argument("--ttl-hours", type=int, default=24)
     sub.add_parser("resilience", help="read-only: failure/recovery episodes, antifragility evidence, common causes, "
                                        "dependency concentration and organ-vs-system decoupling warnings")
-    gv = sub.add_parser("gravity", help="one read-only Goal Gravity turn: Backcast GPS, Lawful Leverage Foundry, "
-                                         "Gate proposals and at most one prepared founder ask")
-    gv.add_argument("--situation", required=True, help="typed situation JSON (sensing evidence, never authority)")
+    gv = sub.add_parser("gravity", help="Goal Gravity: one read-only analysis turn (--situation), or the body's "
+                                         "persistent goals: goals | authorize | control | evidence")
+    gv.add_argument("action", nargs="?", choices=["goals", "authorize", "control", "evidence"],
+                    help="goals: read-only list; authorize: sign a GOAL; control: sign a GOAL_CONTROL; "
+                         "evidence: ledger hashes behind one goal")
+    gv.add_argument("target", nargs="?", help="authorize: GOAL JSON file; control/evidence: goal id (or prefix)")
+    gv.add_argument("--situation", help="typed situation JSON (sensing evidence, never authority); the one-turn "
+                                        "analysis, required when no action is given")
+    gv.add_argument("--from-mission", help="authorize: derive the GOAL deterministically from this signed mission")
+    gv.add_argument("--kind", help="control: stop_pushing | lower_priority | never_use_tactic | do_not_monitor | "
+                                   "ask_before | forget_route | revoke_capability | change_goal | revoke")
+    gv.add_argument("--value", help="control: the value (JSON, e.g. true or 4, or plain text)")
+    gv.add_argument("--reason", default="")
+    gv.add_argument("--key", help="founder key (a delegated phone key may only narrow a goal)")
+    gv.add_argument("--no-passphrase", action="store_true")
+    gv.add_argument("--ttl-hours", type=int, default=24)
+    gv.add_argument("--print-only", action="store_true", help="authorize: print the GOAL body without signing")
+    gv.add_argument("--supersedes", help="authorize: replace this admitted goal (id or prefix); it stays on the "
+                                         "ledger as superseded")
     pr = sub.add_parser("presence", help="was the body actually running: measured availability, absences, late work")
     pr.add_argument("--hours", type=float, default=72.0)
+    mcp = sub.add_parser("mcp", help="MCP tool servers you installed under GREG's read roots (read-only)")
+    mcps = mcp.add_subparsers(dest="mcp_cmd", required=True)
+    mcl = mcps.add_parser("list", help="the servers found; with --tools, each one's tools (run confined, no network)")
+    mcl.add_argument("--tools", action="store_true")
+    mlo = mcps.add_parser("login", help="authorize GREG at a remote MCP server (OAuth; you approve in your browser); "
+                                        "the tokens stay in this body's secret broker under mcp:<name>")
+    mlo.add_argument("name")
+    mlo.add_argument("url")
+    mto = mcps.add_parser("token", help="keep a bearer token a hosted MCP server gave you, with its address and the "
+                                        "tools it lists (read from a hidden prompt or stdin, never the command line)")
+    mto.add_argument("name")
+    mto.add_argument("url")
     doc = sub.add_parser("doctor", help="read-only first-body prerequisites; creates no key, service or body")
     doc.add_argument("--chromebook", action="store_true", required=True)
     fd = sub.add_parser("foundry", help="the Foundry arsenal: completion status, systems, GREG's own graph and reputation")
@@ -259,6 +555,11 @@ def main(argv=None) -> int:
     fdr2.add_argument("--store", required=True, help="the seed store directory")
     fdr2.add_argument("--seed", required=True, help="the seed's sha256: address, as `greg foundry seed` printed it")
     sub.add_parser("learning", help="brief corrections per labelled brief, and every learned change kept, rejected or reverted")
+    sub.add_parser("acceptance", help="read-only founder-device acceptance report from this body's own ledger")
+    rh = sub.add_parser("rehearse", help="credential-free rehearsal: a throwaway body and REHEARSAL key run the "
+                                          "Founder's First Mission end to end")
+    rh.add_argument("--dir"); rh.add_argument("--kernel-root"); rh.add_argument("--effort", type=int, default=8)
+    rh.add_argument("--console", type=int, help="then serve Mission Control for that body on this port")
     c = sub.add_parser("console", help="the founder console on http://127.0.0.1:PORT")
     c.add_argument("--key", help="founder key; without it the console is read-only")
     c.add_argument("--no-passphrase", action="store_true"); c.add_argument("--port", type=int, default=8766)
@@ -284,9 +585,14 @@ def main(argv=None) -> int:
     try:
         if args.cmd == "init":
             print(json.dumps(init_body(home, read_roots=args.read_root or [str(Path.home())],
-                                       deliver_root=args.deliver_root, local_model=args.local_model), indent=1))
+                                       deliver_root=args.deliver_root, local_model=args.local_model,
+                                       confined_egress=args.confined_egress,
+                                       worker_confinement=args.worker_confinement), indent=1))
         elif args.cmd == "founder" and args.founder_cmd == "keygen":
             print(generate_founder_key(args.key, _passphrase(args)))
+        elif args.cmd == "founder" and args.founder_cmd == "public":
+            key = load_founder_key(args.key, _passphrase(args))
+            print(public_bytes(key.public_key()).hex())
         elif args.cmd == "founder" and args.founder_cmd == "enroll":
             with Body(home) as body:
                 print(json.dumps(body.enroll_founder(args.pubkey), indent=1))
@@ -313,10 +619,27 @@ def main(argv=None) -> int:
                 elif args.target == "word-limit":
                     spec = templates.word_limit(file=Path(args.file), max_words=args.max_words,
                                                 workspace_root=Layout(home).workspace)
+                elif args.target == "business-case":
+                    missing = [f for f in ("case", "buyer", "offer", "price", "acceptance") if not getattr(args, f)]
+                    if missing:
+                        raise BodyError("business-case needs " + ", ".join("--" + f for f in missing))
+                    spec = templates.business_case(case=args.case, buyer=args.buyer, offer=args.offer,
+                                                   price=args.price, currency=args.currency,
+                                                   acceptance=args.acceptance, statement=args.statement,
+                                                   workspace_root=Layout(home).workspace, venture=args.venture,
+                                                   approve_writes=args.approve_writes)
                 elif args.target == "cognition":
                     if not args.problem:
                         raise BodyError('cognition needs --problem')
                     spec = templates.cognitive_problem(json.loads(Path(args.problem).read_text()))
+                elif args.target == "shared-work":
+                    missing = [f for f in ("task", "person", "relationship", "function", "acceptance")
+                               if not getattr(args, f)]
+                    if missing:
+                        raise BodyError("shared-work needs " + ", ".join("--" + f for f in missing))
+                    spec = templates.shared_work(task=args.task, person=args.person, relationship=args.relationship,
+                                                 function=args.function, deliverable=args.deliverable,
+                                                 acceptance=args.acceptance, workspace_root=Layout(home).workspace)
                 elif args.target == "human-work":
                     if not (args.function and args.purpose):
                         raise BodyError("human-work needs --function and --purpose")
@@ -336,6 +659,12 @@ def main(argv=None) -> int:
                                                         preauthorize_delivery=args.preauthorize_delivery,
                                                         standing=args.standing,
                                                         cadence_seconds=args.cadence_seconds or 3600)
+                elif args.target == "organ-exchange":
+                    missing = [f for f in ("daleobanks", "wmi", "signal") if not getattr(args, f)]
+                    if missing:
+                        raise BodyError(f"organ-exchange needs --{', --'.join(missing)}")
+                    spec = templates.organ_exchange(daleobanks_root=args.daleobanks, wmi_root=args.wmi,
+                                                    signal=args.signal, preauthorize_delivery=args.preauthorize_delivery)
                 else:
                     raise BodyError(f"unknown template {args.target}; known: {sorted(templates.TEMPLATES)}")
             from greg.missions import validate_mission
@@ -347,8 +676,12 @@ def main(argv=None) -> int:
         elif args.cmd == "accept":
             print(_drop(home, "CRITIQUE", {"target_event_id": args.event_id, "verdict": "accept",
                                            "evidence_type": "founder_judgment", "text": args.text}, args))
+        elif args.cmd == "founder" and args.founder_cmd == "attest":
+            print(*_drop_attested(home, None, {}, args, require=True), sep="\n")
         elif args.cmd == "body" and args.body_cmd == "designate":
-            print(_drop(home, "BODY_DESIGNATE", {"purpose": "first_founder_body"}, args))
+            # With a protected key the same signature session also attests the founder tier, so the
+            # installer's designation step is the one place Alfonso types his passphrase for both.
+            print(*_drop_attested(home, "BODY_DESIGNATE", {"purpose": "first_founder_body"}, args), sep="\n")
         elif args.cmd == "model" and args.model_cmd == "set":
             from greg.models import validate_route_selection
             if args.off and (args.route or args.local_model):
@@ -455,12 +788,39 @@ def main(argv=None) -> int:
             print(json.dumps(data, indent=1))
         elif args.cmd == "path":
             from greg import path as devpath
+
+            def where(journal):
+                if not getattr(args, "node", None):
+                    return devpath.position(journal)
+                try:
+                    return devpath.measure(journal, args.node)
+                except devpath.PathError as exc:
+                    raise BodyError(str(exc)) from None
             if Layout(home).ledger.exists():
                 with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
-                    data = devpath.position(journal)
+                    data = where(journal)
             else:
-                data = devpath.position(None)
+                data = where(None)
             print(json.dumps(data, indent=1))
+        elif args.cmd == "treasury":
+            from greg import venture_books
+            if args.treasury_cmd == "books":
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    print(json.dumps({"books": venture_books.books(journal),
+                                      "transfers": venture_books.transfers(journal)}, indent=1))
+            else:
+                pairs = [t.partition("=") for t in args.tier]
+                if not pairs or any(not sep for _, sep, _ in pairs):
+                    raise BodyError("name each tier as --tier TIER=AMOUNT")
+                try:
+                    body = venture_books.validate_requirements({"venture": args.venture,
+                                                                "currency": args.currency.upper(),
+                                                                "requirements": {k: v for k, _, v in pairs}})
+                except venture_books.BooksError as exc:
+                    raise BodyError(str(exc)) from None
+                print(_drop(home, "TREASURY_REQUIREMENTS", body, args))
+        elif args.cmd == "sop":
+            print(json.dumps(_sop(home, args), indent=1))
         elif args.cmd == "resilience":
             from greg import resilience
             if Layout(home).ledger.exists():
@@ -469,9 +829,13 @@ def main(argv=None) -> int:
             else:
                 data = {"reality_status": "NO_BODY_LEDGER", "note": "measure on the body"}
             print(json.dumps(data, indent=1, default=str))
+        elif args.cmd == "gravity" and args.action is not None:
+            _gravity_action(home, args)
         elif args.cmd == "gravity":
             from foundry.lawful_leverage import LeverageRefused
             from greg import gravity
+            if not args.situation:
+                raise BodyError("gravity needs --situation, or an action: goals | authorize | control | evidence")
             situation = json.loads(Path(args.situation).read_text())
             try:
                 if Layout(home).ledger.exists():
@@ -511,9 +875,11 @@ def main(argv=None) -> int:
                 print(json.dumps(seed.make_seed(Path(home), out), indent=1))
             else:
                 from foundry.systems import graph, reputation
+                # One clock: the ledger's record time. A payload's own `at` is the mission engine's tick time,
+                # taken before the tick reads its inbox, so an approved action would sort before its approval.
                 with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
                     events = [{"type": e.type, "event_id": e.event_id, "payload": e.payload,
-                               "at": e.payload.get("at") or e.occurred_at} for e in journal.replay("")]
+                               "at": e.occurred_at} for e in journal.replay("")]
                 if args.foundry_cmd in ("trace", "changed"):
                     from foundry.systems import observability
                     if args.foundry_cmd == "trace":
@@ -562,24 +928,37 @@ def main(argv=None) -> int:
         elif args.cmd == "lifecycle":
             print(_drop(home, "LIFECYCLE", {"mission_id": args.mission_id, "state": args.state,
                                             "reason": args.reason}, args))
+        elif args.cmd == "acceptance":
+            from greg import acceptance
+            return acceptance.main(home)
+        elif args.cmd == "rehearse":
+            from greg import rehearsal
+            return rehearsal.main(args)
         elif args.cmd == "console":
             from greg import planner
             from greg.capabilities import SecretBroker
             from greg.console import Console, serve
             key = load_founder_key(args.key, _passphrase(args)) if args.key else None
             layout = Layout(home)
-            models_config = None
+            models_config, egress = None, None
             if layout.config.is_file():
+                body_config = json.loads(layout.config.read_text())
                 with observe(home, actor="spiffe://uniimente.internal/greg/model-reader") as journal:
                     from greg.models import effective_route_config
-                    models_config = effective_route_config(json.loads(layout.config.read_text()).get("models"), journal)
+                    models_config = effective_route_config(body_config.get("models"), journal)
+                from greg.body import egress_relay
+                egress = egress_relay(layout.home, body_config)       # #26: the console's model calls too
             transport = None if args.no_model else planner.default_transport(SecretBroker(layout.secrets),
-                                                                            config=models_config)
+                                                                            config=models_config, egress=egress)
             replacement = (None if args.no_model else
-                           lambda selection: planner.default_transport(SecretBroker(layout.secrets), config=selection))
-            server = serve(Console(home, key=key, transport=transport, transport_factory=replacement), port=args.port)
-            print(f"GREG console on http://127.0.0.1:{args.port}  (model route: "
+                           lambda selection: planner.default_transport(SecretBroker(layout.secrets), config=selection,
+                                                                       egress=egress))
+            console = Console(home, key=key, transport=transport, transport_factory=replacement)
+            server = serve(console, port=args.port)
+            print(f"GREG console: open this private link once, in this computer's browser:\n  "
+                  f"{console.owner_url(server.server_address[1])}\n(model route: "
                   f"{transport.name if transport else 'off'}; {'signing enabled' if key else 'read-only'}). "
+                  "The link works once; other local programs cannot use the console without it. "
                   "Ctrl-C closes the console; the body keeps running.", flush=True)
             try:
                 server.serve_forever()
@@ -640,8 +1019,17 @@ def main(argv=None) -> int:
             broker, known = SecretBroker(Layout(home).secrets), _known_handles()
             if args.secret_cmd == "list":
                 print(json.dumps({"stored": broker.names(), "known_handles": sorted(known)}, indent=1))
-            elif args.name not in known:
-                raise BodyError(f"unknown credential handle {args.name!r}; known: {', '.join(sorted(known))}")
+            elif args.name not in known and not mcp_handle(args.name):
+                raise BodyError(f"unknown credential handle {args.name!r}; known: {', '.join(sorted(known))}, "
+                                "or mcp:<name> for an MCP server you installed")
+            elif args.secret_cmd == "set" and getattr(args, "from_file", None):
+                if not mcp_handle(args.name):
+                    raise BodyError("--from-file is for mcp:<name> credentials a server reads as a file")
+                broker.put(args.name, _secret_file(args.from_file))
+                print(json.dumps({"stored": args.name, "where": "this body's secret broker (mode 0600); never the "
+                                  "ledger", "read_by": "only a mission that names it in secret_files or secrets, after "
+                                  "your approval", "original": f"{args.from_file} is unchanged; delete it if this "
+                                  "should be the only copy"}, indent=1))
             elif args.secret_cmd == "set":
                 broker.put(args.name, _secret_value(args.name))
                 print(json.dumps({"stored": args.name, "where": "this body's secret broker (mode 0600); "
@@ -661,6 +1049,50 @@ def main(argv=None) -> int:
                 print(json.dumps(improvement.report(journal, journal.ledger), indent=1, default=str))
         elif args.cmd == "status":
             print(json.dumps(status(home), indent=1, default=str))
+        elif args.cmd == "mcp" and args.mcp_cmd == "login":
+            import asyncio
+            import os
+            from greg import mcp_login
+            from greg.capabilities import SecretBroker
+
+            def show(link):
+                print(f"Open this link to authorize GREG at {args.url} (it waits up to 5 minutes):\n{link}",
+                      file=sys.stderr, flush=True)
+            from greg.capabilities import CapabilityError
+            try:
+                out = asyncio.run(mcp_login.login(args.name, args.url, SecretBroker(Layout(home).secrets),
+                                                  open_url=show, cafile=os.environ.get("GREG_EGRESS_CAFILE")))
+            except CapabilityError as exc:
+                raise BodyError(f"not logged in: {exc}") from None
+            print(json.dumps({**out, "next": f"a mission names bearer {out['handle']}; every call still waits for "
+                                             "your approval" + (f", and names {out['renews_at']} in hosts so an "
+                                             "expired login can renew" if out["renews_at"] != urlsplit(args.url).hostname
+                                             else "")}, indent=1))
+        elif args.cmd == "mcp" and args.mcp_cmd == "token":
+            import asyncio
+            import os
+            from greg import mcp_login
+            from greg.capabilities import CapabilityError, SecretBroker
+            try:
+                out = asyncio.run(mcp_login.register_token(args.name, args.url, _secret_value(f"mcp:{args.name}"),
+                                                           SecretBroker(Layout(home).secrets),
+                                                           cafile=os.environ.get("GREG_EGRESS_CAFILE")))
+            except CapabilityError as exc:
+                raise BodyError(f"not registered: {exc}") from None
+            print(json.dumps({**out, "next": f"a mission names bearer {out['handle']}; every call still waits for "
+                                             "your approval"}, indent=1))
+        elif args.cmd == "mcp":
+            from greg import mcp_tools
+            servers = mcp_tools.installed_servers(json.loads(Layout(home).config.read_text())["read_roots"])
+            if args.tools:
+                for server in servers.values():
+                    try:
+                        server["tools"] = [{k: t[k] for k in ("name", "description", "claims_read_only")} | {
+                            "needs": (t.get("input_schema") or {}).get("required", [])}
+                            for t in mcp_tools.server_tools(server, scratch_parent=Layout(home).workspace / "mcp-listing")]
+                    except Exception as exc:
+                        server["tools"] = f"not listed: {str(exc)[:200]}"
+            print(json.dumps(servers, indent=1))
         elif args.cmd == "doctor":
             from greg.doctor import chromebook
             report = chromebook()

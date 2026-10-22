@@ -286,15 +286,75 @@ def test_operation_verdicts_are_bound_to_the_solver_code_they_measured():
     from greg.cognition import compiler as C
     from greg.cognition import genome_library as lib
     evidence = copy.deepcopy(C.evidence_index())
-    assert C.operation_status("control", evidence["operations"]["control"]) == ("DEFAULT_FOR_GEOMETRY", None)
-    evidence["operations"]["control"]["code"]["closure_sha256"] = "sha256:" + "1" * 64  # as if the solver changed
-    status, why = C.operation_status("control", evidence["operations"]["control"])
+    # swarm: the positive verdict whose solver code is unchanged on the PR #184 merged tree (see the next test)
+    assert C.operation_status("swarm", evidence["operations"]["swarm"]) == ("DEFAULT_FOR_GEOMETRY", None)
+    evidence["operations"]["swarm"]["code"]["closure_sha256"] = "sha256:" + "1" * 64  # as if the solver changed
+    status, why = C.operation_status("swarm", evidence["operations"]["swarm"])
     assert status == "UNEVALUATED" and "needs re-admission" in why
-    assert lib.admission_of("control", evidence)[0] == "EXPERIMENTAL"
+    assert lib.admission_of("swarm", evidence)[0] == "EXPERIMENTAL"
     evidence["operations"]["pattern"]["code"]["closure_sha256"] = "sha256:" + "2" * 64  # a REJECTED verdict persists
     assert C.operation_status("pattern", evidence["operations"]["pattern"]) == ("REJECTED", None)
-    del evidence["operations"]["control"]["code"]                                     # unbound positive: not trusted
-    assert C.operation_status("control", evidence["operations"]["control"])[0] == "UNEVALUATED"
+    del evidence["operations"]["swarm"]["code"]                                       # unbound positive: not trusted
+    assert C.operation_status("swarm", evidence["operations"]["swarm"])[0] == "UNEVALUATED"
+
+
+def test_the_four_operation_verdicts_are_re_admitted_on_the_merged_solvers():
+    """Joining this lineage with PR #184 brought #159's native-qualified solvers, so the 2026-10-14 control, game,
+    information and probabilistic verdicts were measured on code that has since changed, and code binding routed them
+    as UNEVALUATED (fourth review, R2: only each solver function changed; #159's helpers and the unchanged contracts
+    functions they reach are newly reached members). Next-wave item 2 re-measured them once on the merged code,
+    pre-registered at 462bd98 on fresh seeds 2600-2629: control, game and information route DEFAULT_FOR_GEOMETRY at
+    the closure they were measured on; probabilistic did not replicate (EXPERIMENTAL) and leaves routing. The
+    2026-10-14 verdicts stay in history and, read alone at the merged code, still need re-admission.
+
+    Joined with Track B (#180-#189): operation admission v3 (2026-10-16, on the converged tree) sits between the two
+    in each history, and the round-2 binding rule (review of #179, N4) applies. SOLVERS takes non-literal updates and
+    the 462bd98 run recorded no runtime dispatch, so control, game and information, measured on exactly the joined
+    closure, route as UNEVALUATED until a re-admission records the function SOLVERS held at runtime. Probabilistic's
+    EXPERIMENTAL persists."""
+    import json
+    import sys
+    from greg.cognition import compiler as C
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import build_mind_evidence_index as B
+    run = "docs/evidence/greg-genome-admission/2026-10-21-operations/results.json"
+    v3 = "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json"
+    lineage = "docs/evidence/greg-genome-admission/2026-10-14/results.json"
+    results, before = json.loads((ROOT / run).read_text()), json.loads((ROOT / lineage).read_text())
+    assert results["pre_registered"] is True and results["source_commit"] == results["freeze_commit"]
+    assert results["source_commit"].startswith("462bd98")
+    assert "solver_closures" not in results          # the run recorded no runtime dispatch
+    index = C.evidence_index()
+    solver = {"control": "control", "game": "game", "information": "information", "probabilistic": "bayesian"}
+    expected = {"control": "DEFAULT_FOR_GEOMETRY", "game": "DEFAULT_FOR_GEOMETRY",
+                "information": "DEFAULT_FOR_GEOMETRY", "probabilistic": "EXPERIMENTAL"}
+    for family, want in expected.items():
+        row = index["operations"][family]
+        assert (row["evidence"], row["raw_status"]) == (f"{run}#families.{family}", want), family
+        assert [h["evidence"].partition("#")[0] for h in row["history"]][-3:] == [lineage, v3, run], family
+        # the run measured the joined tree's solver closure exactly
+        assert row["code"]["closure_sha256"] == C.solver_code(family)["closure_sha256"], family
+        status, why = C.operation_status(family, row)
+        if want == "EXPERIMENTAL":                    # inconclusive evidence persists with its scope
+            assert (status, why) == (want, None), family
+            assert C.family_status(family, index)["stale"] is None
+        else:                                         # a positive verdict binds only a confirmed dispatch (N4)
+            assert status == "UNEVALUATED" and "recorded no runtime dispatch" in why, (family, why)
+            assert C.family_status(family, index)["stale"] == why
+        # the earlier verdict, bound to the code it measured, still reads as stale at the merged code
+        then = dict(row, status="DEFAULT_FOR_GEOMETRY", raw_status="DEFAULT_FOR_GEOMETRY",
+                    code=B._measured_code(family, before["source_commit"]))
+        status, why = C.operation_status(family, then)
+        assert status == "UNEVALUATED" and "needs re-admission" in why, (family, why)
+        # what changed in its closure (fourth review, R2), read as if its run had recorded a confirming runtime
+        # dispatch, so the dispatch rule above does not report first (a fixture, not evidence)
+        confirmed = {**then["code"], "dispatched": {**then["code"]["dispatched"], "verified_at_runtime": True}}
+        status, why = C.operation_status(family, {**then, "code": confirmed})
+        assert status == "UNEVALUATED" and "needs re-admission" in why, (family, why)
+        changed = why.split("changed since: ", 1)[1].split(";", 1)[0]
+        assert changed == f"greg/cognition/solvers.py::{solver[family]}", (family, why)
+        added = why.split("added to the closure since: ", 1)[1].split(";", 1)[0]
+        assert "greg/cognition/solvers.py::_native_source" in added and "contracts.py::canonical" in added, why
 
 
 # ---------------------------------------------------------------- conflict (f): one intervention generator
@@ -732,7 +792,9 @@ def test_a_positive_operation_verdict_without_a_competitor_is_not_an_admission()
         status, why = C.operation_status(family, index["operations"][family])
         assert status == "UNEVALUATED" and "no competitor" in why, family
     assert C.operation_status("graph", index["operations"]["graph"]) == ("EXPERIMENTAL", None)
-    for family in ("control", "game", "information", "probabilistic", "swarm", "robust_pattern"):
+    # control, game, information and probabilistic are decided by next-wave item 2's re-admission on the PR #184
+    # merged code, which ran after operation admission v3 (test_the_four_operation_verdicts_are_re_admitted...).
+    for family in ("swarm", "robust_pattern"):
         assert C.operation_status(family, index["operations"][family]) == ("DEFAULT_FOR_GEOMETRY", None), family
 
 
@@ -796,10 +858,16 @@ def test_recipe_lifts_bind_the_recipe_code_they_measured():
     # with the complete closure (review B2), every lift measured on a lineage's freeze commit is stale on the
     # converged tree: the compiler, composition and genesis it reaches have changed since. It routes as UNEVALUATED
     # until a fresh pre-registered run measures the converged Mind (record section 8). P6 converged v1 is that run
-    # (record section 22): a live lift is one it measured, on the recipe code it measured
+    # (record section 22): a live lift is one it measured, on the recipe code it measured. Joined with the #178/#184
+    # trunk, that recipe code changed again: composition's stage runner and cortex.reason carry the caller's grant
+    # window (COG-5), and #159's native-qualified solvers serve bayes_then_voi's information and probabilistic
+    # stages. No lift routes on the joined tree until a pre-registered run measures the joined code
     converged = "docs/evidence/greg-composition-lift/2026-10-21-converged/"
+    lifts = {r for r, v in index["recipes"].items() if v.get("lift") and v["evidence"].startswith(converged)}
+    assert lifts == {"identify_then_optimize", "bayes_then_voi"}             # P6 converged v1's two lifts, indexed
+    assert all("needs re-measurement" in C.recipe_stale(r, index["recipes"][r]) for r in lifts)
     live = {r for r, v in index["recipes"].items() if v.get("lift") and not C.recipe_stale(r, v)}
-    assert live == {"identify_then_optimize", "bayes_then_voi"}
+    assert live == set(), "a lift routes on code that differs from what it measured"
     assert all(index["recipes"][r]["evidence"].startswith(converged) for r in live), \
         "a lift routes on code that differs from what it measured"
     assert all(C.recipe_stale(r, v) for r, v in index["recipes"].items()
@@ -815,8 +883,9 @@ def test_recipe_lifts_bind_the_recipe_code_they_measured():
     rows = {r["method"]: r for r in C.candidates({"capacity_network": {"edges": [], "source": "s", "sink": "t",
                                                                         "budget": 1, "costs": {}}},
                                                   C.CompetencyGeometry(), index)}
-    # graph_then_allocate's deciding verdict (P6 converged v1, F3) measured today's recipe code: it binds, and it is
-    # no lift, so the recipe routes NO_LIFT and is demoted, never stale
+    # graph_then_allocate's deciding verdict (P6 converged v1, F3) is no lift, and no lift persists like any negative
+    # verdict, also where the joined tree has changed the recipe code: the recipe routes NO_LIFT and is demoted, never
+    # stale
     row = rows["composition:graph_then_allocate"]
     assert row["status"] == "NO_LIFT" and "stale_evidence" not in row and row["demoted"]
     stale = copy.deepcopy(index)
@@ -840,10 +909,15 @@ def test_admitted_labels_are_reported_by_provenance_and_practitioner_ties_are_vi
     assert sum(split.values()) == len(labelled)
     for e in labelled:
         kind = genome_library.provenance(e)
-        if kind == "rule_admitted":           # only pre-registered admissions (genome or operation v3) count
+        if kind == "rule_admitted":           # only pre-registered genome admissions count as admissions
             # any dated pre-registered genome admission (v1-v4 on 2026-10-1x, #158's v5 onward on 2026-10-2x)
-            assert all((re.search(r"greg-genome-admission/2026-1\d-\d\d", r) or "greg-operation-admission/" in r)
-                       and not r.startswith(genome_library.LINEAGE_ADMISSION_DIR) for r in e.evidence_refs), e
+            assert all(re.search(r"greg-genome-admission/2026-1\d-\d\d", r)
+                       and not r.startswith(genome_library.LINEAGE_ADMISSION_DIR)
+                       and not genome_library.OPERATION_READMISSION.match(r) for r in e.evidence_refs), e
+        if kind == "operation_readmitted":    # a pre-registered re-admission run's own directory: the merged tree's
+            # run_operations.py (<run id>-operations/) or the converged tree's operation-admission harness v3
+            assert all(genome_library.OPERATION_READMISSION.match(r) for r in e.evidence_refs), e
+            assert all("-operations/" in r or "greg-operation-admission/" in r for r in e.evidence_refs), e
         if e.source in ("composition_recipe", "cortex_organ"):
             assert kind in ("recipe_lift", "organ_label")
     row = evidence_index()["recipes"]["graph_then_allocate"]
@@ -875,25 +949,29 @@ def test_a_rebuilt_index_never_binds_a_function_its_run_did_not_call(monkeypatch
     spec = importlib.util.spec_from_file_location("_builder_b1", ROOT / "scripts" / "build_mind_evidence_index.py")
     B = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(B)
-    record = dict(C.evidence_index()["operations"]["control"])
+    # a positive verdict whose solver code is unchanged on both lineages and on their join, and whose run recorded
+    # the function SOLVERS held at runtime (operation admission v3)
+    family = "swarm"
+    record = dict(C.evidence_index()["operations"][family])
     commit = next(s["source_commit"] for s in C.evidence_index()["sources"]
                   if s["path"] == record["evidence"].partition("#")[0])
     if subprocess.run(["git", "cat-file", "-e", f"{commit}^{{commit}}"], cwd=ROOT, capture_output=True).returncode:
         pytest.skip("the measuring commit is not in this clone")
     runtime = (json.loads((ROOT / record["evidence"].partition("#")[0]).read_text()).get("solver_closures")
-               or {}).get("control")                                  # the run's recorded runtime dispatch (N4)
-    honest = B._measured_code("control", commit, runtime)
-    assert honest["function"] == "control" and C.operation_status("control", {**record, "code": honest})[0] == \
-        "DEFAULT_FOR_GEOMETRY"
-    monkeypatch.setitem(solvers.SOLVERS, "control", solvers.SOLVERS["graph"])        # a later re-pointing
+               or {}).get(family)                                     # the run's recorded runtime dispatch (N4)
+    honest = B._measured_code(family, commit, runtime)
+    function = honest["function"]
+    assert function == C.solver_code(family)["function"] and honest["dispatched"].get("verified_at_runtime")
+    assert C.operation_status(family, {**record, "code": honest})[0] == "DEFAULT_FOR_GEOMETRY"
+    monkeypatch.setitem(solvers.SOLVERS, family, solvers.SOLVERS["graph"])            # a later re-pointing
     C.solver_code.cache_clear()
     try:
-        rebuilt = B._measured_code("control", commit, runtime)
-        status, why = C.operation_status("control", {**record, "code": rebuilt})
+        rebuilt = B._measured_code(family, commit, runtime)
+        status, why = C.operation_status(family, {**record, "code": rebuilt})
     finally:
         monkeypatch.undo()
         C.solver_code.cache_clear()
-    assert rebuilt["function"] == "control" and rebuilt["dispatched"]["function"] == "control"
+    assert rebuilt["function"] == function and rebuilt["dispatched"]["function"] == function
     assert status == "UNEVALUATED" and "now dispatches to" in why
 
 
@@ -1159,11 +1237,15 @@ def test_a_runtime_dispatch_that_disagrees_binds_nothing():
     import copy
     from greg.cognition import compiler as C
     index = C.evidence_index()
-    row = copy.deepcopy(index["operations"]["control"])
-    assert C.operation_status("control", row)[0] == "DEFAULT_FOR_GEOMETRY"
+    # swarm: a positive verdict whose run recorded its runtime dispatch (control's deciding run, on the joined tree,
+    # is next-wave item 2's, which recorded none: test_the_four_operation_verdicts_are_re_admitted...)
+    family = "swarm"
+    row = copy.deepcopy(index["operations"][family])
+    assert C.operation_status(family, row)[0] == "DEFAULT_FOR_GEOMETRY"
+    assert row["code"]["dispatched"]["verified_at_runtime"]
     row["code"]["dispatched"] = {k: v for k, v in row["code"]["dispatched"].items() if k != "verified_at_runtime"}
     row["code"]["dispatched"]["runtime_disagrees"] = {"path": "greg/cognition/solvers.py", "function": "game"}
-    status, why = C.operation_status("control", row)
+    status, why = C.operation_status(family, row)
     assert status == "UNEVALUATED" and "at runtime" in why
 
 

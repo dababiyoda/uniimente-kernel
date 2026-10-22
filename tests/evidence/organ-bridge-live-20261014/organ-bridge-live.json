@@ -1,0 +1,62 @@
+{
+  "appraisal": {
+    "appraiser": "kernel-appraiser",
+    "checks": {
+      "invariant:answers_this_packet": true,
+      "invariant:finance_flag_forces_review": true,
+      "invariant:human_approval_required": true,
+      "reproduced:go_no_go": true,
+      "reproduced:legal_readiness": true,
+      "reproduced:market_alignment": true,
+      "reproduced:opportunity_score": true,
+      "reproduced:reasons": true,
+      "reproduced:requires_human_approval": true,
+      "reproduced:risk_level": true,
+      "reproduced:validation_plan": true
+    },
+    "mission_id": "m:organ-bridge-d58e5088",
+    "tier": "multi-process reproduction + invariant check; not external acceptance",
+    "verdict": "REPRODUCED"
+  },
+  "external_effects": null,
+  "ledger_chain": [
+    true,
+    "chain intact: 6 records"
+  ],
+  "mission_id": "m:organ-bridge-d58e5088",
+  "organs_observed": [
+    "daleobanks",
+    "wealthmachine"
+  ],
+  "replay_refused": true,
+  "routing_track_records": {},
+  "sender_identity_isolated": [
+    false
+  ],
+  "spend_usd": 0.0,
+  "system_44_metrics": {
+    "actions": 0,
+    "blocks": 0,
+    "closures": 0,
+    "cost_usd": 0,
+    "decision_latency_s": null,
+    "verified_rate": 0.0
+  },
+  "system_44_trace": [
+    {
+      "event_id": "fb2af521-2162-5558-a9b1-1858d8a4632f",
+      "kind": "mission.observed"
+    },
+    {
+      "event_id": "6f55432b-ec77-50ef-bd34-824cae50fe43",
+      "kind": "mission.observed"
+    },
+    {
+      "event_id": "182f35ae-e2ed-5928-9349-c3af8ae9fc95",
+      "kind": "mission.appraised",
+      "verdict": "REPRODUCED"
+    }
+  ],
+  "trace_id": "trace-5daeeeb61912c4a6",
+  "vepmc": 0
+}

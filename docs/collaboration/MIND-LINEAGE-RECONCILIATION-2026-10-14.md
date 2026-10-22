@@ -700,7 +700,7 @@ the row says otherwise.
 
 | finding | disposition |
 |---|---|
-| B1 (high) | Fixed. The builder resolves `SOLVERS[family]` statically at the run's commit, including `T[k] = f`, `T.update({...})`, an imported dict literal and `__import__(...).f`. It binds that function's closure. `operation_status` routes a family whose dispatch changed as UNEVALUATED. Regression: re-pointing `control` to `graph`, then rebuilding, no longer keeps the verdict. |
+| B1 (high) | Fixed. The builder resolves `SOLVERS[family]` statically at the run's commit, including `T[k] = f`, `T.update({...})`, an imported dict literal and `__import__(...).f`. It binds that function's closure. `operation_status` routes a family whose dispatch changed as UNEVALUATED. Regression: re-pointing `control` to `graph`, then rebuilding, no longer keeps the verdict (on PR #184's tree the regression re-points `swarm`, the positive verdict still in force there, section 24). |
 | B2 (medium, latent) | Fixed, with all six cases as regressions: in-body imports, a later subscript mutation, `.update(...)`, `global`, dotted chains and per-method locals. |
 
 **Consequence, stated rather than hidden.** With the complete closure, every recipe lift measured on a lineage's
@@ -818,3 +818,97 @@ findings routes wrongly today.
 | #158 merge at `fa0d92a0` (green in CI, run 39648661029) | Brings the natural-ops family, L3 batch D and the one-step crowd vote (the coverage record's acquisition target), the exact node cut, the immune-8 NOT_VIABLE record, the data-exposure ledger, the founder decision packet and the whole-machine trace script. `foundry/owned-source.json` conflicted and was regenerated with `scripts/refresh_owned_source.py`. The map is pinned to `fa0d92a0`. The merge added two modules to the genome registry tuple `library.MODULES`, which N4 had just bound through `library.run`, and so staled every genome-stage recipe. The registry tuple is now excluded from the adapter digest (`compiler.ADAPTER_REGISTRY`). It decides only which genome serves a family, and each stage family is bound by its own solve closure, so a registry change that reaches a stage still stales the recipe. A change to `run` itself still stales it (test). The four P6 converged v1 verdicts bind on the merged tree. |
 | #158's data-exposure ledger on the converged tree (4 failures after the `fa0d92a0` merge) | Fixed. Three changes: (1) The ledger tool read HEAD as #158's tree, so on #179's tree every #179 artifact counted as #158's and #179's newer runs were missed. Where the reconciliation map's `pr158` commit is an ancestor of HEAD, it now reads #158's tree at that commit and #179's at HEAD. Regenerated, all 13 ledger tests pass, and the P6 converged v1 seeds appear as #179 exposures. (2) `mind_status`'s `lineage_179` claimed "this line neither runs that code nor routes on #179's index", which is false on #179's own tree. Where this tree's index lists the run, it now reports `in_this_index` and adds no duplicate rows. (3) The ledger cites SNDlib network names (`abilene`), a release marker. The exclusion list gains `provenance_only`: a declared provenance record is exempt from the marker rule only byte-identical to its tracked file; an edited copy is scanned (test). Both tool changes should be adopted on #158 or replaced there. |
 | #158 merge at `98a2ab0c` (green in CI, run 39693118401) | Brings admission v5-v7, the develop_repair P8 target and hybrid genome, and the formal, evo and search lanes. #158 adopted this branch's ledger and `mind_status` changes at `93667efc`; the conflicts differed only in a provenance comment and take #158's wording. The evidence index, owned-source inventory and exposure ledger are regenerated with their tools, and the map is pinned to `98a2ab0c`. Two follow-ups. (1) `scripts/admission_readme.py` used a Python 3.12 nested-quote f-string, which does not parse on CI's Python 3.11. It is fixed here and reported to #158; no freeze binds the script. (2) The provenance test recognised only admission directories dated `2026-10-1x` and now accepts any dated pre-registered genome admission. The four P6 converged v1 verdicts still bind. |
+
+## 24. On PR #184's tree (2026-10-16): four operation verdicts await re-admission
+
+**Numbering (merge of PR #189 into PR #192, 2026-10-22).** This section and the next were sections 18 and 19
+on PR #184's tree, while the Track B line used 18 to 23 for the sections above. Both sets are kept; these two
+are renumbered 24 and 25, and only their cross-references changed. Where
+`docs/evidence/one-machine-ten-steps/2026-10-15/README.md` (items 14 and 15) and
+`docs/intent/INTENT-20261014-FABLE-OPUS-MAXIMUS.json` cite this record's section 18 or 19 for the four operation
+verdicts, they mean sections 24 and 25. On the joined tree two re-admission runs bear on control, game,
+information and probabilistic: operation admission v3 (section 18, freeze `dfdcfe9`, measured on Track B's
+solvers, seeds 5001-5040) and the 2026-10-21 run (section 25, `462bd98`, measured on #159's native-qualified
+solvers, seeds 2600-2629). Which reading routes is decided by the code binding against the joined tree's
+solvers in the regenerated evidence index, not by this record.
+
+The sentence at the end of section 17 ("All nine positive operation verdicts keep their status") was true of
+this lineage when it was written and is kept as written. PR #184 joined this lineage (Track B, #181 `79c38f8`
+containing #179 `c6c4d74` and #180 `e4674f9`) with the one-machine trunk (#178, #175, #169), whose #159
+native-qualified solvers changed the four solver functions in `greg/cognition/solvers.py` (`control`, `game`, `information`, `bayesian`). They also added
+helpers (`_native_source`, `_request`, `_work`) that bring the unchanged `contracts.canonical`, `contracts.digest`
+and (for control, game and information) `contracts.integer` into those closures. (Corrected after the fourth review,
+R2: this paragraph first said the contracts functions changed; their digests are identical on both trees, and
+`operation_status` now reports newly reached members apart from changed ones.) The code binding (`c6c4d74`)
+therefore routes the control, game, information and probabilistic verdicts as UNEVALUATED on that tree, each naming
+the changed solver function, the newly reached members and "needs re-admission"; swarm keeps DEFAULT_FOR_GEOMETRY, and the four baseline-only verdicts (micro, exact, graph,
+sequential) stay UNEVALUATED as before. The binding was not weakened.
+`tests/unit/test_greg_mind_convergence.py::test_the_pr184_merge_leaves_four_operation_verdicts_awaiting_re_admission`
+records the state and fails once they are re-admitted. Re-admission is a new pre-registered genome-admission run on
+fresh held-out seeds against the merged code (the 2026-10-15-v3 procedure); it has not been run.
+
+## 25. Re-admission of the four operation verdicts on PR #184's tree (2026-10-21)
+
+Section 24's "it has not been run" is kept as written; it was true on 2026-10-16. Next-wave item 2 built the live
+harness section 15 said was missing: `cortex/evaluation/genome_admission/run_operations.py` wraps #155's four
+generators and arms verbatim (dev-seed parity with #155's `BENCHMARKS` is a unit test), declares one change (compute
+limit 100000, the merged native ceiling; #155's 200000 crashes every merged solver), scores every candidate output
+through `greg.cognition.verification.verify`, and runs under the canonical genome-admission rule, with #155's
+`status()` recorded beside it and never routed. A review of the runner found two defects before any held-out draw,
+both fixed with tests in `1d37418`: a negative start aliased spent seeds (`random.Random(-s)` seeds as `s`), and a run
+was not bound to a committed freeze. The run is refused unless its `freeze.json` is committed at HEAD unchanged and
+the tree is clean outside its directory; the evidence index routes a run that was not pre-registered as UNEVALUATED.
+
+Pre-registered at `462bd98` on fresh seeds 2600-2629 (1300-1329 was abandoned before any draw: seed 1311 is a frozen
+cross-geometry item), run once at that commit pinned to one core
+(`docs/evidence/greg-genome-admission/2026-10-21-operations/`):
+
+| Family | Status (routes) | #155's rule | vs baseline | vs #155's competitor |
+|---|---|---|---|---|
+| control | DEFAULT_FOR_GEOMETRY | DEFAULT_FOR_GEOMETRY | 28-2-0 | 30-0-0 |
+| game | DEFAULT_FOR_GEOMETRY | DEFAULT_FOR_GEOMETRY | 30-0-0 | 22-0-8 |
+| information | DEFAULT_FOR_GEOMETRY | DEFAULT_FOR_GEOMETRY | 16-0-14 | 14-0-16 |
+| probabilistic | **EXPERIMENTAL** | EXPERIMENTAL | 16-11-3 (p = 0.22) | 15-12-3 (p = 0.35) |
+
+Control, game and information route again at the closure they were measured on. Probabilistic's 2026-10-14 DEFAULT
+(seeds 1001-1040) did not replicate on fresh seeds; it leaves routing, an outcome the pre-registration put at about
+0.20 and accepted in advance. The arms are #155's, weaker than the library's strongest competitors (`pid_simopt`,
+`game_lp_dual`, `bayes_interval`), so the genome library labels these `operation_readmitted`, never `rule_admitted`.
+The merged control and game solvers are about 50x and 1,600x slower than #155's competitors at the median; the
+verdicts rest on quality. The binding test that recorded section 24's state is replaced by
+`test_the_four_operation_verdicts_are_re_admitted_on_the_merged_solvers`, which also checks that the 2026-10-14
+verdicts, read alone at the merged code, still need re-admission.
+
+## 26. On the joined tree (#196, 2026-10-22): what routes, measured rather than inferred
+
+Integration candidate 2 (draft #196) joins #192 (#178 and #184) with Track B (#189), #179 and #158. Sections 24 and
+25 describe #184's tree and are kept as written; this section records what the joined code routes. Every line below
+comes from a command run on the joined tree at `ea90b4b4` (`compiler.recipe_stale`, `scripts/mind_status.py`, the
+rebuilt evidence index), compared with #179's own head `866d4770` where stated.
+
+| Verdict | Recorded (index) | Routes on the joined tree | Why |
+|---|---|---|---|
+| control, game, information (2026-10-21 run, `462bd98`) | DEFAULT_FOR_GEOMETRY | **UNEVALUATED** | "cannot be bound to its code: 1 non-literal update(s) of the dispatch table at the run's commit, and the run recorded no runtime dispatch that confirms it" |
+| probabilistic | EXPERIMENTAL | EXPERIMENTAL | section 25's non-replication |
+| recipe lifts F2R `identify_then_optimize`, F4 `bayes_then_voi` (P6 converged v1) | VPL_LIFT | **stale (UNEVALUATED)** | "the recipe code has changed; needs re-measurement" |
+| recipe lifts F6, F8 and the four NO_LIFT recipes | as recorded | stale | the same, and already stale on #179's head |
+
+Section 25's sentence "Control, game and information route again at the closure they were measured on" held on
+#184's tree. On the joined tree Track B's stricter binding (a run that recorded no runtime dispatch cannot vouch for a
+dispatch table updated non-literally) applies to that run, and the binding was not weakened to keep them routing.
+
+**Live VPL on the joined tree is 0.** On #179's head it is 2 (F2R and F4 bind live there). The join changed the code
+those lifts were measured on: the grant-window guard in `cortex.reason` (#184's COG-5), the composition stages and the
+information and probabilistic stage solvers (#159). This is a measured cost of the integration, kept as such.
+
+Next, pre-registered and run once each on the joined code, with fresh held-out seeds (bands 4000-4999 and 5100-5999,
+checked against `spent_seeds()`, every freeze and the exposure ledger): P6 joined v1 (the four synthetic families,
+v1's procedure and rule unchanged) and an operation re-admission of control, game, information and probabilistic
+that records the runtime dispatch the binding needs. Their verdicts, including any NO_LIFT or non-replication, are
+added here when run.
+
+Also observed on the joined tree: the body package `greg` (69 modules; 47 on #179's tree) exceeds
+`cognition.optimization`'s declared 64-variable model ceiling, so the Mind abstains on its own body's critical path
+(MODEL_INVALID). The whole-machine trace's mission 2 now plans the runtime package `egregore`, and the body package is
+an abstain-never-wrong control. The admitted CPM genome `solver.or.critical_path` (DEFAULT_FOR_GEOMETRY, v3) has no
+such ceiling, but it is withheld until the founder attaches it.

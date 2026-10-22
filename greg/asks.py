@@ -36,7 +36,8 @@ from __future__ import annotations
 import re
 import unicodedata
 
-from greg.journal import Journal
+from greg.dataplane import INVISIBLE
+from greg.journal import Journal, fact_id
 from provenance.ledger import sha256_json
 
 RESOURCES = {
@@ -68,7 +69,8 @@ RESOURCE_FIELDS = ("resource", "evidence", "options", "expected_effect", "uncert
 PROSE_FIELDS = ("why_now", "recommendation", "consequence_of_no_response", "expected_effect", "uncertainty",
                 "argued_from")
 NO_COST = "none"      # an option whose cost starts with this needs no money, access, hardware or people
-_INVISIBLE = dict.fromkeys(map(ord, "\u00ad\u200b\u200c\u200d\u200e\u200f\u2060\u2061\u2062\u2063\ufeff"))
+# The data plane's character set: zero-width, bidi embeddings/overrides/isolates, joiners, BOM, C0 (#13).
+_INVISIBLE = dict.fromkeys(INVISIBLE)
 
 _SELF = r"(?:greg|i|me|myself|this body|the body|this machine|this institution|the institution|uniimente|the egregore)"
 _SELF_POSS = r"(?:my|greg'?s|its|the body'?s|this body'?s|the institution'?s|uniimente'?s)"
@@ -301,6 +303,8 @@ ANSWER_ONLY_RECORDS = {
                   "when the deliverable is observed.",
     "ACCOUNT_ACCESS": "Your answer is only recorded; it grants nothing. Only `greg secret set` on the body gives "
                       "GREG a credential.",
+    "COMPENSATION": "Your answer is only recorded; GREG reverses, contacts and pays no one for this effect. Undo it "
+                    "yourself if it should not stand.",
     "HUMAN_JUDGMENT": "Your answer is recorded as the decision on this one question; it acts on nothing by itself. "
                       "Any consequence still crosses the Gate under its own authority.",
     "CAPABILITY_ATTACH": "Approve or Reject only records your answer. Attaching is its own signed command: the "
@@ -308,12 +312,82 @@ ANSWER_ONLY_RECORDS = {
 }
 
 
+# An answer to these is only recorded and the mission keeps waiting until GREG observes the work, so
+# the ask (and where the work goes) stays on every surface until it is withdrawn. Closing it on an
+# answer left the founder, or a phone tap, with a blocked mission and no instruction (ported from #168, 3c92bc9).
+OPEN_UNTIL_OBSERVED = ("HUMAN_WORK",)
+
+
+def open_requests(events, *, counted=None, uncounted=None, pending=()) -> list[dict]:
+    """Asks still waiting on the founder, in request order, from decision.* and mission events.
+
+    An answer or a withdrawal closes an ask, except that an answered ask in OPEN_UNTIL_OBSERVED stays
+    open, marked with the recorded answer, until it is withdrawn or its mission has ended.
+
+    ``counted`` is the mission book's counted answers (``MissionBook.answers``: request id -> the record a
+    founder-signed DECISION stands behind). A row it does not count closes nothing: the ask stays open,
+    marked ``unsigned_answer_recorded``, because the mission still waits on it. None counts every row.
+    ``uncounted`` (``MissionBook.unverified``) gives that row's cause and reason, and ``pending`` the digests of
+    signed commands still waiting in the body's inbox: a row citing one is the founder's own answer being applied.
+    """
+    requested, answers, withdrawn, ended = [], {}, set(), set()
+    rows = {}
+    for e in events:
+        kind, p = e.type[len("greg."):], e.payload
+        if kind == "decision.requested":
+            # only the ask record() wrote (keyed on its request id): a row under another identity is not shown,
+            # so the founder answers the ask the mission book applies the answer to
+            event_id = getattr(e, "event_id", None)
+            if event_id is None or event_id == fact_id("decision.requested", p.get("request_id")):
+                requested.append(p)
+        elif kind == "decision.answered":
+            answers[p["request_id"]] = p.get("answer")
+            rows[p["request_id"]] = p
+        elif kind == "decision.withdrawn":
+            withdrawn.add(p["request_id"])
+        elif kind == "mission.achieved" or (kind == "mission.lifecycle"
+                                            and p.get("state") in ("ABANDONED", "SUPERSEDED")):
+            ended.add(p.get("mission_id"))
+    still_open = []
+    for r in requested:
+        rid = r["request_id"]
+        if rid in withdrawn:
+            continue
+        if rid in answers:
+            if counted is not None and rid not in counted:
+                why = (uncounted or {}).get(rid) or {}
+                cause = "pending" if rows[rid].get("command_digest") in set(pending) else why.get("cause")
+                r = {**r, "unsigned_answer_recorded": answers[rid],
+                     **({"unsigned_answer_cause": cause} if cause else {}),
+                     **({"unsigned_answer_why": why["why"]} if why.get("why") and cause != "pending" else {})}
+            elif r.get("kind") not in OPEN_UNTIL_OBSERVED or r.get("mission_id") in ended:
+                continue
+            else:
+                r = {**r, "answered": answers[rid] if counted is None else counted[rid].get("answer")}
+        still_open.append(r)
+    return still_open
+
+
+# Asks that no DECISION closes (greg/missions.py refuses one); every surface says what does close them.
+NOT_ANSWERABLE = {
+    "SCOPE_RENEWAL": "Approve or Reject cannot renew a mandate. Sign a new MISSION with a new horizon and "
+                     "supersede this one (`greg mission ...`, then LIFECYCLE SUPERSEDED), or abandon it.",
+    "CRASH_LOOP_HOLD": "Approve or Reject cannot lift the hold. Only a signed BODY_RESUME does (`greg resume`, the "
+                       "Resume button, or a device key you delegated BODY_RESUME to), and it withdraws this ask; "
+                       "BODY_STOP stops the body.",
+}
+
+
 def surface(request: dict) -> dict:
     """The fields every founder surface (console, phone, status, morning report) shows."""
     keys = ("request_id", "kind", "mission_id", "resource", "why_now", "recommendation", "expected_effect",
             "options", "alternatives", "uncertainty", "authority_requested", "evidence",
-            "consequence_of_no_response", "deadline", "deadline_evidence", "wording_withheld")
+            "consequence_of_no_response", "deadline", "deadline_evidence", "wording_withheld", "answered",
+            "unsigned_answer_recorded", "unsigned_answer_cause", "unsigned_answer_why")
     shown = {k: request[k] for k in keys if k in request}
     if request.get("kind") in ANSWER_ONLY_RECORDS:
         shown["answer_effect"] = ANSWER_ONLY_RECORDS[request["kind"]]
+    if request.get("kind") in NOT_ANSWERABLE:     # no Approve/Reject on any surface: the body refuses them
+        shown["answerable"] = False
+        shown["answer_effect"] = NOT_ANSWERABLE[request["kind"]]
     return shown

@@ -1,7 +1,11 @@
 """Cognition through signed missions, the real Gate, retained receipts and restart."""
+import subprocess
+
+import pytest
+
 from greg.body import Body
 from greg.cognition.settlement import competence
-from tests.greg_fixtures import drop, make_body, mission, signed
+from tests.greg_fixtures import Clock, drop, make_body, mission, signed
 
 
 def test_cognition_is_durable_receipted_and_reobserved_on_the_existing_body(tmp_path):
@@ -110,6 +114,68 @@ def test_a_cognition_deficit_opens_capability_genesis_then_asks_the_founder_once
         assert [a["kind"] for a in asks] == ["CAPABILITY_ATTACH"]
         done = [e.payload for e in body.journal.replay("mission.action") if e.payload["mission_id"] == "m:residual"]
         assert len(done) == 1 and done[0]["status"] == "DONE"
+
+
+@pytest.mark.parametrize("first_solve", ["answers", "times_out"])
+def test_recombined_native_game_uses_same_gate_appraisal_and_learning_after_restart(tmp_path, monkeypatch, first_solve):
+    # A first solve that times out (a cold solver under load) abstains with no verification ("NOT_RUN"); the mission
+    # closes on a later solve. The receipt checked below is the one the passing observation was served by, never
+    # simply the first receipt for the problem, which was an abstention in that case (acceptance run, 2026-10-16).
+    if first_solve == "times_out":
+        from greg.cognition import cortex
+        real, calls = cortex._numeric, []
+
+        def cold(*args, **kwargs):
+            calls.append(1)
+            if len(calls) == 1:
+                raise subprocess.TimeoutExpired("cognition.game", 1)
+            return real(*args, **kwargs)
+        monkeypatch.setattr(cortex, "_numeric", cold)
+    home, key, body_id, _ = make_body(tmp_path)
+    params = {"problem_id": "qualified:game", "operation": "minimax",
+              "data": {"payoffs": [[1, -1], [-1, 1]]}}
+    spec = mission("m:native-game", checks=[{
+        "check_id": "value", "description": "check encoded minimax value",
+        "sensor": {"capability": "cognition.solve", "target": "cognition:game", "params": params},
+        "predicate": {"op": "equals", "field": "output.value", "value": 0}}],
+        strategies=[{"action_id": "recompute", "capability": "cognition.solve", "target": "cognition:game",
+                     "params": params, "advances": ["value"], "rationale": "bounded numeric minimax"}],
+        capabilities=["cognition.solve"], targets=("cognition:*",), ceiling="read_only")
+    with Body(home) as body:
+        # Non-seed families start withheld (VERIFIED) on every body; the founder attaches them.
+        body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": "cognition.game"}))
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        # The converged engine acts in one tick and books the achieved closure on the next. Under host
+        # load a budget-bounded solve may abstain (TIMEOUT/BUDGET_EXHAUSTED); that observation is
+        # inconclusive, the engine backs off and re-observes, and the strategy is never blamed for it.
+        for _ in range(6):
+            body.tick()
+            if body.engine.book.missions["m:native-game"].status == "ACHIEVED":
+                break
+            clock.advance(31)
+        assert body.engine.book.missions["m:native-game"].status == "ACHIEVED"
+        assert not [e for e in body.journal.replay("routing.outcome")
+                    if e.payload["mission_id"] == "m:native-game"], "an abstaining sensor never books a strategy ineffective"
+        [*_, passed] = [e.payload for e in body.journal.replay("mission.observed")
+                        if e.payload["mission_id"] == "m:native-game" and e.payload["passed"]]
+        cognitive = body.ledger.find(passed["receipt"]).payload["result"]["output"]
+        assert cognitive["problem_id"] == "qualified:game"
+        assert cognitive["method"] == "cognition.game" and cognitive["method_version"] == "0.3.0"
+        assert cognitive["evaluator"] == "greg.cognition.verification/0.3.0"
+        assert cognitive["evaluator_result"]["checks"]["independent_minimax_primal_dual"]
+        assert cognitive["authority_created"] is False and cognitive["empirical_validity"] == "WORLD_UNVERIFIED"
+        assert body.journal.replay("mission.appraised")[-1].payload["verdict"] == "VERIFIED"
+        count = len(body.ledger.by_type("receipt"))
+    with Body(home, clock=clock) as body:
+        body.boot()
+        body.tick()
+        assert len(body.ledger.by_type("receipt")) == count
+        history = competence(body.journal)
+        assert len(history) == 1
+        assert next(iter(history))[:2] == ("cognition.game", "0.3.0")
 
 
 def test_a_compiled_request_settles_the_method_it_executed_and_links_the_compile_receipt(tmp_path):
@@ -224,7 +290,11 @@ def test_a_re_digested_compile_receipt_must_list_its_selected_receipt():
 def test_a_world_unverified_compile_settles_no_competence_although_its_organ_answered(tmp_path):
     """Review 2026-10-14: a high-consequence compile that runs a cortex organ ends WORLD_UNVERIFIED while the
     organ's own receipt answered NONE and verified. Only the compile-state check keeps that conditional result out
-    of settlement, and no test pinned it. The mission is achieved and appraised; nothing is credited."""
+    of settlement, and no test pinned it. The mission is achieved and appraised; nothing is credited.
+
+    Cortex 0.2.2 forwards the compile's declared class to the organ, so a financial class now escalates there and
+    the organ no longer answers. The case this test pins (the compile conditional, its organ answered) is a high
+    harm the cortex's own rule does not raise to a class: a reputation harm of 0.6 under internal_write."""
     from greg.cognition.contracts import digest
     from greg.cognition.settlement import _compiled, measured_outcomes
     saas = {"target": {"name": "spend", "unit": "USD/year"},
@@ -232,8 +302,9 @@ def test_a_world_unverified_compile_settles_no_competence_although_its_organ_ans
                           {"name": "price", "unit": "USD/count/month", "low": 20, "high": 35}],
             "expression": ["*", "seats", "price"]}
     home, key, body_id, _ = make_body(tmp_path)
-    params = {"problem_id": "real:conditional", "compile": {"geometry": {"consequence_class": "financial"},
-                                                            "data": {"estimation_model": saas}}}
+    params = {"problem_id": "real:conditional", "compile": {"geometry": {"consequence_class": "internal_write"},
+                                                            "data": {"estimation_model": saas},
+                                                            "consequence": {"reputation": 0.6}}}
     spec = mission("m:conditional", checks=[{
         "check_id": "conditional", "description": "the compiled estimate is a conditional result",
         "sensor": {"capability": "cognition.solve", "target": "cognition:conditional", "params": params},

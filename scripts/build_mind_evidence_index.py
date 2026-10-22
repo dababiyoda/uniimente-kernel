@@ -145,9 +145,16 @@ OPERATION_RUNS = (
     ("docs/evidence/greg-genome-admission/2026-10-14/results-v2.json", "families", None),
     ("docs/evidence/pr155-crowd-sparse/2026-10-14/results.json", "status", "crowd"),
     # the converged tree's live re-admission harness (review of #179, M17), pre-registered and frozen: every
-    # family's row, then the sparse-crowd geometry for crowd, in the order the lineage ran them
+    # family's row, then the sparse-crowd geometry for crowd, in the order the lineage ran them (finished
+    # 2026-10-16 09:05 UTC)
     ("docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json", "families", None),
     ("docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json", "crowd_sparse", "crowd"),
+    # next-wave item 2: #155's control, game, information and probabilistic re-measured on the merged solvers,
+    # pre-registered at 462bd98 (cortex/evaluation/genome_admission/run_operations.py; finished 2026-10-21 11:20
+    # UTC); last, so it is current for those four families. It recorded no runtime dispatch, so a positive verdict
+    # from it binds only where the static dispatch has no unresolved update (greg.cognition.compiler
+    # .operation_status, round-2 review of #179, N4)
+    ("docs/evidence/greg-genome-admission/2026-10-21-operations/results.json", "families", None),
 )
 # Verdicts measured against a competitor on held-out data; any other label is structural and changes no route.
 MEASURED = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY", "COMPOSITION_ONLY", "EXPERIMENTAL", "SUPERSEDED", "REJECTED")
@@ -354,6 +361,8 @@ def build() -> dict:
             history = (index["operations"].get(family) or {}).get("history", []) + [{"evidence": pointer,
                                                                                         "status": raw}]
             routed, erratum = ERRATA.get((family, raw), (raw if raw in MEASURED else "UNEVALUATED", None))
+            if data.get("pre_registered") is False:     # a re-admission run its runner could not bind to a commit
+                routed, erratum = "UNEVALUATED", "the run was not pre-registered: its freeze was not committed first"
             index["operations"][family] = {"status": routed, "raw_status": raw,
                                            **({"erratum": erratum} if erratum else {}),
                                            "measured": raw in MEASURED, "evidence": pointer, "history": history,

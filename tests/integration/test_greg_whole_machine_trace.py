@@ -100,3 +100,22 @@ def test_organ_edge_and_dissent_are_preserved(trace):
     assert dissent["critical_path_compiler_dissent"]
     assert dissent["abstention"]["compile"]["state"] == "HUMAN_JUDGMENT_REQUIRED"
     assert dissent["abstention"]["counts"]["mission.achieved"] == 0
+
+
+def test_a_dependency_graph_past_the_optimizer_ceiling_is_abstained_on_never_answered_wrongly(monkeypatch, tmp_path):
+    """The body package's own critical path (mission 2 before the joined tree outgrew it): within the optimizer's
+    declared model ceiling the answer is certified and equals an independent longest chain; past it the compiler
+    abstains with MODEL_INVALID. Either way it never answers wrongly."""
+    from greg.cognition import compiler
+    from greg.cognition.cortex import reason, registry_view
+    monkeypatch.setattr(compiler, "EVIDENCE_INDEX", tmp_path / "index.json")
+    graph = T.module_graph("greg", "greg")
+    r = reason({"problem_id": "body:critical-path", "compile": {
+        "geometry": {"geometry": "optimization", "subgeometry": "critical_path", "consequence_class": "read_only",
+                     "reversibility": "reversible"}, "data": T.critical_path_data(graph)}}, registry=registry_view())
+    if len(graph["modules"]) + 1 <= 64:
+        assert r["state"] == "ANSWERED"
+        assert r["result"]["objective_value"] == T.independent_longest_chain(graph)["makespan"]
+    else:
+        assert r["state"] == "ABSTAIN", r["state"]
+        assert any("MODEL_INVALID" in a for a in r["abstentions"]), r["abstentions"]

@@ -123,7 +123,7 @@
       "claim": "Owned community and journey predecessor integrated",
       "tier": "sandbox_execution",
       "reference": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36931905363",
-      "finding": "All six CI jobs passed atca8465b6; full suite1578 passed/74 skipped; V1–V5 passed. This does not validate the new serving delta."
+      "finding": "All six CI jobs passed atca8465b6; full suite1578 passed/74 skipped; V1\u2013V5 passed. This does not validate the new serving delta."
     }
   ],
   "counterevidence": [
@@ -206,7 +206,14 @@
       "simplest_viable_alternative": "Reuse GREG console, ArtifactStore, #3 versions and guarded query for private receipt-bound owned pages.",
       "strongest_competing_architecture": "Owned Discourse/Ghost/FastAPI instance behind a separately governed deployment.",
       "reversible_experiment": "Actual loopback HTTP serving of a signed GREG mission, hostile Host refusal, unsigned-file exclusion and corruption refusal in CI."
-    }
+    },
+    "rejected_alternatives": [
+      {
+        "name": "strongest_competing_architecture",
+        "rejection_reason": "Not selected for this bounded increment: No owned instance or deployment authority is connected; duplicating the founder console would drift. The intended wider capability remains binding; this disposition is not permanent removal.",
+        "revival_evidence": "Authorized deployment target, operational requirements and verified authority integration."
+      }
+    ]
   },
   "pass_2": {
     "attack_summary": "Attack unreceipted source admission, parallel authority/public exposure, stale or corrupt provenance, script/path injection and dependency-skipped proofs; strengthen all five before implementation.",

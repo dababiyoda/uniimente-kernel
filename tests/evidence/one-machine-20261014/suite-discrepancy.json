@@ -1,0 +1,21 @@
+{
+ "question": "#173 reported 0 failures; #175 reported 10 failures on both #175 and the same #173 base in another environment. Which is true, and why?",
+ "runs_2026_10_14": [
+  {"head": "b6d9f20 (#173)", "checkout": "full clone", "python": "3.13.16", "result": "3135 passed, 12 skipped, 0 failed", "seconds": 1200.66},
+  {"head": "e34dfe0 (#175)", "checkout": "full clone", "python": "3.13.16", "result": "3144 passed, 12 skipped, 0 failed", "seconds": 1237.96},
+  {"head": "e34dfe0 (#175)", "checkout": "git clone --depth 1", "python": "3.13.16", "result": "3139 passed, 14 skipped, 3 failed", "seconds": 1198.26,
+   "failed": ["tests/unit/test_migration_spec_frozen.py::test_the_subject_class_is_byte_identical_to_the_frozen_hash",
+              "tests/unit/test_migration_spec_frozen.py::test_continuity_baseline_is_true_right_now",
+              "tests/unit/test_repair_spec_frozen.py::test_continuity_hashes_describe_the_real_artifacts_now"],
+   "cause": "each runs `git show <historical sha>:<path>`; a depth-1 clone has no such commit object (exit 128)"}
+ ],
+ "classification": {
+  "environment": "shallow checkout (missing git history): reproduced, 3 tests. Code is not defective; the tests lacked the shallow guard their sibling test already had.",
+  "not_reproduced_here": "the remaining failures #175 reported ('foundry systems', landlock and similar) do not fail in this container (Landlock ABI 7 available, full and shallow runs). #175 itself attributes them to its environment; without its logs they stay classified as environment-dependent, unconfirmed.",
+  "dependency": "none observed: same venv (kvenv) for every run",
+  "test_ordering": "none observed: full suite in default order, three runs",
+  "state_contamination": "one contaminated run was discarded (files edited in the same worktree mid-run); all three recorded runs used dedicated worktrees",
+  "code_defect": "none observed in the suite itself"
+ },
+ "repair": "tests/history.py require_commits(): skip with the reason only when the checkout is shallow; a missing commit in a full checkout still fails. Applied to the three tests. After: full clone 35 passed; shallow clone 30 passed, 5 skipped, 0 failed."
+}

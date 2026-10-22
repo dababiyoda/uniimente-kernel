@@ -1,0 +1,112 @@
+{
+ "vepmc": {
+  "VEPMC": 0,
+  "structural_candidate_count": 0,
+  "founder_tier_count": 0,
+  "evidence_level": "NONE",
+  "missions": [
+   {
+    "mission_id": "m:one-machine-staff-om",
+    "closure_event_id": "075ebf13-7248-566b-95b1-a5e65f8b68b0",
+    "founder_signed": true,
+    "interface_detached": true,
+    "persistent_runtime": true,
+    "real_capability": true,
+    "approval_boundary": true,
+    "interruption_survived": true,
+    "appraised_verified": true,
+    "founder_accepted": false,
+    "founder_body": false,
+    "device_class": "linux_other",
+    "designated_device_class": null,
+    "fixture_evidence": false,
+    "counts": false,
+    "missing": [
+     "founder_accepted",
+     "founder_body"
+    ],
+    "evidence_level": "NONE"
+   },
+   {
+    "mission_id": "m:compiled-staff-later",
+    "closure_event_id": "cc159d95-ca09-5ee6-bae9-a62e6c2e9b87",
+    "founder_signed": true,
+    "interface_detached": true,
+    "persistent_runtime": true,
+    "real_capability": true,
+    "approval_boundary": false,
+    "interruption_survived": false,
+    "appraised_verified": true,
+    "founder_accepted": false,
+    "founder_body": false,
+    "device_class": "linux_other",
+    "designated_device_class": null,
+    "fixture_evidence": false,
+    "counts": false,
+    "missing": [
+     "approval_boundary",
+     "interruption_survived",
+     "founder_accepted",
+     "founder_body"
+    ],
+    "evidence_level": "NONE"
+   }
+  ],
+  "conditions": [
+   "founder_signed",
+   "interface_detached",
+   "persistent_runtime",
+   "real_capability",
+   "approval_boundary",
+   "interruption_survived",
+   "appraised_verified",
+   "founder_accepted",
+   "founder_body"
+  ],
+  "external_confirmation_required": "ledger checks cannot prove physical ownership or personal presence"
+ },
+ "sandbox": {
+  "SANDBOX_WHOLE_MACHINE_CLOSURES": 1,
+  "missions": [
+   {
+    "mission_id": "m:one-machine-staff-om",
+    "founder_signed_via_inbox": true,
+    "mind_certified_without_model": true,
+    "capability_formed": true,
+    "organs_reproduced": true,
+    "worker_accepted": true,
+    "interruption_reconciled": true,
+    "appraised_verified": true,
+    "whole_machine": true,
+    "missing": []
+   },
+   {
+    "mission_id": "m:compiled-staff-later",
+    "founder_signed_via_inbox": true,
+    "mind_certified_without_model": true,
+    "capability_formed": false,
+    "organs_reproduced": false,
+    "worker_accepted": false,
+    "interruption_reconciled": false,
+    "appraised_verified": true,
+    "whole_machine": false,
+    "missing": [
+     "capability_formed",
+     "organs_reproduced",
+     "worker_accepted",
+     "interruption_reconciled"
+    ]
+   }
+  ],
+  "stages": [
+   "founder_signed_via_inbox",
+   "mind_certified_without_model",
+   "capability_formed",
+   "organs_reproduced",
+   "worker_accepted",
+   "interruption_reconciled",
+   "appraised_verified"
+  ],
+  "tier": "sandbox integration diagnostic: synthetic or test authority allowed; never VEPMC, never founder acceptance, never real-world outcome evidence"
+ }
+}

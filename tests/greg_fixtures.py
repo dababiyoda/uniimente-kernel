@@ -24,17 +24,51 @@ class Clock:
         self.now += timedelta(seconds=seconds)
 
 
-def make_body(tmp: Path, *, read_roots=None):
+def host_worker_confinement() -> str:
+    """The founder's worker setting a test body takes to run the real worker path on this host: the default
+    (``required``) where the bubblewrap envelope works, else ``supervised``, under which a worker the envelope cannot
+    host runs with #178's Landlock grants as its floor, the choice a founder makes on such a host (CI runners, where
+    bwrap's network namespace is refused). Tests about the setting itself pass it explicitly."""
+    from greg.worker_isolation import WorkerIsolationError, _backend
+    try:
+        _backend(require_bubblewrap=True)
+    except WorkerIsolationError:
+        return "supervised"
+    return "required"
+
+
+def make_body(tmp: Path, *, read_roots=None, worker_confinement: str = "required", passphrase: bytes | None = None):
     tmp = Path(tmp)
     data = tmp / "data"
     data.mkdir(exist_ok=True)
     home = tmp / "body"
-    config = init_body(home, read_roots=[str(p) for p in (read_roots or [data])])
-    public = generate_founder_key(tmp / "founder.pem", None)
-    key = load_founder_key(tmp / "founder.pem", None)
+    config = init_body(home, read_roots=[str(p) for p in (read_roots or [data])],
+                       worker_confinement=worker_confinement)
+    public = generate_founder_key(tmp / "founder.pem", passphrase)
+    key = load_founder_key(tmp / "founder.pem", passphrase)
     with Body(home) as body:
         body.enroll_founder(public)
     return home, key, config["body_id"], data
+
+
+TEST_PASSPHRASE = b"test passphrase, not Alfonso's"
+
+
+def attest_founder_tier(home: Path, keyfile: Path, passphrase: bytes, monkeypatch) -> list:
+    """Run ``greg founder attest`` exactly as the founder would, against a passphrase-protected key.
+
+    It proves the custody check and the attestation path work. It does not make a test key
+    Alfonso's: the body cannot tell the two apart (greg/metrics.py founder_tier, residual).
+    """
+    import contextlib
+    import io
+    from greg import cli
+    monkeypatch.setenv("GREG_FOUNDER_PASSPHRASE", passphrase.decode())
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        assert cli.main(["--home", str(home), "founder", "attest", "--key", str(keyfile)]) == 0
+    monkeypatch.delenv("GREG_FOUNDER_PASSPHRASE")
+    return [Path(line) for line in out.getvalue().split()]
 
 
 def horizon(days: float = 2) -> str:

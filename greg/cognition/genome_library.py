@@ -23,6 +23,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 import json
 from pathlib import Path
+import re
 
 ROOT = Path(__file__).resolve().parents[2]
 STATUSES = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY", "COMPOSITION_ONLY", "EXPERIMENTAL", "SUPERSEDED",
@@ -321,9 +322,14 @@ def matrix(entries: list[GenomeEntry] | None = None) -> dict:
 # where an admitted label comes from (review of #179, H4): only the first is an admission under #158's
 # pre-registered rule at the current version; the others are reported, never summed into one "admitted" number
 PROVENANCE = {
-    "rule_admitted": "#158 genome admission, or the converged tree's operation-admission harness (v3), under a "
-                     "pre-registered rule (git freeze before the run), held-out seeds, against a named competitor, "
-                     "bound to the measured version or solver closure",
+    "rule_admitted": "#158 genome admission under the pre-registered rule (git freeze before the run), held-out "
+                     "seeds, against a named competitor, bound to the measured version",
+    # both re-admission harnesses of #155's families (the merged tree's run_operations.py and the converged tree's
+    # operation-admission harness v3) reuse #155's own arms, so neither is summed into rule_admitted
+    "operation_readmitted": "#155's operation families re-measured on the merged or converged solvers (operation "
+                            "re-admission, or operation-admission harness v3) under a pre-registered rule (freeze "
+                            "committed before the run), held-out seeds, against #155's own arms, bound to the "
+                            "measured solver closure: not a strongest-competitor admission",
     "lineage_operation_verdict": "#155 operation-family admission runs: held-out, but not pre-registered in git "
                                  "(freeze, runner and results land in one commit); a DEFAULT with no competitor "
                                  "routes as UNEVALUATED",
@@ -331,6 +337,10 @@ PROVENANCE = {
     "organ_label": "a hand-coded cortex-organ label from router evidence: not an admission",
 }
 LINEAGE_ADMISSION_DIR = "docs/evidence/greg-genome-admission/2026-10-14/"
+# cortex/evaluation/genome_admission/run_operations.py writes each re-admission under <run id>-operations/;
+# run_ops_v3.py (the converged tree's operation-admission harness) writes under greg-operation-admission/<run id>/
+OPERATION_READMISSION = re.compile(r"docs/evidence/(?:greg-genome-admission/[^/]+-operations"
+                                   r"|greg-operation-admission/[^/]+)/")
 
 
 def provenance(e: GenomeEntry) -> str | None:
@@ -340,6 +350,8 @@ def provenance(e: GenomeEntry) -> str | None:
         return "recipe_lift"
     if e.source == "cortex_organ":
         return "organ_label"
+    if any(OPERATION_READMISSION.match(r) for r in e.evidence_refs):
+        return "operation_readmitted"
     if any(r.startswith(LINEAGE_ADMISSION_DIR) for r in e.evidence_refs):
         return "lineage_operation_verdict"
     return "rule_admitted"

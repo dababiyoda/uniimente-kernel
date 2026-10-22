@@ -16,7 +16,7 @@ edits the reviewed record. It becomes, explicitly and traceably:
 """
 from __future__ import annotations
 
-from greg import anchor, asks
+from greg import anchor, asks, sop
 from greg.journal import Journal, iso, utcnow
 from provenance.ledger import sha256_json
 
@@ -38,7 +38,8 @@ def _window(journal: Journal):
     return (events[ids.index(start) + 1:] if start in ids else events), start
 
 
-def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict | None = None) -> dict:
+def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict | None = None,
+                   pending=()) -> dict:
     events, previous = _window(journal)
     by = lambda kind: [e.payload for e in events if e.type == "greg." + kind]
     all_events = journal.replay()
@@ -52,6 +53,8 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
     # checks were still failing at the next observation of that check.
     surprises = []
     for action in done:
+        if not action.get("at"):     # reconciliations retained before 2026-10-14 carry no time to order by
+            continue
         spec = missions.get(action["mission_id"], {})
         strategy = next((s for s in spec.get("strategies", []) if s["action_id"] == action["action_id"]), None)
         for check in (strategy or {}).get("advances", []):
@@ -60,12 +63,6 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
             if later and not later[0]["passed"]:
                 surprises.append({"action_id": action["action_id"], "check_id": check,
                                   "expected": "check passes after action", "observed": later[0]["detail"]})
-    open_requests = []
-    answered = {e.payload["request_id"] for e in all_events
-                if e.type in ("greg.decision.answered", "greg.decision.withdrawn")}
-    for e in all_events:
-        if e.type == "greg.decision.requested" and e.payload["request_id"] not in answered:
-            open_requests.append(e.payload)
     critiques = [e.payload for e in all_events if e.type == "greg.critique.recorded"]
     closed = set()   # closed only through its own proven close condition; a reverted fix reopens it
     for e in all_events:
@@ -82,9 +79,14 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
         for mid, m in engine.book.missions.items():
             status[mid] = {"status": m.status, "paused": m.paused, "rung": m.rung, "blocker": m.blocker,
                            "next_observe_at": m.next_observe_at, "spent_usd": m.spent_usd}
+    from greg.missions import MissionBook
+    # an answer row the mission book does not count (no founder-signed DECISION behind it) leaves its ask open
+    book = engine.book if engine is not None else MissionBook(journal)
+    open_requests = asks.open_requests(all_events, counted=book.answers, uncounted=book.unverified, pending=pending)
     from greg import presence
     reviews = [e.payload for e in all_events if e.type == "greg.tribunal.reported"]
     since = presence._t(reviews[-1]["at"]) if reviews and reviews[-1].get("at") else None
+    usage = sop.model_usage(journal)
     report = {
         "reality_status": "RETAINED_EVIDENCE_PROJECTION",
         "window": {"after_event": previous, "events": len(events)},
@@ -93,8 +95,10 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
         "q1_goals_worked_on": [{"mission_id": mid, "intended_effect": missions[mid]["intended_effect"],
                                  "state": status.get(mid)} for mid in touched],
         "q2_why": {mid: missions[mid]["founder_expression"][:300] for mid in touched},
-        "q3_what_i_did": [{k: a[k] for k in ("mission_id", "action_id", "capability", "route", "status",
-                                               "receipt", "cost_usd", "at")} for a in actions],
+        # .get: a founder reconciliation is an action record with no dispatch (no route or receipt);
+        # retained records written before it named its capability must still render.
+        "q3_what_i_did": [{k: a.get(k) for k in ("mission_id", "action_id", "capability", "route", "status",
+                                                   "receipt", "cost_usd", "at")} for a in actions],
         "q4_intentionally_not_done": [{"mission_id": b["mission_id"], "blocker": b["blocker"]}
                                       for b in by("mission.blocked")],
         "q5_what_changed_in_reality": {
@@ -110,8 +114,10 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
                         "external_anchor": anchor.summary(journal),
                         "receipts": [a["receipt"] for a in done if a.get("receipt")]},
         "q9_learned": {"capabilities_acquired": by("deficit.resolved"), "sops_proposed": by("sop.proposed"),
+                       "sops_awaiting_ratification": sop.awaiting_ratification(journal),
+                       "sops_compounding": sop.trend(journal)["compounding"],
                        "critiques_applied": [c["critique_id"] for c in critiques]},
-        "q10_retain": sorted({a["capability"] for a in done}),
+        "q10_retain": sorted({a["capability"] for a in done if a.get("capability")}),
         "q11_change": [{"regression_id": r["regression_id"], "description": r["description"]} for r in regressions],
         "q12_decisions_required": [asks.surface(r) for r in open_requests],
         "q13_tonight": [{"mission_id": mid, **st} for mid, st in status.items()
@@ -120,8 +126,14 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
                     "founder_decisions_requested": len(by("decision.requested")),
                     "asks_with_wording_withheld": len(by("ask.wording_withheld")),
                     "founder_commands_accepted": len(by("command.accepted")),
-                    "model_calls": 0, "verified_mission_closures": len(by("mission.achieved")),
-                    "spend_usd": round(sum(a.get("cost_usd", 0.0) for a in done), 6)},
+                    "model_calls": usage["model_calls"], "model_cost_usd": usage["model_cost_usd"],
+                    "model_cost_known": usage["cost_known"],
+                    "model_route_attempts_recorded": usage["model_route_attempts_recorded"],
+                    "verified_mission_closures": len(by("mission.achieved")),
+                    # booked spend: every completed action, and a metered dispatch the founder reconciled as not
+                    # executed, which keeps its signed cap (H.G4)
+                    "spend_usd": round(sum(a.get("cost_usd") or 0.0 for a in actions
+                                           if a["status"] in ("DONE", "RECONCILED_NOT_EXECUTED")), 6)},
         "claims_not_made": ["no external business outcome", "no Mac verification unless recorded by the Mac package",
                             "no model output treated as evidence",
                             "no continuous operation beyond the presence measured in q0"],
@@ -136,6 +148,8 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
     report["routing_knowledge"] = routing.routing_knowledge(journal)
     from greg import improvement
     report["learning"] = improvement.report(journal, journal.ledger)   # kept, rejected, reverted, expired
+    from greg import goal_gravity          # persistent goals: what woke, what was asked, what is stopped
+    report["goal_gravity"] = goal_gravity.morning_section(journal)
     report["report_digest"] = sha256_json(report)
     return report
 
@@ -179,6 +193,10 @@ def critique(journal: Journal, engine, body: dict, command_digest: str) -> dict:
         if target.type != "greg.mission.action" or target.payload.get("status") != "DONE" \
                 or target.payload.get("capability") != improvement.CAPABILITY:
             raise CritiqueError("brief labels and failure claims must reference a delivered brief action")
+        if not target.payload.get("receipt"):
+            # A founder-reconciled delivery has no receipt, so improvement could never read what it showed.
+            raise CritiqueError("the reconciled brief has no retained inputs to label: its delivery was "
+                                "reconciled by the founder without a receipt")
         record["epistemic"] = {**epistemic, "is_truth": False}
     if body.get("regression"):
         condition = ("a test or check that fails on the criticized behavior" if not epistemic else

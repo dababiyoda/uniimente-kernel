@@ -30,6 +30,7 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -48,7 +49,10 @@ MAX_INPUT = 256 * 1024
 RUN_TIMEOUT = 10
 
 HARNESS = r'''
-import builtins, json, sys
+import builtins, json, resource, sys
+# The candidate's own CPU is bounded here: a loop dies by SIGXCPU and is judged as the candidate's failure.
+# A wall-clock timeout is the host's only when the host cannot run an isolated no-op either (verify).
+resource.setrlimit(resource.RLIMIT_CPU, (8, 9))
 sys.setrecursionlimit(2000)
 ALLOWED = set(json.loads(sys.argv[2]))
 real_import = builtins.__import__
@@ -78,7 +82,12 @@ sys.stdout.write(json.dumps(out))
 
 
 class BuildError(RuntimeError):
-    pass
+    """A build attempt produced no candidate. ``cost_usd`` is what the attempt was still billed (a withheld
+    substituted answer, a reply without source), so Genesis books it against the signed build budget."""
+
+    def __init__(self, message: str = "", *, cost_usd=None):
+        super().__init__(message)
+        self.cost_usd = cost_usd
 
 
 def screen(source: str) -> list[str]:
@@ -141,14 +150,40 @@ def _run_with_stdin(argv, *, cwd: Path, data: bytes, timeout: int) -> subprocess
                "r=subprocess.run(sys.argv[2:],stdin=f,capture_output=True);"
                "sys.stdout.buffer.write(r.stdout);sys.stderr.buffer.write(r.stderr);sys.exit(r.returncode)",
                str(stdin_file), *argv]
-    return run_isolated(wrapped, cwd=cwd, isolate_network=True, timeout=timeout)
+    # Supervised: the wrapper and the harness it starts share one process group, killed when the run ends or
+    # times out, so a candidate that hangs leaves nothing running behind it.
+    return run_isolated(wrapped, cwd=cwd, isolate_network=True, timeout=timeout, stop_check=lambda: False)
+
+
+def isolation_ready(timeout: int = RUN_TIMEOUT) -> None:
+    """Raise a transient CapabilityError when the isolated runtime that judges built code cannot run now,
+    so a host outage defers formation before any paid build attempt instead of failing the candidate."""
+    with tempfile.TemporaryDirectory(prefix="greg-built-probe-") as tmp:
+        try:
+            proc = run_isolated([sys.executable, "-I", "-S", "-c", "pass"], cwd=Path(tmp), timeout=timeout)
+        except subprocess.TimeoutExpired:
+            raise CapabilityError("the isolated build verifier did not start in time",
+                                  failure_class="transient") from None
+    if proc.returncode:
+        raise CapabilityError(f"the isolated build verifier exited {proc.returncode}", failure_class="transient")
 
 
 def verify(source_path: Path, vectors: list[dict]) -> tuple[bool, dict]:
-    """Judge a candidate against frozen vectors it never saw. Returns (passed, report)."""
+    """Judge a candidate against frozen vectors it never saw. Returns (passed, report).
+
+    A host outage (isolation unavailable, the whole run timing out) is no verdict on the candidate: it is
+    raised as a transient CapabilityError. The candidate's own CPU is bounded by the harness."""
     try:
         results = execute(source_path, [v["input_text"] for v in vectors])
-    except (CapabilityError, subprocess.TimeoutExpired) as exc:
+    except subprocess.TimeoutExpired as exc:
+        # The candidate's CPU is bounded by the harness, but it can block without using any (a lock taken
+        # twice). If the host still runs an isolated no-op, the hang is the candidate's; else the host's.
+        isolation_ready()
+        return False, {"cases": len(vectors), "isolation": "separate no-network interpreter",
+                       "failures": [{"error": f"did not finish within {exc.timeout}s while the host was healthy"}]}
+    except CapabilityError as exc:
+        if exc.failure_class == "transient":
+            raise
         return False, {"cases": len(vectors), "failures": [{"error": f"{type(exc).__name__}: {exc}"[:300]}],
                        "isolation": "separate no-network interpreter"}
     failures = []
@@ -204,15 +239,26 @@ def extract_source(reply: str) -> str:
     return match.group(1).strip() + "\n"
 
 
+def _billed_source(reply: str, cost_usd) -> str:
+    try:
+        return extract_source(reply)
+    except BuildError as exc:   # a reply without source was still paid for
+        raise BuildError(str(exc), cost_usd=cost_usd) from exc
+
+
 class ClaudeCodeBuilder:
-    """The installed Claude Code CLI as a coding agent: no tools, no disk, bounded spend."""
+    """The installed Claude Code CLI as a coding agent: no tools, no disk, bounded spend.
+
+    ``egress`` is set by a body with confined egress (#26): the CLI then runs in a network namespace whose only way
+    out is the relay door, allowlisted for the Anthropic API host, like the ``claude-code`` model route."""
 
     def __init__(self, binary: str | None = None, *, model: str | None = None, max_budget_usd: float = 1.00,
-                 timeout: int = 300, runner=subprocess.run):
+                 timeout: int = 300, runner=subprocess.run, egress=None):
         self.binary = binary or shutil.which("claude")
         if not self.binary:
             raise BuildError("Claude Code CLI is not installed")
         self.model, self.max_budget_usd, self.timeout, self.runner = model, max_budget_usd, timeout, runner
+        self.egress = egress
         self.identity = "claude-code" + (f":{model}" if model else "")
 
     def build(self, request: dict, feedback: list[str] | None = None) -> dict:
@@ -221,16 +267,49 @@ class ClaudeCodeBuilder:
                 "--strict-mcp-config", "--max-budget-usd", f"{self.max_budget_usd:.2f}"]
         if self.model:
             argv += ["--model", self.model]
+        from greg.models import CLI_NO_MODEL_FALLBACK, cli_authors, cli_cost, cli_reason, cli_report
         with tempfile.TemporaryDirectory(prefix="greg-builder-") as empty:  # nothing to read, nothing to write
-            proc = self.runner(argv, input=prompt, capture_output=True, text=True, timeout=self.timeout, cwd=empty)
-        if proc.returncode:
-            raise BuildError(f"Claude Code exited {proc.returncode}: {(proc.stderr or proc.stdout)[-300:]}")
-        result = json.loads(proc.stdout)
-        if result.get("is_error"):
-            raise BuildError(f"Claude Code reported an error: {str(result.get('result'))[:300]}")
-        return {"source": extract_source(str(result.get("result", ""))), "builder": self.identity,
+            try:
+                proc = (self.runner(argv, input=prompt, capture_output=True, text=True, timeout=self.timeout,
+                                    cwd=empty, env={**os.environ, **CLI_NO_MODEL_FALLBACK})
+                        if self.egress is None else self._behind_door(argv, prompt, empty))
+            except subprocess.TimeoutExpired:
+                # Killed at the timeout after it may have spent up to its cap: booked, never as zero.
+                raise BuildError(f"Claude Code timed out after {self.timeout}s", cost_usd=self.max_budget_usd) from None
+        result = cli_report(proc)        # printed with what the run cost even when the CLI exits 1 (every is_error)
+        if result is None:
+            if proc.returncode:
+                raise BuildError(f"Claude Code exited {proc.returncode}: {(proc.stderr or proc.stdout)[-300:]}")
+            raise BuildError("Claude Code produced unreadable output")
+        cost = cli_cost(result, self.max_budget_usd)     # unknown spend books the cap, never zero
+        if result.get("is_error") or proc.returncode or result.get("stop_reason") == "refusal":
+            exited = f" (exit {proc.returncode})" if proc.returncode else ""
+            raise BuildError(f"Claude Code reported an error{exited}: {cli_reason(result)[:300]}", cost_usd=cost)
+        authors = cli_authors(result)
+        if self.model and any(self.model not in a for a in authors):
+            raise BuildError(f"Claude Code: requested {self.model}, the report names {authors}"[:300], cost_usd=cost)
+        return {"source": _billed_source(str(result.get("result", "")), cost), "builder": self.identity,
                 "prompt_sha256": "sha256:" + hashlib.sha256(prompt.encode()).hexdigest(),
-                "cost_usd": result.get("total_cost_usd")}
+                "cost_usd": cost}
+
+
+    def _behind_door(self, argv: list, prompt: str, scratch: str):
+        """The same confinement as ``models.ClaudeCodeRoute`` (its namespace and per-call relay), as its own identity."""
+        import sys
+        import urllib.parse
+        from foundry.systems.relay_door import Door, door_argv
+        from greg import model_child
+        from greg.models import CLI_NO_MODEL_FALLBACK, RouteError, _namespace, _scoped_relay, cli_home
+        env, runtime = cli_home(scratch)
+        try:
+            namespace = _namespace(scratch, readonly=(str(Path(self.binary).resolve().parent), *runtime))
+        except RouteError as exc:
+            raise BuildError(str(exc)) from None
+        host = urllib.parse.urlsplit(model_child.BASE_URLS["anthropic"]).hostname
+        with Door(_scoped_relay(self.egress, "genesis.claude-code", host), "genesis.claude-code") as door:
+            return self.runner(namespace + door_argv(sys.executable, door.fd, argv), input=prompt, capture_output=True,
+                               text=True, timeout=self.timeout, cwd=scratch, pass_fds=[door.fd],
+                               env={**env, **CLI_NO_MODEL_FALLBACK})
 
 
 BUILDER_SYSTEM = ("You write one small, pure Python function to an exact contract. You have no tools. "
@@ -255,12 +334,15 @@ class ModelBuilder:
         prompt = build_prompt(request, feedback)
         try:
             result = self.router.complete(BUILDER_SYSTEM, prompt, budget_usd=self.max_budget_usd)
-        except RouteError as exc:
+        except RouteError as exc:   # a withheld (e.g. substituted) answer was still billed: carry the spend
             spent = (getattr(self.router, "last", None) or {}).get("cost_usd") or 0.0
             raise BuildError(f"no model route produced a candidate: {exc}"[:300] + (f" (spent ${spent:.4f})"
-                                                                                  if spent else "")) from exc
-        return {"source": extract_source(result["text"]), "builder": "model:" + result["route"],
-                "served_model": result.get("served_model"),
+                                                                                  if spent else ""),
+                             cost_usd=spent or None) from exc
+        return {"source": _billed_source(result["text"], result.get("cost_usd")),
+                "builder": "model:" + result["route"],
+                "served_model": result.get("served_model"), "requested_model": result.get("requested_model"),
+                "substituted": result.get("substituted"),   # None: the route did not or could not check
                 "model_digest": result.get("model_digest"),
                 "prompt_sha256": "sha256:" + hashlib.sha256(prompt.encode()).hexdigest(),
                 "cost_usd": result.get("cost_usd"), "routes_tried": result.get("tried", [])}

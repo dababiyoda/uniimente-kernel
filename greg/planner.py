@@ -48,6 +48,8 @@ SCHEDULE = re.compile(r"\b(?:shift|window)\s*:?\s*(?:is\s+)?\d{1,5}\s*(?:h|hours
 NETWORK = re.compile(r"\b(?:(?:shortest|cheapest|fastest|quickest)\s+(?:route|path|way)|(?:maximum|max|most)\s+"
                      r"(?:flow|units|throughput|capacity))\s+from\s+\w+\s+to\s+\w+", re.I)
 NETWORK_LINK = re.compile(r"\b\w+\s+(?:to|and)\s+\w+\s*[:,]?\s*\d", re.I)
+PORTFOLIO = re.compile(r"\b(?:earns|pays|returns|makes|brings in|is worth|costs)\s+\$?\d", re.I)
+PORTFOLIO_NEEDS = re.compile(r"\b[A-Za-z0-9][\w.-]*\s+(?:needs|requires|depends on)\s+[A-Za-z0-9]", re.I)
 PLAN = re.compile(r"(?:^|[.!?\n]\s*)(?:maximi[sz]e|minimi[sz]e)\s+\S", re.I)
 PLAN_LIMIT = re.compile(r"(?:<=|>=|≤|≥|\bat most\b|\bat least\b|\bbetween\b|=)\s*-?\d", re.I)
 
@@ -59,6 +61,7 @@ class PlannerContext:
     workspace: Path | None = None
     today: str = field(default_factory=lambda: datetime.now(timezone.utc).date().isoformat())
     repositories: dict | None = None               # name -> {"path", "github"}; discovered when None
+    hosted: dict | None = None                     # name -> public record of a hosted MCP login or registered token
 
     def repos(self) -> dict:
         if self.repositories is None:
@@ -149,6 +152,256 @@ def _verify_route(text: str, ctx: PlannerContext) -> dict:
                             "digest matches"])
 
 
+EFFORT = re.compile(r"\b(?:effort|budget)\D{0,20}(\d{1,3})\b", re.I)
+
+
+def kernel_checkouts(ctx: PlannerContext) -> list[Path]:
+    """UNIIMENTE kernel checkouts inside the read roots: the sources the First Mission reads."""
+    def children(directory: Path, limit: int) -> list[Path]:
+        try:
+            return sorted(d for d in directory.iterdir() if d.is_dir() and not d.name.startswith("."))[:limit]
+        except OSError:
+            return []
+
+    found, candidates = [], []
+    for root in (Path(r) for r in ctx.read_roots if Path(r).is_dir()):   # the root and two levels below, bounded
+        level1 = children(root, 64)
+        candidates += [root, *level1, *[d for c in level1 for d in children(c, 16)]]
+    candidates += [Path(r["path"]) for r in ctx.repos().values()]
+    for candidate in candidates:
+        if (candidate / "greg/path.json").is_file() and (candidate / "foundry/completion.yaml").is_file():
+            if candidate.resolve() not in found:
+                found.append(candidate.resolve())
+    return found
+
+
+def _first_mission_route(text: str, ctx: PlannerContext) -> dict:
+    kernels = kernel_checkouts(ctx)
+    if not kernels:
+        return {"status": "NEEDS_INPUT", "origin": "template:first-mission",
+                "questions": ["Which UNIIMENTE kernel checkout should GREG read? Add it to the read roots "
+                              "(it must contain greg/path.json and foundry/completion.yaml)."]}
+    budget = EFFORT.search(text)
+    effort = int(budget.group(1)) if budget else 8
+    if not 1 <= effort <= 200:
+        return {"status": "NEEDS_INPUT", "origin": "template:first-mission",
+                "questions": ["An effort budget is a whole number of units from 1 to 200."]}
+    spec = templates.first_mission(kernel_root=str(kernels[0]), effort_budget=effort, founder_expression=text)
+    return _proposal(spec, "template:first-mission", notes=[
+        f"reads {kernels[0]} (greg/path.json and foundry/completion.yaml) and writes one private dossier to "
+        "your delivery folder; nothing is sent, published, spent or merged",
+        f"effort budget: {effort} units" + ("" if budget else " (default; say 'effort budget 12' to change it)"),
+        "the selection uses GREG's exact knapsack engine; if it is not attached yet the mission stops and asks "
+        "you to attach it (read-only)",
+        "the scores are a declared prior over the sources, shown in the dossier; you can change them",
+        "an independent appraisal re-derives the dossier before the mission counts as achieved"])
+
+
+MCP_WORDS = re.compile(r"\b(?:mcp|(?:tool\s+)?servers?)\b", re.I)
+GENERIC_VERBS = {"get", "show", "list", "find", "read", "fetch", "give", "tell", "use", "run", "make", "do", "ask"}
+TIMEZONE = re.compile(r"\b(?:UTC|[A-Z][A-Za-z_]+/[A-Za-z_]+(?:/[A-Za-z_]+)?)\b")
+CHANGE_WORDS = re.compile(r"\b(?:write|append|add|create|save|store|edit|update|replace|insert|put|delete|remove|"
+                          r"rename|move|commit|post|send|record)\b", re.I)
+ACT_QUOTE = re.compile(r"\"([^\"]{1,400})\"|\u201c([^\u201d]{1,400})\u201d|(?<!\w)'([^']{1,400})'(?!\w)")
+
+
+def _words(text: str) -> set:
+    return {w[:-1] if len(w) > 3 and w.endswith("s") else w for w in re.findall(r"[a-z0-9]+", text.lower())}
+
+
+def _mcp_route(text: str, ctx: PlannerContext) -> dict | None:
+    """Words that name an installed MCP server: one read-only ``mcp.call`` mission, its tool and arguments taken from
+    the server's own tool list and schemas. Anything the words do not settle becomes a question, never a guess."""
+    from greg import mcp_tools
+    origin = "template:mcp-tool"
+    servers = mcp_tools.installed_servers(ctx.read_roots)
+    words = _words(text)
+    named = [n for n in servers if re.search(rf"\b{re.escape(n)}\s+(?:mcp\s+)?(?:tool\s+)?server", text, re.I)]
+    if not named and not re.search(r"\bmcp\b", text, re.I):
+        return None                                  # "server" alone, without an installed server named: not ours
+    if not servers:
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            "No MCP servers are installed under GREG's read roots. Install one into its own folder there, for example "
+            "python3 -m venv <read root>/tools/git && <read root>/tools/git/bin/pip install mcp-server-git"]}
+    if len(named) != 1:
+        if not named and len(servers) == 1:
+            named = list(servers)
+        else:
+            return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+                "Which server? Installed: " + ", ".join(servers) + " (say e.g. 'the git server')"]}
+    name, server = named[0], servers[named[0]]
+    scratch = Path(ctx.workspace or Path.home() / ".cache" / "greg") / "mcp-planner"
+    try:
+        tools = mcp_tools.server_tools(server, scratch_parent=scratch)
+    except Exception as exc:
+        return {"status": "NEEDS_INPUT", "origin": origin,
+                "questions": [f"The {name} server did not list its tools: {str(exc)[:200]}"]}
+
+    def fit(tool):
+        """(distinctive words of the tool's name present in the request, minus those absent); generic verbs and the
+        server's own name do not count. Naming the tool exactly wins."""
+        if re.search(rf"\b{re.escape(tool['name'])}\b", text):
+            return (99, 0)
+        parts = {w[:-1] if len(w) > 3 and w.endswith("s") else w
+                 for w in re.findall(r"[a-z0-9]+", tool["name"].lower())} - GENERIC_VERBS - {name}
+        return (len(parts & words), -len(parts - words))
+    ranked = sorted((t for t in tools if fit(t)[0] > 0), key=fit, reverse=True)
+    matching = ranked
+    if not matching or (len(matching) > 1 and fit(matching[0]) == fit(matching[1])):
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"Which of the {name} server's tools? " + "; ".join(
+                f"{t['name']}: {(t['description'] or '').strip().splitlines()[0][:80] if t['description'] else ''}"
+                for t in tools[:20])]}
+    tool = matching[0]
+    schema = tool.get("input_schema") or {}
+    properties = schema.get("properties", {})
+    # A change: the words ask for one and the server does not claim the tool only reads. Text in quotes may fill one
+    # string argument, and a file that does not exist yet may be named (its folder must exist).
+    act = not tool.get("claims_read_only") and bool(CHANGE_WORDS.search(text))
+    quotes = [next(g for g in m.groups() if g is not None) for m in ACT_QUOTE.finditer(text)] if act else []
+    plain = ACT_QUOTE.sub(" ", text) if act else text
+    arguments, readable, missing, target, quoted = {}, [], [], None, None
+    roots = [Path(r).expanduser().resolve() for r in ctx.read_roots]
+    for prop in schema.get("required", []):
+        spec = properties.get(prop, {})
+        key = prop.lower()
+        if any(k in key for k in ("path", "repo", "file", "dir", "folder")):
+            found = FILE_PATH.search(plain)
+            target = Path(found.group(1).rstrip(".,;")).expanduser().resolve() if found else None
+            if target is None or not (target.exists() or (act and target.parent.is_dir())):
+                missing.append(f"{prop} (a path under {', '.join(map(str, roots))})")
+            elif not any(target == r or r in target.parents for r in roots):
+                return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+                    f"GREG may only read under {', '.join(map(str, roots))}; {target} is outside."]}
+            else:
+                arguments[prop], readable = str(target), [str(target)]
+        elif "timezone" in key or key in ("tz", "zone"):
+            zone = TIMEZONE.search(text)
+            if zone:
+                arguments[prop] = zone.group(0)
+            else:
+                missing.append(f"{prop} (an IANA zone such as Asia/Tokyo)")
+        elif act and quoted is None and len(quotes) == 1 and spec.get("type", "string") == "string":
+            arguments[prop], quoted = quotes[0], quotes[0]
+        else:
+            missing.append(f"{prop}: {spec.get('description') or spec.get('type') or 'a value'}"
+                           + (" (put it in quotes)" if act else ""))
+    if missing:
+        return {"status": "NEEDS_INPUT", "origin": origin,
+                "questions": [f"The {name} server's {tool['name']} needs " + "; ".join(missing) + "."]}
+    if act:
+        return _mcp_act_route(text, name, server, tool, arguments, target, quoted)
+    readable = list(dict.fromkeys([*server.get("readable", []), *readable]))
+    spec = templates.mcp_tool(server=name, root=server["root"], command=[*server["command"], *server.get("args", [])],
+                              tool=tool["name"], arguments=arguments, readable=readable, founder_expression=text)
+    return _proposal(spec, origin, notes=[
+        f"the {name} server's {tool['name']} tool, with {json.dumps(arguments)}",
+        "read-only by construction: the server runs with no network and a read-only view of what this mission "
+        "names; a tool that tries to write or send fails and nothing changes",
+        "the server's own claims about its tools are not trusted; its answer is shown as untrusted data"]
+        + ([] if tool.get("claims_read_only") else [
+            f"the server does not claim {tool['name']} is read-only: if it tries to change something, it fails inside "
+            "GREG's namespace and nothing changes (to change something, ask for the change with the text in quotes: "
+            "GREG proposes an mcp.act mission you approve)"]))
+
+
+PAGE_URL = re.compile(r"\bhttps?://[^\s'\"\u201c\u201d<>]+")
+
+
+def _hosted_route(text: str, ctx: PlannerContext) -> dict | None:
+    """Words that name a hosted MCP server the founder logged in to (``greg mcp login``) or registered a token for
+    (``greg mcp token``): one ``mcp.act`` by URL, its tool taken from the list the server gave then, so drafting
+    contacts nobody. A call on someone else's machine is a change GREG cannot read back from its own disk, so the
+    words must name a page GREG renders to see the effect, and the text it should show, in quotes. Whatever the words
+    do not settle becomes a question."""
+    from urllib.parse import urlsplit
+    origin = "template:mcp-remote-act"
+    named = [n for n in ctx.hosted
+             if re.search(rf"\b{re.escape(n)}\s+(?:mcp\s+)?(?:service|server)\b", text, re.I)]
+    if len(named) != 1:
+        return None                                 # not about one hosted server by name: other routes decide
+    name, hosted = named[0], ctx.hosted[named[0]]
+    tools, words = hosted.get("tools") or [], _words(text)
+
+    def fit(tool):
+        if re.search(rf"\b{re.escape(tool['name'])}\b", text):
+            return (99, 0)
+        parts = {w[:-1] if len(w) > 3 and w.endswith("s") else w
+                 for w in re.findall(r"[a-z0-9]+", tool["name"].lower())} - GENERIC_VERBS - _words(name)
+        return (len(parts & words), -len(parts - words))
+    ranked = sorted((t for t in tools if fit(t)[0] > 0), key=fit, reverse=True)
+    if not ranked or (len(ranked) > 1 and fit(ranked[0]) == fit(ranked[1])):
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"Which of the {name} service's tools (as it listed them)? "
+            + ("; ".join(f"{t['name']}: {t.get('description', '')[:80]}" for t in tools[:20]) or "it listed none")]}
+    tool = ranked[0]
+    verb = re.findall(r"[a-z0-9]+", tool["name"].lower())[:1]
+    if tool.get("claims_read_only") or not (CHANGE_WORDS.search(text) or set(verb) & words):
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"Every call to the hosted {name} service waits for your approval, and GREG proposes one only for a change "
+            "it can then see. Say what should change, the text in quotes, and the page that will show it."]}
+    quotes = [next(g for g in m.groups() if g is not None) for m in ACT_QUOTE.finditer(text)]
+    needs = list(tool.get("needs") or [])
+    if len(quotes) != 1 or len(needs) > 1:
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"The {name} service's {tool['name']} needs " + (", ".join(needs) or "no arguments")
+            + ". GREG fills one of them from the one text in quotes; say the rest in a mission you sign by hand."]}
+    arguments = {needs[0]: quotes[0]} if needs else {}
+    server_url = hosted["server"]
+    pages = [u.rstrip(".,;)") for u in PAGE_URL.findall(ACT_QUOTE.sub(" ", text)) if u.rstrip(".,;)") != server_url]
+    if len(pages) != 1:
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"GREG checks a change on the {name} service by rendering a page that shows it. Which page (one https "
+            f"address)? GREG closes the mission when that page shows {quotes[0]!r}."]}
+    check_url = pages[0]
+    host, renew_at = urlsplit(server_url).hostname, hosted.get("renews_at")
+    hosts = [host, renew_at] if renew_at and renew_at != host else []
+    handle = hosted.get("handle") or f"mcp:{name}"
+    spec = templates.mcp_remote_act(server=name, url=server_url, tool=tool["name"], arguments=arguments,
+                                    bearer=handle, check_url=check_url, expect_text=quotes[0], hosts=hosts,
+                                    founder_expression=text)
+    return _proposal(spec, origin, notes=[
+        f"the hosted {name} service's {tool['name']} tool at {server_url}, with {json.dumps(arguments)}; chosen from "
+        "the tools the service listed when you logged in or registered it, so drafting contacted nobody",
+        f"GREG asks you before it runs and shows this exact scope: {host}" + (f" (and {renew_at} to renew the login)"
+                                                                           if hosts else "")
+        + f" through the relay, with the credential {handle}; nothing on this computer is written",
+        f"closes only when GREG itself renders {check_url} and finds {quotes[0]!r}; if it already does, nothing runs",
+        "evidence: the service's answer to the call is its own claim; the page render is "
+        + templates.REMOTE_EVIDENCE[templates.remote_evidence(server_url, check_url)],
+        "the service's own answer is untrusted data"])
+
+
+def _mcp_act_route(text: str, name: str, server: dict, tool: dict, arguments: dict, target: Path | None,
+                   quoted: str | None) -> dict:
+    """One ``mcp.act`` mission from the founder's words. GREG checks the change itself by reading the file the words
+    name, so a change it cannot read back becomes a question. The server may write the file's folder (servers often
+    replace a file by writing a new one and renaming it) and nothing else; no network, no credentials."""
+    origin = "template:mcp-act"
+    if target is None or target.is_dir():
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"GREG checks a change by reading the file it changes. The {name} server's {tool['name']} names "
+            + (f"the folder {target}" if target else "no file") + ", so GREG could not tell whether it worked. "
+            "Name the file and, in quotes, the text it should contain afterwards."]}
+    if quoted is not None:
+        expect, closes = {"op": "contains", "field": "text", "value": quoted}, f"finds {quoted!r} in it"
+    elif not target.exists():
+        expect, closes = {"op": "equals", "field": "exists", "value": True}, "finds that it exists"
+    else:
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"What should {target} contain after the change? Put that text in quotes so GREG can check it."]}
+    writable = target.parent
+    spec = templates.mcp_act(server=name, root=server["root"], command=[*server["command"], *server.get("args", [])],
+                             tool=tool["name"], arguments=arguments, writable=[str(writable)], check_path=str(target),
+                             expect=expect, readable=server.get("readable", []), founder_expression=text)
+    return _proposal(spec, origin, notes=[
+        f"the {name} server's {tool['name']} tool, with {json.dumps(arguments)}",
+        f"GREG asks you before it runs and shows this exact scope: the server may write {writable} and nothing "
+        "else; no network; no credentials",
+        f"closes only when GREG itself reads {target} and {closes}; if that is already true, nothing runs",
+        "the server's own answer is untrusted data"])
+
+
 def template_route(text: str, ctx: PlannerContext) -> dict | None:
     lowered = text.lower()
     if (work := CODE_WORK.match(text)):    # software-development work: a temporary coding worker, appraised
@@ -180,6 +433,18 @@ def template_route(text: str, ctx: PlannerContext) -> dict | None:
             f"GREG has no built-in {function}: it looks for an installed open-source engine (NetworkX, SciPy), "
             "qualifies it, and asks you to attach it, showing its version and license",
             "every answer is accepted only on GREG's own certificate, not on the engine's word"])
+    if PORTFOLIO.search(text) and PORTFOLIO_NEEDS.search(text):   # which to take when some need others
+        try:
+            spec = templates.portfolio_in_words(text=text)
+        except ValueError as exc:
+            return {"status": "NEEDS_INPUT", "origin": "template:portfolio-in-words", "questions": [str(exc)]}
+        return _proposal(spec, "template:portfolio-in-words", notes=[
+            "read-only: GREG computes and shows the choice; it buys, hires or starts nothing",
+            "the controlled language is read without a model; a sentence it cannot read stops the plan",
+            "GREG constructs this capability: a certified reduction onto a maximum-flow engine it qualifies "
+            "(an installed open-source package such as NetworkX or SciPy), which you attach",
+            "the answer counts only on GREG's funding certificate, checked against your items alone; it names "
+            "what to take, the profit, and what was left out and why"])
     if PLAN.search(text) and PLAN_LIMIT.search(text):          # a linear plan in controlled words
         try:
             spec = templates.plan_in_words(text=text)
@@ -193,6 +458,12 @@ def template_route(text: str, ctx: PlannerContext) -> dict | None:
             "GLOP), qualifies it, and asks you to attach it, showing its version and license",
             "the plan counts only if GREG's own duality certificate proves no plan does better; if no plan meets "
             "every limit, GREG proves that and names the limits in conflict"])
+    if getattr(ctx, "hosted", None) and (proposal := _hosted_route(text, ctx)) is not None:
+        return proposal                     # a tool on a hosted MCP server the founder logged in to or registered
+    if MCP_WORDS.search(text) and (proposal := _mcp_route(text, ctx)) is not None:
+        return proposal                     # a tool on an MCP server the founder installed, named in the words
+    if templates.FIRST_MISSION_WORDS.search(text):      # the founder's first mission: where am I going, what next
+        return _first_mission_route(text, ctx)
     if BRIEF.search(text):
         repos = ctx.repos()
         named = {n: r for n, r in repos.items() if n.lower() in lowered}
@@ -267,9 +538,20 @@ def _prompt(text: str, ctx: PlannerContext) -> str:
     from greg.missions import MISSION_SCHEMA
     inventory = [{k: c.get(k) for k in ("capability_id", "function", "description", "consequence_class", "inputs",
                                          "outputs", "target_prefix", "state")} for c in ctx.capabilities]
-    return json.dumps({"founder_words": text, "today": ctx.today, "capability_inventory": inventory,
-                       "readable_repositories": ctx.repos(), "mission_json_schema": MISSION_SCHEMA},
-                      sort_keys=True, indent=1)
+    context = {"founder_words": text, "today": ctx.today, "capability_inventory": inventory,
+               "readable_repositories": ctx.repos(), "mission_json_schema": MISSION_SCHEMA}
+    if MCP_WORDS.search(text):          # the founder's installed MCP servers and their tools, for an mcp.call mission
+        from greg import mcp_tools
+        servers = {}
+        for name, server in list(mcp_tools.installed_servers(ctx.read_roots).items())[:5]:
+            try:
+                tools = mcp_tools.server_tools(server, scratch_parent=Path(ctx.workspace or Path.home() / ".cache" /
+                                                                           "greg") / "mcp-planner")
+            except Exception as exc:
+                tools = f"unlisted: {str(exc)[:120]}"
+            servers[name] = {**server, "tools": tools}
+        context["installed_mcp_servers"] = servers
+    return json.dumps(context, sort_keys=True, indent=1, default=str)
 
 
 def _first_json_object(text: str) -> dict:
@@ -377,6 +659,7 @@ def vet(draft: dict, text: str, ctx: PlannerContext, *, origin: str, extra: dict
                            or ["fs:*"], "max_consequence_class": "read_only", "budget_usd": 0,
                            "horizon": horizon.isoformat().replace("+00:00", "Z")}
     draft.pop("auto_attach", None)
+    draft.pop("standing_reconciliation", None)     # the founder adds a standing mandate, never a model
     if clamped:
         extra = {**extra, "clamped": clamped}
     return _proposal(draft, origin, notes=["drafted by a model; review every check and strategy before signing"]
@@ -407,12 +690,16 @@ class ClaudeCodeTransport(_TextTransport, models.ClaudeCodeRoute):
             raise MissionError(str(exc)) from exc
 
 
-def _complete(transport, system: str, user: str) -> tuple[str, str, list, str | None]:
-    """Text, true author, routes tried and provider-reported served model, for a transport or a ModelRouter."""
+IDENTITY_FIELDS = ("served_model", "requested_model", "substituted")   # model identity evidence, when reported
+
+
+def _complete(transport, system: str, user: str) -> tuple[str, str, list, dict]:
+    """Text, true author, routes tried and the reported model identity, for a transport or a ModelRouter."""
     result = transport.complete(system, user)
     if isinstance(result, dict):
-        return result["text"], result["route"], result.get("tried", []), result.get("served_model")
-    return result, transport.name, [], None
+        identity = {k: result[k] for k in IDENTITY_FIELDS if result.get(k) is not None}
+        return result["text"], result["route"], result.get("tried", []), identity
+    return result, transport.name, [], {}
 
 
 def model_route(text: str, ctx: PlannerContext, transport, *, repair_rounds: int = 1) -> dict:
@@ -420,9 +707,13 @@ def model_route(text: str, ctx: PlannerContext, transport, *, repair_rounds: int
     prompt = _prompt(text, ctx)
     origin = f"model:{transport.name}"
     attempts = []
+    calls, spent = 0, 0.0           # every round costs, including drafts that are then repaired
     for round_number in range(repair_rounds + 1):
         try:
-            reply, author, tried, served = _complete(transport, SYSTEM, prompt)
+            calls += 1
+            reply, author, tried, identity = _complete(transport, SYSTEM, prompt)
+            cost = (getattr(transport, "last", None) or {}).get("cost_usd")
+            spent = None if cost is None or spent is None else spent + float(cost)
             draft = _first_json_object(reply)
         except models.Refusal as exc:   # a decline is final; the router never re-asks another vendor
             return {"status": "REFUSED", "origin": origin, "why": str(exc)[:400], "refusal_class": exc.kind,
@@ -431,12 +722,13 @@ def model_route(text: str, ctx: PlannerContext, transport, *, repair_rounds: int
             return {"status": "FAILED", "origin": origin, "why": f"{type(exc).__name__}: {exc}"[:400],
                     "attempts": attempts}
         origin = f"model:{author}"   # the route that actually wrote this draft
-        extra = {"model": author, "rounds": round_number + 1,
+        extra = {"model": author, "rounds": round_number + 1, "model_calls": calls,
                  "prompt_sha256": "sha256:" + hashlib.sha256((SYSTEM + "\n" + prompt).encode()).hexdigest()}
+        if spent is not None:       # absent, not zero, when a route did not report its cost
+            extra["model_cost_usd"] = round(spent, 6)
         if tried:
             extra["routes_tried"] = tried
-        if served:
-            extra["served_model"] = served
+        extra.update(identity)
         digest = (getattr(transport, "last", None) or {}).get("model_digest")
         if digest:
             extra["model_digest"] = digest
@@ -470,15 +762,22 @@ def propose(text: str, ctx: PlannerContext, *, transport=None) -> dict:
     return model_route(text, ctx, transport)
 
 
-def default_transport(secrets=None, *, config: dict | None = None):
-    """Every model route this body can reach behind one router, or None when there is none."""
-    routes, _ = models.available_routes(secrets, config=config)
+def default_transport(secrets=None, *, config: dict | None = None, egress=None):
+    """Every model route this body can reach behind one router, or None when there is none. ``egress`` is the body's
+    #26 relay when confined egress is on; paid routes then reach their providers only through it."""
+    routes, _ = models.available_routes(secrets, config=config, egress=egress)
     return models.ModelRouter(routes) if routes else None
 
 
 CONSEQUENCE_WORDS = {"read_only": "read", "internal_write": "write a file on this computer",
                      "external_contact": "contact someone outside", "financial": "spend money",
                      "irreversible": "do something irreversible"}
+
+
+def _builtin_consequence(capability_id) -> str | None:
+    """A built-in capability's class when the caller's list does not carry it; unknown stays unknown (and asks)."""
+    from greg.capabilities import BUILTINS
+    return BUILTINS[capability_id][0].consequence_class if capability_id in BUILTINS else None
 
 
 def authority_summary(spec: dict, capabilities: list[dict]) -> dict:
@@ -489,13 +788,18 @@ def authority_summary(spec: dict, capabilities: list[dict]) -> dict:
     from fnmatch import fnmatchcase
     for strategy in spec.get("strategies", []):
         cid = strategy.get("capability")
-        cap = known.get(cid, {})
+        consequence = known.get(cid, {}).get("consequence_class") or _builtin_consequence(cid)
         words = f"{strategy['action_id']}: {cid or 'function ' + str(strategy.get('function'))} " \
-                f"({CONSEQUENCE_WORDS.get(cap.get('consequence_class'), 'unknown consequence')}) on {strategy['target']}"
-        within = (cid and any(fnmatchcase(cid, p) for p in cone["capabilities"])
-                  and ["read_only", "internal_write", "external_contact"].index(cap.get("consequence_class", "read_only"))
-                  <= ["read_only", "internal_write", "external_contact"].index(cone["max_consequence_class"]))
-        (inside if within else ask).append(words)
+                f"({CONSEQUENCE_WORDS.get(consequence, 'unknown consequence')}) on {strategy['target']}"
+        order = ["read_only", "internal_write", "external_contact"]
+        within = bool(cid and consequence in order and any(fnmatchcase(cid, p) for p in cone["capabilities"])
+                      and order.index(consequence) <= order.index(cone["max_consequence_class"]))
+        signed = any(p["action_id"] == strategy["action_id"] and p["capability"] == cid
+                     and p["target"] == strategy["target"] and p["consequence_class"] == consequence
+                     for p in spec.get("pre_approved_steps", []))
+        if signed and not within:            # this one step only (greg/sop.py); the cone itself is unchanged
+            words += " (pre-approved by this signature)"
+        (inside if within or signed else ask).append(words)
     return {"may_do_without_asking": ["observe: " + ", ".join(sorted({c["sensor"].get("capability") or
                                                                       c["sensor"].get("function") for c in
                                                                       spec["success_checks"]}))] + inside,

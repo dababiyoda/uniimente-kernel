@@ -28,6 +28,8 @@ import time
 from .contracts import CognitionError, canonical, digest, strict_data
 
 SCHEMA = "greg-competency-compilation/0.2"   # 0.2: selected_receipt (the executed method's own receipt)
+# The confidence label of an answer from a construction whose problem-level certificate GREG checked.
+CERTIFIED = "certified: exact problem-level certificate"
 ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE_INDEX = ROOT / "docs" / "evidence" / "greg-mind-evidence-index.json"
 # The thinking budget's clock (directive section 12); a module attribute so tests can drive it deterministically.
@@ -37,7 +39,8 @@ HIGH_CONSEQUENCE = ("external_contact", "financial", "irreversible")
 HUMAN_CLASSES = ("normative", "legal", "institutional_acceptance")
 HUMAN_ROLES = ("founder", "operator", "domain_expert", "affected_participant", "auditor", "customer",
                "professional", "regulator")
-STATUS_RANK = {"DEFAULT_FOR_GEOMETRY": 0, "NICHE_CAPABILITY": 1, "UNEVALUATED": 2, "EXPERIMENTAL": 3, "NO_LIFT": 8,
+STATUS_RANK = {"DEFAULT_FOR_GEOMETRY": 0, "NICHE_CAPABILITY": 1, "UNEVALUATED": 2, "CONSTRUCTED_VERIFIED": 2,
+               "EXPERIMENTAL": 3, "NO_LIFT": 8,
                "COMPOSITION_ONLY": 9, "SUPERSEDED": 9, "REJECTED": 9, "FRONTIER_HORIZON": 9}
 EXCLUDED = ("SUPERSEDED", "REJECTED", "FRONTIER_HORIZON", "COMPOSITION_ONLY")
 # Statuses that are not positive evidence: they persist through a version bump until a re-admission replaces
@@ -61,6 +64,9 @@ NATIVE_INPUTS = {
     # an observations-only request cannot say which question it asks (it stays reachable by its operation).
     "crowd_label": ("classes", "labels"), "swarm_minimize": ("function", "shift", "bounds", "budget", "seed"),
     "evolve_blackbox": ("function", "shift", "bounds", "budget", "seed"),
+    # cortex 0.2.2 (verified 2026-10-21): an affected party is the protection review's native input, so the family
+    # that reads it is a candidate instead of the request being called a gap no catalogued method reads
+    "protection_review": ("affected_party",),
 }
 
 
@@ -436,9 +442,16 @@ def operation_status(family: str, record: dict) -> tuple[str, str | None]:
                                "needs re-admission")
     if measured != now.get("closure_sha256"):
         then, current = code.get("closure_members") or {}, now.get("closure_members") or {}
-        changed = sorted(k for k in set(then) | set(current) if then.get(k) != current.get(k))
+        # a member whose own code changed, apart from one the closure now reaches that it did not (unchanged code
+        # newly called by a changed member), apart from one it no longer reaches
+        changed = sorted(k for k in set(then) & set(current) if then[k] != current[k])
+        added, removed = sorted(set(current) - set(then)), sorted(set(then) - set(current))
         return "UNEVALUATED", (f"{status} was measured on solver closure {measured}; changed since: "
-                               f"{', '.join(changed) or 'unknown'}; needs re-admission")
+                               f"{', '.join(changed) or 'none'}"
+                               + (f"; added to the closure since: {', '.join(added)}" if added else "")
+                               + (f"; no longer in the closure: {', '.join(removed)}" if removed else "")
+                               + ("" if changed or added or removed else " (members not recorded)")
+                               + "; needs re-admission")
     return status, None
 
 
@@ -902,6 +915,69 @@ def _part_rows(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
 PART_FLAGS = ("formalization_complete",)        # request-level flags a part-addressed method reads with its part
 
 
+def _forward_consequence(data: dict, g, vector):
+    """The compile's declared consequence as the payload's ``declared`` block for a cortex organ: its class, and its
+    harm vector as the cortex's own harm levels, so the cortex's harm-implies-class rule decides exactly as on its
+    direct path (review of the 0.2.2 port: a reputation or privacy harm of 0.5 had been forwarded as "financial").
+    Each may raise the payload's own declaration, never lower it."""
+    from capabilities.genome import CONSEQUENCE_CLASSES as ORDER
+    from .bridge import _HARM_TO_VECTOR, _LEVEL
+
+    def rank(c):
+        return ORDER.index(c) if c in ORDER else -1
+    levels = [(name, x) for name, x in sorted(_LEVEL.items(), key=lambda kv: kv[1] if kv[1] is not None else -1)
+              if x is not None]
+
+    def level(value):                       # the least level at or above the value: never understates a harm
+        return next(name for name, x in levels if value <= x)
+    declared = dict(data.get("declared") or {}) if isinstance(data.get("declared"), dict) else {}
+    current = declared.get("consequence_class")
+    forwarded = {}
+    if g.consequence_class and rank(g.consequence_class) > rank(current):
+        declared["consequence_class"] = g.consequence_class
+        forwarded.update({"from": current or "undeclared", "to": g.consequence_class,
+                          "why": "compile geometry.consequence_class"})
+    harm = dict(declared.get("harm") or {}) if isinstance(declared.get("harm"), dict) else {}
+    raised = {}
+    for dimension, field_ in _HARM_TO_VECTOR.items():
+        value = float(getattr(vector, field_, 0.0) or 0.0)
+        if value <= 0:
+            continue
+        mine, theirs = level(min(value, 1.0)), harm.get(dimension)
+        if _LEVEL.get(theirs) is None or _LEVEL[mine] > _LEVEL[theirs]:
+            raised[dimension] = mine
+    if raised:
+        declared["harm"] = {**harm, **raised}
+        forwarded["harm"] = raised
+    if not forwarded:
+        return data, None
+    return {**data, "declared": declared}, forwarded
+
+
+def _protection_matter(data: dict) -> str | None:
+    """Why the request is a victim-protection matter that qualified humans lead, or None (cortex 0.2.2, the
+    cortex's own override mirrored before any candidate search; verified 2026-10-21). A malformed protection block
+    is treated as one: protection fails toward the human route."""
+    from cortex.contracts import CortexError, VictimProtection
+    from cortex.routing import HUMAN_LED_PROTECTION
+    block = data.get("victim_protection")
+    if block is not None:
+        if not isinstance(block, dict):
+            return "victim_protection is not a mapping; handled as human-led"
+        try:
+            p = VictimProtection.from_dict(block)
+        except (CortexError, TypeError, AttributeError) as exc:
+            return f"victim_protection could not be read ({exc}); handled as human-led"
+        if p.relevant and (set(p.required_actions) & set(HUMAN_LED_PROTECTION) or p.gaps):
+            return "victim protection requires human-led action"
+    party = data.get("affected_party")
+    if isinstance(party, dict):
+        harm = [party.get(k, 0) for k in ("immediate_harm", "continuing_harm")]
+        if any(isinstance(h, (int, float)) and not isinstance(h, bool) and h > 0 for h in harm):
+            return "an affected party with immediate or continuing harm"
+    return None
+
+
 def _one_part(data: dict) -> str | None:
     """The part, when the request is a recipe of one typed part and nothing else (``{"capacity_network": {...}}``,
     plus request-level flags): that part is the whole question. Otherwise None."""
@@ -1195,6 +1271,111 @@ def _subregion_evidence(item, data: dict, record: dict) -> dict | None:
             "competitor_deployable": item.competitor_deployable, "evidence": record.get("evidence")}
 
 
+def constructed_candidates(data: dict, g: CompetencyGeometry, registry) -> list[dict]:
+    """Capabilities Capability Genesis constructed (greg.recombine) that fit this request's inputs.
+
+    An ATTACHED construction is a candidate like any admitted method; a fitting reduction with no
+    attached construction is rejected as *constructible*, so the deficit names a function Genesis
+    can actually form instead of an unbuildable geometry label. Attachment stays a founder act."""
+    from greg import recombine
+    rows = []
+    for reduction in recombine.fits(data):
+        attached = [m.capability_id for m in getattr(registry, "by_function", lambda f: [])(reduction.function)
+                    if m.provider.startswith("composed:") and m.consequence_class == "read_only"
+                    and registry.usable(m.capability_id)[0]]
+        row = {"method": attached[0] if attached else f"constructible:{reduction.function}",
+               "operation": reduction.function, "kind": "constructed", "inputs": list(reduction.inputs),
+               "epistemic_classes": list(reduction.epistemic_classes),
+               "status": "CONSTRUCTED_VERIFIED" if attached else "UNEVALUATED", "rejected": None}
+        if g.geometry and g.geometry not in reduction.epistemic_classes:
+            row["rejected"] = f"native geometry {list(reduction.epistemic_classes)} does not include {g.geometry}"
+        elif not attached:
+            row["rejected"] = "constructible: no attached construction yet (Capability Genesis can form it)"
+            row["constructible"] = True
+        rows.append(row)
+    return rows
+
+
+def _run_constructed(chosen: dict, data: dict, pid: str, registry, receipt: dict, finish, *, high: bool = False,
+                     budget=None, evaluate=()):
+    """Invoke an attached, read-only construction; its problem-level certificate is the evidence.
+
+    A construction is optimisation-class (``recombine.Reduction.epistemic_classes``), so it meets the same rules
+    as every other compile route: under high consequence it needs a complete formal model and returns a
+    conditional result (WORLD_UNVERIFIED), never ANSWERED; its call is a required step on the decision's thinking
+    budget (refused below the minimum step, measured, any overrun disclosed); and the sensitivity operator, when
+    it applies, re-runs the construction itself on perturbed inputs."""
+    from greg.capabilities import CapabilityError
+    manifest = registry.manifests[chosen["method"]]
+    if manifest.consequence_class != "read_only" or not manifest.provider.startswith("composed:"):
+        receipt["abstentions"].append("ABSTAIN: only a read-only construction may answer inside cognition")
+        return finish("ABSTAIN")
+    if high and data.get("formalization_complete") is not True:
+        receipt["abstentions"].append("FORMALIZATION_INCOMPLETE: complete formal model plus independently "
+                                      "verified world assumptions")
+        return finish("FORMALIZATION_INCOMPLETE")
+    request = {key: data[key] for key in chosen["inputs"]}
+    adapter = registry.adapters[manifest.capability_id]
+    step = f"constructed:{manifest.capability_id}"
+    allotted = budget.allot(step, required=True) if budget is not None else None
+    if budget is not None and allotted is None:
+        receipt["abstentions"].append(budget.stops()[-1]["reason"])
+        return finish("ABSTAIN")
+    try:
+        out = _call_construction(adapter, manifest, request, pid)
+    except CapabilityError as exc:
+        if str(exc).startswith("capability refused:"):
+            # the mission's two-strike repair re-forms a construction that faults in service
+            receipt["capability_fault"] = {"capability_id": manifest.capability_id, "detail": str(exc)[:300],
+                                           "failure_class": getattr(exc, "failure_class", None)}
+        receipt["abstentions"].append(f"ABSTAIN: {str(exc)[:300]}")
+        return finish("ABSTAIN")
+    finally:
+        if budget is not None:
+            _close_step(budget, step, allotted, receipt, f"{manifest.capability_id}")
+    receipt["resource_use"]["stages"] = 1
+    receipt["proof_artifacts"] = [{"type": "certificate", "evidence_type": (out.get("certificate") or {}).get("kind")}]
+    receipt["verification_method"] = (out.get("certificate") or {}).get("checked_by") or \
+        "GREG problem-level certificate, independent of the engine"
+    receipt["dissent"].append(f"trust per call: {manifest.provenance.get('baseline', 'see the construction card')}")
+    if out.get("certified") is not True:
+        receipt["abstentions"].append("ABSTAIN: the construction returned no certificate")
+        return finish("ABSTAIN")
+    # Set only once the certificate is in hand: a predicate on this label then implies an answer
+    # that carries a problem-level certificate, never an abstention that merely tried.
+    receipt["confidence_type"] = CERTIFIED
+    if high:
+        receipt["uncertainty"] = "exact for the declared inputs; whether they describe the world is not verified"
+    if "sensitivity" in evaluate and budget is not None:
+        def rerun(key, varied, limit):
+            try:
+                again = _call_construction(adapter, manifest, {k: varied[k] for k in chosen["inputs"]}, pid)
+            except CapabilityError as exc:
+                return {"abstention_state": f"ABSTAIN: {str(exc)[:120]}"}
+            return {"abstention_state": "NONE" if again.get("certified") is True else "NO_CERTIFICATE",
+                    "output": again}
+        receipt["sensitivity"] = _perturbation_runs(request, out, budget, receipt, rerun)
+    return finish("WORLD_UNVERIFIED" if high else "ANSWERED", out)
+
+
+def _call_construction(adapter, manifest, request: dict, pid: str) -> dict:
+    import tempfile
+    from greg.capabilities import InvocationContext
+    with tempfile.TemporaryDirectory(prefix="greg-constructed-") as tmp:
+        ctx = InvocationContext(workspace=Path(tmp), read_roots=(), secrets=None, manifest=manifest,
+                                target=f"cognition:{pid}")
+        return adapter(request, ctx)
+
+
+def _close_step(budget, step: str, allotted, receipt: dict, who: str) -> None:
+    """Record a required step's measured spend and disclose an overrun (the call itself is not interruptible)."""
+    budget.done(step)
+    used = budget.ledger[-1]["spent_s"]
+    if allotted is not None and used > allotted:
+        receipt["dissent"].append(f"{who} overran the thinking budget: {used:.3g}s spent of {allotted:.3g}s "
+                                  "allotted; the construction's engine, not the budget, bounds its call")
+
+
 def _stale_measurements(item, record: dict, data: dict | None) -> dict:
     """A genome's frozen held-out evidence measured at another version of its code, labelled with that version.
 
@@ -1283,7 +1464,14 @@ def _operation_usable(registry, operation: str) -> bool:
 def _usable(registry, row: dict) -> tuple[bool, str]:
     """Whether the row can run now: an operation's capability must be attached; a composition needs an
     attached capability for every operation stage it declares (problem-path stages are routed on the canonical
-    path and checked there)."""
+    path and checked there). A construction (``kind == "constructed"``) runs exactly when its own capability is
+    usable: constructed_candidates admits only an attached, read-only one, and this re-checks it, never widens."""
+    if row["kind"] == "constructed":
+        try:
+            ok, why = registry.usable(row["method"])
+        except Exception as exc:
+            return False, f"registry: {type(exc).__name__}"
+        return bool(ok), str(why)
     if row["kind"] == "problem":
         from .bridge import ROUTER
         for cid in (ROUTER, row["method"]):
@@ -1389,6 +1577,7 @@ def _formed(registry, data: dict, g: CompetencyGeometry, body: dict, high: bool,
         except Exception as exc:
             receipt["abstentions"].append(f"{cid} refused: {exc}"[:300])
             receipt["method_or_composition_selected"] = receipt["selection_level"] = None
+            receipt.setdefault("formed_tried", []).append([cid, manifest.digest()])   # ran, no certified answer
             continue
         finally:
             budget.done(step)
@@ -1422,6 +1611,16 @@ def _formed(registry, data: dict, g: CompetencyGeometry, body: dict, high: bool,
             receipt["withheld_best_fit"]["served_by"] = cid
         return ("WORLD_UNVERIFIED" if high else "ANSWERED"), answer
     return None
+
+
+def _formed_tried(registry, receipt: dict) -> list:
+    """The formed mechanisms this compile ran and got no certified answer from, as ``[capability_id, digest]``
+    (recorded by ``_formed`` as each one refused).
+
+    Capability Genesis records them on the deficit's search pass; a mechanism is excluded from serving the need
+    only if this compile tried it, never because it became usable later (an attach during a host outage's
+    back-off, for one) and never because it was merely considered."""
+    return [list(pair) for pair in receipt.get("formed_tried", [])]
 
 
 def _formed_receipt(pid: str, manifest, spec: dict, g: CompetencyGeometry, vector, data: dict, answer: dict,
@@ -1669,7 +1868,8 @@ def human_packet(g: CompetencyGeometry, body: dict) -> dict:
             "machine_role": "prepare evidence and alternatives only"}
 
 
-def run(params, *, registry, journal=None, model_config=None) -> dict:
+def run(params, *, registry, journal=None, model_config=None, caller_window=None, shared_deadline=None,
+        shared_compute_limit=None) -> dict:
     from .cortex import _cpu_delta, _cpu_seconds, reason
     started = time.monotonic()
     pid, body = validate(params)
@@ -1677,8 +1877,10 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     from .budget import Controller
     # One thinking budget for the whole decision: the answer, the premises check and every sensitivity re-run
     # draw on the declared latency_budget. It used to be a per-run limit, so one request could spend it six times.
+    # Inside a canonical dispatch the caller's grant window bounds the whole decision and reaches every inner run.
     budget = Controller(float(g.latency_budget) if g.latency_budget else DEFAULT_BUDGET_S,
-                        declared=bool(g.latency_budget), clock=CLOCK)
+                        declared=bool(g.latency_budget), clock=CLOCK, caller_window=caller_window,
+                        shared_deadline=shared_deadline, shared_compute_limit=shared_compute_limit)
     data = body["data"]
     consequence = body.get("consequence") or {}
     evidence = evidence_index()
@@ -1717,7 +1919,10 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     if vector.prohibited:
         receipt["abstentions"].append("law, consent and rights constraints are eligibility gates; upside cannot compensate")
         return finish("PROHIBITED")
-    if g.human_judgment_required or g.legal_content or g.rights_impact or g.geometry in HUMAN_CLASSES:
+    protection = _protection_matter(data)
+    if protection:
+        receipt["abstentions"].append(f"protection matter: {protection}; a handoff, never a capability gap")
+    if g.human_judgment_required or g.legal_content or g.rights_impact or g.geometry in HUMAN_CLASSES or protection:
         receipt["method_or_composition_selected"] = "human:qualified_judgment"
         receipt["selection_level"] = "constitutional_route"
         # the question's identity: what the founder's signed answer must be bound to (judgments excluded,
@@ -1763,10 +1968,11 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             "evidence_type": "exact_negation", "benchmark": "tests/unit/test_greg_inversion_operator.py"})
         data = inverted
     # 3. candidates by native geometry and inputs; frozen negative evidence excludes
-    rows = candidates(data, g, evidence)
+    rows = candidates(data, g, evidence) + constructed_candidates(data, g, registry)
     # the geometry the inputs themselves imply (methods whose native inputs they carry), against the declaration
     from dataclasses import replace
     implied = sorted({c for r in candidates(data, replace(g, geometry=None), evidence)
+                      + constructed_candidates(data, replace(g, geometry=None), registry)
                       for c in r.get("epistemic_classes", [])})
     receipt["derived_geometry"] = {"declared": g.geometry, "fits_by_inputs": implied,
                                    "agrees": not g.geometry or not implied or g.geometry in implied}
@@ -1807,6 +2013,17 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             receipt["missing_information"] = missing
             receipt["abstentions"].append("missing information: the request lacks " + _lacks(missing))
             return finish("ABSTAIN")
+        # Cortex 0.2.2 (Seed Cortex 0.1.6 rule): only a capability gap carries a deficit. A request that carries
+        # no inputs at all, for a geometry a catalogued method answers natively, lacks inputs; it names no new data
+        # shape or question for Capability Genesis to build a function for. (A request whose inputs no method
+        # reads, or whose inputs contradict its declaration, stays a deficit with dissent, as designed here.)
+        native = [m for m in _method_inputs() if g.geometry and g.geometry in m["epistemic_classes"]]
+        if native and not data:
+            receipt["missing_information"] = [{"method": m["method"], "missing_inputs": sorted(m["inputs"])}
+                                              for m in native]
+            receipt["abstentions"].append(f"missing information: {g.geometry!r} is answered natively by "
+                                          f"{sorted(m['method'] for m in native)}; the request carries no inputs")
+            return finish("ABSTAIN")
         if superseding:
             # the method that fits was superseded on frozen held-out evidence by a deployable mechanism: name it
             receipt["acquisition_candidates"] = superseding
@@ -1829,8 +2046,22 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                                                or "no catalogued method or recipe reads any of these inputs"),
                              "verified": True},
             "fitting": [],                          # nothing fits: only a formed mechanism can serve it
+            "tried": _formed_tried(registry, receipt),   # formed mechanisms this compile ran with no answer
             "search_order": list(GENESIS_SEARCH),
             "route": "greg.genesis (Capability Genesis) under the enclosing mission's authority"}
+        buildable = [r for r in rows if r.get("constructible")]
+        if buildable:
+            # The Mind names the missing function in a form Capability Genesis can construct.
+            from greg import recombine
+            from greg.genesis import CATALOG
+            found = recombine.chain(buildable[0]["operation"], CATALOG)
+            if found is not None:
+                path, engine = found
+                receipt["capability_deficit"].update({
+                    "function": buildable[0]["operation"], "required_inputs": buildable[0]["inputs"],
+                    "constructible": {"chain": [r.reduction_id for r in path], "engine": engine,
+                                      "alternatives": [r["operation"] for r in buildable[1:]]},
+                    "search_order": ["attached", "verified_detached", "constructed", "builder", "founder"]})
         return finish("CAPABILITY_DEFICIT")
     competence = _settled_competence(journal, g.geometry)
     settled = _settled_counts(journal)
@@ -1890,6 +2121,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                              "unserviceable": [{"method": r["method"], "why": r["usable_why"]} for r in eligible],
                              "verified": True},
             "fitting": fitting(eligible),           # the need is served once one can run (``runnable``)
+            "tried": _formed_tried(registry, receipt),   # formed mechanisms this compile ran with no answer
             "search_order": list(GENESIS_SEARCH),
             "route": "founder attach of the prepared ask, or greg.genesis under the enclosing mission's authority"}
         return finish("CAPABILITY_DEFICIT")
@@ -1927,9 +2159,12 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         "no settled outcomes in this journal; admission evidence and cost decide"
     if body.get("execute") is False:
         return finish("PLANNED")
-    # 4. execute through the same canonical reason. High consequence raises the proof requirement on this path
-    # exactly as on the direct canonical path (FORMALIZATION_INCOMPLETE for formal/optimisation methods).
-    high = g.consequence_class in HIGH_CONSEQUENCE or vector.high
+    # 4. execute through the same canonical reason. High consequence raises the proof requirement on every route
+    # exactly as on the direct canonical path (FORMALIZATION_INCOMPLETE for formal/optimisation methods); a
+    # construction is optimisation-class, and its call draws on the same thinking budget.
+    if chosen["kind"] == "constructed":
+        return _run_constructed(chosen, data, pid, registry, receipt, finish, high=high, budget=budget,
+                                evaluate=plan["evaluate"])
     extra = {"consequences": consequence} if consequence else {}
     if chosen["kind"] == "problem":
         from cortex.routing import FORMAL_ENGINES
@@ -1941,14 +2176,43 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         if limit is None:
             receipt["abstentions"].append(budget.stops()[-1]["reason"])
             return finish("ABSTAIN")
-        payload = data
-        if budget.declared:
+        # Compiler control flags (PART_FLAGS, e.g. formalization_complete) are read here, never by the cortex, whose
+        # strict payload contract refuses unknown keys (0.2.2; verified 2026-10-21). The parts of the other cortex
+        # organs are withheld too: the router would otherwise run organs this compile rejected or did not select, and
+        # the high-consequence gate above would not cover them.
+        foreign = {k for r in rows if r.get("kind") == "problem" and r["method"] != chosen["method"]
+                   for k in r.get("inputs", ())} - set(chosen.get("inputs", ()))
+        payload = {k: v for k, v in data.items() if k not in PART_FLAGS and k not in foreign}
+        # A part another part masked (a schedule_request beside a formal_model) is routed once the masking part is
+        # withheld: re-read the cortex's own route policy until it routes only the selected organ (review of the
+        # 0.2.2 port), and fail closed if a part the selected organ needs would itself route another organ.
+        from cortex.routing import _route_parts
+        while extra := [key for key, _ in _route_parts(payload) if key != chosen.get("organ")]:
+            triggers = {k for k in payload for key in extra
+                        if key not in {x for x, _ in _route_parts({p: v for p, v in payload.items() if p != k})}}
+            if not triggers or triggers & set(chosen.get("inputs", ())):
+                receipt["abstentions"].append(f"the payload would still route {sorted(extra)} beside "
+                                              f"{chosen['method']}")
+                return finish("ABSTAIN")
+            foreign |= triggers
+            payload = {k: v for k, v in payload.items() if k not in triggers}
+        # The compile's declared consequence reaches the organ: it may raise the payload's own declaration, never
+        # lower it (cortex 0.2.2; verified 2026-10-21: a financial compile reached the cortex as internal_write).
+        payload, forwarded = _forward_consequence(payload, g, vector)
+        if forwarded:
+            receipt["consequence_forwarded"] = forwarded
+        if foreign:
+            receipt["transformations"].append({"operator_id": "single_organ_payload", "effect_kind": "scope",
+                                               "transformation": f"payload parts {sorted(foreign)} withheld: they "
+                                                                 f"belong to organs this compile did not select",
+                                               "evidence_type": "routing policy", "benchmark": None})
+        if budget.bounded:
             resources = data.get("resources") or {}
-            payload = {**data, "resources": {**resources, "max_latency_s": min(
+            payload = {**payload, "resources": {**resources, "max_latency_s": min(
                 float(resources.get("max_latency_s", 30.0)), limit)}}
         inner = reason({"problem_id": pid, "problem": {"question": g.objective or g.epistemic_question or pid,
                                                        "payload": payload}},
-                       registry=registry, journal=journal, model_config=model_config)
+                       registry=registry, journal=journal, model_config=model_config, **budget.inner)
         budget.done("answer")
         receipt["intermediate_receipts"] = [inner["receipt_id"]]
         receipt["selected_receipt"] = inner
@@ -1975,9 +2239,9 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             receipt["abstentions"].append(budget.stops()[-1]["reason"])
             return finish("ABSTAIN")
         chain = {"question": g.objective or "compiled", "payload": data,
-                 **({"max_latency_s": limit} if budget.declared else {})}
+                 **({"max_latency_s": limit} if budget.bounded else {})}
         inner = reason({"problem_id": pid, "chain": chain}, registry=registry, journal=journal,
-                       model_config=model_config)
+                       model_config=model_config, **budget.inner)
         budget.done("answer")
         receipt["intermediate_receipts"] = [s["receipt_id"] for s in inner["stages"]]
         receipt["dissent"] += [f"stage {s['stage']} ({s['method']}): {s['counterargument']}"[:400]
@@ -1989,6 +2253,12 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         if inner["state"] != "ANSWERED":
             receipt["abstentions"].append(f"{inner['state']}: {inner['reason']}")
             return finish(inner["state"])
+        if high:
+            # as on the problem, operation, constructed and formed routes: a high-consequence answer is conditional
+            # on unverified world assumptions and on consequence authority it never holds (0.2.2; verified 2026-10-21)
+            receipt["abstentions"].append("WORLD_UNVERIFIED: high consequence; world assumptions and consequence "
+                                          "authority unverified")
+            return finish("WORLD_UNVERIFIED", inner["answer"])
         return finish("ANSWERED", inner["answer"])
     limit = budget.allot("answer", required=True)
     if limit is None:
@@ -2001,7 +2271,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         data = _part_data(data, chosen["part"])
     cpu_started = _cpu_seconds()
     inner = reason({"problem_id": pid, "operation": chosen["operation"], "data": data, "geometry": geometry_hint,
-                    **extra}, registry=registry, journal=journal, model_config=model_config)
+                    **extra}, registry=registry, journal=journal, model_config=model_config, **budget.inner)
     budget.done("answer", cpu_seconds=_cpu_delta(cpu_started))
     receipt["intermediate_receipts"] = [inner["receipt_id"]]
     # the executed method's own receipt, whole: settlement credits that method through this compilation
@@ -2068,7 +2338,7 @@ def _premises_check(pid, operation, claim, hint, verdict, registry, journal, mod
     cpu_started = _cpu_seconds()
     check = reason({"problem_id": f"{pid}/premises"[:96], "operation": operation, "data": premises(claim),
                     "geometry": {**hint, "latency_limit": limit}, **extra}, registry=registry, journal=journal,
-                   model_config=model_config)
+                   model_config=model_config, **budget.inner)
     budget.done("premises", cpu_seconds=_cpu_delta(cpu_started))
     receipt["intermediate_receipts"].append(check["receipt_id"])
     status = check["output"].get("solver_status") if _has_answer(check) else None
@@ -2110,7 +2380,22 @@ def _sensitivity_runs(pid, operation, data, baseline, hint, registry, journal, m
 
     Each re-run is optional cognition: the thinking budget starts it only when the slowest measured run fits in
     what remains. An input it cannot afford is reported as untested, never as robust."""
-    from .cortex import _cpu_delta, _cpu_seconds, reason
+    from .cortex import reason
+
+    def rerun(key, varied, limit):
+        out = reason({"problem_id": f"{pid}/sens/{key}"[:128], "operation": operation, "data": varied,
+                      "geometry": {**hint, "latency_limit": limit}, **extra}, registry=registry, journal=journal,
+                     model_config=model_config, **budget.inner)
+        receipt["intermediate_receipts"].append(out["receipt_id"])
+        return out
+
+    return _perturbation_runs(data, baseline, budget, receipt, rerun)
+
+
+def _perturbation_runs(data, baseline, budget, receipt, rerun) -> dict:
+    """The sensitivity operator's measurement, shared by every route that answers: ``rerun(key, varied, limit)``
+    re-answers the request with one input perturbed and returns a receipt-shaped dict."""
+    from .cortex import _cpu_delta, _cpu_seconds
     keys = [k for k in sorted(data) if _numbers(data[k])][:4]
     base = _numbers(baseline)
     rows, not_run = {}, {}
@@ -2121,11 +2406,8 @@ def _sensitivity_runs(pid, operation, data, baseline, hint, registry, journal, m
             continue
         varied = {**data, key: _scaled(data[key], 1.1)}
         cpu_started = _cpu_seconds()
-        out = reason({"problem_id": f"{pid}/sens/{key}"[:128], "operation": operation, "data": varied,
-                      "geometry": {**hint, "latency_limit": limit}, **extra}, registry=registry, journal=journal,
-                     model_config=model_config)
+        out = rerun(key, varied, limit)
         budget.done(f"sensitivity:{key}", cpu_seconds=_cpu_delta(cpu_started))
-        receipt["intermediate_receipts"].append(out["receipt_id"])
         if not _has_answer(out):
             rows[key] = {"state": out["abstention_state"]}
             continue

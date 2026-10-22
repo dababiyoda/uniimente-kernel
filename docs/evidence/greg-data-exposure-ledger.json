@@ -217,7 +217,7 @@
  "counts": {
   "by_lineage": {
    "#158": 331,
-   "#179": 91,
+   "#179": 93,
    "both": 42
   },
   "by_role": {
@@ -225,9 +225,9 @@
    "admission held-out": 131,
    "canary": 1,
    "dev": 239,
-   "held-out": 67,
+   "held-out": 68,
    "review-pilot": 11,
-   "train": 8
+   "train": 9
   },
   "by_role_and_lineage": {
    "P8 held-out / #158": 6,
@@ -239,13 +239,13 @@
    "dev / #179": 12,
    "dev / both": 23,
    "held-out / #158": 13,
-   "held-out / #179": 35,
+   "held-out / #179": 36,
    "held-out / both": 19,
    "review-pilot / #158": 11,
    "train / #158": 6,
-   "train / #179": 2
+   "train / #179": 3
   },
-  "exposures": 464,
+  "exposures": 466,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -22202,6 +22202,84 @@
     [
      6010,
      6033
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "07b9f128e2ec7f42fc9683927ce18a3a67b6f21c",
+    "path": "tests/evidence/antifragility-v3b-2026-10-22/workload.json",
+    "sha256": "sha256:11636fff4393e0a5352d59ec34ff33ca73cae54b2888f3caaf8f82304bc13a65"
+   },
+   "exposure_commit": "07b9f128e2ec7f42fc9683927ce18a3a67b6f21c",
+   "family": "antifragility.holdout",
+   "generator": {
+    "code_sha256": "sha256:193ef1ea8212587fa67ec65bc9b1dae5323acd57ff333999e5c34e408a5999fc",
+    "commit": "07b9f128e2ec7f42fc9683927ce18a3a67b6f21c",
+    "delegates": [],
+    "function": "instance",
+    "key": "tests.evidence.antifragility-2026-10-15.experiment:instance",
+    "kind": "code",
+    "module": "tests.evidence.antifragility-2026-10-15.experiment",
+    "module_file_sha256": "sha256:f51d87992f8dfd8c69090f2e4b2e0ffdc6c35ef883985111c8127e2bba9ffe68",
+    "prng": [
+     "Random(seed)"
+    ],
+    "resolved": true
+   },
+   "id": "#179|tests/evidence/antifragility-v3b-2026-10-22/workload.json|held-out|antifragility.holdout|-",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "frozen workload; the experiment runs every listed instance once",
+   "n": 20,
+   "present_in": [],
+   "program": "antifragility (section 14)",
+   "role": "held-out",
+   "seeds": [
+    [
+     6300,
+     6319
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "07b9f128e2ec7f42fc9683927ce18a3a67b6f21c",
+    "path": "tests/evidence/antifragility-v3b-2026-10-22/workload.json",
+    "sha256": "sha256:11636fff4393e0a5352d59ec34ff33ca73cae54b2888f3caaf8f82304bc13a65"
+   },
+   "exposure_commit": "07b9f128e2ec7f42fc9683927ce18a3a67b6f21c",
+   "family": "antifragility.stress",
+   "generator": {
+    "code_sha256": "sha256:193ef1ea8212587fa67ec65bc9b1dae5323acd57ff333999e5c34e408a5999fc",
+    "commit": "07b9f128e2ec7f42fc9683927ce18a3a67b6f21c",
+    "delegates": [],
+    "function": "instance",
+    "key": "tests.evidence.antifragility-2026-10-15.experiment:instance",
+    "kind": "code",
+    "module": "tests.evidence.antifragility-2026-10-15.experiment",
+    "module_file_sha256": "sha256:f51d87992f8dfd8c69090f2e4b2e0ffdc6c35ef883985111c8127e2bba9ffe68",
+    "prng": [
+     "Random(seed)"
+    ],
+    "resolved": true
+   },
+   "id": "#179|tests/evidence/antifragility-v3b-2026-10-22/workload.json|train|antifragility.stress|-",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "frozen workload; the experiment runs every listed instance once",
+   "n": 120,
+   "present_in": [],
+   "program": "antifragility (section 14)",
+   "role": "train",
+   "seeds": [
+    [
+     6100,
+     6219
     ]
    ]
   },

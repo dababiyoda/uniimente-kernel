@@ -589,7 +589,10 @@ def cusum_shiryaev_roberts(data):
 def cusum_instance(seed):
     r = random.Random(f"genome:basal_cusum_detect:{seed}")
     T = r.randrange(200, 801)
-    arl0 = r.choice((200.0, 500.0, 1000.0))
+    # merge review 2026-10-22 (before the v8 freeze): ARL0 200-1000 was shorter than the 200-800-sample streams, so
+    # every detector false-alarmed on most instances and the benchmark could not separate them. The declared
+    # in-control run length is now long relative to the pre-change segment (at most 640 samples).
+    arl0 = r.choice((5000.0, 10000.0, 20000.0))
     sigma = round(r.uniform(0.5, 3.0), 4)
     mu0 = round(r.uniform(-5.0, 5.0), 4)
     delta = round(sigma * r.choice((0.5, 0.75, 1.0, 1.5, 2.0)), 6)

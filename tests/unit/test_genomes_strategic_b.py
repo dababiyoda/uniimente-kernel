@@ -365,9 +365,12 @@ def test_stackelberg_value_weakly_dominates_nash_and_pure_commitment(seed):
     data, truth, out = solved("game_stackelberg_commit", seed)
     value = Fraction(out["output"]["leader_value_exact"])
     assert value >= Fraction(ITEMS["game_stackelberg_commit"].baseline(data)["leader_value_exact"])
-    nash = ITEMS["game_stackelberg_commit"].competitor(data)
+    nash = strategic_b.sc_nash_commitment(data)
     assert value >= Fraction(nash["leader_value_exact"])
     assert float(value) == pytest.approx(truth["leader_value"], abs=1e-9)
+    # the competitor is the standard HiGHS multiple-LP method; it reaches the commitment value too
+    highs = ITEMS["game_stackelberg_commit"].competitor(data)
+    assert highs["leader_value"] == pytest.approx(float(value), abs=1e-6)
 
 
 def test_classic_inspection_commitment():

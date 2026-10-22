@@ -1111,7 +1111,21 @@ def sc_baseline(data):
 
 
 def sc_competitor(data):
-    """Competitor: commit to the leader's best simultaneous-move Nash strategy (exact support enumeration from
+    """Competitor: the standard deployable method, Conitzer-Sandholm multiple LPs in floating point with SciPy HiGHS
+    (the method the truth also uses). Replaced the lane's Nash-commitment competitor at merge review (2026-10-22,
+    before any held-out seed existed): commitment value is never below the simultaneous-move Nash value (von Stengel
+    and Zamir), so wins against that arm were guaranteed by theory and could not support an admission."""
+    a, b = _sc(data)
+    ref = sc_reference(a, b)
+    x, j = ref["leader_strategy"], ref["follower_response"]
+    m = len(a)
+    return {"leader_strategy": x, "follower_response": j,
+            "leader_value": sum(a[i][j] * x[i] for i in range(m)),
+            "follower_value": sum(b[i][j] * x[i] for i in range(m))}
+
+
+def sc_nash_commitment(data):
+    """Reference arm kept for the commitment value gap: commit to the leader's best simultaneous-move Nash strategy (exact support enumeration from
     ``strategic``); the follower then best responds with leader-favourable ties. Its value is at least that Nash
     payoff, and the commitment value gap is the candidate's value minus it."""
     from .strategic import _support_equilibria
@@ -1356,12 +1370,14 @@ INTELLIGENCES = [
                             "correct within 1e-9 of the scale, otherwise quality is the leader value's share of the "
                             "range from the worst payoff; seeds 0-9 dev, held-out seeds fixed by the admission freeze",
             baseline="the leader's best pure commitment",
-            competitor="commit to the leader's best simultaneous-move Nash strategy (exact support enumeration); the "
-                       "commitment value gap is reported against it",
+            competitor="Conitzer-Sandholm multiple LPs in floating point with SciPy HiGHS (the standard deployable "
+                       "method); the Nash-commitment arm is kept as sc_nash_commitment for the commitment value gap",
             dependency=None, **_common()),
         solve=sc_solve, verify=sc_verify, instance=sc_instance, score=sc_score, baseline=sc_baseline,
         competitor=sc_competitor, subregion=sc_subregion, tolerance=1e-9,
-        notes={"competitor": "specified by the lane brief; it answers the simultaneous-move question, so the "
-                             "candidate is expected to weakly dominate it. HiGHS multiple LPs (the truth method) is "
-                             "the stronger deployable competitor and would tie on quality"}),
+        notes={"competitor": "merge review 2026-10-22, before the v8 freeze: the lane brief's Nash-commitment "
+                             "competitor answers the simultaneous-move question, so the candidate weakly dominates it "
+                             "by theory; it was replaced by HiGHS multiple LPs, the stronger deployable method, which "
+                             "is expected to tie on quality (the candidate's distinct value is an exact rational "
+                             "certificate, which the admission rule does not score)"}),
 ]

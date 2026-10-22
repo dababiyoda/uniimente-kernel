@@ -127,6 +127,148 @@ def _supervision(ctx, provider, report) -> dict | None:
     return SUPERVISION if not isolation and not governed else None
 
 
+# Graduated confinement (#190's second dividend, R2-A): the tier a worker process, or a run of its patch's tests,
+# actually got, strongest first. ``refused`` (nothing ran) and ``not_reported`` (GREG launched no process it could
+# confine: an in-process provider) rank with nothing confined.
+CONFINEMENT_TIERS = ("envelope", "landlock", "supervised_unconfined", "not_reported", "refused")
+TIER_RANK = {"envelope": 3, "landlock": 2, "supervised_unconfined": 1, "not_reported": 0, "refused": 0}
+_REFUSED_EVIDENCE = ("refused", "unreviewed", "unsupported")
+
+
+def _landlock_abi(value) -> int | None:
+    return value if isinstance(value, int) and not isinstance(value, bool) and value >= 3 else None
+
+
+def confinement_tier(evidence) -> dict:
+    """The one derivation of the confinement tier from the isolation evidence GREG itself produced (pure).
+
+    ``envelope``: ``prepare_worker`` applied the bubblewrap envelope (status prepared, filesystem os-confined,
+    mechanism bubblewrap). ``landlock``: the founder's ``supervised`` fallback ran with #173's Landlock grants
+    (evidence ``landlock`` record with filesystem landlock and an ABI >= 3), or a Landlock-only envelope.
+    ``supervised_unconfined``: the supervised fallback without filesystem confinement. ``refused``: the envelope
+    refused and nothing ran. Anything else: ``not_reported``. Signals count as scoped only where the record says so
+    AND the ABI can scope them (>= 6, ``isolation.signal_scope``), so a record cannot buy scoping its kernel lacks.
+    Never read from a provider's claim: callers pass GREG's own evidence, and ``commission`` passes nothing for a
+    provider GREG did not launch."""
+    ev = evidence if isinstance(evidence, dict) else {}
+    tier, abi, scoped = "not_reported", None, None
+    if ev.get("mode") == "supervised":
+        landlock = ev.get("landlock") if isinstance(ev.get("landlock"), dict) else {}
+        abi = _landlock_abi(landlock.get("abi")) if landlock.get("filesystem") == "landlock" else None
+        if abi is not None:
+            tier = "landlock"
+            scoped = (landlock.get("signals") == isolation.signals_record(isolation.SCOPE_SIGNAL)
+                      and bool(isolation.signal_scope(abi)))
+        else:
+            tier = "supervised_unconfined"
+    elif ev.get("status") == "prepared" and ev.get("filesystem") == "os-confined":
+        if ev.get("mechanism") == "bubblewrap":
+            tier = "envelope"
+        elif ev.get("mechanism") == "landlock" and _landlock_abi(ev.get("landlock_abi")) is not None:
+            tier, abi, scoped = "landlock", ev["landlock_abi"], False   # the envelope's own ruleset scopes no signals
+    elif ev.get("status") in _REFUSED_EVIDENCE:
+        tier = "refused"
+    return {"tier": tier, "landlock_abi": abi, "signals_scoped": scoped}
+
+
+def _written_evidence(record: dict) -> dict:
+    """The isolation evidence implied by the confinement mode string and Landlock record ``run_tests`` wrote for one
+    acceptance run (all a record from before tiers were recorded carries)."""
+    mode = str(record.get("confinement") or "")
+    if mode.startswith("envelope"):
+        return {"status": "prepared", "filesystem": "os-confined", "mechanism": "bubblewrap"}
+    if mode.startswith("supervised"):
+        return {"mode": "supervised", "landlock": record.get("landlock")}
+    return {"status": "refused"} if mode == "refused" else {}
+
+
+def _acceptance_evidence(record: dict) -> dict:
+    """The isolation evidence of one acceptance run: as recorded, or, for a record from before tiers were recorded,
+    rebuilt from the mode and Landlock record GREG wrote then (``run_tests``)."""
+    return record["isolation"] if isinstance(record.get("isolation"), dict) else _written_evidence(record)
+
+
+def _path(evidence: dict) -> str | None:
+    """Which ``run_tests`` path an isolation record describes: the envelope, the supervised fallback, or a refusal."""
+    if evidence.get("mode") == "supervised":
+        return "supervised"
+    if evidence.get("status") in _REFUSED_EVIDENCE:
+        return "refused"
+    return "envelope" if evidence.get("status") == "prepared" else None
+
+
+def _claim_findings(where: str, claim: dict, evidence: dict) -> list[str]:
+    """A claimed tier record against the tier its own evidence supports: a stronger tier, another ABI, or signals
+    scoped that the evidence (or an ABI below 6) does not support is an overclaim. A missing field is no claim."""
+    derived, found = confinement_tier(evidence), []
+    tier = claim.get("tier")
+    if tier is not None and tier not in CONFINEMENT_TIERS:
+        found.append(f"{where} claims an unknown confinement tier {tier!r}")
+    elif tier is not None and TIER_RANK[tier] > TIER_RANK[derived["tier"]]:
+        found.append(f"{where} claims confinement tier {tier!r} but its isolation evidence supports only "
+                     f"{derived['tier']!r}")
+    elif tier == "landlock" and "landlock_abi" in claim and claim["landlock_abi"] != derived["landlock_abi"]:
+        found.append(f"{where} claims Landlock ABI {claim['landlock_abi']!r} but its evidence records "
+                     f"{derived['landlock_abi']!r}")
+    if claim.get("signals_scoped") is True and not derived["signals_scoped"]:
+        found.append(f"{where} claims signals scoped but its evidence supports no signal scoping "
+                     f"(Landlock ABI {derived['landlock_abi']!r}; scoping needs ABI >= 6)")
+    landlock = evidence.get("landlock") if isinstance(evidence.get("landlock"), dict) else {}
+    if landlock.get("signals") == isolation.signals_record(isolation.SCOPE_SIGNAL) and not derived["signals_scoped"]:
+        found.append(f"{where}'s isolation evidence says signals were scoped under Landlock ABI "
+                     f"{landlock.get('abi')!r}, which cannot scope them (ABI >= 6)")
+    return found
+
+
+def tier_findings(summary: dict, confinement: str) -> tuple[list[str], dict]:
+    """``worker.appraise``'s check of a receipt's confinement claims (R2-A): every claimed tier (the worker block,
+    its confinement record, each acceptance record) against the tier its own recorded evidence supports, and, on a
+    ``required`` body, any supervised fallback at all. An acceptance record's isolation must describe the run its
+    mode string names; malformed acceptance records reject (never a crash). A receipt from before tiers were recorded
+    claims nothing but what its confinement record implies; its tier is derived from its evidence, never refused for
+    absence."""
+    worker = summary.get("worker") if isinstance(summary.get("worker"), dict) else {}
+    evidence = worker.get("isolation") if isinstance(worker.get("isolation"), dict) else {}
+    record = worker.get("confinement") if isinstance(worker.get("confinement"), dict) else {}
+    implied = {"bubblewrap envelope": "envelope", "landlock": "landlock"}.get(record.get("filesystem"))
+    findings = _claim_findings("the receipt's worker block", worker, evidence)
+    findings += _claim_findings("the worker's confinement record", {"tier": implied, **record}, evidence)
+    from_evidence = confinement_tier(evidence)
+    # ``not_reported``: commission found no process GREG launched, so the worker's isolation is the provider's own
+    # report, not GREG's evidence; the appraiser never re-derives a stronger tier from it (a downgrade is no overclaim).
+    derived = ({"tier": "not_reported", "landlock_abi": None, "signals_scoped": None}
+               if worker.get("tier") == "not_reported" else from_evidence)
+    required = confinement_mode(confinement) == "required"
+    if required and from_evidence["tier"] in ("landlock", "supervised_unconfined"):
+        findings.append(f"this body requires the envelope, but the worker ran under the supervised fallback "
+                        f"(tier {from_evidence['tier']!r})")
+    records = summary.get("greg_tests") if summary.get("greg_tests") is not None else []
+    if not isinstance(records, list) or not all(isinstance(t, dict) for t in records):
+        return findings + ["the receipt's acceptance records (greg_tests) are malformed"], {
+            "worker": derived, "greg_tests": []}
+    tests = []
+    for index, test in enumerate(records):
+        test_evidence = _acceptance_evidence(test)
+        findings += _claim_findings(f"acceptance record {index}", test, test_evidence)
+        tiers = [confinement_tier(test_evidence)]
+        if test.get("confinement") is not None and isinstance(test.get("isolation"), dict):
+            # The mode string and Landlock record run_tests wrote beside the isolation evidence describe the same run;
+            # a record whose isolation names another path (or another Landlock grant) is not one GREG wrote. Evidence
+            # naming no path under an envelope mode (a test double's envelope) claims less, and ranks as it derives.
+            written = _written_evidence(test)
+            tiers.append(confinement_tier(written))
+            paths = (_path(written), _path(test_evidence))
+            if paths[0] != paths[1] and paths != ("envelope", None) or (
+                    paths[0] == "supervised" and tiers[0] != tiers[1]):
+                findings.append(f"acceptance record {index}'s isolation evidence (tier {tiers[0]['tier']!r}) "
+                                f"disagrees with the confinement mode GREG wrote beside it (tier {tiers[1]['tier']!r})")
+        tests.append(min(tiers, key=lambda t: TIER_RANK[t["tier"]]))
+        if required and any(t["tier"] in ("landlock", "supervised_unconfined") for t in tiers):
+            findings.append(f"this body requires the envelope, but acceptance record {index} ran under the "
+                            f"supervised fallback")
+    return findings, {"worker": derived, "greg_tests": tests}
+
+
 class WorkerError(CapabilityError):
     pass
 
@@ -551,13 +693,15 @@ def _landlock_supervised(envelope: dict, cwd: Path, binary, read_files=()) -> di
     if evidence.get("mode") != "supervised":
         return {**envelope, "confinement": {"filesystem": "bubblewrap envelope", "mechanism": evidence.get("mechanism"),
                                             "readable": list(evidence.get("read_roots", [])),
-                                            "writable": list(evidence.get("write_roots", []))}}
+                                            "writable": list(evidence.get("write_roots", [])),
+                                            **confinement_tier(evidence)}}
     preexec, landlock = _confined(cwd, binary, read_files=read_files)
     filesystem = (f"Landlock-confined: reads the host runtime, writes only {cwd} (same UID as the body; signals "
                   f"{landlock.get('signals')})"
                   if landlock.get("filesystem") == "landlock" else evidence.get("filesystem"))
-    return {**envelope, "preexec_fn": preexec, "confinement": landlock,
-            "evidence": {**evidence, "filesystem": filesystem, "landlock": landlock}}
+    evidence = {**evidence, "filesystem": filesystem, "landlock": landlock}
+    return {**envelope, "preexec_fn": preexec, "confinement": {**landlock, **confinement_tier(evidence)},
+            "evidence": evidence}
 
 
 class ClaudeCodeWorker:
@@ -912,7 +1056,7 @@ def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None, confinem
     for argv in tests:
         argv = [sys.executable if a in ("python", "python3") else a for a in argv]
         started = time.monotonic()
-        mode, landlock = "envelope: private filesystem, PID and network namespaces", None
+        mode, landlock, evidence = "envelope: private filesystem, PID and network namespaces", None, {}
         try:
             try:
                 envelope = prepare_worker(argv, cwd, timeout_seconds=timeout, provider="acceptance-tests",
@@ -924,7 +1068,7 @@ def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None, confinem
                     raise
                 # Never the envelope's description for a run outside it, even when the run times out (merge review
                 # of e410977): the supervised record is set before the run and refined by what run_isolated applied.
-                mode = _supervised_acceptance(None)
+                mode, evidence = _supervised_acceptance(None), {"mode": "supervised", "landlock": None}
                 try:
                     proc = run_isolated(argv, cwd=cwd, isolate_network=True, timeout=timeout, stop_check=stop_check,
                                         confine_to=cwd,
@@ -932,11 +1076,13 @@ def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None, confinem
                                                    "PYTHONDONTWRITEBYTECODE": "1"})
                 except subprocess.TimeoutExpired as exc:
                     landlock = getattr(exc, "confinement", None)
-                    mode = _supervised_acceptance(landlock)
+                    mode, evidence = _supervised_acceptance(landlock), {"mode": "supervised", "landlock": landlock}
                     raise
                 landlock = getattr(proc, "confinement", None)
-                mode = _supervised_acceptance(landlock)
+                mode, evidence = _supervised_acceptance(landlock), {"mode": "supervised", "landlock": landlock}
             else:
+                evidence = {k: envelope["evidence"].get(k) for k in ("status", "filesystem", "mechanism",
+                                                                     "landlock_abi", "network_isolated")}
                 envelope["env"]["PYTHONDONTWRITEBYTECODE"] = "1"
                 proc = supervised_run(envelope["argv"], cwd=cwd, timeout=timeout, capture_output=True,
                                       env=envelope["env"], preexec_fn=envelope["preexec_fn"], close_fds=True,
@@ -946,14 +1092,17 @@ def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None, confinem
             code, out = -1, f"timed out after {timeout}s"
         except (CapabilityError, WorkerIsolationError, subprocess.SubprocessError) as exc:
             code, out, mode = -1, "acceptance confinement refused: " + str(exc)[:300], "refused"
+            evidence = {"status": "refused"}
         except OSError as exc:
             # The worker's clone could not host the run (e.g. it made the clone unwritable): the patch fails
             # acceptance. Nothing outside the clone ran, so this is never an outcome GREG cannot know.
             code, out, mode = -1, f"acceptance could not run in the worker's clone: {type(exc).__name__}: {exc}", \
                 "refused"
+            evidence = {"status": "refused"}
         results.append({"argv": argv, "returncode": code, "passed": code == 0,
                         "seconds": round(time.monotonic() - started, 2), "tail": out[-MAX_TAIL:],
-                        "network": "denied", "confinement": mode, "landlock": landlock})
+                        "network": "denied", "confinement": mode, "landlock": landlock, "isolation": evidence,
+                        **confinement_tier(evidence)})
     return results
 
 
@@ -1327,6 +1476,8 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
         status = "BUDGET_EXCEEDED" if spend["status"] == "over_cap" else "SPEND_INVALID"
     if report.interrupted:
         status = "UNCERTAIN"
+    tier = confinement_tier(report.isolation if isinstance(
+        provider, (ClaudeCodeWorker, CliAgentWorker, ScriptWorker)) else None)
     summary = {
         "work_order": order.order, "status": status, "mode": order.mode, "mission_id": order.mission_id,
         "grant_id": order.grant_id, "order_digest": order.digest(), "repo": order.repo,
@@ -1341,7 +1492,10 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
                    "permission_denials": report.permission_denials, "isolation": report.isolation,
                    # #178's statement of what supervision leaves unconfined, only where it is true (see below).
                    "supervision": _supervision(ctx, provider, report),
-                   "confinement": report.confinement or {"filesystem": "not reported by the provider"},
+                   # R2-A: the tier is derived from GREG's own envelope evidence, never from what a provider says;
+                   # a provider GREG did not launch (in-process) gives no evidence GREG produced.
+                   **tier,
+                   "confinement": {**(report.confinement or {"filesystem": "not reported by the provider"}), **tier},
                    "interrupted": report.interrupted},
         "cost_usd": spend["charge_usd"], "spend": spend, "collection_error": collection_error,
         "worker_claim": report.claim, "worker_summary_tail": report.summary[-1500:],
@@ -1462,6 +1616,15 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
         if canonical.get("worker", {}).get("cost_usd") != summary.get("worker", {}).get("cost_usd"):
             return {"order": order_name, "verdict": "REJECTED",
                     "findings": findings + ["retained spend differs from the canonical commission receipt"]}
+        for field in ("isolation", "tier", "landlock_abi", "signals_scoped"):
+            if canonical.get("worker", {}).get(field) != summary.get("worker", {}).get(field):
+                return {"order": order_name, "verdict": "REJECTED",
+                        "findings": findings + [f"retained worker {field} differs from the canonical commission "
+                                                "receipt"]}
+        if canonical.get("greg_tests") != summary.get("greg_tests"):
+            return {"order": order_name, "verdict": "REJECTED",
+                    "findings": findings + ["retained acceptance records (greg_tests) differ from the canonical "
+                                            "commission receipt"]}
         receipt_binding = "frozen work order and collected artifact bound to canonical commission receipt"
     if summary.get("status") not in ("COMPLETED", "NO_CHANGE"):
         findings.append(f"worker collection did not complete: {summary.get('status')}")
@@ -1482,6 +1645,12 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
         verdict = "REJECTED"
     elif spend["status"] == "unknown":
         findings.append(spend["reason"])
+    # R2-A: a receipt may not claim a stronger confinement than its own evidence supports, and a ``required`` body's
+    # receipt may not show the supervised fallback at all. An old receipt's tier is derived, never refused for absence.
+    overclaims, receipt_tiers = tier_findings(summary, ctx.worker_confinement)
+    if overclaims:
+        findings += overclaims
+        verdict = "REJECTED"
     with_tests = []
     import tempfile
     with tempfile.TemporaryDirectory(prefix="greg-appraise-") as tmp:
@@ -1567,7 +1736,11 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
         findings.append("worker self-report retained as claim only; not used for this verdict")
     return {"order": order_name, "verdict": verdict, "findings": findings, "changed_files": names,
             "patch_sha256": summary["patch_sha256"], "branch": summary.get("branch"), "commit": summary.get("commit"),
-            "independent_tests": [{k: t[k] for k in ("argv", "returncode", "passed", "seconds")} for t in with_tests],
+            "independent_tests": [{k: t[k] for k in ("argv", "returncode", "passed", "seconds", "tier", "landlock_abi",
+                                                     "signals_scoped")} for t in with_tests],
+            # This appraisal's own re-run, derived by run_tests from the envelope evidence of each run it made.
+            "confinement": {"receipt": receipt_tiers,
+                            "independent_tests": [confinement_tier(t["isolation"]) for t in with_tests]},
             "independence": "fresh clone of the source at the recorded base, retained patch re-applied, "
                             "acceptance re-run with no network; worker claim and collector tests not used",
             "worker": summary.get("worker", {}).get("identity"), "receipt_binding": receipt_binding,

@@ -118,6 +118,29 @@ def test_a_capability_that_reports_its_observation_incomplete_proves_only_monoto
     assert judge(p("equals", False, "found"), output)[0] == INSUFFICIENT
 
 
+def test_a_field_the_capability_declares_decided_is_judged_whole_on_an_incomplete_output():
+    # document.text's hit on a text page of a partly scanned PDF: the phrase is there whatever the scan holds
+    output = {"text": "page one words", "complete": False, "found": True, "decided": ["found"]}
+    assert judge(p("equals", True, "found"), output)[0] == TRUE
+    assert judge(p("equals", False, "found"), output)[0] == FALSE
+    assert judge(p("not_contains", "clause"), output)[0] == INSUFFICIENT          # only the named field
+    assert judge(p("contains", "page one"), output)[0] == TRUE
+
+
+@pytest.mark.parametrize("decided", [["found"], "found", ["text"], [], None])
+def test_decided_never_vouches_for_an_unknown_value_or_an_unnamed_field(decided):
+    output = {"text": "page one words", "complete": False, "found": None, "decided": decided}
+    assert judge(p("equals", True, "found"), output)[0] == INSUFFICIENT
+    assert judge(p("equals", False, "found"), output)[0] == INSUFFICIENT
+
+
+def test_decided_never_vouches_for_a_list_cut_at_the_receipt_limit():
+    rows = list(range(RECEIPT_LIST_LIMIT))
+    output = {"rows": rows, "complete": False, "decided": ["rows"]}
+    assert judge(p("equals", rows, "rows"), output)[0] == INSUFFICIENT
+    assert judge(p("not_contains", 5000, "rows"), output)[0] == INSUFFICIENT
+
+
 @pytest.mark.parametrize("output", [None, {}, {"text": ""}])
 def test_empty_outputs_keep_their_meaning(output):
     assert judge(p("contains", "x"), output)[0] == FALSE

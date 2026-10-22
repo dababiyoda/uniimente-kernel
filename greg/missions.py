@@ -2220,6 +2220,13 @@ class MissionEngine:
                 return repaired
         human = m.blocker["type"] == "human_work"   # it waits only on the checks the person's work advances
         waiting_on = failing & set(m.blocker["failing_checks"]) if human else failing
+        # A NO_STRATEGY ask raised only because every remaining strategy waited on a precondition that observation
+        # said failed is moot once observation says such a precondition passes: that strategy may run now. Without
+        # this, a mission whose work waits on the world (a request arriving) stayed blocked for good, since its other
+        # checks, which only that strategy advances, still fail.
+        unheld = [] if human or not failing else self._unheld(m, failing)
+        if unheld:
+            waiting_on = set()
         if waiting_on and human:
             declined = self._declined(m, now)
             if declined is not None:
@@ -2229,7 +2236,10 @@ class MissionEngine:
             return {"state": "WAITING", "blocker": m.blocker, "still_failing": sorted(failing)}
         rid = m.blocker["request_id"]
         why = ("the deliverable is observed: the checks this work advances now pass, and GREG took no action for it"
-               if human else "world re-observed: every failing check now passes without any GREG action")
+               if human else
+               (f"world re-observed: the precondition that held {', '.join(unheld)} now passes, so it may run; GREG "
+                "took no action for that precondition") if unheld else
+               "world re-observed: every failing check now passes without any GREG action")
         if not m.blocker.get("shared_ask"):      # an ask this mission only shares stays open for its other uses
             self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id, "why": why,
                                                        "evidence": evidence, "at": iso(now)}, key=[rid, "withdrawn"])
@@ -2241,6 +2251,19 @@ class MissionEngine:
                 self._schedule(resumed, now, 0)      # observed early: the next step must not wait out the old slot
             return {"state": "RESUMED", "still_failing": sorted(failing)}
         return self._setpoint_reached(self.book.missions[m.mission_id], now, evidence)
+
+    def _unheld(self, m: MissionState, failing: set) -> list:
+        """Strategies the blocker's NO_STRATEGY ask recorded as held by a failing precondition, whose every such
+        precondition (a check of this mission) observation now says passes, and that are neither failed nor
+        excluded. Read from the ask's own retained evidence; an input-held strategy is not reconsidered here."""
+        rid = m.blocker.get("request_id")
+        ask = next((e.payload for e in self.journal.replay("decision.requested")
+                    if e.payload.get("request_id") == rid and e.payload.get("kind") == "NO_STRATEGY"), None)
+        held = ((ask or {}).get("evidence") or {}).get("held_by_precondition") or {}
+        checks = {c["check_id"] for c in m.spec["success_checks"]}
+        return sorted(a for a, needs in held.items()
+                      if isinstance(needs, list) and needs and set(needs) <= checks and not set(needs) & failing
+                      and a not in m.failed and a not in m.excluded)
 
     def _deliverable_arrived(self, m: MissionState) -> bool:
         """A person's work landed since GREG last looked: observe now, not at the next cadence slot.

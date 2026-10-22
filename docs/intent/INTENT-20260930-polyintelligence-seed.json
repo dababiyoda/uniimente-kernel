@@ -1,0 +1,136 @@
+{
+  "intent_id": "INTENT-20260930-polyintelligence-seed",
+  "statement": "Build the approved GREG Polyintelligence Architecture Seed Experiment: hard constraints before ranking; governed heterogeneous cognition, typed proof, abstention, receipts and outcome learning for verified durable lawful founder-authorized advantage.",
+  "source_refs": [
+    "Current founder chat, 2026-09-30: revised architecture, approved build prompt and explicit authorization to begin build; stable conversation ID and exact message timestamps unavailable",
+    "docs/FOUNDER_EFFECT_COMPILER.md and docs/intent/INTENT-0030-effect-not-metaphor.md",
+    "docs/RECURSIVE_COLLABORATION_PROTOCOL.md",
+    "docs/UNIIMENTE_FINAL_BUILD_ORDER.md and docs/CANONICAL_EXECUTION_ORDER.md",
+    "Repository-selection inspection of https://github.com/dababiyoda/uniimente-kernel/pull/137: open draft, claude/uniimente-greg-reconciliation-39syff, head a4eeb70820117f9a0f74f1496173e3af0f770afa, VEPMC 0; seed branch does not change these",
+    "Founder-provided citations to Digital Egregore Design Analysis.txt, Digital Developmental Substrate.txt, What gives UNIIMENTE the science-fiction advantage.txt and Levin's Alignment with UNIIMENTE.txt; originals not retrieved in this build",
+    "This manual source record does not authenticate a runtime principal or become an execution grant"
+  ],
+  "exact_founder_approval": "prompt is approved you may begin build: achieve maximum anti-fragile, resilient and durable compounding asymmetric leverage for the Egregore. By pushing and staying inside safety and legality constraints, prefer the maximum high-surface-tension asymmetrically strong lawful option giving the egregore an all around over powered complete achievement of everything in that prompt verbatim one by one: maximize evidence, institutional leverage, accountability, deterrence, victim protection, and minimal collateral harm, while simultaneously maximizing durable asymmetric leverage for the Egregore by anchoring the entire framework at its absolute meniscus—converting maximum operational pressure into an impermeable, self-reinforcing shield of total systemic dominance.",
+  "exact_founder_correction": "The Seed Genome should not maximize “asymmetric advantage” as a naked scalar. It should search for the strongest verified, durable, lawful, founder-authorized advantage only after hard constraints eliminate illegal, rights-violating, unauthorized, insufficiently evidenced, or unacceptably harmful routes.",
+  "exact_founder_architecture_approval": "I would approve this architecture pitch as the basis for the build prompt. I would not approve the three-organ directive unchanged. It is too narrow to represent the actual system you have specified.",
+  "owner": "Alfonso Lopez is root human authority; repository maintainers own implementation, operation and unresolved engineering/benchmark risk",
+  "state": "active",
+  "binding_scope": "Authorized repository development, development dependencies and reversible seed evaluation. Integrate through existing CapabilityGenome/GenomeRegistry, StandingCognitionRuntime, EvidenceLedger, local model client and Kernel Consequence Gate. No new authority, production installation, deployment, automatic activation or external consequence is granted by this record.",
+  "constitutional_constraints": [
+    "Law, rights, applicable consent, founder authorization, evidence sufficiency, unacceptable harm, resources and consequence limits are hard gates before ranking",
+    "Unresolved material gates require evidence acquisition, authorized adjudication or abstention; a favorable score cannot override them",
+    "Formal validity, empirical validity and legitimate authority remain distinct",
+    "Models and Intelligence Genomes cannot create permission, authenticate the founder, activate themselves, change their evaluators or expand authority",
+    "Reuse the existing Capability Genome registry and Kernel consequence owner; no second registry, Kernel, identity or event/authority plane",
+    "Source evidence and ledger integrity do not establish factual truth or causal identification",
+    "Use existing local freely licensed model protocol; no automatic paid/hosted fallback or install",
+    "Learning is bounded, reversible and outcome-linked; no feedback is not success",
+    "Preserve negative results, history, alternative mechanisms and dissent",
+    "Biological/metaphorical terms require mechanism, state, interface, feedback, test, measurable behavior and failure condition",
+    "VEPMC 0→1 remains the operational priority; seed evaluation is not Chromebook/founder/reboot verification"
+  ],
+  "effect_compilation": {
+    "observable_effect": "Choose suitable bounded heterogeneous cognition by problem geometry; issue legitimate typed proof or abstention; compare full cost/latency/error with strong baselines; retain verified improvements without authority growth.",
+    "literal_requirements": [
+      "Problem geometry and epistemic classification",
+      "Hard consequence/evidence eligibility gates before ranking",
+      "Semantic, Fermi/Estimation and Formal solver organs plus Evidence/Causal route and independent adversarial artifact checking",
+      "Cognitive light cone, typed receipts and explicit proof limits",
+      "Frozen comparison, verified outcome linkage and reversible routing-memory updates"
+    ],
+    "metaphor_and_aspiration": [
+      "Absolute meniscus compiles to uncertainty margins, reversibility and recovery reserves",
+      "Impermeable shield compiles to measured detection/containment, protected provenance and failure-diverse verification; perfection is not guaranteed",
+      "Total systemic dominance and over powered retain the destination of durable lawful advantage, not sovereignty or control over others",
+      "Antifragility requires demonstrated retained improvement following contained disturbance"
+    ],
+    "latest_five_layers": [
+      "Primitive / basal intelligence",
+      "Distributed / collective intelligence",
+      "Solver / macro-cognitive intelligence",
+      "Developmental / morphogenetic intelligence",
+      "Meta-intelligence / Polyintelligence Cortex"
+    ],
+    "existing_mechanisms_inspected": [
+      "capabilities/genome.py",
+      "egregore/runtime.py and egregore/contracts.py",
+      "egregore/local_model.py and egregore/gate_adapter.py",
+      "provenance/ledger.py",
+      "memory/causal.py",
+      "foundry/tribunal.py and evolution/strategy_tree.py",
+      "developmental/README.md and preserved morphogenesis research",
+      "docs/OPEN_SOURCE_STACK.md and the prior open-source intent"
+    ],
+    "residual_capability_deficit": "An integrated geometry-to-eligibility-to-typed-proof-to-receipt seam and bounded outcome-conditioned competence memory; live cross-geometry superiority is not established by implementation.",
+    "simplest_viable_mechanism": "Narrow cognitive CapabilityGenome extensions, deterministic eligibility and router, mature solver primitives, existing local model protocol and a proposer adapter to the existing runtime.",
+    "review_record": "docs/POLYINTELLIGENCE_SEED.md contains alternatives, five analytical perspectives, exactly two strengthening passes, dissent, owner, detach/rollback/kill conditions and C1-to-frontier backcast. Perspectives are not independent human/legal/stakeholder review."
+  },
+  "success_evidence": [
+    "Build executor full suite: python -m pytest -q; 797 passed, 4 skipped",
+    "verifier/runs/v2-2026-09-30T20-28-49.412678+00-00.json: V1–V5 PASS; tests/unit 776 passed, 4 skipped",
+    "examples/cognition/seed-suite.json: 32 visible frozen synthetic cases; digest sha256:339ec102222db55cb32975a7267e563488b2b0687c94e8077295aee882245995",
+    "examples/cognition/results/service-unavailable-20260930.json: router 29/32 fixture checks; no live baseline quality results",
+    "examples/cognition/results/synthetic-plumbing-20260930.json: 32/32 engineering fixture checks with real Fermi arithmetic/Z3 and explicitly replayed semantic test responses",
+    "These checks verify implementation plumbing and bounded fixture behavior, not routing gain or external effectiveness"
+  ],
+  "failure_evidence": [
+    "Default local inference unavailable: three semantic cases fail answer rubrics; always-LLM and committee each have 32 NOT_RUN cases",
+    "verifier/runs/v2-2026-09-30T20-18-03.220257+00-00.json retains 2 failed, 760 passed, 4 skipped; missing historical Git source was fetched, historical-source fixtures unmodified",
+    "No live-model quality comparison, routing superiority or held-out generalization established; both benchmark reports remain unpromoted with superiority_claim=false",
+    "Calibration NOT_MEASURED; hardware, energy and full operating cost unknown",
+    "No institutional acceptance, deterrence, victim restitution/protection, physical deployment, Chromebook use or reboot evidence supplied by seed tests",
+    "Historical source-document originals not retrieved; no Chromebook/founder/reboot verification established by this build"
+  ],
+  "acceptance_evidence_required": [
+    "Executable contracts, mechanisms and meaningful hostile/gate tests",
+    "Frozen held-out cross-geometry suite and predeclared thresholds",
+    "Matched strong always-LLM and ordinary committee baselines with all overhead, cost, latency, critical errors and abstention scored",
+    "No authority/gate expansion and no hidden hosted billing",
+    "Verified outcome-linked routing updates with bounded attribution and rollback",
+    "Real accepted outcomes before institutional leverage, deterrence or protection claims"
+  ],
+  "dependencies": [
+    "Existing registry, ledger, runtime, evaluators, resources and Gate",
+    "Available local inference server/model, freely licensed weights and target hardware for actual model-quality baselines",
+    "Versioned mature solver dependencies and bounded solver/model timeouts",
+    "Adequate empirical data, identification assumptions and domain/human adjudication for causal/high-consequence claims",
+    "Frozen evaluator and independent outcome verification"
+  ],
+  "conflicts": [
+    "The three-organ experiment does not define the complete architecture",
+    "Formal proofs cannot universally determine empirical, causal, normative or legal truth",
+    "Numerical advantage cannot outweigh failed hard gates",
+    "Impermeability, total dominance and zero harm are aspirations, not guaranteed implementation properties",
+    "Historical biological mechanisms and developmental IntelligenceGenome remain preserved research, not production defaults"
+  ],
+  "next_review_trigger": "First matched held-out benchmark with an available local model, followed by verified mission outcomes; any gate bypass, unauthorized disclosure, fabricated outcome, hidden paid fallback, evaluator gaming or authority expansion requires immediate suspension/regression.",
+  "supersedes": [
+    "Earlier three-organ-only interpretation as the complete Polyintelligence Architecture",
+    "High risk automatically defaults to Formal as universal decision authority",
+    "Single unconstrained asymmetric-advantage scalar as the control objective",
+    "Earlier assumption that implementation approval remains pending; the explicit latest approval authorizes this build"
+  ],
+  "superseded_by": [],
+  "implementation_refs": [
+    "egregore/cognition/contracts.py and egregore/cognition/genomes.py",
+    "egregore/cognition/runtime.py and egregore/cognition/organs.py",
+    "egregore/cognition/integration.py and egregore/cognition/learning.py",
+    "egregore/cognition/benchmark.py and egregore/cognition/__main__.py",
+    "requirements-cognition.txt",
+    "examples/cognition/seed-suite.json and examples/cognition/results/",
+    "docs/POLYINTELLIGENCE_SEED.md",
+    "Existing StandingCognitionRuntime proposer binding and EvidenceLedger outcome/receipt records"
+  ],
+  "implementation_limits": [
+    "Host GateAssessment is advisory; passing judgments do not authenticate founder authorization, legality or factual correctness",
+    "Semantic structure/source checks do not establish general semantic entailment",
+    "Formal solver is a bounded structured integer-constraint DSL; natural-language completeness and empirical/legal validity remain unverified",
+    "Evidence/Causal returns evidence requirements; no causal effect estimator",
+    "Geometry routing is deterministic validated classification, not a trained arbitrary-language classifier or general hybrid composer",
+    "RoutingMemory retains witnessed outcome-linked update proposals only; no automatic weight application or evidence authentication",
+    "Socket/solver limits and post-checks do not enforce whole-process preemption for injected clients; final receipt fsync is outside bounded latency scope",
+    "Request audit uses existing local-ledger access and retention policy and may contain sensitive inputs",
+    "Production activation, constitutional authority, historical PR #137 and VEPMC status are unchanged"
+  ],
+  "evidence_state": "EXPERIMENT_UNPROMOTED; executable seed and synthetic regression evidence recorded; live comparison, routing gain and external effectiveness unverified. Baseline NOT_RUN is not proof of gain."
+}

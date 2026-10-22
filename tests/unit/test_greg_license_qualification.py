@@ -169,3 +169,60 @@ def test_without_the_spdx_parser_every_license_fails_closed(monkeypatch):
     monkeypatch.setattr(licensing, "canonicalize_license_expression", None)
     assessment = licensing.assess(FakeDist("a", "MIT"))
     assert assessment["verdict"] == "FOUNDER_REVIEW" and "unavailable" in assessment["reason"]
+
+
+# -- independent review of 73b19fe: each case below passed (wrongly) before its fix -------------------------
+
+@pytest.mark.parametrize("dist, cls", [
+    (FakeDist("rider", text="MIT\nsome other\nCommons Clause restriction"), licensing.NOT_OPEN),   # review 3
+    (FakeDist("multi", text="MIT\nsee COPYING for the rest"), licensing.UNKNOWN),                 # review 3
+    (FakeDist("t1", classifiers=["License :: OSI Approved :: BSD License"],
+              text="Proprietary, non-commercial only"), licensing.NOT_OPEN),                      # review 4
+    (FakeDist("t2", classifiers=["License :: OSI Approved :: MIT License"], text="SSPL-1.0"), licensing.NOT_OPEN),
+    (FakeDist("t3", "MIT", text="AGPL-3.0-only"), licensing.NETWORK_COPYLEFT),
+    (FakeDist("osl", "OSL-3.0"), licensing.NETWORK_COPYLEFT),                                      # review 5
+    (FakeDist("eupl", "EUPL-1.2"), licensing.NETWORK_COPYLEFT),
+    (FakeDist("full", classifiers=["License :: OSI Approved :: BSD License"],
+              text="Copyright (c) 2001 X.\nAll rights reserved.\nRedistribution ... permitted"), licensing.PERMISSIVE),
+])
+def test_the_license_field_is_read_beside_every_other_declaration(dist, cls):
+    assert licensing.declared(dist)["class"] == cls
+
+
+def test_a_card_recorded_before_assessments_is_reassessed_from_the_installed_package():      # review 2
+    import importlib.metadata
+    version = importlib.metadata.version("networkx")
+    assert licensing.auto_attach_allowed({"distribution": "networkx", "version": version})[0] is True
+    assert licensing.auto_attach_allowed({"distribution": "networkx", "version": "0.0.0"})[0] is False
+    assert licensing.auto_attach_allowed({"distribution": "no-such-distribution-greg", "version": "1"})[0] is False
+
+
+def test_an_engine_is_not_attached_as_a_dependency_when_its_license_is_not_cleared():          # review 1
+    class Stub:
+        _form_only = None
+
+    class Cone:
+        @staticmethod
+        def _capability_inside(_):
+            return True
+
+    class Mission:
+        spec = {"auto_attach": {"max_consequence_class": "read_only"}}
+        cone = Cone()
+        mission_id = "m"
+
+    class Manifest:
+        capability_id = "acquired.lp.optimize.acme"
+        provider = "installed:python:acme==1.0"
+        consequence_class = "read_only"
+        provenance = {"license_assessment": licensing.assess(FakeDist("acme", "BUSL-1.1"))}
+
+    assert genesis_mod.Genesis._attach_dependency(Stub(), Mission(), Manifest(), "composed.x", None) is False
+
+
+def test_an_unrecognised_short_name_beside_a_classifier_is_informational_not_blocking():
+    lgpl = FakeDist("lazr", classifiers=["License :: OSI Approved :: GNU Library or Lesser General Public License "
+                                         "(LGPL)"], text="LGPL v3, see the README")
+    assert licensing.declared(lgpl)["class"] == licensing.WEAK_COPYLEFT
+    parent = FakeDist("oauth", classifiers=["License :: OSI Approved", "License :: OSI Approved :: BSD License"])
+    assert licensing.declared(parent)["class"] == licensing.PERMISSIVE

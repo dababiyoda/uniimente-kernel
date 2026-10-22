@@ -925,7 +925,9 @@ class Genesis:
         """Attach the exact engine a construction is pinned to, under the same signed scope, or ask."""
         if self._form_only:
             return False
-        allowed = (mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"
+        licensed = (licensing.auto_attach_allowed(manifest.provenance)[0]
+                    if manifest.provider.startswith("installed:python:") else True)
+        allowed = (licensed and mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"
                    and manifest.consequence_class == "read_only"
                    and mission.cone._capability_inside(manifest.capability_id))
         if not allowed:

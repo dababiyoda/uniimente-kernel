@@ -43,7 +43,7 @@ Open-Source Metabolism workstream, increment 1. Session `session_013k41DnwrjzpXL
 
 **What GREG can now do that it could not before:** tell a legally cleared open-source mechanism from one that is technically qualified but legally uncleared, and refuse to attach the second on its own. This is the "legally qualified" state of directive §6, executed on the canonical mission path.
 
-`tests/unit/test_greg_license_qualification.py` (27 tests):
+`tests/unit/test_greg_license_qualification.py` (39 tests after the review):
 
 - **19 parse and classify cases.** They include AND/OR precedence, a WITH exception, an unparseable expression, an undeclared license, conflicting classifiers, a legacy text field and a copyright-only text.
 - **The engines Genesis already uses stay cleared** from their own metadata: networkx, scipy, ortools, and numpy/protobuf as common-mode dependencies.
@@ -53,7 +53,7 @@ Open-Source Metabolism workstream, increment 1. Session `session_013k41DnwrjzpXL
 - **Baseline:** the real license is auto-attached and the mission closes.
 - **Ablation:** with the gate removed, the BUSL package attaches itself and the mission closes. That is the failure the gate exists to prevent.
 - **Fail-before:** 5 of these tests fail on `a3fa3795`'s `genesis.py`/`mechanisms.py` and pass with the change.
-- **Non-regression:** the Genesis-related suites (packaging, open-source, linear, cognition, recombine, recovery, negative-control, budgeted selection and the new tests) all pass: 277 passed.
+- **Non-regression:** the Genesis-related suites (packaging, open-source, linear, cognition, recombine, recovery, negative-control, budgeted selection and the new tests) all pass: 289 passed after the review fixes.
 - **Live Mind routing unchanged:** `scripts/mind_status.py` output is byte-identical before and after (4,681 lines). No admitted verdict's code binding moved.
 - **Owned-source inventory:** `foundry/owned-source.json` was refreshed with `scripts/refresh_owned_source.py`. The only addition is `greg/licensing.py`, a runtime source with no secrets, readable like `greg/mechanisms.py`.
 
@@ -77,6 +77,21 @@ Open-Source Metabolism workstream, increment 1. Session `session_013k41DnwrjzpXL
 - *Attack:* system binaries (`sha256sum`, `wc`) and builder-generated code are not license-assessed. That is accepted for now: coreutils are on every body, and builder code is GREG's. It is recorded as a residual below.
 
 **Decision:** EXPERIMENT in draft. Rollback is to revert the `_attach` condition; the card field is inert without it.
+
+## Independent review (separate agent, 2026-10-22, on `73b19fe`)
+
+A separate review agent, which did not write the code, read the diff adversarially. Each finding below now has a regression test that would have passed, wrongly, before its fix.
+
+1. **HIGH. `_attach_dependency` bypassed the gate.** An engine under a construction was re-attached under mission scope after recovery, with no license check. It is now gated like `_attach`.
+2. **MEDIUM. Permissive packages verified before this change were blocked for good.** Their cards had no assessment. A card without one is now re-assessed from the installed distribution, and only at the qualified version.
+3. **MEDIUM. A multi-line legacy `License` field was read from its first line only.** A multi-line field is now unclassified, and a restrictive phrase in a short field marks it not open source.
+4. **MEDIUM. A stricter `License` field beside an expression or classifier was ignored.** It now counts when it classifies stricter or names a restrictive phrase. An unrecognised short name beside a classifier is informational.
+5. **Classes. OSL-3.0 (external deployment) and EUPL-1.1/1.2 (online access counts as distribution) are now network copyleft.**
+6. **LOW, accepted as a limit.** Only declared `common_mode` dependencies are assessed, not every transitive import.
+
+**A negative found while fixing 3.** A phrase scan over full license texts is unreliable: scipy's field bundles the GPL of its compiled runtime, which says "noncommercially". The scan is limited to short declarations, so a rider inside a full text is not detected; the card's limits say so.
+
+**Sweep of every distribution installed in this environment (123):** 107 CLEARED, 2 CLEARED_WITH_OBLIGATIONS, 14 FOUNDER_REVIEW before the classifier fixes and 2 after (pypdfium2 "BSD-3-Clause, Apache-2.0, dependency licenses"; supervisor "BSD-derived (URL)"). Both are ambiguous declarations; sending them to the founder is fail-closed by design.
 
 ## Residual deficits (open, not claimed)
 

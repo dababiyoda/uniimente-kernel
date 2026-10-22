@@ -2,7 +2,8 @@
 
 **Status: measurement for the integration owner. It disposes of nothing.** Session `session_01PwqafNDa4MExng4LG5kye6`,
 claim [#96 comment 6334241156](https://github.com/dababiyoda/uniimente-kernel/issues/96#issuecomment-6334241156).
-Destination measured: #196 head `ac84ad7dd46ce83313bb56e2b5743d80f413904c`. It merges, signs and activates nothing.
+Destinations measured: #196 head `ac84ad7dd46ce83313bb56e2b5743d80f413904c`, then the integrator's next push
+`abc7a55af5b123156b35f452e551e5239d46e72d` (the #168 join). It merges, signs and activates nothing.
 
 ## Why this was the gap
 
@@ -42,19 +43,22 @@ source are counted, not judged. The `measure` mode is unchanged.
   `3884493`, `933b0c7` unported, with 0 of 16 added tests present.
 - **Defect found in my own first version:** a commit cherry-picked onto the same parent within one second recreates
   the identical commit, so it becomes an ancestor; the fixture now picks onto a different parent.
-- **Cost:** 358 s wall for 139 heads (this container).
+- **Moving-head check:** between the two runs the integrator joined #168 (which carries #137's later commits). The
+  second run drops both rows and nothing else from the earlier lead table; #158, which moved the same morning, appears.
+- **Cost:** 358 s and 372 s wall for 139 heads (this container).
 
-## Result: 139 open PRs against `ac84ad7d`
+## Result: 139 open PRs against `abc7a55a` (current #196 head)
 
-Inputs pinned in `docs/evidence/intake-audit/2026-10-22/prs.json`; per-PR output in `intake-summary.json`.
+Inputs and outputs per destination under `docs/evidence/intake-audit/2026-10-22/<dest>/`: `prs.json` (pinned
+heads), `intake-summary.json` (per PR), `recent-unported.json` (every SHA below). The `ac84ad7d` run is kept.
 
-- 53 contained by ancestry, 6 behaviour-contained, 80 with an unported delta.
-- 694 unique commits judged: 532 `MISSING`, 27 `PARTIAL`, 76 `SUPERSEDED_IN_SOURCE`, 28 `UNDECIDABLE`,
-  16 `TESTS_PRESENT`, 12 `CONTENT_PRESENT`, 3 `EQUIVALENT_PATCH`.
-- 371 of the unported commits date from July–August 2026: the phase/build/morphogenesis lineages that later
+- 54 contained by ancestry, 6 behaviour-contained, 79 with an unported delta.
+- 697 unique commits judged: 532 `MISSING`, 28 `PARTIAL`, 79 `SUPERSEDED_IN_SOURCE`, 28 `UNDECIDABLE`,
+  15 `TESTS_PRESENT`, 12 `CONTENT_PRESENT`, 3 `EQUIVALENT_PATCH`.
+- 368 of the unported commits date from July–August 2026: the phase/build/morphogenesis lineages that later
   corrections superseded. They are history, not intake debt, unless someone shows otherwise.
 
-### Unported since 2026-10-10 (90 commits, 487 tests absent from #196)
+### Unported since 2026-10-10 (94 commits, 550 tests absent from #196 `abc7a55a`)
 
 Grouped by the smallest open PR carrying them (`recent-unported.json` has every SHA).
 
@@ -65,9 +69,9 @@ Grouped by the smallest open PR carrying them (`recent-unported.json` has every 
 | #167 | `dba14ac8` | 16 (10-13..21) | 12 / 85 | not mentioned in any collaboration record on #196 | **new** |
 | #143 | `6fa9b89a` | 11 (10-13..14) | 0 / 65 | #143 cited as contract source; these commits are not | **new** |
 | #129 | `9309fd86` | 2 (10-13) | 0 / 33 | partly named "portable mechanism" | check |
+| #158 | `14608914` | 13 (10-22) | 34 / 126 | active Mind lineage: genome admission v8, run this morning | expected |
 | #182 | `2f6a5b52` | 8 (10-15) | 1 / 46 | founder signature | expected |
-| #168 | `0fd430f3` | 6 (10-14..21) | 0 / 13 | join in progress (integrator) | expected |
-| #137 | `933b0c7c` | 3 (10-21) | 0 / 16 | handoff posted; port pending | expected |
+| #137, #168 | | 0 | | joined at `abc7a55a` (were 3 and 6 commits at `ac84ad7d`) | resolved |
 | #200, #201, #202 | | 7, 6, 7 (10-22) | 0 / 38, 0 / 28, 0 / 24 | open drafts into #196 | expected |
 | #161, #163, #162, #105 | | 2, 1, 1, 2 | 0 / 4 in all | CI timeouts, ledger regeneration, evidence records | low |
 

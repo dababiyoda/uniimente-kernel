@@ -54,6 +54,29 @@ Progress 2026-10-21 (measured; negative results kept):
 - **Data-exposure ledger across both lineages** ([ledger](evidence/greg-data-exposure-ledger.json)): 352 exposure records at this head.
 - **Six new withheld genomes**, with development numbers only.
 - **Founder decisions prepared:** [D1-D5](collaboration/FOUNDER-DECISIONS-2026-10-21.md).
+- **Genome admission v5** ([evidence](evidence/greg-genome-admission/2026-10-21-v5/README.md)): 11 new families on fresh seeds 1400-1429. It was pre-registered at `2046b744`, frozen at `b8061a21` and run once on a quiet machine.
+  - **DEFAULT (7):** MaxSAT, bin packing, Louvain communities, multistart L-BFGS-B, weighted-vote crowd, exact node cut, token-bucket admission.
+  - **NICHE (2):** QP reconciliation, NLMS.
+  - **SUPERSEDED:** the auction.
+  - **REJECTED:** graph diffusion.
+  - **Caveats:**
+    - Differential evolution wins 15-7 against the DEFAULT multistart genome, not significant under the rule. The proposed routing for multimodal objectives is DE.
+    - The node-cut genome's wins are bounds coverage only.
+  - 44 of 58 genomes are admitted; none is attached.
+- **`develop_repair` as a second P8 target:** a declared pilot was NOT_VIABLE because the trigger can never fire (the genome beats its no-repair baseline on 640 of 640). The measured deficit against the replanner is a mechanism, a hybrid of central plan and local fallback, not a configuration.
+- **`develop_repair_hybrid` 1.0.0** ([evidence](evidence/greg-repair-hybrid/2026-10-21-exploratory/README.md)), registered and withheld. It composes the existing replanner with a local audit and a dormant local standby.
+  - The declared exploratory emergence test (640 fresh items, seeds 4000-4639, one run) is **PARTIAL**: mean quality 0.9835 with 0 false claims, against the replanner's 0.7451 with 37.
+  - It fails E2b, losing 37-126 to the replanner on stale controllers, as its declaration warned: the woken standby's message cost is already paid when the planner recovers.
+  - Ablations show that the audit removes the false claims and that the fallback restores function.
+  - A blocked repair mission resumed on the founder-attached hybrid through Capability Genesis, and its answer was verified (test key). This is exploratory evidence, not admission; admission v6 is drafted for seeds 1500-1529 and not frozen.
+- **Genome admission v6** ([evidence](evidence/greg-genome-admission/2026-10-21-v6/README.md)): pre-registered at `b33fd678`, frozen at `f33cb2a9` and run once on seeds 1500-1529.
+  - `develop_repair` 1.1.2 is NICHE_CAPABILITY and replicates v2: 7-23 against the replanner.
+  - `develop_repair_hybrid` 1.0.0 is NICHE_CAPABILITY:
+    - 23-7 against the local rules;
+    - 7-7, with 16 ties, against the replanner, with 0 wrong answers against the replanner's 3;
+    - not DEFAULT because it is about 92x slower than the replanner;
+    - the stale-controller weakness replicates (3-7).
+  - 45 of 59 genomes are admitted, every one with current-version evidence. None is attached.
 
 ## FABLE 5.1 OPUS MAXIMUS: one GREG, stacked on #178 — 2026-10-15
 

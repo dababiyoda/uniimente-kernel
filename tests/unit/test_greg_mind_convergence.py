@@ -15,6 +15,7 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import re
 from pathlib import Path
 import subprocess
 
@@ -908,8 +909,10 @@ def test_admitted_labels_are_reported_by_provenance_and_practitioner_ties_are_vi
     assert sum(split.values()) == len(labelled)
     for e in labelled:
         kind = genome_library.provenance(e)
-        if kind == "rule_admitted":           # only #158's pre-registered genome admissions count as admissions
-            assert all("greg-genome-admission/2026-10-1" in r and not r.startswith(genome_library.LINEAGE_ADMISSION_DIR)
+        if kind == "rule_admitted":           # only pre-registered genome admissions count as admissions
+            # any dated pre-registered genome admission (v1-v4 on 2026-10-1x, #158's v5 onward on 2026-10-2x)
+            assert all(re.search(r"greg-genome-admission/2026-1\d-\d\d", r)
+                       and not r.startswith(genome_library.LINEAGE_ADMISSION_DIR)
                        and not genome_library.OPERATION_READMISSION.match(r) for r in e.evidence_refs), e
         if kind == "operation_readmitted":    # a pre-registered re-admission run's own directory: the merged tree's
             # run_operations.py (<run id>-operations/) or the converged tree's operation-admission harness v3

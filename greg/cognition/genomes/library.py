@@ -24,6 +24,7 @@ from .contract import Executable, GenomeError
 # module path -> layer it implements (documentation; each genome declares its own layer)
 MODULES = (
     "greg.cognition.genomes.flow",          # L3 graph max-flow / min-cut; capacity expansion compiler
+    "greg.cognition.genomes.node_cut",      # L3 exact minimum S-T vertex cut with a Menger certificate
     "greg.cognition.genomes.forecasting",   # L3 time-series forecasting with calibrated quantiles
     "greg.cognition.genomes.decision",      # L3 decision analysis (preposterior / value of information)
     "greg.cognition.genomes.basal",         # L1 basal / primitive intelligences
@@ -37,6 +38,16 @@ MODULES = (
     "greg.cognition.genomes.competitors",   # L3 promoted competitors of SUPERSEDED genomes (own genomes)
     "greg.cognition.genomes.solvers_d",     # L3 batch D: MaxSAT, bin packing, reconciliation QP, communities, L-BFGS-B
     "greg.cognition.genomes.crowd",         # L2 one-step weighted crowd vote (#179 acquisition target)
+    "greg.cognition.genomes.basal_b",       # L1 batch B: token-bucket admission (rate control), NLMS online learner
+    "greg.cognition.genomes.collective_b",  # L2 batch B: ecology bidding as a priced task auction (Bertsekas)
+    "greg.cognition.genomes.developmental_b",  # L4 batch B: graph diffusion (harmonic label propagation)
+    "greg.cognition.genomes.developmental_hybrid",  # L4 recombined: central plan audited by the local repair rules
+    "greg.cognition.genomes.formal",        # L3 property-based testing (counterexample search)
+    "greg.cognition.genomes.basal_memory",  # L1 associative memory (Hebbian Hopfield recall)
+    "greg.cognition.genomes.developmental_ca",  # L4 cellular-automaton pattern regeneration
+    "greg.cognition.genomes.evolutionary",  # L3 genetic algorithm (factored binary) and MAP-Elites quality-diversity
+    "greg.cognition.genomes.centrality",    # L3 exact top-k betweenness-critical nodes (batched sparse Brandes)
+    "greg.cognition.genomes.search",        # L3 search: IDA* (memory-bounded optimal), beam (flow shop), MCTS (Hex)
 )
 PROOF_CLASS = "genome_certificate"
 PROOF_FIELDS = ("intelligence_id", "version", "evidence_type", "inputs_digest", "certificate", "limits")

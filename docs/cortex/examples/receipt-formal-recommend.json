@@ -69,6 +69,8 @@
     "note": "mandatory checks are never traded for cost; only optional deeper cognition is gated on its chance of changing the decision",
     "policy": "cortex-thinking-budget/0.1"
   },
+  "capability_deficit": null,
+  "coverage": "complete",
   "created_at": "2026-09-30T00:00:00Z",
   "disposition": {
     "kind": "recommend",
@@ -130,7 +132,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.067897,
+    "seconds": 0.093539,
     "solver_calls": 9,
     "usd": 0.0
   },
@@ -281,7 +283,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 0.065224,
+          "seconds": 0.090277,
           "solver_calls": 9,
           "usd": 0.0
         },
@@ -796,24 +798,28 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:cb0e2724c6b2a4f6fdb0dc5207e7197712f21d4bdf1003bb225339a1de5d21cc",
+  "receipt_id": "sha256:17221261cdadf0fa2d9bbc7b0a75f312480dc3cb76083b6e4ecdc94a4ce9b844",
   "route": {
     "attempts": [],
     "composition": false,
+    "dropped_by_cap": [],
     "formal_plan": {
       "excluded": {},
       "order": [
         "cortex.formal.z3@0.2.0",
         "cortex.optimization.cpsat@0.2.0"
       ],
-      "policy": "cortex-route-policy/0.2.1",
+      "policy": "cortex-route-policy/0.2.2",
       "policy_order": [
         "cortex.formal.z3@0.2.0",
         "cortex.optimization.cpsat@0.2.0"
       ],
       "query_kind": "feasibility"
     },
-    "policy": "cortex-route-policy/0.2.1",
+    "part_geometries": {
+      "cortex.formal.z3@0.2.0": "constraint_feasibility"
+    },
+    "policy": "cortex-route-policy/0.2.2",
     "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
     "selected": [
       "cortex.formal.z3@0.2.0"
@@ -846,8 +852,8 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.2.1",
-    "policy": "cortex-route-policy/0.2.1",
+    "cortex": "0.2.2",
+    "policy": "cortex-route-policy/0.2.2",
     "routes": {
       "cortex.formal.z3@0.2.0": "0.2.0"
     },

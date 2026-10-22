@@ -297,11 +297,17 @@ class TestRoutingMemory:
         self.geometry = self.receipt["geometry"]["epistemic_class"]
 
     def verified(self, n=1, status="verified_success"):
+        # 0.2.2 (from seed 0.1.6): one receipt is one decision and settles a method once, so each outcome gets its
+        # own receipt.
         for _ in range(n):
-            self.ledger.settle(outcome_status=status,
+            self._decisions = getattr(self, "_decisions", 0) + 1
+            problem = formal_problem()
+            problem["problem_id"] = f"{problem['problem_id']}-{self._decisions}"
+            self.ledger.settle(outcome_status=status, receipt=cortex().run(problem),
+                               method="cortex.formal.z3", method_version="0.2.0",
                                provenance={"kind": "external_observation", "validation_status": "externally_verified"},
                                attribution=[{"method": "cortex.formal.z3", "role": "final_answer",
-                                             "uncertainty": "low"}], **self.kw)
+                                             "uncertainty": "low"}])
 
     def test_absent_and_unresolved_change_nothing(self):
         for status in ("absent_feedback", "unresolved"):

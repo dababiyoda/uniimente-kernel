@@ -64,6 +64,9 @@ NATIVE_INPUTS = {
     # an observations-only request cannot say which question it asks (it stays reachable by its operation).
     "crowd_label": ("classes", "labels"), "swarm_minimize": ("function", "shift", "bounds", "budget", "seed"),
     "evolve_blackbox": ("function", "shift", "bounds", "budget", "seed"),
+    # cortex 0.2.2 (verified 2026-10-21): an affected party is the protection review's native input, so the family
+    # that reads it is a candidate instead of the request being called a gap no catalogued method reads
+    "protection_review": ("affected_party",),
 }
 
 
@@ -719,6 +722,69 @@ def _part_rows(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
 
 
 PART_FLAGS = ("formalization_complete",)        # request-level flags a part-addressed method reads with its part
+
+
+def _forward_consequence(data: dict, g, vector):
+    """The compile's declared consequence as the payload's ``declared`` block for a cortex organ: its class, and its
+    harm vector as the cortex's own harm levels, so the cortex's harm-implies-class rule decides exactly as on its
+    direct path (review of the 0.2.2 port: a reputation or privacy harm of 0.5 had been forwarded as "financial").
+    Each may raise the payload's own declaration, never lower it."""
+    from capabilities.genome import CONSEQUENCE_CLASSES as ORDER
+    from .bridge import _HARM_TO_VECTOR, _LEVEL
+
+    def rank(c):
+        return ORDER.index(c) if c in ORDER else -1
+    levels = [(name, x) for name, x in sorted(_LEVEL.items(), key=lambda kv: kv[1] if kv[1] is not None else -1)
+              if x is not None]
+
+    def level(value):                       # the least level at or above the value: never understates a harm
+        return next(name for name, x in levels if value <= x)
+    declared = dict(data.get("declared") or {}) if isinstance(data.get("declared"), dict) else {}
+    current = declared.get("consequence_class")
+    forwarded = {}
+    if g.consequence_class and rank(g.consequence_class) > rank(current):
+        declared["consequence_class"] = g.consequence_class
+        forwarded.update({"from": current or "undeclared", "to": g.consequence_class,
+                          "why": "compile geometry.consequence_class"})
+    harm = dict(declared.get("harm") or {}) if isinstance(declared.get("harm"), dict) else {}
+    raised = {}
+    for dimension, field_ in _HARM_TO_VECTOR.items():
+        value = float(getattr(vector, field_, 0.0) or 0.0)
+        if value <= 0:
+            continue
+        mine, theirs = level(min(value, 1.0)), harm.get(dimension)
+        if _LEVEL.get(theirs) is None or _LEVEL[mine] > _LEVEL[theirs]:
+            raised[dimension] = mine
+    if raised:
+        declared["harm"] = {**harm, **raised}
+        forwarded["harm"] = raised
+    if not forwarded:
+        return data, None
+    return {**data, "declared": declared}, forwarded
+
+
+def _protection_matter(data: dict) -> str | None:
+    """Why the request is a victim-protection matter that qualified humans lead, or None (cortex 0.2.2, the
+    cortex's own override mirrored before any candidate search; verified 2026-10-21). A malformed protection block
+    is treated as one: protection fails toward the human route."""
+    from cortex.contracts import CortexError, VictimProtection
+    from cortex.routing import HUMAN_LED_PROTECTION
+    block = data.get("victim_protection")
+    if block is not None:
+        if not isinstance(block, dict):
+            return "victim_protection is not a mapping; handled as human-led"
+        try:
+            p = VictimProtection.from_dict(block)
+        except (CortexError, TypeError, AttributeError) as exc:
+            return f"victim_protection could not be read ({exc}); handled as human-led"
+        if p.relevant and (set(p.required_actions) & set(HUMAN_LED_PROTECTION) or p.gaps):
+            return "victim protection requires human-led action"
+    party = data.get("affected_party")
+    if isinstance(party, dict):
+        harm = [party.get(k, 0) for k in ("immediate_harm", "continuing_harm")]
+        if any(isinstance(h, (int, float)) and not isinstance(h, bool) and h > 0 for h in harm):
+            return "an affected party with immediate or continuing harm"
+    return None
 
 
 def _one_part(data: dict) -> str | None:
@@ -1572,7 +1638,10 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
     if vector.prohibited:
         receipt["abstentions"].append("law, consent and rights constraints are eligibility gates; upside cannot compensate")
         return finish("PROHIBITED")
-    if g.human_judgment_required or g.legal_content or g.rights_impact or g.geometry in HUMAN_CLASSES:
+    protection = _protection_matter(data)
+    if protection:
+        receipt["abstentions"].append(f"protection matter: {protection}; a handoff, never a capability gap")
+    if g.human_judgment_required or g.legal_content or g.rights_impact or g.geometry in HUMAN_CLASSES or protection:
         receipt["method_or_composition_selected"] = "human:qualified_judgment"
         receipt["selection_level"] = "constitutional_route"
         # the question's identity: what the founder's signed answer must be bound to (judgments excluded,
@@ -1659,6 +1728,17 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
             # missing information, not a capability deficit: Capability Genesis is not asked to build it again
             receipt["missing_information"] = missing
             receipt["abstentions"].append("missing information: the request lacks " + _lacks(missing))
+            return finish("ABSTAIN")
+        # Cortex 0.2.2 (Seed Cortex 0.1.6 rule): only a capability gap carries a deficit. A request that carries
+        # no inputs at all, for a geometry a catalogued method answers natively, lacks inputs; it names no new data
+        # shape or question for Capability Genesis to build a function for. (A request whose inputs no method
+        # reads, or whose inputs contradict its declaration, stays a deficit with dissent, as designed here.)
+        native = [m for m in _method_inputs() if g.geometry and g.geometry in m["epistemic_classes"]]
+        if native and not data:
+            receipt["missing_information"] = [{"method": m["method"], "missing_inputs": sorted(m["inputs"])}
+                                              for m in native]
+            receipt["abstentions"].append(f"missing information: {g.geometry!r} is answered natively by "
+                                          f"{sorted(m['method'] for m in native)}; the request carries no inputs")
             return finish("ABSTAIN")
         if superseding:
             # the method that fits was superseded on frozen held-out evidence by a deployable mechanism: name it
@@ -1793,10 +1873,39 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
         if limit is None:
             receipt["abstentions"].append(budget.stops()[-1]["reason"])
             return finish("ABSTAIN")
-        payload = data
+        # Compiler control flags (PART_FLAGS, e.g. formalization_complete) are read here, never by the cortex, whose
+        # strict payload contract refuses unknown keys (0.2.2; verified 2026-10-21). The parts of the other cortex
+        # organs are withheld too: the router would otherwise run organs this compile rejected or did not select, and
+        # the high-consequence gate above would not cover them.
+        foreign = {k for r in rows if r.get("kind") == "problem" and r["method"] != chosen["method"]
+                   for k in r.get("inputs", ())} - set(chosen.get("inputs", ()))
+        payload = {k: v for k, v in data.items() if k not in PART_FLAGS and k not in foreign}
+        # A part another part masked (a schedule_request beside a formal_model) is routed once the masking part is
+        # withheld: re-read the cortex's own route policy until it routes only the selected organ (review of the
+        # 0.2.2 port), and fail closed if a part the selected organ needs would itself route another organ.
+        from cortex.routing import _route_parts
+        while extra := [key for key, _ in _route_parts(payload) if key != chosen.get("organ")]:
+            triggers = {k for k in payload for key in extra
+                        if key not in {x for x, _ in _route_parts({p: v for p, v in payload.items() if p != k})}}
+            if not triggers or triggers & set(chosen.get("inputs", ())):
+                receipt["abstentions"].append(f"the payload would still route {sorted(extra)} beside "
+                                              f"{chosen['method']}")
+                return finish("ABSTAIN")
+            foreign |= triggers
+            payload = {k: v for k, v in payload.items() if k not in triggers}
+        # The compile's declared consequence reaches the organ: it may raise the payload's own declaration, never
+        # lower it (cortex 0.2.2; verified 2026-10-21: a financial compile reached the cortex as internal_write).
+        payload, forwarded = _forward_consequence(payload, g, vector)
+        if forwarded:
+            receipt["consequence_forwarded"] = forwarded
+        if foreign:
+            receipt["transformations"].append({"operator_id": "single_organ_payload", "effect_kind": "scope",
+                                               "transformation": f"payload parts {sorted(foreign)} withheld: they "
+                                                                 f"belong to organs this compile did not select",
+                                               "evidence_type": "routing policy", "benchmark": None})
         if budget.bounded:
             resources = data.get("resources") or {}
-            payload = {**data, "resources": {**resources, "max_latency_s": min(
+            payload = {**payload, "resources": {**resources, "max_latency_s": min(
                 float(resources.get("max_latency_s", 30.0)), limit)}}
         inner = reason({"problem_id": pid, "problem": {"question": g.objective or g.epistemic_question or pid,
                                                        "payload": payload}},
@@ -1841,6 +1950,12 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
         if inner["state"] != "ANSWERED":
             receipt["abstentions"].append(f"{inner['state']}: {inner['reason']}")
             return finish(inner["state"])
+        if high:
+            # as on the problem, operation, constructed and formed routes: a high-consequence answer is conditional
+            # on unverified world assumptions and on consequence authority it never holds (0.2.2; verified 2026-10-21)
+            receipt["abstentions"].append("WORLD_UNVERIFIED: high consequence; world assumptions and consequence "
+                                          "authority unverified")
+            return finish("WORLD_UNVERIFIED", inner["answer"])
         return finish("ANSWERED", inner["answer"])
     limit = budget.allot("answer", required=True)
     if limit is None:

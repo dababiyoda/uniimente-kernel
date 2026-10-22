@@ -1094,8 +1094,8 @@
    "path": "greg/cognition/worker.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158); arrived with #158 after 41a8538, merged at its head f8e8fd2 (review of #179, M18)"
+   "disposition": "modified",
+   "note": "present in one lineage only (pr158); arrived with #158 after 41a8538, merged at its head f8e8fd2 (review of #179, M18); modified by cortex 0.2.2 (2026-10-21): forwards the host's authority instant to Cortex.run"
   },
   {
    "path": "greg/cognition/worlds.py",

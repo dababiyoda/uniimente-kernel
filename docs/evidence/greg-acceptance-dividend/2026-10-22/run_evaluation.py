@@ -30,6 +30,7 @@ cases = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(cases)
 CASES, ABLATION_CASES, LAYERS, run_case, passed = (cases.CASES, cases.ABLATION_CASES, cases.LAYERS, cases.run_case,
                                                    cases.passed)
+REVIEW_CASES = cases.REVIEW_CASES      # post hoc (adversarial review of c3a9e26), reported in their own table
 
 
 def main(argv=None) -> int:
@@ -37,7 +38,7 @@ def main(argv=None) -> int:
     ap.add_argument("--kernel")
     ap.add_argument("--label")
     ap.add_argument("--out")
-    ap.add_argument("--cases", default=",".join(CASES))
+    ap.add_argument("--cases", default=",".join(CASES + REVIEW_CASES))
     ap.add_argument("--regimes", default="required,supervised")
     ap.add_argument("--ablation", action="store_true")
     ap.add_argument("--timing", action="store_true")
@@ -93,6 +94,20 @@ def main(argv=None) -> int:
     return 0
 
 
+def table_row(case: str, by: dict, labels: list, regimes: list) -> str:
+    cells = []
+    for lab in labels:
+        for reg in regimes:
+            row = next((x for x in by[lab]["rows"] if x["case"] == case and x["regime"] == reg), None)
+            if row is None:
+                cells.append("not run")
+                continue
+            mark = "PASSED" if passed(row) else "refused"
+            cells.append(f"{row['final_verdict']}; {'ACHIEVED' if row['achieved'] else 'not achieved'}; "
+                         f"{row['separate_appraiser'] or 'no closure'} ({mark})")
+    return f"| {case} | " + " | ".join(cells) + " |"
+
+
 def render(results: list[dict]) -> str:
     """The README tables, computed from result files only."""
     by = {}
@@ -104,23 +119,15 @@ def render(results: list[dict]) -> str:
     regimes = sorted({row["regime"] for r in results for row in r["rows"]}, key=["required", "supervised"].index)
     labels = [lab for lab in ("baseline", "new") if lab in by]
     head = "| Case | " + " | ".join(f"{lab} / {reg}" for lab in labels for reg in regimes) + " |"
-    lines += ["### Hostile and honest cases (in-body verdict; ACHIEVED; separate appraiser)", "", head,
-              "|" + "---|" * (1 + len(labels) * len(regimes))]
-    for case in CASES:
-        cells = []
-        for lab in labels:
-            for reg in regimes:
-                row = next((x for x in by[lab]["rows"] if x["case"] == case and x["regime"] == reg), None)
-                if row is None:
-                    cells.append("not run")
-                    continue
-                mark = "PASSED" if passed(row) else "refused"
-                cells.append(f"{row['final_verdict']}; {'ACHIEVED' if row['achieved'] else 'not achieved'}; "
-                             f"{row['separate_appraiser'] or 'no closure'} ({mark})")
-        lines.append(f"| {case} | " + " | ".join(cells) + " |")
+    for title, group in (("Hostile and honest cases (in-body verdict; ACHIEVED; separate appraiser)", CASES),
+                         ("Post hoc, from the review of c3a9e26: E* hostile, T* honest (same columns)", REVIEW_CASES)):
+        if not any(x["case"] in group for r in results for x in r["rows"]):
+            continue
+        lines += [f"### {title}", "", head, "|" + "---|" * (1 + len(labels) * len(regimes))]
+        lines += [table_row(case, by, labels, regimes) for case in group] + [""]
     new = by.get("new")
     if new and new["ablation"]:
-        lines += ["", "### Ablation (new tree): PASSED means the hostile worker got through with that layer off", "",
+        lines += ["### Ablation (new tree): PASSED means the hostile worker got through with that layer off", "",
                   "| Case | regime | all layers | " + " | ".join(f"- {layer}" for layer in LAYERS) + " |",
                   "|---|---|---|" + "---|" * len(LAYERS)]
         for reg in regimes:

@@ -83,3 +83,25 @@ def test_a_vacuous_test_behind_a_code_side_helper_is_not_yet_refused(tmp_path):
     _regime("required")
     row = run_case(KERNEL, tmp_path, "H3h", "required")
     assert not passed(row)
+
+
+# -- post hoc, from the adversarial review of c3a9e26 (not pre-registered) ------------------------------------------
+
+@pytest.mark.parametrize("regime", REGIMES)
+@pytest.mark.parametrize("case", ["E1", "E2", "E3"])
+def test_the_reviewed_discrimination_evasions_are_refused(tmp_path, case, regime):
+    """E1/E3: a vacuous test under a name acceptance runs but pytest's default names miss; E2: a vacuous test that
+    fails only where GREG's base copy has no ``.git``. The base copy is now a clone laid out as the fresh one."""
+    _regime(regime)
+    row = run_case(KERNEL, tmp_path, case, regime)
+    assert not passed(row), row
+    assert any("pass on the recorded base" in f for f in row["findings"]), row["findings"]
+
+
+@pytest.mark.xfail(strict=True, reason="negative result (post hoc, review of c3a9e26, E4): on a plain code_change order "
+                                       "with no binding and no verifier, a test that reads a file the patch adds "
+                                       "fails on the base by construction, so a coherent lie passes discrimination")
+def test_a_coherent_lie_on_a_plain_code_change_order_is_not_yet_refused(tmp_path):
+    _regime("required")
+    row = run_case(KERNEL, tmp_path, "E4", "required")
+    assert not passed(row)

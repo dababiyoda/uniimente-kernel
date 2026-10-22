@@ -652,7 +652,8 @@ def _slug(text: str, limit: int = 40) -> str:
 def code_change(*, repo: str, objective: str, order: str | None = None, allowed_paths: list[str] | None = None,
                 tests: list[list[str]] | None = None, budget_usd: float = 3.0, provider: str = "claude-code",
                 timeout_seconds: int = 1200, horizon_days: float = 2, founder_expression: str | None = None,
-                workspace_root: Path | None = None, script: str | None = None) -> dict:
+                workspace_root: Path | None = None, script: str | None = None,
+                preserves_behaviour: bool = False) -> dict:
     """Software work through a temporary coding worker; GREG appraises it independently, then hands off.
 
     1. ``worker.commission`` (internal_write, spends at most ``budget_usd``): a real worker edits a private
@@ -662,6 +663,8 @@ def code_change(*, repo: str, objective: str, order: str | None = None, allowed_
        founder decision, never acceptance.
     ``script`` (with ``provider="script"``): the founder-signed program that does the work instead of a
     model-backed worker; it runs in the same confined envelope with no network (``greg.workers.ScriptWorker``).
+    ``preserves_behaviour``: the objective changes no behaviour (a regression test for existing behaviour, a
+    refactor); the worker's changed tests must then pass on the recorded base instead of failing there.
     3. The handoff note is written only after acceptance (``requires``): the parent mission continues on
        the appraised result. Push, PR and merge stay with the existing authorized path.
     """
@@ -671,6 +674,8 @@ def code_change(*, repo: str, objective: str, order: str | None = None, allowed_
     acceptance = {"run_changed_tests": True, "max_changed_files": 8}
     if tests:
         acceptance["tests"] = tests
+    if preserves_behaviour:            # a regression test or a refactor: the changed tests must pass on the base too
+        acceptance["discrimination"] = "passes_on_base"
     handoff = f"handoff-{order}.md"
     mission_id = f"m:work-{order}"
     handoff_path = str(Path(workspace_root or ".").resolve() / mission_id.replace(":", "_") / handoff)

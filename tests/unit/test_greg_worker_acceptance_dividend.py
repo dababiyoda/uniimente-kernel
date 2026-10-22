@@ -128,13 +128,15 @@ def staged_patch(tmp_path, files: dict, links: dict | None = None) -> tuple[Path
     return repo, base, workers._git(repo, "diff", "--cached", "--name-status", "--no-renames", base).stdout
 
 
-def discriminate(tmp_path, repo, base, name_status, acceptance=None):
-    inputs = workers.delivered_inputs(repo, base, acceptance or {}, name_status)
+def discriminate(tmp_path, repo, base, name_status, acceptance=None, timeout=60):
+    acceptance = acceptance or {"run_changed_tests": True}
+    inputs = workers.delivered_inputs(repo, base, acceptance, name_status)
     tree = None
     if inputs["tests"] and None not in inputs["test_side"].values():
-        tree = tmp_path / "base-tree"
+        tree = tmp_path / "base-tree" / "fresh"
         workers.base_tree(repo, base, tree, inputs["test_side"])
-    return workers.discrimination_findings(tree, inputs, timeout=60)
+    return workers.discrimination_findings(tree, inputs, timeout=timeout,
+                                           expect=acceptance.get("discrimination", "fails_on_base"))
 
 
 def test_a_test_that_passes_on_the_base_proves_nothing_and_is_refused(tmp_path):
@@ -174,11 +176,17 @@ def test_a_symbolic_link_is_never_followed_as_a_test_or_an_artifact(tmp_path):
 
 # -- on the canonical path: commission, the in-body appraisal and the separate appraiser ----------------
 
-def code_mission(tmp_path, monkeypatch, edits: dict, *, acceptance: dict | None = None, ticks: int = 6):
+def code_mission(tmp_path, monkeypatch, edits: dict, *, acceptance: dict | None = None, ticks: int = 6,
+                 base: dict | None = None, links: dict | None = None):
     data = tmp_path / "data"
-    data.mkdir()
+    data.mkdir(parents=True)
     repo = make_repo(data)
     (repo / "problem.json").write_text(json.dumps(STAFFING))
+    for rel, text in (base or {}).items():
+        (repo / rel).parent.mkdir(parents=True, exist_ok=True)
+        (repo / rel).write_text(text)
+    for rel, target in (links or {}).items():
+        (repo / rel).symlink_to(target)
     workers._git(repo, "add", "-A")
     workers._git(repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "problem")
     home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
@@ -255,3 +263,189 @@ def test_a_work_order_with_malformed_bindings_is_refused_before_any_worker_runs(
 
 def test_the_artifact_verifiers_are_a_protected_surface():
     assert workers.protected("greg/artifact_verifiers.py")
+
+
+# -- the adversarial review of c3a9e26 (R1-A): what discrimination judges, where and when -------------------------
+
+VACUOUS = "def test_ok():\n    assert True\n"
+SUB = {"pkg/calc.py": "def add(a, b):\n    return a + b\n\n\ndef sub(a, b):\n    return a - b\n",
+       "tests/test_calc.py": "from pkg.calc import sub\n\n\ndef test_sub():\n    assert sub(3, 1) == 2\n"}
+
+
+@pytest.mark.parametrize("name", ["tests/latest_plan.py", "tests/attest_x.py", "tests/contest_x.py"])
+def test_discrimination_judges_every_changed_file_the_acceptance_runs_whatever_its_name(tmp_path, name):
+    """Acceptance hands pytest every changed ``tests/*test_*.py``; pytest collects a file named on its command line
+    whatever its name. Discrimination judges exactly that list, not pytest's default file names."""
+    repo, base, status = staged_patch(tmp_path, {name: VACUOUS})
+    assert workers.acceptance_runs({"run_changed_tests": True}, [name]) == [name]
+    [finding], run = discriminate(tmp_path, repo, base, status)
+    assert "pass on the recorded base" in finding and run["returncode"] == 0
+
+
+def test_a_vacuous_test_under_a_non_default_name_does_not_close_a_code_change_mission(tmp_path, monkeypatch):
+    states, verdict, _ = code_mission(tmp_path, monkeypatch, {"pkg/calc.py": SUB["pkg/calc.py"],
+                                                              "tests/latest_calc.py": VACUOUS})
+    assert verdict["verdict"] == "REJECTED" and "ACHIEVED" not in states
+    assert any("pass on the recorded base" in f for f in verdict["findings"]), verdict["findings"]
+
+
+def test_a_vacuous_test_collected_by_a_bare_pytest_does_not_close_a_code_change_mission(tmp_path, monkeypatch):
+    """A frozen ``pytest`` that names no path runs every default-named test, the worker's included: it is judged."""
+    states, verdict, _ = code_mission(tmp_path, monkeypatch, {"pkg/calc.py": SUB["pkg/calc.py"],
+                                                              "tests/test_vacuous.py": VACUOUS},
+                                      acceptance={"run_changed_tests": False,
+                                                  "tests": [["python", "-m", "pytest", "-q", "-p", "no:cacheprovider"]]})
+    assert verdict["verdict"] == "REJECTED" and "ACHIEVED" not in states
+    assert any("pass on the recorded base" in f for f in verdict["findings"]), verdict["findings"]
+
+
+def test_discrimination_judges_only_changed_files_the_acceptance_runs(tmp_path):
+    """Pre-registered L2: a changed test file 'that the acceptance runs'. A colocated test the frozen command never
+    runs is not judged; one it names, or one inside a directory it names, is."""
+    named = {"tests": [["python", "-m", "pytest", "-q", "tests/test_contract.py::test_sub"]]}
+    names = ["pkg/calc_test.py", "tests/test_contract.py", "tests/test_other.py"]
+    assert workers.acceptance_runs(named, names) == ["tests/test_contract.py"]
+    assert workers.acceptance_runs({"tests": [["python", "-m", "pytest", "tests/"]]}, names) == [
+        "tests/test_contract.py", "tests/test_other.py"]
+    assert workers.acceptance_runs({"tests": [["python", "-m", "pytest", "."]]}, names) == names
+    assert workers.acceptance_runs({"tests": [["python", "scripts/check.py", "tests/test_other.py"]]}, names) == []
+    # a pytest that names no path collects from its root: an option's value is never taken for a path
+    assert workers.acceptance_runs({"tests": [["python", "-m", "pytest", "-q", "-p", "no:cacheprovider"]]},
+                                   names) == names
+    assert workers.acceptance_runs({"tests": [["python", "-m", "pytest", "--deselect", "tests/test_other.py::t",
+                                               "tests/test_contract.py"]]}, names) == ["tests/test_contract.py"]
+    repo, base, status = staged_patch(tmp_path, {"pkg/calc_test.py": VACUOUS})
+    assert workers.delivered_inputs(repo, base, named, status)["tests"] == []
+
+
+def test_a_changed_test_the_acceptance_never_runs_does_not_refuse_an_honest_change(tmp_path, monkeypatch):
+    contract = "from pkg.calc import sub\n\n\ndef test_sub():\n    assert sub(3, 1) == 2\n"
+    colocated = "from pkg.calc import add\n\n\ndef test_add():\n    assert add(1, 1) == 2\n"
+    states, verdict, appraisal = code_mission(
+        tmp_path, monkeypatch, {"pkg/calc.py": SUB["pkg/calc.py"], "pkg/calc_test.py": colocated + "# touched\n"},
+        base={"tests/test_contract.py": contract, "pkg/calc_test.py": colocated},
+        acceptance={"run_changed_tests": False,
+                    "tests": [["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", "tests/test_contract.py"]]})
+    assert verdict["verdict"] == "ACCEPTED" and "ACHIEVED" in states, verdict["findings"]
+    assert verdict["base_run"] is None and appraisal["verdict"] == "VERIFIED", appraisal["findings"]
+
+
+def test_the_base_copy_is_a_clone_laid_out_as_the_fresh_clone(tmp_path):
+    """No environmental tell: its own .git directory, the fresh clone's directory name, the worker's test-side files
+    staged as in the fresh clone's index, symbolic links kept as links and never followed."""
+    repo, base, status = staged_patch(tmp_path, {"tests/test_git.py": (
+        "from pathlib import Path\n\n\ndef test_plan():\n"
+        "    assert (Path(__file__).resolve().parents[1] / '.git').is_dir()\n")})
+    [finding], run = discriminate(tmp_path, repo, base, status)
+    assert "pass on the recorded base" in finding and run["returncode"] == 0
+    tree = tmp_path / "base-tree" / "fresh"
+    assert workers._git(tree, "diff", "--cached", "--name-only", base).stdout.split() == ["tests/test_git.py"]
+    assert not (tree / "pkg" / "sub.py").exists()
+
+
+def test_a_base_with_absolute_or_escaping_symbolic_links_can_host_the_base_run(tmp_path):
+    repo = make_repo(tmp_path)
+    (repo / "docs-link").symlink_to("/usr/share/doc")
+    (repo / "up-link").symlink_to("../..")
+    workers._git(repo, "add", "-A")
+    workers._git(repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "links")
+    base = workers._git(repo, "rev-parse", "HEAD").stdout.strip()
+    tree = tmp_path / "b" / "fresh"
+    workers.base_tree(repo, base, tree, {"tests/test_x.py": VACUOUS.encode()})
+    assert (tree / "docs-link").is_symlink() and str((tree / "docs-link").readlink()) == "/usr/share/doc"
+    assert (tree / "tests" / "test_x.py").read_bytes() == VACUOUS.encode()
+
+
+def test_an_honest_change_in_a_repository_with_an_absolute_symbolic_link_closes(tmp_path, monkeypatch):
+    states, verdict, appraisal = code_mission(tmp_path, monkeypatch, SUB, links={"docs-link": "/usr/share/doc"})
+    assert verdict["verdict"] == "ACCEPTED" and "ACHIEVED" in states, verdict["findings"]
+    assert verdict["base_run"]["returncode"] != 0 and appraisal["verdict"] == "VERIFIED"
+
+
+def test_a_base_copy_that_cannot_be_built_is_a_refusal_never_a_crash(tmp_path, monkeypatch):
+    def broken(*a, **k):
+        raise OSError("no space left on device")
+    monkeypatch.setattr(workers, "base_tree", broken)
+    states, verdict, _ = code_mission(tmp_path, monkeypatch, SUB)
+    assert verdict["verdict"] == "REJECTED" and "ACHIEVED" not in states
+    assert any("GREG's copy of the recorded base could not be built" in f and "no space left" in f
+               for f in verdict["findings"]), verdict["findings"]
+
+
+@pytest.mark.parametrize("label, base, test", [
+    ("crash", "import os\n\n\ndef add(a, b):\n    if b < 0:\n        os._exit(3)\n    return a + b\n",
+     "from pkg.calc import add\n\n\ndef test_negative():\n    assert add(2, -1) == 1\n"),
+    ("skip", None, "import pytest\ncalc = pytest.importorskip('pkg.newmod')\n\n\ndef test_new():\n"
+                   "    assert calc.VALUE == 1\n"),
+    ("hang", "def add(a, b):\n    while b < 0:\n        pass\n    return a + b\n",
+     "from pkg.calc import add\n\n\ndef test_negative():\n    assert add(2, -1) == 1\n")])
+def test_any_base_failure_other_than_a_confinement_refusal_is_a_discriminating_test(tmp_path, label, base, test):
+    """A timeout, a signal, an internal error or 'no tests ran' on the base: the base lacks what the test checks."""
+    repo = make_repo(tmp_path)
+    if base:
+        (repo / "pkg" / "calc.py").write_text(base)
+        workers._git(repo, "add", "-A")
+        workers._git(repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "bug")
+    commit = workers._git(repo, "rev-parse", "HEAD").stdout.strip()
+    (repo / "pkg" / "calc.py").write_text("def add(a, b):\n    return a + b\n")
+    (repo / "pkg" / "newmod.py").write_text("VALUE = 1\n")
+    (repo / "tests" / "test_calc.py").write_text(test)
+    workers._git(repo, "add", "-A")
+    status = workers._git(repo, "diff", "--cached", "--name-status", "--no-renames", commit).stdout
+    findings, run = discriminate(tmp_path, repo, commit, status, timeout=3)
+    assert findings == [] and run["returncode"] not in (0, 1, 2), (label, run)
+
+
+def test_a_confinement_refusal_of_the_base_run_is_never_read_as_discrimination(monkeypatch, tmp_path):
+    monkeypatch.setattr(workers, "run_tests", lambda argvs, *a, **k: [
+        {"argv": argvs[0], "returncode": -1, "passed": False, "seconds": 0.0, "tail": "acceptance confinement "
+         "refused: no envelope", "confinement": "refused", "landlock": None}])
+    inputs = {"tests": ["tests/test_x.py"], "test_side": {"tests/test_x.py": b""}}
+    [finding], run = workers.discrimination_findings(tmp_path, inputs, timeout=5)
+    assert "could not be judged" in finding and run["confinement"] == "refused"
+
+
+def test_the_base_run_timeout_scales_with_the_acceptance_run_not_the_order(monkeypatch, tmp_path):
+    """A base that hangs already discriminates, so its run is bounded by the acceptance run's own duration, never
+    shorter than a slow vacuous test needs to pass there too."""
+    assert workers.base_run_timeout(1200, [{"seconds": 0.4}], "fails_on_base") == 12
+    assert workers.base_run_timeout(1200, [{"seconds": 61.5}, {"seconds": 2}], "fails_on_base") == 264
+    assert workers.base_run_timeout(30, [{"seconds": 61.5}], "fails_on_base") == 30
+    assert workers.base_run_timeout(1200, [{"seconds": 0.4}], "passes_on_base") == 1200
+
+
+def test_a_behaviour_preserving_order_requires_its_changed_tests_to_pass_on_the_base(tmp_path, monkeypatch):
+    """An order may declare that the change preserves behaviour (a regression test for existing behaviour, a refactor):
+    its changed tests must then PASS on the base, still one extra run, and a test that fails there is refused."""
+    regression = {"tests/test_calc.py": "from pkg.calc import add\n\n\ndef test_add():\n    assert add(2, 3) == 5\n"}
+    preserving = {"discrimination": "passes_on_base"}
+    states, verdict, appraisal = code_mission(tmp_path / "a", monkeypatch, regression, acceptance=preserving)
+    assert verdict["verdict"] == "ACCEPTED" and "ACHIEVED" in states, verdict["findings"]
+    assert verdict["base_run"]["returncode"] == 0 and appraisal["verdict"] == "VERIFIED"
+    states, verdict, _ = code_mission(tmp_path / "b", monkeypatch, SUB, acceptance=preserving)
+    assert verdict["verdict"] == "REJECTED" and "ACHIEVED" not in states
+    assert any("fail on the recorded base" in f and "preserves behaviour" in f for f in verdict["findings"])
+    # undeclared, the default still refuses it: its tests prove nothing about a change (a deliberate trade-off)
+    states, verdict, _ = code_mission(tmp_path / "c", monkeypatch, regression)
+    assert verdict["verdict"] == "REJECTED"
+
+
+@pytest.mark.parametrize("value, mode", [("sometimes", "repository"), (True, "repository"),
+                                         ("passes_on_base", "document")])
+def test_a_malformed_discrimination_declaration_is_refused_at_commission(tmp_path, value, mode):
+    from greg.capabilities import BUILTINS, InvocationContext
+    repo = make_repo(tmp_path)
+    ctx = InvocationContext(workspace=tmp_path, read_roots=(tmp_path,), secrets=None,
+                            manifest=BUILTINS["worker.commission"][0])
+    acceptance = ({"run_changed_tests": True} if mode == "repository" else {"output": "out.md"})
+    params = {"order": "x", "objective": "o", "max_budget_usd": 1, "repo": str(repo), "allowed_paths": ["tests/*"],
+              "mode": mode, "acceptance": {**acceptance, "discrimination": value}}
+    with pytest.raises(workers.WorkerError, match="acceptance.discrimination"):
+        workers.WorkOrder.from_params(params, ctx)
+
+
+def test_the_code_change_template_declares_a_behaviour_preserving_order_only_when_asked():
+    plain = templates.code_change(repo="/tmp", objective="o")
+    assert "discrimination" not in plain["strategies"][0]["params"]["acceptance"]
+    kept = templates.code_change(repo="/tmp", objective="o", preserves_behaviour=True)
+    assert kept["strategies"][0]["params"]["acceptance"]["discrimination"] == "passes_on_base"

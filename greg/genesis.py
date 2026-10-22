@@ -111,6 +111,10 @@ class Candidate:
     binary_name: str
     argv: tuple                        # tokens; "{binary}" and "{file}" are substituted
     parse: str                         # parser id below
+    # Installed binaries run alongside, on the same file, whose raw output the function's derive step reads
+    # (pdfimages beside pdftotext: which pages carry an image). Each is pinned by hash in the manifest; one
+    # that is missing on the body is reported as missing, never assumed.
+    companions: tuple = ()             # ((binary_name, argv), ...)
 
 
 PARSERS = {
@@ -138,7 +142,8 @@ CATALOG = {
         "description": "The words of a PDF in reading order, whitespace-normalized (text drawn in a standard font; "
                        "no OCR of scanned images)",
         "oracle": documents.oracle_document_text, "output_field": "text", "derive": documents.find_phrase,
-        "candidates": (Candidate("pdftotext", ("{binary}", "-enc", "UTF-8", "-q", "{file}", "-"), "words"),),
+        "candidates": (Candidate("pdftotext", ("{binary}", "-enc", "UTF-8", "-q", "{file}", "-"), "words",
+                                 companions=(("pdfimages", ("{binary}", "-list", "{file}")),)),),
     },
     # Open-source packages (founder correction 2026-10-01, #144): installed engines, never installed by GREG.
     "graph.shortest_path": {
@@ -482,8 +487,38 @@ _LIMITER = (
     "try:\n"
     "    resource.setrlimit(resource.RLIMIT_AS, (mem, mem))\n"
     "except (ValueError, OSError):\n"
-    "    pass\n"
+    "    if sys.platform.startswith('linux'):\n"     # enforceable here: a ceiling that did not take is a refusal
+    "        raise\n"
     "os.execv(sys.argv[5], sys.argv[5:])\n")
+
+
+def ceilings() -> dict:
+    """The ceilings an acquired binary runs under on this body, as the qualification report states them."""
+    return {"output_bytes": mechanisms.MAX_OUTPUT, "memory_bytes": BINARY_MEMORY,
+            "memory_enforced": sys.platform.startswith("linux"),
+            "memory_note": None if sys.platform.startswith("linux") else "RLIMIT_AS is not enforced on this platform"}
+
+
+def _read_spool(path: Path, limit: int) -> bytes | None:
+    """Read a spool file the binary may have tampered with: never through a link, never a FIFO or a device,
+    and never more than ``limit + 1`` bytes. None when it is missing."""
+    import stat as stat_module
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    except FileNotFoundError:
+        return None
+    except OSError as exc:                   # ELOOP: the binary replaced its spool file with a link
+        raise CapabilityError(f"capability refused: spool file {path.name} was replaced ({exc.strerror})") from None
+    try:
+        if not stat_module.S_ISREG(os.fstat(fd).st_mode):
+            raise CapabilityError(f"capability refused: spool file {path.name} is no longer a regular file")
+        chunks, left = [], limit + 1
+        while left > 0 and (chunk := os.read(fd, min(left, 1 << 20))):
+            chunks.append(chunk)
+            left -= len(chunk)
+        return b"".join(chunks)
+    finally:
+        os.close(fd)
 
 
 def _run_bounded(argv: list, workspace: Path, name: str) -> tuple[int, bytes, str]:
@@ -495,16 +530,37 @@ def _run_bounded(argv: list, workspace: Path, name: str) -> tuple[int, bytes, st
     try:
         proc = run_isolated([sys.executable, "-I", "-c", _LIMITER, str(out), str(err), str(mechanisms.MAX_OUTPUT + 1),
                              str(BINARY_MEMORY), *argv], cwd=workspace)
-        size = out.stat().st_size if out.exists() else 0
-        if proc.returncode == -signal.SIGXFSZ or size > mechanisms.MAX_OUTPUT:
+        if proc.returncode == -signal.SIGXFSZ:
+            raise CapabilityError(f"capability refused: {name} output exceeds {mechanisms.MAX_OUTPUT} bytes "
+                                  "(killed at the ceiling by SIGXFSZ, never buffered)")
+        stdout = _read_spool(out, mechanisms.MAX_OUTPUT) or b""
+        if len(stdout) > mechanisms.MAX_OUTPUT:
             raise CapabilityError(f"capability refused: {name} output exceeds {mechanisms.MAX_OUTPUT} bytes "
                                   "(stopped at the ceiling, never buffered)")
-        stdout = out.read_bytes() if out.exists() else b""
-        tail = err.read_bytes()[-400:] if err.exists() else b""      # also at most the ceiling
+        tail = (_read_spool(err, mechanisms.MAX_OUTPUT) or b"")[-400:]
         return proc.returncode, stdout, tail.decode("utf-8", errors="replace")
     finally:
         out.unlink(missing_ok=True)
         err.unlink(missing_ok=True)
+
+
+def _companion_outputs(candidate: Candidate, path: Path, ctx: InvocationContext) -> dict:
+    """Run each pinned companion binary on the same file; its raw output, or None when it is not on this body."""
+    pinned = ctx.manifest.provenance.get("companions") or {}
+    outputs = {}
+    for name, template in candidate.companions:
+        entry = pinned.get(name)
+        if not entry:
+            outputs[name] = None
+            continue
+        if hashlib.sha256(Path(entry["binary"]).read_bytes()).hexdigest() != entry["binary_sha256"]:
+            raise CapabilityError(f"installed {name} changed since verification; quarantine required")
+        argv = [entry["binary"] if t == "{binary}" else str(path) if t == "{file}" else t for t in template]
+        returncode, stdout, stderr = _run_bounded(argv, ctx.workspace, name)
+        if returncode:
+            raise CapabilityError(f"{name} exited {returncode}: {stderr[-200:]}".rstrip(": "))
+        outputs[name] = stdout.decode("utf-8", errors="replace")
+    return outputs
 
 
 def catalog_adapter(function: str, candidate: Candidate, binary: str):
@@ -526,8 +582,10 @@ def catalog_adapter(function: str, candidate: Candidate, binary: str):
             raise CapabilityError(f"{candidate.binary_name} exited {returncode}: {stderr[-200:]}".rstrip(": "))
         raw = stdout.decode("utf-8", errors="replace")
         value = PARSERS[candidate.parse](raw)
-        return {spec["output_field"]: value, "path": str(path), **(spec["derive"](value, params, raw)
-                                                                    if spec.get("derive") else {})}
+        if not spec.get("derive"):
+            return {spec["output_field"]: value, "path": str(path)}
+        extras = _companion_outputs(candidate, path, ctx)
+        return {spec["output_field"]: value, "path": str(path), **spec["derive"](value, params, raw, extras)}
     return adapter
 
 
@@ -537,6 +595,17 @@ def _binary_license(binary: str) -> dict:
     if assessment is None:
         return {"license": "system package; license not readable on this body (no dpkg or no DEP-5 file)"}
     return {"license": assessment["parts"][0]["expression"][:200], "license_assessment": assessment}
+
+
+def _companions(candidate: Candidate) -> dict:
+    """Pin each companion binary the body has: path, content hash and its own DEP-5 license."""
+    pinned = {}
+    for name, _ in candidate.companions:
+        found = installed_binary(name)
+        if found:
+            pinned[name] = {"binary": found, "binary_sha256": hashlib.sha256(Path(found).read_bytes()).hexdigest(),
+                            **_binary_license(found)}
+    return pinned
 
 
 def qualify_package(function: str, candidate: PackageCandidate, card: dict, seed: int) -> tuple[bool, dict]:
@@ -1850,7 +1919,7 @@ class Genesis:
             strengthens=("capability_formation", "proof"),
             provenance={"binary": binary, "binary_sha256": hashlib.sha256(Path(binary).read_bytes()).hexdigest(),
                         "version": version_text[0] if version_text else "unknown", "deficit_id": deficit_id,
-                        **_binary_license(binary),
+                        **_binary_license(binary), "companions": _companions(candidate),
                         "builder": "none: existing installed software acquired by search"})
 
     def _verify(self, function, candidate: Candidate, binary: str, seed: int, manifest) -> tuple[bool, dict]:
@@ -1877,12 +1946,14 @@ class Genesis:
                     continue
                 if got != case["expected"]:
                     failures.append({"case": case["name"], "got": str(got)[:80], "expected": str(case["expected"])[:80]})
-                elif "complete" in case and output.get("complete") is not case["complete"]:
-                    # a reader must also say when it could not read everything (a page with no text layer)
+                elif case.get("complete") is False and output.get("complete") is not False:
+                    # a reader must say when it could not read everything (a page with no text layer, or an
+                    # image); reporting less than it read only costs it proofs of absence, so that is allowed
                     failures.append({"case": case["name"], "complete": output.get("complete"),
                                      "expected_complete": case["complete"]})
         return (not failures, {"cases": len(vectors), "failures": failures, "isolation": "no-network subprocess",
-                               "platform": sys.platform})
+                               "platform": sys.platform, "ceilings": ceilings(),
+                               "companions": sorted((manifest.provenance.get("companions") or {}))})
 
     def _attach(self, mission, manifest: CapabilityManifest, deficit_id: str, now, offered: list | None = None):
         # Founder-signed pre-authorization only: read-only, and inside the cone. A capability formed for cognition

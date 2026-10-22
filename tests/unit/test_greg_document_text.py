@@ -49,7 +49,7 @@ def test_a_mission_checks_a_fact_inside_a_pdf_by_acquiring_installed_software(tm
     [resolved] = events(home, "deficit.resolved")
     assert resolved["capability_id"] == "acquired.document.text.pdftotext"
     [verified] = [e for e in events(home, "genesis.verified") if e["capability_id"].endswith("pdftotext")]
-    assert verified["passed"] and verified["report"]["failures"] == [] and verified["report"]["cases"] == 7
+    assert verified["passed"] and verified["report"]["failures"] == [] and verified["report"]["cases"] == 8
     with Body(home) as body:
         manifest = body.registry.manifests["acquired.document.text.pdftotext"]
     license_ = manifest.provenance.get("license_assessment")
@@ -279,7 +279,8 @@ def test_a_phrase_found_on_a_text_page_of_a_partly_scanned_pdf_is_still_found(tm
 
 @needs_pdftotext
 def test_the_oracle_rejects_a_reader_that_claims_a_scanned_page_was_read(tmp_path, monkeypatch):
-    monkeypatch.setattr(documents, "coverage", lambda raw: {"pages": 1, "pages_without_text": [], "complete": True})
+    monkeypatch.setattr(documents, "coverage", lambda raw, images=None: {"pages": 1, "pages_without_text": [],
+                                                                          "complete": True})
     home, key, body_id, data = make_body(tmp_path)
     lease = data / "lease.pdf"
     lease.write_bytes(documents.write_pdf(LEASE, compress=True))
@@ -289,7 +290,7 @@ def test_the_oracle_rejects_a_reader_that_claims_a_scanned_page_was_read(tmp_pat
     assert missions["m:lease"].status != "ACHIEVED"
     [verified] = [e for e in events(home, "genesis.verified") if e["capability_id"].endswith("pdftotext")]
     assert not verified["passed"]
-    assert {f["case"] for f in verified["report"]["failures"]} == {"case3.pdf", "case6.pdf"}
+    assert {f["case"] for f in verified["report"]["failures"]} == {"case3.pdf", "case6.pdf", "case7.pdf"}
 
 
 def _adapter(tmp_path, binary, argv):
@@ -328,3 +329,103 @@ def test_an_acquired_binary_runs_under_a_memory_ceiling_and_reports_its_stderr(t
     failing, _ = _adapter(tmp_path, sys.executable, ("{binary}", "-I", "-c", "import sys; sys.exit('bad-pdf-x')"))
     with pytest.raises(CapabilityError, match="bad-pdf-x"):
         failing()
+
+
+# -- independent review of f929246 (session_01Xt7KBAgrod4jhY9uDnsDkR, #201): each test below fails on 09b60e2 -----
+
+STAMPED = [["Residential lease between the parties."], documents.Stamped("BATES-000002"), ["Signed by both parties."]]
+
+
+@needs_pdftotext
+def test_a_stamped_scan_never_proves_a_phrase_absent(tmp_path):
+    # finding 1: a Bates stamp gave the scanned page text, so it counted as read and absence was "proved"
+    home, key, body_id, data = make_body(tmp_path)
+    lease = data / "stamped.pdf"
+    lease.write_bytes(documents.write_pdf(STAMPED, compress=True))
+    submit(home, key, body_id, "MISSION", mission("m:stamp", checks=[found_check(lease, "terminate without notice",
+                                                                                 expected=False)],
+                                                  strategies=[], **SCOPE))
+    missions, _ = run(home, Clock(), ticks=4)
+    assert missions["m:stamp"].status != "ACHIEVED"
+    with Body(home) as body:
+        receipt = [r for r in body.ledger.by_type("receipt")
+                   if (r.payload.get("result") or {}).get("output", {}).get("phrase")][-1]
+    output = receipt.payload["result"]["output"]
+    assert output["pages_without_text"] == [] and output["pages_with_images"] == [2]
+    assert output["complete"] is False and output["found"] is None
+
+
+def test_without_an_image_listing_no_page_is_vouched_for():
+    raw = "one two\f three four\f"
+    assert documents.coverage(raw)["complete"] is False
+    assert documents.coverage(raw)["image_check"] == "unavailable on this body"
+    listing = "page   num  type\n------------------\n"
+    assert documents.coverage(raw, listing)["complete"] is True
+    assert documents.coverage(raw, listing + "   2     0 image\n")["pages_with_images"] == [2]
+
+
+def test_a_hit_is_declared_decided_and_a_miss_is_not():
+    # finding 2b, the reader's side: a found phrase holds however much more could have been read
+    hit = documents.find_phrase("a b c", {"phrase": "b"}, "a b c\f\f")
+    assert hit["found"] is True and hit["complete"] is False and hit["decided"] == ["found"]
+    miss = documents.find_phrase("a b c", {"phrase": "z"}, "a b c\f\f")
+    assert miss["found"] is None and "decided" not in miss
+
+
+@needs_pdftotext
+def test_a_body_without_pdfimages_still_reads_but_never_proves_absence(tmp_path, monkeypatch):
+    real = genesis_mod.installed_binary
+    monkeypatch.setattr(genesis_mod, "installed_binary", lambda name, *a, **k: None if name == "pdfimages"
+                        else real(name, *a, **k))
+    home, key, body_id, data = make_body(tmp_path)
+    lease = data / "lease.pdf"
+    lease.write_bytes(documents.write_pdf(LEASE, compress=True))
+    submit(home, key, body_id, "MISSION", mission("m:both", checks=[
+        found_check(lease, "renewal term is twelve months"), {**found_check(lease, "terminate", expected=False),
+                                                              "check_id": "never"}], strategies=[], **SCOPE))
+    missions, _ = run(home, Clock(), ticks=4)
+    assert missions["m:both"].status != "ACHIEVED"            # the absence half cannot be proved
+    observed = {e["check_id"]: e["passed"] for e in events(home, "mission.observed")}
+    assert observed["found"] is True and observed["never"] is False
+
+
+def test_the_qualification_report_states_the_ceilings_applied():
+    report = genesis_mod.ceilings()
+    assert report["output_bytes"] == genesis_mod.mechanisms.MAX_OUTPUT
+    assert report["memory_enforced"] is __import__("sys").platform.startswith("linux")
+
+
+def test_a_held_companion_license_holds_the_binary():
+    class M:
+        capability_id, provider = "acquired.document.text.pdftotext", "installed:/usr/bin/pdftotext"
+        provenance = {"license_assessment": {"held": False, "class": licensing.STRONG_COPYLEFT, "parts": []},
+                      "companions": {"pdfimages": {"license_assessment": {
+                          "held": True, "class": licensing.NETWORK_COPYLEFT, "parts": [], "reason": "AGPL companion"}}}}
+    assert licensing.attach_check(M()) == (False, "AGPL companion")
+
+
+def test_a_writer_that_honours_sigxfsz_is_killed_at_the_ceiling(tmp_path):
+    # finding 4: the Python flood writer ignores SIGXFSZ, so the kill path was never exercised
+    from greg.capabilities import CapabilityError
+    yes = genesis_mod.installed_binary("yes")
+    if yes is None:
+        pytest.skip("no yes(1) on this body")
+    call, workspace = _adapter(tmp_path, yes, ("{binary}",))
+    with pytest.raises(CapabilityError, match="killed at the ceiling by SIGXFSZ"):
+        call()
+    assert not any(workspace.glob(".out-*"))
+
+
+@pytest.mark.skipif(not __import__("sys").platform.startswith("linux"), reason="/proc/self/fd is Linux")
+def test_a_binary_that_swaps_its_spool_file_is_refused(tmp_path):
+    # finding 3: the parent read its spool file by path, through a link the binary planted (/dev/zero: unbounded)
+    import sys
+    from greg.capabilities import CapabilityError
+    swap = "import os; p = os.readlink('/proc/self/fd/1'); os.unlink(p); os.symlink('/dev/zero', p)"
+    call, _ = _adapter(tmp_path, sys.executable, ("{binary}", "-I", "-c", swap))
+    with pytest.raises(CapabilityError, match="spool file .* was replaced"):
+        call()
+    fifo = "import os; p = os.readlink('/proc/self/fd/1'); os.unlink(p); os.mkfifo(p)"
+    call, _ = _adapter(tmp_path, sys.executable, ("{binary}", "-I", "-c", fifo))
+    with pytest.raises(CapabilityError, match="no longer a regular file"):
+        call()

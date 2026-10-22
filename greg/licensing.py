@@ -407,9 +407,13 @@ def attach_check(manifest) -> tuple[bool, str]:
     if manifest.provider.startswith("installed:python:"):
         return auto_attach_allowed(provenance)
     if manifest.provider.startswith("installed:"):
-        assessment = provenance.get("license_assessment")
-        if isinstance(assessment, dict) and (assessment.get("held") or assessment.get("class") in (NETWORK_COPYLEFT, NOT_OPEN)
-                                             or any(_held_terms(p.get("terms") or [])
-                                                    for p in assessment.get("parts") or [])):
-            return False, assessment.get("reason", "")
+        # the binary itself, then every companion binary that runs beside it (pdfimages beside pdftotext)
+        assessments = [provenance.get("license_assessment")] + [
+            c.get("license_assessment") for c in (provenance.get("companions") or {}).values() if isinstance(c, dict)]
+        for assessment in assessments:
+            if isinstance(assessment, dict) and (assessment.get("held")
+                                                 or assessment.get("class") in (NETWORK_COPYLEFT, NOT_OPEN)
+                                                 or any(_held_terms(p.get("terms") or [])
+                                                        for p in assessment.get("parts") or [])):
+                return False, assessment.get("reason", "")
     return True, ""

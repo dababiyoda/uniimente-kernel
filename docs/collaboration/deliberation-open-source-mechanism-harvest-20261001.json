@@ -1,0 +1,371 @@
+{
+  "decision_id": "DECISION-20261001-open-source-mechanism-harvest",
+  "title": "Make qualified open-source mechanism reuse the default before original construction",
+  "problem": "UNIIMENTE already prefers open source and acquire-before-invent, but agents can still rebuild known algorithms or treat public repositories only as references. The founder wants open-source code and information used as construction feedstock to accelerate completion of the full currently achievable mind.",
+  "founder_intent_refs": [
+    "INTENT-20261001-open-source-mechanism-harvest",
+    "INTENT-20260930-open-source-first",
+    "Issue #117"
+  ],
+  "baseline": "Existing guidance searches open source before new architecture and prefers local/free software, but it does not consistently distinguish discovery, dependency reuse, vendored source transplants, coherent forks/subtrees and Foundry recombination.",
+  "alternatives": [
+    {
+      "name": "Standing search rule only",
+      "description": "Tell agents to search GitHub before coding but add no reuse/provenance modes.",
+      "advantages": [
+        "Minimal process",
+        "Fast to understand"
+      ],
+      "disadvantages": [
+        "Does not control license or provenance",
+        "Does not distinguish educational code from production dependencies",
+        "Does not prevent whole-repository dependency sprawl"
+      ],
+      "revival_evidence": "Revive if the five-mode policy creates measurable bureaucracy without reducing duplicate implementation, license risk or dependency burden."
+    },
+    {
+      "name": "Wholesale repository mirroring",
+      "description": "Copy or subtree large collections of useful open-source repositories into UNIIMENTE for maximal immediate capability surface.",
+      "advantages": [
+        "Large mechanism surface becomes locally available quickly",
+        "Can reduce future network dependency"
+      ],
+      "disadvantages": [
+        "Creates large update and security burden",
+        "Mixes licenses and abstractions",
+        "Can duplicate registries, schedulers or control planes",
+        "Catalogued code may be mistaken for integrated capability"
+      ],
+      "revival_evidence": "Revive only for a coherent subsystem whose full boundary is required and whose license, maintenance, security, storage and update economics beat a narrow dependency or source slice."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Existing open-source-first guidance remains, but duplicate custom implementations and inconsistent repository reuse remain possible.",
+    "advantages": [
+      "No new governance or documentation",
+      "No immediate migration cost"
+    ],
+    "disadvantages": [
+      "Engineering time can continue to be spent rebuilding solved mechanisms",
+      "The founder's explicit 2026-10-01 correction remains under-specified for future agents"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Preserve the full Body + Organs + Mind destination and make reuse an acceleration mechanism, never a stopping condition or narrowing device.",
+      "material_concerns": [
+        "Agents may convert reuse into another cataloging exercise",
+        "Agents may interpret a seed proof as completion"
+      ],
+      "evidence_refs": [
+        "Founder source record 2026-10-01",
+        "Issue #117"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Use a source-to-capability pipeline behind canonical GREG interfaces rather than importing external systems as parallel operating planes.",
+      "material_concerns": [
+        "Duplicate registries or schedulers",
+        "Irreversible coupling to upstream repository structure"
+      ],
+      "evidence_refs": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/open-source/MECHANISM_SOURCE_MAP_2026-10-01.md"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Reject blanket copy-paste. Require exact provenance, license/security review, stronger baselines and common-mode disclosure.",
+      "material_concerns": [
+        "License contamination",
+        "Educational code masquerading as production code",
+        "False independence through wrappers around the same upstream",
+        "Popularity mistaken for suitability"
+      ],
+      "evidence_refs": [
+        "TheAlgorithms/Python README",
+        "TheAlgorithms/Python LICENSE.md",
+        "Mechanism Recombination Foundry repository diligence"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Prefer maintained dependencies behind narrow adapters; vendor only small stable primitives when carrying the upstream dependency is worse.",
+      "material_concerns": [
+        "Dependency bloat",
+        "Upstream API churn",
+        "Update ownership",
+        "Runtime and hardware fit"
+      ],
+      "evidence_refs": [
+        "docs/OPEN_SOURCE_STACK.md",
+        "docs/open-source/MECHANISM_SOURCE_MAP_2026-10-01.md"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Open source changes cost and inspectability, not truth, privacy, legality or participant welfare. Every imported mechanism remains subject to evidence and consequence gates.",
+      "material_concerns": [
+        "Sensitive-data exposure",
+        "Unsafe transitive behavior",
+        "Claims of correctness based only on repository existence"
+      ],
+      "evidence_refs": [
+        "AGENTS.md evidence and authority section",
+        "Recursive Founder-Intent Collaboration Protocol"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The repository already requires acquire-before-invent and open-source-first selection.",
+      "tier": "primary_source",
+      "reference": "AGENTS.md and CLAUDE.md on main, inspected 2026-10-01",
+      "finding": "Both explicitly require searching existing, commodity and open-source mechanisms before new architecture."
+    },
+    {
+      "claim": "TheAlgorithms/Python is primarily educational and its own README warns implementations may be less efficient than standard-library implementations.",
+      "tier": "primary_source",
+      "reference": "TheAlgorithms/Python README.md, inspected 2026-10-01",
+      "finding": "Use as a mechanism atlas and possible source of narrow transplants, not as automatic production code."
+    },
+    {
+      "claim": "TheAlgorithms/Python's repository license permits reuse with retained notice obligations.",
+      "tier": "primary_source",
+      "reference": "TheAlgorithms/Python LICENSE.md, inspected 2026-10-01",
+      "finding": "The repository carries an MIT license; exact file/subcomponent terms still require adoption-time verification."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Open source does not eliminate all cost or operational burden.",
+      "tier": "primary_source",
+      "reference": "docs/OPEN_SOURCE_STACK.md",
+      "finding": "Hardware, electricity, storage, maintenance, exclusive data and platform costs can remain."
+    },
+    {
+      "claim": "A large repository import can be worse than a small local implementation.",
+      "tier": "other",
+      "reference": "Mechanism Recombination Foundry repository diligence",
+      "finding": "Reject or isolate upstreams when deep irreversible coupling or operational burden exceeds the primitive's value."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Turn existing public technical work into qualified, replaceable construction supply so GREG reaches the full currently achievable machine faster while preserving provenance, authority and evidence.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Avoid rebuilding solved algorithms and infrastructure.",
+        "amplified_value": "Founder and agent effort concentrates on the GREG-specific integration, proof, learning and novel residual mechanisms."
+      },
+      {
+        "id": "A2",
+        "statement": "Increase the available cognitive repertoire quickly.",
+        "amplified_value": "P5-P7 can recruit mature graph, symbolic, causal, optimization, control, game and search machinery without inventing each field from first principles."
+      },
+      {
+        "id": "A3",
+        "statement": "Preserve replaceability through typed adapters.",
+        "amplified_value": "Upstreams can be upgraded or replaced without becoming constitutional dependencies."
+      },
+      {
+        "id": "A4",
+        "statement": "Make invention more targeted.",
+        "amplified_value": "Foundry work begins from a named residual CapabilityDeficit after precedent and reusable mechanisms have been exhausted."
+      },
+      {
+        "id": "A5",
+        "statement": "Convert external engineering history into project learning.",
+        "amplified_value": "Mechanism cards preserve assumptions, failures and alternatives even when source code is not imported."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "A popular upstream can become a hidden critical dependency.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Require pinned provenance, a narrow adapter, a substitute, rollback and a review trigger."
+      },
+      {
+        "id": "D2",
+        "statement": "Copied code can create license, attribution, patent or distribution obligations.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Require exact adoption-time license/provenance review and prohibit uncertain reuse until resolved."
+      },
+      {
+        "id": "D3",
+        "statement": "Repository search can waste time for trivial functions.",
+        "severity": "medium",
+        "response_type": "learning",
+        "redesigned_response": "Apply proportionality: material capabilities require source search; trivial local utilities may be written directly when search cost clearly exceeds expected reuse value."
+      },
+      {
+        "id": "D4",
+        "statement": "Educational/reference algorithms can pass toy tests but be poor production implementations.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Classify educational atlases as DISCOVER-first and require native-domain qualification plus a stronger/simpler baseline before production use."
+      },
+      {
+        "id": "D5",
+        "statement": "Multiple apparent implementations can share a common upstream and fail together.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Receipts and verifier profiles disclose shared upstream code, parser, model, dataset and solver dependencies."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Acquire-before-invent exists but repository reuse is under-specified.",
+      "do_nothing": "No process cost, but duplicate implementation and inconsistent qualification remain.",
+      "simplest_viable_alternative": "A single 'search GitHub first' rule is cheaper but does not govern provenance, quality or integration mode.",
+      "strongest_competing_architecture": "Wholesale mirroring maximizes local code surface but creates the largest maintenance, licensing and architectural-capture burden.",
+      "reversible_experiment": "Install governance, source map and entry-point rules now; prove the pipeline on the next material CapabilityDeficit without importing a large new subsystem."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Blanket whole-repository copying",
+        "rejection_reason": "It confuses source availability with integrated capability and maximizes coupling.",
+        "revival_evidence": "A bounded coherent subsystem whose full surface is required and demonstrably cheaper/safer to maintain than a narrow adapter or vendored slice."
+      },
+      {
+        "name": "Build everything internally",
+        "rejection_reason": "It wastes effort on known mechanisms and contradicts current acquire-before-invent doctrine.",
+        "revival_evidence": "Evidence that available implementations fail license, security, performance, portability or architecture requirements and a local implementation is materially simpler."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Assume coding agents optimize for speed and game the shortcut: they may paste attractive code, infer license from a repository badge, import a framework for one function, count a catalog entry as a capability, or call two wrappers independent verification.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "bureaucracy",
+        "statement": "Qualification records can become documentation work that delays actual coding.",
+        "strengthening_response": "Keep records proportional and attach them only to material adopted mechanisms; discovery-only sources need only concise mechanism cards."
+      },
+      {
+        "id": "N2",
+        "category": "dependency",
+        "statement": "Fast-moving upstreams can change behavior or terms after adoption.",
+        "strengthening_response": "Pin immutable versions, record update ownership and re-run qualification when upstream license, API, model weights or security posture changes."
+      },
+      {
+        "id": "N3",
+        "category": "gaming",
+        "statement": "Agents can satisfy 'searched open source' by listing popular repositories without testing fit.",
+        "strengthening_response": "A candidate counts only when its primitive, contract, constraints, license and strongest alternative are recorded; adoption requires native qualification."
+      },
+      {
+        "id": "N4",
+        "category": "fragility",
+        "statement": "Vendoring can freeze old vulnerabilities while hiding the upstream update channel.",
+        "strengthening_response": "Vendor only small stable slices and preserve upstream commit/path plus an explicit refresh trigger."
+      },
+      {
+        "id": "N5",
+        "category": "centralization",
+        "statement": "A single algorithm/library family can dominate routing and create correlated failure.",
+        "strengthening_response": "Preserve method diversity where it has measured value and require failure-diverse verification for critical claims."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Upstream dependencies are sometimes the correct tradeoff; replaceable adapters, pins, substitutes and review triggers bound the risk.",
+        "owner": "Capability owner",
+        "review_trigger": "Upstream failure, abandonment, security advisory or materially better substitute."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "resolved",
+        "rationale": "The policy prohibits unresolved reuse and requires exact provenance/license records for code transplants and dependencies.",
+        "owner": "Repository maintainer",
+        "review_trigger": "Any redistribution, license change, new subcomponent or legal uncertainty."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Proportionality prevents deep research for trivial functions while retaining mandatory search for material capabilities.",
+        "owner": "Implementation owner",
+        "review_trigger": "Measured source-search time repeatedly exceeds reuse value for a capability class."
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "resolved",
+        "rationale": "Educational repositories default to DISCOVER and cannot become active capability without independent qualification.",
+        "owner": "Capability owner",
+        "review_trigger": "Any proposed promotion of educational/example code."
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "Common dependencies cannot always be eliminated, but they must be disclosed and critical verification must seek fault diversity.",
+        "owner": "Verifier owner",
+        "review_trigger": "Any claim of independent verification or critical-method redundancy."
+      }
+    ],
+    "final_design": "Five reuse modes govern source use: DISCOVER, DEPEND, VENDOR-SLICE, FORK/SUBTREE and RECOMBINE. Material CapabilityDeficits search qualified internal/open-source mechanisms before original construction. Every adopted external mechanism has pinned provenance, license/security/fit evidence, typed integration, native tests, replacement and rollback. Foundry receives only the residual unsolved mechanism. Reuse accelerates full-machine completion and never creates authority or a stopping condition.",
+    "residual_risks": [
+      {
+        "risk": "Complex licenses, patents or model/data terms may require professional review.",
+        "mitigation": "Mark unresolved and do not redistribute or promote until reviewed.",
+        "owner": "Repository maintainer / authorized counsel when needed",
+        "review_trigger": "Consequential distribution or unresolved rights."
+      },
+      {
+        "risk": "Upstream vulnerabilities or abandonment can appear after adoption.",
+        "mitigation": "Pin, monitor at material review points, preserve substitutes and test rollback.",
+        "owner": "Capability owner",
+        "review_trigger": "Security advisory, maintenance lapse or failed upgrade."
+      },
+      {
+        "risk": "The mechanism atlas can grow faster than integrated capability.",
+        "mitigation": "Count only exercised mission-path capability as progress; catalogs remain discovery assets.",
+        "owner": "GREG product owner",
+        "review_trigger": "Any completion claim based on catalog size or unexercised descriptors."
+      }
+    ],
+    "recommendation": "RETAIN"
+  },
+  "dissent": {
+    "present": false,
+    "handling": "All five roles were explicitly asked to attack the proposal. The blanket-copy interpretation was rejected and absorbed into the final design; no remaining material dissent blocks the development-selection rule.",
+    "entries": []
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "approved",
+    "approver": "Alfonso Lopez"
+  },
+  "migration_plan": "Add the intent/source/review/source-map records, wire the rule into AGENTS.md, CLAUDE.md, Copilot instructions, OPEN_SOURCE_STACK.md and the founder ledger, then reference it from the active coordination issue and Cortex PR. No runtime dependency or capability is activated by this migration.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert the governance commits on the dedicated branch or later merge commit.",
+      "Remove the new source-map references from agent entry points.",
+      "Preserve the source record and deliberation history as historical evidence even if the policy is superseded."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Measured search/qualification effort consistently costs more than the quality/time benefit of reuse for the affected capability class.",
+    "The rule repeatedly produces unmanageable license, security, maintenance or architectural coupling that cannot be bounded by adapters or source slices.",
+    "A stronger founder-authorized acquisition policy supersedes it."
+  ],
+  "decision": "RETAIN",
+  "decision_owner": "Alfonso Lopez",
+  "review_trigger": "Next material CapabilityDeficit, first repository-scale import, or any evidence that the policy impedes rather than accelerates full-machine completion."
+}

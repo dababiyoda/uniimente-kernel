@@ -5300,11 +5300,11 @@
      "greg/cognition/composition.py::_answered": "sha256:e371351dc852b0964d70b533ae63f45dce84e800d309e4d0578564e70a986d84",
      "greg/cognition/composition.py::_bayes_then_voi": "sha256:1aadcec9a75e8d8f37ad80c504f19f980b91ed99a1772c5de56e2cd199eb4f30",
      "greg/cognition/composition.py::_op_summary": "sha256:a4492539a6200102c35c00ceb0a1e0c0f5bc6547ec6bed00f65c35c1f3a3fe16",
-     "greg/cognition/composition.py::_operation": "sha256:5d406ab1d883dcbe4abaa4d50968022c8ad0d6b769384a4c0e2f3352754d8eb3",
+     "greg/cognition/composition.py::_operation": "sha256:a13f69b04428f0e3a40e1665c39c3955cb87f34edc2bae2213c7d71fa3acb08e",
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
-     "greg/cognition/cortex.py::reason": "sha256:2acce50704f5765e966010795e55883f6916b8c95293175737174960d5a21bc5"
+     "greg/cognition/cortex.py::reason": "sha256:cdfc5e568776b12907346e581fcdd1b9ba9ce55e2d46e1d583ad9eed665b23da"
     },
-    "closure_sha256": "sha256:d08aaa349707d5537b6bddbec1baa591fb604d9c802644fabfa4de603e67d2a4",
+    "closure_sha256": "sha256:334e67aa8a064cc5aa4da5faa939fc9e758c24571c91b6bacc8991d064c7a4f7",
     "closure_unresolved": [],
     "dispatched": {
      "function": "_bayes_then_voi",
@@ -5318,11 +5318,11 @@
      "adapter:run": "sha256:88fcab7a5faf3b23c0d0334f6b94626f131d68b06e9759f83949e32878e301ec",
      "decision_preposterior": "sha256:30bdb5dfd71430da041ca8a390ae0e2df7836722fb92da8a978ac3fb1f82e09b",
      "dispatch:SOLVERS": "sha256:c23c4382b10824f20a42dff821493fc5d24b63767185d26dcaacf5ed6f7d8b4c",
-     "solvers:information": "sha256:2ddbb1d9f941abbbbd626e003ceb053d2660c44bb894d25b86c92c0dbe1a66b3",
-     "solvers:probabilistic": "sha256:1a1662833a2302616498d68bd844a4070f99256b8af59c6c88a78010e8430818"
+     "solvers:information": "sha256:d1473fddab10f469a1c7d33d37524fb2738fbba525d6e1edf98cd243e1d884b3",
+     "solvers:probabilistic": "sha256:7dbab42bea25b159ea4e8c9b709f13d528c304455b9431f6fd3d28605f23ed21"
     }
    },
-   "evidence": "docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json#summary.F4",
+   "evidence": "docs/evidence/greg-composition-lift/2026-10-22-joined/results-joined-v1.json#summary.F4",
    "family": "F4",
    "history": [
     {
@@ -5367,24 +5367,70 @@
      "prefer": null,
      "status": "VPL_LIFT",
      "wins": 12
+    },
+    {
+     "code": {
+      "closure_members": {
+       "greg/cognition/composition.py::OPERATION_STAGE_LATENCY_S": "sha256:2fcf62cc0e89147f2b849104bb0d124dfdc362927cceaf85412c09e1c8f458ac",
+       "greg/cognition/composition.py::_answered": "sha256:e371351dc852b0964d70b533ae63f45dce84e800d309e4d0578564e70a986d84",
+       "greg/cognition/composition.py::_bayes_then_voi": "sha256:1aadcec9a75e8d8f37ad80c504f19f980b91ed99a1772c5de56e2cd199eb4f30",
+       "greg/cognition/composition.py::_op_summary": "sha256:a4492539a6200102c35c00ceb0a1e0c0f5bc6547ec6bed00f65c35c1f3a3fe16",
+       "greg/cognition/composition.py::_operation": "sha256:5d406ab1d883dcbe4abaa4d50968022c8ad0d6b769384a4c0e2f3352754d8eb3",
+       "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+       "greg/cognition/cortex.py::reason": "sha256:2acce50704f5765e966010795e55883f6916b8c95293175737174960d5a21bc5"
+      },
+      "closure_sha256": "sha256:d08aaa349707d5537b6bddbec1baa591fb604d9c802644fabfa4de603e67d2a4",
+      "closure_unresolved": [],
+      "dispatched": {
+       "function": "_bayes_then_voi",
+       "path": "greg/cognition/composition.py",
+       "unresolved_updates": 0
+      },
+      "function": "greg/cognition/composition.py::_bayes_then_voi",
+      "recipe_entry_sha256": "sha256:634e882fdcaddeb52715ba60992227ac4932ab2cd1e920bd20dc4968e2670487",
+      "stage_closures": {
+       "adapter:_genome_solver": "sha256:b7495c95473ce2372082a5f18d518c61e1d99ca306756f2e58a3e084257621e1",
+       "adapter:run": "sha256:88fcab7a5faf3b23c0d0334f6b94626f131d68b06e9759f83949e32878e301ec",
+       "decision_preposterior": "sha256:30bdb5dfd71430da041ca8a390ae0e2df7836722fb92da8a978ac3fb1f82e09b",
+       "dispatch:SOLVERS": "sha256:c23c4382b10824f20a42dff821493fc5d24b63767185d26dcaacf5ed6f7d8b4c",
+       "solvers:information": "sha256:2ddbb1d9f941abbbbd626e003ceb053d2660c44bb894d25b86c92c0dbe1a66b3",
+       "solvers:probabilistic": "sha256:1a1662833a2302616498d68bd844a4070f99256b8af59c6c88a78010e8430818"
+      }
+     },
+     "evidence": "docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json#summary.F4",
+     "family": "F4",
+     "instances": {
+      "count": 40,
+      "sha256": "sha256:2ac1f86614e04a2bbfcf39d31b020a9c2474459b27f8de6457cd19035642f04c"
+     },
+     "lift": true,
+     "losses": 0,
+     "overlap_with_previous": 0,
+     "p_one_sided": 3.0517578125e-05,
+     "p_one_sided_as_recorded": 3.0517578e-05,
+     "prefer": null,
+     "status": "VPL_LIFT",
+     "wins": 15
     }
    ],
    "instances": {
     "count": 40,
-    "sha256": "sha256:2ac1f86614e04a2bbfcf39d31b020a9c2474459b27f8de6457cd19035642f04c"
+    "sha256": "sha256:4ef3462f013d22b8583891fbdcfc6e49978d5f22bf37133588b2ba943b1c1af2"
    },
    "lift": true,
    "losses": 0,
    "overlap_with_previous": 0,
-   "p_one_sided": 3.0517578125e-05,
-   "p_one_sided_as_recorded": 3.0517578e-05,
+   "p_one_sided": 9.5367431640625e-07,
+   "p_one_sided_as_recorded": 9.53674e-07,
    "prefer": null,
    "status": "VPL_LIFT",
-   "wins": 15
+   "wins": 20
   },
   "estimate_then_optimize": {
    "code": {
     "closure_members": {
+     "greg/cognition/budget.py::_instant": "sha256:356ad551f6df03f573048ee8e6febae6ff2caa12ed302d1727a78eb231de23b8",
+     "greg/cognition/budget.py::window_limit": "sha256:b44c3b185aabb5adbd69fe2ca489083c445ba09965a1445d901c206ee52ef846",
      "greg/cognition/composition.py::DECL": "sha256:099cb470532e82dab72a780e7996c1dccf66b8953e7d850ded52ae0ab3d6e1cd",
      "greg/cognition/composition.py::MAX_REQUEST_BYTES": "sha256:a9ffe0ec4120a7968dfb9357ab0c45498709e5be2864c8ebdaec82945d0edb2b",
      "greg/cognition/composition.py::OPERATION_RECIPES": "sha256:4ff4bf5ad54063e29ab529b9d7759295dbe514bee933be3bffed31006d1ff5aa",
@@ -5410,13 +5456,13 @@
      "greg/cognition/composition.py::_lookup": "sha256:42d5309b85be90e6f1231a436265a3f077a001b24a0e6321dcdbe71488d82fda",
      "greg/cognition/composition.py::_observed": "sha256:eb9b613d4167eda458501461ece51ee700867f13e7ace800fe3284fbfdc4c9cd",
      "greg/cognition/composition.py::_op_summary": "sha256:a4492539a6200102c35c00ceb0a1e0c0f5bc6547ec6bed00f65c35c1f3a3fe16",
-     "greg/cognition/composition.py::_operation": "sha256:5d406ab1d883dcbe4abaa4d50968022c8ad0d6b769384a4c0e2f3352754d8eb3",
+     "greg/cognition/composition.py::_operation": "sha256:a13f69b04428f0e3a40e1665c39c3955cb87f34edc2bae2213c7d71fa3acb08e",
      "greg/cognition/composition.py::_optimality": "sha256:5ad7bd0fab2f39980224217aee439882479dd21bef81ce3ae748079c447687e2",
      "greg/cognition/composition.py::_quantile_multiplier": "sha256:4b87b322ff5b717c676963624f10fb524d8a584d92144bffb0391c097eddf492",
      "greg/cognition/composition.py::_reads": "sha256:074dd69c9ae173a8ff5f1b0b1d2cb7ca1cb18d3705ba8d0954dfb79af02a325e",
      "greg/cognition/composition.py::_real": "sha256:9d2c0be2daa0eebe07e6ed1b4ab6c8efb01bddd0cfafbc24aaa6f651a52a1144",
      "greg/cognition/composition.py::_roots": "sha256:261f5fa340d80bd2e8e46b2960c6c8c26706e8f372c6e6f36d533cc2c9b12b05",
-     "greg/cognition/composition.py::_stage": "sha256:576df5d20c0bdf3a41a756753bdf98e71878607ab7000686b36ec0601f0467ec",
+     "greg/cognition/composition.py::_stage": "sha256:95262bb78bc86b685822f76607506544ad7356403f3bf72639d10f9819a0c8af",
      "greg/cognition/composition.py::_summary": "sha256:430e64d840e65dbe3b6438731e4146d2dc40bfd5437b1be71f7e29a22f8260eb",
      "greg/cognition/composition.py::_track_then_staff": "sha256:cb9f358edf7b48b73c1d5b62e008944b8b2b2a87e5a79872cf3b88670bd05441",
      "greg/cognition/composition.py::derive": "sha256:c9137241e4c68ed10b78c081bc14d1b2c77323ca6f3d62c206ca3a44b08a8096",
@@ -5424,7 +5470,7 @@
      "greg/cognition/composition.py::matching": "sha256:c7eca7b8d2ddd39c5e733a3743aa4a0f3c94c7e02cbb52ee33ece1ee856bfc4e",
      "greg/cognition/composition.py::plan_ratios": "sha256:371097f5aefa03fad4331fa569c5a17d9784b6e45ba93c44bc8827a038a48582",
      "greg/cognition/composition.py::route": "sha256:706b89d01c643af40ef6d93a9bed5a5db87223e5492115f1aee00dbcd2ff8fe1",
-     "greg/cognition/composition.py::run": "sha256:b21f0fb49128860cc46497f422b49d476f78012b525741a287ba314e7b0d89de",
+     "greg/cognition/composition.py::run": "sha256:8a10849f17d489accceae0ba6514640bffd7bbd8ed455923acce0df464bc9177",
      "greg/cognition/composition.py::staffing_plan": "sha256:e76377663259d6e9add2cb955b5174186c30d5051a611c560703c1b34ba3300e",
      "greg/cognition/composition.py::staffing_quantile": "sha256:5eef6211d0adc79f4ae3a94dd492c1adc2329d19f4e4a56009cd7c8c61872a64",
      "greg/cognition/composition.py::substitute": "sha256:2227fb44f16e2be75a163d3b63953155646a512ee2673a89dcf0bf6ed6184dee",
@@ -5435,9 +5481,9 @@
      "greg/cognition/contracts.py::digest": "sha256:764c30e3f94e9b5aef02d037d9565af736c2c39d5109c18b39df6ffe0eac4fb4",
      "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
      "greg/cognition/contracts.py::strict_data": "sha256:47432930fb6eb71cbb0158c26c453f1dd3f94f8e23923d77e977972bd45b32bf",
-     "greg/cognition/cortex.py::reason": "sha256:2acce50704f5765e966010795e55883f6916b8c95293175737174960d5a21bc5"
+     "greg/cognition/cortex.py::reason": "sha256:cdfc5e568776b12907346e581fcdd1b9ba9ce55e2d46e1d583ad9eed665b23da"
     },
-    "closure_sha256": "sha256:f1ccd269dc6197901d0230197a90d8e7d323f416cc952e6c909cf54db68c1555",
+    "closure_sha256": "sha256:92fe253e2b21a5639a2ea4b1b2bbb8b8d067e93ad3b4313408def75ac11c8408",
     "closure_unresolved": [],
     "dispatched": null,
     "function": "greg/cognition/composition.py::run",
@@ -5456,7 +5502,7 @@
      "route:_route_parts": "sha256:fdab04e2c86abbe1c8a9a1df939891f01e14c7c154adb43147cba7a28fc852b4"
     }
    },
-   "evidence": "docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json#summary.F1",
+   "evidence": "docs/evidence/greg-composition-lift/2026-10-22-joined/results-joined-v1.json#summary.F1",
    "family": "F1",
    "history": [
     {
@@ -5474,19 +5520,108 @@
      "prefer": null,
      "status": "VPL_LIFT",
      "wins": 13
+    },
+    {
+     "code": {
+      "closure_members": {
+       "greg/cognition/composition.py::DECL": "sha256:099cb470532e82dab72a780e7996c1dccf66b8953e7d850ded52ae0ab3d6e1cd",
+       "greg/cognition/composition.py::MAX_REQUEST_BYTES": "sha256:a9ffe0ec4120a7968dfb9357ab0c45498709e5be2864c8ebdaec82945d0edb2b",
+       "greg/cognition/composition.py::OPERATION_RECIPES": "sha256:4ff4bf5ad54063e29ab529b9d7759295dbe514bee933be3bffed31006d1ff5aa",
+       "greg/cognition/composition.py::OPERATION_STAGE_LATENCY_S": "sha256:2fcf62cc0e89147f2b849104bb0d124dfdc362927cceaf85412c09e1c8f458ac",
+       "greg/cognition/composition.py::OPTIMALITY": "sha256:2fde7eeb0a6473b9468dce23b4374ba668199ba5284c255ec65e24c793f36e9e",
+       "greg/cognition/composition.py::PRODUCERS": "sha256:6eb2e23f8f93340e970b0c7b5160adcce46d1db0102059c63c18c08b70edd2c4",
+       "greg/cognition/composition.py::RECIPES": "sha256:55ff4c4c71dfc45292dcc84116d3ae3d6fc4cc55ebd4e00c3857afb36b8d4cf5",
+       "greg/cognition/composition.py::SCHEMA": "sha256:60250f3e8a6ec2443d18350e63425337423a5efa5ebbbcdd257666c9384bbbb4",
+       "greg/cognition/composition.py::STAFF_KEYS": "sha256:b321f2d562542d7a92ec00f5b1ed4c275e819e662e8a7b88404ea63366294dc2",
+       "greg/cognition/composition.py::STAGE_ORDER": "sha256:ccbc492864182d175397bf06a1e17ff04e3f34eacf0a35f91c268b7678c050de",
+       "greg/cognition/composition.py::TRACKER_KEYS": "sha256:370b06c86fcf583edd853062fd55b3961daad513c4375c682c513b2e35c9ecd8",
+       "greg/cognition/composition.py::TRACK_FLOOR_MULTIPLIER": "sha256:a2b1090f516f4e8bca046430a434a718c40225d177bc3564f8cce50979aca617",
+       "greg/cognition/composition.py::TRACK_MIN_MEASUREMENTS": "sha256:e2df339f4ae9619769d132957a8e51a019ddf0c9cf53b87780b971fd4a08daaa",
+       "greg/cognition/composition.py::TRACK_NULL_FRACTION": "sha256:7d5525ab24965ddda458af36e8d383ee8e75e0ba4ed4f3cacb564c9cb5a1e57a",
+       "greg/cognition/composition.py::TranslationError": "sha256:75d3b5d83a1ea9378afaec748c6254923b0c59c7056be47f8bbac4170867efe8",
+       "greg/cognition/composition.py::_answered": "sha256:e371351dc852b0964d70b533ae63f45dce84e800d309e4d0578564e70a986d84",
+       "greg/cognition/composition.py::_bayes_then_voi": "sha256:1aadcec9a75e8d8f37ad80c504f19f980b91ed99a1772c5de56e2cd199eb4f30",
+       "greg/cognition/composition.py::_certified": "sha256:bbe317928731c651ee2d766563ed6f0d26293b7ca53c0abc892393c61b50478a",
+       "greg/cognition/composition.py::_count": "sha256:9f2281b4301525a5ba22a4abbefa92ad9addecaeda81fc88caf8d6c60817ec0f",
+       "greg/cognition/composition.py::_forecast_then_allocate": "sha256:0d28744399669fbd8b4950ef0fe663006a46d6076efaa21766cf3c67670e5d0a",
+       "greg/cognition/composition.py::_forecast_then_staff": "sha256:9fab97805cac76421e1c7da4db9d5eb0009d28e2ac0912146a50828ce3d1057b",
+       "greg/cognition/composition.py::_graph_then_allocate": "sha256:ffe2769517981a0364817698063aedda88a483590b2ff792bde78b22e5c57050",
+       "greg/cognition/composition.py::_lookup": "sha256:42d5309b85be90e6f1231a436265a3f077a001b24a0e6321dcdbe71488d82fda",
+       "greg/cognition/composition.py::_observed": "sha256:eb9b613d4167eda458501461ece51ee700867f13e7ace800fe3284fbfdc4c9cd",
+       "greg/cognition/composition.py::_op_summary": "sha256:a4492539a6200102c35c00ceb0a1e0c0f5bc6547ec6bed00f65c35c1f3a3fe16",
+       "greg/cognition/composition.py::_operation": "sha256:5d406ab1d883dcbe4abaa4d50968022c8ad0d6b769384a4c0e2f3352754d8eb3",
+       "greg/cognition/composition.py::_optimality": "sha256:5ad7bd0fab2f39980224217aee439882479dd21bef81ce3ae748079c447687e2",
+       "greg/cognition/composition.py::_quantile_multiplier": "sha256:4b87b322ff5b717c676963624f10fb524d8a584d92144bffb0391c097eddf492",
+       "greg/cognition/composition.py::_reads": "sha256:074dd69c9ae173a8ff5f1b0b1d2cb7ca1cb18d3705ba8d0954dfb79af02a325e",
+       "greg/cognition/composition.py::_real": "sha256:9d2c0be2daa0eebe07e6ed1b4ab6c8efb01bddd0cfafbc24aaa6f651a52a1144",
+       "greg/cognition/composition.py::_roots": "sha256:261f5fa340d80bd2e8e46b2960c6c8c26706e8f372c6e6f36d533cc2c9b12b05",
+       "greg/cognition/composition.py::_stage": "sha256:576df5d20c0bdf3a41a756753bdf98e71878607ab7000686b36ec0601f0467ec",
+       "greg/cognition/composition.py::_summary": "sha256:430e64d840e65dbe3b6438731e4146d2dc40bfd5437b1be71f7e29a22f8260eb",
+       "greg/cognition/composition.py::_track_then_staff": "sha256:cb9f358edf7b48b73c1d5b62e008944b8b2b2a87e5a79872cf3b88670bd05441",
+       "greg/cognition/composition.py::derive": "sha256:c9137241e4c68ed10b78c081bc14d1b2c77323ca6f3d62c206ca3a44b08a8096",
+       "greg/cognition/composition.py::derived_inputs": "sha256:a1d9e9740b112482098c598425be3d43e628febb1d3234985ea4533857933b94",
+       "greg/cognition/composition.py::matching": "sha256:c7eca7b8d2ddd39c5e733a3743aa4a0f3c94c7e02cbb52ee33ece1ee856bfc4e",
+       "greg/cognition/composition.py::plan_ratios": "sha256:371097f5aefa03fad4331fa569c5a17d9784b6e45ba93c44bc8827a038a48582",
+       "greg/cognition/composition.py::route": "sha256:706b89d01c643af40ef6d93a9bed5a5db87223e5492115f1aee00dbcd2ff8fe1",
+       "greg/cognition/composition.py::run": "sha256:b21f0fb49128860cc46497f422b49d476f78012b525741a287ba314e7b0d89de",
+       "greg/cognition/composition.py::staffing_plan": "sha256:e76377663259d6e9add2cb955b5174186c30d5051a611c560703c1b34ba3300e",
+       "greg/cognition/composition.py::staffing_quantile": "sha256:5eef6211d0adc79f4ae3a94dd492c1adc2329d19f4e4a56009cd7c8c61872a64",
+       "greg/cognition/composition.py::substitute": "sha256:2227fb44f16e2be75a163d3b63953155646a512ee2673a89dcf0bf6ed6184dee",
+       "greg/cognition/composition.py::track_measurements": "sha256:f88a6464fc7d77b20a437dbb9c4d188d4fc1d3cf0012aac8836586f34ad79186",
+       "greg/cognition/composition.py::validate": "sha256:c0c7fbee812844dde477412da16d24eb4daf7c711a11e132e35c37eeb5a46a3a",
+       "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+       "greg/cognition/contracts.py::canonical": "sha256:0e9d18746651bec77bcac0f5122daf7eb0b5a5bc8ebeea69629123f085e2dda6",
+       "greg/cognition/contracts.py::digest": "sha256:764c30e3f94e9b5aef02d037d9565af736c2c39d5109c18b39df6ffe0eac4fb4",
+       "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+       "greg/cognition/contracts.py::strict_data": "sha256:47432930fb6eb71cbb0158c26c453f1dd3f94f8e23923d77e977972bd45b32bf",
+       "greg/cognition/cortex.py::reason": "sha256:2acce50704f5765e966010795e55883f6916b8c95293175737174960d5a21bc5"
+      },
+      "closure_sha256": "sha256:f1ccd269dc6197901d0230197a90d8e7d323f416cc952e6c909cf54db68c1555",
+      "closure_unresolved": [],
+      "dispatched": null,
+      "function": "greg/cognition/composition.py::run",
+      "recipe_entry_sha256": "sha256:428bc0f85736daba39d9bba4f0e82614041bae8ad266641741f84cacbf0ef6c7",
+      "stage_closures": {
+       "organ:estimate:EstimationOrgan": "sha256:e2efcc2b1fa5cce72ed9009784d61b5265f6c67719b3096273fc2a2afc22bc5b",
+       "organ:optimization:CpSatOrgan": "sha256:93391fad974cfb4922841b8bf4d565c1cc003c34c4aa8357e66cc93318bd83e7",
+       "organ:optimization:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2",
+       "route:CpSatOrgan": "sha256:93391fad974cfb4922841b8bf4d565c1cc003c34c4aa8357e66cc93318bd83e7",
+       "route:DeterrenceOrgan": "sha256:6ad068dd9f12e914790902fe5fa72d8a063dee792276c003e656fa11067384cf",
+       "route:EstimationOrgan": "sha256:e2efcc2b1fa5cce72ed9009784d61b5265f6c67719b3096273fc2a2afc22bc5b",
+       "route:EvidenceCausalOrgan": "sha256:139bc0a18e65564c91e6c54de0ed9f06e655a2da5ebe9ba24a9ac0d64a8fe3a4",
+       "route:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2",
+       "route:ScheduleExtractionOrgan": "sha256:d4b9dadef56ae45585733c957c028ca7ae5657ed31a26aea8b4a635c9fff9e25",
+       "route:SemanticOrgan": "sha256:82a01912cf908d923137f6a707e6ae1a374e787683052c9ea8b77ddf7eae6e35",
+       "route:_route_parts": "sha256:fdab04e2c86abbe1c8a9a1df939891f01e14c7c154adb43147cba7a28fc852b4"
+      }
+     },
+     "evidence": "docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json#summary.F1",
+     "family": "F1",
+     "instances": {
+      "count": 40,
+      "sha256": "sha256:bcbccd78892c4dc8bf2c10579350cf55c32d2aaa00efbf4b1f5a97357beb1739"
+     },
+     "lift": false,
+     "losses": 0,
+     "overlap_with_previous": 0,
+     "p_one_sided": 2.9103830456733704e-11,
+     "p_one_sided_as_recorded": 2.9e-11,
+     "prefer": "optimize_at_worst_case",
+     "status": "NO_LIFT",
+     "wins": 35
     }
    ],
    "instances": {
     "count": 40,
-    "sha256": "sha256:bcbccd78892c4dc8bf2c10579350cf55c32d2aaa00efbf4b1f5a97357beb1739"
+    "sha256": "sha256:64331847973f530c3857295ccf4bd7465debd19ddad1c341f31735951eebe736"
    },
-   "lift": false,
+   "lift": true,
    "losses": 0,
    "overlap_with_previous": 0,
    "p_one_sided": 2.9103830456733704e-11,
    "p_one_sided_as_recorded": 2.9e-11,
-   "prefer": "optimize_at_worst_case",
-   "status": "NO_LIFT",
+   "prefer": null,
+   "status": "VPL_LIFT",
    "wins": 35
   },
   "forecast_then_allocate": {
@@ -5588,11 +5723,11 @@
      "greg/cognition/composition.py::_certified": "sha256:bbe317928731c651ee2d766563ed6f0d26293b7ca53c0abc892393c61b50478a",
      "greg/cognition/composition.py::_graph_then_allocate": "sha256:ffe2769517981a0364817698063aedda88a483590b2ff792bde78b22e5c57050",
      "greg/cognition/composition.py::_op_summary": "sha256:a4492539a6200102c35c00ceb0a1e0c0f5bc6547ec6bed00f65c35c1f3a3fe16",
-     "greg/cognition/composition.py::_operation": "sha256:5d406ab1d883dcbe4abaa4d50968022c8ad0d6b769384a4c0e2f3352754d8eb3",
+     "greg/cognition/composition.py::_operation": "sha256:a13f69b04428f0e3a40e1665c39c3955cb87f34edc2bae2213c7d71fa3acb08e",
      "greg/cognition/composition.py::_optimality": "sha256:5ad7bd0fab2f39980224217aee439882479dd21bef81ce3ae748079c447687e2",
-     "greg/cognition/cortex.py::reason": "sha256:2acce50704f5765e966010795e55883f6916b8c95293175737174960d5a21bc5"
+     "greg/cognition/cortex.py::reason": "sha256:cdfc5e568776b12907346e581fcdd1b9ba9ce55e2d46e1d583ad9eed665b23da"
     },
-    "closure_sha256": "sha256:6ec913a466b684e35a8e9f9b3a955aa79ddbf6d6eef993f6555d8bcac4b6f0e8",
+    "closure_sha256": "sha256:c3cb6f6eded4dd5e461becb9a19592051295c5b2de494b117ac3c1ad88d688f7",
     "closure_unresolved": [],
     "dispatched": {
      "function": "_graph_then_allocate",
@@ -5610,7 +5745,7 @@
      "solvers:optimization": "sha256:55393a60242a113613869e9ff464e88e1cc03230fd174276f766935a77a07401"
     }
    },
-   "evidence": "docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json#summary.F3",
+   "evidence": "docs/evidence/greg-composition-lift/2026-10-22-joined/results-joined-v1.json#summary.F3",
    "family": "F3",
    "history": [
     {
@@ -5700,11 +5835,57 @@
       "parametric_min_cost_flow"
      ],
      "wins": 92
+    },
+    {
+     "code": {
+      "closure_members": {
+       "greg/cognition/composition.py::OPERATION_STAGE_LATENCY_S": "sha256:2fcf62cc0e89147f2b849104bb0d124dfdc362927cceaf85412c09e1c8f458ac",
+       "greg/cognition/composition.py::OPTIMALITY": "sha256:2fde7eeb0a6473b9468dce23b4374ba668199ba5284c255ec65e24c793f36e9e",
+       "greg/cognition/composition.py::_answered": "sha256:e371351dc852b0964d70b533ae63f45dce84e800d309e4d0578564e70a986d84",
+       "greg/cognition/composition.py::_certified": "sha256:bbe317928731c651ee2d766563ed6f0d26293b7ca53c0abc892393c61b50478a",
+       "greg/cognition/composition.py::_graph_then_allocate": "sha256:ffe2769517981a0364817698063aedda88a483590b2ff792bde78b22e5c57050",
+       "greg/cognition/composition.py::_op_summary": "sha256:a4492539a6200102c35c00ceb0a1e0c0f5bc6547ec6bed00f65c35c1f3a3fe16",
+       "greg/cognition/composition.py::_operation": "sha256:5d406ab1d883dcbe4abaa4d50968022c8ad0d6b769384a4c0e2f3352754d8eb3",
+       "greg/cognition/composition.py::_optimality": "sha256:5ad7bd0fab2f39980224217aee439882479dd21bef81ce3ae748079c447687e2",
+       "greg/cognition/cortex.py::reason": "sha256:2acce50704f5765e966010795e55883f6916b8c95293175737174960d5a21bc5"
+      },
+      "closure_sha256": "sha256:6ec913a466b684e35a8e9f9b3a955aa79ddbf6d6eef993f6555d8bcac4b6f0e8",
+      "closure_unresolved": [],
+      "dispatched": {
+       "function": "_graph_then_allocate",
+       "path": "greg/cognition/composition.py",
+       "unresolved_updates": 0
+      },
+      "function": "greg/cognition/composition.py::_graph_then_allocate",
+      "recipe_entry_sha256": "sha256:8dec62ed97e2b286504f92a47b2a803660f378d13896f2b6885b723860e2346f",
+      "stage_closures": {
+       "adapter:_genome_solver": "sha256:b7495c95473ce2372082a5f18d518c61e1d99ca306756f2e58a3e084257621e1",
+       "adapter:run": "sha256:88fcab7a5faf3b23c0d0334f6b94626f131d68b06e9759f83949e32878e301ec",
+       "dispatch:SOLVERS": "sha256:c23c4382b10824f20a42dff821493fc5d24b63767185d26dcaacf5ed6f7d8b4c",
+       "flow_capacity_plan": "sha256:f99e90914ef86e571897407fa08e0173e5bc121989d8258f582a4fd9e093edcb",
+       "flow_maxflow": "sha256:e2df9a6ebbbbbaf400421698e973ee9f767f663ddc4b96cb5077bc044205b3b9",
+       "solvers:optimization": "sha256:55393a60242a113613869e9ff464e88e1cc03230fd174276f766935a77a07401"
+      }
+     },
+     "evidence": "docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json#summary.F3",
+     "family": "F3",
+     "instances": {
+      "count": 40,
+      "sha256": "sha256:5dcf479d8a10e5d5107844bef24692aa301d0b561c9f195d507a23086d4088cd"
+     },
+     "lift": false,
+     "losses": 0,
+     "overlap_with_previous": 0,
+     "p_one_sided": 1.0,
+     "p_one_sided_as_recorded": 1.0,
+     "prefer": "exact_single",
+     "status": "NO_LIFT",
+     "wins": 0
     }
    ],
    "instances": {
     "count": 40,
-    "sha256": "sha256:5dcf479d8a10e5d5107844bef24692aa301d0b561c9f195d507a23086d4088cd"
+    "sha256": "sha256:180c52cfa758a5d28d6a9d82b4b57f7ea389d6e30e3fb11c8efae15948ae393c"
    },
    "lift": false,
    "losses": 0,
@@ -5718,6 +5899,8 @@
   "identify_then_optimize": {
    "code": {
     "closure_members": {
+     "greg/cognition/budget.py::_instant": "sha256:356ad551f6df03f573048ee8e6febae6ff2caa12ed302d1727a78eb231de23b8",
+     "greg/cognition/budget.py::window_limit": "sha256:b44c3b185aabb5adbd69fe2ca489083c445ba09965a1445d901c206ee52ef846",
      "greg/cognition/composition.py::DECL": "sha256:099cb470532e82dab72a780e7996c1dccf66b8953e7d850ded52ae0ab3d6e1cd",
      "greg/cognition/composition.py::MAX_REQUEST_BYTES": "sha256:a9ffe0ec4120a7968dfb9357ab0c45498709e5be2864c8ebdaec82945d0edb2b",
      "greg/cognition/composition.py::OPERATION_RECIPES": "sha256:4ff4bf5ad54063e29ab529b9d7759295dbe514bee933be3bffed31006d1ff5aa",
@@ -5743,13 +5926,13 @@
      "greg/cognition/composition.py::_lookup": "sha256:42d5309b85be90e6f1231a436265a3f077a001b24a0e6321dcdbe71488d82fda",
      "greg/cognition/composition.py::_observed": "sha256:eb9b613d4167eda458501461ece51ee700867f13e7ace800fe3284fbfdc4c9cd",
      "greg/cognition/composition.py::_op_summary": "sha256:a4492539a6200102c35c00ceb0a1e0c0f5bc6547ec6bed00f65c35c1f3a3fe16",
-     "greg/cognition/composition.py::_operation": "sha256:5d406ab1d883dcbe4abaa4d50968022c8ad0d6b769384a4c0e2f3352754d8eb3",
+     "greg/cognition/composition.py::_operation": "sha256:a13f69b04428f0e3a40e1665c39c3955cb87f34edc2bae2213c7d71fa3acb08e",
      "greg/cognition/composition.py::_optimality": "sha256:5ad7bd0fab2f39980224217aee439882479dd21bef81ce3ae748079c447687e2",
      "greg/cognition/composition.py::_quantile_multiplier": "sha256:4b87b322ff5b717c676963624f10fb524d8a584d92144bffb0391c097eddf492",
      "greg/cognition/composition.py::_reads": "sha256:074dd69c9ae173a8ff5f1b0b1d2cb7ca1cb18d3705ba8d0954dfb79af02a325e",
      "greg/cognition/composition.py::_real": "sha256:9d2c0be2daa0eebe07e6ed1b4ab6c8efb01bddd0cfafbc24aaa6f651a52a1144",
      "greg/cognition/composition.py::_roots": "sha256:261f5fa340d80bd2e8e46b2960c6c8c26706e8f372c6e6f36d533cc2c9b12b05",
-     "greg/cognition/composition.py::_stage": "sha256:576df5d20c0bdf3a41a756753bdf98e71878607ab7000686b36ec0601f0467ec",
+     "greg/cognition/composition.py::_stage": "sha256:95262bb78bc86b685822f76607506544ad7356403f3bf72639d10f9819a0c8af",
      "greg/cognition/composition.py::_summary": "sha256:430e64d840e65dbe3b6438731e4146d2dc40bfd5437b1be71f7e29a22f8260eb",
      "greg/cognition/composition.py::_track_then_staff": "sha256:cb9f358edf7b48b73c1d5b62e008944b8b2b2a87e5a79872cf3b88670bd05441",
      "greg/cognition/composition.py::derive": "sha256:c9137241e4c68ed10b78c081bc14d1b2c77323ca6f3d62c206ca3a44b08a8096",
@@ -5757,7 +5940,7 @@
      "greg/cognition/composition.py::matching": "sha256:c7eca7b8d2ddd39c5e733a3743aa4a0f3c94c7e02cbb52ee33ece1ee856bfc4e",
      "greg/cognition/composition.py::plan_ratios": "sha256:371097f5aefa03fad4331fa569c5a17d9784b6e45ba93c44bc8827a038a48582",
      "greg/cognition/composition.py::route": "sha256:706b89d01c643af40ef6d93a9bed5a5db87223e5492115f1aee00dbcd2ff8fe1",
-     "greg/cognition/composition.py::run": "sha256:b21f0fb49128860cc46497f422b49d476f78012b525741a287ba314e7b0d89de",
+     "greg/cognition/composition.py::run": "sha256:8a10849f17d489accceae0ba6514640bffd7bbd8ed455923acce0df464bc9177",
      "greg/cognition/composition.py::staffing_plan": "sha256:e76377663259d6e9add2cb955b5174186c30d5051a611c560703c1b34ba3300e",
      "greg/cognition/composition.py::staffing_quantile": "sha256:5eef6211d0adc79f4ae3a94dd492c1adc2329d19f4e4a56009cd7c8c61872a64",
      "greg/cognition/composition.py::substitute": "sha256:2227fb44f16e2be75a163d3b63953155646a512ee2673a89dcf0bf6ed6184dee",
@@ -5768,9 +5951,9 @@
      "greg/cognition/contracts.py::digest": "sha256:764c30e3f94e9b5aef02d037d9565af736c2c39d5109c18b39df6ffe0eac4fb4",
      "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
      "greg/cognition/contracts.py::strict_data": "sha256:47432930fb6eb71cbb0158c26c453f1dd3f94f8e23923d77e977972bd45b32bf",
-     "greg/cognition/cortex.py::reason": "sha256:2acce50704f5765e966010795e55883f6916b8c95293175737174960d5a21bc5"
+     "greg/cognition/cortex.py::reason": "sha256:cdfc5e568776b12907346e581fcdd1b9ba9ce55e2d46e1d583ad9eed665b23da"
     },
-    "closure_sha256": "sha256:f1ccd269dc6197901d0230197a90d8e7d323f416cc952e6c909cf54db68c1555",
+    "closure_sha256": "sha256:92fe253e2b21a5639a2ea4b1b2bbb8b8d067e93ad3b4313408def75ac11c8408",
     "closure_unresolved": [],
     "dispatched": null,
     "function": "greg/cognition/composition.py::run",
@@ -5789,7 +5972,7 @@
      "route:_route_parts": "sha256:fdab04e2c86abbe1c8a9a1df939891f01e14c7c154adb43147cba7a28fc852b4"
     }
    },
-   "evidence": "docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json#summary.F2R",
+   "evidence": "docs/evidence/greg-composition-lift/2026-10-22-joined/results-joined-v1.json#summary.F2R",
    "family": "F2R",
    "history": [
     {
@@ -5929,20 +6112,109 @@
      "prefer": null,
      "status": "VPL_LIFT",
      "wins": 13
+    },
+    {
+     "code": {
+      "closure_members": {
+       "greg/cognition/composition.py::DECL": "sha256:099cb470532e82dab72a780e7996c1dccf66b8953e7d850ded52ae0ab3d6e1cd",
+       "greg/cognition/composition.py::MAX_REQUEST_BYTES": "sha256:a9ffe0ec4120a7968dfb9357ab0c45498709e5be2864c8ebdaec82945d0edb2b",
+       "greg/cognition/composition.py::OPERATION_RECIPES": "sha256:4ff4bf5ad54063e29ab529b9d7759295dbe514bee933be3bffed31006d1ff5aa",
+       "greg/cognition/composition.py::OPERATION_STAGE_LATENCY_S": "sha256:2fcf62cc0e89147f2b849104bb0d124dfdc362927cceaf85412c09e1c8f458ac",
+       "greg/cognition/composition.py::OPTIMALITY": "sha256:2fde7eeb0a6473b9468dce23b4374ba668199ba5284c255ec65e24c793f36e9e",
+       "greg/cognition/composition.py::PRODUCERS": "sha256:6eb2e23f8f93340e970b0c7b5160adcce46d1db0102059c63c18c08b70edd2c4",
+       "greg/cognition/composition.py::RECIPES": "sha256:55ff4c4c71dfc45292dcc84116d3ae3d6fc4cc55ebd4e00c3857afb36b8d4cf5",
+       "greg/cognition/composition.py::SCHEMA": "sha256:60250f3e8a6ec2443d18350e63425337423a5efa5ebbbcdd257666c9384bbbb4",
+       "greg/cognition/composition.py::STAFF_KEYS": "sha256:b321f2d562542d7a92ec00f5b1ed4c275e819e662e8a7b88404ea63366294dc2",
+       "greg/cognition/composition.py::STAGE_ORDER": "sha256:ccbc492864182d175397bf06a1e17ff04e3f34eacf0a35f91c268b7678c050de",
+       "greg/cognition/composition.py::TRACKER_KEYS": "sha256:370b06c86fcf583edd853062fd55b3961daad513c4375c682c513b2e35c9ecd8",
+       "greg/cognition/composition.py::TRACK_FLOOR_MULTIPLIER": "sha256:a2b1090f516f4e8bca046430a434a718c40225d177bc3564f8cce50979aca617",
+       "greg/cognition/composition.py::TRACK_MIN_MEASUREMENTS": "sha256:e2df339f4ae9619769d132957a8e51a019ddf0c9cf53b87780b971fd4a08daaa",
+       "greg/cognition/composition.py::TRACK_NULL_FRACTION": "sha256:7d5525ab24965ddda458af36e8d383ee8e75e0ba4ed4f3cacb564c9cb5a1e57a",
+       "greg/cognition/composition.py::TranslationError": "sha256:75d3b5d83a1ea9378afaec748c6254923b0c59c7056be47f8bbac4170867efe8",
+       "greg/cognition/composition.py::_answered": "sha256:e371351dc852b0964d70b533ae63f45dce84e800d309e4d0578564e70a986d84",
+       "greg/cognition/composition.py::_bayes_then_voi": "sha256:1aadcec9a75e8d8f37ad80c504f19f980b91ed99a1772c5de56e2cd199eb4f30",
+       "greg/cognition/composition.py::_certified": "sha256:bbe317928731c651ee2d766563ed6f0d26293b7ca53c0abc892393c61b50478a",
+       "greg/cognition/composition.py::_count": "sha256:9f2281b4301525a5ba22a4abbefa92ad9addecaeda81fc88caf8d6c60817ec0f",
+       "greg/cognition/composition.py::_forecast_then_allocate": "sha256:0d28744399669fbd8b4950ef0fe663006a46d6076efaa21766cf3c67670e5d0a",
+       "greg/cognition/composition.py::_forecast_then_staff": "sha256:9fab97805cac76421e1c7da4db9d5eb0009d28e2ac0912146a50828ce3d1057b",
+       "greg/cognition/composition.py::_graph_then_allocate": "sha256:ffe2769517981a0364817698063aedda88a483590b2ff792bde78b22e5c57050",
+       "greg/cognition/composition.py::_lookup": "sha256:42d5309b85be90e6f1231a436265a3f077a001b24a0e6321dcdbe71488d82fda",
+       "greg/cognition/composition.py::_observed": "sha256:eb9b613d4167eda458501461ece51ee700867f13e7ace800fe3284fbfdc4c9cd",
+       "greg/cognition/composition.py::_op_summary": "sha256:a4492539a6200102c35c00ceb0a1e0c0f5bc6547ec6bed00f65c35c1f3a3fe16",
+       "greg/cognition/composition.py::_operation": "sha256:5d406ab1d883dcbe4abaa4d50968022c8ad0d6b769384a4c0e2f3352754d8eb3",
+       "greg/cognition/composition.py::_optimality": "sha256:5ad7bd0fab2f39980224217aee439882479dd21bef81ce3ae748079c447687e2",
+       "greg/cognition/composition.py::_quantile_multiplier": "sha256:4b87b322ff5b717c676963624f10fb524d8a584d92144bffb0391c097eddf492",
+       "greg/cognition/composition.py::_reads": "sha256:074dd69c9ae173a8ff5f1b0b1d2cb7ca1cb18d3705ba8d0954dfb79af02a325e",
+       "greg/cognition/composition.py::_real": "sha256:9d2c0be2daa0eebe07e6ed1b4ab6c8efb01bddd0cfafbc24aaa6f651a52a1144",
+       "greg/cognition/composition.py::_roots": "sha256:261f5fa340d80bd2e8e46b2960c6c8c26706e8f372c6e6f36d533cc2c9b12b05",
+       "greg/cognition/composition.py::_stage": "sha256:576df5d20c0bdf3a41a756753bdf98e71878607ab7000686b36ec0601f0467ec",
+       "greg/cognition/composition.py::_summary": "sha256:430e64d840e65dbe3b6438731e4146d2dc40bfd5437b1be71f7e29a22f8260eb",
+       "greg/cognition/composition.py::_track_then_staff": "sha256:cb9f358edf7b48b73c1d5b62e008944b8b2b2a87e5a79872cf3b88670bd05441",
+       "greg/cognition/composition.py::derive": "sha256:c9137241e4c68ed10b78c081bc14d1b2c77323ca6f3d62c206ca3a44b08a8096",
+       "greg/cognition/composition.py::derived_inputs": "sha256:a1d9e9740b112482098c598425be3d43e628febb1d3234985ea4533857933b94",
+       "greg/cognition/composition.py::matching": "sha256:c7eca7b8d2ddd39c5e733a3743aa4a0f3c94c7e02cbb52ee33ece1ee856bfc4e",
+       "greg/cognition/composition.py::plan_ratios": "sha256:371097f5aefa03fad4331fa569c5a17d9784b6e45ba93c44bc8827a038a48582",
+       "greg/cognition/composition.py::route": "sha256:706b89d01c643af40ef6d93a9bed5a5db87223e5492115f1aee00dbcd2ff8fe1",
+       "greg/cognition/composition.py::run": "sha256:b21f0fb49128860cc46497f422b49d476f78012b525741a287ba314e7b0d89de",
+       "greg/cognition/composition.py::staffing_plan": "sha256:e76377663259d6e9add2cb955b5174186c30d5051a611c560703c1b34ba3300e",
+       "greg/cognition/composition.py::staffing_quantile": "sha256:5eef6211d0adc79f4ae3a94dd492c1adc2329d19f4e4a56009cd7c8c61872a64",
+       "greg/cognition/composition.py::substitute": "sha256:2227fb44f16e2be75a163d3b63953155646a512ee2673a89dcf0bf6ed6184dee",
+       "greg/cognition/composition.py::track_measurements": "sha256:f88a6464fc7d77b20a437dbb9c4d188d4fc1d3cf0012aac8836586f34ad79186",
+       "greg/cognition/composition.py::validate": "sha256:c0c7fbee812844dde477412da16d24eb4daf7c711a11e132e35c37eeb5a46a3a",
+       "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+       "greg/cognition/contracts.py::canonical": "sha256:0e9d18746651bec77bcac0f5122daf7eb0b5a5bc8ebeea69629123f085e2dda6",
+       "greg/cognition/contracts.py::digest": "sha256:764c30e3f94e9b5aef02d037d9565af736c2c39d5109c18b39df6ffe0eac4fb4",
+       "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+       "greg/cognition/contracts.py::strict_data": "sha256:47432930fb6eb71cbb0158c26c453f1dd3f94f8e23923d77e977972bd45b32bf",
+       "greg/cognition/cortex.py::reason": "sha256:2acce50704f5765e966010795e55883f6916b8c95293175737174960d5a21bc5"
+      },
+      "closure_sha256": "sha256:f1ccd269dc6197901d0230197a90d8e7d323f416cc952e6c909cf54db68c1555",
+      "closure_unresolved": [],
+      "dispatched": null,
+      "function": "greg/cognition/composition.py::run",
+      "recipe_entry_sha256": "sha256:80c333ac73d427a3910d7aee4d7212fcee2078e0e0db076e2cb487092d3c38e2",
+      "stage_closures": {
+       "organ:causal:EvidenceCausalOrgan": "sha256:139bc0a18e65564c91e6c54de0ed9f06e655a2da5ebe9ba24a9ac0d64a8fe3a4",
+       "organ:optimization:CpSatOrgan": "sha256:93391fad974cfb4922841b8bf4d565c1cc003c34c4aa8357e66cc93318bd83e7",
+       "organ:optimization:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2",
+       "route:CpSatOrgan": "sha256:93391fad974cfb4922841b8bf4d565c1cc003c34c4aa8357e66cc93318bd83e7",
+       "route:DeterrenceOrgan": "sha256:6ad068dd9f12e914790902fe5fa72d8a063dee792276c003e656fa11067384cf",
+       "route:EstimationOrgan": "sha256:e2efcc2b1fa5cce72ed9009784d61b5265f6c67719b3096273fc2a2afc22bc5b",
+       "route:EvidenceCausalOrgan": "sha256:139bc0a18e65564c91e6c54de0ed9f06e655a2da5ebe9ba24a9ac0d64a8fe3a4",
+       "route:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2",
+       "route:ScheduleExtractionOrgan": "sha256:d4b9dadef56ae45585733c957c028ca7ae5657ed31a26aea8b4a635c9fff9e25",
+       "route:SemanticOrgan": "sha256:82a01912cf908d923137f6a707e6ae1a374e787683052c9ea8b77ddf7eae6e35",
+       "route:_route_parts": "sha256:fdab04e2c86abbe1c8a9a1df939891f01e14c7c154adb43147cba7a28fc852b4"
+      }
+     },
+     "evidence": "docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json#summary.F2R",
+     "family": "F2R",
+     "instances": {
+      "count": 64,
+      "sha256": "sha256:030314e3d161d58b5805f2437be6fe2b39875878c6434eb0f4243c6bfe412c1f"
+     },
+     "lift": true,
+     "losses": 2,
+     "overlap_with_previous": 0,
+     "p_one_sided": 0.0006561279296875,
+     "p_one_sided_as_recorded": 0.00065612793,
+     "prefer": null,
+     "status": "VPL_LIFT",
+     "wins": 16
     }
    ],
    "instances": {
     "count": 64,
-    "sha256": "sha256:030314e3d161d58b5805f2437be6fe2b39875878c6434eb0f4243c6bfe412c1f"
+    "sha256": "sha256:567992d9c88ff594d89d20ef67e94e1966e58bf1ffa003554fbe8b7d64283183"
    },
    "lift": true,
    "losses": 2,
    "overlap_with_previous": 0,
-   "p_one_sided": 0.0006561279296875,
-   "p_one_sided_as_recorded": 0.00065612793,
+   "p_one_sided": 0.003692626953125,
+   "p_one_sided_as_recorded": 0.003692626953,
    "prefer": null,
    "status": "VPL_LIFT",
-   "wins": 16
+   "wins": 13
   },
   "track_then_staff": {
    "code": {
@@ -6090,6 +6362,11 @@
    "path": "docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json",
    "sha256": "sha256:b4cb032489facbffd7859003a4a298ad07604ed253859bcc1f3115d5ccf0a836",
    "source_commit": "53d39d766a96ca7fdab18452827da24b71258fa9"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-22-joined/results-joined-v1.json",
+   "sha256": "sha256:3efde5d11d7c43442c96a0890bef3e1b1346125793a1a7d36592f977f51946a8",
+   "source_commit": "8d81f342e57f7c1c956c47b10606e51327c7927a"
   },
   {
    "path": "docs/evidence/greg-learned-routing/2026-10-07/results-v2.json",

@@ -912,3 +912,35 @@ Also observed on the joined tree: the body package `greg` (69 modules; 47 on #17
 (MODEL_INVALID). The whole-machine trace's mission 2 now plans the runtime package `egregore`, and the body package is
 an abstain-never-wrong control. The admitted CPM genome `solver.or.critical_path` (DEFAULT_FOR_GEOMETRY, v3) has no
 such ceiling, but it is withheld until the founder attaches it.
+
+**P6 joined v1, run (2026-10-22).** Pre-registered at `aaaa1c26`, frozen at `8d81f342`, and run once on fresh
+held-out seeds 4640-4902, with results in `docs/evidence/greg-composition-lift/2026-10-22-joined/`. The procedure and
+rule are v1's, unchanged. Results:
+
+| Family | Recipe | Verdict on the joined code |
+|---|---|---|
+| F1 | `estimate_then_optimize` | **LIFT**, 35-0 (0 wrong, 1 suboptimal). Converged v1 read NO_LIFT on one false answer. |
+| F2R | `identify_then_optimize` | **LIFT**, 13-2. The composition made 4 wrong answers; the best single made 15. |
+| F3 | `graph_then_allocate` | NO_LIFT. `flow_expansion_mcf` ties it on 40 of 40 at 0.234 s against 1.206 s. Converged v1 agreed. |
+| F4 | `bayes_then_voi` | **LIFT**, 20-0 |
+
+After the index rebuild, `compiler.recipe_stale` is None for all four recipes. **Live VPL on the joined tree is 3**:
+it was 0 at `ea90b4b4`, and on #179's head it is 2. Converged v1's verdicts stay in each recipe's history, marked
+stale. The natural-family recipes (F5-F8) are still stale on the joined code. The exposure ledger has 451 records,
+with no overlap involving held-out data.
+
+**Operation re-admission on the joined tree, run (2026-10-22).** Pre-registered at `244b652c` and frozen at `3520efe6`.
+It ran once on fresh seeds 5920-5949, in a clean detached worktree. Results are in
+`docs/evidence/greg-genome-admission/2026-10-22-joined-operations/`. The runner now records, per family, the solver
+function every candidate call reached, and that dispatch equals the frozen closure for all four families.
+
+| Family | Verdict | Against the baseline | Against the competitor |
+|---|---|---|---|
+| control | **DEFAULT_FOR_GEOMETRY** | 30-0 | 30-0 |
+| game | **DEFAULT_FOR_GEOMETRY** | 30-0 | 21-0-9 |
+| information | **DEFAULT_FOR_GEOMETRY** | 17-0-13 | 13-0-17 |
+| probabilistic | NICHE_CAPABILITY | 17-6-7, p 0.017 | 13-10-7, p 0.34, and slower |
+
+Control, game and information replicate and route again: the binding rule is satisfied, not loosened. On
+2026-10-21 probabilistic read EXPERIMENTAL. Here it reads NICHE_CAPABILITY, which is a second reading, not a
+replication, and it is kept as such. No candidate output was refuted.

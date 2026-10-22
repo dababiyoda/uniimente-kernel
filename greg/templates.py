@@ -658,7 +658,9 @@ def code_change(*, repo: str, objective: str, order: str | None = None, allowed_
     1. ``worker.commission`` (internal_write, spends at most ``budget_usd``): a real worker edits a private
        clone; GREG collects the diff, runs acceptance with no network and commits on ``greg/<order>``.
     2. ``worker.appraise`` (read-only sensor): fresh clone, patch re-applied, scope and protected-surface
-       checks, acceptance re-run. Only ``ACCEPTED`` closes the check; a protected surface yields a
+       checks, acceptance re-run. Founder-named ``tests`` are a sealed oracle judged at the base; the
+       worker's own tests count only if they fail on the base and kill mutants of the change
+       (``greg/evidence_strength.py``). Only ``ACCEPTED`` closes the check; a protected surface yields a
        founder decision, never acceptance.
     ``script`` (with ``provider="script"``): the founder-signed program that does the work instead of a
     model-backed worker; it runs in the same confined envelope with no network (``greg.workers.ScriptWorker``).

@@ -25,7 +25,24 @@ MEDIA = 'tests/unit/test_greg_media_case.py'
 FABRIC = 'tests/unit/test_greg_task_fabric.py'
 RESTORE = 'tests/unit/test_greg_restore.py'
 FAILURES = 'tests/unit/test_greg_failure_closure.py'
+CONSTRUCTION_SETTLED = 'tests/unit/test_greg_construction_settlement.py'
+CONSTRUCTION_DECISION = 'tests/unit/test_greg_construction_decision.py'
 MUTANTS = [
+ ('a construction answer is never settled', 'greg/cognition/settlement.py',
+  'built = _constructed(receipt, constructed) if compiled is None else None', 'built = None',
+  'test_a_constructions_verified_answer_settles_once_and_reaches_the_compilers_counts', CONSTRUCTION_SETTLED),
+ ('any compile receipt is credited as a construction', 'greg/cognition/settlement.py',
+  '            or value.get("method_or_composition_selected") not in constructed\n', '',
+  'test_a_compile_receipt_naming_anything_but_a_registered_construction_credits_nothing', CONSTRUCTION_SETTLED),
+ ('a relaxed construction answers the capped question', 'greg/cognition/compiler.py',
+  '        elif fuller:\n            ignored = ', '        elif False:\n            ignored = ',
+  'test_settled_construction_outcomes_reorder_the_ranking_and_the_relaxation_cannot_win_the_capped_question',
+  CONSTRUCTION_DECISION),
+ ('a relaxed construction is offered while the fuller one is unattached', 'greg/cognition/compiler.py',
+  '        elif fuller:\n            ignored = ',
+  '        elif fuller and registry.by_function(fuller[0].function):\n            ignored = ',
+  'test_a_capped_question_after_an_uncapped_one_constructs_the_capped_capability_instead_of_the_relaxed_answer',
+  CONSTRUCTION_DECISION),
  ('optimality not attacked by a second engine', 'greg/cognition/verification.py',
   'certificate["status"] != "REFUTED")', 'True)',
   'test_a_feasible_but_not_optimal_claim_is_refuted_by_a_second_engine'),

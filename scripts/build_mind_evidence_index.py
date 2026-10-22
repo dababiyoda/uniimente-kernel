@@ -53,6 +53,12 @@ P6_RUNS = (
     ("docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json",
      {"F1": "estimate_then_optimize", "F2R": "identify_then_optimize", "F3": "graph_then_allocate",
       "F4": "bayes_then_voi"}),
+    # P6 joined v1 (2026-10-22): the same procedure on the joined integration tree, where every converged v1 verdict
+    # was stale (the joined cortex.reason and stage solvers changed its recipe closures). Fresh held-out seeds; its
+    # verdicts bind the recipe code at its freeze commit and decide, as the latest measurement of these recipes.
+    ("docs/evidence/greg-composition-lift/2026-10-22-joined/results-joined-v1.json",
+     {"F1": "estimate_then_optimize", "F2R": "identify_then_optimize", "F3": "graph_then_allocate",
+      "F4": "bayes_then_voi"}),
 )
 # In finish order; the last decides. PR #155's decisive retest (NO_GAIN, 2026-10-14) follows #158's (REGRESSION,
 # 2026-10-08); both are kept in ``history`` and neither is a gain, so the default stays shadow.
@@ -155,6 +161,11 @@ OPERATION_RUNS = (
     # from it binds only where the static dispatch has no unresolved update (greg.cognition.compiler
     # .operation_status, round-2 review of #179, N4)
     ("docs/evidence/greg-genome-admission/2026-10-21-operations/results.json", "families", None),
+    # the same four families re-measured on the joined tree, pre-registered at 244b652c and frozen at 3520efe6
+    # (seeds 5920-5949; finished 2026-10-22 05:56 UTC); last, so it is current for them. It recorded the solver
+    # function each family's candidate calls reached (solver_closures), which a positive verdict needs while
+    # SOLVERS takes non-literal updates
+    ("docs/evidence/greg-genome-admission/2026-10-22-joined-operations/results.json", "families", None),
 )
 # Verdicts measured against a competitor on held-out data; any other label is structural and changes no route.
 MEASURED = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY", "COMPOSITION_ONLY", "EXPERIMENTAL", "SUPERSEDED", "REJECTED")

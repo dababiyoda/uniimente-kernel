@@ -45,8 +45,9 @@ jobs:
     # twice here, it took about 15 + 12 minutes at c360103, and at 0067be6 the full suite alone took 25 minutes
     # (the V2 re-run was then cancelled 20 minutes in at the 45-minute limit, run 39614663399): growth from the
     # review rounds' regression tests, not a hang (#180). This job now carries both lineages' tests, so it keeps
-    # the larger of the two limits; 75 leaves headroom without hiding a hang for long.
-    timeout-minutes: 75
+    # the larger of the two limits. On the joined tree (#196) the job took 65 minutes at 78da0332; #158's admission v8
+    # (83 genomes) adds its tests, and on its own line the full suite alone took 38 minutes at 14608914. Raised to 90.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:

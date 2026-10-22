@@ -1,7 +1,7 @@
 """R1-A evaluation runner: hostile and honest workers through the canonical path, on one kernel tree.
 
     python run_evaluation.py --kernel TREE --label new|baseline --out results-LABEL.json [--ablation] [--timing]
-    python run_evaluation.py --render results-baseline.json results-new.json    # README tables, from the files
+    python run_evaluation.py --render FILE...      # README tables from result files (merged by --label)
 
 Pre-registered in PREREGISTRATION.md (commit 57b5c17). Every case is a founder-signed mission on a real ``Body``:
 ``worker.commission`` (private clone, GREG-collected diff, GREG's acceptance run), the in-body ``worker.appraise``
@@ -43,9 +43,17 @@ def main(argv=None) -> int:
     ap.add_argument("--timing", action="store_true")
     ap.add_argument("--scratch", default=None)
     ap.add_argument("--render", nargs="*")
+    ap.add_argument("--readme", help="with --render: replace the README's results block instead of printing")
     a = ap.parse_args(argv)
     if a.render:
-        print(render([json.loads(Path(p).read_text()) for p in a.render]))
+        tables = render([json.loads(Path(p).read_text()) for p in a.render])
+        if not a.readme:
+            print(tables)
+            return 0
+        readme = Path(a.readme)
+        text, begin, end = readme.read_text(), "<!-- results:begin -->", "<!-- results:end -->"
+        head, rest = text.split(begin, 1)
+        readme.write_text(head + begin + "\n" + tables + "\n" + end + rest.split(end, 1)[1])
         return 0
     kernel = Path(a.kernel).resolve()
     sys.path.insert(0, str(kernel))
@@ -62,7 +70,7 @@ def main(argv=None) -> int:
     def tmpdir():
         return tempfile.TemporaryDirectory(prefix="r1a-", dir=scratch)
     for regime in a.regimes.split(","):
-        for case in a.cases.split(","):
+        for case in [c for c in a.cases.split(",") if c not in ("", "none")]:
             with tmpdir() as t:
                 row = run_case(kernel, Path(t), case, regime)
             out["rows"].append(row)
@@ -87,7 +95,11 @@ def main(argv=None) -> int:
 
 def render(results: list[dict]) -> str:
     """The README tables, computed from result files only."""
-    by = {r["label"]: r for r in results}
+    by = {}
+    for r in results:             # several files per tree (rows, timing) merge by label
+        merged = by.setdefault(r["label"], {**r, "rows": [], "ablation": [], "timing": []})
+        for key in ("rows", "ablation", "timing"):
+            merged[key] += r[key]
     lines = []
     regimes = sorted({row["regime"] for r in results for row in r["rows"]}, key=["required", "supervised"].index)
     labels = [lab for lab in ("baseline", "new") if lab in by]

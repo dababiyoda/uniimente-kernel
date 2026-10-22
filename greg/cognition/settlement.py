@@ -83,6 +83,57 @@ def _formed_versions(journal) -> set:
     return out
 
 
+def _constructed_versions(journal) -> dict:
+    """capability id -> pinned version of every construction Capability Genesis registered on this body
+    (``greg.recombine``: a ``composed:`` provider with a ``composed`` origin). Its id carries the reduction chain's
+    digest, so a construction whose reduction code changed is a different capability and never inherits credit."""
+    out = {}
+    for event in journal.replay("capability.registered"):
+        manifest = event.payload.get("manifest") or {}
+        if str(manifest.get("provider", "")).startswith("composed:") \
+                and (event.payload.get("origin") or {}).get("kind") == "composed":
+            out[manifest.get("capability_id")] = str(manifest.get("version"))
+    return out
+
+
+def _constructed(value, constructed):
+    """A retained compile receipt that one of this body's constructions answered with its problem-level
+    certificate, or None. A construction's answer has no cognitive receipt (``selected_receipt`` is None), so it is
+    credited through the compile receipt itself: its identity digest must hold, it creates no authority, it is
+    ANSWERED and certified, and the method it names is a construction Genesis registered here. A WORLD_UNVERIFIED
+    or abstaining compilation settles nothing, as on every other route."""
+    if not isinstance(value, dict) or value.get("schema") not in COMPILE_SCHEMAS:
+        return None
+    copy = dict(value)
+    identity = copy.pop("receipt_id", None)
+    if (identity != digest(copy) or value.get("authority_created") is not False or value.get("state") != "ANSWERED"
+            or value.get("selected_receipt") is not None
+            or value.get("method_or_composition_selected") not in constructed
+            or not str(value.get("confidence_type", "")).startswith("certified")):
+        return None
+    return value
+
+
+def _constructed_outcome(built, constructed, registration, check, producer, data, event, appraisal):
+    """The settled outcome of a construction's answer, under the signed check's identity, or None when the check
+    does not bind this receipt (another sensor, producer or input)."""
+    if (not check or producer != "cognition.solve" or check["sensor"].get("capability") != producer
+            or digest(check["sensor"].get("params", {})) != built["inputs_digest"]):
+        return None
+    method = built["method_or_composition_selected"]
+    cost = built.get("cost") or {}
+    return {**_claim_fields(registration, check, built), "receipt": data["receipt"],
+            "cognitive_receipt": built["receipt_id"], "method": method, "method_version": constructed[method],
+            "geometry_key": digest({"compiled_geometry": built.get("geometry"),
+                                    "subgeometry": built.get("subgeometry"),
+                                    "consequence_class": built.get("consequence_class")}),
+            "correct": data["passed"], "observation_event": event.event_id, "appraisal_event": appraisal.event_id,
+            "cost_usd": float(cost.get("money_usd") or 0.0), "latency": float(built.get("latency_s") or 0.0),
+            "causal_credit": "construction: its problem-level certificate, checked independently of its engine",
+            "evidence_tier": "locally reobserved and appraised computation; external outcome unproven",
+            "authority_created": False, "compile_receipt": built["receipt_id"], "selected_by": "competency_compiler"}
+
+
 def _known_method(receipt, compiled, builtins, formed) -> bool:
     """The receipt's method is one GREG can credit: a builtin cognitive capability at its manifest version, or,
     for a compiled request the compiler served by a formed mechanism, that mechanism at its pinned version."""
@@ -100,6 +151,7 @@ def measured_outcomes(journal):
     from .cortex import geometry_key
     from greg.capabilities import BUILTINS
     formed = _formed_versions(journal)
+    constructed = _constructed_versions(journal)
     registrations = {e.payload["mission_id"]: e.payload for e in journal.replay("mission.registered")}
     witnesses = {r.payload["witness_id"]: r.payload for r in journal.ledger.by_type("witness")}
     latest_appraisal, observations = {}, {}
@@ -121,6 +173,18 @@ def measured_outcomes(journal):
             continue
         receipt = record.payload.get("result", {}).get("output")
         compiled = _compiled(receipt)
+        built = _constructed(receipt, constructed) if compiled is None else None
+        if built is not None:             # a construction's certified answer: credited through its compile receipt
+            registration = registrations.get(data["mission_id"], {})
+            outcome = _constructed_outcome(
+                built, constructed, registration,
+                next((c for c in registration.get("spec", {}).get("success_checks", [])
+                      if c["check_id"] == data["check_id"]), None),
+                witnesses.get(record.payload.get("witness_id"), {}).get("capability"),
+                data, event, latest_appraisal[data["mission_id"]])
+            if outcome is not None:
+                observations[_outcome_identity(outcome)] = outcome
+            continue
         if compiled is not None:
             receipt = compiled["selected_receipt"]
         if (not _valid_receipt(receipt) or receipt["abstention_state"] != "NONE" or

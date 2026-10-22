@@ -217,7 +217,7 @@
  "counts": {
   "by_lineage": {
    "#158": 331,
-   "#179": 73,
+   "#179": 81,
    "both": 42
   },
   "by_role": {
@@ -225,7 +225,7 @@
    "admission held-out": 127,
    "canary": 1,
    "dev": 235,
-   "held-out": 58,
+   "held-out": 66,
    "review-pilot": 11,
    "train": 7
   },
@@ -239,13 +239,13 @@
    "dev / #179": 8,
    "dev / both": 23,
    "held-out / #158": 13,
-   "held-out / #179": 26,
+   "held-out / #179": 34,
    "held-out / both": 19,
    "review-pilot / #158": 11,
    "train / #158": 6,
    "train / #179": 1
   },
-  "exposures": 446,
+  "exposures": 454,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -365,12 +365,12 @@
    },
    "#179": {
     "glob": "cortex/evaluation/(?!genome_admission/).*(freeze|prereg)[^/]*\\.json",
-    "matched": 18,
+    "matched": 20,
     "missing": [],
     "no_declaration": [
      "cortex/evaluation/pr155_f8_fallback_diagnostic/prereg-draft.json"
     ],
-    "parsed": 17
+    "parsed": 19
    }
   }
  },
@@ -18471,6 +18471,226 @@
   },
   {
    "artifact": {
+    "commit": "8d81f342e57f7c1c956c47b10606e51327c7927a",
+    "path": "cortex/evaluation/composition_lift/freeze-joined-v1.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:3fd5d9879d7e685ed8e2d0fcc6e168609143c2ce629edb1a88f7ec4fea869d28"
+   },
+   "exposure_commit": "8d81f342e57f7c1c956c47b10606e51327c7927a",
+   "family": "F1",
+   "generator": {
+    "commit": "8d81f342e57f7c1c956c47b10606e51327c7927a",
+    "files": [
+     {
+      "path": "cortex/evaluation/composition_lift/run.py",
+      "sha256": "sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_converged_v1.py",
+      "sha256": "sha256:b0409f924d2ca9d7d2712a47ce6996fe13426eb1f9204bd0a682ef69c00e3489"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_joined_v1.py",
+      "sha256": "sha256:22bf2a4499741be4b3ecdd19b1d674628ad459c644ee812ed6d306eed4ac92be"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_v2.py",
+      "sha256": "sha256:5f89a32f4607bbc567a328a346176ec48dc2182226290e8ac022d39666e650e3"
+     }
+    ],
+    "function": null,
+    "key": "cortex/evaluation/composition_lift/run.py@sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633|cortex/evaluation/composition_lift/run_converged_v1.py@sha256:b0409f924d2ca9d7d2712a47ce6996fe13426eb1f9204bd0a682ef69c00e3489|cortex/evaluation/composition_lift/run_joined_v1.py@sha256:22bf2a4499741be4b3ecdd19b1d674628ad459c644ee812ed6d306eed4ac92be|cortex/evaluation/composition_lift/run_v2.py@sha256:5f89a32f4607bbc567a328a346176ec48dc2182226290e8ac022d39666e650e3",
+    "kind": "harness",
+    "resolved": true,
+    "why": "instances built inline by the harness or materialised in a frozen suite"
+   },
+   "id": "#179|cortex/evaluation/composition_lift/freeze-joined-v1.json|held-out|F1|held-out:F1",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-composition-lift/2026-10-22-joined/results-joined-v1.json",
+   "n": 40,
+   "part": "held-out:F1",
+   "present_in": [
+    "#179"
+   ],
+   "program": "P6",
+   "role": "held-out",
+   "seeds": [
+    [
+     4717,
+     4756
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "8d81f342e57f7c1c956c47b10606e51327c7927a",
+    "path": "cortex/evaluation/composition_lift/freeze-joined-v1.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:3fd5d9879d7e685ed8e2d0fcc6e168609143c2ce629edb1a88f7ec4fea869d28"
+   },
+   "exposure_commit": "8d81f342e57f7c1c956c47b10606e51327c7927a",
+   "family": "F2R",
+   "generator": {
+    "commit": "8d81f342e57f7c1c956c47b10606e51327c7927a",
+    "files": [
+     {
+      "path": "cortex/evaluation/composition_lift/run.py",
+      "sha256": "sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_converged_v1.py",
+      "sha256": "sha256:b0409f924d2ca9d7d2712a47ce6996fe13426eb1f9204bd0a682ef69c00e3489"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_joined_v1.py",
+      "sha256": "sha256:22bf2a4499741be4b3ecdd19b1d674628ad459c644ee812ed6d306eed4ac92be"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_v2.py",
+      "sha256": "sha256:5f89a32f4607bbc567a328a346176ec48dc2182226290e8ac022d39666e650e3"
+     }
+    ],
+    "function": null,
+    "key": "cortex/evaluation/composition_lift/run.py@sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633|cortex/evaluation/composition_lift/run_converged_v1.py@sha256:b0409f924d2ca9d7d2712a47ce6996fe13426eb1f9204bd0a682ef69c00e3489|cortex/evaluation/composition_lift/run_joined_v1.py@sha256:22bf2a4499741be4b3ecdd19b1d674628ad459c644ee812ed6d306eed4ac92be|cortex/evaluation/composition_lift/run_v2.py@sha256:5f89a32f4607bbc567a328a346176ec48dc2182226290e8ac022d39666e650e3",
+    "kind": "harness",
+    "resolved": true,
+    "why": "instances built inline by the harness or materialised in a frozen suite"
+   },
+   "id": "#179|cortex/evaluation/composition_lift/freeze-joined-v1.json|held-out|F2R|held-out:F2R",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-composition-lift/2026-10-22-joined/results-joined-v1.json",
+   "n": 64,
+   "part": "held-out:F2R",
+   "present_in": [
+    "#179"
+   ],
+   "program": "P6",
+   "role": "held-out",
+   "seeds": [
+    [
+     4640,
+     4703
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "8d81f342e57f7c1c956c47b10606e51327c7927a",
+    "path": "cortex/evaluation/composition_lift/freeze-joined-v1.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:3fd5d9879d7e685ed8e2d0fcc6e168609143c2ce629edb1a88f7ec4fea869d28"
+   },
+   "exposure_commit": "8d81f342e57f7c1c956c47b10606e51327c7927a",
+   "family": "F3",
+   "generator": {
+    "commit": "8d81f342e57f7c1c956c47b10606e51327c7927a",
+    "files": [
+     {
+      "path": "cortex/evaluation/composition_lift/run.py",
+      "sha256": "sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_converged_v1.py",
+      "sha256": "sha256:b0409f924d2ca9d7d2712a47ce6996fe13426eb1f9204bd0a682ef69c00e3489"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_joined_v1.py",
+      "sha256": "sha256:22bf2a4499741be4b3ecdd19b1d674628ad459c644ee812ed6d306eed4ac92be"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_v2.py",
+      "sha256": "sha256:5f89a32f4607bbc567a328a346176ec48dc2182226290e8ac022d39666e650e3"
+     }
+    ],
+    "function": null,
+    "key": "cortex/evaluation/composition_lift/run.py@sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633|cortex/evaluation/composition_lift/run_converged_v1.py@sha256:b0409f924d2ca9d7d2712a47ce6996fe13426eb1f9204bd0a682ef69c00e3489|cortex/evaluation/composition_lift/run_joined_v1.py@sha256:22bf2a4499741be4b3ecdd19b1d674628ad459c644ee812ed6d306eed4ac92be|cortex/evaluation/composition_lift/run_v2.py@sha256:5f89a32f4607bbc567a328a346176ec48dc2182226290e8ac022d39666e650e3",
+    "kind": "harness",
+    "resolved": true,
+    "why": "instances built inline by the harness or materialised in a frozen suite"
+   },
+   "id": "#179|cortex/evaluation/composition_lift/freeze-joined-v1.json|held-out|F3|held-out:F3",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-composition-lift/2026-10-22-joined/results-joined-v1.json",
+   "n": 40,
+   "part": "held-out:F3",
+   "present_in": [
+    "#179"
+   ],
+   "program": "P6",
+   "role": "held-out",
+   "seeds": [
+    [
+     4809,
+     4848
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "8d81f342e57f7c1c956c47b10606e51327c7927a",
+    "path": "cortex/evaluation/composition_lift/freeze-joined-v1.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:3fd5d9879d7e685ed8e2d0fcc6e168609143c2ce629edb1a88f7ec4fea869d28"
+   },
+   "exposure_commit": "8d81f342e57f7c1c956c47b10606e51327c7927a",
+   "family": "F4",
+   "generator": {
+    "commit": "8d81f342e57f7c1c956c47b10606e51327c7927a",
+    "files": [
+     {
+      "path": "cortex/evaluation/composition_lift/run.py",
+      "sha256": "sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_converged_v1.py",
+      "sha256": "sha256:b0409f924d2ca9d7d2712a47ce6996fe13426eb1f9204bd0a682ef69c00e3489"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_joined_v1.py",
+      "sha256": "sha256:22bf2a4499741be4b3ecdd19b1d674628ad459c644ee812ed6d306eed4ac92be"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_v2.py",
+      "sha256": "sha256:5f89a32f4607bbc567a328a346176ec48dc2182226290e8ac022d39666e650e3"
+     }
+    ],
+    "function": null,
+    "key": "cortex/evaluation/composition_lift/run.py@sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633|cortex/evaluation/composition_lift/run_converged_v1.py@sha256:b0409f924d2ca9d7d2712a47ce6996fe13426eb1f9204bd0a682ef69c00e3489|cortex/evaluation/composition_lift/run_joined_v1.py@sha256:22bf2a4499741be4b3ecdd19b1d674628ad459c644ee812ed6d306eed4ac92be|cortex/evaluation/composition_lift/run_v2.py@sha256:5f89a32f4607bbc567a328a346176ec48dc2182226290e8ac022d39666e650e3",
+    "kind": "harness",
+    "resolved": true,
+    "why": "instances built inline by the harness or materialised in a frozen suite"
+   },
+   "id": "#179|cortex/evaluation/composition_lift/freeze-joined-v1.json|held-out|F4|held-out:F4",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-composition-lift/2026-10-22-joined/results-joined-v1.json",
+   "n": 40,
+   "part": "held-out:F4",
+   "present_in": [
+    "#179"
+   ],
+   "program": "P6",
+   "role": "held-out",
+   "seeds": [
+    [
+     4863,
+     4902
+    ]
+   ]
+  },
+  {
+   "artifact": {
     "commit": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
     "path": "cortex/evaluation/composition_lift/freeze-v2.json",
     "read_at": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
@@ -18712,6 +18932,158 @@
     [
      6801,
      6840
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "aaaa1c2697c30f3d6f83f39c88b0dfd3b7474e6e",
+    "path": "cortex/evaluation/composition_lift/prereg-joined-v1.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:482cb69a3f3c944289f3940a9bb8cee9aaf40a207cf378fcc40837a5517facc6"
+   },
+   "exposure_commit": "aaaa1c2697c30f3d6f83f39c88b0dfd3b7474e6e",
+   "family": "F1",
+   "generator": {
+    "commit": "aaaa1c2697c30f3d6f83f39c88b0dfd3b7474e6e",
+    "files": [],
+    "function": null,
+    "key": "harness:cortex/evaluation/composition_lift/prereg-joined-v1.json",
+    "kind": "harness",
+    "resolved": false,
+    "why": "instances built inline by the harness or materialised in a frozen suite"
+   },
+   "id": "#179|cortex/evaluation/composition_lift/prereg-joined-v1.json|held-out|F1|held-out:F1",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": false,
+   "looked_at_basis": "no results file binds this freeze's digest",
+   "n": 40,
+   "part": "held-out:F1",
+   "present_in": [
+    "#179"
+   ],
+   "program": "P6",
+   "role": "held-out",
+   "seeds": [
+    [
+     4717,
+     4756
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "aaaa1c2697c30f3d6f83f39c88b0dfd3b7474e6e",
+    "path": "cortex/evaluation/composition_lift/prereg-joined-v1.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:482cb69a3f3c944289f3940a9bb8cee9aaf40a207cf378fcc40837a5517facc6"
+   },
+   "exposure_commit": "aaaa1c2697c30f3d6f83f39c88b0dfd3b7474e6e",
+   "family": "F2R",
+   "generator": {
+    "commit": "aaaa1c2697c30f3d6f83f39c88b0dfd3b7474e6e",
+    "files": [],
+    "function": null,
+    "key": "harness:cortex/evaluation/composition_lift/prereg-joined-v1.json",
+    "kind": "harness",
+    "resolved": false,
+    "why": "instances built inline by the harness or materialised in a frozen suite"
+   },
+   "id": "#179|cortex/evaluation/composition_lift/prereg-joined-v1.json|held-out|F2R|held-out:F2R",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": false,
+   "looked_at_basis": "no results file binds this freeze's digest",
+   "n": 64,
+   "part": "held-out:F2R",
+   "present_in": [
+    "#179"
+   ],
+   "program": "P6",
+   "role": "held-out",
+   "seeds": [
+    [
+     4640,
+     4703
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "aaaa1c2697c30f3d6f83f39c88b0dfd3b7474e6e",
+    "path": "cortex/evaluation/composition_lift/prereg-joined-v1.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:482cb69a3f3c944289f3940a9bb8cee9aaf40a207cf378fcc40837a5517facc6"
+   },
+   "exposure_commit": "aaaa1c2697c30f3d6f83f39c88b0dfd3b7474e6e",
+   "family": "F3",
+   "generator": {
+    "commit": "aaaa1c2697c30f3d6f83f39c88b0dfd3b7474e6e",
+    "files": [],
+    "function": null,
+    "key": "harness:cortex/evaluation/composition_lift/prereg-joined-v1.json",
+    "kind": "harness",
+    "resolved": false,
+    "why": "instances built inline by the harness or materialised in a frozen suite"
+   },
+   "id": "#179|cortex/evaluation/composition_lift/prereg-joined-v1.json|held-out|F3|held-out:F3",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": false,
+   "looked_at_basis": "no results file binds this freeze's digest",
+   "n": 40,
+   "part": "held-out:F3",
+   "present_in": [
+    "#179"
+   ],
+   "program": "P6",
+   "role": "held-out",
+   "seeds": [
+    [
+     4809,
+     4848
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "aaaa1c2697c30f3d6f83f39c88b0dfd3b7474e6e",
+    "path": "cortex/evaluation/composition_lift/prereg-joined-v1.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:482cb69a3f3c944289f3940a9bb8cee9aaf40a207cf378fcc40837a5517facc6"
+   },
+   "exposure_commit": "aaaa1c2697c30f3d6f83f39c88b0dfd3b7474e6e",
+   "family": "F4",
+   "generator": {
+    "commit": "aaaa1c2697c30f3d6f83f39c88b0dfd3b7474e6e",
+    "files": [],
+    "function": null,
+    "key": "harness:cortex/evaluation/composition_lift/prereg-joined-v1.json",
+    "kind": "harness",
+    "resolved": false,
+    "why": "instances built inline by the harness or materialised in a frozen suite"
+   },
+   "id": "#179|cortex/evaluation/composition_lift/prereg-joined-v1.json|held-out|F4|held-out:F4",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": false,
+   "looked_at_basis": "no results file binds this freeze's digest",
+   "n": 40,
+   "part": "held-out:F4",
+   "present_in": [
+    "#179"
+   ],
+   "program": "P6",
+   "role": "held-out",
+   "seeds": [
+    [
+     4863,
+     4902
     ]
    ]
   },

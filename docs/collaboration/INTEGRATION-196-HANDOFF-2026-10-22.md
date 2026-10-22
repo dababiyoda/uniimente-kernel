@@ -37,6 +37,8 @@ that was 13 PRs, plus the deltas listed under Pending.
 | Operation re-admission (pre-registered `244b652c`, frozen `3520efe6`) | `4691f039` | merged; ledger and index regenerated | `5d9a43c7` |
 | #198 (two-session rehearsal) | `162e388b` | already contained (GitHub-merged) | — |
 | #168 (contains #137's 3 later commits) | `0fd430f3` | merged via `wip/join-168`; three seams resolved toward the stronger mechanism (verified answers on the path surface, founder tier for met-ahead, the sealed oracle over a weakened evaluator) | `1b48ab7f`, joined at the merge after `5d9a43c7`; owned source `a07cdc3e` |
+| #201 evidence-soundness patch (`session_013k41DnwrjzpXL33r3j9BgB`) | `cb5d8647`; follow-up `962fdd3a` | applied; the refusal watch marks inconclusive observations | `3d2f9cc4`, `8d0a2303` |
+| Construction decision (relaxation fix) | `7276de8f` | merged | `8befbc71`, loop map `78da0332` |
 
 ## Conflict decisions
 
@@ -101,16 +103,32 @@ that was 13 PRs, plus the deltas listed under Pending.
 | `4bdcbeb5` | P6, ledger, evidence index, convergence, mind status and path tests (local) | 320 passed |
 | `ac84ad7d` | appraisal closure, discovery and every discovery-using test (local) | 29 + 75 passed; 3 failed before |
 | `wip/join-168` `1b48ab7f` | #168's affected suites (local); worker appraisal mutation gate | 432 passed, 1 load-sensitive failure that passes 44/44 in three reruns; 7 of 7 mutants caught |
+| `a0109641` | Canonical CI | job 9 V2: `test_frontier_backcasts` (P5 cited stale results; fixed `3b7f4436`) and 5 evidence-strength failures on a runner without usable bubblewrap (fixed `9e12b9a6`) |
+| `9e12b9a6` | evidence-strength tests with bubblewrap blocked, then real (local) | 5 failed before the fixture, 10 passed after; 79 passed with real bubblewrap |
+| `8befbc71` | construction-decision tests on `9e12b9a6`'s compiler vs the fix (local) | fails on base (closure spends 9 against a cap of 5), 2 passed with the fix; 105 compiler, construction, recombine, budgeted and portfolio tests pass; 2 new mutants caught |
+| `78da0332` | **Canonical CI** | **all 9 jobs success**, the first fully green head of this candidate (job 1 full suite 65 min; job 6 every mutation gate; job 8 one machine with real organs; job 9 V1-V5) |
+| `8d0a2303` | #201 decided-fields follow-up: incomplete evidence, missions, appraisal closure, Goal Gravity, restore fold (local) | 186 passed; 16 mutation anchors in `greg/missions.py` intact; Canonical CI running |
 
 Organs: DALEOBANKS `667439f`, WealthMachine `ec82b80` (CI pins, unchanged; neither organ moved its pinned code).
 
 ## Dispatched
 
-- **§14 antifragility v3 (condition-specific competence):** accepted by `session_01GRT2jX7cQXwvMkn64ZgvLk` (#96).
-  - Design: a 36-mission stress set and a fresh holdout; the compute-matched control B1 is the kill rule, the shuffled
-    condition is required for GAIN, the LOW floor is 0, and GAIN needs p < 0.05.
-  - Seeds come from 6000-6999. Hooks are on `claude/antifragility-v3-condition-competence`.
-  - Nothing is frozen or run until this candidate's head settles.
+- **§14 antifragility v3 (condition-specific competence):** run by `session_01GRT2jX7cQXwvMkn64ZgvLk` (#202), frozen
+  `4229fe1b` on `9e12b9a6`, run once. Verdict **NO_GAIN**, accepted by the owner with no rerun:
+  - the pre-registered 20-d cell was 11-6 discordant, p 0.17 against the required p < 0.05;
+  - every arm equals PRE at 66/100 on the holdout;
+  - the compute-matched control B1 was invalid as run;
+  - the split by objective that suggested where gain might live is post hoc and claims nothing;
+  - `78da0332` cannot touch this request shape: routing is byte-identical on the pilot seeds.
+- **v3b approved under conditions** (design `533020e4`, frozen `07b9f128` on a tree containing `78da0332`; no v3b
+  mission or holdout instance had run at freeze):
+  - condition key `dimension_objective`, read from the request only;
+  - coarser readers merge finer evidence;
+  - the shuffle control permutes objectives under a seed;
+  - fresh seeds 6100-6219 (stress) and 6300-6319 (holdout), none drawn before;
+  - B1 is the best-of-k incumbent within the accepted compute budget;
+  - power 0.935 at 24 stress per objective and 20 holdout per cell;
+  - declared the last experiment in this line; a NO_GAIN closes it.
 
 ## Self-review
 
@@ -140,15 +158,51 @@ This is one agent working through five lenses. It is not independent review.
 - Attack 2: Alfonso cannot review a 1000-commit stack. Answer: the review unit is this record's decision table, plus
   CI and acceptance on one head. Merge stays his decision.
 
-## Pending
+## Ten-item handoff (2026-10-22, head `8d0a2303`)
 
-- CI green on the joined head (#168 included).
-- One mission across all 15 steps (`LOOP-15-MAP-2026-10-22.md`). Today the steps are shown across three episodes.
-- A decision changed by settled construction outcomes. This needs at least 10 outcomes on two competing fits.
-- Natural-family recipe lifts (F5-F8) re-measured on the joined code. This needs fresh natural data, and the network
-  policy blocks the NYC TLC source.
-- Antifragility v3 freeze and run (dispatched).
-- Device acceptance (founder). #182 (founder signature). Decisions D1-D8 in `FOUNDER-ACTIONS-2026-10-22.md`.
+1. **New integrated capability.** One CI-checked tree now holds every verified open increment: #192's machine, the
+   portfolio chain, Cortex 0.2.2, Track B, #179/#158, #168, #201's evidence soundness and the construction-decision
+   fix. On it, GREG:
+   - answers a capped portfolio question only with a method that honours the cap; before, a certified uncapped plan
+     spending 9 against a cap of 5 closed ACHIEVED;
+   - settles a construction's verified answer under its own id, and those settled outcomes reorder later compiles;
+   - closes a check only on what the retained evidence proves, re-observing and then asking the founder when it
+     cannot decide;
+   - names the exact commit a founder-device acceptance ran.
+   Live VPL on this tree is 3 (F1, F2R, F4); control, game and information routing is re-admitted.
+2. **Requirement-to-evidence inventory.** `docs/opus-maximus/FOUNDER_INTENT_COVERAGE_MATRIX.md` §5, one row per
+   requirement, each with its path, tier, command, owner and next action. No row reaches FOUNDER-DEVICE or EXTERNAL.
+3. **Exact revisions.** Base #192 `397a38e3`; head `8d0a2303`; 36 first-parent commits. Source heads are pinned in
+   the intake table above.
+4. **Changes and rationale.** The intake table, the conflict decisions (both defenses kept at every seam) and
+   defects 1-6, each fixed with a test that fails without the fix.
+5. **Independent review status.** Track B's 21-file join had an independent reviewer per coupled group. The #168
+   join, the #201 patches and this record are self-reviewed (five lenses, two passes), not independently reviewed.
+   #196 has no human review. Merge is the founder's.
+6. **Validation and negatives.** Canonical CI all 9 jobs green on `78da0332`; `8d0a2303` running. Negatives kept:
+   antifragility NO_GAIN three times; F3 NO_LIFT; probabilistic reads differently in two runs; construction outcomes
+   reorder compiles, but there is no positive dividend yet; one load-sensitive test failure that passes on rerun.
+7. **Remaining engineering work.**
+   - One mission across all 15 steps (`LOOP-15-MAP-2026-10-22.md`; today three episodes).
+   - A positive construction dividend: realized outcomes bound to construction receipts, so a certified construction
+     can settle as wrong.
+   - Antifragility v3b: run once (frozen).
+   - #158 genome admission v8 (seeds 1700-1729): intake after it runs.
+   - Per-geometry pooling of settled competence (a stated limitation).
+   - A third probabilistic operation run.
+8. **Irreducible founder or external actions.**
+   - Founder-device acceptance on the Chromebook (`FOUNDER-ACTIONS-2026-10-22.md` §1). VEPMC moves only on it.
+   - #182: founder signature.
+   - D1-D8 in `FOUNDER-ACTIONS-2026-10-22.md`, including network allowance for `huggingface.co`, `ollama.com` and
+     the NYC TLC source (local-model baselines; F5-F8 natural data).
+   - Merge of #196 into #192, and onward.
+9. **Next assignment.**
+   - Integration owner (`session_01FBS4KNJR59nSbdGbxo8Mbx`): CI on `8d0a2303`, then the single 15-step mission.
+   - `session_01GRT2jX7cQXwvMkn64ZgvLk`: run v3b once and report on #96.
+   - `session_013k41DnwrjzpXL33r3j9BgB`: license qualification before attach (its draft PR).
+   - Alfonso: device acceptance first; it is the one action that moves VEPMC.
+10. **Full-machine verdict: NOT complete.** BODY + ORGANS + MIND are integrated and green in a sandbox. Nothing has
+    run on the founder device or in the world. VEPMC **0**.
 
 ## Rollback
 

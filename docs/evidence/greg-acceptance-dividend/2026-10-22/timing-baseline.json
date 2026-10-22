@@ -40,16 +40,16 @@
      1,
      1
     ],
-    "median_seconds": 0.428,
+    "median_seconds": 0.299,
     "seconds": [
-     0.441,
-     0.428,
-     0.427,
-     0.431,
-     0.425
+     0.299,
+     0.304,
+     0.302,
+     0.297,
+     0.297
     ]
    },
-   "wall_seconds": 13.4,
+   "wall_seconds": 8.7,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -88,16 +88,16 @@
      1,
      1
     ],
-    "median_seconds": 0.422,
+    "median_seconds": 0.268,
     "seconds": [
-     0.401,
-     0.59,
-     0.479,
-     0.422,
-     0.368
+     0.262,
+     0.293,
+     0.266,
+     0.268,
+     0.272
     ]
    },
-   "wall_seconds": 9.6,
+   "wall_seconds": 6.3,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"

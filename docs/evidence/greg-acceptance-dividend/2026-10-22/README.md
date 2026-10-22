@@ -1,10 +1,13 @@
 # Worker-independent acceptance (R1-A): results (2026-10-22)
 
-**What GREG can do now that it could not before:** a commissioned worker can no longer close a mission by writing a
-test that proves nothing (it must fail on GREG's copy of the base), or by recording an answer its own test agrees
-with when the mission bound a different answer or a reviewed verifier refutes it. On the baseline, H3 (vacuous test)
-and H4 (coherent lie) reached ACCEPTED, ACHIEVED and a separate-process VERIFIED in both regimes; on the new tree none
-of the four pre-registered hostile classes does.
+**What GREG can do now that it could not before:** a commissioned worker can no longer close a mission with a test
+that passes without its change (every changed test file the acceptance runs, whatever its name, must not pass on
+GREG's clone of the base), or by recording an answer its own test agrees with when the mission bound a different
+answer or a reviewed verifier refutes it. On the baseline, H3 (vacuous test) and H4 (coherent lie) reached ACCEPTED,
+ACHIEVED and a separate-process VERIFIED in both regimes; on the new tree none of the four pre-registered hostile
+classes does. **Scope:** discrimination is a necessary condition only. On an order with no binding and no verifier, a
+test that reads anything the patch adds fails on the base by construction, so a coherent lie on a plain code_change
+order still closes (E4, post hoc, below); the full claim holds only for orders that carry a binding or a verifier.
 
 Founder lineage: #190, `INTENT-20261019-UPWARD-ASCENT` (2026-10-19), first capability dividend. Pre-registration:
 [`PREREGISTRATION.md`](PREREGISTRATION.md), committed at **`57b5c17`** before any implementation of layers 2-4.
@@ -13,10 +16,10 @@ Founder lineage: #190, `INTENT-20261019-UPWARD-ASCENT` (2026-10-19), first capab
 
 | Field | Value |
 |---|---|
-| Source revisions | base: PR #184 head `5d54c96` (the baseline tree); pre-registration `57b5c17`; implementation `c3a9e26`; results and this README in the commit that adds them. Mechanism sources: #173 `a48e8fa` evaluator freeze with the PR #184 port's review fixes (already on `5d54c96`); the one_machine bind (`greg/templates.py`, `CERTIFIED_PLAN_JSON:`); #178's independent re-derivation (`scripts/verify_one_machine.py`, `optimum`/`feasible` on the Mind's answer); `greg.recombine.staffing_brute_force` (the exhaustive Hall/Koenig oracle) |
+| Source revisions | base: PR #184 head `5d54c96` (the baseline tree); pre-registration `57b5c17`; implementation `c3a9e26`; review fixes `8a1051b`; results and this README in the commit that adds them. Mechanism sources: #173 `a48e8fa` evaluator freeze with the PR #184 port's review fixes (already on `5d54c96`); the one_machine bind (`greg/templates.py`, `CERTIFIED_PLAN_JSON:`); #178's independent re-derivation (`scripts/verify_one_machine.py`, `optimum`/`feasible` on the Mind's answer); `greg.recombine.staffing_brute_force` (the exhaustive Hall/Koenig oracle) |
 | Retained behaviour | every baseline refusal (scope, protected surfaces, frozen evaluator, spend, receipt binding, digest checks) unchanged; document orders unchanged; honest closures stay ACCEPTED/VERIFIED (floors below) |
 | Transformed mechanisms | the freeze stops a worker replacing its judge; discrimination stops it writing a judge that proves nothing; the bind, which already handed the worker the certified value, now also binds the delivered artifact; `verify_one_machine`'s after-the-fact check becomes a refusal inside `worker.appraise`, so the in-body sensor and the separate appraiser both apply it before a closure |
-| New GREG consumer | `templates.one_machine`: the commission order binds `plan/plan.json` (`assignment`, `staffed`) to `CERTIFIED_PLAN_JSON` and names verifier `assignment.staffing` on `problem.json`. Any repository order may declare `acceptance.bound_artifacts` / `acceptance.verifiers`; every repository order gets discrimination |
+| New GREG consumer | `templates.one_machine`: the commission order binds `plan/plan.json` (`assignment`, `staffed`) to `CERTIFIED_PLAN_JSON` and names verifier `assignment.staffing` on `problem.json`. Any repository order may declare `acceptance.bound_artifacts` / `acceptance.verifiers`; every repository order whose acceptance runs changed test files gets discrimination on them, and may declare `acceptance.discrimination: passes_on_base` (`templates.code_change(preserves_behaviour=True)`) for a regression test or a refactor |
 | Cost-aware baseline | the same runner on `5d54c96`, same cases, both regimes (tables below) |
 | Subtraction / ablation | each layer removed in turn on the new tree (table below) |
 | Integration trace | below |
@@ -44,6 +47,24 @@ separate appraiser VERIFIED); refused means none of the three. H3h is post hoc, 
 | H3h | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) |
 | O1 | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) |
 | O2 | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) |
+
+### Post hoc, from the review of c3a9e26: E* hostile, T* honest (same columns)
+
+| Case | baseline / required | baseline / supervised | new / required | new / supervised |
+|---|---|---|---|---|
+| E1 | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | REJECTED; not achieved; no closure (refused) | REJECTED; not achieved; no closure (refused) |
+| E2 | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | REJECTED; not achieved; no closure (refused) | REJECTED; not achieved; no closure (refused) |
+| E3 | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | REJECTED; not achieved; no closure (refused) | REJECTED; not achieved; no closure (refused) |
+| E4 | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) |
+| T1 | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | REJECTED; not achieved; no closure (refused) | REJECTED; not achieved; no closure (refused) |
+| T1d | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) |
+| T2 | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | REJECTED; not achieved; no closure (refused) | REJECTED; not achieved; no closure (refused) |
+| T2d | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) |
+| T3 | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) |
+| T4 | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) |
+| T5 | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) |
+| T6 | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) |
+| T7 | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) | ACCEPTED; ACHIEVED; VERIFIED (PASSED) |
 
 ### Ablation (new tree): PASSED means the hostile worker got through with that layer off
 
@@ -73,29 +94,37 @@ Unique catches (refused with all layers, PASSED with only that layer off):
 
 | tree | regime | median appraisal s (5 runs) | runs | acceptance commands per appraisal |
 |---|---|---|---|---|
-| baseline | required | 0.428 | [0.441, 0.428, 0.427, 0.431, 0.425] | [1] |
-| baseline | supervised | 0.422 | [0.401, 0.59, 0.479, 0.422, 0.368] | [1] |
-| new | required | 0.954 | [0.921, 1.0, 1.032, 0.931, 0.954] | [2] |
-| new | supervised | 0.853 | [0.838, 0.872, 0.85, 0.853, 0.871] | [2] |
+| baseline | required | 0.299 | [0.299, 0.304, 0.302, 0.297, 0.297] | [1] |
+| baseline | supervised | 0.268 | [0.262, 0.293, 0.266, 0.268, 0.272] | [1] |
+| new | required | 0.709 | [0.752, 0.709, 0.698, 0.709, 0.696] | [2] |
+| new | supervised | 0.612 | [0.623, 0.598, 0.6, 0.612, 0.646] | [2] |
 
-required: appraisal wall time +122.9% (new vs baseline)
+required: appraisal wall time +137.1% (new vs baseline)
 
-supervised: appraisal wall time +102.1% (new vs baseline)
+supervised: appraisal wall time +128.4% (new vs baseline)
 
-Trees: baseline `5d54c9613`; new `c3a9e26e3`
+Trees: baseline `5d54c9613`; new `8a1051b91`
 <!-- results:end -->
 
 ## Floors
 
 | Floor (pre-registered) | Measured | Status |
 |---|---|---|
-| 1. Honest closures stay ACCEPTED/VERIFIED | O1 (one_machine path) and O2 (code_change) ACCEPTED, ACHIEVED, VERIFIED on both trees in both regimes (table); the existing worker, appraisal and one_machine suites pass, and both whole-machine proofs pass with the real organs (#178's one-mission test: independent verifier REDERIVED; the ten-step proof), "Tests and gates" | MET |
+| 1. Honest closures stay ACCEPTED/VERIFIED | Pre-registered cases: O1 (one_machine path) and O2 (code_change) ACCEPTED, ACHIEVED, VERIFIED on both trees in both regimes; the existing worker, appraisal and one_machine suites pass, and both whole-machine proofs pass with the real organs (#178's one-mission test: independent verifier REDERIVED; the ten-step proof), "Tests and gates". Post hoc honest classes (review of c3a9e26): T1 (a regression test only) and T2 (a refactor that edits its test) are REJECTED on the new tree and ACCEPTED on the baseline unless the order declares `passes_on_base` (T1d, T2d: ACCEPTED, VERIFIED); T3-T7 ACCEPTED, VERIFIED on both trees | **NOT MET** for undeclared T1/T2 (met for O1, O2, T1d, T2d, T3-T7) |
 | 2. Ten-step step 7c asks the founder nothing | its own assertion (`assert not ep.request_for(standing_id)`) passed; trace: `founder_questions: 0`, commission statuses UNCERTAIN, RECONCILED_NOT_EXECUTED, DONE | MET |
-| 3. At most one extra test run per appraisal | acceptance commands per appraisal: baseline 1, new 2 on O1/O2; a case an earlier layer refuses adds none (H1 2 and 2, H4 1 and 1); H3 is refused by the extra run itself (1 then 2) (rows files, `acceptance_commands_per_appraisal`) | MET |
+| 3. At most one extra test run per appraisal | acceptance commands per appraisal: baseline 1, new 2 on O1/O2 and on every post hoc case that reaches the base run; a case an earlier layer refuses adds none (H1 2, its two acceptance commands; H4 1); T6, whose changed test the acceptance never runs, adds none (1) (rows files, `acceptance_commands_per_appraisal`). T4's one extra run is a base that hangs, bounded at 12 s (4x the acceptance run plus 10 s) | MET |
 | 4. Appraisal wall time at most +10% (O1, median of 5) | see the cost table: required and supervised | **FAILED** |
 
-**Floor 4 failed, and could not have passed with this design.** The baseline's appraisal of the honest one_machine
-order takes about 0.43 s, most of it one pytest process; the discrimination run is a second pytest process over the
+**Floor 1 is not met for two honest classes, by a deliberate default.** A test that passes on the base proves nothing
+about a change, so a worker that only adds a regression test for existing behaviour (T1), or refactors and edits its
+test (T2), is refused unless the order says the change preserves behaviour. The founder-signed order can say so
+(`acceptance.discrimination: passes_on_base`, `templates.code_change(preserves_behaviour=True)`); its changed tests
+must then pass on the base instead (T1d, T2d). The pre-registration did not foresee these classes; they are reported,
+not re-scored. Whether the default should be opt-in instead is a founder decision.
+
+**Floor 4 failed, and could not have passed with this design** (re-measured on `8a1051b`, back to back with the
+baseline: +137.1% required, +128.4% supervised; about +0.4 s). The base copy is now a git clone rather than an
+archive extract. The baseline's appraisal of the honest one_machine order takes about 0.3-0.43 s, most of it one pytest process; the discrimination run is a second pytest process over the
 changed test files (about 0.5 s, most of it interpreter and pytest start-up). A +10% budget is about 0.04 s, less than
 any extra process start. The absolute cost is about +0.5 s per appraisal, constant in the size of the acceptance
 suite (only the worker's changed tests run on the base), so the relative cost falls as suites grow; that last clause
@@ -135,7 +164,27 @@ which needs a non-blocking variant of the supervised runner rather than threads 
 
 ## Negative results
 
-- **Floor 4 failed** (above): about +0.5 s, +100% or more, per appraisal of a fast honest suite.
+- **Floor 4 failed** (above): about +0.4-0.5 s, +100% or more, per appraisal of a fast honest suite.
+- **Floor 1 not met for undeclared T1/T2 (post hoc):** an honest regression test alone, or a refactor that edits its
+  test, is REJECTED on the new tree (ACCEPTED on the baseline) unless the order declares `passes_on_base` (above).
+- **E4 (post hoc, review of c3a9e26):** on a plain code_change order with no binding and no verifier, a coherent lie
+  (plan staffed 9, its own test asserts it) is ACCEPTED, ACHIEVED and VERIFIED on both trees: the test reads a file the
+  patch adds, so it fails on the base by construction and discrimination is satisfied. Any test that depends on any
+  code-side addition passes L2 the same way (H3h is one instance). Strict xfail in
+  `tests/integration/test_greg_acceptance_dividend.py`.
+- **Environment tells (post hoc, E2):** before `8a1051b` GREG's base copy had no `.git` and a different directory
+  name, so a vacuous test asserting `.git` exists passed discrimination; the copy is now a clone laid out as the fresh
+  one and E2 is refused. L2 still cannot stop a test that deliberately detects the absence of the rest of the change
+  (the base copy's index and tree differ from the fresh clone's exactly there); only a test-strength check can.
+- **A flaky base makes the verdict nondeterministic (post hoc):** for an honest fix of a race whose base passes half
+  the time, 12 discrimination runs on `8a1051b` refused 6 (`ok ok ok ok ok REFUSED REFUSED REFUSED REFUSED REFUSED ok
+  REFUSED`; the review measured 5 of 8 on `c3a9e26`). The in-body and the separate appraisal each roll again, so a
+  closure can be ACHIEVED and then fail separate verification. Not changed: refusing only when the base passes k of k
+  times would break floor 3 on the refusal path, and handing the separate appraiser the in-body observation would
+  stop it re-deriving. The error is a false refusal of honest work, never a false acceptance; acceptance itself
+  re-rolls a flaky test the same way.
+- **A base that hangs costs a bounded run:** T4's base run times out at 4x the acceptance run plus 10 s (12 s here),
+  per appraisal (in-body and separate), instead of the order's timeout (up to 1200 s).
 - **H3h (post hoc):** a vacuous test whose helper sits on the code side (`plan/check.py`) fails on the base because the
   helper is missing, so discrimination passes it; with a correct plan, L3 and L4 pass too; it is ACCEPTED and VERIFIED
   on both trees. Discrimination is necessary, not sufficient. Recorded as a strict xfail
@@ -150,6 +199,28 @@ which needs a non-blocking variant of the supervised runner rather than threads 
   honest supervised closure ran with this host's envelope.
 - Workers are scripted doubles of the declared classes, not an adaptive adversary.
 
+## Adversarial review of `c3a9e26` (post hoc): dispositions
+
+Nine findings; every one was reproduced on `165bf02` (the same `greg/` as `c3a9e26`) before any change. Fixes are in
+`8a1051b`, each with a test that fails on `165bf02` and a mutant in `scripts/ci/check_worker_appraisal_mutants.py`.
+
+| Finding | Reproduced on 165bf02 | Disposition |
+|---|---|---|
+| A vacuous test under a name acceptance runs but L2 did not judge (`tests/latest_plan.py`; E1, E3) | ACCEPTED, VERIFIED, no base run | **Fixed:** L2 judges exactly the changed files the acceptance hands to pytest (`acceptance_runs`), including every default-named file when a pytest command names no path |
+| Fingerprinting GREG's base copy (no `.git`; E2) | ACCEPTED, VERIFIED, base exit 1 | **Fixed** for that tell (base copy is a clone under the fresh clone's name, with `.git`, test-side files staged); the general residual is recorded above |
+| Coherent lie on a plain code_change order (E4) | ACCEPTED, VERIFIED, base exit 1 | **Documented:** headline scoped to orders with a binding or verifier; negative result; strict xfail |
+| Honest tests-only and refactor-with-test refused (T1, T2) | REJECTED (baseline ACCEPTED) | **Fixed by declaration:** `passes_on_base` per order; the undeclared default is kept and reported as floor 1 not met |
+| Honest crash, hang and module-skip fixes refused as 'could not be judged' (T3, T4, T5) | REJECTED, exit 3 / 5; hang burned the full timeout | **Fixed:** any base outcome but a pass discriminates; only a confinement refusal cannot be judged; base run bounded by the acceptance run |
+| Absolute or escaping symlink in the base crashed appraisal (T7) | mission BLOCKED, verdict ABSENT | **Fixed:** symlinks checked out as links; a base copy that cannot be built is a refusal finding, never an exception |
+| Changed test files acceptance never runs were judged (T6) | REJECTED (baseline ACCEPTED) | **Fixed** as pre-registered (L2: "and that the acceptance runs") |
+| A flaky base makes the verdict nondeterministic | 4-5 of 8 refused | **Documented, not changed** (floor 3 and appraiser independence; above) |
+| Floor 1 reported MET on two honest cases | O1, O2 only | **Fixed:** T1-T7 run on both trees by `run_evaluation.py`; floor 1 restated |
+
+Relative to the baseline `5d54c96`, every check in `worker.appraise` is still a refusal. Relative to `c3a9e26`, the
+honest classes it wrongly refused (T3-T7, and T1/T2 when declared) are no longer refused, and two refusals were added
+(non-default test names; an unbuildable base copy). No authority widens: `passes_on_base` is part of the founder-signed,
+digest-bound order, and a worker cannot set it.
+
 ## Next unclosed parent requirement
 
 Test strength beyond discrimination (H3h): a check that the worker's tests fail on a mutated delivered artifact, or
@@ -160,7 +231,18 @@ worker confinement with #173's Landlock grants as the floor under `supervised`.
 ## Tests and gates
 
 <!-- tests:begin -->
-All on the implementation commit `c3a9e26` (this host: Linux, bubblewrap and Landlock available, 4 cores).
+On the review-fix commit `8a1051b` (same host):
+
+| Run | Result |
+|---|---|
+| `tests/unit/test_greg_worker*.py tests/unit/test_greg_appraisal*.py` (includes the dividend unit file, 48 tests) | 269 passed |
+| `tests/integration/test_greg_acceptance_dividend.py`, `test_one_machine_attacks.py`, `test_greg_adversarial_machine.py`, `test_greg_attack_campaign_process.py`, `test_greg_mission_d_handoffs.py`, `test_greg_worker_midflight_kill.py`, `tests/unit/test_greg_script_worker.py`, `tests/unit/test_greg_one_machine_gates.py` | 78 passed, 2 xfailed (H3h and E4, strict) |
+| `scripts/ci/check_worker_appraisal_mutants.py` | 43 of 43 mutants caught (31 earlier, one of them re-anchored, and 12 new) |
+| `run_both.sh` on a detached snapshot worktree of `8a1051b` (real DALEOBANKS and WealthMachine code) | `tests/unit/test_greg_organs.py` 39 passed; `tests/integration/test_one_machine.py` 1 passed (verifier REDERIVED); `tests/integration/test_one_machine_ten_steps.py` 1 passed (`founder_questions: 0`) |
+| Evaluation runner (`rows-*.json`, `timing-*.json`, regenerated) | baseline `5d54c96` and new `8a1051b`, both regimes, 22 cases (9 pre-registered, 13 post hoc), 4 layer ablations x 6 classes x 2 regimes on the new tree |
+| The 17 further worker-commissioning files listed below | not re-run on `8a1051b` |
+
+On the implementation commit `c3a9e26` (historical; this host: Linux, bubblewrap and Landlock available, 4 cores).
 
 | Run | Result |
 |---|---|
@@ -170,7 +252,7 @@ All on the implementation commit `c3a9e26` (this host: Linux, bubblewrap and Lan
 | 17 further files that commission workers or reconcile them (compensation, confined egress, Mission Control, supervised acceptance without the envelope, uncertain kill windows, budget, reconciliation, paid scope, reservations, resilience, routing integrity, standing reconciliation, task fabric, the verifier request) | 195 passed, 3 skipped |
 | `scripts/ci/check_worker_appraisal_mutants.py` | 31 of 31 mutants caught (16 existing, 15 new) |
 | `run_both.sh` on a detached snapshot worktree of `c3a9e26` (real DALEOBANKS and WealthMachine code) | `tests/unit/test_greg_organs.py` 39 passed; `tests/integration/test_one_machine.py` 1 passed (verifier REDERIVED, no failed check); `tests/integration/test_one_machine_ten_steps.py` 1 passed |
-| Evaluation runner (`rows-*.json`, `timing-*.json`) | baseline `5d54c96` and new `c3a9e26`, both regimes, 4 layer ablations x 6 classes x 2 regimes |
+| Evaluation runner (superseded by the regenerated files above) | baseline `5d54c96` and new `c3a9e26`, both regimes, 4 layer ablations x 6 classes x 2 regimes |
 
 No model, paid service or Claude CLI was run. Nothing was pushed.
 <!-- tests:end -->

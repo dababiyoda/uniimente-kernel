@@ -20,7 +20,7 @@
     ],
     "passed": false,
     "returncode": 1,
-    "seconds": 0.44
+    "seconds": 0.32
    },
    "case": "H1",
    "final_verdict": "ACCEPTED",
@@ -39,7 +39,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 5.1,
+   "wall_seconds": 3.4,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -65,7 +65,7 @@
     ],
     "passed": true,
     "returncode": 0,
-    "seconds": 0.44
+    "seconds": 0.32
    },
    "case": "H2",
    "final_verdict": "REJECTED",
@@ -83,7 +83,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 2.6,
+   "wall_seconds": 1.7,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -110,7 +110,7 @@
     ],
     "passed": true,
     "returncode": 0,
-    "seconds": 0.39
+    "seconds": 0.27
    },
    "case": "H3",
    "final_verdict": "REJECTED",
@@ -129,7 +129,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 4.0,
+   "wall_seconds": 2.6,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -165,7 +165,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.1,
+   "wall_seconds": 2.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -198,7 +198,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.3,
+   "wall_seconds": 2.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -230,7 +230,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 1.6,
+   "wall_seconds": 1.0,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -261,7 +261,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 2.8,
+   "wall_seconds": 1.9,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -292,7 +292,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 1.8,
+   "wall_seconds": 1.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -326,7 +326,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 8.7,
+   "wall_seconds": 5.3,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -362,7 +362,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.1,
+   "wall_seconds": 2.2,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -395,7 +395,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.3,
+   "wall_seconds": 2.2,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -427,7 +427,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 1.6,
+   "wall_seconds": 1.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -458,7 +458,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 2.9,
+   "wall_seconds": 2.0,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -489,7 +489,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 1.7,
+   "wall_seconds": 1.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -516,7 +516,7 @@
     ],
     "passed": true,
     "returncode": 0,
-    "seconds": 0.4
+    "seconds": 0.27
    },
    "case": "H3",
    "final_verdict": "REJECTED",
@@ -535,7 +535,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 4.5,
+   "wall_seconds": 2.8,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -569,7 +569,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.5,
+   "wall_seconds": 5.6,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -596,7 +596,7 @@
     ],
     "passed": false,
     "returncode": 1,
-    "seconds": 0.44
+    "seconds": 0.33
    },
    "case": "H4b",
    "final_verdict": "ACCEPTED",
@@ -616,7 +616,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 9.4,
+   "wall_seconds": 11.9,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -648,7 +648,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 1.6,
+   "wall_seconds": 1.2,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -679,7 +679,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 2.7,
+   "wall_seconds": 1.9,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -710,7 +710,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 1.7,
+   "wall_seconds": 1.2,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -737,7 +737,7 @@
     ],
     "passed": true,
     "returncode": 0,
-    "seconds": 0.39
+    "seconds": 0.27
    },
    "case": "H3",
    "final_verdict": "REJECTED",
@@ -756,7 +756,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 4.0,
+   "wall_seconds": 2.8,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -790,7 +790,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.2,
+   "wall_seconds": 2.2,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -823,7 +823,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.2,
+   "wall_seconds": 2.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -849,7 +849,7 @@
     ],
     "passed": false,
     "returncode": 1,
-    "seconds": 0.43
+    "seconds": 0.28
    },
    "case": "H4v",
    "final_verdict": "ACCEPTED",
@@ -868,7 +868,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 3.6,
+   "wall_seconds": 2.3,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -894,7 +894,7 @@
     ],
     "passed": false,
     "returncode": 1,
-    "seconds": 0.37
+    "seconds": 0.26
    },
    "case": "H1",
    "final_verdict": "ACCEPTED",
@@ -913,7 +913,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 4.6,
+   "wall_seconds": 3.3,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -939,7 +939,7 @@
     ],
     "passed": true,
     "returncode": 0,
-    "seconds": 0.42
+    "seconds": 0.32
    },
    "case": "H2",
    "final_verdict": "REJECTED",
@@ -957,7 +957,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 2.4,
+   "wall_seconds": 1.7,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -984,7 +984,7 @@
     ],
     "passed": true,
     "returncode": 0,
-    "seconds": 0.37
+    "seconds": 0.26
    },
    "case": "H3",
    "final_verdict": "REJECTED",
@@ -1003,7 +1003,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.6,
+   "wall_seconds": 2.6,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1039,7 +1039,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 2.9,
+   "wall_seconds": 2.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1072,7 +1072,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 2.9,
+   "wall_seconds": 2.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1104,7 +1104,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 1.4,
+   "wall_seconds": 1.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1135,7 +1135,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 2.4,
+   "wall_seconds": 1.8,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1166,7 +1166,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 1.4,
+   "wall_seconds": 1.0,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1200,7 +1200,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 8.1,
+   "wall_seconds": 5.8,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -1236,7 +1236,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.0,
+   "wall_seconds": 2.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1269,7 +1269,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.2,
+   "wall_seconds": 2.2,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1301,7 +1301,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 1.4,
+   "wall_seconds": 1.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1332,7 +1332,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 2.5,
+   "wall_seconds": 1.9,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1363,7 +1363,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 1.5,
+   "wall_seconds": 1.2,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1390,7 +1390,7 @@
     ],
     "passed": true,
     "returncode": 0,
-    "seconds": 0.37
+    "seconds": 0.26
    },
    "case": "H3",
    "final_verdict": "REJECTED",
@@ -1409,7 +1409,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.7,
+   "wall_seconds": 2.7,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1443,7 +1443,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.1,
+   "wall_seconds": 2.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1470,7 +1470,7 @@
     ],
     "passed": false,
     "returncode": 1,
-    "seconds": 0.37
+    "seconds": 0.26
    },
    "case": "H4b",
    "final_verdict": "ACCEPTED",
@@ -1490,7 +1490,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 8.5,
+   "wall_seconds": 5.7,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -1522,7 +1522,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 1.4,
+   "wall_seconds": 1.0,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1553,7 +1553,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 2.5,
+   "wall_seconds": 1.8,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1584,7 +1584,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 1.6,
+   "wall_seconds": 1.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1611,7 +1611,7 @@
     ],
     "passed": true,
     "returncode": 0,
-    "seconds": 0.37
+    "seconds": 0.26
    },
    "case": "H3",
    "final_verdict": "REJECTED",
@@ -1630,7 +1630,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.9,
+   "wall_seconds": 2.6,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1664,7 +1664,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.1,
+   "wall_seconds": 2.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1697,7 +1697,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.2,
+   "wall_seconds": 2.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1723,7 +1723,7 @@
     ],
     "passed": false,
     "returncode": 1,
-    "seconds": 0.42
+    "seconds": 0.26
    },
    "case": "H4v",
    "final_verdict": "ACCEPTED",
@@ -1742,7 +1742,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 3.3,
+   "wall_seconds": 2.3,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -1750,7 +1750,7 @@
   }
  ],
  "dirty_greg_or_tests": false,
- "head": "c3a9e26e322d51d07159fe4fe2dc10673fa6135a",
+ "head": "8a1051b91e88fc6b26930e2a28765bf52b270b5e",
  "kernel": "/home/user/uk-r1a",
  "label": "new",
  "python": "3.13.16",
@@ -1780,7 +1780,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 2.7,
+   "wall_seconds": 1.9,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1811,7 +1811,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 1.6,
+   "wall_seconds": 1.0,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1838,7 +1838,7 @@
     ],
     "passed": true,
     "returncode": 0,
-    "seconds": 0.43
+    "seconds": 0.27
    },
    "case": "H3",
    "final_verdict": "REJECTED",
@@ -1857,7 +1857,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 7.5,
+   "wall_seconds": 4.8,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1893,7 +1893,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.3,
+   "wall_seconds": 2.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1926,7 +1926,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.5,
+   "wall_seconds": 2.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1958,7 +1958,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 2.0,
+   "wall_seconds": 1.0,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -1985,7 +1985,7 @@
     ],
     "passed": false,
     "returncode": 2,
-    "seconds": 0.5
+    "seconds": 0.32
    },
    "case": "H3h",
    "final_verdict": "ACCEPTED",
@@ -2003,7 +2003,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 10.5,
+   "wall_seconds": 6.7,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -2030,7 +2030,7 @@
     ],
     "passed": false,
     "returncode": 2,
-    "seconds": 0.49
+    "seconds": 0.47
    },
    "case": "O1",
    "final_verdict": "ACCEPTED",
@@ -2048,7 +2048,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 9.7,
+   "wall_seconds": 10.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -2074,7 +2074,7 @@
     ],
     "passed": false,
     "returncode": 2,
-    "seconds": 0.49
+    "seconds": 0.37
    },
    "case": "O2",
    "final_verdict": "ACCEPTED",
@@ -2091,7 +2091,562 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 4.3,
+   "wall_seconds": 2.9,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    0,
+    2,
+    2
+   ],
+   "achieved": false,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/latest_plan.py"
+    ],
+    "passed": true,
+    "returncode": 0,
+    "seconds": 0.27
+   },
+   "case": "E1",
+   "final_verdict": "REJECTED",
+   "findings": [
+    "the worker's tests ['tests/latest_plan.py'] pass on the recorded base without its change: they prove nothing about it",
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:one-machine-r1a-e1",
+   "regime": "required",
+   "separate_appraiser": null,
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "BLOCKED",
+    "WAITING"
+   ],
+   "timing": null,
+   "wall_seconds": 2.6,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "REJECTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    0,
+    2,
+    2
+   ],
+   "achieved": false,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_plan.py"
+    ],
+    "passed": true,
+    "returncode": 0,
+    "seconds": 0.32
+   },
+   "case": "E2",
+   "final_verdict": "REJECTED",
+   "findings": [
+    "the worker's tests ['tests/test_plan.py'] pass on the recorded base without its change: they prove nothing about it",
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:one-machine-r1a-e2",
+   "regime": "required",
+   "separate_appraiser": null,
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "BLOCKED",
+    "WAITING"
+   ],
+   "timing": null,
+   "wall_seconds": 2.7,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "REJECTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": false,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/latest_plan.py"
+    ],
+    "passed": true,
+    "returncode": 0,
+    "seconds": 0.27
+   },
+   "case": "E3",
+   "final_verdict": "REJECTED",
+   "findings": [
+    "the worker's tests ['tests/latest_plan.py'] pass on the recorded base without its change: they prove nothing about it",
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": null,
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "BLOCKED",
+    "WAITING"
+   ],
+   "timing": null,
+   "wall_seconds": 1.7,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "REJECTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": true,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_plan.py"
+    ],
+    "passed": false,
+    "returncode": 1,
+    "seconds": 0.32
+   },
+   "case": "E4",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 2.8,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": false,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_calc.py"
+    ],
+    "passed": true,
+    "returncode": 0,
+    "seconds": 0.27
+   },
+   "case": "T1",
+   "final_verdict": "REJECTED",
+   "findings": [
+    "the worker's tests ['tests/test_calc.py'] pass on the recorded base without its change: they prove nothing about it",
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": null,
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "BLOCKED",
+    "WAITING"
+   ],
+   "timing": null,
+   "wall_seconds": 1.6,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "REJECTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": true,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_calc.py"
+    ],
+    "passed": true,
+    "returncode": 0,
+    "seconds": 0.33
+   },
+   "case": "T1d",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 2.8,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": false,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_calc.py"
+    ],
+    "passed": true,
+    "returncode": 0,
+    "seconds": 0.27
+   },
+   "case": "T2",
+   "final_verdict": "REJECTED",
+   "findings": [
+    "the worker's tests ['tests/test_calc.py'] pass on the recorded base without its change: they prove nothing about it",
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": null,
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "BLOCKED",
+    "WAITING"
+   ],
+   "timing": null,
+   "wall_seconds": 1.6,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "REJECTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": true,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_calc.py"
+    ],
+    "passed": true,
+    "returncode": 0,
+    "seconds": 0.27
+   },
+   "case": "T2d",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 2.6,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": true,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_calc.py"
+    ],
+    "passed": false,
+    "returncode": 3,
+    "seconds": 0.22
+   },
+   "case": "T3",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 2.6,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": true,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_calc.py"
+    ],
+    "passed": false,
+    "returncode": -1,
+    "seconds": 12.06
+   },
+   "case": "T4",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 39.2,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": true,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_sub.py"
+    ],
+    "passed": false,
+    "returncode": 5,
+    "seconds": 0.27
+   },
+   "case": "T5",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 2.5,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T6",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.6,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": true,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_calc.py"
+    ],
+    "passed": false,
+    "returncode": 2,
+    "seconds": 0.32
+   },
+   "case": "T7",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 2.7,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -2122,7 +2677,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 2.5,
+   "wall_seconds": 1.9,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -2153,7 +2708,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 1.5,
+   "wall_seconds": 1.2,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -2180,7 +2735,7 @@
     ],
     "passed": true,
     "returncode": 0,
-    "seconds": 0.37
+    "seconds": 0.26
    },
    "case": "H3",
    "final_verdict": "REJECTED",
@@ -2199,7 +2754,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.9,
+   "wall_seconds": 2.6,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -2235,7 +2790,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.1,
+   "wall_seconds": 2.3,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -2268,7 +2823,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 3.2,
+   "wall_seconds": 2.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -2300,7 +2855,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 1.4,
+   "wall_seconds": 1.0,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -2327,7 +2882,7 @@
     ],
     "passed": false,
     "returncode": 2,
-    "seconds": 0.47
+    "seconds": 0.31
    },
    "case": "H3h",
    "final_verdict": "ACCEPTED",
@@ -2345,7 +2900,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 9.3,
+   "wall_seconds": 6.0,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -2372,7 +2927,7 @@
     ],
     "passed": false,
     "returncode": 2,
-    "seconds": 0.47
+    "seconds": 0.31
    },
    "case": "O1",
    "final_verdict": "ACCEPTED",
@@ -2390,7 +2945,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 9.4,
+   "wall_seconds": 6.0,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -2416,7 +2971,7 @@
     ],
     "passed": false,
     "returncode": 2,
-    "seconds": 0.47
+    "seconds": 0.36
    },
    "case": "O2",
    "final_verdict": "ACCEPTED",
@@ -2433,7 +2988,562 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 3.9,
+   "wall_seconds": 2.9,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    0,
+    2,
+    2
+   ],
+   "achieved": false,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/latest_plan.py"
+    ],
+    "passed": true,
+    "returncode": 0,
+    "seconds": 0.27
+   },
+   "case": "E1",
+   "final_verdict": "REJECTED",
+   "findings": [
+    "the worker's tests ['tests/latest_plan.py'] pass on the recorded base without its change: they prove nothing about it",
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:one-machine-r1a-e1",
+   "regime": "supervised",
+   "separate_appraiser": null,
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "BLOCKED",
+    "WAITING"
+   ],
+   "timing": null,
+   "wall_seconds": 2.6,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "REJECTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    0,
+    2,
+    2
+   ],
+   "achieved": false,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_plan.py"
+    ],
+    "passed": true,
+    "returncode": 0,
+    "seconds": 0.27
+   },
+   "case": "E2",
+   "final_verdict": "REJECTED",
+   "findings": [
+    "the worker's tests ['tests/test_plan.py'] pass on the recorded base without its change: they prove nothing about it",
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:one-machine-r1a-e2",
+   "regime": "supervised",
+   "separate_appraiser": null,
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "BLOCKED",
+    "WAITING"
+   ],
+   "timing": null,
+   "wall_seconds": 2.6,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "REJECTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": false,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/latest_plan.py"
+    ],
+    "passed": true,
+    "returncode": 0,
+    "seconds": 0.26
+   },
+   "case": "E3",
+   "final_verdict": "REJECTED",
+   "findings": [
+    "the worker's tests ['tests/latest_plan.py'] pass on the recorded base without its change: they prove nothing about it",
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": null,
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "BLOCKED",
+    "WAITING"
+   ],
+   "timing": null,
+   "wall_seconds": 1.6,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "REJECTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": true,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_plan.py"
+    ],
+    "passed": false,
+    "returncode": 1,
+    "seconds": 0.26
+   },
+   "case": "E4",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 2.6,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": false,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_calc.py"
+    ],
+    "passed": true,
+    "returncode": 0,
+    "seconds": 0.26
+   },
+   "case": "T1",
+   "final_verdict": "REJECTED",
+   "findings": [
+    "the worker's tests ['tests/test_calc.py'] pass on the recorded base without its change: they prove nothing about it",
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": null,
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "BLOCKED",
+    "WAITING"
+   ],
+   "timing": null,
+   "wall_seconds": 1.6,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "REJECTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": true,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_calc.py"
+    ],
+    "passed": true,
+    "returncode": 0,
+    "seconds": 0.32
+   },
+   "case": "T1d",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 2.7,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": false,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_calc.py"
+    ],
+    "passed": true,
+    "returncode": 0,
+    "seconds": 0.26
+   },
+   "case": "T2",
+   "final_verdict": "REJECTED",
+   "findings": [
+    "the worker's tests ['tests/test_calc.py'] pass on the recorded base without its change: they prove nothing about it",
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": null,
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "BLOCKED",
+    "WAITING"
+   ],
+   "timing": null,
+   "wall_seconds": 1.7,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "REJECTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": true,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_calc.py"
+    ],
+    "passed": true,
+    "returncode": 0,
+    "seconds": 0.26
+   },
+   "case": "T2d",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 2.5,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": true,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_calc.py"
+    ],
+    "passed": false,
+    "returncode": 3,
+    "seconds": 0.21
+   },
+   "case": "T3",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 2.4,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": true,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_calc.py"
+    ],
+    "passed": false,
+    "returncode": -1,
+    "seconds": 12.06
+   },
+   "case": "T4",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 37.9,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": true,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_sub.py"
+    ],
+    "passed": false,
+    "returncode": 5,
+    "seconds": 0.26
+   },
+   "case": "T5",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 2.6,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T6",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.6,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    2,
+    2
+   ],
+   "achieved": true,
+   "base_run": {
+    "argv": [
+     "/usr/bin/python",
+     "-m",
+     "pytest",
+     "-q",
+     "-p",
+     "no:cacheprovider",
+     "tests/test_calc.py"
+    ],
+    "passed": false,
+    "returncode": 2,
+    "seconds": 0.31
+   },
+   "case": "T7",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 2.7,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"

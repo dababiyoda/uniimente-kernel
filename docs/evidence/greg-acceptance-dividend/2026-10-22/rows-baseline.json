@@ -31,7 +31,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 2.7,
+   "wall_seconds": 1.8,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -62,7 +62,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 1.7,
+   "wall_seconds": 1.0,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -94,7 +94,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 11.5,
+   "wall_seconds": 7.2,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -126,7 +126,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 9.1,
+   "wall_seconds": 4.9,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -158,7 +158,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 8.1,
+   "wall_seconds": 8.9,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -188,7 +188,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 2.6,
+   "wall_seconds": 2.0,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -220,7 +220,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 8.2,
+   "wall_seconds": 5.5,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -252,7 +252,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 8.0,
+   "wall_seconds": 4.9,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -282,7 +282,401 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 2.5,
+   "wall_seconds": 1.7,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "E1",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:one-machine-r1a-e1",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 5.3,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "E2",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:one-machine-r1a-e2",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 5.1,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "E3",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.7,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "E4",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 2.0,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T1",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.7,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T1d",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.8,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T2",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.7,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T2d",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.7,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T3",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.7,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T4",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 2.7,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T5",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.8,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T6",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.7,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T7",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "required",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.7,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -313,7 +707,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 2.6,
+   "wall_seconds": 1.7,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -344,7 +738,7 @@
     "WAITING"
    ],
    "timing": null,
-   "wall_seconds": 1.6,
+   "wall_seconds": 1.0,
    "worker_appraise_verdicts": [
     "ABSENT",
     "REJECTED"
@@ -376,7 +770,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 7.8,
+   "wall_seconds": 5.0,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -408,7 +802,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 8.0,
+   "wall_seconds": 8.8,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -440,7 +834,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 8.1,
+   "wall_seconds": 5.1,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -470,7 +864,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 2.5,
+   "wall_seconds": 1.6,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -502,7 +896,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 8.0,
+   "wall_seconds": 4.9,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -534,7 +928,7 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 8.4,
+   "wall_seconds": 4.9,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"
@@ -564,7 +958,401 @@
     "ACHIEVED"
    ],
    "timing": null,
-   "wall_seconds": 2.6,
+   "wall_seconds": 1.7,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "E1",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:one-machine-r1a-e1",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 5.0,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "E2",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:one-machine-r1a-e2",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 5.0,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "E3",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.7,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "E4",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.6,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T1",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.7,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T1d",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.9,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T2",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.8,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T2d",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.7,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T3",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.8,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T4",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.7,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T5",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 1.7,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T6",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 2.0,
+   "worker_appraise_verdicts": [
+    "ABSENT",
+    "ACCEPTED"
+   ]
+  },
+  {
+   "ablate": null,
+   "acceptance_commands_per_appraisal": [
+    0,
+    1,
+    1
+   ],
+   "achieved": true,
+   "base_run": null,
+   "case": "T7",
+   "final_verdict": "ACCEPTED",
+   "findings": [
+    "worker self-report retained as claim only; not used for this verdict"
+   ],
+   "mission_id": "m:work-attack",
+   "regime": "supervised",
+   "separate_appraiser": "VERIFIED",
+   "separate_findings": [],
+   "states": [
+    "ACTED",
+    "ACTED",
+    "ACHIEVED"
+   ],
+   "timing": null,
+   "wall_seconds": 5.0,
    "worker_appraise_verdicts": [
     "ABSENT",
     "ACCEPTED"

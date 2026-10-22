@@ -37,7 +37,7 @@ from events.spine import EventSpine
 from greg import anchor, asks, compute, dataplane, doctor, gravity, improvement, metrics, models, presence, sop, tribunal
 from greg.authority import AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityRegistry, SecretBroker
-from greg.founder import FounderAuthError, FounderVerifier, key_id, spent_nonce, validate_device_grant
+from greg.founder import FounderAuthError, FounderVerifier, instant, key_id, spent_nonce, validate_device_grant
 from greg.genesis import Genesis
 from greg.journal import Journal, iso, utcnow
 from greg.missions import MissionEngine, MissionError
@@ -78,11 +78,14 @@ CRASH_LOOP_WINDOW_SECONDS = 600
 BREAKER = "crash-loop breaker"
 RESUME_LIFTS = "a signed BODY_RESUME: the founder key, or a device key the founder delegated BODY_RESUME to"
 HOLD_ASK = "CRASH_LOOP_HOLD"  # no DECISION answers it (greg/missions.py NOT_ANSWERABLE); BODY_RESUME withdraws it
+# A body restored from a backup (greg/recovery.py) holds itself; Body._after_restore lets only the founder key lift it.
+RESTORE_LIFTS = "a BODY_RESUME signed by the founder key and issued after the restore (a device key cannot lift it)"
 
-# The separate-process appraiser (greg/appraisal.py) judges a closure VERIFIED or REFUTED. A run killed, timed out
-# or without a readable verdict judged nothing (acceptance H.G7): it is one unavailable attempt, retried on a later
-# tick, and after APPRAISAL_ATTEMPTS of them the closure is recorded appraised UNAVAILABLE (final, never VERIFIED).
-APPRAISER_VERDICTS = ("VERIFIED", "REFUTED")
+# The separate-process appraiser (greg/appraisal.py) judges a closure VERIFIED or REFUTED, and a failure closure
+# (mission.unmet) VERIFIED_UNMET or REFUTED. A run killed, timed out or without a readable verdict judged nothing
+# (acceptance H.G7): it is one unavailable attempt, retried on a later tick, and after APPRAISAL_ATTEMPTS of them the
+# closure is recorded appraised UNAVAILABLE (final, never VERIFIED).
+APPRAISER_VERDICTS = ("VERIFIED", "VERIFIED_UNMET", "REFUTED")
 APPRAISAL_ATTEMPTS = 3
 APPRAISAL_TIMEOUT_SECONDS = 120
 
@@ -123,6 +126,8 @@ def body_pauses(journal: Journal, *, pause_file: bool) -> list[dict]:
     if toggles and toggles[-1].type == "greg.body.paused":
         hold = toggles[-1].payload
         out.append({"by": BREAKER, "why": hold.get("why"), "lifted_by": RESUME_LIFTS} if hold.get("by") == BREAKER
+                   else {"by": "restore hold", "why": hold.get("reason"), "lifted_by": RESTORE_LIFTS}
+                   if "restore_id" in hold
                    else {"by": "body paused (signed BODY_PAUSE)", "lifted_by": RESUME_LIFTS})
     if pause_file:
         out.append({"by": "PAUSE file in the body home", "lifted_by": "removing that file on this machine"})
@@ -547,6 +552,7 @@ class Body:
         env = verifier.verify(envelope, now=now)
         principal = verifier.principal(env, now=now)
         kind, body = env["kind"], env["body"]
+        self._after_restore(env, kind, principal)
         # Commands are applied before the next tick's rebuild; a request raised during the
         # previous tick must already be visible, or a fast approval is refused as "unknown".
         # A STOP authenticated mid-tick (while a worker runs) must not rebuild in-flight state.
@@ -566,6 +572,24 @@ class Body:
         if kind == "DECISION":   # the answer counts from its acceptance (MissionBook): Goal Gravity reads it this tick
             self.engine.book.rebuild()
         return {"status": "APPLIED", "digest": digest, "result": result}
+
+    def _after_restore(self, env: dict, kind: str, principal: str) -> None:
+        """A body restored from a backup (greg/recovery.py) knows nothing after its recovery point: it refuses any
+        command issued before the restore, which the original may already have applied, and only the founder key
+        releases the restore hold."""
+        restores = self.journal.replay("body.restored")
+        if not restores:
+            return
+        restore = restores[-1].payload
+        if instant(env["issued_at"]) < instant(restore["restored_at"]):
+            raise FounderAuthError(f"issued before this body was restored from a backup at {restore['restored_at']}: "
+                                   "the original may already have applied it; sign it again if it is still wanted")
+        if kind == "BODY_RESUME" and principal != "founder" and self._restore_hold():
+            raise FounderAuthError("only the founder key releases a restore hold")
+
+    def _restore_hold(self) -> bool:
+        state = [e for e in self.journal.replay("body.") if e.type in ("greg.body.paused", "greg.body.resumed")]
+        return bool(state) and state[-1].type == "greg.body.paused" and "restore_id" in state[-1].payload
 
     def _dispatch(self, kind: str, body: dict, digest: str, *, principal: str = "founder",
                   envelope: dict | None = None, now: datetime | None = None):
@@ -912,7 +936,7 @@ class Body:
             if mid not in appraised:
                 self._appraise_closure(mid, None, now)
         judged = {e.payload.get("closure_event") for e in self.journal.replay("mission.appraised")}
-        for event in self.journal.replay("mission.held"):
+        for event in self.journal.replay("mission.held") + self.journal.replay("mission.unmet"):
             if event.event_id not in judged:
                 self._appraise_closure(event.payload["mission_id"], event.event_id, now)
 

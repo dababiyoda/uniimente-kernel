@@ -394,7 +394,8 @@ def solver_code(family: str) -> dict | None:
     rel = path.relative_to(ROOT).as_posix()
     bound = closure(rel, fn.__name__)
     return {"path": rel, "function": fn.__name__, "sha256": function_digest(path.read_text(), fn.__name__),
-            "closure_sha256": bound["sha256"] if bound else None, "closure_members": bound["members"] if bound else {}}
+            "closure_sha256": bound["sha256"] if bound else None, "closure_members": bound["members"] if bound else {},
+            "closure_unresolved": bound["unresolved"] if bound else []}
 
 
 def operation_status(family: str, record: dict) -> tuple[str, str | None]:
@@ -419,6 +420,19 @@ def operation_status(family: str, record: dict) -> tuple[str, str | None]:
         # the family now dispatches to another function than the one its run called (review of #179, B1)
         return "UNEVALUATED", (f"{status} was measured on {code.get('path')}::{code.get('function')}; the family now "
                                f"dispatches to {now.get('path')}::{now.get('function')}; needs re-admission")
+    dispatched = code.get("dispatched") or {}
+    if dispatched.get("runtime_disagrees"):
+        seen = dispatched["runtime_disagrees"]
+        return "UNEVALUATED", (f"{status}: the run recorded {seen.get('path')}::{seen.get('function')} at runtime, "
+                               f"not the statically bound {dispatched.get('path')}::{dispatched.get('function')}; "
+                               "nothing is bound; needs re-admission")
+    unbound = [*([f"{dispatched['unresolved_updates']} non-literal update(s) of the dispatch table at the run's "
+                  "commit, and the run recorded no runtime dispatch that confirms it"]
+                 if dispatched.get("unresolved_updates") and not dispatched.get("verified_at_runtime") else []),
+               *(code.get("closure_unresolved") or []), *(now.get("closure_unresolved") or [])]
+    if measured is not None and unbound:
+        # code the static closure cannot follow binds nothing positive (round-2 review of #179, N4)
+        return "UNEVALUATED", f"{status} cannot be bound to its code: {'; '.join(unbound)}; needs re-admission"
     if measured is None:
         return "UNEVALUATED", (f"{status} is bound to the solver's entry function only "
                                f"({code.get('sha256') or 'not recorded'}), not its dependency closure; "
@@ -438,27 +452,121 @@ def operation_status(family: str, record: dict) -> tuple[str, str | None]:
     return status, None
 
 
+RECIPE_BOUNDARY = frozenset({"greg/cognition/cortex.py::reason", "greg/cognition/bridge.py::reason_cortex"})
+
+
 def recipe_code(recipe: str, read=None) -> dict | None:
     """The executable a recipe verdict measured: the dependency closure of the function that runs the recipe
     (its operation-recipe function, or ``run`` for a template recipe) plus the digest of its RECIPES entry."""
     import hashlib
     import json as _json
     from . import code_binding
-    from .composition import OPERATION_RECIPES, RECIPES
+    from .composition import RECIPES
     read = read or code_binding.working_tree
-    fn = OPERATION_RECIPES.get(recipe)
-    bound = code_binding.closure("greg/cognition/composition.py", fn.__name__ if fn else "run", read)
+    # the function OPERATION_RECIPES bound the recipe to in that tree, never today's (round-2 review, N5 / B1)
+    then = code_binding.dispatch("greg/cognition/composition.py", "OPERATION_RECIPES", recipe, read)
+    function = "run" if then is None else then.get("function")     # no operation recipe then: the template runner
+    if function is None:
+        return None
+    # the stages run through cortex.reason, whose solvers carry their own bindings: hash it, do not follow it
+    bound = code_binding.closure((then or {}).get("path") or "greg/cognition/composition.py", function, read,
+                                 stop=RECIPE_BOUNDARY)
     if bound is None:
         return None
     entry = "sha256:" + hashlib.sha256(_json.dumps(RECIPES.get(recipe), sort_keys=True).encode()).hexdigest()
     return {"function": bound["entry"], "closure_sha256": bound["sha256"], "closure_members": bound["members"],
-            "recipe_entry_sha256": entry}
+            "closure_unresolved": bound["unresolved"], "dispatched": then, "recipe_entry_sha256": entry,
+            "stage_closures": _stage_closures(recipe, read)}
+
+
+def _stage_closures(recipe: str, read) -> dict:
+    """Each genome that can serve one of the recipe's stage operations -> its solve closure digest in that tree
+    (None when absent). The recipe's own closure stops at cortex.reason, so a behaviour change in a stage solver
+    must still stale the recipe's verdict (round-3 review of #179, finding 1)."""
+    import inspect
+    from . import code_binding
+    from .composition import RECIPES
+    from .genomes import library
+    from .catalog import FAMILIES
+    entry = RECIPES.get(recipe) or {}
+    operations = set(entry.get("operations") or ())
+    out = {}
+    for family, item in sorted(library.executables().items()):
+        if getattr(item.genome, "operation", None) not in operations:
+            continue
+        path = Path(inspect.getsourcefile(item.solve)).resolve().relative_to(ROOT).as_posix()
+        bound = code_binding.closure(path, item.solve.__name__, read)
+        out[family] = None if bound is None else bound["sha256"]
+    # operation families served through SOLVERS, resolved at that tree (round-4 review of #179, finding A)
+    genomes = library.executables()
+    for family, spec in sorted(FAMILIES.items()):
+        if family not in genomes and operations & set(spec[1]):       # genome families are bound above
+            then = code_binding.dispatch("greg/cognition/solvers.py", "SOLVERS", family, read)
+            bound = (code_binding.closure(then["path"], then["function"], read)
+                     if then and then.get("path") and then.get("function") else None)
+            out[f"solvers:{family}"] = None if bound is None else bound["sha256"]
+    if any(not k.startswith("solvers:") for k in out):
+        # genome stages run through the runtime adapter, not the bound solve (round-5 review of #179, N4)
+        for path, name in (("greg/cognition/solvers.py", "_genome_solver"), ("greg/cognition/genomes/library.py", "run")):
+            bound = code_binding.closure(path, name, read)
+            out[f"adapter:{name}"] = None if bound is None else _digest_members(bound["members"], ADAPTER_REGISTRY)
+    if out:
+        # every statement that can rebind a SOLVERS key, the forms dispatch() cannot resolve included (N4)
+        out["dispatch:SOLVERS"] = code_binding.table_statements("greg/cognition/solvers.py", "SOLVERS", read)
+    # problem-path stages served by cortex organs (template recipes); an unmapped class binds None (fails closed)
+    for klass in entry.get("stage_classes") or ():
+        for path, name in STAGE_ORGANS.get(klass, ((None, None),)):
+            bound = code_binding.closure(path, name, read) if path else None
+            out[f"organ:{klass}:{name}"] = None if bound is None else bound["sha256"]
+    if entry.get("stage_classes"):
+        # the route policy that picks a stage's organ, and every organ the cortex router can instantiate, derived
+        # from cortex.routing rather than a hand copy: an edit to any of them stales a template recipe (N4)
+        for path, name in [("cortex/routing.py", "_route_parts"), *_router_organs()]:
+            bound = code_binding.closure(path, name, read)
+            out[f"route:{name}"] = None if bound is None else bound["sha256"]
+    return out
+
+
+# The genome registry tuple decides only which genome serves a family. Each stage family is bound by its own solve
+# closure above, so a registry change that reached a stage would stale the recipe there; adding unrelated genome
+# modules must not (merge of #158 fa0d92a0 added two modules and staled every genome-stage recipe through it).
+ADAPTER_REGISTRY = frozenset({"greg/cognition/genomes/library.py::MODULES"})
+
+
+def _digest_members(members: dict, exclude: frozenset) -> str:
+    import hashlib
+    import json as _json
+    kept = {k: v for k, v in members.items() if k not in exclude}
+    return "sha256:" + hashlib.sha256(_json.dumps(kept, sort_keys=True).encode()).hexdigest()
+
+
+def _router_organs() -> list[tuple[str, str]]:
+    """(path, class) of every organ class cortex.routing imports, today."""
+    import inspect
+    import cortex.routing as routing
+    out = set()
+    for name, obj in vars(routing).items():
+        if isinstance(obj, type) and name.endswith("Organ") and obj.__module__.startswith("cortex.organs"):
+            out.add((Path(inspect.getsourcefile(obj)).resolve().relative_to(ROOT).as_posix(), obj.__name__))
+    return sorted(out)
+
+
+# The cortex organs that can serve a template recipe's problem-path stage class (cortex.routing's organ set).
+STAGE_ORGANS = {"estimate": (("cortex/organs/estimation.py", "EstimationOrgan"),),
+                "causal": (("cortex/organs/evidence_causal.py", "EvidenceCausalOrgan"),),
+                "optimization": (("cortex/organs/cpsat.py", "CpSatOrgan"), ("cortex/organs/formal.py", "FormalOrgan"))}
 
 
 @lru_cache(maxsize=None)
 def _recipe_code_now(recipe: str) -> str | None:
     now = recipe_code(recipe)
-    return None if now is None else now["closure_sha256"] + "|" + now["recipe_entry_sha256"]
+    return None if now is None else (now["closure_sha256"] + "|" + now["recipe_entry_sha256"] + "|" +
+                                     _json_stages(now.get("stage_closures")))
+
+
+def _json_stages(stages) -> str:
+    import json as _json
+    return _json.dumps(stages or {}, sort_keys=True)
 
 
 def recipe_stale(recipe: str, verdict: dict) -> str | None:
@@ -469,7 +577,13 @@ def recipe_stale(recipe: str, verdict: dict) -> str | None:
     if not code.get("closure_sha256"):
         return "the recipe code it measured is not recorded (absent from git at the run's source commit); " \
                "needs re-measurement"
-    if code["closure_sha256"] + "|" + code.get("recipe_entry_sha256", "") != _recipe_code_now(recipe):
+    unbound = [*code.get("closure_unresolved", []),
+               *([f"{code['dispatched']['unresolved_updates']} non-literal update(s) of OPERATION_RECIPES"]
+                 if (code.get("dispatched") or {}).get("unresolved_updates") else [])]
+    if unbound:
+        return f"the recipe code it measured cannot be bound: {'; '.join(unbound)}; needs re-measurement"
+    if code["closure_sha256"] + "|" + code.get("recipe_entry_sha256", "") + "|" + _json_stages(
+            code.get("stage_closures")) != _recipe_code_now(recipe):
         return f"measured on recipe code {code['closure_sha256']}; the recipe code has changed; needs re-measurement"
     return None
 
@@ -579,11 +693,43 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict, *, parts: bool
                 row["missing_inputs"] = [{"method": row["method"], "part": lacking["part"],
                                           "missing_inputs": lacking["missing_inputs"]}]
         rows.append(row)
+        if not row["rejected"]:
+            _reject_recipe_relaxations(row, recipe, rows, keys, evidence)
         if parts:
             rows += _part_rows(data, g, evidence)
+        # a single genome admitted DEFAULT against this recipe's twin, at its current version, that fits this request
+        # (a row no rule rejected, flat or in the part): equal quality at no more than 1.25x the recipe's latency on
+        # this geometry. The recipe's lift was measured over a repertoire without it. Decided after the stage rule and
+        # the part rows: a genome with no row here answers another question, and a rejected recipe is not demoted.
+        # Demoted, not deleted, the recipe still serves while the genome is withheld. It is no fallback for an input
+        # the attached genome refuses: parallel edges end in the genome's abstention
+        fits = {r["method"] for r in rows if not r["rejected"]}
+        matched = [m for m in _matched_by_single_genome(recipe, evidence) if m["method"] in fits]
+        if matched and not row["rejected"]:
+            row["matched_by"] = matched
+            row["demoted"] = "; ".join(filter(None, [row.get("demoted"), _matched_reason(matched)]))
     else:
         rows += _derived_rows(data, rows)
     return rows
+
+
+def _reject_recipe_relaxations(row: dict, recipe: str, rows: list[dict], keys: set, evidence: dict) -> None:
+    """The fixed recipe's twin of the derived-chain rule below. A single method or organ reading a strict subset of
+    the inputs a routed recipe consumes answers a relaxation of the recipe's question and is rejected; a genome
+    admitted DEFAULT against the recipe's twin decides the same question and still competes. Without this rule an
+    unevaluated recipe tied an unevaluated organ on status and lost on the method name: on the converged tree the
+    Fermi organ answered F1's estimate-then-optimize requests, ignored ``formal_template`` and abstained
+    (development check of the converged recipe-lift re-measurement, 2026-10-21)."""
+    from .composition import RECIPES
+    consumed = set(RECIPES[recipe]["requires"]) & keys
+    twins = {m["method"] for m in _matched_by_single_genome(recipe, evidence)}
+    for other in rows:
+        if (other is row or other["kind"] == "composition" or other["rejected"] or other.get("part")
+                or other["method"] in twins):
+            continue
+        if set(other.get("inputs") or ()) < consumed:
+            other["rejected"] = (f"answers a relaxation: ignores declared inputs "
+                                 f"{sorted(consumed - set(other['inputs']))} that {row['method']} consumes")
 
 
 def _derived_rows(data: dict, rows: list[dict]) -> list[dict]:
@@ -639,10 +785,15 @@ def _family_rows(keys: set, g: CompetencyGeometry, evidence: dict, data: dict | 
             outputs = None
             admission = family_status(family, evidence)
             status, stale = admission["status"], admission["stale"]
+            record = evidence["genomes"].get(family, {}) if family in genomes else {}
+            measured = current = None
+            other_version = False             # the family's evidence was measured at another version of its code
             if family in genomes:
                 need = genomes[family].genome.required_inputs
                 outputs = sorted(genomes[family].genome.output_contract)
                 standalone = genomes[family].genome.standalone_decision
+                measured, current = record.get("version"), genomes[family].genome.version
+                other_version = bool(measured) and measured != current
             else:
                 need = NATIVE_INPUTS.get(op)
                 standalone = True
@@ -658,19 +809,26 @@ def _family_rows(keys: set, g: CompetencyGeometry, evidence: dict, data: dict | 
             elif not standalone:
                 reason = "composition stage only (no standalone decision)"
             elif status in EXCLUDED:
-                reason = f"frozen admission status {status}"
+                reason = f"frozen admission status {status}" + (
+                    f", measured at version {measured} (it persists until a re-admission at {current})"
+                    if other_version else "")
             row = {"method": f"cognition.{family}", "operation": op, "kind": "operation", "status": status,
                    "epistemic_classes": list(classes), "rejected": reason, "inputs": sorted(need), "outputs": outputs,
                    **({"stale_evidence": stale} if stale else {}),
                    # solver code that changed since the admission run measured it (reported, not gating)
                    **({"code_drift": admission["code_drift"]} if admission.get("code_drift") else {})}
-            if family in genomes and not stale and evidence["genomes"].get(family, {}).get("median_seconds") is not None:
-                row["median_seconds"] = evidence["genomes"][family]["median_seconds"]   # held-out, this version
-            if family in genomes and not stale and data is not None:
-                # subregion verdicts bind the version they were measured at, like the status they refine
-                measured = _subregion_evidence(genomes[family], data, evidence["genomes"].get(family, {}))
-                if measured:
-                    row["subregion"] = measured
+            # Held-out measurements (median latency, subregion verdicts) bind the version they were measured at.
+            # Measured at another version, they never rank, order fits or name acquisitions, whatever the status:
+            # a negative status persists, but the latency and verdicts it came with describe other code. They
+            # are reported under ``stale_measurements``, labelled with the version measured.
+            if family in genomes and not other_version and record.get("median_seconds") is not None:
+                row["median_seconds"] = record["median_seconds"]          # held-out, measured at this version
+            if family in genomes and not other_version and data is not None:
+                placed = _subregion_evidence(genomes[family], data, record)
+                if placed:
+                    row["subregion"] = placed
+            if other_version:
+                row["stale_measurements"] = _stale_measurements(genomes[family], record, data)
             if family in genomes and status == "SUPERSEDED":
                 item = genomes[family]
                 row["superseded_by"] = {"mechanism": item.genome.competitor,
@@ -700,9 +858,42 @@ def _settle_promotions(pending: list, rows: list[dict]) -> None:
             # govern it, and attaching it is the founder's decision (never a Genesis acquisition)
             row["superseded_by"]["promoted_as"] = method
         elif method in why:
-            # its promoted genome cannot answer this request (its own frozen status, the declared geometry, a
-            # relaxation): the superseding mechanism stays an acquisition candidate, and the reason is kept
+            # its promoted genome cannot answer this request (its own frozen status, a relaxation): the superseding
+            # mechanism stays an acquisition candidate, and the reason is kept. A declared geometry that excludes the
+            # promoted genome excludes this row too (promotion keeps the class), and run names no candidate for it
             row["superseded_by"]["promoted_rejected"] = {"method": method, "why": why[method]}
+
+
+def _matched_reason(matched: list[dict], inhibited=frozenset()) -> str:
+    """Why a recipe is demoted by the single genomes that matched its twin. The recipe ranks after each matched genome
+    that is not demoted. One that settled outcomes on this body demote (``inhibited``) is a demoted fit too, so the
+    recipe need not rank after it: the demoted fits are ordered among themselves by the other rank keys."""
+    def them(methods):
+        return "it" if len(methods) == 1 else "them"
+    text = (f"admitted single genome {', '.join(m['method'] for m in matched)} matched this recipe's twin "
+            f"({', '.join(m['evidence'] for m in matched)}); the single method is canonical for this geometry")
+    ahead = [m["method"] for m in matched if m["method"] not in inhibited]
+    demoted = [m["method"] for m in matched if m["method"] in inhibited]
+    if not demoted:
+        return text + f" and the recipe ranks after {them(ahead)}"
+    if ahead:
+        text += f" and the recipe ranks after {', '.join(ahead)}"
+    return text + (f", but settled outcomes on this body demote {', '.join(demoted)} too, so the recipe is ordered "
+                   f"with {them(demoted)} among the demoted fits by the other rank keys")
+
+
+def _matched_by_single_genome(recipe: str, evidence: dict) -> list[dict]:
+    """Genomes whose admission competitor is ``recipe``'s twin and whose frozen status at their current version is
+    DEFAULT_FOR_GEOMETRY (a stale or any other status matches nothing)."""
+    from .genomes import library
+    out = []
+    for family, item in sorted(library.executables().items()):
+        record = evidence["genomes"].get(family, {})
+        if (getattr(item, "competitor_recipe", None) == recipe and record.get("status") == "DEFAULT_FOR_GEOMETRY"
+                and record.get("version") == item.genome.version):
+            out.append({"method": f"cognition.{family}", "version": item.genome.version,
+                        "evidence": record.get("evidence") or "evidence index"})
+    return out
 
 
 def _part_rows(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
@@ -968,19 +1159,26 @@ def _organ_rows(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]
         if cid is None:
             continue
         klass = _CLASS.get(cls, cls)
-        record = (evidence.get("organs") or {}).get(cid, {})
-        status = record.get("status", "UNEVALUATED")
-        measured, current = record.get("version"), CORTEX_ENTRIES.get(cid, (None,))[0]
-        stale = None
-        if measured and current and measured != current and status not in NOT_POSITIVE:
-            stale = f"{status} was measured at version {measured}; version {current} needs re-admission"
-            status = "UNEVALUATED"
+        status, stale = organ_status(cid, evidence)
         reason = (f"native geometry {klass} does not include {g.geometry}" if g.geometry and g.geometry != klass
                   else f"frozen status {status}" if status in EXCLUDED else None)
         rows.append({"method": cid, "operation": "problem", "kind": "problem", "status": status, "organ": key,
                      "epistemic_classes": [klass], "inputs": sorted(k for k in data if key not in without[k]),
                      "outputs": None, "rejected": reason, **({"stale_evidence": stale} if stale else {})})
     return rows
+
+
+def organ_status(cid: str, evidence: dict) -> tuple[str, str | None]:
+    """(routing status, stale reason) of a cortex organ, from the evidence index's ``organs`` section: UNEVALUATED
+    without a row; positive evidence binds the version measured (CORTEX_ENTRIES), negative evidence persists. The
+    compiler and the genome inventory both read it (round-2 review of #179, N2)."""
+    from .catalog import CORTEX_ENTRIES
+    record = (evidence.get("organs") or {}).get(cid, {})
+    status = record.get("status", "UNEVALUATED")
+    measured, current = record.get("version"), CORTEX_ENTRIES.get(cid, (None,))[0]
+    if measured and current and measured != current and status not in NOT_POSITIVE:
+        return "UNEVALUATED", f"{status} was measured at version {measured}; version {current} needs re-admission"
+    return status, None
 
 
 SUBREGION_RANK = {"FAVOURED": 0, "NEUTRAL": 1, "DOMINATED": 2}
@@ -1112,6 +1310,25 @@ def _close_step(budget, step: str, allotted, receipt: dict, who: str) -> None:
                                   "allotted; the construction's engine, not the budget, bounds its call")
 
 
+def _stale_measurements(item, record: dict, data: dict | None) -> dict:
+    """A genome's frozen held-out evidence measured at another version of its code, labelled with that version.
+
+    Reported in rows, receipts and attach asks, and never used to rank, order fits or name acquisitions: the median
+    latency and subregion verdicts describe the code that was measured. Its status is handled by the status rule
+    (positive evidence counts as UNEVALUATED; negative evidence persists until a re-admission replaces it)."""
+    measured, current, status = record.get("version"), item.genome.version, record.get("status")
+    persists = status in NOT_POSITIVE
+    region = _subregion_evidence(item, data, record) if data is not None else None
+    return {k: v for k, v in {
+        "version_measured": measured, "version_current": current, "status": status,
+        "evidence": record.get("evidence"), "median_seconds": record.get("median_seconds"), "subregion": region,
+        "stale_evidence": (f"measured at version {measured}, not the current {current}: reported, never used to rank, "
+                           f"order fits or name acquisitions; "
+                           + (f"the {status} status persists until a re-admission at {current} replaces it"
+                              if persists else f"the {status} status counts as UNEVALUATED until a re-admission"))
+    }.items() if v is not None}
+
+
 def _rank(row: dict, prefer: list, competence: dict) -> tuple:
     status = 0 if row["status"] == "VPL_LIFT" else STATUS_RANK.get(row["status"], 5)
     preferred = 0 if (row["operation"] in prefer or row["method"] in prefer) else 1
@@ -1120,7 +1337,8 @@ def _rank(row: dict, prefer: list, competence: dict) -> tuple:
     latency = row.get("median_seconds")
     # Frozen negative evidence outranks an operator's preference: evidence over heuristics. Within one status,
     # the measured subregion verdict orders fits before settled competence, then measured held-out latency
-    # (unmeasured last), then operations before compositions and organs.
+    # (unmeasured last), then operations before compositions and organs. Both measurements count only at the
+    # version they were measured at (_family_rows reports another version's under stale_measurements).
     return (1 if row.get("demoted") else 0, preferred, status, region, settled,
             latency if latency is not None else float("inf"), 0 if row["kind"] == "operation" else 1, row["method"])
 
@@ -1305,6 +1523,16 @@ def _formed(registry, data: dict, g: CompetencyGeometry, body: dict, high: bool,
                                 [m.capability_id for m, _ in formed])
         if inhibited[cid]:
             receipt["dissent"].append(f"{cid}: {inhibited[cid]}")
+        # the compile receipt carries the evidence the formed mechanism was chosen on, not only its own receipt
+        # (whole-machine trace gap, #158, 2026-10-21): settled outcomes per formed mechanism considered, and the
+        # mechanism receipt's strongest counterargument as dissent
+        receipt["conditional_competence_basis"] = {
+            m.capability_id: ({"settled": settled[m.capability_id][0], "correct": settled[m.capability_id][1],
+                               "laplace": round((settled[m.capability_id][1] + 1) / (settled[m.capability_id][0] + 2),
+                                                4)}
+                              if m.capability_id in settled else "no settled outcomes in this journal")
+            for m, _ in formed}
+        receipt["dissent"].append(inner["strongest_counterargument"])
         receipt.update(proof_artifacts=[{"type": "genesis_mechanism_certificate",
                                          "evidence_type": spec["evidence_type"]}],
                        verification_method=f"GREG-owned certificate sharing no code with {answer.get('engine')}: "
@@ -1392,7 +1620,8 @@ def attach_ask(pid: str, best: dict, fallback: dict | None, evidence: dict) -> d
                                   "measured_code_closure": (operation.get("code") or {}).get("closure_sha256"),
                                   "caveat": NOTES.get(family),
                                   "code_changed_since_admission": best.get("code_drift"),
-                                  "subregion": best.get("subregion"), "current_state": best["usable_why"]}.items()
+                                  "subregion": best.get("subregion"), "current_state": best["usable_why"],
+                                  "stale_measurements": best.get("stale_measurements")}.items()
                 if v is not None}
     if best.get("promotes"):
         # the frozen evidence that made this mechanism worth promoting, labelled for what it measured
@@ -1478,6 +1707,58 @@ def _settled_competence(journal, geometry_class) -> dict:
     return {m: (k + 1) / (n + 2) for m, (n, k) in _settled_counts(journal).items()}
 
 
+SETTLED_ALPHA = 0.05            # family-wise, Holm over the challengers tested against the evidence-ranked first fit
+
+
+def _settled_preference(eligible: list[dict], settled: dict) -> dict | None:
+    """Retained settled outcomes alone can change the choice between two eligible fits (whole-machine trace gap,
+    #158, 2026-10-21). The evidence-ranked first fit A is compared with every other undemoted fit B that, like A,
+    has at least SETTLED_MIN_N settled outcomes on this body; B is preferred when a one-sided Fisher exact test
+    says B's correct rate exceeds A's at Holm-adjusted p < SETTLED_ALPHA. The threshold is the inhibition rule's
+    and is not lowered here. Without enough outcomes on both sides nothing moves and frozen evidence decides.
+
+    Stated limitation: outcomes are pooled over a method's versions and geometries, as the inhibition rule pools
+    them (``_settled_counts``). Reorders ``eligible`` in place; returns the test record, or None."""
+    if len(eligible) < 2:
+        return None
+    first = eligible[0]
+    n_a, k_a = settled.get(first["method"], (0, 0))
+    if n_a < SETTLED_MIN_N:
+        return None
+    from scipy.stats import fisher_exact
+    tests = []
+    for row in eligible[1:]:
+        n_b, k_b = settled.get(row["method"], (0, 0))
+        if row.get("demoted") or n_b < SETTLED_MIN_N:
+            continue
+        p = float(fisher_exact([[k_b, n_b - k_b], [k_a, n_a - k_a]], alternative="greater")[1])
+        tests.append({"method": row["method"], "settled": [k_b, n_b], "p_one_sided": p})
+    if not tests:
+        return None
+    m, adjusted, running = len(tests), {}, 0.0
+    for i, t in enumerate(sorted(tests, key=lambda t: t["p_one_sided"])):
+        running = max(running, min(1.0, (m - i) * t["p_one_sided"]))
+        adjusted[t["method"]] = running
+    for t in tests:
+        t["p_holm"] = round(adjusted[t["method"]], 6)
+        t["p_one_sided"] = round(t["p_one_sided"], 6)
+    winners = [t for t in tests if adjusted[t["method"]] < SETTLED_ALPHA]
+    record = {"against": first["method"], "against_settled": [k_a, n_a], "min_n": SETTLED_MIN_N,
+              "alpha": SETTLED_ALPHA, "test": "one-sided Fisher exact, Holm over the challengers", "tests": tests,
+              "preferred": None}
+    if winners:
+        win = min(winners, key=lambda t: (t["p_holm"], t["method"]))
+        row = next(r for r in eligible if r["method"] == win["method"])
+        row["settled_preferred"] = {
+            **win, "why": (f"settled outcomes on this body prefer {row['method']} ({win['settled'][0]} of "
+                           f"{win['settled'][1]} correct) over the evidence-ranked {first['method']} ({k_a} of "
+                           f"{n_a}); one-sided Fisher exact, Holm-adjusted p = {win['p_holm']}")}
+        eligible.remove(row)
+        eligible.insert(0, row)
+        record["preferred"] = row["method"]
+    return record
+
+
 def _settled_inhibition(n: int, k: int) -> str | None:
     """Live negative evidence: with at least SETTLED_MIN_N settled outcomes, a method whose 95% Wilson upper bound
     on correctness is below one half is demoted (ranked after every other fit, never deleted)."""
@@ -1523,7 +1804,7 @@ def human_packet(g: CompetencyGeometry, body: dict) -> dict:
 
 def run(params, *, registry, journal=None, model_config=None, caller_window=None, shared_deadline=None,
         shared_compute_limit=None) -> dict:
-    from .cortex import reason
+    from .cortex import _cpu_delta, _cpu_seconds, reason
     started = time.monotonic()
     pid, body = validate(params)
     g = CompetencyGeometry.parse(body.get("geometry", {}))
@@ -1634,6 +1915,8 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
     receipt["methods_rejected"] = [{"method": r["method"], "why": r["rejected"]} for r in rows if r["rejected"]]
     receipt["methods_demoted"] = [{"method": r["method"], "why": r["demoted"]} for r in rows if r.get("demoted")]
     eligible = [r for r in rows if not r["rejected"]]
+    # a superseded row the declaration excludes names nothing: promotion keeps the epistemic class, so the
+    # superseding mechanism (promoted or not) has the geometry the declaration excludes
     superseding = [{"mechanism": r["superseded_by"]["mechanism"], "supersedes": r["method"],
                     "evidence": r["superseded_by"]["evidence"],
                     "route": "greg.genesis (Capability Genesis) under the enclosing mission's authority",
@@ -1641,7 +1924,8 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
                     **({"promoted_genome_rejected": r["superseded_by"]["promoted_rejected"]}
                        if r["superseded_by"].get("promoted_rejected") else {})}
                    for r in rows if r.get("superseded_by", {}).get("deployable")
-                   and not r["superseded_by"].get("promoted_as")]
+                   and not r["superseded_by"].get("promoted_as")
+                   and not (g.geometry and g.geometry not in r["epistemic_classes"])]
     high = g.consequence_class in HIGH_CONSEQUENCE or vector.high
     if not eligible:
         formed = _formed(registry, data, g, body, high, receipt, budget, pid=pid, vector=vector, journal=journal)
@@ -1705,8 +1989,19 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
         inhibited = _settled_inhibition(*settled.get(r["method"], (0, 0)))
         if inhibited and not r.get("demoted"):
             r["demoted"] = inhibited                    # live negative evidence changes routing
+            r["settled_inhibition"] = True
+    by_outcomes = {r["method"] for r in eligible if r.get("settled_inhibition")}
+    for r in eligible:
+        if r.get("matched_by") and by_outcomes & {m["method"] for m in r["matched_by"]}:
+            # a matched genome is a demoted fit too: the recipe need not rank after it. candidates composed the
+            # reason from this same list after any earlier one (a lift verdict), and a demoted row is not rewritten
+            r["demoted"] = r["demoted"].replace(_matched_reason(r["matched_by"]),
+                                                _matched_reason(r["matched_by"], by_outcomes))
     receipt["methods_demoted"] = [{"method": r["method"], "why": r["demoted"]} for r in rows if r.get("demoted")]
     eligible.sort(key=lambda r: _rank(r, plan["prefer"], competence))
+    preference = _settled_preference(eligible, settled)
+    if preference:
+        receipt["settled_preference"] = preference
     for r in eligible:
         r["usable"], r["usable_why"] = _usable(registry, r)
     best = eligible[0]
@@ -1718,6 +2013,8 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
                                         "status": best["status"], "served_by": runnable[0]["method"] if runnable
                                         else None, **({"subregion": best["subregion"]} if best.get("subregion")
                                                       else {}),
+                                        **({"stale_measurements": best["stale_measurements"]}
+                                           if best.get("stale_measurements") else {}),
                                         **({"promotes": best["promotes"]} if best.get("promotes") else {})}
         state = _state(registry, best["method"])
         if best["kind"] == "composition" or state != "VERIFIED":
@@ -1750,14 +2047,20 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
         return finish("CAPABILITY_DEFICIT")
     chosen = runnable[0]
     receipt["method_or_composition_selected"] = chosen["method"]
-    receipt["selection_level"] = ("only_fit_despite_no_lift" if chosen.get("demoted")
+    receipt["selection_level"] = (_demoted_level(chosen, best) if chosen.get("demoted")
+                                  else "preferred_by_settled_outcomes" if chosen.get("settled_preferred")
                                   else "preferred_by_operator" if chosen["operation"] in plan["prefer"]
                                   or chosen["method"] in plan["prefer"] else "admission_status")
+    if chosen.get("settled_preferred"):
+        receipt["dissent"].append(chosen["settled_preferred"]["why"])
     if chosen.get("demoted"):
         receipt["dissent"].append(chosen["demoted"])
     if chosen.get("stale_evidence"):
         receipt["selection_level"] = "unevaluated_at_current_version"
         receipt["dissent"].append(f"stale admission evidence: {chosen['stale_evidence']}")
+    if chosen.get("stale_measurements"):
+        # held-out evidence of another version of this method's code, labelled with that version (never ranked)
+        receipt["stale_measurements"] = chosen["stale_measurements"]
     region = chosen.get("subregion")
     if region:
         receipt["subregion_evidence"] = region
@@ -1851,9 +2154,10 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
     if chosen.get("part"):
         receipt["payload_part"] = chosen["part"]          # the method reads this part of the request: the question
         data = _part_data(data, chosen["part"])
+    cpu_started = _cpu_seconds()
     inner = reason({"problem_id": pid, "operation": chosen["operation"], "data": data, "geometry": geometry_hint,
                     **extra}, registry=registry, journal=journal, model_config=model_config, **budget.inner)
-    budget.done("answer", cpu_seconds=(inner.get("compute_cost") or {}).get("cpu_seconds"))
+    budget.done("answer", cpu_seconds=_cpu_delta(cpu_started))
     receipt["intermediate_receipts"] = [inner["receipt_id"]]
     # the executed method's own receipt, whole: settlement credits that method through this compilation
     # (greg.cognition.settlement), and the compile receipt is the link back from the outcome
@@ -1885,6 +2189,20 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
     return finish(done, inner["output"])
 
 
+def _demoted_level(chosen: dict, best: dict) -> str:
+    """Why a demoted fit serves. A demoted row ranks after every fit that is not, so either a better-ranked fit cannot
+    run (the receipt names it in ``withheld_best_fit``) or every fit is demoted and this one ranks first, labelled by
+    what demoted it: no verified lift, settled outcomes on this body, or else best of the demoted fits (a recipe
+    matched by a single genome that settled outcomes on this body demote too)."""
+    if chosen is not best:
+        return "serves_while_best_fit_withheld"
+    if chosen["status"] == "NO_LIFT":
+        return "only_fit_despite_no_lift"
+    if chosen.get("settled_inhibition"):
+        return "demoted_by_settled_outcomes"
+    return "best_of_demoted_fits"
+
+
 def _has_answer(inner: dict) -> bool:
     """An answer the path may use: NONE, or the conditional WORLD_UNVERIFIED a high-consequence geometry gets.
     A refuted or timed-out receipt keeps its output for audit, never for use."""
@@ -1896,16 +2214,17 @@ def _premises_check(pid, operation, claim, hint, verdict, registry, journal, mod
     """An UNSAT negation proves the claim only if the constraints are satisfiable on their own; otherwise every
     property 'holds' vacuously and the claim is PREMISES_INCONSISTENT. The check is required evidence, so the
     thinking budget never prices it away; without room for it the verdict stays undecided."""
-    from .cortex import reason
+    from .cortex import _cpu_delta, _cpu_seconds, reason
     if not claim["constraints"]:
         return {**verdict, "premises": "SATISFIABLE (no constraints)"}
     limit = budget.allot("premises", required=True)
     if limit is None:
         return {**verdict, "premises": f"UNDECIDED ({budget.stops()[-1]['reason']}): the claim may hold vacuously"}
+    cpu_started = _cpu_seconds()
     check = reason({"problem_id": f"{pid}/premises"[:96], "operation": operation, "data": premises(claim),
                     "geometry": {**hint, "latency_limit": limit}, **extra}, registry=registry, journal=journal,
                    model_config=model_config, **budget.inner)
-    budget.done("premises", cpu_seconds=(check.get("compute_cost") or {}).get("cpu_seconds"))
+    budget.done("premises", cpu_seconds=_cpu_delta(cpu_started))
     receipt["intermediate_receipts"].append(check["receipt_id"])
     status = check["output"].get("solver_status") if _has_answer(check) else None
     if status == "UNSAT":
@@ -1961,6 +2280,7 @@ def _sensitivity_runs(pid, operation, data, baseline, hint, registry, journal, m
 def _perturbation_runs(data, baseline, budget, receipt, rerun) -> dict:
     """The sensitivity operator's measurement, shared by every route that answers: ``rerun(key, varied, limit)``
     re-answers the request with one input perturbed and returns a receipt-shaped dict."""
+    from .cortex import _cpu_delta, _cpu_seconds
     keys = [k for k in sorted(data) if _numbers(data[k])][:4]
     base = _numbers(baseline)
     rows, not_run = {}, {}
@@ -1970,8 +2290,9 @@ def _perturbation_runs(data, baseline, budget, receipt, rerun) -> dict:
             not_run[key] = budget.stops()[-1]["reason"]
             continue
         varied = {**data, key: _scaled(data[key], 1.1)}
+        cpu_started = _cpu_seconds()
         out = rerun(key, varied, limit)
-        budget.done(f"sensitivity:{key}", cpu_seconds=(out.get("compute_cost") or {}).get("cpu_seconds"))
+        budget.done(f"sensitivity:{key}", cpu_seconds=_cpu_delta(cpu_started))
         if not _has_answer(out):
             rows[key] = {"state": out["abstention_state"]}
             continue

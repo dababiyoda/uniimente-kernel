@@ -1,5 +1,6 @@
 """P8 protected evolutionary cognition: closed space, confined candidates, sealed evaluator, no activation."""
 import json
+import math
 import random
 
 import pytest
@@ -78,11 +79,12 @@ def _small_forecasting_split(monkeypatch):
 def test_a_cycle_without_a_recurring_failure_changes_nothing(monkeypatch, tmp_path):
     monkeypatch.setattr(E, "FAILURE_RATE_TRIGGER", 1.01)
     monkeypatch.setattr(E, "_dirty", lambda paths: [])         # the dirty-tree rule has its own test
+    monkeypatch.setattr(E, "_spent_heldout", lambda *a, **k: {})   # so has the spent-split rule
     _small_forecasting_split(monkeypatch)
     frozen = tmp_path / "freeze.json"
     E.freeze("forecast_quantile", frozen, generations=2, population=2)
     record = E.cycle(generations=2, population=2, out=tmp_path / "c.json", freeze=frozen,
-                     require_confinement=isolation.available()["available"])
+                     require_confinement=isolation.available()["available"], allow_dirty_for_test=True)
     assert record["decision"] == "NO_RECURRING_FAILURE" and record["authority_created"] is False
     assert record["freeze"]["sha256"].startswith("sha256:") and record["source_dirty"] == []
     assert "proposal" not in record
@@ -220,6 +222,7 @@ def test_a_constraint_release_candidate_runs_confined_and_verifies(tmp_path):
 def _frozen(monkeypatch, tmp_path, edit=None):
     """A pre-registered small forecasting cycle; ``edit`` changes the freeze as an on-disk edit after it would."""
     monkeypatch.setattr(E, "_dirty", lambda paths: [])
+    monkeypatch.setattr(E, "_spent_heldout", lambda *a, **k: {})
     _small_forecasting_split(monkeypatch)
     path = tmp_path / "freeze.json"
     E.freeze("forecast_quantile", path, generations=2, population=2)
@@ -243,7 +246,8 @@ def test_a_trusted_file_that_differs_from_the_freeze_is_refused(monkeypatch, tmp
         inputs["code"][path] = "sha256:" + "0" * 64
     frozen = _frozen(monkeypatch, tmp_path, edit)
     with pytest.raises(E.EvolutionError, match="FROZEN_INPUT_CHANGED"):
-        E.cycle(generations=2, population=2, out=tmp_path / "c.json", freeze=frozen, require_confinement=False)
+        E.cycle(generations=2, population=2, out=tmp_path / "c.json", freeze=frozen, require_confinement=False,
+                allow_dirty_for_test=True)
     assert not (tmp_path / "c.json").exists()
 
 
@@ -256,7 +260,8 @@ def test_a_trusted_file_that_differs_from_the_freeze_is_refused(monkeypatch, tmp
 def test_seals_split_settings_and_rule_must_equal_the_freeze(monkeypatch, tmp_path, edit, why):
     frozen = _frozen(monkeypatch, tmp_path, edit)
     with pytest.raises(E.EvolutionError, match=why):
-        E.cycle(generations=2, population=2, out=tmp_path / "c.json", freeze=frozen, require_confinement=False)
+        E.cycle(generations=2, population=2, out=tmp_path / "c.json", freeze=frozen, require_confinement=False,
+                allow_dirty_for_test=True)
 
 
 def test_a_trusted_file_changed_mid_run_stops_the_cycle_before_the_next_evaluation(monkeypatch, tmp_path):
@@ -272,12 +277,13 @@ def test_a_trusted_file_changed_mid_run_stops_the_cycle_before_the_next_evaluati
     monkeypatch.setattr(E, "_code", drifting)
     with pytest.raises(E.EvolutionError, match="FROZEN_INPUT_CHANGED"):
         E.cycle(generations=2, population=2, out=tmp_path / "c.json", freeze=frozen,
-                require_confinement=isolation.available()["available"])
+                require_confinement=isolation.available()["available"], allow_dirty_for_test=True)
     assert not (tmp_path / "c.json").exists()
 
 
 def test_a_dirty_trusted_file_is_refused_for_a_freeze_and_for_a_record(monkeypatch, tmp_path):
     monkeypatch.setattr(E, "_dirty", lambda paths: ["greg/cognition/evolution.py"])
+    monkeypatch.setattr(E, "_clean_room_violations", lambda code: [])      # the clean room has its own tests
     with pytest.raises(E.EvolutionError, match="DIRTY_TREE"):
         E.freeze("forecast_quantile", tmp_path / "f.json")
     (tmp_path / "f.json").write_text(json.dumps({"inputs": {}}))
@@ -344,10 +350,53 @@ def test_a_method_error_is_recorded_per_problem_and_never_aborts_the_sandbox():
 
 
 def _shipped(target_name):
+    """The configuration the shipped executable actually runs, observed on a development instance (independent
+    review, P8-5: comparing the named constant alone let the executable run a rejected configuration), which must
+    also be the named constant."""
     import importlib
+    from greg.cognition import evolution_sandbox as S
+    from greg.cognition.genomes import library
     spec = E.TARGET_SPECS[target_name]()
-    module = importlib.import_module(spec.proposal["module"][:-3].replace("/", "."))
-    return getattr(module, spec.proposal["constant"])
+    constant = getattr(importlib.import_module(spec.proposal["module"][:-3].replace("/", ".")),
+                       spec.proposal["constant"])
+    executable = library.executables()[E.EVOLVABLE_CONFIG_PINS[target_name][0]]
+    module_name, function, _ = S.TARGETS[target_name]
+    module = importlib.import_module(module_name)
+    real, seen = getattr(module, function), []
+
+    def spy(config, data):
+        seen.append(json.loads(json.dumps(config)))
+        return real(config, data)
+    setattr(module, function, spy)
+    try:
+        data, _ = executable.instance(3)                                    # development seed
+        out = executable.solve(data, {"latency_s": 5.0, "compute": 100000})
+    finally:
+        setattr(module, function, real)
+    assert seen, (target_name, "the shipped executable never ran its evolvable method")
+    assert all(c == seen[0] for c in seen) and seen[0] == json.loads(json.dumps(constant)), target_name
+    # what the method reports it ran (the verifier's round 2: a substitution inside the method passed the spy)
+    ran = _effective(target_name, out["certificate"], data)
+    assert ran == {k: seen[0][k] for k in ran}, (target_name, ran)
+    return seen[0]
+
+
+def _effective(target_name, certificate, data):
+    """The configuration a certificate shows the run used, from values the run computed rather than copied from
+    its argument (the verifier's round 3: the forecasting certificate copies fit_window, the grids and the scale
+    from the argument). Constraint release: the whole search configuration. Immune: detectors, folds, the alarm
+    fraction (target_rate / tolerance) and the whitening (a Cholesky factor is full whitening). Forecasting: the
+    rolling origins actually evaluated (one more than the configured count on this long development series).
+    The rest - forecasting's window, grids, error model and scale; immune's uniform share and scale set - is not
+    observable from the certificate and rests on the argument check above and on review."""
+    if target_name == "constraint_release":
+        return certificate["search_config"]
+    if target_name == "forecast_quantile":
+        return {"origins": certificate["rolling_origins"] - 1}
+    cal = certificate["calibration"]
+    return {"detectors": certificate["detectors_generated"], "calibration_folds": int(cal["method"].split("-fold")[0]),
+            "alarm_fraction": round(cal["target_rate"] / data["max_false_alarm_rate"], 9),
+            "whitening": "full" if "cholesky" in certificate["standardisation"] else "diagonal"}
 
 
 def test_no_rejected_p8_configuration_is_shipped_and_every_incumbent_still_is():
@@ -403,3 +452,970 @@ def test_an_earlier_cycles_split_reproduces_its_frozen_evaluator_seals():
     assert E.SealedEvaluator(train, D.constraint_release_score).seal == record["evaluator_seals"]["train"]
     assert E.SealedEvaluator(held, D.constraint_release_score).seal == record["evaluator_seals"]["heldout"]
     assert E.CR_CURRENT_SPLIT != "cycle-3"
+
+
+# ------------------------------------------------------------------ independent review 2026-10-15: P8 integrity v2
+def test_the_frozen_closure_covers_every_repository_file_each_target_runs_in_both_processes():
+    """P8-1: the closure was ten named files; package __init__ files and ~25 parent-imported modules ran outside it.
+    A fresh interpreter runs a development cycle per target (dev-seed items) and reports what it executed."""
+    import subprocess
+    import sys
+    script = r'''
+import json, sys
+sys.path.insert(0, sys.argv[1])
+from greg import isolation
+from greg.cognition import evolution as E
+from greg.cognition.genomes import collective, developmental as D, forecasting
+train, held, _ = E.forecasting_split()
+f_items = lambda d, n: dict(list(d.items())[:n])
+def dev(make, seeds, category):
+    return {f"s{s}": {"data": make(s)[0], "truth": make(s)[1], "category": category(make(s)[0])} for s in seeds}
+E.forecasting_split = lambda seed=808, excluded_seeds=None: (f_items(train, 3), f_items(held, 2), [])
+E.immune_split = lambda: (dev(collective.immune_gaussian_instance, (1, 2, 3), collective.immune_dimension_band),
+                          dev(collective.immune_gaussian_instance, (4, 5), collective.immune_dimension_band), [])
+cr = lambda seeds: dev(D.constraint_release_instance, seeds, D.constraint_release_subregion)
+E.cr_split = lambda name=E.CR_CURRENT_SPLIT: (cr((1, 2, 3)), cr((4, 5)), [])
+E.FAILURE_RATE_TRIGGER = 0.0
+out = {}
+for name in sorted(E.TARGET_SPECS):
+    sandbox = []
+    real = E.run_candidate
+    def spy(*a, **k):
+        result = real(*a, **k)
+        sandbox.append(sorted(result["loaded"]))
+        return result
+    E.run_candidate = spy
+    record = E.cycle(generations=1, population=2, target_name=name,
+                     require_confinement=isolation.available()["available"])
+    E.run_candidate = real
+    closure = set(E.trusted_closure(name))
+    out[name] = {"decision": record["decision"],
+                 "parent_outside": sorted(E._loaded_repository_files() - closure),
+                 "sandbox_outside": sorted({p for run in sandbox for p in run} - closure),
+                 "sandbox_inits": sorted({p for run in sandbox for p in run if p.endswith("__init__.py")})}
+print(json.dumps(out))
+'''
+    proc = subprocess.run([sys.executable, "-I", "-c", script, str(E.ROOT)], capture_output=True, timeout=900)
+    assert proc.returncode == 0, proc.stderr[-2000:]
+    out = json.loads(proc.stdout.splitlines()[-1])
+    assert set(out) == set(E.TARGET_SPECS)
+    for name, seen in out.items():
+        assert seen["parent_outside"] == [] and seen["sandbox_outside"] == [], (name, seen)
+        assert {"greg/__init__.py", "greg/cognition/__init__.py",
+                "greg/cognition/genomes/__init__.py"} <= set(seen["sandbox_inits"]), name
+
+
+def test_the_parent_refuses_a_sandbox_that_executed_code_outside_or_unlike_the_freeze(target):
+    """P8-1: only the method module was compared; an edited package __init__ or helper ran unnoticed."""
+    train, _, _ = E.forecasting_split()
+    problems = [{"id": k, "data": v["data"]} for k, v in list(train.items())[:1]]
+    code = E._code("forecast_quantile")
+    confine = isolation.available()["available"]
+    run = E.run_candidate(target, target.incumbent, problems, require_confinement=confine, expected_code=code)
+    assert set(run["loaded"]) <= set(code) and "greg/cognition/genomes/__init__.py" in run["loaded"]
+    assert all(run["loaded"][p] == code[p] for p in run["loaded"])
+    uncovered = {p: v for p, v in code.items() if p != "greg/cognition/genomes/__init__.py"}
+    with pytest.raises(E.EvolutionError, match="does not cover"):
+        E.run_candidate(target, target.incumbent, problems, require_confinement=confine, expected_code=uncovered)
+    edited = {**code, "greg/__init__.py": "sha256:" + "4" * 64}
+    with pytest.raises(E.EvolutionError, match="FROZEN_INPUT_CHANGED: the sandbox executed greg/__init__.py"):
+        E.run_candidate(target, target.incumbent, problems, require_confinement=confine, expected_code=edited)
+
+
+def test_the_sandbox_hashes_the_bytes_it_compiles_and_never_reads_repository_bytecode():
+    """P8-2: an UNCHECKED_HASH .pyc in the gitignored __pycache__ ran instead of the hashed source."""
+    import importlib.machinery
+    from greg.cognition import evolution_sandbox as S
+    source = E.ROOT / "greg/isolation.py"
+    loader = importlib.machinery.SourceFileLoader("greg.isolation", str(source))
+    with pytest.raises(OSError, match="never executed"):
+        S._get_data(loader, str(E.ROOT / "greg/__pycache__/isolation.cpython-313.pyc"))
+    assert S._get_data(loader, str(source)) == source.read_bytes()
+    assert S._EXECUTED["greg/isolation.py"] == E._sha(source)
+    # importing the module for TARGETS changes nothing in the importing process
+    assert importlib.machinery.SourceFileLoader.get_data is not S._get_data
+
+
+def test_a_development_run_never_looks_at_the_held_out_split(monkeypatch, tmp_path):
+    """P8-3: without a freeze the cycle evaluated the reserved held-out split, any number of times. The same
+    settings under a freeze reach the one look."""
+    monkeypatch.setattr(E, "FAILURE_RATE_TRIGGER", 0.0)
+    monkeypatch.setattr(E, "TRAIN_GAIN_MIN", -math.inf)
+    monkeypatch.setattr(E, "STRESS_TOLERANCE", math.inf)
+    monkeypatch.setattr(E, "outputs_verified", lambda *a: True)
+    monkeypatch.setattr(E, "_dirty", lambda paths: [])
+    monkeypatch.setattr(E, "_spent_heldout", lambda *a, **k: {})
+    _small_forecasting_split(monkeypatch)
+    confine = isolation.available()["available"]
+    seen = []
+    real = E.SealedEvaluator.losses
+
+    def spy(self, outputs):                     # every later evaluation scores better, so a candidate advances
+        seen.append(set(self._items))
+        return {k: -float(len(seen)) for k in real(self, outputs)}
+    monkeypatch.setattr(E.SealedEvaluator, "losses", spy)
+    _, held, _ = E.forecasting_split()
+    record = E.cycle(generations=2, population=2, require_confinement=confine)
+    assert record["decision"] == "STOPPED_BEFORE_HELDOUT" and "heldout" not in record
+    frozen = tmp_path / "freeze.json"
+    E.freeze("forecast_quantile", frozen, generations=2, population=2)
+    record = E.cycle(generations=2, population=2, freeze=frozen, require_confinement=confine)   # no record written
+    assert record["decision"] == "STOPPED_BEFORE_HELDOUT" and "heldout" not in record
+    assert not any(items & set(held) for items in seen)
+    # a test run may not look at a registered held-out split either (verifier's round-2 finding) ...
+    with pytest.raises(E.EvolutionError, match="never evaluates a registered held-out split"):
+        E.cycle(generations=2, population=2, freeze=frozen, require_confinement=confine,
+                out=tmp_path / "c.json", allow_dirty_for_test=True)
+    assert not any(items & set(held) for items in seen) and not (tmp_path / "c.json").exists()
+    # ... and takes the one look only on development instances, writing its record
+    from greg.cognition.genomes import developmental as D
+
+    def dev(seeds):
+        return {f"s{s}": {"data": D.constraint_release_instance(s)[0], "truth": D.constraint_release_instance(s)[1],
+                          "category": D.constraint_release_subregion(D.constraint_release_instance(s)[0])}
+                for s in seeds}
+    monkeypatch.setattr(E, "cr_split", lambda name=E.CR_CURRENT_SPLIT: (dev((1, 2)), dev((4, 5)), []))
+    frozen = tmp_path / "cr-freeze.json"
+    E.freeze("constraint_release", frozen, generations=2, population=2)
+    record = E.cycle(generations=2, population=2, target_name="constraint_release", freeze=frozen,
+                     require_confinement=confine, out=tmp_path / "c.json", allow_dirty_for_test=True)
+    assert record["decision"] in ("RETAIN", "REJECT") and record["heldout"]["n"] == 2
+    assert json.loads((tmp_path / "c.json").read_text())["heldout"] == record["heldout"]
+
+
+def test_the_sandbox_puts_the_repository_after_the_standard_library():
+    """A file at the repository root named like a standard module must not shadow it in the sandbox (the
+    verifier's addition to P8-1); the repository's packages still precede installed ones."""
+    from greg.cognition import evolution_sandbox as S
+    path = ["/usr/lib/python313.zip", "/usr/lib/python3.13", "/usr/lib/python3.13/lib-dynload",
+            "/usr/local/lib/python3.13/dist-packages", "/usr/lib/python3/dist-packages"]
+    assert S.search_path(path) == [*path[:3], str(S.ROOT), *path[3:]]
+    assert S.search_path(path[:3]) == [*path[:3], str(S.ROOT)]
+
+
+def test_a_freeze_refuses_a_held_out_split_an_earlier_cycle_or_freeze_looked_at(monkeypatch, tmp_path):
+    """One look per held-out item: cycle 4's frozen split (s7500-s7589) and cycles 1-3's splits are spent."""
+    from greg.cognition.genomes import developmental as D
+    monkeypatch.setattr(E, "_dirty", lambda paths: [])
+    data, truth = D.constraint_release_instance(3)                            # development seed, relabelled
+    item = {"data": data, "truth": truth, "category": D.constraint_release_subregion(data)}
+    monkeypatch.setattr(E, "cr_split", lambda name=E.CR_CURRENT_SPLIT: ({"s3": item}, {"s7500": item}, []))
+    with pytest.raises(E.EvolutionError, match="SPLIT_SPENT.*2026-10-15-cr-4/freeze.json"):
+        E.freeze("constraint_release", tmp_path / "f.json")
+    assert not (tmp_path / "f.json").exists()
+    # cycles 2 and 3 stopped at the stress gate: their held-out items were never looked at, so they stay usable
+    assert "2026-10-14/cycle-cr-3" not in E._spent_heldout("constraint_release")
+    assert E._spent_heldout("immune_detect") == {}
+    assert set(E._spent_heldout("forecast_quantile")) == {"2026-10-08/cycle-forecast-1"}   # cycle 1 looked
+
+
+def test_a_recorded_cycle_needs_a_committed_freeze_confinement_and_the_clean_room(monkeypatch, tmp_path):
+    """P8-4: a freeze outside the repository (or edited after its commit) was accepted; P8-7: a recorded cycle
+    could run unconfined; P8-1/P8-2: nothing required the run to vouch for the code it executed."""
+    with pytest.raises(E.EvolutionError, match="CONFINEMENT_REQUIRED"):
+        E.cycle(out=tmp_path / "c.json", freeze=tmp_path / "f.json", require_confinement=False)
+    with pytest.raises(E.EvolutionError, match="CLEAN_ROOM_REQUIRED"):     # a test process is no clean room
+        E.cycle(out=tmp_path / "c.json", freeze=tmp_path / "f.json")
+    monkeypatch.setattr(E, "_clean_room_violations", lambda code: [])
+    monkeypatch.setattr(E, "_dirty", lambda paths: [])
+    (tmp_path / "f.json").write_text(json.dumps({"inputs": {}}))
+    with pytest.raises(E.EvolutionError, match="FREEZE_NOT_COMMITTED"):
+        E.cycle(out=tmp_path / "c.json", freeze=tmp_path / "f.json")
+    elsewhere = E.ROOT / "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json"  # committed, not a P8 run's
+    with pytest.raises(E.EvolutionError, match="FREEZE_NOT_COMMITTED"):
+        E.cycle(target_name="constraint_release", out=tmp_path / "c.json", freeze=elsewhere)
+    with pytest.raises(E.EvolutionError, match="FREEZE_NOT_COMMITTED"):
+        E.run_recorded("constraint_release", tmp_path / "f.json", tmp_path / "c.json")
+    committed = E.ROOT / "docs/evidence/greg-protected-evolution/2026-10-15-cr-4/freeze.json"
+    monkeypatch.setattr(E, "_dirty", lambda paths: list(paths))          # an uncommitted edit of a committed freeze
+    with pytest.raises(E.EvolutionError, match="FREEZE_NOT_COMMITTED"):
+        E.run_recorded("constraint_release", committed, tmp_path / "c.json")
+
+
+def test_the_clean_room_names_repository_bytecode_and_unfrozen_executed_code(monkeypatch, tmp_path):
+    import sys
+    import types
+    import importlib.machinery
+    monkeypatch.setattr(E.subprocess, "run", lambda *a, **k: types.SimpleNamespace(returncode=0, stdout="",
+                                                                                     stderr=""))  # a fresh checkout
+    entry = lambda loader, path: b""                                            # the clean-room entry's loader
+    entry.executed = {p: "x" for p in E._loaded_repository_files()}
+    monkeypatch.setattr(importlib.machinery.SourceFileLoader, "get_data", entry)
+    code = {p: "x" for p in E._loaded_repository_files()}
+    monkeypatch.setattr(sys, "pycache_prefix", None)
+    assert any("bytecode" in v for v in E._clean_room_violations(code))
+    prefix = tmp_path / "prefix"
+    planted = prefix / E.ROOT.relative_to(E.ROOT.anchor) / "greg/cognition/genomes"
+    planted.mkdir(parents=True)
+    monkeypatch.setattr(sys, "pycache_prefix", str(prefix))
+    assert E._clean_room_violations(code) == []
+    (planted / "developmental.cpython-313.pyc").write_bytes(b"\0")
+    assert any("prefix is not empty" in v for v in E._clean_room_violations(code))
+    (planted / "developmental.cpython-313.pyc").unlink()
+    stdlib = prefix / "usr/lib/python3.13"            # bytecode of a standard module the entry imports first
+    stdlib.mkdir(parents=True)
+    (stdlib / "hashlib.cpython-313.pyc").write_bytes(b"\0")
+    assert any("prefix is not empty" in v for v in E._clean_room_violations(code))
+    (stdlib / "hashlib.cpython-313.pyc").unlink()
+    stray = types.ModuleType("greg_review_stray")
+    stray.__file__ = str(E.ROOT / "greg/cognition/genomes/strategic_patch.py")
+    monkeypatch.setitem(sys.modules, "greg_review_stray", stray)
+    assert any("strategic_patch.py" in v for v in E._clean_room_violations(code))
+
+
+def test_the_dirty_check_compares_bytes_with_head_so_an_index_flag_cannot_hide_an_edit(monkeypatch, tmp_path):
+    """P8-6: ``git status`` trusted skip-worktree/assume-unchanged; the check now compares content with HEAD."""
+    import subprocess
+    git = lambda *a: subprocess.run(["git", *a], cwd=tmp_path, check=True, capture_output=True)
+    git("init", "-q")
+    (tmp_path / "a.py").write_text("x = 1\n")
+    (tmp_path / "b.py").write_text("y = 1\n")
+    git("add", ".")
+    git("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "c")
+    monkeypatch.setattr(E, "ROOT", tmp_path)
+    assert E._dirty(["a.py", "b.py"]) == []
+    git("update-index", "--skip-worktree", "a.py")
+    (tmp_path / "a.py").write_text("x = 0\n")
+    git("update-index", "--assume-unchanged", "b.py")
+    (tmp_path / "b.py").write_text("y = 0\n")
+    assert subprocess.run(["git", "status", "--porcelain"], cwd=tmp_path, capture_output=True, text=True).stdout == ""
+    assert E._dirty(["a.py", "b.py", "untracked.py"]) == ["a.py", "b.py", "untracked.py"]
+
+
+def test_confinement_failure_is_reported_as_such_and_an_unconfined_run_asks_for_none(monkeypatch, target):
+    """P8-7: without Landlock the child omitted its digest and the parent blamed METHOD_CHANGED; the request
+    always asked for confinement."""
+    problems = [{"id": "a", "data": E.forecasting_split()[0][next(iter(E.forecasting_split()[0]))]["data"]}]
+    sent = []
+    real_run = __import__("greg.capabilities", fromlist=["run_isolated"]).run_isolated
+
+    def spy(argv, **kw):
+        sent.append(json.loads(kw["input_bytes"]))
+        return real_run(argv, **kw)
+    monkeypatch.setattr("greg.capabilities.run_isolated", spy)
+    E.run_candidate(target, target.incumbent, problems, require_confinement=False)
+    assert sent[-1]["confine"] is False
+    real = E.json.loads
+
+    def unavailable(text):
+        out = real(text)
+        if isinstance(out, dict) and "outputs" in out:
+            out = {"confined": None, "error": "CONFINEMENT_UNAVAILABLE: no Landlock", "imported": out["imported"],
+                   "loaded": out["loaded"]}
+        return out
+    monkeypatch.setattr(E.json, "loads", unavailable)
+    with pytest.raises(E.EvolutionError, match="CONFINEMENT_UNAVAILABLE"):
+        E.run_candidate(target, target.incumbent, problems, require_confinement=True)
+
+    def failed(text):                                   # an unconfined child's own error is reported as itself
+        out = real(text)
+        return {"confined": None, "error": "UNKNOWN_TARGET"} if isinstance(out, dict) and "outputs" in out else out
+    monkeypatch.setattr(E.json, "loads", failed)
+    with pytest.raises(E.EvolutionError, match="UNKNOWN_TARGET"):
+        E.run_candidate(target, target.incumbent, problems, require_confinement=False)
+
+
+@pytest.mark.parametrize("name,key,value,why", [
+    ("constraint_release", "p_restart", float("nan"), "outside"),
+    ("constraint_release", "p_restart", True, "outside"),
+    ("forecast_quantile", "beta_set", [0.0, 0.05, 0.1, float("nan")], "outside the declared space"),
+    ("immune_detect", "detectors", float("nan"), "outside the declared space")])
+def test_non_finite_and_mistyped_values_are_evolution_errors(name, key, value, why):
+    """P8-8: NaN inside a choice escaped as a bare ValueError."""
+    target = E.TARGET_SPECS[name]().target()
+    with pytest.raises(E.EvolutionError, match=why):
+        target.validate({**target.incumbent, key: value})
+
+
+def test_float_values_have_one_canonical_form_and_unknown_kinds_are_refused():
+    """P8-8: 0 and -0.0 passed unchanged and became configurations distinct from the incumbent's 0.0."""
+    target = E.cr_target()
+    incumbent = E.config_id(target.validate(target.incumbent))
+    assert incumbent == E.config_id(target.incumbent)
+    for same in (0, -0.0, 0.0):
+        assert E.config_id(target.validate({**target.incumbent, "p_restart": same})) == incumbent
+    with pytest.raises(E.EvolutionError, match="unknown kinds"):
+        E.Target("x", {"a": ("int", (0, 10))}, {"a": 1})
+
+
+@pytest.mark.skipif(not isolation.available()["available"] or isolation.available()["abi"] < 6,
+                    reason="Landlock scoping needs ABI 6")
+def test_a_confined_process_cannot_reach_an_abstract_socket_created_outside_its_domain():
+    """L1: only signal scoping had a test; dropping SCOPE_ABSTRACT_UNIX_SOCKET passed every suite."""
+    import os
+    import socket
+    import subprocess
+    import sys
+    name = f"\0greg-review-{os.getpid()}"
+    listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    listener.bind(name)
+    listener.listen(1)
+    try:
+        code = ("import json, socket, sys, tempfile; sys.path.insert(0, %r)\n"
+                "from greg import isolation\n"
+                "info = isolation.confine(tempfile.mkdtemp(), [], list_code=False)\n"
+                "s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\n"
+                "try:\n    s.connect(%r); out = 'ALLOWED'\n"
+                "except OSError as exc:\n    out = type(exc).__name__\n"
+                "print(json.dumps({'connect': out, 'scopes': info['ipc_scopes']}))\n") % (str(E.ROOT), name)
+        proc = subprocess.run([sys.executable, "-I", "-c", code], capture_output=True, timeout=60)
+        out = json.loads(proc.stdout)
+    finally:
+        listener.close()
+    assert out == {"connect": "PermissionError", "scopes": ["abstract_unix_socket", "signal"]}, out
+
+
+@pytest.mark.skipif(not isolation.available()["available"], reason="Landlock unavailable on this host")
+def test_confinement_refuses_a_process_whose_other_threads_would_stay_unconfined():
+    """L2: landlock_restrict_self confines the calling thread only; a pre-existing thread kept full access."""
+    import subprocess
+    import sys
+    code = ("import json, sys, tempfile, threading, time; sys.path.insert(0, %r)\n"
+            "from greg import isolation\n"
+            "threading.Thread(target=time.sleep, args=(5,), daemon=True).start()\n"
+            "try:\n    isolation.confine(tempfile.mkdtemp(), [], list_code=False); print('CONFINED')\n"
+            "except isolation.IsolationError as exc:\n    print('REFUSED', exc)\n") % str(E.ROOT)
+    proc = subprocess.run([sys.executable, "-I", "-c", code], capture_output=True, text=True, timeout=60)
+    assert proc.stdout.startswith("REFUSED") and "2 threads" in proc.stdout, proc.stdout + proc.stderr
+
+
+# ------------------------------------------------------------------ verifier's round 2 on the P8 fix (2026-10-15)
+def test_the_clean_room_requires_a_fresh_checkout(monkeypatch, tmp_path):
+    """A direct --inside run in a working tree (untracked or ignored files, __pycache__ included) is not a clean
+    room, whatever bytecode prefix the caller chose."""
+    import subprocess
+    import sys
+    git = lambda *a: subprocess.run(["git", *a], cwd=tmp_path, check=True, capture_output=True)
+    git("init", "-q")
+    (tmp_path / ".gitignore").write_text("__pycache__/\n")
+    (tmp_path / "a.py").write_text("x = 1\n")
+    git("add", ".")
+    git("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "c")
+    import importlib.machinery
+    entry = importlib.machinery.SourceFileLoader.get_data
+    monkeypatch.setattr(importlib.machinery.SourceFileLoader, "get_data", lambda loader, path: entry(loader, path))
+    importlib.machinery.SourceFileLoader.get_data.executed = {}
+    monkeypatch.setattr(E, "ROOT", tmp_path)                       # no repository module of tmp_path is loaded
+    monkeypatch.setattr(sys, "pycache_prefix", str(tmp_path.parent / "fresh-prefix"))
+    assert E._clean_room_violations(None) == []
+    (tmp_path / "__pycache__").mkdir()
+    (tmp_path / "__pycache__" / "a.cpython-313.pyc").write_bytes(b"\0")
+    assert any("not a fresh checkout" in v for v in E._clean_room_violations(None))
+
+
+def test_a_recorded_cycle_checks_the_clean_room_before_it_imports_the_target(monkeypatch, tmp_path):
+    called = []
+    monkeypatch.setattr(E, "_clean_room_violations", lambda code: ["planted"])
+    monkeypatch.setitem(E.TARGET_SPECS, "constraint_release", lambda: called.append(1))
+    with pytest.raises(E.EvolutionError, match="CLEAN_ROOM_REQUIRED: \\['planted'\\]"):
+        E.cycle(target_name="constraint_release", out=tmp_path / "c.json", freeze=tmp_path / "f.json")
+    assert called == []
+
+
+def test_the_launcher_refuses_a_dirty_or_bytecode_bearing_tree_and_disables_hooks(monkeypatch, tmp_path):
+    """The verifier tainted a 'clean_room' record through the launching process (an uncommitted edit it loaded,
+    never-checked bytecode) and through a post-checkout hook run by git worktree add."""
+    import subprocess
+    committed = E.ROOT / "docs/evidence/greg-protected-evolution/2026-10-15-cr-4/freeze.json"
+    with pytest.raises(E.EvolutionError, match="FREEZE_NOT_COMMITTED"):          # committed, but not a freeze
+        E.run_recorded("constraint_release", E.ROOT / "greg/path.json", tmp_path / "c.json")
+    monkeypatch.setattr(E, "_dirty", lambda paths: [p for p in paths if p == "greg/cognition/genomes/__init__.py"])
+    with pytest.raises(E.EvolutionError, match="DIRTY_TREE: the launching tree"):
+        E.run_recorded("constraint_release", committed, tmp_path / "c.json")
+    monkeypatch.setattr(E, "_dirty", lambda paths: [])
+    monkeypatch.setattr(E, "_unchecked_bytecode", lambda: ["greg/cognition/evolution.py"])
+    with pytest.raises(E.EvolutionError, match="never-checked repository bytecode"):
+        E.run_recorded("constraint_release", committed, tmp_path / "c.json")
+    monkeypatch.setattr(E, "_unchecked_bytecode", lambda: [])
+    calls = []
+
+    class Stop(Exception):
+        pass
+
+    def run(argv, **kw):
+        calls.append(argv)
+        if "add" in argv:
+            raise Stop
+        return subprocess.CompletedProcess(argv, 0, b"", b"")
+    monkeypatch.setattr(E.subprocess, "run", run)
+    with pytest.raises(Stop):
+        E.run_recorded("constraint_release", committed, tmp_path / "c.json")
+    add = next(argv for argv in calls if "worktree" in argv)
+    assert add[:3] == ["git", "-c", "core.hooksPath=/dev/null"] and "add" in add
+    calls.clear()
+    monkeypatch.setattr(E.subprocess, "run", lambda argv, **kw: calls.append(argv) or
+                        subprocess.CompletedProcess(argv, 0, b"", b""))
+    assert E.run_recorded("constraint_release", committed, tmp_path / "c.json") == 0
+    inner = next(argv for argv in calls if "--inside" in argv)
+    assert inner[1:6] == ["-E", "-s", "-B", "-P", "-X"] and inner[6].startswith("pycache_prefix=")
+    assert inner[7].endswith("greg/cognition/evolution_room.py")          # the source-only entry, not -m
+
+
+def test_never_checked_bytecode_of_a_loaded_module_is_named(monkeypatch, tmp_path):
+    import sys
+    import types
+    pyc = tmp_path / "x.cpython-313.pyc"
+    pyc.write_bytes(b"\0" * 4 + (0b01).to_bytes(4, "little") + b"\0" * 8)       # hash-based, source never checked
+    module = types.ModuleType("greg_review_unchecked")
+    module.__file__ = str(E.ROOT / "greg/cognition/x.py")
+    module.__cached__ = str(pyc)
+    monkeypatch.setitem(sys.modules, "greg_review_unchecked", module)
+    assert E._unchecked_bytecode() == ["greg/cognition/x.py"]
+    pyc.write_bytes(b"\0" * 4 + (0b11).to_bytes(4, "little") + b"\0" * 8)       # checked against the source
+    assert E._unchecked_bytecode() == []
+
+
+def test_the_spent_ledger_reads_every_freeze_under_the_evidence_tree(monkeypatch, tmp_path):
+    nested = tmp_path / "a" / "b"
+    nested.mkdir(parents=True)
+    (nested / "freeze.json").write_text(json.dumps({"inputs": {"target": "constraint_release",
+                                                               "split": {"heldout": ["s9"]}}}))
+    monkeypatch.setattr(E, "EVIDENCE", tmp_path)
+    assert E._spent_heldout("constraint_release")["a/b/freeze.json"] == {"s9"}
+
+
+# ------------------------------------------------------------------ verifier's round 3 on the P8 fix (2026-10-15)
+def test_the_clean_room_entry_compiles_from_source_and_reads_no_bytecode():
+    """evolution.py's own import chain loads every genome module, so a check after it is too late; the entry is
+    stdlib-only and installs its loader before the first repository import."""
+    import ast
+    import importlib.machinery
+    from greg.cognition import evolution_room as R
+    source = E.ROOT / "greg/cognition/evolution_room.py"
+    imported = {a.name.split(".")[0] for n in ast.walk(ast.parse(source.read_text()))
+                for a in getattr(n, "names", []) if isinstance(n, (ast.Import, ast.ImportFrom))}
+    imported |= {n.module.split(".")[0] for n in ast.walk(ast.parse(source.read_text()))
+                 if isinstance(n, ast.ImportFrom) and n.module}
+    assert not imported & {"greg", "cortex", "capabilities", "events", "provenance"}, imported
+    loader = importlib.machinery.SourceFileLoader("greg.isolation", str(E.ROOT / "greg/isolation.py"))
+    for pyc in ("/usr/lib/python3.13/json/__pycache__/decoder.cpython-313.pyc",
+                str(E.ROOT / "greg/__pycache__/isolation.cpython-313.pyc")):
+        with pytest.raises(OSError, match="never reads bytecode"):
+            R.get_data(loader, pyc)
+    assert R.get_data(loader, str(E.ROOT / "greg/isolation.py")) == (E.ROOT / "greg/isolation.py").read_bytes()
+    assert R.get_data.executed["greg/isolation.py"] == E._sha(E.ROOT / "greg/isolation.py")
+    assert importlib.machinery.SourceFileLoader.get_data is not R.get_data       # importing it installs nothing
+
+
+def test_a_recorded_cycle_needs_the_clean_room_entry_and_its_compiled_digests_to_match(monkeypatch):
+    import importlib.machinery
+    import types
+    monkeypatch.setattr(E.subprocess, "run", lambda *a, **k: types.SimpleNamespace(returncode=0, stdout="",
+                                                                                     stderr=""))
+    monkeypatch.setattr(E.sys, "pycache_prefix", "/nonexistent-fresh-prefix")
+    code = {p: "x" for p in E._loaded_repository_files()}
+    assert any("clean-room entry" in v for v in E._clean_room_violations(code))     # started any other way
+    entry = lambda loader, path: b""
+    entry.executed = {**code, "greg/cognition/genomes/developmental.py": "sha256:" + "5" * 64}
+    monkeypatch.setattr(importlib.machinery.SourceFileLoader, "get_data", entry)
+    assert any("unlike the freeze" in v for v in E._clean_room_violations(code))
+    entry.executed = dict(code)
+    assert E._clean_room_violations(code) == []
+    del entry.executed["greg/cognition/genomes/developmental.py"]      # loaded before the loader (compatibility check)
+    assert any("without the entry's loader" in v for v in E._clean_room_violations(code))
+
+
+def test_the_freeze_commit_is_not_guessed_in_a_shallow_clone(monkeypatch, tmp_path):
+    """The compatibility check: a shallow clone named its boundary commit as the commit that added the freeze."""
+    import subprocess
+    origin = tmp_path / "origin"
+    origin.mkdir()
+    git = lambda cwd, *a: subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t", *a], cwd=cwd,
+                                         check=True, capture_output=True, text=True).stdout.strip()
+    git(origin, "init", "-q")
+    (origin / "freeze.json").write_text("{}")
+    git(origin, "add", ".")
+    git(origin, "commit", "-qm", "freeze")
+    added = git(origin, "rev-parse", "HEAD")
+    (origin / "later.txt").write_text("x")
+    git(origin, "add", ".")
+    git(origin, "commit", "-qm", "later")
+    monkeypatch.setattr(E, "ROOT", origin)
+    assert E._freeze_commit("freeze.json") == added
+    git(tmp_path, "clone", "-q", "--depth", "1", f"file://{origin}", "shallow")
+    monkeypatch.setattr(E, "ROOT", tmp_path / "shallow")
+    assert E._freeze_commit("freeze.json").startswith("unknown: a shallow clone")
+
+
+def test_a_virtualenv_inside_the_repository_is_not_repository_code(monkeypatch):
+    """The launcher refused an honest run from a tree holding .venv (its .pth-loaded modules lie under ROOT)."""
+    import types
+    stray = types.ModuleType("greg_review_venv")
+    stray.__file__ = str(E.ROOT / ".venv/lib/python3.11/site-packages/_distutils_hack/__init__.py")
+    monkeypatch.setitem(E.sys.modules, "greg_review_venv", stray)
+    assert not any(p.startswith(".venv/") for p in E._loaded_repository_files())
+
+
+
+@pytest.mark.skipif(not isolation.available()["available"], reason="Landlock unavailable on this host")
+def test_a_confined_process_in_a_virtualenv_can_start_its_interpreter(tmp_path):
+    """The compatibility check: confinement denied <venv>/pyvenv.cfg, so a confined worker's child interpreter
+    failed whenever GREG ran from a virtualenv (pre-existing; CI runs without one)."""
+    import subprocess
+    import sys
+    subprocess.run([sys.executable, "-m", "venv", "--without-pip", "--system-site-packages", str(tmp_path / "v")],
+                   check=True, capture_output=True, timeout=120)
+    code = ("import subprocess, sys, tempfile; sys.path.insert(0, %r)\n"
+            "from greg import isolation\n"
+            "isolation.confine(tempfile.mkdtemp(), [], list_code=False)\n"
+            "print(subprocess.run([sys.executable, '-c', 'print(1)'], capture_output=True, text=True).returncode)\n"
+            ) % str(E.ROOT)
+    proc = subprocess.run([str(tmp_path / "v" / "bin" / "python"), "-I", "-c", code], capture_output=True, text=True,
+                          timeout=120)
+    assert proc.stdout.strip() == "0", proc.stdout + proc.stderr
+
+
+# ------------------------------------------------------------------ cycle 5 design (2026-10-16): a frozen search policy
+# Recorded cycles ran the search with seed 20261008 (cycle 4's freeze names it; cycles 1-3 used the default).
+RECORDED_CYCLES = ("2026-10-08/cycle-forecast-1.json", "2026-10-09/cycle-immune-2.json",
+                   "2026-10-14/cycle-cr-3.json", "2026-10-15-cr-4/cycle-cr-4.json")
+
+
+@pytest.mark.parametrize("path", RECORDED_CYCLES)
+def test_every_recorded_cycles_search_replays_from_its_record_through_run_search(path):
+    """The search left cycle() for run_search(); the default policy is the same search draw for draw: replayed
+    with each recorded configuration's recorded train loss, it visits the recorded lineage in order and selects the
+    recorded candidate. No instance of any split is generated."""
+    record = json.loads((E.EVIDENCE / path).read_text())
+    target = E.TARGET_SPECS[record["target"]]().target()
+    assert target.incumbent == record["incumbent"]["config"]
+    recorded = {step["id"]: step["train_mean_loss"] for step in record["search"]["lineage"]}
+    setting = E.search_setting(target, seed=20261008)
+    assert setting == {"policy": "mutate-incumbent/1"}
+    found = E.run_search(target, lambda config: {"x": recorded[E.config_id(config)]},
+                         generations=record["search"]["generations"], population=record["search"]["population"],
+                         seed=20261008, incumbent_loss=record["failure"]["incumbent_mean_train_loss"],
+                         initial=setting.get("initial", ()))
+    assert [s["id"] for s in found["lineage"]] == [s["id"] for s in record["search"]["lineage"]]
+    assert [s["ops"] for s in found["lineage"]] == [s["ops"] for s in record["search"]["lineage"]]
+    assert found["evaluated"] == record["search"]["evaluated"] and found["candidate"]["id"] == record["candidate"]["id"]
+
+
+def test_the_cover_policy_declares_axis_extremes_and_a_latin_hypercube_inside_the_closed_space():
+    target = E.cr_target()
+    setting = E.search_setting(target, "cover/1", seed=20261016, lhs=16)
+    assert setting["policy"] == "cover/1" and setting["lhs"] == 16
+    initial = setting["initial"]
+    ids = [E.config_id(c) for c in initial]
+    assert len(ids) == len(set(ids)) and E.config_id(target.incumbent) not in ids
+    assert all(target.validate(c) == c for c in initial)
+    axis = E._axis_cover(target)
+    # every axis extreme that differs from the incumbent, p_restart = 1.0 among them; then exactly lhs points
+    expected_axis = [c for c in axis if E.config_id(c) != E.config_id(target.incumbent)]
+    assert initial[:len(expected_axis)] == expected_axis and len(initial) == len(expected_axis) + 16
+    assert {**target.incumbent, "p_restart": 1.0} in initial
+    lhs = initial[len(expected_axis):]
+    for key, (kind, values) in target.space.items():
+        column = [c[key] for c in lhs]
+        if kind == "float":                       # one point in each of 16 equal strata
+            lo, hi = values
+            strata = sorted(min(15, int((v - lo) / (hi - lo) * 16)) for v in column)
+            assert strata == list(range(16)), (key, column)
+        else:                                     # each choice used, counts differ by at most one
+            counts = [column.count(v) for v in values]
+            assert max(counts) - min(counts) <= 1 and min(counts) >= 1, (key, counts)
+    assert E.search_setting(target, "cover/1", seed=20261016, lhs=16) == setting           # deterministic
+    assert E.search_setting(target, "cover/1", seed=1, lhs=16)["initial"][len(expected_axis):] != lhs
+    assert E.search_setting(target, "cover/1", seed=1, lhs=0)["initial"] == expected_axis
+
+
+@pytest.mark.parametrize("policy,lhs,why", [("mutate-incumbent/1", 4, "declares no cover"),
+                                            ("cover/1", 65, "lhs is an integer"), ("cover/1", True, "lhs is an integer"),
+                                            ("cover/1", 2.0, "lhs is an integer"), ("anneal/1", 0, "unknown search")])
+def test_a_search_setting_outside_its_declared_policies_is_refused(policy, lhs, why):
+    with pytest.raises(E.EvolutionError, match=why):
+        E.search_setting(E.cr_target(), policy, seed=1, lhs=lhs)
+
+
+def test_a_cover_search_reaches_the_declared_region_and_keeps_the_default_stream():
+    """Generation 1 evaluates the incumbent's mutants (the same draws as the default policy), then the declared
+    cover; a region far from the incumbent becomes a candidate when it scores best."""
+    target = E.cr_target()
+
+    def evaluate(config):                          # a loss that favours restart-heavy search policies
+        return {"x": 1.0 - config["p_restart"] + 0.001 * config["mu"]}
+    incumbent_loss = round(1.0 + 0.001 * target.incumbent["mu"], 6)
+    default = E.run_search(target, evaluate, generations=3, population=4, seed=7, incumbent_loss=incumbent_loss)
+    cover = E.search_setting(target, "cover/1", seed=7, lhs=8)
+    found = E.run_search(target, evaluate, generations=3, population=4, seed=7, incumbent_loss=incumbent_loss,
+                         initial=cover["initial"])
+    first = [s for s in found["lineage"] if s["generation"] == 1]
+    mutants = [s["id"] for s in default["lineage"] if s["generation"] == 1]
+    assert [s["id"] for s in first[:len(mutants)]] == mutants
+    assert {op for s in first[len(mutants):] for op in s["ops"]} == {"cover:axis", "cover:lhs"}
+    assert all(s["parents"] == [] for s in first[len(mutants):])
+    assert found["candidate"]["config"]["p_restart"] == 1.0
+    assert max(s["config"]["p_restart"] for s in default["lineage"]) < 1.0
+
+
+def _cr_dev_split(monkeypatch):
+    from greg.cognition.genomes import developmental as D
+
+    def dev(seeds):
+        return {f"s{s}": {"data": D.constraint_release_instance(s)[0], "truth": D.constraint_release_instance(s)[1],
+                          "category": D.constraint_release_subregion(D.constraint_release_instance(s)[0])}
+                for s in seeds}
+    monkeypatch.setattr(E, "cr_split", lambda name=E.CR_CURRENT_SPLIT: (dev((1, 2)), dev((4, 5)), []))
+
+
+def test_the_search_setting_is_frozen_with_every_configuration_and_re_derived_by_the_cycle(monkeypatch, tmp_path):
+    """The freeze records the policy and the configurations it declares; a cycle re-derives them and refuses a
+    frozen list, policy or seed that differs, and a run whose own setting differs from the freeze."""
+    monkeypatch.setattr(E, "_dirty", lambda paths: [])
+    monkeypatch.setattr(E, "_spent_heldout", lambda *a, **k: {})
+    monkeypatch.setattr(E, "FAILURE_RATE_TRIGGER", 1.01)              # stop after the incumbent's train evaluation
+    _cr_dev_split(monkeypatch)
+    path = tmp_path / "freeze.json"
+    manifest = E.freeze("constraint_release", path, generations=2, population=2, seed=11, search="cover/1", lhs=4)
+    settings = manifest["inputs"]["settings"]
+    assert manifest["inputs"]["schema"] == E.FREEZE_SCHEMA == "greg-protected-evolution-freeze/3"
+    assert settings["search"] == E.search_setting(E.cr_target(), "cover/1", seed=11, lhs=4)
+    assert json.loads(path.read_text())["inputs"]["settings"] == settings
+    confine = isolation.available()["available"]
+    frozen = json.loads(path.read_text())["inputs"]["settings"]
+    record = E.cycle(target_name="constraint_release", freeze=path, require_confinement=confine, **frozen)  # as __main__
+    assert record["decision"] == "NO_RECURRING_FAILURE"
+    edited = json.loads(json.dumps(frozen["search"]))
+    edited["initial"][0]["p_restart"] = 0.5
+    with pytest.raises(E.EvolutionError, match="not what its declared policy produces"):
+        E.cycle(target_name="constraint_release", freeze=path, require_confinement=confine,
+                **{**frozen, "search": edited})
+    with pytest.raises(E.EvolutionError, match="FROZEN_INPUT_CHANGED: the search settings differ"):
+        E.cycle(target_name="constraint_release", freeze=path, require_confinement=confine,
+                **{**frozen, "search": None})                   # the default policy, not the frozen cover
+    with pytest.raises(E.EvolutionError, match="not what its declared policy produces"):
+        E.cycle(target_name="constraint_release", freeze=path, require_confinement=confine,
+                **{**frozen, "seed": 12})                       # another seed draws another hypercube
+    with pytest.raises(E.EvolutionError, match="a search setting is"):
+        E.cycle(target_name="constraint_release", freeze=path, require_confinement=confine,
+                **{**frozen, "search": {**frozen["search"], "evaluator": "x"}})
+    with pytest.raises(E.EvolutionError, match="population is an integer"):
+        E.freeze("constraint_release", tmp_path / "g.json", population=True)
+
+
+def test_the_cycle_5_split_is_fresh_and_checked_without_generating_an_instance(monkeypatch):
+    from greg.cognition.genomes import admission, developmental as D
+
+    def refuse(seed):
+        raise AssertionError(f"generated instance {seed}")
+    monkeypatch.setattr(D, "constraint_release_instance", refuse)
+    train, held, reserved = E.cr_split_seeds("cycle-5")
+    assert (train, held) == (tuple(range(7600, 7660)), tuple(range(7700, 7880)))     # the pre-registered split
+    earlier = {s for name in ("cycle-3", "cycle-4") for part in E.CR_SPLITS[name] for s in part}
+    others = earlier | set(E.IMMUNE_TRAIN_SEEDS) | set(E.IMMUNE_HELDOUT_SEEDS) | set(admission.DEV_SEEDS) | \
+        set(admission.HELDOUT_SEEDS) | admission.spent_seeds()
+    assert others <= reserved and not (set(train) | set(held)) & others
+    assert set(train) | set(held) <= set(admission.P8_RESERVED)
+    # its freeze is committed (2026-10-16-cr-5), so the split counts as spent although the cycle stopped at the
+    # adversarial gate before the held-out look: a committed freeze spends its split whether or not it looked
+    spent = E._spent_heldout("constraint_release")
+    assert {f"s{s}" for s in held} <= set().union(*spent.values())
+    assert any("2026-10-16-cr-5" in key for key, ids in spent.items() if {f"s{s}" for s in held} <= set(ids))
+    assert {f"s{s}" for s in held} <= E._registered_heldout("constraint_release")   # a test run never looks at it
+    for bad in ({"cycle-x": (tuple(range(7450, 7470)), tuple(range(7800, 7810)))},     # overlaps cycle 4's train
+                {"cycle-x": (tuple(range(3000, 3010)), tuple(range(7800, 7810)))},     # outside P8's range
+                {"cycle-x": (tuple(range(7800, 7810)), tuple(range(7805, 7815)))},     # train meets held-out
+                {"cycle-x": ((7800, 7800), tuple(range(7805, 7815)))}):                # a repeated seed
+        monkeypatch.setattr(E, "CR_SPLITS", {**E.CR_SPLITS, **bad})
+        with pytest.raises(E.EvolutionError, match="overlap"):
+            E.cr_split_seeds("cycle-x")
+        with pytest.raises(E.EvolutionError, match="overlap"):
+            E.cr_split("cycle-x")                               # the guard runs before any instance
+    with pytest.raises(E.EvolutionError, match="unknown"):
+        E.cr_split_seeds("cycle-9")
+
+
+# instance generation, truths, stress sets and method, byte-identical at cycle 4's commit 2cbb43d and at c8d1fd3
+GENERATION_CODE_SHA256 = "e3c174b08e368a831f5c13f7ffc1e7ba3bc7e14862443b699e0822aa99b7cb41"
+
+
+def test_the_cycle_6_split_is_fresh_and_checked_without_generating_an_instance(monkeypatch):
+    from greg.cognition.genomes import admission, developmental as D
+
+    def refuse(seed):
+        raise AssertionError(f"generated instance {seed}")
+    monkeypatch.setattr(D, "constraint_release_instance", refuse)
+    assert E.CR_CURRENT_SPLIT == "cycle-6"
+    train, held, reserved = E.cr_split_seeds("cycle-6")
+    assert (train, held) == (tuple(range(7880, 8000)), tuple(range(8060, 8300)))    # the pre-registered split
+    earlier = {s for name in ("cycle-3", "cycle-4", "cycle-5") for part in E.CR_SPLITS[name] for s in part}
+    others = earlier | set(E.IMMUNE_TRAIN_SEEDS) | set(E.IMMUNE_HELDOUT_SEEDS) | set(admission.DEV_SEEDS) | \
+        set(admission.HELDOUT_SEEDS) | admission.spent_seeds()
+    assert others <= reserved and not (set(train) | set(held)) & others
+    assert set(train) | set(held) <= set(admission.P8_RESERVED) and not set(held) & set(range(3000, 4000))
+    # its freeze (2026-10-16-cr-6) is committed and the cycle looked once, so the split is spent
+    spent = E._spent_heldout("constraint_release")
+    assert any("2026-10-16-cr-6" in key for key, ids in spent.items() if {f"s{s}" for s in held} <= set(ids))
+    assert {f"s{s}" for s in held} <= E._registered_heldout("constraint_release")
+
+
+def test_earlier_constraint_release_splits_and_the_seal_code_are_unchanged():
+    """Cycles 3 and 4 re-seal at HEAD only if their seeds and the seal's code (SealedEvaluator, the target's score
+    and RULE) are unchanged. Checked here without generating their instances; the re-seal of cycle 3 from its
+    instances is test_an_earlier_cycles_split_reproduces_its_frozen_evaluator_seals."""
+    import hashlib
+    import inspect
+    from greg.cognition.genomes import developmental as D
+    freeze4 = json.loads((E.EVIDENCE / "2026-10-15-cr-4/freeze.json").read_text())["inputs"]
+    train4, held4 = E.CR_SPLITS["cycle-4"]
+    assert sorted(f"s{s}" for s in train4) == freeze4["split"]["train"]
+    assert sorted(f"s{s}" for s in held4) == freeze4["split"]["heldout"]
+    assert E.CR_SPLITS["cycle-3"] == (tuple(range(7200, 7260)), tuple(range(7300, 7390)))
+    assert freeze4["rule"] == E.RULE
+    code = inspect.getsource(E.SealedEvaluator) + inspect.getsource(D.constraint_release_score) + E.RULE
+    # computed at c8d1fd3, where the seal code is byte-identical to cycle 4's commit 2cbb43d
+    assert hashlib.sha256(code.encode()).hexdigest() == \
+        "98c39cdd809f3509140dc2d23ce0c70301d5b3e3eb34e91b847b4e2bbfc08b3d"
+    # what generates the instances, their truths, the stress sets and the method also fixes the seals and the replay
+    generated = "".join(inspect.getsource(f) for f in (
+        D.constraint_release_instance, D._twt_optimum, D._cr_inputs, D.constraint_release_solve_with,
+        D.constraint_release_random_restart, D.constraint_release_subregion, E._cr_stress))
+    assert hashlib.sha256(generated.encode()).hexdigest() == GENERATION_CODE_SHA256
+
+
+# ------------------------------------------------------------------ named immune splits (cycle 7 design)
+def test_cycle_2s_immune_split_keeps_its_name_and_seeds_and_is_checked_without_generating(monkeypatch):
+    from greg.cognition.genomes import admission, collective
+
+    def refuse(seed):
+        raise AssertionError(f"generated instance {seed}")
+    monkeypatch.setattr(collective, "immune_gaussian_instance", refuse)
+    train, held, reserved = E.immune_split_seeds("cycle-2")
+    assert (train, held) == (tuple(range(7000, 7040)), tuple(range(8000, 8060)))
+    assert E.IMMUNE_SPLITS["cycle-2"] == (E.IMMUNE_TRAIN_SEEDS, E.IMMUNE_HELDOUT_SEEDS)
+    cr = {s for seeds in E.CR_SPLITS.values() for part in seeds for s in part}
+    assert cr <= reserved and set(admission.HELDOUT_SEEDS) <= reserved and not (set(train) | set(held)) & reserved
+    # cycle 2 never looked at its held-out split, and the pre-freeze ledger names it by the named split
+    assert E._spent_heldout("immune_detect") == {}
+    assert E.PRE_FREEZE_HELDOUT["2026-10-09/cycle-immune-2"][1]() == {f"s{s}" for s in held}
+    assert {f"s{s}" for s in held} <= E._registered_heldout("immune_detect")
+    for bad in ({"cycle-x": (tuple(range(7020, 7030)), tuple(range(8540, 8550)))},     # overlaps cycle 2's train
+                {"cycle-x": (tuple(range(7880, 7890)), tuple(range(8540, 8550)))},     # a constraint-release split
+                {"cycle-x": (tuple(range(3100, 3110)), tuple(range(8540, 8550)))},     # outside P8's range
+                {"cycle-x": (tuple(range(8540, 8550)), tuple(range(8545, 8555)))}):    # train meets held-out
+        monkeypatch.setattr(E, "IMMUNE_SPLITS", {**E.IMMUNE_SPLITS, **bad})
+        with pytest.raises(E.EvolutionError, match="overlap"):
+            E.immune_split_seeds("cycle-x")
+        with pytest.raises(E.EvolutionError, match="overlap"):
+            E.immune_split("cycle-x")                           # the guard runs before any instance
+    with pytest.raises(E.EvolutionError, match="unknown"):
+        E.immune_split_seeds("cycle-9")
+
+
+# the immune method, score, stress sets and baseline, byte-identical at cycle 2's commit ed4ee29 and at 050c1b2
+# (the generator was then named differently; test_genomes_collective_native pins the split it produces)
+IMMUNE_CYCLE_CODE_SHA256 = "77b51d45108def343693c123a6c58d1e2e9357b403dbc9fcc493904af468e36a"
+
+
+def test_the_immune_cycle_code_is_unchanged_since_cycle_2():
+    import hashlib
+    import inspect
+    from greg.cognition.genomes import collective as C
+    code = "".join(inspect.getsource(f) for f in (C.immune_solve_with, C.immune_score, C.immune_zscore,
+                                                   C._binom_upper, C._immune_inputs, C._standardiser,
+                                                   C._immune_config, E._immune_stress))
+    assert hashlib.sha256(code.encode()).hexdigest() == IMMUNE_CYCLE_CODE_SHA256
+    seal = inspect.getsource(E.SealedEvaluator) + inspect.getsource(C.immune_score) + E.RULE
+    assert hashlib.sha256(seal.encode()).hexdigest().startswith("8126e28e9f1c")
+
+
+def test_p8_reserves_8600_to_9199_which_no_admission_freeze_or_p8_split_had_used():
+    """Added for cycle 7's design (2026-10-21) before any instance of these seeds was generated: an admission run
+    can no longer choose them, and every earlier P8 split, canary and admission freeze stays outside them."""
+    from greg.cognition.genomes import admission
+    extension = set(range(8600, 9200))
+    assert admission.P8_RESERVED == range(7000, 9200) and extension <= set(admission.P8_RESERVED)
+    used = admission.spent_seeds() | set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS)
+    used |= {s for name, seeds in (*E.CR_SPLITS.items(), *E.IMMUNE_SPLITS.items()) if name != "cycle-7"
+             for part in seeds for s in part}                           # cycle 7's immune split is what it is for
+    used |= {s for seeds in E.CR_CANARY_SEEDS.values() for s in seeds}
+    assert not used & extension and max(used & set(admission.P8_RESERVED)) < 8600
+    for manifest in E.EVIDENCE.rglob("freeze.json"):
+        split = json.loads(manifest.read_text()).get("inputs", {}).get("split", {})
+        ids = {int(k[1:]) for k in (*split.get("train", []), *split.get("heldout", [])) if k[1:].isdigit()}
+        assert not ids & extension, manifest
+
+
+def test_the_cycle_7_immune_split_is_registered_fresh_and_not_current(monkeypatch):
+    from greg.cognition.genomes import admission, collective
+
+    def refuse(seed):
+        raise AssertionError(f"generated instance {seed}")
+    monkeypatch.setattr(collective, "immune_gaussian_instance", refuse)
+    train, held, reserved = E.immune_split_seeds("cycle-7")
+    assert (train, held) == (tuple(range(8600, 8720)), tuple(range(8720, 8840)))
+    assert set(E.IMMUNE_SPLITS["cycle-2"][0]) | set(E.IMMUNE_SPLITS["cycle-2"][1]) <= reserved
+    assert set(train) | set(held) <= set(admission.P8_RESERVED) and not (set(train) | set(held)) & reserved
+    assert not (set(train) | set(held)) & set(range(3000, 4000))       # no review seed of any pilot
+    assert E.IMMUNE_CURRENT_SPLIT == "cycle-2"                          # the pilot judged it NOT_VIABLE
+    assert {f"s{s}" for s in held} <= E._registered_heldout("immune_detect")   # a test run never looks at it
+    assert not {f"s{s}" for s in held} & set().union(*E._spent_heldout("immune_detect").values(), set())
+    # the constraint-release splits now avoid it too
+    assert set(train) | set(held) <= E.cr_split_seeds("cycle-6")[2]
+
+
+# ------------------------------------------------------------------ stress gate with wrong answers (2026-10-21)
+def test_the_stress_gate_counts_wrong_answers_when_both_means_are_infinite():
+    """Found by the cycle-7 design pilot: ``worsened(inf, inf)`` is False, so a candidate with more wrong answers
+    than an incumbent that already had one passed the adversarial gate."""
+    inf = float("inf")
+    assert E.worsened(inf, inf) is False                                  # the blind spot itself
+    more = {"incumbent": inf, "candidate": inf, "wrong": {"incumbent": 2, "candidate": 3, "both_answered": 10,
+                                                          "incumbent_answered_mean": -0.9,
+                                                          "candidate_answered_mean": -0.95}}
+    assert E.stress_worsened(more)
+    fewer = {**more, "wrong": {**more["wrong"], "incumbent": 3, "candidate": 2}}
+    assert not E.stress_worsened(fewer)
+    equal_worse = {**more, "wrong": {**more["wrong"], "candidate": 2, "candidate_answered_mean": -0.5}}
+    assert E.stress_worsened(equal_worse)                                 # -0.5 vs -0.9: worse by > 5%
+    equal_same = {**more, "wrong": {**more["wrong"], "candidate": 2, "candidate_answered_mean": -0.9}}
+    assert not E.stress_worsened(equal_same)
+    new_wrong = {"incumbent": -0.9, "candidate": inf, "wrong": {"incumbent": 0, "candidate": 1, "both_answered": 9,
+                                                                "incumbent_answered_mean": -0.9,
+                                                                "candidate_answered_mean": -0.9}}
+    assert E.stress_worsened(new_wrong)
+    assert E.stress_worsened({"incumbent": 0.010, "candidate": 0.0106}) and \
+        not E.stress_worsened({"incumbent": 0.010, "candidate": 0.0104})   # finite sets: unchanged
+
+
+AUDIT = E.EVIDENCE / "2026-10-21-stress-gate-audit"
+AUDITED_RECORDS = ("2026-10-08/cycle-forecast-1.json", "2026-10-09/cycle-immune-2.json", "2026-10-14/cycle-cr-3.json",
+                   "2026-10-15-cr-4/cycle-cr-4.json", "2026-10-16-cr-5/cycle-cr-5.json",
+                   "2026-10-16-cr-6/cycle-cr-6.json")
+
+
+def test_every_recorded_stress_decision_is_unchanged_on_reproduced_item_level_losses():
+    """Replaces the 32246ee test, which passed only the two recorded means and so reached the old comparison through
+    the ``wrong is None`` fallback. Here the gate runs on per-item stress losses reproduced from each record's TRAIN
+    items at its source commit (independent audit, 2026-10-21; no held-out item was built). The reproduced means must
+    equal the frozen record's, which ties the item data to the record; then every adversarial verdict must be the
+    recorded one, and the item-level wrong-answer branch must actually run somewhere."""
+    items = json.loads((AUDIT / "item_losses.json").read_text())["cycles"]
+    reanalysis = json.loads((AUDIT / "reanalysis.json").read_text())["cycles"]
+    assert sorted(c["record"] for c in items.values()) == sorted(AUDITED_RECORDS)
+    item_level = 0
+    for name, cycle in items.items():
+        record = json.loads((E.EVIDENCE / cycle["record"]).read_text())
+        assert record["source_commit"] == cycle["source_commit"] and record["evaluator_seals"]["train"] == \
+            cycle["train_seal"]
+        summary = E.stress_summary(cycle["losses"]["incumbent"], cycle["losses"]["candidate"])
+        assert set(summary) == {k for k, v in record["adversarial"].items() if isinstance(v, dict)}
+        for kind, v in summary.items():
+            assert (v["incumbent"], v["candidate"]) == (record["adversarial"][kind]["incumbent"],
+                                                       record["adversarial"][kind]["candidate"]), (name, kind)
+            item_level += "wrong" in v
+        rejected = (not record["adversarial"]["all_outputs_verified"]
+                    or any(E.stress_worsened(v) for v in summary.values()))
+        assert rejected == (record.get("reason") == "adversarial evaluation failed"), name
+        assert reanalysis[name]["status"] == "RESOLVED"
+        assert reanalysis[name]["original"]["decision"] == reanalysis[name]["reanalysed"]["decision"] == \
+            record["decision"]
+    assert item_level >= 2           # cycle 2: scarce (0 vs 1 wrong) and strict (1 vs 1 wrong, both-answered means)
+    strict = E.stress_summary(*(({k: v for k, v in items["cycle-immune-2"]["losses"][r].items()
+                                  if k.startswith("strict:")}) for r in ("incumbent", "candidate")))["strict"]
+    assert strict["wrong"]["incumbent"] == strict["wrong"]["candidate"] == 1 and not E.stress_worsened(strict)
+
+
+def test_the_means_only_form_never_reaches_the_wrong_answer_branch():
+    """Why the 32246ee historical test proved nothing about the new branch: given only the two means it falls back."""
+    inf = math.inf
+    assert E.stress_worsened({"incumbent": inf, "candidate": inf}) is False
+    assert E.stress_worsened({"incumbent": inf, "candidate": inf, "wrong": {
+        "incumbent": 1, "candidate": 2, "both_answered": 3, "incumbent_answered_mean": 0.1,
+        "candidate_answered_mean": 0.1}}) is True
+
+
+# ------------------------------------------------------------------ independent stress-gate audit (2026-10-21)
+def _inline_239a87f(inc_s, cand_s):
+    """cycle()'s adversarial aggregation as it stood at 239a87f, verbatim, as the reference for well-formed input."""
+    import statistics
+    adversarial = {}
+    for kind in sorted({k.split(":")[0] for k in inc_s}):
+        ki = [inc_s[k] for k in inc_s if k.startswith(kind)]
+        kc = [cand_s[k] for k in cand_s if k.startswith(kind)]
+        adversarial[kind] = {"incumbent": round(statistics.fmean(ki), 6), "candidate": round(statistics.fmean(kc), 6)}
+        if any(math.isinf(v) for v in ki + kc):
+            finite = [(a, b) for a, b in zip(ki, kc) if not (math.isinf(a) or math.isinf(b))]
+            adversarial[kind]["wrong"] = {"incumbent": sum(map(math.isinf, ki)), "candidate": sum(map(math.isinf, kc)),
+                                          "both_answered": len(finite),
+                                          "incumbent_answered_mean": round(statistics.fmean(a for a, _ in finite), 6)
+                                          if finite else None,
+                                          "candidate_answered_mean": round(statistics.fmean(b for _, b in finite), 6)
+                                          if finite else None}
+    return adversarial
+
+
+def test_stress_items_group_by_exact_kind_so_a_prefix_kind_cannot_mask_a_worse_set():
+    """At 239a87f ``k.startswith(kind)`` put ``leaner:*`` items into ``lean``: a 50-fold worse ``lean`` set passed."""
+    inc, cand = {"lean:a": 0.01, "leaner:a": 10.0}, {"lean:a": 0.5, "leaner:a": 0.0}
+    summary = E.stress_summary(inc, cand)
+    assert summary["lean"] == {"incumbent": 0.01, "candidate": 0.5}
+    assert E.stress_worsened(summary["lean"])
+
+
+def test_stress_items_pair_by_key_not_by_position():
+    """At 239a87f ``zip(ki, kc)`` paired by position: loss maps in different key orders compared the wrong items."""
+    inf = math.inf
+    inc, cand = {"k:a": inf, "k:b": 0.01, "k:c": 0.01}, {"k:c": 0.5, "k:b": 0.01, "k:a": inf}
+    wrong = E.stress_summary(inc, cand)["k"]["wrong"]
+    assert wrong["both_answered"] == 2 and wrong["candidate_answered_mean"] == 0.255
+    assert E.stress_worsened(E.stress_summary(inc, cand)["k"])
+    with pytest.raises(E.EvolutionError, match="STRESS_UNPAIRED"):
+        E.stress_summary(inc, {"k:a": inf, "k:b": 0.01})                # zip would silently drop k:c
+
+
+def test_stress_summary_equals_the_239a87f_aggregation_on_well_formed_aligned_losses():
+    rng = random.Random(7)
+    for _ in range(3000):
+        kinds = rng.sample(["lean", "fewval", "scarce", "strict"], rng.randint(1, 3))
+        keys = [f"{k}:s{i}" for k in kinds for i in range(rng.randint(1, 5))]
+        draw = lambda: math.inf if rng.random() < 0.2 else rng.choice([-0.9, -0.2, 0.0, 0.01, 0.0105, 1.0])  # noqa
+        inc, cand = {k: draw() for k in keys}, {k: draw() for k in keys}
+        assert E.stress_summary(inc, cand) == _inline_239a87f(inc, cand)
+
+
+def test_the_cycle_aggregates_its_stress_sets_through_stress_summary():
+    import inspect
+    source = inspect.getsource(E.cycle)
+    assert "stress_summary(inc_s, cand_s)" in source and "startswith(kind)" not in source
+
+
+@pytest.mark.parametrize("kind", [
+    {"incumbent": 0.01, "candidate": math.nan},                          # NaN compares False: passed at 239a87f
+    {"incumbent": math.nan, "candidate": 9.0},
+    {"incumbent": -math.inf, "candidate": 5.0},                          # -inf + 0.05 * inf is NaN: passed
+    {"incumbent": None, "candidate": 0.01},
+    {"incumbent": True, "candidate": 0.01},
+    {"incumbent": math.inf, "candidate": math.inf, "wrong": {"incumbent": 1, "candidate": 1, "both_answered": 3,
+     "incumbent_answered_mean": 0.1, "candidate_answered_mean": math.nan}},          # passed
+    {"incumbent": math.inf, "candidate": math.inf, "wrong": {"incumbent": 1, "candidate": -5, "both_answered": 3,
+     "incumbent_answered_mean": 0.1, "candidate_answered_mean": 0.1}},               # negative count: passed
+    {"incumbent": math.inf, "candidate": math.inf, "wrong": {"incumbent": 1.0, "candidate": 1.0, "both_answered": 3,
+     "incumbent_answered_mean": 0.1, "candidate_answered_mean": 0.1}},
+    {"incumbent": math.inf, "candidate": math.inf, "wrong": {"incumbent": 1, "candidate": 1, "both_answered": 3,
+     "incumbent_answered_mean": None, "candidate_answered_mean": None}},             # TypeError at 239a87f
+    {"incumbent": None, "candidate": None, "malformed": {"incumbent": 1, "candidate": 0}},
+])
+def test_the_stress_gate_fails_closed_on_values_it_cannot_rank(kind):
+    assert E.stress_worsened(kind) is True
+
+
+@pytest.mark.parametrize("inc, cand", [
+    ({"k:a": 0.01, "k:b": 0.01}, {"k:a": math.nan, "k:b": 0.01}),        # inline: no wrong block, NaN mean, PASS
+    ({"k:a": math.nan, "k:b": 0.01}, {"k:a": 9.0, "k:b": 9.0}),            # a NaN incumbent disarmed the set: PASS
+    ({"k:a": -math.inf, "k:b": 0.01}, {"k:a": 0.5, "k:b": 0.5}),          # -inf counted as a wrong answer: PASS
+    ({"k:a": math.inf, "k:b": -math.inf}, {"k:a": 0.5, "k:b": 0.5}),      # inline raised ValueError in fsum
+])
+def test_a_stress_set_with_a_nan_or_negative_infinite_loss_is_malformed_and_fails(inc, cand):
+    summary = E.stress_summary(inc, cand)["k"]
+    assert summary["malformed"] and summary["incumbent"] is None and E.stress_worsened(summary)
+
+
+def test_well_formed_wrong_answer_semantics_are_unchanged_by_failing_closed():
+    inf = math.inf
+    s = lambda inc, cand: E.stress_worsened(E.stress_summary(inc, cand)["k"])     # noqa: E731
+    assert s({"k:a": inf, "k:b": 0.01}, {"k:a": 1.0, "k:b": 1.0}) is False          # fewer wrong: passes (policy)
+    assert s({"k:a": inf, "k:b": 0.1}, {"k:a": inf, "k:b": inf}) is True            # more wrong
+    assert s({"k:a": inf, "k:b": 0.01}, {"k:a": inf, "k:b": 0.1}) is True           # equal, answered worse
+    assert s({"k:a": inf, "k:b": 0.01}, {"k:a": 5.0, "k:b": inf}) is False          # equal, none both answered
+    assert s({"k:a": 0.010}, {"k:a": 0.0106}) is True and s({"k:a": 0.010}, {"k:a": 0.0104}) is False

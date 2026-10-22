@@ -45,13 +45,17 @@ GENOMES = {
     "collective_market": (SIMULATED, "synthetic lognormal private values"),
     "collective_quorum": (SIMULATED, "seeded observer panels with shared noise; truth is the hidden state"),
     "control_mpc": (SIMULATED, "simulated double-integrator plant"),
+    "crowd_weighted_vote": (SIMULATED, "simulated crowds of seeded worker types; truth is the hidden item labels"),
     "develop_repair": (SIMULATED, "simulated TARGET_FORM_001 lattices with seeded damage and controller failures"),
     "mech_vcg": (SIMULATED, "synthetic bidder values and simulated bidding behaviour"),
     "pid_simopt": (SIMULATED, "seeded FOPDT plant simulations"),
     # mathematical instances: the instance is the problem; truth is computed from it independently
     "assignment_lsa": (MATHEMATICAL, "generated cost matrices; exact optimum"),
     "bimatrix_nash": (MATHEMATICAL, "generated bimatrix games; equilibria checked exactly"),
+    "binpack_cpsat": (MATHEMATICAL, "planted bin-packing instances; optimum known by construction"),
+    "blackbox_multistart_lbfgsb": (MATHEMATICAL, "declared shifted test objectives; known minimum"),
     "collective_aco": (MATHEMATICAL, "generated TSP instances; Held-Karp or reference tours"),
+    "community_louvain": (MATHEMATICAL, "planted stochastic block models; quality is the recomputed modularity"),
     "collective_physarum": (MATHEMATICAL, "generated Steiner network instances; reference heuristics"),
     "critical_path": (MATHEMATICAL, "generated project networks; exact longest path"),
     "decision_preposterior": (MATHEMATICAL, "structural recomputation on generated posteriors"),
@@ -68,12 +72,14 @@ GENOMES = {
     "info_experiment": (MATHEMATICAL, "a declared prior and likelihood tables; scenarios drawn from that prior"),
     "knapsack_bnb": (MATHEMATICAL, "generated knapsack instances; exact optimum"),
     "mc_expectation": (MATHEMATICAL, "expectations of declared distributions; analytic truth"),
+    "maxsat_cpsat": (MATHEMATICAL, "generated weighted MaxSAT instances; exact optimum by an independent MILP"),
     "mc_importance": (MATHEMATICAL, "Gamma upper tails; truth from the closed-form survival function"),
     "mechanism_check": (MATHEMATICAL, "declared direct mechanisms; exhaustive check"),
     "milp_optimize": (MATHEMATICAL, "generated integer programmes; exact optimum"),
     "min_cost_flow": (MATHEMATICAL, "generated flow networks; exact optimum"),
     "newsvendor_compile": (MATHEMATICAL, "structural translation checks on generated scenario sets"),
     "queue_erlang": (MATHEMATICAL, "declared M/M/c parameters; exact Erlang C"),
+    "reconcile_qp": (MATHEMATICAL, "generated noisy balances; exact QP optimum by exhaustive face enumeration"),
     "search_astar": (MATHEMATICAL, "generated weighted grids; exact shortest path"),
     "synth_cegis": (MATHEMATICAL, "planted bounded synthesis tasks; exhaustive check"),
     "verify_liveness": (MATHEMATICAL, "declared transition systems; exhaustive check"),
@@ -89,9 +95,9 @@ P6_FAMILIES = {
                        "re-run, not fresh seeds); truth is the generator's hidden effects"),
     "F3": (MATHEMATICAL, "constructed to need two intelligences; truth is the exact optimum"),
     "F4": (SIMULATED, "constructed to need two intelligences; truth is the Bayes-optimal action under the declared "
-                      "Beta(1,1) posterior, not the hidden parameter (review of #179, M13). The best constituent "
-                      "was denied the observed evidence (an uninformed prior), and under the hidden parameter the "
-                      "composition realises less value (mean -55.4 against -20.3)"),
+                      "Beta(1,1) prior, not the hidden parameter: in realised value the composition is worse (-55.4 "
+                      "against the uninformed constituent's -20.3), and the constituent was denied the observed "
+                      "evidence"),
     "F5": (NATURAL, "real M4 data and real outcomes; the newsvendor decision layer is declared"),
     "F6": (NATURAL, "real bank call arrivals and real outcomes; the staffing decision layer is declared"),
     "F7": (NATURAL, "real SNDlib topologies, lengths, demands and loads; truth is the exact optimum of the declared "

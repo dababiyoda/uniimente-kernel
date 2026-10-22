@@ -191,6 +191,12 @@ def optimization(data, geometry):
         raise CognitionError("unknown objective variable")
     for v in objective["coefficients"].values():
         integer(v, low=-1000000, high=1000000)
+    # every objective value, bound and gap a receipt can carry must fit its 1e12 number ceiling: refused here with the
+    # reason, not answered and then rejected by the verifier's contract as a non-answer (review V7)
+    low = sum(min(v * variables[n][0], v * variables[n][1]) for n, v in objective["coefficients"].items())
+    high = sum(max(v * variables[n][0], v * variables[n][1]) for n, v in objective["coefficients"].items())
+    if max(-low, high, high - low) > 1e12:
+        raise CognitionError(f"objective range [{low}, {high}] exceeds the receipt's 1e12 number ceiling; rescale it")
     expr = sum(v * vs[n] for n, v in objective["coefficients"].items())
     if objective["sense"] == "min":
         model.minimize(expr)

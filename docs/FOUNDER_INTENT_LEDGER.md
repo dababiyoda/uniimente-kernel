@@ -2,6 +2,38 @@
 
 # Founder Intent Ledger
 
+## Mind to its maximum: successor pilot, evaluator audit, five layers — 2026-10-21
+
+`INTENT-20261021-MIND-MAXIMUM-CONTINUATION` ([record](intent/INTENT-20261021-MIND-MAXIMUM-CONTINUATION.json), [verbatim source](intent/sources/MIND-MAXIMUM-CONTINUATION-2026-10-21-source.md)): continue the complete five-layer Mind to its maximum defensible capability. "Do not stop at P8."
+
+**Kept as recorded:** the NOT_VIABLE immune cycle-7 verdict, its draft and its seeds.
+
+**Authorized:**
+- a successor pilot on a narrower immune space, under its own identity and with declared bounds, an exposure audit and stopping rules;
+- a survey of second targets among licensed targets already available;
+- an independent audit of the 32246ee stress-gate repair and its claim that historical decisions are unchanged;
+- a reconstruction of five-layer and section-31 coverage;
+- composition, metacognition and Genesis work;
+- organ integration through canonical contracts.
+
+**Kept separate, for the founder:** the shared RULE, adoption of cycle 6, genome attachment, data rights, protected merges, spending and live activation.
+
+State: active. Authority delta: none.
+
+Progress 2026-10-21 (measured; negative results kept):
+
+- **Evaluator audit** ([evidence](evidence/greg-protected-evolution/2026-10-21-stress-gate-audit/README.md)) by an independent reviewer.
+  - All six past P8 decisions hold on reproduced item-level stress data. Each cycle was re-run at its source commit, on train items only.
+  - Two defects were fixed: the gate passed values it could not rank (fail-open) and paired items by position.
+  - Six policy items go to the founder.
+- **The authorized immune successor (immune-8)** ([decision](evidence/greg-protected-evolution/2026-10-21-immune-8/DECISION.md)) is NOT_VIABLE: best simulated P(RETAIN) 0.000. No third immune pilot. The next step is `develop_repair`.
+- **Coverage** ([record](collaboration/MIND-COVERAGE-2026-10-21.md)): section 31 has 9 conditions met, 8 partly met, 0 unmet.
+- **Whole-machine trace** ([evidence](evidence/greg-whole-machine-trace/2026-10-21/README.md)): one consequence-inert mission ran all nine steps on the canonical path, with eight gaps recorded. Signed with a test key; VEPMC 0.
+- **Natural family on GREG's own dependency graph** ([evidence](evidence/greg-natural-ops-2026-10-21/README.md)): the frozen verdict is LIFT 5-0. That lift is an input-size artefact, and the exact in-process method beats every GREG arm.
+- **Data-exposure ledger across both lineages** ([ledger](evidence/greg-data-exposure-ledger.json)): 352 exposure records at this head.
+- **Six new withheld genomes**, with development numbers only.
+- **Founder decisions prepared:** [D1-D5](collaboration/FOUNDER-DECISIONS-2026-10-21.md).
+
 ## FABLE 5.1 OPUS MAXIMUS: one GREG, stacked on #178 — 2026-10-15
 
 `INTENT-20261014-FABLE-OPUS-MAXIMUS` ([record](intent/INTENT-20261014-FABLE-OPUS-MAXIMUS.json), [verbatim prompt](intent/sources/FABLE-5-1-MASTER-BUILD-PROMPT-2026-10-14-source.md)): the greatest technically defensible realization of BODY + ORGANS + MIND on one canonical reviewable trunk, with no parallel GREG. Deliverables A-L are in [`opus-maximus/`](opus-maximus/). Convergence decision: [stack on #178](collaboration/deliberation-opus-maximus-converge-on-178-20261015.json) instead of running a second trunk.
@@ -70,6 +102,55 @@ Track B update, 2026-10-15 (founder review of #179 and the independent review; r
   default for budgeted capacity expansion; attaching it is the founder's.
 - **Release guard:** uncleared third-party data cannot ship in a release (CI check). The distribution question
   stays with the founder and counsel.
+
+Authority delta: none.
+
+Track B update, 2026-10-16 (record sections 1, 3, 7 and 8): #158 is merged at `10fdbab`.
+- **Verifier:** #158's independent Z3 certificates for OPTIMAL, FEASIBLE, INFEASIBLE and UNSAT claims.
+- **F7 with the genome:** a declared re-use of v4's exposed items. `flow_expansion_mcf` MATCHES the composition on
+  200 of 200 at about a quarter of the latency, and F7's lift is **NO_LIFT** once the genome is a constituent.
+  v4's frozen verdict is unchanged.
+- **Admission v4:** `grid_dijkstra` 1.1.0 is DEFAULT_FOR_GEOMETRY, and the flow genomes replicate.
+- **P8 cycle 5:** REJECTED. Protected evolution has still never kept an improvement.
+- **Release guard:** 26 uncleared paths, including F7 v6's SNDlib-derived files.
+- **Operation re-admission (review M17):** a live, pre-registered harness re-admits #155's operation families on
+  this tree. Its first run, on fresh seeds 5001-5040, replicates 14 of 17 rows. `graph` falls to EXPERIMENTAL
+  (4-0, too few discordant items), `robust_pattern` rises to DEFAULT, and `collective` reads EXPERIMENTAL, as its
+  erratum said (record section 18).
+
+Track B update, 2026-10-21 (round-2 re-verification by the #158 session; record section 19):
+- **Crowd verifier:** it re-runs EM, so a claimed non-convergence no longer skips the check. This was a high finding.
+- **One status on every surface:** organ labels, recipe lifts and #155's lineage verdicts are notes, not admissions.
+  41 labels are rule-admitted.
+- **Release check:** it blocks by digest, path suffix or data marker, inside nested archives.
+- **Closure binding:** it follows scopes, guarded definitions, star imports and constant dynamic imports. Code
+  it cannot follow binds nothing positive. Recipes bind at the measured tree and stop at `cortex.reason`.
+- **Merge:** #158 is merged at `463a9d0`.
+
+Authority delta: none.
+
+Track B update, 2026-10-21 (round-3 re-verification; record sections 1 and 20):
+- **Recipe binding:** recipe verdicts also bind their stage genomes.
+- **Runtime dispatch:** a disagreeing runtime dispatch binds nothing.
+- **Release check:** it blocks recompressed and reformatted copies. Re-encoded copies are a stated limit.
+- **Crowd verifier:** abstentions must match the declared threshold.
+- **Seeds:** operation admission seeds 5001-5040 are spent.
+- **Merge:** #158 is merged at `050c1b2`. P8 cycle 6 RETAINed on held-out data, and random restart is at least as
+  good. It is PROPOSED_NOT_APPLIED, and who adopts it is a live founder decision.
+
+Track B update, 2026-10-21 (composition and metacognition lane; record section 22):
+- **Converged recipe lifts** ([evidence](evidence/greg-composition-lift/2026-10-21-converged/README.md)): P6
+  converged v1 was pre-registered, frozen and run once on fresh seeds, against the strongest single available.
+  **Converged VPL is 2 of 4 synthetic families.**
+  - F2R lifts 16-2; F4 lifts 15-0.
+  - F1 is NO_LIFT: 35-0 on correctness, but one false answer that the conservative single does not make.
+  - F3 is NO_LIFT: tied by `flow_expansion_mcf` at about a fifth of the latency.
+  - The natural-family recipes stay UNEVALUATED on the converged code.
+- **Compiler:**
+  - an organ answering a relaxation of a routed recipe is rejected (found by the development check, fixed
+    before the freeze);
+  - settled outcomes alone can change the choice between eligible fits (Fisher exact test, Holm, n >= 10);
+  - a formed mechanism's compile receipt carries its competence basis and dissent.
 
 Authority delta: none.
 
@@ -248,10 +329,10 @@ Progress 2026-10-14 (measured, frozen, negative results kept):
 
 Progress 2026-10-15 (measured, frozen, negative results kept):
 
-- **P6 v5** ([evidence](evidence/greg-composition-lift/2026-10-14-v5/README.md)): the natural family F8 (real NYC 2015 pickups; basal Kalman tracker -> Erlang C staffing) **lifts** over the best single intelligence, 8.6% cheaper (1589-204 items, 120-2 days). The EWMA-ratio-plus-quantile ablation is 4.7% cheaper still, and all of that comes from the tracker's fallbacks. Natural families are now 3 of 4. The data's redistribution terms are unverified (release blocker).
+- **P6 v5** ([evidence](evidence/greg-composition-lift/2026-10-14-v5/README.md)): the natural family F8 (real NYC 2015 pickups; basal Kalman tracker -> Erlang C staffing) **lifts** over the best single intelligence, 8.6% cheaper (1589-204 items, 120-2 days). The EWMA-ratio-plus-quantile ablation is cheaper still: it costs 4.5% less than routed (routed costs 4.7% more than it), and all of that comes from the tracker's fallbacks. Natural families are now 3 of 4. The data's redistribution terms are unverified (release blocker).
 - **Genome admission v3** ([evidence](evidence/greg-genome-admission/2026-10-15-v3/README.md)), pre-registered at `878f76c` on fresh seeds 1200-1229, measured 24 families: 15 new, 5 version-bumped and the 4 Layer 2 genomes on their native regimes.
-  - `flow_expansion_mcf` is DEFAULT against the F7 composition twin, with equal quality on all 30 instances at about one seventh of the latency. On F7's geometry the single exact method is canonical, which answers the founder's audit question at an exact version.
-  - Eight DEFAULT verdicts rest on latency at equal quality.
+  - `flow_expansion_mcf` is DEFAULT against the F7 composition twin, with equal quality on all 30 instances at about one seventh of the latency. Both were measured on 30 synthetic capacity-expansion instances (seeds 1200-1229); the genome was not run on F7's SNDlib items. On that capacity-expansion geometry the single exact method is canonical, which answers the founder's audit question at an exact version.
+  - Eight DEFAULT verdicts tie their competitor on all 30 instances and rest on being no slower than 1.25x its median latency. Two of them (`game_lp_dual`, `knapsack_bnb`) also tie their baseline and pass only by being at least 1.25x cheaper than it.
   - `bootstrap_ci` is REJECTED.
   - Grid shortest paths have no admitted genome: `grid_dijkstra` is EXPERIMENTAL at 1.22x its baseline's speed, short of 1.25x.
   - `basal_bayes_filter` fell to NICHE and `develop_constraint_release` rose to DEFAULT. Both crossed a rule boundary, recorded as a replication finding.
@@ -262,11 +343,62 @@ Progress 2026-10-15 (measured, frozen, negative results kept):
   - Cycle 4 is the first cycle run under the freeze. It targeted the constraint-release search policy on a fresh split and was REJECTED at the held-out gate.
     - On train the candidate was 23.7% better and improved on both stress sets.
     - On held-out it lost 26-37 (p = 0.94) and its mean loss was 46% worse.
-    - Random restart beat both configurations on held-out.
+    - Random restart had lower loss than the incumbent on 53% of train items, beat the candidate 46-22 on held-out and had the lowest held-out mean loss (0.0045 against 0.0062 and 0.0091). The record compares it with no other searched configuration.
+    - The search did try restart: its three configurations with `p_restart` above 0 (0.064, 0.156 and 0.339) were all worse than the incumbent on train.
   - Protected evolution has still never kept an improvement: 4 cycles, 4 REJECTs.
 - **Fix rounds merged after independent verification:** packs B and C, Capability Genesis (five rounds) and the solo compiler work (three rounds).
 - **Independent review of PR #179** posted, plus a review of its closure binding. A family re-pointed to another solver keeps a positive verdict after an index rebuild (confirmed).
+- **Records corrected after the independent evidence review:** the F8 percentage base, the scope of the `flow_expansion_mcf` result, the explanation of the eight DEFAULT verdicts and the random-restart comparison above. The v3 admission, P8 cycle-4 and P6 v5 READMEs carry errata that quote the original wording. `scripts/mind_status.py` now reports a status change across a declared regime change (`collective_quorum`, `collective_immune`) apart from a rule-boundary flip, and the admission harness records `source_dirty` for future runs.
+- **Independent review of this day's work** (five lenses, each finding re-run by a second agent): 33 findings plus 9 the verifiers added, all confirmed or partly confirmed. Each was fixed with a regression test that fails on the old code and independently re-checked:
+  - **P8 integrity v2.** The freeze now covers the full import closure, and executed code is checked in both processes. A recorded cycle runs only through a clean room (a fresh checkout, a source-only entry, no bytecode, git hooks off). Held-out data is looked at once, and only by a recorded run. This took four rounds of independent checking. It defends a record against a dirty or stale tree, not against whoever controls the machine.
+  - **Competency Compiler and Genesis:** a wrapped request now gets one ask, recipe demotion is scoped to the request, and demotion labels are truthful.
+  - **Optimisation verifier:** OPTIMAL, INFEASIBLE and UNSAT claims are now certified independently by Z3 ("proven" only when certified). Objectives are compared exactly at large magnitudes, and parallel edges are refused in capacity expansion.
+  - **Records:** errata quote the original wording.
 - **Blocked by the environment:** fresh NYC TLC data for F8's next evaluation. The network policy refuses `data.cityofnewyork.us` and the TLC CDN.
+
+Progress 2026-10-16 (measured, frozen, negative results kept):
+
+- **F7 with `flow_expansion_mcf`** ([evidence](evidence/greg-composition-lift/2026-10-16-f7-mcf/README.md)): **MATCH.**
+  - It is a declared re-use of v4's 200 held-out SNDlib items, which had been looked at twice before.
+  - The admitted single genome, through `cortex.reason`, is optimal on 200/200, as is the composition, at 0.26x its median latency.
+  - The independent rescoring (SciPy max flow plus a HiGHS MILP, no code shared) agrees on every item, and the compiler selected the genome on all 200.
+  - With the genome as a constituent, F7's lift is NO_LIFT. v4's verdict is unchanged; the single exact method is canonical on F7's real geometry.
+  - Attempt 1 hung before any held-out item finished: the pool was forked after the solver threads started. No outcome was observed. It was fixed, disclosed and re-frozen at a new path.
+- **P8 cycle 5** ([evidence](evidence/greg-protected-evolution/2026-10-16-cr-5/README.md)): **REJECT at the adversarial gate.**
+  - The `cover/1` search, designed from a review-seed pilot, reached the restart anchor (`p_restart` 1.0) within 0.5% of the best train loss.
+  - The argmin of near-tied train means chose `offspring` 6, which failed the lean stress set (+27.5%).
+  - The held-out split was never evaluated, but it is spent by its committed freeze.
+  - Five cycles, five REJECTs; section 31 item 7 is unmet. Next: a pre-registered selection rule that does not rest on near-tied train means.
+- **Genome admission v4** ([evidence](evidence/greg-genome-admission/2026-10-16-v4/README.md)), seeds 1300-1329:
+  - `grid_dijkstra` 1.1.0 is **DEFAULT_FOR_GEOMETRY** at 2.60x its baseline, so the grid shortest-path geometry now has an admitted genome.
+  - `flow_reinforce_greedy` 1.0.2 (SUPERSEDED) and `flow_capacity_plan` 1.0.3 (COMPOSITION_ONLY) replicate.
+  - 35 of 47 are admitted; none is attached.
+- **Merged after independent verification:**
+  - the compiler lane (three rounds) and the optimisation-verifier lane (four rounds: deadline-bounded Z3 certificates, FEASIBLE bounds certified to rounding noise, truthful dissent);
+  - the P8 cycle-5 design;
+  - the grid genome, with version-bound compiler measurements and admission CPU and load diagnostics.
+- **CI:** job 1's limit was raised to 45 minutes; it runs the suite twice.
+
+Progress 2026-10-21 (measured, frozen, negative results kept):
+
+- **P8 cycle 6** ([evidence](evidence/greg-protected-evolution/2026-10-16-cr-6/README.md)): **RETAIN**, the first improvement protected evolution has kept.
+  - The candidate raises `p_restart` from 0 to 0.807. It was 48.4% better on train and better on both stress sets.
+  - On held-out (240 fresh items, one look) it won 105-73, p = 0.00995, with 29.6% lower mean loss.
+  - It survives the four-attempt threshold on this target (0.0125), not the programme-wide one (0.05/6 = 0.00833).
+  - Random restart, reported outside the rule, is at least as good: the candidate goes 80-89 against it, and random restart's mean loss is lower.
+  - The proposal is PROPOSED_NOT_APPLIED. Adoption and its canary (re-admission on fresh seeds) are the founder's decision.
+  - Section 31 item 7 is met at the proposal level. P8's exit (repeated held-out gains) is not.
+- **Design pilots before the freeze** (review seeds 3500-3999; [pilots](evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/README.md)):
+  - The planned selection-rule change was refuted: no declared rule beat the lowest train mean, and the sign-test rule coded beforehand did worst (0.20 against 0.55). It is kept in git history and reverted.
+  - What changed was power: 120 train and 240 held-out items. To make room, P8's reserved seeds were extended to 7000-8599.
+- **Cycle-6 canary** ([evidence](evidence/greg-protected-evolution/2026-10-16-cr-6/canary/README.md)): CANARY_PASSES. It was pre-registered before any instance existed and run on 240 fresh seeds (8300-8539).
+  - The proposal beats the incumbent 107-74, p = 0.0086, with a 33.9% lower mean loss.
+  - Random restart has the lowest mean loss overall and in both subregions. Against the proposal it wins 95-79 (p = 0.128), which is not significant.
+  - On the evidence so far, the options rank random restart, then the proposal, then the incumbent. Nothing is applied.
+- **A second P8 target** ([decision](evidence/greg-protected-evolution/2026-10-21-immune-7/DECISION.md)): `immune_detect` was judged NOT_VIABLE by its pilot's rule, declared before the pilot ran: best simulated P(RETAIN) 0.216, threshold 0.30. Cycle 7 is not run.
+  - Under the frozen rule one wrong answer makes a held-out mean infinite, so P(RETAIN) falls as the split grows.
+  - The pilot found that the adversarial gate missed added wrong answers when the incumbent already had one. This is fixed with a regression test (`stress_worsened`), and no recorded decision changes.
+  - How `RULE` should treat wrong answers is an open founder decision.
 
 ## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07
 
@@ -294,7 +426,7 @@ Re-issued 2026-10-13 ([lineage](intent/sources/GREG-SEED-GENOME-DIRECTIVE-REISSU
 - **§13 and §15:** the verifier cross-checks and evidence-backed legitimacy in #161.
 - **§12:** (superseded 2026-10-14, kept as written: "wiring the budget controller into a runtime optional step is deferred until the next freeze, because the frozen evaluations pin `cortex.py`.") A thinking-budget controller now governs the compile path. One declared `latency_budget` covers the answer, the premises check and every sensitivity re-run, where each run had previously been handed the whole budget. Required steps are never priced away; an exhausted budget narrows the result. An optional re-run starts only when the slowest measured step fits. Every run and stop is kept with its reason, and cortex receipts record measured CPU seconds. The earlier deferral was wrong: frozen evaluations run at their freeze commits, so changing `cortex.py` on a branch alters no recorded result.
 
-Repeated byte-identically 2026-10-14T04:59:45Z (same whole-message SHA-256, `ee71d7de…`). Repetition adds no authority; it was applied by closing §12.
+Repeated byte-identically 2026-10-14T04:59:45Z (same whole-message SHA-256, `ee71d7de…`). Repetition adds no authority; it was applied by closing §12. Repeated byte-identically a third time 2026-10-15T12:21:07Z; applied by closing §16's media case: a DALEOBANKS paraphrase is checked claim by claim against its source, and a sentence that changes a figure, a negation, a hedge, a scope, a direction or a name is held back (`tests/evidence/media-case-convergence-2026-10-15/`). Sent a fourth time 2026-10-15T17:32:27Z with the new opening line "Continue building, and achieving EVERYTHING IN THE PROMPT:" (whole message `9b9eed0c…`; the rest byte-identical to `ee71d7de…`); applied by §14's pre-registered antifragility test, which found that settled competence heard successes only, and by the fix: independently appraised failure closures.
 
 Evidence: `tests/evidence/seed-genome-residuals-2026-10-13/`. Authority delta: none. VEPMC: 0.
 

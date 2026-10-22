@@ -13,5 +13,5 @@ byte-identical in the lineage archive:
 | `cortex/evaluation/composition_lift/freeze-v3.json` | `ef5f078` | `8da4ca74bc6905ae0946f2a00111ff26fb6db09396c18a79dca360a7892b9633` | `docs/collaboration/lineage-archive/pr155-ef5f078/cortex/evaluation/composition_lift/freeze-v3.json` |
 
 To reproduce a run, extract the whole tree at its freeze commit (`git archive <commit> | tar -x -C <dir>`); a
-per-file `git show` is not enough. Every frozen runner of both lineages refuses at the convergence head.
+per-file `git show` is not enough. Every frozen runner of both lineages refuses at the convergence head except `cortex/evaluation/developmental_sweep/run.py`, whose frozen inputs are unchanged here, so it would run; its historical result is pinned by sha256 in a test (review of #179, L22; corrected after the round-2 review, N6).
 Added after the independent review of PR #179 (L1). This file is new; nothing in this directory was edited.

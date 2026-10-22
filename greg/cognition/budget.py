@@ -279,7 +279,11 @@ class Controller:
         self.total = self.requested = float(number(total_seconds, low=0))
         self.ceiling = float(number(step_ceiling_seconds, low=MIN_STEP_SECONDS))
         self.declared, self.clock = declared, clock
-        self.started = clock()
+        # The budget covers the steps (answer, premises, sensitivity), so its clock starts at the first allotment.
+        # Planning time before it would otherwise reach the first step's latency limit, which travels inside the
+        # inner request and so inside the settled claim's input digest: one answer re-observed after a restart
+        # would hash differently and settle twice.
+        self.started = None
         self.ledger, self.costs, self.cpu = [], [], []
         self._open = None
         self.window = window_limit(caller_window, shared_deadline)
@@ -294,8 +298,10 @@ class Controller:
         """True when the total is a stated limit (a declared budget or the caller's window), not the default."""
         return self.declared or self.window is not None
 
-    def remaining(self) -> float:
-        return max(0.0, self.total - (self.clock() - self.started))
+    def remaining(self, now=None) -> float:
+        if self.started is None:
+            return self.total
+        return max(0.0, self.total - ((self.clock() if now is None else now) - self.started))
 
     def cost_range(self):
         """[fastest, slowest] measured step, in seconds; ``None`` before any step has been measured."""
@@ -305,7 +311,10 @@ class Controller:
         """The latency limit this step may use, or ``None`` with the stop reason recorded."""
         if self._open is not None:
             raise CognitionError(f"step {self._open['step']} was allotted and never closed")
-        remaining, cost = self.remaining(), self.cost_range()
+        now = self.clock()                      # read once: the first step's limit is then exactly the total
+        if self.started is None:
+            self.started = now
+        remaining, cost = self.remaining(now), self.cost_range()
         entry = {"step": step, "required": required, "remaining_s": round(remaining, 4), "cost_range_s": cost}
         if remaining < MIN_STEP_SECONDS:
             reason = (f"BUDGET_EXHAUSTED: {remaining:.3g}s left, below the {MIN_STEP_SECONDS}s minimum step that can "
@@ -315,7 +324,7 @@ class Controller:
                       f"({remaining:.3g}s); an optional step is not started without room to finish")
         else:
             limit = min(self.ceiling, remaining)
-            self._open = {**entry, "decision": "RUN", "limit_s": round(limit, 4), "_at": self.clock()}
+            self._open = {**entry, "decision": "RUN", "limit_s": round(limit, 4), "_at": now}
             return limit
         self.ledger.append({**entry, "decision": "STOP", "reason": reason})
         return None
@@ -344,7 +353,8 @@ class Controller:
                                  and self.window["seconds"] < self.requested else
                                  "declared latency_budget" if self.declared else "default (no latency_budget declared)"),
                 **({"window": self.window} if self.window is not None else {}),
-                "spent_s": round(self.clock() - self.started, 4), "remaining_s": round(self.remaining(), 4),
+                "spent_s": round(self.clock() - self.started, 4) if self.started is not None else 0.0,
+                "remaining_s": round(self.remaining(), 4),
                 "steps": list(self.ledger),
                 "measured_step_s": {"count": len(costs), "p50": round(costs[len(costs) // 2], 4) if costs else None,
                                     "max": round(costs[-1], 4) if costs else None,

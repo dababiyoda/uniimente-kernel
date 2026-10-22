@@ -2,7 +2,7 @@
  "schema": "mind-lineage-reconciliation-map/1",
  "base": "92bc6e31e0baa8fd507833e0f272b4a5e532e4d3",
  "pr155": "ef5f078013b549a51458dc9f6b5f34b324ea70b0",
- "pr158": "f8e8fd2d294f9d79dbd623c065feb17fd1744a18",
+ "pr158": "fa0d92a0cb843be5f79d876dab3116c79f46e3ad",
  "vocabulary": [
   "complementary",
   "interchangeable",
@@ -26,6 +26,13 @@
   "docs/evidence/pr155-f8-fallback-diagnostic/2026-10-15/"
  ],
  "entries": [
+  {
+   "path": ".github/workflows/canonical-ci.yml",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "extended",
+   "note": "#158's workflow (job 1 timeout 45 min) plus the release-exclusion check on every change and on tags (review of #179, M19)"
+  },
   {
    "path": "contracts/lawful-leverage.schema.json",
    "lineage": "pr158",
@@ -69,6 +76,20 @@
    "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
   },
   {
+   "path": "cortex/evaluation/composition_lift/freeze-v6-attempt2.json",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/freeze-v6.json",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
    "path": "cortex/evaluation/composition_lift/prereg-v4.json",
    "lineage": "pr158",
    "classification": "historical evidence",
@@ -81,6 +102,13 @@
    "classification": "historical evidence",
    "disposition": "kept",
    "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/prereg-v6.json",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
   },
   {
    "path": "cortex/evaluation/composition_lift/run_v2.py",
@@ -109,6 +137,13 @@
    "classification": "historical evidence",
    "disposition": "kept",
    "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/run_v6.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
   },
   {
    "path": "cortex/evaluation/composition_lift/suite-v2.json",
@@ -300,6 +335,48 @@
    "note": "two different frozen artifacts at one path; both kept byte-identical under docs/collaboration/lineage-archive/{pr155-ef5f078,pr158-a832c73}/; #158's occupies the original path because #158's live tests import those runners"
   },
   {
+   "path": "cortex/evaluation/natural_ops/__init__.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "cortex/evaluation/natural_ops/arms.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "cortex/evaluation/natural_ops/extract.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "cortex/evaluation/natural_ops/run.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "cortex/evaluation/natural_ops/split.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "cortex/evaluation/natural_ops/truth.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
    "path": "cortex/evaluation/pr155_crowd_sparse/__init__.py",
    "lineage": "pr155",
    "classification": "complementary",
@@ -326,6 +403,27 @@
    "classification": "complementary",
    "disposition": "merged",
    "note": "both lineages' entries kept; the convergence entry is added on top"
+  },
+  {
+   "path": "docs/collaboration/FOUNDER-DECISIONS-2026-10-21.md",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/collaboration/MIND-COVERAGE-2026-10-21.json",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/collaboration/MIND-COVERAGE-2026-10-21.md",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
   },
   {
    "path": "docs/collaboration/MIND-LINEAGE-SOURCE-MANIFEST-2026-10-14.json",
@@ -468,6 +566,48 @@
    "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
   },
   {
+   "path": "docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/attempt-1/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/attempt-1/run.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/results-v6.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/run.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-data-exposure-ledger.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet); regenerated on the converged tree by its tool"
+  },
+  {
    "path": "docs/evidence/greg-developmental-sweep/2026-10-14/README.md",
    "lineage": "pr155",
    "classification": "historical evidence",
@@ -608,6 +748,97 @@
    "note": "present in one lineage only (pr158); arrived with #158 after 41a8538, merged at its head f8e8fd2 (review of #179, M18)"
   },
   {
+   "path": "docs/evidence/greg-genome-admission/2026-10-16-v4/PREREGISTRATION.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-16-v4/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-16-v4/freeze.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-16-v4/results.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-16-v4/run.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-genome-l3-absent-2026-10-21/ADMISSION-V5-PREREGISTRATION-DRAFT.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-l3-absent-2026-10-21/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-l3-absent-2026-10-21/dev/binpack_cpsat.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-l3-absent-2026-10-21/dev/blackbox_multistart_lbfgsb.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-l3-absent-2026-10-21/dev/community_louvain.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-l3-absent-2026-10-21/dev/crowd_weighted_vote.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-l3-absent-2026-10-21/dev/maxsat_cpsat.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-l3-absent-2026-10-21/dev/reconcile_qp.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
    "path": "docs/evidence/greg-learned-routing/2026-10-07/README.md",
    "lineage": "pr155",
    "classification": "historical evidence",
@@ -655,6 +886,55 @@
    "classification": "complementary",
    "disposition": "rebuilt",
    "note": "rebuilt by scripts/build_mind_evidence_index.py from every frozen source of both lineages: genomes (with #158's admission v3), recipes, routing and #155's operation-family verdicts. Recipes and routing changed relative to either lineage (identify_then_optimize decided by F2R, conditional_competence by #158's REGRESSION; review of #179, H1 and L3), and practitioner arms (tied_by, loses_to) are carried"
+  },
+  {
+   "path": "docs/evidence/greg-natural-ops-2026-10-21/PREREGISTRATION.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-natural-ops-2026-10-21/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-natural-ops-2026-10-21/development-v1-degree-stage1.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-natural-ops-2026-10-21/development.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-natural-ops-2026-10-21/freeze.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-natural-ops-2026-10-21/results.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-natural-ops-2026-10-21/run.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
   },
   {
    "path": "docs/evidence/greg-polyintelligence-mind/2026-10-07/baseline-suite-at-92bc6e3.log",
@@ -762,6 +1042,461 @@
    "note": "present in one lineage only (pr158); arrived with #158 after 41a8538, merged at its head f8e8fd2 (review of #179, M18)"
   },
   {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/PREREGISTRATION.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/cycle-cr-5.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/cycle-cr-5.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/freeze.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/pilot/grid.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/pilot/region-configs.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/pilot/region.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/pilot/simulate-1-settings.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/pilot/simulate-1-train3000-3059-test3060-3119.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/pilot/simulate-2-T1.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/pilot/simulate-2-T2.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/pilot/simulate-2-T3.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/pilot/simulate-2-settings.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/pilot/simulate-3-T12.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/pilot/simulate-3-settings.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/pilot/simulate-4-T12-settings.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/pilot/simulate-4-T12.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/pilot/simulate-4-T5.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/pilot/simulate-4-T6.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/pilot/simulate-4-settings.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/pilot/summary.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/PREREGISTRATION.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/canary/PREREGISTRATION.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/canary/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/canary/canary.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/canary/canary.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/cycle-cr-6.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/cycle-cr-6.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/freeze.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/lineages-T1.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/lineages-T2.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/lineages-T3.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/lineages-U1.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/lineages-U2.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/pool-configs.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/summary-2.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/summary.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-7/DECISION.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-7/PREREGISTRATION.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-7/pilot/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-7/pilot/region.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-7/pilot/simulate.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-7/pilot/summary.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-8/DECISION.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-8/DESIGN.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-8/EXPOSURE-AUDIT.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-8/LINEAGE.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-8/SECOND-TARGET-SURVEY.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-8/gate-audit.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-8/pilot/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-8/pilot/region.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-8/pilot/simulate.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-8/pilot/summary.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-stress-gate-audit/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-stress-gate-audit/item_losses.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-stress-gate-audit/probe-at-239a87f.txt",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-stress-gate-audit/probe-at-3587fcf.txt",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-stress-gate-audit/probe.py",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-stress-gate-audit/reanalysis.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-stress-gate-audit/reproduce_stress.py",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-whole-machine-trace/2026-10-21/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-whole-machine-trace/2026-10-21/trace.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
    "path": "docs/evidence/pr155-crowd-sparse/2026-10-14/README.md",
    "lineage": "pr155",
    "classification": "historical evidence",
@@ -790,6 +1525,13 @@
    "note": "founder source or intent record"
   },
   {
+   "path": "docs/intent/INTENT-20261021-MIND-MAXIMUM-CONTINUATION.json",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
    "path": "docs/intent/sources/FULL-POLYINTELLIGENCE-MIND-CONTINUATION-2026-10-07-source.md",
    "lineage": "pr155",
    "classification": "duplicate",
@@ -802,6 +1544,13 @@
    "classification": "historical evidence",
    "disposition": "kept",
    "note": "founder source or intent record"
+  },
+  {
+   "path": "docs/intent/sources/MIND-MAXIMUM-CONTINUATION-2026-10-21-source.md",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
   },
   {
    "path": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md",
@@ -850,7 +1599,7 @@
    "lineage": "pr158",
    "classification": "complementary",
    "disposition": "extended",
-   "note": "present in one lineage only (pr158); kept until PR #184 joined this lineage with the one-machine trunk (#178, #175, #169) on 2026-10-16, which extends these bytes"
+   "note": "present in one lineage only (pr158); extended on the restore drill (#186): a body restored from a backup refuses commands issued before the restore, and only the founder key releases the restore hold (directive section 14); PR #184 joined this lineage with the one-machine trunk (#178, #175, #169) on 2026-10-16, which also extends these bytes, and the joined tree keeps both"
   },
   {
    "path": "greg/cli.py",
@@ -892,14 +1641,14 @@
    "lineage": "pr158",
    "classification": "complementary",
    "disposition": "extended",
-   "note": "canonical Layer 5 entry; now applies #155's operation-family verdicts from the index"
+   "note": "canonical Layer 5 entry; now applies #155's operation-family verdicts from the index; re-merged with #158 at 10fdbab (certified bounds, part-row demotion and stale_measurements, thread refusal and venv grant, wording), this branch's additions kept; 2026-10-21: a routed recipe rejects organs answering its relaxation, settled outcomes alone can change the choice between eligible fits, a formed mechanism's compile receipt carries its basis and dissent"
   },
   {
    "path": "greg/cognition/composition.py",
    "lineage": "both",
    "classification": "complementary",
    "disposition": "merged",
-   "note": "#158's operation recipes dispatch first; #155's typed-dataflow derive handles estimate/identify chains"
+   "note": "#158's operation recipes dispatch first; #155's typed-dataflow derive handles estimate/identify chains; re-merged with #158 at 10fdbab (certified bounds, part-row demotion and stale_measurements, thread refusal and venv grant, wording), this branch's additions kept"
   },
   {
    "path": "greg/cognition/contracts.py",
@@ -921,6 +1670,13 @@
    "classification": "interchangeable",
    "disposition": "selected:pr158",
    "note": "#158's controller is canonical (confined candidates, sealed evaluator, recurring-failure trigger, three REJECT cycles); #155's routing-genome mechanism kept as greg/cognition/evolution_routing.py, imported only by its historical runner; at #158's head f8e8fd2, whose af258bf fixes review M14/L5/L6 (freeze, module check, parent-probed confinement). This branch's parallel fix (1da022a) is superseded and kept in history only"
+  },
+  {
+   "path": "greg/cognition/evolution_room.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
   },
   {
    "path": "greg/cognition/evolution_sandbox.py",
@@ -947,8 +1703,8 @@
    "path": "greg/cognition/genomes/admission.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158). Extended in Track B (round-3 review of #179, finding 5): spent_seeds() also reads the converged tree's operation-admission freezes (5001-5040 so far); proposed to #158 for adoption."
   },
   {
    "path": "greg/cognition/genomes/basal.py",
@@ -979,6 +1735,13 @@
    "note": "present in one lineage only (pr158)"
   },
   {
+   "path": "greg/cognition/genomes/crowd.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
    "path": "greg/cognition/genomes/decision.py",
    "lineage": "pr158",
    "classification": "complementary",
@@ -996,8 +1759,8 @@
    "path": "greg/cognition/genomes/flow.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "extended",
-   "note": "flow_expansion_mcf known_strengths no longer claims PMCF's F7 tie (review L10); mechanism level (review L14): graph_then_allocate (composition), flow_expansion_mcf (single exact genome) and expansion_truth (the harness truth, duplicated by run_v4's PMCF) are interchangeable implementations of budgeted capacity expansion. #158's admission v3 (pre-registered 878f76c) admits flow_expansion_mcf 1.0.0 DEFAULT_FOR_GEOMETRY against the composition twin, so it is the canonical routed default for that geometry; the composition stays a registered alternative; attaching remains the founder's"
+   "disposition": "selected:pr158",
+   "note": "#158's genomes, including its verifier lane's version bumps (flow_reinforce_greedy 1.0.2, flow_capacity_plan 1.0.3) and its corrections of flow_expansion_mcf's known_strengths (review of #179, L10; 463a9d0 cites its F7 result). Mechanism level (review L14): graph_then_allocate (composition), flow_expansion_mcf (single exact genome) and expansion_truth (the harness truth, duplicated by run_v4's PMCF) are interchangeable implementations of budgeted capacity expansion. #158's admission v3 (pre-registered 878f76c) admits flow_expansion_mcf 1.0.0 DEFAULT_FOR_GEOMETRY against the composition twin, and F7 v6 (re-use of v4's items) finds it MATCHES the composition on 200 of 200 with NO_LIFT for the composition: it is the canonical routed default for that geometry; the composition stays a registered alternative; attaching remains the founder's"
   },
   {
    "path": "greg/cognition/genomes/forecasting.py",
@@ -1033,6 +1796,13 @@
    "classification": "complementary",
    "disposition": "kept",
    "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/genomes/solvers_d.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
   },
   {
    "path": "greg/cognition/genomes/stochastic.py",
@@ -1073,8 +1843,8 @@
    "path": "greg/cognition/settlement.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); extended on the antifragility branch: verified failure closures (VERIFIED_UNMET) settle as incorrect outcomes, and a claim's identity is its signed sensor params, so a re-observed failure settles once (directive sections 11 and 14)"
   },
   {
    "path": "greg/cognition/solvers.py",
@@ -1088,7 +1858,7 @@
    "lineage": "both",
    "classification": "complementary",
    "disposition": "merged",
-   "note": "#155's family checks and #158's genome_certificate branch on one verifier"
+   "note": "#155's family checks and #158's genome_certificate branch on one verifier; re-merged with #158 at 10fdbab (certified bounds, part-row demotion and stale_measurements, thread refusal and venv grant, wording), this branch's additions kept"
   },
   {
    "path": "greg/cognition/worker.py",
@@ -1102,7 +1872,7 @@
    "lineage": "pr158",
    "classification": "complementary",
    "disposition": "extended",
-   "note": "F2b declared SIMULATED"
+   "note": "F2b declared SIMULATED; re-merged with #158 at 10fdbab (certified bounds, part-row demotion and stale_measurements, thread refusal and venv grant, wording), this branch's additions kept"
   },
   {
    "path": "greg/dataplane.py",
@@ -1117,6 +1887,13 @@
    "classification": "complementary",
    "disposition": "extended",
    "note": "present in one lineage only (pr158); kept until PR #184 joined this lineage with the one-machine trunk (#178, #175, #169) on 2026-10-16, which extends these bytes"
+  },
+  {
+   "path": "greg/foundry_worker.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab; PR #184 had converged #132's Foundry onto the Mind line (fd2ccf36: module_for dispatch by implementation), and the 2026-10-22 join of #189 into #192 keeps both, which extends these bytes"
   },
   {
    "path": "greg/genesis.py",
@@ -1137,7 +1914,7 @@
    "lineage": "both",
    "classification": "duplicate",
    "disposition": "unified",
-   "note": "two fixes of the same CI defect (#158 1ea2209, #155 bfb9c04); one grant path: #155's superset with the ancestor guard covers #158's glibc list (tested). #158's f8e8fd2 adds Landlock ABI >= 6 signal and abstract-socket scoping and list_code (af258bf, review of #179 L5): ported onto the unified grant path; #158's separate glibc list is not re-introduced"
+   "note": "two fixes of the same CI defect (#158 1ea2209, #155 bfb9c04); one grant path: #155's superset with the ancestor guard covers #158's glibc list (tested). #158's f8e8fd2 adds Landlock ABI >= 6 signal and abstract-socket scoping and list_code (af258bf, review of #179 L5): ported onto the unified grant path; #158's separate glibc list is not re-introduced; re-merged with #158 at 10fdbab (certified bounds, part-row demotion and stale_measurements, thread refusal and venv grant, wording), this branch's additions kept"
   },
   {
    "path": "greg/missions.py",
@@ -1168,6 +1945,13 @@
    "note": "present in one lineage only (pr158); kept until PR #184 joined this lineage with the one-machine trunk (#178, #175, #169) on 2026-10-16, which extends these bytes"
   },
   {
+   "path": "scripts/build_mind_coverage_record.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
    "path": "scripts/build_mind_evidence_index.py",
    "lineage": "pr158",
    "classification": "complementary",
@@ -1175,11 +1959,60 @@
    "note": "operations section from #155's admission runs; genome glob skips another harness's files"
   },
   {
+   "path": "scripts/data_exposure_ledger.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet); 2026-10-21 on #179: tree-aware (#158's tree is the map's pinned commit, #179's is HEAD)"
+  },
+  {
+   "path": "scripts/greg_whole_machine_trace.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
    "path": "scripts/mind_status.py",
    "lineage": "pr158",
    "classification": "complementary",
    "disposition": "extended",
    "note": "NO_GAIN labels as a demotion like REGRESSION"
+  },
+  {
+   "path": "scripts/p8_cr6_canary.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "scripts/p8_cr6_selection_pilot.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "scripts/p8_cr_pilot.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "scripts/p8_immune8_pilot.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "scripts/p8_immune_pilot.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
   },
   {
    "path": "scripts/prepare_m4_weekly.py",
@@ -1245,11 +2078,32 @@
    "note": "present in one lineage only (pr158)"
   },
   {
+   "path": "tests/integration/test_greg_whole_machine_trace.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "tests/unit/test_cognition_optimization_certificates.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
    "path": "tests/unit/test_cognition_seed_gates.py",
    "lineage": "pr158",
    "classification": "complementary",
    "disposition": "kept",
    "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_composition_lift_v6.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
   },
   {
    "path": "tests/unit/test_cortex_reserved_drift.py",
@@ -1259,11 +2113,25 @@
    "note": "present in one lineage only (pr158)"
   },
   {
-   "path": "tests/unit/test_frontier_backcasts.py",
+   "path": "tests/unit/test_data_exposure_ledger.py",
    "lineage": "pr158",
    "classification": "complementary",
    "disposition": "kept",
-   "note": "#158's checks; older P4/P6 records now cite #155's frozen runs"
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "tests/unit/test_frontier_backcasts.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "extended",
+   "note": "#158's checks; older P4/P6 records now cite #155's frozen runs; 2026-10-21: frozen-run limits read through run_limits (a declared sidecar when a report omitted them)"
+  },
+  {
+   "path": "tests/unit/test_genome_admission_provenance.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab. Extended in Track B: it reads only admission runs that carry a \"genomes\" key, because the converged index also holds P6 and P4 runs."
   },
   {
    "path": "tests/unit/test_genomes_basal.py",
@@ -1336,6 +2204,13 @@
    "note": "present in one lineage only (pr158)"
   },
   {
+   "path": "tests/unit/test_genomes_solvers_d.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
    "path": "tests/unit/test_genomes_stochastic.py",
    "lineage": "pr158",
    "classification": "complementary",
@@ -1360,8 +2235,8 @@
    "path": "tests/unit/test_greg_cognition_genesis.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); extended 2026-10-21 with the compile receipt's competence basis and dissent for a formed mechanism (whole-machine trace gap)"
   },
   {
    "path": "tests/unit/test_greg_community_evidence.py",
@@ -1375,7 +2250,7 @@
    "lineage": "pr158",
    "classification": "complementary",
    "disposition": "extended",
-   "note": "#158 tests plus evidence-index and relaxation tests from the convergence"
+   "note": "#158 tests plus evidence-index and relaxation tests from the convergence; settled-preference test (2026-10-21)"
   },
   {
    "path": "tests/unit/test_greg_genome_library.py",
@@ -1409,8 +2284,8 @@
    "path": "tests/unit/test_greg_landlock.py",
    "lineage": "pr155",
    "classification": "complementary",
-   "disposition": "extended",
-   "note": "present in one lineage only (pr155); kept until PR #184 joined this lineage with the one-machine trunk (#178, #175, #169) on 2026-10-16, which extends these bytes"
+   "disposition": "merged",
+   "note": "#155's grant-path regression and #158's ABI-pinned ruleset-layout test, both kept; PR #184 joined this lineage with the one-machine trunk (#178, #175, #169) on 2026-10-16, which extends these bytes, and the joined tree keeps all three"
   },
   {
    "path": "tests/unit/test_greg_outcome_calibration.py",
@@ -1448,6 +2323,13 @@
    "note": "present in one lineage only (pr158)"
   },
   {
+   "path": "tests/unit/test_mind_coverage_record.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
    "path": "tests/unit/test_mind_evidence_index.py",
    "lineage": "pr158",
    "classification": "complementary",
@@ -1474,6 +2356,41 @@
    "classification": "complementary",
    "disposition": "extended",
    "note": "#158 tests updated for recipe code binding (review H5)"
+  },
+  {
+   "path": "tests/unit/test_natural_ops_family.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "tests/unit/test_p8_cr6_canary.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "tests/unit/test_p8_cr_pilot.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+  },
+  {
+   "path": "tests/unit/test_p8_immune8_pilot.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "tests/unit/test_p8_immune_pilot.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
   },
   {
    "path": "tests/unit/test_vpl_metrics.py",

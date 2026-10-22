@@ -19,7 +19,10 @@ through tweepy). Every attempt is decided and journaled at the relay; without na
 nothing runs.
 
 Capabilities:
-  ``daleobanks.verify``   read_only sensor: DALEOBANKS content checks + GREG claim/source binding
+  ``daleobanks.verify``   read_only sensor: DALEOBANKS content checks + GREG claim/source binding. Given
+                          ``cognition`` (claim name -> problem id), every sentence of the draft must be a claim
+                          that GREG's evidence family answered as written: bound to a supporting span and showing
+                          none of the six detected kinds of change (directive section 16, the media case).
   ``daleobanks.publish``  external_contact: one publish request through DALEOBANKS's gate
   ``daleobanks.outcome``  read_only sensor: projection of this mission's canonical publish receipts
 """
@@ -33,6 +36,8 @@ import re
 import subprocess
 
 from greg.capabilities import CapabilityError, InvocationContext, _inside
+# The sentence-by-sentence rule is shared with the Task Fabric's evaluator (worker.appraise).
+from greg.cognition.restatement import coverage as truth_preservation
 
 SCRIPT = r'''
 import asyncio, json, sys
@@ -172,9 +177,14 @@ def verify(params: dict, ctx: InvocationContext) -> dict:
         findings.append("DALEOBANKS Critic blocking: " + "; ".join(checks["critic"]["blocking_issues"])[:300])
     if float(checks["firewall"].get("risk", 0)) >= 0.5:
         findings.append(f"DALEOBANKS PromptFirewall risk {checks['firewall']['risk']}: {checks['firewall'].get('patterns')}")
+    truth = {"checked": False, "limits": "figures against the source only: no sentence was checked as written"}
+    if params.get("cognition"):
+        from greg.ventures import cognition_receipts
+        truth, problems = truth_preservation(text, cognition_receipts(ctx, params["cognition"]))
+        findings += problems
     return {"present": True, "verdict": "VERIFIED" if not findings else "REJECTED", "findings": findings,
             "draft_sha256": "sha256:" + hashlib.sha256(text.encode()).hexdigest(), "chars": len(text.strip()),
-            "daleobanks": checks, "authority_created": False}
+            "daleobanks": checks, "truth_preservation": truth, "authority_created": False}
 
 
 def publish(params: dict, ctx: InvocationContext) -> dict:

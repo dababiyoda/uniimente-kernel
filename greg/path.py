@@ -23,7 +23,7 @@ import json
 from pathlib import Path
 import re
 
-from greg import metrics
+from greg import asks, metrics
 from greg.journal import Journal
 
 PATH_FILE = Path(__file__).with_name("path.json")
@@ -468,12 +468,19 @@ def position(journal: Journal | None, data: dict | None = None) -> dict:
     ids = [n["id"] for n in data["nodes"]]
     following = data["nodes"][ids.index(active["id"]) + 1] if active and ids.index(active["id"]) + 1 < len(ids) \
         else None
+    # Later nodes this ledger already meets: reported as measured, never as achieved, because the
+    # path's order is the dependency order. Without this a founder who closed N6 or N7 while an
+    # earlier node had no predicate saw his own verified work nowhere.
+    met_ahead = [{"id": n["id"], "title": n["title"]} for n in data["nodes"][ids.index(active["id"]) + 1:]
+                 if measurements[n["id"]].get("met")] if active else []
     open_kinds = set()
     if journal is not None:
-        answered = {e.payload["request_id"] for e in journal.replay("decision.")
-                    if e.type in ("greg.decision.answered", "greg.decision.withdrawn")}
-        open_kinds = {e.payload.get("kind") for e in journal.replay("decision.requested")
-                      if e.payload["request_id"] not in answered}
+        # An answer row counts only as the verified fold counts it (MissionBook.answers), as on every founder surface.
+        from greg.missions import MissionBook
+        book = MissionBook(journal)
+        open_kinds = {r.get("kind") for r in asks.open_requests(
+            journal.replay("decision.") + journal.replay("mission.achieved") + journal.replay("mission.lifecycle"),
+            counted=book.answers, uncounted=book.unverified)}
     pull_forward = [{"node": n["id"], "title": n["title"], "triggered_by": sorted(open_kinds & set(n["may_be_pulled_forward_by"]))}
                     for n in data["nodes"] if open_kinds & set(n.get("may_be_pulled_forward_by", []))]
     horizons = data.get("horizons", [])
@@ -488,6 +495,7 @@ def position(journal: Journal | None, data: dict | None = None) -> dict:
         "next": None if following is None else {"id": following["id"], "title": following["title"],
                                                   "gate": following["gate"]},
         "pull_forward_seams": pull_forward,
+        "met_ahead": met_ahead,
         "horizons": {"total": len(horizons),
                      "at_active_node": [h["id"] for h in horizons if active and h["node"] == active["id"]],
                      "by_feasibility": {f: sorted(h["id"] for h in horizons if h["feasibility"] == f)

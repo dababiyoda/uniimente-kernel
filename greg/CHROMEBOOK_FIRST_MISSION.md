@@ -204,11 +204,12 @@ greg mission new business-case --case "lease review 01" --buyer "Acme Property L
   --acceptance "summary delivered within 5 business days" --key ~/.greg-founder.pem
 ```
 
-- GREG drafts `offer.md` in the case folder (`greg status` shows the path). It carries a case
+- GREG drafts `offer.md` in the case folder. It carries a case
   reference, for example `CASE-LEASE-REVIEW-01`, which the buyer puts on the payment.
 - **You** send the offer, collect payment, deliver, and ask the buyer to confirm. Each step is
-  one costed ask in the console and on your phone. GREG contacts, charges and pays no one; an
-  answer to these asks is only a record.
+  one costed ask in the console and on your phone, naming the file to save and the folder to
+  save it in. GREG contacts, charges and pays no one. An answer to these asks is only a record,
+  and the ask stays until GREG sees the file, usually within a minute or two.
 - You save the evidence into the case folder:
   - `acceptance.txt`: the buyer's written acceptance;
   - `statement.csv`: an export from your payment account. Its columns default to
@@ -291,8 +292,13 @@ run it for a second venture:
 ```bash
 greg sop ratify <procedure-id> --pre-approve draft-offer --pre-approve record-settlement --key ~/.greg-founder.pem
 greg sop run <procedure-id> --venture audits --set reference=CASE-AUDIT-01 --set buyer="..." \
-  --set offer="..." --set price=300.00 --set acceptance="..." --key ~/.greg-founder.pem
+  --key ~/.greg-founder.pem
 ```
+
+`greg sop list` shows each procedure's inputs. Only what differed between the cases that taught it
+becomes an input. If those three cases shared one price, offer and acceptance, the procedure keeps
+them fixed, and `--set price=...` is refused. Vary them across the teaching cases if the second
+venture needs its own.
 
 Sign what each venture owes before any surplus counts. Tier names come from
 `capital/allocation-policy.yaml`:

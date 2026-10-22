@@ -54,7 +54,7 @@ import sys
 import tempfile
 import time
 
-from greg import isolation
+from greg import evidence_strength, isolation
 from greg.capabilities import CapabilityError, InvocationContext, _inside
 from greg.worker_isolation import WorkerIsolationError, envelope_cannot_confine, prepare_worker
 
@@ -71,6 +71,7 @@ PROTECTED_SURFACES = (
     "greg/cognition/cortex.py", "greg/cognition/bridge.py", "greg/cognition/seed_path.py", "greg/cognition/seed_compat.py",
     "cortex/contracts.py", "cortex/schemas.py", "cortex/seed/contracts.py", "cortex/seed/verify.py",
     "cortex/organs/adversarial.py", "cortex/organs/formal_eval.py", "cortex/evaluation/*",
+    "greg/evidence_strength.py", "foundry/systems/repair.py",
     "AGENTS.md", "CLAUDE.md", "*/AGENTS.md", "*/CLAUDE.md", "docs/FOUNDER_*", "docs/intent/*",
     ".github/*", "tools/offline_test.py", "conftest.py",
     "greg/worker_isolation.py", "greg/isolation.py", "greg/console.py", "greg/remote.py",
@@ -1279,7 +1280,7 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
         verdict = "REJECTED"
     elif spend["status"] == "unknown":
         findings.append(spend["reason"])
-    with_tests = []
+    with_tests, strength = [], None
     import tempfile
     with tempfile.TemporaryDirectory(prefix="greg-appraise-") as tmp:
         fresh = Path(tmp) / "fresh"
@@ -1320,13 +1321,38 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
                 findings.append(f"the worker changed the frozen evaluator it is judged by: {evaluator['replaced']}")
                 verdict = "REJECTED"
         if order["mode"] == "repository":
-            with_tests = run_tests(acceptance_commands(order["acceptance"], names), fresh,
-                                   timeout=min(int(order["timeout_seconds"]), 1200), stop_check=ctx.stop_check,
-                                   confinement=ctx.worker_confinement)
+            # Sealed oracle (#168, 68240cc): what the founder named as the judge is judged as it was at the base.
+            base_files = set(_git(fresh, "ls-tree", "-r", "--name-only", base).stdout.split())
+            tampered = sorted(n for n in names if n in evidence_strength.sealed_paths(order["acceptance"], base_files))
+            if tampered:
+                findings.append(f"the patch edits its sealed acceptance oracle {tampered}; the founder's version "
+                                "is what was run")
+                verdict = "REJECTED"
+                _git(fresh, "checkout", "--quiet", base, "--", *tampered)
+            timeout = min(int(order["timeout_seconds"]), 1200)
+
+            def confined_tests(tests, cwd, *, timeout):
+                # every acceptance run, including the evidence-strength runs, keeps the body's confinement
+                return run_tests(tests, cwd, timeout=timeout, stop_check=ctx.stop_check,
+                                 confinement=ctx.worker_confinement)
+            with_tests = confined_tests(acceptance_commands(order["acceptance"], names), fresh, timeout=timeout)
             failed = [t for t in with_tests if not t["passed"]]
             if failed:
                 findings.append(f"{len(failed)} acceptance command(s) failed in the independent clone")
                 verdict = "REJECTED"
+            # The worker's own tests are acceptance only if they can tell its change from no change
+            # and from a corrupted version of it.
+            authored = evidence_strength.worker_tests(names)
+            if verdict == "ACCEPTED" and order["acceptance"].get("run_changed_tests") and authored:
+                base_clone = Path(tmp) / "base"
+                private_clone(repo, summary["base_commit"], base_clone)
+                strength = evidence_strength.judge(
+                    fresh=fresh, base_clone=base_clone, patch=Path(tmp) / "change.patch", base=base, names=names,
+                    command=acceptance_commands({"run_changed_tests": True}, names)[-1], git=_git,
+                    run_tests=confined_tests, timeout=min(timeout, 300))
+                if strength["findings"]:
+                    findings.extend(strength["findings"])
+                    verdict = "REJECTED"
         else:
             try:
                 out = _inside(fresh / order["acceptance"]["output"], (fresh,))
@@ -1368,4 +1394,5 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
                             "acceptance re-run with no network; worker claim and collector tests not used",
             "worker": summary.get("worker", {}).get("identity"), "receipt_binding": receipt_binding,
             "spend": spend, **mind,
+            "evidence_strength": strength and {k: v for k, v in strength.items() if k != "findings"},
             "authority_created": False}

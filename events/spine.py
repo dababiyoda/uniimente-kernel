@@ -85,6 +85,7 @@ class EventSpine:
         self._latest = {}        # event_id -> (payload, record hash) of its last record
         self._positions = {}     # type prefix -> (payloads seen, matches counted, event_id -> position)
         self._folded, self._folded_tail = 0, None
+        self._generation = object()  # a cursor from since() is honored only within one history
 
     @staticmethod
     def _event_from_payload(p):
@@ -189,6 +190,22 @@ class EventSpine:
             order = lists[0] if len(lists) == 1 else heapq.merge(*lists)  # positions ascend: ledger order
             chosen = [self._payloads[i] for i in order]
         return [self._event_copy(p) for p in chosen]
+
+    def since(self, type_prefix, cursor=None):
+        """Events of this prefix retained after ``cursor``, in ledger order, each the caller's own copy.
+
+        Returns ``(events, cursor, restarted)``. Pass the returned cursor to the next call to get
+        only what was added in between; ``replay(type_prefix)`` equals the events of the first call
+        followed by those of every later one. A cursor from before the history was replaced (or
+        None) is not honored: the events then start from the beginning and ``restarted`` is True,
+        so a caller folding them must start its projection over.
+        """
+        self._refresh()
+        start, restarted = 0, True
+        if cursor is not None and cursor[0] is self._generation:  # _payloads only grows within one
+            start, restarted = cursor[1], False
+        events = [self._event_copy(p) for p in self._payloads[start:] if p["type"].startswith(type_prefix)]
+        return events, (self._generation, len(self._payloads)), restarted
 
     def positions(self, type_prefix=""):
         """event_id -> position of its last record among the events replay(type_prefix) returns.

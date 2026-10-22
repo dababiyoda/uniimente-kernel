@@ -15,6 +15,7 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import re
 from pathlib import Path
 import subprocess
 
@@ -840,7 +841,8 @@ def test_admitted_labels_are_reported_by_provenance_and_practitioner_ties_are_vi
     for e in labelled:
         kind = genome_library.provenance(e)
         if kind == "rule_admitted":           # only pre-registered admissions (genome or operation v3) count
-            assert all(("greg-genome-admission/2026-10-1" in r or "greg-operation-admission/" in r)
+            # any dated pre-registered genome admission (v1-v4 on 2026-10-1x, #158's v5 onward on 2026-10-2x)
+            assert all((re.search(r"greg-genome-admission/2026-1\d-\d\d", r) or "greg-operation-admission/" in r)
                        and not r.startswith(genome_library.LINEAGE_ADMISSION_DIR) for r in e.evidence_refs), e
         if e.source in ("composition_recipe", "cortex_organ"):
             assert kind in ("recipe_lift", "organ_label")

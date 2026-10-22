@@ -319,6 +319,74 @@
    },
    "version": "1.0.0"
   },
+  "basal_nlms": {
+   "code": {
+    "closure_members": {
+     "greg/cognition/genomes/basal_b.py::LMS_EPS": "sha256:48d94bdad5c3f5ed46896a958c33d991fc97e3bef99720f46b196e73ed96375c",
+     "greg/cognition/genomes/basal_b.py::LMS_MAX_D": "sha256:ae2b5043f11cc6d01d3fd3e9a92979aadd6788bc6389c6198d326a659fe3b1ab",
+     "greg/cognition/genomes/basal_b.py::LMS_MAX_N": "sha256:ae2b5043f11cc6d01d3fd3e9a92979aadd6788bc6389c6198d326a659fe3b1ab",
+     "greg/cognition/genomes/basal_b.py::LMS_MU": "sha256:48d94bdad5c3f5ed46896a958c33d991fc97e3bef99720f46b196e73ed96375c",
+     "greg/cognition/genomes/basal_b.py::LMS_NATIVE_D": "sha256:ae2b5043f11cc6d01d3fd3e9a92979aadd6788bc6389c6198d326a659fe3b1ab",
+     "greg/cognition/genomes/basal_b.py::_lms_input": "sha256:2a2d09f2494a190df3d18ca7ddccf2f85f3999e3b3e9f9f0dfc7f82ef65f79b2",
+     "greg/cognition/genomes/basal_b.py::_lms_output": "sha256:07cf20a4fb838abfc532af7784e586d5e8ec2741cf55a71d6e0dedd72dba257b",
+     "greg/cognition/genomes/basal_b.py::_mapping": "sha256:6d729f6ec5c3dbf1b2f73a837272a0a0741678b8f6926e105f772386bc6ef65e",
+     "greg/cognition/genomes/basal_b.py::_mse": "sha256:c4b8a7d7bb56c64790487cb0206297513400b1fd57617630a94a7750a91cc4f0",
+     "greg/cognition/genomes/basal_b.py::_nlms": "sha256:51b2394ce3ebebd29db307c4b67f819b2c378b60098b160f14135ddbcaf1af94",
+     "greg/cognition/genomes/basal_b.py::nlms_solve": "sha256:745b412c28d48a7be163f1bb7d3e4512e4b0ca3ae3a78ca71ff10fe4e8df72e0",
+     "greg/cognition/genomes/contract.py::GenomeError": "sha256:52e14aeef5deb1d61a5fd29c49e9bf051c9858046e08335c95921a242cdcbf3e",
+     "greg/cognition/genomes/contract.py::answer": "sha256:d8785786fb45e388d25b584f19db70773f1d03897ffd4264c38ddc4e8d76abb7",
+     "greg/cognition/genomes/contract.py::finite": "sha256:1d8420fc918c0f1376a817332575834eefd9d86533f9be134dde960ffacc6479"
+    },
+    "closure_sha256": "sha256:108c07e37a4a8381cd45f425fe9b0c403b3a75c2dbcf09250868ccce96b7b3a5",
+    "function": "greg/cognition/genomes/basal_b.py::nlms_solve"
+   },
+   "competitor": "exponentially weighted recursive least squares (forgetting 0.995, P0 = 1000 I)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.basal_nlms",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "NICHE_CAPABILITY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.00271,
+   "status": "NICHE_CAPABILITY",
+   "subregions_vs_competitor": {
+    "long_high_dim": {
+     "losses": 7,
+     "n": 9,
+     "p_better": 0.980469,
+     "p_worse": 0.089844,
+     "ties": 0,
+     "wins": 2
+    },
+    "long_low_dim": {
+     "losses": 5,
+     "n": 10,
+     "p_better": 0.623047,
+     "p_worse": 0.623047,
+     "ties": 0,
+     "wins": 5
+    },
+    "short_high_dim": {
+     "losses": 6,
+     "n": 9,
+     "p_better": 0.910156,
+     "p_worse": 0.253906,
+     "ties": 0,
+     "wins": 3
+    },
+    "short_low_dim": {
+     "losses": 2,
+     "n": 2,
+     "p_better": 1.0,
+     "p_worse": 0.25,
+     "ties": 0,
+     "wins": 0
+    }
+   },
+   "version": "1.0.0"
+  },
   "basal_pid": {
    "code": {
     "closure_members": {
@@ -390,6 +458,65 @@
     }
    },
    "version": "1.0.2"
+  },
+  "basal_token_bucket": {
+   "code": {
+    "closure_members": {
+     "greg/cognition/genomes/basal_b.py::TB_EPS": "sha256:448876bcc3d71705b9ab616752c3a75a74dddfc1ca45b059273f3dd343c213b7",
+     "greg/cognition/genomes/basal_b.py::TB_MAX_REQUESTS": "sha256:b5f5beb708dfc8c79312a22dedb2251c36d5228f93387f60d84ff2bcf4b5b508",
+     "greg/cognition/genomes/basal_b.py::TB_NATIVE_REQUESTS": "sha256:b5f5beb708dfc8c79312a22dedb2251c36d5228f93387f60d84ff2bcf4b5b508",
+     "greg/cognition/genomes/basal_b.py::TB_WINDOW": "sha256:a78a211f03718411eb3afba8530fea6e2ba3e3dd1516cbd4fe56ee1a6e29e9bb",
+     "greg/cognition/genomes/basal_b.py::_mapping": "sha256:6d729f6ec5c3dbf1b2f73a837272a0a0741678b8f6926e105f772386bc6ef65e",
+     "greg/cognition/genomes/basal_b.py::_tb_input": "sha256:f6c66c01a737567aa6eef22bb1c2511e7f3070040dde4a6386d774c4d37a41ea",
+     "greg/cognition/genomes/basal_b.py::_tb_output": "sha256:08e3e80502662a71e8f9a687dac964f5a2088e0fc975c8e357826acb67083557",
+     "greg/cognition/genomes/basal_b.py::_tiered_bucket": "sha256:601878bfab4c71b76ade4288546d8f7a9248ca4dbc7c8ac9b71a1a236f82825d",
+     "greg/cognition/genomes/basal_b.py::token_bucket_solve": "sha256:56e85481d16bb6e54985758197d82e953e52af1d4ae3ce606c17dbdadddc966d",
+     "greg/cognition/genomes/contract.py::GenomeError": "sha256:52e14aeef5deb1d61a5fd29c49e9bf051c9858046e08335c95921a242cdcbf3e",
+     "greg/cognition/genomes/contract.py::answer": "sha256:d8785786fb45e388d25b584f19db70773f1d03897ffd4264c38ddc4e8d76abb7",
+     "greg/cognition/genomes/contract.py::bounded_int": "sha256:0dbf539071a00ce139a03a623c785be33860ddd71946075a7590473707c8bb42",
+     "greg/cognition/genomes/contract.py::finite": "sha256:1d8420fc918c0f1376a817332575834eefd9d86533f9be134dde960ffacc6479"
+    },
+    "closure_sha256": "sha256:9ae0efdfceb160385beb9d704ef7c56be845e65144e190c376044001cc04e3dd",
+    "function": "greg/cognition/genomes/basal_b.py::token_bucket_solve"
+   },
+   "competitor": "online bid-price control (fluid approximation over the refill horizon from the last 256 requests' rate and value distribution)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.basal_token_bucket",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.000342,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "heavy_overload": {
+     "losses": 3,
+     "n": 16,
+     "p_better": 0.010635,
+     "p_worse": 0.99791,
+     "ties": 0,
+     "wins": 13
+    },
+    "overload": {
+     "losses": 0,
+     "n": 7,
+     "p_better": 0.007812,
+     "p_worse": 1.0,
+     "ties": 0,
+     "wins": 7
+    },
+    "underload": {
+     "losses": 7,
+     "n": 7,
+     "p_better": 1.0,
+     "p_worse": 0.007812,
+     "ties": 0,
+     "wins": 0
+    }
+   },
+   "version": "1.0.0"
   },
   "bayes_interval": {
    "code": {
@@ -510,6 +637,119 @@
      "p_worse": 1.0,
      "ties": 7,
      "wins": 1
+    }
+   },
+   "version": "1.0.0"
+  },
+  "binpack_cpsat": {
+   "code": {
+    "closure_members": {
+     "greg/cognition/genomes/contract.py::GenomeError": "sha256:52e14aeef5deb1d61a5fd29c49e9bf051c9858046e08335c95921a242cdcbf3e",
+     "greg/cognition/genomes/contract.py::answer": "sha256:d8785786fb45e388d25b584f19db70773f1d03897ffd4264c38ddc4e8d76abb7",
+     "greg/cognition/genomes/contract.py::bounded_int": "sha256:0dbf539071a00ce139a03a623c785be33860ddd71946075a7590473707c8bb42",
+     "greg/cognition/genomes/solvers_d.py::BP_MAX_CAPACITY": "sha256:b953eaf761d1ab0a79a75a951158a67277f96ccd2764e80ce7b0d4a1baf42805",
+     "greg/cognition/genomes/solvers_d.py::BP_MAX_ITEMS": "sha256:b953eaf761d1ab0a79a75a951158a67277f96ccd2764e80ce7b0d4a1baf42805",
+     "greg/cognition/genomes/solvers_d.py::BP_NATIVE_ITEMS": "sha256:b953eaf761d1ab0a79a75a951158a67277f96ccd2764e80ce7b0d4a1baf42805",
+     "greg/cognition/genomes/solvers_d.py::_abstain": "sha256:c9b16f234f6e13d9f44b2107a665bf03566f47ea229b940441fc034840690764",
+     "greg/cognition/genomes/solvers_d.py::_canonical_packing": "sha256:55f76d61c66ee7167976a487b4dd046e3ec0f99d2205891863f55cae23513ecd",
+     "greg/cognition/genomes/solvers_d.py::_ffd": "sha256:1501aaeaafe0e64b8525219f716ed151946272011d34410b38509a17fcc329e0",
+     "greg/cognition/genomes/solvers_d.py::_fits_in": "sha256:2cb0c9ede1530bf54622a6e81db2c0503ba8c54c26e51caaf5cb1a6b4f535d90",
+     "greg/cognition/genomes/solvers_d.py::_mapping": "sha256:6d729f6ec5c3dbf1b2f73a837272a0a0741678b8f6926e105f772386bc6ef65e",
+     "greg/cognition/genomes/solvers_d.py::_packing_input": "sha256:21af6c27b1f62989521ea3a049408888306e302ec57bd464dc8416024cbaed0d",
+     "greg/cognition/genomes/solvers_d.py::_seconds": "sha256:18fcb275e396ed0dfbc70725e9dcda1eb4081aeca506a4e2a4f90956260d5024",
+     "greg/cognition/genomes/solvers_d.py::_unknown": "sha256:061b7cf6089b09969eb3a501feb7607eb06c54dc71179bd27e1e79ad3061727a",
+     "greg/cognition/genomes/solvers_d.py::binpack_solve": "sha256:5ca52f3599835f310ac6fc92dfbb7041286e4bce07cc4de4c5c61983b8d173dc"
+    },
+    "closure_sha256": "sha256:43a8e9787735391406eb2729b9a6b3ae655defffcdbcb642b908af822df7ed49",
+    "function": "greg/cognition/genomes/solvers_d.py::binpack_solve"
+   },
+   "competitor": "SciPy HiGHS branch-and-cut on the assignment model with the same symmetry breaking and cardinality cut (bins-used objective, 10 s limit)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.binpack_cpsat",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.041921,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "large_items": {
+     "losses": 1,
+     "n": 9,
+     "p_better": 0.75,
+     "p_worse": 0.75,
+     "ties": 7,
+     "wins": 1
+    },
+    "mixed": {
+     "losses": 0,
+     "n": 13,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 13,
+     "wins": 0
+    },
+    "triplet_like": {
+     "losses": 0,
+     "n": 8,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 8,
+     "wins": 0
+    }
+   },
+   "version": "1.0.0"
+  },
+  "blackbox_multistart_lbfgsb": {
+   "code": {
+    "closure_members": {
+     "greg/cognition/genomes/contract.py::GenomeError": "sha256:52e14aeef5deb1d61a5fd29c49e9bf051c9858046e08335c95921a242cdcbf3e",
+     "greg/cognition/genomes/contract.py::answer": "sha256:d8785786fb45e388d25b584f19db70773f1d03897ffd4264c38ddc4e8d76abb7",
+     "greg/cognition/genomes/contract.py::bounded_int": "sha256:0dbf539071a00ce139a03a623c785be33860ddd71946075a7590473707c8bb42",
+     "greg/cognition/genomes/contract.py::finite": "sha256:1d8420fc918c0f1376a817332575834eefd9d86533f9be134dde960ffacc6479",
+     "greg/cognition/genomes/solvers_d.py::BB_MAX_DIM": "sha256:76c78f43d62a946aa5d45ad65f9f892eea81afaec53d16038760bd096de4b789",
+     "greg/cognition/genomes/solvers_d.py::BB_MAX_EVALS": "sha256:76c78f43d62a946aa5d45ad65f9f892eea81afaec53d16038760bd096de4b789",
+     "greg/cognition/genomes/solvers_d.py::BB_OBJECTIVES": "sha256:827a0e8c03afb65df6d46dc653e5c9a53fb2c13a48da2046a21dbc035098b530",
+     "greg/cognition/genomes/solvers_d.py::_Exhausted": "sha256:dad7b7d2df88485ad11b5da6e07f63bfeaa7dc1c023f01fbcd3ac50522068b13",
+     "greg/cognition/genomes/solvers_d.py::_bb_input": "sha256:698db341a758b150c868d07f6ffec2f1ee574ba08b79bb7409b50fb9020caead",
+     "greg/cognition/genomes/solvers_d.py::_bb_value": "sha256:15fed81b31d57be077c9172e428de06f74cfc34f5078d768972a88aa61003838",
+     "greg/cognition/genomes/solvers_d.py::_counted": "sha256:06efc7e2a82c8eb52e26c335256d1cb788d4cdc7ccede3cf51e5e796cc1ddc6c",
+     "greg/cognition/genomes/solvers_d.py::_mapping": "sha256:6d729f6ec5c3dbf1b2f73a837272a0a0741678b8f6926e105f772386bc6ef65e",
+     "greg/cognition/genomes/solvers_d.py::_unknown": "sha256:061b7cf6089b09969eb3a501feb7607eb06c54dc71179bd27e1e79ad3061727a",
+     "greg/cognition/genomes/solvers_d.py::bb_multistart_solve": "sha256:34f39c00641de5b134c5e8438bf38845cf344392a389e25837bd55668d2d5ff2"
+    },
+    "closure_sha256": "sha256:b0094242267462a2866e835534e9a565d8f03c59703bd7951fcf342b4707e302",
+    "function": "greg/cognition/genomes/solvers_d.py::bb_multistart_solve"
+   },
+   "competitor": "SciPy differential evolution (rand/1/bin, popsize 10, no polish) at the same budget, #179's blackbox mechanism",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.blackbox_multistart_lbfgsb",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.133712,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "multimodal": {
+     "losses": 15,
+     "n": 20,
+     "p_better": 0.999344,
+     "p_worse": 0.003769,
+     "ties": 2,
+     "wins": 3
+    },
+    "unimodal": {
+     "losses": 0,
+     "n": 10,
+     "p_better": 0.0625,
+     "p_worse": 1.0,
+     "ties": 6,
+     "wins": 4
     }
    },
    "version": "1.0.0"
@@ -725,6 +965,74 @@
     }
    },
    "version": "1.0.1"
+  },
+  "collective_auction": {
+   "code": {
+    "closure_members": {
+     "greg/cognition/genomes/collective_b.py::AU_MAX_AGENTS": "sha256:2678a60a6e9bb6a12e41d6edcd1bb8639aa57e81173b0bde592a0e4ff76b155f",
+     "greg/cognition/genomes/collective_b.py::AU_MAX_SLOTS": "sha256:2678a60a6e9bb6a12e41d6edcd1bb8639aa57e81173b0bde592a0e4ff76b155f",
+     "greg/cognition/genomes/collective_b.py::AU_MAX_TASKS": "sha256:2678a60a6e9bb6a12e41d6edcd1bb8639aa57e81173b0bde592a0e4ff76b155f",
+     "greg/cognition/genomes/collective_b.py::AU_MAX_VALUE": "sha256:2678a60a6e9bb6a12e41d6edcd1bb8639aa57e81173b0bde592a0e4ff76b155f",
+     "greg/cognition/genomes/collective_b.py::AU_NATIVE_TASKS": "sha256:c5db156aa5cf80e62050523fa9a48236f3290583b86b74e3945b06e9a0f5466a",
+     "greg/cognition/genomes/collective_b.py::AU_SCALE": "sha256:790dbc4fa49c223d68e8f9b882df1fe4baeed753eefc1879f83be38347046395",
+     "greg/cognition/genomes/collective_b.py::_allocation_output": "sha256:c0708a669c65946a09b67f42511912622f8557c6f536e0a5f8a8708572a029bd",
+     "greg/cognition/genomes/collective_b.py::_auction": "sha256:39452c78ca275fa07428dd63a198635ab2da5b67029d5660d4b18df15ec9568a",
+     "greg/cognition/genomes/collective_b.py::_input": "sha256:937ee60dcc06b039f390adeaebf6490a310bbe4b94e3bf773d84700d40457c82",
+     "greg/cognition/genomes/collective_b.py::_second": "sha256:36567a59bce62927ed23a656809e3c4744c0fcb0d28cf5f15cb11d38e4c18d6d",
+     "greg/cognition/genomes/collective_b.py::auction_solve": "sha256:d07a2d07fcad28089974f3df6c78ca18b4e6526c546fd93e12a8801601aa328c",
+     "greg/cognition/genomes/contract.py::GenomeError": "sha256:52e14aeef5deb1d61a5fd29c49e9bf051c9858046e08335c95921a242cdcbf3e",
+     "greg/cognition/genomes/contract.py::answer": "sha256:d8785786fb45e388d25b584f19db70773f1d03897ffd4264c38ddc4e8d76abb7",
+     "greg/cognition/genomes/contract.py::bounded_int": "sha256:0dbf539071a00ce139a03a623c785be33860ddd71946075a7590473707c8bb42"
+    },
+    "closure_sha256": "sha256:4a4ac91d7a15d2bb33093a8f1618cd404da73516ba371b4bea73fab597cc916d",
+    "function": "greg/cognition/genomes/collective_b.py::auction_solve"
+   },
+   "competitor": "central planner: SciPy linear_sum_assignment (Jonker-Volgenant) on the expanded slot matrix",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.collective_auction",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "SUPERSEDED",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.030941,
+   "status": "SUPERSEDED",
+   "subregions_vs_competitor": {
+    "ample_dense": {
+     "losses": 0,
+     "n": 8,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 8,
+     "wins": 0
+    },
+    "ample_sparse": {
+     "losses": 0,
+     "n": 6,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 6,
+     "wins": 0
+    },
+    "scarce_dense": {
+     "losses": 0,
+     "n": 15,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 15,
+     "wins": 0
+    },
+    "scarce_sparse": {
+     "losses": 0,
+     "n": 1,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 1,
+     "wins": 0
+    }
+   },
+   "version": "1.0.0"
   },
   "collective_flock": {
    "code": {
@@ -1079,6 +1387,76 @@
    },
    "version": "1.0.1"
   },
+  "community_louvain": {
+   "code": {
+    "closure_members": {
+     "greg/cognition/genomes/contract.py::GenomeError": "sha256:52e14aeef5deb1d61a5fd29c49e9bf051c9858046e08335c95921a242cdcbf3e",
+     "greg/cognition/genomes/contract.py::answer": "sha256:d8785786fb45e388d25b584f19db70773f1d03897ffd4264c38ddc4e8d76abb7",
+     "greg/cognition/genomes/contract.py::finite": "sha256:1d8420fc918c0f1376a817332575834eefd9d86533f9be134dde960ffacc6479",
+     "greg/cognition/genomes/solvers_d.py::CD_MAX_EDGES": "sha256:3324a208c77e21d6bb0d215f074bebd260099759c41bb3c9423ce300650be6b1",
+     "greg/cognition/genomes/solvers_d.py::CD_MAX_NODES": "sha256:3324a208c77e21d6bb0d215f074bebd260099759c41bb3c9423ce300650be6b1",
+     "greg/cognition/genomes/solvers_d.py::CD_NATIVE_EDGES": "sha256:3324a208c77e21d6bb0d215f074bebd260099759c41bb3c9423ce300650be6b1",
+     "greg/cognition/genomes/solvers_d.py::CD_NATIVE_NODES": "sha256:3324a208c77e21d6bb0d215f074bebd260099759c41bb3c9423ce300650be6b1",
+     "greg/cognition/genomes/solvers_d.py::CD_RESTARTS": "sha256:9795608c2a345f375050cc92656061ffb758e7d5eb82736d842a7e3e6e16739d",
+     "greg/cognition/genomes/solvers_d.py::NAME_MAX": "sha256:a5c6840d4caeffb8c75dc0b170385fe683eafef3836f2a31b0fa71b03763bd3d",
+     "greg/cognition/genomes/solvers_d.py::_abstain": "sha256:c9b16f234f6e13d9f44b2107a665bf03566f47ea229b940441fc034840690764",
+     "greg/cognition/genomes/solvers_d.py::_canonical_communities": "sha256:fbf56404f234d0f381057b7edef4bca4ad13bf87d88aa2c3346bd7a129b1b761",
+     "greg/cognition/genomes/solvers_d.py::_local_moves": "sha256:d6be035e52bd14a85d7d9030f8373f09b6155fa47db24a065512a67f57acfd1b",
+     "greg/cognition/genomes/solvers_d.py::_mapping": "sha256:6d729f6ec5c3dbf1b2f73a837272a0a0741678b8f6926e105f772386bc6ef65e",
+     "greg/cognition/genomes/solvers_d.py::_modularity": "sha256:0f08b7e3bb3bd614fbed65df8f8785c6cef856187861e6d03f93cd05aa17237c",
+     "greg/cognition/genomes/solvers_d.py::_network": "sha256:c9128e6a948365371fb2cdf8ccc04c1241391bd6b3fd163f7a5008bf4f035efb",
+     "greg/cognition/genomes/solvers_d.py::community_solve": "sha256:cbbda1aed9f41c62ce3eacf28deb0908f4f8c192c3a1e5777f08ea4bd8d8ab8d"
+    },
+    "closure_sha256": "sha256:2e93e1952a02894e48f1f3878035f48cbeb23afa1704bcf2c8062e6924848573",
+    "function": "greg/cognition/genomes/solvers_d.py::community_solve"
+   },
+   "competitor": "Clauset-Newman-Moore greedy modularity (networkx.greedy_modularity_communities)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.community_louvain",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.038323,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "unweighted_dense": {
+     "losses": 0,
+     "n": 14,
+     "p_better": 0.000244,
+     "p_worse": 1.0,
+     "ties": 2,
+     "wins": 12
+    },
+    "unweighted_sparse": {
+     "losses": 0,
+     "n": 9,
+     "p_better": 0.001953,
+     "p_worse": 1.0,
+     "ties": 0,
+     "wins": 9
+    },
+    "weighted_dense": {
+     "losses": 0,
+     "n": 4,
+     "p_better": 0.0625,
+     "p_worse": 1.0,
+     "ties": 0,
+     "wins": 4
+    },
+    "weighted_sparse": {
+     "losses": 0,
+     "n": 3,
+     "p_better": 0.125,
+     "p_worse": 1.0,
+     "ties": 0,
+     "wins": 3
+    }
+   },
+   "version": "1.0.0"
+  },
   "control_mpc": {
    "code": {
     "closure_members": {
@@ -1240,6 +1618,74 @@
    },
    "version": "1.0.0"
   },
+  "crowd_weighted_vote": {
+   "code": {
+    "closure_members": {
+     "greg/cognition/genomes/contract.py::GenomeError": "sha256:52e14aeef5deb1d61a5fd29c49e9bf051c9858046e08335c95921a242cdcbf3e",
+     "greg/cognition/genomes/contract.py::answer": "sha256:d8785786fb45e388d25b584f19db70773f1d03897ffd4264c38ddc4e8d76abb7",
+     "greg/cognition/genomes/contract.py::bounded_int": "sha256:0dbf539071a00ce139a03a623c785be33860ddd71946075a7590473707c8bb42",
+     "greg/cognition/genomes/crowd.py::MAX_CLASSES": "sha256:5b66ab547aa4e73e7cb83641662fe080c593ec628f6570089d503ce7e548035d",
+     "greg/cognition/genomes/crowd.py::MAX_ITEMS": "sha256:5b66ab547aa4e73e7cb83641662fe080c593ec628f6570089d503ce7e548035d",
+     "greg/cognition/genomes/crowd.py::MAX_VOTES": "sha256:5b66ab547aa4e73e7cb83641662fe080c593ec628f6570089d503ce7e548035d",
+     "greg/cognition/genomes/crowd.py::MAX_WORKERS": "sha256:5b66ab547aa4e73e7cb83641662fe080c593ec628f6570089d503ce7e548035d",
+     "greg/cognition/genomes/crowd.py::NAME_MAX": "sha256:a5c6840d4caeffb8c75dc0b170385fe683eafef3836f2a31b0fa71b03763bd3d",
+     "greg/cognition/genomes/crowd.py::P_CLIP": "sha256:e738290b34b080c1cf229969073ab30aa31c7b2d0d8d31ddbac6bea3bdef4d0c",
+     "greg/cognition/genomes/crowd.py::_plurality": "sha256:f21dc16112655c0007d0ef01f70c9aeab70668e31affb755793b9f919e043e09",
+     "greg/cognition/genomes/crowd.py::_votes": "sha256:5067a59ae96d2f9e6f66448931e37fc4be3bc6458a0f211bb6bf7777b32780d6",
+     "greg/cognition/genomes/crowd.py::_weight": "sha256:270fd954c230cf6efd250421fa3e62d2637e82d047fae1786ed2742d8c1fb824",
+     "greg/cognition/genomes/crowd.py::vote_solve": "sha256:9e2492819536078e57eae747c1aabe49d504734e880a108e8b02658f027e1f3c",
+     "greg/cognition/genomes/crowd.py::weighted_vote": "sha256:1bf352cbf6e8c49dc28803a5beb800d529332ffb75ce3606a21f8a6e74fed2ff"
+    },
+    "closure_sha256": "sha256:af84e786a3975e7b00b1d3211cc0a7f64eb232948421a574d5c1b1ae94b7ed85",
+    "function": "greg/cognition/genomes/crowd.py::vote_solve"
+   },
+   "competitor": "Dawid-Skene EM with per-worker confusion matrices (#179's crowd mechanism, ported)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.crowd_weighted_vote",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.003701,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "dense_binary": {
+     "losses": 1,
+     "n": 2,
+     "p_better": 0.75,
+     "p_worse": 0.75,
+     "ties": 0,
+     "wins": 1
+    },
+    "dense_multiclass": {
+     "losses": 1,
+     "n": 13,
+     "p_better": 0.005859,
+     "p_worse": 0.999512,
+     "ties": 2,
+     "wins": 10
+    },
+    "sparse_binary": {
+     "losses": 0,
+     "n": 3,
+     "p_better": 0.125,
+     "p_worse": 1.0,
+     "ties": 0,
+     "wins": 3
+    },
+    "sparse_multiclass": {
+     "losses": 0,
+     "n": 12,
+     "p_better": 0.000244,
+     "p_worse": 1.0,
+     "ties": 0,
+     "wins": 12
+    }
+   },
+   "version": "1.0.0"
+  },
   "decision_preposterior": {
    "code": {
     "closure_members": {
@@ -1361,6 +1807,73 @@
    },
    "version": "1.2.0"
   },
+  "develop_diffusion": {
+   "code": {
+    "closure_members": {
+     "greg/cognition/genomes/contract.py::GenomeError": "sha256:52e14aeef5deb1d61a5fd29c49e9bf051c9858046e08335c95921a242cdcbf3e",
+     "greg/cognition/genomes/contract.py::answer": "sha256:d8785786fb45e388d25b584f19db70773f1d03897ffd4264c38ddc4e8d76abb7",
+     "greg/cognition/genomes/contract.py::bounded_int": "sha256:0dbf539071a00ce139a03a623c785be33860ddd71946075a7590473707c8bb42",
+     "greg/cognition/genomes/contract.py::finite": "sha256:1d8420fc918c0f1376a817332575834eefd9d86533f9be134dde960ffacc6479",
+     "greg/cognition/genomes/developmental_b.py::GD_MAX_CLASSES": "sha256:c7c030be07fb0170248c7b5d77411bdd4e9740a4376056a2174df5129231069b",
+     "greg/cognition/genomes/developmental_b.py::GD_MAX_EDGES": "sha256:c7c030be07fb0170248c7b5d77411bdd4e9740a4376056a2174df5129231069b",
+     "greg/cognition/genomes/developmental_b.py::GD_MAX_NODES": "sha256:c7c030be07fb0170248c7b5d77411bdd4e9740a4376056a2174df5129231069b",
+     "greg/cognition/genomes/developmental_b.py::GD_MAX_SWEEPS": "sha256:5e0f0af3eef79a4e719587938eec34fa280964de602dfd8d0e9ebd495270010e",
+     "greg/cognition/genomes/developmental_b.py::GD_TOL": "sha256:9eaae76d02f634232558ab2b6d9765a5dc305e137c4cfe38a96a17d8af9c3d63",
+     "greg/cognition/genomes/developmental_b.py::_diffuse": "sha256:04b4280d8e18e7c762addc2b27a16de74dc0b6a579534688259ca466e6545fa1",
+     "greg/cognition/genomes/developmental_b.py::_input": "sha256:b59c3b6c2487424344248359d21064a0e10133daa45552a247668bae199cb1a3",
+     "greg/cognition/genomes/developmental_b.py::_labels_from": "sha256:7d13bdef2451c2f6fc9f8919cff4f944ec9724bad3d06b6c8f15a30dc6917f60",
+     "greg/cognition/genomes/developmental_b.py::diffusion_solve": "sha256:becda4d47c27875a4ac51e2ad0b419da26ff6294258decd0d6935f29e246505c"
+    },
+    "closure_sha256": "sha256:35be6d0bc7b35fa0afc95489fc56266319285ec2abdcdf06bb768086b2eac7a8",
+    "function": "greg/cognition/genomes/developmental_b.py::diffusion_solve"
+   },
+   "competitor": "central structural method: NetworkX Louvain communities, each labelled by its seeds' majority (nearest seed where a community has none)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.develop_diffusion",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "REJECTED",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.012344,
+   "status": "REJECTED",
+   "subregions_vs_competitor": {
+    "few_seeds_dense": {
+     "losses": 12,
+     "n": 14,
+     "p_better": 0.999084,
+     "p_worse": 0.00647,
+     "ties": 0,
+     "wins": 2
+    },
+    "few_seeds_sparse": {
+     "losses": 7,
+     "n": 10,
+     "p_better": 0.945312,
+     "p_worse": 0.171875,
+     "ties": 0,
+     "wins": 3
+    },
+    "more_seeds_dense": {
+     "losses": 1,
+     "n": 5,
+     "p_better": 0.3125,
+     "p_worse": 0.9375,
+     "ties": 1,
+     "wins": 3
+    },
+    "more_seeds_sparse": {
+     "losses": 0,
+     "n": 1,
+     "p_better": 0.5,
+     "p_worse": 1.0,
+     "ties": 0,
+     "wins": 1
+    }
+   },
+   "version": "1.0.0"
+  },
   "develop_repair": {
    "code": {
     "closure_members": {
@@ -1372,6 +1885,8 @@
      "greg/cognition/genomes/developmental.py::CONTROLLER_MODES": "sha256:038b06c03eb478ea50e572a35e079e6bebc78d9e09e80580e2eca497f7cc051f",
      "greg/cognition/genomes/developmental.py::EXPIRY_WAVES": "sha256:be9d94e005e52126537429dff74a76b5ee567987cb053cda6ed8ea781332599a",
      "greg/cognition/genomes/developmental.py::MAX_LOSS": "sha256:a4b1de000684e21137115b616b99487897e25e5f242b7a6e361a41ae7a1eb664",
+     "greg/cognition/genomes/developmental.py::REPAIR_CONFIG_SPACE": "sha256:4195c62bcffc99f4789e5296fcc3d3d12929a9a0f2010c87f9931078bcc9475e",
+     "greg/cognition/genomes/developmental.py::REPAIR_DEFAULT_CONFIG": "sha256:f799928ac1323b8503077c9f974aec89835d40f28fe4d6ba4a557d441dd395d3",
      "greg/cognition/genomes/developmental.py::REPAIR_MAX_EVENTS": "sha256:b54b0cc61fdf0eac3849036adc6ccef11c641db3d1dc8fbb4c5819ac101c1408",
      "greg/cognition/genomes/developmental.py::REPAIR_MAX_STEPS": "sha256:1afa85b76a1e5186afbf3ed51b53bdb06478b426027590ad5dde7d8efd53be30",
      "greg/cognition/genomes/developmental.py::REPAIR_MAX_UNITS": "sha256:6fa4578f1dacc47a4f53453baa6763e139ea342d8f3bc873ceddae570fa9c27a",
@@ -1383,18 +1898,20 @@
      "greg/cognition/genomes/developmental.py::_cell_list": "sha256:776424b6b35604210ba8e180d522702ab299696e45c3c8bf72ffb0b60e24523d",
      "greg/cognition/genomes/developmental.py::_key": "sha256:fa3f00edb2fa7d661a62a54f6bae8a8521ed67801ff50dc50f9dbe25774c3dc7",
      "greg/cognition/genomes/developmental.py::_lattice": "sha256:4a4ccd8b923e2a457af2f6ee6451415bd4d2a230e8b1dc332316fa8a812e96a9",
-     "greg/cognition/genomes/developmental.py::_local_repair": "sha256:d3b13680467d8c6463fb94a08c8041e1008a7886e2d444a44f615fb7c810ac31",
+     "greg/cognition/genomes/developmental.py::_local_repair": "sha256:d54c45845cf90ffa65fb041d77d542d66d5162b709509e358c9224ed5d698804",
      "greg/cognition/genomes/developmental.py::_repair_inputs": "sha256:ee7c310a3682d14687970110c8983d19e3de5252c5a4a88fbbaa610a52f9781f",
      "greg/cognition/genomes/developmental.py::_require_dict": "sha256:a843523aa8662eb98ce07bb0cabea1d13910756f35f31e2e794a0b2b67cb0b31",
-     "greg/cognition/genomes/developmental.py::_settle_steps": "sha256:4de71939c26d971f30c7f2398ade8b5b14f3ac26a627d653449a22eca4f8cdf7",
-     "greg/cognition/genomes/developmental.py::_vouched": "sha256:14b34c1295740cc54046ed46da8434a4277c781685162925d6e21eff7ef92c80",
-     "greg/cognition/genomes/developmental.py::repair_solve": "sha256:be8750b58d11d8e1e1c21643407ecaacca778516790e20d70ff8d5615429d053"
+     "greg/cognition/genomes/developmental.py::_settle_steps": "sha256:c990deae71aae47175894f2f1257a47a7bc7fd28b3ac049df6b93ff1271e4c30",
+     "greg/cognition/genomes/developmental.py::_vouched": "sha256:dac578c3a203ef8c9f48e41e8d4553096a480e1dbcb63efe07b0061acd6a7527",
+     "greg/cognition/genomes/developmental.py::repair_protocol_config": "sha256:4c6bae7eb57180904da224d001dfb7a4ca009a34779a666e85e47d153f9332da",
+     "greg/cognition/genomes/developmental.py::repair_solve": "sha256:ceb7a4b603f28ddb7924351f206ccced546b8e57489be6e4b116b80d66e965c8",
+     "greg/cognition/genomes/developmental.py::repair_solve_with": "sha256:4776fa1cba5e64a51748cf16817b25d0f8a2b1105a421a6ebc7671e725af9f63"
     },
-    "closure_sha256": "sha256:84c83dad20928e227b336ec394904f8933db19d866418d440eed060b20a0a6af",
+    "closure_sha256": "sha256:0f22b177dba3861b14c8551d5803ea112dfce12f7f111cf379841229f52915cf",
     "function": "greg/cognition/genomes/developmental.py::repair_solve"
    },
    "competitor": "adaptive centralized replanner: global BFS shortest-path rebuild on its view at every change, reliable pushes; reliable or predeclared-unreliable (crash / stale view)",
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14-v2/results.json#genomes.develop_repair",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v6/results.json#genomes.develop_repair",
    "history": [
     {
      "run": "2026-10-13-v1",
@@ -1405,9 +1922,14 @@
      "run": "2026-10-14-v2",
      "status": "NICHE_CAPABILITY",
      "version": "1.1.1"
+    },
+    {
+     "run": "2026-10-21-v6",
+     "status": "NICHE_CAPABILITY",
+     "version": "1.1.2"
     }
    ],
-   "median_seconds": 0.026847,
+   "median_seconds": 0.027451,
    "status": "NICHE_CAPABILITY",
    "subregions_vs_competitor": {
     "reliable_controller": {
@@ -1427,7 +1949,91 @@
      "wins": 7
     }
    },
-   "version": "1.1.1"
+   "version": "1.1.2"
+  },
+  "develop_repair_hybrid": {
+   "code": {
+    "closure_members": {
+     "greg/cognition/genomes/contract.py::GenomeError": "sha256:52e14aeef5deb1d61a5fd29c49e9bf051c9858046e08335c95921a242cdcbf3e",
+     "greg/cognition/genomes/contract.py::answer": "sha256:d8785786fb45e388d25b584f19db70773f1d03897ffd4264c38ddc4e8d76abb7",
+     "greg/cognition/genomes/contract.py::bounded_int": "sha256:0dbf539071a00ce139a03a623c785be33860ddd71946075a7590473707c8bb42",
+     "greg/cognition/genomes/contract.py::finite": "sha256:1d8420fc918c0f1376a817332575834eefd9d86533f9be134dde960ffacc6479",
+     "greg/cognition/genomes/developmental.py::ACTION_COST": "sha256:6462ef52dd9850d8a71288d9a3e3e6811a5903257171521bc8f0da9a0368fa48",
+     "greg/cognition/genomes/developmental.py::CONTROLLER_MODES": "sha256:038b06c03eb478ea50e572a35e079e6bebc78d9e09e80580e2eca497f7cc051f",
+     "greg/cognition/genomes/developmental.py::EXPIRY_WAVES": "sha256:be9d94e005e52126537429dff74a76b5ee567987cb053cda6ed8ea781332599a",
+     "greg/cognition/genomes/developmental.py::MAX_LOSS": "sha256:a4b1de000684e21137115b616b99487897e25e5f242b7a6e361a41ae7a1eb664",
+     "greg/cognition/genomes/developmental.py::REPAIR_DEFAULT_CONFIG": "sha256:f799928ac1323b8503077c9f974aec89835d40f28fe4d6ba4a557d441dd395d3",
+     "greg/cognition/genomes/developmental.py::REPAIR_MAX_EVENTS": "sha256:b54b0cc61fdf0eac3849036adc6ccef11c641db3d1dc8fbb4c5819ac101c1408",
+     "greg/cognition/genomes/developmental.py::REPAIR_MAX_STEPS": "sha256:1afa85b76a1e5186afbf3ed51b53bdb06478b426027590ad5dde7d8efd53be30",
+     "greg/cognition/genomes/developmental.py::REPAIR_MAX_UNITS": "sha256:6fa4578f1dacc47a4f53453baa6763e139ea342d8f3bc873ceddae570fa9c27a",
+     "greg/cognition/genomes/developmental.py::REPEATS": "sha256:94eb9490a1dc0f0406fa9e78e4e4fed10a50f7cb81842bce9d851b9cadb5007e",
+     "greg/cognition/genomes/developmental.py::RETRACT_REPEATS": "sha256:8d4183dd84a0a6f23e0091258069e389d0462b6768524c6caa1eb99de0780702",
+     "greg/cognition/genomes/developmental.py::SEED_MAX": "sha256:d6bfa53f0ee5bb07d80b10184faf14aac83a268f6dd24461403b54bb17076839",
+     "greg/cognition/genomes/developmental.py::WAVE_PERIOD": "sha256:dcc128084ad62e06d3aa78e6df746a0054faa809b7aa5d018e92fa924f0a98c7",
+     "greg/cognition/genomes/developmental.py::_bfs_pointers": "sha256:847d6ddd78a47275a81c883f3ede5de4a9abebdf94ae943038180fe0f6099020",
+     "greg/cognition/genomes/developmental.py::_cell_list": "sha256:776424b6b35604210ba8e180d522702ab299696e45c3c8bf72ffb0b60e24523d",
+     "greg/cognition/genomes/developmental.py::_key": "sha256:fa3f00edb2fa7d661a62a54f6bae8a8521ed67801ff50dc50f9dbe25774c3dc7",
+     "greg/cognition/genomes/developmental.py::_lattice": "sha256:4a4ccd8b923e2a457af2f6ee6451415bd4d2a230e8b1dc332316fa8a812e96a9",
+     "greg/cognition/genomes/developmental.py::_local_repair": "sha256:d54c45845cf90ffa65fb041d77d542d66d5162b709509e358c9224ed5d698804",
+     "greg/cognition/genomes/developmental.py::_parse_key": "sha256:130f7f97c162e1084cd70f7075b01107840276d199b2af133d1b5d7bc281dde6",
+     "greg/cognition/genomes/developmental.py::_repair_inputs": "sha256:ee7c310a3682d14687970110c8983d19e3de5252c5a4a88fbbaa610a52f9781f",
+     "greg/cognition/genomes/developmental.py::_require_dict": "sha256:a843523aa8662eb98ce07bb0cabea1d13910756f35f31e2e794a0b2b67cb0b31",
+     "greg/cognition/genomes/developmental.py::_vouched": "sha256:dac578c3a203ef8c9f48e41e8d4553096a480e1dbcb63efe07b0061acd6a7527",
+     "greg/cognition/genomes/developmental.py::repair_central_replanner": "sha256:548c84e2a382d920fa74bc5dadbd3d8e3c3a05d7ed3cb34c381d719c2f629828",
+     "greg/cognition/genomes/developmental_hybrid.py::PROBE_SALT": "sha256:e76eace2ed6d01d061c003d91c93ed2681665760893502d75474ded16cb2113a",
+     "greg/cognition/genomes/developmental_hybrid.py::_activation_flood": "sha256:92e6e12964b0ed42b4c6bf022629edd552ee8a4020706396cbf8c815753ff528",
+     "greg/cognition/genomes/developmental_hybrid.py::_audit": "sha256:148ab3ec87c9547a295d848a0ff127c0ae0ddbd8c55bfe4b6c6c3b32c92d597e",
+     "greg/cognition/genomes/developmental_hybrid.py::_dead_by": "sha256:30d8d29267f7e0af8e6591e2b971de4379971d3bb5ad0c833157055b396297b5",
+     "greg/cognition/genomes/developmental_hybrid.py::_derived_inputs": "sha256:cd2126e7ab15655e7995f9308c2e2a76f728596516fc9c52ee2181879e6b10ff",
+     "greg/cognition/genomes/developmental_hybrid.py::_keys": "sha256:956b5f861399bd0e96bc8bceeeb8ea15906088831d652dbefac478368aa0e029",
+     "greg/cognition/genomes/developmental_hybrid.py::_local_from": "sha256:0b8ca004ef749cda9336231ead58bb4cf26cc5a47fade96a4d1781d44dcb6f1a",
+     "greg/cognition/genomes/developmental_hybrid.py::_probe": "sha256:1cb745aa6dfc04766962a96ca880c07d7d6b0b8d0752e0555402876ea35f7493",
+     "greg/cognition/genomes/developmental_hybrid.py::_table": "sha256:2a2f68e03c30e4ba1be71520410888550d60d92fcfd50b5a59ad903640053d18",
+     "greg/cognition/genomes/developmental_hybrid.py::_truncated": "sha256:b9561525193ce9219a85b8e9d858f51b3c287f5281da331f805c0ca1b65a92ab",
+     "greg/cognition/genomes/developmental_hybrid.py::first_discrepancy": "sha256:016fb6ce25633c2599c50d79bffc7f94d34916394689627b1694cda86623f91a",
+     "greg/cognition/genomes/developmental_hybrid.py::hybrid_solve": "sha256:035ef44cfdb04aa3e0b93d7ce8393ef4ed1c9df45dbf93ea3b1bac4f2c63f992"
+    },
+    "closure_sha256": "sha256:f48b2d76b195d97572d58a160d82ad1e76c9d26dc0d4703ace1f50e6b500f876",
+    "function": "greg/cognition/genomes/developmental_hybrid.py::hybrid_solve"
+   },
+   "competitor": "adaptive centralized replanner alone (repair_central_replanner)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v6/results.json#genomes.develop_repair_hybrid",
+   "history": [
+    {
+     "run": "2026-10-21-v6",
+     "status": "NICHE_CAPABILITY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.084921,
+   "status": "NICHE_CAPABILITY",
+   "subregions_vs_competitor": {
+    "crashed_controller": {
+     "losses": 0,
+     "n": 5,
+     "p_better": 0.0625,
+     "p_worse": 1.0,
+     "ties": 1,
+     "wins": 4
+    },
+    "reliable_controller": {
+     "losses": 0,
+     "n": 15,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 15,
+     "wins": 0
+    },
+    "stale_controller": {
+     "losses": 7,
+     "n": 10,
+     "p_better": 0.945312,
+     "p_worse": 0.171875,
+     "ties": 0,
+     "wins": 3
+    }
+   },
+   "version": "1.0.0"
   },
   "dp_knapsack": {
    "code": {
@@ -1857,6 +2463,54 @@
    },
    "version": "1.0.0"
   },
+  "graph_node_cut_exact": {
+   "code": {
+    "closure_members": {
+     "greg/cognition/genomes/contract.py::GenomeError": "sha256:52e14aeef5deb1d61a5fd29c49e9bf051c9858046e08335c95921a242cdcbf3e",
+     "greg/cognition/genomes/contract.py::answer": "sha256:d8785786fb45e388d25b584f19db70773f1d03897ffd4264c38ddc4e8d76abb7",
+     "greg/cognition/genomes/node_cut.py::CERTIFICATE_VERTICES": "sha256:c0b02df8abbba82c30ba2d7a5f3df8e491b183c94fd0dc0b042aa7110fb9be22",
+     "greg/cognition/genomes/node_cut.py::MAX_EDGES": "sha256:82d6b552c7bdc16adcd777f487d8e4e5e8c5abcd6225ada887cb12e87a302e9a",
+     "greg/cognition/genomes/node_cut.py::MAX_NAME": "sha256:f415ed147ec48a90c85fea161d01726c004c5ac407ee465b31f8cf6abbfa4bcd",
+     "greg/cognition/genomes/node_cut.py::MAX_NODES": "sha256:82d6b552c7bdc16adcd777f487d8e4e5e8c5abcd6225ada887cb12e87a302e9a",
+     "greg/cognition/genomes/node_cut.py::RETAINED_ITEMS": "sha256:8831120faf12ec2b822d747afabb9f71b630eccbffaf65c4b3ef8127b327dd4a",
+     "greg/cognition/genomes/node_cut.py::_graph": "sha256:ed4eab6c74aa73f7b871aa9be16b5e7da7d5c19c84adc6b0c3eb0a2e41d550dc",
+     "greg/cognition/genomes/node_cut.py::_reaches": "sha256:03166d311115a5e62f04a9e369595d2b8b5e537f806d50cab4917ea205673596",
+     "greg/cognition/genomes/node_cut.py::node_cut_solve": "sha256:919c5da52fe96318fdf93fcf73f8bb926e855da5140a9e72a3602b7c432fbdec"
+    },
+    "closure_sha256": "sha256:bea6d0b4d298dca894093b871361b1d5961aef7e08db34dc12b38f1b181554f9",
+    "function": "greg/cognition/genomes/node_cut.py::node_cut_solve"
+   },
+   "competitor": "flow_maxflow 1.0.1 (admitted DEFAULT) on the node-split translation, in process; independent exact ILP (scipy.optimize.milp, HiGHS) reported beside it",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.graph_node_cut_exact",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.001107,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "beyond_flow_maxflow_bounds": {
+     "losses": 0,
+     "n": 7,
+     "p_better": 0.007812,
+     "p_worse": 1.0,
+     "ties": 0,
+     "wins": 7
+    },
+    "within_flow_maxflow_bounds": {
+     "losses": 0,
+     "n": 23,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 23,
+     "wins": 0
+    }
+   },
+   "version": "1.0.0"
+  },
   "grid_dijkstra": {
    "code": {
     "closure_members": {
@@ -2052,6 +2706,71 @@
      "p_worse": 1.0,
      "ties": 8,
      "wins": 0
+    }
+   },
+   "version": "1.0.0"
+  },
+  "maxsat_cpsat": {
+   "code": {
+    "closure_members": {
+     "greg/cognition/genomes/contract.py::GenomeError": "sha256:52e14aeef5deb1d61a5fd29c49e9bf051c9858046e08335c95921a242cdcbf3e",
+     "greg/cognition/genomes/contract.py::answer": "sha256:d8785786fb45e388d25b584f19db70773f1d03897ffd4264c38ddc4e8d76abb7",
+     "greg/cognition/genomes/contract.py::bounded_int": "sha256:0dbf539071a00ce139a03a623c785be33860ddd71946075a7590473707c8bb42",
+     "greg/cognition/genomes/solvers_d.py::INFEASIBLE": "sha256:a4122ec4486cdfb039f57488cc4a2ddcb14385589ccae245f2fb65fa01067a36",
+     "greg/cognition/genomes/solvers_d.py::MS_MAX_CLAUSES": "sha256:fca6f5cbbb39661b0be4692bf4283f4ddd73e51ece6d0e69b6b8405f1a012f8f",
+     "greg/cognition/genomes/solvers_d.py::MS_MAX_VARS": "sha256:fca6f5cbbb39661b0be4692bf4283f4ddd73e51ece6d0e69b6b8405f1a012f8f",
+     "greg/cognition/genomes/solvers_d.py::MS_MAX_WEIGHT": "sha256:022174edb957d0167c7b9c106c785b029142231930dc97bad16a4ee9ed17cc56",
+     "greg/cognition/genomes/solvers_d.py::MS_MAX_WIDTH": "sha256:022174edb957d0167c7b9c106c785b029142231930dc97bad16a4ee9ed17cc56",
+     "greg/cognition/genomes/solvers_d.py::MS_NATIVE_CLAUSES": "sha256:fca6f5cbbb39661b0be4692bf4283f4ddd73e51ece6d0e69b6b8405f1a012f8f",
+     "greg/cognition/genomes/solvers_d.py::MS_NATIVE_VARS": "sha256:fca6f5cbbb39661b0be4692bf4283f4ddd73e51ece6d0e69b6b8405f1a012f8f",
+     "greg/cognition/genomes/solvers_d.py::_abstain": "sha256:c9b16f234f6e13d9f44b2107a665bf03566f47ea229b940441fc034840690764",
+     "greg/cognition/genomes/solvers_d.py::_digest": "sha256:41140dc31c2b89fc1bd487f09db4f6b5d59dc4981d087e276c14272ca5dab904",
+     "greg/cognition/genomes/solvers_d.py::_mapping": "sha256:6d729f6ec5c3dbf1b2f73a837272a0a0741678b8f6926e105f772386bc6ef65e",
+     "greg/cognition/genomes/solvers_d.py::_maxsat": "sha256:e6573d6d0bf434e86aca3b45756cef941a00524bf3f00a1ba29baaaaa1283aed",
+     "greg/cognition/genomes/solvers_d.py::_maxsat_output": "sha256:4781b105f5440f9571d76e6429b0d691819f7cf06124e049cc6504a1e41bdb47",
+     "greg/cognition/genomes/solvers_d.py::_sat": "sha256:3651eec8509827a397a6f0f91b478bf8119a3ef91456e04e9dcc9fc268803fb2",
+     "greg/cognition/genomes/solvers_d.py::_seconds": "sha256:18fcb275e396ed0dfbc70725e9dcda1eb4081aeca506a4e2a4f90956260d5024",
+     "greg/cognition/genomes/solvers_d.py::_unknown": "sha256:061b7cf6089b09969eb3a501feb7607eb06c54dc71179bd27e1e79ad3061727a",
+     "greg/cognition/genomes/solvers_d.py::maxsat_solve": "sha256:15421038ccac0d5349e12068152d338624ba3de17fb46645722248374af60a06"
+    },
+    "closure_sha256": "sha256:8816efc844429cc42ec5747a14bc2c369a135ee98ce97b9646217c84b13132f0",
+    "function": "greg/cognition/genomes/solvers_d.py::maxsat_solve"
+   },
+   "competitor": "Z3 Optimize (MaxRes core-guided MaxSAT) with soft constraints",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.maxsat_cpsat",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.023888,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "hard_and_soft": {
+     "losses": 0,
+     "n": 14,
+     "p_better": 0.5,
+     "p_worse": 1.0,
+     "ties": 13,
+     "wins": 1
+    },
+    "soft_only": {
+     "losses": 0,
+     "n": 8,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 8,
+     "wins": 0
+    },
+    "unit_claims": {
+     "losses": 0,
+     "n": 8,
+     "p_better": 0.125,
+     "p_worse": 1.0,
+     "ties": 5,
+     "wins": 3
     }
    },
    "version": "1.0.0"
@@ -2658,6 +3377,58 @@
     }
    },
    "version": "1.0.3"
+  },
+  "reconcile_qp": {
+   "code": {
+    "closure_members": {
+     "greg/cognition/genomes/contract.py::GenomeError": "sha256:52e14aeef5deb1d61a5fd29c49e9bf051c9858046e08335c95921a242cdcbf3e",
+     "greg/cognition/genomes/contract.py::answer": "sha256:d8785786fb45e388d25b584f19db70773f1d03897ffd4264c38ddc4e8d76abb7",
+     "greg/cognition/genomes/contract.py::finite": "sha256:1d8420fc918c0f1376a817332575834eefd9d86533f9be134dde960ffacc6479",
+     "greg/cognition/genomes/solvers_d.py::QP_FEAS_TOL": "sha256:93fed6e700810444b80690ee1bc4de463b088ec5df19c1906f6977c482a3a97e",
+     "greg/cognition/genomes/solvers_d.py::QP_KKT_TOL": "sha256:93fed6e700810444b80690ee1bc4de463b088ec5df19c1906f6977c482a3a97e",
+     "greg/cognition/genomes/solvers_d.py::QP_MAX_ROWS": "sha256:34294cc5a5131838f28c3863e280b33a380ba3594f96bcfc178d1fb449fbbfb0",
+     "greg/cognition/genomes/solvers_d.py::QP_MAX_VARS": "sha256:34294cc5a5131838f28c3863e280b33a380ba3594f96bcfc178d1fb449fbbfb0",
+     "greg/cognition/genomes/solvers_d.py::_face": "sha256:6aa6a01c84e3bc9d1236e6be1cabc0aed337b12f55ec3fd7f132c9c656113863",
+     "greg/cognition/genomes/solvers_d.py::_kkt_multipliers": "sha256:123e7d5d52e5d6ac71a60c35e999246ea71f372c6bb6c339c8f8996eb9043879",
+     "greg/cognition/genomes/solvers_d.py::_mapping": "sha256:6d729f6ec5c3dbf1b2f73a837272a0a0741678b8f6926e105f772386bc6ef65e",
+     "greg/cognition/genomes/solvers_d.py::_qp_input": "sha256:0051e9256890920f223ae7b9ca44ec4cc8009bd9bd861f76c4f6e9f87a90ed98",
+     "greg/cognition/genomes/solvers_d.py::_qp_objective": "sha256:f627d499b31ffcf6a94d90aa38fd52c8a7e9ccfcf0cc7c27521f882cb4c656b7",
+     "greg/cognition/genomes/solvers_d.py::_unknown": "sha256:061b7cf6089b09969eb3a501feb7607eb06c54dc71179bd27e1e79ad3061727a",
+     "greg/cognition/genomes/solvers_d.py::reconcile_solve": "sha256:bfd0459339e02a4b00b982690eebb5bd81462d4768027c8a8919635d59afadf6"
+    },
+    "closure_sha256": "sha256:12ca2bd0fe03796e99e3f535fc7de0910e628217df7bc9ce989f6e43a3553a21",
+    "function": "greg/cognition/genomes/solvers_d.py::reconcile_solve"
+   },
+   "competitor": "SciPy SLSQP on the same QP (analytic gradient, ftol 1e-12)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json#genomes.reconcile_qp",
+   "history": [
+    {
+     "run": "2026-10-21-v5",
+     "status": "NICHE_CAPABILITY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.00335,
+   "status": "NICHE_CAPABILITY",
+   "subregions_vs_competitor": {
+    "balanced_network": {
+     "losses": 0,
+     "n": 23,
+     "p_better": 0.25,
+     "p_worse": 1.0,
+     "ties": 21,
+     "wins": 2
+    },
+    "budget_split": {
+     "losses": 0,
+     "n": 7,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 7,
+     "wins": 0
+    }
+   },
+   "version": "1.0.0"
   },
   "search_astar": {
    "code": {
@@ -4748,6 +5519,16 @@
    "path": "docs/evidence/greg-genome-admission/2026-10-16-v4/results.json",
    "sha256": "sha256:9927a6fd940046b0af70bb7e9f78f84f58f896719af8487c7c77dfa827643e42",
    "source_commit": "3da09c0382d91c4755725329223359e9c1d62ca4"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
+   "sha256": "sha256:eb7470bac2b5abfb13428bc64178e9e717f1c4917bf54dbb99caa32961dd6367",
+   "source_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v6/results.json",
+   "sha256": "sha256:2d3d965c4ce5ec97a54d654ec7d4900d28fa70d1be11f1fb924e362ae27a86f8",
+   "source_commit": "f33cb2a921689570ae4401da7b9884be252ba476"
   },
   {
    "path": "docs/evidence/greg-genome-admission/2026-10-14/results.json",

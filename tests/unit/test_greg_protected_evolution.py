@@ -391,6 +391,8 @@ def _effective(target_name, certificate, data):
     observable from the certificate and rests on the argument check above and on review."""
     if target_name == "constraint_release":
         return certificate["search_config"]
+    if target_name == "develop_repair":         # retract_repeats is not observable from the certificate
+        return {k: certificate[k] for k in ("wave_period", "expiry_waves", "repeats")}
     if target_name == "forecast_quantile":
         return {"origins": certificate["rolling_origins"] - 1}
     cal = certificate["calibration"]
@@ -403,7 +405,11 @@ def test_no_rejected_p8_configuration_is_shipped_and_every_incumbent_still_is():
     records = [json.loads(p.read_text()) for p in sorted((E.ROOT / "docs/evidence/greg-protected-evolution")
                                                         .glob("*/cycle-*.json"))]
     records = [r for r in records if r.get("schema") == "greg-protected-evolution/1"]
-    assert {r["target"] for r in records} == set(E.TARGET_SPECS)
+    # every recorded target is a current target; a target with no recorded cycle yet (develop_repair, designed
+    # 2026-10-21 with no split registered) still ships its incumbent
+    assert {r["target"] for r in records} <= set(E.TARGET_SPECS)
+    for name in set(E.TARGET_SPECS) - {r["target"] for r in records}:
+        assert _shipped(name) == E.TARGET_SPECS[name]().target().incumbent, name
     for r in records:
         shipped = _shipped(r["target"])
         if r["decision"] != "RETAIN":
@@ -475,6 +481,8 @@ E.immune_split = lambda: (dev(collective.immune_gaussian_instance, (1, 2, 3), co
                           dev(collective.immune_gaussian_instance, (4, 5), collective.immune_dimension_band), [])
 cr = lambda seeds: dev(D.constraint_release_instance, seeds, D.constraint_release_subregion)
 E.cr_split = lambda name=E.CR_CURRENT_SPLIT: (cr((1, 2, 3)), cr((4, 5)), [])
+rp = lambda seeds: {f"s{s}": E.repair_item(s) for s in seeds}
+E.repair_split = lambda name=E.REPAIR_CURRENT_SPLIT: (rp((1, 2, 3)), rp((4, 5)), [])
 E.FAILURE_RATE_TRIGGER = 0.0
 out = {}
 for name in sorted(E.TARGET_SPECS):

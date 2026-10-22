@@ -62,7 +62,8 @@ HELDOUT_ROLES = ("held-out", "admission held-out", "P8 held-out", "canary")
 ROLES = ("dev", "review-pilot", "train", "held-out", "canary", "admission held-out", "P8 held-out")
 REVIEW_RANGE = (3000, 3999)              # the repository's review-seed convention (pilots, review tests)
 # development ranges a lane declared in committed evidence before using them (seeds outside 0-9 a test may draw)
-DECLARED_DEV_RANGES = {(9300, 9339): "docs/evidence/greg-genome-l3-absent-2026-10-21/README.md"}
+DECLARED_DEV_RANGES = {(9300, 9339): "docs/evidence/greg-genome-l3-absent-2026-10-21/README.md",
+                       (9400, 9439): "docs/evidence/greg-genome-l124-absent-2026-10-21/README.md"}
 GENOMES_DIR = "greg/cognition/genomes/"
 RESULT_NAME = re.compile(r"(result|cycle-|canary|heldout|summary)[^/]*\.json$")
 HEX64 = re.compile(r"[0-9a-f]{64}")
@@ -507,7 +508,7 @@ def admission_179(src: Source, results: dict) -> list[dict]:
 
 
 P8_TARGETS = {"constraint_release": ("cr_split", "CR_SPLITS"), "immune_detect": ("immune_split", "IMMUNE_SPLITS"),
-              "forecast_quantile": ("forecasting_split", None)}
+              "forecast_quantile": ("forecasting_split", None), "develop_repair": ("repair_item", "REPAIR_SPLITS")}
 
 
 def _p8_generator(commit: str, target: str) -> dict:
@@ -615,7 +616,8 @@ def p8_pilots(src: Source) -> list[dict]:
     for path in src.paths(r"docs/evidence/greg-protected-evolution/[^/]+/pilot/[^/]+\.json"):
         dirs.setdefault(path.rsplit("/", 1)[0], []).append(path)
     for directory, files in sorted(dirs.items()):
-        target = "immune_detect" if "immune" in directory else "constraint_release"
+        target = ("immune_detect" if "immune" in directory else "develop_repair" if "repair" in directory
+                  else "constraint_release")
         declared, union = {}, set()
         for path in files:
             for key, seeds in _walk_ranges(load_json(src.commit, path)):
@@ -629,6 +631,29 @@ def p8_pilots(src: Source) -> list[dict]:
                            role="review-pilot", family=target, generator=_p8_generator(commit, target),
                            seeds=union, looked_at=True, basis="pilot outcomes are recorded in these files",
                            extra={"declared": {k: ranges(v) for k, v in sorted(declared.items())}}))
+    return out
+
+
+def exploratory_runs(src: Source) -> list[dict]:
+    """Declared exploratory measurements outside admission and P8 (``docs/evidence/greg-repair-hybrid/*/*.json``
+    with schema ``greg-repair-hybrid-exploratory/1``): every item the run scored, under the generator it drew from.
+    Development seeds 0-9 are role dev; any other run is review-pilot (looked at, never held-out again)."""
+    out = []
+    for path in src.paths(r"docs/evidence/greg-repair-hybrid/[^/]+/[^/]+\.json"):
+        doc = load_json(src.commit, path)
+        if not (isinstance(doc, dict) and str(doc.get("schema", "")).startswith("greg-repair-hybrid-exploratory/")):
+            continue
+        seeds = sorted({r["seed"] for r in doc.get("items", []) if isinstance(r, dict) and type(r.get("seed")) is int})
+        if not seeds:
+            continue
+        commit = src.added(path)
+        art = {"path": path, "commit": commit, "sha256": blob_sha(src.commit, path)}
+        out.append(_record(lineage=src.lineage, program="repair hybrid exploratory", artifact=art, commit=commit,
+                           role="dev" if set(seeds) <= set(SAMPLE_SEEDS) else "review-pilot",
+                           family="develop_repair_hybrid",
+                           generator=function_identity(commit, "greg.cognition.genomes.developmental",
+                                                       "repair_instance"),
+                           seeds=seeds, looked_at=True, basis="the run's per-item outcomes are recorded in this file"))
     return out
 
 
@@ -1211,7 +1236,7 @@ CONVERGED_MAP = "docs/collaboration/MIND-LINEAGE-RECONCILIATION-MAP-2026-10-14.j
 def _trees() -> tuple[str | None, str | None]:
     """(#158 tree, #179 tree). On #158's line: HEAD and PIN_179. On #179's converged tree, which merges #158, HEAD is
     #179's own tree and #158's is the commit the reconciliation map pins, an ancestor of HEAD; otherwise every
-    #179 artifact would read as #158's and #179's newer runs would be missed (merge of #158 fa0d92a0 into #179)."""
+    #179 artifact would read as #158's and #179's newer runs would be missed (adopted from #179 54278f2f)."""
     head = REF_158 if resolve(REF_158) else None          # symbolic, so a rebuild after a commit is identical
     pinned = (load_json(head, CONVERGED_MAP) or {}).get("pr158") if head else None
     if pinned and resolve(pinned) and resolve(pinned) != resolve(head) and is_ancestor(pinned, head) \
@@ -1233,6 +1258,7 @@ def build() -> dict:
 
     records, unparsed = [], []
     records += admission_genomes(s158, results) + p8_cycles(s158, results) + p8_canaries(s158) + p8_pilots(s158)
+    records += exploratory_runs(s158)
     g158, u158 = generic_freezes(s158, results, [])
     records += g158
     unparsed += u158

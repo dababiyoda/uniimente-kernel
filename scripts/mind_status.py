@@ -713,9 +713,9 @@ def _lineage_179(rows: list[dict]) -> dict:
         return {**pin, "available": False,
                 "why": f"commit {pin['commit']} is not in this clone; fetch {pin['branch']} to read it", "rows": []}
     data = json.loads(raw)
-    # On a tree whose own evidence index lists this run (the converged #179 tree), its verdicts already route here
+    # On a tree whose own evidence index lists this run (the converged #179 tree), its verdicts already route there
     # through the operation rows: the lineage view would duplicate them and its "raises no label here" would be
-    # false, so it reports that and adds no rows (merge of #158 fa0d92a0 into #179)
+    # false, so it reports that and adds no rows (adopted from #179 54278f2f)
     try:
         listed = {s.get("path") for s in json.loads(INDEX.read_text()).get("sources", [])}
     except (OSError, ValueError):

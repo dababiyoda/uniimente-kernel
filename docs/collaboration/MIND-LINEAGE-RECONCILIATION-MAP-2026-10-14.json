@@ -2,7 +2,7 @@
  "schema": "mind-lineage-reconciliation-map/1",
  "base": "92bc6e31e0baa8fd507833e0f272b4a5e532e4d3",
  "pr155": "ef5f078013b549a51458dc9f6b5f34b324ea70b0",
- "pr158": "fa0d92a0cb843be5f79d876dab3116c79f46e3ad",
+ "pr158": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
  "vocabulary": [
   "complementary",
   "interchangeable",
@@ -605,7 +605,7 @@
    "lineage": "pr158",
    "classification": "historical evidence",
    "disposition": "extended",
-   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet); regenerated on the converged tree by its tool"
+   "note": "present in one lineage only (pr158); regenerated on the converged tree by its own tool, which reads #158's tree at the map's pin and #179's at HEAD"
   },
   {
    "path": "docs/evidence/greg-developmental-sweep/2026-10-14/README.md",
@@ -783,6 +783,167 @@
    "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
   },
   {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v5-draft-l124.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v5-draft-nodecut.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/PREREGISTRATION.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/run.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v6-draft-repair.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v6/PREREGISTRATION.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v6/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v6/freeze.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v6/results.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v6/run.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v7-draft-evo.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v7-draft-formal.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v7-draft-search.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/PREREGISTRATION.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/freeze.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-l124-absent-2026-10-21/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-l124-absent-2026-10-21/dev/basal_nlms.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-l124-absent-2026-10-21/dev/basal_token_bucket.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-l124-absent-2026-10-21/dev/collective_auction.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-l124-absent-2026-10-21/dev/develop_diffusion.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
    "path": "docs/evidence/greg-genome-l3-absent-2026-10-21/ADMISSION-V5-PREREGISTRATION-DRAFT.md",
    "lineage": "pr158",
    "classification": "historical evidence",
@@ -935,6 +1096,41 @@
    "classification": "historical evidence",
    "disposition": "kept",
    "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+  },
+  {
+   "path": "docs/evidence/greg-node-cut-2026-10-21/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-node-cut-2026-10-21/admission-dev-seeds.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-node-cut-2026-10-21/development.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-node-cut-2026-10-21/latency.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-node-cut-2026-10-21/overhead.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
   },
   {
    "path": "docs/evidence/greg-polyintelligence-mind/2026-10-07/baseline-suite-at-92bc6e3.log",
@@ -1434,6 +1630,55 @@
    "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
   },
   {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-repair-1/DESIGN.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-repair-1/EXPOSURE-AUDIT.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-repair-1/exposure-query.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-repair-1/pilot/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-repair-1/pilot/region.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-repair-1/pilot/simulate.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-21-repair-1/pilot/summary.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
    "path": "docs/evidence/greg-protected-evolution/2026-10-21-stress-gate-audit/README.md",
    "lineage": "pr158",
    "classification": "historical evidence",
@@ -1481,6 +1726,48 @@
    "classification": "historical evidence",
    "disposition": "kept",
    "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "docs/evidence/greg-repair-hybrid/2026-10-21-exploratory/DECLARATION.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-repair-hybrid/2026-10-21-exploratory/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-repair-hybrid/2026-10-21-exploratory/dev.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-repair-hybrid/2026-10-21-exploratory/review.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-whole-machine-trace/2026-10-21-pr179-54278f2f/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "docs/evidence/greg-whole-machine-trace/2026-10-21-pr179-54278f2f/trace.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
   },
   {
    "path": "docs/evidence/greg-whole-machine-trace/2026-10-21/README.md",
@@ -1714,11 +2001,39 @@
    "note": "present in one lineage only (pr158)"
   },
   {
+   "path": "greg/cognition/genomes/basal_b.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "greg/cognition/genomes/basal_memory.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "greg/cognition/genomes/centrality.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
    "path": "greg/cognition/genomes/collective.py",
    "lineage": "pr158",
    "classification": "complementary",
    "disposition": "kept",
    "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/genomes/collective_b.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
   },
   {
    "path": "greg/cognition/genomes/competitors.py",
@@ -1756,6 +2071,34 @@
    "note": "present in one lineage only (pr158)"
   },
   {
+   "path": "greg/cognition/genomes/developmental_b.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "greg/cognition/genomes/developmental_ca.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "greg/cognition/genomes/developmental_hybrid.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "greg/cognition/genomes/evolutionary.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
    "path": "greg/cognition/genomes/flow.py",
    "lineage": "pr158",
    "classification": "complementary",
@@ -1770,6 +2113,13 @@
    "note": "present in one lineage only (pr158)"
   },
   {
+   "path": "greg/cognition/genomes/formal.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
    "path": "greg/cognition/genomes/graph_or.py",
    "lineage": "pr158",
    "classification": "complementary",
@@ -1782,6 +2132,20 @@
    "classification": "complementary",
    "disposition": "kept",
    "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/genomes/node_cut.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "greg/cognition/genomes/search.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
   },
   {
    "path": "greg/cognition/genomes/solvers_b.py",
@@ -1945,6 +2309,13 @@
    "note": "present in one lineage only (pr158)"
   },
   {
+   "path": "scripts/admission_readme.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes); 2026-10-22 on #179: one f-string used Python 3.12 nested quotes and did not parse on CI's Python 3.11"
+  },
+  {
    "path": "scripts/build_mind_coverage_record.py",
    "lineage": "pr158",
    "classification": "complementary",
@@ -1962,8 +2333,8 @@
    "path": "scripts/data_exposure_ledger.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "extended",
-   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet); 2026-10-21 on #179: tree-aware (#158's tree is the map's pinned commit, #179's is HEAD)"
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet); 2026-10-21 on #179: tree-aware (#158's tree is the map's pinned commit, #179's is HEAD); #158 adopted #179's change at 93667efc, identical again"
   },
   {
    "path": "scripts/greg_whole_machine_trace.py",
@@ -1978,6 +2349,13 @@
    "classification": "complementary",
    "disposition": "extended",
    "note": "NO_GAIN labels as a demotion like REGRESSION"
+  },
+  {
+   "path": "scripts/node_cut_development.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
   },
   {
    "path": "scripts/p8_cr6_canary.py",
@@ -2015,6 +2393,13 @@
    "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
   },
   {
+   "path": "scripts/p8_repair1_pilot.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
    "path": "scripts/prepare_m4_weekly.py",
    "lineage": "pr158",
    "classification": "complementary",
@@ -2027,6 +2412,13 @@
    "classification": "complementary",
    "disposition": "kept",
    "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "scripts/repair_hybrid_explore.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
   },
   {
    "path": "tests/fixtures/graph_matching_highs_regressions.json",
@@ -2134,6 +2526,13 @@
    "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab. Extended in Track B: it reads only admission runs that carry a \"genomes\" key, because the converged index also holds P6 and P4 runs."
   },
   {
+   "path": "tests/unit/test_genomes_absent_formal.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
    "path": "tests/unit/test_genomes_basal.py",
    "lineage": "pr158",
    "classification": "complementary",
@@ -2169,6 +2568,20 @@
    "note": "present in one lineage only (pr158)"
   },
   {
+   "path": "tests/unit/test_genomes_developmental_hybrid.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "tests/unit/test_genomes_evo_centrality.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
    "path": "tests/unit/test_genomes_flow_mcf.py",
    "lineage": "pr158",
    "classification": "complementary",
@@ -2183,11 +2596,25 @@
    "note": "present in one lineage only (pr158)"
   },
   {
+   "path": "tests/unit/test_genomes_l124.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
    "path": "tests/unit/test_genomes_library.py",
    "lineage": "pr158",
    "classification": "complementary",
    "disposition": "kept",
    "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_genomes_search.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
   },
   {
    "path": "tests/unit/test_genomes_solvers_b.py",
@@ -2223,6 +2650,13 @@
    "classification": "complementary",
    "disposition": "kept",
    "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_graph_node_cut_genome.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
   },
   {
    "path": "tests/unit/test_greg_advantage_compiler.py",
@@ -2391,6 +2825,20 @@
    "classification": "complementary",
    "disposition": "kept",
    "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+  },
+  {
+   "path": "tests/unit/test_p8_repair1_pilot.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+  },
+  {
+   "path": "tests/unit/test_p8_repair_target.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
   },
   {
    "path": "tests/unit/test_vpl_metrics.py",

@@ -35,6 +35,8 @@ Do not create another framework to implement this rule. Apply it to `greg/` and 
 
 This repository is the canonical institutional control plane for **UNIIMENTE: Artificial Egregore**.
 
+**Latest founder correction (2026-10-19):** Read [Universal Substrate Elevation](docs/intent/INTENT-20261019-UPWARD-ASCENT.md). Convergence must produce a demonstrated capability dividend, not stop at consolidation or archival. Apply Mechanism Recombination Foundry to material duplication and not-yet-elevated substrate; preserve the complete founder vision as the acceptance floor. This changes development requirements, not runtime authority.
+
 Current product correction: `docs/intent/INTENT-GREG-EMBODIED-2026-09-11.md`.
 GREG's interface belongs to a persistent operating layer above the founder's
 computer OS. Background mission continuity and authorized computer use are core

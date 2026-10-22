@@ -23,6 +23,7 @@ Treat the entire historical repository as mechanism substrate. Extract what work
 
 Read and obey, in this order:
 
+- @docs/intent/INTENT-20261019-UPWARD-ASCENT.md
 - @docs/PROJECT_COGNITION_SOP.md
 - @docs/PROJECT_SOURCE_CENSUS_2026-09-26.md
 

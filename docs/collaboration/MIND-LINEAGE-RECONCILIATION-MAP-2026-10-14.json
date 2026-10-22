@@ -2340,8 +2340,8 @@
    "path": "scripts/greg_whole_machine_trace.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+   "disposition": "modified",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet); modified on the joined tree (#196, 2026-10-22): mission 2 plans the runtime package egregore, because the body package greg (69 modules there) passes cognition.optimization's 64-variable model ceiling, and the body package is kept as an abstain-never-wrong control"
   },
   {
    "path": "scripts/mind_status.py",
@@ -2473,8 +2473,8 @@
    "path": "tests/integration/test_greg_whole_machine_trace.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+   "disposition": "modified",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet); modified on the joined tree (#196, 2026-10-22): mission 2 plans the runtime package egregore, because the body package greg (69 modules there) passes cognition.optimization's 64-variable model ceiling, and the body package is kept as an abstain-never-wrong control"
   },
   {
    "path": "tests/unit/test_cognition_optimization_certificates.py",

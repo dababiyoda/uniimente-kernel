@@ -230,8 +230,9 @@ def projection(console) -> dict:
         build_rows = [{"mission_id": payer.get(e.payload.get("deficit_id")), "cost_usd": e.payload.get("cost_usd")}
                       for kind in ("genesis.built", "genesis.unbuilt") for e in journal.replay(kind)]
         # A builder call the body died inside is charged at the ceiling it was given (Genesis._build_spend).
+        from greg.genesis import SETTLES_BUILD
         settled = {(e.payload["deficit_id"], e.payload.get("build"))
-                   for kind in ("genesis.built", "genesis.build_failed") for e in journal.replay(kind)}
+                   for kind in SETTLES_BUILD for e in journal.replay(kind)}
         build_rows += [{"mission_id": payer.get(e.payload["deficit_id"]), "cost_usd": e.payload.get("reserved_usd"),
                         "at_cap": True} for e in journal.replay("genesis.build_started")
                        if (e.payload["deficit_id"], e.payload.get("build")) not in settled]

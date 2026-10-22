@@ -40,7 +40,7 @@ from greg.capabilities import BUILTINS, CapabilityManifest, InvocationContext
 from greg.founder import _signing_bytes
 from greg.journal import Journal
 from greg.lightcone import LightCone
-from greg.missions import disagreement, evaluate_predicate, pre_approved
+from greg.missions import disagreement, evaluate_predicate, pre_approved, reconciled_booking
 from provenance.ledger import EvidenceLedger, sha256_json
 
 REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
@@ -541,9 +541,38 @@ def appraise(request: dict) -> dict:
                   if r.payload.get("type") == "greg.authority.grant_issued" and r.seq < achieved_seq}
         by_id = {s["action_id"]: s for s in spec["strategies"]}
         spent = 0.0
+        uncertain = {(e.payload["action_id"], e.payload.get("attempt")): e.payload
+                     for e in journal.replay("mission.action")
+                     if e.payload["mission_id"] == mid and e.payload["status"] == "UNCERTAIN"}
         for event in journal.replay("mission.action"):
             action = event.payload
-            if action["mission_id"] != mid or action["status"] != "DONE" or seq[event.event_id] >= achieved_seq:
+            if action["mission_id"] != mid or seq[event.event_id] >= achieved_seq:
+                continue
+            cost = float(action.get("cost_usd", 0.0) or 0.0)
+            if action.get("route") == "founder_reconciliation":
+                # H.G4, re-derived here rather than taken from the engine: a founder reconciliation books what its
+                # answer books (a metered "not executed" keeps its signed cap, a receipted report over the cap is
+                # booked as reported), and that booking is spend so far for every later action's admission. An
+                # engine that released it and retried inside the cone with no approval is refuted (merge review of
+                # e410977). One reconciled as executed is still re-admitted below, as every DONE action is.
+                dispatch = uncertain.get((action["action_id"], action.get("attempt")), {})
+                receipt = ledger.find(dispatch["receipt"]) if dispatch.get("receipt") else None
+                output = (receipt.payload.get("result") or {}).get("output") \
+                    if receipt is not None and receipt.record_type == "receipt" else None
+                strategy = by_id.get(action["action_id"]) or {}
+                worst = dispatch.get("reserved_usd", strategy.get("cost_usd", 0.0)) or 0.0
+                answer = "reconcile_executed" if action["status"] == "DONE" else "reconcile_not_executed"
+                required = reconciled_booking(action.get("capability") or dispatch.get("capability"), answer,
+                                              float(worst), output)["cost_usd"]
+                if cost < required - 1e-9:
+                    approvals_ok = False
+                    findings.append(f"{action['action_id']}: its founder reconciliation booked ${cost:.2f} where "
+                                    f"its answer books ${required:.2f} (H.G4)")
+                cost = max(cost, required)
+                if action["status"] != "DONE":
+                    spent += cost
+                    continue
+            if action["status"] != "DONE":
                 continue
             at_seq = seq[event.event_id]
             in_window = registered_seq < at_seq
@@ -569,7 +598,7 @@ def appraise(request: dict) -> dict:
                     approvals_ok = False
                     why = "; ".join(outside) if outside else "its grant claims a founder approval"
                     findings.append(f"{action['action_id']}: executed without a prior founder approval ({why})")
-            spent += float(action.get("cost_usd", 0.0) or 0.0)
+            spent += cost
         checks["approval_boundaries_honored"] = approvals_ok
         checks["approval_boundary_encountered"] = approvals_seen > 0
 

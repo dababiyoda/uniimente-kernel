@@ -381,6 +381,26 @@ def metered_spend(capability_id: str, output, cap_usd: float) -> dict:
             "spend_basis": "provider_reported"}
 
 
+def reconciled_booking(capability: str | None, answer: str, worst: float, output=None) -> dict:
+    """What the founder's reconciliation answer books for one UNCERTAIN dispatch, as the engine records it and the
+    separate appraiser re-derives it (acceptance H.G4).
+
+    "Executed" books the signed cap (its spend was never measured). "Not executed" settles the effect, not the
+    money: a metered capability (a paid worker) may have spent while its provider ran, so it books the cap too;
+    any other capability releases it. ``output`` is a receipted interrupt's collected output: its provider report
+    is stated, and one over the cap is booked as reported, with the overspend (never below what the provider said
+    it spent, as ``metered_spend`` books a DONE run; merge review of e410977), so the budget bounds a retry."""
+    worst = float(worst)
+    booked = answer == "reconcile_executed" or capability in METERED_SPEND
+    reported = metered_spend(capability, output, worst)["provider_reported_usd"] \
+        if output is not None and capability in METERED_SPEND else None
+    out = {"booked": booked, "provider_reported_usd": reported, "cost_usd": worst if booked else 0.0,
+           "overspend_usd": None}
+    if booked and reported is not None and reported > worst + 1e-9:
+        out.update(cost_usd=round(float(reported), 6), overspend_usd=round(float(reported) - worst, 6))
+    return out
+
+
 def disagreement(output) -> dict | None:
     """The views behind a composition that reported CONFLICT, kept side by side for the founder: which question,
     which method said what (a digest and a short preview of each output), and the dissent. Nothing is ranked."""
@@ -763,8 +783,8 @@ class MissionBook:
             payer = self.missions.get(self._deficit_of.get(data.get("deficit_id")))
             if payer is not None:
                 payer.spent_usd += float(data.get("cost_usd") or 0.0)
-                if kind == "genesis.built":
-                    payer.reserved.pop(("genesis", data["deficit_id"], data.get("build")), None)
+                # either settles its call (a billed failure is booked here, before its genesis.build_failed)
+                payer.reserved.pop(("genesis", data["deficit_id"], data.get("build")), None)
             return
         if kind in ("genesis.build_started", "genesis.build_failed"):
             # A builder call is reserved on the cone at the ceiling it was given until it settles (built, or
@@ -2255,22 +2275,28 @@ class MissionEngine:
                                               "the answered reconciliation did not state what it books; asking "
                                               "again with the terms", terms="booked_usd_by_answer")
         # A receipted interrupt (a cancellable worker stopped itself, its report collected) carries the provider's
-        # report: stated as given, though an interrupted run's report does not bound what it spent.
+        # report: stated as given, though an interrupted run's report does not bound what it spent; one over the
+        # cap is booked as reported, never the cap in its place (reconciled_booking).
         receipt = self.office.ledger.find(dispatch["receipt"]) if dispatch.get("receipt") else None
-        reported = metered_spend(capability, (receipt.payload.get("result") or {}).get("output"), worst)[
-            "provider_reported_usd"] if receipt is not None and receipt.record_type == "receipt" \
-            and capability in METERED_SPEND else None
+        output = (receipt.payload.get("result") or {}).get("output") \
+            if receipt is not None and receipt.record_type == "receipt" else None
+        booking = reconciled_booking(capability, answer, worst, output)
+        reported, over = booking["provider_reported_usd"], booking["overspend_usd"]
         measured = None if reported is None else (f"its receipted run reported ${reported:.2f} before it was "
                                                   "interrupted, which does not bound what an interrupted run spent")
         settled = {"mission_id": m.mission_id, "action_id": aid, "attempt": attempt,
                    "status": "DONE" if executed else "RECONCILED_NOT_EXECUTED",
                    "capability": capability, "route": "founder_reconciliation",
                    "dispatch_route": dispatch.get("route"), "receipt": None, "at": iso(now),
-                   "reasons": ["founder reconciliation: " + answer], "cost_usd": worst if booked else 0.0}
+                   "reasons": ["founder reconciliation: " + answer], "cost_usd": booking["cost_usd"]}
         if "proposal_id" in m.blocker:
             settled.update(reconciles={k: m.blocker.get(k) for k in ("request_id", "proposal_id", "grant_id")},
                            scope_digest=m.blocker.get("scope_digest"))
-        if executed:       # it executed, but its spend was never measured: book the signed cap
+        if over is not None:   # it reported spending more than signed: that spend is booked, with the overspend
+            settled.update(cost_cap_usd=worst, provider_reported_usd=reported, overspend_usd=over,
+                           spend_basis="provider_reported: over the signed cap; founder reconciliation: " + answer
+                                       + f"; {measured}, so at least the reported spend is booked")
+        elif executed:     # it executed, but its spend was never measured: book the signed cap
             settled.update(cost_cap_usd=worst, provider_reported_usd=reported,
                            spend_basis="signed_cap: founder reconciled the dispatch as executed; "
                                        + (measured or "its spend was never measured"))

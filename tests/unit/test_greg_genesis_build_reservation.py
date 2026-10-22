@@ -206,3 +206,44 @@ def test_a_cone_left_only_by_binary_rounding_buys_no_further_call(tmp_path):
     boot(home, BilledAgent([(WRONG, 0.7), (GOOD, 0.0)], calls, 0.7), ticks=12)
     assert calls == [0.7], "the attempt took what the cone had left, and nothing was left for another"
     assert any(r["result"] == "no founder-signed build budget remains" for r in facts(home, "genesis.route"))
+
+
+class BillsThenFails:
+    """A paid agent whose call is billed at its ceiling and returns no candidate (BuildError with cost_usd, as a
+    Claude Code timeout is billed)."""
+    identity = "billed-fail"
+
+    def __init__(self, calls):
+        self.max_budget_usd, self.calls = CEILING, calls
+
+    def build(self, request, feedback=None):
+        from greg import builders
+        self.calls.append(round(self.max_budget_usd, 6))
+        raise builders.BuildError("timed out", cost_usd=self.max_budget_usd)
+
+
+def test_a_billed_failure_survives_a_kill_between_its_two_records_and_the_budget_bounds_the_next_call(tmp_path,
+                                                                                                    monkeypatch):
+    """Merge review of e410977: a billed failed call writes genesis.build_failed and genesis.unbuilt (its bill). The
+    body dies between the two writes, whichever comes second. The bill stays booked (the reservation is never
+    released at $0), Mission Control books the same, and the restarted body's next call fits in what the signed
+    $1.00 budget has left (before the fix: two calls billed $1.20, $0.60 booked)."""
+    home = setup(tmp_path, budget=1.0)
+    record, seen = Journal.record, []
+
+    def dies_at_the_second_write(self, kind, data, **kw):
+        if kind in ("genesis.build_failed", "genesis.unbuilt"):
+            seen.append(kind)
+            if len(seen) == 2:
+                raise Killed()
+        return record(self, kind, data, **kw)
+    monkeypatch.setattr(Journal, "record", dies_at_the_second_write)
+    calls = []
+    assert boot(home, BillsThenFails(calls))[-1] == "KILLED"
+    monkeypatch.setattr(Journal, "record", record)
+    boot(home, BillsThenFails(calls), ticks=3)
+    committed, row = books(home)
+    billed = round(sum(calls), 6)
+    assert len(calls) >= 1 and calls[0] == CEILING
+    assert committed == billed == row["booked_usd"] == row["build_usd"], (committed, billed, row, calls)
+    assert billed <= 1.0 + 1e-9, f"the builder was paid past the signed budget: {calls}"

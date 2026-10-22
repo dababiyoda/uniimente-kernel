@@ -105,6 +105,11 @@ def _vectors_wordcount(seed: int):
     return cases
 
 
+# What settles a started builder call (genesis.build_started): a candidate, a billed failure (its bill booked), or
+# a failure. Every reader of the build reservation uses this one set (Genesis, MissionBook, Mission Control, SOPs).
+SETTLES_BUILD = ("genesis.built", "genesis.unbuilt", "genesis.build_failed")
+
+
 @dataclass(frozen=True)
 class Candidate:
     """How one installed tool realizes a function: argv template and output parser."""
@@ -1601,15 +1606,18 @@ class Genesis:
                     built = self.builder.build(request, feedback)
                 except Exception as exc:  # the builder is untrusted; its failure is evidence
                     why = f"attempt {attempt} failed: {type(exc).__name__}: {exc}"[:300]
-                    self.journal.record("genesis.build_failed", {"deficit_id": deficit_id, "build": build,
-                                                                 "attempt": attempt,
-                                                                 "error": f"{type(exc).__name__}: {exc}"[:300]},
-                                        key=[deficit_id, "build_failed", build])
                     cost = getattr(exc, "cost_usd", None)
+                    # The bill is recorded first and settles the call itself (genesis.unbuilt carries its build):
+                    # recorded after genesis.build_failed, a kill between the two released the reservation at $0
+                    # and the restarted body paid for another call (merge review of e410977, acceptance H.G7).
                     if cost:   # billed although no candidate came back (e.g. a withheld substituted answer)
                         self.journal.record("genesis.unbuilt", {"deficit_id": deficit_id, "build": build,
                                                                 "attempt": attempt, "cost_usd": cost, "why": why,
                                                                 "at": iso(now)})
+                    self.journal.record("genesis.build_failed", {"deficit_id": deficit_id, "build": build,
+                                                                 "attempt": attempt,
+                                                                 "error": f"{type(exc).__name__}: {exc}"[:300]},
+                                        key=[deficit_id, "build_failed", build])
                     self._route(deficit_id, "builder", why, None)
                     break
                 spent += float(built.get("cost_usd") or 0.0)
@@ -1721,9 +1729,10 @@ class Genesis:
 
     def _build_spend(self, deficits: set) -> float:
         """What builds charged against the signed build budget of these deficits: each reported cost, and each
-        build that started and never settled (the body died inside the builder's call) at its reserved ceiling."""
+        build that started and never settled (the body died inside the builder's call) at its reserved ceiling. A
+        billed failure (genesis.unbuilt) settles its call with its bill, before its genesis.build_failed."""
         settled = {(e.payload["deficit_id"], e.payload.get("build"))
-                   for kind in ("genesis.built", "genesis.build_failed") for e in self.journal.replay(kind)}
+                   for kind in SETTLES_BUILD for e in self.journal.replay(kind)}
         # Reported: every billed call, a candidate (genesis.built) or none (genesis.unbuilt: billed and failed).
         reported = sum(e.payload.get("cost_usd") or 0.0 for kind in ("genesis.built", "genesis.unbuilt")
                        for e in self.journal.replay(kind) if e.payload["deficit_id"] in deficits)

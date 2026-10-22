@@ -516,3 +516,84 @@ def test_the_engine_sensor_reads_receipts_through_a_reader_that_cannot_write(tmp
         assert body.engine.book.missions["m:paid"].status == "ACHIEVED"
     finally:
         body.close()
+
+
+# -- merge review of e410977 into PR #184: money across a receipted interrupt -------------------------------------
+
+@pytest.mark.parametrize("answer_value", ["reconcile_not_executed", "reconcile_executed"])
+def test_a_receipted_interrupt_that_reported_spending_over_its_cap_books_what_it_reported(tmp_path, monkeypatch,
+                                                                                           answer_value):
+    """Cap $0.50, budget $1.00, the interrupted run reported $0.80. Either answer books at least the $0.80 it reported
+    (with the $0.30 overspend), never the cap in its place; and the budget bounds the retry: $0.80 booked leaves no
+    room for another $0.50 run without the founder's approval (before the fix it booked $0.50, reran, and real spend
+    reached $1.30)."""
+    worker = _InterruptedOnceWorker(reported_usd=0.80)
+    body, clock, answer = _paid_body(tmp_path, monkeypatch, worker, budget=1.0)
+    try:
+        _ticks(body, clock, 3)
+        [request] = _requests(body)
+        answer(request, answer_value)
+        _ticks(body, clock, 4)
+        settled = [e.payload for e in body.journal.replay("mission.action")][1]
+        assert settled["route"] == "founder_reconciliation"
+        assert settled["cost_usd"] == 0.8 and settled["overspend_usd"] == 0.3, settled
+        assert settled["provider_reported_usd"] == 0.8 and settled["cost_cap_usd"] == 0.5
+        assert settled["spend_basis"].startswith("provider_reported: over the signed cap"), settled["spend_basis"]
+        m = body.engine.book.missions["m:paid"]
+        assert m.spent_usd >= 0.8 - 1e-9
+        if answer_value == "reconcile_not_executed":
+            assert len(worker.runs) == 1, "a retry ran past the signed budget"
+            assert len(_requests(body, "APPROVAL")) == 1
+    finally:
+        body.close()
+
+
+def test_the_appraiser_refutes_a_closure_that_released_a_metered_not_executed_cap_and_retried(tmp_path, monkeypatch):
+    """Budget $0.50, the first $0.50 run interrupted, the ask disclosed that "not executed" books $0.50. An engine
+    that settles it at $0.00 (the pre-H.G4 rule) retries inside the cone with no approval and claims ACHIEVED; the
+    separate appraiser re-derives the booking and refutes that closure (before the fix it recorded VERIFIED)."""
+    import greg.missions as gm
+    real = gm.MissionEngine._record_reconciliation
+
+    def defective(self, m, now):          # forgets H.G4 for the settlement only (the ask still disclosed it)
+        saved = gm.METERED_SPEND
+        gm.METERED_SPEND = {}
+        try:
+            return real(self, m, now)
+        finally:
+            gm.METERED_SPEND = saved
+    monkeypatch.setattr(gm.MissionEngine, "_record_reconciliation", defective)
+    worker = _InterruptedOnceWorker()
+    body, clock, answer = _paid_body(tmp_path, monkeypatch, worker, budget=0.5)
+    try:
+        _ticks(body, clock, 3)
+        [request] = _requests(body)
+        assert request["evidence"]["booked_usd_by_answer"]["reconcile_not_executed"] == 0.5
+        answer(request, "reconcile_not_executed")
+        _ticks(body, clock, 8)
+        assert [s for s, _ in _actions(body)] == ["UNCERTAIN", "RECONCILED_NOT_EXECUTED", "DONE"]
+        assert _requests(body, "APPROVAL") == []
+        [appraised] = [e.payload for e in body.journal.replay("mission.appraised")]
+        assert appraised["verdict"] == "REFUTED", appraised
+        assert any("H.G4" in f for f in appraised.get("findings") or []), appraised
+    finally:
+        body.close()
+
+
+def test_the_appraiser_verifies_a_closure_that_kept_the_metered_cap_booked(tmp_path, monkeypatch):
+    """The control: the correct engine books the cap, so the $0.50 retry in a $0.50 budget waits for an approval;
+    approved, the closure re-derives cleanly."""
+    worker = _InterruptedOnceWorker()
+    body, clock, answer = _paid_body(tmp_path, monkeypatch, worker, budget=0.5)
+    try:
+        _ticks(body, clock, 3)
+        [request] = _requests(body)
+        answer(request, "reconcile_not_executed")
+        _ticks(body, clock, 3)
+        [approval] = _requests(body, "APPROVAL")
+        answer(approval, "approve")
+        _ticks(body, clock, 8)
+        [appraised] = [e.payload for e in body.journal.replay("mission.appraised")]
+        assert appraised["verdict"] == "VERIFIED", appraised
+    finally:
+        body.close()

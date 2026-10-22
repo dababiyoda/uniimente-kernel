@@ -598,8 +598,9 @@ def _mission_costs(journal: Journal) -> dict:
     # A builder call the body died inside never reported its cost. Genesis charges it against the signed build
     # budget at the ceiling it was given (genesis.build_started, Genesis._build_spend); the measurement counts the
     # call at that reservation too, and says that what it really spent is unknown.
+    from greg.genesis import SETTLES_BUILD
     settled = {(e.payload["deficit_id"], e.payload.get("build"))
-               for kind in ("genesis.built", "genesis.build_failed") for e in journal.replay(kind)}
+               for kind in SETTLES_BUILD for e in journal.replay(kind)}
     for event in journal.replay("genesis.build_started"):
         mid = deficits.get(event.payload["deficit_id"])
         if mid is None or (event.payload["deficit_id"], event.payload["build"]) in settled:

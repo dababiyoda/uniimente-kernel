@@ -216,16 +216,16 @@
  },
  "counts": {
   "by_lineage": {
-   "#158": 337,
-   "#179": 40,
+   "#158": 331,
+   "#179": 48,
    "both": 42
   },
   "by_role": {
    "P8 held-out": 7,
    "admission held-out": 123,
    "canary": 1,
-   "dev": 233,
-   "held-out": 38,
+   "dev": 227,
+   "held-out": 46,
    "review-pilot": 11,
    "train": 6
   },
@@ -235,15 +235,15 @@
    "admission held-out / #158": 90,
    "admission held-out / #179": 33,
    "canary / #158": 1,
-   "dev / #158": 210,
+   "dev / #158": 204,
    "dev / both": 23,
    "held-out / #158": 13,
-   "held-out / #179": 6,
+   "held-out / #179": 14,
    "held-out / both": 19,
    "review-pilot / #158": 11,
    "train / #158": 6
   },
-  "exposures": 419,
+  "exposures": 421,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -363,12 +363,12 @@
    },
    "#179": {
     "glob": "cortex/evaluation/(?!genome_admission/).*(freeze|prereg)[^/]*\\.json",
-    "matched": 5,
+    "matched": 7,
     "missing": [],
     "no_declaration": [
      "cortex/evaluation/pr155_f8_fallback_diagnostic/prereg-draft.json"
     ],
-    "parsed": 4
+    "parsed": 6
    }
   }
  },
@@ -377,7 +377,7 @@
    "artifact": {
     "commit": "e450218c4ed5c60c1673d9d28898a95d42f34142",
     "path": "cortex/evaluation/composition_lift/freeze-v1.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:30c1208e62b6ace469e1a79cc6a2ad4db60025a63f2b5e6f8bdcc156b52780f0"
    },
    "exposure_commit": "1521bd173c9c6692a6ceae69c6f9e2f6f3dda0d8",
@@ -426,7 +426,7 @@
    "artifact": {
     "commit": "e450218c4ed5c60c1673d9d28898a95d42f34142",
     "path": "cortex/evaluation/composition_lift/freeze-v1.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:30c1208e62b6ace469e1a79cc6a2ad4db60025a63f2b5e6f8bdcc156b52780f0"
    },
    "exposure_commit": "1521bd173c9c6692a6ceae69c6f9e2f6f3dda0d8",
@@ -475,7 +475,7 @@
    "artifact": {
     "commit": "1ec8df53ed70271860968c5015887ffa3239f6c7",
     "path": "cortex/evaluation/composition_lift/freeze-v2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:d05105c6dd3cf429e4083fa2d5d6a395c387ac444c6816f173435a1df746a067"
    },
    "exposure_commit": "07350d4bc7637e85e5439640cd3ab250278e7e1a",
@@ -531,7 +531,7 @@
    "artifact": {
     "commit": "1ec8df53ed70271860968c5015887ffa3239f6c7",
     "path": "cortex/evaluation/composition_lift/freeze-v2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:d05105c6dd3cf429e4083fa2d5d6a395c387ac444c6816f173435a1df746a067"
    },
    "exposure_commit": "07350d4bc7637e85e5439640cd3ab250278e7e1a",
@@ -587,7 +587,7 @@
    "artifact": {
     "commit": "1ec8df53ed70271860968c5015887ffa3239f6c7",
     "path": "cortex/evaluation/composition_lift/freeze-v2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:d05105c6dd3cf429e4083fa2d5d6a395c387ac444c6816f173435a1df746a067"
    },
    "exposure_commit": "07350d4bc7637e85e5439640cd3ab250278e7e1a",
@@ -643,7 +643,7 @@
    "artifact": {
     "commit": "1ec8df53ed70271860968c5015887ffa3239f6c7",
     "path": "cortex/evaluation/composition_lift/freeze-v2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:d05105c6dd3cf429e4083fa2d5d6a395c387ac444c6816f173435a1df746a067"
    },
    "exposure_commit": "07350d4bc7637e85e5439640cd3ab250278e7e1a",
@@ -699,7 +699,7 @@
    "artifact": {
     "commit": "1ec8df53ed70271860968c5015887ffa3239f6c7",
     "path": "cortex/evaluation/composition_lift/freeze-v2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:d05105c6dd3cf429e4083fa2d5d6a395c387ac444c6816f173435a1df746a067"
    },
    "exposure_commit": "07350d4bc7637e85e5439640cd3ab250278e7e1a",
@@ -755,7 +755,7 @@
    "artifact": {
     "commit": "1ec8df53ed70271860968c5015887ffa3239f6c7",
     "path": "cortex/evaluation/composition_lift/freeze-v2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:d05105c6dd3cf429e4083fa2d5d6a395c387ac444c6816f173435a1df746a067"
    },
    "exposure_commit": "07350d4bc7637e85e5439640cd3ab250278e7e1a",
@@ -811,7 +811,7 @@
    "artifact": {
     "commit": "1ec8df53ed70271860968c5015887ffa3239f6c7",
     "path": "cortex/evaluation/composition_lift/freeze-v2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:d05105c6dd3cf429e4083fa2d5d6a395c387ac444c6816f173435a1df746a067"
    },
    "exposure_commit": "07350d4bc7637e85e5439640cd3ab250278e7e1a",
@@ -867,7 +867,7 @@
    "artifact": {
     "commit": "1ec8df53ed70271860968c5015887ffa3239f6c7",
     "path": "cortex/evaluation/composition_lift/freeze-v2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:d05105c6dd3cf429e4083fa2d5d6a395c387ac444c6816f173435a1df746a067"
    },
    "exposure_commit": "07350d4bc7637e85e5439640cd3ab250278e7e1a",
@@ -923,7 +923,7 @@
    "artifact": {
     "commit": "5acda2c4e226d34a2d305a12c9c182a2ea45d79a",
     "path": "cortex/evaluation/composition_lift/freeze-v3.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:af90173537c84af31e1619dcc2c90660597cf3192611b22be28108d65fb80f58"
    },
    "exposure_commit": "5acda2c4e226d34a2d305a12c9c182a2ea45d79a",
@@ -987,7 +987,7 @@
    "artifact": {
     "commit": "5acda2c4e226d34a2d305a12c9c182a2ea45d79a",
     "path": "cortex/evaluation/composition_lift/freeze-v3.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:af90173537c84af31e1619dcc2c90660597cf3192611b22be28108d65fb80f58"
    },
    "exposure_commit": "5acda2c4e226d34a2d305a12c9c182a2ea45d79a",
@@ -1051,7 +1051,7 @@
    "artifact": {
     "commit": "14ec7a697b827978a67f42db56936d05e5e6f23b",
     "path": "cortex/evaluation/composition_lift/freeze-v4.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:f965222d8f9df5a2ff260f989e6594bd944d3aab7a50fcdc3b5aca5037404396"
    },
    "exposure_commit": "14ec7a697b827978a67f42db56936d05e5e6f23b",
@@ -1119,7 +1119,7 @@
    "artifact": {
     "commit": "14ec7a697b827978a67f42db56936d05e5e6f23b",
     "path": "cortex/evaluation/composition_lift/freeze-v4.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:f965222d8f9df5a2ff260f989e6594bd944d3aab7a50fcdc3b5aca5037404396"
    },
    "exposure_commit": "14ec7a697b827978a67f42db56936d05e5e6f23b",
@@ -1202,7 +1202,7 @@
    "artifact": {
     "commit": "202b932b015c2623798229db085f68728468b8b6",
     "path": "cortex/evaluation/composition_lift/freeze-v5.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:434e5db1f998927a3621f8656af3c9299b39827e6da1f9ce641531cbac71f31c"
    },
    "exposure_commit": "202b932b015c2623798229db085f68728468b8b6",
@@ -1267,7 +1267,7 @@
    "artifact": {
     "commit": "202b932b015c2623798229db085f68728468b8b6",
     "path": "cortex/evaluation/composition_lift/freeze-v5.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:434e5db1f998927a3621f8656af3c9299b39827e6da1f9ce641531cbac71f31c"
    },
    "exposure_commit": "202b932b015c2623798229db085f68728468b8b6",
@@ -1332,7 +1332,7 @@
    "artifact": {
     "commit": "91b826cbff7e7856a30c01e073e4094039181708",
     "path": "cortex/evaluation/composition_lift/freeze-v6-attempt2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:66bb0c7dabfa62a22db9ef67e07b6099dd85e5ba067623a5d39d547a8884a5ba"
    },
    "exposure_commit": "91b826cbff7e7856a30c01e073e4094039181708",
@@ -1404,7 +1404,7 @@
    "artifact": {
     "commit": "91b826cbff7e7856a30c01e073e4094039181708",
     "path": "cortex/evaluation/composition_lift/freeze-v6-attempt2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:66bb0c7dabfa62a22db9ef67e07b6099dd85e5ba067623a5d39d547a8884a5ba"
    },
    "exposure_commit": "91b826cbff7e7856a30c01e073e4094039181708",
@@ -1491,7 +1491,7 @@
    "artifact": {
     "commit": "44301385cf0c2cc53fe7275512ee74bc47e69fca",
     "path": "cortex/evaluation/composition_lift/freeze-v6.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:2c6f513e53d1b9c3c6c7e0772c08210bb043f73144cbde97722cb6415f45d656"
    },
    "exposure_commit": "44301385cf0c2cc53fe7275512ee74bc47e69fca",
@@ -1563,7 +1563,7 @@
    "artifact": {
     "commit": "44301385cf0c2cc53fe7275512ee74bc47e69fca",
     "path": "cortex/evaluation/composition_lift/freeze-v6.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:2c6f513e53d1b9c3c6c7e0772c08210bb043f73144cbde97722cb6415f45d656"
    },
    "exposure_commit": "44301385cf0c2cc53fe7275512ee74bc47e69fca",
@@ -1650,7 +1650,7 @@
    "artifact": {
     "commit": "311dfa01415be7902e7b639d8d0d9aaa0bf513d3",
     "path": "cortex/evaluation/composition_lift/prereg-v6.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:097a42dd474dd19e99bf151277be752578eef96e55e558a7c82a802b27ddebab"
    },
    "exposure_commit": "311dfa01415be7902e7b639d8d0d9aaa0bf513d3",
@@ -1694,7 +1694,7 @@
    "artifact": {
     "commit": "311dfa01415be7902e7b639d8d0d9aaa0bf513d3",
     "path": "cortex/evaluation/composition_lift/prereg-v6.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:097a42dd474dd19e99bf151277be752578eef96e55e558a7c82a802b27ddebab"
    },
    "exposure_commit": "311dfa01415be7902e7b639d8d0d9aaa0bf513d3",
@@ -1738,7 +1738,7 @@
    "artifact": {
     "commit": "bff88a0a2e43ab50aff1654650bfd9c294baec6f",
     "path": "cortex/evaluation/freeze-crossgeo-v0.2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:ce9abbc1af4181d30369ac4d794f7ed3d7cd4f20e8417118688ede8850ff6dde"
    },
    "exposure_commit": "bff88a0a2e43ab50aff1654650bfd9c294baec6f",
@@ -1803,7 +1803,7 @@
    "artifact": {
     "commit": "bff88a0a2e43ab50aff1654650bfd9c294baec6f",
     "path": "cortex/evaluation/freeze-crossgeo-v0.2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:ce9abbc1af4181d30369ac4d794f7ed3d7cd4f20e8417118688ede8850ff6dde"
    },
    "exposure_commit": "bff88a0a2e43ab50aff1654650bfd9c294baec6f",
@@ -1868,7 +1868,7 @@
    "artifact": {
     "commit": "bff88a0a2e43ab50aff1654650bfd9c294baec6f",
     "path": "cortex/evaluation/freeze-crossgeo-v0.2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:ce9abbc1af4181d30369ac4d794f7ed3d7cd4f20e8417118688ede8850ff6dde"
    },
    "exposure_commit": "bff88a0a2e43ab50aff1654650bfd9c294baec6f",
@@ -1933,7 +1933,7 @@
    "artifact": {
     "commit": "bff88a0a2e43ab50aff1654650bfd9c294baec6f",
     "path": "cortex/evaluation/freeze-crossgeo-v0.2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:ce9abbc1af4181d30369ac4d794f7ed3d7cd4f20e8417118688ede8850ff6dde"
    },
    "exposure_commit": "bff88a0a2e43ab50aff1654650bfd9c294baec6f",
@@ -1998,7 +1998,7 @@
    "artifact": {
     "commit": "d2d64bb427d4b2f821a3ba8601d03c7c7e3c3bcc",
     "path": "cortex/evaluation/freeze-crossgeo-v0.3.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:75ca409e9f3aca775e4423d8625c10d0e6bdd24d70d06758711b99fb40ea611d"
    },
    "exposure_commit": "d2d64bb427d4b2f821a3ba8601d03c7c7e3c3bcc",
@@ -2063,7 +2063,7 @@
    "artifact": {
     "commit": "d2d64bb427d4b2f821a3ba8601d03c7c7e3c3bcc",
     "path": "cortex/evaluation/freeze-crossgeo-v0.3.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:75ca409e9f3aca775e4423d8625c10d0e6bdd24d70d06758711b99fb40ea611d"
    },
    "exposure_commit": "d2d64bb427d4b2f821a3ba8601d03c7c7e3c3bcc",
@@ -2128,7 +2128,7 @@
    "artifact": {
     "commit": "d2d64bb427d4b2f821a3ba8601d03c7c7e3c3bcc",
     "path": "cortex/evaluation/freeze-crossgeo-v0.3.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:75ca409e9f3aca775e4423d8625c10d0e6bdd24d70d06758711b99fb40ea611d"
    },
    "exposure_commit": "d2d64bb427d4b2f821a3ba8601d03c7c7e3c3bcc",
@@ -2193,7 +2193,7 @@
    "artifact": {
     "commit": "d2d64bb427d4b2f821a3ba8601d03c7c7e3c3bcc",
     "path": "cortex/evaluation/freeze-crossgeo-v0.3.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:75ca409e9f3aca775e4423d8625c10d0e6bdd24d70d06758711b99fb40ea611d"
    },
    "exposure_commit": "d2d64bb427d4b2f821a3ba8601d03c7c7e3c3bcc",
@@ -2258,7 +2258,7 @@
    "artifact": {
     "commit": "0db70ddd0a0bfc74cc11e3e4f637ec4838f21e54",
     "path": "cortex/evaluation/freeze-v0.1.1.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:aafa204c87f925c7d2d58a3d239d78d07a6d9e1d2d68033a12fb946d402c5acb"
    },
    "exposure_commit": "0db70ddd0a0bfc74cc11e3e4f637ec4838f21e54",
@@ -2315,7 +2315,7 @@
    "artifact": {
     "commit": "0db70ddd0a0bfc74cc11e3e4f637ec4838f21e54",
     "path": "cortex/evaluation/freeze-v0.1.1.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:aafa204c87f925c7d2d58a3d239d78d07a6d9e1d2d68033a12fb946d402c5acb"
    },
    "exposure_commit": "0db70ddd0a0bfc74cc11e3e4f637ec4838f21e54",
@@ -2372,7 +2372,7 @@
    "artifact": {
     "commit": "0db70ddd0a0bfc74cc11e3e4f637ec4838f21e54",
     "path": "cortex/evaluation/freeze-v0.1.1.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:aafa204c87f925c7d2d58a3d239d78d07a6d9e1d2d68033a12fb946d402c5acb"
    },
    "exposure_commit": "0db70ddd0a0bfc74cc11e3e4f637ec4838f21e54",
@@ -2429,7 +2429,7 @@
    "artifact": {
     "commit": "5495611f5eb1c0216b7d3adf7b63be9162a1ab10",
     "path": "cortex/evaluation/freeze-v0.1.2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:e93921208ceabb2f2ef0131308fd29de71fc4e36e4dc84bffb2e6f19f2726164"
    },
    "exposure_commit": "5495611f5eb1c0216b7d3adf7b63be9162a1ab10",
@@ -2486,7 +2486,7 @@
    "artifact": {
     "commit": "5495611f5eb1c0216b7d3adf7b63be9162a1ab10",
     "path": "cortex/evaluation/freeze-v0.1.2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:e93921208ceabb2f2ef0131308fd29de71fc4e36e4dc84bffb2e6f19f2726164"
    },
    "exposure_commit": "5495611f5eb1c0216b7d3adf7b63be9162a1ab10",
@@ -2543,7 +2543,7 @@
    "artifact": {
     "commit": "5495611f5eb1c0216b7d3adf7b63be9162a1ab10",
     "path": "cortex/evaluation/freeze-v0.1.2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:e93921208ceabb2f2ef0131308fd29de71fc4e36e4dc84bffb2e6f19f2726164"
    },
    "exposure_commit": "5495611f5eb1c0216b7d3adf7b63be9162a1ab10",
@@ -2600,7 +2600,7 @@
    "artifact": {
     "commit": "992f980b874076bfb3afb9f37ddfce039e517f6c",
     "path": "cortex/evaluation/freeze-v0.1.3.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:150828c1171bcc0a198b0362219884e77dfaedaf06a6463a19d31d8209a75fec"
    },
    "exposure_commit": "992f980b874076bfb3afb9f37ddfce039e517f6c",
@@ -2657,7 +2657,7 @@
    "artifact": {
     "commit": "992f980b874076bfb3afb9f37ddfce039e517f6c",
     "path": "cortex/evaluation/freeze-v0.1.3.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:150828c1171bcc0a198b0362219884e77dfaedaf06a6463a19d31d8209a75fec"
    },
    "exposure_commit": "992f980b874076bfb3afb9f37ddfce039e517f6c",
@@ -2714,7 +2714,7 @@
    "artifact": {
     "commit": "992f980b874076bfb3afb9f37ddfce039e517f6c",
     "path": "cortex/evaluation/freeze-v0.1.3.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:150828c1171bcc0a198b0362219884e77dfaedaf06a6463a19d31d8209a75fec"
    },
    "exposure_commit": "992f980b874076bfb3afb9f37ddfce039e517f6c",
@@ -2771,7 +2771,7 @@
    "artifact": {
     "commit": "38cc3d2d843040054481744144e5abe8187cc3c9",
     "path": "cortex/evaluation/freeze-v0.1.4.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:7245f4bc90e3c68a11cc3a965e08e17574f1dfef15355b83df090a3007e734bb"
    },
    "exposure_commit": "38cc3d2d843040054481744144e5abe8187cc3c9",
@@ -2828,7 +2828,7 @@
    "artifact": {
     "commit": "38cc3d2d843040054481744144e5abe8187cc3c9",
     "path": "cortex/evaluation/freeze-v0.1.4.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:7245f4bc90e3c68a11cc3a965e08e17574f1dfef15355b83df090a3007e734bb"
    },
    "exposure_commit": "38cc3d2d843040054481744144e5abe8187cc3c9",
@@ -2885,7 +2885,7 @@
    "artifact": {
     "commit": "38cc3d2d843040054481744144e5abe8187cc3c9",
     "path": "cortex/evaluation/freeze-v0.1.4.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:7245f4bc90e3c68a11cc3a965e08e17574f1dfef15355b83df090a3007e734bb"
    },
    "exposure_commit": "38cc3d2d843040054481744144e5abe8187cc3c9",
@@ -2942,7 +2942,7 @@
    "artifact": {
     "commit": "54c1029d077b515cd4cb3cc85a912da7f05e7423",
     "path": "cortex/evaluation/freeze-v0.1.5.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:8624eb2c6862e94e22065cde0ea74eb1956f52a13a2117740d516f0b155383fc"
    },
    "exposure_commit": "54c1029d077b515cd4cb3cc85a912da7f05e7423",
@@ -2999,7 +2999,7 @@
    "artifact": {
     "commit": "54c1029d077b515cd4cb3cc85a912da7f05e7423",
     "path": "cortex/evaluation/freeze-v0.1.5.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:8624eb2c6862e94e22065cde0ea74eb1956f52a13a2117740d516f0b155383fc"
    },
    "exposure_commit": "54c1029d077b515cd4cb3cc85a912da7f05e7423",
@@ -3056,7 +3056,7 @@
    "artifact": {
     "commit": "54c1029d077b515cd4cb3cc85a912da7f05e7423",
     "path": "cortex/evaluation/freeze-v0.1.5.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:8624eb2c6862e94e22065cde0ea74eb1956f52a13a2117740d516f0b155383fc"
    },
    "exposure_commit": "54c1029d077b515cd4cb3cc85a912da7f05e7423",
@@ -3113,7 +3113,7 @@
    "artifact": {
     "commit": "1313e907f0af6014084b710a73cedb025798a201",
     "path": "cortex/evaluation/freeze-v0.1.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b08c021c148b610cb30c8e267cc6a7d06b008fd3b50e829ef4ad85d8c92e081"
    },
    "exposure_commit": "1313e907f0af6014084b710a73cedb025798a201",
@@ -3170,7 +3170,7 @@
    "artifact": {
     "commit": "1313e907f0af6014084b710a73cedb025798a201",
     "path": "cortex/evaluation/freeze-v0.1.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b08c021c148b610cb30c8e267cc6a7d06b008fd3b50e829ef4ad85d8c92e081"
    },
    "exposure_commit": "1313e907f0af6014084b710a73cedb025798a201",
@@ -3227,7 +3227,7 @@
    "artifact": {
     "commit": "1313e907f0af6014084b710a73cedb025798a201",
     "path": "cortex/evaluation/freeze-v0.1.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b08c021c148b610cb30c8e267cc6a7d06b008fd3b50e829ef4ad85d8c92e081"
    },
    "exposure_commit": "1313e907f0af6014084b710a73cedb025798a201",
@@ -3284,7 +3284,7 @@
    "artifact": {
     "commit": "bff88a0a2e43ab50aff1654650bfd9c294baec6f",
     "path": "cortex/evaluation/freeze-v0.2.0.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:007e2fb71bbbc45f85a0cb8eb89e7dd69583562472b260e8845d569a2ec41de0"
    },
    "exposure_commit": "bff88a0a2e43ab50aff1654650bfd9c294baec6f",
@@ -3341,7 +3341,7 @@
    "artifact": {
     "commit": "bff88a0a2e43ab50aff1654650bfd9c294baec6f",
     "path": "cortex/evaluation/freeze-v0.2.0.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:007e2fb71bbbc45f85a0cb8eb89e7dd69583562472b260e8845d569a2ec41de0"
    },
    "exposure_commit": "bff88a0a2e43ab50aff1654650bfd9c294baec6f",
@@ -3398,7 +3398,7 @@
    "artifact": {
     "commit": "bff88a0a2e43ab50aff1654650bfd9c294baec6f",
     "path": "cortex/evaluation/freeze-v0.2.0.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:007e2fb71bbbc45f85a0cb8eb89e7dd69583562472b260e8845d569a2ec41de0"
    },
    "exposure_commit": "bff88a0a2e43ab50aff1654650bfd9c294baec6f",
@@ -3455,7 +3455,7 @@
    "artifact": {
     "commit": "d2d64bb427d4b2f821a3ba8601d03c7c7e3c3bcc",
     "path": "cortex/evaluation/freeze-v0.2.1.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:31706043e489eca242d745b47496c226c81eceacc2cf624515a655e1641f8895"
    },
    "exposure_commit": "d2d64bb427d4b2f821a3ba8601d03c7c7e3c3bcc",
@@ -3512,7 +3512,7 @@
    "artifact": {
     "commit": "d2d64bb427d4b2f821a3ba8601d03c7c7e3c3bcc",
     "path": "cortex/evaluation/freeze-v0.2.1.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:31706043e489eca242d745b47496c226c81eceacc2cf624515a655e1641f8895"
    },
    "exposure_commit": "d2d64bb427d4b2f821a3ba8601d03c7c7e3c3bcc",
@@ -3569,7 +3569,7 @@
    "artifact": {
     "commit": "d2d64bb427d4b2f821a3ba8601d03c7c7e3c3bcc",
     "path": "cortex/evaluation/freeze-v0.2.1.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:31706043e489eca242d745b47496c226c81eceacc2cf624515a655e1641f8895"
    },
    "exposure_commit": "d2d64bb427d4b2f821a3ba8601d03c7c7e3c3bcc",
@@ -3626,7 +3626,7 @@
    "artifact": {
     "commit": "0ff0c338fad3097ccb99d7f01a3cdb73285b891e",
     "path": "cortex/evaluation/learned_routing/freeze-v1.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:fb3b7502bcb0d8ea85ae3eab35f2b61c20e8bbfd21e89c7f59f6827470f9a1d2"
    },
    "exposure_commit": "4baf5344ff255d4a85aaf307a2e7f88a55a96815",
@@ -3675,7 +3675,7 @@
    "artifact": {
     "commit": "0ff0c338fad3097ccb99d7f01a3cdb73285b891e",
     "path": "cortex/evaluation/learned_routing/freeze-v1.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:fb3b7502bcb0d8ea85ae3eab35f2b61c20e8bbfd21e89c7f59f6827470f9a1d2"
    },
    "exposure_commit": "4baf5344ff255d4a85aaf307a2e7f88a55a96815",
@@ -3724,7 +3724,7 @@
    "artifact": {
     "commit": "557fd77479d06f68742ccfc668a2ab488e52b1c8",
     "path": "cortex/evaluation/learned_routing/freeze-v2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:f1ec064be104a17b1210a040a18470df5e58c045f40d5541f2a271dc8968889e"
    },
    "exposure_commit": "557fd77479d06f68742ccfc668a2ab488e52b1c8",
@@ -3777,7 +3777,7 @@
    "artifact": {
     "commit": "557fd77479d06f68742ccfc668a2ab488e52b1c8",
     "path": "cortex/evaluation/learned_routing/freeze-v2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:f1ec064be104a17b1210a040a18470df5e58c045f40d5541f2a271dc8968889e"
    },
    "exposure_commit": "557fd77479d06f68742ccfc668a2ab488e52b1c8",
@@ -3830,7 +3830,7 @@
    "artifact": {
     "commit": "5475f75ae7d47b090e0cb8a1eb55fe909fe4c580",
     "path": "cortex/evaluation/learned_routing/freeze-v3.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:2edd3d1aba9bd9d27ace126081885b6b3cf7c0df1c5961e12e0484214af366c1"
    },
    "exposure_commit": "5475f75ae7d47b090e0cb8a1eb55fe909fe4c580",
@@ -3886,7 +3886,7 @@
    "artifact": {
     "commit": "5475f75ae7d47b090e0cb8a1eb55fe909fe4c580",
     "path": "cortex/evaluation/learned_routing/freeze-v3.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:2edd3d1aba9bd9d27ace126081885b6b3cf7c0df1c5961e12e0484214af366c1"
    },
    "exposure_commit": "5475f75ae7d47b090e0cb8a1eb55fe909fe4c580",
@@ -3942,7 +3942,7 @@
    "artifact": {
     "commit": "5475f75ae7d47b090e0cb8a1eb55fe909fe4c580",
     "path": "cortex/evaluation/learned_routing/freeze-v3.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:2edd3d1aba9bd9d27ace126081885b6b3cf7c0df1c5961e12e0484214af366c1"
    },
    "exposure_commit": "5475f75ae7d47b090e0cb8a1eb55fe909fe4c580",
@@ -3998,7 +3998,7 @@
    "artifact": {
     "commit": "a243488910183d1d0d1dec7cad8d0e6c65573774",
     "path": "cortex/evaluation/seed_genome/freeze-v2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:c9d956140170fecd456c2cc13d83c9a73e769717f8e707b0be7a1402994a9aca"
    },
    "exposure_commit": "a243488910183d1d0d1dec7cad8d0e6c65573774",
@@ -4051,7 +4051,7 @@
    "artifact": {
     "commit": "a243488910183d1d0d1dec7cad8d0e6c65573774",
     "path": "cortex/evaluation/seed_genome/freeze-v3.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:2d3037bc5c89a5117b448241a8869fde72ed5b1d96a89e4e7892a559ae6f8bcd"
    },
    "exposure_commit": "a243488910183d1d0d1dec7cad8d0e6c65573774",
@@ -4102,9 +4102,9 @@
   },
   {
    "artifact": {
-    "commit": "HEAD",
+    "commit": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "path": "cortex/evaluation/seed_genome/freeze-v4.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:7beffdc3d2da8056859ac903fa79174c856fbe63a885b10ffd6295a65d1648da"
    },
    "exposure_commit": "1aab4132fa4cb4064a01d5c02613b930467fbee3",
@@ -4156,7 +4156,7 @@
    "artifact": {
     "commit": "ce88162302545c79be7a602d035ff6f0f4e2cda1",
     "path": "cortex/evaluation/seed_genome/freeze-v5.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:169508f221920bcd9560afd44729ebdab41475aed481d5a516c103292be9f216"
    },
    "exposure_commit": "fc727a7c1a904e0ec9f52278255aa7898373aec4",
@@ -4209,7 +4209,7 @@
    "artifact": {
     "commit": "a243488910183d1d0d1dec7cad8d0e6c65573774",
     "path": "cortex/evaluation/seed_genome/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5ed28a43922b0a3105ac5fa8307bf8526e6f70bdaaae552540b188b56e6b88eb"
    },
    "exposure_commit": "a243488910183d1d0d1dec7cad8d0e6c65573774",
@@ -4262,7 +4262,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -4306,7 +4306,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -4350,7 +4350,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -4394,7 +4394,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -4438,7 +4438,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -4482,7 +4482,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -4526,7 +4526,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -4571,7 +4571,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -4615,7 +4615,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -4659,7 +4659,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -4704,7 +4704,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -4748,7 +4748,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -4792,7 +4792,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -4836,7 +4836,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -4880,7 +4880,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -4924,7 +4924,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -4968,7 +4968,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5012,7 +5012,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5056,7 +5056,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5098,7 +5098,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5140,7 +5140,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5182,7 +5182,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "data": {
@@ -5265,7 +5265,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5309,7 +5309,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5353,7 +5353,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5397,7 +5397,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5441,7 +5441,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5485,7 +5485,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5529,7 +5529,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5573,7 +5573,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5617,7 +5617,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5661,7 +5661,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5705,7 +5705,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5749,7 +5749,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5793,7 +5793,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5837,7 +5837,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5881,7 +5881,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5925,7 +5925,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -5970,7 +5970,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6014,7 +6014,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6058,7 +6058,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6103,7 +6103,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6147,7 +6147,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6191,7 +6191,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6235,7 +6235,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6279,7 +6279,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6323,7 +6323,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6367,7 +6367,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6411,7 +6411,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6455,7 +6455,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6497,7 +6497,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6539,7 +6539,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6581,7 +6581,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6623,7 +6623,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6667,7 +6667,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6711,7 +6711,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6755,7 +6755,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6799,7 +6799,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6843,7 +6843,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6887,7 +6887,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6931,7 +6931,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -6975,7 +6975,7 @@
    "artifact": {
     "commit": "496c85b2bd5111960fa5f055da91b9736252979e",
     "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:9eb502ac9325e1e031b734f33853b36005f6de3c4b586c9e29d11c826b63f83c"
    },
    "exposure_commit": "496c85b2bd5111960fa5f055da91b9736252979e",
@@ -7019,7 +7019,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "exposure_commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
@@ -7063,7 +7063,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "exposure_commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
@@ -7107,7 +7107,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "exposure_commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
@@ -7152,7 +7152,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "exposure_commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
@@ -7196,7 +7196,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "exposure_commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
@@ -7240,7 +7240,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "exposure_commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
@@ -7284,7 +7284,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "exposure_commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
@@ -7328,7 +7328,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "data": {
@@ -7411,7 +7411,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "exposure_commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
@@ -7455,7 +7455,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "exposure_commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
@@ -7499,7 +7499,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "exposure_commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
@@ -7543,7 +7543,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "exposure_commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
@@ -7587,7 +7587,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "exposure_commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
@@ -7632,7 +7632,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "exposure_commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
@@ -7676,7 +7676,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "exposure_commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
@@ -7720,7 +7720,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "exposure_commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
@@ -7764,7 +7764,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "exposure_commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
@@ -7808,7 +7808,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "exposure_commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
@@ -7850,7 +7850,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "exposure_commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
@@ -7894,7 +7894,7 @@
    "artifact": {
     "commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
     "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:05a965e1d2c31a5d3714fc72ede49c27c748d872f27a1ac067266e1227ba6f64"
    },
    "exposure_commit": "8e37cd851666e025aac4c0735083bef7bcb10235",
@@ -7938,7 +7938,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -7982,7 +7982,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8026,7 +8026,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8070,7 +8070,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8114,7 +8114,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8160,7 +8160,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8207,7 +8207,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8252,7 +8252,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8297,7 +8297,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8341,7 +8341,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8385,7 +8385,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8427,7 +8427,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8469,7 +8469,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8511,7 +8511,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8555,7 +8555,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8599,7 +8599,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8643,7 +8643,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8687,7 +8687,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8731,7 +8731,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8775,7 +8775,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8819,7 +8819,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8863,7 +8863,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8907,7 +8907,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8951,7 +8951,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -8995,7 +8995,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9039,7 +9039,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9083,7 +9083,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9127,7 +9127,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9171,7 +9171,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9217,7 +9217,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9264,7 +9264,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9309,7 +9309,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9354,7 +9354,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9398,7 +9398,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9442,7 +9442,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9484,7 +9484,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9526,7 +9526,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9568,7 +9568,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9612,7 +9612,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9656,7 +9656,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9700,7 +9700,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9744,7 +9744,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9788,7 +9788,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9832,7 +9832,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9876,7 +9876,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9920,7 +9920,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -9964,7 +9964,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -10008,7 +10008,7 @@
    "artifact": {
     "commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
     "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a50573cbddce05f854a316f9fc79ccc477a9b767b8878aaac9f0e1b15f16bc38"
    },
    "exposure_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7",
@@ -10052,7 +10052,7 @@
    "artifact": {
     "commit": "3da09c0382d91c4755725329223359e9c1d62ca4",
     "path": "docs/evidence/greg-genome-admission/2026-10-16-v4/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5c236f40904cc997aadeab95c8a6b32fc0877967c822ad9a3a58b5c4798843a9"
    },
    "exposure_commit": "3da09c0382d91c4755725329223359e9c1d62ca4",
@@ -10094,7 +10094,7 @@
    "artifact": {
     "commit": "3da09c0382d91c4755725329223359e9c1d62ca4",
     "path": "docs/evidence/greg-genome-admission/2026-10-16-v4/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5c236f40904cc997aadeab95c8a6b32fc0877967c822ad9a3a58b5c4798843a9"
    },
    "exposure_commit": "3da09c0382d91c4755725329223359e9c1d62ca4",
@@ -10136,7 +10136,7 @@
    "artifact": {
     "commit": "3da09c0382d91c4755725329223359e9c1d62ca4",
     "path": "docs/evidence/greg-genome-admission/2026-10-16-v4/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5c236f40904cc997aadeab95c8a6b32fc0877967c822ad9a3a58b5c4798843a9"
    },
    "exposure_commit": "3da09c0382d91c4755725329223359e9c1d62ca4",
@@ -10180,7 +10180,7 @@
    "artifact": {
     "commit": "3da09c0382d91c4755725329223359e9c1d62ca4",
     "path": "docs/evidence/greg-genome-admission/2026-10-16-v4/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5c236f40904cc997aadeab95c8a6b32fc0877967c822ad9a3a58b5c4798843a9"
    },
    "exposure_commit": "3da09c0382d91c4755725329223359e9c1d62ca4",
@@ -10222,7 +10222,7 @@
    "artifact": {
     "commit": "3da09c0382d91c4755725329223359e9c1d62ca4",
     "path": "docs/evidence/greg-genome-admission/2026-10-16-v4/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5c236f40904cc997aadeab95c8a6b32fc0877967c822ad9a3a58b5c4798843a9"
    },
    "exposure_commit": "3da09c0382d91c4755725329223359e9c1d62ca4",
@@ -10264,7 +10264,7 @@
    "artifact": {
     "commit": "3da09c0382d91c4755725329223359e9c1d62ca4",
     "path": "docs/evidence/greg-genome-admission/2026-10-16-v4/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5c236f40904cc997aadeab95c8a6b32fc0877967c822ad9a3a58b5c4798843a9"
    },
    "exposure_commit": "3da09c0382d91c4755725329223359e9c1d62ca4",
@@ -10308,7 +10308,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -10332,11 +10332,12 @@
     "#158"
    ],
    "looked_at": true,
-   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json, docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -10351,7 +10352,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -10375,11 +10376,12 @@
     "#158"
    ],
    "looked_at": true,
-   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json, docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -10394,7 +10396,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -10418,11 +10420,12 @@
     "#158"
    ],
    "looked_at": true,
-   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json, docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -10437,7 +10440,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -10461,11 +10464,12 @@
     "#158"
    ],
    "looked_at": true,
-   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json, docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -10480,7 +10484,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -10504,11 +10508,12 @@
     "#158"
    ],
    "looked_at": true,
-   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json, docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -10523,7 +10528,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -10547,11 +10552,12 @@
     "#158"
    ],
    "looked_at": true,
-   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json, docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -10566,7 +10572,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -10590,11 +10596,12 @@
     "#158"
    ],
    "looked_at": true,
-   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json, docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -10609,7 +10616,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -10633,11 +10640,12 @@
     "#158"
    ],
    "looked_at": true,
-   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json, docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -10652,7 +10660,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -10676,11 +10684,12 @@
     "#158"
    ],
    "looked_at": true,
-   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json, docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -10695,7 +10704,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -10719,11 +10728,12 @@
     "#158"
    ],
    "looked_at": true,
-   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json, docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -10738,7 +10748,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -10762,11 +10772,12 @@
     "#158"
    ],
    "looked_at": true,
-   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v5/results.json, docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -10781,7 +10792,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -10809,7 +10820,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -10824,7 +10836,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -10852,7 +10864,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -10867,7 +10880,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -10895,7 +10908,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -10910,7 +10924,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -10938,7 +10952,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -10953,7 +10968,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -10981,7 +10996,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -10996,7 +11012,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -11024,7 +11040,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -11039,7 +11056,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -11067,7 +11084,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -11082,7 +11100,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -11110,7 +11128,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -11125,7 +11144,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -11153,7 +11172,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -11168,7 +11188,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -11196,7 +11216,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -11211,7 +11232,7 @@
    "artifact": {
     "commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v5/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:be40c282039a82044aea42b72c1f972ca731568e8b6141182cefcd701e3f77f5"
    },
    "exposure_commit": "b8061a21104253d157037e7ab4d3dcc54ee917a6",
@@ -11239,7 +11260,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -11254,7 +11276,7 @@
    "artifact": {
     "commit": "f33cb2a921689570ae4401da7b9884be252ba476",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v6/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:c7c6dfa7c3d6a10d4b799a2ca52e922b6db6f3ac61e754c8252edb85ddb811de"
    },
    "exposure_commit": "f33cb2a921689570ae4401da7b9884be252ba476",
@@ -11278,11 +11300,12 @@
     "#158"
    ],
    "looked_at": true,
-   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v6/results.json",
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v6/results.json, docs/evidence/greg-genome-admission/2026-10-21-v6/results.json",
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -11297,7 +11320,7 @@
    "artifact": {
     "commit": "f33cb2a921689570ae4401da7b9884be252ba476",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v6/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:c7c6dfa7c3d6a10d4b799a2ca52e922b6db6f3ac61e754c8252edb85ddb811de"
    },
    "exposure_commit": "f33cb2a921689570ae4401da7b9884be252ba476",
@@ -11321,11 +11344,12 @@
     "#158"
    ],
    "looked_at": true,
-   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v6/results.json",
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-10-21-v6/results.json, docs/evidence/greg-genome-admission/2026-10-21-v6/results.json",
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -11340,7 +11364,7 @@
    "artifact": {
     "commit": "f33cb2a921689570ae4401da7b9884be252ba476",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v6/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:c7c6dfa7c3d6a10d4b799a2ca52e922b6db6f3ac61e754c8252edb85ddb811de"
    },
    "exposure_commit": "f33cb2a921689570ae4401da7b9884be252ba476",
@@ -11368,7 +11392,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -11383,7 +11408,7 @@
    "artifact": {
     "commit": "f33cb2a921689570ae4401da7b9884be252ba476",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v6/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:c7c6dfa7c3d6a10d4b799a2ca52e922b6db6f3ac61e754c8252edb85ddb811de"
    },
    "exposure_commit": "f33cb2a921689570ae4401da7b9884be252ba476",
@@ -11411,7 +11436,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -11426,7 +11452,7 @@
    "artifact": {
     "commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b29d465d6a6fd1e3c645028870f651b36f3d455c0481dd42b607f18851154cf"
    },
    "exposure_commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
@@ -11454,7 +11480,8 @@
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -11469,7 +11496,7 @@
    "artifact": {
     "commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b29d465d6a6fd1e3c645028870f651b36f3d455c0481dd42b607f18851154cf"
    },
    "exposure_commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
@@ -11497,7 +11524,8 @@
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -11512,7 +11540,7 @@
    "artifact": {
     "commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b29d465d6a6fd1e3c645028870f651b36f3d455c0481dd42b607f18851154cf"
    },
    "exposure_commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
@@ -11540,7 +11568,8 @@
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -11555,7 +11584,7 @@
    "artifact": {
     "commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b29d465d6a6fd1e3c645028870f651b36f3d455c0481dd42b607f18851154cf"
    },
    "exposure_commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
@@ -11583,7 +11612,8 @@
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -11598,7 +11628,7 @@
    "artifact": {
     "commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b29d465d6a6fd1e3c645028870f651b36f3d455c0481dd42b607f18851154cf"
    },
    "exposure_commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
@@ -11626,7 +11656,8 @@
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -11641,7 +11672,7 @@
    "artifact": {
     "commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b29d465d6a6fd1e3c645028870f651b36f3d455c0481dd42b607f18851154cf"
    },
    "exposure_commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
@@ -11669,7 +11700,8 @@
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -11684,7 +11716,7 @@
    "artifact": {
     "commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b29d465d6a6fd1e3c645028870f651b36f3d455c0481dd42b607f18851154cf"
    },
    "exposure_commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
@@ -11712,7 +11744,8 @@
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -11727,7 +11760,7 @@
    "artifact": {
     "commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b29d465d6a6fd1e3c645028870f651b36f3d455c0481dd42b607f18851154cf"
    },
    "exposure_commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
@@ -11755,7 +11788,8 @@
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -11770,7 +11804,7 @@
    "artifact": {
     "commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b29d465d6a6fd1e3c645028870f651b36f3d455c0481dd42b607f18851154cf"
    },
    "exposure_commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
@@ -11798,7 +11832,8 @@
    "n": 30,
    "part": "heldout",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "admission held-out",
@@ -11813,7 +11848,7 @@
    "artifact": {
     "commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b29d465d6a6fd1e3c645028870f651b36f3d455c0481dd42b607f18851154cf"
    },
    "exposure_commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
@@ -11841,7 +11876,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -11856,7 +11892,7 @@
    "artifact": {
     "commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b29d465d6a6fd1e3c645028870f651b36f3d455c0481dd42b607f18851154cf"
    },
    "exposure_commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
@@ -11884,7 +11920,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -11899,7 +11936,7 @@
    "artifact": {
     "commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b29d465d6a6fd1e3c645028870f651b36f3d455c0481dd42b607f18851154cf"
    },
    "exposure_commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
@@ -11927,7 +11964,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -11942,7 +11980,7 @@
    "artifact": {
     "commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b29d465d6a6fd1e3c645028870f651b36f3d455c0481dd42b607f18851154cf"
    },
    "exposure_commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
@@ -11970,7 +12008,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -11985,7 +12024,7 @@
    "artifact": {
     "commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b29d465d6a6fd1e3c645028870f651b36f3d455c0481dd42b607f18851154cf"
    },
    "exposure_commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
@@ -12013,7 +12052,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -12028,7 +12068,7 @@
    "artifact": {
     "commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b29d465d6a6fd1e3c645028870f651b36f3d455c0481dd42b607f18851154cf"
    },
    "exposure_commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
@@ -12056,7 +12096,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -12071,7 +12112,7 @@
    "artifact": {
     "commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b29d465d6a6fd1e3c645028870f651b36f3d455c0481dd42b607f18851154cf"
    },
    "exposure_commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
@@ -12099,7 +12140,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -12114,7 +12156,7 @@
    "artifact": {
     "commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b29d465d6a6fd1e3c645028870f651b36f3d455c0481dd42b607f18851154cf"
    },
    "exposure_commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
@@ -12142,7 +12184,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -12157,7 +12200,7 @@
    "artifact": {
     "commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
     "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/freeze.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:5b29d465d6a6fd1e3c645028870f651b36f3d455c0481dd42b607f18851154cf"
    },
    "exposure_commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4",
@@ -12185,7 +12228,8 @@
    "n": 10,
    "part": "dev",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "admission",
    "role": "dev",
@@ -12200,7 +12244,7 @@
    "artifact": {
     "commit": "3283f851c2cae9d1003b4db083dcace6933455d7",
     "path": "docs/evidence/greg-protected-evolution/2026-10-08/cycle-forecast-1.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:ec42ba4fe8623ca0beeef5accb02d81e87c516a3f228b1776ff3ea08388ce61a"
    },
    "exposure_commit": "fe222f44f8ba362f18d885ab91d037d3dc5041bf",
@@ -12350,7 +12394,7 @@
    "artifact": {
     "commit": "3283f851c2cae9d1003b4db083dcace6933455d7",
     "path": "docs/evidence/greg-protected-evolution/2026-10-08/cycle-forecast-1.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:ec42ba4fe8623ca0beeef5accb02d81e87c516a3f228b1776ff3ea08388ce61a"
    },
    "exposure_commit": "fe222f44f8ba362f18d885ab91d037d3dc5041bf",
@@ -12499,7 +12543,7 @@
    "artifact": {
     "commit": "8c5da6d9ad4e3868ae8fd4d5cce5058d0eae7e3f",
     "path": "docs/evidence/greg-protected-evolution/2026-10-09/cycle-immune-2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:adf326b6a05f5585fdc64cb4d0395338f7d3c1f8dc83abc6847a5f475c1711ad"
    },
    "exposure_commit": "ed4ee29c77f03893cfd80c195c0c92137a107831",
@@ -12556,7 +12600,7 @@
    "artifact": {
     "commit": "8c5da6d9ad4e3868ae8fd4d5cce5058d0eae7e3f",
     "path": "docs/evidence/greg-protected-evolution/2026-10-09/cycle-immune-2.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:adf326b6a05f5585fdc64cb4d0395338f7d3c1f8dc83abc6847a5f475c1711ad"
    },
    "exposure_commit": "ed4ee29c77f03893cfd80c195c0c92137a107831",
@@ -12613,7 +12657,7 @@
    "artifact": {
     "commit": "02660c82a2db562bc70a1302f497467529013aa2",
     "path": "docs/evidence/greg-protected-evolution/2026-10-14/cycle-cr-3.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:7d348c2957a5f8fc95b5b4e780c5fa75af700cae191deab38c62d74ae8ec27a3"
    },
    "exposure_commit": "5287303fb218a9444c79231432e3fd11ff2be51e",
@@ -12669,7 +12713,7 @@
    "artifact": {
     "commit": "02660c82a2db562bc70a1302f497467529013aa2",
     "path": "docs/evidence/greg-protected-evolution/2026-10-14/cycle-cr-3.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:7d348c2957a5f8fc95b5b4e780c5fa75af700cae191deab38c62d74ae8ec27a3"
    },
    "exposure_commit": "5287303fb218a9444c79231432e3fd11ff2be51e",
@@ -12725,7 +12769,7 @@
    "artifact": {
     "commit": "864be64858b7b7535c24b9736a9f1b443a1d636e",
     "path": "docs/evidence/greg-protected-evolution/2026-10-15-cr-4/cycle-cr-4.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:0a958ba6ae15b7a79fd6842f72aad63a2fcf2b861f3eb5c15b79d1cf941f7eaf"
    },
    "exposure_commit": "2cbb43dc5519e827e814b002b2c75e773c2e297a",
@@ -12781,7 +12825,7 @@
    "artifact": {
     "commit": "864be64858b7b7535c24b9736a9f1b443a1d636e",
     "path": "docs/evidence/greg-protected-evolution/2026-10-15-cr-4/cycle-cr-4.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:0a958ba6ae15b7a79fd6842f72aad63a2fcf2b861f3eb5c15b79d1cf941f7eaf"
    },
    "exposure_commit": "2cbb43dc5519e827e814b002b2c75e773c2e297a",
@@ -12837,7 +12881,7 @@
    "artifact": {
     "commit": "174fd79b957e419939841e63c3f6749d1729bb11",
     "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/cycle-cr-5.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:3ab3482f7a8418eee6984ee44fce538422ca13305a1fd363d631e8686c7be2f1"
    },
    "exposure_commit": "6fa98ffb13819d446b2274808206cd4e8748b4cc",
@@ -12893,7 +12937,7 @@
    "artifact": {
     "commit": "174fd79b957e419939841e63c3f6749d1729bb11",
     "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/cycle-cr-5.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:3ab3482f7a8418eee6984ee44fce538422ca13305a1fd363d631e8686c7be2f1"
    },
    "exposure_commit": "6fa98ffb13819d446b2274808206cd4e8748b4cc",
@@ -13036,7 +13080,7 @@
      }
     ],
     "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/pilot/",
-    "read_at": "HEAD"
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e"
    },
    "declared": {
     "region/seeds/pool": [
@@ -13112,7 +13156,7 @@
    "artifact": {
     "commit": "ac1c9e6faef8aa069eff948894d852d47a25ba78",
     "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/canary/canary.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a361e3c581b8f26cbf399ea239c1114007250c2df9020a6d9c95770cbd0381a0"
    },
    "exposure_commit": "82bb6453f4e8da76c318838cb5299320ac2e3fda",
@@ -13155,7 +13199,7 @@
    "artifact": {
     "commit": "6223f42647fa39f8e59760b1ae4e5670ee050269",
     "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/cycle-cr-6.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a2b6150b64248092ad6e03fcc9940bd1da24c9f2fa57e1376a215c2d6a4333a8"
    },
    "exposure_commit": "70bb77d20e4c5e0123050307e7adebeaa4bfba56",
@@ -13211,7 +13255,7 @@
    "artifact": {
     "commit": "6223f42647fa39f8e59760b1ae4e5670ee050269",
     "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/cycle-cr-6.json",
-    "read_at": "HEAD",
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "sha256": "sha256:a2b6150b64248092ad6e03fcc9940bd1da24c9f2fa57e1376a215c2d6a4333a8"
    },
    "exposure_commit": "70bb77d20e4c5e0123050307e7adebeaa4bfba56",
@@ -13309,7 +13353,7 @@
      }
     ],
     "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/",
-    "read_at": "HEAD"
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e"
    },
    "declared": {
     "seeds/pool": [
@@ -13388,7 +13432,7 @@
      }
     ],
     "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-7/pilot/",
-    "read_at": "HEAD"
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e"
    },
    "declared": {
     "region/seeds/pool": [
@@ -13459,7 +13503,8 @@
    "looked_at_basis": "pilot outcomes are recorded in these files",
    "n": 900,
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "P8 immune_detect pilot",
    "role": "review-pilot",
@@ -13491,7 +13536,7 @@
      }
     ],
     "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-8/pilot/",
-    "read_at": "HEAD"
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e"
    },
    "declared": {
     "region/seeds/pool": [
@@ -13568,7 +13613,8 @@
    "looked_at_basis": "pilot outcomes are recorded in these files",
    "n": 1000,
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "P8 immune_detect pilot",
    "role": "review-pilot",
@@ -13600,7 +13646,7 @@
      }
     ],
     "path": "docs/evidence/greg-protected-evolution/2026-10-21-repair-1/pilot/",
-    "read_at": "HEAD"
+    "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e"
    },
    "declared": {
     "seeds/pool": [
@@ -13652,7 +13698,8 @@
    "looked_at_basis": "pilot outcomes are recorded in these files",
    "n": 1000,
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "P8 develop_repair pilot",
    "role": "review-pilot",
@@ -13693,7 +13740,8 @@
    "looked_at_basis": "the run's per-item outcomes are recorded in this file",
    "n": 10,
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "repair hybrid exploratory",
    "role": "dev",
@@ -13734,7 +13782,8 @@
    "looked_at_basis": "the run's per-item outcomes are recorded in this file",
    "n": 640,
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "repair hybrid exploratory",
    "role": "review-pilot",
@@ -13747,7 +13796,7 @@
   },
   {
    "artifact": {
-    "commit": "HEAD",
+    "commit": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
     "line_commits": [
      "4d99fb024239fbb219667bda98842e1ea40d84fc"
     ],
@@ -13873,7 +13922,8 @@
    "n": 1,
    "part": "?:ITEMS[family].instance:392",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -13921,7 +13971,8 @@
    "n": 10,
    "part": "greg.cognition.genomes.basal_memory:hopfield_instance:277",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -13969,7 +14020,8 @@
    "n": 10,
    "part": "greg.cognition.genomes.basal_memory:hopfield_instance:288",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -14017,7 +14069,8 @@
    "n": 10,
    "part": "greg.cognition.genomes.developmental_ca:ca_instance:308",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -14065,7 +14118,8 @@
    "n": 10,
    "part": "greg.cognition.genomes.formal:pb_instance:217",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -14311,7 +14365,8 @@
    "n": 2,
    "part": "greg.cognition.genomes.collective:flock_instance:755",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -14366,7 +14421,8 @@
    "n": 10,
    "part": "greg.cognition.genomes.collective:immune_instance:738",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -14417,7 +14473,8 @@
    "n": 10,
    "part": "greg.cognition.genomes.collective:immune_instance:745",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -14871,7 +14928,8 @@
    "n": 10,
    "part": "greg.cognition.genomes.developmental:repair_instance:23",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -14912,7 +14970,8 @@
    "n": 1,
    "part": "?:ITEMS[family].instance:294",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -14960,7 +15019,8 @@
    "n": 10,
    "part": "greg.cognition.genomes.evolutionary:qd_instance:204",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -15008,7 +15068,8 @@
    "n": 4,
    "part": "greg.cognition.genomes.centrality:bc_instance:221",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -15293,7 +15354,8 @@
    "n": 1,
    "part": "?:ITEMS[family].instance:349",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -15341,7 +15403,8 @@
    "n": 10,
    "part": "greg.cognition.genomes.collective_b:auction_instance:241",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -15382,7 +15445,8 @@
    "n": 10,
    "part": "?:item.instance:131",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -15428,7 +15492,8 @@
    "n": 3,
    "part": "?:item.instance:85",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -15480,7 +15545,8 @@
    "n": 1,
    "part": "greg.cognition.genomes.decision:instance:211",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -15530,7 +15596,8 @@
    "n": 2,
    "part": "greg.cognition.genomes.forecasting:instance:180",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -15577,7 +15644,8 @@
    "n": 1,
    "part": "greg.cognition.genomes.flow:maxflow_instance:33",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -16168,7 +16236,8 @@
    "n": 1,
    "part": "?:ITEMS[family].instance:370",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -16216,7 +16285,8 @@
    "n": 40,
    "part": "greg.cognition.genomes.solvers_d:reconcile_instance:249",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -16847,7 +16917,8 @@
    "n": 10,
    "part": "?:item.instance:152",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -16888,7 +16959,8 @@
    "n": 10,
    "part": "?:item.instance:213",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -16929,7 +17001,8 @@
    "n": 10,
    "part": "?:item.instance:57",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -16972,7 +17045,8 @@
    "n": 3,
    "part": "?:library.executables()[FAMILY].instance:175",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -17022,8 +17096,7 @@
    "n": 3,
    "part": "?:dp.instance:881",
    "present_in": [
-    "#158",
-    "#179"
+    "#158"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -17080,8 +17153,7 @@
    "n": 3,
    "part": "?:item.instance:337",
    "present_in": [
-    "#158",
-    "#179"
+    "#158"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -17129,8 +17201,7 @@
    "n": 1,
    "part": "greg.cognition.genomes.solvers_b:astar_instance:381",
    "present_in": [
-    "#158",
-    "#179"
+    "#158"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -17185,8 +17256,7 @@
    "n": 1,
    "part": "greg.cognition.genomes.solvers_b:knapsack_instance:758",
    "present_in": [
-    "#158",
-    "#179"
+    "#158"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -17232,8 +17302,7 @@
    "n": 1,
    "part": "greg.cognition.genomes.flow:expansion_instance:488",
    "present_in": [
-    "#158",
-    "#179"
+    "#158"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -17990,7 +18059,8 @@
    "n": 1,
    "part": "?:executable.instance:372",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -18041,7 +18111,8 @@
    "n": 3,
    "part": "greg.cognition.genomes.collective:immune_gaussian_instance:106",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -18096,7 +18167,8 @@
    "n": 2,
    "part": "greg.cognition.genomes.developmental:constraint_release_instance:203",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -18137,7 +18209,8 @@
    "n": 200,
    "part": "?:_random_instance:102",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -18178,7 +18251,8 @@
    "n": 60,
    "part": "?:_random_instance:146",
    "present_in": [
-    "#158"
+    "#158",
+    "#179"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -18186,6 +18260,210 @@
     [
      0,
      59
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "53d39d766a96ca7fdab18452827da24b71258fa9",
+    "path": "cortex/evaluation/composition_lift/freeze-converged-v1.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:2d9b7f9f736ad6bdae60ccf30ffc108fbbbb7759089dea13ffbfc509653f0efd"
+   },
+   "exposure_commit": "53d39d766a96ca7fdab18452827da24b71258fa9",
+   "family": "F1",
+   "generator": {
+    "commit": "53d39d766a96ca7fdab18452827da24b71258fa9",
+    "files": [
+     {
+      "path": "cortex/evaluation/composition_lift/run.py",
+      "sha256": "sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_converged_v1.py",
+      "sha256": "sha256:b0409f924d2ca9d7d2712a47ce6996fe13426eb1f9204bd0a682ef69c00e3489"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_v2.py",
+      "sha256": "sha256:5f89a32f4607bbc567a328a346176ec48dc2182226290e8ac022d39666e650e3"
+     }
+    ],
+    "function": null,
+    "key": "cortex/evaluation/composition_lift/run.py@sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633|cortex/evaluation/composition_lift/run_converged_v1.py@sha256:b0409f924d2ca9d7d2712a47ce6996fe13426eb1f9204bd0a682ef69c00e3489|cortex/evaluation/composition_lift/run_v2.py@sha256:5f89a32f4607bbc567a328a346176ec48dc2182226290e8ac022d39666e650e3",
+    "kind": "harness",
+    "resolved": true,
+    "why": "instances built inline by the harness or materialised in a frozen suite"
+   },
+   "id": "#179|cortex/evaluation/composition_lift/freeze-converged-v1.json|held-out|F1|held-out:F1",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json",
+   "n": 40,
+   "part": "held-out:F1",
+   "present_in": [
+    "#179"
+   ],
+   "program": "P6",
+   "role": "held-out",
+   "seeds": [
+    [
+     6501,
+     6540
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "53d39d766a96ca7fdab18452827da24b71258fa9",
+    "path": "cortex/evaluation/composition_lift/freeze-converged-v1.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:2d9b7f9f736ad6bdae60ccf30ffc108fbbbb7759089dea13ffbfc509653f0efd"
+   },
+   "exposure_commit": "53d39d766a96ca7fdab18452827da24b71258fa9",
+   "family": "F2R",
+   "generator": {
+    "commit": "53d39d766a96ca7fdab18452827da24b71258fa9",
+    "files": [
+     {
+      "path": "cortex/evaluation/composition_lift/run.py",
+      "sha256": "sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_converged_v1.py",
+      "sha256": "sha256:b0409f924d2ca9d7d2712a47ce6996fe13426eb1f9204bd0a682ef69c00e3489"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_v2.py",
+      "sha256": "sha256:5f89a32f4607bbc567a328a346176ec48dc2182226290e8ac022d39666e650e3"
+     }
+    ],
+    "function": null,
+    "key": "cortex/evaluation/composition_lift/run.py@sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633|cortex/evaluation/composition_lift/run_converged_v1.py@sha256:b0409f924d2ca9d7d2712a47ce6996fe13426eb1f9204bd0a682ef69c00e3489|cortex/evaluation/composition_lift/run_v2.py@sha256:5f89a32f4607bbc567a328a346176ec48dc2182226290e8ac022d39666e650e3",
+    "kind": "harness",
+    "resolved": true,
+    "why": "instances built inline by the harness or materialised in a frozen suite"
+   },
+   "id": "#179|cortex/evaluation/composition_lift/freeze-converged-v1.json|held-out|F2R|held-out:F2R",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json",
+   "n": 64,
+   "part": "held-out:F2R",
+   "present_in": [
+    "#179"
+   ],
+   "program": "P6",
+   "role": "held-out",
+   "seeds": [
+    [
+     6601,
+     6664
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "53d39d766a96ca7fdab18452827da24b71258fa9",
+    "path": "cortex/evaluation/composition_lift/freeze-converged-v1.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:2d9b7f9f736ad6bdae60ccf30ffc108fbbbb7759089dea13ffbfc509653f0efd"
+   },
+   "exposure_commit": "53d39d766a96ca7fdab18452827da24b71258fa9",
+   "family": "F3",
+   "generator": {
+    "commit": "53d39d766a96ca7fdab18452827da24b71258fa9",
+    "files": [
+     {
+      "path": "cortex/evaluation/composition_lift/run.py",
+      "sha256": "sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_converged_v1.py",
+      "sha256": "sha256:b0409f924d2ca9d7d2712a47ce6996fe13426eb1f9204bd0a682ef69c00e3489"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_v2.py",
+      "sha256": "sha256:5f89a32f4607bbc567a328a346176ec48dc2182226290e8ac022d39666e650e3"
+     }
+    ],
+    "function": null,
+    "key": "cortex/evaluation/composition_lift/run.py@sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633|cortex/evaluation/composition_lift/run_converged_v1.py@sha256:b0409f924d2ca9d7d2712a47ce6996fe13426eb1f9204bd0a682ef69c00e3489|cortex/evaluation/composition_lift/run_v2.py@sha256:5f89a32f4607bbc567a328a346176ec48dc2182226290e8ac022d39666e650e3",
+    "kind": "harness",
+    "resolved": true,
+    "why": "instances built inline by the harness or materialised in a frozen suite"
+   },
+   "id": "#179|cortex/evaluation/composition_lift/freeze-converged-v1.json|held-out|F3|held-out:F3",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json",
+   "n": 40,
+   "part": "held-out:F3",
+   "present_in": [
+    "#179"
+   ],
+   "program": "P6",
+   "role": "held-out",
+   "seeds": [
+    [
+     6701,
+     6740
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "53d39d766a96ca7fdab18452827da24b71258fa9",
+    "path": "cortex/evaluation/composition_lift/freeze-converged-v1.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:2d9b7f9f736ad6bdae60ccf30ffc108fbbbb7759089dea13ffbfc509653f0efd"
+   },
+   "exposure_commit": "53d39d766a96ca7fdab18452827da24b71258fa9",
+   "family": "F4",
+   "generator": {
+    "commit": "53d39d766a96ca7fdab18452827da24b71258fa9",
+    "files": [
+     {
+      "path": "cortex/evaluation/composition_lift/run.py",
+      "sha256": "sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_converged_v1.py",
+      "sha256": "sha256:b0409f924d2ca9d7d2712a47ce6996fe13426eb1f9204bd0a682ef69c00e3489"
+     },
+     {
+      "path": "cortex/evaluation/composition_lift/run_v2.py",
+      "sha256": "sha256:5f89a32f4607bbc567a328a346176ec48dc2182226290e8ac022d39666e650e3"
+     }
+    ],
+    "function": null,
+    "key": "cortex/evaluation/composition_lift/run.py@sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633|cortex/evaluation/composition_lift/run_converged_v1.py@sha256:b0409f924d2ca9d7d2712a47ce6996fe13426eb1f9204bd0a682ef69c00e3489|cortex/evaluation/composition_lift/run_v2.py@sha256:5f89a32f4607bbc567a328a346176ec48dc2182226290e8ac022d39666e650e3",
+    "kind": "harness",
+    "resolved": true,
+    "why": "instances built inline by the harness or materialised in a frozen suite"
+   },
+   "id": "#179|cortex/evaluation/composition_lift/freeze-converged-v1.json|held-out|F4|held-out:F4",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json",
+   "n": 40,
+   "part": "held-out:F4",
+   "present_in": [
+    "#179"
+   ],
+   "program": "P6",
+   "role": "held-out",
+   "seeds": [
+    [
+     6801,
+     6840
     ]
    ]
   },
@@ -18285,9 +18563,161 @@
   },
   {
    "artifact": {
+    "commit": "d90cd6fb163eca18d4ca9267e226781c33a9a590",
+    "path": "cortex/evaluation/composition_lift/prereg-converged-v1.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:3bbe3edcbdc5567c1f3d0f69565ee4bd7382438c333490229a950d001db01a0d"
+   },
+   "exposure_commit": "d90cd6fb163eca18d4ca9267e226781c33a9a590",
+   "family": "F1",
+   "generator": {
+    "commit": "d90cd6fb163eca18d4ca9267e226781c33a9a590",
+    "files": [],
+    "function": null,
+    "key": "harness:cortex/evaluation/composition_lift/prereg-converged-v1.json",
+    "kind": "harness",
+    "resolved": false,
+    "why": "instances built inline by the harness or materialised in a frozen suite"
+   },
+   "id": "#179|cortex/evaluation/composition_lift/prereg-converged-v1.json|held-out|F1|held-out:F1",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": false,
+   "looked_at_basis": "no results file binds this freeze's digest",
+   "n": 40,
+   "part": "held-out:F1",
+   "present_in": [
+    "#179"
+   ],
+   "program": "P6",
+   "role": "held-out",
+   "seeds": [
+    [
+     6501,
+     6540
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "d90cd6fb163eca18d4ca9267e226781c33a9a590",
+    "path": "cortex/evaluation/composition_lift/prereg-converged-v1.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:3bbe3edcbdc5567c1f3d0f69565ee4bd7382438c333490229a950d001db01a0d"
+   },
+   "exposure_commit": "d90cd6fb163eca18d4ca9267e226781c33a9a590",
+   "family": "F2R",
+   "generator": {
+    "commit": "d90cd6fb163eca18d4ca9267e226781c33a9a590",
+    "files": [],
+    "function": null,
+    "key": "harness:cortex/evaluation/composition_lift/prereg-converged-v1.json",
+    "kind": "harness",
+    "resolved": false,
+    "why": "instances built inline by the harness or materialised in a frozen suite"
+   },
+   "id": "#179|cortex/evaluation/composition_lift/prereg-converged-v1.json|held-out|F2R|held-out:F2R",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": false,
+   "looked_at_basis": "no results file binds this freeze's digest",
+   "n": 64,
+   "part": "held-out:F2R",
+   "present_in": [
+    "#179"
+   ],
+   "program": "P6",
+   "role": "held-out",
+   "seeds": [
+    [
+     6601,
+     6664
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "d90cd6fb163eca18d4ca9267e226781c33a9a590",
+    "path": "cortex/evaluation/composition_lift/prereg-converged-v1.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:3bbe3edcbdc5567c1f3d0f69565ee4bd7382438c333490229a950d001db01a0d"
+   },
+   "exposure_commit": "d90cd6fb163eca18d4ca9267e226781c33a9a590",
+   "family": "F3",
+   "generator": {
+    "commit": "d90cd6fb163eca18d4ca9267e226781c33a9a590",
+    "files": [],
+    "function": null,
+    "key": "harness:cortex/evaluation/composition_lift/prereg-converged-v1.json",
+    "kind": "harness",
+    "resolved": false,
+    "why": "instances built inline by the harness or materialised in a frozen suite"
+   },
+   "id": "#179|cortex/evaluation/composition_lift/prereg-converged-v1.json|held-out|F3|held-out:F3",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": false,
+   "looked_at_basis": "no results file binds this freeze's digest",
+   "n": 40,
+   "part": "held-out:F3",
+   "present_in": [
+    "#179"
+   ],
+   "program": "P6",
+   "role": "held-out",
+   "seeds": [
+    [
+     6701,
+     6740
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "d90cd6fb163eca18d4ca9267e226781c33a9a590",
+    "path": "cortex/evaluation/composition_lift/prereg-converged-v1.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:3bbe3edcbdc5567c1f3d0f69565ee4bd7382438c333490229a950d001db01a0d"
+   },
+   "exposure_commit": "d90cd6fb163eca18d4ca9267e226781c33a9a590",
+   "family": "F4",
+   "generator": {
+    "commit": "d90cd6fb163eca18d4ca9267e226781c33a9a590",
+    "files": [],
+    "function": null,
+    "key": "harness:cortex/evaluation/composition_lift/prereg-converged-v1.json",
+    "kind": "harness",
+    "resolved": false,
+    "why": "instances built inline by the harness or materialised in a frozen suite"
+   },
+   "id": "#179|cortex/evaluation/composition_lift/prereg-converged-v1.json|held-out|F4|held-out:F4",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": false,
+   "looked_at_basis": "no results file binds this freeze's digest",
+   "n": 40,
+   "part": "held-out:F4",
+   "present_in": [
+    "#179"
+   ],
+   "program": "P6",
+   "role": "held-out",
+   "seeds": [
+    [
+     6801,
+     6840
+    ]
+   ]
+  },
+  {
+   "artifact": {
     "commit": "b99daba9df4d539b0a1dcb87d8fb882227f5c36a",
     "path": "cortex/evaluation/developmental_sweep/freeze-v1.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:a38957bf9221b8c520170e87ef7d8b765307770589acdab7c517581d2475d86b"
    },
    "exposure_commit": "b99daba9df4d539b0a1dcb87d8fb882227f5c36a",
@@ -18330,7 +18760,7 @@
    "artifact": {
     "commit": "b99daba9df4d539b0a1dcb87d8fb882227f5c36a",
     "path": "cortex/evaluation/evolution/freeze-v1.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:682e1cd611bd15aad3623c41723b3dba3ecf2321e61baa6cfb6d94f25a5fbd35"
    },
    "exposure_commit": "b99daba9df4d539b0a1dcb87d8fb882227f5c36a",
@@ -18373,7 +18803,7 @@
    "artifact": {
     "commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
     "path": "cortex/evaluation/genome_admission/freeze-ops-v3.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:39d42d5b3c80606967fb95c7def2949b6db964e9b3d4c8b6586a6cd0bd1dddd5"
    },
    "exposure_commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
@@ -18414,7 +18844,7 @@
    "artifact": {
     "commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
     "path": "cortex/evaluation/genome_admission/freeze-ops-v3.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:39d42d5b3c80606967fb95c7def2949b6db964e9b3d4c8b6586a6cd0bd1dddd5"
    },
    "exposure_commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
@@ -18457,7 +18887,7 @@
    "artifact": {
     "commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
     "path": "cortex/evaluation/genome_admission/freeze-ops-v3.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:39d42d5b3c80606967fb95c7def2949b6db964e9b3d4c8b6586a6cd0bd1dddd5"
    },
    "exposure_commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
@@ -18500,7 +18930,7 @@
    "artifact": {
     "commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
     "path": "cortex/evaluation/genome_admission/freeze-ops-v3.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:39d42d5b3c80606967fb95c7def2949b6db964e9b3d4c8b6586a6cd0bd1dddd5"
    },
    "exposure_commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
@@ -18543,7 +18973,7 @@
    "artifact": {
     "commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
     "path": "cortex/evaluation/genome_admission/freeze-ops-v3.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:39d42d5b3c80606967fb95c7def2949b6db964e9b3d4c8b6586a6cd0bd1dddd5"
    },
    "exposure_commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
@@ -18586,7 +19016,7 @@
    "artifact": {
     "commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
     "path": "cortex/evaluation/genome_admission/freeze-ops-v3.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:39d42d5b3c80606967fb95c7def2949b6db964e9b3d4c8b6586a6cd0bd1dddd5"
    },
    "exposure_commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
@@ -18629,7 +19059,7 @@
    "artifact": {
     "commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
     "path": "cortex/evaluation/genome_admission/freeze-ops-v3.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:39d42d5b3c80606967fb95c7def2949b6db964e9b3d4c8b6586a6cd0bd1dddd5"
    },
    "exposure_commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
@@ -18672,7 +19102,7 @@
    "artifact": {
     "commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
     "path": "cortex/evaluation/genome_admission/freeze-ops-v3.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:39d42d5b3c80606967fb95c7def2949b6db964e9b3d4c8b6586a6cd0bd1dddd5"
    },
    "exposure_commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
@@ -18715,7 +19145,7 @@
    "artifact": {
     "commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
     "path": "cortex/evaluation/genome_admission/freeze-ops-v3.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:39d42d5b3c80606967fb95c7def2949b6db964e9b3d4c8b6586a6cd0bd1dddd5"
    },
    "exposure_commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
@@ -18758,7 +19188,7 @@
    "artifact": {
     "commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
     "path": "cortex/evaluation/genome_admission/freeze-ops-v3.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:39d42d5b3c80606967fb95c7def2949b6db964e9b3d4c8b6586a6cd0bd1dddd5"
    },
    "exposure_commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
@@ -18801,7 +19231,7 @@
    "artifact": {
     "commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
     "path": "cortex/evaluation/genome_admission/freeze-ops-v3.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:39d42d5b3c80606967fb95c7def2949b6db964e9b3d4c8b6586a6cd0bd1dddd5"
    },
    "exposure_commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
@@ -18844,7 +19274,7 @@
    "artifact": {
     "commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
     "path": "cortex/evaluation/genome_admission/freeze-ops-v3.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:39d42d5b3c80606967fb95c7def2949b6db964e9b3d4c8b6586a6cd0bd1dddd5"
    },
    "exposure_commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
@@ -18887,7 +19317,7 @@
    "artifact": {
     "commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
     "path": "cortex/evaluation/genome_admission/freeze-ops-v3.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:39d42d5b3c80606967fb95c7def2949b6db964e9b3d4c8b6586a6cd0bd1dddd5"
    },
    "exposure_commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
@@ -18930,7 +19360,7 @@
    "artifact": {
     "commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
     "path": "cortex/evaluation/genome_admission/freeze-ops-v3.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:39d42d5b3c80606967fb95c7def2949b6db964e9b3d4c8b6586a6cd0bd1dddd5"
    },
    "exposure_commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
@@ -18973,7 +19403,7 @@
    "artifact": {
     "commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
     "path": "cortex/evaluation/genome_admission/freeze-ops-v3.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:39d42d5b3c80606967fb95c7def2949b6db964e9b3d4c8b6586a6cd0bd1dddd5"
    },
    "exposure_commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
@@ -19016,7 +19446,7 @@
    "artifact": {
     "commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
     "path": "cortex/evaluation/genome_admission/freeze-ops-v3.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:39d42d5b3c80606967fb95c7def2949b6db964e9b3d4c8b6586a6cd0bd1dddd5"
    },
    "exposure_commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
@@ -19059,7 +19489,7 @@
    "artifact": {
     "commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
     "path": "cortex/evaluation/genome_admission/freeze-ops-v3.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:39d42d5b3c80606967fb95c7def2949b6db964e9b3d4c8b6586a6cd0bd1dddd5"
    },
    "exposure_commit": "dfdcfe92f00449039686c922623a925910aeb8a2",
@@ -19100,7 +19530,7 @@
    "artifact": {
     "commit": "5063599039f63ab912a432b6f1d253e959a335d3",
     "path": "cortex/evaluation/genome_admission/freeze-v1.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:a1138bd672fa37feb0cd2e667a3b216828e648e86adf8d818d99a2c6567f43d0"
    },
    "exposure_commit": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
@@ -19145,7 +19575,7 @@
    "artifact": {
     "commit": "5063599039f63ab912a432b6f1d253e959a335d3",
     "path": "cortex/evaluation/genome_admission/freeze-v1.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:a1138bd672fa37feb0cd2e667a3b216828e648e86adf8d818d99a2c6567f43d0"
    },
    "exposure_commit": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
@@ -19190,7 +19620,7 @@
    "artifact": {
     "commit": "5063599039f63ab912a432b6f1d253e959a335d3",
     "path": "cortex/evaluation/genome_admission/freeze-v1.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:a1138bd672fa37feb0cd2e667a3b216828e648e86adf8d818d99a2c6567f43d0"
    },
    "exposure_commit": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
@@ -19235,7 +19665,7 @@
    "artifact": {
     "commit": "5063599039f63ab912a432b6f1d253e959a335d3",
     "path": "cortex/evaluation/genome_admission/freeze-v1.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:a1138bd672fa37feb0cd2e667a3b216828e648e86adf8d818d99a2c6567f43d0"
    },
    "exposure_commit": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
@@ -19280,7 +19710,7 @@
    "artifact": {
     "commit": "5063599039f63ab912a432b6f1d253e959a335d3",
     "path": "cortex/evaluation/genome_admission/freeze-v1.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:a1138bd672fa37feb0cd2e667a3b216828e648e86adf8d818d99a2c6567f43d0"
    },
    "exposure_commit": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
@@ -19325,7 +19755,7 @@
    "artifact": {
     "commit": "5063599039f63ab912a432b6f1d253e959a335d3",
     "path": "cortex/evaluation/genome_admission/freeze-v1.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:a1138bd672fa37feb0cd2e667a3b216828e648e86adf8d818d99a2c6567f43d0"
    },
    "exposure_commit": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
@@ -19370,7 +19800,7 @@
    "artifact": {
     "commit": "5063599039f63ab912a432b6f1d253e959a335d3",
     "path": "cortex/evaluation/genome_admission/freeze-v1.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:a1138bd672fa37feb0cd2e667a3b216828e648e86adf8d818d99a2c6567f43d0"
    },
    "exposure_commit": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
@@ -19415,7 +19845,7 @@
    "artifact": {
     "commit": "5063599039f63ab912a432b6f1d253e959a335d3",
     "path": "cortex/evaluation/genome_admission/freeze-v1.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:a1138bd672fa37feb0cd2e667a3b216828e648e86adf8d818d99a2c6567f43d0"
    },
    "exposure_commit": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
@@ -19460,7 +19890,7 @@
    "artifact": {
     "commit": "5063599039f63ab912a432b6f1d253e959a335d3",
     "path": "cortex/evaluation/genome_admission/freeze-v1.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:a1138bd672fa37feb0cd2e667a3b216828e648e86adf8d818d99a2c6567f43d0"
    },
    "exposure_commit": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
@@ -19505,7 +19935,7 @@
    "artifact": {
     "commit": "5063599039f63ab912a432b6f1d253e959a335d3",
     "path": "cortex/evaluation/genome_admission/freeze-v1.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:a1138bd672fa37feb0cd2e667a3b216828e648e86adf8d818d99a2c6567f43d0"
    },
    "exposure_commit": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
@@ -19550,7 +19980,7 @@
    "artifact": {
     "commit": "5063599039f63ab912a432b6f1d253e959a335d3",
     "path": "cortex/evaluation/genome_admission/freeze-v1.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:a1138bd672fa37feb0cd2e667a3b216828e648e86adf8d818d99a2c6567f43d0"
    },
    "exposure_commit": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
@@ -19595,7 +20025,7 @@
    "artifact": {
     "commit": "5063599039f63ab912a432b6f1d253e959a335d3",
     "path": "cortex/evaluation/genome_admission/freeze-v1.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:a1138bd672fa37feb0cd2e667a3b216828e648e86adf8d818d99a2c6567f43d0"
    },
    "exposure_commit": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
@@ -19640,7 +20070,7 @@
    "artifact": {
     "commit": "b99daba9df4d539b0a1dcb87d8fb882227f5c36a",
     "path": "cortex/evaluation/genome_admission/freeze-v2.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:ae429fe0f2651576c55ab542abe35ec6c1898824eb27ea7862da321113c6c10b"
    },
    "exposure_commit": "b99daba9df4d539b0a1dcb87d8fb882227f5c36a",
@@ -19681,7 +20111,7 @@
    "artifact": {
     "commit": "b99daba9df4d539b0a1dcb87d8fb882227f5c36a",
     "path": "cortex/evaluation/genome_admission/freeze-v2.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:ae429fe0f2651576c55ab542abe35ec6c1898824eb27ea7862da321113c6c10b"
    },
    "exposure_commit": "b99daba9df4d539b0a1dcb87d8fb882227f5c36a",
@@ -19724,7 +20154,7 @@
    "artifact": {
     "commit": "b99daba9df4d539b0a1dcb87d8fb882227f5c36a",
     "path": "cortex/evaluation/genome_admission/freeze-v2.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:ae429fe0f2651576c55ab542abe35ec6c1898824eb27ea7862da321113c6c10b"
    },
    "exposure_commit": "b99daba9df4d539b0a1dcb87d8fb882227f5c36a",
@@ -19767,7 +20197,7 @@
    "artifact": {
     "commit": "b99daba9df4d539b0a1dcb87d8fb882227f5c36a",
     "path": "cortex/evaluation/genome_admission/freeze-v2.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:ae429fe0f2651576c55ab542abe35ec6c1898824eb27ea7862da321113c6c10b"
    },
    "exposure_commit": "b99daba9df4d539b0a1dcb87d8fb882227f5c36a",
@@ -19865,7 +20295,7 @@
    "artifact": {
     "commit": "85ce2750203097177ce752bf7e50a8bc8c9cda17",
     "path": "cortex/evaluation/pr155_crowd_sparse/freeze-v1.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:30cec11ad8073f7cdbba5a4013f353f0812c748b8577e0c039dfd4d5afc32689"
    },
    "exposure_commit": "85ce2750203097177ce752bf7e50a8bc8c9cda17",
@@ -19912,7 +20342,7 @@
    "artifact": {
     "commit": "49b2d589de515b9e8d478f620dd41ad939267d44",
     "path": "cortex/evaluation/pr155_f7_audit/freeze.json",
-    "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+    "read_at": "HEAD",
     "sha256": "sha256:9fb5db8edafd2bde83fbc7a5034276ca65de321481af32e26878f1276b08fd7f"
    },
    "exposure_commit": "49b2d589de515b9e8d478f620dd41ad939267d44",
@@ -20001,337 +20431,38 @@
   },
   {
    "artifact": {
-    "commit": "da0ad870e5dc8a00833a3b514ea83475b43d0f1e",
+    "commit": "153232ec1ab2a284e9c7f63e3e51578d95d9afd8",
     "line_commits": [
-     "d041a3a05fb03bfe7740df47c66287426963afcd"
+     "49696aad10e80e697c3c14e3d33d4cddee9df614",
+     "950e6ab8d66b5086abb481fb383029566076c985"
     ],
     "lines": [
-     754
+     881,
+     903,
+     991,
+     996,
+     1013
     ],
-    "path": "tests/unit/test_genomes_collective_native.py",
-    "sha256": "sha256:27cd1a6d45af6d0c53be8b92a6919f3be1566dedd4ff9eeb99147fa4c30ada56"
+    "path": "tests/unit/test_greg_cognition_genesis.py",
+    "sha256": "sha256:8a8978f6bb7543c452f74f5b8814f6ec73d9decc3428108ee63683b6db18ed56"
    },
-   "exposure_commit": "d041a3a05fb03bfe7740df47c66287426963afcd",
-   "family": "collective_flock",
-   "generator": {
-    "code_sha256": "sha256:63d0fb41afd7856abdc51505a79f52d14168ff57c208165f06b056446089376c",
-    "commit": "d041a3a05fb03bfe7740df47c66287426963afcd",
-    "delegates": [
-     "flock_dropout_instance",
-     "flock_limited_radius_instance",
-     "flock_ring_swap_instance"
-    ],
-    "function": "flock_instance",
-    "key": "greg.cognition.genomes.collective:flock_instance",
-    "kind": "code",
-    "module": "greg.cognition.genomes.collective",
-    "module_file_sha256": "sha256:30483b3898b95b885a4fc094205cc233cc0dc15c3a9c5cd8cd62c12df0afc1d6",
-    "prng": [],
-    "resolved": true
-   },
-   "id": "#179|tests/unit/test_genomes_collective_native.py|dev|collective_flock|greg.cognition.genomes.collective:flock_instance:754",
-   "lineages": [
-    "#158"
-   ],
-   "looked_at": true,
-   "looked_at_basis": "a test asserts on these instances",
-   "n": 2,
-   "part": "greg.cognition.genomes.collective:flock_instance:754",
-   "present_in": [
-    "#158"
-   ],
-   "program": "test fixture",
-   "role": "dev",
-   "seeds": [
-    [
-     4,
-     4
-    ],
-    [
-     7,
-     7
-    ]
-   ]
-  },
-  {
-   "artifact": {
-    "commit": "da0ad870e5dc8a00833a3b514ea83475b43d0f1e",
-    "line_commits": [
-     "65b9acc2f251c542be86be63711c531e4840bb2e"
-    ],
-    "lines": [
-     737
-    ],
-    "path": "tests/unit/test_genomes_collective_native.py",
-    "sha256": "sha256:27cd1a6d45af6d0c53be8b92a6919f3be1566dedd4ff9eeb99147fa4c30ada56"
-   },
-   "exposure_commit": "65b9acc2f251c542be86be63711c531e4840bb2e",
-   "family": "collective_immune",
-   "generator": {
-    "code_sha256": "sha256:0f7d9937607afbf78835a574dbb0e6d252d27d54d09206b099766b4322853d66",
-    "commit": "65b9acc2f251c542be86be63711c531e4840bb2e",
-    "delegates": [
-     "immune_gaussian_instance",
-     "immune_mixture_instance",
-     "immune_ring_instance",
-     "immune_union_instance"
-    ],
-    "function": "immune_instance",
-    "key": "greg.cognition.genomes.collective:immune_instance",
-    "kind": "code",
-    "module": "greg.cognition.genomes.collective",
-    "module_file_sha256": "sha256:96707c27263f393460483aad5ee39c5efac214c23de0e9498741f0bc3cff3fbb",
-    "prng": [],
-    "resolved": true
-   },
-   "id": "#179|tests/unit/test_genomes_collective_native.py|dev|collective_immune|greg.cognition.genomes.collective:immune_instance:737",
-   "lineages": [
-    "#158"
-   ],
-   "looked_at": true,
-   "looked_at_basis": "a test asserts on these instances",
-   "n": 10,
-   "part": "greg.cognition.genomes.collective:immune_instance:737",
-   "present_in": [
-    "#158"
-   ],
-   "program": "test fixture",
-   "role": "dev",
-   "seeds": [
-    [
-     0,
-     9
-    ]
-   ]
-  },
-  {
-   "artifact": {
-    "commit": "da0ad870e5dc8a00833a3b514ea83475b43d0f1e",
-    "line_commits": [
-     "65b9acc2f251c542be86be63711c531e4840bb2e"
-    ],
-    "lines": [
-     744
-    ],
-    "path": "tests/unit/test_genomes_collective_native.py",
-    "sha256": "sha256:27cd1a6d45af6d0c53be8b92a6919f3be1566dedd4ff9eeb99147fa4c30ada56"
-   },
-   "exposure_commit": "65b9acc2f251c542be86be63711c531e4840bb2e",
-   "family": "collective_immune",
-   "generator": {
-    "code_sha256": "sha256:0f7d9937607afbf78835a574dbb0e6d252d27d54d09206b099766b4322853d66",
-    "commit": "65b9acc2f251c542be86be63711c531e4840bb2e",
-    "delegates": [
-     "immune_gaussian_instance",
-     "immune_mixture_instance",
-     "immune_ring_instance",
-     "immune_union_instance"
-    ],
-    "function": "immune_instance",
-    "key": "greg.cognition.genomes.collective:immune_instance",
-    "kind": "code",
-    "module": "greg.cognition.genomes.collective",
-    "module_file_sha256": "sha256:96707c27263f393460483aad5ee39c5efac214c23de0e9498741f0bc3cff3fbb",
-    "prng": [],
-    "resolved": true
-   },
-   "id": "#179|tests/unit/test_genomes_collective_native.py|dev|collective_immune|greg.cognition.genomes.collective:immune_instance:744",
-   "lineages": [
-    "#158"
-   ],
-   "looked_at": true,
-   "looked_at_basis": "a test asserts on these instances",
-   "n": 10,
-   "part": "greg.cognition.genomes.collective:immune_instance:744",
-   "present_in": [
-    "#158"
-   ],
-   "program": "test fixture",
-   "role": "dev",
-   "seeds": [
-    [
-     0,
-     9
-    ]
-   ]
-  },
-  {
-   "artifact": {
-    "commit": "4e84d6f7452afdb468b5b395a9153e3022e25553",
-    "line_commits": [
-     "b5aa2f006b956a064b5dba788b9479bd1661c027"
-    ],
-    "lines": [
-     128
-    ],
-    "path": "tests/unit/test_genomes_library.py",
-    "sha256": "sha256:58eb06b9c3d9f5eed832bbbcc197918a8e84feb3756f0f02163638cc9f238f05"
-   },
-   "exposure_commit": "b5aa2f006b956a064b5dba788b9479bd1661c027",
+   "exposure_commit": "950e6ab8d66b5086abb481fb383029566076c985",
    "family": null,
    "generator": {
-    "commit": "b5aa2f006b956a064b5dba788b9479bd1661c027",
-    "key": "item.instance",
+    "commit": "950e6ab8d66b5086abb481fb383029566076c985",
+    "key": "dp.instance",
     "kind": "code",
     "resolved": false,
     "why": "receiver not resolved statically"
    },
-   "id": "#179|tests/unit/test_genomes_library.py|dev|-|?:item.instance:128",
-   "lineages": [
-    "#158"
-   ],
-   "looked_at": true,
-   "looked_at_basis": "a test asserts on these instances",
-   "n": 10,
-   "part": "?:item.instance:128",
-   "present_in": [
-    "#158"
-   ],
-   "program": "test fixture",
-   "role": "dev",
-   "seeds": [
-    [
-     0,
-     9
-    ]
-   ]
-  },
-  {
-   "artifact": {
-    "commit": "4e84d6f7452afdb468b5b395a9153e3022e25553",
-    "line_commits": [
-     "4e84d6f7452afdb468b5b395a9153e3022e25553",
-     "6801c3c6e78397c060b13a74f6714263aa9f159c",
-     "b5aa2f006b956a064b5dba788b9479bd1661c027"
-    ],
-    "lines": [
-     85,
-     159,
-     191,
-     219
-    ],
-    "path": "tests/unit/test_genomes_library.py",
-    "sha256": "sha256:58eb06b9c3d9f5eed832bbbcc197918a8e84feb3756f0f02163638cc9f238f05"
-   },
-   "exposure_commit": "b5aa2f006b956a064b5dba788b9479bd1661c027",
-   "family": null,
-   "generator": {
-    "commit": "b5aa2f006b956a064b5dba788b9479bd1661c027",
-    "key": "item.instance",
-    "kind": "code",
-    "resolved": false,
-    "why": "receiver not resolved statically"
-   },
-   "id": "#179|tests/unit/test_genomes_library.py|dev|-|?:item.instance:85",
+   "id": "#179|tests/unit/test_greg_cognition_genesis.py|dev|-|?:dp.instance:881",
    "lineages": [
     "#158"
    ],
    "looked_at": true,
    "looked_at_basis": "a test asserts on these instances",
    "n": 3,
-   "part": "?:item.instance:85",
-   "present_in": [
-    "#158"
-   ],
-   "program": "test fixture",
-   "role": "dev",
-   "seeds": [
-    [
-     0,
-     1
-    ],
-    [
-     3,
-     3
-    ]
-   ]
-  },
-  {
-   "artifact": {
-    "commit": "4e84d6f7452afdb468b5b395a9153e3022e25553",
-    "line_commits": [
-     "b5aa2f006b956a064b5dba788b9479bd1661c027"
-    ],
-    "lines": [
-     205
-    ],
-    "path": "tests/unit/test_genomes_library.py",
-    "sha256": "sha256:58eb06b9c3d9f5eed832bbbcc197918a8e84feb3756f0f02163638cc9f238f05"
-   },
-   "exposure_commit": "b5aa2f006b956a064b5dba788b9479bd1661c027",
-   "family": null,
-   "generator": {
-    "code_sha256": "sha256:6aee6ecc95a9c0ff5d0dc4cced58c7708fe9d508e1b6a66cb659a427dc68a071",
-    "commit": "b5aa2f006b956a064b5dba788b9479bd1661c027",
-    "delegates": [],
-    "function": "instance",
-    "key": "greg.cognition.genomes.decision:instance",
-    "kind": "code",
-    "module": "greg.cognition.genomes.decision",
-    "module_file_sha256": "sha256:1c82de6b9c2c9c4b82ae26a5fdc339a7f9d07d8db4dc8f05e392136a2f31d2bd",
-    "prng": [
-     "Random(<seed>)"
-    ],
-    "resolved": true
-   },
-   "id": "#179|tests/unit/test_genomes_library.py|dev|-|greg.cognition.genomes.decision:instance:205",
-   "lineages": [
-    "#158"
-   ],
-   "looked_at": true,
-   "looked_at_basis": "a test asserts on these instances",
-   "n": 1,
-   "part": "greg.cognition.genomes.decision:instance:205",
-   "present_in": [
-    "#158"
-   ],
-   "program": "test fixture",
-   "role": "dev",
-   "seeds": [
-    [
-     4,
-     4
-    ]
-   ]
-  },
-  {
-   "artifact": {
-    "commit": "4e84d6f7452afdb468b5b395a9153e3022e25553",
-    "line_commits": [
-     "4d99fb024239fbb219667bda98842e1ea40d84fc",
-     "b5aa2f006b956a064b5dba788b9479bd1661c027"
-    ],
-    "lines": [
-     174,
-     235,
-     247,
-     269
-    ],
-    "path": "tests/unit/test_genomes_library.py",
-    "sha256": "sha256:58eb06b9c3d9f5eed832bbbcc197918a8e84feb3756f0f02163638cc9f238f05"
-   },
-   "exposure_commit": "b5aa2f006b956a064b5dba788b9479bd1661c027",
-   "family": null,
-   "generator": {
-    "code_sha256": "sha256:63bccc2008a52b6d05a85f3952370af92f5c2fc88a1a361bd78959581eefeb3b",
-    "commit": "b5aa2f006b956a064b5dba788b9479bd1661c027",
-    "delegates": [],
-    "function": "instance",
-    "key": "greg.cognition.genomes.forecasting:instance",
-    "kind": "code",
-    "module": "greg.cognition.genomes.forecasting",
-    "module_file_sha256": "sha256:7ba2fbaf62c55bc1567f5bd96a3153c45891eff2c21e289cbf4ef7c0f255b5e5",
-    "prng": [],
-    "resolved": true
-   },
-   "id": "#179|tests/unit/test_genomes_library.py|dev|-|greg.cognition.genomes.forecasting:instance:174",
-   "lineages": [
-    "#158"
-   ],
-   "looked_at": true,
-   "looked_at_basis": "a test asserts on these instances",
-   "n": 2,
-   "part": "greg.cognition.genomes.forecasting:instance:174",
+   "part": "?:dp.instance:881",
    "present_in": [
     "#158"
    ],
@@ -20340,45 +20471,55 @@
    "seeds": [
     [
      2,
-     3
+     4
     ]
    ]
   },
   {
    "artifact": {
-    "commit": "4e84d6f7452afdb468b5b395a9153e3022e25553",
+    "commit": "153232ec1ab2a284e9c7f63e3e51578d95d9afd8",
     "line_commits": [
-     "4e84d6f7452afdb468b5b395a9153e3022e25553"
+     "153232ec1ab2a284e9c7f63e3e51578d95d9afd8",
+     "253662728be3ffa569e8e726d93c2687ac2f5177",
+     "6a429ba45b07de3017429a136e71fa0f4e8f4cf0",
+     "a14fe909623aaf967e7d6e3fdd128bf3fb25db62",
+     "a3d3cf60dfd38e3650ea5b82dd18c1f12b17e404",
+     "ab1e3858885f6121a598db66c0da4a036f7d84df"
     ],
     "lines": [
-     33,
-     44
+     337,
+     413,
+     416,
+     462,
+     469,
+     518,
+     554,
+     674,
+     707,
+     734,
+     806,
+     811
     ],
-    "path": "tests/unit/test_genomes_library.py",
-    "sha256": "sha256:58eb06b9c3d9f5eed832bbbcc197918a8e84feb3756f0f02163638cc9f238f05"
+    "path": "tests/unit/test_greg_cognition_genesis.py",
+    "sha256": "sha256:8a8978f6bb7543c452f74f5b8814f6ec73d9decc3428108ee63683b6db18ed56"
    },
-   "exposure_commit": "4e84d6f7452afdb468b5b395a9153e3022e25553",
-   "family": "flow_maxflow",
+   "exposure_commit": "ab1e3858885f6121a598db66c0da4a036f7d84df",
+   "family": null,
    "generator": {
-    "code_sha256": "sha256:15f9eb46d7b2681d258d433411e665e91d9222cbae4a4bbd0c0b85129968b37c",
-    "commit": "4e84d6f7452afdb468b5b395a9153e3022e25553",
-    "delegates": [],
-    "function": "maxflow_instance",
-    "key": "greg.cognition.genomes.flow:maxflow_instance",
+    "commit": "ab1e3858885f6121a598db66c0da4a036f7d84df",
+    "key": "item.instance",
     "kind": "code",
-    "module": "greg.cognition.genomes.flow",
-    "module_file_sha256": "sha256:3ad0af882ce51a107a1828e5c8901a5bcc8f42a2d39dc1f7abcb621d7632fdde",
-    "prng": [],
-    "resolved": true
+    "resolved": false,
+    "why": "receiver not resolved statically"
    },
-   "id": "#179|tests/unit/test_genomes_library.py|dev|flow_maxflow|greg.cognition.genomes.flow:maxflow_instance:33",
+   "id": "#179|tests/unit/test_greg_cognition_genesis.py|dev|-|?:item.instance:337",
    "lineages": [
     "#158"
    ],
    "looked_at": true,
    "looked_at_basis": "a test asserts on these instances",
-   "n": 1,
-   "part": "greg.cognition.genomes.flow:maxflow_instance:33",
+   "n": 3,
+   "part": "?:item.instance:337",
    "present_in": [
     "#158"
    ],
@@ -20386,8 +20527,157 @@
    "role": "dev",
    "seeds": [
     [
-     3,
+     1,
      3
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "153232ec1ab2a284e9c7f63e3e51578d95d9afd8",
+    "line_commits": [
+     "3a4a24eaf445776ae8f460c357010e08c83568f6"
+    ],
+    "lines": [
+     381
+    ],
+    "path": "tests/unit/test_greg_cognition_genesis.py",
+    "sha256": "sha256:8a8978f6bb7543c452f74f5b8814f6ec73d9decc3428108ee63683b6db18ed56"
+   },
+   "exposure_commit": "3a4a24eaf445776ae8f460c357010e08c83568f6",
+   "family": null,
+   "generator": {
+    "code_sha256": "sha256:c49b07c83537ab8765929d3512d8cc4d4532683174cef4c24bc87916e3d0110b",
+    "commit": "3a4a24eaf445776ae8f460c357010e08c83568f6",
+    "delegates": [],
+    "function": "astar_instance",
+    "key": "greg.cognition.genomes.solvers_b:astar_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.solvers_b",
+    "module_file_sha256": "sha256:53b741e22208ef3a4a2d9f256c020517e2efa6b767d3de75db600465e570d714",
+    "prng": [
+     "Random(920000 + seed)"
+    ],
+    "resolved": true
+   },
+   "id": "#179|tests/unit/test_greg_cognition_genesis.py|dev|-|greg.cognition.genomes.solvers_b:astar_instance:381",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 1,
+   "part": "greg.cognition.genomes.solvers_b:astar_instance:381",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     1,
+     1
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "153232ec1ab2a284e9c7f63e3e51578d95d9afd8",
+    "line_commits": [
+     "49696aad10e80e697c3c14e3d33d4cddee9df614",
+     "6a429ba45b07de3017429a136e71fa0f4e8f4cf0",
+     "950e6ab8d66b5086abb481fb383029566076c985",
+     "a14fe909623aaf967e7d6e3fdd128bf3fb25db62"
+    ],
+    "lines": [
+     758,
+     838,
+     933,
+     1025,
+     1135
+    ],
+    "path": "tests/unit/test_greg_cognition_genesis.py",
+    "sha256": "sha256:8a8978f6bb7543c452f74f5b8814f6ec73d9decc3428108ee63683b6db18ed56"
+   },
+   "exposure_commit": "a14fe909623aaf967e7d6e3fdd128bf3fb25db62",
+   "family": "dp_knapsack",
+   "generator": {
+    "code_sha256": "sha256:08847222a0215e9bafbd11cba7b6ad6895f8964c40a4d56791ad99ecbfe8dabd",
+    "commit": "a14fe909623aaf967e7d6e3fdd128bf3fb25db62",
+    "delegates": [],
+    "function": "knapsack_instance",
+    "key": "greg.cognition.genomes.solvers_b:knapsack_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.solvers_b",
+    "module_file_sha256": "sha256:de9f74c9a956502e2bfbe2996ee4e25521fde536c209011ffdcec8e6b6f56efa",
+    "prng": [
+     "Random(910000 + seed)"
+    ],
+    "resolved": true
+   },
+   "id": "#179|tests/unit/test_greg_cognition_genesis.py|dev|dp_knapsack|greg.cognition.genomes.solvers_b:knapsack_instance:758",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 1,
+   "part": "greg.cognition.genomes.solvers_b:knapsack_instance:758",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     2,
+     2
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "153232ec1ab2a284e9c7f63e3e51578d95d9afd8",
+    "line_commits": [
+     "6a429ba45b07de3017429a136e71fa0f4e8f4cf0"
+    ],
+    "lines": [
+     488
+    ],
+    "path": "tests/unit/test_greg_cognition_genesis.py",
+    "sha256": "sha256:8a8978f6bb7543c452f74f5b8814f6ec73d9decc3428108ee63683b6db18ed56"
+   },
+   "exposure_commit": "6a429ba45b07de3017429a136e71fa0f4e8f4cf0",
+   "family": "flow_expansion_mcf",
+   "generator": {
+    "code_sha256": "sha256:215d3e9566ec73b3e9f321fcb1ef3de09469e397c8a344cc109ca9f4882f0ab3",
+    "commit": "6a429ba45b07de3017429a136e71fa0f4e8f4cf0",
+    "delegates": [],
+    "function": "expansion_instance",
+    "key": "greg.cognition.genomes.flow:expansion_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.flow",
+    "module_file_sha256": "sha256:6b95ddbfaa8b475a6ea7e2075ad7b9285ac0b7e3bffb31aca50d96b8f50bd045",
+    "prng": [],
+    "resolved": true
+   },
+   "id": "#179|tests/unit/test_greg_cognition_genesis.py|dev|flow_expansion_mcf|greg.cognition.genomes.flow:expansion_instance:488",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 1,
+   "part": "greg.cognition.genomes.flow:expansion_instance:488",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     1,
+     1
     ]
    ]
   },
@@ -20413,11 +20703,11 @@
      355,
      362,
      382,
-     1187,
-     1203
+     1221,
+     1237
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:32045e6a8f0a22c8e5cefbdba51f5c0153c173c712a862138a6a905389be63ad"
+    "sha256": "sha256:2dc432f18ec4de13453b58f7c3f4f80f1e8c4b2e309adbc12e84c0d6533cfce1"
    },
    "exposure_commit": "ba06e46d3af517675b9be6162ee4806ec304d604",
    "family": null,
@@ -20455,10 +20745,10 @@
      "278f8abdb1553c37f9de2712bee8eef96a7476e1"
     ],
     "lines": [
-     563
+     593
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:32045e6a8f0a22c8e5cefbdba51f5c0153c173c712a862138a6a905389be63ad"
+    "sha256": "sha256:2dc432f18ec4de13453b58f7c3f4f80f1e8c4b2e309adbc12e84c0d6533cfce1"
    },
    "exposure_commit": "278f8abdb1553c37f9de2712bee8eef96a7476e1",
    "family": null,
@@ -20469,14 +20759,14 @@
     "resolved": false,
     "why": "receiver not resolved statically"
    },
-   "id": "#179|tests/unit/test_greg_competency_compiler.py|dev|-|?:mcf.instance:563",
+   "id": "#179|tests/unit/test_greg_competency_compiler.py|dev|-|?:mcf.instance:593",
    "lineages": [
     "#158"
    ],
    "looked_at": true,
    "looked_at_basis": "a test asserts on these instances",
    "n": 1,
-   "part": "?:mcf.instance:563",
+   "part": "?:mcf.instance:593",
    "present_in": [
     "#158"
    ],
@@ -20493,6 +20783,7 @@
    "artifact": {
     "commit": "3283f851c2cae9d1003b4db083dcace6933455d7",
     "line_commits": [
+     "03ee566fcc4a6a0730d2b632c40e12d87e215f96",
      "079e717696e8f7b37eb0a1d421a5c2c61753bde6",
      "115cf24d6b0e1831f678b5f2f90a07dfa516c890",
      "1282a4c5589cfb69cc5e27563df57fea37f94635",
@@ -20521,12 +20812,13 @@
      477,
      512,
      523,
-     550,
-     552,
-     1076
+     542,
+     580,
+     582,
+     1110
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:32045e6a8f0a22c8e5cefbdba51f5c0153c173c712a862138a6a905389be63ad"
+    "sha256": "sha256:2dc432f18ec4de13453b58f7c3f4f80f1e8c4b2e309adbc12e84c0d6533cfce1"
    },
    "exposure_commit": "bb65d6fd7c6b13a80ed30f9c947bbd0e2da8b6f5",
    "family": null,
@@ -20574,7 +20866,7 @@
      300
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:32045e6a8f0a22c8e5cefbdba51f5c0153c173c712a862138a6a905389be63ad"
+    "sha256": "sha256:2dc432f18ec4de13453b58f7c3f4f80f1e8c4b2e309adbc12e84c0d6533cfce1"
    },
    "exposure_commit": "3a4a24eaf445776ae8f460c357010e08c83568f6",
    "family": null,
@@ -20619,10 +20911,10 @@
      "079e717696e8f7b37eb0a1d421a5c2c61753bde6"
     ],
     "lines": [
-     1045
+     1079
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:32045e6a8f0a22c8e5cefbdba51f5c0153c173c712a862138a6a905389be63ad"
+    "sha256": "sha256:2dc432f18ec4de13453b58f7c3f4f80f1e8c4b2e309adbc12e84c0d6533cfce1"
    },
    "exposure_commit": "079e717696e8f7b37eb0a1d421a5c2c61753bde6",
    "family": "assignment_lsa",
@@ -20640,14 +20932,14 @@
     ],
     "resolved": true
    },
-   "id": "#179|tests/unit/test_greg_competency_compiler.py|dev|assignment_lsa|greg.cognition.genomes.graph_or:assignment_instance:1045",
+   "id": "#179|tests/unit/test_greg_competency_compiler.py|dev|assignment_lsa|greg.cognition.genomes.graph_or:assignment_instance:1079",
    "lineages": [
     "#158"
    ],
    "looked_at": true,
    "looked_at_basis": "a test asserts on these instances",
    "n": 1,
-   "part": "greg.cognition.genomes.graph_or:assignment_instance:1045",
+   "part": "greg.cognition.genomes.graph_or:assignment_instance:1079",
    "present_in": [
     "#158"
    ],
@@ -20668,11 +20960,11 @@
      "278f8abdb1553c37f9de2712bee8eef96a7476e1"
     ],
     "lines": [
-     578,
-     809
+     608,
+     839
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:32045e6a8f0a22c8e5cefbdba51f5c0153c173c712a862138a6a905389be63ad"
+    "sha256": "sha256:2dc432f18ec4de13453b58f7c3f4f80f1e8c4b2e309adbc12e84c0d6533cfce1"
    },
    "exposure_commit": "278f8abdb1553c37f9de2712bee8eef96a7476e1",
    "family": "basal_hysteresis",
@@ -20690,14 +20982,14 @@
     ],
     "resolved": true
    },
-   "id": "#179|tests/unit/test_greg_competency_compiler.py|dev|basal_hysteresis|greg.cognition.genomes.basal:hysteresis_instance:578",
+   "id": "#179|tests/unit/test_greg_competency_compiler.py|dev|basal_hysteresis|greg.cognition.genomes.basal:hysteresis_instance:608",
    "lineages": [
     "#158"
    ],
    "looked_at": true,
    "looked_at_basis": "a test asserts on these instances",
    "n": 1,
-   "part": "greg.cognition.genomes.basal:hysteresis_instance:578",
+   "part": "greg.cognition.genomes.basal:hysteresis_instance:608",
    "present_in": [
     "#158"
    ],
@@ -20717,10 +21009,10 @@
      "00450872b594dcb9c6b20a694f9d9f728f30bd71"
     ],
     "lines": [
-     800
+     830
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:32045e6a8f0a22c8e5cefbdba51f5c0153c173c712a862138a6a905389be63ad"
+    "sha256": "sha256:2dc432f18ec4de13453b58f7c3f4f80f1e8c4b2e309adbc12e84c0d6533cfce1"
    },
    "exposure_commit": "00450872b594dcb9c6b20a694f9d9f728f30bd71",
    "family": "basal_pid",
@@ -20738,14 +21030,14 @@
     ],
     "resolved": true
    },
-   "id": "#179|tests/unit/test_greg_competency_compiler.py|dev|basal_pid|greg.cognition.genomes.basal:pid_instance:800",
+   "id": "#179|tests/unit/test_greg_competency_compiler.py|dev|basal_pid|greg.cognition.genomes.basal:pid_instance:830",
    "lineages": [
     "#158"
    ],
    "looked_at": true,
    "looked_at_basis": "a test asserts on these instances",
    "n": 1,
-   "part": "greg.cognition.genomes.basal:pid_instance:800",
+   "part": "greg.cognition.genomes.basal:pid_instance:830",
    "present_in": [
     "#158"
    ],
@@ -20765,10 +21057,10 @@
      "00450872b594dcb9c6b20a694f9d9f728f30bd71"
     ],
     "lines": [
-     897
+     930
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:32045e6a8f0a22c8e5cefbdba51f5c0153c173c712a862138a6a905389be63ad"
+    "sha256": "sha256:2dc432f18ec4de13453b58f7c3f4f80f1e8c4b2e309adbc12e84c0d6533cfce1"
    },
    "exposure_commit": "00450872b594dcb9c6b20a694f9d9f728f30bd71",
    "family": "causal_backdoor",
@@ -20787,14 +21079,14 @@
     ],
     "resolved": true
    },
-   "id": "#179|tests/unit/test_greg_competency_compiler.py|dev|causal_backdoor|greg.cognition.genomes.solvers_c:causal_instance:897",
+   "id": "#179|tests/unit/test_greg_competency_compiler.py|dev|causal_backdoor|greg.cognition.genomes.solvers_c:causal_instance:930",
    "lineages": [
     "#158"
    ],
    "looked_at": true,
    "looked_at_basis": "a test asserts on these instances",
    "n": 1,
-   "part": "greg.cognition.genomes.solvers_c:causal_instance:897",
+   "part": "greg.cognition.genomes.solvers_c:causal_instance:930",
    "present_in": [
     "#158"
    ],
@@ -20814,10 +21106,10 @@
      "00450872b594dcb9c6b20a694f9d9f728f30bd71"
     ],
     "lines": [
-     967
+     1000
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:32045e6a8f0a22c8e5cefbdba51f5c0153c173c712a862138a6a905389be63ad"
+    "sha256": "sha256:2dc432f18ec4de13453b58f7c3f4f80f1e8c4b2e309adbc12e84c0d6533cfce1"
    },
    "exposure_commit": "00450872b594dcb9c6b20a694f9d9f728f30bd71",
    "family": "develop_repair",
@@ -20835,14 +21127,14 @@
     ],
     "resolved": true
    },
-   "id": "#179|tests/unit/test_greg_competency_compiler.py|dev|develop_repair|greg.cognition.genomes.developmental:repair_instance:967",
+   "id": "#179|tests/unit/test_greg_competency_compiler.py|dev|develop_repair|greg.cognition.genomes.developmental:repair_instance:1000",
    "lineages": [
     "#158"
    ],
    "looked_at": true,
    "looked_at_basis": "a test asserts on these instances",
    "n": 1,
-   "part": "greg.cognition.genomes.developmental:repair_instance:967",
+   "part": "greg.cognition.genomes.developmental:repair_instance:1000",
    "present_in": [
     "#158"
    ],
@@ -20866,18 +21158,18 @@
      "81fdd2ee7024d9ff0a3875eb99887fbe2ae36cdf"
     ],
     "lines": [
-     632,
-     660,
-     712,
-     748,
-     921,
-     1026,
-     1062,
-     1106,
-     1147
+     662,
+     690,
+     742,
+     778,
+     954,
+     1060,
+     1096,
+     1140,
+     1181
     ],
     "path": "tests/unit/test_greg_competency_compiler.py",
-    "sha256": "sha256:32045e6a8f0a22c8e5cefbdba51f5c0153c173c712a862138a6a905389be63ad"
+    "sha256": "sha256:2dc432f18ec4de13453b58f7c3f4f80f1e8c4b2e309adbc12e84c0d6533cfce1"
    },
    "exposure_commit": "81fdd2ee7024d9ff0a3875eb99887fbe2ae36cdf",
    "family": "flow_expansion_mcf",
@@ -20893,14 +21185,14 @@
     "prng": [],
     "resolved": true
    },
-   "id": "#179|tests/unit/test_greg_competency_compiler.py|dev|flow_expansion_mcf|greg.cognition.genomes.flow:expansion_instance:632",
+   "id": "#179|tests/unit/test_greg_competency_compiler.py|dev|flow_expansion_mcf|greg.cognition.genomes.flow:expansion_instance:662",
    "lineages": [
     "#158"
    ],
    "looked_at": true,
    "looked_at_basis": "a test asserts on these instances",
    "n": 1,
-   "part": "greg.cognition.genomes.flow:expansion_instance:632",
+   "part": "greg.cognition.genomes.flow:expansion_instance:662",
    "present_in": [
     "#158"
    ],
@@ -20910,153 +21202,6 @@
     [
      3,
      3
-    ]
-   ]
-  },
-  {
-   "artifact": {
-    "commit": "fe222f44f8ba362f18d885ab91d037d3dc5041bf",
-    "line_commits": [
-     "9df3e69d0732950bc0ad50186f01984aedb9ac6f"
-    ],
-    "lines": [
-     372
-    ],
-    "path": "tests/unit/test_greg_protected_evolution.py",
-    "sha256": "sha256:aeb58bc3a98e78b4472ffa3c9d0ee685c7e9b97306b7c82aff3368bb26a109b4"
-   },
-   "exposure_commit": "9df3e69d0732950bc0ad50186f01984aedb9ac6f",
-   "family": null,
-   "generator": {
-    "commit": "9df3e69d0732950bc0ad50186f01984aedb9ac6f",
-    "key": "executable.instance",
-    "kind": "code",
-    "resolved": false,
-    "why": "receiver not resolved statically"
-   },
-   "id": "#179|tests/unit/test_greg_protected_evolution.py|dev|-|?:executable.instance:372",
-   "lineages": [
-    "#158"
-   ],
-   "looked_at": true,
-   "looked_at_basis": "a test asserts on these instances",
-   "n": 1,
-   "part": "?:executable.instance:372",
-   "present_in": [
-    "#158"
-   ],
-   "program": "test fixture",
-   "role": "dev",
-   "seeds": [
-    [
-     3,
-     3
-    ]
-   ]
-  },
-  {
-   "artifact": {
-    "commit": "fe222f44f8ba362f18d885ab91d037d3dc5041bf",
-    "line_commits": [
-     "da0ad870e5dc8a00833a3b514ea83475b43d0f1e"
-    ],
-    "lines": [
-     106,
-     120,
-     161
-    ],
-    "path": "tests/unit/test_greg_protected_evolution.py",
-    "sha256": "sha256:aeb58bc3a98e78b4472ffa3c9d0ee685c7e9b97306b7c82aff3368bb26a109b4"
-   },
-   "exposure_commit": "da0ad870e5dc8a00833a3b514ea83475b43d0f1e",
-   "family": null,
-   "generator": {
-    "code_sha256": "sha256:d8f076b1df59f3a954f12e0afa8b205978c4f1c4fb8be3846677c95cceedb621",
-    "commit": "da0ad870e5dc8a00833a3b514ea83475b43d0f1e",
-    "delegates": [],
-    "function": "immune_gaussian_instance",
-    "key": "greg.cognition.genomes.collective:immune_gaussian_instance",
-    "kind": "code",
-    "module": "greg.cognition.genomes.collective",
-    "module_file_sha256": "sha256:a970ef2235cac741f7f0f650b327495725118b46e80f8f0dbcc3085ff7e1ec6c",
-    "prng": [
-     "Random(7400000 + seed)",
-     "default_rng(7400000 + seed)"
-    ],
-    "resolved": true
-   },
-   "id": "#179|tests/unit/test_greg_protected_evolution.py|dev|-|greg.cognition.genomes.collective:immune_gaussian_instance:106",
-   "lineages": [
-    "#158"
-   ],
-   "looked_at": true,
-   "looked_at_basis": "a test asserts on these instances",
-   "n": 3,
-   "part": "greg.cognition.genomes.collective:immune_gaussian_instance:106",
-   "present_in": [
-    "#158"
-   ],
-   "program": "test fixture",
-   "role": "dev",
-   "seeds": [
-    [
-     0,
-     0
-    ],
-    [
-     2,
-     3
-    ]
-   ]
-  },
-  {
-   "artifact": {
-    "commit": "fe222f44f8ba362f18d885ab91d037d3dc5041bf",
-    "line_commits": [
-     "5287303fb218a9444c79231432e3fd11ff2be51e",
-     "9df3e69d0732950bc0ad50186f01984aedb9ac6f"
-    ],
-    "lines": [
-     203,
-     213,
-     600
-    ],
-    "path": "tests/unit/test_greg_protected_evolution.py",
-    "sha256": "sha256:aeb58bc3a98e78b4472ffa3c9d0ee685c7e9b97306b7c82aff3368bb26a109b4"
-   },
-   "exposure_commit": "9df3e69d0732950bc0ad50186f01984aedb9ac6f",
-   "family": null,
-   "generator": {
-    "code_sha256": "sha256:3508d65c68d0c9fac3e50dd57eb4b2f351fb0d299804dc806e17792251415037",
-    "commit": "9df3e69d0732950bc0ad50186f01984aedb9ac6f",
-    "delegates": [],
-    "function": "constraint_release_instance",
-    "key": "greg.cognition.genomes.developmental:constraint_release_instance",
-    "kind": "code",
-    "module": "greg.cognition.genomes.developmental",
-    "module_file_sha256": "sha256:0010b57a97771e8a21787d5db2a2843c4a570cb15b5986bd1797a64d46a2b09c",
-    "prng": [
-     "Random(f'genome:develop_constraint_release:{seed}')"
-    ],
-    "resolved": true
-   },
-   "id": "#179|tests/unit/test_greg_protected_evolution.py|dev|-|greg.cognition.genomes.developmental:constraint_release_instance:203",
-   "lineages": [
-    "#158"
-   ],
-   "looked_at": true,
-   "looked_at_basis": "a test asserts on these instances",
-   "n": 2,
-   "part": "greg.cognition.genomes.developmental:constraint_release_instance:203",
-   "present_in": [
-    "#158"
-   ],
-   "program": "test fixture",
-   "role": "dev",
-   "seeds": [
-    [
-     3,
-     4
     ]
    ]
   }
@@ -21931,21 +22076,21 @@
    "commit": "888003ceaaac077f714e5a3068e12bf60135847d",
    "lineage": "#158",
    "path": "cortex/evaluation/composition_lift/prereg-v4.json",
-   "read_at": "HEAD",
+   "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
    "why": "no seed, partition or suite declaration found in its inputs"
   },
   {
    "commit": "53082f495e219ea4792e9dc8d8840aaf66044e9d",
    "lineage": "#158",
    "path": "cortex/evaluation/composition_lift/prereg-v5.json",
-   "read_at": "HEAD",
+   "read_at": "98a2ab0c34aa06be00edfdd6b98c1733c2e8922e",
    "why": "no seed, partition or suite declaration found in its inputs"
   },
   {
    "commit": "d3a5abd63d11ba5c49b8782a219d4b4f20acdef0",
    "lineage": "#179",
    "path": "cortex/evaluation/pr155_f8_fallback_diagnostic/prereg-draft.json",
-   "read_at": "a3106f6a4c3e11762f7b2dc044ecad0a2a0a1dfb",
+   "read_at": "HEAD",
    "why": "no seed, partition or suite declaration found in its inputs"
   }
  ]

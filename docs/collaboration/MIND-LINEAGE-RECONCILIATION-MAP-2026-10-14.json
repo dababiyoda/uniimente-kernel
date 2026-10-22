@@ -604,8 +604,8 @@
    "path": "docs/evidence/greg-data-exposure-ledger.json",
    "lineage": "pr158",
    "classification": "historical evidence",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet); regenerated on the converged tree by its tool; #158 adopted #179's change at 93667efc, identical again"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); regenerated on the converged tree by its own tool, which reads #158's tree at the map's pin and #179's at HEAD"
   },
   {
    "path": "docs/evidence/greg-developmental-sweep/2026-10-14/README.md",

@@ -419,6 +419,7 @@
     "greg/acceptance.py",
     "greg/anchor.py",
     "greg/appraisal.py",
+    "greg/artifact_verifiers.py",
     "greg/artifacts.py",
     "greg/asks.py",
     "greg/authority.py",

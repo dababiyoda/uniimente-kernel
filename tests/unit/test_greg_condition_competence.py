@@ -100,3 +100,15 @@ def test_a_pair_uses_the_signed_predicate_and_an_unverified_shadow_never_passes(
     assert ok["alternative_pass"] and not ok["incumbent_pass"]
     assert not cc.pair(check, False, {"verified": True, "fitness": 0.5}, "c", "c2")["alternative_pass"]
     assert not cc.pair(check, False, {"verified": False, "fitness": 0.1}, "c", "c3")["alternative_pass"]
+
+
+def test_the_discordant_floor_binds_even_when_alpha_would_allow_it(monkeypatch):
+    monkeypatch.setattr(cc, "ALPHA", 0.1)                          # 4-0 gives p = 0.0625 < 0.1
+    four = cc.cell_evidence([_pair(f"c{i}", False, True) for i in range(4)])
+    assert not cc.preference("optimization|d11-30", four)["fired"]
+
+
+def test_the_pooled_ablation_reads_every_cell_as_one(monkeypatch):
+    monkeypatch.setattr(cc, "MODE", "pooled")
+    ev = cc.cell_evidence([_pair(f"c{i}", False, True) for i in range(5)])
+    assert set(ev) == {"optimization|all"} and ev["optimization|all"]["alternative_only"] == 5

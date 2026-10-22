@@ -26,6 +26,7 @@ from pathlib import Path
 import time
 
 from .contracts import CognitionError, canonical, digest, strict_data
+from . import condition_competence
 
 SCHEMA = "greg-competency-compilation/0.2"   # 0.2: selected_receipt (the executed method's own receipt)
 # The confidence label of an answer from a construction whose problem-level certificate GREG checked.
@@ -2086,6 +2087,7 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
         r["usable"], r["usable_why"] = _usable(registry, r)
     best = eligible[0]
     runnable = [r for r in eligible if r["usable"]]
+    runnable = condition_competence.compile_hook(g.geometry, data, runnable, registry, journal, receipt, pid)
     if not best["usable"]:
         # the best fit by evidence is registered but withheld: say so, route to the best usable fit, and
         # prepare (never record or act on) one founder ask to attach it, with its admission evidence
@@ -2129,6 +2131,7 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
     receipt["method_or_composition_selected"] = chosen["method"]
     receipt["selection_level"] = (_demoted_level(chosen, best) if chosen.get("demoted")
                                   else "preferred_by_settled_outcomes" if chosen.get("settled_preferred")
+                                  else "preferred_by_condition_evidence" if chosen.get("condition_preferred")
                                   else "preferred_by_operator" if chosen["operation"] in plan["prefer"]
                                   or chosen["method"] in plan["prefer"] else "admission_status")
     if chosen.get("settled_preferred"):
@@ -2269,6 +2272,7 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
     if chosen.get("part"):
         receipt["payload_part"] = chosen["part"]          # the method reads this part of the request: the question
         data = _part_data(data, chosen["part"])
+    data = chosen.get("adapted_data") or data        # a condition preference runs through its declared adapter
     cpu_started = _cpu_seconds()
     inner = reason({"problem_id": pid, "operation": chosen["operation"], "data": data, "geometry": geometry_hint,
                     **extra}, registry=registry, journal=journal, model_config=model_config, **budget.inner)
@@ -2301,7 +2305,7 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
     if "sensitivity" in plan["evaluate"]:
         receipt["sensitivity"] = _sensitivity_runs(pid, chosen["operation"], data, inner["output"], geometry_hint,
                                                    registry, journal, model_config, receipt, extra, budget)
-    return finish(done, inner["output"])
+    return finish(done, condition_competence.answer(chosen, inner))
 
 
 def _demoted_level(chosen: dict, best: dict) -> str:

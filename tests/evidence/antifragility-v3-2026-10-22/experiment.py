@@ -32,6 +32,9 @@ HOLDOUT_SEEDS = range(2000, 2010)
 INCUMBENTS = ("cognition.swarm", "cognition.blackbox")
 ALTERNATIVE = "cognition.blackbox_multistart_lbfgsb"
 ATTACHED = INCUMBENTS + (ALTERNATIVE,)    # founder-attached (per-run test key) in every arm
+# the mechanism, its two call sites and this harness: pinned by the freeze, checked before any run
+CODE = ("greg/cognition/condition_competence.py", "greg/cognition/compiler.py", "greg/cognition/settlement.py",
+        "greg/cognition/genomes/solvers_d.py", "tests/evidence/antifragility-v3-2026-10-22/experiment.py")
 
 
 def workload() -> dict:
@@ -74,11 +77,12 @@ def stress(home: Path, key, body_id: str, items: list) -> dict:
                         "evidence": ev.get(cell), "fired": bool(pref and pref["fired"])})
         achieved = {e.payload["mission_id"] for e in body.journal.replay("mission.achieved")}
         pairs = cc.pairs_from(body.journal)
+        cost = cc.shadow_cost(body.journal)
     first = next((i + 1 for i, row in enumerate(log) if row["fired"]), None)
     return {"missions": len(items),
             "damage_failed_missions": sum(1 for item in items if f"m:{item['id']}" not in achieved),
-            "shadow_trials": len(pairs), "shadow_evaluations": sum(p["shadow_evaluations"] for p in pairs),
-            "shadow_seconds": round(sum(p["shadow_seconds"] for p in pairs), 3),
+            "paired_claims": len(pairs), "shadow_trials": cost["trials"], "shadow_evaluations": cost["evaluations"],
+            "shadow_seconds": cost["seconds"],
             "preference_fired": first is not None, "recovery_cost_missions_until_preference": first, "log": log}
 
 
@@ -188,8 +192,9 @@ def verdict(arms: dict, rows: dict, fired: bool) -> dict:
 def main(argv) -> int:
     frozen = json.loads((HERE / "workload.json").read_text())
     if (digest(workload()) != frozen["digest"] or digest(frozen["workload"]) != frozen["digest"]
-            or file_digest(V189) != frozen["v189_experiment_sha256"]):
-        print("the workload or #189's generator differs from the frozen one")
+            or file_digest(V189) != frozen["v189_experiment_sha256"]
+            or {p: file_digest(p) for p in CODE} != frozen["code_sha256"]):
+        print("the workload, #189's generator or the frozen code differs from the freeze")
         return 1
     if "--check" in argv:
         print("workload matches", frozen["digest"])
@@ -226,7 +231,8 @@ if __name__ == "__main__":
     if "--freeze" in sys.argv:
         w = workload()
         (HERE / "workload.json").write_text(json.dumps({"digest": digest(w), "workload": w,
-                                                        "v189_experiment_sha256": file_digest(V189)},
+                                                        "v189_experiment_sha256": file_digest(V189),
+                                                        "code_sha256": {p: file_digest(p) for p in CODE}},
                                                        sort_keys=True) + "\n")
         print("frozen", digest(w))
     else:

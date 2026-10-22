@@ -1,9 +1,12 @@
-# Antifragility v3: condition-specific competence. Pre-registration (DRAFT, not frozen)
+# Antifragility v3: condition-specific competence. Pre-registration
 
-**Status: DRAFT.** This file becomes the pre-registration when it is committed together with `workload.json` (with
-its digest) and with the code digests of the mechanism and harness. That commit comes before any stress mission or
-holdout instance of this experiment is generated. Until then nothing here is binding, and no seed listed under *New
-data* has been generated.
+**Status: pre-registered.** This file is committed together with `workload.json`, which holds the workload digest,
+the sha256 of #189's harness and the sha256 of the mechanism, its two call sites and this harness. That commit
+comes before any stress mission or holdout instance of this experiment is run. `experiment.py` refuses to run if
+any of them differs.
+
+**Base:** the integration owner's joined head `5492b07b` on `claude/greg-full-machine-completion-whgiee`, which
+contains #189 `93badaff` and #179 `866d4770`, merged into `claude/antifragility-v3-condition-competence`.
 
 - **Intent:** `INTENT-20261001-greg-seed-genome` §14, which requires "bounded stress, coupled to a verified learning
   mechanism, produces a subsequent measurable improvement relative to an appropriate control, after counting stress
@@ -28,8 +31,15 @@ data* has been generated.
 
 ## 2. The learning mechanism under test
 
-The mechanism is new functions in `greg/cognition/condition_competence.py`, reached through one call-site hook in the
-compiler and one in settlement. It does three things, and it changes nothing else.
+The mechanism is new functions in `greg/cognition/condition_competence.py`. It is reached through these edits to
+existing code, and nothing else:
+- `compiler.py`: one hook after the runnable fits are known (`compile_hook`);
+- `compiler.py`: one line that runs an adapted request when the alternative is chosen;
+- `compiler.py`: one line that renames its answer (`answer`);
+- `compiler.py`: one `selection_level` label, `preferred_by_condition_evidence`;
+- `settlement.py`: one field merge (`settlement_fields`).
+
+It does three things.
 
 **(c) The condition key, declared now.** A request's cell is `(geometry, dimension band)`. The dimension is
 `len(shift)`, a property the request already carries. The bands are `≤ 10` and `11-30`. The key is declared before
@@ -37,8 +47,10 @@ any run. #189's author warned that keying on scale is chosen with hindsight, so 
 (§4) tests that choice.
 
 **(b) A bounded, inert shadow trial.**
-- **Trigger:** a mission's compile, in a cell where the incumbent method has at least one settled `VERIFIED_UNMET`
-  outcome on this body.
+- **Trigger:** a mission's compile served by the incumbent, in a cell where the incumbent has at least one settled
+  `VERIFIED_UNMET` outcome on this body **from another problem**. A request is never shadowed because of its own
+  failure, so the failure that triggers shadowing never enters the paired evidence as a known discordant pair. This
+  was found and fixed in a plumbing smoke on the disclosed pilot seeds 0-5.
 - **What runs:** the next fit in that cell that is **founder-attached** and admitted. The only such fit here is
   `blackbox_multistart_lbfgsb` 1.0.0. It runs in shadow through a declared input adapter:
   - function → objective;
@@ -52,7 +64,9 @@ any run. #189's author warned that keying on scale is chosen with hindsight, so 
 - **Bounds:**
   - at most 36 shadow trials per cell, and none once the cell's preference has fired (a decided cell spends no more);
   - each one gets at most the request's own evaluation budget;
-  - every shadow evaluation and second is counted as repair cost.
+  - every shadow evaluation and second is counted as repair cost, read from every retained compile receipt;
+  - a re-observation of the same claim reuses its seeded, deterministic shadow record instead of re-running it, and a
+    reused record costs nothing again. In the smoke, this took 17 trials for 5 claims down to 5.
 - **Pairing:** at settlement, the shadow result is judged by the same signed check predicate as the incumbent's
   result, and recorded as one paired observation per claim identity.
 
@@ -86,7 +100,7 @@ any run. #189's author warned that keying on scale is chosen with hindsight, so 
 | CONTROL | the same stressed journal | off (no cell preference, no shadow pairing read) |
 | A, pooled | the same stressed journal | on, with a single cell for all dimensions |
 | S, shuffled condition | the same stressed journal | on. When the evidence is read, each stress mission's settled pair is assigned to a band by a seeded fair coin (seed `antifragility-v3-shuffle`), independent of its dimension. Holdout requests are still keyed by their true dimension. All 36 stress missions are HIGH, so permuting their identical keys would be vacuous; the coin is the real test of whether the key carries the signal. |
-| B1, compute-matched | none | off. The incumbent's evaluation budget on every HIGH holdout instance is raised to ⌊(LEARN's measured holdout evaluations, shadows included, + the stress shadow evaluations − 50 × the LOW budget) / 50⌋, so B1's declared total equals LEARN's measured total |
+| B1, compute-matched | none | off. The incumbent's evaluation budget on every HIGH holdout instance is raised to ⌊(LEARN's measured holdout evaluations, shadows included, + the stress shadow evaluations from the ledger − 50 × the LOW budget) / 50⌋, so B1's declared total equals LEARN's measured total |
 | B2, best-of-both | none | off. Both fits on every instance, and the better verified answer kept. A 2× compute reference, not a kill rule |
 
 Holdout instances are compiled directly, so holdout outcomes never feed learning (as in #189). The arms run in this
@@ -131,7 +145,24 @@ Evaluated in this order.
 
 The stress damage, shadow cost, recovery cost and latency are reported beside every verdict. NO_GAIN is kept if that is the result. No rule, seed, τ or ceiling changes after a run.
 
-## 6. Declared before the run
+## 6. Verification of the mechanism before the freeze
+
+- 24 unit and hook tests. The hook tests drive the real compile path:
+  - routing switches only in the fired cell;
+  - routing never switches to an unattached or unadmitted alternative;
+  - CONTROL reads no evidence;
+  - a shadow is inert and its answer is never returned;
+  - the shadow ceiling holds;
+  - settlement pairs a shadow under the signed check;
+  - a request's own failure never makes its shadow due.
+- 12 mutants of the mechanism, all caught.
+- The existing compiler and failure-closure tests pass on the joined head with the hooks in place (108).
+- **Plumbing smoke** on the disclosed pilot seeds 0-5, HIGH:
+  - 6 missions, 5 failed;
+  - 5 paired claims and 5 shadow trials;
+  - the preference did not fire at 6 missions, as the power analysis expects.
+
+## 7. Declared before the run
 
 - **Power** (simulated from the pilot rates, `power_from_pilot.txt`): about 0.89-0.93 that the cell preference
   fires within 36 HIGH missions. The simulation assumes independent pairs within a function.

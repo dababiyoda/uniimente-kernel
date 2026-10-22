@@ -190,8 +190,119 @@ def evidence_from(journal) -> dict:
     return cell_evidence(pairs_from(journal), shuffle=MODE == "shuffled")
 
 
-def incumbent_unmet(journal, cell: str) -> int:
-    """Settled VERIFIED_UNMET outcomes of the incumbent in this cell (true dimension, whatever the arm)."""
+def incumbent_unmet(journal, cell: str, exclude_problem: str | None = None) -> int:
+    """Settled VERIFIED_UNMET outcomes of the incumbent in this cell (true dimension, whatever the arm), from
+    problems other than ``exclude_problem``: a request is never shadowed because of its own failure, so the failure
+    that triggers shadowing never enters the paired evidence (its re-observation would be a known discordant pair)."""
     from . import settlement
     return sum(1 for o in settlement.measured_outcomes(journal)
-               if o.get("condition_cell") == cell and o["method"] == INCUMBENT and not o["correct"])
+               if o.get("condition_cell") == cell and o["method"] == INCUMBENT and not o["correct"]
+               and o.get("problem_id") != exclude_problem)
+
+
+ADMITTED_STATUSES = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY")
+
+
+def _admitted() -> bool:
+    """The alternative's frozen admission verdict, read (never written) from the evidence index at its version."""
+    import json
+    from .compiler import EVIDENCE_INDEX
+    try:
+        row = json.loads(EVIDENCE_INDEX.read_text())["genomes"][ALTERNATIVE_FAMILY]
+    except (OSError, ValueError, KeyError):
+        return False
+    return row.get("status") in ADMITTED_STATUSES and row.get("version") == ALTERNATIVE_VERSION
+
+
+def _attached(registry) -> bool:
+    try:
+        return ALTERNATIVE in registry.manifests and bool(registry.usable(ALTERNATIVE)[0])
+    except Exception:
+        return False
+
+
+def compile_hook(geometry, data: dict, runnable: list, registry, journal, receipt: dict, pid=None) -> list:
+    """The compiler's one call site, after the runnable fits are known. It records the request's cell; when the
+    incumbent serves a cell with settled failures, it runs one inert shadow of the alternative (recorded, never
+    returned); when the cell preference has fired and the alternative is founder-attached and admitted, it puts the
+    alternative first, through the adapter, with the preference record as its basis. It never attaches, admits or
+    reads another cell. Returns the (possibly reordered) runnable list."""
+    cell = condition_key(geometry, data)
+    if cell is None or not runnable:
+        return runnable
+    receipt["condition"] = {"policy": POLICY, "cell": cell, "mode": MODE}
+    if MODE == "off" or runnable[0]["method"] != INCUMBENT:
+        return runnable
+    evidence = evidence_from(journal)
+    pref = preference(cell, evidence)
+    fired = bool(pref and pref["fired"])
+    if pref:
+        receipt["condition"]["preference"] = pref
+    if fired and _attached(registry) and _admitted():
+        try:
+            adapted = adapter(data)
+        except ValueError as exc:
+            receipt["condition"]["not_switched"] = str(exc)
+            return runnable
+        from .genomes import library
+        row = {"method": ALTERNATIVE, "kind": "operation", "operation": library.genome(ALTERNATIVE_FAMILY).operation,
+               "usable": True, "usable_why": "founder-attached", "adapted_data": adapted,
+               "condition_preferred": pref}
+        receipt["dissent"].append(pref["basis"])
+        return [row] + runnable
+    if not fired and journal is not None:
+        shadows = sum(1 for p in pairs_from(journal) if p["cell"] == cell)
+        if shadow_due(cell, incumbent_unmet(journal, cell, exclude_problem=pid), shadows) and _attached(registry):
+            from .contracts import digest
+            request = digest(data)
+            prior = _prior_shadow(journal, request)
+            receipt["condition_shadow"] = ({**prior, "reused": True} if prior else
+                                           {**shadow_trial(data), "cell": cell, "request_digest": request})
+    return runnable
+
+
+def answer(chosen: dict, inner: dict):
+    """The compile result: the executed method's output, renamed exactly when it ran through the adapter."""
+    if chosen.get("adapted_data") is None:
+        return inner["output"]
+    return output_adapter(inner["output"], (inner.get("proof_artifact") or {}).get("certificate")
+                          or inner.get("certificate") or {"evaluations_used": 0})
+
+
+def settlement_fields(compiled, check: dict, passed: bool) -> dict:
+    """The settlement call site: the compile receipt's cell and, when it carried a shadow, the paired observation
+    under the same signed check (the claim identity is attached by ``pairs_from``)."""
+    condition = (compiled or {}).get("condition") or {}
+    if not condition.get("cell"):
+        return {}
+    out = {"condition_cell": condition["cell"]}
+    shadow = compiled.get("condition_shadow")
+    if shadow:
+        out["condition_pair"] = pair(check, passed, shadow, condition["cell"], None)
+    return out
+
+
+def _prior_shadow(journal, request: str) -> dict | None:
+    """A shadow already run on this exact request (a re-observation of the same claim). The trial is seeded and
+    deterministic, so its record is reused rather than re-run; a reused record costs nothing again."""
+    for record in journal.ledger.by_type("receipt"):
+        output = (record.payload.get("result") or {}).get("output")
+        shadow = output.get("condition_shadow") if isinstance(output, dict) else None
+        if shadow and shadow.get("request_digest") == request and not shadow.get("reused"):
+            return {k: v for k, v in shadow.items() if k != "reused"}
+    return None
+
+
+def shadow_cost(journal) -> dict:
+    """Every shadow trial this body ran, re-observations included, read from its retained compile receipts: the
+    repair cost the experiment counts (pairs_from keeps one pair per claim, which would under-count)."""
+    trials = evaluations = 0
+    seconds = 0.0
+    for record in journal.ledger.by_type("receipt"):
+        output = (record.payload.get("result") or {}).get("output")
+        shadow = output.get("condition_shadow") if isinstance(output, dict) else None
+        if shadow and not shadow.get("reused"):
+            trials += 1
+            evaluations += int(shadow.get("evaluations") or 0)
+            seconds += float(shadow.get("seconds") or 0.0)
+    return {"trials": trials, "evaluations": evaluations, "seconds": round(seconds, 3)}

@@ -36,6 +36,7 @@ from greg.authority import ActionOutcome, AuthorityOffice
 from greg.capabilities import CapabilityError, InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
 from greg import asks, improvement, routing
+from greg.founder import instant
 from greg.journal import Journal, fact_id, iso
 from greg.lightcone import LightCone
 from provenance.ledger import sha256_json
@@ -45,6 +46,8 @@ MISSION_SCHEMA = json.loads((ROOT / "contracts/greg-mission.schema.json").read_t
 TERMINAL = {"ACHIEVED", "ABANDONED", "SUPERSEDED"}
 LIFECYCLE_STATES = {"ACTIVE", "PAUSED", "ABANDONED", "SUPERSEDED"}
 DECISION_ANSWERS = {"approve", "reject", "reconcile_executed", "reconcile_not_executed"}
+# Body._after_restore refuses a command issued before the latest restore; every reader of mission truth says so too
+RESTORED_REFUSAL = "issued before this body was restored from a backup: the command path refuses it"
 EPOCH = datetime.min.replace(tzinfo=timezone.utc)
 # A retry-safe (read-only, idempotent) dispatch whose completion is unknown is re-attempted, but boundedly:
 # at most RETRY_LIMIT consecutive unknown outcomes per strategy, the first retry at once (an interrupted read),
@@ -706,13 +709,16 @@ class MissionBook:
 
     def rebuild(self):
         self.missions, self.requests, self.answers, self.withdrawn = {}, {}, {}, {}
-        self.consumed: set[str] = set()    # answered paid APPROVALs whose one funded run has happened
+        self.consumed: set[str] = set()    # answered paid APPROVALs whose one funded run has happened, and approvals
+                                           # a restore voided (the original may have used them)
+        self._restore = None               # the latest body.restored in ledger order: the one Body._after_restore reads
         self._deficit_of = {}              # deficit_id -> the mission whose light cone pays for its builds
         self.unverified: dict[str, dict] = {}   # request_id -> {row, why}: an answer row kept as data, never applied
         self.unverified_requests: list[dict] = []  # decision.requested rows not recorded the way greg.asks records one
         self._admitted: set[str] = set()   # DECISION digests whose acceptance has been admitted (once each)
         self._refused_commands: dict[str, str] = {}   # digest -> why the body refused that command (command.rejected)
         self._unverifiable: set[str] = set()   # DECISION digests with an acceptance record that does not verify
+        self._unverifiable_why: dict[str, str] = {}   # digest -> the specific reason, when the fold knows one
         self._pending: dict = {}           # cited digest -> answer rows awaiting that DECISION's signed acceptance
         self._signed, self._signed_at = {}, {}   # verified DECISIONs; digest -> the acceptance event each verified at
         if self.verify_answers and getattr(self.journal, "ledger", None) is not None:
@@ -732,9 +738,9 @@ class MissionBook:
                 cause, why = "refused_by_body", ("the body refused the signed decision it cites: "
                                                  + self._refused_commands[digest])[:300]
             elif digest in self._unverifiable:
-                cause, why = "unverifiable_acceptance", ("a record says the body accepted the decision it cites, but "
-                                                         "it carries no signed envelope that verifies (bodies before "
-                                                         "2026-09-26 kept none)")
+                cause, why = "unverifiable_acceptance", self._unverifiable_why.get(digest, (
+                    "a record says the body accepted the decision it cites, but it carries no signed envelope that "
+                    "verifies (bodies before 2026-09-26 kept none)"))
             else:
                 cause, why = "no_signed_decision", "no founder-signed DECISION it cites was accepted after it was recorded"
             for data in rows:
@@ -754,6 +760,9 @@ class MissionBook:
         if kind == "command.rejected":
             if isinstance(data.get("digest"), str):
                 self._refused_commands[data["digest"]] = str(data.get("reason", ""))
+            return
+        if kind == "body.restored":
+            self._restore = data      # a DECISION accepted after it is held to it (_refusal), as Body.apply holds it
             return
         mid = data.get("mission_id")
         m = self.missions.get(mid)
@@ -904,6 +913,7 @@ class MissionBook:
             request = self.requests.get(data["request_id"])
             if data.get("voids_approval") and request:   # a restore from a backup: the approval is asked again
                 m.approved_scopes.discard(request["scope_digest"])
+                self.consumed.add(data["request_id"])   # used up for every reader (Goal Gravity's answer_for too)
         elif kind == "decision.answered":
             self._answered(data)
 
@@ -946,6 +956,8 @@ class MissionBook:
         digest = accepted.get("digest")
         if accepted.get("kind") == "DECISION" and isinstance(digest, str) and digest not in self._signed:
             self._unverifiable.add(digest)
+            if self._before_restore(accepted):
+                self._unverifiable_why[digest] = RESTORED_REFUSAL
         if accepted.get("kind") != "DECISION" or not isinstance(digest, str) or digest not in self._signed_at \
                 or self._signed_at[digest] != event_id or digest in self._admitted:
             return
@@ -960,11 +972,23 @@ class MissionBook:
             else:
                 self.unverified[str(rid)] = {"row": data, "why": why, "cause": "refused_at_acceptance"}
 
+    def _before_restore(self, cmd: dict) -> bool:
+        """Body._after_restore refuses a command issued before the latest restore (the original may already have
+        applied it); an unreadable time refuses there too."""
+        if self._restore is None:
+            return False
+        try:
+            return instant(cmd["envelope"]["issued_at"]) < instant(self._restore.get("restored_at"))
+        except (KeyError, TypeError, ValueError):
+            return True
+
     def _refusal(self, data: dict, request: dict | None, cmd: dict) -> str | None:
         """Why a row citing a signed DECISION does not count at its acceptance (None: it counts)."""
         rid = data.get("request_id")
         if signed_answer(self._signed, rid, data) is None:
             return "the signed DECISION it cites answers another request or gives another answer"
+        if self._before_restore(cmd):
+            return RESTORED_REFUSAL
         if request is None:
             return "no such request was recorded before the DECISION's acceptance"
         if rid in self.withdrawn:

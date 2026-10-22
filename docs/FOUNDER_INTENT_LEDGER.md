@@ -91,6 +91,25 @@ Progress 2026-10-21 (measured; negative results kept):
     - property-based search: Z3 finds every counterexample;
     - Hopfield recall: exact nearest neighbour is the ceiling.
   - 50 of 68 genomes are admitted. None is attached.
+- **Genome admission v8** ([evidence](evidence/greg-genome-admission/2026-10-22-v8/README.md)): fifteen genomes from five parallel lanes, built for the ABSENT coverage items left after v7. Pre-registered at `28e29538`, frozen at `bc966a18`, run once on seeds 1700-1729.
+  - **DEFAULT (8):**
+    - role differentiation (beats a centralised MIS on rounds, 20-8);
+    - novelty search (16-1 against MAP-Elites on deceptive mazes);
+    - scenario fans (29-1 against Monte Carlo);
+    - resolution proofs (Z3 decides as well, and the win is the declared value of a checkable proof);
+    - MDL (ties BIC);
+    - repeated games (ties simulation, faster);
+    - Stackelberg commitment (ties HiGHS multiple LPs);
+    - CUSUM (Shiryaev–Roberts is at least as good).
+  - **NICHE (4):**
+    - convex QP with a duality certificate: 30/30 and 20-0 against SciPy, but demoted because GREG's 64 KiB request limit refused a held-out instance (an integration defect, recorded);
+    - Hamming correction (the Bayes decoder is better on noisy blocks);
+    - the hyper-heuristic (no significant edge over random selection);
+    - isotonic recalibration (superseded in substance, 2-28 against Platt scaling; the rule calls any win NICHE, a policy question).
+  - **EXPERIMENTAL (2):** robust tube MPC; judgmental pooling (14-16 against the mean; dev did not replicate).
+  - **SUPERSEDED:** Nash bargaining (SLSQP ties and is faster).
+  - Merge review before the freeze: replaced a Stackelberg competitor weak by construction, and fixed a CUSUM benchmark that every detector failed.
+  - 62 of 83 genomes are admitted. None is attached.
 
 ## FABLE 5.1 OPUS MAXIMUS: one GREG, stacked on #178 — 2026-10-15
 

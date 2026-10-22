@@ -31,6 +31,14 @@ GENOMES = {
                                    "real continuations"),
     # simulated worlds: truth is a hidden state, parameter or outcome of a seeded generator
     "basal_bandit": (SIMULATED, "seeded Bernoulli reward processes; truth is the generator's hidden arm means"),
+    "mdl_model_select": (SIMULATED, "seeded noisy polynomial data; truth is the generator's hidden degree and a "
+                                    "held-back split it never shows"),
+    "forecast_judgment_pool": (SIMULATED, "seeded forecaster panels over Gaussian information blocks; truth is the "
+                                          "generator's event outcomes and true probabilities"),
+    "forecast_scenarios": (SIMULATED, "seeded regime-switching AR and jump processes; truth is the generator's "
+                                      "conditional futures"),
+    "forecast_recalibration": (SIMULATED, "seeded distorted judgments; truth is the generator's true "
+                                          "probabilities"),
     "basal_bayes_filter": (SIMULATED, "seeded two-level regime signals; truth is the hidden regime tape"),
     "basal_nlms": (SIMULATED, "seeded linear streams (stationary, drifting, switching, heavy-tailed noise, correlated "
                               "features); truth is the generator's realised targets"),
@@ -43,6 +51,12 @@ GENOMES = {
     "develop_ca_repair": (SIMULATED, "seeded elementary-CA space-time patterns with erased holes; truth is the hidden "
                                      "original pattern"),
     "basal_breaker": (SIMULATED, "seeded up/outage dependency processes; truth is the hidden outage tape"),
+    "basal_cusum_detect": (SIMULATED, "seeded Gaussian or Student-t streams with a planted mean shift; truth is the "
+                                      "hidden change point"),
+    "basal_hamming_correct": (SIMULATED, "seeded random data blocks through a simulated bit-flip channel; truth is the "
+                                         "hidden original data"),
+    "control_robust_tube": (SIMULATED, "seeded linear plant models with a declared disturbance box; truth is the exact "
+                                       "worst case over every disturbance vertex sequence of the model"),
     "basal_hysteresis": (SIMULATED, "seeded two-level regime signals; truth is the hidden regime tape"),
     "basal_kalman": (SIMULATED, "seeded DWNA target tracks; truth is the hidden true track"),
     "basal_pid": (SIMULATED, "seeded FOPDT plant simulations"),
@@ -112,6 +126,23 @@ GENOMES = {
     "evo_map_elites": (MATHEMATICAL, "declared planar arms; QD-score over the exactly computed reachable cells"),
     "graph_betweenness_topk": (MATHEMATICAL, "generated graphs; exact betweenness by an independent reference "
                                              "Brandes"),
+    "prove_resolution": (MATHEMATICAL, "generated propositional and ground clause sets (pigeonhole, chains, random "
+                                       "CNF); entailment decided independently by Z3"),
+    "convex_qp_dual": (MATHEMATICAL, "generated dense convex QPs under linear inequalities; optimum by a long SLSQP "
+                                     "run polished by an exact active-set KKT iteration"),
+    "game_repeated_sustain": (MATHEMATICAL, "generated stage games (prisoner's dilemmas, discrete Cournot, random); "
+                                            "exact critical discount from an independent Z3 equilibrium enumeration"),
+    "game_nash_bargaining": (MATHEMATICAL, "generated payoff polytopes (random hulls, sampled concave frontiers); "
+                                           "exact solution by enumerating every vertex simplex"),
+    "game_stackelberg_commit": (MATHEMATICAL, "generated security, inspection and random games; leader optimum by "
+                                              "independent HiGHS linear programs"),
+    "evo_novelty_search": (MATHEMATICAL, "generated grid mazes of declared kinds (deceptive by design or not); exact "
+                                         "maze distance field by BFS"),
+    "hyper_select_lowlevel": (MATHEMATICAL, "planted zero-slack bin-packing instances; optimum known by construction "
+                                            "(equal to the volume bound)"),
+    "develop_differentiate": (MATHEMATICAL, "generated graphs (geometric, small-world, holed grids, random); exact "
+                                            "pattern check, CP-SAT reference leader optimum and exact component "
+                                            "radii"),
 }
 
 # P6 composition-lift families, as each frozen run's own ``limits`` describes them.

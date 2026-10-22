@@ -59,3 +59,22 @@ def test_an_unconfined_body_never_reports_confinement(tmp_path):
                                                    "verdict": "ALLOWED"})    # a stray file is not a confined body
     after = status_of(report(home))
     assert after["network_confined"] == "NOT_YET" and after["undeclared_destination_denied"] == "NOT_YET"
+
+
+def test_the_report_names_the_exact_code_it_accepted(tmp_path, monkeypatch):
+    """A founder-device acceptance binds to one tree: the commit the body runs, and whether it was edited."""
+    import subprocess
+    from greg import capabilities
+    home, *_ = setup(tmp_path)
+    result = report(home)
+    head = subprocess.run(["git", "-C", str(capabilities.KERNEL_ROOT), "rev-parse", "HEAD"], capture_output=True,
+                          text=True).stdout.strip()
+    edited = bool(subprocess.run(["git", "-C", str(capabilities.KERNEL_ROOT), "status", "--porcelain",
+                                  "--untracked-files=no"], capture_output=True, text=True).stdout.strip())
+    assert result["code"] == {"root": str(capabilities.KERNEL_ROOT), "commit": head, "dirty": edited}
+    assert status_of(result)["code_identified"] == ("NOT_YET" if edited else "PASS")
+    # a body whose code is not a git checkout cannot say what it accepted: never PASS
+    monkeypatch.setattr(capabilities, "KERNEL_ROOT", tmp_path / "not-a-checkout")
+    (tmp_path / "not-a-checkout").mkdir()
+    unnamed = report(home)
+    assert unnamed["code"]["commit"] is None and status_of(unnamed)["code_identified"] == "NOT_YET"

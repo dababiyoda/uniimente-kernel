@@ -37,7 +37,7 @@ checks to diagnose the local runtime. The diagnostic creates no key or body.
 sudo apt install -y python3 python3-venv git          # once; skip if already installed
 sudo apt install -y bubblewrap   # optional: only coding workers need it; without it worker.commission refuses
 mkdir -p ~/src && cd ~/src
-git clone -b claude/uniimente-greg-reconciliation-39syff https://github.com/dababiyoda/uniimente-kernel
+git clone -b claude/greg-full-machine-completion-whgiee https://github.com/dababiyoda/uniimente-kernel
 cd uniimente-kernel && bash greg/chromebook/install.sh
 ```
 
@@ -68,7 +68,7 @@ missing; add `--no-engines` to skip the step. N1 needs none of them.
 ```bash
 mkdir -p ~/src && cd ~/src
 git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
-git checkout claude/uniimente-greg-reconciliation-39syff   # the one converged GREG branch; use main once merged
+git checkout claude/greg-full-machine-completion-whgiee   # the review candidate named in greg/chromebook/REVIEW_BRANCH; use main once merged
 python3 -m venv ~/.uniimente/venv
 ~/.uniimente/venv/bin/pip install -r requirements-dev.txt
 ~/.uniimente/venv/bin/pip install --only-binary=:all: -r requirements-cognition.txt   # optional engines

@@ -49,6 +49,8 @@ def test_one_command_reaches_a_designated_body_and_a_rerun_changes_nothing(tmp_p
     first = run(dev_args(tmp_path), tmp_path)
     assert first.returncode == 0, first.stdout[-3000:] + first.stderr[-3000:]
     assert "WARNING: not ChromeOS Linux" in first.stdout and "unprotected" in first.stdout
+    head = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+    assert f"Installing code {head} " in first.stdout                         # the commit an acceptance will name
     assert (tmp_path / "founder.pem").exists() and len((tmp_path / "founder.pem.pub").read_text().strip()) == 64
     assert list((tmp_path / "body/inbox").glob("*body_designate*.json"))          # queued, not self-accepted
 
@@ -208,3 +210,16 @@ def test_a_rerun_offers_the_founder_tier_to_a_body_designated_without_it(tmp_pat
     assert json.loads(greg(tmp_path, "status"))["founder_tier"]["enrolled_key_attested"] is True
     third = subprocess.run(["bash", str(SCRIPT), *args], capture_output=True, text=True, env=env, timeout=300)
     assert "has claimed the founder tier" in third.stdout and not list((tmp_path / "body/inbox").glob("*.json"))
+
+
+def test_every_founder_install_surface_names_the_one_review_branch():
+    """The runbook and the installer once told Alfonso to clone a branch the candidate had long left behind. Each
+    founder-facing clone/checkout names the branch in greg/chromebook/REVIEW_BRANCH, and nothing else."""
+    import re
+    branch = (ROOT / "greg/chromebook/REVIEW_BRANCH").read_text().strip()
+    assert re.fullmatch(r"[A-Za-z0-9._/-]+", branch)
+    named = []
+    for rel in ("greg/CHROMEBOOK_FIRST_MISSION.md", "greg/chromebook/install.sh"):
+        text = (ROOT / rel).read_text()
+        named += [(rel, b) for b in re.findall(r"git (?:clone -b|checkout) (\S+)", text)]
+    assert named and all(b == branch for _, b in named), named

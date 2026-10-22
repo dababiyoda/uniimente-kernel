@@ -30,7 +30,9 @@ EXECUTED_ON_GREG = {
                             "memory-bounded IDA* on implicit sliding-puzzle state graphs; cognition.search_beam "
                             "(beam search over flow-shop insertion sequences), cognition.search_mcts (UCT game-tree "
                             "search for Hex moves) and cognition.formal_property_search (counterexample search over a "
-                            "typed expression language) are different search mechanisms, not graph path search"),
+                            "typed expression language) are different search mechanisms, not graph path search; nor is "
+                            "cognition.evo_novelty_search (novelty-driven evolutionary search over move programs in a "
+                            "maze simulator, which never reads the map as a graph)"),
     "cortex.control.feedback": (("cognition.control", "cognition.basal_pid", "cognition.control_mpc",
                                  "cognition.pid_simopt"),
                                 "clamped PID step, SIMC PI tuning, simulation-optimised PI tuning and box-constrained "
@@ -52,7 +54,10 @@ EXECUTED_ON_GREG = {
                            "a typed route to authenticated human judgment: the family records the panel and "
                            "abstains HUMAN_REVIEW_REQUIRED; it never adjudicates"),
     "cortex.exact.symbolic": (("cognition.exact",), "SymPy exact calculation"),
-    "cortex.search.heuristic": (("cognition.search_astar",), "A* with an admissible heuristic on weighted grids"),
+    "cortex.search.heuristic": (("cognition.search_astar",),
+                                "A* with an admissible heuristic on weighted grids; cognition.hyper_select_lowlevel "
+                                "is a different mechanism (a hyper-heuristic choosing among low-level bin-packing "
+                                "heuristics), not heuristic state-space search"),
     "cortex.meta.mental_models": (("greg.cognition.compiler:OPERATORS",),
                                   "typed mental-model operators in the Competency Compiler"),
     "cortex.meta.metaconsensus": (("greg.cognition.verification:metaconsensus",),
@@ -67,11 +72,14 @@ EXECUTED_ON_GREG = {
     "cortex.collective.slime_network": (("cognition.collective_physarum",),
                                         "Physarum flux-conductance network design"),
     "cortex.developmental.evolutionary": (("cognition.evolutionary", "greg.cognition.evolution:cycle",
-                                           "cognition.evo_ga_factored", "cognition.evo_map_elites"),
+                                           "cognition.evo_ga_factored", "cognition.evo_map_elites",
+                                           "cognition.evo_novelty_search"),
                                           "differential evolution over a bounded vector, P8 mutation/crossover "
                                           "of closed configuration spaces under a sealed evaluator, a generational "
-                                          "GA on factored binary objectives and MAP-Elites quality-diversity "
-                                          "archives; programs are not evolved"),
+                                          "GA on factored binary objectives, MAP-Elites quality-diversity "
+                                          "archives and mutation-only novelty search over fixed-length move "
+                                          "sequences in a maze simulator; programs in the general sense are not "
+                                          "evolved"),
     "cortex.developmental.program_synthesis": (("cognition.synth_cegis",),
                                                "counterexample-guided synthesis of a fixed template's bounded "
                                                "integer parameters"),

@@ -370,6 +370,7 @@
     "greg/cognition/genomes/flow.py",
     "greg/cognition/genomes/forecasting.py",
     "greg/cognition/genomes/formal.py",
+    "greg/cognition/genomes/formal_b.py",
     "greg/cognition/genomes/graph_or.py",
     "greg/cognition/genomes/library.py",
     "greg/cognition/genomes/node_cut.py",

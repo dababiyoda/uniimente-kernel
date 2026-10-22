@@ -62,3 +62,12 @@ This finding was not pre-registered. It does not change the verdict. **No redesi
   - No answer changed, nothing self-attached, and no other cell was touched.
 - **Not shown:** that GREG learned to route better from stress. **§14's antifragility requirement remains unmet for this mechanism and key.** #189's residual 3 (competence summed across strata) is narrowed: summing across strata was not the only obstacle, because a strata key is also too coarse here. It is not closed.
 - **Authority:** none created. Every attach used a per-run test key. VEPMC: 0.
+
+## After the run: the base moved to `78da0332`
+
+The integration owner's hold, which asked for the freeze to use `78da0332`, arrived after this run had finished.
+
+- **What `78da0332` changes:** `constructed_candidates` now rejects a relaxed construction, such as an uncapped `selection.closure` answering a capped portfolio question.
+- **What the change cannot touch:** this experiment's request shape. Here the compiler considers only `cognition.swarm` and `cognition.blackbox`, and no construction row exists. No composed construction was attached in any arm.
+- **Probe:** compiling pilot-seed requests (seeds 0 and 1, d = 20 and d = 10; not holdout, `execute: False`) on the frozen tree and on that tree merged with `78da0332` gives byte-identical routing (considered, rejected, selected).
+- **Owner's decision:** they accepted this accounting. NO_GAIN stands, and there is no rerun.

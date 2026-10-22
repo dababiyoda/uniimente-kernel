@@ -657,6 +657,31 @@ def exploratory_runs(src: Source) -> list[dict]:
     return out
 
 
+def antifragility_runs(src: Source) -> list[dict]:
+    """The section-14 antifragility experiments (``tests/evidence/antifragility-*/workload.json``): #189's run and
+    v3. Each frozen workload's stress missions are role train (settled on a body, learned from) and its holdout is
+    role held-out. All draw from #189's generator ``instance`` (v3 imports it byte-identically). A workload counts
+    as exposed from the commit that added it, the freeze; a run follows only after that commit."""
+    out = []
+    module = "tests.evidence.antifragility-2026-10-15.experiment"
+    for path in src.paths(r"tests/evidence/antifragility-[^/]+/workload\.json"):
+        doc = load_json(src.commit, path)
+        work = (doc or {}).get("workload") if isinstance(doc, dict) else None
+        if not isinstance(work, dict):
+            continue
+        commit = src.added(path)
+        art = {"path": path, "commit": commit, "sha256": blob_sha(src.commit, path)}
+        gen = function_identity(commit, module, "instance")
+        for role, key in (("train", "stress"), ("held-out", "holdout")):
+            seeds = sorted({r["seed"] for r in work.get(key, []) if isinstance(r, dict) and type(r.get("seed")) is int})
+            if seeds:
+                out.append(_record(lineage=src.lineage, program="antifragility (section 14)", artifact=art,
+                                   commit=commit, role=role, family="antifragility." + key, generator=gen,
+                                   seeds=seeds, looked_at=True,
+                                   basis="frozen workload; the experiment runs every listed instance once"))
+    return out
+
+
 # --- generic freezes and pre-registrations (P6, P4, cortex seed, crossgeo, #155/#179 runs)
 
 PROGRAMS = (("composition_lift", "P6"), ("learned_routing", "P4"), ("seed_genome", "cortex seed genome"),
@@ -1258,7 +1283,7 @@ def build() -> dict:
 
     records, unparsed = [], []
     records += admission_genomes(s158, results) + p8_cycles(s158, results) + p8_canaries(s158) + p8_pilots(s158)
-    records += exploratory_runs(s158)
+    records += exploratory_runs(s158) + antifragility_runs(s158)
     g158, u158 = generic_freezes(s158, results, [])
     records += g158
     unparsed += u158
@@ -1272,6 +1297,7 @@ def build() -> dict:
 
     r179 = admission_179(s179, results)
     r179 += admission_genomes(s179, results) + p8_cycles(s179, results) + p8_canaries(s179) + p8_pilots(s179)
+    r179 += antifragility_runs(s179)          # on the converged/joined tree, HEAD carries the section-14 runs
     g179, u179 = generic_freezes(s179, results, _collisions(s158))
     r179 = [r for r in r179 + g179 if only_179(r)]
     unparsed += [u for u in u179 if u["path"] not in shared_paths or u["read_at"] != pin]

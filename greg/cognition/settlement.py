@@ -4,6 +4,7 @@ from __future__ import annotations
 from collections import defaultdict
 
 from .contracts import CognitiveReceipt, ProblemGeometry, digest
+from . import condition_competence
 
 
 IDENTITY_VERSION = "signed-claim/1"
@@ -211,7 +212,8 @@ def measured_outcomes(journal):
                              "evidence_tier": "locally reobserved and appraised computation; external outcome unproven",
                              "authority_created": False,
                              **({"compile_receipt": compiled["receipt_id"],
-                                 "selected_by": "competency_compiler"} if compiled else {})}
+                                 "selected_by": "competency_compiler"} if compiled else {}),
+                             **condition_competence.settlement_fields(compiled, check, data["passed"])}
         # Reobservations revise this signed claim; another check/input is not its duplicate.
         observations[_outcome_identity(outcome)] = outcome
     return list(observations.values())

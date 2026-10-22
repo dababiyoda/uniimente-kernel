@@ -16,7 +16,7 @@ import pytest
 
 from greg import artifact_verifiers, templates, workers
 from greg.body import Body, Layout
-from tests.greg_fixtures import Clock, drop, make_body, signed
+from tests.greg_fixtures import Clock, acceptance_confinement, drop, make_body, signed
 from tests.integration.test_greg_mind_constructs_capability import STAFFING
 from tests.unit.test_greg_workers import ScriptedWorker, acceptance_envelope, make_repo  # noqa: F401 (autouse fixture)
 
@@ -189,7 +189,7 @@ def code_mission(tmp_path, monkeypatch, edits: dict, *, acceptance: dict | None 
         (repo / rel).symlink_to(target)
     workers._git(repo, "add", "-A")
     workers._git(repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "problem")
-    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data], worker_confinement=acceptance_confinement())
     spec = templates.code_change(repo=str(repo), objective="record the plan", order="r1a", provider="scripted",
                                  allowed_paths=["pkg/*", "plan/*", "tests/*"], budget_usd=1.0,
                                  workspace_root=Layout(home).workspace)

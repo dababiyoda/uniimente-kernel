@@ -39,6 +39,10 @@ that was 13 PRs, plus the deltas listed under Pending.
 | #168 (contains #137's 3 later commits) | `0fd430f3` | merged via `wip/join-168`; three seams resolved toward the stronger mechanism (verified answers on the path surface, founder tier for met-ahead, the sealed oracle over a weakened evaluator) | `1b48ab7f`, joined at the merge after `5d9a43c7`; owned source `a07cdc3e` |
 | #201 evidence-soundness patch (`session_013k41DnwrjzpXL33r3j9BgB`) | `cb5d8647`; follow-up `962fdd3a` | applied; the refusal watch marks inconclusive observations | `3d2f9cc4`, `8d0a2303` |
 | Construction decision (relaxation fix) | `7276de8f` | merged | `8befbc71`, loop map `78da0332` |
+| #202 antifragility v3 and v3b (both NO_GAIN; mechanism off by default, `KEY="dimension"`) | `47ac8d5f` | merged; the line is closed as pre-registered | `79ac8c6f` |
+| #158 admission v8 (15 genomes) | `9a354321` | merged; CI job 1 limit 75 -> 90 min (the job took 65 min at `78da0332`); index and ledger regenerated | `55edb401`, `813ca188` |
+| #158 stdin transport fix (requests above the 128 KiB argv cap reach the solver) | `93bf43a3` | merged; the joined tree's thinking-budget check is kept before the new 1 MiB ceiling | `bf7c5fec` |
+| #158 admission v9 (`convex_qp_dual` DEFAULT on seeds 1800-1829) | `883237a0`, `21ae7f5a` | merged; P5 counted two sets of totals and misread `1.0.0` and `92.5 KB` as statuses (`test_frontier_backcasts`), fixed here and ported to #158 | `05ce137a`, `4dac1608`, `98e49f65` |
 
 ## Conflict decisions
 
@@ -107,7 +111,10 @@ that was 13 PRs, plus the deltas listed under Pending.
 | `9e12b9a6` | evidence-strength tests with bubblewrap blocked, then real (local) | 5 failed before the fixture, 10 passed after; 79 passed with real bubblewrap |
 | `8befbc71` | construction-decision tests on `9e12b9a6`'s compiler vs the fix (local) | fails on base (closure spends 9 against a cap of 5), 2 passed with the fix; 105 compiler, construction, recombine, budgeted and portfolio tests pass; 2 new mutants caught |
 | `78da0332` | **Canonical CI** | **all 9 jobs success**, the first fully green head of this candidate (job 1 full suite 65 min; job 6 every mutation gate; job 8 one machine with real organs; job 9 V1-V5) |
-| `8d0a2303` | #201 decided-fields follow-up: incomplete evidence, missions, appraisal closure, Goal Gravity, restore fold (local) | 186 passed; 16 mutation anchors in `greg/missions.py` intact; Canonical CI running |
+| `8d0a2303` | #201 decided-fields follow-up (local); **Canonical CI** | 186 passed locally; 16 mutation anchors intact; **CI all jobs success** |
+| `55edb401` | genome, condition-competence, compiler, settlement, index, path and admission suites (local) | 2723 passed, 2 skipped |
+| `bf7c5fec` | CI job 6 gates (local): cortex, seed-path and residual tests; three mutation gates; Seed Genome; migrated-seed replay; held-out run | 803 passed; cortex mutants 192/192, cognition boundary 6/6, residual 86/86 caught; Seed Genome 100/100 matched, 0 hard failures; replay 120/120; held-out accepted by the freeze manifest, INCONCLUSIVE only for want of a local model (as in CI) |
+| `4dac1608` | the same suites plus cognition and cortex (local) | 3582 passed, 5 skipped |
 
 Organs: DALEOBANKS `667439f`, WealthMachine `ec82b80` (CI pins, unchanged; neither organ moved its pinned code).
 
@@ -158,7 +165,7 @@ This is one agent working through five lenses. It is not independent review.
 - Attack 2: Alfonso cannot review a 1000-commit stack. Answer: the review unit is this record's decision table, plus
   CI and acceptance on one head. Merge stays his decision.
 
-## Ten-item handoff (2026-10-22, head `8d0a2303`)
+## Ten-item handoff (2026-10-22; code head `98e49f65`)
 
 1. **New integrated capability.** One CI-checked tree now holds every verified open increment: #192's machine, the
    portfolio chain, Cortex 0.2.2, Track B, #179/#158, #168, #201's evidence soundness and the construction-decision
@@ -172,7 +179,7 @@ This is one agent working through five lenses. It is not independent review.
    Live VPL on this tree is 3 (F1, F2R, F4); control, game and information routing is re-admitted.
 2. **Requirement-to-evidence inventory.** `docs/opus-maximus/FOUNDER_INTENT_COVERAGE_MATRIX.md` §5, one row per
    requirement, each with its path, tier, command, owner and next action. No row reaches FOUNDER-DEVICE or EXTERNAL.
-3. **Exact revisions.** Base #192 `397a38e3`; head `8d0a2303`; 36 first-parent commits. Source heads are pinned in
+3. **Exact revisions.** Base #192 `397a38e3`; code head `98e49f65`. Source heads are pinned in
    the intake table above.
 4. **Changes and rationale.** The intake table, the conflict decisions (both defenses kept at every seam) and
    defects 1-6, each fixed with a test that fails without the fix.
@@ -186,9 +193,11 @@ This is one agent working through five lenses. It is not independent review.
    - One mission across all 15 steps (`LOOP-15-MAP-2026-10-22.md`; today three episodes).
    - A positive construction dividend: realized outcomes bound to construction receipts, so a certified construction
      can settle as wrong.
-   - Antifragility v3b: run once (frozen).
-   - #158 genome admission v8 (seeds 1700-1729): intake after it runs.
+   - Antifragility: closed. v3b was NO_GAIN by its frozen rule (best cell 3-0, no preference fired; B1 beats every
+     learned arm); no v3c.
    - Per-geometry pooling of settled competence (a stated limitation).
+   - A signed mission binds at most 16 KiB of inline data (`missions.DEFAULT_BIND_BYTES`), so a founder mission cannot
+     yet carry the large QPs the solver now accepts; it needs a by-reference input path.
    - A third probabilistic operation run.
 8. **Irreducible founder or external actions.**
    - Founder-device acceptance on the Chromebook (`FOUNDER-ACTIONS-2026-10-22.md` §1). VEPMC moves only on it.
@@ -198,7 +207,7 @@ This is one agent working through five lenses. It is not independent review.
    - Merge of #196 into #192, and onward.
 9. **Next assignment.**
    - Integration owner (`session_01FBS4KNJR59nSbdGbxo8Mbx`): CI on `8d0a2303`, then the single 15-step mission.
-   - `session_01GRT2jX7cQXwvMkn64ZgvLk`: run v3b once and report on #96.
+   - `session_01GRT2jX7cQXwvMkn64ZgvLk`: #158 lineage (v8 and v9 joined here).
    - `session_013k41DnwrjzpXL33r3j9BgB`: license qualification before attach (its draft PR).
    - Alfonso: device acceptance first; it is the one action that moves VEPMC.
 10. **Full-machine verdict: NOT complete.** BODY + ORGANS + MIND are integrated and green in a sandbox. Nothing has

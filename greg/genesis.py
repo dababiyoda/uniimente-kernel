@@ -72,7 +72,7 @@ import time
 from greg.capabilities import (CapabilityError, CapabilityManifest, InvocationContext, installed_binary,
                                run_isolated)
 from greg.artifacts import ArtifactStore
-from greg import builders, licensing, mechanisms, recombine
+from greg import builders, documents, licensing, mechanisms, recombine
 from greg.cognition import assignment, linear, network
 from greg.journal import Journal, iso
 from greg.mechanisms import PackageCandidate
@@ -117,6 +117,7 @@ PARSERS = {
     "first_hex_token": lambda out: out.split()[0].lower() if out.split() else "",
     "last_hex_token": lambda out: out.strip().split()[-1].lower() if out.split() else "",
     "first_int": lambda out: int(out.split()[0]) if out.split() else -1,
+    "words": lambda out: " ".join(out.split()),
 }
 
 CATALOG = {
@@ -131,6 +132,13 @@ CATALOG = {
         "description": "Whitespace-separated word count of one text file",
         "oracle": _vectors_wordcount, "output_field": "words",
         "candidates": (Candidate("wc", ("{binary}", "-w", "{file}"), "first_int"),),
+    },
+    # Directive 2026-10-22 (open-source metabolism): reading a PDF is commodity software, acquired, never rebuilt.
+    "document.text": {
+        "description": "The words of a PDF in reading order, whitespace-normalized (text drawn in a standard font; "
+                       "no OCR of scanned images)",
+        "oracle": documents.oracle_document_text, "output_field": "text",
+        "candidates": (Candidate("pdftotext", ("{binary}", "-enc", "UTF-8", "-q", "{file}", "-"), "words"),),
     },
     # Open-source packages (founder correction 2026-10-01, #144): installed engines, never installed by GREG.
     "graph.shortest_path": {
@@ -477,6 +485,14 @@ def catalog_adapter(function: str, candidate: Candidate, binary: str):
         value = PARSERS[candidate.parse](proc.stdout.decode("utf-8", errors="replace"))
         return {spec["output_field"]: value, "path": str(path)}
     return adapter
+
+
+def _binary_license(binary: str) -> dict:
+    """What the OS package owning an installed binary declares, read from DEP-5 where the body has dpkg."""
+    assessment = licensing.system_binary(binary)
+    if assessment is None:
+        return {"license": "system package; license not readable on this body (no dpkg or no DEP-5 file)"}
+    return {"license": assessment["parts"][0]["expression"][:200], "license_assessment": assessment}
 
 
 def qualify_package(function: str, candidate: PackageCandidate, card: dict, seed: int) -> tuple[bool, dict]:
@@ -925,8 +941,7 @@ class Genesis:
         """Attach the exact engine a construction is pinned to, under the same signed scope, or ask."""
         if self._form_only:
             return False
-        licensed = (licensing.auto_attach_allowed(manifest.provenance)[0]
-                    if manifest.provider.startswith("installed:python:") else True)
+        licensed = licensing.attach_check(manifest)[0]
         allowed = (licensed and mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"
                    and manifest.consequence_class == "read_only"
                    and mission.cone._capability_inside(manifest.capability_id))
@@ -1791,7 +1806,7 @@ class Genesis:
             strengthens=("capability_formation", "proof"),
             provenance={"binary": binary, "binary_sha256": hashlib.sha256(Path(binary).read_bytes()).hexdigest(),
                         "version": version_text[0] if version_text else "unknown", "deficit_id": deficit_id,
-                        "license": "system package; license not inspected by GREG",
+                        **_binary_license(binary),
                         "builder": "none: existing installed software acquired by search"})
 
     def _verify(self, function, candidate: Candidate, binary: str, seed: int, manifest) -> tuple[bool, dict]:
@@ -1834,8 +1849,7 @@ class Genesis:
             return None
         cognition = manifest.function.startswith("cognition.")
         # a package is legally qualified apart from technically: its license must permit attach without the founder
-        licensed, license_why = (licensing.auto_attach_allowed(manifest.provenance)
-                                 if manifest.provider.startswith("installed:python:") else (True, ""))
+        licensed, license_why = licensing.attach_check(manifest)
         allowed = (not cognition and licensed
                    and mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"
                    and manifest.consequence_class == "read_only"

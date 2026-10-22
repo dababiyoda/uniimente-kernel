@@ -19,6 +19,7 @@ declaration is not detected, and the founder or counsel decides whatever is sent
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 try:                                   # packaging >= 24.2 (requirements-dev.txt); absent, every license fails closed
     from packaging.licenses import InvalidLicenseExpression, canonicalize_license_expression
@@ -288,3 +289,104 @@ def _reassess(provenance: dict) -> dict | None:
         except (importlib.metadata.PackageNotFoundError, TypeError, ValueError):
             pass
     return assess(dist, deps)
+
+
+# -- installed system binaries (Debian DEP-5 copyright files) ---------------------------------------------------
+# A binary Genesis acquires (sha256sum, wc, pdftotext) belongs to an operating-system package. On Debian-family
+# bodies (Debian, Ubuntu, ChromeOS Crostini) dpkg names that package and its machine-readable copyright file
+# (https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/) declares the licenses. Elsewhere (macOS,
+# a hand-built binary) nothing is readable: the assessment is None and the caller keeps its prior behaviour.
+DEBIAN = {"gpl-2": STRONG_COPYLEFT, "gpl-2+": STRONG_COPYLEFT, "gpl-3": STRONG_COPYLEFT, "gpl-3+": STRONG_COPYLEFT,
+          "gpl": STRONG_COPYLEFT, "lgpl-2": WEAK_COPYLEFT, "lgpl-2+": WEAK_COPYLEFT, "lgpl-2.1": WEAK_COPYLEFT,
+          "lgpl-2.1+": WEAK_COPYLEFT, "lgpl-3": WEAK_COPYLEFT, "lgpl-3+": WEAK_COPYLEFT, "mpl-2.0": WEAK_COPYLEFT,
+          "agpl-3": NETWORK_COPYLEFT, "agpl-3+": NETWORK_COPYLEFT, "expat": PERMISSIVE, "mit": PERMISSIVE,
+          "isc": PERMISSIVE, "zlib": PERMISSIVE, "apache-2.0": PERMISSIVE, "bsd-2-clause": PERMISSIVE,
+          "bsd-3-clause": PERMISSIVE, "bsd-4-clause": PERMISSIVE, "bsd-4-clause-uc": PERMISSIVE,
+          "public-domain": PERMISSIVE, "cc0-1.0": PERMISSIVE, "psf-2": PERMISSIVE, "x11": PERMISSIVE,
+          "fsfap": PERMISSIVE, "fsful": PERMISSIVE, "fsfullr": PERMISSIVE, "gfdl-1.3+": WEAK_COPYLEFT,
+          "gfdl": WEAK_COPYLEFT, "gfdl-ni": WEAK_COPYLEFT, "gfdl-niv-1.3": WEAK_COPYLEFT, "gfdl-niv-1.3+": WEAK_COPYLEFT,
+          "artistic": WEAK_COPYLEFT, "artistic-2.0": PERMISSIVE, "gpl-1": STRONG_COPYLEFT, "gpl-1+": STRONG_COPYLEFT, "gfdl-1.2+": WEAK_COPYLEFT, "gfdl-1.3": WEAK_COPYLEFT}
+DPKG_TIMEOUT = 5
+
+
+def _debian_class(expression: str) -> str:
+    """A DEP-5 License short-name expression: 'or' takes the best alternative, 'and' the worst; 'with ... exception'
+    keeps the base license's class (Debian names many exceptions; GREG does not downgrade on an unknown one)."""
+    best = []
+    for alternative in re.split(r"\s+or\s+", expression.strip(), flags=re.I):
+        parts = [p.strip() for p in re.split(r"\s+and\s+|,\s*", alternative, flags=re.I) if p.strip()]
+        classes = [DEBIAN.get(re.split(r"\s+with\s+", p, flags=re.I)[0].strip().lower(), UNKNOWN) for p in parts]
+        best.append(_worst(classes))
+    return _best(best)
+
+
+def dep5(text: str) -> dict | None:
+    """Every License declared by a Files paragraph (or the header) of a DEP-5 file; None if it is not DEP-5."""
+    paragraphs = [p for p in re.split(r"\n\s*\n", text) if p.strip()]
+    if not paragraphs or not paragraphs[0].lstrip().lower().startswith("format:"):
+        return None
+    terms = []
+    for index, paragraph in enumerate(paragraphs):
+        fields = {line.split(":", 1)[0].strip().lower(): line.split(":", 1)[1].strip()
+                  for line in paragraph.splitlines() if line and not line[0].isspace() and ":" in line}
+        if "license" in fields and (index == 0 or "files" in fields):
+            terms.append({"id": fields["license"][:120], "class": _debian_class(fields["license"])})
+    if not terms:
+        return None
+    return {"expression": " AND ".join(dict.fromkeys(t["id"] for t in terms)), "terms": terms,
+            "class": _worst([t["class"] for t in terms])}
+
+
+def system_binary(binary: str) -> dict | None:
+    """The DEP-5 assessment of the OS package that owns ``binary``, or None when no package manager says."""
+    import os
+    import shutil
+    import subprocess
+    dpkg = shutil.which("dpkg-query")
+    if dpkg is None:
+        return None
+    real = os.path.realpath(binary)
+    try:
+        proc = subprocess.run([dpkg, "-S", real], capture_output=True, text=True, timeout=DPKG_TIMEOUT,
+                              env={"PATH": "/usr/bin:/bin", "LC_ALL": "C"})
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    owners = [line.split(":", 1)[0].strip() for line in proc.stdout.splitlines()
+              if line.rstrip().endswith(": " + real) or line.rstrip().endswith(":" + real)]
+    if proc.returncode or len(set(owners)) != 1:
+        return None
+    package = owners[0].split(":")[0]                          # strip a multiarch qualifier
+    if not re.fullmatch(r"[a-z0-9][a-z0-9.+-]+", package):
+        return None
+    try:
+        parsed = dep5((Path("/usr/share/doc") / package / "copyright").read_text(errors="replace"))
+    except OSError:
+        parsed = None
+    part = ({"distribution": f"{package} (dpkg)", "basis": "Debian DEP-5 copyright file", **parsed} if parsed else
+            {"distribution": f"{package} (dpkg)", "basis": "copyright file missing or not DEP-5",
+             "expression": "UNREAD", "class": UNKNOWN, "terms": []})
+    worst = part["class"]
+    cleared = ORDER.index(worst) <= ORDER.index(CLEARED_UP_TO)
+    return {"verdict": ("CLEARED" if worst == PERMISSIVE else "CLEARED_WITH_OBLIGATIONS") if cleared
+            else "FOUNDER_REVIEW", "class": worst, "auto_attach": cleared,
+            "reason": "every declared license is cleared for GREG's use" if cleared else
+            f"{part['distribution']}: {part['expression'][:200]} ({worst.replace('_', ' ')}, {part['basis']})",
+            "obligations": [OBLIGATIONS[worst]], "parts": [part], "policy": "binary: as for packages",
+            "parser": "dpkg-query + DEP-5 (GREG reader)", "limits": LIMITS}
+
+
+def attach_check(manifest) -> tuple[bool, str]:
+    """Whether an acquired capability's license permits attach without the founder's own command.
+
+    A Python package must carry a cleared assessment (fail closed). A system binary is held only when its OS
+    package declares a license that is known and not cleared; an undeterminable one (no dpkg, no DEP-5 file)
+    or unclassified one keeps the behaviour it had before licenses were read (system packages routinely list
+    documentation licenses GREG does not classify), and its card says so. Other providers are GREG code."""
+    provenance = manifest.provenance
+    if manifest.provider.startswith("installed:python:"):
+        return auto_attach_allowed(provenance)
+    if manifest.provider.startswith("installed:"):
+        assessment = provenance.get("license_assessment")
+        if isinstance(assessment, dict) and assessment.get("class") in (NETWORK_COPYLEFT, NOT_OPEN):
+            return False, assessment.get("reason", "")
+    return True, ""

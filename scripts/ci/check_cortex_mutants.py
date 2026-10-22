@@ -130,7 +130,8 @@ GREG_MUTANTS = [
 ]
 # Founder correction 2026-10-01 (#144): open-source engines are supply, GREG's certificate is the control.
 OSS_TESTS = ["tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_greg_linear_genesis.py",
-             "tests/unit/test_greg_cognition.py", "tests/unit/test_greg_license_qualification.py"]
+             "tests/unit/test_greg_cognition.py", "tests/unit/test_greg_license_qualification.py",
+             "tests/unit/test_greg_document_text.py"]
 OSS_MUTANTS = [
     # license qualification (directive 2026-10-22, 5.3 and 6): legally qualified is a separate state
     ("an uncleared license still auto-attaches", "greg/genesis.py",
@@ -145,6 +146,15 @@ OSS_MUTANTS = [
      'return False, "no license assessment on its Mechanism Card"', 'return True, ""'),
     ("a stricter License field beside a classifier is ignored", "greg/licensing.py",
      "ORDER.index(text_class) > ORDER.index(cls):", "False:"),
+    # document.text (directive 2026-10-22): an acquired PDF reader qualified on GREG's own PDFs; binary licenses
+    ("the frozen oracle accepts any extraction", "greg/genesis.py",
+     'if got != case["expected"]:', "if False:"),
+    ("a binary under a not-open license attaches itself", "greg/licensing.py",
+     'assessment.get("class") in (NETWORK_COPYLEFT, NOT_OPEN)', "False"),
+    ("DEP-5 'and' takes the most permissive license", "greg/licensing.py",
+     "        best.append(_worst(classes))", "        best.append(_best(classes))"),
+    ("a DEP-5 license definition paragraph is read as applying", "greg/licensing.py",
+     'if "license" in fields and (index == 0 or "files" in fields):', 'if "license" in fields:'),
     ("certificate skips edge feasibility", "greg/cognition/network.py",
      "if exact[b] > exact[a] + w + tolerance(exact[a] + w):", "if False:"),
     ("certificate trusts claimed unreachability", "greg/cognition/network.py",

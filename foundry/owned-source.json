@@ -526,6 +526,7 @@
     "greg/dataplane.py",
     "greg/discover.py",
     "greg/doctor.py",
+    "greg/documents.py",
     "greg/egress.py",
     "greg/founder.py",
     "greg/foundry_bridge.py",

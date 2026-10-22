@@ -38,6 +38,11 @@ ALTERNATIVE_VERSION = "1.0.0"
 # (ablation A: one cell for every covered dimension), "shuffled" (ablation S: stress pairs assigned to a band by a
 # seeded fair coin). Set only by the experiment harness and tests; production keeps "on".
 MODE = "on"
+# The condition key. "dimension" is v3's (geometry, dimension band). "dimension_objective" adds the request's declared
+# objective name (v3b, tests/evidence/antifragility-v3b-2026-10-22/): both are read from the request alone. Set only by
+# an experiment harness and tests; production keeps v3's key until an experiment supports another.
+KEY = "dimension"
+KEYS = ("dimension", "dimension_objective")
 
 
 def dimension(data: dict) -> int | None:
@@ -55,6 +60,9 @@ def condition_key(geometry: str, data: dict) -> str | None:
         return f"{geometry}|all"
     for edge, label in BANDS:
         if d <= edge:
+            objective = data.get("function")
+            if KEY == "dimension_objective":
+                return f"{geometry}|{label}|{objective}" if isinstance(objective, str) and objective else None
             return f"{geometry}|{label}"
     return None
 
@@ -93,16 +101,20 @@ def cell_evidence(pairs: Iterable[dict], *, shuffle: bool = False) -> dict:
     coin, independent of its dimension, so a gain that survives it did not come from the condition key."""
     seen, cells = set(), {}
     rnd = random.Random(SHUFFLE_SEED)
+    pairs = [p for p in pairs if not (p["claim"] in seen or seen.add(p["claim"]))]
+    # under the dimension-and-objective key the shuffle reassigns the objective among those the pairs carry
+    objectives = sorted({p["cell"].split("|")[2] for p in pairs if p["cell"].count("|") == 2})
     for p in pairs:
-        if p["claim"] in seen:
-            continue
-        seen.add(p["claim"])
-        cell = p["cell"]
+        parts = p["cell"].split("|")
+        if KEY == "dimension" and len(parts) == 3:
+            parts = parts[:2]                                      # a coarser reader of finer evidence
+        cell = "|".join(parts)
         if MODE == "pooled":
-            cell = cell.split("|", 1)[0] + "|all"
+            cell = parts[0] + "|all"
+        elif shuffle and KEY == "dimension_objective" and len(parts) == 3 and objectives:
+            cell = f"{parts[0]}|{parts[1]}|{objectives[rnd.randrange(len(objectives))]}"
         elif shuffle:
-            geometry = cell.split("|", 1)[0]
-            cell = f"{geometry}|{BANDS[rnd.randrange(len(BANDS))][1]}"
+            cell = f"{parts[0]}|{BANDS[rnd.randrange(len(BANDS))][1]}"
         c = cells.setdefault(cell, {"pairs": 0, "alternative_only": 0, "incumbent_only": 0})
         c["pairs"] += 1
         c["alternative_only"] += bool(p["alternative_pass"]) and not p["incumbent_pass"]

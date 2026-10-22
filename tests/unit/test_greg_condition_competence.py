@@ -112,3 +112,31 @@ def test_the_pooled_ablation_reads_every_cell_as_one(monkeypatch):
     monkeypatch.setattr(cc, "MODE", "pooled")
     ev = cc.cell_evidence([_pair(f"c{i}", False, True) for i in range(5)])
     assert set(ev) == {"optimization|all"} and ev["optimization|all"]["alternative_only"] == 5
+
+
+def test_the_v3b_key_adds_the_declared_objective_and_nothing_measured(monkeypatch):
+    monkeypatch.setattr(cc, "KEY", "dimension_objective")
+    assert cc.condition_key("optimization", _req(20)) == "optimization|d11-30|griewank"
+    assert cc.condition_key("optimization", {**_req(20), "function": ""}) is None
+    monkeypatch.setattr(cc, "KEY", "dimension")
+    assert cc.condition_key("optimization", _req(20)) == "optimization|d11-30"     # v3's key is unchanged
+
+
+def test_a_coarser_key_reads_finer_evidence_by_merging_objectives(monkeypatch):
+    fine = [_pair(f"r{i}", False, True, "optimization|d11-30|rosenbrock") for i in range(3)] + \
+           [_pair(f"a{i}", True, False, "optimization|d11-30|ackley") for i in range(2)]
+    monkeypatch.setattr(cc, "KEY", "dimension")
+    ev = cc.cell_evidence(fine)
+    assert ev == {"optimization|d11-30": {"pairs": 5, "alternative_only": 3, "incumbent_only": 2}}
+    monkeypatch.setattr(cc, "KEY", "dimension_objective")
+    ev = cc.cell_evidence(fine)
+    assert ev["optimization|d11-30|rosenbrock"]["alternative_only"] == 3 and ev["optimization|d11-30|ackley"]["incumbent_only"] == 2
+
+
+def test_the_v3b_shuffle_reassigns_objectives_by_a_seeded_coin(monkeypatch):
+    monkeypatch.setattr(cc, "KEY", "dimension_objective")
+    fine = [_pair(f"r{i}", False, True, "optimization|d11-30|rosenbrock") for i in range(30)] + \
+           [_pair(f"a{i}", True, False, "optimization|d11-30|ackley") for i in range(30)]
+    a, b = cc.cell_evidence(fine, shuffle=True), cc.cell_evidence(fine, shuffle=True)
+    assert a == b and set(a) == {"optimization|d11-30|rosenbrock", "optimization|d11-30|ackley"}
+    assert a["optimization|d11-30|rosenbrock"]["incumbent_only"] > 0            # the labels no longer track the objective

@@ -861,17 +861,24 @@ def test_recipe_lifts_bind_the_recipe_code_they_measured():
     # (record section 22): a live lift is one it measured, on the recipe code it measured. Joined with the #178/#184
     # trunk, that recipe code changed again: composition's stage runner and cortex.reason carry the caller's grant
     # window (COG-5), and #159's native-qualified solvers serve bayes_then_voi's information and probabilistic
-    # stages. No lift routes on the joined tree until a pre-registered run measures the joined code
+    # stages. No lift routed on the joined tree until a pre-registered run measured the joined code. P6 joined v1
+    # (2026-10-22, freeze 8d81f342, fresh seeds) is that run: its verdicts decide the four synthetic recipes, and a
+    # live lift is one it measured, on the recipe code it measured. Converged v1's verdicts stay in history, stale.
     converged = "docs/evidence/greg-composition-lift/2026-10-21-converged/"
-    lifts = {r for r, v in index["recipes"].items() if v.get("lift") and v["evidence"].startswith(converged)}
-    assert lifts == {"identify_then_optimize", "bayes_then_voi"}             # P6 converged v1's two lifts, indexed
-    assert all("needs re-measurement" in C.recipe_stale(r, index["recipes"][r]) for r in lifts)
+    joined = "docs/evidence/greg-composition-lift/2026-10-22-joined/"
+    synthetic = {"estimate_then_optimize", "identify_then_optimize", "graph_then_allocate", "bayes_then_voi"}
+    assert {r for r, v in index["recipes"].items() if v["evidence"].startswith(joined)} == synthetic
+    for r in synthetic:                                                   # the converged verdict is kept, and stale
+        old = [h for h in index["recipes"][r].get("history", []) if h["evidence"].startswith(converged)]
+        assert len(old) == 1 and "needs re-measurement" in C.recipe_stale(r, old[0])
+    lifts = {r for r, v in index["recipes"].items() if v.get("lift") and v["evidence"].startswith(joined)}
+    assert lifts == {"estimate_then_optimize", "identify_then_optimize", "bayes_then_voi"}   # joined v1's lifts
     live = {r for r, v in index["recipes"].items() if v.get("lift") and not C.recipe_stale(r, v)}
-    assert live == set(), "a lift routes on code that differs from what it measured"
-    assert all(index["recipes"][r]["evidence"].startswith(converged) for r in live), \
+    assert live == lifts, "a lift routes on code that differs from what it measured"
+    assert all(index["recipes"][r]["evidence"].startswith(joined) for r in live), \
         "a lift routes on code that differs from what it measured"
     assert all(C.recipe_stale(r, v) for r, v in index["recipes"].items()
-               if v.get("lift") and not v["evidence"].startswith(converged))
+               if v.get("lift") and not v["evidence"].startswith(joined))
     honest = copy.deepcopy(index["recipes"]["track_then_staff"])
     honest["code"] = C.recipe_code("track_then_staff")                 # as if measured on today's code
     assert C.recipe_stale("track_then_staff", honest) is None
@@ -883,9 +890,9 @@ def test_recipe_lifts_bind_the_recipe_code_they_measured():
     rows = {r["method"]: r for r in C.candidates({"capacity_network": {"edges": [], "source": "s", "sink": "t",
                                                                         "budget": 1, "costs": {}}},
                                                   C.CompetencyGeometry(), index)}
-    # graph_then_allocate's deciding verdict (P6 converged v1, F3) is no lift, and no lift persists like any negative
-    # verdict, also where the joined tree has changed the recipe code: the recipe routes NO_LIFT and is demoted, never
-    # stale
+    # graph_then_allocate's deciding verdict (P6 joined v1, F3; converged v1 agreed) is no lift, and no lift
+    # persists like any negative verdict, also where the recipe code later changes: the recipe routes NO_LIFT and
+    # is demoted, never stale
     row = rows["composition:graph_then_allocate"]
     assert row["status"] == "NO_LIFT" and "stale_evidence" not in row and row["demoted"]
     stale = copy.deepcopy(index)

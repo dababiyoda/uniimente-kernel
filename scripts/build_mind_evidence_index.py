@@ -53,6 +53,12 @@ P6_RUNS = (
     ("docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json",
      {"F1": "estimate_then_optimize", "F2R": "identify_then_optimize", "F3": "graph_then_allocate",
       "F4": "bayes_then_voi"}),
+    # P6 joined v1 (2026-10-22): the same procedure on the joined integration tree, where every converged v1 verdict
+    # was stale (the joined cortex.reason and stage solvers changed its recipe closures). Fresh held-out seeds; its
+    # verdicts bind the recipe code at its freeze commit and decide, as the latest measurement of these recipes.
+    ("docs/evidence/greg-composition-lift/2026-10-22-joined/results-joined-v1.json",
+     {"F1": "estimate_then_optimize", "F2R": "identify_then_optimize", "F3": "graph_then_allocate",
+      "F4": "bayes_then_voi"}),
 )
 # In finish order; the last decides. PR #155's decisive retest (NO_GAIN, 2026-10-14) follows #158's (REGRESSION,
 # 2026-10-08); both are kept in ``history`` and neither is a gain, so the default stays shadow.

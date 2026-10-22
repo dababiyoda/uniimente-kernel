@@ -37,7 +37,7 @@ def main(argv=None):
     results = json.loads((run / "results.json").read_text())
     load = results["host_load"]
     print(f"- **Run:** source commit `{results['source_commit'][:8]}`, source dirty {results['source_dirty']}, "
-          f"freeze `{results["freeze_sha256"][:23]}…`, finished {results['finished_at']}.")
+          f"freeze `{results['freeze_sha256'][:23]}…`, finished {results['finished_at']}.")
     print(f"- **Host load:** start {load['start']['loadavg']}, end {load['end']['loadavg']} (diagnostic only).")
     print()
     print(table(results))

@@ -2312,8 +2312,8 @@
    "path": "scripts/admission_readme.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes)"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); merged at 98a2ab0c (admission v5-v7, develop_repair target and hybrid, formal/evo/search lanes); 2026-10-22 on #179: one f-string used Python 3.12 nested quotes and did not parse on CI's Python 3.11"
   },
   {
    "path": "scripts/build_mind_coverage_record.py",

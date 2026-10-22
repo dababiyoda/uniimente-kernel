@@ -878,3 +878,37 @@ The merged control and game solvers are about 50x and 1,600x slower than #155's 
 verdicts rest on quality. The binding test that recorded section 24's state is replaced by
 `test_the_four_operation_verdicts_are_re_admitted_on_the_merged_solvers`, which also checks that the 2026-10-14
 verdicts, read alone at the merged code, still need re-admission.
+
+## 26. On the joined tree (#196, 2026-10-22): what routes, measured rather than inferred
+
+Integration candidate 2 (draft #196) joins #192 (#178 and #184) with Track B (#189), #179 and #158. Sections 24 and
+25 describe #184's tree and are kept as written; this section records what the joined code routes. Every line below
+comes from a command run on the joined tree at `ea90b4b4` (`compiler.recipe_stale`, `scripts/mind_status.py`, the
+rebuilt evidence index), compared with #179's own head `866d4770` where stated.
+
+| Verdict | Recorded (index) | Routes on the joined tree | Why |
+|---|---|---|---|
+| control, game, information (2026-10-21 run, `462bd98`) | DEFAULT_FOR_GEOMETRY | **UNEVALUATED** | "cannot be bound to its code: 1 non-literal update(s) of the dispatch table at the run's commit, and the run recorded no runtime dispatch that confirms it" |
+| probabilistic | EXPERIMENTAL | EXPERIMENTAL | section 25's non-replication |
+| recipe lifts F2R `identify_then_optimize`, F4 `bayes_then_voi` (P6 converged v1) | VPL_LIFT | **stale (UNEVALUATED)** | "the recipe code has changed; needs re-measurement" |
+| recipe lifts F6, F8 and the four NO_LIFT recipes | as recorded | stale | the same, and already stale on #179's head |
+
+Section 25's sentence "Control, game and information route again at the closure they were measured on" held on
+#184's tree. On the joined tree Track B's stricter binding (a run that recorded no runtime dispatch cannot vouch for a
+dispatch table updated non-literally) applies to that run, and the binding was not weakened to keep them routing.
+
+**Live VPL on the joined tree is 0.** On #179's head it is 2 (F2R and F4 bind live there). The join changed the code
+those lifts were measured on: the grant-window guard in `cortex.reason` (#184's COG-5), the composition stages and the
+information and probabilistic stage solvers (#159). This is a measured cost of the integration, kept as such.
+
+Next, pre-registered and run once each on the joined code, with fresh held-out seeds (bands 4000-4999 and 5100-5999,
+checked against `spent_seeds()`, every freeze and the exposure ledger): P6 joined v1 (the four synthetic families,
+v1's procedure and rule unchanged) and an operation re-admission of control, game, information and probabilistic
+that records the runtime dispatch the binding needs. Their verdicts, including any NO_LIFT or non-replication, are
+added here when run.
+
+Also observed on the joined tree: the body package `greg` (69 modules; 47 on #179's tree) exceeds
+`cognition.optimization`'s declared 64-variable model ceiling, so the Mind abstains on its own body's critical path
+(MODEL_INVALID). The whole-machine trace's mission 2 now plans the runtime package `egregore`, and the body package is
+an abstain-never-wrong control. The admitted CPM genome `solver.or.critical_path` (DEFAULT_FOR_GEOMETRY, v3) has no
+such ceiling, but it is withheld until the founder attaches it.

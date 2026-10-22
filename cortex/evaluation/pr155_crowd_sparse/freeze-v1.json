@@ -1,0 +1,15 @@
+{
+  "frozen_at": "2026-10-14T13:03:16.996059+00:00",
+  "inputs": {
+    "code": {
+      "cortex/evaluation/pr155_crowd_sparse/run.py": "sha256:7cbe812101581825ec63ff1abf2078589e772e960e263581f636c8102c813f54",
+      "cortex/evaluation/genome_admission/run.py": "sha256:1ddc445e357f21b34e8a660ea05089937a58f3ea07fc1e2b1ac4981f9a01a2f3",
+      "greg/cognition/repertoire.py": "sha256:126b74a1604e4271136dd934c8c2c33be8e21a2c4e8bd0aac6ae9e9f498ae557",
+      "greg/cognition/solvers.py": "sha256:11447b687856960009bdd33d40182a3e30cc57c0c739ae8e35bb7628467a8ffc"
+    },
+    "seeds": [
+      3001,
+      3040
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 """GREG console: the one founder-facing interface, on this computer.
 
-    python -m greg console --key ~/.greg-founder.pem        (http://127.0.0.1:8766; the phone channel keeps 8765)
+    python -m greg console --key ~/.greg-founder.pem        (prints a private link on 127.0.0.1:8766; the phone channel keeps 8765)
 
 Alfonso says what he wants in plain words, reviews what GREG proposes and exactly
 what signing it would let GREG do, signs, and closes the window. The body keeps
@@ -10,8 +10,13 @@ working under its supervisor. The console is not the body and not a second Kerne
 * its only write is a founder-signed command file dropped into the body inbox;
 * the founder key is decrypted once at start and held in this process's memory only;
   without a key the console is read-only;
-* it binds to 127.0.0.1, refuses any other Host header (DNS rebinding), requires a
-  per-process CSRF token and same-origin POSTs, and caps request sizes.
+* it binds to 127.0.0.1 and refuses any other Host header (DNS rebinding);
+* private reads and every POST require the owner's private session, established once from the
+  single-use link ``greg console`` prints, in addition to the per-process CSRF token and same-origin
+  POSTs. Loopback reachability alone never authorizes use of the unlocked founder key: any local
+  process (a worker keeps host networking for its provider) can reach 127.0.0.1. Extracted from #157;
+  the session cookie is scoped to a random path because cookies are not port-scoped;
+* it caps request sizes. Owned public pages (/owned) stay readable without the session.
 
 Mechanism lineage: #112 egregore/local_console.py (loopback page, Host check, CSRF,
 head-bound review), now driving the canonical #113 body with real Ed25519 signatures
@@ -21,18 +26,22 @@ instead of synthetic development authority. That module left the active tree on 
 from __future__ import annotations
 
 import html
+from http.cookies import CookieError, SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
+import re
 import secrets
 import threading
 import time
 from urllib.parse import parse_qs, quote, urlsplit
 
-from greg import metrics, planner
+from greg import asks, metrics, planner
 from greg.body import Layout, morning_projection, observe, send_signed, status
 
 MAX_BODY = 16 * 1024
+OWNER_COOKIE = "greg_console_owner"
+PRIVATE = b"private owner session required; open the link printed by greg console"
 STYLE = """
 :root{--bg:#f5f6f4;--fg:#18242b;--muted:#5d6b73;--card:#fff;--line:#d5dcd9;--accent:#1f5f8b;--warn:#9a3b12;--ok:#2f6b3a}
 @media (prefers-color-scheme:dark){:root{--bg:#121719;--fg:#e4e9eb;--muted:#9aa7ad;--card:#1b2226;--line:#2d383d;
@@ -64,14 +73,30 @@ class Console:
         self.home = Path(home).expanduser().resolve()
         self.layout = Layout(self.home)
         self.key = key
-        self.transport = transport
+        self.transport = self._held(transport)
         self.transport_factory = transport_factory
         self._route_revision = None
         self.csrf = secrets.token_urlsafe(32)
+        # Interface authentication only: commands still carry the founder's Ed25519 signature and pass the
+        # body and Gate. None of these values reaches argv, the environment, body events or a public page.
+        self._bootstrap = secrets.token_urlsafe(32)
+        self._session = secrets.token_urlsafe(32)
+        self.owner_path = "/owner/" + secrets.token_urlsafe(24) + "/"
         self.proposals: dict[str, dict] = {}
         self.lock = threading.Lock()
         self.planner_context = planner_context
         self.flash: list[str] = []
+
+    def owner_url(self, port: int) -> str:
+        """The private, single-use link for the local owner who started this console."""
+        return f"http://127.0.0.1:{port}{self.owner_path}?access={self._bootstrap}"
+
+    def bootstrap(self, token: str) -> bool:
+        with self.lock:
+            if self._bootstrap is None or not secrets.compare_digest(token.encode(), self._bootstrap.encode()):
+                return False
+            self._bootstrap = None
+            return True
 
     # -- reading ----------------------------------------------------------------------
     def snapshot(self) -> dict:
@@ -106,7 +131,20 @@ class Console:
         config = json.loads(self.layout.config.read_text())
         return planner.PlannerContext(read_roots=tuple(Path(r) for r in config["read_roots"]),
                                       capabilities=status(self.home)["capabilities"],
-                                      workspace=self.layout.workspace)
+                                      workspace=self.layout.workspace, hosted=self._hosted())
+
+    def _hosted(self) -> dict:
+        """The hosted MCP servers GREG holds a login or token for, as the founder's words may name them: public
+        fields only (server, tools as listed, renewal host); no value leaves the secret broker."""
+        from greg import mcp_login
+        from greg.capabilities import SecretBroker
+        broker = SecretBroker(self.layout.secrets)
+        out = {}
+        for handle in broker.names():
+            login = mcp_login.record(broker, handle) if handle.startswith("mcp:") else None
+            if login:
+                out[handle[len("mcp:"):]] = {**mcp_login.public(login), "handle": handle}
+        return out
 
     # -- acting (signed files only) -----------------------------------------------------
     def sign(self, kind: str, body: dict) -> Path:
@@ -114,28 +152,59 @@ class Console:
             raise PermissionError("this console has no founder key; restart it with --key to sign")
         return send_signed(self.home, self.key, kind, body)
 
+    @staticmethod
+    def _held(transport):
+        """A key a vendor refuses while drafting here is not offered to that vendor again in this console."""
+        if transport is not None and hasattr(transport, "routes"):
+            from greg import model_keys
+            model_keys.hold(transport)
+        return transport
+
+    def _keys_stamp(self):
+        try:
+            stat = self.layout.secrets.stat()
+        except OSError:
+            return None
+        return stat.st_mtime_ns, stat.st_size
+
     def _refresh_transport(self):
-        """A signed detach also invalidates drafts in an already open console."""
+        """A signed detach also invalidates drafts in an already open console; a newly stored key is picked up."""
         if self.transport_factory is None:
             return
         with observe(self.home, actor="spiffe://uniimente.internal/greg/console-model-reader") as journal:
             from greg.models import effective_route_config
             events = journal.replay("model.configured")
-            revision = events[-1].event_id if events else None
+            revision = (events[-1].event_id if events else None, self._keys_stamp())
             if revision == self._route_revision:
                 return
             base = json.loads(self.layout.config.read_text()).get("models")
             selected = effective_route_config(base, journal)
-        replacement = self.transport_factory(selected)
+        replacement = self._held(self.transport_factory(selected))
         with self.lock:
             self.transport = replacement
             self.proposals.clear()
             self._route_revision = revision
 
+    def _unrefused(self):
+        """The drafting router without a route whose current key its vendor refused (the body's record says so)."""
+        transport = self.transport
+        if transport is None or not hasattr(transport, "routes"):
+            return transport, []
+        from greg import model_keys
+        with observe(self.home, actor="spiffe://uniimente.internal/greg/console-model-reader") as journal:
+            model_keys.bench_refused(transport, [e.payload for e in journal.replay("model.route")])
+        if transport.routes:
+            return transport, []
+        return None, [name for name in transport.health]
+
     def ask(self, text: str) -> str:
         self._refresh_transport()
         revision = self._route_revision
-        proposal = planner.propose(text, self.context(), transport=self.transport)
+        transport, refused = self._unrefused()
+        proposal = planner.propose(text, self.context(), transport=transport)
+        if refused and proposal.get("status") == "NO_ROUTE":
+            proposal["why"] = ("the vendor refused the stored key for " + ", ".join(refused) + "; store a new one "
+                               "(greg secret set <handle>; Mission Control's Authority view names the handle)")
         self._refresh_transport()
         if self._route_revision != revision:
             proposal = {"status": "FAILED", "why": "model route changed during drafting; ask again"}
@@ -223,6 +292,30 @@ def _ask_details(r: dict) -> str:
     if r.get("wording_withheld"):
         parts.append("<br><b>GREG's wording was withheld</b> (" + _e(", ".join(r["wording_withheld"]["rules"]))
                      + "); the facts and options below are unchanged.")
+    places = [p for p in (r.get("evidence") or {}).get("deliverable_observed_by") or []
+              if isinstance((p.get("params") or {}).get("path"), str)]
+    if places:
+        # The only thing that moves a person's step forward: say exactly which file, and where (#168, 3c92bc9).
+        parts.append("<br><b>Where GREG looks:</b><ul>" + "".join(
+            f"<li>save <code>{_e(Path(p['params']['path']).name)}</code> in "
+            f"<code>{_e(str(Path(p['params']['path']).parent))}</code>"
+            + (f": {_e(p['description'])}" if p.get("description") else "") + "</li>" for p in places) + "</ul>")
+    if r.get("answered") is not None:
+        parts.append(f"<br><b>You answered {_e(r['answered'])}; that is only recorded.</b> "
+                     "The mission still waits for the file above.")
+    if r.get("unsigned_answer_recorded") is not None:
+        answer, cause = _e(r["unsigned_answer_recorded"]), r.get("unsigned_answer_cause")
+        why = f" ({_e(r['unsigned_answer_why'])})" if r.get("unsigned_answer_why") else ""
+        parts.append({
+            "pending": f"<br><b>Your signed answer ({answer}) is being applied.</b>",
+            "refused_by_body": f"<br><b>Your signed answer ({answer}) was refused when GREG applied it{why}.</b> "
+                               "GREG does not act on it; sign your answer again.",
+            "unverifiable_acceptance": f"<br><b>An answer ({answer}) is recorded as accepted, but no signed copy of it "
+                                       "verifies.</b> GREG does not act on it; answer again to confirm.",
+            "refused_at_acceptance": f"<br><b>Your signed answer ({answer}) does not apply to this ask{why}.</b> "
+                                     "GREG does not act on it; this ask waits for your answer.",
+        }.get(cause, f"<br><b>The ledger holds an answer ({answer}) that no decision this body accepted and "
+                     "verified stands behind.</b> GREG does not act on it; this ask waits for your answer."))
     if r.get("answer_effect"):
         parts.append("<br><b>What your answer does:</b> " + _e(r["answer_effect"]))
     if r.get("expected_effect"):
@@ -241,6 +334,20 @@ def _ask_details(r: dict) -> str:
                      + (f": {_e(mech.get('distribution'))} {_e(mech.get('version'))}, license {_e(mech.get('license'))}, "
                         f"{_e(source)}; qualified on {_e(q.get('cases'))} frozen cases with {_e(q.get('failures'))} "
                         f"failures; {_e(mech.get('competence'))}" if mech else ""))
+    reach = {k: v for k, v in (r.get("authority_requested") or {}).items()
+             if k in ("tool", "remote_server", "may_write", "may_reach", "credentials")}
+    if reach:
+        # The approval is bound to this exact scope; show it before the founder answers (increment 20).
+        shown = lambda v: ", ".join(map(str, v)) if isinstance(v, list) else str(v)
+        parts.append("<br><b>Approving lets it:</b><ul>"
+                     + (f"<li>run <code>{_e(reach['tool'])}</code></li>" if "tool" in reach else "")
+                     + (f"<li>on the remote server <code>{_e(reach['remote_server'])}</code></li>"
+                        if "remote_server" in reach else "")
+                     + (f"<li>write: <code>{_e(shown(reach['may_write']))}</code> (nothing else)</li>"
+                        if "may_write" in reach else "")
+                     + (f"<li>reach: {_e(shown(reach['may_reach']))}</li>" if "may_reach" in reach else "")
+                     + (f"<li>credentials: {_e(shown(reach['credentials']))}</li>" if "credentials" in reach else "")
+                     + "</ul>")
     if r.get("resource"):
         parts.append("<br><span class=muted>Authority needed: "
                      + _e("; ".join(f"{k}: {v}" for k, v in r["authority_requested"].items())) + "</span>")
@@ -412,8 +519,12 @@ def home_parts(console: Console) -> dict:
     signer = ("<span class=ok>founder key unlocked in this console</span>" if console.key is not None
               else "<span class=warn>read-only (start with --key to sign)</span>")
     can = console.key is not None
+    egress = st.get("egress") or {}
+    network = ((f"network confined: {egress['decisions']} relay decisions, {egress['denied']} denied"
+                + ("" if egress.get("chain_intact") else " · <b class=warn>relay journal FAILED</b>"))
+               if egress.get("confined") else "<span class=warn>network not confined</span>")
     add("header", f"<h1>GREG</h1><p class=muted>Body {_e(st['body_id'])} · {body_state} · {signer} · "
-           f"chain {'verified' if st['security']['chain_verified'] else '<b class=warn>FAILED</b>'}</p>")
+           f"chain {'verified' if st['security']['chain_verified'] else '<b class=warn>FAILED</b>'} · {network}</p>")
     tier = st.get("founder_tier") or {}
     if tier and not tier.get("enrolled_key_attested"):
         add("founder_tier", "<section class=warn><b>Founder tier: not attested.</b> " + _e(tier.get("consequence", ""))
@@ -433,15 +544,22 @@ def home_parts(console: Console) -> dict:
                "Every morning tell me which of my pull requests are failing checks and what is stale.'></textarea>"
                "<p><button>Propose a mission</button> <span class=muted>Nothing runs until you review and sign."
                "</span></p></form></section>")
-    if st["decisions_required"]:
+    asked = {c["capability_id"] for r in st["decisions_required"] for c in _attachable(r)}
+    waiting = [w for w in st.get("attach_waiting", []) if w["capability_id"] not in asked]
+    if st["decisions_required"] or waiting:
         rows = []
         for r in st["decisions_required"]:
-            # On a capability ask Approve would only record an answer, never attach (greg/asks.py), and
-            # answering removes the ask; offer Attach and Reject instead.
+            # On a capability ask Approve would only record an answer, never attach (greg/asks.py), and answering
+            # removes the ask; offer Attach and Reject instead (#168).
             approve = "" if _attachable(r) else _form(console, "/decide", {"request_id": r["request_id"],
                                                                            "answer": "approve"}, "Approve",
                                                       disabled=not can) + " "
-            actions = "" if r.get("answerable") is False else (approve +
+            if r["kind"] in asks.OPEN_UNTIL_OBSERVED:
+                # Answering changes nothing for the mission; only the file does. No button to mistake for it.
+                actions = "<span class=muted>Nothing to click: save the file, and GREG notices it.</span>"
+            else:
+                # An ask no DECISION closes (asks.NOT_ANSWERABLE) gets no answer buttons; its row says what does.
+                actions = "" if r.get("answerable") is False else (approve +
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reject"}, "Reject",
                              cls="secondary", disabled=not can)) if r["kind"] != "RECONCILIATION" else (
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reconcile_executed"},
@@ -456,21 +574,17 @@ def home_parts(console: Console) -> dict:
             rows.append(f"<tr><td><span class=pill>{_e(r['kind'])}</span></td><td>{_e(r['why_now'])}<br>"
                         f"<span class=muted>{_e(r['recommendation'])}</span>{_ask_details(r)}</td>"
                         f"<td>{actions}</td></tr>")
-        add("decisions", "<section><h2>Decisions waiting for you</h2><table>" + "".join(rows) + "</table></section>")
-    # A capability ask answered without an attach (e.g. approved from the phone, which can never attach)
-    # leaves its mission blocked; keep the one signed way forward in the same "decisions" part, so the
-    # classic page and Mission Control both show it (#168, 8531595).
-    asked = {c["capability_id"] for r in st["decisions_required"] for c in _attachable(r)}
-    waiting = [w for w in st.get("attach_waiting", []) if w["capability_id"] not in asked]
-    if waiting:
-        rows = [f"<tr><td><span class=pill>ATTACH</span></td><td>{_e(w['mission_id'] or '')} is waiting for "
+        html = ("<section><h2>Decisions waiting for you</h2><table>" + "".join(rows) + "</table></section>") if rows else ""
+        if waiting:
+            html += "<section><h2>Waiting for an attach</h2><table>" + "".join(
+                f"<tr><td><span class=pill>ATTACH</span></td><td>{_e(w['mission_id'] or '')} is waiting for "
                 f"{_e(w['capability_id'])}<br><span class=muted>Verified by Genesis; your earlier answer did not "
                 "attach it. Attaching is a signed command.</span></td><td>"
                 + _form(console, "/attach", {"request_id": "", "capability_id": w["capability_id"]},
                         f"Attach {w['capability_id']}", disabled=not can,
                         confirm=f"Sign CAPABILITY_ATTACH for {w['capability_id']}?") + "</td></tr>"
-                for w in waiting]
-        add("decisions", "<section><h2>Waiting for an attach</h2><table>" + "".join(rows) + "</table></section>")
+                for w in waiting) + "</table></section>"
+        add("decisions", html)
     closures = [r for r in vepmc["missions"]]
     if closures:
         rows = []
@@ -643,16 +757,41 @@ def make_handler(console: Console):
             port = self.server.server_address[1]
             return self.headers.get("Host") in (f"127.0.0.1:{port}", f"localhost:{port}")
 
-        def _send(self, code: int, data: bytes, ctype="text/html; charset=utf-8", location=None):
+        def _owner_authenticated(self) -> bool:
+            try:
+                cookies = SimpleCookie(self.headers.get("Cookie", ""))
+            except CookieError:
+                return False
+            value = cookies.get(OWNER_COOKIE)
+            return value is not None and secrets.compare_digest(value.value.encode(), console._session.encode())
+
+        def _send(self, code: int, data: bytes, ctype="text/html; charset=utf-8", location=None,
+                  *, owner=False, public_content=False, establish_session=False):
+            if owner and ctype.startswith("text/html"):
+                # Keep every private link and form under the owner path the session cookie is scoped to.
+                text = data.decode("utf-8")
+                text = re.sub(r"\b(href|action)=(['\"]?)/(?!/)",
+                              lambda match: match.group(1) + "=" + match.group(2) + console.owner_path, text)
+                data = text.encode("utf-8")
+            if owner and location and location.startswith("/") and not location.startswith(console.owner_path):
+                location = console.owner_path + location.lstrip("/")
             self.send_response(code)
             if location:
                 self.send_header("Location", location)
             self.send_header("Content-Type", ctype)
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Frame-Options", "DENY")
-            self.send_header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; "
-                             "script-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'")
+            policy = ("sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src data:; "
+                      "script-src 'none'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'"
+                      if public_content else
+                      "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; "
+                      "form-action 'self'; base-uri 'none'; frame-ancestors 'none'")
+            self.send_header("Content-Security-Policy", policy)
             self.send_header("Referrer-Policy", "no-referrer")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            if establish_session:
+                self.send_header("Set-Cookie", f"{OWNER_COOKIE}={console._session}; "
+                                 f"Path={console.owner_path}; HttpOnly; SameSite=Strict")
             self.send_header("Content-Length", str(len(data)))
             self.end_headers()
             self.wfile.write(data)
@@ -660,28 +799,42 @@ def make_handler(console: Console):
         def do_GET(self):
             if not self._host_ok():
                 return self._send(403, b"loopback host required")
-            path = urlsplit(self.path).path
+            parsed = urlsplit(self.path)
+            path = parsed.path
+            owner = path.startswith(console.owner_path)
+            if owner:
+                path = "/" + path[len(console.owner_path):]
+                supplied = parse_qs(parsed.query).get("access", [])
+                if path == "/" and len(supplied) == 1:
+                    if console.bootstrap(supplied[0]):
+                        return self._send(303, b"", location=console.owner_path, establish_session=True)
+                    if self._owner_authenticated():
+                        return self._send(303, b"", location=console.owner_path)
+                if not self._owner_authenticated():
+                    return self._send(403, PRIVATE, "text/plain; charset=utf-8")
+            elif path != "/owned" and not path.startswith(("/owned/", "/community/", "/community-export/")):
+                return self._send(403, PRIVATE, "text/plain; charset=utf-8")
             try:
                 if path == "/":
-                    return self._send(200, render_mission_control(console))
+                    return self._send(200, render_mission_control(console), owner=True)
                 if path == "/classic":
-                    return self._send(200, render_home(console))
+                    return self._send(200, render_home(console), owner=True)
                 if path.startswith("/mc/"):
-                    q = parse_qs(urlsplit(self.path).query).get("q", [""])[0]
-                    return self._send(200, render_mission_control(console, path.split("/", 2)[2], q))
+                    q = parse_qs(parsed.query).get("q", [""])[0]
+                    return self._send(200, render_mission_control(console, path.split("/", 2)[2], q), owner=True)
                 if path == "/api/mc":
                     from greg.mission_control import projection
                     return self._send(200, json.dumps(projection(console), default=str).encode(), "application/json")
                 if path.startswith("/first-mission/"):
                     from urllib.parse import unquote
-                    return self._send(200, render_first_mission(console, unquote(path.split("/", 2)[2])))
+                    return self._send(200, render_first_mission(console, unquote(path.split("/", 2)[2])), owner=True)
                 if path.startswith("/proposal/"):
-                    return self._send(200, render_proposal(console, path.split("/", 2)[2]))
+                    return self._send(200, render_proposal(console, path.split("/", 2)[2]), owner=True)
                 if path.startswith("/delivery/"):
                     from urllib.parse import unquote
-                    return self._send(200, render_delivery(console, unquote(path.split("/", 2)[2])))
+                    return self._send(200, render_delivery(console, unquote(path.split("/", 2)[2])), owner=True)
                 if path == "/owned":
-                    return self._send(200, render_owned_index(console))
+                    return self._send(200, render_owned_index(console), owner=owner, public_content=True)
                 if path.startswith(("/community/", "/community-export/")):
                     from urllib.parse import unquote
                     parts = path.split("/")
@@ -698,7 +851,8 @@ def make_handler(console: Console):
                     if parts[1] == "community-export":
                         data = read_owned_community(console, mid, name, offset, export=True)
                         return self._send(200, json.dumps(data).encode(), "application/json")
-                    return self._send(200, render_community(console, mid, name, offset))
+                    return self._send(200, render_community(console, mid, name, offset),
+                                      owner=owner, public_content=True)
                 if path.startswith("/owned/"):
                     from urllib.parse import unquote
                     parts = path.split("/")
@@ -709,9 +863,10 @@ def make_handler(console: Console):
                         version = int(query["version"][0]) if "version" in query else None
                     except ValueError:
                         return self._send(400, b"invalid page version")
-                    return self._send(200, render_owned_page(console, unquote(parts[2]), unquote(parts[3]), version))
+                    return self._send(200, render_owned_page(console, unquote(parts[2]), unquote(parts[3]), version),
+                                      owner=owner, public_content=True)
                 if path == "/morning":
-                    return self._send(200, render_morning(console))
+                    return self._send(200, render_morning(console), owner=True)
                 if path == "/api/state":
                     return self._send(200, json.dumps(console.snapshot(), default=str).encode(), "application/json")
             except FileNotFoundError:
@@ -721,6 +876,9 @@ def make_handler(console: Console):
         def do_POST(self):
             if not self._host_ok():
                 return self._send(403, b"loopback host required")
+            parsed = urlsplit(self.path)
+            if not parsed.path.startswith(console.owner_path) or not self._owner_authenticated():
+                return self._send(403, PRIVATE, "text/plain; charset=utf-8")
             origin = self.headers.get("Origin")
             port = self.server.server_address[1]
             if origin not in (None, "null", f"http://127.0.0.1:{port}", f"http://localhost:{port}"):
@@ -732,17 +890,19 @@ def make_handler(console: Console):
                                                  keep_blank_values=True).items()}
             if not secrets.compare_digest(form.get("csrf", ""), console.csrf):
                 return self._send(403, b"invalid form token; reload the page")
-            path = urlsplit(self.path).path
+            path = "/" + parsed.path[len(console.owner_path):]
             try:
                 if path == "/ask":
-                    return self._send(303, b"", location="/proposal/" + console.ask(form.get("text", "")[:4000]))
+                    return self._send(303, b"", location="/proposal/" + console.ask(form.get("text", "")[:4000]),
+                                      owner=True)
                 if path == "/venture-rehearsal":
                     try:
-                        return self._send(303, b"", location="/proposal/" + console.venture_rehearsal())
+                        return self._send(303, b"", location="/proposal/" + console.venture_rehearsal(), owner=True)
                     except FileNotFoundError as exc:
                         return self._send(409, str(exc).encode())
                 if path == "/first-mission":
-                    return self._send(303, b"", location="/proposal/" + console.first_mission(form.get("effort_budget", "8")))
+                    return self._send(303, b"", location="/proposal/" + console.first_mission(form.get("effort_budget", "8")),
+                                      owner=True)
                 if path == "/sign":
                     target = console.sign_proposal(form.get("proposal", ""))
                     console.flash.append(f"Signed and sent: {target.name}. You can close this window.")
@@ -782,7 +942,7 @@ def make_handler(console: Console):
                 return self._send(403, str(exc).encode())
             except (KeyError, ValueError) as exc:
                 return self._send(400, f"{type(exc).__name__}: {exc}".encode()[:500])
-            return self._send(303, b"", location="/")
+            return self._send(303, b"", location="/", owner=True)
     return Handler
 
 

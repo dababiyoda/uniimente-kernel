@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from fractions import Fraction
 import math
+import statistics
 import time
 
 from .contracts import CognitionError, ProofArtifact, digest
@@ -171,6 +172,81 @@ def _native_numeric_checks(family, data, answer):
         dissent.append(str(exc))
     return checks, dissent
 
+_UNITS = {w: i for i, w in enumerate("zero one two three four five six seven eight nine ten eleven twelve thirteen "
+                                     "fourteen fifteen sixteen seventeen eighteen nineteen".split()) if i >= 2}
+_TENS = {w: 10 * i for i, w in enumerate("twenty thirty forty fifty sixty seventy eighty ninety".split(), 2)}
+_NEGATORS = ("not", "no", "never", "none", "nor", "neither", "without", "nobody", "nothing", "cannot")
+_FILLER = frozenset({"the", "a", "an", "and", "but", "or", "of", "in", "on", "at", "to", "for", "by", "with", "from",
+                     "it", "its", "this", "that", "these", "those", "they", "their", "did", "does", "do", "was",
+                     "were", "is", "are", "has", "have", "had", "been", "be", "will", "would", "can", "could", "may",
+                     "might", "should", "shall", "must", "also", "else"})
+
+
+def _restatement_gaps(claim: str, support: list) -> tuple[bool, bool]:
+    """(a figure of the claim is absent from its supporting spans, a claim clause's polarity differs from the span
+    clause it restates). Separate code from the solver's check, read the same way: spelled numbers are figures, and
+    polarity is compared clause against clause, so a negator elsewhere in a span cannot mask a negated claim."""
+    def words(text):
+        return ["".join(ch for ch in w.lower() if ch.isalpha() or ch == "'") for w in text.split()]
+
+    def spelled(text):          # "twelve" -> 12, "twenty-five" / "twenty five" -> 25; "one" is too often not a number
+        out, tokens, i = [], text.replace("-", " ").split(), 0
+        while i < len(tokens):
+            w = tokens[i].lower().strip(".,;:!?")
+            nxt = tokens[i + 1].lower().strip(".,;:!?") if i + 1 < len(tokens) else ""
+            tail = tokens[i][len(tokens[i].rstrip(".,;:!?")):]
+            if w in _TENS and nxt in _UNITS and _UNITS[nxt] < 10:
+                out.append(str(_TENS[w] + _UNITS[nxt]) + tokens[i + 1][len(tokens[i + 1].rstrip(".,;:!?")):])
+                i += 2
+                continue
+            out.append(str(_TENS.get(w, _UNITS.get(w))) + tail if w in _TENS or w in _UNITS else tokens[i])
+            i += 1
+        return " ".join(out)
+
+    def numbers(text):
+        out, token = set(), ""
+        text = spelled(text)
+        for ch in text.replace(" percent", "%").replace(" per cent", "%") + " ":
+            if ch.isdigit() or (token and ch in ",.%"):
+                token += ch
+            elif token:
+                out.add(token.replace(",", "").rstrip(".,"))
+                token = ""
+        return {n for n in out if n and n[0].isdigit()}
+
+    def negative(text):
+        found = words(text)
+        lowered = " ".join(found)
+        return any(w in _NEGATORS or w.endswith("n't") for w in found) or any(
+            p in lowered for p in ("fail to ", "fails to ", "failed to ", "unable to "))
+
+    def clauses(text):
+        out, current = [], ""
+        for i, ch in enumerate(text + " "):
+            if ch in ".;:!?," and (i + 1 >= len(text) or text[i + 1].isspace()):
+                out.append(current)
+                current = ""
+            else:
+                current += ch
+        return [c for c in out + [current] if c.strip()]
+
+    def subject(text):
+        return {w for w in words(text) if len(w) > 2 and w not in _NEGATORS and w not in _FILLER}
+
+    spans = " ".join(support)
+    span_clauses = [c for text in support for c in clauses(text)]
+    polarity = False
+    for clause in clauses(claim):
+        mine = subject(clause)
+        if not mine:
+            continue
+        shared = [len(mine & subject(c)) for c in span_clauses]
+        best = max(shared, default=0)
+        against = [negative(c) for c, n in zip(span_clauses, shared) if n == best] if best else [negative(spans)]
+        polarity = polarity or all(n != negative(clause) for n in against)
+    return bool(numbers(claim) - numbers(spans)), polarity
+
+
 def verify(family, data, answer, proof_class):
     checks, dissent, cross = {}, [], {}
     from .catalog import FAMILIES, NATIVE_QUALIFIED
@@ -220,6 +296,7 @@ def verify(family, data, answer, proof_class):
         checks["artifact_sources_match_input"] = artifact["sources"] == [{k:v for k,v in s.items() if k != "text"} for s in data["sources"]]
         checks["artifact_bindings_match_input"] = artifact["bindings"] == data["bindings"]
         checks["artifact_contradictions_match_input"] = artifact["contradictions"] == [b for b in data["bindings"] if b["relationship"] == "contradicts"]
+        checks["artifact_distortions_match_output"] = artifact.get("distortions") == output.get("distortions")
     if family == "exact" and "polynomial" not in data:
         # A separately parsed Decimal evaluator attacks the Fraction solver.
         import ast
@@ -262,6 +339,11 @@ def verify(family, data, answer, proof_class):
             checks["integer_domain"] = all(v.denominator == 1 for v in values.values())
             objective = sum(c * values[n] for n, c in data["objective"]["coefficients"].items())
             checks["objective_substitution"] = math.isclose(float(objective), output["objective_value"], abs_tol=1e-6)
+            if output["solver_status"] == "OPTIMAL":
+                # OPTIMAL is a claim about the bound: the proof's best bound must meet the objective (gap 0).
+                bound = (answer.get("proof") or {}).get("bound")
+                checks["optimality_bound_met"] = bound is not None and math.isclose(
+                    float(bound), float(objective), abs_tol=1e-6)
             if output["solver_status"] == "OPTIMAL" and checks["constraint_substitution"] and checks["integer_domain"]:
                 # A second engine attacks the optimality claim: no feasible assignment may beat it.
                 better = _z3_integer_check(data, strictly_better_than=objective)
@@ -347,7 +429,122 @@ def verify(family, data, answer, proof_class):
         checks["fresh_sources"] = all(datetime.fromisoformat(s["expires_at"].replace("Z", "+00:00")) > datetime.now(timezone.utc) for s in sources.values())
         checks["span_binding"] = all(b["source_id"] in sources and b["quote"] in sources[b["source_id"]]["text"] for b in data["bindings"])
         checks["contradiction_preserved"] = output["contested"] == any(b["relationship"] == "contradicts" for b in data["bindings"])
+        # Written apart from the solver's tokenizer: a restatement whose figures or polarity differ from its supporting
+        # spans may not be reported as unchanged.
+        support = [b["quote"] for b in data["bindings"] if b["relationship"] == "supports"]
+        if support:
+            reported = {c["class"] for c in output.get("distortions") or []}
+            figure_gap, polarity_gap = _restatement_gaps(data["claim"], support)
+            checks["restatement_rechecked"] = (not figure_gap or "figure" in reported) and \
+                (not polarity_gap or "negation" in reported)
         dissent.append("Declared provenance/quality need separate authentication; quote binding does not prove entailment.")
+    elif family == "robust_pattern":
+        # Recompute the median and MAD with the standard library and re-derive every flag.
+        values = [float(v) for v in data["observations"]]
+        median = statistics.median(values)
+        mad = statistics.median(abs(v - median) for v in values)
+        threshold = float(data.get("threshold", 3.5))
+        checks["artifact_observations_match_input"] = artifact["observations"] == values
+        checks["independent_median_mad"] = math.isclose(output["median"], median) and math.isclose(output["mad"], mad)
+        if mad > 0:
+            checks["independent_flags"] = output["anomalies"] == [
+                i for i, v in enumerate(values) if abs(0.6745 * (v - median) / mad) > threshold]
+        else:
+            # More than half the values equal the median: the documented fallback scale is 1.253314 x the mean
+            # absolute deviation; a constant series flags nothing. Re-derived here, never skipped.
+            mean_ad = sum(abs(v - median) for v in values) / len(values)
+            expected = ([i for i, v in enumerate(values) if abs(v - median) / (1.253314 * mean_ad) > threshold]
+                        if mean_ad > 0 else [])
+            checks["independent_flags"] = output["anomalies"] == expected
+        dissent.append("Flags are statistical; a flagged value is not shown to be an error or an attack.")
+    elif family == "crowd":
+        classes = data["classes"]
+        post, labels = output["posteriors"], output["labels"]
+        checks["posteriors_normalised"] = all(math.isclose(sum(p), 1, abs_tol=1e-6) for p in post.values())
+        checks["labels_are_posterior_argmax"] = all(
+            labels[i] is None or labels[i] == classes[max(range(len(classes)), key=lambda c: (p[c], -c))]
+            for i, p in post.items())
+        tally = {}
+        for r in data["labels"]:
+            key = (str(r["item_id"]), str(r["independence_group"]))
+            tally.setdefault(key, []).append(r["label"])
+        decided = {item for (item, _), got in tally.items()
+                   if sorted(got.count(c) for c in set(got))[-1:] != sorted(got.count(c) for c in set(got))[-2:-1]}
+        checks["every_decidable_item_answered"] = set(labels) == decided
+        objective = [step["map_objective"] for step in artifact["trace"]["em"]]
+        checks["em_objective_non_decreasing"] = all(b >= a - 1e-6 * max(1.0, abs(a)) for a, b in zip(objective, objective[1:]))
+        # Tie the answer to the votes (review 2026-10-15, H3): recompute one E-step from the artifact's fitted model
+        # and the raw votes, check the model is (near) a fixed point of one M-step from the reported posteriors,
+        # and resolve label switching by the standard convention that observers are better than chance.
+        k = len(classes)
+        model = artifact.get("model") or {}
+        prior, confusion = model.get("prior"), model.get("confusion") or {}
+        votes = {}
+        for (item, group), got in tally.items():
+            counts = {c: got.count(c) for c in set(got)}
+            top = max(counts.values())
+            winners = [c for c in classes if counts.get(c) == top]
+            if len(winners) == 1:
+                votes.setdefault(item, {})[group] = classes.index(winners[0])
+        well_formed = (isinstance(prior, list) and len(prior) == k and set(confusion) >= {g for v in votes.values()
+                                                                                         for g in v})
+        checks["fitted_model_present"] = well_formed
+        if well_formed:
+            recomputed = {}
+            for item, by_group in votes.items():
+                logs = [math.log(prior[c]) + sum(math.log(confusion[g][c][label]) for g, label in by_group.items())
+                        for c in range(k)]
+                top = max(logs)
+                total = sum(math.exp(x - top) for x in logs)
+                recomputed[item] = [math.exp(x - top) / total for x in logs]
+            checks["posteriors_recomputed_from_votes"] = set(recomputed) == set(post) and all(
+                all(math.isclose(a, b, abs_tol=1e-6) for a, b in zip(recomputed[i], post[i])) for i in post)
+            smoothing = float(artifact["trace"].get("smoothing", data.get("smoothing", 1.0)))
+            em = artifact["trace"]["em"]
+            converged = len(em) >= 2 and abs(em[-1]["map_objective"] - em[-2]["map_objective"]) < 1e-7
+            if converged:
+                counts = {g: [[smoothing] * k for _ in range(k)] for g in confusion}
+                for item, by_group in votes.items():
+                    for g, label in by_group.items():
+                        for c in range(k):
+                            counts[g][c][label] += post[item][c]
+                checks["model_is_m_step_fixed_point"] = all(
+                    math.isclose(counts[g][c][j] / sum(counts[g][c]), confusion[g][c][j], abs_tol=1e-3)
+                    for g in counts for c in range(k) for j in range(k))
+            else:
+                dissent.append("EM stopped at its iteration cap: the M-step fixed-point check was not applied.")
+            reliability = [sum(prior[c] * confusion[g][c][c] for c in range(k)) for g in confusion]
+            checks["observers_better_than_chance_on_average"] = sum(reliability) / len(reliability) > 1 / k
+        dissent.append("Dawid-Skene assumes observers err independently given the true class; correlated error "
+                       "outside the declared independence groups is not detected.")
+    elif family in ("swarm", "blackbox"):
+        # Closed forms written here, independently of greg.cognition.repertoire (review 2026-10-15, M5).
+        closed = {"sphere": lambda z: sum(v * v for v in z),
+                  "rastrigin": lambda z: 10 * len(z) + sum(v * v - 10 * math.cos(2 * math.pi * v) for v in z),
+                  "ackley": lambda z: (-20 * math.exp(-0.2 * math.sqrt(sum(v * v for v in z) / len(z)))
+                                       - math.exp(sum(math.cos(2 * math.pi * v) for v in z) / len(z)) + 20 + math.e),
+                  # declared with its minimum at the shift: evaluated at z + 1
+                  "rosenbrock": lambda z: sum(100 * ((z[i + 1] + 1) - (z[i] + 1) ** 2) ** 2 + (1 - (z[i] + 1)) ** 2
+                                              for i in range(len(z) - 1)),
+                  "griewank": lambda z: (1 + sum(v * v for v in z) / 4000
+                                         - math.prod(math.cos(v / math.sqrt(i + 1)) for i, v in enumerate(z)))}
+        shift = [float(v) for v in data["shift"]]
+        bounds = [(float(lo), float(hi)) for lo, hi in data["bounds"]]
+        budget = int(data["budget"])
+        x = output["candidate"]
+        checks["candidate_in_bounds"] = len(x) == len(bounds) and all(lo <= v <= hi for v, (lo, hi) in zip(x, bounds))
+        checks["independent_fitness"] = (data["function"] in closed and len(x) == len(shift) and math.isclose(
+            closed[data["function"]]([a - b for a, b in zip(x, shift)]), output["fitness"], rel_tol=1e-9,
+            abs_tol=1e-12))
+        checks["evaluation_budget"] = output["evaluations"] <= budget
+        trace = artifact.get("trace") or []
+        if family == "swarm":                      # the swarm always spends its whole budget
+            checks["evaluation_count_matches_method"] = output["evaluations"] == budget
+        if trace:                                  # the last recorded improvement is the reported best
+            checks["trace_consistent"] = (math.isclose(trace[-1]["fitness"], output["fitness"], rel_tol=1e-12,
+                                                       abs_tol=1e-15)
+                                          and trace[-1]["evaluation"] <= output["evaluations"])
+        dissent.append("A heuristic search returns the best point it evaluated; no global-optimality certificate.")
     elif proof_class == "genome_certificate":
         # IntelligenceGenome library: the genome's own independent check (never its solve path) plus
         # identity, evidence-type and input bindings of the envelope.
@@ -423,8 +620,8 @@ def _z3_integer_check(data, *, strictly_better_than=None, budget_s=CROSS_CHECK_B
             expr = z3.Sum([whole(co) * vs[n] for n, co in objective["coefficients"].items()])
             bound = whole(strictly_better_than)
             solver.add(expr < bound if objective["sense"] == "min" else expr > bound)
-    except (ValueError, TypeError, ArithmeticError):
-        return None  # not the integer model CP-SAT accepts; the second engine stays silent rather than truncate
+    except (ValueError, TypeError, ArithmeticError, KeyError):
+        return None  # not a model this check can pose; the second engine stays silent rather than truncate or guess
     left = _remaining_ms(deadline)
     if left is None:
         return None
@@ -454,7 +651,10 @@ def _z3_core_check(data, core, budget_s=CROSS_CHECK_BUDGET_S):
             lhs = (z3.Sum([z3.RealVal(str(co)) * vs[n] for n, co in c["coefficients"].items()])
                    if c["coefficients"] else z3.RealVal(0))
             rhs = z3.RealVal(str(c["rhs"]))
-            solver.add(_holds(c["op"], lhs, rhs))
+            try:
+                solver.add(_holds(c["op"], lhs, rhs))
+            except KeyError:
+                return None  # an operator this re-check cannot pose is undecided, never a crash
         return _status(z3, solver.check())
 
     try:

@@ -1,0 +1,4270 @@
+{
+ "schema": "greg-composition-lift-results/2",
+ "manifest_sha256": "sha256:6da8c8493b2f6ad551a73c7f3948e10e29bf387058a5d499edf84ada26623fc7",
+ "finished_at": "2026-10-14T11:12:35.897332+00:00",
+ "source_commit": "6e3f35db180d95ea156c04a1cea056e8e070fefb",
+ "platform": "Linux-6.18.44-fc-v114-x86_64-with-glibc2.39",
+ "python": "3.11.15",
+ "heldout": [
+  {
+   "item_id": "F2b-25",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 1.447,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 1.191,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.603,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-26",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.615,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.779,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.522,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-27",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.522,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.798,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "no_decision",
+     "seconds": 0.311,
+     "state": "STAGE_ABSTAINED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-28",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.626,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.777,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.401,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-29",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.615,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.794,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.257,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-30",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.508,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.797,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.358,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-31",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.545,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.756,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.265,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-32",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.545,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.746,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.264,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-33",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.508,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.748,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.35,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-34",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.565,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.832,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.433,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-35",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.5,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.876,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.365,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-36",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.525,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.8,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.478,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-37",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.51,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.708,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "wrong",
+     "seconds": 1.314,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-38",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.502,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.768,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.404,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-39",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.553,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.888,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.462,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-40",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.544,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.797,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.246,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-41",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.512,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.758,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "no_decision",
+     "seconds": 0.275,
+     "state": "STAGE_ABSTAINED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-42",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.581,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.741,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.21,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-43",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.513,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.844,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.218,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-44",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.52,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.756,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.357,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-45",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.525,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.735,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.393,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-46",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.531,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.844,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.582,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-47",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.697,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.792,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.324,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-48",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.603,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.886,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.348,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-49",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.526,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.782,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.265,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-50",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.501,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.76,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.44,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-51",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.51,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.752,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.461,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-52",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.596,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.791,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.448,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-53",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.588,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.769,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.402,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-54",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.573,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.802,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.348,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-55",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.519,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.783,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.274,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-56",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.518,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.818,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.392,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-57",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.62,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.91,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.39,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-58",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.779,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.828,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.309,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-59",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.634,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 1.048,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "wrong",
+     "seconds": 1.267,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-60",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.556,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.817,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.411,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-61",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.515,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.776,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.714,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-62",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.61,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.914,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "wrong",
+     "seconds": 1.423,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-63",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.706,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.797,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.505,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-64",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.552,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.878,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.372,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-65",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.592,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.791,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.37,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-66",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.564,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.824,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.309,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-67",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.547,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.769,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.152,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-68",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.533,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.712,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.208,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-69",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.52,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.794,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.285,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-70",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.527,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "correct",
+     "seconds": 0.775,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.266,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-71",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.551,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.752,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.211,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "F2b-72",
+   "family": "F2b",
+   "arms": {
+    "identify_alone": {
+     "result": "no_decision",
+     "seconds": 0.577,
+     "state": "no allocation from effects alone"
+    },
+    "optimize_on_association": {
+     "result": "wrong",
+     "seconds": 0.792,
+     "state": "single optimiser"
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 1.402,
+     "state": "ANSWERED"
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M00",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.208,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.084,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.225,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M08",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.231,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.034,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.257,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M16",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.285,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.024,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.225,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M24",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.224,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.021,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.233,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M32",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.2,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.02,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.246,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M40",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.226,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.023,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.275,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M48",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.233,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.021,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.238,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M56",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.221,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.02,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.214,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M64",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.221,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.021,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.219,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M72",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.253,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.03,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.213,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M80",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.192,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.043,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.225,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M88",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.213,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.024,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.221,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M96",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.194,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.02,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.216,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M104",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.202,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.02,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.236,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M112",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.203,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.029,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.256,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M120",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.259,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.021,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.216,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M128",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.206,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.02,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.225,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M136",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.218,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.022,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.228,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M144",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.237,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.019,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.268,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M152",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.209,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.02,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.237,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M160",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.209,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.021,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.222,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M168",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.197,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.021,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.215,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M176",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.196,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.022,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.216,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M184",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.203,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.022,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.226,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M192",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.233,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.021,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.219,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M200",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.202,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.021,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.248,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M208",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.21,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.024,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.283,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M216",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.213,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.024,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.228,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M224",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.21,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.02,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.217,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M232",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.196,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.02,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.216,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M240",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.204,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.021,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.232,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M248",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.253,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.024,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.252,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M256",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.204,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.022,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.248,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M264",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.234,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.022,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.228,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M272",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.237,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.021,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.317,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M280",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.24,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.021,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.242,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M288",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.218,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.031,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.277,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M296",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.272,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.027,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.239,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M304",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.202,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.024,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.237,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M312",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.261,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.023,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.223,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M320",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.198,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.02,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.214,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M328",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.198,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.021,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.214,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M336",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.241,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.025,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.292,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M344",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.223,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.02,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.282,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M352",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.192,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.021,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.21,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M360",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.193,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.021,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.212,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M368",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.273,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.021,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.212,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-MIX-M376",
+   "family": "X1",
+   "arms": {
+    "estimate_only": {
+     "result": "wrong",
+     "seconds": 0.196,
+     "state": "OK",
+     "selected": [
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "wrong",
+     "seconds": 0.03,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0"
+     ]
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.222,
+     "state": "OK",
+     "selected": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.estimation.fermi@0.1.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O03",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.436,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O07",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.035,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O11",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.018,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O15",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.031,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O19",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.0,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.019,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O23",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.032,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O27",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.033,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O31",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.018,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O35",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.018,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O39",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.019,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O43",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.003,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.033,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O47",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.034,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O51",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.032,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O55",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.03,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O59",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.034,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O63",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.035,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O67",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.023,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O71",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.032,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O75",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.033,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O79",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.071,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O83",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.031,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O87",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.018,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O91",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.032,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O95",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.0,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.016,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O99",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.019,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O107",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.019,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O111",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.0,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.03,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O115",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.017,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O119",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.029,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O123",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.029,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O127",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.023,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O131",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.035,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O135",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.019,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O139",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.0,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.018,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O143",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.021,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O147",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.019,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O151",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.021,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O155",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.02,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O159",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.017,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O163",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.018,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O171",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.002,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.022,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O175",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.019,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O179",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.033,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O183",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.003,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.03,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O187",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.0,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.034,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O191",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.033,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O195",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.0,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.018,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O199",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.0,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.031,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O203",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.017,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O207",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.0,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.03,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O211",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.031,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O215",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.043,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O219",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.019,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O223",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.001,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.024,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O227",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.003,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.062,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O231",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.019,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  },
+  {
+   "item_id": "HEL-SCH-O235",
+   "family": "X2",
+   "arms": {
+    "extraction_only": {
+     "result": "wrong",
+     "seconds": 0.002,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0"
+     ]
+    },
+    "formal_only": {
+     "result": "no_decision",
+     "seconds": 0.001,
+     "state": "NO_ELIGIBLE_METHOD",
+     "selected": []
+    },
+    "routed": {
+     "result": "correct",
+     "seconds": 0.042,
+     "state": "OK",
+     "selected": [
+      "cortex.extraction.schedule@0.1.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ]
+    }
+   }
+  }
+ ],
+ "summary": {
+  "F2b": {
+   "n": 48,
+   "counts": {
+    "identify_alone": {
+     "correct": 0,
+     "wrong": 0,
+     "suboptimal": 0,
+     "no_decision": 48
+    },
+    "optimize_on_association": {
+     "correct": 35,
+     "wrong": 13,
+     "suboptimal": 0,
+     "no_decision": 0
+    },
+    "routed": {
+     "correct": 43,
+     "wrong": 3,
+     "suboptimal": 0,
+     "no_decision": 2
+    }
+   },
+   "best_constituent": "optimize_on_association",
+   "routed_wins": 11,
+   "routed_losses": 3,
+   "sign_test_p_one_sided": 0.028687,
+   "median_seconds": {
+    "identify_alone": 0.546,
+    "optimize_on_association": 0.792,
+    "routed": 1.357
+   },
+   "lift": true
+  },
+  "X1": {
+   "n": 48,
+   "counts": {
+    "estimate_only": {
+     "correct": 0,
+     "wrong": 48,
+     "suboptimal": 0,
+     "no_decision": 0
+    },
+    "formal_only": {
+     "correct": 0,
+     "wrong": 48,
+     "suboptimal": 0,
+     "no_decision": 0
+    },
+    "routed": {
+     "correct": 48,
+     "wrong": 0,
+     "suboptimal": 0,
+     "no_decision": 0
+    }
+   },
+   "best_constituent": "estimate_only",
+   "routed_wins": 48,
+   "routed_losses": 0,
+   "sign_test_p_one_sided": 0.0,
+   "median_seconds": {
+    "estimate_only": 0.211,
+    "formal_only": 0.021,
+    "routed": 0.227
+   },
+   "lift": true
+  },
+  "X2": {
+   "n": 57,
+   "counts": {
+    "extraction_only": {
+     "correct": 0,
+     "wrong": 57,
+     "suboptimal": 0,
+     "no_decision": 0
+    },
+    "formal_only": {
+     "correct": 0,
+     "wrong": 0,
+     "suboptimal": 0,
+     "no_decision": 57
+    },
+    "routed": {
+     "correct": 57,
+     "wrong": 0,
+     "suboptimal": 0,
+     "no_decision": 0
+    }
+   },
+   "best_constituent": "formal_only",
+   "routed_wins": 57,
+   "routed_losses": 0,
+   "sign_test_p_one_sided": 0.0,
+   "median_seconds": {
+    "extraction_only": 0.001,
+    "formal_only": 0.001,
+    "routed": 0.029
+   },
+   "lift": true
+  },
+  "VPL_v2": {
+   "families_with_lift": 3,
+   "families": 3,
+   "rule": "family lift: routed correct > best constituent correct, routed wrong <= best constituent wrong, one-sided exact sign test p < 0.05, routed median latency <= 60 s; VPL = families with lift"
+  }
+ },
+ "limits": [
+  "X1/X2 were authored by the router-building agent, frozen before this module; not natural tasks",
+  "the strongest single intelligence for X2 (a local language model) is NOT_RUN: none configured",
+  "constituent arms withhold organs through the registry; organ code is unchanged"
+ ]
+}

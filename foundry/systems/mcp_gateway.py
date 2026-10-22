@@ -16,13 +16,20 @@ Providers are interchangeable: a tool may list several; the gateway uses the
 first healthy one and fails over on error, and the answer is checked against a
 second provider when ``cross_check`` is set. The Foundry itself is served as an
 MCP server (foundry/mcp/foundry_server.py) exposing read-only ops only.
+
+A third-party provider is given as a ``command`` started from its own
+installation (``root``), in any language. It always runs confined in the door
+namespace with no network and a read-only filesystem (``_confined``); GREG's
+``mcp.call`` capability uses the same path.
 """
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import hashlib
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -35,8 +42,47 @@ class GatewayError(RuntimeError):
     pass
 
 
+def _confined(provider: dict):
+    """A third-party stdio MCP server, started from its own installation, in the door namespace with no network at
+    all: the founder's home, every body home and GREG's .git hidden; the filesystem read-only except a private scratch
+    directory; only the installation and the paths named in ``readable`` shown. Whatever its tools claim, they can
+    change nothing and reach nothing. Callers check that bubblewrap namespaces work first."""
+    from mcp.client.stdio import StdioServerParameters
+    from foundry.systems.relay_door import namespace_argv
+    root, scratch = Path(provider["root"]).resolve(), Path(provider["scratch"]).resolve()
+    home, temporary = scratch / "home", scratch / "tmp"
+    for directory in (home, temporary):
+        directory.mkdir(parents=True, exist_ok=True)
+    shown = [str(root), *(str(Path(p).resolve()) for p in provider.get("readable", ()))]
+    python = root / "bin" / "python"       # a virtualenv's base interpreter may live under the hidden home
+    if python.exists():
+        shown.append(str(python.resolve().parent.parent))
+    path = [str(root / "bin"), str(root / "node_modules" / ".bin")]
+    entry = Path(provider["command"][0])
+    try:
+        shebang = entry.resolve().read_bytes()[:128].split(b"\n", 1)[0]
+    except OSError:
+        shebang = b""
+    node = shutil.which("node") if b"node" in shebang else None
+    if node:                               # an npm server: its Node runtime, wherever it is installed (nvm keeps it
+        node = Path(node).resolve()        # under the hidden home)
+        path.append(str(node.parent))
+        shown.append(str(node.parent.parent))
+    writable = [str(scratch), *(str(Path(p).resolve()) for p in provider.get("writable", ()))]
+    argv = namespace_argv(writable=writable, readonly=shown, chdir=str(scratch))
+    command = [*map(str, provider["command"])]
+    if provider.get("door"):               # its only way out: a door to a relay allowing exactly the signed hosts
+        from foundry.systems.relay_door import door_argv
+        command = door_argv(sys.executable, provider["door"], command)
+    env = {"PATH": ":".join([*path, "/usr/local/bin", "/usr/bin", "/bin"]), "HOME": str(home),
+           "TMPDIR": str(temporary), "LANG": "C.UTF-8", **provider.get("env", {})}
+    return StdioServerParameters(command=argv[0], args=[*argv[1:], *command], env=env, cwd=str(scratch))
+
+
 def _params(provider: dict):
     from mcp.client.stdio import StdioServerParameters
+    if "command" in provider:              # any third-party server: confined, in every context
+        return _confined(provider)
     scope = os.environ.get("GREG_FOUNDRY_STORE")
     if scope:
         if provider.get("module") != "foundry.mcp.foundry_server" or set(provider.get("env", {})) != {"FOUNDRY_MCP_ROOT"}:
@@ -54,33 +100,87 @@ def _params(provider: dict):
     return StdioServerParameters(command=sys.executable, args=["-s", "-m", provider["module"]], env=env, cwd=str(ROOT))
 
 
+def _schema(tool) -> dict:
+    """The tool's declared input schema (JSON Schema), as the provider states it."""
+    schema = getattr(tool, "input_schema", None) or getattr(tool, "inputSchema", None) or {}
+    return schema if isinstance(schema, dict) else {}
+
+
 def _claim(tool) -> bool | None:
     """The provider's own read-only claim, recorded as a claim and never used for authority."""
     a = tool.annotations
     return None if a is None else getattr(a, "read_only_hint", getattr(a, "readOnlyHint", None))
 
 
+def root_cause(exc: BaseException) -> BaseException:
+    """The first leaf of an exception group: the SDK's task group wraps a provider's failure in one."""
+    while isinstance(exc, BaseExceptionGroup) and exc.exceptions:
+        exc = exc.exceptions[0]
+    return exc
+
+
+@contextlib.asynccontextmanager
+async def _remote(provider: dict):
+    """A remote (Streamable HTTP) server. Used only inside GREG's confined client (``greg/mcp_remote.py``), whose
+    only way out is a door to a relay allowing the server's host: proxies come from the environment the door sets,
+    the bearer token from a credential handle, and certificates are verified (against ``cafile`` when given)."""
+    import ssl
+    import httpx2
+    from mcp.client.streamable_http import streamable_http_client
+    headers = {"Authorization": f"Bearer {provider['bearer']}"} if provider.get("bearer") else {}
+    verify = ssl.create_default_context(cafile=provider["cafile"]) if provider.get("cafile") else True
+    async with httpx2.AsyncClient(headers=headers, verify=verify, trust_env=True,
+                                  timeout=httpx2.Timeout(30.0, read=60.0)) as http:
+        async with streamable_http_client(provider["url"], http_client=http) as streams:
+            yield streams
+
+
+@contextlib.contextmanager
+def _server(provider: dict):
+    """The transport for ``provider``. A confined server's stderr goes to ``server-stderr.log`` in its scratch
+    directory (diagnostics stay with the call instead of the body's own stderr)."""
+    if "url" in provider:
+        yield _remote(provider)
+        return
+    if "command" not in provider:
+        yield _params(provider)
+        return
+    from mcp.client.stdio import stdio_client
+    params = _params(provider)
+    with open(Path(provider["scratch"]) / "server-stderr.log", "w") as errlog:
+        yield stdio_client(params, errlog=errlog)
+
+
 async def _call(provider: dict, tool: str, args: dict) -> dict:
     from mcp import Client
-    async with Client(_params(provider), read_timeout_seconds=30) as client:
-        listed = {t.name: t for t in (await client.list_tools()).tools}
-        if tool not in listed:
-            raise GatewayError(f"provider {provider['name']} does not offer {tool}")
-        claim = _claim(listed[tool])
-        result = await client.call_tool(tool, args)
-        if result.is_error:
-            raise GatewayError(f"{provider['name']}.{tool} failed: {result.content[0].text if result.content else ''}")
-        value = result.structured_content.get("result") if result.structured_content else result.content[0].text
-        return {"provider": provider["name"], "value": value, "provider_claims_read_only": claim}
+    with _server(provider) as server:
+        async with Client(server, read_timeout_seconds=30) as client:
+            listed = {t.name: t for t in (await client.list_tools()).tools}
+            if tool not in listed:
+                raise GatewayError(f"provider {provider['name']} does not offer {tool}")
+            claim = _claim(listed[tool])
+            result = await client.call_tool(tool, args)
+            if result.is_error:
+                raise GatewayError(f"{provider['name']}.{tool} failed: "
+                                   f"{result.content[0].text if result.content else ''}")
+            structured = result.structured_content
+            if structured and set(structured) == {"result"}:   # the SDK's wrapping of a plain return value
+                value = structured["result"]
+            elif structured:                                     # a server's own structure, kept whole
+                value = structured
+            else:
+                value = "\n".join(getattr(c, "text", "") for c in result.content) if result.content else None
+            return {"provider": provider["name"], "value": value, "provider_claims_read_only": claim}
 
 
 def list_tools(provider: dict) -> list[dict]:
     async def run():
         from mcp import Client
-        async with Client(_params(provider), read_timeout_seconds=30) as client:
-            return [{"name": t.name, "description": t.description,
-                     "claims_read_only": _claim(t)}
-                    for t in (await client.list_tools()).tools]
+        with _server(provider) as server:
+            async with Client(server, read_timeout_seconds=30) as client:
+                return [{"name": t.name, "description": t.description, "claims_read_only": _claim(t),
+                         "input_schema": _schema(t)}
+                        for t in (await client.list_tools()).tools]
     return asyncio.run(run())
 
 
@@ -100,7 +200,8 @@ class Gateway:
             try:
                 out = asyncio.run(_call(self.providers[name], tool, args))
             except Exception as exc:  # outage, protocol error, provider refusal: try the next provider
-                errors.append(f"{name}: {type(exc).__name__}: {str(exc)[:120]}")
+                cause = root_cause(exc)
+                errors.append(f"{name}: {type(cause).__name__}: {str(cause)[:120]}")
                 continue
             if first is None:
                 first = out

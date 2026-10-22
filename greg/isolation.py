@@ -15,7 +15,10 @@ import stat
 import sys
 
 READ_FILE, READ_DIR = 1 << 2, 1 << 3
-GLIBC_RUNTIME = ("libc", "libm", "librt", "libdl", "libpthread", "libutil")
+WRITE_FILE, EXECUTE, TRUNCATE = 1 << 1, 1, 1 << 14
+ALL_FS = (1 << 15) - 1
+RUNTIME_LIBRARIES = ("libc.so*", "libm.so*", "librt.so*", "libdl.so*", "libpthread.so*", "libutil.so*",
+                     "libgcc_s.so*", "libstdc++.so*", "libz.so*", "libffi.so*")
 
 
 def _trusted_shared_object(path: Path) -> bool:
@@ -30,8 +33,6 @@ def _trusted_shared_object(path: Path) -> bool:
             return stream.read(4) == b"\x7fELF"
     except OSError:
         return False
-WRITE_FILE, EXECUTE, TRUNCATE = 1 << 1, 1, 1 << 14
-ALL_FS = (1 << 15) - 1
 
 
 class IsolationError(RuntimeError):
@@ -40,6 +41,17 @@ class IsolationError(RuntimeError):
 
 class _Rules(ctypes.Structure):
     _fields_ = [("handled_access_fs", ctypes.c_uint64)]
+
+
+class _ScopedRules(ctypes.Structure):
+    """The ruleset attribute from ABI 6: network access left unhandled (unchanged), IPC scoped to the domain."""
+    _fields_ = [("handled_access_fs", ctypes.c_uint64), ("handled_access_net", ctypes.c_uint64),
+                ("scoped", ctypes.c_uint64)]
+
+
+# ABI >= 6: a confined process may neither signal a process outside its Landlock domain (the parent, PID 1, any
+# host process) nor connect to an abstract UNIX socket created outside it. (#158 af258bf, review of #179 L5)
+SCOPE_ABSTRACT_UNIX_SOCKET, SCOPE_SIGNAL = 1, 2
 
 
 class _Path(ctypes.Structure):
@@ -65,15 +77,16 @@ def available():
         return {"available": False, "abi": None, "reason": str(exc)}
 
 
-def confine(root, public_files):
-    """Irreversibly confine this disposable process. Installation failure raises."""
+def confine(root, public_files, *, list_code: bool = True):
+    """Irreversibly confine this disposable process. Installation failure raises. ``list_code=False`` withholds
+    even directory listing of the repository (the P8 sandbox imports everything it runs before confinement)."""
     libc = _libc()
     abi = libc.syscall(444, None, 0, 1)
     if abi < 3:
         raise IsolationError("Landlock ABI >=3 required; caller/provider execution remains refused")
     root = Path(root).resolve(strict=True)
     code = Path(__file__).resolve().parents[1]
-    grants = {root: ALL_FS, code: READ_DIR}
+    grants = {root: ALL_FS, **({code: READ_DIR} if list_code else {})}
     for file in public_files:
         file = Path(file)
         if file.resolve(strict=True) != file or file.stat().st_nlink != 1 or not file.is_file():
@@ -85,6 +98,27 @@ def confine(root, public_files):
     for directory in (prefix / "lib", Path(sys.prefix).resolve() / "lib"):
         if directory.is_dir():
             grants[directory] = READ_FILE | READ_DIR
+    # The interpreter's own installed-package trees can sit outside <prefix>/lib (Debian's
+    # /usr/local/lib/pythonX.Y/dist-packages). User-site, the repository and the store stay excluded.
+    import site
+    import sysconfig
+    user_site = Path(site.getusersitepackages()).resolve()
+    for directory in {*site.getsitepackages(), sysconfig.get_paths()["purelib"], sysconfig.get_paths()["platlib"]}:
+        directory = Path(directory).resolve()
+        if directory.is_dir() and not any(directory == p or p in directory.parents or directory in p.parents
+                                          for p in (user_site, code, root)):
+            grants[directory] = grants.get(directory, 0) | READ_FILE | READ_DIR
+    # C runtime libraries an extension module imported after confinement may link against (CI:
+    # librt.so.1). Exact public library files, never a whole host library directory. One grant path:
+    # the 2026-10-14 Mind-lineage convergence unified #158's 1ea2209 (glibc family) and #155's bfb9c04
+    # (this superset with the ancestor guard above). Each candidate must be a root-owned, non-writable,
+    # world-readable ELF object (#156/#159), so a planted or linker-script file is never granted.
+    for base in (Path("/lib"), Path("/lib64"), Path("/usr/lib"), Path("/usr/lib64")):
+        for sub in ("", "x86_64-linux-gnu/", "aarch64-linux-gnu/"):
+            for name in RUNTIME_LIBRARIES:
+                for path in base.glob(sub + name):
+                    if _trusted_shared_object(path):
+                        grants[path.resolve()] = grants.get(path.resolve(), 0) | READ_FILE
     # Already-loaded ELF dependencies are explicit public runtime files.
     # No /proc hierarchy is granted; this read happens before confinement.
     for line in Path("/proc/self/maps").read_text().splitlines():
@@ -120,35 +154,37 @@ def confine(root, public_files):
                             "aarch64-linux-gnu/ld-linux*.so*"):
                 for path in base.glob(pattern):
                     grants[path.resolve()] = READ_FILE | EXECUTE
-            # Core glibc runtime libraries a later extension import may dlopen (librt.so.1 is the one
-            # MCP needed on GitHub runners): public loader-adjacent files, read-only, never directories.
-            # Each candidate must be a root-owned, non-writable, world-readable ELF object (#156/#159).
-            for arch in ("", "x86_64-linux-gnu/", "aarch64-linux-gnu/"):
-                for name in GLIBC_RUNTIME:
-                    for path in base.glob(f"{arch}{name}.so.*"):
-                        if _trusted_shared_object(path):
-                            grants[path.resolve()] = grants.get(path.resolve(), 0) | READ_FILE
-    # The interpreter's own site-packages (Debian installs them outside sys.prefix/lib, e.g.
-    # /usr/local/lib/python3.X/dist-packages). Installed runtime code only: user-site and arbitrary
-    # sys.path entries stay excluded.
-    import site
-    for directory in getattr(site, "getsitepackages", lambda: [])():
-        directory = Path(directory)
-        if directory.is_dir():
-            grants[directory.resolve()] = grants.get(directory.resolve(), 0) | READ_FILE | READ_DIR
-    restrict(grants, libc)
+    scoped = abi >= 6
+    restrict(grants, libc, scope=SCOPE_ABSTRACT_UNIX_SOCKET | SCOPE_SIGNAL if scoped else 0)
     return {"filesystem": "landlock", "abi": abi, "arbitrary_source": "refused",
-            "scope": "published source/runtime read-only; staged store read/write"}
+            "scope": "published source/runtime read-only; staged store read/write",
+            "repository_listing": "allowed" if list_code else "denied",
+            "signals": "scoped to the domain" if scoped else "unscoped (Landlock ABI < 6)"}
 
 
-def restrict(grants, libc=None):
+def signal_scope(abi) -> int:
+    """``SCOPE_SIGNAL`` where the kernel has it (Landlock ABI >= 6), else 0.
+
+    A process GREG confines on a worker's behalf (the worker itself, or its patch's tests in GREG's acceptance run)
+    has the body's UID and, in supervised mode, no PID namespace: unscoped, it could SIGSTOP or SIGKILL the body
+    and freeze its timeout, founder STOP and budget handling. Scoped, it can signal only processes in its own
+    Landlock domain (its own children), never the body that supervises it (#173 scoping, merge review of e410977)."""
+    return SCOPE_SIGNAL if isinstance(abi, int) and abi >= 6 else 0
+
+
+def signals_record(scope: int) -> str:
+    return "scoped to the domain" if scope & SCOPE_SIGNAL else "unscoped (Landlock ABI < 6)"
+
+
+def restrict(grants, libc=None, *, scope: int = 0):
     """Irreversibly apply a Landlock ruleset of ``{path: access}`` grants to this process.
 
     Only syscalls: safe to call in a ``preexec_fn`` after fork when ``libc`` was loaded in the parent.
     Every access the ruleset handles and no rule grants is denied, including truncation (ABI >= 3).
+    ``scope`` (ABI >= 6 only) adds IPC scoping.
     """
     libc = libc or _libc()
-    attr = _Rules(ALL_FS)
+    attr = _ScopedRules(ALL_FS, 0, scope) if scope else _Rules(ALL_FS)
     fd = libc.syscall(444, ctypes.byref(attr), ctypes.sizeof(attr), 0)
     if fd < 0:
         raise IsolationError(f"Landlock ruleset creation failed errno={ctypes.get_errno()}")

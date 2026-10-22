@@ -12,8 +12,17 @@ authorities therefore stand between a draft and a platform:
 Either may block. A block is returned truthfully with DALEOBANKS's own hash-chained ledger
 entries as evidence; a dry-run identifier is never reported as a post.
 
+On a body with confined egress (#26) DALEOBANKS's interpreter runs in a bubblewrap network
+namespace whose only way out is the body relay's door: ``daleobanks.verify`` may reach
+nothing, ``daleobanks.publish`` only the platform API hosts its manifest declares (the X API,
+through tweepy). Every attempt is decided and journaled at the relay; without namespaces
+nothing runs.
+
 Capabilities:
-  ``daleobanks.verify``   read_only sensor: DALEOBANKS content checks + GREG claim/source binding
+  ``daleobanks.verify``   read_only sensor: DALEOBANKS content checks + GREG claim/source binding. Given
+                          ``cognition`` (claim name -> problem id), every sentence of the draft must be a claim
+                          that GREG's evidence family answered as written: bound to a supporting span and showing
+                          none of the six detected kinds of change (directive section 16, the media case).
   ``daleobanks.publish``  external_contact: one publish request through DALEOBANKS's gate
   ``daleobanks.outcome``  read_only sensor: projection of this mission's canonical publish receipts
 """
@@ -27,6 +36,8 @@ import re
 import subprocess
 
 from greg.capabilities import CapabilityError, InvocationContext, _inside
+# The sentence-by-sentence rule is shared with the Task Fabric's evaluator (worker.appraise).
+from greg.cognition.restatement import coverage as truth_preservation
 
 SCRIPT = r'''
 import asyncio, json, sys
@@ -76,14 +87,40 @@ def _run(params: dict, ctx: InvocationContext, action: str) -> dict:
     # LIVE and platform credentials are DALEOBANKS's own arming; GREG never sets or forwards them.
     request = {"draft": str(draft), "action": action, "mission_id": ctx.mission_id, "grant_id": ctx.grant_id,
                "content_type": params.get("content_type", "reply")}
-    proc = subprocess.run([str(python), "-c", SCRIPT], input=json.dumps(request), capture_output=True, text=True,
-                          cwd=root, env=env, timeout=120)
+    argv = [str(python), "-c", SCRIPT]
+    if ctx.egress is None:
+        proc = subprocess.run(argv, input=json.dumps(request), capture_output=True, text=True, cwd=root, env=env,
+                              timeout=120)
+    else:
+        proc = _behind_door(argv, request, env, ctx, root=root, ledger_dir=ledger.parent, draft=draft)
     if proc.returncode:
         raise CapabilityError("DALEOBANKS refused or failed: " + (proc.stderr or proc.stdout)[-400:])
     try:
         return json.loads(proc.stdout.strip().splitlines()[-1])
     except (json.JSONDecodeError, IndexError) as exc:
         raise CapabilityError("DALEOBANKS produced unreadable output") from exc
+
+
+def _behind_door(argv: list, request: dict, env: dict, ctx: InvocationContext, *, root: Path, ledger_dir: Path,
+                 draft: Path):
+    """DALEOBANKS's interpreter in a network namespace whose only way out is the relay, allowlisted for exactly the
+    hosts this capability's manifest declares (none for verify). Its ledger directory is the one writable place."""
+    import sys
+    from foundry.systems.relay_door import Door, door_argv, namespace_argv
+    from foundry.systems.segmentation import Relay
+    from greg.worker_isolation import WorkerIsolationError, _backend
+    try:
+        _backend(require_bubblewrap=True)
+    except WorkerIsolationError as exc:
+        raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}") from None
+    identity, hosts = ctx.manifest.capability_id, tuple(ctx.manifest.egress_allowlist or ())
+    scoped = Relay({identity: {"allow": [[h, 443] for h in hosts], "external": bool(hosts)}}, ctx.egress.journal,
+                   connect=ctx.egress.connect, proxy=ctx.egress.proxy)
+    interpreter = str(Path(argv[0]).resolve().parent.parent)     # the venv's base Python may live under $HOME
+    namespace = namespace_argv(writable=[ledger_dir], readonly=[root, draft, interpreter], chdir=root)
+    with Door(scoped, identity) as door:
+        return subprocess.run(namespace + door_argv(sys.executable, door.fd, argv), pass_fds=[door.fd],
+                              input=json.dumps(request), capture_output=True, text=True, env=env, timeout=120)
 
 
 NUMBER = re.compile(r"\d[\d,.]*%?")
@@ -116,9 +153,14 @@ def verify(params: dict, ctx: InvocationContext) -> dict:
         findings.append("DALEOBANKS Critic blocking: " + "; ".join(checks["critic"]["blocking_issues"])[:300])
     if float(checks["firewall"].get("risk", 0)) >= 0.5:
         findings.append(f"DALEOBANKS PromptFirewall risk {checks['firewall']['risk']}: {checks['firewall'].get('patterns')}")
+    truth = {"checked": False, "limits": "figures against the source only: no sentence was checked as written"}
+    if params.get("cognition"):
+        from greg.ventures import cognition_receipts
+        truth, problems = truth_preservation(text, cognition_receipts(ctx, params["cognition"]))
+        findings += problems
     return {"present": True, "verdict": "VERIFIED" if not findings else "REJECTED", "findings": findings,
             "draft_sha256": "sha256:" + hashlib.sha256(text.encode()).hexdigest(), "chars": len(text.strip()),
-            "daleobanks": checks, "authority_created": False}
+            "daleobanks": checks, "truth_preservation": truth, "authority_created": False}
 
 
 def publish(params: dict, ctx: InvocationContext) -> dict:

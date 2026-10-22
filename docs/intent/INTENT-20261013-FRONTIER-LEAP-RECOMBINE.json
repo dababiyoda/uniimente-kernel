@@ -75,12 +75,19 @@
     "greg/genesis.py (recover, _probe, _ProbeView, _recorded_qualification)",
     "greg/missions.py (generation-keyed blocks, recovery re-admission)",
     "greg/body.py (recover each tick)",
-    "docs/mechanisms/MC-0002-governed-half-open-recovery.json"
+    "docs/mechanisms/MC-0002-governed-half-open-recovery.json",
+    "greg/recombine.py (selection-via-maxflow: selection.closure)",
+    "greg/goal_gravity.py (_sense capability perception, _blocked_on)",
+    "docs/evidence/greg-selection/2026-10-15/README.md",
+    "greg/genesis.py (formable, form_for_goal: formation only)",
+    "greg/goal_gravity.py (FUNCTION_VERSION, _form_requested, _goal_formations, _close_goal_formations)",
+    "docs/evidence/greg-goal-formation/2026-10-15/README.md"
   ],
   "tests": [
     "tests/unit/test_greg_recombine.py",
     "tests/integration/test_greg_mind_constructs_capability.py",
-    "tests/integration/test_greg_capability_recovery.py"
+    "tests/integration/test_greg_capability_recovery.py",
+    "tests/integration/test_greg_goal_requests_formation.py"
   ],
   "evidence_refs": [
     "docs/evidence/greg-recombine/2026-10-13/README.md",

@@ -1,9 +1,25 @@
-"""Decision-aware bounded cognition inside the existing GREG invocation.
+"""Decision-aware bounded cognition (directive section 12); mandatory verification is never traded away.
 
-No optional step executes here. Decision value is a provisional range in one
-explicit common unit, not entropy, model confidence, authority, or a reward.
-The existing ResourceGovernor counts local model attempts; the Kernel remains
-responsible for grants and reservations.
+Three controls share one rule: a required step is never priced away, and an optional step runs only when the
+budget can hold it.
+
+* ``optional_step`` prices one optional step when its decision value and its total cost are stated in the same
+  unit, for a caller that holds such a decision model.
+* ``ThinkingBudget`` is one invocation's non-replenishing wall-clock/call plan inside the existing GREG
+  invocation (``cortex.reason``, ``bridge.reason_cortex``, ``seed_path``). No optional step executes there:
+  advisory proposals are priced with ``optional_step`` as recommendations only. Decision value is a provisional
+  range in one explicit common unit, not entropy, model confidence, authority, or a reward. The existing
+  ResourceGovernor counts local model attempts; the Kernel remains responsible for grants and reservations.
+* ``Controller`` is the thinking budget of one compiled decision. Every inner run on the compile path (the
+  answer, the premises check, each sensitivity re-run) draws on one total budget, the requester's declared
+  ``latency_budget``. Each inner run reserves its own mandatory verification, because the cortex gives the
+  solver 45% of a run's limit and the verifier the rest.
+  - Required steps are never value-gated. When the budget cannot hold even a minimal step, the step is
+    refused with BUDGET_EXHAUSTED and the caller returns a narrower result.
+  - An optional step runs only when the tail of the measured step costs (the slowest step so far, not the
+    mean) fits in what remains. The requester's budget is the stated value of the decision, so nothing beyond
+    it is spent on any optional step.
+  - Every decision, run or stop, is kept with its reason, its remaining budget and the measured cost range.
 """
 from __future__ import annotations
 
@@ -26,6 +42,9 @@ def _range(interval, *, high=1e12):
     if interval[0] > interval[1]:
         raise CognitionError("ordered finite ranges required")
     return interval
+
+# Below this an inner run cannot solve (45% of its limit) and still verify; the cortex floors the solver at 10 ms.
+MIN_STEP_SECONDS = 0.1
 
 
 def optional_step(*, decision_improvement_range, total_cost_range, remaining_seconds,
@@ -225,3 +244,111 @@ class ThinkingBudget:
                 "optional_steps": optional, "optional_execution_supported": False,
                 "optional_compute_remaining": "unmeasured; proposals do not reserve or invoke extra computation",
                 "stop_reason": self.stop_reason, "authority_created": False}
+
+
+def window_limit(caller_window=None, shared_deadline=None):
+    """Seconds the caller's canonical grant window still allows one whole decision, with each bound named;
+    ``None`` when the caller passed no window (a standalone evaluation).
+
+    The bounds are the ones ``ThinkingBudget`` enforces on a single run: the window's latency ceiling, its
+    horizon and grant expiry, and the dispatch's shared deadline (a ``time.monotonic()`` instant)."""
+    if caller_window is None and shared_deadline is None:
+        return None
+    now, bounds = datetime.now(timezone.utc), {}
+    if caller_window is not None:
+        bounds["latency_ceiling"] = float(number(caller_window.latency_ceiling_seconds, low=0, high=30))
+        for bound in ("horizon", "grant_expires_at"):
+            bounds[bound] = (_instant(getattr(caller_window, bound)) - now).total_seconds()
+    if shared_deadline is not None:
+        bounds["shared_deadline"] = float(number(shared_deadline, low=0)) - time.monotonic()
+    return {"seconds": max(0.0, min(bounds.values())), "bounds": {k: round(v, 4) for k, v in bounds.items()}}
+
+
+class Controller:
+    """One bounded thinking budget for one decision, with a ledger of every spend and every stop.
+
+    Inside a canonical dispatch the caller's grant window bounds the whole decision, and ``inner`` carries it
+    to every inner run (the window itself, one shared deadline for the decision, the shared compute limit),
+    so each run's ``ThinkingBudget`` enforces the same ceilings and its receipt names the live grant."""
+
+    RULE = ("one total budget per decision; required steps are never value-gated and stop only below the minimum "
+            "step; an optional step runs only when the slowest measured step fits in the remaining budget")
+
+    def __init__(self, total_seconds, *, declared=True, step_ceiling_seconds=30.0, clock=time.monotonic,
+                 caller_window=None, shared_deadline=None, shared_compute_limit=None):
+        self.total = self.requested = float(number(total_seconds, low=0))
+        self.ceiling = float(number(step_ceiling_seconds, low=MIN_STEP_SECONDS))
+        self.declared, self.clock = declared, clock
+        self.started = clock()
+        self.ledger, self.costs, self.cpu = [], [], []
+        self._open = None
+        self.window = window_limit(caller_window, shared_deadline)
+        self.inner = {}
+        if self.window is not None:
+            self.total = min(self.total, self.window["seconds"])
+            self.inner = {"caller_window": caller_window, "shared_deadline": time.monotonic() + self.total,
+                          "shared_compute_limit": shared_compute_limit}
+
+    @property
+    def bounded(self) -> bool:
+        """True when the total is a stated limit (a declared budget or the caller's window), not the default."""
+        return self.declared or self.window is not None
+
+    def remaining(self) -> float:
+        return max(0.0, self.total - (self.clock() - self.started))
+
+    def cost_range(self):
+        """[fastest, slowest] measured step, in seconds; ``None`` before any step has been measured."""
+        return [round(min(self.costs), 4), round(max(self.costs), 4)] if self.costs else None
+
+    def allot(self, step: str, *, required: bool):
+        """The latency limit this step may use, or ``None`` with the stop reason recorded."""
+        if self._open is not None:
+            raise CognitionError(f"step {self._open['step']} was allotted and never closed")
+        remaining, cost = self.remaining(), self.cost_range()
+        entry = {"step": step, "required": required, "remaining_s": round(remaining, 4), "cost_range_s": cost}
+        if remaining < MIN_STEP_SECONDS:
+            reason = (f"BUDGET_EXHAUSTED: {remaining:.3g}s left, below the {MIN_STEP_SECONDS}s minimum step that can "
+                      "still solve and verify")
+        elif not required and cost is not None and cost[1] > remaining:
+            reason = (f"STOP: the slowest measured step ({cost[1]:.3g}s) exceeds the remaining budget "
+                      f"({remaining:.3g}s); an optional step is not started without room to finish")
+        else:
+            limit = min(self.ceiling, remaining)
+            self._open = {**entry, "decision": "RUN", "limit_s": round(limit, 4), "_at": self.clock()}
+            return limit
+        self.ledger.append({**entry, "decision": "STOP", "reason": reason})
+        return None
+
+    def done(self, step: str, *, cpu_seconds=None):
+        """Close the allotted step: its measured wall time becomes cost evidence for the next decision."""
+        if self._open is None or self._open["step"] != step:
+            raise CognitionError(f"step {step} was not allotted")
+        entry = self._open
+        self._open = None
+        spent = max(0.0, self.clock() - entry.pop("_at"))
+        self.costs.append(spent)
+        entry["spent_s"] = round(spent, 4)
+        if isinstance(cpu_seconds, (int, float)) and not isinstance(cpu_seconds, bool):
+            self.cpu.append(float(cpu_seconds))
+            entry["cpu_s"] = round(float(cpu_seconds), 4)
+        self.ledger.append(entry)
+
+    def stops(self) -> list:
+        return [e for e in self.ledger if e["decision"] == "STOP"]
+
+    def summary(self) -> dict:
+        costs = sorted(self.costs)
+        return {"rule": self.RULE, "total_s": round(self.total, 4),
+                "total_source": ("the caller's grant window" if self.window is not None
+                                 and self.window["seconds"] < self.requested else
+                                 "declared latency_budget" if self.declared else "default (no latency_budget declared)"),
+                **({"window": self.window} if self.window is not None else {}),
+                "spent_s": round(self.clock() - self.started, 4), "remaining_s": round(self.remaining(), 4),
+                "steps": list(self.ledger),
+                "measured_step_s": {"count": len(costs), "p50": round(costs[len(costs) // 2], 4) if costs else None,
+                                    "max": round(costs[-1], 4) if costs else None,
+                                    "note": "wall time per inner run, solver and verifier included"},
+                "cpu_s": round(sum(self.cpu), 4) if self.cpu else None,
+                "stopped": [{"step": e["step"], "reason": e["reason"]} for e in self.stops()],
+                "unmeasured": ["peak memory per run", "energy"]}

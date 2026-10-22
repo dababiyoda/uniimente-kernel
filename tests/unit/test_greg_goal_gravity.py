@@ -727,3 +727,57 @@ def test_ledger_closure_traces_every_dispatch_to_a_signed_mission(world, fast):
         bad = gg.ledger_closure(b.journal)
     assert good["ok"] and good["grant_dispatches"] >= 1 and good["founder_answers"] == 0
     assert not bad["ok"] and bad["problems"][-1]["problem"] == "grant_dispatch without greg.authority.grant_issued"
+
+
+# -- the goal's ask is the mission's ask (review findings on the merged trunk) ------------------------------
+
+class PaidWorld(World):
+    def mission_spec(self, **kw):
+        return mission(MID, checks=[note_check("c", self.ws / "c.txt", "ok"), note_check("d", self.ws / "d.txt", "shipped")],
+                       strategies=[write_strategy("w", "c.txt", "ok", ["c"]),
+                                   write_strategy("w2", "d.txt", "shipped", ["d"], cost_usd=0.10)],
+                       capabilities=["fs.read", "fs.write"], targets=("fs:*", "workspace:c.txt"), budget=1.0,
+                       closure={"kind": "infinite", "ladder": [["c"], ["d"]], "cadence_seconds": 86400}, **kw)
+
+
+def test_approving_a_goals_ask_for_a_paid_move_is_the_approval_the_mission_runs(tmp_path, fast):
+    """strategy_scope (#175) digested a paid strategy without the paid budget state AuthorityOffice.act binds
+    (#157), so the founder's approval of the goal's ask never matched the dispatch: w2 never ran and the founder
+    was asked a second time for the same move."""
+    world = PaidWorld(tmp_path)
+    gid, _ = world.start(GOAL(moves=(ship_move(estimated_cost_usd=0.10),)))
+    world.tick(6)
+    goal_ask = [r for r in world.w2_requests() if r.get("evidence", {}).get("goal_id") == gid]
+    assert len(goal_ask) == 1
+    world.submit("DECISION", {"request_id": goal_ask[0]["request_id"], "answer": "approve", "reason": "ship it"})
+    world.tick(8)
+    assert [r["request_id"] for r in world.w2_requests()] == [goal_ask[0]["request_id"]]   # one move, one ask
+    done = [e for e in world.events("mission.action") if e["action_id"] == "w2" and e["status"] == "DONE"]
+    assert len(done) == 1 and (world.ws / "d.txt").read_text() == "shipped"
+
+
+def test_a_goals_ask_for_mcp_act_shows_its_exact_reach(tmp_path, fast):
+    """The Goal Gravity ask path built the APPROVAL without exact_reach (#169), and one ask per scope then kept the
+    loop's ask, which shows it, from ever being recorded: the founder approved writes, hosts and credential handles
+    on an ask that named none of them."""
+    world = World(tmp_path)
+    mid = "m:scribe"
+    out = world.tmp / "notes"
+    out.mkdir()
+    act = {"action_id": "note", "capability": "mcp.act", "target": "mcp:scribe",
+           "params": {"server": "scribe", "root": str(world.tmp), "command": [str(world.tmp / "bin" / "x")],
+                      "tool": "write_note", "arguments": {"text": "hi"}, "writable": [str(out)],
+                      "hosts": ["api.example.com"], "secrets": {"TOKEN": "mcp:scribe"}},
+           "advances": ["noted"], "rationale": "write the note"}
+    spec = mission(mid, checks=[note_check("noted", out / "note.txt", "hi")], strategies=[act],
+                   capabilities=["fs.read"], targets=("fs:*",), ceiling="read_only")
+    world.submit("MISSION", spec, "a.json")
+    world.tick(1)
+    with world.body() as b:                 # AttentionStore.record_ask -> engine.request_decision
+        rid = b.engine.request_decision(mid, "note", why="goal asks", recommendation="approve", now=world.clock.now)
+    world.tick(3)
+    asked = [r for r in world.events("decision.requested") if r.get("action_id") == "note"]
+    assert [r["request_id"] for r in asked] == [rid]
+    reach = asked[0]["authority_requested"]
+    assert reach["may_write"] == [str(out)] and reach["may_reach"] == ["api.example.com:443 through the relay"]
+    assert reach["credentials"] == ["mcp:scribe"]

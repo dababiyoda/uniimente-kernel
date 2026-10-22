@@ -1,0 +1,320 @@
+{
+ "decision_id": "OPUS-MAXIMUS-CONVERGE-ON-178-20261015",
+ "title": "Stack the OPUS MAXIMUS branch on PR #178, the existing one-machine integration trunk, instead of offering a second trunk",
+ "problem": "On 2026-10-15 a fresh read of the open PRs showed draft #178 (head 4ed91f7, created 2026-10-14 16:22, base #175 e34dfe0) declaring itself the integration trunk. It independently built a whole-machine test, the signed organ exchange on the mission path, the reconciliation-record fix and the removal of silent server-side model fallback. This session's unpushed branch (#175 + #169@94d4289 + six commits) built the same four things in parallel. Pushing it as a second trunk would recreate the divergence the founder prohibited ('Do not create a parallel GREG'). This record supersedes the trunk choice of OPUS-MAXIMUS-TRUNK-20261014 (#175 + #169), which stays as lineage.",
+ "founder_intent_refs": [
+  "docs/intent/INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE.json",
+  "docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json",
+  "docs/intent/sources/FABLE-5-1-MASTER-BUILD-PROMPT-2026-10-14-source.md",
+  "docs/intent/sources/ONE-MACHINE-CORRECTIVE-DIRECTIVE-2026-10-14-source.md (carried by #178)",
+  "FABLE 5.1 OPUS MAXIMUS execution command, 2026-10-14 (chat text; founder authentication not claimed)"
+ ],
+ "baseline": "#178 4ed91f7: its whole-machine test, 42/42 attack matrix and CI job 8 (its own record). This branch before the merge: 6a16a9e, the ten-step proof passing with stand-in and with real organs. git rev-list --left-right --count 6a16a9e...4ed91f7 = 18 | 47 (merge base e34dfe0). git merge produced ten conflicted files.",
+ "alternatives": [
+  {
+   "name": "proposed_design",
+   "description": "Merge #178 into this branch with a merge commit and open the draft PR with base claude/greg-one-machine, so its diff is only what #178 lacks: #169's increments after 9c46810 up to 94d4289 (bubblewrap worker envelope, relay door, owner-session console, mission trace script, discovery), the worker-envelope symlink fix, the founder-signed script worker, the alternate organ exchange, the founder-correction learning proof and its tie-break fix, the ten-step supervised proof, the resilience one-outcome rule, the SDK test import fix, and the source and intent documents. Where both sides fixed the same defect, #178's version is kept.",
+   "advantages": [
+    "One trunk (#178) plus one stacked PR; no second trunk.",
+    "Both histories kept by merge commits; nothing is rewritten.",
+    "#178's stricter fixes (model identity, reconciliation spend booking, trusted-git digests) win over this branch's earlier versions."
+   ],
+   "disadvantages": [
+    "The stacked PR still carries a large diff (all of #169's later increments).",
+    "The worker dispatch path changes #178's behaviour: workers now require the bubblewrap envelope, which #178 had left out as a founder decision.",
+    "Two organ-exchange capabilities exist (organ.exchange canonical, organs.exchange alternate)."
+   ],
+   "revival_evidence": "n/a (selected)"
+  },
+  {
+   "name": "simplest_viable_alternative",
+   "description": "Abandon this branch and leave its findings as comments on #178.",
+   "advantages": [
+    "Zero merge work; #178 stays as it is."
+   ],
+   "disadvantages": [
+    "Loses executed, tested work #178 names as its next requirements (founder-correction learning) and #169's later increments.",
+    "Comments are not code; a later session must rebuild it."
+   ],
+   "revival_evidence": "If the merged tree cannot be made green, fall back to this and attach the findings to #178."
+  },
+  {
+   "name": "strongest_competing_architecture",
+   "description": "Push this branch as an independent trunk against main and ask the founder to choose between it and #178.",
+   "advantages": [
+    "Each trunk stays internally consistent."
+   ],
+   "disadvantages": [
+    "Two trunks for one machine: the exact divergence the directive forbids.",
+    "The founder would arbitrate engineering duplication."
+   ],
+   "revival_evidence": "Only if #178 is closed or abandoned by its owner."
+  },
+  {
+   "name": "reversible_experiment",
+   "description": "Merge in a separate worktree and run both whole-machine proofs and the full suite on the merged tree before committing to it.",
+   "advantages": [
+    "The decision rests on executed evidence on the actual merged tree."
+   ],
+   "disadvantages": [
+    "Costs one more full-suite run."
+   ],
+   "revival_evidence": "This is how the proposed design was executed (worktree uk-conv)."
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "Two unreconciled trunks; the next session re-derives which is canonical.",
+  "advantages": [
+   "No merge risk."
+  ],
+  "disadvantages": [
+   "Violates 'Do not create a parallel GREG' and the convergence intent."
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "The founder wants one machine. #178 already declares the trunk; this work should strengthen it, not compete with it. The five roles are performed by one agent; not independent review.",
+   "material_concerns": [
+    "Stacking is not adoption into main; that stays the founder's decision."
+   ],
+   "evidence_refs": [
+    "PR #178 description",
+    "this branch's ten-step proof evidence"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "Duplicate fixes resolve to #178's versions. The real fork is worker confinement: #169's envelope (fail closed without bubblewrap) versus #178's supervision without OS confinement. The envelope is kept because an unconfined worker shares the body's UID and could read its keys; #178's in-memory git digests are added behind it.",
+   "material_concerns": [
+    "Workers become unavailable on hosts without bubblewrap and unprivileged user namespaces, including macOS."
+   ],
+   "evidence_refs": [
+    "greg/workers.py",
+    "greg/worker_isolation.py"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "The merge composes two independently reviewed lines at the worker path; the ten conflicted files were resolved by one agent. #178's CI job 8 runs on GitHub runners where bubblewrap may be absent, so the envelope could turn its merge gate red.",
+   "material_concerns": [
+    "CI job 8 on runners without bubblewrap.",
+    "Unreviewed composition at workers.py hunk 12."
+   ],
+   "evidence_refs": [
+    "greg/workers.py commission()",
+    ".github/workflows (CI job 8)"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "One trunk is cheaper to maintain than two. The stacked PR keeps review scoped to what #178 lacks.",
+   "material_concerns": [
+    "#169 (2fcd872) and #175 (0ae4c94) moved again on 2026-10-15; they are the next merges."
+   ],
+   "evidence_refs": [
+    "git rev-list counts recorded in REPOSITORY_CONVERGENCE_MAP.md"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "No external effect, spend or publication. VEPMC stays 0 and both proofs assert it. Fail-closed confinement protects the founder's keys at the cost of availability.",
+   "material_concerns": [
+    "Do not report the merged tree as more reviewed than it is."
+   ],
+   "evidence_refs": [
+    "vepmc.json in each evidence bundle"
+   ],
+   "recommendation": "EXPERIMENT"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "Duplicated work exists",
+   "tier": "sandbox_execution",
+   "reference": "git log e34dfe0..4ed91f7; git log e34dfe0..6a16a9e",
+   "finding": "Both lines built a whole-machine test, an organ exchange on the mission path, the reconciliation-record fix and model-identity governance."
+  },
+  {
+   "claim": "Targeted suites pass on the merged tree",
+   "tier": "sandbox_execution",
+   "reference": "worktree uk-conv, 2026-10-15",
+   "finding": "166 passed, 1 skipped across workers, script worker, worker isolation, organ exchange, model identity, routing integrity and learning gate."
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "The merged tree is as reviewed as #178",
+   "tier": "other",
+   "reference": "this record",
+   "finding": "False: the worker-path composition and #169's later increments were not part of #178's review."
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "One trunk for the whole machine: #178, with this session's unique, tested work stacked on it and every duplicate resolved to one canonical version.",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "No parallel trunk.",
+    "amplified_value": "Every later session converges on one line; reverses into a liability if the stacked PR silently changes #178's semantics, so each change of #178 behaviour is named in the PR (worker confinement)."
+   },
+   {
+    "id": "A2",
+    "statement": "Duplicates resolve to the stricter version.",
+    "amplified_value": "The canonical code is the better-reviewed one; reverses if the stricter version drops a test this branch found, so this branch's regression tests are adapted to #178's semantics and kept."
+   },
+   {
+    "id": "A3",
+    "statement": "#178's next requirement (founder-correction learning) arrives executed.",
+    "amplified_value": "The trunk's own gap list shrinks with evidence; reverses if the learning proof depends on code #178 lacks, so it runs on the merged tree."
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D1",
+    "statement": "Worker confinement changes #178's availability.",
+    "severity": "high",
+    "response_type": "protective",
+    "redesigned_response": "Fail closed is kept as the safe default and recorded as NEEDS_FOUNDER_DECISION with both options; #178's digest checks are added so the protection is layered, not swapped."
+   },
+   {
+    "id": "D2",
+    "statement": "Large stacked diff.",
+    "severity": "medium",
+    "response_type": "evidence",
+    "redesigned_response": "Bounded and listed: the PR states exactly which commits it adds over #178."
+   },
+   {
+    "id": "D3",
+    "statement": "Two organ-exchange capabilities.",
+    "severity": "low",
+    "response_type": "evidence",
+    "redesigned_response": "organ.exchange (#178) is canonical on the one-machine mission; organs.exchange is a registered alternate with replay-protected bridge state and the DALEOBANKS ledger acceptance record, kept per the Final Build Order."
+   }
+  ],
+  "rejected_alternatives": [
+   {
+    "name": "strongest_competing_architecture",
+    "rejection_reason": "Creates a parallel trunk.",
+    "revival_evidence": "#178 closed by its owner."
+   },
+   {
+    "name": "simplest_viable_alternative",
+    "rejection_reason": "Discards executed, tested work.",
+    "revival_evidence": "Merged tree cannot be made green."
+   }
+  ],
+  "comparisons": {
+   "baseline": "Two unreconciled trunks.",
+   "do_nothing": "Same as baseline.",
+   "simplest_viable_alternative": "Findings as comments only; executed work lost.",
+   "strongest_competing_architecture": "A second trunk; forbidden divergence.",
+   "reversible_experiment": "Executed as the method of this decision."
+  }
+ },
+ "pass_2": {
+  "attack_summary": "Attack the stacked branch as if adopted: CI regressions from the envelope, a reviewer believing #178's supervision record still describes the worker, the alternate organ exchange drifting from the canonical one, and the word 'trunk' read as adoption.",
+  "new_weaknesses": [
+   {
+    "id": "N1",
+    "category": "fragility",
+    "statement": "CI job 8 may run where bubblewrap is unavailable.",
+    "strengthening_response": "The PR states the dependency; the next CI result on the stacked branch decides whether the job installs bubblewrap or the founder chooses #178's unconfined mode."
+   },
+   {
+    "id": "N2",
+    "category": "comprehensibility",
+    "statement": "#178's SUPERVISION constant described an unconfined worker.",
+    "strengthening_response": "Removed with its only caller; the worker report carries the envelope's own isolation evidence instead."
+   },
+   {
+    "id": "N3",
+    "category": "other",
+    "statement": "Stacking could read as adoption.",
+    "strengthening_response": "Draft PR; adoption into main and which line is canonical stay NEEDS_FOUNDER_DECISION."
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D1",
+    "outcome": "accepted",
+    "rationale": "Safe default chosen; founder decides.",
+    "owner": "Alfonso Lopez",
+    "review_trigger": "Founder ruling on worker confinement policy."
+   },
+   {
+    "disadvantage_id": "D2",
+    "outcome": "accepted",
+    "rationale": "Listed in the PR.",
+    "owner": "next reviewing agent",
+    "review_trigger": "Independent review of the stacked diff."
+   },
+   {
+    "disadvantage_id": "D3",
+    "outcome": "resolved",
+    "rationale": "Canonical and alternate named.",
+    "owner": "this session",
+    "review_trigger": "n/a"
+   }
+  ],
+  "residual_risks": [
+   {
+    "risk": "Composition at the worker path is reviewed by one agent only.",
+    "owner": "next reviewing agent",
+    "review_trigger": "before any founder-device run",
+    "mitigation": "Dissent recorded; both whole-machine proofs and the worker suites run on the merged tree."
+   },
+   {
+    "risk": "#169 and #175 moved again; this branch lags their 2026-10-15 heads.",
+    "owner": "next converging session",
+    "review_trigger": "next merge of 2fcd872 and 0ae4c94",
+    "mitigation": "Named as the next merges in REPOSITORY_CONVERGENCE_MAP.md with their measured divergence."
+   }
+  ],
+  "final_design": "Branch claude/opus-maximus-one-greg-20261014 = this session's trunk (6a16a9e) + merge of #178 4ed91f7 with ten documented resolutions; draft PR with base claude/greg-one-machine (#178); #178's versions canonical where both lines fixed the same defect; worker confinement fails closed pending the founder's ruling; no merge to main, no activation, no spend.",
+  "recommendation": "EXPERIMENT"
+ },
+ "dissent": {
+  "present": true,
+  "handling": "Recorded with owner and trigger.",
+  "entries": [
+   {
+    "role": "Adversarial Reviewer",
+    "position": "The worker-path composition needs an independent read before founder-device use.",
+    "rationale": "Two reviewed lines composed by one agent.",
+    "evidence_threshold": "An independent reading of commission() with a regression test per finding.",
+    "owner": "next reviewing agent",
+    "review_trigger": "before any founder-device acceptance run"
+   }
+  ]
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": false,
+  "approval_status": "not_required",
+  "approver": null,
+  "note": "Draft PR stacked on #178. No merge into main, no activation, spend, publication or contact."
+ },
+ "migration_plan": "Merge 4ed91f7 into 6a16a9e in a separate worktree; resolve ten files; adapt this branch's regression tests to #178's canonical semantics; run targeted suites, both whole-machine proofs and the full suite on the merged tree; commit; push; open the draft PR with base claude/greg-one-machine.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "Before push: delete branch conv-178 and keep 6a16a9e.",
+   "After push: revert the merge commit; #178 is untouched by this work."
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "The merged tree cannot pass both whole-machine proofs and the full suite without weakening a test from either line.",
+  "The worker-path composition is found to weaken #178's git-tamper protections.",
+  "The branch is used to claim founder-device, external or commercial evidence."
+ ],
+ "decision": "EXPERIMENT",
+ "decision_owner": "Alfonso Lopez (root authority) for adoption; this session's agent for the development branch",
+ "review_trigger": "Full suite and both proofs on the merged tree; CI on the stacked PR; founder review."
+}

@@ -1,0 +1,31 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- /tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/venvconv/bin/python
+rootdir: /tmp/claude-0/-home-user/078bd1cb-bfbf-5140-aa7d-3c39af880cb4/scratchpad/wtv
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collecting ... collected 22 items
+
+tests/unit/test_greg_ventures.py::test_binding_verdict_never_outruns_the_evidence PASSED [  4%]
+tests/unit/test_greg_ventures.py::test_packet_never_invents_an_unevidenced_buyer PASSED [  9%]
+tests/unit/test_greg_ventures.py::test_assess_caps_the_engine_and_the_appraiser_reproduces_it PASSED [ 13%]
+tests/unit/test_greg_ventures.py::test_evidenced_buyer_lets_the_engine_verdict_stand PASSED [ 18%]
+tests/unit/test_greg_ventures.py::test_appraiser_refutes_every_substitution[memo-differs from the render] PASSED [ 22%]
+tests/unit/test_greg_ventures.py::test_appraiser_refutes_every_substitution[source-source bytes do not match the manifest] PASSED [ 27%]
+tests/unit/test_greg_ventures.py::test_appraiser_refutes_every_substitution[manifest-signal manifest changed] PASSED [ 31%]
+tests/unit/test_greg_ventures.py::test_appraiser_refutes_every_substitution[engine-WealthMachine does not reproduce] PASSED [ 36%]
+tests/unit/test_greg_ventures.py::test_appraiser_refutes_every_substitution[receipt-not the render of its inputs] PASSED [ 40%]
+tests/unit/test_greg_ventures.py::test_refusals_outside_roots_without_delivery_and_on_organ_failure PASSED [ 45%]
+tests/unit/test_greg_ventures.py::test_signed_mission_asks_first_delivers_one_memo_and_is_independently_verified PASSED [ 50%]
+tests/unit/test_greg_ventures.py::test_real_organs PASSED                [ 54%]
+tests/unit/test_greg_ventures.py::test_standing_mission_reassesses_when_evidence_changes_and_each_hold_is_appraised PASSED [ 59%]
+tests/unit/test_greg_ventures.py::test_flip_condition_names_the_gap_or_says_evidence_will_not_help PASSED [ 63%]
+tests/unit/test_greg_ventures.py::test_standing_hold_is_refuted_when_its_new_delivery_was_altered PASSED [ 68%]
+tests/unit/test_greg_ventures.py::test_counterevidence_travels_on_the_wire PASSED [ 72%]
+tests/unit/test_greg_ventures.py::test_a_revenue_figure_never_outruns_its_causal_support PASSED [ 77%]
+tests/unit/test_greg_ventures.py::test_without_economics_the_memo_states_no_revenue_figure_and_the_mission_is_unchanged PASSED [ 81%]
+tests/unit/test_greg_ventures.py::test_the_mission_asks_gregs_own_cognition_first_and_the_memo_draws_no_revenue_conclusion_without_identification PASSED [ 86%]
+tests/unit/test_greg_ventures.py::test_identified_randomized_support_is_stated_with_its_assumptions_and_a_forged_receipt_is_refuted PASSED [ 90%]
+tests/unit/test_greg_ventures.py::test_the_organ_bridge_reads_receipts_through_a_handle_with_no_write_method PASSED [ 95%]
+tests/unit/test_greg_ventures.py::test_real_organs_consume_the_minds_receipts_on_a_signed_mission PASSED [100%]
+
+============================= 22 passed in 35.81s ==============================

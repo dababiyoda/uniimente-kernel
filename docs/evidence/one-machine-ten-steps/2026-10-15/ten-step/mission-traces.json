@@ -1,0 +1,1963 @@
+{
+ "m:engineering-brief-2026-10-15": {
+  "mission_id": "m:engineering-brief-2026-10-15",
+  "intended_outcome": {
+   "founder_expression": "Brief me on the state of my kernel and proj repositories",
+   "intended_effect": "a current, source-bound engineering brief is waiting in the delivery folder",
+   "success_checks": [
+    "the newest engineering brief is recent enough"
+   ]
+  },
+  "selected_intelligence": [],
+  "chosen_tools": [
+   "brief.engineering",
+   "brief.freshness"
+  ],
+  "authority_decision": {
+   "light_cone": {
+    "capabilities": [
+     "brief.freshness",
+     "fs.read"
+    ],
+    "targets": [
+     "deliver:*",
+     "fs:*"
+    ],
+    "max_consequence_class": "read_only",
+    "budget_usd": 0,
+    "horizon": "2026-10-17T13:51:54.399507Z"
+   },
+   "capability_transitions": [
+    {
+     "capability_id": "acquired.graph.max_flow.networkx",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    },
+    {
+     "capability_id": "composed.assignment.staffing.networkx.5670bf4c5c",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    }
+   ],
+   "founder_decisions_requested": [
+    {
+     "kind": "APPROVAL",
+     "why_now": "capability 'brief.engineering' outside scope; internal_write exceeds scope ceiling read_only"
+    }
+   ],
+   "founder_answers": [
+    {
+     "answer": "approve"
+    }
+   ]
+  },
+  "executed_steps": [
+   {
+    "action_id": "deliver-engineering-brief",
+    "attempt": 0,
+    "status": "DONE",
+    "capability": "brief.engineering",
+    "receipt": "sha256:ad82be493a963f5e95e249d96098e2a81c4c01be46d536966675a5e7261b83b5",
+    "cost_usd": 0.0,
+    "at": "2026-10-15T13:52:00.418070Z"
+   }
+  ],
+  "correlated_trace": [
+   {
+    "event_id": "31f70189-8339-57b9-b5e2-d50f971d2851",
+    "at": "2026-10-15T13:51:54.477356Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "00a84411-f7bb-5dd2-acf5-99fbd0460f02",
+    "at": "2026-10-15T13:51:54.482973Z",
+    "kind": "mission.registered"
+   },
+   {
+    "event_id": "dd06a95b-56dd-5777-aec1-2016806dd3ff",
+    "at": "2026-10-15T13:51:54.546726Z",
+    "kind": "decision.requested",
+    "request_id": "req-02b7d7bdf512850dfb059cc2",
+    "capability": "brief.engineering"
+   },
+   {
+    "event_id": "a214af1e-0660-5459-ae0f-042fdb7cf43d",
+    "at": "2026-10-15T13:51:54.550033Z",
+    "kind": "mission.blocked",
+    "reason": null,
+    "capability": null
+   },
+   {
+    "event_id": "8e7aa4b4-835f-5e68-b11b-f7aaabdc137d",
+    "at": "2026-10-15T13:52:00.418070Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "ce86ee74-eeff-5d6a-844a-e57e15e0f544",
+    "at": "2026-10-15T13:52:00.418070Z",
+    "kind": "mission.action",
+    "capability": "brief.engineering",
+    "status": "DONE",
+    "receipt": "sha256:ad82be493a963f5e95e249d96098e2a81c4c01be46d536966675a5e7261b83b5",
+    "cost_usd": 0.0
+   },
+   {
+    "event_id": "bcab2fb2-8f8f-5db1-9d87-1d5cfa7f2547",
+    "at": "2026-10-15T13:52:00.423261Z",
+    "kind": "decision.answered",
+    "request_id": "req-02b7d7bdf512850dfb059cc2",
+    "answer": "approve",
+    "latency_s": 5.876535
+   },
+   {
+    "event_id": "97949a7d-ea61-5d56-aa5d-e9a1b3fb439d",
+    "at": "2026-10-15T13:52:00.437061Z",
+    "kind": "mission.unblocked"
+   },
+   {
+    "event_id": "58d3ca9f-40c9-508c-b316-591067909cb7",
+    "at": "2026-10-15T13:52:00.931649Z",
+    "kind": "mission.achieved",
+    "capability": "brief.engineering"
+   },
+   {
+    "event_id": "95920216-8d5a-554b-abcb-e8c3cf8b0fa0",
+    "at": "2026-10-15T13:52:00.931649Z",
+    "kind": "mission.closure_context"
+   },
+   {
+    "event_id": "d185f3bb-4068-5ebd-9812-54d09837eed7",
+    "at": "2026-10-15T13:52:00.931649Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "fab103e1-934e-5716-be88-08f9817bf403",
+    "at": "2026-10-15T13:52:01.495518Z",
+    "kind": "mission.appraised",
+    "verdict": "VERIFIED",
+    "capability": "brief.engineering"
+   }
+  ],
+  "artifacts": [],
+  "proof": {
+   "observations": [
+    {
+     "check_id": "fresh-brief",
+     "passed": true,
+     "receipt": "sha256:193987f5336f2d0d08b027b34889705c4e6a83083441fcbdd0482b93ced48a51"
+    }
+   ],
+   "independent_appraisal": {
+    "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+    "checks": {
+     "achieved_claimed": true,
+     "approval_boundaries_honored": true,
+     "approval_boundary_encountered": true,
+     "arrived_via_inbox": true,
+     "chain_intact": true,
+     "checks_rederived_from_receipts": true,
+     "deliveries_bound_to_evidence": true,
+     "exactly_once": true,
+     "founder_signature_verified": true,
+     "preconditions_honored": true,
+     "registered_once": true,
+     "world_reobserved": true
+    },
+    "findings": [],
+    "head": "sha256:8fa8e0d2f0f38c09e82e0ee3982a14f9bcb73009d5e72fa3afd8c7c1e38c0339",
+    "limits": "shares reviewed Kernel code; not an independent implementation",
+    "mission_id": "m:engineering-brief-2026-10-15",
+    "verdict": "VERIFIED"
+   },
+   "achieved": true,
+   "receipts_on_ledger": 1
+  },
+  "persistence": {
+   "ledger_chain_verified": true,
+   "chain_detail": "chain intact: 848 records",
+   "ledger": "/tmp/pytest-of-root/pytest-182/test_one_machine_ten_steps_on_0/body/ledger.jsonl"
+  },
+  "retained_learning": {
+   "lesson": null
+  },
+  "reality": "RECORDED_LOCAL_REHEARSAL; counts toward no VEPMC; a throwaway key authenticates no one"
+ },
+ "m:one-cortex": {
+  "mission_id": "m:one-cortex",
+  "intended_outcome": {
+   "founder_expression": "test founder words for m:one-cortex",
+   "intended_effect": "observable effect of m:one-cortex",
+   "success_checks": [
+    "a certified optimal schedule with objective 7"
+   ]
+  },
+  "selected_intelligence": [],
+  "chosen_tools": [
+   "cognition.solve"
+  ],
+  "authority_decision": {
+   "light_cone": {
+    "capabilities": [
+     "cognition.solve"
+    ],
+    "targets": [
+     "cognition:*"
+    ],
+    "max_consequence_class": "read_only",
+    "budget_usd": 0.0,
+    "horizon": "2026-10-17T13:52:03.774185Z"
+   },
+   "capability_transitions": [
+    {
+     "capability_id": "acquired.graph.max_flow.networkx",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    },
+    {
+     "capability_id": "composed.assignment.staffing.networkx.5670bf4c5c",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    }
+   ],
+   "founder_decisions_requested": [],
+   "founder_answers": []
+  },
+  "executed_steps": [],
+  "correlated_trace": [
+   {
+    "event_id": "530819be-3be8-5cb8-9e8e-ee5f012b7240",
+    "at": "2026-10-15T13:52:04.212302Z",
+    "kind": "mission.achieved",
+    "capability": null
+   },
+   {
+    "event_id": "9ab3ac81-230f-5afa-9c1e-ec9de4a1e778",
+    "at": "2026-10-15T13:52:04.212302Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "d38936bb-0c4a-5992-8084-afb4eb1e1f62",
+    "at": "2026-10-15T13:52:04.212302Z",
+    "kind": "mission.closure_context"
+   },
+   {
+    "event_id": "fabdf822-709f-5deb-9c71-0dcbde127f75",
+    "at": "2026-10-15T13:52:04.221394Z",
+    "kind": "mission.registered"
+   },
+   {
+    "event_id": "8d9b57a4-99a1-5bad-bca8-628cfd286139",
+    "at": "2026-10-15T13:52:06.452672Z",
+    "kind": "mission.appraised",
+    "verdict": "VERIFIED",
+    "capability": null
+   },
+   {
+    "event_id": "a1b9ff37-99d6-59fd-beab-78ad2cc426d6",
+    "at": "2026-10-15T13:52:06.485154Z",
+    "kind": "cognition.settled"
+   }
+  ],
+  "artifacts": [],
+  "proof": {
+   "observations": [
+    {
+     "check_id": "optimal-schedule",
+     "passed": true,
+     "receipt": "sha256:a28bc1c678bf32d9dd165c483982818dfb3631b582c73f716f8ab60a36c7e974"
+    }
+   ],
+   "independent_appraisal": {
+    "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+    "checks": {
+     "achieved_claimed": true,
+     "approval_boundaries_honored": true,
+     "approval_boundary_encountered": false,
+     "arrived_via_inbox": true,
+     "chain_intact": true,
+     "checks_rederived_from_receipts": true,
+     "deliveries_bound_to_evidence": true,
+     "exactly_once": true,
+     "founder_signature_verified": true,
+     "preconditions_honored": true,
+     "registered_once": true,
+     "world_reobserved": true
+    },
+    "findings": [],
+    "head": "sha256:13b8deca4e7901319c32e9e0557f491c28d7fc70508e437a701b73d98bc05acb",
+    "limits": "shares reviewed Kernel code; not an independent implementation",
+    "mission_id": "m:one-cortex",
+    "verdict": "VERIFIED"
+   },
+   "achieved": true,
+   "receipts_on_ledger": 0
+  },
+  "persistence": {
+   "ledger_chain_verified": true,
+   "chain_detail": "chain intact: 848 records",
+   "ledger": "/tmp/pytest-of-root/pytest-182/test_one_machine_ten_steps_on_0/body/ledger.jsonl"
+  },
+  "retained_learning": {
+   "lesson": null
+  },
+  "reality": "RECORDED_LOCAL_REHEARSAL; counts toward no VEPMC; a throwaway key authenticates no one"
+ },
+ "m:compiled-one-staff": {
+  "mission_id": "m:compiled-one-staff",
+  "intended_outcome": {
+   "founder_expression": "staff the docks and the line",
+   "intended_effect": "an answer from the smallest competent method, with typed evidence GREG checks itself",
+   "success_checks": [
+    "a competent method answered with its evidence"
+   ]
+  },
+  "selected_intelligence": [
+   {
+    "action_id": "compile",
+    "capability": "cognition.solve",
+    "routing": {
+     "chosen": "compile",
+     "expected_value": 0.5,
+     "reliability": 0.5,
+     "alternatives": []
+    }
+   }
+  ],
+  "chosen_tools": [
+   "cognition.solve"
+  ],
+  "authority_decision": {
+   "light_cone": {
+    "capabilities": [
+     "cognition.solve",
+     "composed.assignment.staffing.*",
+     "acquired.graph.max_flow.*"
+    ],
+    "targets": [
+     "cognition:*"
+    ],
+    "max_consequence_class": "read_only",
+    "budget_usd": 0,
+    "horizon": "2026-10-17T13:52:06.581772Z"
+   },
+   "capability_transitions": [
+    {
+     "capability_id": "acquired.graph.max_flow.networkx",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    },
+    {
+     "capability_id": "composed.assignment.staffing.networkx.5670bf4c5c",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    }
+   ],
+   "founder_decisions_requested": [],
+   "founder_answers": []
+  },
+  "executed_steps": [
+   {
+    "action_id": "compile",
+    "attempt": 0,
+    "status": "DONE",
+    "capability": "cognition.solve",
+    "receipt": "sha256:9a05e99d48b24c67737db50a20d8d0344353e12e92fc96efa904d4f65ebe13ff",
+    "cost_usd": 0.0,
+    "at": "2026-10-15T13:52:07.017641Z"
+   }
+  ],
+  "correlated_trace": [
+   {
+    "event_id": "32e95d3b-73d8-5127-a0ef-ac1692f83ebc",
+    "at": "2026-10-15T13:52:07.017641Z",
+    "kind": "deficit.resolved"
+   },
+   {
+    "event_id": "43625bc3-610b-5826-b5df-4e97704b79bd",
+    "at": "2026-10-15T13:52:07.017641Z",
+    "kind": "mission.action",
+    "capability": "cognition.solve",
+    "status": "DONE",
+    "receipt": "sha256:9a05e99d48b24c67737db50a20d8d0344353e12e92fc96efa904d4f65ebe13ff",
+    "cost_usd": 0.0
+   },
+   {
+    "event_id": "854fd1fd-db42-519b-941d-d74cf993d78d",
+    "at": "2026-10-15T13:52:07.017641Z",
+    "kind": "deficit.resolved"
+   },
+   {
+    "event_id": "a76fbd44-1bfa-5a4a-9609-178bc21f2d89",
+    "at": "2026-10-15T13:52:07.017641Z",
+    "kind": "deficit.opened"
+   },
+   {
+    "event_id": "bb39afc9-78bd-56dd-afd7-31a0e482b332",
+    "at": "2026-10-15T13:52:07.017641Z",
+    "kind": "deficit.opened"
+   },
+   {
+    "event_id": "d87f8df5-bb99-56da-b15c-32eca02ce297",
+    "at": "2026-10-15T13:52:07.017641Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "4cbebd0e-4ac0-55bc-a7e0-9f16dd69979b",
+    "at": "2026-10-15T13:52:07.036594Z",
+    "kind": "mission.registered"
+   },
+   {
+    "event_id": "c2505ec5-699e-5d6f-a828-ae8b4ed8f52f",
+    "at": "2026-10-15T13:52:07.914499Z",
+    "kind": "capability.state"
+   },
+   {
+    "event_id": "83c17e07-d55f-563e-a74e-90e5a03352bd",
+    "at": "2026-10-15T13:52:08.400163Z",
+    "kind": "capability.state"
+   },
+   {
+    "event_id": "2a8e5646-f69f-546b-8a64-98c3e7e28379",
+    "at": "2026-10-15T13:52:08.873657Z",
+    "kind": "mission.closure_context"
+   },
+   {
+    "event_id": "7a3dc4f5-932f-577f-bb0c-535c4c87801b",
+    "at": "2026-10-15T13:52:08.873657Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "da86e038-7c96-505b-a615-2d13e121bd3e",
+    "at": "2026-10-15T13:52:08.873657Z",
+    "kind": "mission.achieved",
+    "capability": "cognition.solve"
+   },
+   {
+    "event_id": "240e71bf-62e2-5325-bded-ab25cc494f19",
+    "at": "2026-10-15T13:52:10.455463Z",
+    "kind": "mission.appraised",
+    "verdict": "VERIFIED",
+    "capability": "cognition.solve"
+   }
+  ],
+  "artifacts": [],
+  "proof": {
+   "observations": [
+    {
+     "check_id": "answered",
+     "passed": true,
+     "receipt": "sha256:72023541cdb89c9057ee3e308c08505080f7ff67382186bd5eace8a0d61abf2b"
+    }
+   ],
+   "independent_appraisal": {
+    "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+    "checks": {
+     "achieved_claimed": true,
+     "approval_boundaries_honored": true,
+     "approval_boundary_encountered": false,
+     "arrived_via_inbox": true,
+     "chain_intact": true,
+     "checks_rederived_from_receipts": true,
+     "deliveries_bound_to_evidence": true,
+     "exactly_once": true,
+     "founder_signature_verified": true,
+     "preconditions_honored": true,
+     "registered_once": true,
+     "world_reobserved": true
+    },
+    "findings": [],
+    "head": "sha256:bdb69cf6ab384561dc910c8a218e9906eb4b1364ab6841bedaadb3118cbcccb0",
+    "limits": "shares reviewed Kernel code; not an independent implementation",
+    "mission_id": "m:compiled-one-staff",
+    "verdict": "VERIFIED"
+   },
+   "achieved": true,
+   "receipts_on_ledger": 1
+  },
+  "persistence": {
+   "ledger_chain_verified": true,
+   "chain_detail": "chain intact: 848 records",
+   "ledger": "/tmp/pytest-of-root/pytest-182/test_one_machine_ten_steps_on_0/body/ledger.jsonl"
+  },
+  "retained_learning": {
+   "lesson": null
+  },
+  "reality": "RECORDED_LOCAL_REHEARSAL; counts toward no VEPMC; a throwaway key authenticates no one"
+ },
+ "m:work-one-sub": {
+  "mission_id": "m:work-one-sub",
+  "intended_outcome": {
+   "founder_expression": "Improve proj: add sub() with a founder-signed script",
+   "intended_effect": "a tested, independently appraised proposed change exists on a reviewable branch; promotion remains with the authorized repository path",
+   "success_checks": [
+    "independent appraisal ACCEPTED the work order",
+    "the review handoff exists for the founder"
+   ]
+  },
+  "selected_intelligence": [],
+  "chosen_tools": [
+   "fs.read",
+   "fs.write",
+   "worker.appraise",
+   "worker.commission"
+  ],
+  "authority_decision": {
+   "light_cone": {
+    "capabilities": [
+     "worker.commission",
+     "worker.appraise",
+     "fs.read",
+     "fs.write"
+    ],
+    "targets": [
+     "work:one-sub",
+     "fs:handoff-one-sub.md",
+     "workspace:handoff-one-sub.md"
+    ],
+    "max_consequence_class": "internal_write",
+    "budget_usd": 0.01,
+    "horizon": "2026-10-17T13:52:10.708210Z"
+   },
+   "capability_transitions": [
+    {
+     "capability_id": "acquired.graph.max_flow.networkx",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    },
+    {
+     "capability_id": "composed.assignment.staffing.networkx.5670bf4c5c",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    }
+   ],
+   "founder_decisions_requested": [],
+   "founder_answers": []
+  },
+  "executed_steps": [
+   {
+    "action_id": "commission-worker",
+    "attempt": 0,
+    "status": "DONE",
+    "capability": "worker.commission",
+    "receipt": "sha256:ce975a8b979979e044054b3ca55c81d492d75ced1dfd4e93ad5bcacebfde1aa2",
+    "cost_usd": 0.0,
+    "at": "2026-10-15T13:52:11.155767Z"
+   },
+   {
+    "action_id": "write-handoff",
+    "attempt": 0,
+    "status": "DONE",
+    "capability": "fs.write",
+    "receipt": "sha256:2a5f30464ea7faff9873239e626ff4be0ea09301263f1e412607c14563f2e255",
+    "cost_usd": 0.0,
+    "at": "2026-10-15T13:52:13.139235Z"
+   }
+  ],
+  "correlated_trace": [
+   {
+    "event_id": "0b9cae57-6820-5a9b-a2e5-02513f4abe91",
+    "at": "2026-10-15T13:52:11.155767Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "b58371c8-50a1-5c16-b33f-35b8b1f98e68",
+    "at": "2026-10-15T13:52:11.155767Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "e3e3fceb-58ca-5b4d-8478-1189b05f1d10",
+    "at": "2026-10-15T13:52:11.155767Z",
+    "kind": "mission.action",
+    "capability": "worker.commission",
+    "status": "DONE",
+    "receipt": "sha256:ce975a8b979979e044054b3ca55c81d492d75ced1dfd4e93ad5bcacebfde1aa2",
+    "cost_usd": 0.0
+   },
+   {
+    "event_id": "01838f3b-f8db-5b6e-82b3-f5ceb35a8230",
+    "at": "2026-10-15T13:52:11.176440Z",
+    "kind": "mission.registered"
+   },
+   {
+    "event_id": "4595acd2-be2f-5c9e-b931-080636ee58ee",
+    "at": "2026-10-15T13:52:13.139235Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "9019852b-ffd4-52f2-a581-5cf25921b898",
+    "at": "2026-10-15T13:52:13.139235Z",
+    "kind": "mission.action",
+    "capability": "fs.write",
+    "status": "DONE",
+    "receipt": "sha256:2a5f30464ea7faff9873239e626ff4be0ea09301263f1e412607c14563f2e255",
+    "cost_usd": 0.0
+   },
+   {
+    "event_id": "a233a375-20da-5819-9513-e10db5a75530",
+    "at": "2026-10-15T13:52:13.139235Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "0554d111-493e-5b0a-b4f5-a5b9ee9d3282",
+    "at": "2026-10-15T13:52:15.051865Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "63728e96-3689-5d95-a303-68bd4c41daa5",
+    "at": "2026-10-15T13:52:15.051865Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "741a7749-7bb2-5808-9652-c7ef361b65cc",
+    "at": "2026-10-15T13:52:15.051865Z",
+    "kind": "mission.achieved",
+    "capability": "fs.write"
+   },
+   {
+    "event_id": "e0a63169-415e-5b41-98e4-bf7e944a82cd",
+    "at": "2026-10-15T13:52:15.051865Z",
+    "kind": "mission.closure_context"
+   },
+   {
+    "event_id": "5f9b6b0d-6a6a-56b6-813e-b364b3cb9c72",
+    "at": "2026-10-15T13:52:17.347933Z",
+    "kind": "mission.appraised",
+    "verdict": "VERIFIED",
+    "capability": "fs.write"
+   }
+  ],
+  "artifacts": [],
+  "proof": {
+   "observations": [
+    {
+     "check_id": "work_accepted",
+     "passed": true,
+     "receipt": "sha256:a9b1816105ba4922001a241fc928941f6ef550622a16bef36f8557606462a8a0"
+    },
+    {
+     "check_id": "handoff_written",
+     "passed": true,
+     "receipt": "sha256:916fa4539cf5dcc0646cdd04b9e48a4f886641f9e589908cda0c6fc1cd11d9ad"
+    }
+   ],
+   "independent_appraisal": {
+    "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+    "checks": {
+     "achieved_claimed": true,
+     "approval_boundaries_honored": true,
+     "approval_boundary_encountered": false,
+     "arrived_via_inbox": true,
+     "chain_intact": true,
+     "checks_rederived_from_receipts": true,
+     "deliveries_bound_to_evidence": true,
+     "exactly_once": true,
+     "founder_signature_verified": true,
+     "preconditions_honored": true,
+     "registered_once": true,
+     "world_reobserved": true
+    },
+    "findings": [],
+    "head": "sha256:8d9c93b541e9e7ee6e506e0ba8572b942067d2ff50d1d9686707f58d56cd545d",
+    "limits": "shares reviewed Kernel code; not an independent implementation",
+    "mission_id": "m:work-one-sub",
+    "verdict": "VERIFIED"
+   },
+   "achieved": true,
+   "receipts_on_ledger": 2
+  },
+  "persistence": {
+   "ledger_chain_verified": true,
+   "chain_detail": "chain intact: 848 records",
+   "ledger": "/tmp/pytest-of-root/pytest-182/test_one_machine_ten_steps_on_0/body/ledger.jsonl"
+  },
+  "retained_learning": {
+   "lesson": null
+  },
+  "reality": "RECORDED_LOCAL_REHEARSAL; counts toward no VEPMC; a throwaway key authenticates no one"
+ },
+ "m:work-slow-sub": {
+  "mission_id": "m:work-slow-sub",
+  "intended_outcome": {
+   "founder_expression": "Improve proj: add sub() after a pause",
+   "intended_effect": "a tested, independently appraised proposed change exists on a reviewable branch; promotion remains with the authorized repository path",
+   "success_checks": [
+    "independent appraisal ACCEPTED the work order",
+    "the review handoff exists for the founder"
+   ]
+  },
+  "selected_intelligence": [],
+  "chosen_tools": [
+   "fs.read",
+   "fs.write",
+   "worker.appraise",
+   "worker.commission"
+  ],
+  "authority_decision": {
+   "light_cone": {
+    "capabilities": [
+     "worker.commission",
+     "worker.appraise",
+     "fs.read",
+     "fs.write"
+    ],
+    "targets": [
+     "work:slow-sub",
+     "fs:handoff-slow-sub.md",
+     "workspace:handoff-slow-sub.md"
+    ],
+    "max_consequence_class": "internal_write",
+    "budget_usd": 0.01,
+    "horizon": "2026-10-17T13:52:17.494073Z"
+   },
+   "capability_transitions": [
+    {
+     "capability_id": "acquired.graph.max_flow.networkx",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    },
+    {
+     "capability_id": "composed.assignment.staffing.networkx.5670bf4c5c",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    }
+   ],
+   "founder_decisions_requested": [
+    {
+     "kind": "RECONCILIATION",
+     "why_now": "an action may or may not have executed before an interruption"
+    }
+   ],
+   "founder_answers": [
+    {
+     "answer": "reconcile_not_executed"
+    }
+   ]
+  },
+  "executed_steps": [
+   {
+    "action_id": "commission-worker",
+    "attempt": 0,
+    "status": "UNCERTAIN",
+    "capability": "worker.commission",
+    "receipt": null,
+    "cost_usd": 0.01,
+    "at": "2026-10-15T13:52:21.382502Z"
+   },
+   {
+    "action_id": "commission-worker",
+    "attempt": 0,
+    "status": "RECONCILED_NOT_EXECUTED",
+    "capability": "worker.commission",
+    "receipt": null,
+    "cost_usd": 0.0,
+    "at": "2026-10-15T13:52:25.178932Z"
+   },
+   {
+    "action_id": "commission-worker",
+    "attempt": 1,
+    "status": "DONE",
+    "capability": "worker.commission",
+    "receipt": "sha256:d86125f56962cea74fb756d1553afcc0a91d1763188fce9d04fbf553aff83e98",
+    "cost_usd": 0.0,
+    "at": "2026-10-15T13:52:25.178932Z"
+   },
+   {
+    "action_id": "write-handoff",
+    "attempt": 0,
+    "status": "DONE",
+    "capability": "fs.write",
+    "receipt": "sha256:91aea04e8ceae15b0b05b41fb1837d4bd9361ace7cc94a6cdc8fc06138832eb8",
+    "cost_usd": 0.0,
+    "at": "2026-10-15T13:52:33.690442Z"
+   }
+  ],
+  "correlated_trace": [
+   {
+    "event_id": "20382423-b78d-5df5-a88b-e6ddeacdbb43",
+    "at": "2026-10-15T13:52:18.349558Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "c750da76-3a88-5b17-93a4-2ad67444933a",
+    "at": "2026-10-15T13:52:18.349558Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "f6115f8d-3ef5-5b8e-9a93-4a735e0be60c",
+    "at": "2026-10-15T13:52:18.403067Z",
+    "kind": "mission.registered"
+   },
+   {
+    "event_id": "6f3883dc-f210-593d-9177-995291520a99",
+    "at": "2026-10-15T13:52:21.382502Z",
+    "kind": "mission.action",
+    "capability": "worker.commission",
+    "status": "UNCERTAIN",
+    "receipt": null,
+    "cost_usd": 0.01
+   },
+   {
+    "event_id": "a59ed82c-c6f6-51c6-81e4-f2f205db31a8",
+    "at": "2026-10-15T13:52:21.382502Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "f9a4c08c-d6e0-5ce2-92a4-2771d39b3fd5",
+    "at": "2026-10-15T13:52:21.382502Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "b68ad900-7fcf-508d-b651-f886d04efdb4",
+    "at": "2026-10-15T13:52:22.215805Z",
+    "kind": "decision.requested",
+    "request_id": "req-567dfc58cff46d99592a3696",
+    "capability": null
+   },
+   {
+    "event_id": "521d288e-0ae6-5e19-99f2-9ea22aded287",
+    "at": "2026-10-15T13:52:22.245925Z",
+    "kind": "mission.blocked",
+    "reason": null,
+    "capability": "worker.commission"
+   },
+   {
+    "event_id": "2ccc78f1-f32d-5c1d-b8f8-a7f40bb04aaf",
+    "at": "2026-10-15T13:52:25.178932Z",
+    "kind": "mission.action",
+    "capability": "worker.commission",
+    "status": "RECONCILED_NOT_EXECUTED",
+    "receipt": null,
+    "cost_usd": 0.0
+   },
+   {
+    "event_id": "80ef956e-bc70-5a75-9cb8-170d815c6051",
+    "at": "2026-10-15T13:52:25.178932Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "92846065-c549-5e7c-ab30-bce68cae8809",
+    "at": "2026-10-15T13:52:25.178932Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "9656682f-9b81-51b2-95ce-959a7f1baa51",
+    "at": "2026-10-15T13:52:25.178932Z",
+    "kind": "mission.action",
+    "capability": "worker.commission",
+    "status": "DONE",
+    "receipt": "sha256:d86125f56962cea74fb756d1553afcc0a91d1763188fce9d04fbf553aff83e98",
+    "cost_usd": 0.0
+   },
+   {
+    "event_id": "ff06c5f5-c784-5f9d-ad67-f0faaa634d05",
+    "at": "2026-10-15T13:52:25.241958Z",
+    "kind": "decision.answered",
+    "request_id": "req-567dfc58cff46d99592a3696",
+    "answer": "reconcile_not_executed",
+    "latency_s": 3.026153
+   },
+   {
+    "event_id": "ff1c1668-bfc0-5d31-8e7a-94d2b40b94f0",
+    "at": "2026-10-15T13:52:25.514950Z",
+    "kind": "mission.unblocked"
+   },
+   {
+    "event_id": "7453bcf6-d13f-5955-b379-6bcb54f772b7",
+    "at": "2026-10-15T13:52:33.690442Z",
+    "kind": "mission.action",
+    "capability": "fs.write",
+    "status": "DONE",
+    "receipt": "sha256:91aea04e8ceae15b0b05b41fb1837d4bd9361ace7cc94a6cdc8fc06138832eb8",
+    "cost_usd": 0.0
+   },
+   {
+    "event_id": "87da8efe-7fa5-5915-a344-178cde3e64b8",
+    "at": "2026-10-15T13:52:33.690442Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "d13fae95-d309-5794-8ff9-a8ab9786d132",
+    "at": "2026-10-15T13:52:33.690442Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "3980eb82-bee4-5f96-9525-b18b741e8d11",
+    "at": "2026-10-15T13:52:35.927159Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "61398a23-afd9-52d0-92be-1de450363f95",
+    "at": "2026-10-15T13:52:35.927159Z",
+    "kind": "mission.closure_context"
+   },
+   {
+    "event_id": "aefec4ad-46b9-5e9a-ac23-032a6cce4c4e",
+    "at": "2026-10-15T13:52:35.927159Z",
+    "kind": "mission.achieved",
+    "capability": "fs.write"
+   },
+   {
+    "event_id": "b71ca95a-d33a-5d72-81ee-e95333050832",
+    "at": "2026-10-15T13:52:35.927159Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "b5694e98-c5ad-5204-a721-08fbbfcd0f4f",
+    "at": "2026-10-15T13:52:38.412047Z",
+    "kind": "mission.appraised",
+    "verdict": "VERIFIED",
+    "capability": "fs.write"
+   }
+  ],
+  "artifacts": [],
+  "proof": {
+   "observations": [
+    {
+     "check_id": "work_accepted",
+     "passed": true,
+     "receipt": "sha256:717e890e8357876ead3b6e4c101a76c8eb814de6cb6e01709ceddaba1d13203e"
+    },
+    {
+     "check_id": "handoff_written",
+     "passed": true,
+     "receipt": "sha256:c5e2a652c34471cebba5e28e9724af01760668f2acc39fa9245f265fa2f79117"
+    }
+   ],
+   "independent_appraisal": {
+    "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+    "checks": {
+     "achieved_claimed": true,
+     "approval_boundaries_honored": true,
+     "approval_boundary_encountered": false,
+     "arrived_via_inbox": true,
+     "chain_intact": true,
+     "checks_rederived_from_receipts": true,
+     "deliveries_bound_to_evidence": true,
+     "exactly_once": true,
+     "founder_signature_verified": true,
+     "preconditions_honored": true,
+     "registered_once": true,
+     "world_reobserved": true
+    },
+    "findings": [],
+    "head": "sha256:c51dd3fcf721130df1b3f9403dbf3d0791ab42ef22a0a30a75b8841a112c2e17",
+    "limits": "shares reviewed Kernel code; not an independent implementation",
+    "mission_id": "m:work-slow-sub",
+    "verdict": "VERIFIED"
+   },
+   "achieved": true,
+   "receipts_on_ledger": 2
+  },
+  "persistence": {
+   "ledger_chain_verified": true,
+   "chain_detail": "chain intact: 848 records",
+   "ledger": "/tmp/pytest-of-root/pytest-182/test_one_machine_ten_steps_on_0/body/ledger.jsonl"
+  },
+  "retained_learning": {
+   "lesson": null
+  },
+  "reality": "RECORDED_LOCAL_REHEARSAL; counts toward no VEPMC; a throwaway key authenticates no one"
+ },
+ "m:work-slow-standing": {
+  "mission_id": "m:work-slow-standing",
+  "intended_outcome": {
+   "founder_expression": "Improve proj: add sub() after a pause, standing mandate",
+   "intended_effect": "a tested, independently appraised proposed change exists on a reviewable branch; promotion remains with the authorized repository path",
+   "success_checks": [
+    "independent appraisal ACCEPTED the work order",
+    "the review handoff exists for the founder"
+   ]
+  },
+  "selected_intelligence": [],
+  "chosen_tools": [
+   "fs.read",
+   "fs.write",
+   "worker.appraise",
+   "worker.commission"
+  ],
+  "authority_decision": {
+   "light_cone": {
+    "capabilities": [
+     "worker.commission",
+     "worker.appraise",
+     "fs.read",
+     "fs.write"
+    ],
+    "targets": [
+     "work:slow-standing",
+     "fs:handoff-slow-standing.md",
+     "workspace:handoff-slow-standing.md"
+    ],
+    "max_consequence_class": "internal_write",
+    "budget_usd": 0.01,
+    "horizon": "2026-10-17T13:52:38.807761Z"
+   },
+   "capability_transitions": [
+    {
+     "capability_id": "acquired.graph.max_flow.networkx",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    },
+    {
+     "capability_id": "composed.assignment.staffing.networkx.5670bf4c5c",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    }
+   ],
+   "founder_decisions_requested": [],
+   "founder_answers": []
+  },
+  "executed_steps": [
+   {
+    "action_id": "commission-worker",
+    "attempt": 0,
+    "status": "UNCERTAIN",
+    "capability": "worker.commission",
+    "receipt": null,
+    "cost_usd": 0.01,
+    "at": "2026-10-15T13:52:42.796656Z"
+   },
+   {
+    "action_id": "commission-worker",
+    "attempt": 0,
+    "status": "RECONCILED_NOT_EXECUTED",
+    "capability": "worker.commission",
+    "receipt": null,
+    "cost_usd": 0.0,
+    "at": "2026-10-15T13:52:42.796656Z"
+   },
+   {
+    "action_id": "commission-worker",
+    "attempt": 1,
+    "status": "DONE",
+    "capability": "worker.commission",
+    "receipt": "sha256:b5f5024f81c15222a64482d79038aad69edcc2a0e86699e5342319604c92b4bb",
+    "cost_usd": 0.0,
+    "at": "2026-10-15T13:52:44.850710Z"
+   },
+   {
+    "action_id": "write-handoff",
+    "attempt": 0,
+    "status": "DONE",
+    "capability": "fs.write",
+    "receipt": "sha256:4b30598c8b1c5cb4b3998e424fa6c153de232c439aa8bc096fd411cfb6741413",
+    "cost_usd": 0.0,
+    "at": "2026-10-15T13:52:53.905497Z"
+   }
+  ],
+  "correlated_trace": [
+   {
+    "event_id": "5ab8d52c-a71c-5b66-90b0-721c81c84fc3",
+    "at": "2026-10-15T13:52:39.627544Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "fdc4c43b-d0c8-5d7f-a21e-b9f57cade3da",
+    "at": "2026-10-15T13:52:39.627544Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "1fc96d6b-2efb-5706-9e5b-78991524abc5",
+    "at": "2026-10-15T13:52:39.688836Z",
+    "kind": "mission.registered"
+   },
+   {
+    "event_id": "0cf56d3c-5dd0-57b6-aec0-1f08e4b146b9",
+    "at": "2026-10-15T13:52:42.796656Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "e91549b5-9405-557f-ba88-9c1fba871061",
+    "at": "2026-10-15T13:52:42.796656Z",
+    "kind": "mission.action",
+    "capability": "worker.commission",
+    "status": "UNCERTAIN",
+    "receipt": null,
+    "cost_usd": 0.01
+   },
+   {
+    "event_id": "f507236b-4ac4-59f9-a9a8-ebf68f178474",
+    "at": "2026-10-15T13:52:42.796656Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "fa81e45a-9c20-5b41-9386-21129ab4c609",
+    "at": "2026-10-15T13:52:42.796656Z",
+    "kind": "mission.action",
+    "capability": "worker.commission",
+    "status": "RECONCILED_NOT_EXECUTED",
+    "receipt": null,
+    "cost_usd": 0.0
+   },
+   {
+    "event_id": "1281c518-8e9c-5e0b-b998-4dd354df384b",
+    "at": "2026-10-15T13:52:44.850710Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "8cbd30eb-f5a4-508b-83a9-8c5b31532bd4",
+    "at": "2026-10-15T13:52:44.850710Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "a0de2131-e6af-5451-ac94-771a3232d5dc",
+    "at": "2026-10-15T13:52:44.850710Z",
+    "kind": "mission.action",
+    "capability": "worker.commission",
+    "status": "DONE",
+    "receipt": "sha256:b5f5024f81c15222a64482d79038aad69edcc2a0e86699e5342319604c92b4bb",
+    "cost_usd": 0.0
+   },
+   {
+    "event_id": "49482232-e03f-5046-b5d3-eee6e5258a89",
+    "at": "2026-10-15T13:52:53.905497Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "dd606380-58c4-51d4-b46c-2e25a1583893",
+    "at": "2026-10-15T13:52:53.905497Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "ea5c3586-0e77-5f1a-bc59-8d1e4e8e14fd",
+    "at": "2026-10-15T13:52:53.905497Z",
+    "kind": "mission.action",
+    "capability": "fs.write",
+    "status": "DONE",
+    "receipt": "sha256:4b30598c8b1c5cb4b3998e424fa6c153de232c439aa8bc096fd411cfb6741413",
+    "cost_usd": 0.0
+   },
+   {
+    "event_id": "2e1d57bb-1ba2-540b-9a19-d58f37c9e135",
+    "at": "2026-10-15T13:52:56.956487Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "79f19969-47bf-5c72-90d3-99d0ac50f0fa",
+    "at": "2026-10-15T13:52:56.956487Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "da729073-a3b5-5749-b1cc-134279fb6918",
+    "at": "2026-10-15T13:52:56.956487Z",
+    "kind": "mission.closure_context"
+   },
+   {
+    "event_id": "efb5c5c2-b839-540d-ab98-5ed0ff9c7413",
+    "at": "2026-10-15T13:52:56.956487Z",
+    "kind": "mission.achieved",
+    "capability": "fs.write"
+   },
+   {
+    "event_id": "741d47c4-3123-5969-bf76-4e5903e987b3",
+    "at": "2026-10-15T13:52:59.868570Z",
+    "kind": "mission.appraised",
+    "verdict": "VERIFIED",
+    "capability": "fs.write"
+   }
+  ],
+  "artifacts": [],
+  "proof": {
+   "observations": [
+    {
+     "check_id": "work_accepted",
+     "passed": true,
+     "receipt": "sha256:5b04ed6d136d73c33b071be946cf34c51276fd0c9081a00bac9f140de6dc3995"
+    },
+    {
+     "check_id": "handoff_written",
+     "passed": true,
+     "receipt": "sha256:13b4b44444253ffae2b92d04a918ef5594cbaa75f97ca53008c207db9f2526d9"
+    }
+   ],
+   "independent_appraisal": {
+    "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+    "checks": {
+     "achieved_claimed": true,
+     "approval_boundaries_honored": true,
+     "approval_boundary_encountered": false,
+     "arrived_via_inbox": true,
+     "chain_intact": true,
+     "checks_rederived_from_receipts": true,
+     "deliveries_bound_to_evidence": true,
+     "exactly_once": true,
+     "founder_signature_verified": true,
+     "preconditions_honored": true,
+     "registered_once": true,
+     "world_reobserved": true
+    },
+    "findings": [],
+    "head": "sha256:8679cd1e5f4e0b42bb7f94c58d5a9f9cdfa9284064f42bdb2f4d7dbdf875dfce",
+    "limits": "shares reviewed Kernel code; not an independent implementation",
+    "mission_id": "m:work-slow-standing",
+    "verdict": "VERIFIED"
+   },
+   "achieved": true,
+   "receipts_on_ledger": 2
+  },
+  "persistence": {
+   "ledger_chain_verified": true,
+   "chain_detail": "chain intact: 848 records",
+   "ledger": "/tmp/pytest-of-root/pytest-182/test_one_machine_ten_steps_on_0/body/ledger.jsonl"
+  },
+  "retained_learning": {
+   "lesson": null
+  },
+  "reality": "RECORDED_LOCAL_REHEARSAL; counts toward no VEPMC; a throwaway key authenticates no one"
+ },
+ "m:organs-d868e8c7afca": {
+  "mission_id": "m:organs-d868e8c7afca",
+  "intended_outcome": {
+   "founder_expression": "Run this signal through DALEOBANKS and WealthMachine as two organs that must authenticate to each other, and tell me what they conclude. Do not act on it.",
+   "intended_effect": "a memo for Alfonso carrying both organs' verified messages, the canonical fields they could not evidence, and a verdict capped by that evidence",
+   "success_checks": [
+    "a memo exists for this signal"
+   ]
+  },
+  "selected_intelligence": [],
+  "chosen_tools": [
+   "organs.exchange",
+   "organs.exchange_status"
+  ],
+  "authority_decision": {
+   "light_cone": {
+    "capabilities": [
+     "organs.exchange_status",
+     "fs.read"
+    ],
+    "targets": [
+     "deliver:*",
+     "fs:*"
+    ],
+    "max_consequence_class": "read_only",
+    "budget_usd": 0,
+    "horizon": "2026-10-17T13:53:00.092210Z"
+   },
+   "capability_transitions": [
+    {
+     "capability_id": "acquired.graph.max_flow.networkx",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    },
+    {
+     "capability_id": "composed.assignment.staffing.networkx.5670bf4c5c",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    }
+   ],
+   "founder_decisions_requested": [
+    {
+     "kind": "APPROVAL",
+     "why_now": "capability 'organs.exchange' outside scope; internal_write exceeds scope ceiling read_only"
+    }
+   ],
+   "founder_answers": [
+    {
+     "answer": "approve"
+    }
+   ]
+  },
+  "executed_steps": [
+   {
+    "action_id": "exchange",
+    "attempt": 0,
+    "status": "DONE",
+    "capability": "organs.exchange",
+    "receipt": "sha256:c38968df5b98ac4a11e6308b508b0f4c14173cc01d583e53d252693b39eec0bc",
+    "cost_usd": 0.0,
+    "at": "2026-10-15T13:53:02.916472Z"
+   }
+  ],
+  "correlated_trace": [
+   {
+    "event_id": "12f460b5-8c55-54d6-a2b7-5150ba9ad63a",
+    "at": "2026-10-15T13:53:00.673068Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "cc2ba048-1fe0-5ba1-a521-7d977a45900d",
+    "at": "2026-10-15T13:53:00.754487Z",
+    "kind": "mission.registered"
+   },
+   {
+    "event_id": "4ecd0303-d63a-5d4b-b21c-5b138619b5a3",
+    "at": "2026-10-15T13:53:02.120497Z",
+    "kind": "decision.requested",
+    "request_id": "req-6a3b162abab334b06a4d1d26",
+    "capability": "organs.exchange"
+   },
+   {
+    "event_id": "8b16cbad-11e3-5da6-ac05-c01de3fcc1be",
+    "at": "2026-10-15T13:53:02.181846Z",
+    "kind": "mission.blocked",
+    "reason": null,
+    "capability": null
+   },
+   {
+    "event_id": "eb7af6df-d236-562c-82ea-0eb7363d54c9",
+    "at": "2026-10-15T13:53:02.916472Z",
+    "kind": "mission.action",
+    "capability": "organs.exchange",
+    "status": "DONE",
+    "receipt": "sha256:c38968df5b98ac4a11e6308b508b0f4c14173cc01d583e53d252693b39eec0bc",
+    "cost_usd": 0.0
+   },
+   {
+    "event_id": "f3e565f2-d190-5436-824f-0fc0510a6323",
+    "at": "2026-10-15T13:53:02.916472Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "682e952c-fad0-566c-96f1-812e1520093d",
+    "at": "2026-10-15T13:53:03.012996Z",
+    "kind": "decision.answered",
+    "request_id": "req-6a3b162abab334b06a4d1d26",
+    "answer": "approve",
+    "latency_s": 0.892499
+   },
+   {
+    "event_id": "d340ca8e-ca74-544c-8164-8f6c8855e990",
+    "at": "2026-10-15T13:53:03.310756Z",
+    "kind": "mission.unblocked"
+   },
+   {
+    "event_id": "97f0eec7-61f0-5cf2-8f77-c12a85e82745",
+    "at": "2026-10-15T13:53:07.786244Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "ab009bcb-f347-5f8f-9441-1d253b62581e",
+    "at": "2026-10-15T13:53:07.786244Z",
+    "kind": "mission.achieved",
+    "capability": "organs.exchange"
+   },
+   {
+    "event_id": "df22a237-dee4-5b2f-930c-33920690a7a0",
+    "at": "2026-10-15T13:53:07.786244Z",
+    "kind": "mission.closure_context"
+   },
+   {
+    "event_id": "d33aa5df-5a5e-559a-8221-ed86e5ff5056",
+    "at": "2026-10-15T13:53:11.162017Z",
+    "kind": "mission.appraised",
+    "verdict": "VERIFIED",
+    "capability": "organs.exchange"
+   }
+  ],
+  "artifacts": [],
+  "proof": {
+   "observations": [
+    {
+     "check_id": "exchanged",
+     "passed": true,
+     "receipt": "sha256:c2985d55ada249abc89db92e774c3977ad7d982bd6646903f270911249a9b15c"
+    }
+   ],
+   "independent_appraisal": {
+    "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+    "checks": {
+     "achieved_claimed": true,
+     "approval_boundaries_honored": true,
+     "approval_boundary_encountered": true,
+     "arrived_via_inbox": true,
+     "chain_intact": true,
+     "checks_rederived_from_receipts": true,
+     "deliveries_bound_to_evidence": true,
+     "exactly_once": true,
+     "founder_signature_verified": true,
+     "preconditions_honored": true,
+     "registered_once": true,
+     "world_reobserved": true
+    },
+    "findings": [],
+    "head": "sha256:769978715a55020b993b83e033b41472901479e899d83d6be476f09b3b3f2445",
+    "limits": "shares reviewed Kernel code; not an independent implementation",
+    "mission_id": "m:organs-d868e8c7afca",
+    "verdict": "VERIFIED"
+   },
+   "achieved": true,
+   "receipts_on_ledger": 1
+  },
+  "persistence": {
+   "ledger_chain_verified": true,
+   "chain_detail": "chain intact: 848 records",
+   "ledger": "/tmp/pytest-of-root/pytest-182/test_one_machine_ten_steps_on_0/body/ledger.jsonl"
+  },
+  "retained_learning": {
+   "lesson": null
+  },
+  "reality": "RECORDED_LOCAL_REHEARSAL; counts toward no VEPMC; a throwaway key authenticates no one"
+ },
+ "m:engineering-brief-one-machine-0": {
+  "mission_id": "m:engineering-brief-one-machine-0",
+  "intended_outcome": {
+   "founder_expression": "Every morning tell me the real state of my repositories and pull requests: what is failing, what is stale, what needs my decision. Change nothing.",
+   "intended_effect": "a current, source-bound engineering brief is waiting in the delivery folder",
+   "success_checks": [
+    "the newest engineering brief is recent enough"
+   ]
+  },
+  "selected_intelligence": [],
+  "chosen_tools": [
+   "brief.engineering",
+   "brief.freshness"
+  ],
+  "authority_decision": {
+   "light_cone": {
+    "capabilities": [
+     "brief.freshness",
+     "fs.read",
+     "brief.engineering"
+    ],
+    "targets": [
+     "deliver:*",
+     "fs:*"
+    ],
+    "max_consequence_class": "internal_write",
+    "budget_usd": 0,
+    "horizon": "2026-10-17T13:53:12.746743Z"
+   },
+   "capability_transitions": [
+    {
+     "capability_id": "acquired.graph.max_flow.networkx",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    },
+    {
+     "capability_id": "composed.assignment.staffing.networkx.5670bf4c5c",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    }
+   ],
+   "founder_decisions_requested": [],
+   "founder_answers": []
+  },
+  "executed_steps": [
+   {
+    "action_id": "deliver-engineering-brief",
+    "attempt": 0,
+    "status": "DONE",
+    "capability": "brief.engineering",
+    "receipt": "sha256:b8470054685908e35d154da6b3479eda7fa5a86817778488d30427283f88f809",
+    "cost_usd": 0.0,
+    "at": "2026-10-15T13:53:13.720302Z"
+   }
+  ],
+  "correlated_trace": [
+   {
+    "event_id": "07278643-b16c-5073-870d-05fb7a44f770",
+    "at": "2026-10-15T13:53:13.720302Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "ebec1602-7053-5628-bb20-a1b6bcc3a2a3",
+    "at": "2026-10-15T13:53:13.720302Z",
+    "kind": "mission.action",
+    "capability": "brief.engineering",
+    "status": "DONE",
+    "receipt": "sha256:b8470054685908e35d154da6b3479eda7fa5a86817778488d30427283f88f809",
+    "cost_usd": 0.0
+   },
+   {
+    "event_id": "2d421ccf-1d01-5de2-90c5-1d7c099ba5ef",
+    "at": "2026-10-15T13:53:13.792269Z",
+    "kind": "mission.registered"
+   },
+   {
+    "event_id": "43aaa8a4-e217-5d82-a8c6-a070dea35052",
+    "at": "2026-10-15T13:53:16.122894Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "83593733-557d-5571-b732-7dd75e93ecb8",
+    "at": "2026-10-15T13:53:16.122894Z",
+    "kind": "mission.closure_context"
+   },
+   {
+    "event_id": "d719bfaf-c228-5cde-a8f5-d60dec993b51",
+    "at": "2026-10-15T13:53:16.122894Z",
+    "kind": "mission.achieved",
+    "capability": "brief.engineering"
+   },
+   {
+    "event_id": "84a1270d-2d86-5708-b589-3db9dd4c532d",
+    "at": "2026-10-15T13:53:17.476469Z",
+    "kind": "mission.appraised",
+    "verdict": "VERIFIED",
+    "capability": "brief.engineering"
+   }
+  ],
+  "artifacts": [],
+  "proof": {
+   "observations": [
+    {
+     "check_id": "fresh-brief",
+     "passed": true,
+     "receipt": "sha256:b0af724e701379a2feeb1106dbde83f63b1b4274bc1f705c1e70dd6aaa092724"
+    }
+   ],
+   "independent_appraisal": {
+    "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+    "checks": {
+     "achieved_claimed": true,
+     "approval_boundaries_honored": true,
+     "approval_boundary_encountered": false,
+     "arrived_via_inbox": true,
+     "chain_intact": true,
+     "checks_rederived_from_receipts": true,
+     "deliveries_bound_to_evidence": true,
+     "exactly_once": true,
+     "founder_signature_verified": true,
+     "preconditions_honored": true,
+     "registered_once": true,
+     "world_reobserved": true
+    },
+    "findings": [],
+    "head": "sha256:f867401af93ac447ae6ca68b54a27ffb6494ccb7ae78154b4b5d6f2d4a32657a",
+    "limits": "shares reviewed Kernel code; not an independent implementation",
+    "mission_id": "m:engineering-brief-one-machine-0",
+    "verdict": "VERIFIED"
+   },
+   "achieved": true,
+   "receipts_on_ledger": 1
+  },
+  "persistence": {
+   "ledger_chain_verified": true,
+   "chain_detail": "chain intact: 848 records",
+   "ledger": "/tmp/pytest-of-root/pytest-182/test_one_machine_ten_steps_on_0/body/ledger.jsonl"
+  },
+  "retained_learning": {
+   "lesson": null
+  },
+  "reality": "RECORDED_LOCAL_REHEARSAL; counts toward no VEPMC; a throwaway key authenticates no one"
+ },
+ "m:engineering-brief-one-machine-1": {
+  "mission_id": "m:engineering-brief-one-machine-1",
+  "intended_outcome": {
+   "founder_expression": "Every morning tell me the real state of my repositories and pull requests: what is failing, what is stale, what needs my decision. Change nothing.",
+   "intended_effect": "a current, source-bound engineering brief is waiting in the delivery folder",
+   "success_checks": [
+    "the newest engineering brief is recent enough"
+   ]
+  },
+  "selected_intelligence": [],
+  "chosen_tools": [
+   "brief.engineering",
+   "brief.freshness"
+  ],
+  "authority_decision": {
+   "light_cone": {
+    "capabilities": [
+     "brief.freshness",
+     "fs.read",
+     "brief.engineering"
+    ],
+    "targets": [
+     "deliver:*",
+     "fs:*"
+    ],
+    "max_consequence_class": "internal_write",
+    "budget_usd": 0,
+    "horizon": "2026-10-17T13:53:18.231020Z"
+   },
+   "capability_transitions": [
+    {
+     "capability_id": "acquired.graph.max_flow.networkx",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    },
+    {
+     "capability_id": "composed.assignment.staffing.networkx.5670bf4c5c",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    }
+   ],
+   "founder_decisions_requested": [],
+   "founder_answers": []
+  },
+  "executed_steps": [
+   {
+    "action_id": "deliver-engineering-brief",
+    "attempt": 0,
+    "status": "DONE",
+    "capability": "brief.engineering",
+    "receipt": "sha256:c32441d75f82208d42c8444b74338c76fe4e53f333943c3f1cf5df31173b07a7",
+    "cost_usd": 0.0,
+    "at": "2026-10-15T13:53:19.905333Z"
+   }
+  ],
+  "correlated_trace": [
+   {
+    "event_id": "3063fab7-6543-532c-aa45-e1f7bec2fc32",
+    "at": "2026-10-15T13:53:19.905333Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "da814c17-e192-5b37-90ce-c2d6d85b38ac",
+    "at": "2026-10-15T13:53:19.905333Z",
+    "kind": "mission.action",
+    "capability": "brief.engineering",
+    "status": "DONE",
+    "receipt": "sha256:c32441d75f82208d42c8444b74338c76fe4e53f333943c3f1cf5df31173b07a7",
+    "cost_usd": 0.0
+   },
+   {
+    "event_id": "74ec4b10-485e-55fd-92c5-23f3ad592a65",
+    "at": "2026-10-15T13:53:19.974069Z",
+    "kind": "mission.registered"
+   },
+   {
+    "event_id": "837a59b3-19a6-5b4e-b1f1-b87c1abb5a7c",
+    "at": "2026-10-15T13:53:22.645837Z",
+    "kind": "mission.achieved",
+    "capability": "brief.engineering"
+   },
+   {
+    "event_id": "e06dbff2-5cb7-5e38-a599-8013bfde6c43",
+    "at": "2026-10-15T13:53:22.645837Z",
+    "kind": "mission.closure_context"
+   },
+   {
+    "event_id": "ea5f6021-b7c0-51c3-9e6a-88870bd16b4f",
+    "at": "2026-10-15T13:53:22.645837Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "22964731-a9a4-5b4f-a900-2398cc94acfd",
+    "at": "2026-10-15T13:53:24.459657Z",
+    "kind": "mission.appraised",
+    "verdict": "VERIFIED",
+    "capability": "brief.engineering"
+   }
+  ],
+  "artifacts": [],
+  "proof": {
+   "observations": [
+    {
+     "check_id": "fresh-brief",
+     "passed": true,
+     "receipt": "sha256:27b93fbf54f3de64a24256370e6a29c5d4e1836dceaa5edaa0983d01389d69c7"
+    }
+   ],
+   "independent_appraisal": {
+    "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+    "checks": {
+     "achieved_claimed": true,
+     "approval_boundaries_honored": true,
+     "approval_boundary_encountered": false,
+     "arrived_via_inbox": true,
+     "chain_intact": true,
+     "checks_rederived_from_receipts": true,
+     "deliveries_bound_to_evidence": true,
+     "exactly_once": true,
+     "founder_signature_verified": true,
+     "preconditions_honored": true,
+     "registered_once": true,
+     "world_reobserved": true
+    },
+    "findings": [],
+    "head": "sha256:b6b60b4b01d6503bf04703c3d818319518959318a90a6225d0b50964b78ea0e3",
+    "limits": "shares reviewed Kernel code; not an independent implementation",
+    "mission_id": "m:engineering-brief-one-machine-1",
+    "verdict": "VERIFIED"
+   },
+   "achieved": true,
+   "receipts_on_ledger": 1
+  },
+  "persistence": {
+   "ledger_chain_verified": true,
+   "chain_detail": "chain intact: 848 records",
+   "ledger": "/tmp/pytest-of-root/pytest-182/test_one_machine_ten_steps_on_0/body/ledger.jsonl"
+  },
+  "retained_learning": {
+   "lesson": null
+  },
+  "reality": "RECORDED_LOCAL_REHEARSAL; counts toward no VEPMC; a throwaway key authenticates no one"
+ },
+ "m:engineering-brief-one-machine-2": {
+  "mission_id": "m:engineering-brief-one-machine-2",
+  "intended_outcome": {
+   "founder_expression": "Every morning tell me the real state of my repositories and pull requests: what is failing, what is stale, what needs my decision. Change nothing.",
+   "intended_effect": "a current, source-bound engineering brief is waiting in the delivery folder",
+   "success_checks": [
+    "the newest engineering brief is recent enough"
+   ]
+  },
+  "selected_intelligence": [],
+  "chosen_tools": [
+   "brief.engineering",
+   "brief.freshness"
+  ],
+  "authority_decision": {
+   "light_cone": {
+    "capabilities": [
+     "brief.freshness",
+     "fs.read",
+     "brief.engineering"
+    ],
+    "targets": [
+     "deliver:*",
+     "fs:*"
+    ],
+    "max_consequence_class": "internal_write",
+    "budget_usd": 0,
+    "horizon": "2026-10-17T13:53:25.692359Z"
+   },
+   "capability_transitions": [
+    {
+     "capability_id": "acquired.graph.max_flow.networkx",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    },
+    {
+     "capability_id": "composed.assignment.staffing.networkx.5670bf4c5c",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    }
+   ],
+   "founder_decisions_requested": [],
+   "founder_answers": []
+  },
+  "executed_steps": [
+   {
+    "action_id": "deliver-engineering-brief",
+    "attempt": 0,
+    "status": "DONE",
+    "capability": "brief.engineering",
+    "receipt": "sha256:7b42bfd92b9714b0b0cfed3c145d3c599e9053d442d77d36ef50611d41b1ec41",
+    "cost_usd": 0.0,
+    "at": "2026-10-15T13:53:27.561353Z"
+   }
+  ],
+  "correlated_trace": [
+   {
+    "event_id": "c4cd0ded-8f5d-57bb-a631-3e3a1baf284a",
+    "at": "2026-10-15T13:53:27.561353Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "c68cc4f4-8e71-5151-a7f0-4e6077629893",
+    "at": "2026-10-15T13:53:27.561353Z",
+    "kind": "mission.action",
+    "capability": "brief.engineering",
+    "status": "DONE",
+    "receipt": "sha256:7b42bfd92b9714b0b0cfed3c145d3c599e9053d442d77d36ef50611d41b1ec41",
+    "cost_usd": 0.0
+   },
+   {
+    "event_id": "16893418-15f9-581a-ab4b-ebd14031aaee",
+    "at": "2026-10-15T13:53:27.647319Z",
+    "kind": "mission.registered"
+   },
+   {
+    "event_id": "4bb934ce-ea61-56c3-8c09-a6379b48ddd4",
+    "at": "2026-10-15T13:53:30.634321Z",
+    "kind": "mission.closure_context"
+   },
+   {
+    "event_id": "87845047-8763-566f-8ca9-e6b1932a0f5c",
+    "at": "2026-10-15T13:53:30.634321Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "c8ee6746-2eae-5463-8059-d086bdb72066",
+    "at": "2026-10-15T13:53:30.634321Z",
+    "kind": "mission.achieved",
+    "capability": "brief.engineering"
+   },
+   {
+    "event_id": "16dc8507-011a-54cc-b12d-8a857021cc77",
+    "at": "2026-10-15T13:53:32.456845Z",
+    "kind": "mission.appraised",
+    "verdict": "VERIFIED",
+    "capability": "brief.engineering"
+   }
+  ],
+  "artifacts": [],
+  "proof": {
+   "observations": [
+    {
+     "check_id": "fresh-brief",
+     "passed": true,
+     "receipt": "sha256:40f4fbae77eb6aa5e8df5f7b55188e4e6536a354cb037945f89340e60210d212"
+    }
+   ],
+   "independent_appraisal": {
+    "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+    "checks": {
+     "achieved_claimed": true,
+     "approval_boundaries_honored": true,
+     "approval_boundary_encountered": false,
+     "arrived_via_inbox": true,
+     "chain_intact": true,
+     "checks_rederived_from_receipts": true,
+     "deliveries_bound_to_evidence": true,
+     "exactly_once": true,
+     "founder_signature_verified": true,
+     "preconditions_honored": true,
+     "registered_once": true,
+     "world_reobserved": true
+    },
+    "findings": [],
+    "head": "sha256:c796460d95f86e4f7ba2f829cdc0237712e69d803a71904246763630686fa005",
+    "limits": "shares reviewed Kernel code; not an independent implementation",
+    "mission_id": "m:engineering-brief-one-machine-2",
+    "verdict": "VERIFIED"
+   },
+   "achieved": true,
+   "receipts_on_ledger": 1
+  },
+  "persistence": {
+   "ledger_chain_verified": true,
+   "chain_detail": "chain intact: 848 records",
+   "ledger": "/tmp/pytest-of-root/pytest-182/test_one_machine_ten_steps_on_0/body/ledger.jsonl"
+  },
+  "retained_learning": {
+   "lesson": null
+  },
+  "reality": "RECORDED_LOCAL_REHEARSAL; counts toward no VEPMC; a throwaway key authenticates no one"
+ },
+ "m:engineering-brief-one-machine-learned": {
+  "mission_id": "m:engineering-brief-one-machine-learned",
+  "intended_outcome": {
+   "founder_expression": "Every morning tell me the real state of my repositories and pull requests: what is failing, what is stale, what needs my decision. Change nothing.",
+   "intended_effect": "a current, source-bound engineering brief is waiting in the delivery folder",
+   "success_checks": [
+    "the newest engineering brief is recent enough"
+   ]
+  },
+  "selected_intelligence": [],
+  "chosen_tools": [
+   "brief.engineering",
+   "brief.freshness"
+  ],
+  "authority_decision": {
+   "light_cone": {
+    "capabilities": [
+     "brief.freshness",
+     "fs.read",
+     "brief.engineering"
+    ],
+    "targets": [
+     "deliver:*",
+     "fs:*"
+    ],
+    "max_consequence_class": "internal_write",
+    "budget_usd": 0,
+    "horizon": "2026-10-17T13:53:34.489860Z"
+   },
+   "capability_transitions": [
+    {
+     "capability_id": "acquired.graph.max_flow.networkx",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    },
+    {
+     "capability_id": "composed.assignment.staffing.networkx.5670bf4c5c",
+     "state": "ATTACHED",
+     "by": "founder-signed mission auto_attach (read_only)"
+    }
+   ],
+   "founder_decisions_requested": [],
+   "founder_answers": []
+  },
+  "executed_steps": [
+   {
+    "action_id": "deliver-engineering-brief",
+    "attempt": 0,
+    "status": "DONE",
+    "capability": "brief.engineering",
+    "receipt": "sha256:2b44beca4b79f455afa2ca22b04aef55d54954f4ce100fae0641716d4af4d89d",
+    "cost_usd": 0.0,
+    "at": "2026-10-15T13:53:36.361389Z"
+   }
+  ],
+  "correlated_trace": [
+   {
+    "event_id": "2caf5aa1-3d6f-509e-a026-864cb8a540dd",
+    "at": "2026-10-15T13:53:36.361389Z",
+    "kind": "mission.action",
+    "capability": "brief.engineering",
+    "status": "DONE",
+    "receipt": "sha256:2b44beca4b79f455afa2ca22b04aef55d54954f4ce100fae0641716d4af4d89d",
+    "cost_usd": 0.0
+   },
+   {
+    "event_id": "fde11563-9f0f-53b6-8db2-3b4ceda5b018",
+    "at": "2026-10-15T13:53:36.361389Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "1600a30c-29fc-5f95-ad06-8edfbdc49f0d",
+    "at": "2026-10-15T13:53:36.481927Z",
+    "kind": "mission.registered"
+   },
+   {
+    "event_id": "1e579f37-39c2-5e2e-a997-40bd2816cd34",
+    "at": "2026-10-15T13:53:39.824337Z",
+    "kind": "mission.achieved",
+    "capability": "brief.engineering"
+   },
+   {
+    "event_id": "47f94256-69f8-53ea-9ed6-d9cd6308fcd9",
+    "at": "2026-10-15T13:53:39.824337Z",
+    "kind": "mission.observed"
+   },
+   {
+    "event_id": "a615c1f0-cfbf-5753-938b-2a0745bc59b9",
+    "at": "2026-10-15T13:53:39.824337Z",
+    "kind": "mission.closure_context"
+   },
+   {
+    "event_id": "ef93f1fd-229f-53c8-997b-3526b2dc6392",
+    "at": "2026-10-15T13:53:41.538666Z",
+    "kind": "mission.appraised",
+    "verdict": "VERIFIED",
+    "capability": "brief.engineering"
+   }
+  ],
+  "artifacts": [],
+  "proof": {
+   "observations": [
+    {
+     "check_id": "fresh-brief",
+     "passed": true,
+     "receipt": "sha256:dda1be2f50a5b8122197bc0e299ec1f1475a1cb546caaae129768b6ac934415d"
+    }
+   ],
+   "independent_appraisal": {
+    "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+    "checks": {
+     "achieved_claimed": true,
+     "approval_boundaries_honored": true,
+     "approval_boundary_encountered": false,
+     "arrived_via_inbox": true,
+     "chain_intact": true,
+     "checks_rederived_from_receipts": true,
+     "deliveries_bound_to_evidence": true,
+     "exactly_once": true,
+     "founder_signature_verified": true,
+     "preconditions_honored": true,
+     "registered_once": true,
+     "world_reobserved": true
+    },
+    "findings": [],
+    "head": "sha256:d946d63829e623f8e88d3a4e3bf5b121758914b688641b6f8322ea01efd6ba26",
+    "limits": "shares reviewed Kernel code; not an independent implementation",
+    "mission_id": "m:engineering-brief-one-machine-learned",
+    "verdict": "VERIFIED"
+   },
+   "achieved": true,
+   "receipts_on_ledger": 1
+  },
+  "persistence": {
+   "ledger_chain_verified": true,
+   "chain_detail": "chain intact: 848 records",
+   "ledger": "/tmp/pytest-of-root/pytest-182/test_one_machine_ten_steps_on_0/body/ledger.jsonl"
+  },
+  "retained_learning": {
+   "lesson": null
+  },
+  "reality": "RECORDED_LOCAL_REHEARSAL; counts toward no VEPMC; a throwaway key authenticates no one"
+ }
+}

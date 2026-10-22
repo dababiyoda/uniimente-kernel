@@ -174,6 +174,12 @@ OSS_MUTANTS = [
 # Frontier leap 2026-10-13 (RECOMBINE, #164): a construction is controlled by its own certificate and lifecycle.
 RECOMBINE_TESTS = ["tests/unit/test_greg_recombine.py"]
 RECOMBINE_MUTANTS = [
+    ("a portfolio that skips a prerequisite is certified", "greg/recombine.py",
+     "    if missing:\n        raise ReductionError(f\"the chosen set is not closed", "    if False:\n        raise ReductionError(f\"the chosen set is not closed"),
+    ("a portfolio below the funding bound is certified", "greg/recombine.py",
+     "    if profit != gain - funded:", "    if False:"),
+    ("funding along a made-up edge is accepted", "greg/recombine.py",
+     "        elif (u, v) not in requires:", "        elif False:"),
     ("repair re-admits the construction that failed in service", "greg/genesis.py",
      'if repair and repair.get("capability_id") == manifest.capability_id:\n            self._route(deficit_id, "constructed"',
      'if False:\n            self._route(deficit_id, "constructed"'),
@@ -210,7 +216,7 @@ MIND_CONSTRUCTION_MUTANTS = [
      'if is_capability_fault(formed, detail, failure_class):\n                        self.capability_faults',
      'if False:\n                        self.capability_faults'),
     ("attaching the engine never forms the construction", "greg/missions.py",
-     'if cap is None and self.genesis.construction_ready(b["function"]):', "if False:"),
+     'if self.genesis.construction_ready(b["function"]):', "if False:"),
     ("the construction awaiting attach is hidden behind the old ask", "greg/missions.py",
      "                                              awaiting=bool(waiting))",
      "                                              awaiting=False)"),
@@ -239,12 +245,50 @@ RECOVERY_MUTANTS = [
      'if capability_id == self._engine_id and self.state.get(capability_id) in ("ATTACHED", "VERIFIED"):',
      'if capability_id == self._engine_id and self.state.get(capability_id) == "ATTACHED":'),
     ("a recovered capability is never offered back to its mission", "greg/missions.py",
-     "                    if fresh:", "                    if False:"),
+     "                if fresh:", "                if False:"),
     ("an identical re-block after an unblock is swallowed", "greg/missions.py",
      'key=[m.mission_id, blocker, self._generation(m, "mission.unblocked")])', "key=[m.mission_id, blocker])"),
     ("a recorded qualification is re-run on the same deficit", "greg/genesis.py",
      '            if prior is not None:\n                self._route(deficit_id, "installed_package"',
      '            if False:\n                self._route(deficit_id, "installed_package"'),
+]
+
+# 2026-10-15: capability formation is perception for Goal Gravity (a blocked goal wakes when what it waits on changes).
+CAPABILITY_PERCEPTION_TESTS = ["tests/integration/test_greg_capability_wakes_goal.py"]
+CAPABILITY_PERCEPTION_MUTANTS = [
+    ("a capability change is invisible to Goal Gravity", "greg/goal_gravity.py",
+     'elif t in ("greg.capability.registered", "greg.capability.state"):', "elif False:"),
+    ("a blocked construction does not perceive its engine", "greg/goal_gravity.py",
+     "        if function in (waiting, engine):", "        if function == waiting:"),
+    ("a capability state is flattened to available or not", "greg/goal_gravity.py",
+     'rec.hash, p["state"], "attributed")', 'rec.hash, p["state"] != "QUARANTINED", "attributed")'),
+]
+
+GOAL_FORMATION_TESTS = ["tests/integration/test_greg_goal_requests_formation.py"]
+GOAL_FORMATION_MUTANTS = [
+    ("a goal's formation request rides the mission's auto_attach", "greg/genesis.py",
+     "(formation only).\n        if self._form_only:", "(formation only).\n        if False:"),
+    ("a goal's formation request commissions the builder", "greg/genesis.py",
+     "        if self._form_only:\n            self._route(deficit_id, \"builder\"",
+     "        if False:\n            self._route(deficit_id, \"builder\""),
+    ("a goal does not perceive the formation it asked for", "greg/goal_gravity.py",
+     "            out.add((p[\"mission_id\"], p[\"function\"]))\n    return sorted(out)",
+     "            out.add((p[\"mission_id\"], p[\"function\"]))\n    return []"),
+    ("an attached implementation never closes the goal's deficit", "greg/goal_gravity.py",
+     "        serving = genesis.find_attached(p[\"function\"])\n        if serving is None:",
+     "        serving = genesis.find_attached(p[\"function\"])\n        if True:"),
+    ("a function requirement never reads present", "greg/goal_gravity.py",
+     "        if version == FUNCTION_VERSION:", "        if False:"),
+    ("a goal's request attaches a construction's engine that fell back to VERIFIED", "greg/genesis.py",
+     "or ask.\"\"\"\n        if self._form_only:\n            return False",
+     "or ask.\"\"\"\n        if False:\n            return False"),
+    ("a second request awaiting one formed capability faults the journal", "greg/genesis.py",
+     '        if self.journal.retained("deficit.awaiting_attach", key) is None:', "        if True:"),
+    ("a host outage during a goal's formation stops the body's tick", "greg/goal_gravity.py",
+     "            except CapabilityError as exc:", "            except ZeroDivisionError as exc:"),
+    ("a stopped goal still asks for formation", "greg/goal_gravity.py",
+     "        if gid not in facts.admitted or facts.stopped(gid) is not None:\n            continue\n        state",
+     "        if gid not in facts.admitted:\n            continue\n        state"),
 ]
 
 # 2026-10-14 installed-body merge: appends verify only new history (e2440a6); a Gate commit verifies all of it.
@@ -301,6 +345,9 @@ CLOSURE_INTEGRITY_MUTANTS = [
      '        and p["target"] == strategy["target"] and p["consequence_class"] == manifest.consequence_class\n',
      '        p["capability"] == manifest.capability_id\n'
      '        and p["consequence_class"] == manifest.consequence_class\n'),
+    ("the appraiser counts an answer the founder fold does not", "greg/appraisal.py",
+     "        answers = {rid: answer for rid, answer in answers.items() if rid in counted}",
+     "        answers = dict(answers)"),
     ("a handoff picks the file fs.write overwrites", "greg/capabilities.py",
      "    if ctx.target != named:", "    if False:"),
     ("N3 counts a statement GREG wrote", "greg/path.py",
@@ -327,14 +374,93 @@ CLOSURE_INTEGRITY_MUTANTS = [
      '    if False:\n        raise BodyError(f"{what} needs your founder key'),
 ]
 
+# 2026-10-21: #173's interruption guards (appraiser retry bound, Genesis build reservation), pinned by the review of
+# the PR #184 port branch (f63f218), carried onto #173's code. Each survived the suites that existed before.
+INTERRUPTION_TESTS = ["tests/unit/test_greg_genesis_build_reservation.py", "tests/unit/test_greg_appraisal_retry_bound.py"]
+INTERRUPTION_MUTANTS = [
+    ("an interrupted call by a builder with no ceiling is charged nothing", "greg/genesis.py",
+     '"reserved_usd": min(self.builder_cap, remaining) if self.builder_cap is not None else remaining,',
+     '"reserved_usd": min(self.builder_cap, remaining) if self.builder_cap is not None else 0.0,'),
+    ("the appraiser's read-only restore completes an unresolved auto-attach", "greg/genesis.py",
+     "        if record:\n            self._finish_attaches()", "        self._finish_attaches()"),
+    ("the third unavailable appraisal waits a tick for its final verdict", "greg/body.py",
+     '        if attempt >= APPRAISAL_ATTEMPTS:\n            self.journal.record("mission.appraised"',
+     '        if False:\n            self.journal.record("mission.appraised"'),
+    ("a build budget left only by binary rounding is not used up", "greg/genesis.py",
+     'round(contract["build_budget_usd"] - spent, 6) <= 0', 'contract["build_budget_usd"] - spent <= 0'),
+    ("a cone left only by binary rounding buys another call", "greg/genesis.py",
+     'remaining = round(min(contract["build_budget_usd"] - spent, cone_left - (spent - spent_at_entry)), 6)',
+     'remaining = min(contract["build_budget_usd"] - spent, cone_left - (spent - spent_at_entry))'),
+]
+
+# 2026-10-22: the review of the merge of #178 e410977 into PR #184 (conv-m178e). Each mutant reverts one fix; on the
+# merge tip the pinning test failed (acceptance soundness, the console's H.G7 half, signal scoping, the timed-out
+# acceptance record, a receipted overspend, the appraiser's H.G4 re-derivation, a billed failure across a kill).
+ACCEPTANCE_READER_TESTS = ["tests/unit/test_acceptance_harness.py::test_the_manifest_and_contract_are_sound_against_this_tree"]
+ACCEPTANCE_READER_MUTANTS = [
+    ("a python -c Body.run driver is not seen as a real Body process", "acceptance/__init__.py",
+     'script = 2 if const[1:2] == ["-c"] else 1', "script = 1"),
+]
+CONSOLE_LINK_TESTS = ["tests/integration/test_greg_inbox_writer_kill_process.py::"
+                      "test_a_service_killed_while_writing_a_decision_leaves_no_partial_command_and_it_applies_once"
+                      "[console-after-rename]"]
+CONSOLE_LINK_MUTANTS = [
+    ("the console's private link works more than once", "greg/console.py",
+     "            self._bootstrap = None\n            return True", "            return True"),
+]
+_CONTAIN = "tests/unit/test_greg_worker_containment.py::"
+SIGNAL_SCOPE_TESTS = [_CONTAIN + "test_a_supervised_confined_worker_cannot_signal_the_body",
+                      _CONTAIN + "test_gregs_supervised_acceptance_run_cannot_signal_the_body",
+                      _CONTAIN + "test_a_timed_out_supervised_acceptance_run_is_never_recorded_as_the_envelope"]
+SIGNAL_SCOPE_MUTANTS = [
+    ("a supervised Landlock worker may signal the body", "greg/workers.py",
+     "isolation.restrict(grants, libc, scope=scope)", "isolation.restrict(grants, libc)"),
+    ("GREG's confined acceptance run may signal the body", "greg/capabilities.py",
+     "restrict(grants, libc, scope=scope)   # precomputed", "restrict(grants, libc)   # precomputed"),
+    ("a timed-out supervised acceptance run keeps an unconfined record", "greg/workers.py",
+     "                    mode = _supervised_acceptance(landlock)\n                    raise",
+     "                    raise"),
+]
+_RECON = "tests/unit/test_greg_mission_reconciliation.py::"
+RECONCILED_MONEY_TESTS = [_RECON + "test_a_receipted_interrupt_that_reported_spending_over_its_cap_books_what_it_reported",
+                          _RECON + "test_the_appraiser_refutes_a_closure_that_released_a_metered_not_executed_cap_and_retried",
+                          _RECON + "test_the_appraiser_verifies_a_closure_that_kept_the_metered_cap_booked"]
+RECONCILED_MONEY_MUTANTS = [
+    ("a receipted interrupt's report over its cap is settled at the cap", "greg/missions.py",
+     "if booked and reported is not None and reported > worst + 1e-9:", "if False:"),
+    ("the appraiser takes a reconciliation's booking from the engine", "greg/appraisal.py",
+     '                if cost < required - 1e-9:\n                    approvals_ok = False',
+     '                if False:\n                    approvals_ok = False'),
+    ("the appraiser leaves a booked reconciliation out of spend so far", "greg/appraisal.py",
+     'if action.get("route") == "founder_reconciliation":', "if False:"),
+]
+BILLED_FAILURE_TESTS = ["tests/unit/test_greg_genesis_build_reservation.py::"
+                        "test_a_billed_failure_survives_a_kill_between_its_two_records_and_the_budget_bounds_the_next_call"]
+BILLED_FAILURE_MUTANTS = [
+    ("a billed failure's bill does not settle its call", "greg/genesis.py",
+     'SETTLES_BUILD = ("genesis.built", "genesis.unbuilt", "genesis.build_failed")',
+     'SETTLES_BUILD = ("genesis.built", "genesis.build_failed")'),
+    ("a billed failure's bill is never recorded", "greg/genesis.py",
+     "                    if cost:   # billed although no candidate came back",
+     "                    if False:   # billed although no candidate came back"),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS),
           ("mind construction", MIND_CONSTRUCTION_TESTS, MIND_CONSTRUCTION_MUTANTS),
           ("recovery", RECOVERY_TESTS, RECOVERY_MUTANTS),
+          ("capability perception", CAPABILITY_PERCEPTION_TESTS, CAPABILITY_PERCEPTION_MUTANTS),
+          ("goal-requested formation", GOAL_FORMATION_TESTS, GOAL_FORMATION_MUTANTS),
           ("evidence chain at commit", COMMIT_CHAIN_TESTS, COMMIT_CHAIN_MUTANTS),
           ("founder tier", FOUNDER_TIER_TESTS, FOUNDER_TIER_MUTANTS),
           ("founder tier (body)", FOUNDER_TIER_BODY_TESTS, FOUNDER_TIER_BODY_MUTANTS),
-          ("closure integrity", CLOSURE_INTEGRITY_TESTS, CLOSURE_INTEGRITY_MUTANTS)]
+          ("closure integrity", CLOSURE_INTEGRITY_TESTS, CLOSURE_INTEGRITY_MUTANTS),
+          ("interruption", INTERRUPTION_TESTS, INTERRUPTION_MUTANTS),
+          ("acceptance reader", ACCEPTANCE_READER_TESTS, ACCEPTANCE_READER_MUTANTS),
+          ("console private link", CONSOLE_LINK_TESTS, CONSOLE_LINK_MUTANTS),
+          ("signal scoping", SIGNAL_SCOPE_TESTS, SIGNAL_SCOPE_MUTANTS),
+          ("reconciled money", RECONCILED_MONEY_TESTS, RECONCILED_MONEY_MUTANTS),
+          ("billed failure", BILLED_FAILURE_TESTS, BILLED_FAILURE_MUTANTS)]
 
 
 def main() -> int:

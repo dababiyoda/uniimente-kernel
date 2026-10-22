@@ -196,3 +196,31 @@ def test_only_the_originating_regression_closes_on_its_declared_held_out_check(t
     assert [r["regression_id"] for r in tribunal.morning_report(m.body.journal, m.body.engine)["q11_change"]] == [
         unrelated["regression"]["regression_id"]]
     m.body.close()
+
+
+def _local(name, uncommitted):
+    return {"name": name, "path": f"/{name}", "readable": True, "uncommitted": uncommitted, "branch": "main"}
+
+
+def test_a_noise_label_on_one_small_dirty_checkout_moves_the_threshold_one_step_not_to_the_end_of_the_space():
+    """Found by the one-machine proof (2026-10-15): text order picked uncommitted_min 20 over 5.
+
+    The founder called one checkout with one uncommitted change noise. 5 and 20 both remove it, but 20 would
+    also hide a checkout with 10 uncommitted changes that nobody labelled. The smallest change is one step."""
+    inputs = {"generated_at": "2026-10-15T00:00:00Z", "stale_days": 14, "github": {"repos": {}},
+              "local": [_local("kernel", 1), _local("proj", 0)]}
+    candidate, stats = improvement._derive([{"inputs": inputs, "truth": []}], briefs.ATTENTION_BASELINE)
+    assert candidate == {**briefs.ATTENTION_BASELINE, "uncommitted_min": 5}
+    assert stats == {"current_errors": 1, "candidate_errors": 0, "fields_changed": 1}
+    later = {**inputs, "local": [_local("other", 10)]}
+    assert "local:other" in briefs.flagged_keys(later, candidate)
+
+
+def test_a_missed_pending_check_starts_flagging_at_the_least_aggressive_threshold_that_catches_it():
+    """``None`` means never flag; the nearest threshold that catches a 10-day-old pending check is 7 days, not 1."""
+    pull = {"number": 9, "title": "t", "draft": False, "updated_at": "2026-10-05T00:00:00Z",
+            "checks": {"failing": 0, "pending": 1, "failing_names": []}}
+    inputs = {"generated_at": "2026-10-15T00:00:00Z", "stale_days": 14, "local": [],
+              "github": {"repos": {"acme/kernel": {"fetched": True, "pulls": [pull], "open": 1, "truncated": False}}}}
+    candidate, _ = improvement._derive([{"inputs": inputs, "truth": ["acme/kernel#9"]}], briefs.ATTENTION_BASELINE)
+    assert candidate == {**briefs.ATTENTION_BASELINE, "flag_pending_after_days": 7}

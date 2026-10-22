@@ -32,6 +32,7 @@ import json
 import re
 from types import SimpleNamespace
 from typing import Any
+import weakref
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -47,11 +48,11 @@ from egregore.resources import ResourceGovernor
 from events.spine import EventError
 from greg import asks, dataplane, path as devpath
 from greg.authority import PRINCIPAL, AuthorityOffice
-from greg.capabilities import BUILTINS, CapabilityManifest
-from greg.founder import CLOCK_SKEW, MAX_TTL, instant, key_id, signing_bytes, spent_nonce
+from greg.capabilities import BUILTINS, CapabilityError, CapabilityManifest
+from greg.founder import CLOCK_SKEW, MAX_TTL, instant, key_id, signed_before_delegation, signing_bytes, spent_nonce
 from greg.journal import SOURCE, iso
 from greg.missions import TERMINAL, MissionBook, MissionError, evaluate_predicate, first_choice, measured, \
-    pursued_checks, strategy_scope
+    pursued_checks, signed_answer, strategy_scope
 from provenance.ledger import sha256_json
 
 SCHEMA = "greg-goal-gravity-binding/1"
@@ -80,6 +81,56 @@ APPROVE_MEANS = ("standing approval of this exact scope for the mission's lifeti
                  "its own loop selects it again (for example after the check regresses), with no new ask, until the "
                  "mission closes or its signed horizon passes; to end it sooner, exclude the strategy with a signed "
                  "critique or pause or abandon the mission. It is not a one-time execution")
+# A paid scope includes the mission's spend state (AuthorityOffice.scope_digest, #157): one paid approval funds one run.
+APPROVE_MEANS_PAID = ("approval of one paid run at the spend this ask shows: the mission runs it once, when its own loop "
+                      "selects it, and asks you again before any later run (for example after the check regresses). If "
+                      "the mission spends before you answer, this ask is withdrawn and asked again at the new spend. "
+                      "To end it before it runs, exclude the strategy with a signed critique, or pause or abandon the "
+                      "mission; a reject after an approve is refused")
+
+
+def approve_means(cost_usd, budget_usd) -> str:
+    """What an approve of a move costing ``cost_usd`` in a mission with budget ``budget_usd`` means: standing for an
+    unpaid scope, one run for a paid one (the engine binds a paid scope to the spend state whenever there is a budget)."""
+    return APPROVE_MEANS_PAID if float(cost_usd or 0.0) > 0 and budget_usd is not None else APPROVE_MEANS
+
+
+def _approve_means_of(r: dict) -> str:
+    """``approve_means`` for one recorded APPROVAL, from the cost and budget the ask itself shows."""
+    evidence = r.get("evidence") if isinstance(r.get("evidence"), dict) else {}
+    budget = evidence.get("budget") if isinstance(evidence.get("budget"), dict) else {}
+    return approve_means((r.get("authority_requested") or {}).get("cost_usd", 0.0), budget.get("budget_usd"))
+
+
+def asks_for_move(r: dict, scope: dict) -> bool:
+    """Whether a recorded request is the engine's APPROVAL ask for this exact goal move (``scope`` from
+    ``strategy_scope``). It compares the spend-free move digest, so the link survives the mission's spending. A paid
+    request recorded before the move digest existed is matched at the spend state its own ask shows
+    (``evidence.budget``), an unpaid one by its scope digest. A compensation APPROVAL naming the same strategy is a
+    different move (other capability, params or target)."""
+    if r.get("kind") != "APPROVAL" or r.get("mission_id") != scope["mission_id"]:
+        return False
+    if "move_digest" in r:
+        return r["move_digest"] == scope["move_digest"]
+    if r.get("scope_digest") == scope["scope_digest"]:
+        return True
+    evidence = r.get("evidence") if isinstance(r.get("evidence"), dict) else {}
+    budget = evidence.get("budget") if isinstance(evidence.get("budget"), dict) else {}
+    if float(scope.get("cost_usd") or 0.0) <= 0 or "spent_usd" not in budget or "strategy" not in scope:
+        return False
+    return r.get("scope_digest") == AuthorityOffice.scope_digest(
+        mission_id=scope["mission_id"], capability_id=scope["capability"],
+        params=scope["strategy"].get("params", {}), target=scope["target"],
+        consequence_class=scope["consequence_class"], cost_usd=scope["cost_usd"],
+        # the Gate binds booked spend plus reservations of unknown outcomes (#173 ``committed_usd``)
+        spent_usd=round(float(budget["spent_usd"]) + float(budget.get("reserved_usd", 0.0)), 9),
+        budget_usd=budget.get("budget_usd"))
+
+
+# A goal plan node may require a function rather than one implementation: ``"<function>@function"`` is
+# present when any registered implementation of the function is usable, and a woken goal missing it asks
+# Genesis to form it (``_form_requested``).
+FUNCTION_VERSION = "function"
 
 
 class _Genomes:
@@ -89,6 +140,9 @@ class _Genomes:
         self.registry = registry
 
     def get(self, name, version):
+        if version == FUNCTION_VERSION:
+            return next((m for m in self.registry.by_function(name) if self.registry.usable(m.capability_id)[0]),
+                        None)
         m = self.registry.manifests.get(name)
         return m if m is not None and m.version == version and self.registry.usable(name)[0] else None
 
@@ -114,6 +168,8 @@ def _verify_envelope(payload: dict, founders: dict, devices: dict, body_id: str,
             grant = devices[kid]
             when = at or instant(env["issued_at"])
             if env["kind"] not in grant["kinds"] or not when < instant(grant["expires_at"]):
+                return None
+            if signed_before_delegation(grant, instant(env["issued_at"])):   # an old token never reactivates
                 return None
             public, principal = grant["public_key"], "device:" + grant["label"]
         else:
@@ -162,9 +218,13 @@ class FounderFacts:
     un-mute, re-prioritize nor resume a goal."""
     body_id: str
     signed: dict = field(default_factory=dict)          # digest -> verified, fresh command (+ principal)
+    signed_at: dict = field(default_factory=dict)       # digest -> event id of the command.accepted it verified at
     admitted: dict = field(default_factory=dict)        # goal_id -> the GOAL digest that admitted it
     specs: dict = field(default_factory=dict)           # goal_id -> GoalSpec of an admitted goal
     refused: dict = field(default_factory=dict)         # digest -> why a signed GOAL / GOAL_CONTROL does not count
+    refused_at: dict = field(default_factory=dict)      # digest -> latest body time the body refused that command
+    clock_floor: Any = None                             # latest body-clock time an earlier non-acceptance record states
+    restored_at: Any = None                             # latest restore from a backup at this position (#186)
     closed: dict = field(default_factory=dict)          # goal_id -> {status, by, issued_at[, superseded_by]}
     closed_intents: dict = field(default_factory=dict)  # goal intent digest -> issued_at of the signed closure
     stop: dict = field(default_factory=dict)            # goal_id -> last signed stop / resume / change
@@ -172,8 +232,14 @@ class FounderFacts:
     floor: dict = field(default_factory=dict)           # goal_id -> lowest priority signed (never above the spec's)
     controlled_at: dict = field(default_factory=dict)   # goal_id -> issued_at (instant) of its latest counted control
     authorizations: dict = field(default_factory=dict)  # goal_id -> first egregore.goal_authorized payload
-    book: Any = None                                    # MissionBook folded to the end of the ledger
+    book: Any = None                                    # MissionBook folded to the end of the ledger (answers
+                                                        # counted at their signed DECISION's acceptance)
     manifests: dict = field(default_factory=dict)       # capability id -> manifest, at the end of the ledger
+    devices: dict = field(default_factory=dict)         # device key id -> delegation in force at the end of the
+                                                        # ledger; a re-delegation carries signed_not_before (its
+                                                        # accepted_at), as greg.body.device_delegations does
+    revoked_devices: set = field(default_factory=set)   # device key ids a signed DEVICE_REVOKE revoked, or a
+                                                        # revocation record removed while delegated
 
     def open_goals(self) -> dict:
         return {g: self.specs[g] for g in self.admitted if g not in self.closed}
@@ -202,12 +268,13 @@ def founder_facts(ledger, *, body_id: str | None = None) -> FounderFacts:
     if not ok:
         raise EventError(why)
     founders: dict[str, str] = {}
-    devices: dict[str, dict] = {}
     seen_nonces: set[str] = set()
-    book = MissionBook(_NoEvents())
+    book = MissionBook(_NoEvents(), verify_answers=True)
     manifests = _manifests_builtin()
     builtin = set(manifests)
     facts = FounderFacts(body_id=body_id or "", book=book, manifests=manifests)
+    devices = facts.devices
+    book._signed, book._signed_at = facts.signed, facts.signed_at   # grown in this pass, as each command verifies
     rooted = False
     for rec in ledger.records:
         if rec.record_type == GoalRegistry.AUTHORIZED_RECORD:
@@ -220,6 +287,22 @@ def founder_facts(ledger, *, body_id: str | None = None) -> FounderFacts:
         kind, p = rec.payload.get("type", ""), rec.payload.get("payload") or {}
         if not kind.startswith("greg."):
             continue
+        if kind != "greg.command.accepted":     # the latest body-clock time an earlier record states
+            for field_ in ("at", "created_at", "accepted_at"):
+                stated = _when(p.get(field_)) if isinstance(p, dict) else None
+                if stated is not None and (facts.clock_floor is None or stated > facts.clock_floor):
+                    facts.clock_floor = stated
+        if kind == "greg.body.restored":
+            # A body restored from a backup (greg/recovery.py) refuses every command issued before the restore
+            # (Body._after_restore): judged here the same way, from this position on. Unreadable: refuse them all,
+            # as the body's own check fails on it.
+            facts.restored_at = _when(p.get("restored_at")) or datetime.max.replace(tzinfo=timezone.utc)
+        elif kind == "greg.device.revoked":
+            # The body's own rule (greg.body.device_delegations): any revocation record removes the device. It only
+            # ever narrows who may sign; a restore voids every delegation this way (#186). Delegated again, the key
+            # carries signed_not_before, as the body's rule gives it.
+            if devices.pop(p.get("device_key_id"), None) is not None:
+                facts.revoked_devices.add(p.get("device_key_id"))
         if kind == "greg.founder.enrolled":
             if not rooted:                     # only the first enrollment is the root; later ones are data
                 founders[p["key_id"]] = p["public_key"]
@@ -231,6 +314,10 @@ def founder_facts(ledger, *, body_id: str | None = None) -> FounderFacts:
             nonce = spent_nonce(kind, p)          # the body's rule exactly (it refused the command there)
             if nonce is not None:
                 seen_nonces.add(nonce)
+            refused_at = _when(p.get("at"))
+            if isinstance(p.get("digest"), str) and refused_at is not None:
+                facts.refused_at[p["digest"]] = max(refused_at, facts.refused_at.get(p["digest"], refused_at))
+            book.fold("command.rejected", p, event_id=rec.payload["event_id"])
             continue
         if kind == "greg.capability.registered":
             try:
@@ -240,14 +327,67 @@ def founder_facts(ledger, *, body_id: str | None = None) -> FounderFacts:
             except (KeyError, TypeError, ValueError):
                 pass
         if kind != "greg.command.accepted":
-            book.fold(kind[len("greg."):], p)
+            book.fold(kind[len("greg."):], p, event_id=rec.payload["event_id"])
             continue
         # Only a record that verified at its position, carrying its own envelope's nonce, spends that nonce
         # here (``spent_nonce``, the body's per-record rule); an unverified record spends nothing, so it can
         # never hide a later signed command the body applied (it can only make the body refuse one).
+        digest_ = p.get("digest")
+        known = isinstance(digest_, str) and digest_ in facts.signed
         if _accepted(facts, p, founders, devices, seen_nonces) is not None:
             seen_nonces.add(spent_nonce(kind, p))
+        if not known and isinstance(digest_, str) and digest_ in facts.signed:
+            facts.signed_at[digest_] = rec.payload["event_id"]
+        book.fold("command.accepted", p, event_id=rec.payload["event_id"])   # a signed DECISION's answer counts here
+    book.finish()
     return facts
+
+
+# verified_decisions memo: ledger -> (records seen, hash of the last one, verified DECISIONs, their acceptance events)
+_VERIFIED: "weakref.WeakKeyDictionary" = weakref.WeakKeyDictionary()
+# The only records a DECISION's verification reads: the key root, key changes, nonces and acceptance times.
+FOUNDER_RECORDS = ("greg.command.accepted", "greg.command.rejected", "greg.founder.enrolled")
+
+
+def _founder_record(rec) -> bool:
+    return rec.record_type == "event" and isinstance(rec.payload, dict) and rec.payload.get("type") in FOUNDER_RECORDS
+
+
+def _decisions(ledger) -> tuple[dict, dict]:
+    """(verified DECISIONs, digest -> the command.accepted event each verified at), from one ``founder_facts`` pass.
+
+    Memoized per ledger and keyed on its last founder record (command.accepted, command.rejected, founder.enrolled):
+    while no such record lands, the prefix that decides every DECISION is unchanged (the remembered tail hash chains
+    it), so the pass reruns only when a command does. Finding that out reads only the records appended since."""
+    records = ledger.records
+    cached = _VERIFIED.get(ledger)
+    if cached is not None:
+        seen, tail, decisions, positions = cached
+        if 0 < seen <= len(records) and records[seen - 1].hash == tail \
+                and not any(_founder_record(r) for r in records[seen:]):
+            _VERIFIED[ledger] = (len(records), records[-1].hash, decisions, positions)
+            return decisions, positions
+    seen, tail = len(records), records[-1].hash        # before the pass: a record landing during it is re-read next
+    facts = founder_facts(ledger)
+    decisions = {d: c for d, c in facts.signed.items() if c["kind"] == "DECISION"}
+    positions = {d: facts.signed_at[d] for d in decisions}
+    _VERIFIED[ledger] = (seen, tail, decisions, positions)
+    return decisions, positions
+
+
+def verified_decisions(ledger) -> dict[str, dict]:
+    """digest -> founder-signed DECISION that ``founder_facts`` counts as signed at its own ledger position.
+
+    The one verifier every reader that decides on a founder answer shares: the mission fold (``MissionBook``, with
+    ``signed_answer``) and, through the book, the human-judgment return path, the founder surfaces and the sandbox
+    diagnostic; the goal lineage reads the same ``founder_facts`` pass. Read-only: the dict is the memo's."""
+    return _decisions(ledger)[0]
+
+
+def decision_positions(ledger) -> dict[str, str]:
+    """digest -> event id of the ``command.accepted`` record each verified DECISION counts at: where its answer
+    takes effect."""
+    return _decisions(ledger)[1]
 
 
 def _accepted(facts: FounderFacts, p: dict, founders: dict, devices: dict, seen_nonces: set) -> str | None:
@@ -271,6 +411,13 @@ def _accepted(facts: FounderFacts, p: dict, founders: dict, devices: dict, seen_
     principal = _verify_envelope(p, founders, devices, facts.body_id, accepted_at)
     if principal is None:
         return None
+    issued = _when(env.get("issued_at"))
+    if facts.restored_at is not None and (issued is None or issued < facts.restored_at):
+        # Body.apply refuses it (Body._after_restore) and records no acceptance: this record is not one it wrote
+        if ckind in VERIFIED_KINDS or ckind in KEY_KINDS:
+            facts.refused[digest_] = ("issued before this body was restored from a backup: the body refuses it, so "
+                                      "this record spends no nonce and counts for nothing")
+        return None
     if not isinstance(p.get("nonce"), str) or p.get("nonce") != env.get("nonce"):
         if ckind in VERIFIED_KINDS or ckind in KEY_KINDS:
             facts.refused[digest_] = ("its record's nonce is not its signed envelope's: not a record Body.apply "
@@ -292,18 +439,41 @@ def _founder_fact(facts: FounderFacts, p: dict, env: dict, ckind: str, digest_: 
     stale = _fresh(env, accepted_at)
     if stale is None and accepted_at is None and ckind in ("GOAL", "GOAL_CONTROL"):
         stale = "no acceptance time on the ledger"
+    if stale is None and accepted_at is None and ckind in ("MISSION", "DECISION") and facts.clock_floor is not None:
+        # no acceptance time recorded (bodies before accepted_at): it happened no earlier than the latest time an
+        # earlier record states, so a floor already past the signed expiry proves it was accepted after it
+        try:
+            if facts.clock_floor >= instant(env["expires_at"]):
+                stale = "no acceptance time, and an earlier record is already later than its signed expiry"
+        except (KeyError, TypeError, ValueError):
+            stale = "unreadable expires_at"
+    refused = facts.refused_at.get(digest_)
+    if stale is None and refused is not None and (accepted_at is None or accepted_at < refused):
+        # the body already refused this very command at ``refused`` (by its own clock); an acceptance claiming an
+        # earlier time is a backdated record, never a later re-send the body applied
+        stale = "accepted at a time before the body's own refusal of this command"
     if stale is not None:
         facts.refused[digest_] = stale
         return
     body = env["body"]
     try:
         if ckind == "ROTATE_FOUNDER_KEY" and principal == "founder":
+            new = key_id(body["new_public_key"])
+            # as Body._dispatch refuses it: rotated in, a device key's unexpired old tokens would verify as founder's
+            if new in devices or new in facts.revoked_devices:
+                facts.refused[digest_] = "rotation to a key that is or was a delegated device key"
+                return
             founders.pop(env["founder_key_id"], None)
-            founders[key_id(body["new_public_key"])] = body["new_public_key"]
+            founders[new] = body["new_public_key"]
         elif ckind == "DEVICE_ENROLL" and principal == "founder":
-            devices[key_id(body["public_key"])] = {"public_key": body["public_key"], "label": str(body["label"]),
-                                                   "kinds": tuple(body["kinds"]), "expires_at": body["expires_at"]}
+            kid = key_id(body["public_key"])
+            grant = {"public_key": body["public_key"], "label": str(body["label"]), "kinds": tuple(body["kinds"]),
+                     "expires_at": body["expires_at"]}
+            if kid in facts.revoked_devices:   # re-delegated: nothing signed before its acceptance verifies
+                grant["signed_not_before"] = p.get("accepted_at")
+            devices[kid] = grant
         elif ckind == "DEVICE_REVOKE" and principal == "founder":
+            facts.revoked_devices.add(body.get("device_key_id"))
             devices.pop(body.get("device_key_id"), None)
     except (KeyError, TypeError, ValueError):
         return
@@ -378,23 +548,6 @@ def signed_commands(journal, *kinds: str, body_id: str | None = None) -> dict[st
     agree that a command the same key signed for another body authenticates nothing here. A replayed
     nonce, or an acceptance outside the envelope's signed validity, authenticates nothing either."""
     return {d: c for d, c in founder_facts(journal.ledger, body_id=body_id).signed.items() if c["kind"] in kinds}
-
-
-def signed_answer(signed: dict, request_id: str, answer: Any) -> dict | None:
-    """The signature-verified DECISION behind one recorded ``decision.answered``, or None.
-
-    It counts only when the cited digest is a verified DECISION (not a MISSION, GOAL or GOAL_CONTROL),
-    for exactly this request, with exactly the recorded answer. Every goal-side reader uses this one
-    predicate: the mirrored refusal, the attention store, the evidence view and the ledger closure."""
-    if not isinstance(answer, dict):
-        return None
-    cmd = signed.get(answer.get("command_digest"))
-    body = ((cmd or {}).get("envelope") or {}).get("body")
-    if cmd is None or cmd.get("kind") != "DECISION" or not isinstance(body, dict):
-        return None
-    if body.get("request_id") != request_id or body.get("answer") != answer.get("answer"):
-        return None
-    return cmd
 
 
 def _spec(payload: Any, digest_: str) -> GoalSpec:
@@ -593,9 +746,7 @@ class BodyAttentionStore:
 
     def _requests(self, scope: dict) -> list[str]:
         book = self.body.engine.book
-        return [rid for rid, r in book.requests.items()
-                if r.get("kind") == "APPROVAL" and r.get("mission_id") == scope["mission_id"]
-                and r.get("scope_digest") == scope["scope_digest"]]
+        return [rid for rid, r in book.requests.items() if asks_for_move(r, scope)]
 
     def _refusal(self, item: dict) -> str | None:
         """Why the decision's move cannot be asked for now (the engine's own ``ask_refusal``), or None."""
@@ -641,9 +792,18 @@ class BodyAttentionStore:
         book = self.body.engine.book
         for rid in self._requests(scope):
             answer = book.answers.get(rid)
-            if answer and answer.get("answer") in ANSWER and signed_answer(self.signed, rid, answer):
-                return {"decision": ANSWER[answer["answer"]], "request_id": rid,
-                        "command_digest": answer["command_digest"]}
+            if not (answer and answer.get("answer") in ANSWER and signed_answer(self.signed, rid, answer)):
+                continue
+            if rid in book.withdrawn:
+                # withdrawn after its answer: a restore from a backup voided the approval (#186); it is asked again
+                continue
+            # A paid approve funds one run at the spend it named (#157): once that run happened, or the mission
+            # spent since, it no longer answers this move and the goal may ask again. A reject answers the move.
+            if answer["answer"] == "approve" and (rid in book.consumed
+                                                  or book.requests[rid].get("scope_digest") != scope["scope_digest"]):
+                continue
+            return {"decision": ANSWER[answer["answer"]], "request_id": rid,
+                    "command_digest": answer["command_digest"]}
         return None
 
     def _notice(self, item: AttentionItem, *, kind: str, lane: str, why: str = "") -> None:
@@ -672,11 +832,13 @@ class BodyAttentionStore:
                 spec = self.registry.get(item.goal_id)
                 move = next(m for m in _moves(spec) if m.route_hash == item.route_hash)
                 ref = move.payload
+                budget = self.body.engine.book.missions[ref["mission_id"]].cone.budget_usd
                 rid = self.body.engine.request_decision(
                     ref["mission_id"], ref["action_id"], why=item.question, recommendation=item.recommendation,
                     now=datetime.fromisoformat(str(payload.get("routed_at", iso(self.body.clock()))).replace("Z", "+00:00")),
                     evidence={"goal_id": item.goal_id, "goal_item_id": item.item_id, "lane": lane,
-                              "evidence_refs": list(item.evidence_refs), "approve_means": APPROVE_MEANS},
+                              "evidence_refs": list(item.evidence_refs),
+                              "approve_means": approve_means(move.estimated_cost_usd, budget)},
                     quoted=tuple(asks.founder_text([spec.founder_intent, spec.desired_state, move.description,
                                                     move.intervention_id, move.expected_outcome,
                                                     [n.gate for n in spec.plan], [n.outcome for n in spec.plan]])))
@@ -940,8 +1102,7 @@ def _settle(body, reg: GoalRegistry, facts: FounderFacts, at: datetime) -> list[
                 continue
             for rid, r in book.requests.items():
                 answer = book.answers.get(rid)
-                if r.get("kind") == "APPROVAL" and r.get("mission_id") == scope["mission_id"] \
-                        and r.get("scope_digest") == scope["scope_digest"] and answer \
+                if asks_for_move(r, scope) and answer \
                         and answer.get("answer") == "reject" and signed_answer(signed, rid, answer):
                     who = signed[answer["command_digest"]]["principal"]
                     reg.record_refusal(gid, route_hash=move.route_hash, now=at,
@@ -1020,6 +1181,17 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
         elif t == "greg.mission.appraised" and p.get("verdict") in ("VERIFIED", "REFUTED"):
             latest[(p["mission_id"], "appraised_verified")] = (rec.payload["event_id"], rec.ts_utc, rec.hash,
                                                                p["verdict"] == "VERIFIED", "attributed")
+        elif t in ("greg.capability.registered", "greg.capability.state"):
+            # Capability formation as perception: a capability that became usable (formed, recovered, attached)
+            # or stopped being usable changes what a mission blocked on its function can do. Recorded by Genesis
+            # or the founder's own command on the ledger; it creates no authority and pulls only timing.
+            cid = (p.get("manifest") or {}).get("capability_id") or p.get("capability_id")
+            manifest = body.registry.manifests.get(cid)
+            if manifest is not None and p.get("state") in CAPABILITY_USABLE:
+                for mid, waiting in _blocked_on(body, book, manifest.function) \
+                        + _goal_formations(body, manifest.function):
+                    latest[(mid, f"capability:{waiting}")] = (rec.payload["event_id"], p.get("at") or rec.ts_utc,
+                                                              rec.hash, p["state"], "attributed")
         elif t == "greg.external.ingested" and not p.get("quarantined"):
             about, terms = intake_about(p.get("content", ""), book, loop.registry)
             emit(rec.payload["event_id"], p["at"], rec.hash, trust="untrusted", tags=[p["channel"]],
@@ -1036,6 +1208,118 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
                 emit(f"greg.path:{node}:{met}:{end}", iso(body.clock()), body.ledger.head,
                      [{"subject": "greg.path", "attribute": node, "value": met, "confidence": 1.0}])
     return out, end
+
+
+# Each transition is its own change: formed or recovered (VERIFIED: attachable), attached (usable now),
+# quarantined or detached (no longer usable). The value is the state, so every one of them can wake a goal.
+CAPABILITY_USABLE = ("VERIFIED", "ATTACHED", "QUARANTINED", "DETACHED")
+
+
+def _blocked_on(body, book: MissionBook, function: str) -> list[tuple[str, str]]:
+    """(mission, the function it waits on) for open missions blocked on ``function`` directly, or on a
+    construction whose engine provides ``function``."""
+    genesis = getattr(body, "genesis", None)
+    out = []
+    for mid, m in sorted(book.missions.items()):
+        waiting = (m.blocker or {}).get("function")
+        if not waiting or m.status in TERMINAL:
+            continue
+        engine = genesis.construction_engine(waiting) if genesis is not None else None
+        if function in (waiting, engine):
+            out.append((mid, waiting))
+    return out
+
+
+def _goal_formations(body, function: str) -> list[tuple[str, str]]:
+    """(mission, function) for open deficits a goal asked Genesis to form, on ``function`` directly or on a
+    construction whose engine provides it: their mission is not blocked, but the goal waits on them."""
+    genesis = getattr(body, "genesis", None)
+    if genesis is None:
+        return []
+    resolved = {e.payload["deficit_id"] for e in body.journal.replay("deficit.resolved")}
+    out = set()
+    for e in body.journal.replay("deficit.opened"):
+        p = e.payload
+        if p.get("requested_by_goal") and p["deficit_id"] not in resolved \
+                and function in (p["function"], genesis.construction_engine(p["function"])):
+            out.add((p["mission_id"], p["function"]))
+    return sorted(out)
+
+
+def _form_requested(body, reg: GoalRegistry, facts: FounderFacts, woken, at: datetime) -> list[dict]:
+    """A woken goal whose active plan node requires ``<function>@function`` that no usable implementation
+    serves asks Genesis to form it, under the first open, unpaused mission the goal binds.
+
+    Formation only (``Genesis.form_for_goal``): the result is VERIFIED and waits for your signed attach;
+    no auto_attach, no builder, no spend, no scope. A function a person performs (``asks.human_work``),
+    one Genesis cannot form without a builder, a revoked capability and a stopped goal are left alone."""
+    genesis = getattr(body, "genesis", None)
+    if genesis is None:
+        return []
+    book = body.engine.book
+    out = []
+    for gid in woken:
+        if gid not in facts.admitted or facts.stopped(gid) is not None:
+            continue
+        state = reg.state(gid)
+        revoked = set(state.preferences.get("revoked_capabilities", []))
+        for cap in state.missing_capabilities:
+            function, _, version = cap.partition("@")
+            if version != FUNCTION_VERSION or cap in revoked or not genesis.formable(function) \
+                    or asks.human_work(function) is not None:
+                continue
+            mission = next((m for mid in sorted(reg.get(gid).authority.get("missions", []))
+                            if (m := book.missions.get(mid)) is not None and m.status not in TERMINAL
+                            and not m.paused), None)
+            if mission is None:
+                continue
+            try:
+                found = genesis.form_for_goal(goal_id=gid, mission=mission, function=function, now=at,
+                                              purpose=f"goal {gid[:23]} plan node {state.active_node_id} requires "
+                                                      f"{function}")
+            except CapabilityError as exc:
+                # A host outage while qualifying (a runner timeout, isolation unavailable) is no evidence about any
+                # candidate: nothing was qualified, failed or built. It is recorded once per reason and the request
+                # re-runs on the goal's next wake; it never stops this turn's missions (a mission's own formation
+                # waits it out on an outage blocker, MissionEngine._form).
+                if exc.failure_class != "transient":
+                    raise
+                why = str(exc)[:200]
+                body.journal.record("goal_gravity.formation_outage", {
+                    "goal_id": gid, "function": function, "mission_id": mission.mission_id, "why": why,
+                    "reconsider": "re-runs when the goal next wakes; nothing was qualified, failed or built"},
+                    key=[gid, function, mission.mission_id, why])
+                out.append({"goal_id": gid, "function": function, "mission_id": mission.mission_id,
+                            "serving": None, "outage": why})
+                continue
+            out.append({"goal_id": gid, "function": function, "mission_id": mission.mission_id,
+                        "serving": found.capability_id if found is not None else None})
+    return out
+
+
+def _close_goal_formations(body, at: datetime) -> list[str]:
+    """Resolve each open goal-requested deficit once an attached, usable implementation serves its function
+    (attached by your signed command): the goal's plan then reads the function present."""
+    genesis = getattr(body, "genesis", None)
+    if genesis is None:
+        return []
+    resolved = {e.payload["deficit_id"] for e in body.journal.replay("deficit.resolved")}
+    closed = []
+    for e in body.journal.replay("deficit.opened"):
+        p = e.payload
+        if not p.get("requested_by_goal") or p["deficit_id"] in resolved:
+            continue
+        serving = genesis.find_attached(p["function"])
+        if serving is None:
+            continue
+        body.journal.record("deficit.resolved", {"deficit_id": p["deficit_id"],
+                                                 "capability_id": serving.capability_id,
+                                                 "mission_id": p["mission_id"],
+                                                 "resume": f"goal {p['requested_by_goal']}", "at": iso(at)},
+                            key=[p["deficit_id"], "resolved"])
+        resolved.add(p["deficit_id"])
+        closed.append(p["deficit_id"])
+    return closed
 
 
 def _sensor_receipt(ledger, gate: dict, m, check: dict, receipt_hash: str):
@@ -1134,6 +1418,9 @@ def _tick(body, now: datetime) -> dict:
     extra = {"pulls_released": released} if released else {}
     refusals = _settle(body, reg, facts, at)
     signals, end = _sense(body, loop, held.cursor)
+    closed = _close_goal_formations(body, at)    # after sensing: the attach that closes one still wakes its goal
+    if closed:
+        extra["formations_closed"] = closed
     reopened = _reopen(reg, facts, signals, at)
     if not (signals or reg.due_for_review(at) or reg.by_status("awake")):
         held.cursor = end
@@ -1143,6 +1430,8 @@ def _tick(body, now: datetime) -> dict:
                      evidence_confidence=1.0)   # an upper bound only: body mode derives it from world evidence
     held.cursor = end                              # advanced only after the turn succeeded
     pulled = _activate(body, held, turn, at)
+    formed = _form_requested(body, reg, facts, turn.woken, at)
+    extra.update({"formation_requested": formed} if formed else {})
     return {"state": turn.status, "turn_id": turn.turn_id, "woken": list(turn.woken), "missions_pulled": pulled,
             "asked": list(held.store.asked), "wake_refused": [w["goal_id"] for w in turn.wake_refused],
             "quarantined": quarantined, "refusals_mirrored": refusals, "reopened": reopened, **extra}
@@ -1160,11 +1449,11 @@ def _mission_rows(book: MissionBook, mids) -> list[dict]:
     return rows
 
 
-def _move_scopes(book: MissionBook, manifests: dict, spec: GoalSpec) -> set[tuple[str, str]]:
-    """(mission_id, scope digest) of each declared move's exact strategy scope: the one link from a goal to the
-    engine's APPROVAL asks, as the attention store and ``_settle`` match. An APPROVAL of another scope that names
-    the same strategy (the compensation of its executed effect) is the mission's decision, not the goal's move."""
-    scopes = set()
+def _move_scopes(book: MissionBook, manifests: dict, spec: GoalSpec) -> list[dict]:
+    """Each declared move's exact strategy scope: the one link from a goal to the engine's APPROVAL asks
+    (``asks_for_move``), as the attention store and ``_settle`` match. An APPROVAL of another scope that names the
+    same strategy (the compensation of its executed effect) is the mission's decision, not the goal's move."""
+    scopes = []
     for move in _moves(spec):
         ref = move.payload if isinstance(move.payload, dict) else {}
         try:
@@ -1172,13 +1461,13 @@ def _move_scopes(book: MissionBook, manifests: dict, spec: GoalSpec) -> set[tupl
                                    now=datetime.now(timezone.utc))      # the time reads only the cone, not the scope
         except MissionError:
             continue
-        scopes.add((scope["mission_id"], scope["scope_digest"]))
+        scopes.append(scope)
     return scopes
 
 
-def _goal_request(r: dict, gid: str, scopes: set) -> bool:
-    return (r.get("evidence") or {}).get("goal_id") == gid or \
-        (r.get("kind") == "APPROVAL" and (r.get("mission_id"), r.get("scope_digest")) in scopes)
+def _goal_request(r: dict, gid: str, scopes: list) -> bool:
+    evidence = r.get("evidence") if isinstance(r.get("evidence"), dict) else {}
+    return evidence.get("goal_id") == gid or any(asks_for_move(r, scope) for scope in scopes)
 
 
 def _goal_requests(book: MissionBook, manifests: dict, gid: str, spec: GoalSpec) -> list[str]:
@@ -1276,7 +1565,7 @@ def projection(journal, *, closure: bool = True) -> dict:
         "how_it_acts": "an awake goal pulls its signed missions' next observation forward (a mission waiting on "
                        "your decision then re-observes and repairs its other checks inside its cone); the missions "
                        "do all execution through the AuthorityOffice and the Consequence Gate",
-        "approve_means": APPROVE_MEANS,
+        "approve_means": {"free": APPROVE_MEANS, "paid": APPROVE_MEANS_PAID},
         "completion_tier": "observation: attributed ledger observations recomputed from Gate receipts and "
                            "separate-process appraisals; not external verification",
     }
@@ -1340,10 +1629,12 @@ def evidence(journal, goal_id: str) -> dict:
         "turns": [r.hash for r in ledger.by_type(GoalGravityLoop.TURN_RECORD)
                   if any(p["goal_id"] == gid for p in r.payload["turn"]["processed"])],
         "experiences": WorldModel(ledger=ledger).evidence_for_goal(gid)[0],
-        "asks": [{"request_id": rid, "answer": (book.answers.get(rid) or {}).get("answer"),
-                  "answer_command": (book.answers.get(rid) or {}).get("command_digest"),
-                  "answer_signature_verified": signed_answer(signed, rid, book.answers.get(rid)) is not None,
-                  "approve_means": APPROVE_MEANS}
+        # an answer row the mission book does not count is shown too, labelled: answer_counted is False
+        "asks": [{"request_id": rid, "answer": (_answer_row(book, rid) or {}).get("answer"),
+                  "answer_command": (_answer_row(book, rid) or {}).get("command_digest"),
+                  "answer_signature_verified": signed_answer(signed, rid, _answer_row(book, rid)) is not None,
+                  "answer_counted": rid in book.answers,
+                  "approve_means": _approve_means_of(book.requests[rid])}
                  for rid in requests],
         "mission_receipts": sorted({e.payload["receipt"] for e in journal.replay("mission.")
                                     if e.type in ("greg.mission.action", "greg.mission.observed")
@@ -1354,14 +1645,21 @@ def evidence(journal, goal_id: str) -> dict:
     }
 
 
+def _answer_row(book: MissionBook, rid: str) -> dict | None:
+    """The answer the mission book counts for a request, else the row it keeps unverified (never applied)."""
+    return book.answers.get(rid) or (book.unverified.get(rid) or {}).get("row")
+
+
 def ledger_closure(journal, *, signed: dict | None = None) -> dict:
     """Detective closure over the body ledger.
 
     Every Gate dispatch traces to a ``greg.authority.grant_issued`` whose authority_ref is a founder MISSION
     command digest that still verifies for this body; no ``egregore.founder_answer`` exists at all (the
     hosted store writes none: founder answers on a body are signed DECISION commands); and every
-    ``greg.decision.answered`` carries a signature-verified DECISION for exactly that request and answer
-    (the mission fold still trusts the record itself, ADR-GOAL-GRAVITY-002 P2: this closure detects it)."""
+    ``greg.decision.answered`` carries a signature-verified DECISION for exactly that request and answer.
+    The mission fold no longer trusts such a row (it counts only the record re-derived from a signed DECISION
+    at its acceptance, ADR-GOAL-GRAVITY-002 P2), so a row reported here moved nothing; the closure still names it,
+    because the ledger holds an answer no signed DECISION stands behind."""
     ledger = journal.ledger
     signed = signed if signed is not None else signed_commands(journal, *VERIFIED_KINDS)
     missions = {d: c["envelope"]["body"] for d, c in signed.items()

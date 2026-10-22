@@ -16,6 +16,7 @@ from events.spine import EventSpine
 from greg import daleobanks_bridge as bridge
 from greg.capabilities import BUILTINS, CapabilityError, InvocationContext, SecretBroker
 from greg.journal import Journal
+from greg.ventures import LedgerReader
 from provenance.ledger import EvidenceLedger
 from tests.greg_fixtures import Clock, drop, make_body, mission, signed, workspace
 
@@ -109,7 +110,18 @@ def test_the_mission_engine_gives_the_projecting_sensors_the_journal(tmp_path):
         m = SimpleNamespace(mission_id=MID)
         for cap in ("daleobanks.outcome", "foundry.query", "foundry.apply"):
             assert body.engine._context(m, BUILTINS[cap][0]).journal is body.journal
-        assert body.engine._context(m, BUILTINS["daleobanks.verify"][0]).journal is None
+        # daleobanks.verify reads the Mind's receipts claim by claim (#183): it gets a read-only LedgerReader, never
+        # the body's writable journal, and nothing on that handle can record, replay or append
+        reader = body.engine._context(m, BUILTINS["daleobanks.verify"][0]).journal
+        assert isinstance(reader, LedgerReader) and reader is not body.journal
+        assert [a for a in dir(reader) if not a.startswith("_")] == ["ledger"]
+        assert [a for a in dir(reader.ledger) if not a.startswith("_")] == ["by_type"]
+        assert reader.ledger is not body.ledger
+        assert list(reader.ledger.by_type("receipt")) == list(body.ledger.by_type("receipt"))
+        for write in ("record", "append"):
+            assert not hasattr(reader, write) and not hasattr(reader.ledger, write)
+        with pytest.raises(AttributeError):
+            reader.ledger.append = body.ledger.append
 
 
 def test_a_receipted_publish_closes_and_the_separate_process_appraiser_verifies_it(tmp_path, monkeypatch):

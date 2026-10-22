@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
+from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
@@ -35,7 +36,7 @@ from greg.authority import ActionOutcome, AuthorityOffice
 from greg.capabilities import CapabilityError, InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
 from greg import asks, improvement, routing
-from greg.journal import Journal, iso
+from greg.journal import Journal, fact_id, iso
 from greg.lightcone import LightCone
 from provenance.ledger import sha256_json
 
@@ -159,8 +160,34 @@ BIND_TYPES = {"string": (str,), "number": (int, float), "integer": (int,), "bool
 DEFAULT_BIND_BYTES = 16 * 1024
 
 
-# Capabilities whose network access runs behind the body's #26 relay when the body confines egress.
-CONFINED_EGRESS = frozenset({"http.get"})
+def exact_reach(capability_id: str, params: dict) -> dict:
+    """What approving this exact scope lets the capability touch, shown before the founder answers. The approval is
+    bound to the scope digest of these params; this makes the same params readable. Credentials by handle only."""
+    if capability_id != "mcp.act":
+        return {}
+    from urllib.parse import urlsplit
+    from greg.mcp_tools import reach_problem
+    problem = reach_problem(params)
+    if problem is not None:       # a malformed scope is shown as such, never parsed into a misleading reach
+        return {"tool": f"{params.get('server')}.{params.get('tool')}" if isinstance(params, dict) else None,
+                "malformed": problem}
+    hosts = params.get("hosts") or ([urlsplit(str(params["url"])).hostname] if params.get("url") else [])
+    credentials = [str(v) for v in (params.get("secrets") or {}).values()] + \
+                  [f"{v} (as a file)" for v in (params.get("secret_files") or {}).values()] + \
+                  ([str(params["bearer"])] if params.get("bearer") else [])
+    return {"tool": f"{params.get('server')}.{params.get('tool')}",
+            **({"remote_server": str(params["url"])} if params.get("url") else {}),
+            "may_write": list(params.get("writable") or []) or "nothing",
+            "may_reach": [f"{h}:443 through the relay" for h in hosts] or "no network",
+            "credentials": sorted(credentials) or "none"}
+
+
+# Capabilities whose network access runs behind the body's #26 relay when the body confines egress. A capability
+# that decides its own confinement from ``ctx.egress`` (the organ exchange runs its organs with no network at all)
+# must be listed, or a confined body hands it None and it runs with the body's network.
+CONFINED_EGRESS = frozenset({"http.get", "github.pulls", "brief.engineering", "browser.render",
+                             "browser.session", "worker.commission", "daleobanks.verify", "daleobanks.publish",
+                             "venture.assess", "mcp.act", "organs.exchange"})
 
 
 class Unbound(Exception):
@@ -354,6 +381,26 @@ def metered_spend(capability_id: str, output, cap_usd: float) -> dict:
             "spend_basis": "provider_reported"}
 
 
+def reconciled_booking(capability: str | None, answer: str, worst: float, output=None) -> dict:
+    """What the founder's reconciliation answer books for one UNCERTAIN dispatch, as the engine records it and the
+    separate appraiser re-derives it (acceptance H.G4).
+
+    "Executed" books the signed cap (its spend was never measured). "Not executed" settles the effect, not the
+    money: a metered capability (a paid worker) may have spent while its provider ran, so it books the cap too;
+    any other capability releases it. ``output`` is a receipted interrupt's collected output: its provider report
+    is stated, and one over the cap is booked as reported, with the overspend (never below what the provider said
+    it spent, as ``metered_spend`` books a DONE run; merge review of e410977), so the budget bounds a retry."""
+    worst = float(worst)
+    booked = answer == "reconcile_executed" or capability in METERED_SPEND
+    reported = metered_spend(capability, output, worst)["provider_reported_usd"] \
+        if output is not None and capability in METERED_SPEND else None
+    out = {"booked": booked, "provider_reported_usd": reported, "cost_usd": worst if booked else 0.0,
+           "overspend_usd": None}
+    if booked and reported is not None and reported > worst + 1e-9:
+        out.update(cost_usd=round(float(reported), 6), overspend_usd=round(float(reported) - worst, 6))
+    return out
+
+
 def disagreement(output) -> dict | None:
     """The views behind a composition that reported CONFLICT, kept side by side for the founder: which question,
     which method said what (a digest and a short preview of each output), and the dissent. Nothing is ranked."""
@@ -473,6 +520,8 @@ class MissionState:
     actions_done: int = 0
     setpoints_reached: int = 0
     pending_effect: dict = field(default_factory=dict)  # action_id -> checks it should change
+    collateral: dict = field(default_factory=dict)      # action_id -> passing checks it does not advance
+    uncertain: dict = field(default_factory=dict)       # action_id -> its latest record, while that is UNCERTAIN
     # A persistent goal's pull (greg/goal_gravity.py) not yet served while the mission waits on an APPROVAL:
     # only ``observe_now`` sets it, so a mission no goal is bound to never has one.
     pull: str | None = None
@@ -610,22 +659,66 @@ def strategy_scope(m: "MissionState | None", manifests: dict, action_id: str, *,
     if manifest is None:
         raise MissionError(f"capability {s['capability']} is not registered on this body")
     cost = float(s.get("cost_usd", 0.0))
+    # The paid budget state too, exactly as AuthorityOffice.act binds a paid scope (#157): without it a goal's
+    # ahead-of-time approval of a paid strategy names a digest the mission's own dispatch never derives.
     scope = AuthorityOffice.scope_digest(mission_id=m.mission_id, capability_id=manifest.capability_id,
                                          params=s.get("params", {}), target=s["target"],
-                                         consequence_class=manifest.consequence_class, cost_usd=cost)
+                                         consequence_class=manifest.consequence_class, cost_usd=cost,
+                                         spent_usd=m.committed_usd, budget_usd=m.cone.budget_usd)
+    # The move itself, whatever the mission has spent: the identity a goal links its move and its asks by. The
+    # scope digest above changes whenever a paid mission spends; it stays the one an approval is checked against.
+    move = AuthorityOffice.scope_digest(mission_id=m.mission_id, capability_id=manifest.capability_id,
+                                        params=s.get("params", {}), target=s["target"],
+                                        consequence_class=manifest.consequence_class, cost_usd=cost)
     outside = m.cone.admits(capability=manifest.capability_id, target=s["target"],
                             consequence_class=manifest.consequence_class, cost_usd=cost,
                             spent_usd=m.committed_usd, at=now)
     return {"mission_id": m.mission_id, "action_id": action_id, "capability": manifest.capability_id,
             "target": s["target"], "consequence_class": manifest.consequence_class, "cost_usd": cost,
-            "scope_digest": scope, "outside_cone": outside, "strategy": s}
+            "scope_digest": scope, "move_digest": move, "outside_cone": outside, "strategy": s}
+
+
+def signed_answer(signed: dict, request_id: str, answer: Any) -> dict | None:
+    """The signature-verified DECISION behind one recorded ``decision.answered``, or None.
+
+    It counts only when the cited digest is a verified DECISION (not a MISSION, GOAL or GOAL_CONTROL),
+    for exactly this request, with exactly the recorded answer. Every reader uses this one predicate: the
+    mission fold, the mirrored refusal, the attention store, the evidence view and the ledger closure."""
+    if not isinstance(answer, dict) or not isinstance(answer.get("command_digest"), str):
+        return None
+    cmd = signed.get(answer["command_digest"])
+    body = ((cmd or {}).get("envelope") or {}).get("body")
+    if cmd is None or cmd.get("kind") != "DECISION" or not isinstance(body, dict):
+        return None
+    if body.get("request_id") != request_id or body.get("answer") != answer.get("answer"):
+        return None
+    return cmd
+
+
+def answer_record(request: dict, body: dict, command_digest: str) -> dict:
+    """The one shape of a ``decision.answered`` row: what ``MissionEngine.answer`` records for the signed DECISION
+    ``body`` answering ``request``, and the only record the mission fold applies (re-derived from the signature,
+    never read from the row)."""
+    return {"request_id": body.get("request_id"), "mission_id": request.get("mission_id"),
+            "answer": body.get("answer"), "reason": str(body.get("reason", ""))[:500],
+            "command_digest": command_digest}
 
 
 class MissionBook:
-    """Projection of mission truth from retained greg.* events."""
+    """Projection of mission truth from retained greg.* events.
 
-    def __init__(self, journal: Journal):
+    A ``decision.answered`` row is not the founder's answer by being on the ledger, whose hash chain is unkeyed: on
+    a journal with a ledger it counts only as ``answer_record`` re-derives it from a founder-signed DECISION that
+    ``goal_gravity.founder_facts`` counts as signed at its ``command.accepted`` position (a key valid there, this
+    body, an unspent nonce, accepted inside its signed validity), and only if the command path's checks hold there.
+    It takes effect at that acceptance. Any other row is kept in ``unverified`` and never moves a mission."""
+
+    def __init__(self, journal: Journal, *, verify_answers: bool | None = None):
         self.journal = journal
+        # None: verify exactly when there is a ledger to verify against (every body journal and the gravity prefix);
+        # a replay-only test stand-in folds recorded rows as they are.
+        self.verify_answers = getattr(journal, "ledger", None) is not None if verify_answers is None \
+            else verify_answers
         self.missions: dict[str, MissionState] = {}
         self.requests: dict[str, dict] = {}
         self.answers: dict[str, dict] = {}
@@ -633,15 +726,55 @@ class MissionBook:
 
     def rebuild(self):
         self.missions, self.requests, self.answers, self.withdrawn = {}, {}, {}, {}
+        self.consumed: set[str] = set()    # answered paid APPROVALs whose one funded run has happened
         self._deficit_of = {}              # deficit_id -> the mission whose light cone pays for its builds
+        self.unverified: dict[str, dict] = {}   # request_id -> {row, why}: an answer row kept as data, never applied
+        self.unverified_requests: list[dict] = []  # decision.requested rows not recorded the way greg.asks records one
+        self._admitted: set[str] = set()   # DECISION digests whose acceptance has been admitted (once each)
+        self._refused_commands: dict[str, str] = {}   # digest -> why the body refused that command (command.rejected)
+        self._unverifiable: set[str] = set()   # DECISION digests with an acceptance record that does not verify
+        self._pending: dict = {}           # cited digest -> answer rows awaiting that DECISION's signed acceptance
+        self._signed, self._signed_at = {}, {}   # verified DECISIONs; digest -> the acceptance event each verified at
+        if self.verify_answers and getattr(self.journal, "ledger", None) is not None:
+            from greg import goal_gravity  # goal_gravity imports this module
+            self._signed = goal_gravity.verified_decisions(self.journal.ledger)
+            self._signed_at = goal_gravity.decision_positions(self.journal.ledger)
         for event in self.journal.replay():
-            self.fold(event.type[len("greg."):], event.payload)
+            self.fold(event.type[len("greg."):], event.payload, event_id=getattr(event, "event_id", None))
+        self.finish()
 
-    def fold(self, kind: str, data: dict) -> None:
+    def finish(self) -> None:
+        """End of the replay: an answer row no signed DECISION it cites was accepted after is kept as data, with the
+        reason the founder is shown: the body refused the very command it cites (sign again), an acceptance record
+        exists that cannot be verified, or no signed decision stands behind it at all."""
+        for digest, rows in self._pending.items():
+            if digest in self._refused_commands:
+                cause, why = "refused_by_body", ("the body refused the signed decision it cites: "
+                                                 + self._refused_commands[digest])[:300]
+            elif digest in self._unverifiable:
+                cause, why = "unverifiable_acceptance", ("a record says the body accepted the decision it cites, but "
+                                                         "it carries no signed envelope that verifies (bodies before "
+                                                         "2026-09-26 kept none)")
+            else:
+                cause, why = "no_signed_decision", "no founder-signed DECISION it cites was accepted after it was recorded"
+            for data in rows:
+                self.unverified[str(data.get("request_id"))] = {"row": data, "why": why, "cause": cause}
+        self._pending = {}
+
+    def fold(self, kind: str, data: dict, *, event_id: str | None = None) -> None:
         """Fold one retained greg.* fact (``kind`` without the ``greg.`` prefix), in ledger order.
 
         ``rebuild`` is this fold over the whole journal; greg/goal_gravity.py folds the same facts one at a
-        time to judge a founder command against the mission state at its own ledger position."""
+        time to judge a founder command against the mission state at its own ledger position. ``event_id``
+        identifies a ``command.accepted`` record, where a signed DECISION's answer takes effect."""
+        if kind == "command.accepted":
+            if self.verify_answers:
+                self._admit(data, event_id)
+            return
+        if kind == "command.rejected":
+            if isinstance(data.get("digest"), str):
+                self._refused_commands[data["digest"]] = str(data.get("reason", ""))
+            return
         mid = data.get("mission_id")
         m = self.missions.get(mid)
         if kind in ("genesis.built", "genesis.unbuilt"):
@@ -650,8 +783,8 @@ class MissionBook:
             payer = self.missions.get(self._deficit_of.get(data.get("deficit_id")))
             if payer is not None:
                 payer.spent_usd += float(data.get("cost_usd") or 0.0)
-                if kind == "genesis.built":
-                    payer.reserved.pop(("genesis", data["deficit_id"], data.get("build")), None)
+                # either settles its call (a billed failure is booked here, before its genesis.build_failed)
+                payer.reserved.pop(("genesis", data["deficit_id"], data.get("build")), None)
             return
         if kind in ("genesis.build_started", "genesis.build_failed"):
             # A builder call is reserved on the cone at the ceiling it was given until it settles (built, or
@@ -672,9 +805,9 @@ class MissionBook:
                                               cone=LightCone.from_dict(data["spec"]["light_cone"]))
         elif m is None:
             if kind == "decision.requested":
-                self.requests[data["request_id"]] = data
+                self._requested(data, event_id)
             elif kind == "decision.answered":
-                self.answers[data["request_id"]] = data
+                self._answered(data)
             elif kind == "decision.withdrawn":
                 self.withdrawn[data["request_id"]] = data
             return
@@ -701,20 +834,36 @@ class MissionBook:
                     # instead of repeating; eligible again after a later pass.
                     # A producer whose output another strategy binds changed its consumers' input,
                     # not the world: it is done, not ineffective, and is not re-run either.
-                    if any(e["from"].get("action_id") == aid for s in m.spec["strategies"] for e in s.get("bind", [])):
+                    if m.failed.get(aid, "").startswith("regressed "):
+                        pass                     # blame for damaging the whole is never washed out by drift
+                    elif any(e["from"].get("action_id") == aid for s in m.spec["strategies"] for e in s.get("bind", [])):
                         m.failed[aid] = f"produced bound input; {data['check_id']} awaits its consumers"[:300]
                     else:
                         m.failed[aid] = f"executed but {data['check_id']} still failing: {data['detail']}"[:300]
                 if not checks:
                     m.pending_effect.pop(aid, None)
+            # Section 13, a local gain that damages the whole: a check that passed just before an action ran,
+            # which that action does not advance, is re-observed failing. The action is blamed and not re-run
+            # automatically; if only such trade-offs remain, the founder decides. Unmeasured is not a regression.
+            for aid, watched in list(m.collateral.items()):
+                if data["check_id"] not in watched or data["detail"].startswith("sensor "):
+                    continue
+                watched.discard(data["check_id"])
+                if not data["passed"]:
+                    m.failed[aid] = f"regressed {data['check_id']}, which passed before it ran: {data['detail']}"[:300]
+                    watched.clear()
+                if not watched:
+                    m.collateral.pop(aid, None)
         elif kind == "mission.action":
             aid = data["action_id"]
             m.attempts[aid] = data["attempt"] + 1
             slot = (aid, data["attempt"])
             if data["status"] == "UNCERTAIN":
                 # The dispatch may have taken effect: its signed cap is reserved until reconciled. Records written
-                # before the reservation existed carry no ``reserved_usd``; their worst case is the signed cost.
-                m.reserved[slot] = float(data.get("reserved_usd", signed_cost(m.spec, aid)))
+                # before the reservation existed carry no ``reserved_usd``; their worst case is the signed cost (a
+                # PR #184 record of an interrupted worker held it as ``cost_usd`` with ``cost_reserved``).
+                legacy = data.get("cost_usd", 0.0) if data.get("cost_reserved") else signed_cost(m.spec, aid)
+                m.reserved[slot] = float(data.get("reserved_usd", legacy))
                 streak = m.uncertain_streak[aid] = m.uncertain_streak.get(aid, 0) + 1
                 if streak >= RETRY_LIMIT:   # bounded: no further blind re-attempt; the mission replans or asks
                     m.failed[aid] = (f"completion unknown on {streak} consecutive dispatches (retry limit "
@@ -722,13 +871,28 @@ class MissionBook:
             else:                     # a later record for the same dispatch settles it (reconciled or receipted)
                 m.reserved.pop(slot, None)
                 m.uncertain_streak.pop(aid, None)
+            # Settled by any later record about the action: its reconciliation, a standing proof, a later attempt.
+            if data["status"] == "UNCERTAIN":
+                m.uncertain[aid] = data
+            else:
+                m.uncertain.pop(aid, None)
             if data["status"] == "DONE":
                 m.actions_done += 1
                 m.spent_usd += data.get("cost_usd", 0.0)
                 m.failed.pop(aid, None)
+                if data.get("cost_cap_usd", 0.0) > 0 and data.get("scope_digest") in m.approved_scopes:
+                    # One paid approval funds one run (#157), even a run that books $0 (a provider reporting no
+                    # spend leaves the spend state, and so the digest, unchanged): the next selection asks again.
+                    m.approved_scopes.discard(data["scope_digest"])
+                    self.consumed |= {rid for rid, r in self.requests.items()
+                                      if r.get("mission_id") == m.mission_id and r.get("kind") == "APPROVAL"
+                                      and r.get("scope_digest") == data["scope_digest"] and rid in self.answers}
                 strategy = next((s for s in m.spec["strategies"] if s["action_id"] == aid), None)
                 if strategy:
                     m.pending_effect[aid] = set(strategy["advances"])
+                    current = {c["check_id"] for c in m.current_checks()}
+                    m.collateral[aid] = {c for c, o in m.observations.items()
+                                         if o["passed"] and c in current and c not in strategy["advances"]}
             elif data["status"] in ("REFUSED", "UNAVAILABLE"):
                 m.failed[aid] = "; ".join(data["reasons"])[:300]
             elif data["status"] == "RECONCILED_NOT_EXECUTED":
@@ -754,21 +918,95 @@ class MissionBook:
         elif kind == "mission.strategy_excluded":
             m.excluded[data["action_id"]] = data["reason"]
         elif kind == "decision.requested":
-            self.requests[data["request_id"]] = data
+            self._requested(data, event_id)
         elif kind == "decision.withdrawn":
             self.withdrawn[data["request_id"]] = data
-        elif kind == "decision.answered":
-            self.answers[data["request_id"]] = data
             request = self.requests.get(data["request_id"])
-            if request and data["answer"] == "approve":
-                m.approved_scopes.add(request["scope_digest"])
-            elif request and data["answer"] == "reject":
-                m.rejected_scopes.add(request["scope_digest"])
-                if request.get("action_id"):
-                    m.failed[request["action_id"]] = "founder rejected: " + data.get("reason", "")[:200]
+            if data.get("voids_approval") and request:   # a restore from a backup (#186): the approval is asked again
+                m.approved_scopes.discard(request["scope_digest"])
+        elif kind == "decision.answered":
+            self._answered(data)
+
+    def _requested(self, data: dict, event_id: str | None) -> None:
+        """A founder ask. ``greg.asks.record`` is its one writer and keys it on its request id, so on a verifying
+        book a row under any other identity (another key under the same id) is kept as data: it cannot replace the
+        ask a signed DECISION answers, nor send that answer to another mission's scope. A fold given no event id
+        (a test stand-in replaying payloads) cannot tell and takes the row as before."""
+        rid = data.get("request_id")
+        if self.verify_answers and event_id is not None and event_id != fact_id("decision.requested", rid):
+            self.unverified_requests.append({"row": data, "why": "not recorded under its request id, the identity "
+                                                                 "greg.asks records every founder ask under"})
+            return
+        self.requests[rid] = data
+
+    def _answered(self, data: dict) -> None:
+        if not self.verify_answers:
+            self._apply_answer(data)
+            return
+        digest = data.get("command_digest")
+        self._pending.setdefault(digest if isinstance(digest, str) else None, []).append(data)
+
+    def _apply_answer(self, data: dict) -> None:
+        self.answers[data["request_id"]] = data
+        m = self.missions.get(data.get("mission_id"))
+        request = self.requests.get(data["request_id"])
+        if m is None or request is None:
+            return
+        if data["answer"] == "approve":
+            m.approved_scopes.add(request["scope_digest"])
+        elif data["answer"] == "reject":
+            m.rejected_scopes.add(request["scope_digest"])
+            if request.get("action_id"):
+                m.failed[request["action_id"]] = "founder rejected: " + data.get("reason", "")[:200]
+
+    def _admit(self, accepted: dict, event_id: str | None) -> None:
+        """A signed DECISION's acceptance: the answer rows citing it count, re-derived, if the command path's own
+        checks (``MissionEngine.answer``) hold here. Only at the one ``command.accepted`` record ``founder_facts``
+        counts it signed at; rows recorded later, or citing anything else, never count."""
+        digest = accepted.get("digest")
+        if accepted.get("kind") == "DECISION" and isinstance(digest, str) and digest not in self._signed:
+            self._unverifiable.add(digest)
+        if accepted.get("kind") != "DECISION" or not isinstance(digest, str) or digest not in self._signed_at \
+                or self._signed_at[digest] != event_id or digest in self._admitted:
+            return
+        self._admitted.add(digest)     # once: a byte-identical copy of the acceptance carries the same event id
+        cmd = self._signed[digest]
+        for data in self._pending.pop(digest, []):
+            rid = data.get("request_id")
+            request = self.requests.get(rid) if isinstance(rid, str) else None
+            why = self._refusal(data, request, cmd)
+            if why is None:
+                self._apply_answer(answer_record(request, cmd["envelope"]["body"], digest))
+            else:
+                self.unverified[str(rid)] = {"row": data, "why": why, "cause": "refused_at_acceptance"}
+
+    def _refusal(self, data: dict, request: dict | None, cmd: dict) -> str | None:
+        """Why a row citing a signed DECISION does not count at its acceptance (None: it counts)."""
+        rid = data.get("request_id")
+        if signed_answer(self._signed, rid, data) is None:
+            return "the signed DECISION it cites answers another request or gives another answer"
+        if request is None:
+            return "no such request was recorded before the DECISION's acceptance"
+        if rid in self.withdrawn:
+            return "the request was withdrawn before the DECISION's acceptance: the command path refuses it"
+        if rid in self.answers:
+            return "the request was already answered before this DECISION's acceptance"
+        reconcile = str(data.get("answer")).startswith("reconcile_")
+        if data.get("answer") not in DECISION_ANSWERS or reconcile != (request.get("kind") == "RECONCILIATION"):
+            return "the answer does not fit the request's kind: the command path refuses it"
+        if data != answer_record(request, cmd["envelope"]["body"], cmd["digest"]):
+            return "not the record MissionEngine.answer writes for the signed DECISION (its words or mission differ)"
+        return None
 
     def open_requests(self) -> list[dict]:
         return [r for rid, r in self.requests.items() if rid not in self.answers and rid not in self.withdrawn]
+
+
+def _named_verified(ask: dict) -> set[str]:
+    """The verified (withheld, attachable) capabilities an attach ask names: what the founder's answer to it decides,
+    and what the console offers to attach from it."""
+    return {c.get("capability_id") for c in (ask.get("evidence") or {}).get("registered") or []
+            if isinstance(c, dict) and c.get("state") == "VERIFIED"}
 
 
 def _mechanism_summary(provenance: dict) -> dict:
@@ -844,9 +1082,15 @@ class MissionEngine:
             raise MissionError("reconciliation requests take reconcile_* answers")
         if request["kind"] != "RECONCILIATION" and answer.startswith("reconcile_"):
             raise MissionError("reconcile answers apply only to reconciliation requests")
-        self.journal.record("decision.answered", {"request_id": rid, "mission_id": request["mission_id"],
-                                                  "answer": answer, "reason": str(body.get("reason", ""))[:500],
-                                                  "command_digest": command_digest}, key=rid)
+        # The row counts once Body.apply records this command's acceptance (MissionBook re-derives it from the
+        # signature). Its identity is its own content, so the only row that can hold it is this exact record: a row
+        # anyone else wrote under the request id or the command's digest cannot refuse the founder's answer. A row
+        # an interrupted apply already wrote under the request id (bodies before fold-time re-verification) is this
+        # same record and is not written twice.
+        record = answer_record(request, body, command_digest)
+        retained = self.journal.retained("decision.answered", rid)
+        if retained is None or retained.payload != record:
+            self.journal.record("decision.answered", record)
         self.book.rebuild()
 
     def exclude_strategy(self, mission_id: str, action_id: str, reason: str, critique_ref: str):
@@ -920,6 +1164,12 @@ class MissionEngine:
             raise MissionError(f"{action_id} is inside the mission's light cone: it needs no founder decision")
         if scope["scope_digest"] in m.rejected_scopes:
             raise MissionError("the founder already rejected this exact scope")
+        # AuthorityOffice.act refuses such an act before the cone, so the mission never asks about it: an approve
+        # asked for ahead of its loop could change nothing on this body.
+        refused = AuthorityOffice.precheck(self.registry.manifests[scope["capability"]], target=scope["target"],
+                                           params=scope["strategy"].get("params", {}))
+        if refused is not None:
+            raise MissionError(f"{action_id} cannot act here ({refused[0]}): {refused[1]}"[:400])
         # The mission's own selection never picks an excluded or failed strategy (tick: "in m.failed or in
         # m.excluded"), nor one that advances no check its loop pursues, so it would never ask for (or run)
         # one; asking ahead of it must not either: an approve could change nothing.
@@ -968,7 +1218,9 @@ class MissionEngine:
         exact scope), the same contract and the same one-ask-per-scope rule, so when the mission's
         loop later reaches the strategy it finds this request instead of asking again. Asking grants
         nothing and executes nothing; an approve adds exactly this scope to the mission's approved
-        scopes, used only when the mission's own feedback loop selects the strategy."""
+        scopes, used only when the mission's own feedback loop selects the strategy. A paid scope
+        includes the mission's spend state (#157), so its approve funds one run: once that run, or
+        any other spend, changes the state, the mission asks again before spending again."""
         self.book.rebuild()
         m = self.book.missions.get(mission_id)
         scope = self._askable(m, mission_id, action_id, now=now)
@@ -983,12 +1235,15 @@ class MissionEngine:
             if evidence:
                 resource = {**resource, "evidence": {**resource["evidence"], **evidence}}
         return self._request(
-            m, kind="APPROVAL", scope_digest=scope["scope_digest"], action_id=action_id,
-            why=(why or "; ".join(scope["outside_cone"]))[:400], recommendation=recommendation[:400],
+            m, kind="APPROVAL", scope_digest=scope["scope_digest"], move_digest=scope["move_digest"],
+            action_id=action_id, why=(why or "; ".join(scope["outside_cone"]))[:400],
+            recommendation=recommendation[:400],
             alternatives=[x["action_id"] for x in m.spec["strategies"] if x["action_id"] != action_id][:5]
             + ["reject: the mission will try alternatives or ask again"],
             requested={"capability": scope["capability"], "target": scope["target"],
                        "consequence_class": scope["consequence_class"], "cost_usd": s.get("cost_usd", 0.0),
+                       # the same reach the loop's ask shows: one scope has one request, whichever path asks first
+                       **exact_reach(scope["capability"], s.get("params", {})),
                        **({"spend": f"${cost:.2f} for this one action"} if cost > 0 else {})},
             now=now, resource=resource, evidence=evidence, quoted=quoted)
 
@@ -1011,41 +1266,71 @@ class MissionEngine:
             summary.append({"mission_id": m.mission_id, **self._step(m, now)})
         return summary
 
+    def _ledger_reader(self):
+        from greg.ventures import LedgerReader
+        return LedgerReader(self.journal) if self.journal is not None else None
+
     def _context(self, m: MissionState, manifest) -> InvocationContext:
         # worker.appraise reads the ledger to bind a retained WorkOrder to its canonical commission receipt, as the
         # separate appraiser does: evidence a stopped body wrote before its receipt is never accepted (H.G11).
         return InvocationContext(workspace=self.workspace_root / m.mission_id.replace(":", "_"),
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
-                                 journal=self.journal if manifest.capability_id in (
-                                     "memory.precedents", "daleobanks.outcome", "worker.appraise") or
-                                 manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.", "organ.",
-                                                                    "foundry.")) else None,
+                                 # ledger access: memory, artifacts, cognition and the body's own records; the organ
+                                 # bridges that render or check the Mind's receipts (the venture memo, DALEOBANKS's
+                                 # claim-by-claim verify) and worker.appraise (it reads its commission receipt; its
+                                 # Mind evaluator gets no ledger it could write, #185) get a reader that cannot write
+                                 journal=self._ledger_reader() if manifest.capability_id in ("venture.assess",
+                                                                                             "daleobanks.verify",
+                                                                                             "worker.appraise")
+                                 else self.journal if manifest.capability_id in ("memory.precedents", "daleobanks.outcome")
+                                 or manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.",
+                                                                       "organ.", "foundry.")) else None,
                                  artifact_root=self.artifact_root, stop_check=self._stop_check,
-                                 capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
+                                 # eligibility view for the Mind, and for the evaluator that asks it
+                                 capability_registry=self.registry if manifest.capability_id.startswith("cognition.")
+                                 or manifest.capability_id == "worker.appraise" else None,
                                  cognition_model=getattr(self, "cognition_model", None),
-                                 egress=getattr(self, "egress", None) if manifest.capability_id in CONFINED_EGRESS else None)
+                                 egress=getattr(self, "egress", None) if manifest.capability_id in CONFINED_EGRESS else None,
+                                 worker_confinement=getattr(self, "worker_confinement", "required"))
+
+    def _inert_interruption(self, m: MissionState, strategy: dict, manifest) -> dict:
+        """The standing-reconciliation proof for an UNCERTAIN dispatch (greg.workers.inert_interruption_proof)."""
+        from greg.workers import inert_interruption_proof
+        prior = sum(1 for e in self.journal.replay("mission.action")
+                    if e.payload.get("mission_id") == m.mission_id
+                    and e.payload.get("action_id") == strategy["action_id"]
+                    and e.payload.get("route") == "standing_reconciliation")
+        return inert_interruption_proof(spec=m.spec, strategy=strategy, capability_id=manifest.capability_id,
+                                        consequence_class=manifest.consequence_class,
+                                        mission_workspace=self.workspace_root / m.mission_id.replace(":", "_"),
+                                        prior=prior)
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,
                  resource: dict | None = None, evidence: dict | None = None, quoted: tuple = (),
-                 instance: dict | None = None, consequence: str = "the mission waits; no action is taken") -> str:
+                 instance: dict | None = None, consequence: str = "the mission waits; no action is taken",
+                 move_digest: str | None = None) -> str:
         """One escalation per exact scope, recorded through the founder-ask contract (greg/asks.py).
 
         ``resource`` makes it a section-60 resource ask: evidence, costed options with their
         expected effects, the recommendation's expected effect and uncertainty. Everything
         Alfonso signed in the mission is exempt from the wording screen. ``instance`` binds the
         request to one occurrence inside its scope (a RECONCILIATION names the one dispatch it
-        settles), so an answer about one occurrence is never reused for another."""
+        settles), so an answer about one occurrence is never reused for another. An APPROVAL also
+        records the move it asks about without the spend state (``move_digest``; the scope digest
+        when none is given, which is the same for an unpaid scope), so a goal still finds its ask,
+        and the answer to it, after the mission spends."""
         epoch = 0
         while True:
             rid = "req-" + sha256_json({"mission": m.mission_id, "kind": kind, "scope": scope_digest,
                                         **({"epoch": epoch} if epoch else {}),
                                         **({"instance": instance} if instance is not None else {})})[7:31]
-            if rid not in self.book.withdrawn and not (kind in NOT_ANSWERABLE and rid in self.book.answers):
+            if rid not in self.book.withdrawn and rid not in self.book.consumed \
+                    and not (kind in NOT_ANSWERABLE and rid in self.book.answers):
                 break
-            epoch += 1  # the same discrepancy returned after healing (or a legacy answer closed an
-            # unanswerable ask): a new escalation
+            epoch += 1  # the same discrepancy returned after healing, a paid approval used, or a legacy answer
+            # closed an unanswerable ask: a new escalation
         if rid in self.book.requests:
             return rid  # one escalation per exact scope; waiting creates no spam
         why = why.strip() or f"{kind.lower().replace('_', ' ')} needs your decision"   # never an empty ask
@@ -1054,6 +1339,8 @@ class MissionEngine:
                    "alternatives": alternatives, "authority_requested": requested,
                    "consequence_of_no_response": consequence,
                    "created_at": iso(now), "reality_status": "RECORDED_LOCAL_MESSAGE"}
+        if kind == "APPROVAL":
+            message["move_digest"] = move_digest or scope_digest
         if evidence is not None:
             message["evidence"] = evidence
         if resource is not None:
@@ -1115,17 +1402,21 @@ class MissionEngine:
         if b["type"] == "capability":
             ok, why = self.registry.usable(b["capability_id"]) if b.get("capability_id") else (False, "none")
             if not ok and self.genesis is not None and b.get("function"):
-                cap = self.genesis.find_attached(b["function"])
-                if cap is None and self.genesis.construction_ready(b["function"]):
+                # the rule that decides whether a mission arriving now has this need (Genesis.serving), never only
+                # what this blocker offered: a fitting method that could not run when the mission blocked (founder-
+                # detached, unregistered, unavailable) serves it once it can, whatever its function name
+                served = self.genesis.serving(m.mission_id, b["function"])
+                if served is not None:
+                    return True, f"{served} now serves {b['function']}"
+                if self.genesis.construction_ready(b["function"]):
                     # once: the engine a construction needs was attached, so Genesis can now form it
                     return True, "the engine this function is constructed over is now attached"
-                if cap is None:
-                    lifted = " ".join(e.payload.get("why", "") for e in self.journal.replay("mission.unblocked")
-                                      if e.payload["mission_id"] == m.mission_id)
-                    fresh = [k for k in self.genesis.recovered_for(b["function"]) if k not in lifted]
-                    if fresh:   # once per recovery: re-admission is offered under the mission's own scope
-                        return True, f"recovered and eligible again: {fresh[0]}"
-                return (cap is not None, "capability now attached" if cap else why)
+                lifted = " ".join(e.payload.get("why", "") for e in self.journal.replay("mission.unblocked")
+                                  if e.payload["mission_id"] == m.mission_id)
+                fresh = [k for k in self.genesis.recovered_for(b["function"]) if k not in lifted]
+                if fresh:   # once per recovery: re-admission is offered under the mission's own scope
+                    return True, f"recovered and eligible again: {fresh[0]}"
+                return False, why
             return ok, why
         if b["type"] == "no_strategy":
             return True, "re-evaluate strategies at cadence"
@@ -1147,6 +1438,37 @@ class MissionEngine:
         rid = b.get("request_id")
         return (b.get("type") == "decision" and bool(b.get("action_id")) and rid not in self.book.answers
                 and rid not in self.book.withdrawn and (self.book.requests.get(rid) or {}).get("kind") == "APPROVAL")
+
+    def _withdraw_spent_paid_asks(self, m: MissionState, now: datetime) -> MissionState:
+        """A paid APPROVAL names the spend state it was asked at (#157); once the mission spends, an approve of it
+        could fund nothing. Withdraw it (a body event, never a founder answer) so every open ask is one an approve
+        can run; when it was the blocker, the loop goes on and asks again at the current spend."""
+        stale = []
+        for rid, r in self.book.requests.items():
+            if r.get("kind") != "APPROVAL" or r.get("mission_id") != m.mission_id or rid in self.book.answers \
+                    or rid in self.book.withdrawn or r.get("move_digest", r.get("scope_digest")) == r.get("scope_digest"):
+                continue                       # another mission's, answered, withdrawn, unpaid, or recorded before
+            evidence = r.get("evidence") if isinstance(r.get("evidence"), dict) else {}
+            state = evidence.get("budget") if isinstance(evidence.get("budget"), dict) else None
+            # The paid scope binds what the budget must cover (booked spend plus #173's reservations of unknown
+            # outcomes, ``committed_usd``), so a reservation made or released since the ask makes it unfundable too.
+            then = float(state.get("spent_usd", 0.0)) + float(state.get("reserved_usd", 0.0)) if state else None
+            if state is None or (abs(then - m.committed_usd) < 1e-9 and state.get("budget_usd") == m.cone.budget_usd):
+                continue
+            stale.append((rid, state))
+        for rid, state in stale:
+            then = float(state.get("spent_usd", 0.0)) + float(state.get("reserved_usd", 0.0))
+            why = (f"the mission has spent since this paid move was asked (${then:.2f} "
+                   f"then, ${m.committed_usd:.2f} now): an approve of it could fund nothing, so it is asked again at the "
+                   "current spend")
+            self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id, "why": why,
+                                                       "at": iso(now)}, key=[rid, "withdrawn"])
+            if (m.blocker or {}).get("request_id") == rid:
+                self._unblock(m, why)
+        if stale:
+            self.book.rebuild()
+            m = self.book.missions[m.mission_id]
+        return m
 
     def _inside_cone(self, m: MissionState, s: dict, now: datetime) -> bool:
         """A static strategy whose exact scope the mission's signed light cone admits now (no decision needed)."""
@@ -1201,6 +1523,12 @@ class MissionEngine:
         if m.status in TERMINAL:
             if m.status == "ACHIEVED":
                 return {"state": m.status}
+            if m.uncertain and self._unsettled(m) is not None:
+                # A question lost to a crash, or a reconciliation block a later decision displaced (the horizon's
+                # SCOPE_RENEWAL), is asked (an open one reused) before anything is undone.
+                self._resume_unsettled(m, now, displace=True)
+                self.book.rebuild()
+                m = self.book.missions[m.mission_id]
             if m.blocker and m.blocker.get("type") == "reconciliation":
                 # Nothing is undone before the founder says what an interrupted dispatch did: compensation
                 # waits for the answer, and an answer that arrives with or after the end is still recorded.
@@ -1216,12 +1544,20 @@ class MissionEngine:
             return {"state": m.status, **self._compensate(m, now)}
         if m.paused:
             return {"state": "PAUSED"}
-        recovered = self._recover_dispatch(m, now)
+        recovered = self._recover_dispatch(m, now)   # a dispatch the body died inside is settled first
         if recovered is not None:
             return recovered
-        if m.blocker and m.blocker.get("request_id") in self.book.withdrawn:
+        resumed = self._resume_unsettled(m, now)     # no blocker: a question a crash lost comes next
+        if resumed is not None:
+            return resumed
+        # A shared body-level attach ask withdrawn under the mission is not this mission's withdraw site: the
+        # mission's own handling asks about its undecided candidates (``_shared_ask_lapsed``).
+        if m.blocker and m.blocker.get("request_id") in self.book.withdrawn and not m.blocker.get("shared_ask"):
             m = self._finish_withdrawal(m)
-        if datetime.fromisoformat(m.cone.horizon.replace("Z", "+00:00")) <= now:
+        m = self._withdraw_spent_paid_asks(m, now)   # a paid ask the mission's spend has made unfundable
+        # An open reconciliation stays the blocker past the horizon: its answer is recorded first, then renewal.
+        if datetime.fromisoformat(m.cone.horizon.replace("Z", "+00:00")) <= now and \
+                (m.blocker or {}).get("type") != "reconciliation":
             self._block(m, {"type": "decision", "request_id": self._request(
                 m, kind="SCOPE_RENEWAL", scope_digest=sha256_json({"horizon": m.cone.horizon}), action_id=None,
                 why="the mission mandate horizon expired", recommendation="renew with a new signed MISSION",
@@ -1248,10 +1584,30 @@ class MissionEngine:
             return self._watch_while_blocked(m, now)
         if m.blocker:
             resolved, why = self._blocker_resolved(m)
+            if not resolved and self._shared_ask_lapsed(m):
+                # the shared ask no longer stands for this mission's need and part of it was never decided: that part
+                # is asked about once, on another standing ask naming an undecided candidate or on the mission's own
+                # ask naming only those; an attach of any method that fits the need still resolves it
+                self._escalate_capability(m, m.blocker["function"], m.blocker.get("capability_id"),
+                                          self._deficit_purpose(m, m.blocker["function"]), now,
+                                          keep=m.blocker.get("attach_candidates", ()))
+                return {"state": "BLOCKED", "blocker": m.blocker}
             if not resolved:
                 if m.pull is not None and self._awaiting_approval(m):
+                    # Preparation dispatches while the APPROVAL stays open: a question a crash lost comes first.
+                    resumed = self._resume_unsettled(m, now, displace=True)
+                    if resumed is not None:
+                        return resumed
                     return self._prepare(m, now)
                 return {"state": "WAITING", "blocker": m.blocker, "why": why}
+            if m.blocker["type"] == "capability" and not m.blocker.get("shared_ask") \
+                    and not self._closed(m.blocker["request_id"]):
+                # this mission's own attach ask is moot once a capability resolves it; a shared ask stays open for
+                # its other uses
+                rid = m.blocker["request_id"]
+                self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id,
+                                                           "why": f"resolved: {why}", "evidence": [], "at": iso(now)},
+                                    key=[rid, "withdrawn", "resolved"])
             if m.blocker["type"] == "reconciliation":
                 asked_again = self._record_reconciliation(m, now)
                 if asked_again is not None:
@@ -1261,9 +1617,11 @@ class MissionEngine:
             self.book.rebuild()
             m = self.book.missions[m.mission_id]
             if lifted["type"] == "capability" and lifted.get("function") and self.genesis is not None \
-                    and self.genesis.find_attached(lifted["function"]) is None:
-                # Lifted because a construction's engine was attached: form the construction now, since
-                # the step that reported the deficit does not repeat. It still waits for its own attach.
+                    and self.genesis.serving(m.mission_id, lifted["function"]) is None:
+                # Lifted because a construction's engine was attached (or a capability recovered): form the
+                # construction now, since the step that reported the deficit does not repeat. It still waits for
+                # its own attach. A need something now serves (Genesis.serving: an attached capability, or for a
+                # cognition residual a fitting method that can run) is not re-formed: the next step uses it.
                 function = lifted["function"]
                 purpose = f"construction of {function} over its attached engine"
                 formed, deferred = self._form(m, function, now, lambda: self.genesis.resolve(
@@ -1314,6 +1672,84 @@ class MissionEngine:
             self._schedule(m, now, 30 * streak or 30)
             return {"state": "SENSOR_RETRY", "checks": sorted(errors)}
         return self._pursue(m, now, failing, evidence)
+
+    def _settle_uncertain(self, m: MissionState, s: dict, manifest, record: dict, now: datetime) -> dict:
+        """An UNCERTAIN dispatch of a non-retry-safe action (``record``, its retained mission.action), never
+        retried blind: settled by the founder's standing mandate when the retained facts prove it inert, else one
+        reconciliation question naming exactly this dispatch (#173: its attempt, proposal and grant, with the cap
+        reserved and what each answer books). Called when the dispatch is recorded, and again after a restart that
+        found the record unsettled."""
+        aid, attempt = record["action_id"], record["attempt"]
+        proof = self._inert_interruption(m, s, manifest) if manifest is not None else \
+            {"holds": False, "predicates": {"founder_mandate": False}}
+        if proof["holds"]:
+            # The founder signed a standing mandate for exactly this class, and the retained facts prove the
+            # interrupted run could not have left a consequence: settle it with the proof, retry once.
+            self.journal.record("mission.action", {
+                "mission_id": m.mission_id, "action_id": aid, "attempt": attempt,
+                "status": "RECONCILED_NOT_EXECUTED", "capability": manifest.capability_id,
+                "route": "standing_reconciliation", "dispatch_route": manifest.route, "receipt": None,
+                "at": iso(now), "mandate": m.command_digest, "proof": proof, "cost_usd": 0.0,
+                "reasons": ["standing reconciliation: a consequence-inert interruption, settled under the "
+                            "founder-signed mission mandate"]},
+                key=[m.mission_id, aid, "standing", attempt])
+            return {"state": "RETRYING", "action": aid, "why": "standing reconciliation of an inert interruption"}
+        unmet = [k for k, ok in proof["predicates"].items() if not ok]
+        # One reconciliation per dispatch: the request names this attempt's proposal and grant, so the answer
+        # settles exactly this dispatch and a later uncertain dispatch opens its own request.
+        dispatch = {"attempt": attempt, "proposal_id": record.get("proposal_id"), "grant_id": record.get("grant_id")}
+        capability = record.get("capability") or getattr(manifest, "capability_id", None)
+        reserved = m.reserved.get((aid, attempt), signed_cost(m.spec, aid))
+        recommendation, booked_by_answer = reconciliation_terms(capability, reserved)
+        rid = self._request(m, kind="RECONCILIATION", scope_digest=record.get("scope_digest") or "", action_id=aid,
+                            why="an action may or may not have executed before an interruption"
+                            + ("; GREG could not settle it under your standing mandate: " + ", ".join(unmet)
+                               if proof["predicates"]["founder_mandate"] else ""),
+                            recommendation=recommendation,
+                            alternatives=["reconcile_executed", "reconcile_not_executed"],
+                            requested={"action_id": aid, **dispatch}, now=now, instance=dispatch,
+                            evidence={"dispatch": dispatch, "reasons": list(record.get("reasons", []))[:3],
+                                      "reserved_usd": reserved,
+                                      "booked_usd_by_answer": booked_by_answer,
+                                      "budget": {"spent_usd": m.spent_usd, "budget_usd": m.cone.budget_usd}})
+        self._block(m, {"type": "reconciliation", "request_id": rid, "action_id": aid, **dispatch,
+                        "scope_digest": record.get("scope_digest"), "capability": capability,
+                        "why": "uncertain completion; no blind retry",
+                        "reconsider": "founder reconciliation decision"})
+        return {"state": "BLOCKED", "blocker": m.blocker}
+
+    def _resume_unsettled(self, m: MissionState, now: datetime, *, displace: bool = False) -> dict | None:
+        """A dispatch recorded UNCERTAIN whose settlement never became durable: the body died after that record
+        and before its reconciliation question (or the block on it) was retained. Settle it now, exactly as the
+        dispatch would have, instead of letting the next tick dispatch the next attempt with no answer.
+
+        ``displace``: another blocker (a goal's open APPROVAL during preparation, the horizon's SCOPE_RENEWAL on an
+        ended mission) stands where the reconciliation block would have been. It is lifted first, as the dispatch
+        itself would have replaced it, so the question comes before anything else is dispatched or undone; the
+        lifted decision stays open and is asked again by the path that raised it."""
+        if (m.blocker or {}).get("type") == "reconciliation" or (m.blocker is not None and not displace):
+            return None
+        unsettled = self._unsettled(m)
+        if unsettled is None:
+            return None
+        if m.blocker is not None:
+            self._unblock(m, "an interrupted dispatch is reconciled before anything else is dispatched or undone")
+            self.book.rebuild()
+            m = self.book.missions[m.mission_id]
+        return self._settle_uncertain(m, *unsettled, now)
+
+    def _unsettled(self, m: MissionState):
+        """The first non-retry-safe action whose latest record is UNCERTAIN: (strategy, manifest, that record),
+        or None."""
+        for aid, record in sorted(m.uncertain.items()):
+            strategy = next((x for x in m.spec["strategies"] if x["action_id"] == aid), None)
+            manifest = self.registry.manifests.get(record.get("capability"))
+            if manifest is None and strategy is not None:
+                manifest = self._manifest_for(strategy)
+            if strategy is None or (manifest is not None and manifest.retry_safe):
+                continue
+            return strategy, manifest, record
+        return None
 
     def _inputs(self, m: MissionState, s: dict) -> tuple[tuple[dict, list, list], tuple | None]:
         """A strategy's typed inputs, resolvable and consumable now: signed ``bind`` edges, then inline
@@ -1582,8 +2018,9 @@ class MissionEngine:
         rid = m.blocker["request_id"]
         why = ("the deliverable is observed: the checks this work advances now pass, and GREG took no action for it"
                if human else "world re-observed: every failing check now passes without any GREG action")
-        self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id, "why": why,
-                                                   "evidence": evidence, "at": iso(now)}, key=[rid, "withdrawn"])
+        if not m.blocker.get("shared_ask"):      # an ask this mission only shares stays open for its other uses
+            self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id, "why": why,
+                                                       "evidence": evidence, "at": iso(now)}, key=[rid, "withdrawn"])
         self._unblock(m, why)
         self.book.rebuild()
         if failing:                                  # other checks remain: pursue them from the next step
@@ -1715,15 +2152,17 @@ class MissionEngine:
             return None, None, cid
         return self.registry.manifests[cid], self.registry.adapters[cid], None
 
-    def _deficit(self, m: MissionState, spec: dict, now: datetime, *, purpose: str):
+    def _deficit(self, m: MissionState, spec: dict, now: datetime, *, purpose: str, cognition: dict | None = None):
         function = spec.get("function") or self.registry.manifests.get(spec.get("capability"), None)
         function = function.function if hasattr(function, "function") else (function or spec.get("capability"))
         resource = asks.human_work(function)
         if resource is not None:                  # never searched, built or attached: a person does this work
             return self._escalate_human(m, spec, function, resource, purpose, now)
         if self.genesis is not None:
+            # a cognition residual carries the compiler's own deficit (geometry, inputs, fitting methods) to Genesis
+            extra = {"deficit": cognition} if cognition is not None else {}
             capability, deferred = self._form(m, function, now, lambda: self.genesis.resolve(
-                mission=m, function=function, purpose=purpose, now=now), purpose=purpose)
+                mission=m, function=function, purpose=purpose, now=now, **extra), purpose=purpose, deficit=cognition)
             if deferred:
                 return None
             if capability is not None:
@@ -1733,7 +2172,8 @@ class MissionEngine:
     OUTAGE_DEFERRALS = 5          # consecutive host outages forming one function before the founder is also told
     OUTAGE_RETRY_CAP = 3600       # seconds: the longest back-off between searches during an outage
 
-    def _form(self, m: MissionState, function: str, now: datetime, formation, *, purpose: str, attempt: int = 0):
+    def _form(self, m: MissionState, function: str, now: datetime, formation, *, purpose: str, attempt: int = 0,
+              deficit: dict | None = None):
         """Run a Genesis formation. A host outage while qualifying (a runner timeout, isolation unavailable)
         is no evidence about any candidate: nothing was qualified, failed or built. The mission waits on an
         outage blocker that re-runs this formation after a growing back-off (``_after_outage``); it does not
@@ -1750,6 +2190,10 @@ class MissionEngine:
                        "why": str(exc)[:200],
                        "retry_at": iso(now + timedelta(seconds=min(60 * 2 ** (attempt - 1), self.OUTAGE_RETRY_CAP))),
                        "reconsider": "the search re-runs after the back-off; nothing was qualified, failed or built"}
+            if deficit is not None:
+                # the retry searches for the need the compile reported (its fitting rows and what it tried), not
+                # for the body as it stands when the back-off ends
+                blocker["deficit"] = deficit
             if attempt >= self.OUTAGE_DEFERRALS:
                 blocker["request_id"] = self._capability_request(
                     m, function, f"{purpose}: the host failed {attempt} times in a row while forming {function} "
@@ -1757,6 +2201,32 @@ class MissionEngine:
                     scope={"function": function, "outage": True})
             self._block(m, blocker)
             return None, True
+
+    def _reask_reconciliation(self, m: MissionState, aid: str, uncertain: dict, capability: str | None,
+                              now: datetime, why: str, *, terms: str | None = None) -> dict:
+        """The retained answer cannot settle the dispatch ``uncertain`` (its UNCERTAIN record): lift the block and ask
+        about that dispatch again, with what each answer books. ``terms`` salts the request, so a second question
+        about the same dispatch is not the one already answered."""
+        self._unblock(m, why)
+        self.book.rebuild()
+        m = self.book.missions[m.mission_id]
+        dispatch = {"attempt": uncertain["attempt"], "proposal_id": uncertain.get("proposal_id"),
+                    "grant_id": uncertain.get("grant_id")}
+        reserved = m.reserved.get((aid, uncertain["attempt"]), signed_cost(m.spec, aid))
+        recommendation, booked_by_answer = reconciliation_terms(capability, reserved)
+        again = self._request(m, kind="RECONCILIATION", scope_digest=uncertain.get("scope_digest") or "",
+                              action_id=aid, why="an action may or may not have executed before an interruption",
+                              recommendation=recommendation,
+                              alternatives=["reconcile_executed", "reconcile_not_executed"],
+                              requested={"action_id": aid, **dispatch}, now=now,
+                              instance=dispatch if terms is None else {**dispatch, "terms": terms},
+                              evidence={"dispatch": dispatch, "reasons": list(uncertain.get("reasons", []))[:3],
+                                        "reserved_usd": reserved, "booked_usd_by_answer": booked_by_answer})
+        self._block(m, {"type": "reconciliation", "request_id": again, "action_id": aid, **dispatch,
+                        "scope_digest": uncertain.get("scope_digest"), "capability": capability,
+                        "why": "uncertain completion; no blind retry",
+                        "reconsider": "founder reconciliation decision"})
+        return {"state": "BLOCKED", "blocker": m.blocker}
 
     def _record_reconciliation(self, m: MissionState, now: datetime) -> dict | None:
         """Record the founder's answer about one UNCERTAIN dispatch (the blocker's request), for a live mission
@@ -1777,30 +2247,15 @@ class MissionEngine:
                         if e.payload.get("request_id") == rid]
             latest = uncertain[-1].payload
             if answered and answered[0] < seq[uncertain[-1].event_id]:
-                self._unblock(m, "the retained reconciliation answered an earlier dispatch; asking about this one")
-                self.book.rebuild()
-                m = self.book.missions[m.mission_id]
-                dispatch = {"attempt": latest["attempt"], "proposal_id": latest.get("proposal_id"),
-                            "grant_id": latest.get("grant_id")}
-                reserved = m.reserved.get((aid, latest["attempt"]), signed_cost(m.spec, aid))
-                recommendation, booked_by_answer = reconciliation_terms(latest.get("capability"), reserved)
-                again = self._request(m, kind="RECONCILIATION", scope_digest=latest.get("scope_digest") or "",
-                                      action_id=aid,
-                                      why="an action may or may not have executed before an interruption",
-                                      recommendation=recommendation,
-                                      alternatives=["reconcile_executed", "reconcile_not_executed"],
-                                      requested={"action_id": aid, **dispatch}, now=now, instance=dispatch,
-                                      evidence={"dispatch": dispatch, "reasons": list(latest.get("reasons", []))[:3],
-                                                "reserved_usd": reserved, "booked_usd_by_answer": booked_by_answer})
-                self._block(m, {"type": "reconciliation", "request_id": again, "action_id": aid, **dispatch,
-                                "scope_digest": latest.get("scope_digest"), "capability": latest.get("capability"),
-                                "why": "uncertain completion; no blind retry",
-                                "reconsider": "founder reconciliation decision"})
-                return {"state": "BLOCKED", "blocker": m.blocker}
+                return self._reask_reconciliation(m, aid, latest, latest.get("capability"), now,
+                                                  "the retained reconciliation answered an earlier dispatch; asking "
+                                                  "about this one")
         attempt = m.blocker.get("attempt", m.attempts.get(aid, 1) - 1)
         # The record reconciles the UNCERTAIN dispatch of this attempt: it names the capability that dispatch
         # actually used (a strategy may name only a function), never the strategy's spec.
         dispatch = next((e.payload for e in reversed(uncertain) if e.payload.get("attempt") == attempt), {})
+        if self.journal.retained("mission.action", [m.mission_id, aid, "reconciled", rid]) is not None:
+            return None      # recorded before a crash that came before the unblock: never re-stamped
         strategy = next((x for x in m.spec["strategies"] if x["action_id"] == aid), {})
         executed = answer == "reconcile_executed"
         worst = m.reserved.get((aid, attempt), signed_cost(m.spec, aid))
@@ -1809,23 +2264,48 @@ class MissionEngine:
         # collected: "not executed" settles the effect, not the money, so its unmeasured spend is booked at the
         # signed cap instead of being released as zero (acceptance H.G4).
         booked = executed or capability in METERED_SPEND
+        disclosed = (((self.book.requests.get(rid) or {}).get("evidence") or {})
+                     .get("booked_usd_by_answer") or {}).get(answer)
+        if not executed and booked and disclosed != worst:
+            # Asked before the disclosure (code from before H.G4): the founder answered "not executed" without being
+            # told it keeps a metered cap booked, so that answer books nothing on its own. Ask once more about this
+            # dispatch, with the terms; the cap stays reserved as unknown spend meanwhile. ("Executed" booked the cap
+            # under the old rule too, so its answer was given on the terms it settles at.)
+            return self._reask_reconciliation(m, aid, {**dispatch, "attempt": attempt}, capability, now,
+                                              "the answered reconciliation did not state what it books; asking "
+                                              "again with the terms", terms="booked_usd_by_answer")
+        # A receipted interrupt (a cancellable worker stopped itself, its report collected) carries the provider's
+        # report: stated as given, though an interrupted run's report does not bound what it spent; one over the
+        # cap is booked as reported, never the cap in its place (reconciled_booking).
+        receipt = self.office.ledger.find(dispatch["receipt"]) if dispatch.get("receipt") else None
+        output = (receipt.payload.get("result") or {}).get("output") \
+            if receipt is not None and receipt.record_type == "receipt" else None
+        booking = reconciled_booking(capability, answer, worst, output)
+        reported, over = booking["provider_reported_usd"], booking["overspend_usd"]
+        measured = None if reported is None else (f"its receipted run reported ${reported:.2f} before it was "
+                                                  "interrupted, which does not bound what an interrupted run spent")
         settled = {"mission_id": m.mission_id, "action_id": aid, "attempt": attempt,
                    "status": "DONE" if executed else "RECONCILED_NOT_EXECUTED",
                    "capability": capability, "route": "founder_reconciliation",
                    "dispatch_route": dispatch.get("route"), "receipt": None, "at": iso(now),
-                   "reasons": ["founder reconciliation: " + answer], "cost_usd": worst if booked else 0.0}
+                   "reasons": ["founder reconciliation: " + answer], "cost_usd": booking["cost_usd"]}
         if "proposal_id" in m.blocker:
             settled.update(reconciles={k: m.blocker.get(k) for k in ("request_id", "proposal_id", "grant_id")},
                            scope_digest=m.blocker.get("scope_digest"))
-        if executed:       # it executed, but its spend was never measured: book the signed cap
-            settled.update(cost_cap_usd=worst, provider_reported_usd=None,
+        if over is not None:   # it reported spending more than signed: that spend is booked, with the overspend
+            settled.update(cost_cap_usd=worst, provider_reported_usd=reported, overspend_usd=over,
+                           spend_basis="provider_reported: over the signed cap; founder reconciliation: " + answer
+                                       + f"; {measured}, so at least the reported spend is booked")
+        elif executed:     # it executed, but its spend was never measured: book the signed cap
+            settled.update(cost_cap_usd=worst, provider_reported_usd=reported,
                            spend_basis="signed_cap: founder reconciled the dispatch as executed; "
-                                       "its spend was never measured")
+                                       + (measured or "its spend was never measured"))
         elif booked:
-            settled.update(cost_cap_usd=worst, provider_reported_usd=None,
-                           spend_basis="signed_cap: the dispatch was claimed and never receipted, so whether its "
-                                       "metered provider ran (the body may have stopped before it started) and what "
-                                       "it spent are unknown; not executed settles its effect, not that possible spend")
+            settled.update(cost_cap_usd=worst, provider_reported_usd=reported, spend_basis="signed_cap: " + (
+                measured or ("its receipted run was interrupted with no provider report" if receipt is not None
+                             else "the dispatch was claimed and never receipted")
+                + ", so whether its metered provider ran (the body may have stopped before it started) and what it "
+                  "spent are unknown") + "; not executed settles its effect, not that possible spend")
         self.journal.record("mission.action", settled, key=[m.mission_id, aid, "reconciled", rid])
         return None
 
@@ -1842,8 +2322,11 @@ class MissionEngine:
         if self.genesis is None:
             self._escalate_capability(m, function, None, purpose, now)
             return {"state": "BLOCKED", "blocker": m.blocker}
+        deficit = b.get("deficit")
+        extra = {"deficit": deficit} if deficit is not None else {}
         formed, deferred = self._form(m, function, now, lambda: self.genesis.resolve(
-            mission=m, function=function, purpose=purpose, now=now), purpose=purpose, attempt=b.get("attempt", 0))
+            mission=m, function=function, purpose=purpose, now=now, **extra), purpose=purpose,
+            attempt=b.get("attempt", 0), deficit=deficit)
         if deferred:
             return {"state": "BLOCKED", "blocker": m.blocker}
         rid = b.get("request_id")
@@ -1874,14 +2357,95 @@ class MissionEngine:
                                         "spend": "none requested; any account, license or purchase is yours to make"},
                              now=now, resource=self._capability_ask(m, function, purpose))
 
+    def _deficit_purpose(self, m: MissionState, function: str) -> str:
+        opened = [e.payload for e in self.journal.replay("deficit.opened")
+                  if e.payload["mission_id"] == m.mission_id and e.payload["function"] == function]
+        return opened[-1]["purpose"] if opened else f"a capability for {function}"
+
+    def _attach_candidates(self, m: MissionState, function: str) -> list[str]:
+        """Withheld capabilities Genesis found for a cognition deficit (they carry other function names)."""
+        return self.genesis.attach_candidates(m.mission_id, function) if self.genesis is not None else []
+
+    def _closed(self, request_id: str) -> bool:
+        return request_id in self.book.answers or request_id in self.book.withdrawn
+
+    def _rejected_for(self, m: MissionState, function: str) -> dict[str, str]:
+        """What the founder already answered for this mission's need, by candidate: every verified candidate named by
+        an attach ask this mission waited on (its own, or a body-level one it shared) that the founder rejected,
+        mapped to that ask. An answer decides exactly what its ask named, never more: none of these is asked about
+        again for this need (section 60), and a candidate no answered ask named is still undecided."""
+        waited = dict.fromkeys(e.payload["blocker"].get("request_id") for e in self.journal.replay("mission.blocked")
+                               if e.payload["mission_id"] == m.mission_id
+                               and e.payload["blocker"].get("type") == "capability"
+                               and e.payload["blocker"].get("function") == function)
+        return {cid: rid for rid in waited if (self.book.answers.get(rid) or {}).get("answer") == "reject"
+                for cid in sorted(_named_verified(self.book.requests.get(rid) or {}))}
+
+    def _undecided(self, m: MissionState, function: str) -> list[str]:
+        """The candidates of this mission's need that no founder act has decided: still withheld (an attach resolves
+        the need; a founder detach is a decision against that candidate) and named by no ask this mission waited on
+        that the founder rejected. Only these are ever asked about again for this need."""
+        rejected = self._rejected_for(m, function)
+        return [c for c in self._attach_candidates(m, function) if c not in rejected]
+
+    def _stands(self, ask: dict, undecided: list[str]) -> bool:
+        """Whether a body-level attach ask still stands for a need whose undecided candidates are ``undecided``: it
+        names one of them, and the founder can still answer it (open) or has said yes to it (approved; the signed
+        attach then resolves every mission waiting on it, since approving only records the answer). A rejected or
+        withdrawn ask does not stand, nor does an open or approved ask whose named candidates have all been decided
+        since (a founder detach decides a candidate without any answer to the ask)."""
+        rid = ask["request_id"]
+        answer = (self.book.answers.get(rid) or {}).get("answer")       # None while the ask is open
+        return rid not in self.book.withdrawn and answer in (None, "approve") \
+            and bool(_named_verified(ask) & set(undecided))
+
+    def _shared_ask_lapsed(self, m: MissionState) -> bool:
+        """Whether a mission waiting on a shared body-level ask must be asked about the rest of its need: the ask no
+        longer stands for it (``_stands``, the same rule that decides whether a mission arriving now would share it)
+        and a candidate remains undecided. The founder's answer to a shared ask is this mission's answer for exactly
+        what the ask named, as for its own ask; it decides nothing the ask did not name (the compiler's ask names its
+        best fit alone, while the blocker keeps every candidate). So the mission waits while the ask is open or
+        approved and names an undecided candidate. Once it does not (rejected, withdrawn unanswered, or every
+        candidate it named decided, answered or not), the mission is asked once more, only about the undecided
+        candidates. Being open is not standing: an open ask about a detached candidate is moot for this need."""
+        b = m.blocker
+        if b["type"] != "capability" or not b.get("shared_ask"):
+            return False
+        undecided = self._undecided(m, b["function"])
+        return bool(undecided) and not self._stands(self.book.requests[b["request_id"]], undecided)
+
+    def _shared_attach_ask(self, undecided: list[str]) -> str | None:
+        """A body-level attach ask already recorded (the Competency Compiler records one per method, for its best
+        fit) that stands for one of the undecided candidates (``_stands``). The mission waits on it, keeping every
+        candidate in its blocker, instead of asking the founder about the same attach a second time. A rejected or
+        withdrawn ask is never shared: this mission's need would then wait on a closed request that no open ask
+        names, and a reject given before this mission existed did not answer its need. Once shared, the founder's
+        answer to it is this mission's answer for what it named (``_shared_ask_lapsed``). Another mission's ask is
+        never shared either, since that mission may withdraw it."""
+        if not undecided:
+            return None
+        for event in self.journal.replay("decision.requested"):
+            ask = event.payload
+            if ask.get("kind") == "CAPABILITY_ATTACH" and ask.get("mission_id") is None \
+                    and self._stands(ask, undecided):
+                return ask["request_id"]
+        return None
+
     def _escalate_capability(self, m: MissionState, function: str, capability_id, purpose: str, now: datetime,
-                             *, awaiting: bool = False):
-        # ``awaiting``: a named, newly formed capability waits for its attach; that is a new ask, not the old one
+                             *, awaiting: bool = False, keep=()):
+        """Ask once about this need's undecided candidates. The blocker records every candidate the mission waited
+        on (``keep``: those of a lapsed blocker, no longer offered); what resolves it is ``_blocker_resolved``.
+        ``awaiting``: a named, newly formed capability waits for its attach; that is a new ask, not the old one."""
+        candidates = self._attach_candidates(m, function)
+        shared = self._shared_attach_ask(self._undecided(m, function))
         scope = {"function": function, **({"awaiting": capability_id} if awaiting else {})}
-        rid = self._capability_request(m, function, purpose, now, scope=scope)
+        rid = shared or self._capability_request(m, function, purpose, now, scope=scope)
+        candidates = list(dict.fromkeys([*candidates, *keep]))
         self._block(m, {"type": "capability", "function": function, "capability_id": capability_id,
                         "request_id": rid, "why": f"no attached capability for {function}",
-                        "reconsider": "a verified capability for this function is attached"})
+                        "reconsider": "a verified capability for this function is attached",
+                        **({"attach_candidates": candidates} if candidates else {}),
+                        **({"shared_ask": True} if shared else {})})
         return None
 
     def _escalate_human(self, m: MissionState, spec: dict, function: str, resource: str, purpose: str,
@@ -2111,18 +2675,25 @@ class MissionEngine:
         deficit_id = opened[-1]["deficit_id"] if opened else None
         routes = [{"route": e.payload["route"], "result": e.payload["result"]}
                   for e in self.journal.replay("genesis.route") if deficit_id and e.payload["deficit_id"] == deficit_id]
+        rejected = self._rejected_for(m, function)     # already answered for this need: listed, never offered again
+        listed = [c for c in self.registry.by_function(function) if c.capability_id not in rejected]
+        listed += [self.registry.manifests[cid] for cid in self._attach_candidates(m, function)
+                   if cid in self.registry.manifests and cid not in rejected
+                   and all(c.capability_id != cid for c in listed)]
         evidence = {"function": function, "required_by": purpose, "deficit_id": deficit_id,
                     "searched": routes or [{"route": "genesis", "result": "not available on this body"
                                             if self.genesis is None else "no route recorded"}],
                     "registered": [{"capability_id": c.capability_id, "state": self.registry.state[c.capability_id],
                                     **({"mechanism": _mechanism_summary(c.provenance)}
                                        if c.provider.startswith("installed:python:") else {})}
-                                   for c in self.registry.by_function(function)]}
+                                   for c in listed],
+                    **({"already_answered": [{"capability_id": cid, "request_id": rid, "answer": "reject"}
+                                             for cid, rid in rejected.items()]} if rejected else {})}
         engine = self.genesis.construction_engine(function) if self.genesis is not None else None
         if engine:   # a constructible function first needs its engine; both are attachable from this ask
             evidence["registered"] += [{"capability_id": c.capability_id, "state": self.registry.state[c.capability_id],
                                         "role": f"engine ({engine}) {function} is constructed over"}
-                                       for c in self.registry.by_function(engine)]
+                                       for c in self.registry.by_function(engine) if c.capability_id not in rejected]
         return {"resource": "capability", "evidence": evidence,
                 "expected_effect": f"the blocked step ({purpose}) proceeds once a verified capability for "
                                    f"{function} is attached",
@@ -2177,6 +2748,47 @@ class MissionEngine:
                           {"option": "do nothing: keep results with their gaps listed", "cost": "none",
                            "expected_effect": "results stay partial; every gap stays visible in each result"}]})
 
+    def _cognition_ask(self, m: MissionState, aid: str, receipt: dict, now: datetime) -> str | None:
+        """Goal gravity for the Mind: a persistent goal pulls the intelligence it needs. A cognition
+        receipt that abstained because the eligible families are built but not attached becomes one
+        ask naming them with their native-benchmark admission (greg/cognition/genome_library.py).
+        A family REJECTED or SUPERSEDED on its own geometry is listed, never recommended. Informational,
+        never a blocker; asking grants nothing: only Alfonso attaches, with ``greg attach``."""
+        from greg.cognition.genome_library import inventory
+        waiting = sorted({r["method"] for r in receipt.get("alternative_methods_considered") or []
+                          if not r.get("eligible") and str(r.get("reason", "")).startswith("state ")})
+        if not waiting:
+            return None
+        library = {e.genome_id: e for e in inventory()}
+        families = [{"capability": cid, "admission": library[cid].admission if cid in library else "NOT_INVENTORIED",
+                     "layer": library[cid].layer if cid in library else None,
+                     "detail": library[cid].detail[:200] if cid in library else "",
+                     "evidence_refs": list(library[cid].evidence_refs) if cid in library else []} for cid in waiting]
+        # never recommend a composition stage on its own: the compiler rejects it as a standalone decision, so
+        # the hook's admissible set follows the compiler's rule (review of #179, M2)
+        order = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY", "EXPERIMENTAL", "NOT_INVENTORIED")
+        admissible = sorted((f for f in families if f["admission"] in order), key=lambda f: order.index(f["admission"]))
+        best = admissible[0] if admissible else None
+        return self._request(
+            m, kind="CAPABILITY_ATTACH", scope_digest=sha256_json({"cognition": waiting}), action_id=aid,
+            why=f"{aid} needed {receipt.get('epistemic_class')} cognition; the eligible families are built and "
+                "verified but not attached, so the receipt abstained",
+            recommendation=(f"attach {best['capability']} (native-benchmark admission: {best['admission']}) with: "
+                            f"greg attach {best['capability']}") if best else
+                           "do not attach: every eligible family lost to a simpler method on its own benchmark; "
+                           "revise the mission's operation",
+            requested={"capabilities": waiting, "spend": "none requested"}, now=now,
+            resource={"resource": "capability",
+                      "evidence": {"families": families, "receipt": receipt.get("missing_information", [])[:3]},
+                      "expected_effect": "the next attempt is answered by the attached family and re-verified by the "
+                                         "independent checker; the mission's own success checks still decide",
+                      "uncertainty": "admission was measured on synthetic native benchmarks, not on this mission's data",
+                      "options": [{"option": f"greg attach {f['capability']}", "cost": "none in money",
+                                   "expected_effect": f"{f['capability']} becomes routable ({f['admission']})"}
+                                  for f in admissible[:3]] +
+                                 [{"option": "do nothing: the mission tries its other strategies", "cost": "none",
+                                   "expected_effect": "this step keeps abstaining"}]})
+
     def _spend_ask(self, m: MissionState, s: dict, outcome, routing_decision: dict) -> dict:
         """Section 60 for money: an approval that spends is a resource ask with its own evidence."""
         cost = float(s["cost_usd"])
@@ -2203,6 +2815,9 @@ class MissionEngine:
         to static strategies whose exact scope lies inside the cone: nothing is asked, nothing blocks,
         and the awaited strategy itself never runs here."""
         from greg.pipeline import resolve, BindingError
+        if self._unsettled(m) is not None:     # never dispatch past an unsettled interruption, whatever the path
+            resumed = self._resume_unsettled(m, now, displace=True)
+            return resumed if resumed is not None else {"state": "BLOCKED", "blocker": m.blocker}
         candidates = []
         records = routing.track_record(self.journal)
         value = float(m.spec.get("value_per_check_usd", 1.0))
@@ -2243,9 +2858,19 @@ class MissionEngine:
             if split:
                 why = (f"qualified intelligences disagree on {', '.join(split)}; GREG keeps every view and does not "
                        f"vote, so it cannot close on either; " + why)
+            tradeoffs = {a: r for a, r in sorted(m.failed.items()) if r.startswith("regressed ")}
+            routes = [s["action_id"] for s in m.spec["strategies"] if set(s["advances"]) & failing]
+            blamed = "; ".join(f"{a} {r.split(',')[0]}" for a, r in tradeoffs.items())
+            if tradeoffs and not split and routes and all(a in tradeoffs for a in routes):
+                why = ("every remaining route improves one check only by breaking another that already passed ("
+                       + blamed + "); GREG will not trade one for the other on its own")
+            elif tradeoffs and not split:
+                why += "; routes that broke a check which already passed are not repeated (" + blamed + ")"
             rid = self._request(m, kind="NO_STRATEGY", scope_digest=key, action_id=None, why=why,
                                 recommendation=("review both views and decide, or add an independent verifier that "
                                                 "can settle the question" if split else
+                                                "decide which check matters more, or add a strategy that satisfies "
+                                                "both" if tradeoffs and routes and all(a in tradeoffs for a in routes) else
                                                 "ask someone else in a new signed mission, do the work yourself, "
                                                 "or abandon" if declined else
                                                 "add or revise strategies, widen scope, or abandon the mission"),
@@ -2258,7 +2883,27 @@ class MissionEngine:
                                 evidence={"failing_checks": sorted(failing), "failed": dict(sorted(m.failed.items())),
                                           "excluded": dict(sorted(m.excluded.items())),
                                           **({"held_by_precondition": held} if held else {}),
+                                          **({"tradeoffs": tradeoffs} if tradeoffs else {}),
                                           **({"disagreement": split} if split else {})})
+            if m.actions_done and not held and not split:
+                # Every admissible strategy ran and these signed checks still fail: a failure closure. The
+                # separate process appraises it as it does an achievement, so settlement hears failures too.
+                # Not while qualified intelligences disagree on a failing check: GREG does not vote, so it closes
+                # on neither view, as a success or as a failure.
+                # A closure is identified by the actions it closes over: after the founder answers the ask with
+                # nothing new run, the mission re-closes over the same actions, which is the closure already
+                # recorded and appraised, not a second one (and not the same identity with a later time).
+                closure = [m.mission_id, "unmet", m.actions_done]
+                if self.journal.retained("mission.unmet", closure) is None:
+                    self.journal.record("mission.unmet", {
+                        "mission_id": m.mission_id, "failing_checks": sorted(failing),
+                        # the receipts of the observations it closes over, bound by the appraiser as for an
+                        # achievement (#173's closure-bound evidence)
+                        "evidence": [m.observations[c]["receipt"] for c in sorted(failing)
+                                     if (m.observations.get(c) or {}).get("receipt")],
+                        "actions_done": m.actions_done,
+                        "closure_rule": "every admissible strategy ran; these signed checks re-observed failing",
+                        "at": iso(now)}, key=closure)
             self._block(m, {"type": "decision", "request_id": rid, "why": "no admissible strategy",
                             "failing_checks": sorted(failing), "reconsider": "founder revises mission"})
             return {"state": "BLOCKED", "blocker": m.blocker}
@@ -2306,13 +2951,17 @@ class MissionEngine:
             bound_params = {**bound_params, "max_budget_usd": float(s.get("cost_usd", 0.0))}
         # Write-ahead: the exact proposal is on the ledger before the Gate is asked, so a body that dies inside
         # the dispatch finds it again on restart and settles it from the Gate's own record (_recover_dispatch).
+        # The exact scope the Gate derives below, paid budget state included (#157), so the intent names its proposal.
         scope = AuthorityOffice.scope_digest(mission_id=m.mission_id, capability_id=manifest.capability_id,
                                              params=bound_params, target=s["target"],
                                              consequence_class=manifest.consequence_class,
-                                             cost_usd=float(s.get("cost_usd", 0.0)))
+                                             cost_usd=float(s.get("cost_usd", 0.0)), spent_usd=m.committed_usd,
+                                             budget_usd=m.cone.budget_usd)
+        budget_state = {"spent_usd": m.committed_usd, "budget_usd": m.cone.budget_usd}
         self.journal.record("mission.dispatching", {
             "mission_id": m.mission_id, "action_id": aid, "attempt": attempt, "capability": manifest.capability_id,
-            "scope_digest": scope, "proposal_id": AuthorityOffice.proposal_id(scope, attempt)},
+            "scope_digest": scope, "proposal_id": AuthorityOffice.proposal_id(scope, attempt),
+            **({"budget_state": budget_state} if float(s.get("cost_usd", 0.0)) > 0 else {})},
             key=[m.mission_id, aid, attempt, scope])
         # A founder-signed SOP pre-approval covers exactly this step's final scope: the one dispatched,
         # after any budget cap, so a pre-approval never covers a scope it did not name.
@@ -2324,9 +2973,16 @@ class MissionEngine:
             evidence_refs=evidence + [r for r in sources if r not in evidence], attempt=attempt,
             spent_usd=m.committed_usd, approved_scopes=m.approved_scopes,
             evidence_confidence=float(s.get("evidence_confidence", 1.0)), signed_scopes=signed)
+        if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"
+                and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):
+            # Extracted from #157: the Gate completed collection, but the cancellable worker stopped after
+            # possible partial effects and spend. Keep its receipt and route it through the same
+            # no-blind-retry reconciliation as any uncertain act, with the signed cap reserved.
+            outcome.status = "UNCERTAIN"
+            outcome.reasons = ["worker execution interrupted; partial outcome and spend require reconciliation"]
         return self._record_outcome(m, s, manifest, outcome, attempt=attempt, routing_decision=routing_decision,
                                     input_bindings=input_bindings, bindings=bindings, budget_capped=budget_capped,
-                                    prepare_for=prepare_for, now=now)
+                                    prepare_for=prepare_for, now=now, params=bound_params, budget_state=budget_state)
 
     def _recover_dispatch(self, m: MissionState, now: datetime) -> dict | None:
         """Settle a dispatch this body began but never recorded, before anything else is decided.
@@ -2369,19 +3025,26 @@ class MissionEngine:
             return {**self._record_outcome(m, s, manifest, outcome, attempt=intent["attempt"],
                                            routing_decision={"chosen": s["action_id"], "recovered": True},
                                            input_bindings=[], bindings=[], budget_capped=None, prepare_for=None,
-                                           now=now), "recovered": intent["proposal_id"]}
+                                           now=now, budget_state=intent.get("budget_state")),
+                    "recovered": intent["proposal_id"]}
         return None
 
     def _record_outcome(self, m: MissionState, s: dict, manifest, outcome, *, attempt, routing_decision: dict,
-                        input_bindings: list, bindings: list, budget_capped, prepare_for, now: datetime) -> dict:
-        """Record one Gate outcome of strategy ``s`` and decide what the mission does next."""
+                        input_bindings: list, bindings: list, budget_capped, prepare_for, now: datetime,
+                        params: dict | None = None, budget_state: dict | None = None) -> dict:
+        """Record one Gate outcome of strategy ``s`` and decide what the mission does next. ``params``: the bound
+        params the Gate was asked with (a recovered dispatch's outcome never needs them: it is never a decision)."""
         aid = s["action_id"]
+        bound_params = s.get("params", {}) if params is None else params
         record = {"mission_id": m.mission_id, "action_id": aid, "attempt": attempt, "status": outcome.status,
                   "reasons": [str(r)[:300] for r in outcome.reasons], "receipt": outcome.receipt_hash,
                   "capability": manifest.capability_id, "route": manifest.route,
                   "cost_usd": outcome.cost_usd if outcome.status == "DONE" else 0.0,
                   "scope_digest": outcome.scope_digest, "routing": routing_decision, "at": iso(now),
                   "input_bindings": input_bindings}
+        if float(s.get("cost_usd", 0.0)) > 0:
+            # The paid budget state the Gate bound into this scope (#157), so a separate appraiser re-derives it.
+            record["budget_state"] = budget_state or {"spent_usd": m.committed_usd, "budget_usd": m.cone.budget_usd}
         if outcome.status == "DONE" and float(s.get("cost_usd", 0.0)) > 0:
             record.update(metered_spend(manifest.capability_id, outcome.output, outcome.cost_usd))
         if outcome.status == "UNCERTAIN":
@@ -2401,14 +3064,26 @@ class MissionEngine:
             record["budget_capped"] = budget_capped
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION") and prepare_for is not None:
             return {"state": "NOTHING_TO_PREPARE"}    # preparation never asks; nothing was dispatched
+        if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION") and manifest.capability_id == "mcp.act":
+            from greg.mcp_tools import reach_problem
+            problem = reach_problem(bound_params)
+            if problem is not None:          # refused before anyone is asked: the signed scope cannot run as written
+                record["status"] = "REFUSED"
+                record["reasons"].append(f"the signed mcp.act scope cannot run: {problem}")
+                self.journal.record("mission.action", record, key=[m.mission_id, aid, attempt, "malformed"])
+                return {"state": "REPLANNING", "action": aid}
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):
             if outcome.scope_digest in m.rejected_scopes:
                 record["status"] = "REFUSED"
                 record["reasons"].append("founder already rejected this exact scope")
                 self.journal.record("mission.action", record, key=[m.mission_id, aid, attempt, "rejected"])
                 return {"state": "REPLANNING", "action": aid}
-            rid = self._request(m, kind="APPROVAL", scope_digest=outcome.scope_digest, action_id=aid,
-                                why="; ".join(outcome.reasons)[:400],
+            move = self.office.scope_digest(mission_id=m.mission_id, capability_id=manifest.capability_id,
+                                            params=bound_params, target=s["target"],
+                                            consequence_class=manifest.consequence_class,
+                                            cost_usd=float(s.get("cost_usd", 0.0)))
+            rid = self._request(m, kind="APPROVAL", scope_digest=outcome.scope_digest, move_digest=move,
+                                action_id=aid, why="; ".join(outcome.reasons)[:400],
                                 recommendation=f"approve {aid} ({manifest.capability_id} on {s['target']}) "
                                                f"at ${s.get('cost_usd', 0.0)}: {s.get('rationale', '')}"[:400],
                                 alternatives=[x["action_id"] for x in m.spec["strategies"] if x["action_id"] != aid][:5]
@@ -2416,6 +3091,8 @@ class MissionEngine:
                                 requested={"capability": manifest.capability_id, "target": s["target"],
                                            "consequence_class": manifest.consequence_class,
                                            "cost_usd": s.get("cost_usd", 0.0),
+                                           # what the bound scope (the one the digest covers) lets it touch
+                                           **exact_reach(manifest.capability_id, bound_params),
                                            **({"spend": f"${float(s['cost_usd']):.2f} for this one action"}
                                               if float(s.get("cost_usd", 0.0)) > 0 else {})},
                                 now=now, resource=self._spend_ask(m, s, outcome, routing_decision)
@@ -2435,35 +3112,23 @@ class MissionEngine:
                     self._schedule(m, now, delay)
                 return {"state": "RETRYING", "action": aid, "why": "read-only idempotent capability",
                         "attempt": attempt, "retry_in_seconds": delay}
-            # One reconciliation per dispatch: the request names this attempt's proposal and grant, so the answer
-            # settles exactly this dispatch and a later uncertain dispatch opens its own request.
-            dispatch = {"attempt": attempt, "proposal_id": outcome.proposal_id, "grant_id": outcome.grant_id}
-            reserved = record["reserved_usd"]
-            recommendation, booked_by_answer = reconciliation_terms(manifest.capability_id, reserved)
-            rid = self._request(m, kind="RECONCILIATION", scope_digest=outcome.scope_digest, action_id=aid,
-                                why="an action may or may not have executed before an interruption",
-                                recommendation=recommendation,
-                                alternatives=["reconcile_executed", "reconcile_not_executed"],
-                                requested={"action_id": aid, **dispatch}, now=now, instance=dispatch,
-                                evidence={"dispatch": dispatch, "reasons": record["reasons"][:3],
-                                          "reserved_usd": reserved,
-                                          "booked_usd_by_answer": booked_by_answer,
-                                          "budget": {"spent_usd": m.spent_usd, "budget_usd": m.cone.budget_usd}})
-            self._block(m, {"type": "reconciliation", "request_id": rid, "action_id": aid, **dispatch,
-                            "scope_digest": outcome.scope_digest, "capability": manifest.capability_id,
-                            "why": "uncertain completion; no blind retry",
-                            "reconsider": "founder reconciliation decision"})
-            return {"state": "BLOCKED", "blocker": m.blocker}
+            return self._settle_uncertain(m, s, manifest, record, now)
         if outcome.status == "DONE" and isinstance(outcome.output, dict) and outcome.output.get("access_gap"):
             self._access_ask(m, aid, manifest, outcome.output["access_gap"], now)
+        # A plain cognition receipt that abstained because built families are unattached (PR #155 lineage):
+        # one informational attach ask. Compiler deficits naming a missing function go to Genesis below.
+        if outcome.status == "DONE" and isinstance(outcome.output, dict) \
+                and outcome.output.get("abstention_state") == "CAPABILITY_DEFICIT":
+            self._cognition_ask(m, aid, outcome.output, now)
         deficit = outcome.output.get("capability_deficit") if outcome.status == "DONE" and \
             isinstance(outcome.output, dict) and outcome.output.get("state") == "CAPABILITY_DEFICIT" else None
         if isinstance(deficit, dict) and deficit.get("function"):
             # Directive 2026-10-07 section 24: no current intelligence fits the residual geometry, so the one
             # Capability Genesis loop searches for it under this mission's authority, else asks the founder once.
             # The deficit is the missing function, not the (attached) solver that reported it: only a capability
-            # attached for that function, or a founder answer, clears the blocker.
-            if self._deficit(m, {"function": deficit["function"]}, now,
+            # attached for that function or one of the candidates Genesis named for it clears the blocker.
+            cognition = {**deficit, "acquisition_candidates": outcome.output.get("acquisition_candidates") or []}
+            if self._deficit(m, {"function": deficit["function"]}, now, cognition=cognition,
                              purpose=f"cognition for {deficit.get('purpose', 'a cognitive request')}"[:200]) is None:
                 return {"state": "BLOCKED", "blocker": m.blocker}
         # DONE: re-observe next tick to verify the effect in the world; REFUSED/

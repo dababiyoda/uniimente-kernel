@@ -26,7 +26,10 @@ Nothing in the chain is a function emitting a success message; every stage is th
 10. Proof classification: VEPMC stays 0; the sandbox whole-machine diagnostic counts 1.
 
 The worker is a deterministic local CLI test double (``tests/one_machine_worker.py``), declared as
-such; the organs are real. Requires the four UNIIMENTE_* organ variables (see test_greg_organs.py).
+such and unreviewed, so the body is initialized with the founder's ``worker_confinement: supervised``
+setting: the worker runs under process supervision, Landlock-confined to its clone where the host has
+Landlock (#173's grants; the stronger confinement applies), and its retained evidence says which, and that
+its network was not confined. A default body refuses it. The organs are real. Requires the four UNIIMENTE_* organ variables (see test_greg_organs.py).
 """
 from __future__ import annotations
 
@@ -158,7 +161,7 @@ def test_one_signed_mission_runs_the_whole_machine_across_processes(tmp_path):
     tools.mkdir()
     worker = tools / "worker.py"
     shutil.copy(KERNEL / "tests" / "one_machine_worker.py", worker)
-    home, _, _, _ = make_body(tmp_path, read_roots=[data, *organ_roots(organs)])
+    home, _, _, _ = make_body(tmp_path, read_roots=[data, *organ_roots(organs)], worker_confinement="supervised")
     key = tmp_path / "founder.pem"
     log = tmp_path / "body.log"
     spec = templates.one_machine(problem_id="staff-om", data=STAFFING, sandbox_repo=str(repo), organs=organs,
@@ -237,6 +240,11 @@ def test_one_signed_mission_runs_the_whole_machine_across_processes(tmp_path):
     assert dispatches(home, mid, "commission") == ["UNCERTAIN", "DONE"]   # interrupted, then once after reconciling
     assert closed["recovered"], "the restart was recorded as a recovery"
     [commission] = done(closed["actions"], "commission")
+    supervision = json.loads((order_dir / "evidence.json").read_text())["summary"]["worker"]["isolation"]
+    assert supervision["mode"] == "supervised"
+    from greg import isolation
+    assert supervision["filesystem"].startswith(                     # exactly what applied (#173 where available)
+        "Landlock-confined" if isolation.available().get("available") else "NOT OS-confined"), supervision
     assert commission["bindings"][0]["from_check"] == "answered"
 
     # 7. Independent verification in separate processes.

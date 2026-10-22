@@ -37,6 +37,40 @@ Founder-intent and deliberation JSON were validated using the invoked protocol's
 and exactly two strengthening passes. The five decision perspectives are parent
 self-review, distinct from the independent workers identified above.
 
+## 2026-10-22: two real Claude Code cloud sessions (#197)
+
+Issue #197 handed two real defects to two fresh Claude Code cloud sessions. They were started by the integration
+owner `session_01FBS4KNJR59nSbdGbxo8Mbx`, with the candidate checked out at `9478aaf8`. Each prompt named only its
+task on #197 and said "follow the repository's own entry instructions". Neither prompt mentioned #89, #96,
+START_HERE or the other session.
+
+- **Task A** (`session_01CcMMcMVNb28chWHspMfCEj`): the Mac runbook (`greg/FIRST_MISSION.md`) installed #122's
+  stale branch.
+- **Task B** (`session_01YY3PSpQdRnfUWNam2cUwzf`): the review-branch drift guard covered only the Chromebook
+  surfaces.
+
+The two tasks overlap. B's test has to fail on the file A fixes.
+
+Observed, from the #197 comments and the sessions' tool calls:
+
+| Measure | Result |
+|---|---|
+| Found Discussion #89 unaided | both, through the public REST API line now in START_HERE. The 2026-10-21 sandbox got HTTP 400 at this step. |
+| Found START_HERE and board #96 unaided | both |
+| Detected the overlap before editing | both. Each claim named the other task's file and proposed the same split: A owns the runbook, B owns the test. |
+| Claim race | the claims landed 22 s apart (02:49:30Z, 02:49:52Z), so B's claim says no A claim existed. B stated its own time wrongly (02:55Z) and corrected both points in its handoff after re-reading the thread before committing. Advisory claims are not atomic, as START_HERE says. |
+| Scope discovered beyond the task | B found a third stale surface (`docs/opus-maximus/MISSION_CONTROL_OPERATIONS.md`) and left it unassigned for the integrator. The integrator assigned it to A, and A acknowledged and fixed it. |
+| Duplicate edits | 0 |
+| Founder interventions | 0. The integrator posted one decision (split acknowledged, third surface assigned, intake order) and sent one peer message pointing A to it. |
+| Handoffs | both complete: product delta, base/head, commands and results, limits, next owner, claim released. A also added a v2 receipt to #198 after its first receipt check failed. |
+| Receiver resume | the integrator resumed both handoffs. #198 (`162e388b`), then #199 (`70b1f21a`), merged into the candidate as `4a435ee2` / `ba4253e3`. `tests/unit/test_greg_chromebook_install.py`: 18 passed. #199 was red by design until #198 landed, as both handoffs said. |
+
+Limits:
+- The receiver was the integrator session, not a third fresh session. The 2026-10-21 sandbox covered a fresh receiver.
+- Both tasks were small and documentation/test only.
+- Two sessions are one data point for the five-PR pilot.
+- No client outside Claude Code cloud sessions was tested.
+
 ## What the evidence proves
 
 Unit tests demonstrate metadata parsing and refusal behavior: exact event refs,

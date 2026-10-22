@@ -5,8 +5,9 @@ the sha256 of #189's harness and the sha256 of the mechanism, its two call sites
 comes before any stress mission or holdout instance of this experiment is run. `experiment.py` refuses to run if
 any of them differs.
 
-**Base:** the integration owner's joined head `5492b07b` on `claude/greg-full-machine-completion-whgiee`, which
-contains #189 `93badaff` and #179 `866d4770`, merged into `claude/antifragility-v3-condition-competence`.
+**Base:** the integration owner's final joined head `9e12b9a6` on `claude/greg-full-machine-completion-whgiee`
+(#196: #189 `93badaff`, #179 `866d4770`, #168, the operation re-admission, P6 joined v1, #201's evidence-soundness
+patch), named for this freeze by the owner on 2026-10-22, merged into `claude/antifragility-v3-condition-competence`.
 
 - **Intent:** `INTENT-20261001-greg-seed-genome` §14, which requires "bounded stress, coupled to a verified learning
   mechanism, produces a subsequent measurable improvement relative to an appropriate control, after counting stress

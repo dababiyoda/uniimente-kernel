@@ -43,6 +43,12 @@ GENOMES = {
     "develop_ca_repair": (SIMULATED, "seeded elementary-CA space-time patterns with erased holes; truth is the hidden "
                                      "original pattern"),
     "basal_breaker": (SIMULATED, "seeded up/outage dependency processes; truth is the hidden outage tape"),
+    "basal_cusum_detect": (SIMULATED, "seeded Gaussian or Student-t streams with a planted mean shift; truth is the "
+                                      "hidden change point"),
+    "basal_hamming_correct": (SIMULATED, "seeded random data blocks through a simulated bit-flip channel; truth is the "
+                                         "hidden original data"),
+    "control_robust_tube": (SIMULATED, "seeded linear plant models with a declared disturbance box; truth is the exact "
+                                       "worst case over every disturbance vertex sequence of the model"),
     "basal_hysteresis": (SIMULATED, "seeded two-level regime signals; truth is the hidden regime tape"),
     "basal_kalman": (SIMULATED, "seeded DWNA target tracks; truth is the hidden true track"),
     "basal_pid": (SIMULATED, "seeded FOPDT plant simulations"),

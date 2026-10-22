@@ -32,12 +32,17 @@ EXECUTED_ON_GREG = {
                             "search for Hex moves) and cognition.formal_property_search (counterexample search over a "
                             "typed expression language) are different search mechanisms, not graph path search"),
     "cortex.control.feedback": (("cognition.control", "cognition.basal_pid", "cognition.control_mpc",
-                                 "cognition.pid_simopt"),
-                                "clamped PID step, SIMC PI tuning, simulation-optimised PI tuning and box-constrained "
-                                "linear MPC"),
+                                 "cognition.pid_simopt", "cognition.control_robust_tube"),
+                                "clamped PID step, SIMC PI tuning, simulation-optimised PI tuning, box-constrained "
+                                "linear MPC, and finite-horizon tube MPC (LQR ancillary feedback, exact error-reach "
+                                "tightening) robust to a declared disturbance box on a declared linear model; no "
+                                "terminal invariant set and no real plant"),
     "cortex.sequential.bandit": (("cognition.basal_bandit", "cognition.sequential"),
                                  "Thompson sampling and finite-horizon MDP backward induction"),
-    "cortex.pattern.anomaly": (("cognition.pattern",), "population z-score anomalies (descriptive only)"),
+    "cortex.pattern.anomaly": (("cognition.pattern", "cognition.basal_cusum_detect"),
+                               "population z-score anomalies (descriptive only) and two-sided CUSUM mean-shift "
+                               "detection on a supplied numeric stream with a declared in-control model "
+                               "(signal-level only: GREG has no physical sensors)"),
     "cortex.information.voi": (("cognition.information", "cognition.decision_preposterior",
                                 "cognition.info_experiment"),
                                "scenario value of information, beta-binomial preposterior analysis and greedy "

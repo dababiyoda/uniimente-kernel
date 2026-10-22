@@ -49,7 +49,7 @@ from events.spine import EventError
 from greg import asks, dataplane, path as devpath
 from greg.authority import PRINCIPAL, AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityError, CapabilityManifest
-from greg.founder import CLOCK_SKEW, MAX_TTL, instant, key_id, signing_bytes, spent_nonce
+from greg.founder import CLOCK_SKEW, MAX_TTL, instant, key_id, signed_before_delegation, signing_bytes, spent_nonce
 from greg.journal import SOURCE, iso
 from greg.missions import TERMINAL, MissionBook, MissionError, evaluate_predicate, first_choice, measured, \
     pursued_checks, signed_answer, strategy_scope
@@ -169,6 +169,8 @@ def _verify_envelope(payload: dict, founders: dict, devices: dict, body_id: str,
             when = at or instant(env["issued_at"])
             if env["kind"] not in grant["kinds"] or not when < instant(grant["expires_at"]):
                 return None
+            if signed_before_delegation(grant, instant(env["issued_at"])):   # an old token never reactivates
+                return None
             public, principal = grant["public_key"], "device:" + grant["label"]
         else:
             return None
@@ -233,6 +235,11 @@ class FounderFacts:
     book: Any = None                                    # MissionBook folded to the end of the ledger (answers
                                                         # counted at their signed DECISION's acceptance)
     manifests: dict = field(default_factory=dict)       # capability id -> manifest, at the end of the ledger
+    devices: dict = field(default_factory=dict)         # device key id -> delegation in force at the end of the
+                                                        # ledger; a re-delegation carries signed_not_before (its
+                                                        # accepted_at), as greg.body.device_delegations does
+    revoked_devices: set = field(default_factory=set)   # device key ids a signed DEVICE_REVOKE revoked, or a
+                                                        # revocation record removed while delegated
 
     def open_goals(self) -> dict:
         return {g: self.specs[g] for g in self.admitted if g not in self.closed}
@@ -261,12 +268,12 @@ def founder_facts(ledger, *, body_id: str | None = None) -> FounderFacts:
     if not ok:
         raise EventError(why)
     founders: dict[str, str] = {}
-    devices: dict[str, dict] = {}
     seen_nonces: set[str] = set()
     book = MissionBook(_NoEvents(), verify_answers=True)
     manifests = _manifests_builtin()
     builtin = set(manifests)
     facts = FounderFacts(body_id=body_id or "", book=book, manifests=manifests)
+    devices = facts.devices
     book._signed, book._signed_at = facts.signed, facts.signed_at   # grown in this pass, as each command verifies
     rooted = False
     for rec in ledger.records:
@@ -292,8 +299,10 @@ def founder_facts(ledger, *, body_id: str | None = None) -> FounderFacts:
             facts.restored_at = _when(p.get("restored_at")) or datetime.max.replace(tzinfo=timezone.utc)
         elif kind == "greg.device.revoked":
             # The body's own rule (greg.body.device_delegations): any revocation record removes the device. It only
-            # ever narrows who may sign; a restore voids every delegation this way (#186).
-            devices.pop(p.get("device_key_id"), None)
+            # ever narrows who may sign; a restore voids every delegation this way (#186). Delegated again, the key
+            # carries signed_not_before, as the body's rule gives it.
+            if devices.pop(p.get("device_key_id"), None) is not None:
+                facts.revoked_devices.add(p.get("device_key_id"))
         if kind == "greg.founder.enrolled":
             if not rooted:                     # only the first enrollment is the root; later ones are data
                 founders[p["key_id"]] = p["public_key"]
@@ -449,12 +458,22 @@ def _founder_fact(facts: FounderFacts, p: dict, env: dict, ckind: str, digest_: 
     body = env["body"]
     try:
         if ckind == "ROTATE_FOUNDER_KEY" and principal == "founder":
+            new = key_id(body["new_public_key"])
+            # as Body._dispatch refuses it: rotated in, a device key's unexpired old tokens would verify as founder's
+            if new in devices or new in facts.revoked_devices:
+                facts.refused[digest_] = "rotation to a key that is or was a delegated device key"
+                return
             founders.pop(env["founder_key_id"], None)
-            founders[key_id(body["new_public_key"])] = body["new_public_key"]
+            founders[new] = body["new_public_key"]
         elif ckind == "DEVICE_ENROLL" and principal == "founder":
-            devices[key_id(body["public_key"])] = {"public_key": body["public_key"], "label": str(body["label"]),
-                                                   "kinds": tuple(body["kinds"]), "expires_at": body["expires_at"]}
+            kid = key_id(body["public_key"])
+            grant = {"public_key": body["public_key"], "label": str(body["label"]), "kinds": tuple(body["kinds"]),
+                     "expires_at": body["expires_at"]}
+            if kid in facts.revoked_devices:   # re-delegated: nothing signed before its acceptance verifies
+                grant["signed_not_before"] = p.get("accepted_at")
+            devices[kid] = grant
         elif ckind == "DEVICE_REVOKE" and principal == "founder":
+            facts.revoked_devices.add(body.get("device_key_id"))
             devices.pop(body.get("device_key_id"), None)
     except (KeyError, TypeError, ValueError):
         return

@@ -28,6 +28,7 @@ FAILURES = 'tests/unit/test_greg_failure_closure.py'
 ADVERSARIAL = 'tests/integration/test_greg_adversarial_machine.py'
 RECONCILIATION = 'tests/unit/test_greg_mission_reconciliation.py'
 RESERVATION = 'tests/unit/test_greg_reservation_release.py'
+REDELEGATION = 'tests/unit/test_greg_device_redelegation.py'
 MUTANTS = [
  ('optimality not attacked by a second engine', 'greg/cognition/verification.py',
   'checks["optimality_cross_engine"] = better == "unsat"', 'checks["optimality_cross_engine"] = True',
@@ -291,8 +292,8 @@ MUTANTS = [
   'test_a_seed_someone_else_built_cannot_write_outside_or_plant_keys', RESTORE),
  # The restore meets PR #184's founder-answer re-verification (item 7): its voids hold there too.
  ("the answer check honours a phone the restore voided", 'greg/goal_gravity.py',
-  '            devices.pop(p.get("device_key_id"), None)\n        if kind == "greg.founder.enrolled":',
-  '            pass\n        if kind == "greg.founder.enrolled":',
+  'if devices.pop(p.get("device_key_id"), None) is not None:',
+  'if devices.get(p.get("device_key_id")) is not None:',
   'test_a_restores_voids_hold_where_founder_answers_are_re_verified[voided_phone]', RESTORE),
  ('the answer check counts a command issued before the restore', 'greg/goal_gravity.py',
   '    if facts.restored_at is not None and (issued is None or issued < facts.restored_at):',
@@ -385,6 +386,27 @@ MUTANTS = [
   'settled.update(cost_cap_usd=worst, provider_reported_usd=None, spend_basis="signed_cap: " + (',
   'test_a_receipted_interrupt_carries_its_provider_report_into_the_settlement[reconcile_not_executed]',
   RECONCILIATION),
+ # An old token of a re-delegated device key never reactivates (the #173 port branch's review, 855b668).
+ ('the founder key rotates to a revoked device key', 'greg/body.py',
+  'if key_id(new_hex) in {e.payload["device_key_id"] for e in self.journal.replay("device.enrolled")}:',
+  'if key_id(new_hex) in self.device_keys():',
+  'test_the_founder_key_never_rotates_to_a_device_key_so_its_old_tokens_stay_dead[True]', REDELEGATION),
+ ('founder_facts honours a rotation to a revoked device key', 'greg/goal_gravity.py',
+  'if new in devices or new in facts.revoked_devices:', 'if new in devices:',
+  'test_the_founder_key_never_rotates_to_a_device_key_so_its_old_tokens_stay_dead[True]', REDELEGATION),
+ ('an unreadable re-delegation anchor verifies everything', 'greg/founder.py',
+  '    except (TypeError, ValueError):\n        return True', '    except (TypeError, ValueError):\n        return False',
+  'test_the_body_refuses_every_command_of_a_re_delegation_recorded_with_no_time[False]', REDELEGATION),
+ ('founder_facts gives a re-delegation no anchor', 'greg/goal_gravity.py',
+  'grant["signed_not_before"] = p.get("accepted_at")', 'pass',
+  'test_founder_facts_never_counts_an_old_token_smuggled_in_as_accepted[while_it_stood_revoked]', REDELEGATION),
+ ('founder_facts ignores the anchor it carries', 'greg/goal_gravity.py',
+  'if signed_before_delegation(grant, instant(env["issued_at"])):', 'if False:',
+  'test_a_token_issued_at_the_re_delegation_instant_verifies_and_one_a_microsecond_earlier_does_not',
+  REDELEGATION),
+ ('founder_facts forgets a revocation record when the key is delegated again', 'greg/goal_gravity.py',
+  'facts.revoked_devices.add(p.get("device_key_id"))', 'pass',
+  'test_a_key_delegated_again_after_a_revocation_record_carries_the_anchor_in_both_derivations', REDELEGATION),
 ]
 
 

@@ -215,12 +215,15 @@ def device_delegations(journal: Journal) -> dict[str, dict]:
     re-delegation but before this body recorded it, or by a device whose clock runs behind this body's, is
     refused and must be signed again. A token whoever held the key forward-dated is not one this rule can tell
     from a new one: re-delegate only a key that was not compromised; a compromised device gets a new key.
-    greg.appraisal._devices_before re-derives the same rule."""
+    A re-delegation record with no readable ``at`` (a legacy or foreign record) refuses everything the key signs
+    (greg.founder.signed_before_delegation). greg.appraisal._devices_before re-derives the same rule, and
+    greg.goal_gravity.founder_facts from the signed commands, anchored at the re-delegation's ``accepted_at`` (the
+    same clock reading as ``at``); the mission fold reads it there."""
     devices, revoked = {}, set()
     for event in journal.replay("device."):
         if event.type == "greg.device.enrolled":
             kid = event.payload["device_key_id"]
-            devices[kid] = ({**event.payload, "signed_not_before": event.payload["at"]} if kid in revoked
+            devices[kid] = ({**event.payload, "signed_not_before": event.payload.get("at")} if kid in revoked
                             else event.payload)
         elif event.type == "greg.device.revoked":
             revoked.add(event.payload["device_key_id"])
@@ -689,7 +692,10 @@ class Body:
             grant = validate_device_grant(body, now=self.clock())
             if grant["device_key_id"] in self.enrolled_keys() or grant["device_key_id"] in self.device_keys():
                 raise MissionError("key already enrolled; revoke before re-delegating")
-            self.journal.record("device.enrolled", {**grant, "command_digest": digest, "at": iso(self.clock())},
+            # ``at`` is the instant this command is accepted at (``accepted_at``): a re-delegation's signed_not_before
+            # (device_delegations), and founder_facts reads the same instant from the acceptance record.
+            self.journal.record("device.enrolled", {**grant, "command_digest": digest,
+                                                    "at": iso(now if now is not None else self.clock())},
                                 key=[grant["device_key_id"], digest])
             return {"device_key_id": grant["device_key_id"], "kinds": grant["kinds"], "expires_at": grant["expires_at"]}
         if kind == "DEVICE_REVOKE":
@@ -706,6 +712,10 @@ class Body:
                 raise MissionError(str(exc)) from None
         if kind == "ROTATE_FOUNDER_KEY":
             new_hex = body["new_public_key"]
+            # signed_not_before guards a key only while it is a device key: rotated in, a key that is or was a
+            # delegated device would make its unexpired device tokens verify again, as founder commands.
+            if key_id(new_hex) in {e.payload["device_key_id"] for e in self.journal.replay("device.enrolled")}:
+                raise MissionError("this key is or was a delegated device key: rotate the founder key to a new key")
             old = next(iter(self.enrolled_keys()))
             self.journal.record("founder.key_rotated", {"old_key_id": old, "new_key_id": key_id(new_hex),
                                                         "new_public_key": new_hex, "command_digest": digest},

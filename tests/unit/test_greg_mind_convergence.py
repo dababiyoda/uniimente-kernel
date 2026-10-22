@@ -303,44 +303,58 @@ def test_the_four_operation_verdicts_are_re_admitted_on_the_merged_solvers():
     information and probabilistic verdicts were measured on code that has since changed, and code binding routed them
     as UNEVALUATED (fourth review, R2: only each solver function changed; #159's helpers and the unchanged contracts
     functions they reach are newly reached members). Next-wave item 2 re-measured them once on the merged code,
-    pre-registered at 462bd98 on fresh seeds 2600-2629: control, game and information route DEFAULT_FOR_GEOMETRY at
-    the closure they were measured on; probabilistic did not replicate (EXPERIMENTAL) and leaves routing. The
-    2026-10-14 verdicts stay in history and, read alone at the merged code, still need re-admission.
+    pre-registered at 462bd98 on fresh seeds 2600-2629: control, game and information DEFAULT_FOR_GEOMETRY;
+    probabilistic did not replicate (EXPERIMENTAL). The 2026-10-14 verdicts stay in history and, read alone at the
+    merged code, still need re-admission.
 
     Joined with Track B (#180-#189): operation admission v3 (2026-10-16, on the converged tree) sits between the two
     in each history, and the round-2 binding rule (review of #179, N4) applies. SOLVERS takes non-literal updates and
-    the 462bd98 run recorded no runtime dispatch, so control, game and information, measured on exactly the joined
-    closure, route as UNEVALUATED until a re-admission records the function SOLVERS held at runtime. Probabilistic's
-    EXPERIMENTAL persists."""
+    the 462bd98 run recorded no runtime dispatch, so read alone its control, game and information verdicts, measured
+    on exactly the joined closure, route as UNEVALUATED. The joined-tree re-admission (2026-10-22-joined-operations,
+    pre-registered at 244b652c, frozen at 3520efe6, seeds 5920-5949) recorded the function SOLVERS held at runtime:
+    control, game and information replicate DEFAULT_FOR_GEOMETRY and route; probabilistic reads NICHE_CAPABILITY
+    (it did not replicate the 2026-10-21 EXPERIMENTAL) and routes as NICHE."""
     import json
     import sys
     from greg.cognition import compiler as C
     sys.path.insert(0, str(ROOT / "scripts"))
     import build_mind_evidence_index as B
     run = "docs/evidence/greg-genome-admission/2026-10-21-operations/results.json"
+    joined = "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/results.json"
     v3 = "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json"
     lineage = "docs/evidence/greg-genome-admission/2026-10-14/results.json"
     results, before = json.loads((ROOT / run).read_text()), json.loads((ROOT / lineage).read_text())
+    rejoined = json.loads((ROOT / joined).read_text())
     assert results["pre_registered"] is True and results["source_commit"] == results["freeze_commit"]
     assert results["source_commit"].startswith("462bd98")
     assert "solver_closures" not in results          # the run recorded no runtime dispatch
+    assert rejoined["pre_registered"] is True and rejoined["source_commit"] == rejoined["freeze_commit"]
+    assert rejoined["source_commit"].startswith("3520efe6") and rejoined["seed_refusals"] == []
     index = C.evidence_index()
     solver = {"control": "control", "game": "game", "information": "information", "probabilistic": "bayesian"}
     expected = {"control": "DEFAULT_FOR_GEOMETRY", "game": "DEFAULT_FOR_GEOMETRY",
                 "information": "DEFAULT_FOR_GEOMETRY", "probabilistic": "EXPERIMENTAL"}
+    now_expected = {"control": "DEFAULT_FOR_GEOMETRY", "game": "DEFAULT_FOR_GEOMETRY",
+                    "information": "DEFAULT_FOR_GEOMETRY", "probabilistic": "NICHE_CAPABILITY"}
     for family, want in expected.items():
         row = index["operations"][family]
-        assert (row["evidence"], row["raw_status"]) == (f"{run}#families.{family}", want), family
-        assert [h["evidence"].partition("#")[0] for h in row["history"]][-3:] == [lineage, v3, run], family
-        # the run measured the joined tree's solver closure exactly
+        assert (row["evidence"], row["raw_status"]) == (f"{joined}#families.{family}", now_expected[family]), family
+        assert [h["evidence"].partition("#")[0] for h in row["history"]][-4:] == [lineage, v3, run, joined], family
+        assert results["families"][family]["status"] == want, family
+        # both re-admissions measured the joined tree's solver closure exactly
         assert row["code"]["closure_sha256"] == C.solver_code(family)["closure_sha256"], family
-        status, why = C.operation_status(family, row)
+        assert rejoined["solver_closures"][family]["function"] == solver[family], family
+        assert row["code"]["dispatched"]["verified_at_runtime"] is True, family
+        assert C.operation_status(family, row) == (now_expected[family], None), family
+        assert C.family_status(family, index)["stale"] is None
+        # the 462bd98 run read alone: a positive verdict binds only a confirmed dispatch (N4)
+        alone = dict(row, status=want, raw_status=want, evidence=f"{run}#families.{family}",
+                     code=B._measured_code(family, results["source_commit"]))
+        status, why = C.operation_status(family, alone)
         if want == "EXPERIMENTAL":                    # inconclusive evidence persists with its scope
             assert (status, why) == (want, None), family
-            assert C.family_status(family, index)["stale"] is None
-        else:                                         # a positive verdict binds only a confirmed dispatch (N4)
+        else:
             assert status == "UNEVALUATED" and "recorded no runtime dispatch" in why, (family, why)
-            assert C.family_status(family, index)["stale"] == why
         # the earlier verdict, bound to the code it measured, still reads as stale at the merged code
         then = dict(row, status="DEFAULT_FOR_GEOMETRY", raw_status="DEFAULT_FOR_GEOMETRY",
                     code=B._measured_code(family, before["source_commit"]))

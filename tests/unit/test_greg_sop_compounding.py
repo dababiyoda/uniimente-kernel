@@ -19,7 +19,7 @@ import sys
 import pytest
 
 from greg import path as devpath, planner, sop, templates
-from greg.body import Body
+from greg.body import Body, status
 from greg.missions import validate_mission
 from greg.tribunal import morning_report
 from greg.metrics import NOT_FOUNDER_TIER
@@ -322,6 +322,11 @@ def test_a_ratified_procedure_runs_without_a_model_or_an_approval_stop_and_close
             assert set(measured["not_founder_tier"].values()) == {NOT_FOUNDER_TIER}
         where = devpath.position(body.journal)      # N4 measured does not skip the path: N1 stays primary
         assert where["active"]["id"] == "N1" and "N4" not in where["achieved"]
+        # but the founder sees that it is met: measured ahead, not achieved. Joined with the founder-tier rule
+        # (#137): closures signed with a test key do not meet N4, so they are not shown as met ahead either.
+        ahead = [{"id": "N4", "title": next(n["title"] for n in devpath.load()["nodes"] if n["id"] == "N4")}]
+        assert where["met_ahead"] == (ahead if founder_tier else [])
+        assert status(home)["developmental_position"]["met_ahead"] == (["N4"] if founder_tier else [])
     finally:
         body.close()
 

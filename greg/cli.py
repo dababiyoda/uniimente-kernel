@@ -94,14 +94,19 @@ def _secret_file(path: str) -> str:
         raise BodyError("a credential file must be text (UTF-8); nothing stored") from None
 
 
+# Where greg/chromebook/install.sh writes the founder key. Named in every refusal; never used silently:
+# a signing command signs only with the key file it names (--key), kept from the candidate over #168 1dfef4e1.
+DEFAULT_FOUNDER_KEY = "~/.greg-founder.pem"
+
+
 def _key_file(args, kind: str | None) -> str:
     """The founder key file a signing command names, or a plain refusal (never a traceback)."""
     what = f"signing {kind}" if kind else "this command"
     if not getattr(args, "key", None):
-        raise BodyError(f"{what} needs your founder key: add --key ~/.greg-founder.pem"
+        raise BodyError(f"{what} needs your founder key: add --key {DEFAULT_FOUNDER_KEY}"
                         + (" (or --print-only to review it unsigned)" if hasattr(args, "print_only") else ""))
     if not Path(args.key).expanduser().is_file():
-        raise BodyError(f"no founder key file at {args.key}; the installer creates ~/.greg-founder.pem")
+        raise BodyError(f"no founder key file at {args.key}; the installer creates {DEFAULT_FOUNDER_KEY}")
     return str(Path(args.key).expanduser())
 
 

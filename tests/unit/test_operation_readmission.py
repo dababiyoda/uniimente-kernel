@@ -213,7 +213,8 @@ def test_the_run_refuses_changed_frozen_inputs_and_never_overwrites_results(tmp_
         R.main(["--run", "r1"])
     monkeypatch.setattr(R, "_sha", sha)
     for edit in (lambda i: i["code"].update({R.RUNNER: "sha256:" + "0" * 64}),
-                 lambda i: i["geometry"].update(compute_limit=200000)):
+                 lambda i: i["geometry"].update(compute_limit=200000),
+                 lambda i: i["solver_closures"]["game"].update(function="exact")):
         frozen = json.loads(pristine)
         edit(frozen["inputs"])
         path.write_text(json.dumps(frozen))
@@ -261,3 +262,66 @@ def test_the_results_carry_families_not_genomes_and_route_through_the_evidence_i
                                                                           row["baseline"])
         assert op["evidence"] == f"{B.ADMISSION}/dev-run/results.json#families.{family}"
         assert op["code"]["closure_sha256"] == C.solver_code(family)["closure_sha256"], family
+
+
+def _dev_run(tmp_path, monkeypatch, name):
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import build_mind_evidence_index as B
+    monkeypatch.setattr(R, "EVIDENCE", tmp_path / B.ADMISSION)
+    run = tmp_path / B.ADMISSION / name
+    run.mkdir(parents=True)
+    (run / "freeze.json").write_text(json.dumps({"frozen_at": "dev", "inputs": R.inputs(admission.DEV_SEEDS[:2])}))
+    R.main(["--run", name])
+    monkeypatch.setattr(B, "ROOT", tmp_path)
+    monkeypatch.setattr(B, "OPERATION_RUNS", ((f"{B.ADMISSION}/{name}/results.json", "families", None),))
+    return json.loads((run / "results.json").read_text()), B.build()
+
+
+def test_a_run_records_the_solver_its_candidate_reached_and_the_index_confirms_the_dispatch(tmp_path, monkeypatch):
+    """SOLVERS takes non-literal updates (greg/cognition/solvers.py), so a positive verdict binds only when its run
+    recorded the function SOLVERS held at runtime (round-2 review of #179, N4). The runner records, per family, the
+    one function every candidate call reached; the index then marks the static dispatch verified_at_runtime and the
+    rule no longer reports "recorded no runtime dispatch". The freeze binds the dispatch it expects."""
+    from greg.cognition import compiler as C
+    results, index = _dev_run(tmp_path, monkeypatch, "dev-dispatch")
+    assert results["solver_closures"].keys() == set(R.FAMILIES)
+    for family in R.FAMILIES:
+        now = C.solver_code(family)
+        assert results["solver_closures"][family] == {"path": now["path"], "function": now["function"],
+                                                      "closure_sha256": now["closure_sha256"],
+                                                      "calls_observed": True}, family
+        dispatched = index["operations"][family]["code"]["dispatched"]
+        assert dispatched["verified_at_runtime"] is True and "runtime_disagrees" not in dispatched, family
+        positive = dict(index["operations"][family], status="DEFAULT_FOR_GEOMETRY")
+        status, why = C.operation_status(family, positive)
+        assert why is None or "recorded no runtime dispatch" not in why, (family, why)
+    assert {f: v["function"] for f, v in R.inputs(admission.DEV_SEEDS[:2])["solver_closures"].items()} == {
+        "control": "control", "game": "game", "information": "information", "probabilistic": "bayesian"}
+
+
+def test_a_run_whose_candidate_reached_another_solver_binds_nothing(tmp_path, monkeypatch):
+    """A candidate that reached a function other than the static dispatch (a rebinding the static reading cannot
+    see) is recorded as reached; the index records runtime_disagrees and a positive verdict routes UNEVALUATED.
+    A family whose candidate reached two functions records no runtime dispatch at all."""
+    from greg.cognition import compiler as C
+    real = SOLVERS["game"]
+
+    def rebound(request, geometry):
+        return real(request, geometry)
+    monkeypatch.setitem(SOLVERS, "game", rebound)
+    frozen = R.closures()
+    monkeypatch.setattr(R, "closures", lambda: {**frozen, "game": {"path": "greg/cognition/solvers.py",
+                                                                   "function": "game", "closure_sha256": None}})
+    results, index = _dev_run(tmp_path, monkeypatch, "dev-rebound")
+    assert results["solver_closures"]["game"] == {"path": "tests/unit/test_operation_readmission.py",
+                                                  "function": "rebound", "closure_sha256": None,
+                                                  "calls_observed": True}
+    dispatched = index["operations"]["game"]["code"]["dispatched"]
+    assert dispatched["runtime_disagrees"] == {"path": "tests/unit/test_operation_readmission.py",
+                                               "function": "rebound"}
+    status, why = C.operation_status("game", dict(index["operations"]["game"], status="DEFAULT_FOR_GEOMETRY"))
+    assert status == "UNEVALUATED" and "at runtime" in why, why
+    R.CALLED["game"] = {("greg/cognition/solvers.py", "game"), ("greg/cognition/solvers.py", "exact")}
+    assert R.runtime_dispatch("game", frozen["game"]) is None
+    R.CALLED.pop("game")
+    assert R.runtime_dispatch("game", frozen["game"]) is None          # no call observed: nothing confirmed

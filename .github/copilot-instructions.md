@@ -1,3 +1,5 @@
+> Before new or resumed UNIIMENTE work, follow `AGENTS.md` and `docs/collaboration/START_HERE.md`; refresh Discussion #89, work board #96 and current claims before editing.
+
 # UNIIMENTE GitHub Agent Instructions
 
 Read `AGENTS.md` and `docs/FOUNDER_EFFECT_COMPILER.md` before material work.

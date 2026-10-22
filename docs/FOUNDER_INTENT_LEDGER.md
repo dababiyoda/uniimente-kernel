@@ -138,3 +138,16 @@ The canonical ledger should ultimately become machine-readable. Until that imple
 - **Supersedes:** none; extends the existing bootstrap and pinned Discussion.
 - **Superseded by:** none.
 - **Implementation refs:** [team entry](collaboration/START_HERE.md), AGENTS.md and CLAUDE.md; draft until adopted.
+
+# Collaboration rollout continuation — 2026-10-21
+
+INTENT-20261021-COMPLETE-COLLABORATION: Alfonso's follow-up, “Complete it and improve
+it. Comprehensively,” extends the entry repair through one consolidated SOP/checker,
+consumer entry pointers, independent review and behavioral verification. Status:
+active; implementation and adoption remain distinct. Full machine completion stays
+BODY + ORGANS + MIND. Exact lineage, limits, owner and review triggers are in
+[the rollout intent record](collaboration/FOUNDER-INTENTS-ROLLOUT-2026-10-21.json),
+with a linked [two-pass decision](collaboration/DELIBERATION-ROLLOUT-2026-10-21.json).
+No earlier intent is silently superseded; existing merge, credential and live-effect
+restrictions remain. Current evidence is in collaboration/VALIDATION.md.
+

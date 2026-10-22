@@ -70,3 +70,4 @@ an API key exists. Search popular repositories, then verify the actual license,
 maintainer activity, hardware fit and whether examples call paid backends.
 Local model weights do not make rented hardware or exclusive data free.
 This changes implementation selection, not Kernel consequence authority.
+

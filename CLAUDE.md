@@ -57,3 +57,4 @@ Historical literal-morphogenesis work is preserved as research, mechanisms, test
 - Adapters (`adapters/`) declare field mappings, information lost/added and
   assumptions explicitly. No silent translation. No fabricated fields. No authority
   inflation.
+

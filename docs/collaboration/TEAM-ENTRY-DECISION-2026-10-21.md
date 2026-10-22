@@ -103,3 +103,4 @@ Rollback: close the draft, or revert only its additive documentation if adopted;
 restore #96's preserved historical section as its routing state. Keep all evidence.
 Kill/simplify if the pilot increases rework, conceals collisions, creates a second
 authority path or requires materially more founder reconstruction.
+

@@ -106,7 +106,7 @@
     ]
    }
   ],
-  "equality_digest": "sha256:8016e63a80ff8498e8237225d04f37233bfabd4230631f2bace7473f0e7053ac",
+  "equality_digest": "sha256:90bfec89c905b4b110737c42619d25d2e3b54dece8360746a252d47703b74ed9",
   "equivalences": [
    {
     "a": "greg.cognition.genomes.collective:flock_dropout_instance",
@@ -199,7 +199,7 @@
     ]
    }
   ],
-  "generators_sampled": 70,
+  "generators_sampled": 85,
   "sample_seeds": [
    0,
    1,
@@ -216,7 +216,7 @@
  },
  "counts": {
   "by_lineage": {
-   "#158": 337,
+   "#158": 350,
    "#179": 40,
    "both": 42
   },
@@ -224,7 +224,7 @@
    "P8 held-out": 7,
    "admission held-out": 123,
    "canary": 1,
-   "dev": 233,
+   "dev": 246,
    "held-out": 38,
    "review-pilot": 11,
    "train": 6
@@ -235,7 +235,7 @@
    "admission held-out / #158": 90,
    "admission held-out / #179": 33,
    "canary / #158": 1,
-   "dev / #158": 210,
+   "dev / #158": 223,
    "dev / both": 23,
    "held-out / #158": 13,
    "held-out / #179": 6,
@@ -243,7 +243,7 @@
    "review-pilot / #158": 11,
    "train / #158": 6
   },
-  "exposures": 419,
+  "exposures": 432,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -14691,6 +14691,150 @@
   },
   {
    "artifact": {
+    "commit": "3483dd832717c78ef4f7dc1903ef2ad9f3dd4ee4",
+    "line_commits": [
+     "3483dd832717c78ef4f7dc1903ef2ad9f3dd4ee4"
+    ],
+    "lines": [
+     321
+    ],
+    "path": "tests/unit/test_genomes_control_b.py",
+    "sha256": "sha256:31920c119c3dab208951047752cfa991acdd4592b02b549c0b814e166f6cc43f"
+   },
+   "exposure_commit": "3483dd832717c78ef4f7dc1903ef2ad9f3dd4ee4",
+   "family": "basal_cusum_detect",
+   "generator": {
+    "code_sha256": "sha256:060fceb5020c5d98f1f304b135cd1c796e5f33afc4aa34debf673e88698bf81d",
+    "commit": "3483dd832717c78ef4f7dc1903ef2ad9f3dd4ee4",
+    "delegates": [],
+    "function": "cusum_instance",
+    "key": "greg.cognition.genomes.control_b:cusum_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.control_b",
+    "module_file_sha256": "sha256:b1802e56ca3ca6fa52e1ba86063bffe53c9a5a46c9be98e1928f4444e61122aa",
+    "prng": [
+     "Random(f'genome:basal_cusum_detect:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#158|tests/unit/test_genomes_control_b.py|dev|basal_cusum_detect|greg.cognition.genomes.control_b:cusum_instance:321",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 10,
+   "part": "greg.cognition.genomes.control_b:cusum_instance:321",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "3483dd832717c78ef4f7dc1903ef2ad9f3dd4ee4",
+    "line_commits": [
+     "3483dd832717c78ef4f7dc1903ef2ad9f3dd4ee4"
+    ],
+    "lines": [
+     264
+    ],
+    "path": "tests/unit/test_genomes_control_b.py",
+    "sha256": "sha256:31920c119c3dab208951047752cfa991acdd4592b02b549c0b814e166f6cc43f"
+   },
+   "exposure_commit": "3483dd832717c78ef4f7dc1903ef2ad9f3dd4ee4",
+   "family": "control_robust_tube",
+   "generator": {
+    "code_sha256": "sha256:05d07e45088a321988fbd4190d845e6b05f84b88b61b1b678554717d707380a2",
+    "commit": "3483dd832717c78ef4f7dc1903ef2ad9f3dd4ee4",
+    "delegates": [],
+    "function": "tube_instance",
+    "key": "greg.cognition.genomes.control_b:tube_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.control_b",
+    "module_file_sha256": "sha256:b1802e56ca3ca6fa52e1ba86063bffe53c9a5a46c9be98e1928f4444e61122aa",
+    "prng": [
+     "Random(f'genome:control_robust_tube:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#158|tests/unit/test_genomes_control_b.py|dev|control_robust_tube|greg.cognition.genomes.control_b:tube_instance:264",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 10,
+   "part": "greg.cognition.genomes.control_b:tube_instance:264",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "3483dd832717c78ef4f7dc1903ef2ad9f3dd4ee4",
+    "line_commits": [
+     "3483dd832717c78ef4f7dc1903ef2ad9f3dd4ee4"
+    ],
+    "lines": [
+     277
+    ],
+    "path": "tests/unit/test_genomes_control_b.py",
+    "sha256": "sha256:31920c119c3dab208951047752cfa991acdd4592b02b549c0b814e166f6cc43f"
+   },
+   "exposure_commit": "3483dd832717c78ef4f7dc1903ef2ad9f3dd4ee4",
+   "family": "control_robust_tube",
+   "generator": {
+    "code_sha256": "sha256:05d07e45088a321988fbd4190d845e6b05f84b88b61b1b678554717d707380a2",
+    "commit": "3483dd832717c78ef4f7dc1903ef2ad9f3dd4ee4",
+    "delegates": [],
+    "function": "tube_instance",
+    "key": "greg.cognition.genomes.control_b:tube_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.control_b",
+    "module_file_sha256": "sha256:b1802e56ca3ca6fa52e1ba86063bffe53c9a5a46c9be98e1928f4444e61122aa",
+    "prng": [
+     "Random(f'genome:control_robust_tube:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#158|tests/unit/test_genomes_control_b.py|dev|control_robust_tube|greg.cognition.genomes.control_b:tube_instance:277",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 10,
+   "part": "greg.cognition.genomes.control_b:tube_instance:277",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
     "commit": "ac6a730ab24e38f7f186325364cbe35a9f54cac7",
     "line_commits": [
      "ac6a730ab24e38f7f186325364cbe35a9f54cac7"
@@ -15063,6 +15207,96 @@
     [
      4,
      4
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "7bc031564a09d2958741a6643ec139d6f9d28a09",
+    "line_commits": [
+     "7bc031564a09d2958741a6643ec139d6f9d28a09"
+    ],
+    "lines": [
+     112,
+     113
+    ],
+    "path": "tests/unit/test_genomes_forecasting_b.py",
+    "sha256": "sha256:ce38695654aba1b4c062ab1309071edeee040ea22f9b3f3f162a2d4a06f3edf0"
+   },
+   "exposure_commit": "7bc031564a09d2958741a6643ec139d6f9d28a09",
+   "family": null,
+   "generator": {
+    "commit": "7bc031564a09d2958741a6643ec139d6f9d28a09",
+    "key": "ITEMS[family].instance",
+    "kind": "code",
+    "resolved": false,
+    "why": "receiver not resolved statically"
+   },
+   "id": "#158|tests/unit/test_genomes_forecasting_b.py|dev|-|?:ITEMS[family].instance:112",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 1,
+   "part": "?:ITEMS[family].instance:112",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     1,
+     1
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "7bc031564a09d2958741a6643ec139d6f9d28a09",
+    "line_commits": [
+     "7bc031564a09d2958741a6643ec139d6f9d28a09"
+    ],
+    "lines": [
+     235
+    ],
+    "path": "tests/unit/test_genomes_forecasting_b.py",
+    "sha256": "sha256:ce38695654aba1b4c062ab1309071edeee040ea22f9b3f3f162a2d4a06f3edf0"
+   },
+   "exposure_commit": "7bc031564a09d2958741a6643ec139d6f9d28a09",
+   "family": "forecast_judgment_pool",
+   "generator": {
+    "code_sha256": "sha256:b28b699fe016a65d83e457b4eef37b78808126377ea31b7b9ccc22f0e08bea17",
+    "commit": "7bc031564a09d2958741a6643ec139d6f9d28a09",
+    "delegates": [],
+    "function": "pool_instance",
+    "key": "greg.cognition.genomes.forecasting_b:pool_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.forecasting_b",
+    "module_file_sha256": "sha256:b5a800a9ed8e47b4479cf91eaee74fe559028f3c19376f4d6365cf204127b589",
+    "prng": [
+     "Random(f'genome:forecast_judgment_pool:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#158|tests/unit/test_genomes_forecasting_b.py|dev|forecast_judgment_pool|greg.cognition.genomes.forecasting_b:pool_instance:235",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 6,
+   "part": "greg.cognition.genomes.forecasting_b:pool_instance:235",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     5
     ]
    ]
   },
@@ -15585,6 +15819,150 @@
     [
      3,
      3
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "159248102a29696736d03878494b15ef20111182",
+    "line_commits": [
+     "159248102a29696736d03878494b15ef20111182"
+    ],
+    "lines": [
+     357
+    ],
+    "path": "tests/unit/test_genomes_search_b.py",
+    "sha256": "sha256:174067410c599584eeacfa30dfaba00eb0aced470747b610973390cae17c7d11"
+   },
+   "exposure_commit": "159248102a29696736d03878494b15ef20111182",
+   "family": "develop_differentiate",
+   "generator": {
+    "code_sha256": "sha256:2a3f1306e8b403b8e672dff108689b61b3938f4ae938e127652ccdc65d4669b3",
+    "commit": "159248102a29696736d03878494b15ef20111182",
+    "delegates": [],
+    "function": "df_instance",
+    "key": "greg.cognition.genomes.search_b:df_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.search_b",
+    "module_file_sha256": "sha256:9083b592d6f969489eff97b4d82c124a9fe484c8ed7bf5e02621c9b654789216",
+    "prng": [
+     "Random(f'genome:develop_differentiate:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#158|tests/unit/test_genomes_search_b.py|dev|develop_differentiate|greg.cognition.genomes.search_b:df_instance:357",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 10,
+   "part": "greg.cognition.genomes.search_b:df_instance:357",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "159248102a29696736d03878494b15ef20111182",
+    "line_commits": [
+     "159248102a29696736d03878494b15ef20111182"
+    ],
+    "lines": [
+     270
+    ],
+    "path": "tests/unit/test_genomes_search_b.py",
+    "sha256": "sha256:174067410c599584eeacfa30dfaba00eb0aced470747b610973390cae17c7d11"
+   },
+   "exposure_commit": "159248102a29696736d03878494b15ef20111182",
+   "family": "evo_novelty_search",
+   "generator": {
+    "code_sha256": "sha256:3c99b1619599aa917dae047979ee7b05c8ab96232a0a7652631a022fd65ef0ed",
+    "commit": "159248102a29696736d03878494b15ef20111182",
+    "delegates": [],
+    "function": "ns_instance",
+    "key": "greg.cognition.genomes.search_b:ns_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.search_b",
+    "module_file_sha256": "sha256:9083b592d6f969489eff97b4d82c124a9fe484c8ed7bf5e02621c9b654789216",
+    "prng": [
+     "Random(f'genome:evo_novelty_search:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#158|tests/unit/test_genomes_search_b.py|dev|evo_novelty_search|greg.cognition.genomes.search_b:ns_instance:270",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 10,
+   "part": "greg.cognition.genomes.search_b:ns_instance:270",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "159248102a29696736d03878494b15ef20111182",
+    "line_commits": [
+     "159248102a29696736d03878494b15ef20111182"
+    ],
+    "lines": [
+     311
+    ],
+    "path": "tests/unit/test_genomes_search_b.py",
+    "sha256": "sha256:174067410c599584eeacfa30dfaba00eb0aced470747b610973390cae17c7d11"
+   },
+   "exposure_commit": "159248102a29696736d03878494b15ef20111182",
+   "family": "hyper_select_lowlevel",
+   "generator": {
+    "code_sha256": "sha256:7de9868cfbb678e2529cbf1282cd963d1626aaee6ca03b4dd7495e38d6cb2dae",
+    "commit": "159248102a29696736d03878494b15ef20111182",
+    "delegates": [],
+    "function": "hh_instance",
+    "key": "greg.cognition.genomes.search_b:hh_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.search_b",
+    "module_file_sha256": "sha256:9083b592d6f969489eff97b4d82c124a9fe484c8ed7bf5e02621c9b654789216",
+    "prng": [
+     "Random(f'genome:hyper_select_lowlevel:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#158|tests/unit/test_genomes_search_b.py|dev|hyper_select_lowlevel|greg.cognition.genomes.search_b:hh_instance:311",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 10,
+   "part": "greg.cognition.genomes.search_b:hh_instance:311",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
     ]
    ]
   },
@@ -16814,6 +17192,247 @@
     [
      3000,
      3019
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "9dc91c68d86202ab0e1a61b94198ac4cea235f1f",
+    "line_commits": [
+     "9dc91c68d86202ab0e1a61b94198ac4cea235f1f"
+    ],
+    "lines": [
+     414
+    ],
+    "path": "tests/unit/test_genomes_strategic_b.py",
+    "sha256": "sha256:f4af2bdcf38dbc091b36b98932c77c236c9ea47582a315209f99b52d142c2028"
+   },
+   "exposure_commit": "9dc91c68d86202ab0e1a61b94198ac4cea235f1f",
+   "family": null,
+   "generator": {
+    "commit": "9dc91c68d86202ab0e1a61b94198ac4cea235f1f",
+    "key": "ITEMS[family].instance",
+    "kind": "code",
+    "resolved": false,
+    "why": "receiver not resolved statically"
+   },
+   "id": "#158|tests/unit/test_genomes_strategic_b.py|dev|-|?:ITEMS[family].instance:414",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 1,
+   "part": "?:ITEMS[family].instance:414",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     4,
+     4
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "9dc91c68d86202ab0e1a61b94198ac4cea235f1f",
+    "line_commits": [
+     "9dc91c68d86202ab0e1a61b94198ac4cea235f1f"
+    ],
+    "lines": [
+     270
+    ],
+    "path": "tests/unit/test_genomes_strategic_b.py",
+    "sha256": "sha256:f4af2bdcf38dbc091b36b98932c77c236c9ea47582a315209f99b52d142c2028"
+   },
+   "exposure_commit": "9dc91c68d86202ab0e1a61b94198ac4cea235f1f",
+   "family": "game_nash_bargaining",
+   "generator": {
+    "code_sha256": "sha256:61a192d505bc8bde3f071b3d929b1652c20e70944ad81ad123165022c86ecd10",
+    "commit": "9dc91c68d86202ab0e1a61b94198ac4cea235f1f",
+    "delegates": [],
+    "function": "nb_instance",
+    "key": "greg.cognition.genomes.strategic_b:nb_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.strategic_b",
+    "module_file_sha256": "sha256:715c9309b77b2295d2e6098c9cdd5fc45dcc6ad181fc72122b9d5cbb8ef3a175",
+    "prng": [
+     "Random(f'genome:game_nash_bargaining:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#158|tests/unit/test_genomes_strategic_b.py|dev|game_nash_bargaining|greg.cognition.genomes.strategic_b:nb_instance:270",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 6,
+   "part": "greg.cognition.genomes.strategic_b:nb_instance:270",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     1
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     8,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "9dc91c68d86202ab0e1a61b94198ac4cea235f1f",
+    "line_commits": [
+     "9dc91c68d86202ab0e1a61b94198ac4cea235f1f"
+    ],
+    "lines": [
+     138
+    ],
+    "path": "tests/unit/test_genomes_strategic_b.py",
+    "sha256": "sha256:f4af2bdcf38dbc091b36b98932c77c236c9ea47582a315209f99b52d142c2028"
+   },
+   "exposure_commit": "9dc91c68d86202ab0e1a61b94198ac4cea235f1f",
+   "family": "game_repeated_sustain",
+   "generator": {
+    "code_sha256": "sha256:cc606280c89c4a528dbc303c893bb42b695813d1a82b23d1fa3ad47cf0da9199",
+    "commit": "9dc91c68d86202ab0e1a61b94198ac4cea235f1f",
+    "delegates": [],
+    "function": "rep_instance",
+    "key": "greg.cognition.genomes.strategic_b:rep_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.strategic_b",
+    "module_file_sha256": "sha256:715c9309b77b2295d2e6098c9cdd5fc45dcc6ad181fc72122b9d5cbb8ef3a175",
+    "prng": [
+     "Random(f'genome:game_repeated_sustain:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#158|tests/unit/test_genomes_strategic_b.py|dev|game_repeated_sustain|greg.cognition.genomes.strategic_b:rep_instance:138",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 10,
+   "part": "greg.cognition.genomes.strategic_b:rep_instance:138",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "9dc91c68d86202ab0e1a61b94198ac4cea235f1f",
+    "line_commits": [
+     "9dc91c68d86202ab0e1a61b94198ac4cea235f1f"
+    ],
+    "lines": [
+     206
+    ],
+    "path": "tests/unit/test_genomes_strategic_b.py",
+    "sha256": "sha256:f4af2bdcf38dbc091b36b98932c77c236c9ea47582a315209f99b52d142c2028"
+   },
+   "exposure_commit": "9dc91c68d86202ab0e1a61b94198ac4cea235f1f",
+   "family": "game_repeated_sustain",
+   "generator": {
+    "code_sha256": "sha256:cc606280c89c4a528dbc303c893bb42b695813d1a82b23d1fa3ad47cf0da9199",
+    "commit": "9dc91c68d86202ab0e1a61b94198ac4cea235f1f",
+    "delegates": [],
+    "function": "rep_instance",
+    "key": "greg.cognition.genomes.strategic_b:rep_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.strategic_b",
+    "module_file_sha256": "sha256:715c9309b77b2295d2e6098c9cdd5fc45dcc6ad181fc72122b9d5cbb8ef3a175",
+    "prng": [
+     "Random(f'genome:game_repeated_sustain:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#158|tests/unit/test_genomes_strategic_b.py|dev|game_repeated_sustain|greg.cognition.genomes.strategic_b:rep_instance:206",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 10,
+   "part": "greg.cognition.genomes.strategic_b:rep_instance:206",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "9dc91c68d86202ab0e1a61b94198ac4cea235f1f",
+    "line_commits": [
+     "9dc91c68d86202ab0e1a61b94198ac4cea235f1f"
+    ],
+    "lines": [
+     363
+    ],
+    "path": "tests/unit/test_genomes_strategic_b.py",
+    "sha256": "sha256:f4af2bdcf38dbc091b36b98932c77c236c9ea47582a315209f99b52d142c2028"
+   },
+   "exposure_commit": "9dc91c68d86202ab0e1a61b94198ac4cea235f1f",
+   "family": "game_stackelberg_commit",
+   "generator": {
+    "code_sha256": "sha256:89c1eab8d9e9088c1faa84ed9532687122134d2ad0334627980e7653c3280dbc",
+    "commit": "9dc91c68d86202ab0e1a61b94198ac4cea235f1f",
+    "delegates": [],
+    "function": "sc_instance",
+    "key": "greg.cognition.genomes.strategic_b:sc_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.strategic_b",
+    "module_file_sha256": "sha256:715c9309b77b2295d2e6098c9cdd5fc45dcc6ad181fc72122b9d5cbb8ef3a175",
+    "prng": [
+     "Random(f'genome:game_stackelberg_commit:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#158|tests/unit/test_genomes_strategic_b.py|dev|game_stackelberg_commit|greg.cognition.genomes.strategic_b:sc_instance:363",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 10,
+   "part": "greg.cognition.genomes.strategic_b:sc_instance:363",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
     ]
    ]
   },

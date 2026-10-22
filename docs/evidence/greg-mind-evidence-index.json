@@ -149,6 +149,126 @@
    },
    "version": "1.0.0"
   },
+  "basal_cusum_detect": {
+   "competitor": "two-sided Shiryaev-Roberts with Pollak's ARL0 threshold A = 2 ARL0 exp(-0.583 delta / sigma) per chart",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-v8/results.json#genomes.basal_cusum_detect",
+   "history": [
+    {
+     "run": "2026-10-22-v8",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.000228,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "large_declared_shift_arl10000": {
+     "losses": 1,
+     "n": 7,
+     "p_better": 1.0,
+     "p_worse": 0.5,
+     "ties": 6,
+     "wins": 0
+    },
+    "large_declared_shift_arl20000": {
+     "losses": 0,
+     "n": 6,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 6,
+     "wins": 0
+    },
+    "large_declared_shift_arl5000": {
+     "losses": 2,
+     "n": 9,
+     "p_better": 0.875,
+     "p_worse": 0.5,
+     "ties": 6,
+     "wins": 1
+    },
+    "small_declared_shift_arl20000": {
+     "losses": 1,
+     "n": 5,
+     "p_better": 1.0,
+     "p_worse": 0.5,
+     "ties": 4,
+     "wins": 0
+    },
+    "small_declared_shift_arl5000": {
+     "losses": 1,
+     "n": 3,
+     "p_better": 1.0,
+     "p_worse": 0.5,
+     "ties": 2,
+     "wins": 0
+    }
+   },
+   "version": "1.0.0"
+  },
+  "basal_hamming_correct": {
+   "competitor": "exhaustive Bayes decoder under the declared loss: posterior over all 2^k codewords at the declared flip probability, decode the MAP codeword when its posterior exceeds 1/2, else flag (triple modular redundancy at matched redundancy is infeasible: it needs rate 1/3 and its own transmission; plain maximum-likelihood table decoding guesses on SECDED double errors and is weaker under this loss)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-v8/results.json#genomes.basal_hamming_correct",
+   "history": [
+    {
+     "run": "2026-10-22-v8",
+     "status": "NICHE_CAPABILITY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.000406,
+   "status": "NICHE_CAPABILITY",
+   "subregions_vs_competitor": {
+    "hamming_15_11_clean": {
+     "losses": 0,
+     "n": 5,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 5,
+     "wins": 0
+    },
+    "hamming_15_11_noisy": {
+     "losses": 6,
+     "n": 8,
+     "p_better": 0.992188,
+     "p_worse": 0.0625,
+     "ties": 1,
+     "wins": 1
+    },
+    "hamming_7_4_noisy": {
+     "losses": 0,
+     "n": 4,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 4,
+     "wins": 0
+    },
+    "secded_16_11_noisy": {
+     "losses": 1,
+     "n": 3,
+     "p_better": 1.0,
+     "p_worse": 0.5,
+     "ties": 2,
+     "wins": 0
+    },
+    "secded_8_4_clean": {
+     "losses": 0,
+     "n": 3,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 3,
+     "wins": 0
+    },
+    "secded_8_4_noisy": {
+     "losses": 0,
+     "n": 7,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 7,
+     "wins": 0
+    }
+   },
+   "version": "1.0.0"
+  },
   "basal_hopfield": {
    "competitor": "exact nearest neighbour by Hamming distance over every stored pattern (NumPy)",
    "evidence": "docs/evidence/greg-genome-admission/2026-10-21-v7/results.json#genomes.basal_hopfield",
@@ -1112,6 +1232,110 @@
    },
    "version": "1.0.0"
   },
+  "control_robust_tube": {
+   "competitor": "min-max open-loop MPC: one vertex-scenario LP (SciPy HiGHS) keeps every vertex sequence feasible and minimises the worst scenario's L1 cost",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-v8/results.json#genomes.control_robust_tube",
+   "history": [
+    {
+     "run": "2026-10-22-v8",
+     "status": "EXPERIMENTAL",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.003172,
+   "status": "EXPERIMENTAL",
+   "subregions_vs_competitor": {
+    "marginal_heavy_disturbance": {
+     "losses": 3,
+     "n": 10,
+     "p_better": 1.0,
+     "p_worse": 0.125,
+     "ties": 7,
+     "wins": 0
+    },
+    "marginal_light_disturbance": {
+     "losses": 1,
+     "n": 3,
+     "p_better": 1.0,
+     "p_worse": 0.5,
+     "ties": 2,
+     "wins": 0
+    },
+    "stable_heavy_disturbance": {
+     "losses": 3,
+     "n": 6,
+     "p_better": 0.65625,
+     "p_worse": 0.65625,
+     "ties": 0,
+     "wins": 3
+    },
+    "stable_light_disturbance": {
+     "losses": 1,
+     "n": 4,
+     "p_better": 0.5,
+     "p_worse": 0.875,
+     "ties": 1,
+     "wins": 2
+    },
+    "unstable_heavy_disturbance": {
+     "losses": 2,
+     "n": 5,
+     "p_better": 0.5,
+     "p_worse": 0.8125,
+     "ties": 0,
+     "wins": 3
+    },
+    "unstable_light_disturbance": {
+     "losses": 2,
+     "n": 2,
+     "p_better": 1.0,
+     "p_worse": 0.25,
+     "ties": 0,
+     "wins": 0
+    }
+   },
+   "version": "1.0.0"
+  },
+  "convex_qp_dual": {
+   "competitor": "SciPy minimize(method='trust-constr') with exact gradient and Hessian, gtol 1e-10 (OSQP is not installed)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-v8/results.json#genomes.convex_qp_dual",
+   "history": [
+    {
+     "run": "2026-10-22-v8",
+     "status": "NICHE_CAPABILITY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.002402,
+   "status": "NICHE_CAPABILITY",
+   "subregions_vs_competitor": {
+    "ill_conditioned": {
+     "losses": 0,
+     "n": 16,
+     "p_better": 0.003906,
+     "p_worse": 1.0,
+     "ties": 8,
+     "wins": 8
+    },
+    "many_constraints": {
+     "losses": 0,
+     "n": 8,
+     "p_better": 0.003906,
+     "p_worse": 1.0,
+     "ties": 0,
+     "wins": 8
+    },
+    "well_conditioned": {
+     "losses": 0,
+     "n": 6,
+     "p_better": 0.0625,
+     "p_worse": 1.0,
+     "ties": 2,
+     "wins": 4
+    }
+   },
+   "version": "1.0.0"
+  },
   "critical_path": {
    "competitor": "networkx.dag_longest_path on the activity-on-arc expansion (CP-SAT makespan minimisation retained as an exact cross-check)",
    "evidence": "docs/evidence/greg-genome-admission/2026-10-15-v3/results.json#genomes.critical_path",
@@ -1291,6 +1515,46 @@
     }
    },
    "version": "1.2.0"
+  },
+  "develop_differentiate": {
+   "competitor": "centralised greedy maximal independent set of the radius-th power graph (NetworkX), charged 2 x the largest component radius rounds to gather at a centre and broadcast back",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-v8/results.json#genomes.develop_differentiate",
+   "history": [
+    {
+     "run": "2026-10-22-v8",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.002959,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "high_diameter_r1": {
+     "losses": 0,
+     "n": 5,
+     "p_better": 0.03125,
+     "p_worse": 1.0,
+     "ties": 0,
+     "wins": 5
+    },
+    "low_diameter_r1": {
+     "losses": 2,
+     "n": 10,
+     "p_better": 0.144531,
+     "p_worse": 0.964844,
+     "ties": 2,
+     "wins": 6
+    },
+    "low_diameter_r2": {
+     "losses": 6,
+     "n": 15,
+     "p_better": 0.303619,
+     "p_worse": 0.849121,
+     "ties": 0,
+     "wins": 9
+    }
+   },
+   "version": "1.0.0"
   },
   "develop_diffusion": {
    "competitor": "central structural method: NetworkX Louvain communities, each labelled by its seeds' majority (nearest seed where a community has none)",
@@ -1566,6 +1830,38 @@
    },
    "version": "1.0.0"
   },
+  "evo_novelty_search": {
+   "competitor": "MAP-Elites with the same behaviour descriptor (one elite per final cell, quality minus the Manhattan objective), uniform elite selection, same mutation and budget",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-v8/results.json#genomes.evo_novelty_search",
+   "history": [
+    {
+     "run": "2026-10-22-v8",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.35815,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "deceptive": {
+     "losses": 1,
+     "n": 18,
+     "p_better": 0.010742,
+     "p_worse": 0.999023,
+     "ties": 8,
+     "wins": 9
+    },
+    "direct": {
+     "losses": 0,
+     "n": 12,
+     "p_better": 0.007812,
+     "p_worse": 1.0,
+     "ties": 5,
+     "wins": 7
+    }
+   },
+   "version": "1.0.0"
+  },
   "flow_capacity_plan": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-16-v4/results.json#genomes.flow_capacity_plan",
    "history": [
@@ -1638,6 +1934,54 @@
    "status": "SUPERSEDED",
    "version": "1.0.2"
   },
+  "forecast_judgment_pool": {
+   "competitor": "the per-event median probability",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-v8/results.json#genomes.forecast_judgment_pool",
+   "history": [
+    {
+     "run": "2026-10-22-v8",
+     "status": "EXPERIMENTAL",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.001242,
+   "status": "EXPERIMENTAL",
+   "subregions_vs_competitor": {
+    "high_agreement_long_record": {
+     "losses": 3,
+     "n": 5,
+     "p_better": 0.8125,
+     "p_worse": 0.5,
+     "ties": 0,
+     "wins": 2
+    },
+    "high_agreement_short_record": {
+     "losses": 3,
+     "n": 5,
+     "p_better": 0.8125,
+     "p_worse": 0.5,
+     "ties": 0,
+     "wins": 2
+    },
+    "low_agreement_long_record": {
+     "losses": 5,
+     "n": 14,
+     "p_better": 0.211975,
+     "p_worse": 0.910217,
+     "ties": 0,
+     "wins": 9
+    },
+    "low_agreement_short_record": {
+     "losses": 3,
+     "n": 6,
+     "p_better": 0.65625,
+     "p_worse": 0.65625,
+     "ties": 0,
+     "wins": 3
+    }
+   },
+   "version": "1.0.0"
+  },
   "forecast_quantile": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14-v2/results.json#genomes.forecast_quantile",
    "history": [
@@ -1655,6 +1999,70 @@
    "median_seconds": 0.01236,
    "status": "DEFAULT_FOR_GEOMETRY",
    "version": "1.1.0"
+  },
+  "forecast_recalibration": {
+   "competitor": "Platt scaling (logistic on logit judgment)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-v8/results.json#genomes.forecast_recalibration",
+   "history": [
+    {
+     "run": "2026-10-22-v8",
+     "status": "NICHE_CAPABILITY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.000571,
+   "status": "NICHE_CAPABILITY",
+   "subregions_vs_competitor": {
+    "long_record": {
+     "losses": 17,
+     "n": 18,
+     "p_better": 0.999996,
+     "p_worse": 7.2e-05,
+     "ties": 0,
+     "wins": 1
+    },
+    "short_record": {
+     "losses": 11,
+     "n": 12,
+     "p_better": 0.999756,
+     "p_worse": 0.003174,
+     "ties": 0,
+     "wins": 1
+    }
+   },
+   "version": "1.0.0"
+  },
+  "forecast_scenarios": {
+   "competitor": "K plain Monte Carlo paths from the same fitted model, equally weighted",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-v8/results.json#genomes.forecast_scenarios",
+   "history": [
+    {
+     "run": "2026-10-22-v8",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.047918,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "jump_drift": {
+     "losses": 0,
+     "n": 15,
+     "p_better": 3.1e-05,
+     "p_worse": 1.0,
+     "ties": 0,
+     "wins": 15
+    },
+    "regime_ar": {
+     "losses": 1,
+     "n": 15,
+     "p_better": 0.000488,
+     "p_worse": 0.999969,
+     "ties": 0,
+     "wins": 14
+    }
+   },
+   "version": "1.0.0"
   },
   "formal_property_search": {
    "competitor": "Z3 symbolic search (linear integer arithmetic, 4 s): a counterexample, a proof of absence or abstention",
@@ -1764,6 +2172,110 @@
     }
    },
    "version": "1.0.2"
+  },
+  "game_nash_bargaining": {
+   "competitor": "SciPy SLSQP on the log-product over convex vertex weights (ftol 1e-15)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-v8/results.json#genomes.game_nash_bargaining",
+   "history": [
+    {
+     "run": "2026-10-22-v8",
+     "status": "SUPERSEDED",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.004792,
+   "status": "SUPERSEDED",
+   "subregions_vs_competitor": {
+    "2_players": {
+     "losses": 0,
+     "n": 16,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 16,
+     "wins": 0
+    },
+    "3_players": {
+     "losses": 0,
+     "n": 14,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 14,
+     "wins": 0
+    }
+   },
+   "version": "1.0.0"
+  },
+  "game_repeated_sustain": {
+   "competitor": "brute-force simulation: discounted payoff streams over a 5000-period horizon and 40-step bisection on the discount, over the same stage-equilibrium punishments",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-v8/results.json#genomes.game_repeated_sustain",
+   "history": [
+    {
+     "run": "2026-10-22-v8",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.005763,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "mixed_punishment_only": {
+     "losses": 1,
+     "n": 11,
+     "p_better": 1.0,
+     "p_worse": 0.5,
+     "ties": 10,
+     "wins": 0
+    },
+    "pure_punishment_available": {
+     "losses": 1,
+     "n": 15,
+     "p_better": 1.0,
+     "p_worse": 0.5,
+     "ties": 14,
+     "wins": 0
+    },
+    "target_is_stage_nash": {
+     "losses": 0,
+     "n": 4,
+     "p_better": 0.5,
+     "p_worse": 1.0,
+     "ties": 3,
+     "wins": 1
+    }
+   },
+   "version": "1.0.0"
+  },
+  "game_stackelberg_commit": {
+   "competitor": "Conitzer-Sandholm multiple LPs in floating point with SciPy HiGHS (the standard deployable method); the Nash-commitment arm is kept as sc_nash_commitment for the commitment value gap",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-v8/results.json#genomes.game_stackelberg_commit",
+   "history": [
+    {
+     "run": "2026-10-22-v8",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.007949,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "mixed_commitment_gain": {
+     "losses": 0,
+     "n": 16,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 16,
+     "wins": 0
+    },
+    "pure_commitment_optimal": {
+     "losses": 0,
+     "n": 14,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 14,
+     "wins": 0
+    }
+   },
+   "version": "1.0.0"
   },
   "graph_betweenness_topk": {
    "competitor": "NetworkX exact betweenness_centrality (pure-Python Brandes), ranked identically",
@@ -1921,6 +2433,54 @@
     }
    },
    "version": "1.1.0"
+  },
+  "hyper_select_lowlevel": {
+   "competitor": "random-selection hyper-heuristic over the same five heuristics, same start, acceptance and budget (chosen over the best single heuristic, ruin-and-recreate alone, as the stronger rival on dev seeds 0-9)",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-v8/results.json#genomes.hyper_select_lowlevel",
+   "history": [
+    {
+     "run": "2026-10-22-v8",
+     "status": "NICHE_CAPABILITY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.25881,
+   "status": "NICHE_CAPABILITY",
+   "subregions_vs_competitor": {
+    "mixed_sizes_large": {
+     "losses": 0,
+     "n": 7,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 7,
+     "wins": 0
+    },
+    "mixed_sizes_medium": {
+     "losses": 0,
+     "n": 8,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 8,
+     "wins": 0
+    },
+    "triplet_large": {
+     "losses": 3,
+     "n": 9,
+     "p_better": 0.5,
+     "p_worse": 0.773438,
+     "ties": 2,
+     "wins": 4
+    },
+    "triplet_medium": {
+     "losses": 1,
+     "n": 6,
+     "p_better": 0.3125,
+     "p_worse": 0.9375,
+     "ties": 2,
+     "wins": 3
+    }
+   },
+   "version": "1.0.0"
   },
   "info_experiment": {
    "competitor": "best, by exact expected value, of adaptive uncertainty sampling, a fixed expert order, one-step greedy on the declared objective (Bayes-risk value of information) and a two-step lookahead on that objective",
@@ -2154,6 +2714,38 @@
    },
    "version": "1.0.1"
   },
+  "mdl_model_select": {
+   "competitor": "BIC (n ln(RSS/n) + (k+1) ln n) over the same degrees; 5-fold cross-validation was also run on dev seeds and was weaker than BIC there (7.31 vs 8.34 total quality), so BIC is the competitor",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-v8/results.json#genomes.mdl_model_select",
+   "history": [
+    {
+     "run": "2026-10-22-v8",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.001101,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "n_gt_40": {
+     "losses": 0,
+     "n": 17,
+     "p_better": 1.0,
+     "p_worse": 1.0,
+     "ties": 17,
+     "wins": 0
+    },
+    "n_le_40": {
+     "losses": 0,
+     "n": 13,
+     "p_better": 0.125,
+     "p_worse": 1.0,
+     "ties": 10,
+     "wins": 3
+    }
+   },
+   "version": "1.0.0"
+  },
   "mech_vcg": {
    "competitor": "uniform-price auction (highest rejected bid); bidders reduce demand on later units by a class-symmetric factor from a simulated iterated best response",
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.mech_vcg",
@@ -2384,6 +2976,46 @@
      "p_worse": 0.411901,
      "ties": 0,
      "wins": 9
+    }
+   },
+   "version": "1.0.0"
+  },
+  "prove_resolution": {
+   "competitor": "Z3 (CDCL SAT core, 10 s per goal clause): verdict and model; no proof object in this contract",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-22-v8/results.json#genomes.prove_resolution",
+   "history": [
+    {
+     "run": "2026-10-22-v8",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.0.0"
+    }
+   ],
+   "median_seconds": 0.00151,
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "subregions_vs_competitor": {
+    "horn_large": {
+     "losses": 0,
+     "n": 10,
+     "p_better": 0.125,
+     "p_worse": 1.0,
+     "ties": 7,
+     "wins": 3
+    },
+    "non_horn_large": {
+     "losses": 0,
+     "n": 10,
+     "p_better": 0.25,
+     "p_worse": 1.0,
+     "ties": 8,
+     "wins": 2
+    },
+    "small_le_18_atoms": {
+     "losses": 0,
+     "n": 10,
+     "p_better": 0.25,
+     "p_worse": 1.0,
+     "ties": 8,
+     "wins": 2
     }
    },
    "version": "1.0.0"
@@ -2961,6 +3593,11 @@
    "path": "docs/evidence/greg-genome-admission/2026-10-21-v7/results.json",
    "sha256": "sha256:81f9b09c9c2ba96a09ebe99358804a1c4ca53f3a27adcbbde15a0f32f24ee79c",
    "source_commit": "568c4b7b904a4ac414af7068b98434bfae43c8a4"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-22-v8/results.json",
+   "sha256": "sha256:b77ab04e15b03b63ab5edca6fd3a4a5d7bbf72c7aedd8bcc5aca03e0d8fd551f",
+   "source_commit": "bc966a186f87e4a38d96ec1db63069220e052898"
   }
  ]
 }

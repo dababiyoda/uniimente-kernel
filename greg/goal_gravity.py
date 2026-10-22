@@ -51,8 +51,8 @@ from greg.authority import PRINCIPAL, AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityManifest
 from greg.founder import CLOCK_SKEW, MAX_TTL, instant, key_id, signing_bytes, spent_nonce
 from greg.journal import SOURCE, iso
-from greg.missions import TERMINAL, MissionBook, MissionError, evaluate_predicate, first_choice, measured, \
-    pursued_checks, signed_answer, strategy_scope
+from greg.missions import RESTORED_REFUSAL, TERMINAL, MissionBook, MissionError, evaluate_predicate, first_choice, \
+    measured, pursued_checks, signed_answer, strategy_scope
 from provenance.ledger import sha256_json
 
 SCHEMA = "greg-goal-gravity-binding/1"
@@ -158,6 +158,8 @@ def _verify_envelope(payload: dict, founders: dict, devices: dict, body_id: str,
             when = at or instant(env["issued_at"])
             if env["kind"] not in grant["kinds"] or not when < instant(grant["expires_at"]):
                 return None
+            if grant.get("signed_not_before") and instant(env["issued_at"]) < instant(grant["signed_not_before"]):
+                return None         # an old token never reactivates (FounderVerifier.verify, greg/founder.py)
             public, principal = grant["public_key"], "device:" + grant["label"]
         else:
             return None
@@ -221,6 +223,9 @@ class FounderFacts:
     book: Any = None                                    # MissionBook folded to the end of the ledger (answers
                                                         # counted at their signed DECISION's acceptance)
     manifests: dict = field(default_factory=dict)       # capability id -> manifest, at the end of the ledger
+    restored: Any = None                                # latest greg.body.restored so far (Body._after_restore)
+    revoked: set = field(default_factory=set)           # device keys revoked so far, by any route (a restore's too)
+    enrolled_at: dict = field(default_factory=dict)     # (device key, command digest) -> the body's enrollment time
 
     def open_goals(self) -> dict:
         return {g: self.specs[g] for g in self.admitted if g not in self.closed}
@@ -289,6 +294,13 @@ def founder_facts(ledger, *, body_id: str | None = None) -> FounderFacts:
                 facts.refused_at[p["digest"]] = max(refused_at, facts.refused_at.get(p["digest"], refused_at))
             book.fold("command.rejected", p, event_id=rec.payload["event_id"])
             continue
+        if kind == "greg.device.revoked":     # Body.device_keys honours every revocation: one only narrows trust
+            facts.revoked.add(p.get("device_key_id"))
+            devices.pop(p.get("device_key_id"), None)
+        elif kind == "greg.device.enrolled":  # when the body recorded a delegation: it narrows, never grants
+            facts.enrolled_at[(p.get("device_key_id"), p.get("command_digest"))] = p.get("at")
+        elif kind == "greg.body.restored":
+            facts.restored = p
         if kind == "greg.capability.registered":
             try:
                 manifest = CapabilityManifest.from_dict(p["manifest"])
@@ -315,8 +327,10 @@ def founder_facts(ledger, *, body_id: str | None = None) -> FounderFacts:
 
 # verified_decisions memo: ledger -> (records seen, hash of the last one, verified DECISIONs, their acceptance events)
 _VERIFIED: "weakref.WeakKeyDictionary" = weakref.WeakKeyDictionary()
-# The only records a DECISION's verification reads: the key root, key changes, nonces and acceptance times.
-FOUNDER_RECORDS = ("greg.command.accepted", "greg.command.rejected", "greg.founder.enrolled")
+# The only records a DECISION's verification reads: the key root, key changes, nonces, acceptance times, device
+# revocations and enrollment times, and restores.
+FOUNDER_RECORDS = ("greg.command.accepted", "greg.command.rejected", "greg.founder.enrolled",
+                   "greg.device.revoked", "greg.device.enrolled", "greg.body.restored")
 
 
 def _founder_record(rec) -> bool:
@@ -386,6 +400,15 @@ def _accepted(facts: FounderFacts, p: dict, founders: dict, devices: dict, seen_
             facts.refused[digest_] = ("its record's nonce is not its signed envelope's: not a record Body.apply "
                                       "wrote; it spends no nonce and counts for nothing")
         return None
+    if facts.restored is not None:
+        try:          # Body._after_restore refuses every command issued before the latest restore; unreadable, all
+            before = instant(env["issued_at"]) < instant(facts.restored.get("restored_at"))
+        except (KeyError, TypeError, ValueError):
+            before = True
+        if before:
+            if ckind in VERIFIED_KINDS or ckind in KEY_KINDS:
+                facts.refused[digest_] = f"{RESTORED_REFUSAL}; not a record Body.apply wrote, it spends no nonce"
+            return None
     if ckind not in VERIFIED_KINDS and ckind not in KEY_KINDS:
         return principal
     if env["nonce"] in seen_nonces:
@@ -424,8 +447,12 @@ def _founder_fact(facts: FounderFacts, p: dict, env: dict, ckind: str, digest_: 
             founders.pop(env["founder_key_id"], None)
             founders[key_id(body["new_public_key"])] = body["new_public_key"]
         elif ckind == "DEVICE_ENROLL" and principal == "founder":
-            devices[key_id(body["public_key"])] = {"public_key": body["public_key"], "label": str(body["label"]),
-                                                   "kinds": tuple(body["kinds"]), "expires_at": body["expires_at"]}
+            kid = key_id(body["public_key"])
+            devices[kid] = {"public_key": body["public_key"], "label": str(body["label"]),
+                            "kinds": tuple(body["kinds"]), "expires_at": body["expires_at"]}
+            if kid in facts.revoked:      # greg.body.device_delegations: a re-delegation verifies only later tokens
+                stated = [t for t in (p.get("accepted_at"), facts.enrolled_at.get((kid, digest_))) if _when(t)]
+                devices[kid]["signed_not_before"] = max(stated, key=_when) if stated else env["issued_at"]
         elif ckind == "DEVICE_REVOKE" and principal == "founder":
             devices.pop(body.get("device_key_id"), None)
     except (KeyError, TypeError, ValueError):

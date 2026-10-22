@@ -31,6 +31,14 @@ GENOMES = {
                                    "real continuations"),
     # simulated worlds: truth is a hidden state, parameter or outcome of a seeded generator
     "basal_bandit": (SIMULATED, "seeded Bernoulli reward processes; truth is the generator's hidden arm means"),
+    "mdl_model_select": (SIMULATED, "seeded noisy polynomial data; truth is the generator's hidden degree and a "
+                                    "held-back split it never shows"),
+    "forecast_judgment_pool": (SIMULATED, "seeded forecaster panels over Gaussian information blocks; truth is the "
+                                          "generator's event outcomes and true probabilities"),
+    "forecast_scenarios": (SIMULATED, "seeded regime-switching AR and jump processes; truth is the generator's "
+                                      "conditional futures"),
+    "forecast_recalibration": (SIMULATED, "seeded distorted judgments; truth is the generator's true "
+                                          "probabilities"),
     "basal_bayes_filter": (SIMULATED, "seeded two-level regime signals; truth is the hidden regime tape"),
     "basal_nlms": (SIMULATED, "seeded linear streams (stationary, drifting, switching, heavy-tailed noise, correlated "
                               "features); truth is the generator's realised targets"),
@@ -118,6 +126,10 @@ GENOMES = {
     "evo_map_elites": (MATHEMATICAL, "declared planar arms; QD-score over the exactly computed reachable cells"),
     "graph_betweenness_topk": (MATHEMATICAL, "generated graphs; exact betweenness by an independent reference "
                                              "Brandes"),
+    "prove_resolution": (MATHEMATICAL, "generated propositional and ground clause sets (pigeonhole, chains, random "
+                                       "CNF); entailment decided independently by Z3"),
+    "convex_qp_dual": (MATHEMATICAL, "generated dense convex QPs under linear inequalities; optimum by a long SLSQP "
+                                     "run polished by an exact active-set KKT iteration"),
     "game_repeated_sustain": (MATHEMATICAL, "generated stage games (prisoner's dilemmas, discrete Cournot, random); "
                                             "exact critical discount from an independent Z3 equilibrium enumeration"),
     "game_nash_bargaining": (MATHEMATICAL, "generated payoff polytopes (random hulls, sampled concave frontiers); "

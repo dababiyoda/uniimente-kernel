@@ -212,14 +212,88 @@ def test_a_rerun_offers_the_founder_tier_to_a_body_designated_without_it(tmp_pat
     assert "has claimed the founder tier" in third.stdout and not list((tmp_path / "body/inbox").glob("*.json"))
 
 
+# Every runbook or script that tells the founder to install the kernel by clone or checkout. A surface found by
+# install_surfaces() must be listed here or in NOT_FOUNDER_INSTALL with the reason it installs no body.
+FOUNDER_INSTALL_SURFACES = (
+    "greg/CHROMEBOOK_FIRST_MISSION.md",
+    "greg/chromebook/install.sh",
+    "greg/FIRST_MISSION.md",                            # the Mac runbook
+    "docs/opus-maximus/MISSION_CONTROL_OPERATIONS.md",  # the founder's operator card, section 1 "Install"
+)
+NOT_FOUNDER_INSTALL = {
+    "docs/OPEN_SOURCE_RESEARCH_LINE.md": "an offline research preview beside the organ clones; it installs no body",
+}
+
+
+def install_commands(rel: str):
+    """Commands a founder would copy: fenced blocks of a runbook, the whole of a script. Inline mentions (a rollback
+    row, a checkout GREG is to read) are not install steps."""
+    import re
+    text = (ROOT / rel).read_text()
+    if not rel.endswith(".md"):
+        return [text]
+    return [m.group(2) for m in re.finditer(r"^(```|~~~)[^\n]*\n(.*?)^\1[ \t]*$", text, re.M | re.S)]
+
+
+def named_branches(block: str):
+    """The branch each kernel clone installs: its -b/--branch, else the next checkout/switch, else None (the default
+    branch). A checkout/switch with no clone in the block names its branch too."""
+    import re
+    named, clone_waiting = [], False
+    for line in block.splitlines():
+        clone = re.search(r"git clone\b(.*)", line)
+        if clone and "uniimente-kernel" in clone.group(1):
+            if clone_waiting:
+                named.append(None)
+            b = re.search(r"(?:-b|--branch)[ =](\S+)", clone.group(1))
+            if b:
+                named.append(b.group(1))
+            clone_waiting = not b
+            continue
+        b = re.search(r"git (?:checkout|switch)(?: -c| -b)? ([^\s`;&|]+)", line)
+        if b:
+            named.append(b.group(1))
+            clone_waiting = False
+    return named + ([None] if clone_waiting else [])
+
+
+def install_surfaces():
+    import re
+    tracked = subprocess.run(["git", "ls-files", "*.md", "*.sh"], cwd=ROOT, capture_output=True, text=True,
+                             check=True).stdout.split()
+    return {rel for rel in tracked if not rel.startswith(("tests/", "docs/evidence/")) and (ROOT / rel).is_file()
+            and any(re.search(r"git clone\b[^\n]*uniimente-kernel|git (?:checkout|switch) ", b)
+                    for b in install_commands(rel))}
+
+
 def test_every_founder_install_surface_names_the_one_review_branch():
-    """The runbook and the installer once told Alfonso to clone a branch the candidate had long left behind. Each
+    """The runbooks and the installer once told Alfonso to clone branches the candidate had long left behind. Each
     founder-facing clone/checkout names the branch in greg/chromebook/REVIEW_BRANCH, and nothing else."""
     import re
     branch = (ROOT / "greg/chromebook/REVIEW_BRANCH").read_text().strip()
     assert re.fullmatch(r"[A-Za-z0-9._/-]+", branch)
-    named = []
-    for rel in ("greg/CHROMEBOOK_FIRST_MISSION.md", "greg/chromebook/install.sh"):
-        text = (ROOT / rel).read_text()
-        named += [(rel, b) for b in re.findall(r"git (?:clone -b|checkout) (\S+)", text)]
-    assert named and all(b == branch for _, b in named), named
+    named = {rel: [b for block in install_commands(rel) for b in named_branches(block)]
+             for rel in FOUNDER_INSTALL_SURFACES}
+    assert all(named.values()), {rel: b for rel, b in named.items() if not b}
+    stale = {rel: b for rel, b in named.items() if any(x != branch for x in b)}
+    assert not stale, f"founder install surfaces that do not install {branch}: {stale}"
+
+
+def test_no_founder_install_surface_escapes_the_review_branch_guard():
+    """A new runbook that clones or checks out the kernel joins FOUNDER_INSTALL_SURFACES, or says why it is not one."""
+    found = install_surfaces()
+    assert set(FOUNDER_INSTALL_SURFACES) <= found, set(FOUNDER_INSTALL_SURFACES) - found
+    assert found - set(FOUNDER_INSTALL_SURFACES) - set(NOT_FOUNDER_INSTALL) == set()
+
+
+@pytest.mark.parametrize("block, expected", [
+    ("git clone -b good https://github.com/dababiyoda/uniimente-kernel\n", ["good"]),
+    ("git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel\ngit checkout good\n", ["good"]),
+    ("git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel\n", [None]),
+    ("git clone https://github.com/dababiyoda/uniimente-kernel\ngit clone -b good https://github.com/"
+     "dababiyoda/uniimente-kernel\n", [None, "good"]),
+    ("cd ~/src/uniimente-kernel\ngit switch stale   # comment\n", ["stale"]),
+    ("git clone https://github.com/dababiyoda/DALEOBANKS\n", []),
+])
+def test_named_branches_reads_what_a_founder_would_install(block, expected):
+    assert named_branches(block) == expected

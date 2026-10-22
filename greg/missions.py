@@ -495,7 +495,9 @@ def judge(predicate: dict, output) -> tuple[str, str]:
     only monotone facts follow: a phrase or item found in the prefix is in the whole (contains TRUE, not_contains
     FALSE), and a long string's equality is decided by its digest and length. A miss proves nothing. An output
     that declares itself incomplete (``"complete": false``, e.g. a PDF page with no text layer) gets the same
-    treatment for every field: more data could only add to it."""
+    treatment for every field: more data could only add to it, unless the output names that field in
+    ``"decided"`` (e.g. ``document.text``'s ``found`` once a phrase is found): a field so named, holding a value,
+    is judged whole. ``decided`` vouches for fields of an incomplete output only, never for a cut list."""
     op = predicate["op"]
     path = predicate.get("field", "")
     try:
@@ -530,6 +532,9 @@ def judge(predicate: dict, output) -> tuple[str, str]:
     partial = isinstance(value, list) and len(value) == RECEIPT_LIST_LIMIT and op in (
         "equals", "contains", "not_contains", "count_gte")
     declared = isinstance(output, dict) and output.get("complete") is False
+    if declared and not partial and value is not None and isinstance(output.get("decided"), list) \
+            and path in output["decided"]:
+        return verdict, f"{detail}; decided by the capability despite an incomplete observation"
     if partial or declared:
         monotone = (op == "contains" and verdict == TRUE) or (op == "not_contains" and verdict == FALSE) \
             or (op == "count_gte" and verdict == TRUE) \

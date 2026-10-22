@@ -201,7 +201,7 @@ jobs:
   cortex_seed:
     name: "6 · Cortex seed experiment (Z3 + CP-SAT, frozen evaluation)"
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60  # the merged mutation gates (cortex 135, residual 106 mutants) outgrew 20 minutes
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

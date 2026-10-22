@@ -24,6 +24,23 @@ class Clock:
         self.now += timedelta(seconds=seconds)
 
 
+def acceptance_confinement() -> str:
+    """The worker setting for a test about something other than confinement that needs GREG's acceptance run to pass.
+    ``required`` where the host has the bubblewrap envelope. Without it ``required`` fails closed by design (pinned in
+    test_greg_worker_confinement_setting.py), so such a test runs ``supervised`` there."""
+    from greg.worker_isolation import host_has_envelope
+    return "required" if host_has_envelope() else "supervised"
+
+
+def skip_required_without_envelope(confinement: str) -> None:
+    """A ``required`` case of a test that needs a passing acceptance run says why it cannot run on this host."""
+    from greg.worker_isolation import host_has_envelope
+    if confinement == "required" and not host_has_envelope():
+        import pytest
+        pytest.skip("no bubblewrap envelope on this host: `required` fails closed here (see "
+                    "test_greg_worker_confinement_setting.py), so its acceptance run cannot pass")
+
+
 def make_body(tmp: Path, *, read_roots=None, worker_confinement: str = "required", passphrase: bytes | None = None):
     tmp = Path(tmp)
     data = tmp / "data"

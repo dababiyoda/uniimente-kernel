@@ -24,7 +24,7 @@ from greg import workers
 from greg.body import Body
 from greg.missions import MissionError, validate_mission
 from provenance.ledger import sha256_json
-from tests.greg_fixtures import Clock, drop, horizon, make_body, signed
+from tests.greg_fixtures import Clock, acceptance_confinement, drop, horizon, make_body, signed
 
 
 def _git(repo, *args):
@@ -98,7 +98,7 @@ def _run(tmp_path, monkeypatch, spec_kw=None, *, double=None, ticks=8, seconds=6
     data = tmp_path / "data"
     data.mkdir()
     repo = _repo(data)
-    home, key, bid, _ = make_body(tmp_path, read_roots=[data])
+    home, key, bid, _ = make_body(tmp_path, read_roots=[data], worker_confinement=acceptance_confinement())
     double = double or Double()
     monkeypatch.setitem(workers.PROVIDERS, "scripted", double)
     spec = _spec(repo, **(spec_kw or {}))

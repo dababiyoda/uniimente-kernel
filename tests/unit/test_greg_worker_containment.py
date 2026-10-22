@@ -39,7 +39,8 @@ import pytest
 
 from greg import isolation, workers
 from greg.body import Body
-from tests.greg_fixtures import Clock, drop, horizon, make_body, signed
+from tests.greg_fixtures import (Clock, acceptance_confinement, drop, horizon, make_body, signed,
+                                 skip_required_without_envelope)
 
 LANDLOCK = isolation.available().get("available")
 
@@ -218,7 +219,7 @@ def test_a_worker_that_replaces_its_evaluator_never_closes_its_mission(tmp_path,
     data = tmp_path / "data"
     data.mkdir()
     repo = _repo(data)
-    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data], worker_confinement=acceptance_confinement())
     monkeypatch.setitem(workers.PROVIDERS, "scripted", Substitute(how))
     strategy = {"action_id": "sub", "capability": "worker.commission", "target": "work:sub", "cost_usd": 0.5,
                 "params": {"order": "sub", "mode": "repository", "repo": str(repo), "objective": "add sub()",
@@ -507,6 +508,7 @@ SUBSTITUTES = {
 @pytest.mark.parametrize("how", sorted(SUBSTITUTES))
 def test_a_helper_a_shadowed_runner_or_a_shadowed_module_is_a_replaced_evaluator(
         tmp_path, monkeypatch, how, confinement):
+    skip_required_without_envelope(confinement)
     base, edits, allowed = SUBSTITUTES[how]
     verdict = appraise_direct(tmp_path, monkeypatch, edits, confinement, allowed=allowed, base=base)
     assert verdict["verdict"] == "REJECTED", verdict
@@ -524,6 +526,7 @@ def test_a_helper_a_shadowed_runner_or_a_shadowed_module_is_a_replaced_evaluator
 def test_honest_work_on_code_an_acceptance_command_names_is_accepted(tmp_path, monkeypatch, acceptance, base,
                                                                       confinement):
     """The freeze covers what judges (tests, their helpers, scripts, configuration), not the code being judged."""
+    skip_required_without_envelope(confinement)
     verdict = appraise_direct(tmp_path, monkeypatch, {"pkg/calc.py": RIGHT_SUB}, confinement, acceptance=acceptance,
                               base=base)
     assert verdict["verdict"] == "ACCEPTED", verdict
@@ -547,6 +550,7 @@ def test_a_project_file_change_never_turns_a_rejection_into_a_founder_decision(t
 @pytest.mark.parametrize("how", ["helper", "shadow-pytest"])
 def test_a_helper_or_runner_substitute_never_closes_its_mission(tmp_path, monkeypatch, how, confinement):
     """The canonical code-change mission (``templates.code_change``, which also runs the worker's changed tests)."""
+    skip_required_without_envelope(confinement)
     from greg import templates
     from greg.body import Layout
     base, edits, allowed = SUBSTITUTES[how]

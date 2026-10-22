@@ -18,6 +18,9 @@ from greg.body import Body, Layout
 from greg.capabilities import BUILTINS, InvocationContext, SecretBroker
 from tests.greg_fixtures import Clock, drop, make_body, signed
 from tests.unit.test_greg_workers import GOOD, ScriptedWorker, git, make_repo, run_mission
+# The worker tests' autouse envelope applies here too: real confinement where the host provides it, else the
+# labelled scripted envelope, so these appraisal tests run on a host without usable bubblewrap (CI runners).
+from tests.unit.test_greg_workers import acceptance_envelope  # noqa: F401  (autouse fixture)
 
 WRONG = "def add(a, b):\n    return a + b\n\n\ndef sub(a, b):\n    return a + b\n"          # corrupted: sub adds
 VACUOUS = {"pkg/calc.py": WRONG, "tests/test_calc.py": "def test_ok():\n    assert True\n"}

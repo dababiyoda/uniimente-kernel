@@ -72,7 +72,7 @@ import time
 from greg.capabilities import (CapabilityError, CapabilityManifest, InvocationContext, installed_binary,
                                run_isolated)
 from greg.artifacts import ArtifactStore
-from greg import builders, mechanisms, recombine
+from greg import builders, licensing, mechanisms, recombine
 from greg.cognition import assignment, linear, network
 from greg.journal import Journal, iso
 from greg.mechanisms import PackageCandidate
@@ -1831,11 +1831,16 @@ class Genesis:
                 offered.append(manifest.capability_id)
             return None
         cognition = manifest.function.startswith("cognition.")
-        allowed = (not cognition and mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"
+        # a package is legally qualified apart from technically: its license must permit attach without the founder
+        licensed, license_why = (licensing.auto_attach_allowed(manifest.provenance)
+                                 if manifest.provider.startswith("installed:python:") else (True, ""))
+        allowed = (not cognition and licensed
+                   and mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"
                    and manifest.consequence_class == "read_only"
                    and mission.cone._capability_inside(manifest.capability_id))
         if not allowed:
             why = ("a capability formed for cognition is attached only by the founder's own command" if cognition
+                   else f"its license needs your decision before any attach: {license_why}" if not licensed
                    else "mission scope does not pre-authorize this attach")
             self.journal.record("deficit.awaiting_attach", {"deficit_id": deficit_id,
                                                             "capability_id": manifest.capability_id, "why": why},

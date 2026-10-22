@@ -539,6 +539,7 @@
     "greg/institution.py",
     "greg/isolation.py",
     "greg/journal.py",
+    "greg/licensing.py",
     "greg/lightcone.py",
     "greg/mac/verify_mac_body.sh",
     "greg/mcp_login.py",

@@ -333,6 +333,11 @@ def bound_value(edge: dict, output):
         # the receipt kept a prefix; binding it would hand the next action part of a value as if it were whole
         raise Unbound(f"{source}.{edge['from']['field']} was kept as its first {len(value['prefix'])} of "
                       f"{value['length']} characters; a prefix is not bound as the whole value")
+    held = _held_back(value)
+    if held:
+        # a cut string or a list at the item limit inside the value: binding it would hand the next action a
+        # wrapper or a shortened list in place of the whole (#201 review, 5b)
+        raise Unbound(f"{source}.{edge['from']['field']} {held}; a part is not bound as the whole value")
     kinds = BIND_TYPES[edge["type"]]
     if not isinstance(value, kinds) or (edge["type"] in ("number", "integer") and isinstance(value, bool)):
         raise Unbound(f"{source}.{edge['from']['field']} is not {edge['type']}")
@@ -429,6 +434,22 @@ def _cut(value) -> dict | None:
             and isinstance(value["length"], int) and value["length"] > len(value["prefix"]):
         return value
     return None
+
+
+def _held_back(value) -> str | None:
+    """Why a value the receipt did not keep whole cannot stand for the whole, or None. It looks at every depth:
+    a member kept as a prefix, or a list kept to its first RECEIPT_LIST_LIMIT items."""
+    if _cut(value):
+        return "holds a member kept as a prefix"
+    if isinstance(value, list):
+        if len(value) == RECEIPT_LIST_LIMIT:
+            return f"is a list at the receipt's {RECEIPT_LIST_LIMIT}-item limit"
+        members = value
+    elif isinstance(value, dict):
+        members = value.values()
+    else:
+        return None
+    return next((why for why in map(_held_back, members) if why), None)
 
 
 def _raw_field(output, path: str):
@@ -531,7 +552,19 @@ def judge(predicate: dict, output) -> tuple[str, str]:
     verdict, detail = _judge_whole(op, value, expected)
     partial = isinstance(value, list) and len(value) == RECEIPT_LIST_LIMIT and op in (
         "equals", "contains", "not_contains", "count_gte")
-    declared = isinstance(output, dict) and output.get("complete") is False
+    # a list member longer than the receipt keeps is a wrapper, not the member: it can match nothing, so only a
+    # hit on a whole member decides (#201 review, 5a); its length is still the list's own
+    holed = isinstance(value, list) and not partial and op in ("equals", "contains", "not_contains") \
+        and any(_cut(v) for v in value)
+    if holed:
+        decided = (op == "contains" and verdict == TRUE and not _cut(expected)) \
+            or (op == "not_contains" and verdict == FALSE and not _cut(expected)) \
+            or (op == "equals" and (not isinstance(expected, list) or len(expected) != len(value) or any(
+                not _cut(v) and v != e for v, e in zip(value, expected))))
+        if not decided:
+            return INSUFFICIENT, f"{detail}; a member of the list was kept only as a prefix"
+    # an incomplete output still states its own completeness in full (#201 review, 6)
+    declared = isinstance(output, dict) and output.get("complete") is False and path != "complete"
     if declared and not partial and value is not None and isinstance(output.get("decided"), list) \
             and path in output["decided"]:
         return verdict, f"{detail}; decided by the capability despite an incomplete observation"

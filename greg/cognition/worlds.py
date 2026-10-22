@@ -112,6 +112,12 @@ GENOMES = {
     "evo_map_elites": (MATHEMATICAL, "declared planar arms; QD-score over the exactly computed reachable cells"),
     "graph_betweenness_topk": (MATHEMATICAL, "generated graphs; exact betweenness by an independent reference "
                                              "Brandes"),
+    "game_repeated_sustain": (MATHEMATICAL, "generated stage games (prisoner's dilemmas, discrete Cournot, random); "
+                                            "exact critical discount from an independent Z3 equilibrium enumeration"),
+    "game_nash_bargaining": (MATHEMATICAL, "generated payoff polytopes (random hulls, sampled concave frontiers); "
+                                           "exact solution by enumerating every vertex simplex"),
+    "game_stackelberg_commit": (MATHEMATICAL, "generated security, inspection and random games; leader optimum by "
+                                              "independent HiGHS linear programs"),
 }
 
 # P6 composition-lift families, as each frozen run's own ``limits`` describes them.

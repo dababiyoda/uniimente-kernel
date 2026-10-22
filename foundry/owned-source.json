@@ -379,6 +379,7 @@
     "greg/cognition/genomes/solvers_d.py",
     "greg/cognition/genomes/stochastic.py",
     "greg/cognition/genomes/strategic.py",
+    "greg/cognition/genomes/strategic_b.py",
     "greg/cognition/human.py",
     "greg/cognition/learned_routing.py",
     "greg/cognition/linear.py",

@@ -43,11 +43,16 @@ EXECUTED_ON_GREG = {
                                "scenario value of information, beta-binomial preposterior analysis and greedy "
                                "expected-information-gain test selection"),
     "cortex.game.mechanism": (("cognition.game", "cognition.game_minimax", "cognition.game_lp_dual",
-                               "cognition.bimatrix_nash", "cognition.mech_vcg", "cognition.mechanism_check"),
+                               "cognition.bimatrix_nash", "cognition.mech_vcg", "cognition.mechanism_check",
+                               "cognition.game_repeated_sustain", "cognition.game_nash_bargaining",
+                               "cognition.game_stackelberg_commit"),
                               "zero-sum matrix games by LP (with a duality certificate), general-sum bimatrix Nash "
-                              "equilibria by support enumeration, the VCG multi-unit mechanism, and exhaustive "
+                              "equilibria by support enumeration, the VCG multi-unit mechanism, exhaustive "
                               "dominant-strategy incentive-compatibility and participation checks of declared direct "
-                              "mechanisms"),
+                              "mechanisms, the critical discount of a two-player repeated game under Nash-reversion "
+                              "grim trigger (no optimal penal codes), the two- or three-player Nash bargaining "
+                              "solution over a polytope, and the strong Stackelberg leader commitment by multiple "
+                              "LPs (one follower type)"),
     "cortex.human.panel": (("cognition.human",),
                            "a typed route to authenticated human judgment: the family records the panel and "
                            "abstains HUMAN_REVIEW_REQUIRED; it never adjudicates"),

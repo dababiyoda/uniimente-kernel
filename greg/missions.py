@@ -36,6 +36,7 @@ from greg.authority import ActionOutcome, AuthorityOffice
 from greg.capabilities import CapabilityError, InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
 from greg import asks, improvement, routing
+from greg.founder import instant
 from greg.journal import Journal, fact_id, iso
 from greg.lightcone import LightCone
 from provenance.ledger import sha256_json
@@ -706,7 +707,9 @@ class MissionBook:
 
     def rebuild(self):
         self.missions, self.requests, self.answers, self.withdrawn = {}, {}, {}, {}
-        self.consumed: set[str] = set()    # answered paid APPROVALs whose one funded run has happened
+        self.consumed: set[str] = set()    # answered paid APPROVALs whose one funded run has happened, and approvals
+                                           # a restore voided (the original may have used them)
+        self._restore = None               # the latest body.restored in ledger order: the one Body._after_restore reads
         self._deficit_of = {}              # deficit_id -> the mission whose light cone pays for its builds
         self.unverified: dict[str, dict] = {}   # request_id -> {row, why}: an answer row kept as data, never applied
         self.unverified_requests: list[dict] = []  # decision.requested rows not recorded the way greg.asks records one
@@ -754,6 +757,9 @@ class MissionBook:
         if kind == "command.rejected":
             if isinstance(data.get("digest"), str):
                 self._refused_commands[data["digest"]] = str(data.get("reason", ""))
+            return
+        if kind == "body.restored":
+            self._restore = data      # a DECISION accepted after it is held to it (_refusal), as Body.apply holds it
             return
         mid = data.get("mission_id")
         m = self.missions.get(mid)
@@ -904,6 +910,7 @@ class MissionBook:
             request = self.requests.get(data["request_id"])
             if data.get("voids_approval") and request:   # a restore from a backup: the approval is asked again
                 m.approved_scopes.discard(request["scope_digest"])
+                self.consumed.add(data["request_id"])   # used up for every reader (Goal Gravity's answer_for too)
         elif kind == "decision.answered":
             self._answered(data)
 
@@ -965,6 +972,13 @@ class MissionBook:
         rid = data.get("request_id")
         if signed_answer(self._signed, rid, data) is None:
             return "the signed DECISION it cites answers another request or gives another answer"
+        if self._restore is not None:
+            try:      # Body._after_restore: the original may already have applied a command issued before the restore
+                before = instant(cmd["envelope"]["issued_at"]) < instant(self._restore.get("restored_at"))
+            except (KeyError, TypeError, ValueError):   # unreadable there too: the command path refuses every command
+                before = True
+            if before:
+                return "issued before this body was restored from a backup: the command path refuses it"
         if request is None:
             return "no such request was recorded before the DECISION's acceptance"
         if rid in self.withdrawn:

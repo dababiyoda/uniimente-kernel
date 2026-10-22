@@ -687,6 +687,16 @@ def answer_record(request: dict, body: dict, command_digest: str) -> dict:
             "command_digest": command_digest}
 
 
+def _own(value):
+    """A copy the caller owns of a mission field: dicts, lists and sets are copied all the way down.
+    Strings, numbers and the frozen LightCone are immutable and shared."""
+    if type(value) is dict:
+        return {k: _own(v) for k, v in value.items()}
+    if type(value) in (list, set):
+        return type(value)(_own(v) for v in value)
+    return value
+
+
 class MissionBook:
     """Projection of mission truth from retained greg.* events.
 
@@ -694,7 +704,18 @@ class MissionBook:
     a journal with a ledger it counts only as ``answer_record`` re-derives it from a founder-signed DECISION that
     ``goal_gravity.founder_facts`` counts as signed at its ``command.accepted`` position (a key valid there, this
     body, an unspent nonce, accepted inside its signed validity), and only if the command path's checks hold there.
-    It takes effect at that acceptance. Any other row is kept in ``unverified`` and never moves a mission."""
+    It takes effect at that acceptance. Any other row is kept in ``unverified`` and never moves a mission.
+
+    ``rebuild`` folds only the events retained since its previous call into the book's own state,
+    then hands out copies, so callers see exactly what a fold from the first event gives (tests pin
+    that) at a cost that follows new events and the number of missions, not the whole history.
+    Replaced history, or a fold that stopped part-way, is folded again from the beginning on the
+    next call.
+
+    Missions are copied afresh on every call. A decision record is copied once, when it is folded:
+    copying every decision ever made on every call would grow with history again. Either way the
+    fold reads only its own copies, so nothing a caller changes reaches a mission's state.
+    """
 
     def __init__(self, journal: Journal, *, verify_answers: bool | None = None):
         self.journal = journal
@@ -705,9 +726,94 @@ class MissionBook:
         self.missions: dict[str, MissionState] = {}
         self.requests: dict[str, dict] = {}
         self.answers: dict[str, dict] = {}
+        self._cursor = None
         self.rebuild()
 
+    # What the fold keeps between rebuilds (#168 bd0c17dc, joined with the verified answer fold). The first seven are
+    # handed to callers as copies; the rest are the fold's own.
+    _FOLD_SHOWN = ("missions", "requests", "answers", "withdrawn", "consumed", "unverified", "unverified_requests")
+    _FOLD_OWN = ("_restore", "_deficit_of", "_admitted", "_refused_commands", "_unverifiable", "_unverifiable_why",
+                 "_pending")
+
     def rebuild(self):
+        """Fold the events retained since the previous rebuild into the book's own state, then hand out copies.
+
+        Callers see exactly what a fold from the first event gives (tests/unit/test_greg_mission_book_incremental.py
+        pins that, verified answers, restores and unverified rows included). The fold is begun again from the first
+        event when the journal can only replay, when the history was replaced, when a fold stopped part-way, and when
+        ``verify_answers`` changed, and when the verified-DECISION set moved under what was already folded: a DECISION
+        acceptance folded while it did not verify (``_unverifiable``) that verifies now, or a verified DECISION whose
+        counting position changed. Neither
+        happens on an append-only ledger, where ``founder_facts`` judges each command at its own position; the check
+        keeps the incremental fold equal to a full one even if it did."""
+        from dataclasses import fields, replace
+        verify = getattr(self, "verify_answers", None)
+        if verify is None:
+            verify = self.verify_answers = getattr(self.journal, "ledger", None) is not None
+        signed, signed_at = {}, {}   # verified DECISIONs; digest -> the acceptance event each verified at
+        if verify and getattr(self.journal, "ledger", None) is not None:
+            from greg import goal_gravity  # goal_gravity imports this module
+            signed = goal_gravity.verified_decisions(self.journal.ledger)
+            signed_at = goal_gravity.decision_positions(self.journal.ledger)
+        state, cursor = getattr(self, "_state", None), getattr(self, "_cursor", None)
+        if state is None or state["verify"] != verify \
+                or any(signed_at.get(d) != at for d, at in state["signed_at"].items()) \
+                or any(d in signed for d in state["_unverifiable"]):
+            cursor = None
+        since = getattr(self.journal, "since", None)
+        if since is None:            # a journal that can only replay: fold all of it, every time
+            events, next_cursor, restarted = self.journal.replay(), None, True
+        else:
+            events, next_cursor, restarted = since(cursor)
+        self._state, self._cursor = None, None   # if a fold below raises, the next call starts over
+        if restarted or state is None:
+            self._reset()
+        else:
+            for name in self._FOLD_SHOWN + self._FOLD_OWN:
+                setattr(self, name, state[name])
+        self._signed, self._signed_at = signed, signed_at
+        for event in events:
+            self._apply(event)
+        state = {name: getattr(self, name) for name in self._FOLD_SHOWN + self._FOLD_OWN}
+        state["signed_at"], state["verify"] = dict(signed_at), verify
+        # finish() reads the end of the fold; the fold keeps its own pending rows and unverified table
+        self.unverified, self._pending = dict(state["unverified"]), dict(state["_pending"])
+        self.finish()
+        unverified, self._pending = self.unverified, state["_pending"]
+        self._state, self._cursor = state, next_cursor
+        self.missions = {mid: replace(m, **{f.name: _own(getattr(m, f.name)) for f in fields(m)})
+                         for mid, m in state["missions"].items()}
+        shown = getattr(self, "_shown", None)
+        if shown is None or restarted:
+            shown = self._shown = {"requests": {}, "answers": {}, "withdrawn": {}}
+        for table in ("requests", "answers", "withdrawn"):
+            # a decision record is copied once, when the fold first holds it: the fold reads only its own
+            cache, held = shown[table], state[table]
+            for rid, data in held.items():
+                if rid not in cache or cache[rid][0] is not data:
+                    cache[rid] = (data, _own(data))
+            setattr(self, table, {rid: cache[rid][1] for rid in held})
+        self.consumed = set(state["consumed"])
+        self.unverified = _own(unverified)
+        self.unverified_requests = _own(state["unverified_requests"])
+
+    @property
+    def _requests(self) -> dict:
+        return self._state["requests"]
+
+    @property
+    def _answers(self) -> dict:
+        return self._state["answers"]
+
+    @property
+    def _withdrawn(self) -> dict:
+        return self._state["withdrawn"]
+
+    def _apply(self, event) -> None:
+        self.fold(event.type[len("greg."):], event.payload, event_id=getattr(event, "event_id", None))
+
+    def _reset(self) -> None:
+        """The fold state before the first event."""
         self.missions, self.requests, self.answers, self.withdrawn = {}, {}, {}, {}
         self.consumed: set[str] = set()    # answered paid APPROVALs whose one funded run has happened, and approvals
                                            # a restore voided (the original may have used them)
@@ -720,14 +826,6 @@ class MissionBook:
         self._unverifiable: set[str] = set()   # DECISION digests with an acceptance record that does not verify
         self._unverifiable_why: dict[str, str] = {}   # digest -> the specific reason, when the fold knows one
         self._pending: dict = {}           # cited digest -> answer rows awaiting that DECISION's signed acceptance
-        self._signed, self._signed_at = {}, {}   # verified DECISIONs; digest -> the acceptance event each verified at
-        if self.verify_answers and getattr(self.journal, "ledger", None) is not None:
-            from greg import goal_gravity  # goal_gravity imports this module
-            self._signed = goal_gravity.verified_decisions(self.journal.ledger)
-            self._signed_at = goal_gravity.decision_positions(self.journal.ledger)
-        for event in self.journal.replay():
-            self.fold(event.type[len("greg."):], event.payload, event_id=getattr(event, "event_id", None))
-        self.finish()
 
     def finish(self) -> None:
         """End of the replay: an answer row no signed DECISION it cites was accepted after is kept as data, with the
@@ -1886,6 +1984,22 @@ class MissionEngine:
             return {"state": "BLOCKED", "blocker": m.blocker}
         return None
 
+    def _observations_retained(self, mission_id: str, check_id: str) -> int:
+        """How many observations of this check the journal retains, counting only events new since the
+        last call (the count a replay of every mission.observed event gives)."""
+        since = getattr(self.journal, "since", None)
+        if since is None:            # a journal that can only replay: count all of them
+            events, self._observed_cursor, restarted = self.journal.replay("mission.observed"), None, True
+        else:
+            events, self._observed_cursor, restarted = since(getattr(self, "_observed_cursor", None),
+                                                             "mission.observed")
+        if restarted:
+            self._observed_counts = {}
+        for e in events:
+            key = (e.payload.get("mission_id"), e.payload.get("check_id"))
+            self._observed_counts[key] = self._observed_counts.get(key, 0) + 1
+        return self._observed_counts.get((mission_id, check_id), 0)
+
     def _observe(self, m: MissionState, now: datetime):
         failing, evidence = set(), []
         sensor_errors = self.sensor_errors = set()
@@ -1905,9 +2019,7 @@ class MissionEngine:
             # because the wall clock repeated its timestamp (clock freeze/NTP).
             # The journal survives process death; count only this check's
             # retained observations so each completed read gets a new attempt.
-            attempt = sum(1 for e in self.journal.replay("mission.observed")
-                          if e.payload.get("mission_id") == m.mission_id
-                          and e.payload.get("check_id") == check["check_id"])
+            attempt = self._observations_retained(m.mission_id, check["check_id"])
             from greg.pipeline import resolve, PendingInput, BindingError
             try:
                 bound_params, input_bindings = resolve(sensor.get("params", {}), self.journal, m.mission_id)

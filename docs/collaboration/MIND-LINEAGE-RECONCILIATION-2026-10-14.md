@@ -927,4 +927,20 @@ rule are v1's, unchanged. Results:
 After the index rebuild, `compiler.recipe_stale` is None for all four recipes. **Live VPL on the joined tree is 3**:
 it was 0 at `ea90b4b4`, and on #179's head it is 2. Converged v1's verdicts stay in each recipe's history, marked
 stale. The natural-family recipes (F5-F8) are still stale on the joined code. The exposure ledger has 451 records,
-with no overlap involving held-out data. The operation re-admission is still to run.
+with no overlap involving held-out data.
+
+**Operation re-admission on the joined tree, run (2026-10-22).** Pre-registered at `244b652c` and frozen at `3520efe6`.
+It ran once on fresh seeds 5920-5949, in a clean detached worktree. Results are in
+`docs/evidence/greg-genome-admission/2026-10-22-joined-operations/`. The runner now records, per family, the solver
+function every candidate call reached, and that dispatch equals the frozen closure for all four families.
+
+| Family | Verdict | Against the baseline | Against the competitor |
+|---|---|---|---|
+| control | **DEFAULT_FOR_GEOMETRY** | 30-0 | 30-0 |
+| game | **DEFAULT_FOR_GEOMETRY** | 30-0 | 21-0-9 |
+| information | **DEFAULT_FOR_GEOMETRY** | 17-0-13 | 13-0-17 |
+| probabilistic | NICHE_CAPABILITY | 17-6-7, p 0.017 | 13-10-7, p 0.34, and slower |
+
+Control, game and information replicate and route again: the binding rule is satisfied, not loosened. On
+2026-10-21 probabilistic read EXPERIMENTAL. Here it reads NICHE_CAPABILITY, which is a second reading, not a
+replication, and it is kept as such. No candidate output was refuted.

@@ -109,7 +109,9 @@ jobs:
     name: "9 · Institutional verifier V1-V5"
     runs-on: ubuntu-latest
     # Same rationale as job 1 (#180): V2 re-runs tests/unit, which Track B's Mind tests enlarged; bounds a hung run.
-    timeout-minutes: 45
+    # On the joined tree (#196) V2 covers both lineages' tests/unit: 25 min in #192's job 9, 29m10s inside Track B's
+    # job 1; 60 keeps that union clear of the limit.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -202,7 +204,10 @@ jobs:
   cortex_seed:
     name: "6 · Cortex seed experiment (Z3 + CP-SAT, frozen evaluation)"
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # The joined tree (#196) runs both lineages' mutants: the whole job took 18m04s at 47229e3b (#192, run 39645058690)
+    # and 15.5 min at af50537b (#196 before Track B); Track B's residual step alone took 6m04s at 93badaff (run
+    # 39688750571) and now runs the union plus #192's baseline pass. 40 bounds a hung run with that union's headroom.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

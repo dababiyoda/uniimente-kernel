@@ -152,7 +152,11 @@ then choose **Accept result** or reject it truthfully. Run:
 greg vepmc
 greg morning
 greg presence --hours 2
+greg acceptance > ~/GREG/acceptance.json
 ```
+
+`greg acceptance` reads only this body's ledger. It names the exact code commit it ran, and its
+`code_identified` property passes only on a clean checkout of one named commit. Keep the file with the brief.
 
 If GitHub refused some reads (rate limit, or a private repository), the brief lists
 those gaps and GREG asks **once** for access, with the evidence and a no-cost option.

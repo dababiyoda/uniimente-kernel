@@ -49,6 +49,7 @@ MODULES = (
     "greg.cognition.genomes.centrality",    # L3 exact top-k betweenness-critical nodes (batched sparse Brandes)
     "greg.cognition.genomes.search",        # L3 search: IDA* (memory-bounded optimal), beam (flow shop), MCTS (Hex)
     "greg.cognition.genomes.strategic_b",   # L3 strategic pack B: repeated games, Nash bargaining, Stackelberg
+    "greg.cognition.genomes.formal_b",      # L3 batch B: resolution proofs, MDL model selection, convex QP duality
 )
 PROOF_CLASS = "genome_certificate"
 PROOF_FIELDS = ("intelligence_id", "version", "evidence_type", "inputs_digest", "certificate", "limits")

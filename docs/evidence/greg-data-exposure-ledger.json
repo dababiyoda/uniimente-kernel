@@ -216,7 +216,7 @@
  },
  "counts": {
   "by_lineage": {
-   "#158": 331,
+   "#158": 332,
    "#179": 141,
    "both": 42
   },
@@ -224,7 +224,7 @@
    "P8 held-out": 7,
    "admission held-out": 147,
    "canary": 1,
-   "dev": 271,
+   "dev": 272,
    "held-out": 68,
    "review-pilot": 11,
    "train": 9
@@ -235,7 +235,7 @@
    "admission held-out / #158": 90,
    "admission held-out / #179": 57,
    "canary / #158": 1,
-   "dev / #158": 204,
+   "dev / #158": 205,
    "dev / #179": 44,
    "dev / both": 23,
    "held-out / #158": 13,
@@ -245,7 +245,7 @@
    "train / #158": 6,
    "train / #179": 3
   },
-  "exposures": 514,
+  "exposures": 515,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -16330,8 +16330,7 @@
    "n": 1,
    "part": "?:item(family).instance:847",
    "present_in": [
-    "#158",
-    "#179"
+    "#158"
    ],
    "program": "test fixture",
    "role": "dev",
@@ -24072,6 +24071,48 @@
     [
      0,
      9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "e968b32516ba13dc89ce1020d1da325add21fe10",
+    "line_commits": [
+     "e968b32516ba13dc89ce1020d1da325add21fe10"
+    ],
+    "lines": [
+     848,
+     849
+    ],
+    "path": "tests/unit/test_genomes_stochastic.py",
+    "sha256": "sha256:e2faa39d5df7803fd2228c04a52ec20d3962f92b33500fd9bc27a2ddb4bfbb3c"
+   },
+   "exposure_commit": "e968b32516ba13dc89ce1020d1da325add21fe10",
+   "family": null,
+   "generator": {
+    "commit": "e968b32516ba13dc89ce1020d1da325add21fe10",
+    "key": "item(family).instance",
+    "kind": "code",
+    "resolved": false,
+    "why": "receiver not resolved statically"
+   },
+   "id": "#179|tests/unit/test_genomes_stochastic.py|dev|-|?:item(family).instance:848",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 1,
+   "part": "?:item(family).instance:848",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     4,
+     4
     ]
    ]
   },

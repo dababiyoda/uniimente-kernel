@@ -25180,10 +25180,10 @@
      "32196c390a2179408bca5793ab1d0cbc253d4f1b"
     ],
     "lines": [
-     18
+     20
     ],
     "path": "tests/unit/test_greg_large_inline_mission.py",
-    "sha256": "sha256:41636f815ba7fa5fb545bd2aa81c9e05ee515ed5bc7035575bb20530b005edd0"
+    "sha256": "sha256:06c8157f6f05ceb44ba25398bba801bfb4799fccaa5c8571432f5812d7a72181"
    },
    "exposure_commit": "32196c390a2179408bca5793ab1d0cbc253d4f1b",
    "family": null,
@@ -25194,14 +25194,14 @@
     "resolved": false,
     "why": "receiver not resolved statically"
    },
-   "id": "#179|tests/unit/test_greg_large_inline_mission.py|dev|-|?:item.instance:18",
+   "id": "#179|tests/unit/test_greg_large_inline_mission.py|dev|-|?:item.instance:20",
    "lineages": [
     "#179"
    ],
    "looked_at": true,
    "looked_at_basis": "a test asserts on these instances",
    "n": 1,
-   "part": "?:item.instance:18",
+   "part": "?:item.instance:20",
    "present_in": [],
    "program": "test fixture",
    "role": "dev",

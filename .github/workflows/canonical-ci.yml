@@ -319,7 +319,10 @@ jobs:
         with:
           python-version: "3.11"
       - name: Kernel environment
-        run: pip install -r kernel/requirements-dev.txt -r kernel/requirements-cognition.txt
+        # organs.exchange runs organ code under the kernel's own interpreter, as the research line does, so it needs
+        # the research line's pinned organ imports (python-dotenv). Until ubuntu-26.04 the ten-step proof that
+        # exercises it was skipped for want of bubblewrap namespaces.
+        run: pip install -r kernel/requirements-dev.txt -r kernel/requirements-cognition.txt -r kernel/requirements-research-line.txt
       - name: Each organ in its own environment, from its own requirements
         run: |
           python -m venv organs/daleobanks-venv

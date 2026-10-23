@@ -70,6 +70,10 @@ Full data: `binary-license-policy-2026-10-22/use-context-measurement-2026-10-23.
   DEP-5 read, measured under concurrent test load. It is about 0.2 µs under P0.
 - **What drives false holds.** The DEP-5 reader does not cover enough license names. The leading unclassified
   terms are ImageMagick, Magick++, "other", "permissive", CC-BY-SA-3.0, bare LGPL and GNU-All-Permissive.
+- **Negative result: a bigger name table is not the lever.** Adding 18 version-independent DEP-5 names (bare
+  LGPL and Apache, ImageMagick, libpng, Unicode, PHP-3.01 and others) moved P4c from 442 holds to 438. A package
+  is held when any one of its terms is unclassified, and the long tail is per-package text ("other", "permissive")
+  that only reading the text can classify. The extension was reverted; the measurement is kept here.
 - **P3, ScanCode, targeted.**
   - scancode-toolkit-mini 32.5.0 ran in an isolated scratch venv. Nothing was installed on the body's interpreter.
   - The dependency defect reproduces: with pluggy 1.7.0 it fails to start (`did not find any 'pre_scan' hooks`);

@@ -53,5 +53,11 @@
   },
   "effect": "resolves the one P4c catalog hold (shasum, owned by perl) to strong copyleft, compatible with GREG's use",
   "disagreement_kept": "openssl: GREG's reader says weak copyleft, scancode strong (GPL-1.0-or-later alternative); neither is a legal opinion"
+ },
+ "name_table_extension_negative": {
+  "names_added": 18,
+  "p4c_holds_before": 442,
+  "p4c_holds_after": 438,
+  "decision": "reverted; text classification (P3) is the lever"
  }
 }

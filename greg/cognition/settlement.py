@@ -97,6 +97,13 @@ def _constructed_versions(journal) -> dict:
     return out
 
 
+def _constructed_functions(journal) -> dict:
+    """capability id -> the function (``recombine.REDUCTIONS`` key) of every construction Genesis registered here."""
+    return {e.payload["manifest"].get("capability_id"): (e.payload.get("origin") or {}).get("function")
+            for e in journal.replay("capability.registered")
+            if (e.payload.get("origin") or {}).get("kind") == "composed" and e.payload.get("manifest")}
+
+
 def _constructed(value, constructed):
     """A retained compile receipt that one of this body's constructions answered with its problem-level
     certificate, or None. A construction's answer has no cognitive receipt (``selected_receipt`` is None), so it is
@@ -153,6 +160,9 @@ def measured_outcomes(journal):
     from greg.capabilities import BUILTINS
     formed = _formed_versions(journal)
     constructed = _constructed_versions(journal)
+    functions = _constructed_functions(journal) if constructed else {}
+    world = _world_realizations(journal)
+    world_seen = defaultdict(dict)        # claim identity -> objective realizations on any receipt observed for it
     registrations = {e.payload["mission_id"]: e.payload for e in journal.replay("mission.registered")}
     witnesses = {r.payload["witness_id"]: r.payload for r in journal.ledger.by_type("witness")}
     latest_appraisal, observations = {}, {}
@@ -184,7 +194,12 @@ def measured_outcomes(journal):
                 witnesses.get(record.payload.get("witness_id"), {}).get("capability"),
                 data, event, latest_appraisal[data["mission_id"]])
             if outcome is not None:
-                observations[_outcome_identity(outcome)] = outcome
+                identity = _outcome_identity(outcome)
+                observations[identity] = outcome
+                promise = _promise(built, functions.get(outcome["method"]))
+                world_seen[identity].update({e.event_id: e for e in world.get(data["receipt"], {}).values()
+                                             if e.payload.get("compile_receipt") == built["receipt_id"]
+                                             and promise is not None and _promised(e.payload) == promise})
             continue
         if compiled is not None:
             receipt = compiled["selected_receipt"]
@@ -216,6 +231,13 @@ def measured_outcomes(journal):
                              **condition_competence.settlement_fields(compiled, check, data["passed"])}
         # Reobservations revise this signed claim; another check/input is not its duplicate.
         observations[_outcome_identity(outcome)] = outcome
+    for identity, events in world_seen.items():
+        if identity in observations and events:
+            settled = _world_settled(observations[identity], list(events.values()))
+            if settled is None:
+                observations.pop(identity)    # conflicting realizations of one claim: scored as neither
+            else:
+                observations[identity] = settled
     return list(observations.values())
 
 
@@ -304,6 +326,106 @@ def receipt_links(journal) -> dict:
 REALIZATION_SOURCES = ("sensor_observation", "external_record", "founder_reported")
 MIN_CALIBRATION_N = 20
 
+# The objective each construction's answer promises (``recombine`` certify outputs): field and sense. A function
+# absent here, or an answer with no finite value in that field (an impossible deadline), promises nothing realizable.
+OBJECTIVES = {"selection.closure": ("profit", "max"), "selection.budgeted": ("profit", "max"),
+              "assignment.staffing": ("staffed", "max"), "assignment.matching": ("size", "max"),
+              "project.crash": ("cost", "min")}
+# Declared before any outcome and never set per realization: the world fell short of the promise when the realized
+# objective is worse than the promised one by more than this fraction of |promised| (at least this much absolute).
+REALIZATION_RELATIVE_TOLERANCE = 0.05
+
+
+def _finite(value) -> bool:
+    return type(value) in (int, float) and value == value and abs(value) != float("inf")
+
+
+def _promise(built, function) -> tuple | None:
+    """(objective field, sense, promised value) a construction's certified answer commits to, or None."""
+    spec = OBJECTIVES.get(function)
+    result = built.get("result") if isinstance(built.get("result"), dict) else {}
+    if spec is None or result.get("feasible") is False or not _finite(result.get(spec[0])):
+        return None
+    return spec[0], spec[1], result[spec[0]]
+
+
+def _promised(fact) -> tuple:
+    return fact.get("objective"), fact.get("sense"), fact.get("promised")
+
+
+def realization_tolerance(promised) -> float:
+    return REALIZATION_RELATIVE_TOLERANCE * max(abs(promised), 1.0)
+
+
+def world_met(promised, realized, sense) -> bool:
+    """Whether the world kept the answer's promise. Wrong in the world means the realized objective is worse than
+    promised by more than the declared tolerance (below it for a maximum, above it for a minimum); doing better is
+    not a failure. It is evidence about the method on this geometry, not proof the certificate was false: the
+    certificate proves the answer from the declared inputs, and the world can still disagree with those inputs."""
+    tolerance = realization_tolerance(promised)
+    return realized >= promised - tolerance if sense == "max" else realized <= promised + tolerance
+
+
+def _world_realizations(journal) -> dict:
+    """ledger receipt -> {event id: objective realization fact} (``record_realization`` on a construction)."""
+    out = defaultdict(dict)
+    for event in journal.replay("cognition.realization"):
+        if event.payload.get("kind") == "objective":
+            out[event.payload["receipt"]][event.event_id] = event
+    return out
+
+
+def _world_settled(outcome, events) -> dict | None:
+    """The construction outcome as the world settled it, or None when its realizations disagree (scored as neither).
+
+    For competence the world verdict supersedes the certificate's: ``correct`` is true only when the answer passed
+    its signed check and the world kept its promise. Both stay on the record (``certificate_correct``, ``world``)."""
+    values = {e.payload["realized"] for e in events if _finite(e.payload.get("realized"))}
+    if len(values) != 1:
+        return None
+    first = min(events, key=lambda e: e.event_id)
+    objective, sense, promised = _promised(first.payload)
+    realized = values.pop()
+    met = world_met(promised, realized, sense)
+    return {**outcome, "correct": bool(outcome["correct"] and met), "certificate_correct": outcome["correct"],
+            "world": {"objective": objective, "sense": sense, "promised": promised, "realized": realized,
+                      "tolerance": realization_tolerance(promised), "met": met, "source": first.payload["source"],
+                      "realization_events": sorted(e.event_id for e in events)},
+            "evidence_tier": f"realized objective bound to the receipt ({first.payload['source']}); the certificate "
+                             "was checked locally"}
+
+
+def _record_objective(journal, *, receipt, built, realized, source, note, command_digest) -> dict:
+    """One realized objective per construction receipt. A repeat of the same value returns the fact already kept; a
+    different value is recorded beside it as a conflict, and the claim is then scored as neither."""
+    promise = _promise(built, _constructed_functions(journal).get(built["method_or_composition_selected"]))
+    if promise is None:
+        raise ValueError("this construction's answer promises no realizable objective")
+    objective, sense, promised = promise
+    if not _finite(realized):
+        raise ValueError(f"realized takes one finite number: the realized {objective} the answer promised")
+    if source not in REALIZATION_SOURCES:
+        raise ValueError(f"source is one of {list(REALIZATION_SOURCES)}")
+    payload = {"receipt": receipt, "kind": "objective", "compile_receipt": built["receipt_id"],
+               "method": built["method_or_composition_selected"], "objective": objective, "sense": sense,
+               "promised": promised, "realized": realized, "tolerance": realization_tolerance(promised),
+               "tolerance_rule": f"{REALIZATION_RELATIVE_TOLERANCE} x max(|promised|, 1), declared in code",
+               "met": world_met(promised, realized, sense), "source": source, "note": str(note)[:300],
+               "authority_created": False, **({"command_digest": command_digest} if command_digest else {})}
+    first = journal.retained("cognition.realization", receipt)
+    if first is None:
+        journal.record("cognition.realization", payload, key=receipt, sensitivity="confidential")
+        return payload
+    if first.payload.get("realized") == realized:
+        return first.payload
+    key = [receipt, "conflict", repr(realized)]
+    kept = journal.retained("cognition.realization", key)
+    if kept is not None:
+        return kept.payload
+    payload = {**payload, "conflicts_with": first.event_id}
+    journal.record("cognition.realization", payload, key=key, sensitivity="confidential")
+    return payload
+
 
 def record_realization(journal, *, receipt: str, realized, source: str, note: str = "",
                        command_digest: str | None = None) -> dict:
@@ -311,13 +433,22 @@ def record_realization(journal, *, receipt: str, realized, source: str, note: st
 
     ``receipt`` is the ledger hash of the action receipt whose output is the cognitive receipt; ``realized`` is
     one finite number per forecast horizon step, observed after the forecast was made. The source is labelled,
-    never upgraded: a founder-reported value is evidence of that report, not a sensor reading. No authority."""
+    never upgraded: a founder-reported value is evidence of that report, not a sensor reading. No authority.
+
+    On a construction's certified answer (``_constructed``) ``realized`` is one finite number instead: the realized
+    value of the objective the answer promised (``OBJECTIVES``), scored by ``world_met`` and settled once per receipt
+    as that method's world outcome on its geometry (``measured_outcomes``)."""
     record = journal.ledger.find(receipt)
     retained = (record.payload.get("result", {}).get("output") if record is not None and
                 record.record_type == "receipt" else None)
     cognitive, compiled = _forecast_of(retained)
     if cognitive is None:
-        raise ValueError("realizations bind only to a retained, valid, unrefuted forecast receipt")
+        built = _constructed(retained, _constructed_versions(journal))
+        if built is None:
+            raise ValueError("realizations bind only to a retained, valid, unrefuted forecast receipt or a "
+                             "certified construction answer")
+        return _record_objective(journal, receipt=receipt, built=built, realized=realized, source=source,
+                                 note=note, command_digest=command_digest)
     horizon = len(cognitive["output"]["point"])
     if (not isinstance(realized, list) or len(realized) != horizon
             or not all(type(v) in (int, float) and v == v and abs(v) != float("inf") for v in realized)):

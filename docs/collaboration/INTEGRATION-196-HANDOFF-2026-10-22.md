@@ -139,6 +139,20 @@ Organs: DALEOBANKS `667439f`, WealthMachine `ec82b80` (CI pins, unchanged; neith
   - power 0.935 at 24 stress per objective and 20 holdout per cell;
   - declared the last experiment in this line; a NO_GAIN closes it.
 
+- **Fresh-receiver test:** `session_01Jwps9aYCMfYFNh66iMMJaB` resumed the #197/#199 handoff read-only from
+  the durable records alone ([#96 comment 6341046052](https://github.com/dababiyoda/uniimente-kernel/issues/96#issuecomment-6341046052)).
+  - Its first action was correct, it needed no founder reconstruction, and the Chromebook drift guard passed
+    18/18 at `950c61e6`, with a negative control.
+  - Two frictions it reported are now fixed in the docs: START_HERE step 4 says to read the board's newest
+    comments (the connector's comment pages start with the oldest), and RECEIPT.md says `integration.branch`
+    names the destination, not the work branch.
+  - Limits: one receiver; the task was read-only, and its dispatch named the board, so finding the board unaided
+    was not tested.
+- **#201's review findings 5a, 5b, 6** (routed here): fixed at `af6fdfe1` with three failing-first tests. A
+  member kept only as a prefix no longer settles a check by a miss. A value holding such a member, or a list at
+  the 1,000-item limit, is never bound as whole. An incomplete output still decides its own `complete` field.
+  Other settled fields stay the capability's to name in `decided`.
+
 ## Self-review
 
 This is one agent working through five lenses. It is not independent review.
@@ -196,13 +210,32 @@ This is one agent working through five lenses. It is not independent review.
      (`tests/integration/test_one_mission_fifteen_steps.py`, CI job 8). Its honest gaps are listed in the test's `GAPS`:
      the observation enters through the stopped-body intake, the organs do not carry the staffing figures into
      WealthMachine's assessment, and the changed decision comes from a kept capability, not reordered outcomes.
-   - A positive construction dividend: realized outcomes bound to construction receipts, so a certified construction
-     can settle as wrong.
+   - Closed since: the **live intake**. A running body now reads untrusted observations dropped into `intake/`
+     (`greg intake --source S --channel C`) on its next tick, as data only (`Body.ingest_intake`,
+     `tests/unit/test_greg_live_intake.py`). In the 15-step mission the observation now arrives with the body
+     running, with no restart. Disabling the read fails 8 of the 9 unit tests and the 15-step mission. Remaining
+     on step 2: the drop is local, so no connector delivers an outside feed.
+   - A positive construction dividend. **Mechanism built at `4c7a3a97`** (dispatched worker, reviewed and joined
+     here; note `CONSTRUCTION-REALIZATION-2026-10-22.md`): a founder-signed REALIZATION of the objective a
+     construction's answer promised settles it wrong in the world when it falls short by more than 5% of the
+     promise. In a test, 10 synthetic realizations, 6 of them short, reordered a later compile by the Fisher rule;
+     with realizations disabled the choice does not change. **The dividend itself is not measured.** No real
+     realized outcome is reachable from this container: a realized portfolio profit or staffing result exists only
+     after a founder executes a plan in the world, and GREG has executed none (VEPMC 0). A pre-registered run waits
+     on the founder's first real portfolio or staffing decision, reported with `greg realize`.
    - Antifragility: closed. v3b was NO_GAIN by its frozen rule (best cell 3-0, no preference fired; B1 beats every
      learned arm); no v3c.
    - Per-geometry pooling of settled competence (a stated limitation).
-   - A signed mission binds at most 16 KiB of inline data (`missions.DEFAULT_BIND_BYTES`), so a founder mission cannot
-     yet carry the large QPs the solver now accepts; it needs a by-reference input path.
+   - ~~A signed mission binds at most 16 KiB of inline data, so a founder mission cannot yet carry the large QPs the
+     solver now accepts; it needs a by-reference input path.~~ **Corrected by measurement at `048a8ca4`:** a
+     founder-signed mission carrying a 509 KB `convex_qp_dual` request inline (development seed 5) registered, solved
+     and closed ACHIEVED. `DEFAULT_BIND_BYTES` limits only a value bound from one action's receipt into another
+     (receipts keep 16 KiB strings and 1,000 list items), and such a cut value is now refused (#201 review 5b). The
+     remaining needs are:
+     - large values passed between actions by artifact reference;
+     - the ledger cost of large inline missions. That one mission grew the ledger 3.2 MB: the 1 MB spec holds the
+       request twice (sensor and strategy), and the ledger keeps the spec three times (`command.accepted` keeps both
+       the body and the signed envelope, and `mission.registered` keeps it again).
    - A third probabilistic operation run.
 8. **Irreducible founder or external actions.**
    - Founder-device acceptance on the Chromebook (`FOUNDER-ACTIONS-2026-10-22.md` §1). VEPMC moves only on it.

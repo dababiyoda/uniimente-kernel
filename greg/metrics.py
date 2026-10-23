@@ -248,14 +248,14 @@ def founder_tier(journal: Journal | None) -> dict:
     """
     if journal is None:
         return {}
-    from greg.founder import FOUNDER_TIER_BODY
+    from greg.founder import FOUNDER_TIER_BODY, accepted_body
     seq = {r.payload.get("event_id"): r.seq for r in journal.ledger.by_type("event")}
     commands, attested = {}, {}
     for event in journal.replay("command.accepted"):
         command = event.payload
         commands.setdefault(command.get("digest"), command)
         if (command.get("kind") == "FOUNDER_TIER" and command.get("signer") == "founder"
-                and command.get("body") == FOUNDER_TIER_BODY):
+                and accepted_body(command) == FOUNDER_TIER_BODY):
             attested.setdefault(command.get("founder_key_id"), seq[event.event_id])
     out = {}
     for event in journal.replay("mission.registered"):
@@ -282,12 +282,12 @@ def tier_status(journal: Journal | None, enrolled: list) -> dict:
 
     Without it, a body designated before FOUNDER_TIER existed stayed silently unattested: every later
     closure was a structural candidate and no surface said why (review of 2026-10-14)."""
-    from greg.founder import FOUNDER_TIER_BODY
+    from greg.founder import FOUNDER_TIER_BODY, accepted_body
     attested = {}
     for event in (journal.replay("command.accepted") if journal is not None else []):
         command = event.payload
         if (command.get("kind") == "FOUNDER_TIER" and command.get("signer") == "founder"
-                and command.get("body") == FOUNDER_TIER_BODY):
+                and accepted_body(command) == FOUNDER_TIER_BODY):
             attested.setdefault(command.get("founder_key_id"), command.get("issued_at"))
     ok = bool(enrolled) and all(k in attested for k in enrolled)
     return {"enrolled_key_attested": ok,

@@ -217,14 +217,14 @@
  "counts": {
   "by_lineage": {
    "#158": 331,
-   "#179": 139,
+   "#179": 141,
    "both": 42
   },
   "by_role": {
    "P8 held-out": 7,
    "admission held-out": 147,
    "canary": 1,
-   "dev": 269,
+   "dev": 271,
    "held-out": 68,
    "review-pilot": 11,
    "train": 9
@@ -236,7 +236,7 @@
    "admission held-out / #179": 57,
    "canary / #158": 1,
    "dev / #158": 204,
-   "dev / #179": 42,
+   "dev / #179": 44,
    "dev / both": 23,
    "held-out / #158": 13,
    "held-out / #179": 36,
@@ -245,7 +245,7 @@
    "train / #158": 6,
    "train / #179": 3
   },
-  "exposures": 512,
+  "exposures": 514,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -25126,6 +25126,89 @@
     [
      3,
      3
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "4c7a3a97428a6f9aac298090b5d7dd4c3d0dfbef",
+    "line_commits": [
+     "4c7a3a97428a6f9aac298090b5d7dd4c3d0dfbef"
+    ],
+    "lines": [
+     154
+    ],
+    "path": "tests/unit/test_greg_construction_realization.py",
+    "sha256": "sha256:3c473a88da67bc5f736bcc2de3fd00324bc9410135575a5deb90ab935eb6ad9c"
+   },
+   "exposure_commit": "4c7a3a97428a6f9aac298090b5d7dd4c3d0dfbef",
+   "family": null,
+   "generator": {
+    "code_sha256": "sha256:15f9eb46d7b2681d258d433411e665e91d9222cbae4a4bbd0c0b85129968b37c",
+    "commit": "4c7a3a97428a6f9aac298090b5d7dd4c3d0dfbef",
+    "delegates": [],
+    "function": "maxflow_instance",
+    "key": "greg.cognition.genomes.flow:maxflow_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.flow",
+    "module_file_sha256": "sha256:c4c30d7925a3ef63da2e537571dfefe7a7ec961dc1957fd3f329ab35d8800007",
+    "prng": [],
+    "resolved": true
+   },
+   "id": "#179|tests/unit/test_greg_construction_realization.py|dev|-|greg.cognition.genomes.flow:maxflow_instance:154",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 1,
+   "part": "greg.cognition.genomes.flow:maxflow_instance:154",
+   "present_in": [],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     3,
+     3
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "32196c390a2179408bca5793ab1d0cbc253d4f1b",
+    "line_commits": [
+     "32196c390a2179408bca5793ab1d0cbc253d4f1b"
+    ],
+    "lines": [
+     20
+    ],
+    "path": "tests/unit/test_greg_large_inline_mission.py",
+    "sha256": "sha256:06c8157f6f05ceb44ba25398bba801bfb4799fccaa5c8571432f5812d7a72181"
+   },
+   "exposure_commit": "32196c390a2179408bca5793ab1d0cbc253d4f1b",
+   "family": null,
+   "generator": {
+    "commit": "32196c390a2179408bca5793ab1d0cbc253d4f1b",
+    "key": "item.instance",
+    "kind": "code",
+    "resolved": false,
+    "why": "receiver not resolved statically"
+   },
+   "id": "#179|tests/unit/test_greg_large_inline_mission.py|dev|-|?:item.instance:20",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 1,
+   "part": "?:item.instance:20",
+   "present_in": [],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     5,
+     5
     ]
    ]
   },

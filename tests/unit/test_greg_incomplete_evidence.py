@@ -154,6 +154,44 @@ def test_a_kept_prefix_is_never_bound_as_the_whole_value():
     assert bound_value(edge, kept("short")) == "short"
 
 
+
+# -- #201's independent review (comment 6334826521), findings 5a, 5b and 6 -------------------------------------------
+
+def test_a_list_holding_a_cut_member_proves_only_what_it_holds():
+    """5a: authority.bounded turns a long list element into a wrapper. A cut member is not the whole element, so a
+    miss against it proves nothing; a hit on another member still does."""
+    output = bounded({"items": ["short", FILLER]})
+    assert judge({"op": "not_contains", "field": "items", "value": FILLER}, output)[0] == INSUFFICIENT
+    assert judge({"op": "contains", "field": "items", "value": FILLER}, output)[0] == INSUFFICIENT
+    assert judge({"op": "equals", "field": "items", "value": ["short", FILLER]}, output)[0] == INSUFFICIENT
+    assert judge({"op": "contains", "field": "items", "value": "short"}, output)[0] == TRUE
+    assert judge({"op": "not_contains", "field": "items", "value": "short"}, output)[0] == FALSE
+
+
+def test_a_cut_list_or_an_object_holding_a_cut_member_is_never_bound_as_whole():
+    """5b: a list at the receipt's item limit may have lost items, and an object or list holding a cut string
+    would hand the next action a wrapper in its place."""
+    edge = {"from": {"action_id": "read", "field": "rows"}, "type": "array", "max_bytes": 10 ** 7}
+    with pytest.raises(Unbound, match="item limit"):
+        bound_value(edge, bounded({"rows": list(range(RECEIPT_LIST_LIMIT + 500))}))
+    with pytest.raises(Unbound, match="kept as a prefix"):
+        bound_value(edge, bounded({"rows": ["short", FILLER]}))
+    obj = {"from": {"action_id": "read", "field": "doc"}, "type": "object", "max_bytes": 10 ** 7}
+    with pytest.raises(Unbound, match="kept as a prefix"):
+        bound_value(obj, bounded({"doc": {"title": "t", "body": FILLER}}))
+    assert bound_value(edge, bounded({"rows": [1, 2, 3]})) == [1, 2, 3]
+    assert bound_value(obj, bounded({"doc": {"title": "t"}})) == {"title": "t"}
+
+
+def test_an_incomplete_output_still_decides_its_own_completeness():
+    """6: "complete" is the one field an incomplete output always states in full."""
+    output = {"text": "a", "complete": False, "pages": 3}
+    assert judge({"op": "equals", "field": "complete", "value": True}, output)[0] == FALSE
+    assert judge({"op": "equals", "field": "complete", "value": False}, output)[0] == TRUE
+    # other settled facts stay the capability's to name in "decided"; the generic rule does not guess them
+    assert judge({"op": "equals", "field": "pages", "value": 3}, output)[0] == INSUFFICIENT
+    assert judge({"op": "equals", "field": "pages", "value": 3}, {**output, "decided": ["pages"]})[0] == TRUE
+
 # -- on the mission path: a long non-PDF output (fs.read of a 22 KiB text file) -----------------------------------
 
 def _forbid(check_id, path, text):

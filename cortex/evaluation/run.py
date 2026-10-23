@@ -15,6 +15,7 @@ import copy
 import hashlib
 import json
 import sys
+import sysconfig
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -37,6 +38,21 @@ FROZEN_CODE = ["cortex/evaluation/scoring.py", "cortex/evaluation/arms.py", "cor
                "cortex/organs/estimation.py", "cortex/organs/evidence_causal.py", "cortex/organs/semantic.py",
                "cortex/organs/adversarial.py", "cortex/organs/deterrence.py", "cortex/organs/cpsat.py",
                "cortex/organs/formal_eval.py", "cortex/outcomes.py", "cortex/organs/schedule_extraction.py"]
+# 0.2.2 (PRR-07, verified 2026-10-21): the hand list above hashed 19 files while a scored run loads 34 more repository
+# modules (memory/causal.py's validation weights decide gate evidence floors). Every in-repo module the scored path
+# imports is frozen; tests/unit/test_cortex_seed_ports.py runs the path in a fresh interpreter and checks it.
+FROZEN_SUPPORT = [
+    "adapters/__init__.py", "adapters/contract_validation.py", "capabilities/__init__.py",
+    "capabilities/genome.py", "compiler/__init__.py", "compiler/ucl_compiler.py", "compiler/ucl_parser.py",
+    "cortex/__init__.py", "cortex/evaluation/__init__.py", "cortex/organs/__init__.py", "egregore/__init__.py",
+    "egregore/attention.py", "egregore/cognition_seam.py", "egregore/contract_check.py", "egregore/contracts.py",
+    "egregore/experience.py", "egregore/goals.py", "egregore/gps.py", "egregore/gravity.py",
+    "egregore/intersections.py", "egregore/interventions.py", "egregore/leverage.py", "egregore/local_model.py",
+    "egregore/relevance.py", "egregore/resources.py", "egregore/retention.py", "egregore/runtime.py",
+    "memory/__init__.py", "memory/causal.py", "morphogenesis/__init__.py", "morphogenesis/contracts.py",
+    "morphogenesis/engine.py", "policy/__init__.py", "policy/engine.py",
+]
+FROZEN_CODE = FROZEN_CODE + [p for p in FROZEN_SUPPORT if p not in FROZEN_CODE]
 
 
 def _sha(path: Path) -> str:
@@ -77,12 +93,17 @@ def learning_checks() -> dict:
     """Deterministic checks of item 10 on real receipts: delayed and absent outcomes,
     predictions offered as outcomes, bounded updates, default changes, rollback."""
     cortex = Cortex(clock=lambda: "2026-09-30T00:00:00Z")
-    receipt = cortex.run({"problem_id": "learn-1", "question": "Is the pair schedulable?", "payload": {
-        "formal_model": {"requirement": "x + y <= 4", "variables": [{"name": "x", "sort": "int", "lo": 0, "hi": 4},
-                                                                   {"name": "y", "sort": "int", "lo": 0, "hi": 4}],
-                         "obligations": [{"id": "R1", "text": "x + y at most 4"}],
-                         "constraints": [{"id": "C1", "covers": ["R1"], "expr": ["<=", ["+", "x", "y"], 4]}]},
-        "declared": {"consequence_class": "internal_write", "reversibility": "reversible"}}})
+    def decide(n):
+        # 0.2.2 (from seed 0.1.6): one receipt is one observation and settles a method once, so each outcome
+        # needs its own decision.
+        return cortex.run({"problem_id": f"learn-{n}", "question": "Is the pair schedulable?", "payload": {
+            "formal_model": {"requirement": "x + y <= 4",
+                             "variables": [{"name": "x", "sort": "int", "lo": 0, "hi": 4},
+                                           {"name": "y", "sort": "int", "lo": 0, "hi": 4}],
+                             "obligations": [{"id": "R1", "text": "x + y at most 4"}],
+                             "constraints": [{"id": "C1", "covers": ["R1"], "expr": ["<=", ["+", "x", "y"], 4]}]},
+            "declared": {"consequence_class": "internal_write", "reversibility": "reversible"}}})
+    receipt = decide(1)
     ledger = CompetenceLedger()
     method, version = "cortex.formal.z3", "0.2.0"
     geometry = receipt["geometry"]["epistemic_class"]
@@ -100,8 +121,8 @@ def learning_checks() -> dict:
     except ValueError as exc:
         out["prediction_as_outcome"] = f"refused: {exc}"
     checkpoint = ledger.head
-    for _ in range(6):
-        ledger.settle(receipt=receipt, method=method, method_version=version, outcome_status="verified_success",
+    for n in range(6):
+        ledger.settle(receipt=decide(n + 2), method=method, method_version=version, outcome_status="verified_success",
                       provenance={"kind": "external_observation", "validation_status": "externally_verified"},
                       attribution=[{"method": method, "role": "final_answer", "uncertainty": "low"},
                                    {"method": "cortex.verifier.adversarial", "role": "flaw_detection",
@@ -114,6 +135,11 @@ def learning_checks() -> dict:
 
 
 def run(partition: str, arm_names: list[str], *, client_factory=None) -> dict:
+    if len(set(arm_names)) != len(arm_names):
+        raise SystemExit(f"repeated arm name in {list(arm_names)}: an arm runs once")   # 0.2.2 (PRR-10)
+    known = ("routed_seed", "always_llm", "llm_committee", "always_abstain")
+    if set(arm_names) - set(known):
+        raise SystemExit(f"unknown arm(s) {sorted(set(arm_names) - set(known))}; known: {list(known)}")
     items = load_items(partition)
     manifest = None
     if partition == "heldout":
@@ -151,8 +177,11 @@ def run(partition: str, arm_names: list[str], *, client_factory=None) -> dict:
                     d = A.always_abstain(item)
                 else:
                     raise SystemExit(f"unknown arm {name}")
-            except (ValueError, OSError, KeyError, TypeError) as exc:
+            except (A.Unreached, ValueError, OSError, KeyError, TypeError) as exc:
+                # an unreached model item is an error (the baseline did not run there); a malformed reply the
+                # model returned is scored by the arm as a task failure and never lands here (0.2.2)
                 d = {"disposition": "error", "answer": None, "error": f"{type(exc).__name__}: {exc}",
+                     "unreached": isinstance(exc, A.Unreached),
                      "latency_s": 0.0, "cost_usd": 0.0, "model_calls": 0, "solver_calls": 0}
             decisions.append(d)
         scored = [S.score_item(i, d) for i, d in zip(items, decisions)]
@@ -172,7 +201,41 @@ def run(partition: str, arm_names: list[str], *, client_factory=None) -> dict:
             results["arms"][name]["paired_gain_vs_routed"] = S.paired_gain(routed, scored)
     results["exit"] = S.exit_verdict(results["arms"])
     results["learning_checks"] = learning_checks()
+    # 0.2.2 (PRR-07 guard, verified 2026-10-21): a reported run that loaded repository code the freeze does not hash
+    # (a lazy import that fires only with a live model) cannot report a verdict about frozen code.
+    unfrozen = unfrozen_code_loaded()
+    if manifest is not None and unfrozen:
+        results["unfrozen_code_loaded"] = unfrozen
+        before = results["exit"]
+        results["exit"] = {"verdict": "INCONCLUSIVE", "promote": False,
+                           "reasons": [f"the run loaded repository code the freeze does not hash: {unfrozen}",
+                                       *before.get("reasons", [])],
+                           "before_unfrozen_guard": before}
     return results
+
+
+def unfrozen_code_loaded() -> list[str]:
+    """Repository modules this process has loaded that the freeze does not hash. Installed dependencies are not
+    repository code, even when the interpreter's environment lives inside the checkout (``python3 -m venv .venv``,
+    as docs/GREG_LOCAL_START.md prescribes): paths under the interpreter's prefixes and any site-packages or
+    dist-packages directory are skipped (review of the 0.2.2 port)."""
+    root = ROOT.resolve()
+    installed = {Path(p).resolve() for p in (sys.prefix, sys.base_prefix, sys.exec_prefix,
+                                             *sysconfig.get_paths().values()) if p}
+    loaded = set()
+    for module in list(sys.modules.values()):
+        path = getattr(module, "__file__", None)
+        if not path:
+            continue
+        path = Path(path).resolve()
+        if root not in path.parents:
+            continue
+        rel = path.relative_to(root).parts
+        if rel[:1] == ("tests",) or {"site-packages", "dist-packages"} & set(rel) \
+                or any(p == path or p in path.parents for p in installed if p != root and root in p.parents):
+            continue
+        loaded.add("/".join(rel))
+    return sorted(loaded - set(FROZEN_CODE))
 
 
 def main(argv=None) -> int:
@@ -188,6 +251,9 @@ def main(argv=None) -> int:
         manifest = {"schema": "cortex-freeze/0.1",
                     "frozen_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                     "inputs": freeze_inputs()}
+        if MANIFEST.exists():
+            # 0.2.2: a held-out set already observed is never re-frozen in place; a new version is a new manifest
+            raise SystemExit(f"refusing to overwrite {MANIFEST.name}; create a new version")
         MANIFEST.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         print(f"frozen: {MANIFEST.relative_to(ROOT)} {_sha(MANIFEST)}")
         return 0

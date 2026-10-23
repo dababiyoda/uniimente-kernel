@@ -551,9 +551,11 @@ def test_a_second_dispatch_claim_for_a_completed_action_is_reported_as_a_duplica
 # re-delegated phone signed under its revoked delegation, so a body that wrongly accepted the old token was VERIFIED.
 
 @pytest.mark.parametrize("signed_when", ["before_its_revocation", "while_it_stood_revoked"])
-def test_the_appraiser_refuses_an_approval_a_re_delegated_device_signed_before_its_re_delegation(tmp_path, signed_when):
+def test_the_appraiser_refuses_an_approval_a_re_delegated_device_signed_before_its_re_delegation(tmp_path, signed_when,
+                                                                                              monkeypatch):
     from datetime import timedelta
     import greg.body as body_module
+    import greg.goal_gravity as gravity
     from greg.founder import generate_founder_key, instant, key_id, load_founder_key, stamp
     from tests.greg_fixtures import Clock
     home, key, body_id, _ = make_body(tmp_path)
@@ -589,6 +591,16 @@ def test_the_appraiser_refuses_an_approval_a_re_delegated_device_signed_before_i
         body.device_keys = lambda: {k: {f: v for f, v in d.items() if f != "signed_not_before"}
                                     for k, d in body_module.device_delegations(body.journal).items()}
         body.apply(old, channel="inbox")
+        # The verified fold re-derives the answer from the signed DECISION and applies the same rule on its own
+        # (greg.goal_gravity), so a defect in the body's command path alone still leaves the mission waiting.
+        assert _run(body, clock)[-1] == "WAITING"
+        # With the fold's rule removed as well, the body acts on the old token, and the appraiser must refute it.
+        verify = gravity._verify_envelope
+        monkeypatch.setattr(gravity, "_verify_envelope", lambda payload, founders, devices, *rest: verify(
+            payload, founders, {k: {f: v for f, v in d.items() if f != "signed_not_before"}
+                                for k, d in devices.items()}, *rest))
+        gravity._VERIFIED.pop(body.journal.ledger, None)       # the fold's memo, so the book re-derives them
+        body.engine.book.rebuild()
         assert _run(body, clock)[-1] == "ACHIEVED"
         verdict = body.journal.replay("mission.appraised")[-1].payload
     assert verdict["verdict"] == "REFUTED", verdict

@@ -26,6 +26,7 @@ import os
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -36,6 +37,7 @@ from greg.authority import ActionOutcome, AuthorityOffice
 from greg.capabilities import CapabilityError, InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
 from greg import asks, improvement, routing
+from greg.founder import instant
 from greg.journal import Journal, fact_id, iso
 from greg.lightcone import LightCone
 from provenance.ledger import sha256_json
@@ -45,6 +47,8 @@ MISSION_SCHEMA = json.loads((ROOT / "contracts/greg-mission.schema.json").read_t
 TERMINAL = {"ACHIEVED", "ABANDONED", "SUPERSEDED"}
 LIFECYCLE_STATES = {"ACTIVE", "PAUSED", "ABANDONED", "SUPERSEDED"}
 DECISION_ANSWERS = {"approve", "reject", "reconcile_executed", "reconcile_not_executed"}
+# Body._after_restore refuses a command issued before the latest restore; every reader of mission truth says so too
+RESTORED_REFUSAL = "issued before this body was restored from a backup: the command path refuses it"
 EPOCH = datetime.min.replace(tzinfo=timezone.utc)
 # A retry-safe (read-only, idempotent) dispatch whose completion is unknown is re-attempted, but boundedly:
 # at most RETRY_LIMIT consecutive unknown outcomes per strategy, the first retry at once (an interrupted read),
@@ -158,6 +162,8 @@ def pre_approved(spec: dict, strategy: dict, manifest) -> bool:
 BIND_TYPES = {"string": (str,), "number": (int, float), "integer": (int,), "boolean": (bool,),
               "object": (dict,), "array": (list,)}
 DEFAULT_BIND_BYTES = 16 * 1024
+RECEIPT_BIND_MAX = 64 * 1024                 # the most a value kept in a receipt may carry
+DEFAULT_ARTIFACT_BIND_BYTES = 1024 * 1024    # the artifact route (by: artifact): the cognition request ceiling
 
 
 def exact_reach(capability_id: str, params: dict) -> dict:
@@ -272,6 +278,9 @@ def _validate_bindings(strategy: dict, actions: set):
         else:
             raise MissionError(f"strategy {strategy['action_id']} binds {edge['param']}, which is also signed "
                                "statically; one source per param")
+        if edge.get("by") != "artifact" and edge.get("max_bytes", 0) > RECEIPT_BIND_MAX:
+            raise MissionError(f"strategy {strategy['action_id']} binds {edge['param']} with max_bytes over "
+                               f"{RECEIPT_BIND_MAX}: a value that large comes only by artifact")
         template = edge.get("template")
         if template is not None and template.count("{value}") != 1:
             raise MissionError("a binding template needs exactly one {value} placeholder")
@@ -316,13 +325,53 @@ def _set_path(params: dict, path: str, value):
     node[parts[-1]] = value
 
 
-def bound_value(edge: dict, output):
-    """The typed, size-bounded value one edge carries from a receipt's output."""
-    source = edge["from"].get("action_id") or "check " + str(edge["from"].get("check_id"))
+def artifact_output(result: dict, artifact_root, *, source: str = "source"):
+    """The whole output behind a receipt ``result`` whose output the receipt bound cut, or None when the receipt
+    kept it whole (no ``output_artifact``). Read only by the address the ledger recorded, re-hashed on read, and
+    checked to cut to exactly the output the receipt kept. Anything else raises Unbound: never a prefix."""
+    record = result.get("output_artifact")
+    if record is None:
+        return None
+    if not isinstance(record, dict) or not record.get("address"):
+        why = record.get("unavailable") if isinstance(record, dict) else None
+        raise Unbound(f"{source}'s whole output was not kept: {why or 'no artifact address'}")
+    if artifact_root is None:
+        raise Unbound(f"{source}'s whole output is in an artifact store this engine cannot read")
+    from greg.authority import bounded, output_store
+    from greg.capabilities import CapabilityError
     try:
-        value = _field(output, edge["from"]["field"])
+        whole = json.loads(output_store(artifact_root).read(record["address"]).decode())
+    except CapabilityError as exc:
+        raise Unbound(f"{source}'s whole output {record['address'][:19]} cannot be used: {exc}") from None
+    except ValueError:
+        raise Unbound(f"{source}'s whole output {record['address'][:19]} is not the JSON it was kept as") from None
+    if bounded(whole) != result.get("output"):
+        raise Unbound(f"{source}'s artifact {record['address'][:19]} is not the output its receipt kept")
+    return whole
+
+
+def bound_value(edge: dict, output, whole=None):
+    """The typed, size-bounded value one edge carries from a receipt's output. ``whole``: the receipt's whole
+    output read back from the artifact store (``artifact_output``), used only by an edge that opted in with
+    ``by: artifact``; every other edge reads the kept output and refuses a cut value."""
+    source = edge["from"].get("action_id") or "check " + str(edge["from"].get("check_id"))
+    by_artifact = edge.get("by") == "artifact"
+    from_whole = by_artifact and whole is not None   # re-hashed against the receipt's recorded address
+    try:
+        value = _raw_field(whole if from_whole else output, edge["from"]["field"])
     except KeyError:
         raise Unbound(f"{source} output has no {edge['from']['field']}") from None
+    except LookupError as exc:
+        raise Unbound(f"{source}: {exc}") from None
+    if not from_whole and _cut(value):
+        # the receipt kept a prefix; binding it would hand the next action part of a value as if it were whole
+        raise Unbound(f"{source}.{edge['from']['field']} was kept as its first {len(value['prefix'])} of "
+                      f"{value['length']} characters; a prefix is not bound as the whole value")
+    held = None if from_whole else _held_back(value)
+    if held:
+        # a cut string or a list at the item limit inside the value: binding it would hand the next action a
+        # wrapper or a shortened list in place of the whole (#201 review, 5b)
+        raise Unbound(f"{source}.{edge['from']['field']} {held}; a part is not bound as the whole value")
     kinds = BIND_TYPES[edge["type"]]
     if not isinstance(value, kinds) or (edge["type"] in ("number", "integer") and isinstance(value, bool)):
         raise Unbound(f"{source}.{edge['from']['field']} is not {edge['type']}")
@@ -331,8 +380,9 @@ def bound_value(edge: dict, output):
     if edge.get("template") is not None:
         value = edge["template"].replace("{value}", value if isinstance(value, str) else json.dumps(value))
     size = len(json.dumps(value, ensure_ascii=False).encode())
-    if size > edge.get("max_bytes", DEFAULT_BIND_BYTES):
-        raise Unbound(f"bound value of {size} bytes exceeds {edge.get('max_bytes', DEFAULT_BIND_BYTES)}")
+    limit = edge.get("max_bytes", DEFAULT_ARTIFACT_BIND_BYTES if by_artifact else DEFAULT_BIND_BYTES)
+    if size > limit:
+        raise Unbound(f"bound value of {size} bytes exceeds {limit}")
     return value
 
 
@@ -365,7 +415,7 @@ def metered_spend(capability_id: str, output, cap_usd: float) -> dict:
     if field_path is not None and isinstance(output, dict):
         try:
             reported = _field(output, field_path)
-        except KeyError:
+        except LookupError:            # KeyError included
             reported = None
     if isinstance(reported, bool) or not isinstance(reported, (int, float)) or reported != reported:
         return {"cost_usd": cap, "cost_cap_usd": cap, "spend_basis": "signed_cap" if field_path is None
@@ -403,18 +453,58 @@ def signed_cost(spec: dict, action_id: str) -> float:
     return float(strategy.get("cost_usd", 0.0)) if strategy else 0.0
 
 
-def _field(output, path: str):
+# authority.bounded keeps receipts small: a long string becomes its first RECEIPT_TEXT_LIMIT characters plus
+# its digest and length, and a list keeps its first RECEIPT_LIST_LIMIT items with no marker at all (receipts
+# written before this change included). A predicate reads only what was kept, so it decides only what the kept
+# part can prove; everything else is INSUFFICIENT, never FALSE or TRUE.
+RECEIPT_LIST_LIMIT = 1000
+TRUE, FALSE, INSUFFICIENT = "TRUE", "FALSE", "INSUFFICIENT"
+INSUFFICIENT_EVIDENCE = "insufficient evidence: "
+
+
+def _cut(value) -> dict | None:
+    """The bounded form of a long string as authority.bounded writes it, or None for a whole value."""
+    if isinstance(value, dict) and value.get("truncated") is True \
+            and set(value) == {"prefix", "truncated", "sha256", "length"} and isinstance(value["prefix"], str) \
+            and isinstance(value["length"], int) and value["length"] > len(value["prefix"]):
+        return value
+    return None
+
+
+def _held_back(value) -> str | None:
+    """Why a value the receipt did not keep whole cannot stand for the whole, or None. It looks at every depth:
+    a member kept as a prefix, or a list kept to its first RECEIPT_LIST_LIMIT items."""
+    if _cut(value):
+        return "holds a member kept as a prefix"
+    if isinstance(value, list):
+        if len(value) == RECEIPT_LIST_LIMIT:
+            return f"is a list at the receipt's {RECEIPT_LIST_LIMIT}-item limit"
+        members = value
+    elif isinstance(value, dict):
+        members = value.values()
+    else:
+        return None
+    return next((why for why in map(_held_back, members) if why), None)
+
+
+def _raw_field(output, path: str):
     value = output
     for part in path.split(".") if path else []:
         if isinstance(value, dict) and part in value:
             value = value[part]
         elif isinstance(value, list) and part.isdigit() and int(part) < len(value):
             value = value[int(part)]
+        elif isinstance(value, list) and part.isdigit() and len(value) == RECEIPT_LIST_LIMIT:
+            raise LookupError(f"item {part} of {path} lies past the {RECEIPT_LIST_LIMIT} items a receipt keeps")
         else:
             raise KeyError(path)
-    if isinstance(value, dict) and value.get("truncated"):
-        value = value["prefix"]
     return value
+
+
+def _field(output, path: str):
+    value = _raw_field(output, path)
+    cut = _cut(value)
+    return cut["prefix"] if cut else value
 
 
 def unanswered(output) -> str | None:
@@ -454,30 +544,102 @@ def measured(observation: dict) -> bool:
     return not str(observation.get("detail", "")).startswith("sensor ")
 
 
-def evaluate_predicate(predicate: dict, output) -> tuple[bool, str]:
+def judge(predicate: dict, output) -> tuple[str, str]:
+    """TRUE, FALSE or INSUFFICIENT: what the retained output proves about one predicate.
+
+    A whole value is judged as before. From a kept prefix (a long string, or a list at the receipt's item limit)
+    only monotone facts follow: a phrase or item found in the prefix is in the whole (contains TRUE, not_contains
+    FALSE), and a long string's equality is decided by its digest and length. A miss proves nothing. An output
+    that declares itself incomplete (``"complete": false``, e.g. a PDF page with no text layer) gets the same
+    treatment for every field: more data could only add to it, unless the output names that field in
+    ``"decided"`` (e.g. ``document.text``'s ``found`` once a phrase is found): a field so named, holding a value,
+    is judged whole. ``decided`` vouches for fields of an incomplete output only, never for a cut list."""
     op = predicate["op"]
+    path = predicate.get("field", "")
     try:
-        value = _field(output, predicate.get("field", ""))
+        value = _raw_field(output, path)
     except KeyError:
-        return (op == "absent"), f"field {predicate.get('field')!r} absent"
+        return (TRUE if op == "absent" else FALSE), f"field {path!r} absent"
+    except LookupError as exc:
+        return INSUFFICIENT, str(exc)
     expected = predicate.get("value")
     if op == "exists":
-        return True, "present"
+        return TRUE, "present"
     if op == "absent":
-        return False, "present"
+        return FALSE, "present"
+    cut = _cut(value)
+    if cut:
+        text, length = cut["prefix"], cut["length"]
+        kept = f"first {len(text)} of {length} characters kept"
+        if op == "equals":
+            same = isinstance(expected, str) and len(expected) == length \
+                and hashlib.sha256(expected.encode()).hexdigest() == cut["sha256"]
+            return (TRUE if same else FALSE), f"equals {expected!r:.60} by digest of all {length} characters"
+        if op == "count_gte":
+            return (TRUE if length >= expected else FALSE), f"len {length} >= {expected}"
+        if op in ("gte", "lte"):
+            return FALSE, "not numeric"
+        if op in ("contains", "not_contains"):
+            if isinstance(expected, str) and expected in text:
+                return (TRUE if op == "contains" else FALSE), f"{expected!r:.60} found in the kept prefix"
+            return INSUFFICIENT, f"{op} {expected!r:.60}: not in the {kept}; the rest was not retained"
+        raise MissionError(f"unknown predicate op {op!r}")
+    verdict, detail = _judge_whole(op, value, expected)
+    partial = isinstance(value, list) and len(value) == RECEIPT_LIST_LIMIT and op in (
+        "equals", "contains", "not_contains", "count_gte")
+    # a list member longer than the receipt keeps is a wrapper, not the member: it can match nothing, so only a
+    # hit on a whole member decides (#201 review, 5a); its length is still the list's own
+    holed = isinstance(value, list) and not partial and op in ("equals", "contains", "not_contains") \
+        and any(_cut(v) for v in value)
+    if holed:
+        decided = (op == "contains" and verdict == TRUE and not _cut(expected)) \
+            or (op == "not_contains" and verdict == FALSE and not _cut(expected)) \
+            or (op == "equals" and (not isinstance(expected, list) or len(expected) != len(value) or any(
+                not _cut(v) and v != e for v, e in zip(value, expected))))
+        if not decided:
+            return INSUFFICIENT, f"{detail}; a member of the list was kept only as a prefix"
+    # an incomplete output still states its own completeness in full (#201 review, 6)
+    declared = isinstance(output, dict) and output.get("complete") is False and path != "complete"
+    if declared and not partial and value is not None and isinstance(output.get("decided"), list) \
+            and path in output["decided"]:
+        return verdict, f"{detail}; decided by the capability despite an incomplete observation"
+    if partial or declared:
+        monotone = (op == "contains" and verdict == TRUE) or (op == "not_contains" and verdict == FALSE) \
+            or (op == "count_gte" and verdict == TRUE) \
+            or (op == "equals" and verdict == FALSE and partial and not declared and isinstance(expected, list)
+                and expected[:RECEIPT_LIST_LIMIT] != value)
+        if not monotone:
+            why = (f"the list was kept to its first {RECEIPT_LIST_LIMIT} items" if partial
+                   else "the capability reported its observation incomplete")
+            return INSUFFICIENT, f"{detail}; {why}"
+    return verdict, detail
+
+
+def _judge_whole(op, value, expected) -> tuple[str, str]:
+    def as_verdict(ok):
+        return TRUE if ok else FALSE
     if op == "equals":
-        return value == expected, f"{value!r} == {expected!r}"
+        return as_verdict(value == expected), f"{value!r:.200} == {expected!r:.200}"
     if op == "contains":
-        return (expected in value) if isinstance(value, (str, list)) else False, f"contains {expected!r}"
+        return as_verdict((expected in value) if isinstance(value, (str, list)) else False), f"contains {expected!r}"
     if op == "not_contains":
-        return (expected not in value) if isinstance(value, (str, list)) else False, f"not contains {expected!r}"
+        return as_verdict((expected not in value) if isinstance(value, (str, list)) else False), \
+            f"not contains {expected!r}"
     if op in ("gte", "lte"):
         if not isinstance(value, (int, float)) or isinstance(value, bool):
-            return False, "not numeric"
-        return (value >= expected if op == "gte" else value <= expected), f"{value} {op} {expected}"
+            return FALSE, "not numeric"
+        return as_verdict(value >= expected if op == "gte" else value <= expected), f"{value} {op} {expected}"
     if op == "count_gte":
-        return (len(value) >= expected) if isinstance(value, (list, str)) else False, f"len {op} {expected}"
+        return as_verdict((len(value) >= expected) if isinstance(value, (list, str)) else False), \
+            f"len {op} {expected}"
     raise MissionError(f"unknown predicate op {op!r}")
+
+
+def evaluate_predicate(predicate: dict, output) -> tuple[bool, str]:
+    """Passed only on proof. INSUFFICIENT is not passed, and its detail starts with INSUFFICIENT_EVIDENCE so the
+    mission treats it as an unmeasured check (re-observe, then ask), never as a strategy that failed."""
+    verdict, detail = judge(predicate, output)
+    return verdict == TRUE, (INSUFFICIENT_EVIDENCE + detail) if verdict == INSUFFICIENT else detail
 
 
 @dataclass
@@ -684,6 +846,16 @@ def answer_record(request: dict, body: dict, command_digest: str) -> dict:
             "command_digest": command_digest}
 
 
+def _own(value):
+    """A copy the caller owns of a mission field: dicts, lists and sets are copied all the way down.
+    Strings, numbers and the frozen LightCone are immutable and shared."""
+    if type(value) is dict:
+        return {k: _own(v) for k, v in value.items()}
+    if type(value) in (list, set):
+        return type(value)(_own(v) for v in value)
+    return value
+
+
 class MissionBook:
     """Projection of mission truth from retained greg.* events.
 
@@ -691,7 +863,18 @@ class MissionBook:
     a journal with a ledger it counts only as ``answer_record`` re-derives it from a founder-signed DECISION that
     ``goal_gravity.founder_facts`` counts as signed at its ``command.accepted`` position (a key valid there, this
     body, an unspent nonce, accepted inside its signed validity), and only if the command path's checks hold there.
-    It takes effect at that acceptance. Any other row is kept in ``unverified`` and never moves a mission."""
+    It takes effect at that acceptance. Any other row is kept in ``unverified`` and never moves a mission.
+
+    ``rebuild`` folds only the events retained since its previous call into the book's own state,
+    then hands out copies, so callers see exactly what a fold from the first event gives (tests pin
+    that) at a cost that follows new events and the number of missions, not the whole history.
+    Replaced history, or a fold that stopped part-way, is folded again from the beginning on the
+    next call.
+
+    Missions are copied afresh on every call. A decision record is copied once, when it is folded:
+    copying every decision ever made on every call would grow with history again. Either way the
+    fold reads only its own copies, so nothing a caller changes reaches a mission's state.
+    """
 
     def __init__(self, journal: Journal, *, verify_answers: bool | None = None):
         self.journal = journal
@@ -702,26 +885,106 @@ class MissionBook:
         self.missions: dict[str, MissionState] = {}
         self.requests: dict[str, dict] = {}
         self.answers: dict[str, dict] = {}
+        self._cursor = None
         self.rebuild()
 
+    # What the fold keeps between rebuilds (#168 bd0c17dc, joined with the verified answer fold). The first seven are
+    # handed to callers as copies; the rest are the fold's own.
+    _FOLD_SHOWN = ("missions", "requests", "answers", "withdrawn", "consumed", "unverified", "unverified_requests")
+    _FOLD_OWN = ("_restore", "_deficit_of", "_admitted", "_refused_commands", "_unverifiable", "_unverifiable_why",
+                 "_pending")
+
     def rebuild(self):
+        """Fold the events retained since the previous rebuild into the book's own state, then hand out copies.
+
+        Callers see exactly what a fold from the first event gives (tests/unit/test_greg_mission_book_incremental.py
+        pins that, verified answers, restores and unverified rows included). The fold is begun again from the first
+        event when the journal can only replay, when the history was replaced, when a fold stopped part-way, and when
+        ``verify_answers`` changed, and when the verified-DECISION set moved under what was already folded: a DECISION
+        acceptance folded while it did not verify (``_unverifiable``) that verifies now, or a verified DECISION whose
+        counting position changed. Neither
+        happens on an append-only ledger, where ``founder_facts`` judges each command at its own position; the check
+        keeps the incremental fold equal to a full one even if it did."""
+        from dataclasses import fields, replace
+        verify = getattr(self, "verify_answers", None)
+        if verify is None:
+            verify = self.verify_answers = getattr(self.journal, "ledger", None) is not None
+        signed, signed_at = {}, {}   # verified DECISIONs; digest -> the acceptance event each verified at
+        if verify and getattr(self.journal, "ledger", None) is not None:
+            from greg import goal_gravity  # goal_gravity imports this module
+            signed = goal_gravity.verified_decisions(self.journal.ledger)
+            signed_at = goal_gravity.decision_positions(self.journal.ledger)
+        state, cursor = getattr(self, "_state", None), getattr(self, "_cursor", None)
+        if state is None or state["verify"] != verify \
+                or any(signed_at.get(d) != at for d, at in state["signed_at"].items()) \
+                or any(d in signed for d in state["_unverifiable"]):
+            cursor = None
+        since = getattr(self.journal, "since", None)
+        if since is None:            # a journal that can only replay: fold all of it, every time
+            events, next_cursor, restarted = self.journal.replay(), None, True
+        else:
+            events, next_cursor, restarted = since(cursor)
+        self._state, self._cursor = None, None   # if a fold below raises, the next call starts over
+        if restarted or state is None:
+            self._reset()
+        else:
+            for name in self._FOLD_SHOWN + self._FOLD_OWN:
+                setattr(self, name, state[name])
+        self._signed, self._signed_at = signed, signed_at
+        for event in events:
+            self._apply(event)
+        state = {name: getattr(self, name) for name in self._FOLD_SHOWN + self._FOLD_OWN}
+        state["signed_at"], state["verify"] = dict(signed_at), verify
+        # finish() reads the end of the fold; the fold keeps its own pending rows and unverified table
+        self.unverified, self._pending = dict(state["unverified"]), dict(state["_pending"])
+        self.finish()
+        unverified, self._pending = self.unverified, state["_pending"]
+        self._state, self._cursor = state, next_cursor
+        self.missions = {mid: replace(m, **{f.name: _own(getattr(m, f.name)) for f in fields(m)})
+                         for mid, m in state["missions"].items()}
+        shown = getattr(self, "_shown", None)
+        if shown is None or restarted:
+            shown = self._shown = {"requests": {}, "answers": {}, "withdrawn": {}}
+        for table in ("requests", "answers", "withdrawn"):
+            # a decision record is copied once, when the fold first holds it: the fold reads only its own
+            cache, held = shown[table], state[table]
+            for rid, data in held.items():
+                if rid not in cache or cache[rid][0] is not data:
+                    cache[rid] = (data, _own(data))
+            setattr(self, table, {rid: cache[rid][1] for rid in held})
+        self.consumed = set(state["consumed"])
+        self.unverified = _own(unverified)
+        self.unverified_requests = _own(state["unverified_requests"])
+
+    @property
+    def _requests(self) -> dict:
+        return self._state["requests"]
+
+    @property
+    def _answers(self) -> dict:
+        return self._state["answers"]
+
+    @property
+    def _withdrawn(self) -> dict:
+        return self._state["withdrawn"]
+
+    def _apply(self, event) -> None:
+        self.fold(event.type[len("greg."):], event.payload, event_id=getattr(event, "event_id", None))
+
+    def _reset(self) -> None:
+        """The fold state before the first event."""
         self.missions, self.requests, self.answers, self.withdrawn = {}, {}, {}, {}
-        self.consumed: set[str] = set()    # answered paid APPROVALs whose one funded run has happened
+        self.consumed: set[str] = set()    # answered paid APPROVALs whose one funded run has happened, and approvals
+                                           # a restore voided (the original may have used them)
+        self._restore = None               # the latest body.restored in ledger order: the one Body._after_restore reads
         self._deficit_of = {}              # deficit_id -> the mission whose light cone pays for its builds
         self.unverified: dict[str, dict] = {}   # request_id -> {row, why}: an answer row kept as data, never applied
         self.unverified_requests: list[dict] = []  # decision.requested rows not recorded the way greg.asks records one
         self._admitted: set[str] = set()   # DECISION digests whose acceptance has been admitted (once each)
         self._refused_commands: dict[str, str] = {}   # digest -> why the body refused that command (command.rejected)
         self._unverifiable: set[str] = set()   # DECISION digests with an acceptance record that does not verify
+        self._unverifiable_why: dict[str, str] = {}   # digest -> the specific reason, when the fold knows one
         self._pending: dict = {}           # cited digest -> answer rows awaiting that DECISION's signed acceptance
-        self._signed, self._signed_at = {}, {}   # verified DECISIONs; digest -> the acceptance event each verified at
-        if self.verify_answers and getattr(self.journal, "ledger", None) is not None:
-            from greg import goal_gravity  # goal_gravity imports this module
-            self._signed = goal_gravity.verified_decisions(self.journal.ledger)
-            self._signed_at = goal_gravity.decision_positions(self.journal.ledger)
-        for event in self.journal.replay():
-            self.fold(event.type[len("greg."):], event.payload, event_id=getattr(event, "event_id", None))
-        self.finish()
 
     def finish(self) -> None:
         """End of the replay: an answer row no signed DECISION it cites was accepted after is kept as data, with the
@@ -732,9 +995,9 @@ class MissionBook:
                 cause, why = "refused_by_body", ("the body refused the signed decision it cites: "
                                                  + self._refused_commands[digest])[:300]
             elif digest in self._unverifiable:
-                cause, why = "unverifiable_acceptance", ("a record says the body accepted the decision it cites, but "
-                                                         "it carries no signed envelope that verifies (bodies before "
-                                                         "2026-09-26 kept none)")
+                cause, why = "unverifiable_acceptance", self._unverifiable_why.get(digest, (
+                    "a record says the body accepted the decision it cites, but it carries no signed envelope that "
+                    "verifies (bodies before 2026-09-26 kept none)"))
             else:
                 cause, why = "no_signed_decision", "no founder-signed DECISION it cites was accepted after it was recorded"
             for data in rows:
@@ -754,6 +1017,9 @@ class MissionBook:
         if kind == "command.rejected":
             if isinstance(data.get("digest"), str):
                 self._refused_commands[data["digest"]] = str(data.get("reason", ""))
+            return
+        if kind == "body.restored":
+            self._restore = data      # a DECISION accepted after it is held to it (_refusal), as Body.apply holds it
             return
         mid = data.get("mission_id")
         m = self.missions.get(mid)
@@ -901,6 +1167,10 @@ class MissionBook:
             self._requested(data, event_id)
         elif kind == "decision.withdrawn":
             self.withdrawn[data["request_id"]] = data
+            request = self.requests.get(data["request_id"])
+            if data.get("voids_approval") and request:   # a restore from a backup: the approval is asked again
+                m.approved_scopes.discard(request["scope_digest"])
+                self.consumed.add(data["request_id"])   # used up for every reader (Goal Gravity's answer_for too)
         elif kind == "decision.answered":
             self._answered(data)
 
@@ -943,6 +1213,8 @@ class MissionBook:
         digest = accepted.get("digest")
         if accepted.get("kind") == "DECISION" and isinstance(digest, str) and digest not in self._signed:
             self._unverifiable.add(digest)
+            if self._before_restore(accepted):
+                self._unverifiable_why[digest] = RESTORED_REFUSAL
         if accepted.get("kind") != "DECISION" or not isinstance(digest, str) or digest not in self._signed_at \
                 or self._signed_at[digest] != event_id or digest in self._admitted:
             return
@@ -957,11 +1229,23 @@ class MissionBook:
             else:
                 self.unverified[str(rid)] = {"row": data, "why": why, "cause": "refused_at_acceptance"}
 
+    def _before_restore(self, cmd: dict) -> bool:
+        """Body._after_restore refuses a command issued before the latest restore (the original may already have
+        applied it); an unreadable time refuses there too."""
+        if self._restore is None:
+            return False
+        try:
+            return instant(cmd["envelope"]["issued_at"]) < instant(self._restore.get("restored_at"))
+        except (KeyError, TypeError, ValueError):
+            return True
+
     def _refusal(self, data: dict, request: dict | None, cmd: dict) -> str | None:
         """Why a row citing a signed DECISION does not count at its acceptance (None: it counts)."""
         rid = data.get("request_id")
         if signed_answer(self._signed, rid, data) is None:
             return "the signed DECISION it cites answers another request or gives another answer"
+        if self._before_restore(cmd):
+            return RESTORED_REFUSAL
         if request is None:
             return "no such request was recorded before the DECISION's acceptance"
         if rid in self.withdrawn:
@@ -1253,15 +1537,20 @@ class MissionEngine:
         return InvocationContext(workspace=self.workspace_root / m.mission_id.replace(":", "_"),
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
-                                 # ledger access: memory, artifacts, cognition and the body's own records; the organ bridge
-                                 # that renders the Mind's receipts into a memo gets a reader that cannot write
-                                 journal=self._ledger_reader() if manifest.capability_id == "venture.assess"
-                                 else self.journal if manifest.capability_id in (
-                                     "memory.precedents", "daleobanks.outcome", "worker.appraise")
+                                 # ledger access: memory, artifacts, cognition and the body's own records. The organ
+                                 # bridges that render or check against the Mind's receipts (the venture memo, the
+                                 # DALEOBANKS restatement) and the evaluator that binds a retained WorkOrder to its
+                                 # commission receipt get a reader that cannot write
+                                 journal=self._ledger_reader() if manifest.capability_id in ("venture.assess",
+                                                                                             "daleobanks.verify",
+                                                                                             "worker.appraise")
+                                 else self.journal if manifest.capability_id in ("memory.precedents", "daleobanks.outcome")
                                  or manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.",
                                                                        "organ.", "foundry.")) else None,
                                  artifact_root=self.artifact_root, stop_check=self._stop_check,
-                                 capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
+                                 # eligibility view for the Mind, and for the evaluator that asks it
+                                 capability_registry=self.registry if manifest.capability_id.startswith("cognition.")
+                                 or manifest.capability_id == "worker.appraise" else None,
                                  cognition_model=getattr(self, "cognition_model", None),
                                  egress=getattr(self, "egress", None) if manifest.capability_id in CONFINED_EGRESS else None,
                                  worker_confinement=getattr(self, "worker_confinement", "required"))
@@ -1786,11 +2075,14 @@ class MissionEngine:
             record = self.office.ledger.find(receipt)
             if record is None or record.record_type != "receipt":
                 raise Unbound(f"{source} receipt {receipt[:19]} is not on the ledger")
-            value = bound_value(edge, record.payload.get("result", {}).get("output"))
+            result = record.payload.get("result", {})
+            whole = artifact_output(result, self.artifact_root, source=source) if edge.get("by") == "artifact" else None
+            value = bound_value(edge, result.get("output"), whole)
             _set_path(params, edge["param"], value)
             bindings.append({"param": edge["param"], ("from_check" if "check_id" in edge["from"] else "from_action"): source,
                              "from_receipt": receipt,
-                             "field": edge["from"]["field"], "value_sha256": sha256_json({"v": value})})
+                             "field": edge["from"]["field"], "value_sha256": sha256_json({"v": value}),
+                             **({"from_artifact": result["output_artifact"]["address"]} if whole is not None else {})})
             sources.append(receipt)
         return params, bindings, sources
 
@@ -1854,6 +2146,22 @@ class MissionEngine:
             return {"state": "BLOCKED", "blocker": m.blocker}
         return None
 
+    def _observations_retained(self, mission_id: str, check_id: str) -> int:
+        """How many observations of this check the journal retains, counting only events new since the
+        last call (the count a replay of every mission.observed event gives)."""
+        since = getattr(self.journal, "since", None)
+        if since is None:            # a journal that can only replay: count all of them
+            events, self._observed_cursor, restarted = self.journal.replay("mission.observed"), None, True
+        else:
+            events, self._observed_cursor, restarted = since(getattr(self, "_observed_cursor", None),
+                                                             "mission.observed")
+        if restarted:
+            self._observed_counts = {}
+        for e in events:
+            key = (e.payload.get("mission_id"), e.payload.get("check_id"))
+            self._observed_counts[key] = self._observed_counts.get(key, 0) + 1
+        return self._observed_counts.get((mission_id, check_id), 0)
+
     def _observe(self, m: MissionState, now: datetime):
         failing, evidence = set(), []
         sensor_errors = self.sensor_errors = set()
@@ -1873,9 +2181,7 @@ class MissionEngine:
             # because the wall clock repeated its timestamp (clock freeze/NTP).
             # The journal survives process death; count only this check's
             # retained observations so each completed read gets a new attempt.
-            attempt = sum(1 for e in self.journal.replay("mission.observed")
-                          if e.payload.get("mission_id") == m.mission_id
-                          and e.payload.get("check_id") == check["check_id"])
+            attempt = self._observations_retained(m.mission_id, check["check_id"])
             from greg.pipeline import resolve, PendingInput, BindingError
             try:
                 bound_params, input_bindings = resolve(sensor.get("params", {}), self.journal, m.mission_id)
@@ -1907,6 +2213,11 @@ class MissionEngine:
                     self.capability_faults[check["check_id"]] = (manifest, detail, sensor.get("params", {}))
             else:
                 passed, detail = evaluate_predicate(check["predicate"], outcome.output)
+                if detail.startswith(INSUFFICIENT_EVIDENCE):
+                    # The retained output cannot decide the check: the world was not measured. The sensor
+                    # retry path re-observes and then asks the founder; no strategy is blamed.
+                    detail = f"sensor inconclusive (incomplete evidence): {detail}"
+                    sensor_errors.add(check["check_id"])
                 fault = outcome.output.get("capability_fault") if isinstance(outcome.output, dict) else None
                 if not passed and isinstance(fault, dict) and self.genesis is not None \
                         and fault.get("capability_id") in self.registry.manifests:
@@ -1980,6 +2291,13 @@ class MissionEngine:
                 return repaired
         human = m.blocker["type"] == "human_work"   # it waits only on the checks the person's work advances
         waiting_on = failing & set(m.blocker["failing_checks"]) if human else failing
+        # A NO_STRATEGY ask raised only because every remaining strategy waited on a precondition that observation
+        # said failed is moot once observation says such a precondition passes: that strategy may run now. Without
+        # this, a mission whose work waits on the world (a request arriving) stayed blocked for good, since its other
+        # checks, which only that strategy advances, still fail.
+        unheld = [] if human or not failing else self._unheld(m, failing)
+        if unheld:
+            waiting_on = set()
         if waiting_on and human:
             declined = self._declined(m, now)
             if declined is not None:
@@ -1989,7 +2307,10 @@ class MissionEngine:
             return {"state": "WAITING", "blocker": m.blocker, "still_failing": sorted(failing)}
         rid = m.blocker["request_id"]
         why = ("the deliverable is observed: the checks this work advances now pass, and GREG took no action for it"
-               if human else "world re-observed: every failing check now passes without any GREG action")
+               if human else
+               (f"world re-observed: the precondition that held {', '.join(unheld)} now passes, so it may run; GREG "
+                "took no action for that precondition") if unheld else
+               "world re-observed: every failing check now passes without any GREG action")
         if not m.blocker.get("shared_ask"):      # an ask this mission only shares stays open for its other uses
             self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id, "why": why,
                                                        "evidence": evidence, "at": iso(now)}, key=[rid, "withdrawn"])
@@ -2001,6 +2322,19 @@ class MissionEngine:
                 self._schedule(resumed, now, 0)      # observed early: the next step must not wait out the old slot
             return {"state": "RESUMED", "still_failing": sorted(failing)}
         return self._setpoint_reached(self.book.missions[m.mission_id], now, evidence)
+
+    def _unheld(self, m: MissionState, failing: set) -> list:
+        """Strategies the blocker's NO_STRATEGY ask recorded as held by a failing precondition, whose every such
+        precondition (a check of this mission) observation now says passes, and that are neither failed nor
+        excluded. Read from the ask's own retained evidence; an input-held strategy is not reconsidered here."""
+        rid = m.blocker.get("request_id")
+        ask = next((e.payload for e in self.journal.replay("decision.requested")
+                    if e.payload.get("request_id") == rid and e.payload.get("kind") == "NO_STRATEGY"), None)
+        held = ((ask or {}).get("evidence") or {}).get("held_by_precondition") or {}
+        checks = {c["check_id"] for c in m.spec["success_checks"]}
+        return sorted(a for a, needs in held.items()
+                      if isinstance(needs, list) and needs and set(needs) <= checks and not set(needs) & failing
+                      and a not in m.failed and a not in m.excluded)
 
     def _deliverable_arrived(self, m: MissionState) -> bool:
         """A person's work landed since GREG last looked: observe now, not at the next cadence slot.
@@ -2056,8 +2390,12 @@ class MissionEngine:
         if outcome.status != "DONE":
             return None
         passed, detail = evaluate_predicate(watch["predicate"], outcome.output)
+        # Evidence that cannot decide whether the person declined is recorded as inconclusive. A refusal is never
+        # assumed: GREG keeps waiting, and the row says the observation did not decide it.
+        inconclusive = detail.startswith(INSUFFICIENT_EVIDENCE)
         self.journal.record("human.refusal_observed", {"mission_id": m.mission_id, "action_id": strategy["action_id"],
-                                                       "declined": passed, "detail": detail[:300],
+                                                       "declined": passed, "inconclusive": inconclusive,
+                                                       "detail": detail[:300],
                                                        "receipt": outcome.receipt_hash, "at": iso(now)},
                             key=[m.mission_id, strategy["action_id"], outcome.proposal_id])
         return (detail, outcome.receipt_hash) if passed else None
@@ -2824,6 +3162,16 @@ class MissionEngine:
                                           **({"held_by_precondition": held} if held else {}),
                                           **({"tradeoffs": tradeoffs} if tradeoffs else {}),
                                           **({"disagreement": split} if split else {})})
+            if m.actions_done and not held:
+                # Every admissible strategy ran and these signed checks still fail: a failure closure. The
+                # separate process appraises it as it does an achievement, so settlement hears failures too.
+                # Qualified intelligences that disagree are not a measured failure: GREG keeps every view and does
+                # not vote, so it closes on neither (the ask above carries the disagreement to the founder).
+                if not split:
+                    self.journal.record("mission.unmet", {
+                        "mission_id": m.mission_id, "failing_checks": sorted(failing), "actions_done": m.actions_done,
+                        "closure_rule": "every admissible strategy ran; these signed checks re-observed failing",
+                        "at": iso(now)}, key=[m.mission_id, "unmet", m.actions_done])
             self._block(m, {"type": "decision", "request_id": rid, "why": "no admissible strategy",
                             "failing_checks": sorted(failing), "reconsider": "founder revises mission"})
             return {"state": "BLOCKED", "blocker": m.blocker}

@@ -1,3 +1,5 @@
+> Before new or resumed UNIIMENTE work, follow `AGENTS.md` and `docs/collaboration/START_HERE.md`; refresh Discussion #89, work board #96 and current claims before editing.
+
 ## Full-machine completion — controlling correction, October 1, 2026
 
 **BODY + ORGANS + MIND = GREG / UNIIMENTE** is the fixed completion boundary. Read `docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json` and its verbatim source. Reconstruct the whole boundary, implement the highest-priority unfinished dependency in rigorous increments, prove and integrate each increment, then automatically resume the parent objective and the next unblocked requirement. Seeds, experiments, sandboxes, benchmarks, PRs and VEPMC are intermediate sequencing/evidence units; none may narrow the machine or stop unrelated feasible implementation. A future-family label preserves its obligation. Registered is not implemented; a tested component is not an integrated machine.

@@ -9,6 +9,7 @@ from __future__ import annotations
 import copy
 import json
 import math
+import os
 import sys
 import time
 
@@ -851,17 +852,32 @@ def test_instances_and_solves_are_deterministic(family):
     assert item(family).solve(copy.deepcopy(data), BUDGET) == out
 
 
+def _clock():
+    return time.perf_counter(), time.process_time(), time.thread_time()
+
+
+def _spent(started, step, family, seed):
+    """Wall, calling-thread-CPU and process-CPU seconds for one step, and the OS thread count, numbers first (the
+    institutional verifier prints pytest's one-line summary, cut at the terminal width): a wall time far above this
+    thread's CPU time is a stall from elsewhere (another thread or the host), not slow code."""
+    wall, process, own = (b - a for a, b in zip(started, _clock()))
+    threads = len(os.listdir("/proc/self/task")) if os.path.isdir("/proc/self/task") else -1
+    return wall, f"{step} s{seed} wall={wall:.2f} thread={own:.2f} proc={process:.2f} tasks={threads} {family}"
+
+
 @pytest.mark.parametrize("family", FAMILIES)
 def test_dev_seeds_run_within_budget(family):
     x = item(family)
     for seed in DEV:
         data, _ = dev(family, seed)
-        started = time.perf_counter()
+        started = _clock()
         out = x.solve(copy.deepcopy(data), BUDGET)
-        assert time.perf_counter() - started < 2.0, (family, seed)
-        started = time.perf_counter()
+        wall, why = _spent(started, "solve", family, seed)
+        assert wall < 2.0, why
+        started = _clock()
         assert all(x.verify(data, out["output"], out["certificate"]).values())
-        assert time.perf_counter() - started < 3.0, (family, seed)
+        wall, why = _spent(started, "verify", family, seed)
+        assert wall < 3.0, why
 
 
 # ------------------------------------------------------------------ second review: scale, rounding and channel defects
@@ -1101,7 +1117,7 @@ if mode == "__probe__":
     request = {"data": {}, "geometry": {"latency_limit": 10}}
 elif mode == "verify":
     import greg.cognition.verification as verification
-    verification.verify = lambda *a: (stray(), {"verdict": "STRUCTURALLY_VERIFIED"})[1]
+    verification.verify = lambda *a, **k: (stray(), {"verdict": "STRUCTURALLY_VERIFIED"})[1]   # k: the deadline
     request = {"family": "x", "data": {}, "answer": {}, "proof_class": "x", "geometry": {"latency_limit": 10}}
 else:
     import cortex.routing

@@ -1106,9 +1106,12 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                 _lazy("greg.mcp_tools", "act")),
     "daleobanks.verify": (_builtin("daleobanks.verify", "media.verify_draft",
                                    "DALEOBANKS EthicsGuard/Critic/PromptFirewall on a draft plus figure-to-source "
-                                   "binding (DALEOBANKS code, DALEOBANKS interpreter)", "cli", "read_only",
+                                   "binding (DALEOBANKS code, DALEOBANKS interpreter); with ``cognition``, every "
+                                   "sentence must be a claim GREG's evidence family answered as written",
+                                   "cli", "read_only",
                                    "daleobanks:", {"daleobanks_root": "path", "draft": "path", "source": "path",
-                                                   "python": "path?", "max_chars": "int?"},
+                                                   "python": "path?", "max_chars": "int?", "cognition": "dict?",
+                                                   "content_type": "str?"},
                                    {"verdict": "str", "findings": "list", "draft_sha256": "str"},
                                    filesystem="read-scoped", binaries=(sys.executable,), retry_safe=True,
                                    data_classes=("project_sources",), tests=("tests/unit/test_greg_daleobanks_bridge.py",),
@@ -1208,7 +1211,7 @@ BUILTINS.update({
                                  "wealthmachine_python": "path", "seed": "str", "timeout_seconds": "int?"},
                                 {"trace_id": "str", "packet_id": "str", "assessment": "dict",
                                  "appraisal_verdict": "REPRODUCED|REFUTED", "transport_verified": "bool",
-                                 "sender_identity_isolated": "bool", "organ_heads": "dict"},
+                                 "sender_identity_isolated": "bool", "key_holders": "dict", "organ_heads": "dict"},
                                 filesystem="workspace-write", binaries=_GIT, data_classes=("project_sources",),
                                 tests=("tests/unit/test_greg_organs.py", "tests/integration/test_one_machine.py"),
                                 provenance=_ORGAN_SOURCE),

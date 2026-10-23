@@ -1,0 +1,161 @@
+{
+  "generated_by": "scripts/qualify_recombine.py",
+  "seeds": 60,
+  "environment": {
+    "python": "3.11.15",
+    "platform": "linux",
+    "packages": {
+      "networkx": "3.6.1",
+      "scipy": "1.17.1",
+      "numpy": "2.4.6",
+      "ortools": "9.15.6755"
+    }
+  },
+  "reductions": {
+    "staffing-via-maxflow": "9f42f5affeadb4ea66dd8430d51cf02d4ac4f476906ac10698129bf5505f1ef7",
+    "matching-via-staffing": "eae0fb22f67f4a5be8167b2a0b99e4a79c74c19a23054f164f36904fd39f6be9",
+    "crash-via-lp": "c7a0db1c3926fd7bdf49ecf4cecef0213823362699635ea16ce6fee7d5592170",
+    "selection-via-maxflow": "ab4feb2f9386b4d364c5d499c731601788312e87e533d96cefe3a573c1b5b6dd"
+  },
+  "stress": [
+    {
+      "function": "assignment.staffing",
+      "engine": "graph.max_flow",
+      "distribution": "networkx",
+      "cases": 600,
+      "proved_without_engine": 0,
+      "status": "run",
+      "version": "3.6.1",
+      "engine_cases": 600,
+      "wrong": 0,
+      "refused": 0,
+      "batch_seconds": 0.34
+    },
+    {
+      "function": "assignment.staffing",
+      "engine": "graph.max_flow",
+      "distribution": "scipy",
+      "cases": 600,
+      "proved_without_engine": 0,
+      "status": "run",
+      "version": "1.17.1",
+      "engine_cases": 600,
+      "wrong": 0,
+      "refused": 0,
+      "batch_seconds": 0.64
+    },
+    {
+      "function": "project.crash",
+      "engine": "lp.optimize",
+      "distribution": "scipy",
+      "cases": 600,
+      "proved_without_engine": 184,
+      "status": "run",
+      "version": "1.17.1",
+      "engine_cases": 416,
+      "wrong": 0,
+      "refused": 0,
+      "batch_seconds": 1.41
+    },
+    {
+      "function": "project.crash",
+      "engine": "lp.optimize",
+      "distribution": "ortools",
+      "cases": 600,
+      "proved_without_engine": 184,
+      "status": "run",
+      "version": "9.15.6755",
+      "engine_cases": 416,
+      "wrong": 0,
+      "refused": 0,
+      "batch_seconds": 0.42
+    },
+    {
+      "function": "selection.closure",
+      "engine": "graph.max_flow",
+      "distribution": "networkx",
+      "cases": 720,
+      "proved_without_engine": 133,
+      "status": "run",
+      "version": "3.6.1",
+      "engine_cases": 587,
+      "wrong": 0,
+      "refused": 0,
+      "batch_seconds": 0.47
+    },
+    {
+      "function": "selection.closure",
+      "engine": "graph.max_flow",
+      "distribution": "scipy",
+      "cases": 720,
+      "proved_without_engine": 133,
+      "status": "run",
+      "version": "1.17.1",
+      "engine_cases": 587,
+      "wrong": 0,
+      "refused": 0,
+      "batch_seconds": 0.71
+    }
+  ],
+  "reuse": {
+    "engine": {
+      "capability_id": "acquired.graph.max_flow.networkx",
+      "qualified": true,
+      "seconds": 0.32,
+      "oracle_cases": 12,
+      "scale_probe": {
+        "nodes": 300,
+        "edges": 2942,
+        "package_solve_seconds": 0.0223,
+        "package_run_seconds_with_interpreter": 0.301,
+        "certified": true,
+        "simplest_local_alternative": "local Edmonds-Karp (plain Python)",
+        "local_seconds": 0.003,
+        "agrees_with_local": true
+      }
+    },
+    "constructions": [
+      {
+        "function": "assignment.staffing",
+        "chain": [
+          "staffing-via-maxflow"
+        ],
+        "qualified": true,
+        "seconds": 0.22,
+        "oracle_cases": 10,
+        "engine_calls": 10,
+        "engine_requalified": false,
+        "new_solver_code_lines": 0
+      },
+      {
+        "function": "assignment.matching",
+        "chain": [
+          "matching-via-staffing",
+          "staffing-via-maxflow"
+        ],
+        "qualified": true,
+        "seconds": 0.28,
+        "oracle_cases": 9,
+        "engine_calls": 9,
+        "engine_requalified": false,
+        "new_solver_code_lines": 0
+      },
+      {
+        "function": "selection.closure",
+        "chain": [
+          "selection-via-maxflow"
+        ],
+        "qualified": true,
+        "seconds": 0.23,
+        "oracle_cases": 12,
+        "engine_calls": 9,
+        "engine_requalified": false,
+        "new_solver_code_lines": 0
+      }
+    ]
+  },
+  "limits": [
+    "timings are one run on a shared CI-class container, indicative only",
+    "chained functions (matching) are covered end to end by tests, not by the batch stress"
+  ]
+}

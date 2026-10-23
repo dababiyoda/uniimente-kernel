@@ -13,6 +13,7 @@ Alfonso's; the report says so. A rehearsal body (``greg rehearse``) is never fou
 from __future__ import annotations
 
 import json
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -23,6 +24,21 @@ def _passed(journal, mission_id: str, check_id: str) -> bool:
     obs = [e.payload for e in journal.replay("mission.observed")
            if e.payload["mission_id"] == mission_id and e.payload["check_id"] == check_id]
     return bool(obs) and bool(obs[-1]["passed"])
+
+
+def _code(home: Path) -> dict:
+    """The exact code this body runs: the kernel checkout's commit and whether a tracked file differs from it, read
+    with the hardened read-only git (nothing the checkout's own config names runs). An acceptance then names the
+    tree it accepted, so a reviewer can compare it with the candidate under review."""
+    from greg.capabilities import KERNEL_ROOT, read_only_git
+    root = Path(KERNEL_ROOT)
+    try:
+        head = read_only_git(root, "rev-parse", "HEAD", home=home)
+        changes = read_only_git(root, "status", "--porcelain", "--untracked-files=no", home=home)
+    except (OSError, subprocess.TimeoutExpired):
+        return {"root": str(root), "commit": None, "dirty": None}
+    return {"root": str(root), "commit": (head.stdout.strip() or None) if head.returncode == 0 else None,
+            "dirty": bool(changes.stdout.strip()) if changes.returncode == 0 else None}
 
 
 def _egress(home: Path, config: dict) -> dict:
@@ -81,11 +97,15 @@ def report(home: str | Path) -> dict:
         owned = [m for m in verified_first if _passed(journal, m, "owned-preview")]
         retained = [m for m in verified_first if _passed(journal, m, "lesson-retained")]
     egress = _egress(layout.home, config)
+    code = _code(layout.home)
     rows = {r["mission_id"]: r for r in vepmc["missions"]}
     first_row = next((rows[m] for m in verified_first if m in rows), None)
     heartbeat = st.get("background") or {}
     props = [
         ("ledger_chain_verified", ok, "the hash chain of every retained record verifies", "—"),
+        ("code_identified", bool(code["commit"]) and code["dirty"] is False,
+         "the body runs a clean checkout of one named commit (code.commit), so this report binds to that tree",
+         "1. Install (clone the review branch; do not edit tracked files)"),
         ("founder_key_enrolled", bool(st["security"]["founder_keys_enrolled"]), "a founder key is enrolled", "1. Install"),
         ("first_body_designated", designated, "a founder-signed first-body designation is on this ledger", "1. Install (step 8/8)"),
         ("supervised_runtime", heartbeat.get("state") in ("RUNNING", "PAUSED"), "the supervised body reports a heartbeat",
@@ -122,6 +142,7 @@ def report(home: str | Path) -> dict:
             "LOCAL (not a founder-designated body run; not founder-device evidence)")
     out = {"kind": "greg-founder-device-acceptance/1", "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
            "body_id": st["body_id"], "home": str(layout.home), "reality": tier, "chain": chain if not ok else "verified",
+           "code": code,
            "properties": [{"property": p, "status": "PASS" if v else "NOT_YET", "means": means, "runbook": step}
                           for p, v, means, step in props],
            "passed": sum(1 for _, v, _, _ in props if v), "total": len(props),

@@ -5,7 +5,8 @@ geometry, checks which cognitive organs are eligible for it, runs the eligible o
 their output with an independent verifier, and returns a recommendation, abstention, bounded test or handoff
 together with a content-addressed receipt.
 
-**Status:** cortex 0.2.1, converged onto GREG's mission path (`cognition.solve`, one registry, one receipt
+**Status:** cortex 0.2.2 (the Seed Cortex 0.1.6 repairs ported onto GREG's path and 28 further findings verified:
+[`SEED_CORTEX_PORT_0.2.2.md`](SEED_CORTEX_PORT_0.2.2.md)), converged onto GREG's mission path (`cognition.solve`, one registry, one receipt
 envelope, one settlement) · seven seed organs including a fault-diverse CP-SAT engine and the schedule-extraction
 composition · reserved families registered and disabled · **not promoted**. The frozen cross-geometry comparison
 against GREG's own baselines is reported in [`GREG_SEED_GENOME_REPORT.md`](GREG_SEED_GENOME_REPORT.md); the v0.1

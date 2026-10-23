@@ -605,6 +605,7 @@ class Genesis:
         self.builder_cap = getattr(builder, "max_budget_usd", None)   # the builder's own ceiling, never ratcheted
         self.store = self.workspace_root.parent / "capabilities" / "built"   # content-addressed built sources
         self.objects = ArtifactStore(self.store, legacy_source_suffix=".py")  # preserve existing bodies' paths
+        self._form_only = None   # goal id while forming on a goal's request (form_for_goal)
 
     # -- queries used by the mission engine --------------------------------------
     def find_attached(self, function: str):
@@ -922,6 +923,8 @@ class Genesis:
 
     def _attach_dependency(self, mission, manifest, dependent: str, now) -> bool:
         """Attach the exact engine a construction is pinned to, under the same signed scope, or ask."""
+        if self._form_only:
+            return False
         allowed = (mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"
                    and manifest.consequence_class == "read_only"
                    and mission.cone._capability_inside(manifest.capability_id))
@@ -1002,6 +1005,24 @@ class Genesis:
         self.journal.record("deficit.candidates", {"deficit_id": deficit_id, **found, "pass": len(passes)},
                             key=[deficit_id, "candidates", len(passes)])
 
+    def formable(self, function: str) -> bool:
+        """True when Genesis can form ``function`` without a builder: a catalogued tool or package, or a
+        certified reduction chain onto one (what a goal's plan may ask to have formed)."""
+        return function in CATALOG or self.construction_engine(function) is not None
+
+    def form_for_goal(self, *, goal_id: str, mission, function: str, purpose: str, now):
+        """Form ``function`` because a founder-signed goal's plan requires it, under one of its signed missions.
+
+        Formation only: every verified result waits for the founder's CAPABILITY_ATTACH (no mission
+        auto_attach applies, no engine is attached for it) and no builder is commissioned, so no build
+        budget is spent on a goal's behalf. Returns the attached manifest when one already serves."""
+        prior = self._form_only
+        self._form_only = goal_id
+        try:
+            return self.resolve(mission=mission, function=function, purpose=purpose, now=now)
+        finally:
+            self._form_only = prior
+
     def resolve(self, *, mission, function: str, purpose: str, now, repair: dict | None = None,
                 deficit: dict | None = None):
         found = self.find_attached(function)
@@ -1052,6 +1073,8 @@ class Genesis:
                 opened["search_order"] = ["attached", "verified_detached", "constructed", "builder", "founder"]
             if repair is not None:
                 opened["repair"] = repair
+            if self._form_only:
+                opened["requested_by_goal"] = self._form_only
             self.journal.record("deficit.opened", opened, key=deficit_id)
 
         # 2. registered but detached
@@ -1170,12 +1193,12 @@ class Genesis:
                      if self.registry.usable(m.capability_id)[0]]
         offered = []
         found = self._search_cognition(mission, function, deficit_id, record, mechanisms, contract, seed, repair, now,
-                                       offered)
+                                       offered, fitting)
         self._offer(deficit_id, offered, fitting, tried)
         return found
 
     def _search_cognition(self, mission, function, deficit_id, record, matched, contract, seed, repair, now,
-                          offered: list):
+                          offered: list, fitting=()):
         for named in record["named_by_compiler"]:
             self._route(deficit_id, "frozen_evidence", f"the compiler names {named['mechanism']} (in place of "
                                                        f"{named['supersedes']}) from frozen held-out evidence", None)
@@ -1186,7 +1209,7 @@ class Genesis:
                 return self._attach(mission, manifest, deficit_id, now, offered)
         self._route(deficit_id, "verified_detached", "none", None)
         # 3. the registered repertoire: the simplest route is a family GREG already has
-        offered += self._genome_library(deficit_id, record)
+        offered += self._genome_library(deficit_id, record, fitting)
         if offered:
             self._route(deficit_id, "installed_package", "not searched: a registered intelligence fits this geometry; "
                                                          "attaching it is the simpler route", None)
@@ -1215,14 +1238,17 @@ class Genesis:
                 return found
         return self._builder_route(mission, function, deficit_id, now, contract, repair, offered)
 
-    def _genome_library(self, deficit_id: str, record: dict) -> list[str]:
+    def _genome_library(self, deficit_id: str, record: dict, fitting=()) -> list[str]:
         """Registered intelligences whose native geometry and inputs fit the residual; returns attach candidates.
 
         The rows and their verdicts are the Competency Compiler's own (``compiler.family_rows``: native epistemic
         class, every native input present, composition stage, frozen admission status, and a relaxation of a fuller
-        fitting method), so Genesis offers exactly the families the compiler would route to once attached. A
-        registered, withheld (VERIFIED) family is reported for the founder to attach; GREG never attaches it.
-        Detached, quarantined or unregistered families are reported, not offered."""
+        fitting method), so Genesis offers exactly the families the compiler would route to once attached. A request
+        in a one-part recipe's shape (``{"capacity_network": {...}}``) names only its part, whose inputs the residual
+        does not carry: the compiler fitted families to the part, and its own fitting operation rows (``fitting``)
+        that the family rows cannot see are offered the same way. A registered, withheld (VERIFIED) family is
+        reported for the founder to attach; GREG never attaches it. Detached, quarantined or unregistered families
+        are reported, not offered."""
         from greg.cognition import catalog, compiler
         from greg.cognition.genomes import library
         provided, declared = set(record["required_inputs"]), record["geometry"]
@@ -1238,29 +1264,49 @@ class Genesis:
                             cid)
                 noted = True
                 continue
-            state = self.registry.state.get(cid)
-            why = ("not registered on this body" if state is None
-                   else "founder-detached; explicit attach required" if state == "DETACHED"
-                   else f"attached ({self.registry.usable(cid)[1]})" if state == "ATTACHED"
-                   else f"state {state}" if state != "VERIFIED" else None)
+            why = self._not_offered(cid)
             if why:
                 self._route(deficit_id, "genome_library", f"{cid} fits but is not a candidate: {why}", cid)
                 noted = True
                 continue
             found.append(cid)
-            self._route(deficit_id, "genome_library", f"attach candidate: {cid} ({row['status']}) fits by native class "
+            # a frozen status that persists from another version of the code (negative evidence awaiting a
+            # re-admission) is labelled with the version it was measured at, never presented as this version's
+            stale = row.get("stale_measurements") if not row.get("stale_evidence") else None
+            at = {"admission_version": stale["version_measured"], "current_version": stale["version_current"]} \
+                if stale else {}
+            label = row["status"] + (f", measured at version {at['admission_version']}" if at else "")
+            self._route(deficit_id, "genome_library", f"attach candidate: {cid} ({label}) fits by native class "
                                                       f"and inputs {row['inputs']}; registered and withheld; GREG "
                                                       "does not attach it", cid)
             self.journal.record("deficit.awaiting_attach", {
-                "deficit_id": deficit_id, "capability_id": cid, "admission_status": row["status"],
+                "deficit_id": deficit_id, "capability_id": cid, "admission_status": row["status"], **at,
                 "why": "a registered, withheld intelligence fits the residual geometry; attaching it is the "
                        "founder's decision"}, key=[deficit_id, "await", cid, row["status"]])
+        # operation rows the compiler fitted to the request's one typed part: its row, not the residual's input names,
+        # decides (the family rows above decide every family they see)
+        for cid in dict.fromkeys(r["method"] for r in fitting or ()
+                                 if r["kind"] == "operation" and r["method"] not in fits):
+            why = self._not_offered(cid)
+            if why:
+                self._route(deficit_id, "genome_library", f"{cid} fits the request's part but is not a candidate: "
+                                                          f"{why}", cid)
+                noted = True
+                continue
+            found.append(cid)
+            self._route(deficit_id, "genome_library", f"attach candidate: {cid} fits the request's one typed part by "
+                                                      "the compiler's own row; registered and withheld; GREG does not "
+                                                      "attach it", cid)
+            self.journal.record("deficit.awaiting_attach", {
+                "deficit_id": deficit_id, "capability_id": cid,
+                "why": "a registered, withheld intelligence fits the request's part; attaching it is the founder's "
+                       "decision"}, key=[deficit_id, "await", cid, "part"])
         near = []
         if declared:                    # reported, never offered: the same geometry, some of the inputs
             genomes = library.executables()
             for family, (_, operations, classes, _, _) in sorted(catalog.FAMILIES.items()):
                 cid = "cognition." + family
-                if declared not in classes or cid in fits:
+                if declared not in classes or cid in fits or cid in found:
                     continue
                 needs = ([tuple(genomes[family].genome.required_inputs)] if family in genomes
                          else [compiler.NATIVE_INPUTS[op] for op in operations if op in compiler.NATIVE_INPUTS])
@@ -1274,6 +1320,14 @@ class Genesis:
                                                       f"{'of geometry ' + declared + ' ' if declared else ''}takes "
                                                       f"its native inputs from {shown(sorted(provided))}", None)
         return found
+
+    def _not_offered(self, cid: str) -> str | None:
+        """Why a fitting registered intelligence is not an attach candidate on this body, else None (withheld)."""
+        state = self.registry.state.get(cid)
+        return ("not registered on this body" if state is None
+                else "founder-detached; explicit attach required" if state == "DETACHED"
+                else f"attached ({self.registry.usable(cid)[1]})" if state == "ATTACHED"
+                else f"state {state}" if state != "VERIFIED" else None)
 
     @staticmethod
     def _fits(record: dict):
@@ -1500,6 +1554,11 @@ class Genesis:
 
     def _builder_route(self, mission, function, deficit_id, now, contract=None, repair=None, offered=None):
         """Commission the residual capability against the founder-frozen contract, verify, register."""
+        if self._form_only:
+            self._route(deficit_id, "builder", f"goal {self._form_only[:23]} asked for formation: a goal never "
+                                               "commissions a builder or spends a build budget", None)
+            self._route(deficit_id, "founder", "escalated", None)
+            return None
         if self.builder is None or contract is None:
             why = ("no builder attached (coding agent/human/model not connected)" if self.builder is None
                    else "the mission declares no contract for this function; nothing to build against")
@@ -1762,7 +1821,15 @@ class Genesis:
     def _attach(self, mission, manifest: CapabilityManifest, deficit_id: str, now, offered: list | None = None):
         # Founder-signed pre-authorization only: read-only, and inside the cone. A capability formed for cognition
         # (directive section 24) is attached only by the founder's own command, never under a mission scope.
-        # ``offered`` collects what a cognition search pass found for the founder.
+        # ``offered`` collects what a cognition search pass found for the founder. Never for a goal's request.
+        if self._form_only:
+            self.journal.record("deficit.awaiting_attach", {
+                "deficit_id": deficit_id, "capability_id": manifest.capability_id,
+                "why": f"formed because goal {self._form_only[:23]} requires {manifest.function}; attaching is "
+                       "your signed CAPABILITY_ATTACH"}, key=[deficit_id, "await", manifest.capability_id])
+            if offered is not None:
+                offered.append(manifest.capability_id)
+            return None
         cognition = manifest.function.startswith("cognition.")
         allowed = (not cognition and mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"
                    and manifest.consequence_class == "read_only"

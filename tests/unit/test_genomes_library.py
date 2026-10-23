@@ -118,6 +118,9 @@ def _leaf_mutants(value, path=()):
 # A compiled model whose non-binding upper bound is raised means the same thing (same feasible integer
 # points, same optimum); the verifiers require bounds that never cut the feasible region, not byte equality.
 EQUIVALENT = {"flow_capacity_plan", "newsvendor_compile"}
+# A counterexample is any domain input on which the re-executed property fails: changing an argument the failure does
+# not depend on gives another counterexample, an equally true answer (the score re-executes it independently).
+COUNTEREXAMPLES = {"formal_property_search"}
 
 
 @pytest.mark.parametrize("family", sorted(library.executables()))
@@ -149,6 +152,9 @@ def test_every_single_leaf_corruption_of_an_answer_is_refuted_or_provably_equiva
         if (accepted is True and family in EQUIVALENT and path[:2] == ("model", "variables") and path[-1] == 1
                 and value > original and abs(model_optimum(forged["model"]) - truth["optimum"]) <= 1e-6):
             continue
+        if (accepted is True and family in COUNTEREXAMPLES and path[0] == "counterexample"
+                and item.score(data, truth, forged)["category"] == "correct"):
+            continue                                    # another input that re-executes as a counterexample
         survivors.append((path, accepted))
     assert not survivors, (family, survivors[:10])
 

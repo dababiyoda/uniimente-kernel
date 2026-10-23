@@ -71,6 +71,12 @@ class AbstentionClass(StrEnum):
     NO_QUORUM = "NO_QUORUM"
 
 
+def outcome_state_for(abstention_state: str) -> str:
+    """The directive outcome label an abstention state implies (one mapping for every receipt builder)."""
+    return {"NONE": "ANSWERED_WITHIN_SCOPE", "HUMAN_REVIEW_REQUIRED": "ESCALATE",
+            "WORLD_UNVERIFIED": "CONDITIONAL_RESULT"}.get(abstention_state, "ABSTAIN")
+
+
 def canonical(value) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
 

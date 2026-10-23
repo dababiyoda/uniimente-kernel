@@ -20,6 +20,19 @@ Describe the problem, affected system boundary, and why this belongs in this rep
 - Conflicts with:
 - Defers or supersedes:
 
+## Upward recombination and full-vision completion
+
+For material convergence, duplication or not-yet-elevated substrate, apply `docs/intent/INTENT-20261019-UPWARD-ASCENT.md` using Mechanism Recombination Foundry. Record the source-to-function transformation in the existing reconciliation record, not another parallel ledger.
+
+- Source revisions and useful behaviors preserved:
+- Material mutations and resulting emergent capability:
+- Actual GREG caller, receiving consumer and integration trace:
+- Strongest simple baseline, measurable capability dividend and subtraction/ablation test:
+- Evidence tier attained, negative results and remaining full-vision obligations:
+- Unconverted substrate, next mutation/build step, owner and precise blocker or revisit trigger:
+
+Preservation, renaming, file consolidation, green CI and documentation alone do not prove a new runtime capability. Preparatory work must name the product blocker it removes. Open or blocked obligations never count as full completion. No runtime or merge authority is added.
+
 ## Effect compilation / anti-literalization
 
 Required for any founder metaphor, science-fiction aspiration, morphogenesis/developmental work, or materially new capability.
@@ -110,3 +123,13 @@ Do not manufacture consensus. Record the strongest remaining objection and the e
 - [ ] Experiment
 
 Decision owner and rationale:
+
+## Coordination and handoff receipt
+
+For work governed by the collaboration protocol, copy the version-2 example from
+[RECEIPT.md](../docs/collaboration/RECEIPT.md) into this PR body, replace placeholders,
+and rebind base/head after each push. Declare actual session identity, files/interfaces,
+overlap search and acknowledged split, integration destination, validation, limitations,
+rollback and receiver acknowledgment. Unknown owner stays explicitly unassigned.
+Do not claim independent review from five-lens self-review.
+

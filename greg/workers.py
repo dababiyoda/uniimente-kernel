@@ -54,7 +54,7 @@ import sys
 import tempfile
 import time
 
-from greg import isolation
+from greg import evidence_strength, isolation
 from greg.capabilities import CapabilityError, InvocationContext, _inside
 from greg.worker_isolation import WorkerIsolationError, envelope_cannot_confine, prepare_worker
 
@@ -71,6 +71,7 @@ PROTECTED_SURFACES = (
     "greg/cognition/cortex.py", "greg/cognition/bridge.py", "greg/cognition/seed_path.py", "greg/cognition/seed_compat.py",
     "cortex/contracts.py", "cortex/schemas.py", "cortex/seed/contracts.py", "cortex/seed/verify.py",
     "cortex/organs/adversarial.py", "cortex/organs/formal_eval.py", "cortex/evaluation/*",
+    "greg/evidence_strength.py", "foundry/systems/repair.py",
     "AGENTS.md", "CLAUDE.md", "*/AGENTS.md", "*/CLAUDE.md", "docs/FOUNDER_*", "docs/intent/*",
     ".github/*", "tools/offline_test.py", "conftest.py",
     "greg/worker_isolation.py", "greg/isolation.py", "greg/console.py", "greg/remote.py",
@@ -272,6 +273,8 @@ class WorkOrder:
             raise WorkerError("require_context_quote needs non-empty document source context")
         # Inputs: founder read roots, or what this same mission already wrote to its own workspace.
         inputs = tuple(str(_inside(Path(p), ctx.read_roots + (ctx.workspace,))) for p in params.get("inputs", []))
+        if "bound_claims" in acceptance:
+            bound_claims(acceptance, mode, allowed_paths, inputs)
         provider = str(params.get("provider", "claude-code"))
         if provider not in PROVIDERS:
             raise WorkerError(f"unknown worker provider {provider!r}; known: {sorted(PROVIDERS)}")
@@ -342,6 +345,35 @@ def worker_spend(raw, cap: float) -> dict:
             "raw_provider_value": raw_evidence, "reason": reason, "source": "provider_report"}
 
 
+def bound_claims(acceptance: dict, mode: str, allowed_paths, inputs=None) -> dict:
+    """A document order may require every sentence of its deliverable to be a claim the Mind answers as written.
+
+    ``{"claims": file, "quality": primary|secondary|unverified, "expires_at": ISO time}``: the worker lists each
+    sentence with the input spans that support it; quality and freshness are the signer's declaration about the
+    inputs, never the worker's. Acceptance belongs to ``worker.appraise``, which asks the Mind itself."""
+    from datetime import datetime
+    spec = acceptance["bound_claims"]
+    if mode != "document":
+        raise WorkerError("bound_claims applies to document work orders")
+    if not isinstance(spec, dict) or set(spec) != {"claims", "quality", "expires_at"}:
+        raise WorkerError("bound_claims declares exactly claims, quality and expires_at")
+    if not ORDER_NAME.match(str(spec["claims"])) or spec["claims"] == acceptance["output"]:
+        raise WorkerError("bound_claims.claims names a short file beside the deliverable")
+    if not allowed(spec["claims"], allowed_paths) or not allowed(acceptance["output"], allowed_paths):
+        raise WorkerError("the deliverable and its claims file must both be writable")
+    if spec["quality"] not in ("primary", "secondary", "unverified"):
+        raise WorkerError("bound_claims.quality is primary, secondary or unverified")
+    try:
+        datetime.fromisoformat(str(spec["expires_at"]).replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise WorkerError("bound_claims.expires_at is an ISO time") from exc
+    if inputs is not None:
+        names = [Path(p).name for p in inputs]
+        if not names or len(set(names)) != len(names):
+            raise WorkerError("bound_claims needs at least one input, each with its own file name")
+    return spec
+
+
 # -- providers ---------------------------------------------------------------------------
 
 def worker_prompt(order: WorkOrder) -> str:
@@ -368,6 +400,14 @@ def worker_prompt(order: WorkOrder) -> str:
                          "appraisal will compare exact source bytes; a paraphrase does not satisfy this check.")
         if order.acceptance.get("criteria"):
             lines.append("ACCEPTANCE CRITERIA: " + str(order.acceptance["criteria"]))
+        if order.acceptance.get("bound_claims"):
+            names = [Path(p).name for p in order.inputs]
+            lines.append(f"Also write ./{order.acceptance['bound_claims']['claims']}: a JSON list with one entry per "
+                         f"sentence of the deliverable, in order: {{\"text\": the sentence exactly as written, "
+                         f"\"quotes\": [{{\"input\": one of {names}, \"quote\": a span copied exactly from that "
+                         "input that says the same thing}]}. Every sentence needs at least one quote. GREG checks each "
+                         "sentence against its quotes itself: one that changes a figure, a negation, a hedge, a scope, "
+                         "a direction or a name, or that no quote supports, is not accepted.")
     if order.context:
         lines.append("CONTEXT:\n" + order.context)
     lines.append(f"When finished, end your reply with one line: {REPORT_MARK} "
@@ -802,13 +842,16 @@ def _tree_digest(root: Path) -> str:
     return h.hexdigest()
 
 
-def _git(repo: Path, *args, check: bool = True, home: Path | None = None) -> subprocess.CompletedProcess:
+def _git(repo: Path, *args, check: bool = True, home: Path | None = None,
+         text: bool = True) -> subprocess.CompletedProcess:
+    """``text=False`` returns raw bytes: a worker may write any bytes, and decoding them would crash."""
     env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "GIT_CONFIG_NOSYSTEM": "1",
            "GIT_CONFIG_GLOBAL": "/dev/null", "HOME": str(home or repo), "GIT_TERMINAL_PROMPT": "0"}
-    proc = subprocess.run(["git", *_GIT_HARDENING, "-C", str(repo), *args], capture_output=True, text=True,
+    proc = subprocess.run(["git", *_GIT_HARDENING, "-C", str(repo), *args], capture_output=True, text=text,
                           timeout=120, env=env)
     if check and proc.returncode:
-        raise WorkerError(f"git {' '.join(args[:3])} failed: {proc.stderr[-300:]}")
+        stderr = proc.stderr if text else proc.stderr.decode("utf-8", "replace")
+        raise WorkerError(f"git {' '.join(args[:3])} failed: {stderr[-300:]}")
     return proc
 
 
@@ -829,10 +872,11 @@ def private_clone(source: str, base: str, dest: Path) -> str:
     return commit
 
 
-def collect_changes(clone: Path, base_commit: str) -> tuple[list[str], str]:
+def collect_changes(clone: Path, base_commit: str) -> tuple[list[str], bytes]:
+    """Changed paths and the patch as bytes: a worker may write any bytes, and decoding them would crash."""
     _git(clone, "add", "-A")
     names = _git(clone, "diff", "--cached", "--name-only", base_commit).stdout.split()
-    patch = _git(clone, "diff", "--cached", "--binary", base_commit).stdout
+    patch = _git(clone, "diff", "--cached", "--binary", base_commit, text=False).stdout
     return sorted(names), patch
 
 
@@ -964,7 +1008,10 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
              "authority_ref": order.authority_ref, "mission_id": order.mission_id,
              "provider": order.provider, "max_budget_usd": order.max_budget_usd,
              "timeout_seconds": order.timeout_seconds, "workspace": str(work),
-             "authority_created": False, "push_rights": False, "secrets": "none"}
+             "authority_created": False, "push_rights": False, "secrets": "none",
+             "acceptance": order.acceptance,
+             "evaluator": "worker.appraise; every sentence answered by the Mind's evidence family (cognition.evidence)"
+                          if order.acceptance.get("bound_claims") else "worker.appraise"}
     (root / "lease.json").write_text(json.dumps(lease, indent=2, sort_keys=True))
     base_commit = None
     if order.mode == "repository":
@@ -1023,9 +1070,9 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
             raise WorkerError("the clone's git metadata changed during GREG's restore; nothing was collected")
         names, patch = collect_changes(work, base_commit)
     except (WorkerError, OSError, subprocess.TimeoutExpired) as exc:
-        names, patch = [], ""
+        names, patch = [], b""
         collection_error = f"could not collect worker changes: {str(exc)[:300]}"
-    patch_bytes = patch.encode()
+    patch_bytes = patch                    # already bytes: collect_changes never decodes a worker's bytes
     if len(patch_bytes) > MAX_PATCH:
         collection_error = "the worker's diff exceeds the reviewable patch ceiling"
     findings = scope_findings(names, order.allowed_paths, order.acceptance.get("max_changed_files"))
@@ -1105,6 +1152,55 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
 
 # -- independent appraisal ----------------------------------------------------------------
 
+def _mind_appraisal(order_name: str, order: dict, spec: dict, fresh: Path, base: str, out: Path,
+                    registry=None) -> tuple[dict, list[str], dict]:
+    """Every sentence of the deliverable against GREG's own copies of the inputs, answered by the Mind.
+
+    The inputs are read from the base commit GREG made before the worker ran, never from the worker's tree; the
+    worker's bindings are claims the evidence family checks, never acceptance."""
+    from greg.cognition import restatement
+    from greg.cognition.contracts import CognitionError
+    unchecked = {"checked": False, "limits": "no sentence was checked as written"}
+    if not out.is_file():
+        return unchecked, [], {}
+    # The claims file is a second worker-written file: read it only inside the fresh clone, as the deliverable is
+    # (#184). A symlink out of the clone would hand the Mind a host file as the worker's bindings.
+    try:
+        claims_file = _inside(fresh / spec["claims"], (fresh,))
+    except CapabilityError:
+        return unchecked, [f"claims file {spec['claims']} leaves the private workspace: it is not read"], {}
+    if not claims_file.is_file():
+        return unchecked, [f"claims file {spec['claims']} is missing: no sentence of the deliverable can be checked"], {}
+    try:
+        document, raw_claims = out.read_text(encoding="utf-8"), claims_file.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return unchecked, ["the deliverable or its claims file is not UTF-8 text"], {}
+    except OSError as exc:
+        return unchecked, [f"the deliverable or its claims file cannot be read ({type(exc).__name__})"], {}
+    names = [Path(p).name for p in order["inputs"]]
+    if not names or len(set(names)) != len(names):
+        return unchecked, ["the order's inputs need distinct file names for GREG's copies to be checked"], {}
+    sources = []
+    for name in names:
+        shown = _git(fresh, "show", f"{base}:inputs/{name}", check=False, text=False)
+        if shown.returncode:
+            return unchecked, [f"input {name} is not in GREG's copy at the base commit"], {}
+        try:
+            text = shown.stdout.decode("utf-8")
+        except UnicodeDecodeError:
+            return unchecked, [f"input {name} is not UTF-8 text; the Mind reads text"], {}
+        sources.append(restatement.source(
+            name, text, quality=spec["quality"], expires_at=spec["expires_at"],
+            provenance=f"work order {order_name}: GREG's copy of {name} at base {base[:12]}, made before the worker ran"))
+    claims, findings = restatement.read_claims(raw_claims, names)
+    try:
+        receipts = restatement.answer(claims, sources, problem_prefix=f"work-{order_name}", registry=registry)
+    except (CognitionError, ValueError, TypeError, KeyError) as exc:
+        return unchecked, findings + [f"the Mind could not take the claims: {str(exc)[:200]}"], {}
+    truth, problems = restatement.coverage(document, receipts)
+    return truth, findings + problems, receipts
+
+
 def appraise(params: dict, ctx: InvocationContext) -> dict:
     """``worker.appraise`` (read-only sensor): re-derive the result without trusting the worker or the collector.
 
@@ -1113,6 +1209,10 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
     protected-surface checks -> rerun acceptance with no network -> budget check. The worker's
     claim and GREG's first test run are ignored. Verdicts: ABSENT, ACCEPTED, REJECTED,
     NEEDS_FOUNDER_DECISION (protected surface touched: capability may grow, authority may not).
+
+    A document order with ``bound_claims`` is accepted only if every sentence of the deliverable is a claim the Mind
+    answered as written against GREG's copies of the inputs. A mission may sign that contract into this sensor's
+    params; the signed contract then applies, and a recorded order that differs from it is rejected.
     """
     order_name = str(params.get("order", ""))
     if not ORDER_NAME.match(order_name):
@@ -1150,7 +1250,17 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
             return {"order": order_name, "verdict": "REJECTED",
                     "findings": ["retained spend differs from the canonical commission receipt"]}
         receipt_binding = "frozen work order and collected artifact bound to canonical commission receipt"
-    findings, verdict = [], "ACCEPTED"
+    findings, verdict, mind = [], "ACCEPTED", {}
+    # A contract the mission signed into this sensor's params is checked before it is used, then applies.
+    signed = params.get("bound_claims")
+    if signed is not None:
+        try:
+            bound_claims({**order["acceptance"], "bound_claims": signed}, order["mode"], tuple(order["allowed_paths"]))
+        except WorkerError as exc:
+            return {"order": order_name, "verdict": "REJECTED", "findings": [f"the signed acceptance contract: {exc}"]}
+        if signed != order["acceptance"].get("bound_claims"):
+            findings.append("the recorded acceptance contract differs from the one this mission signed")
+            verdict = "REJECTED"
     if summary.get("status") not in ("COMPLETED", "NO_CHANGE"):
         findings.append(f"worker collection did not complete: {summary.get('status')}")
         verdict = "REJECTED"
@@ -1170,7 +1280,7 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
         verdict = "REJECTED"
     elif spend["status"] == "unknown":
         findings.append(spend["reason"])
-    with_tests = []
+    with_tests, strength = [], None
     import tempfile
     with tempfile.TemporaryDirectory(prefix="greg-appraise-") as tmp:
         fresh = Path(tmp) / "fresh"
@@ -1211,13 +1321,38 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
                 findings.append(f"the worker changed the frozen evaluator it is judged by: {evaluator['replaced']}")
                 verdict = "REJECTED"
         if order["mode"] == "repository":
-            with_tests = run_tests(acceptance_commands(order["acceptance"], names), fresh,
-                                   timeout=min(int(order["timeout_seconds"]), 1200), stop_check=ctx.stop_check,
-                                   confinement=ctx.worker_confinement)
+            # Sealed oracle (#168, 68240cc): what the founder named as the judge is judged as it was at the base.
+            base_files = set(_git(fresh, "ls-tree", "-r", "--name-only", base).stdout.split())
+            tampered = sorted(n for n in names if n in evidence_strength.sealed_paths(order["acceptance"], base_files))
+            if tampered:
+                findings.append(f"the patch edits its sealed acceptance oracle {tampered}; the founder's version "
+                                "is what was run")
+                verdict = "REJECTED"
+                _git(fresh, "checkout", "--quiet", base, "--", *tampered)
+            timeout = min(int(order["timeout_seconds"]), 1200)
+
+            def confined_tests(tests, cwd, *, timeout):
+                # every acceptance run, including the evidence-strength runs, keeps the body's confinement
+                return run_tests(tests, cwd, timeout=timeout, stop_check=ctx.stop_check,
+                                 confinement=ctx.worker_confinement)
+            with_tests = confined_tests(acceptance_commands(order["acceptance"], names), fresh, timeout=timeout)
             failed = [t for t in with_tests if not t["passed"]]
             if failed:
                 findings.append(f"{len(failed)} acceptance command(s) failed in the independent clone")
                 verdict = "REJECTED"
+            # The worker's own tests are acceptance only if they can tell its change from no change
+            # and from a corrupted version of it.
+            authored = evidence_strength.worker_tests(names)
+            if verdict == "ACCEPTED" and order["acceptance"].get("run_changed_tests") and authored:
+                base_clone = Path(tmp) / "base"
+                private_clone(repo, summary["base_commit"], base_clone)
+                strength = evidence_strength.judge(
+                    fresh=fresh, base_clone=base_clone, patch=Path(tmp) / "change.patch", base=base, names=names,
+                    command=acceptance_commands({"run_changed_tests": True}, names)[-1], git=_git,
+                    run_tests=confined_tests, timeout=min(timeout, 300))
+                if strength["findings"]:
+                    findings.extend(strength["findings"])
+                    verdict = "REJECTED"
         else:
             try:
                 out = _inside(fresh / order["acceptance"]["output"], (fresh,))
@@ -1234,6 +1369,15 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
                     not order.get("context") or order["context"].encode() not in out.read_bytes()):
                 findings.append("document does not quote the frozen source context verbatim")
                 verdict = "REJECTED"
+            # The Mind answers every sentence; a deliverable outside the workspace (already REJECTED) is never read.
+            spec = signed if signed is not None else order["acceptance"].get("bound_claims")
+            if spec is not None and out is not None:
+                truth, problems, receipts = _mind_appraisal(order_name, order, spec, fresh, base, out,
+                                                            registry=ctx.capability_registry)
+                mind = {"truth_preservation": truth, "cognition_receipts": receipts}
+                if problems:
+                    findings += problems
+                    verdict = "REJECTED"
         if scope["protected_touched"] and verdict == "ACCEPTED":
             findings.append(f"protected surfaces changed: {scope['protected_touched']}; founder decision required")
             verdict = "NEEDS_FOUNDER_DECISION"
@@ -1249,5 +1393,6 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
             "independence": "fresh clone of the source at the recorded base, retained patch re-applied, "
                             "acceptance re-run with no network; worker claim and collector tests not used",
             "worker": summary.get("worker", {}).get("identity"), "receipt_binding": receipt_binding,
-            "spend": spend,
+            "spend": spend, **mind,
+            "evidence_strength": strength and {k: v for k, v in strength.items() if k != "findings"},
             "authority_created": False}

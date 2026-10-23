@@ -575,6 +575,9 @@ def catalog_adapter(function: str, candidate: Candidate, binary: str):
         expected = ctx.manifest.provenance.get("binary_sha256")
         if expected and hashlib.sha256(Path(binary).read_bytes()).hexdigest() != expected:
             raise CapabilityError("installed binary changed since verification; quarantine required")
+        requalified, why = licensing.requalify_binary(ctx.manifest, binary)   # P4c draft; P0 returns at once
+        if not requalified:
+            raise CapabilityError(f"capability refused: {why}")
         ctx.workspace.mkdir(parents=True, exist_ok=True)
         argv = [binary if t == "{binary}" else str(path) if t == "{file}" else t for t in candidate.argv]
         returncode, stdout, stderr = _run_bounded(argv, ctx.workspace, candidate.binary_name)
@@ -1910,7 +1913,7 @@ class Genesis:
     def _manifest_for(self, function, candidate: Candidate, binary: str, deficit_id: str) -> CapabilityManifest:
         version = run_isolated([binary, "--version"], cwd=Path(tempfile.gettempdir()), timeout=10)
         version_text = (version.stdout or version.stderr).decode("utf-8", errors="replace").splitlines()[:1]
-        return CapabilityManifest(
+        manifest = CapabilityManifest(
             capability_id=f"acquired.{function}.{candidate.binary_name}", version="1.0.0",
             provider="installed:" + binary, function=function, description=CATALOG[function]["description"],
             route="cli", consequence_class="read_only", inputs={"path": "str"},
@@ -1921,6 +1924,9 @@ class Genesis:
                         "version": version_text[0] if version_text else "unknown", "deficit_id": deficit_id,
                         **_binary_license(binary), "companions": _companions(candidate),
                         "builder": "none: existing installed software acquired by search"})
+        # what this binary's terms permit for the use GREG actually makes of it, bound to the assessed facts
+        manifest.provenance["use_qualification"] = licensing.capability_qualification(manifest)
+        return manifest
 
     def _verify(self, function, candidate: Candidate, binary: str, seed: int, manifest) -> tuple[bool, dict]:
         spec = CATALOG[function]

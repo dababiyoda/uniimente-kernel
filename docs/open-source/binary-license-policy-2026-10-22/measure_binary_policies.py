@@ -24,13 +24,16 @@ def main():
             continue
         a = licensing.system_binary(path)
         rows.append({"binary": name, "verdict": a["verdict"] if a else "UNDETERMINABLE",
-                     "held_current": bool(a) and not licensing.attach_check(_Manifest(a))[0]})
+                     "held_current": bool(a) and not licensing.attach_check(_Manifest(a), "P0")[0],
+                     "held_p4c": not licensing.attach_check(_Manifest(a), "P4c")[0]})
     cleared = {"CLEARED", "CLEARED_WITH_OBLIGATIONS"}
     print(json.dumps({"binaries": len(rows), "verdicts": collections.Counter(r["verdict"] for r in rows),
                       "P0_current_hold_known_uncleared": sum(r["held_current"] for r in rows),
                       "P1_fail_closed": sum(r["verdict"] not in cleared for r in rows),
                       "P2_catalog_allowlist_then_fail_closed": sum(r["verdict"] not in cleared and r["binary"] not in catalog
                                                                    for r in rows),
+                      "P4c_use_context_hold": sum(r["held_p4c"] for r in rows),
+                      "catalog_p4c_held": sorted(r["binary"] for r in rows if r["binary"] in catalog and r["held_p4c"]),
                       "catalog": {r["binary"]: r["verdict"] for r in rows if r["binary"] in catalog}}, indent=1))
 
 

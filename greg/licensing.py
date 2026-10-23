@@ -18,6 +18,8 @@ declaration is not detected, and the founder or counsel decides whatever is sent
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from pathlib import Path
 
@@ -396,24 +398,192 @@ def system_binary(binary: str) -> dict | None:
             "parser": "dpkg-query + DEP-5 (GREG reader)", "limits": LIMITS}
 
 
-def attach_check(manifest) -> tuple[bool, str]:
+# -- use-context qualification: drafts D-LIC-1 and P4c ------------------------------------------------------------
+# A license permits or forbids a *use*, not a package. GREG's real use of an acquired capability is fixed by its
+# route: an unmodified binary or interpreter run as a separate process with network isolation, never redistributed,
+# under a read-only consequence scope. ``qualify_use`` judges each declared term against that use and binds the
+# verdict to the exact assessed facts (content hash, version, parts) and to the use, so a change in either is a
+# change of qualification. Both policies are drafts: the active values stay P0 until the founder adopts them in a
+# reviewed commit (directive of 2026-10-23: "Do not activate the policy until I explicitly approve it").
+
+ACTIVE_BINARY_POLICY = "P0"            # draft: "P4c"
+ACTIVE_FOUNDER_ATTACH_POLICY = "P0"    # draft: "D-LIC-1"
+COMPATIBLE, UNCERTAIN, INCOMPATIBLE = "compatible", "uncertain", "incompatible"
+VERDICT_ORDER = (COMPATIBLE, UNCERTAIN, INCOMPATIBLE)
+GREG_USE = {"interaction": "separate_process", "network": "none", "modified": False, "redistributed": False,
+            "scope": "read_only"}
+
+
+def _digest(value) -> str:
+    return "sha256:" + hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":"),
+                                                 default=str).encode()).hexdigest()
+
+
+def _term_verdict(cls: str, use: dict) -> tuple[str, str]:
+    """Whether one declared term permits ``use``. Obligations are not prohibitions: GPL and AGPL are compatible
+    with the uses their conditions do not reach. Unknown is never compatible, whatever the use."""
+    local = use.get("interaction") == "separate_process" and not use.get("redistributed")
+    if cls == PERMISSIVE:
+        return COMPATIBLE, "permissive"
+    if cls in (WEAK_COPYLEFT, STRONG_COPYLEFT):
+        return ((COMPATIBLE, "copyleft conditions apply to redistribution or linking, neither of which this use does")
+                if local else (UNCERTAIN, "this use redistributes or links copyleft code"))
+    if cls == NETWORK_COPYLEFT:
+        return ((COMPATIBLE, "network-copyleft conditions apply to modified or network-offered copies; this use is "
+                             "an unmodified, network-isolated local process")
+                if local and use.get("network") == "none" and not use.get("modified")
+                else (UNCERTAIN, "this use modifies or network-exposes network-copyleft code"))
+    if cls == NOT_OPEN:
+        return INCOMPATIBLE, "not an open-source license: permission must be evidenced, not assumed"
+    return UNCERTAIN, "license not classified: absence of network use or redistribution does not make it compatible"
+
+
+def qualify_use(assessments, use: dict, subject: dict) -> dict:
+    """Use-specific verdict for every assessment a capability carries (its binary, then each companion).
+
+    ``subject`` pins what was assessed (content hash, version, provider); the digest covers it, the assessed
+    parts and nothing else, so it changes exactly when the facts change. A missing assessment is uncertain."""
+    terms, facts = [], []
+    for assessment in assessments:
+        if not isinstance(assessment, dict):
+            terms.append({"id": "NO ASSESSMENT", "class": UNKNOWN, "verdict": UNCERTAIN,
+                          "why": "no license assessment could be read for this binary"})
+            facts.append(None)
+            continue
+        parts = assessment.get("parts") or []
+        facts.append([{k: p.get(k) for k in ("distribution", "expression", "class", "terms")} for p in parts])
+        for part in parts or [{"expression": "UNREAD", "class": assessment.get("class") or UNKNOWN, "terms": []}]:
+            for term in part.get("terms") or [{"id": part.get("expression") or "UNREAD", "class": part.get("class")}]:
+                verdict, why = _term_verdict(term.get("class") or UNKNOWN, use)
+                terms.append({"id": str(term.get("id"))[:120], "class": term.get("class") or UNKNOWN,
+                              "verdict": verdict, "why": why})
+    worst = max((t["verdict"] for t in terms), key=VERDICT_ORDER.index, default=UNCERTAIN)
+    blocking = [t for t in terms if t["verdict"] != COMPATIBLE]
+    return {"verdict": worst, "use": dict(use), "use_digest": _digest(use),
+            "assessment_digest": _digest({"subject": subject, "facts": facts}), "terms": terms,
+            "obligations": sorted({OBLIGATIONS[t["class"]] for t in terms if t["class"] in OBLIGATIONS}),
+            "reason": ("; ".join(f"{t['id']}: {t['why']}" for t in blocking) if blocking
+                       else "every declared term permits this use")[:400]}
+
+
+def _binary_assessments(provenance: dict) -> list:
+    return [provenance.get("license_assessment")] + [
+        c.get("license_assessment") for c in (provenance.get("companions") or {}).values() if isinstance(c, dict)]
+
+
+def _binary_subject(provenance: dict) -> dict:
+    return {"binary_sha256": provenance.get("binary_sha256"), "version": provenance.get("version"),
+            "companions": {n: c.get("binary_sha256") for n, c in sorted((provenance.get("companions") or {}).items())
+                           if isinstance(c, dict)}}
+
+
+def capability_qualification(manifest, use: dict = GREG_USE) -> dict:
+    """The use-specific qualification of an acquired capability as its card records it now."""
+    provenance = manifest.provenance
+    if manifest.provider.startswith("installed:python:"):
+        return qualify_use([provenance.get("license_assessment")], use,
+                           {"distribution": provenance.get("distribution"), "version": provenance.get("version")})
+    return qualify_use(_binary_assessments(provenance), use, _binary_subject(provenance))
+
+
+def _p0_binary_check(provenance: dict) -> tuple[bool, str]:
+    for assessment in _binary_assessments(provenance):
+        if isinstance(assessment, dict) and (assessment.get("held")
+                                             or assessment.get("class") in (NETWORK_COPYLEFT, NOT_OPEN)
+                                             or any(_held_terms(p.get("terms") or [])
+                                                    for p in assessment.get("parts") or [])):
+            return False, assessment.get("reason", "")
+    return True, ""
+
+
+def attach_check(manifest, policy: str | None = None) -> tuple[bool, str]:
     """Whether an acquired capability's license permits attach without the founder's own command.
 
-    A Python package must carry a cleared assessment (fail closed). A system binary is held only when its OS
-    package declares a license that is known and not cleared; an undeterminable one (no dpkg, no DEP-5 file)
-    or unclassified one keeps the behaviour it had before licenses were read (system packages routinely list
-    documentation licenses GREG does not classify), and its card says so. Other providers are GREG code."""
+    A Python package must carry a cleared assessment (fail closed). Under P0 (active) a system binary is held only
+    when its OS package declares a license that is known and not cleared; an undeterminable one (no dpkg, no DEP-5
+    file) or unclassified one keeps the behaviour it had before licenses were read. Under P4c (draft) every term of
+    the binary and of each companion must be compatible with GREG's actual use; anything uncertain, incompatible
+    or unassessed is held until a use-specific founder clearance. Other providers are GREG code."""
+    policy = policy or ACTIVE_BINARY_POLICY
     provenance = manifest.provenance
     if manifest.provider.startswith("installed:python:"):
         return auto_attach_allowed(provenance)
-    if manifest.provider.startswith("installed:"):
-        # the binary itself, then every companion binary that runs beside it (pdfimages beside pdftotext)
-        assessments = [provenance.get("license_assessment")] + [
-            c.get("license_assessment") for c in (provenance.get("companions") or {}).values() if isinstance(c, dict)]
-        for assessment in assessments:
-            if isinstance(assessment, dict) and (assessment.get("held")
-                                                 or assessment.get("class") in (NETWORK_COPYLEFT, NOT_OPEN)
-                                                 or any(_held_terms(p.get("terms") or [])
-                                                        for p in assessment.get("parts") or [])):
-                return False, assessment.get("reason", "")
+    if not manifest.provider.startswith("installed:"):
+        return True, ""
+    if policy == "P0":
+        return _p0_binary_check(provenance)
+    if policy == "P4c":
+        q = capability_qualification(manifest)
+        if q["verdict"] != COMPATIBLE:
+            return False, q["reason"] + "; a use-specific founder clearance (D-LIC-1) can lift this hold"
+        return True, ""
+    raise ValueError(f"unknown binary license policy {policy!r}")
+
+
+def founder_attach_check(manifest, body: dict, policy: str | None = None,
+                         binary_policy: str | None = None) -> tuple[bool, str, dict | None]:
+    """Whether a founder CAPABILITY_ATTACH may proceed past the capability's license hold.
+
+    P0 (active): the founder's attach is not license-checked (prior behaviour). D-LIC-1 (draft): a capability the
+    license check holds is attached only with ``body["license_clearance"]`` naming the exact assessment digest
+    (a stale one is refused), GREG's real use, a non-empty basis and every obligation accepted; an incompatible
+    (not-open) term also needs ``permission`` evidence, since a signature does not override third-party rights.
+    Returns (allowed, reason, clearance record to journal)."""
+    policy = policy or ACTIVE_FOUNDER_ATTACH_POLICY
+    if policy == "P0":
+        return True, "", None
+    if policy != "D-LIC-1":
+        raise ValueError(f"unknown founder attach policy {policy!r}")
+    licensed, why = attach_check(manifest, binary_policy)
+    if licensed:
+        return True, "", None
+    clearance = body.get("license_clearance")
+    if not isinstance(clearance, dict):
+        return False, (f"license hold unresolved ({why}); a bare attach does not clear it: add a license_clearance "
+                       "for this exact assessment and use"), None
+    q = capability_qualification(manifest)
+    if clearance.get("assessment_digest") != q["assessment_digest"]:
+        return False, "license_clearance is for a different or earlier assessment; requalify and clear again", None
+    if clearance.get("use") != q["use"]:
+        return False, "license_clearance names a use other than this route's real use", None
+    if not str(clearance.get("basis") or "").strip():
+        return False, "license_clearance needs a basis: why these terms allow this use", None
+    missing = sorted(set(q["obligations"]) - set(clearance.get("obligations_accepted") or ()))
+    if missing:
+        return False, f"license_clearance does not accept every obligation: {missing[0]}", None
+    if any(t["verdict"] == INCOMPATIBLE for t in q["terms"]) and not str(clearance.get("permission") or "").strip():
+        return False, ("a not-open term needs permission evidence (a grant or license from the rights holder); "
+                       "a founder signature does not override third-party rights"), None
+    return True, "license cleared by the founder for this use", {
+        "assessment_digest": q["assessment_digest"], "use_digest": q["use_digest"], "verdict": q["verdict"],
+        "basis": str(clearance["basis"])[:400], "permission": str(clearance.get("permission") or "")[:400] or None,
+        "obligations_accepted": q["obligations"]}
+
+
+def requalify(manifest, live_assessments: list, use: dict = GREG_USE,
+              policy: str | None = None) -> tuple[bool, str]:
+    """Before each run under P4c: the license facts read now and the use about to happen must equal those the
+    capability was qualified (or cleared) under. P0 does not requalify. A change is not judged here; it stops the
+    run and sends the capability back through qualification."""
+    if (policy or ACTIVE_BINARY_POLICY) != "P4c":
+        return True, ""
+    recorded = manifest.provenance.get("use_qualification")
+    if not isinstance(recorded, dict):
+        return False, "no use qualification recorded; requalification required"
+    now = qualify_use(live_assessments, use, _binary_subject(manifest.provenance))
+    if now["use_digest"] != recorded.get("use_digest"):
+        return False, ("use context changed since qualification (network, modification, redistribution or scope); "
+                       "requalification required")
+    if now["assessment_digest"] != recorded.get("assessment_digest"):
+        return False, "license facts changed since qualification; requalification required"
     return True, ""
+
+
+def requalify_binary(manifest, binary: str, use: dict = GREG_USE, policy: str | None = None) -> tuple[bool, str]:
+    """``requalify`` for an installed binary and its companions, reading their DEP-5 facts now (P4c only)."""
+    if (policy or ACTIVE_BINARY_POLICY) != "P4c":
+        return True, ""
+    live = [system_binary(binary)] + [system_binary(c["binary"]) for _, c in
+                                      sorted((manifest.provenance.get("companions") or {}).items())
+                                      if isinstance(c, dict) and c.get("binary")]
+    return requalify(manifest, live, use, policy="P4c")

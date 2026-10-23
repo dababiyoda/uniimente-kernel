@@ -102,10 +102,11 @@ GAPS = {
     2: "the observation is a local file drop (greg intake): a local process stands in for an external feed, and no "
        "connector delivers it from outside the host. The wake is timing only: it changes when the "
        "mission observes, never what it may do",
-    9: "DALEOBANKS takes in the whole bound seed (its own ledger counts its characters) but its refinery builds the "
-       "packet from the seed's thesis, so the staffing figures do not reach WealthMachine's assessment; the organs run "
-       "pinned code on the body's host and UID, and the second WealthMachine process makes the assessment REPRODUCED "
-       "(same-code determinism), not VERIFIED by an independent party",
+    9: "the staffing figures reach WealthMachine as packet evidence, but its assessment counts evidence items and does "
+       "not read the figures; each organ signs with its own key, yet WealthMachine holds DALEOBANKS's key to verify it "
+       "(HMAC lets a verifier forge); the organs run pinned code on the body's host and UID, and the second "
+       "WealthMachine process makes the assessment REPRODUCED (same-code determinism), not VERIFIED by an "
+       "independent party",
     10: "a SIGKILL on a Linux test host, not on the founder's device",
     12: "the appraiser shares reviewed Kernel code: process independence, not an independent implementation",
     14: "the changed decision is capability retention (the formed construction is reused); settled outcomes alone "
@@ -487,11 +488,21 @@ def test_one_mission_crosses_all_fifteen_steps(tmp_path, capsys):
     refined = next(r for r in dale if r["event"] == "idea_refined")
     assert intake_row["payload"]["chars"] == len(seed) and refined["payload"]["id"] == intake_row["payload"]["id"]
     assert refined["payload"]["opportunity"] == exchange["packet_id"]
+    # The Mind's figures reach WealthMachine: the verified packet's evidence carries the bound answer (DALEOBANKS
+    # 664ac98c keeps stated evidence, not only the thesis). The packet is the content the Kernel verified.
+    dale_sha = next(o["content_sha256"] for o in observed if o["organ"] == "daleobanks")
+    [packet_row] = [i for i in ev(home, "external.ingested", source="organ:daleobanks")
+                    if i["content_sha256"] == dale_sha]
+    packet = json.loads(packet_row["content"])
+    carried = [e for e in packet["evidence"] if e.startswith("Evidence from GREG's certified staffing plan")]
+    assert carried == [seed[seed.index("Evidence from GREG's certified staffing plan"):]], packet["evidence"]
+    assert json.loads(carried[0].split(": ", 1)[1]) == answer["receipt"]["result"]       # the whole certified answer
     steps[9] = {"name": "a real organ process consumes the answer",
                 "events": [ref(organs_done[0])] + [ref(o) for o in observed] + [ref(appraised_organs[-1])],
                 "binding": obind, "organ_heads": exchange["organ_heads"], "packet_id": exchange["packet_id"],
                 "daleobanks_ledger": {"idea_intake_chars": intake_row["payload"]["chars"], "bound_seed_chars": len(seed),
                                       "idea_refined_opportunity": refined["payload"]["opportunity"]},
+                "packet_evidence": packet["evidence"], "sender_identity_isolated": exchange["sender_identity_isolated"],
                 "assessment": exchange["assessment"]}
 
     # 10-11. SIGKILL in flight; recovery keeps authority, budget and the unresolved effect

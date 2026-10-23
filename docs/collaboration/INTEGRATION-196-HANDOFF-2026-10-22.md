@@ -237,6 +237,21 @@ This is one agent working through five lenses. It is not independent review.
        request twice (sensor and strategy), and the ledger keeps the spec three times (`command.accepted` keeps both
        the body and the signed envelope, and `mission.registered` keeps it again).
    - A third probabilistic operation run.
+   - **Organ pin upgrade: decided and built (founder, 2026-10-23: "All organs should have upgraded pins").**
+     - **Pins.** DALEOBANKS #96 (`664ac98c`) and WealthMachineIntelligence #44 (`7a45d223`) pin
+       `uniimente-kernel-boundaries` at Kernel `e7dc0cbc`, which has per-organ keys. WealthMachine's CI also pins
+       its DALEOBANKS producer at `664ac98c`. CI jobs 7 and 8 here pin both organ commits.
+     - **Keys.** `organ.exchange` mints one key per organ, and no shared key. DALEOBANKS gets only its own key;
+       WealthMachine gets its own plus DALEOBANKS's, which it needs to verify. GREG refuses a sender identity that
+       is not isolated.
+     - **Tests.** An answer signed with DALEOBANKS's key in WealthMachine's name is refused, and so is a
+       shared-scope answer (`tests/unit/test_greg_organs.py`; 5 tests fail without the change).
+     - **Refinery.** DALEOBANKS now carries a seed's stated evidence into its packet, so the 15-step mission's
+       certified answer reaches WealthMachine whole (step 9 asserts it).
+     - **Still open.** WealthMachine counts evidence items but does not read the figures. A verifier holding an HMAC
+       key can forge, so asymmetric signatures are the next step. Merging into the organs' `main` is the founder's.
+     - **Other repositories.** RailScout, PumpStation and RESEARCH-IN pin no Kernel boundary package, so there was
+       nothing in them to upgrade.
 8. **Irreducible founder or external actions.**
    - Founder-device acceptance on the Chromebook (`FOUNDER-ACTIONS-2026-10-22.md` §1). VEPMC moves only on it.
    - #182: founder signature.

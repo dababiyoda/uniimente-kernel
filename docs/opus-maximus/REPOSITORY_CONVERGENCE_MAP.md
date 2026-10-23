@@ -82,7 +82,7 @@ This branch began on 2026-10-14 as a separate trunk (#175 + #169). On 2026-10-15
 | WealthMachineIntelligence `ec82b80` | same pin | VentureAssessment producer; replay-protected HTTP intake; manifest 13 commits stale |
 | RAILSCOUT `232f724` (PR #9 branch) | none | `railscout.appraisal/1` duck-typed by `greg/ventures.py`; no manifest |
 
-Per-organ keys (#174) are on the trunk; the organs still pin the one-key package. Upgrading the pin is a founder decision.
+Per-organ keys (#174) are on the trunk. The pin upgrade was decided 2026-10-23 and is upgraded 2026-10-23 by founder decision: DALEOBANKS #96 (`664ac98c`) and WealthMachineIntelligence #44 (`7a45d223`) pin Kernel `e7dc0cbc`, not yet on either organ's `main`.
 
 ## Migration and recovery
 

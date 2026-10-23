@@ -98,8 +98,12 @@ def main():
             report["rebuilds"] = layouts
             docker(*shared, "--load", str(context))
             image = docker("image", "inspect", "greg-restricted:verified", "--format", "{{.Id}}")
-            if image != layouts[0]["config_digest"]:
-                raise RuntimeError("loaded image differs from retained OCI config")
+            # The classic image store reports the config digest as the image ID; the containerd image
+            # store (Docker's default on ubuntu-26.04 runners) reports the manifest digest. Both
+            # content-address the retained artifact (the manifest names the config and every layer).
+            if image not in (layouts[0]["config_digest"], layouts[0]["manifest_digest"]):
+                raise RuntimeError(f"loaded image {image} differs from retained OCI config "
+                                   f"{layouts[0]['config_digest']} and manifest {layouts[0]['manifest_digest']}")
             cases = [
                 {"language": "pricing", "source": "max(base_price*units, cost_per_unit*units*1.2)",
                  "inputs": {"base_price": 7, "units": 4, "cost_per_unit": 3}},

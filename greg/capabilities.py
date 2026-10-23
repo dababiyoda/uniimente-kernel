@@ -1211,7 +1211,7 @@ BUILTINS.update({
                                  "wealthmachine_python": "path", "seed": "str", "timeout_seconds": "int?"},
                                 {"trace_id": "str", "packet_id": "str", "assessment": "dict",
                                  "appraisal_verdict": "REPRODUCED|REFUTED", "transport_verified": "bool",
-                                 "sender_identity_isolated": "bool", "organ_heads": "dict"},
+                                 "sender_identity_isolated": "bool", "key_holders": "dict", "organ_heads": "dict"},
                                 filesystem="workspace-write", binaries=_GIT, data_classes=("project_sources",),
                                 tests=("tests/unit/test_greg_organs.py", "tests/integration/test_one_machine.py"),
                                 provenance=_ORGAN_SOURCE),

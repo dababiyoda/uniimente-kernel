@@ -72,7 +72,7 @@ import time
 from greg.capabilities import (CapabilityError, CapabilityManifest, InvocationContext, installed_binary,
                                run_isolated)
 from greg.artifacts import ArtifactStore
-from greg import builders, mechanisms, recombine
+from greg import builders, documents, licensing, mechanisms, recombine
 from greg.cognition import assignment, linear, network
 from greg.journal import Journal, iso
 from greg.mechanisms import PackageCandidate
@@ -111,12 +111,17 @@ class Candidate:
     binary_name: str
     argv: tuple                        # tokens; "{binary}" and "{file}" are substituted
     parse: str                         # parser id below
+    # Installed binaries run alongside, on the same file, whose raw output the function's derive step reads
+    # (pdfimages beside pdftotext: which pages carry an image). Each is pinned by hash in the manifest; one
+    # that is missing on the body is reported as missing, never assumed.
+    companions: tuple = ()             # ((binary_name, argv), ...)
 
 
 PARSERS = {
     "first_hex_token": lambda out: out.split()[0].lower() if out.split() else "",
     "last_hex_token": lambda out: out.strip().split()[-1].lower() if out.split() else "",
     "first_int": lambda out: int(out.split()[0]) if out.split() else -1,
+    "words": lambda out: " ".join(out.split()),
 }
 
 CATALOG = {
@@ -131,6 +136,14 @@ CATALOG = {
         "description": "Whitespace-separated word count of one text file",
         "oracle": _vectors_wordcount, "output_field": "words",
         "candidates": (Candidate("wc", ("{binary}", "-w", "{file}"), "first_int"),),
+    },
+    # Directive 2026-10-22 (open-source metabolism): reading a PDF is commodity software, acquired, never rebuilt.
+    "document.text": {
+        "description": "The words of a PDF in reading order, whitespace-normalized (text drawn in a standard font; "
+                       "no OCR of scanned images)",
+        "oracle": documents.oracle_document_text, "output_field": "text", "derive": documents.find_phrase,
+        "candidates": (Candidate("pdftotext", ("{binary}", "-enc", "UTF-8", "-q", "{file}", "-"), "words",
+                                 companions=(("pdfimages", ("{binary}", "-list", "{file}")),)),),
     },
     # Open-source packages (founder correction 2026-10-01, #144): installed engines, never installed by GREG.
     "graph.shortest_path": {
@@ -457,6 +470,99 @@ def package_adapter(function: str, candidate: PackageCandidate):
     return adapter
 
 
+# An acquired binary runs under ceilings it cannot raise: its stdout and stderr go to files in the
+# workspace, and RLIMIT_FSIZE stops it at the first byte past the output ceiling (SIGXFSZ), so an oversized
+# answer is refused without ever being buffered; RLIMIT_AS bounds its memory (a decompression bomb). The
+# limiter is the standard library's ``resource`` applied in a child of the isolated process, then ``execv``.
+BINARY_MEMORY = 2 * 1024 ** 3
+_LIMITER = (
+    "import os, resource, signal, sys\n"
+    "signal.signal(signal.SIGXFSZ, signal.SIG_DFL)\n"     # Python ignores it; the binary must die at the ceiling
+    "out, err, cap, mem = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])\n"
+    "for fd, path in ((1, out), (2, err)):\n"
+    "    f = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)\n"
+    "    os.dup2(f, fd)\n"
+    "    os.close(f)\n"
+    "resource.setrlimit(resource.RLIMIT_FSIZE, (cap, cap))\n"
+    "try:\n"
+    "    resource.setrlimit(resource.RLIMIT_AS, (mem, mem))\n"
+    "except (ValueError, OSError):\n"
+    "    if sys.platform.startswith('linux'):\n"     # enforceable here: a ceiling that did not take is a refusal
+    "        raise\n"
+    "os.execv(sys.argv[5], sys.argv[5:])\n")
+
+
+def ceilings() -> dict:
+    """The ceilings an acquired binary runs under on this body, as the qualification report states them."""
+    return {"output_bytes": mechanisms.MAX_OUTPUT, "memory_bytes": BINARY_MEMORY,
+            "memory_enforced": sys.platform.startswith("linux"),
+            "memory_note": None if sys.platform.startswith("linux") else "RLIMIT_AS is not enforced on this platform"}
+
+
+def _read_spool(path: Path, limit: int) -> bytes | None:
+    """Read a spool file the binary may have tampered with: never through a link, never a FIFO or a device,
+    and never more than ``limit + 1`` bytes. None when it is missing."""
+    import stat as stat_module
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    except FileNotFoundError:
+        return None
+    except OSError as exc:                   # ELOOP: the binary replaced its spool file with a link
+        raise CapabilityError(f"capability refused: spool file {path.name} was replaced ({exc.strerror})") from None
+    try:
+        if not stat_module.S_ISREG(os.fstat(fd).st_mode):
+            raise CapabilityError(f"capability refused: spool file {path.name} is no longer a regular file")
+        chunks, left = [], limit + 1
+        while left > 0 and (chunk := os.read(fd, min(left, 1 << 20))):
+            chunks.append(chunk)
+            left -= len(chunk)
+        return b"".join(chunks)
+    finally:
+        os.close(fd)
+
+
+def _run_bounded(argv: list, workspace: Path, name: str) -> tuple[int, bytes, str]:
+    """Run one acquired binary under the output and memory ceilings; (returncode, stdout, stderr tail)."""
+    import secrets
+    import signal
+    tag = secrets.token_hex(8)
+    out, err = workspace / f".out-{tag}", workspace / f".err-{tag}"
+    try:
+        proc = run_isolated([sys.executable, "-I", "-c", _LIMITER, str(out), str(err), str(mechanisms.MAX_OUTPUT + 1),
+                             str(BINARY_MEMORY), *argv], cwd=workspace)
+        if proc.returncode == -signal.SIGXFSZ:
+            raise CapabilityError(f"capability refused: {name} output exceeds {mechanisms.MAX_OUTPUT} bytes "
+                                  "(killed at the ceiling by SIGXFSZ, never buffered)")
+        stdout = _read_spool(out, mechanisms.MAX_OUTPUT) or b""
+        if len(stdout) > mechanisms.MAX_OUTPUT:
+            raise CapabilityError(f"capability refused: {name} output exceeds {mechanisms.MAX_OUTPUT} bytes "
+                                  "(stopped at the ceiling, never buffered)")
+        tail = (_read_spool(err, mechanisms.MAX_OUTPUT) or b"")[-400:]
+        return proc.returncode, stdout, tail.decode("utf-8", errors="replace")
+    finally:
+        out.unlink(missing_ok=True)
+        err.unlink(missing_ok=True)
+
+
+def _companion_outputs(candidate: Candidate, path: Path, ctx: InvocationContext) -> dict:
+    """Run each pinned companion binary on the same file; its raw output, or None when it is not on this body."""
+    pinned = ctx.manifest.provenance.get("companions") or {}
+    outputs = {}
+    for name, template in candidate.companions:
+        entry = pinned.get(name)
+        if not entry:
+            outputs[name] = None
+            continue
+        if hashlib.sha256(Path(entry["binary"]).read_bytes()).hexdigest() != entry["binary_sha256"]:
+            raise CapabilityError(f"installed {name} changed since verification; quarantine required")
+        argv = [entry["binary"] if t == "{binary}" else str(path) if t == "{file}" else t for t in template]
+        returncode, stdout, stderr = _run_bounded(argv, ctx.workspace, name)
+        if returncode:
+            raise CapabilityError(f"{name} exited {returncode}: {stderr[-200:]}".rstrip(": "))
+        outputs[name] = stdout.decode("utf-8", errors="replace")
+    return outputs
+
+
 def catalog_adapter(function: str, candidate: Candidate, binary: str):
     """Adapter bound to one verified binary; re-checked against its content hash."""
     spec = CATALOG[function]
@@ -469,14 +575,40 @@ def catalog_adapter(function: str, candidate: Candidate, binary: str):
         expected = ctx.manifest.provenance.get("binary_sha256")
         if expected and hashlib.sha256(Path(binary).read_bytes()).hexdigest() != expected:
             raise CapabilityError("installed binary changed since verification; quarantine required")
+        requalified, why = licensing.requalify_binary(ctx.manifest, binary)   # P4c draft; P0 returns at once
+        if not requalified:
+            raise CapabilityError(f"capability refused: {why}")
         ctx.workspace.mkdir(parents=True, exist_ok=True)
         argv = [binary if t == "{binary}" else str(path) if t == "{file}" else t for t in candidate.argv]
-        proc = run_isolated(argv, cwd=ctx.workspace)
-        if proc.returncode:
-            raise CapabilityError(f"{candidate.binary_name} exited {proc.returncode}")
-        value = PARSERS[candidate.parse](proc.stdout.decode("utf-8", errors="replace"))
-        return {spec["output_field"]: value, "path": str(path)}
+        returncode, stdout, stderr = _run_bounded(argv, ctx.workspace, candidate.binary_name)
+        if returncode:
+            raise CapabilityError(f"{candidate.binary_name} exited {returncode}: {stderr[-200:]}".rstrip(": "))
+        raw = stdout.decode("utf-8", errors="replace")
+        value = PARSERS[candidate.parse](raw)
+        if not spec.get("derive"):
+            return {spec["output_field"]: value, "path": str(path)}
+        extras = _companion_outputs(candidate, path, ctx)
+        return {spec["output_field"]: value, "path": str(path), **spec["derive"](value, params, raw, extras)}
     return adapter
+
+
+def _binary_license(binary: str) -> dict:
+    """What the OS package owning an installed binary declares, read from DEP-5 where the body has dpkg."""
+    assessment = licensing.system_binary(binary)
+    if assessment is None:
+        return {"license": "system package; license not readable on this body (no dpkg or no DEP-5 file)"}
+    return {"license": assessment["parts"][0]["expression"][:200], "license_assessment": assessment}
+
+
+def _companions(candidate: Candidate) -> dict:
+    """Pin each companion binary the body has: path, content hash and its own DEP-5 license."""
+    pinned = {}
+    for name, _ in candidate.companions:
+        found = installed_binary(name)
+        if found:
+            pinned[name] = {"binary": found, "binary_sha256": hashlib.sha256(Path(found).read_bytes()).hexdigest(),
+                            **_binary_license(found)}
+    return pinned
 
 
 def qualify_package(function: str, candidate: PackageCandidate, card: dict, seed: int) -> tuple[bool, dict]:
@@ -925,7 +1057,8 @@ class Genesis:
         """Attach the exact engine a construction is pinned to, under the same signed scope, or ask."""
         if self._form_only:
             return False
-        allowed = (mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"
+        licensed = licensing.attach_check(manifest)[0]
+        allowed = (licensed and mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"
                    and manifest.consequence_class == "read_only"
                    and mission.cone._capability_inside(manifest.capability_id))
         if not allowed:
@@ -1780,7 +1913,7 @@ class Genesis:
     def _manifest_for(self, function, candidate: Candidate, binary: str, deficit_id: str) -> CapabilityManifest:
         version = run_isolated([binary, "--version"], cwd=Path(tempfile.gettempdir()), timeout=10)
         version_text = (version.stdout or version.stderr).decode("utf-8", errors="replace").splitlines()[:1]
-        return CapabilityManifest(
+        manifest = CapabilityManifest(
             capability_id=f"acquired.{function}.{candidate.binary_name}", version="1.0.0",
             provider="installed:" + binary, function=function, description=CATALOG[function]["description"],
             route="cli", consequence_class="read_only", inputs={"path": "str"},
@@ -1789,8 +1922,11 @@ class Genesis:
             strengthens=("capability_formation", "proof"),
             provenance={"binary": binary, "binary_sha256": hashlib.sha256(Path(binary).read_bytes()).hexdigest(),
                         "version": version_text[0] if version_text else "unknown", "deficit_id": deficit_id,
-                        "license": "system package; license not inspected by GREG",
+                        **_binary_license(binary), "companions": _companions(candidate),
                         "builder": "none: existing installed software acquired by search"})
+        # what this binary's terms permit for the use GREG actually makes of it, bound to the assessed facts
+        manifest.provenance["use_qualification"] = licensing.capability_qualification(manifest)
+        return manifest
 
     def _verify(self, function, candidate: Candidate, binary: str, seed: int, manifest) -> tuple[bool, dict]:
         spec = CATALOG[function]
@@ -1804,7 +1940,8 @@ class Genesis:
                 path = tmp / case["name"]
                 path.write_bytes(case["data"])
                 try:
-                    got = adapter({"path": str(path)}, ctx)[spec["output_field"]]
+                    output = adapter({"path": str(path)}, ctx)
+                    got = output[spec["output_field"]]
                 except subprocess.TimeoutExpired:   # the host, not the binary: no verdict either way
                     raise CapabilityError(f"verifying {candidate.binary_name} timed out",
                                           failure_class="transient") from None
@@ -1815,8 +1952,14 @@ class Genesis:
                     continue
                 if got != case["expected"]:
                     failures.append({"case": case["name"], "got": str(got)[:80], "expected": str(case["expected"])[:80]})
+                elif case.get("complete") is False and output.get("complete") is not False:
+                    # a reader must say when it could not read everything (a page with no text layer, or an
+                    # image); reporting less than it read only costs it proofs of absence, so that is allowed
+                    failures.append({"case": case["name"], "complete": output.get("complete"),
+                                     "expected_complete": case["complete"]})
         return (not failures, {"cases": len(vectors), "failures": failures, "isolation": "no-network subprocess",
-                               "platform": sys.platform})
+                               "platform": sys.platform, "ceilings": ceilings(),
+                               "companions": sorted((manifest.provenance.get("companions") or {}))})
 
     def _attach(self, mission, manifest: CapabilityManifest, deficit_id: str, now, offered: list | None = None):
         # Founder-signed pre-authorization only: read-only, and inside the cone. A capability formed for cognition
@@ -1831,11 +1974,15 @@ class Genesis:
                 offered.append(manifest.capability_id)
             return None
         cognition = manifest.function.startswith("cognition.")
-        allowed = (not cognition and mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"
+        # a package is legally qualified apart from technically: its license must permit attach without the founder
+        licensed, license_why = licensing.attach_check(manifest)
+        allowed = (not cognition and licensed
+                   and mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"
                    and manifest.consequence_class == "read_only"
                    and mission.cone._capability_inside(manifest.capability_id))
         if not allowed:
             why = ("a capability formed for cognition is attached only by the founder's own command" if cognition
+                   else f"its license needs your decision before any attach: {license_why}" if not licensed
                    else "mission scope does not pre-authorize this attach")
             self.journal.record("deficit.awaiting_attach", {"deficit_id": deficit_id,
                                                             "capability_id": manifest.capability_id, "why": why},

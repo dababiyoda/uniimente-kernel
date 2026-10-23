@@ -574,7 +574,7 @@ class Body:
         self.journal.record("command.accepted", {"kind": kind, "digest": digest, "nonce": env["nonce"],
                                                   "founder_key_id": env["founder_key_id"], "signer": principal,
                                                   "issued_at": env["issued_at"], "accepted_at": iso(now),
-                                                  "body": body, "envelope": env, "channel": channel,
+                                                  "envelope": env, "channel": channel,   # body: env["body"]
                                                   "result": result}, key=digest)
         if kind == "DECISION":   # the answer counts from its acceptance (MissionBook): Goal Gravity reads it this tick
             self.engine.book.rebuild()

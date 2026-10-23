@@ -256,13 +256,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: dababiyoda/WealthMachineIntelligence
-          ref: ec82b8027d987c865dc123215afb53d20916908f
+          ref: 7a45d223b74d6eea3b9ed5bdaeb12a3625b525de
           path: consumers/wmi
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
           repository: dababiyoda/DALEOBANKS
-          ref: a8341ba81622dbd1180583bc6660fa1e7ed707b8
+          ref: 664ac98c553759ce754bb684cb248225343edd7e
           path: consumers/dale
           persist-credentials: false
       - uses: actions/setup-python@v5
@@ -301,17 +301,18 @@ jobs:
           path: kernel
           fetch-depth: 0
           persist-credentials: false
-      # The organs at the heads the whole-machine evidence was recorded against.
+      # The organs at their upgraded pins (founder decision 2026-10-23): per-organ bridge keys, and DALEOBANKS
+      # packets that carry stated evidence. Draft PRs DALEOBANKS #96 and WealthMachineIntelligence #44.
       - uses: actions/checkout@v4
         with:
           repository: dababiyoda/DALEOBANKS
-          ref: 667439f49442bd898d3655666a389f53114f1412
+          ref: 664ac98c553759ce754bb684cb248225343edd7e
           path: organs/daleobanks
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
           repository: dababiyoda/WealthMachineIntelligence
-          ref: ec82b8027d987c865dc123215afb53d20916908f
+          ref: 7a45d223b74d6eea3b9ed5bdaeb12a3625b525de
           path: organs/wealthmachine
           persist-credentials: false
       - uses: actions/setup-python@v5

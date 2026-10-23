@@ -2,6 +2,27 @@
 
 # Founder Intent Ledger
 
+## Organ pins upgraded — 2026-10-23
+
+Founder message in the #196 session, verbatim: "All organs should have upgraded pins". It is not founder authentication; it settles the open "organ pin upgrade" decision.
+
+| Required field | INTENT-20261023-ORGAN-PINS-UPGRADED |
+| --- | --- |
+| statement | All organs should have upgraded pins |
+| source_refs | #196 session, 2026-10-23; `opus-maximus/NEXT_WAVE_AND_HORIZONS.md` item 3; `opus-maximus/ORGAN_MAP.md` defect 4 |
+| owner | Alfonso Lopez decides; the #196 integration owner implements |
+| state | implemented on organ branches; organ `main` merges open |
+| binding_scope | `uniimente-kernel-boundaries` pins in DALEOBANKS and WealthMachineIntelligence; their CI's cross-organ pin; Canonical CI jobs 7 and 8; `greg/organs.py` keys |
+| constitutional_constraints | no merge to any `main`; no new authority; keys exist per invocation only and are never written |
+| success_evidence | `tests/unit/test_greg_organs.py` (wrong-organ key and shared scope refused; 5 tests fail without the change); DALEOBANKS 387/387; WealthMachine 126/128 locally (the 2 need port 5000 and fail identically on the old pin); 15-step mission step 9 asserts the certified answer in the packet evidence |
+| failure_evidence | WealthMachine holds DALEOBANKS's key in order to verify it, and HMAC lets a verifier forge; WealthMachine counts evidence items but does not read figures; the archive pin is unhashed |
+| dependencies | DALEOBANKS #96, WealthMachineIntelligence #44, uniimente-kernel #196 (`e7dc0cbc`) |
+| conflicts | the frozen local proof mission and the repository guardian expect `4999acff`/0.1.2 on the organs' `main`; they stay right until the founder merges |
+| next_review_trigger | organ CI on #44; founder merge of #96/#44 |
+| supersedes | the "organ pin upgrade" open decision |
+| superseded_by | none |
+| implementation_refs | `greg/organs.py`, `greg/organ_bridge.py`, DALEOBANKS `services/idea_refinery.py`, both organs' `docs/KERNEL_PIN_UPGRADE_2026-10-23.md` |
+
 ## Seed Cortex 0.2.2 on GREG's path, stacked on #184 — 2026-10-21
 
 Faithful summary, not verbatim and not founder authentication. Repetition adds no authority.
@@ -132,7 +153,7 @@ Progress 2026-10-21 (measured; negative results kept):
 - **Proof:** the ten-step proof and #178's one-mission test both pass on one tree with real DALEOBANKS and WealthMachine code.
 - **Next-wave items 2 and 7 (2026-10-21):** #155's four operation verdicts were re-measured once on the merged solvers, pre-registered at `462bd98` on fresh seeds 2600-2629: control, game and information route DEFAULT again; probabilistic did not replicate and is EXPERIMENTAL, out of routing (`evidence/greg-genome-admission/2026-10-21-operations/`). A `decision.answered` row now moves a mission only as the record re-derived from a founder-signed DECISION at its own acceptance; a three-lens review of that change found 16 defects, all fixed with tests, among them a refused answer that could be revived by a backdated acceptance and an unsigned ask that could redirect the founder's approve (ADR-GOAL-GRAVITY-002).
 - **Founder correction of 2026-10-19 (#190, `INTENT-20261019-UPWARD-ASCENT`, on #190's branch):** convergence is incomplete until every material overlap is recombined into a measured capability on GREG's path; the full vision is the acceptance floor. Applied here: #173's head `27a57cb` was inspected against this tree (about 100 commits not contained, not 20 as recorded; the convergence map is corrected). Seven defects it fixed exist on this branch's path and are ported first. The first capability dividend selected is a worker-independent acceptance check that recombines #173's evaluator freeze, #178's independent re-derivation and this branch's appraiser. Second is graduated worker confinement, with #173's Landlock grants as the floor under `supervised`. Each comes with a pre-declared threshold, floors and an ablation.
-- **Open founder decisions:** VEPMC device and acceptance; organ pin upgrade; the canonical Goal Gravity runtime; contacting brokers for the freight proof-of-delivery cell; merge of this branch.
+- **Open founder decisions:** VEPMC device and acceptance; organ pin upgrade (decided 2026-10-23, see the entry at the top; organ `main` merges open); the canonical Goal Gravity runtime; contacting brokers for the freight proof-of-delivery cell; merge of this branch.
 - State: active. Reality: INTEGRATION and SANDBOX-WHOLE-MACHINE. VEPMC 0. No authority, spending, publication, contact or merge.
 
 ## Convergence of the two Mind lineages — 2026-10-14

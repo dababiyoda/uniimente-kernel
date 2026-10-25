@@ -6,6 +6,13 @@ publishing, credential or live-activation authority.
 
 ## Start every new or resumed session here
 
+For a shared multi-repository workspace, install entry pointers once with
+`python scripts/workspace_entry.py --workspace /absolute/workspace --install`
+from this Kernel checkout. Run without `--install` to check for missing or
+changed pointers. The installer creates workspace AGENTS/Claude/Copilot/Cursor
+entry files; it never overwrites existing instructions or edits organ repositories.
+See [workspace entry validation and limits](WORKSPACE-ENTRY-2026-10-25.md).
+
 1. Read the [pinned founder Discussion](https://github.com/dababiyoda/uniimente-kernel/discussions/89), including its coding operating system section. From a cloud session the github.com page returns 403 through the egress proxy and the GitHub connector has no Discussion tool; the public REST API serves the same text without a credential: `curl -sS https://api.github.com/repos/dababiyoda/uniimente-kernel/discussions/89` (body field; comments at `.../discussions/89/comments`). Verified 2026-10-22 from a Claude Code cloud session.
 2. Read repository AGENTS.md, CLAUDE.md when applicable, and instructions under the paths you will edit.
 3. Read the [Founder Effect Compiler](../FOUNDER_EFFECT_COMPILER.md), [Founder Intent Ledger](../FOUNDER_INTENT_LEDGER.md), [Recursive Collaboration Protocol](../RECURSIVE_COLLABORATION_PROTOCOL.md), [Final Build Order](../UNIIMENTE_FINAL_BUILD_ORDER.md), and [Canonical Execution Order](../CANONICAL_EXECUTION_ORDER.md).

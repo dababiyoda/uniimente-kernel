@@ -146,6 +146,9 @@
   acceptance:
   - A capability is packaged into a reproducible OCI image with pinned inputs
   - The same capability runs identically from the image in a second environment
+  evidence: foundry/evidence/system-09.json
+  hosted_evidence: docs/evidence/foundry-09-oci/2026-10-23/hosted-run-39984114068.json
+  evidence_tier: SANDBOX_VERIFIED
   adopt:
   - OCI images
   - Docker
@@ -161,10 +164,16 @@
   interface: foundry.apply package; foundry.query inspect (system9); disposable hosted builder produces and runs OCI artifacts
   tests:
   - tests/unit/test_greg_oci.py
-  limitations: Digest-pinned restricted-rule capability context is packaged by the signed Body. Real paired OCI rebuild and
-    second-environment execution require the hosted evidence artifact; context creation alone is not completion. Full GREG
-    and organ dependency images and stronger general-code execution remain unfinished.
-  gap: 'Actual hosted OCI rebuild/run evidence pending for this delta; retain full-machine portability and general execution
+  limitations: Local evidence proves deterministic restricted-rule context packaging only and keeps image_built=false. Exact-head
+    hosted run 39984114068/job 120524216169 supplies the paired-image and second-environment evidence, but its archive and log
+    internals were not locally inspected. Full GREG and organ dependency images and stronger general-code execution remain unfinished.
+  recovery: Rebuild from reviewed owned bytes with foundry.apply package; inspect rejects changed or incomplete contexts. The hosted
+    proof removes its disposable builder in finally. Any later rebuild or behavior mismatch, or source drift, restores PARTIAL with
+    the failed criterion named; stale success is never reused and negative evidence is retained.
+  state_lineage: '2026-10-26: PARTIAL -> COMPLETE for the owned restricted-rule capability at SANDBOX_VERIFIED. Local system-09
+    evidence proves deterministic context packaging only (image_built=false); exact-head hosted run 39984114068/job 120524216169
+    proves the committed two-build/six-case proof returned success. Artifact and log internals were not locally inspected; see
+    hosted_evidence. The former PARTIAL gap is retained verbatim after this sentence: Actual hosted OCI rebuild/run evidence pending for this delta; retain full-machine portability and general execution
     obligations. Preserved foundry-55 lineage (#132, foundry/systems/containers.py): Implementation exists (pinned base by
     digest with mirror failover and digest verification, deterministic capability layer, OCI layout, securejoin unpacking,
     runc and gVisor runtime specs). In-session runs on 2026-09-30 before the pause: identical image digest across builds and
@@ -172,7 +181,7 @@
     OCI runtimes (runc/runsc as root) and sandbox escape probes in the development container was denied by the session''s
     safety classifier (containment escape). Resuming needs Alfonso''s explicit authorization for where these may run (e.g.
     CI only, or a dedicated VM). Non-privileged hardening 2026-10-14: containers.run refuses before building any command unless UNIIMENTE_PRIVILEGED_RUNTIME_HOST names this host (founder-approved dedicated host or CI only); root images are refused; extraction confinement is tested without privilege (tests/unit/test_foundry_containers_hardening.py). Dedicated-host specification: docs/collaboration/PRIVILEGED-RUNTIME-TEST-HOST-2026-10-14.md. Status 2026-10-16: location authorization received from the founder; earlier unvalidated groundwork preserved inactive in docs/evidence/validation-groundwork-2026-10-16/; validation not performed; further execution blocked by a safety restriction reported in this session.'
-  state: PARTIAL
+  state: COMPLETE
 10:
   acceptance:
   - Generated or third-party code runs under stronger-than-process isolation (microVM or gVisor-class)
@@ -1367,7 +1376,7 @@
   - foundry/systems/build.py
   - foundry/systems/__init__.py
   - greg/foundry_bridge.py
-  interface: foundry.query toolchain; foundry.apply build|verify (system 53)
+  interface: foundry.query toolchain; foundry.apply build|verify
   limitations: Source bundle of the owned Python packages and data, not a wheel or OCI image; third-party packages are pinned
     by version in the manifest, not vendored.
   recovery: Rebuilds in a separate process must be byte-identical; the bundle runs from an empty directory.

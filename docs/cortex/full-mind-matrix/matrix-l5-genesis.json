@@ -1,0 +1,633 @@
+{
+  "schema": "full-mind-completion-matrix/0.1",
+  "chunk": "L5-GENESIS",
+  "created_utc": "2026-10-03",
+  "directive_source": "docs/collaboration/founder-directive-full-polyintelligence-mind-2026-10-03.txt (section 12)",
+  "column_contract": [
+    "intended_function",
+    "current_canonical_implementation",
+    "evidence_inspected",
+    "status",
+    "substrate",
+    "input_contract",
+    "output_contract",
+    "epistemic_type",
+    "verifier",
+    "integration_path",
+    "routing_eligibility",
+    "tests",
+    "real_world_evidence",
+    "blocker",
+    "next_build",
+    "dependency",
+    "completion_criterion"
+  ],
+  "status_taxonomies": {
+    "capability": [
+      "IMPLEMENTED",
+      "PARTIALLY IMPLEMENTED",
+      "BUILDABLE NOW",
+      "EXPERIMENTAL",
+      "FRONTIER",
+      "BLOCKED",
+      "SCIENCE-FICTION-LONG-HORIZON"
+    ],
+    "evidence_ladder": [
+      "DECLARED",
+      "SCAFFOLDED",
+      "IMPLEMENTED",
+      "INTEGRATED",
+      "TESTED",
+      "INDEPENDENTLY VERIFIED",
+      "USED BY GREG",
+      "REAL-WORLD VALIDATED"
+    ]
+  },
+  "rows": [
+    {
+      "id": "L5-FAMILY",
+      "title": "L5 metacognitive/institutional intelligence family",
+      "level": "L5",
+      "directive_ref": "L5; review A30",
+      "register_lineage": [
+        "A30"
+      ],
+      "intended_function": "Cognition about cognition: geometry, routing, composition, verification, abstention, consensus, settlement, metabolism, calibration and credit, all bounded by one authority/evidence architecture.",
+      "current_canonical_implementation": "cortex-route-policy/0.4.0 with deterministic geometry routing, hard eligibility, bounded composition, cap honesty, adversarial verification, dispositions and typed receipts; competence memory is outcome-conditional; many meta families remain reserved (mental_models, metaconsensus, global_workspace, active_inference).",
+      "evidence_inspected": [
+        "cortex/routing.py",
+        "cortex/contracts.py",
+        "cortex/memory.py",
+        "cortex/genome.py",
+        "docs/cortex/dependency-partition-2026-10-03.json A30"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "INDEPENDENTLY VERIFIED"
+      },
+      "substrate": "Deterministic Python and existing canonical journal/registry; no separate meta-OS.",
+      "input_contract": "ProblemGeometry, registered genomes, evidence, resource limits and outcome records where available.",
+      "output_contract": "Routes/compositions, recommendations/abstentions/bounded tests/handoffs and receipts with no execution authority.",
+      "epistemic_type": "Meta-artifacts inherit and check source types; routing structure is deductive, learned competence is outcome-conditional estimate.",
+      "verifier": "Verifier v4 layers, unit/integration suites, fresh-clone replication, freeze manifests and mutation checks.",
+      "integration_path": "All L5 mechanisms extend the one Cortex/GREG bridge and canonical memory; no second learning, routing, mission or authority plane.",
+      "routing_eligibility": "Meta routing itself is the canonical route; reserved meta organs withheld.",
+      "tests": [
+        "tests/unit/test_cortex_routes.py",
+        "tests/unit/test_cortex_pipeline.py",
+        "tests/unit/test_cortex_npart_composition.py",
+        "tests/integration/test_greg_cortex_mission.py"
+      ],
+      "real_world_evidence": "Fresh-clone replication is engineering evidence; zero real cognition outcome rows and no commercial result.",
+      "blocker": "Outcome learning/calibration blocked by R12.2; reserved meta attach and founder decisions per rows.",
+      "next_build": "A30/B30 metaconsensus with bounded signal exchange, minority views and verdict jurisdictions immediately after selected VOI slice.",
+      "dependency": "Canonical Kernel/GREG contracts; real outcomes for learning; founder attach for reserved profiles.",
+      "completion_criterion": "Each L5 row meets its criterion, GREG demonstrably selects/composes/tests/verifies/compares/abstains through real ProblemGeometry routing, and learned claims are backed by real outcomes."
+    },
+    {
+      "id": "L5-PROBLEMGEOMETRY",
+      "title": "ProblemGeometry",
+      "level": "L5",
+      "directive_ref": "L5 ProblemGeometry; review B29",
+      "register_lineage": [
+        "B29"
+      ],
+      "intended_function": "A typed, explicit description of problem structure sufficient for hard eligibility, routing, composition, abstention and later outcome-conditioned comparison.",
+      "current_canonical_implementation": "cortex/contracts.py ProblemGeometry with problem_id, epistemic_class, claim_type, objective, ambiguity, exactness, uncertainty, causal_structure, constraints, temporal_character, evidence_quality, resource_limits, consequence_vector, consequence_class, reversibility, unresolved_fields, provenance and rejected_proposals; enum validation and deterministic routing derivation plus structured proposer hook.",
+      "evidence_inspected": [
+        "cortex/contracts.py",
+        "cortex/routing.py",
+        "docs/cortex/dependency-partition-2026-10-03.json B29"
+      ],
+      "status": {
+        "capability": "IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
+      "substrate": "Python dataclasses/enums; canonical JSON.",
+      "input_contract": "Typed fields above; invalid enum/unresolved structure rejected or preserved explicitly.",
+      "output_contract": "Validated geometry used in receipts, memory keys and frozen evaluation.",
+      "epistemic_type": "Deductive structure; semantic derivation remains model-output tier when a model supplies it.",
+      "verifier": "Contract/routing tests, mutation checks and freeze non-contamination.",
+      "integration_path": "B29 extends the same schema additively with graph structure, constraint density, search-space size, adversariality, identifiability and embodiment; update routers/evaluations together, no parallel geometry type.",
+      "routing_eligibility": "Mandatory intake for cortex routing; missing decisive fields produce unresolved/abstention rather than guessed confidence.",
+      "tests": [
+        "tests/unit/test_cortex_routes.py",
+        "tests/unit/test_cortex_pipeline.py",
+        "tests/unit/test_cortex_npart_composition.py"
+      ],
+      "real_world_evidence": "none",
+      "blocker": "B29 additional fields unbuilt; free-text derivation of richer fields may need local model (R05.1).",
+      "next_build": "B29 geometry-field expansion with deterministic derivation, migration/default rules, frozen-manifest versioning and tests (partition queue item 3).",
+      "dependency": "Shared contracts; routing/evaluation migration; optional semantic intake.",
+      "completion_criterion": "New fields change eligibility or composition on concrete tests, unknown values remain explicit, old manifests remain readable or are versioned, and no field silently creates capability/authority."
+    },
+    {
+      "id": "L5-EPISTEMIC-TYPING",
+      "title": "Epistemic typing",
+      "level": "L5",
+      "directive_ref": "L5 epistemic typing; review A31",
+      "register_lineage": [
+        "A31"
+      ],
+      "intended_function": "Keep deductive, arithmetic, feasibility, optimization, estimate, prediction, causal, semantic, strategic, normative, legal, physical, institutional acceptance and unresolved claims distinct through every composition.",
+      "current_canonical_implementation": "EpistemicClass and ProofClass enums in GREG/cortex contracts; unresolved additive for classification failure and never coerced; receipt separates formal validity, empirical validity and legitimate authority.",
+      "evidence_inspected": [
+        "greg/cognition/contracts.py",
+        "cortex/contracts.py",
+        "docs/cortex/README.md",
+        "docs/cortex/verbatim-register.json A31"
+      ],
+      "status": {
+        "capability": "IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
+      "substrate": "Python enums/dataclasses and canonical receipts.",
+      "input_contract": "Every family/organ declares epistemic classes and proof class.",
+      "output_contract": "Typed artifacts and receipts; unresolved preserved.",
+      "epistemic_type": "This is the typing mechanism itself.",
+      "verifier": "Contract and routing tests; causal/pattern separation and normative/legal handoffs.",
+      "integration_path": "New organs must declare types in catalog/genome and pass contract validation before routing.",
+      "routing_eligibility": "Hard epistemic eligibility before ranking.",
+      "tests": [
+        "tests/unit/test_greg_cognition.py",
+        "tests/unit/test_cortex_routes.py",
+        "tests/unit/test_cortex_pipeline.py"
+      ],
+      "real_world_evidence": "none",
+      "blocker": "Typing cannot itself establish that an empirical claim is true.",
+      "next_build": "Define composition/jurisdiction typing rules in B30 metaconsensus without vote-based type promotion.",
+      "dependency": "Canonical contracts and per-organ manifests.",
+      "completion_criterion": "Met for current organs; no composition, quorum or model output may silently upgrade epistemic type or authority."
+    },
+    {
+      "id": "L5-PROOF-CARRYING",
+      "title": "Proof-carrying cognition",
+      "level": "L5",
+      "directive_ref": "L5 proof-carrying cognition; review A33",
+      "register_lineage": [
+        "A33"
+      ],
+      "intended_function": "Every consequential cognitive artifact carries the evidence, method, certificate, assumptions and counterevidence needed for independent checking.",
+      "current_canonical_implementation": "cortex-proof-artifact and cortex-receipt contracts; Z3/CP-SAT witnesses and UNSAT optimality certificates, LP duality certificates, estimation assumptions/sensitivity, causal identification/refutations, receipt accountability/falsification/missing information; ready-method disclosure shipped with formed functions, external publication founder-gated.",
+      "evidence_inspected": [
+        "cortex/contracts.py",
+        "cortex/organs/formal_eval.py",
+        "cortex/organs/cpsat.py",
+        "cortex/organs/continuous.py",
+        "docs/cortex/dependency-partition-2026-10-03.json A33"
+      ],
+      "status": {
+        "capability": "IMPLEMENTED",
+        "evidence_ladder": "INDEPENDENTLY VERIFIED"
+      },
+      "substrate": "Solver certificates plus canonical JSON/SHA-256 evidence records.",
+      "input_contract": "Typed artifact with method/version, inputs, evidence and verification material.",
+      "output_contract": "Proof-carrying artifact/receipt or refusal when proof requirements cannot be met.",
+      "epistemic_type": "Proof supports only its declared class; a formal certificate is not empirical or authority proof.",
+      "verifier": "Independent engines, mutation checks, verifier v4 and fresh-clone replication.",
+      "integration_path": "All new organs must implement the same proof/receipt envelope; external publication remains a separate authorized decision.",
+      "routing_eligibility": "Required for enabled cortex routes; missing proof/evidence lowers disposition or abstains.",
+      "tests": [
+        "tests/unit/test_cortex_formal_engines.py",
+        "tests/unit/test_cortex_pipeline.py",
+        "tests/unit/test_cortex_formed_organs.py"
+      ],
+      "real_world_evidence": "Fresh-clone replication verifies the engineering package; no external decision has relied on these proofs.",
+      "blocker": "Some semantic/strategic claims cannot carry deductive proof and must carry sources/assumptions instead; publication needs founder authority.",
+      "next_build": "Add B34 passive credit fields and B30 verdict jurisdiction to receipts; do not overclaim proof for empirical outputs.",
+      "dependency": "Per-artifact verifiers; provenance; canonical receipt schema.",
+      "completion_criterion": "Every enabled route emits independently checkable material appropriate to its epistemic type and refuses when it cannot; external publication is not implied."
+    },
+    {
+      "id": "L5-INDEPENDENT-VERIFICATION",
+      "title": "Independent verification",
+      "level": "L5",
+      "directive_ref": "L5 independent verification",
+      "register_lineage": [],
+      "intended_function": "Check cognition with structurally independent methods and adversarial review rather than trusting the producer or a majority of correlated outputs.",
+      "current_canonical_implementation": "Z3 plus CP-SAT formal degeneracy and independent re-check; duality/UNSAT certificates; brute force small instances; model-free adversarial verifier; verifier v4 external run records and fresh anonymous clone replication; proposer is not its only verifier.",
+      "evidence_inspected": [
+        "cortex/organs/formal_eval.py",
+        "cortex/organs/adversarial.py",
+        "verifier/v4/",
+        "verifier/runs/remote-replication-2026-10-02T22-28-45.826879+00-00.json"
+      ],
+      "status": {
+        "capability": "IMPLEMENTED",
+        "evidence_ladder": "INDEPENDENTLY VERIFIED"
+      },
+      "substrate": "Independent open-source engines and clean execution environments.",
+      "input_contract": "Original problem/model plus candidate artifact and claimed certificate.",
+      "output_contract": "Verification findings/certificates, blocked disposition or replicated run evidence; failed records retained.",
+      "epistemic_type": "Deductive verification where possible; sandbox/independent execution tiers explicitly distinguished.",
+      "verifier": "Mutation checks, known-bad fixtures and non-reproducing flake preserved with isolated reruns rather than erased.",
+      "integration_path": "Mandatory canonical pipeline and delivery verification; high-value work seeks another intelligence/human review when available.",
+      "routing_eligibility": "No recommend without applicable verification; verification itself is not an authority grant.",
+      "tests": [
+        "tests/unit/test_cortex_formal_engines.py",
+        "tests/unit/test_cortex_pipeline.py",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
+      "real_world_evidence": "1833 passed/6 skipped/0 failed fresh-clone suite replicated twice; one prior verifier flake FAIL preserved.",
+      "blocker": "Not all artifact types have structurally independent verifiers; shared assumptions can still correlate errors.",
+      "next_build": "Add independent checks for VOI/metaconsensus when built; expand degeneracy rather than declaring universal verification.",
+      "dependency": "Alternative engines/methods; executable tests; independent reviewers where high value.",
+      "completion_criterion": "Each enabled artifact has a declared independent check or an explicit verification limitation that lowers its disposition; no self-verification is represented as independent."
+    },
+    {
+      "id": "L5-ABSTENTION",
+      "title": "Abstention plus WAIT / REQUEST EVIDENCE / SMALL EXPERIMENT / ESCALATE",
+      "level": "L5",
+      "directive_ref": "L5 abstention and recovery actions",
+      "register_lineage": [],
+      "intended_function": "Refuse unsupported cognition and choose the safest useful recovery: wait, request decisive evidence, propose a bounded experiment, or escalate to legitimate authority.",
+      "current_canonical_implementation": "Dispositions recommend/abstain/bounded_test/handoff; abstention classes NONE, ABSTAIN, PROHIBITED, HUMAN_REVIEW_REQUIRED, CAPABILITY_DEFICIT, EVIDENCE_EXPIRED, FORMALIZATION_INCOMPLETE, WORLD_UNVERIFIED, REFUTED, UNKNOWN, UNIDENTIFIED, NO_QUORUM; missing resolving information and capability deficit paths; consequence handoffs. Directive mapping: WAIT=abstain with unmet dependency, REQUEST EVIDENCE=abstain/handoff plus missing information, SMALL EXPERIMENT=bounded_test, ESCALATE=handoff/HUMAN_REVIEW_REQUIRED/CAPABILITY_DEFICIT.",
+      "evidence_inspected": [
+        "greg/cognition/contracts.py",
+        "cortex/contracts.py (DISPOSITIONS)",
+        "cortex/routing.py",
+        "docs/cortex/README.md"
+      ],
+      "status": {
+        "capability": "IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
+      "substrate": "Python enums and deterministic routing/mission escalation.",
+      "input_contract": "Geometry, evidence/dependency status, consequence and capability availability.",
+      "output_contract": "Typed abstention/disposition with reason, missing information and recovery path; no silent fallback answer.",
+      "epistemic_type": "Unresolved/appropriate abstention class; abstention is not failure to be hidden.",
+      "verifier": "Tests for unavailable model, non-identification, incomplete formalization, budget refusal, human handoff and no-quorum.",
+      "integration_path": "Existing mission deficit/authority/founder escalation; bounded tests require their own authorization and cannot execute external effects from cortex.",
+      "routing_eligibility": "Always available as safe outcome; prohibited routes cannot be overridden by ranking.",
+      "tests": [
+        "tests/unit/test_cortex_routes.py",
+        "tests/unit/test_cortex_pipeline.py",
+        "tests/unit/test_greg_cognition.py"
+      ],
+      "real_world_evidence": "none — no real bounded experiment or escalation outcome recorded.",
+      "blocker": "A recovery action may still depend on unavailable evidence, infrastructure or human decision; that dependency must remain visible.",
+      "next_build": "VOI will value requested evidence; metaconsensus will preserve CONTESTED rather than force recommend.",
+      "dependency": "L3-N-VOI; canonical human/founder escalation; real evidence sources.",
+      "completion_criterion": "Every unsupported route resolves to a typed safe disposition with an actionable recovery and no fabricated answer, including under composition and budget pressure."
+    },
+    {
+      "id": "L5-COGNITIVE-DEGENERACY",
+      "title": "Cognitive degeneracy",
+      "level": "L5",
+      "directive_ref": "L5 cognitive degeneracy; review A36; algorithm portfolio context A35",
+      "register_lineage": [
+        "A36"
+      ],
+      "intended_function": "Multiple structurally different methods can address the same function, enabling independent checking and graceful degradation rather than redundant copies sharing one failure mode.",
+      "current_canonical_implementation": "Z3 and CP-SAT solve/re-check overlapping formal models; formed functions and built-in GREG families provide alternative methods; verifier records shared dependencies; 0.4.0 composition expands available method combinations without falsely reporting cap-dropped parts.",
+      "evidence_inspected": [
+        "cortex/organs/formal.py",
+        "cortex/organs/cpsat.py",
+        "cortex/organs/formal_eval.py",
+        "cortex/organs/adversarial.py",
+        "cortex/routing.py",
+        "docs/cortex/dependency-partition-2026-10-03.json A36"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "INDEPENDENTLY VERIFIED"
+      },
+      "substrate": "z3-solver/ortools/scipy/networkx/sympy diverse open-source engines.",
+      "input_contract": "Same declared problem expressible in multiple method contracts with dependency metadata.",
+      "output_contract": "Independent artifacts/findings and explicit agreement/disagreement; no forced consensus.",
+      "epistemic_type": "Same claim type only when each method independently justifies it; disagreement remains unresolved/CONTESTED.",
+      "verifier": "Cross-engine differential tests, brute force small cases, removal tests and shared-dependency reporting.",
+      "integration_path": "Add alternative engines through canonical registry/composition; no duplicate canonical ownership of the same organ function without a verification purpose.",
+      "routing_eligibility": "Alternative eligible methods ranked deterministically; verification combinations bounded by composition/solver budgets.",
+      "tests": [
+        "tests/unit/test_cortex_formal_engines.py",
+        "tests/unit/test_cortex_npart_composition.py",
+        "tests/unit/test_cortex_formed_organs.py"
+      ],
+      "real_world_evidence": "Fresh-clone replicated formal checks; no measured real incident recovery through degeneracy.",
+      "blocker": "Many organs still have only one method; shared libraries/assumptions limit independence.",
+      "next_build": "After VOI/metaconsensus, add structurally different checkers where critical failure is most costly and measure removal behavior.",
+      "dependency": "Alternative substrates; B30 metaconsensus for disagreement; shared-dependency metadata.",
+      "completion_criterion": "For each critical cognitive function, at least two genuinely different methods or a documented deficit exist; removal/fault-injection tests show honest degradation and disagreement is preserved."
+    },
+    {
+      "id": "L5-COGNITIVE-ROUTING",
+      "title": "Cognitive routing",
+      "level": "L5",
+      "directive_ref": "L5 cognitive routing; review B32/B64 cheapest-sufficient cognition",
+      "register_lineage": [
+        "B32",
+        "B64"
+      ],
+      "intended_function": "Select the cheapest sufficient eligible cognition for the actual geometry and stakes, with deterministic hard constraints before any ranking and no outcome-free learned superiority claims.",
+      "current_canonical_implementation": "cortex-route-policy/0.4.0 deterministic routing with geometry, hard eligibility before ranking, budget, alternatives why_not, bounded composition and cap honesty; profiles carry cost/latency estimates. Learned ledger reorder refuses to move without outcomes; deterministic cost-aware tie-breaking remains unbuilt.",
+      "evidence_inspected": [
+        "cortex/routing.py",
+        "cortex/gates.py",
+        "cortex/memory.py",
+        "greg/cognition/catalog.py (profiles)",
+        "docs/cortex/dependency-partition-2026-10-03.json B32/B64"
+      ],
+      "status": {
+        "capability": "IMPLEMENTED",
+        "evidence_ladder": "INDEPENDENTLY VERIFIED"
+      },
+      "substrate": "Deterministic Python router; one catalog/registry; no separate routing service.",
+      "input_contract": "ProblemGeometry, eligible genomes, resource_limits and optional real-outcome competence estimates.",
+      "output_contract": "Route or bounded composition, alternatives, refusal/abstention and expenditure in typed receipt.",
+      "epistemic_type": "Routing decision is deductive under declared policy; learned estimates remain outcome-conditional.",
+      "verifier": "Routing/gate/cap/budget tests, freeze manifests, fresh-clone replication and ledger refusal tests.",
+      "integration_path": "B32/B64 add deterministic cost-aware tie-breaking inside the existing policy with explicit version bump, tests and receipt rationale; no second router or market.",
+      "routing_eligibility": "This is the canonical eligibility/ranking mechanism itself; reserved/withheld organs never enter candidates.",
+      "tests": [
+        "tests/unit/test_cortex_routes.py",
+        "tests/unit/test_cortex_npart_composition.py",
+        "tests/unit/test_greg_cortex_bridge.py"
+      ],
+      "real_world_evidence": "Replicated engineering runs; no real-world cost/quality routing outcome.",
+      "blocker": "Learned cheapest-sufficient decisions lack real outcomes; current latency/cost fields are estimates, not measured external prices.",
+      "next_build": "B32/B64 deterministic cost-aware tie-breaking after higher-priority VOI/metaconsensus/geometry slices; preserve Pareto incomparability and policy-versioned receipts.",
+      "dependency": "Catalog profiles; B29 geometry; real outcomes for any learned routing; L4-MARKET explicitly deferred.",
+      "completion_criterion": "Given equal sufficiency, deterministic tests select the lower declared cost with explainable ties/incomparability; any learned improvement later requires real measured cost/quality and rollback."
+    },
+    {
+      "id": "L5-COGNITIVE-COMPOSITION",
+      "title": "Cognitive composition",
+      "level": "L5",
+      "directive_ref": "L5 cognitive composition; review A52/B27/B31/B47",
+      "register_lineage": [
+        "A52",
+        "B27",
+        "B31",
+        "B47"
+      ],
+      "intended_function": "Compose bounded organs into a temporary problem-solving pipeline where no single organ suffices, preserving contracts, caps, verification and honest refusal.",
+      "current_canonical_implementation": "0.4.0 route-or-compose with bounded n-part composition up to MAX_COMPOSITION=4; per-part hard eligibility; aggregate solver-budget refusal before formed execution; cap_dropped and alternatives why_not honesty; schedule-extraction composition and three-part tests; policy version coupled across contracts/catalog.",
+      "evidence_inspected": [
+        "cortex/routing.py",
+        "cortex/contracts.py",
+        "greg/cognition/catalog.py",
+        "tests/unit/test_cortex_npart_composition.py",
+        "verifier/runs/v4-2026-10-02T22-24-16.849187+00-00.json",
+        "docs/cortex/dependency-partition-2026-10-03.json selected_next"
+      ],
+      "status": {
+        "capability": "IMPLEMENTED",
+        "evidence_ladder": "INDEPENDENTLY VERIFIED"
+      },
+      "substrate": "Existing deterministic router/organs and shared contracts; no persistent new tissue.",
+      "input_contract": "Geometry plus explicitly required eligible parts and aggregate resource limits.",
+      "output_contract": "Composed typed artifact/receipt with part lineage or honest cap/budget/eligibility refusal.",
+      "epistemic_type": "Composition cannot exceed the justified joint epistemic type; verification checks interfaces and final artifact.",
+      "verifier": "V1-V6 verifier layers, three-part composition, five-part cap honesty, zero-invocation budget refusal, freeze non-contamination, version coupling and remote replication.",
+      "integration_path": "Completed slice integrated on canonical GREG/cortex bridge; future B47 depth/VOI/metaconsensus extends this router rather than creating another composition path.",
+      "routing_eligibility": "Only eligible required parts within MAX_COMPOSITION=4 and max_solver_calls; dropped eligible parts are reported as cap-dropped, never 'not required'.",
+      "tests": [
+        "tests/unit/test_cortex_npart_composition.py",
+        "tests/unit/test_cortex_schedule_composition.py",
+        "tests/integration/test_greg_cortex_mission.py"
+      ],
+      "real_world_evidence": "Fresh anonymous clone suite 1833/6/0 replicated; no external user outcome and no N3 superiority claim.",
+      "blocker": "N3 real-gain promotion, richer verdict composition and deeper composition remain unproven/unbuilt; composition bound is deliberate.",
+      "next_build": "B30 metaconsensus for verdict-typed composition and VOI for information-acquisition parts; N3 comparisons only under frozen manifests.",
+      "dependency": "Enabled organ contracts; L5-METACONSENSUS; L3-N-VOI; frozen composition benchmarks for B55.",
+      "completion_criterion": "Current bounded composition met and independently replicated; further completion requires real measured complementary gains, interface verification and honest behavior under caps, budgets, contradiction and missing parts."
+    },
+    {
+      "id": "L5-METACONSENSUS",
+      "title": "Metaconsensus",
+      "level": "L5",
+      "directive_ref": "L5 metaconsensus; review A30/B30",
+      "register_lineage": [
+        "B30"
+      ],
+      "intended_function": "Combine verdicts by epistemic jurisdiction and evidence, preserving minority views and contradictions as CONTESTED rather than averaging incompatible conclusions.",
+      "current_canonical_implementation": "Adversarial findings, contradiction detection, NO_QUORUM, Pareto incomparability and blocked recommendations provide primitives; cortex.meta.metaconsensus reserved/disabled and no verdict-typed composition engine exists.",
+      "evidence_inspected": [
+        "cortex/organs/adversarial.py",
+        "cortex/organs/evidence_causal.py",
+        "greg/cognition/contracts.py",
+        "cortex/genome.py",
+        "docs/cortex/dependency-partition-2026-10-03.json selected_next.queue_after item 2"
+      ],
+      "status": {
+        "capability": "BUILDABLE NOW",
+        "evidence_ladder": "SCAFFOLDED"
+      },
+      "substrate": "Deterministic Python over canonical artifacts/receipts; no model vendor required for first slice.",
+      "input_contract": "Verdicts with epistemic type, proof/evidence, dependencies, dissent, jurisdiction and confidence limitations.",
+      "output_contract": "Jurisdiction-resolved verdict or CONTESTED/NO_QUORUM/abstention with minority views and unresolved questions preserved.",
+      "epistemic_type": "No promotion by votes; each jurisdiction retains its proof/evidence standard.",
+      "verifier": "Contradiction, correlated-vote, minority-preservation, no-quorum and jurisdiction-conflict tests plus adversarial cases.",
+      "integration_path": "Build as canonical composition/receipt mechanism behind the existing reserved metaconsensus profile as governed; do not create a democracy of models or second decision authority.",
+      "routing_eligibility": "Reserved metaconsensus organ withheld; current verifier/gates still block invalid recommendations.",
+      "tests": [
+        "tests/unit/test_cortex_pipeline.py (current primitives)",
+        "tests/unit/test_cortex_gates_genome.py (reserved rule)"
+      ],
+      "real_world_evidence": "none",
+      "blocker": "No external dependency for a bounded deterministic verdict-typed slice; real collective legitimacy still requires real participants/outcomes.",
+      "next_build": "A30/B30 after selected VOI: verdict-typed composition, bounded signal exchange, minority views, CONTESTED on contradictions, never averaging (partition queue item 2).",
+      "dependency": "L5-EPISTEMIC-TYPING; adversarial findings; composition contracts; real participants for any legitimacy claim.",
+      "completion_criterion": "Tests prove compatible verdicts compose by jurisdiction, contradictions yield CONTESTED with minority evidence intact, correlated votes cannot manufacture confidence, and no outcome acquires authority."
+    },
+    {
+      "id": "L5-COGNITIVE-SPIDER-WEB",
+      "title": "Cognitive spider-web (proof/eligibility/routing/settlement control layer)",
+      "level": "L5",
+      "directive_ref": "L5 cognitive spider-web; review A34/B33/B53",
+      "register_lineage": [
+        "A34",
+        "B33",
+        "B53"
+      ],
+      "intended_function": "Make useful cognition reliably route through accepted proof, eligibility, routing and outcome settlement so better methods become defaults through verified outcomes rather than lock-in.",
+      "current_canonical_implementation": "Registry/genome eligibility, deterministic router, proof-carrying receipts and canonical measured_outcomes/CompetenceLedger settlement structure exist; cognitive settlement mechanism implemented, but zero real outcome rows mean settlement/regret learning is non-operative and routing refuses unearned learned reorder.",
+      "evidence_inspected": [
+        "cortex/genome.py",
+        "cortex/routing.py",
+        "cortex/memory.py",
+        "greg/cognition/cells.py",
+        "docs/cortex/dependency-partition-2026-10-03.json A34/B33/B52/B53/R12.2"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
+      "substrate": "One canonical registry/router/receipt/journal projection; no second settlement store.",
+      "input_contract": "Route/receipt plus actual outcome reference and geometry/method/version for settlement.",
+      "output_contract": "Competence estimates, rollback and eligible-key reorder only when evidence conditions are met; otherwise no learned change.",
+      "epistemic_type": "Structural rails deductive; competence/regret are outcome-conditional estimates, never external truth without real records.",
+      "verifier": "Ledger threshold/refusal/rollback tests; real outcome references must exist in canonical journal; regret claims require counterfactual discipline.",
+      "integration_path": "Use existing memory/journal and mission outcome paths; do not build parallel proof ledgers or routing-regret stores.",
+      "routing_eligibility": "Deterministic rails active; learned routing influence disabled by evidence insufficiency rather than fabricated data.",
+      "tests": [
+        "tests/unit/test_cortex_routes.py",
+        "tests/unit/test_greg_cognition.py",
+        "tests/unit/test_cortex_npart_composition.py"
+      ],
+      "real_world_evidence": "none — zero real outcome rows; no accepted external artifact or settlement consequence.",
+      "blocker": "A34/B52/B53 reality-blocked: zero real outcomes; no external acceptance; proof ledger outcome rate cannot be measured.",
+      "next_build": "Keep rails honest; B34 adds passive receipt provenance. Do not synthesize outcomes. Seek real read-only usage through authorized founder/mission paths.",
+      "dependency": "Real outcomes and external usage; canonical journal; B34; authorized missions.",
+      "completion_criterion": "Real accepted cognitive outcomes settle against canonical receipts, competence updates change routing only with sufficient evidence, rollback works, and removal tests show participants retain useful portable proof rather than abusive lock-in."
+    },
+    {
+      "id": "L5-COGNITIVE-METABOLISM",
+      "title": "Cognitive metabolism / Value-of-Information regulation",
+      "level": "L5",
+      "directive_ref": "L5 cognitive metabolism; review A38",
+      "register_lineage": [
+        "A38"
+      ],
+      "intended_function": "Allocate finite computation and information acquisition to the highest expected decision value, stop when marginal value is below cost, and account for expenditure honestly.",
+      "current_canonical_implementation": "Catalog cost/latency profiles, resource_limits, aggregate solver-budget refusal and receipt expenditure accounting exist; GREG information solver computes basic VOI. No decision-linked metabolic controller or stopping policy is enabled.",
+      "evidence_inspected": [
+        "greg/cognition/catalog.py",
+        "cortex/routing.py",
+        "cortex/contracts.py",
+        "greg/cognition/solvers.py (information)",
+        "docs/cortex/dependency-partition-2026-10-03.json A38/A12/B17"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
+      "substrate": "Deterministic accounting plus existing information solver; money_usd=0 for cells and no paid fallback.",
+      "input_contract": "Declared budgets, solver costs/latency, decision value model and candidate information/computation options.",
+      "output_contract": "Expenditure receipts now; future acquire/stop/refuse metabolic decision with information_value artifact.",
+      "epistemic_type": "strategic/estimate for value decisions; budget enforcement deductive.",
+      "verifier": "Aggregate budget tests now; future analytic stopping, zero/negative-value and fabricated-value refusal tests.",
+      "integration_path": "Build with L3-N-VOI inside existing routing/resource accounting; do not add an economic market or autonomous budget authority.",
+      "routing_eligibility": "Budget enforcement active; metabolic acquisition policy not yet eligible until VOI organ qualified.",
+      "tests": [
+        "tests/unit/test_cortex_npart_composition.py",
+        "tests/unit/test_greg_cognition.py"
+      ],
+      "real_world_evidence": "none — declared cost/latency estimates are not measured external expenditure outcomes.",
+      "blocker": "Decision-linked VOI unbuilt; real cost/quality calibration absent.",
+      "next_build": "Implement jointly with selected A12/B17 VOI slice: value information against decision change and cost, with explicit stop/abstain rules.",
+      "dependency": "L3-N-VOI; L5-COGNITIVE-ROUTING cost tie-breaking; real outcomes for calibration.",
+      "completion_criterion": "Analytic and routed tests show computation/information stops at zero/negative expected net value, budgets cannot be exceeded, fabricated utilities refuse, and receipts expose the actual decision basis."
+    },
+    {
+      "id": "L5-OUTCOME-CALIBRATION",
+      "title": "Outcome calibration and outcome-based cognitive credit",
+      "level": "L5",
+      "directive_ref": "L5 outcome calibration; review A39; proof-ledger R12.2",
+      "register_lineage": [
+        "A39",
+        "B52"
+      ],
+      "intended_function": "Compare predicted/claimed performance with actual outcomes, calibrate confidence and update competence only from canonical real records while preserving misses and zero results.",
+      "current_canonical_implementation": "Outcome-based cognitive credit mechanism, measured_outcomes projection, CompetenceLedger conditional estimates, cells local predicate rate and world_confidence=null without outcomes, rollback and frozen evaluation separation exist. Zero real outcome rows make calibration non-operative; B52 proof-ledger outcome-rate measurement cannot run honestly.",
+      "evidence_inspected": [
+        "cortex/memory.py",
+        "greg/cognition/cells.py",
+        "greg/cognition/solvers.py",
+        "docs/cortex/dependency-partition-2026-10-03.json A39/B52/R12.2",
+        "docs/cortex/verbatim-register.json A39"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
+      "substrate": "Canonical journal and in-memory/versioned ledger projections; no second outcome store.",
+      "input_contract": "Actual outcome references, receipt/method/version/geometry and declared success/failure predicates.",
+      "output_contract": "Conditional competence/calibration estimates or explicit insufficient-evidence/null confidence; negative records retained.",
+      "epistemic_type": "estimate/prediction from real observations; never causal without identification.",
+      "verifier": "Refusal below evidence thresholds, rollback tests, frozen-vs-real tier separation and zero-outcome honesty checks.",
+      "integration_path": "Consume existing mission outcome observation path; no synthetic outcomes, no simulated baselines and no independent calibration store.",
+      "routing_eligibility": "Calibration cannot influence routing until minimum real evidence conditions are met.",
+      "tests": [
+        "tests/unit/test_greg_cognition.py",
+        "tests/unit/test_cortex_routes.py"
+      ],
+      "real_world_evidence": "none — explicitly zero real outcome rows (R12.2).",
+      "blocker": "Reality-blocked: no real outcome stream, external missions or accepted cognitive results; B52 cannot be advanced independently.",
+      "next_build": "No algorithmic substitute for outcomes. Preserve mechanism and expose the deficit; obtain authorized read-only real usage before calibration claims.",
+      "dependency": "Real canonical outcomes; external usage; L5-COGNITIVE-SPIDER-WEB settlement.",
+      "completion_criterion": "A nonzero canonical real-outcome set produces reliability diagrams/confidence intervals or an honest small-sample report, failed predictions remain visible, and routing changes only after declared evidence thresholds."
+    },
+    {
+      "id": "L5-CAUSAL-CREDIT-ASSIGNMENT",
+      "title": "Causal credit assignment",
+      "level": "L5",
+      "directive_ref": "L5 causal credit assignment; review B34",
+      "register_lineage": [
+        "B34"
+      ],
+      "intended_function": "Attribute outcome differences to particular cognitive parts/routes without confusing temporal provenance with identified causation.",
+      "current_canonical_implementation": "Receipts record selected route/parts, expenditure, alternatives and evidence; verifier records shared dependencies; causal organ enforces identification. B34 passive causal-credit fields are not yet present as a dedicated receipt schema; no outcome-linked causal attribution is possible with zero outcomes.",
+      "evidence_inspected": [
+        "cortex/contracts.py",
+        "cortex/routing.py",
+        "cortex/organs/adversarial.py",
+        "cortex/organs/evidence_causal.py",
+        "docs/cortex/dependency-partition-2026-10-03.json B34"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
+      "substrate": "Canonical receipts/composition lineage and causal contracts.",
+      "input_contract": "Route/part lineage, alternatives, actual outcome references and any identification design.",
+      "output_contract": "Passive provenance/credit fields now planned; causal claims only with explicit identification, otherwise association labeled.",
+      "epistemic_type": "provenance/deductive lineage versus causal estimate kept separate; no automatic causal promotion.",
+      "verifier": "Schema tests, confounded-composition cases, missing-outcome refusal and causal identification/refutation tests.",
+      "integration_path": "B34 extends the existing receipt with passive causal-credit provenance; later real attribution uses canonical outcomes and causal organ, no parallel credit ledger.",
+      "routing_eligibility": "Passive fields do not affect routing; causal credit cannot alter learned routing without real identified evidence.",
+      "tests": [
+        "tests/unit/test_cortex_npart_composition.py (part lineage)",
+        "tests/unit/test_cortex_routes.py (causal identification)"
+      ],
+      "real_world_evidence": "none — zero outcomes and no attribution study.",
+      "blocker": "Passive fields independently buildable; actual credit reality-blocked by zero outcomes and confounding.",
+      "next_build": "B34 passive receipt causal-credit fields (partition queue item 7), then stop at provenance until real identified outcome evidence exists.",
+      "dependency": "Receipt schema; composition lineage; canonical outcomes; L3-J-CAUSAL identification.",
+      "completion_criterion": "Every composed outcome can be traced to parts and alternatives without loss; any stronger credit claim cites a valid identification design and preserves confounding/negative evidence."
+    },
+    {
+      "id": "CAPABILITY-GENESIS",
+      "title": "Capability Genesis — DEFICIT through REUSE",
+      "level": "L5",
+      "directive_ref": "Mandatory Capability Genesis; review B24/B56; N4",
+      "register_lineage": [
+        "B24",
+        "B56"
+      ],
+      "intended_function": "DEFICIT → SEARCH → ACQUIRE → QUALIFY → ADAPT → COMPOSE → GENERATE → TEST → ADVERSARIAL TEST → VERIFY → REJECT OR REGISTER → ROUTE → OBSERVE → LEARN → REUSE; acquire and compose before inventing, use Mechanism Recombination Foundry only when invention is necessary.",
+      "current_canonical_implementation": "CAPABILITY_DEFICIT abstention and mission/founder escalation exist; existing catalog/search enables acquisition review; formed functions demonstrate founder-attached qualification/verification/registration precedent; bounded composition reuses organs. No closed autonomous loop: no real deficit stream, autonomous acquisition/qualification or observe/learn/reuse outcomes.",
+      "evidence_inspected": [
+        "greg/cognition/contracts.py",
+        "greg/cognition/catalog.py",
+        "cortex/genome.py",
+        "cortex/organs/formed.py",
+        "docs/cortex/dependency-partition-2026-10-03.json B24/B56/A16",
+        "docs/cortex/verbatim-register.json N4 lineage"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
+      "substrate": "Canonical registry, sandboxed tests/verifier, formed-function attach and existing mission paths; no automatic paid acquisition.",
+      "input_contract": "Real typed deficit, candidate provenance/license/dependencies, qualification specification, resource bounds and authorization boundary.",
+      "output_contract": "Qualified/adapted/composed/rejected candidate or authorized registration proposal; deficits and rejected candidates preserved; no self-activation.",
+      "epistemic_type": "Candidate claims advance only through actual evidence tiers: fixture/test/sandbox/external outcome; model generation itself is tier 2.",
+      "verifier": "Contract/unit/adversarial/sandbox/independent verification, license/security/provenance review, formed-function independent checks and rollback; proposer not sole verifier.",
+      "integration_path": "Use the one GREG catalog/cortex genome and Kernel capability attach; generation only after search/acquire/qualify/adapt/compose fail; no second registry, routing, learning or authority plane.",
+      "routing_eligibility": "Only REJECT or registered+authorized candidates route; reserved/withheld/unverified candidates never do.",
+      "tests": [
+        "tests/unit/test_cortex_gates_genome.py",
+        "tests/unit/test_cortex_formed_organs.py",
+        "tests/unit/test_greg_cognition.py",
+        "tests/integration/test_greg_cortex_mission.py"
+      ],
+      "real_world_evidence": "Formed functions are real integrated engineering precedent, not autonomous GREG acquisition or commercial learning; zero outcome-driven REUSE cases.",
+      "blocker": "B24/B56 N4 founder+reality gates; zero real deficits/outcomes; acquisition may require external authority/license/network; autonomous generation blocked per A16.",
+      "next_build": "Apply the loop manually to each matrix-selected slice: search existing canonical mechanisms first, adapt/compose, verify and register through draft PR. Do not claim autonomous Genesis; N4 remains gated.",
+      "dependency": "Real deficit/outcome stream; candidate sources and lawful licenses; sandbox/verifier; founder attach; N4; Mechanism Recombination Foundry for necessary invention.",
+      "completion_criterion": "At least one real observed deficit completes the full loop with preserved rejected alternatives, independent verification, authorized registration, routed use, observed outcome and measured reuse improvement—without capability growth becoming authority growth."
+    }
+  ]
+}

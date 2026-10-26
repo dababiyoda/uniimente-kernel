@@ -1,0 +1,96 @@
+{
+  "schema": "full-mind-completion-matrix-index/0.1",
+  "created_utc": "2026-10-03",
+  "directive_source": "docs/collaboration/founder-directive-full-polyintelligence-mind-2026-10-03.txt",
+  "founder_intent_ids": [
+    "INTENT-0036",
+    "INTENT-0037"
+  ],
+  "rule": "Evidence index over the fixed BODY + ORGANS + MIND boundary. GREG built-in family mechanisms, enabled cortex organs, reserved/disabled cortex profiles, evaluation-only instrumentation, integration tests and real-world use are distinct states. No status is inferred from an installed library or a prose destination.",
+  "chunks": [
+    {
+      "path": "docs/cortex/full-mind-matrix/matrix-l1-l2.json",
+      "chunk": "L1-L2",
+      "rows": 24
+    },
+    {
+      "path": "docs/cortex/full-mind-matrix/matrix-l3.json",
+      "chunk": "L3",
+      "rows": 26
+    },
+    {
+      "path": "docs/cortex/full-mind-matrix/matrix-l4.json",
+      "chunk": "L4",
+      "rows": 15
+    },
+    {
+      "path": "docs/cortex/full-mind-matrix/matrix-l5-genesis.json",
+      "chunk": "L5-GENESIS",
+      "rows": 15
+    },
+    {
+      "path": "docs/cortex/full-mind-matrix/matrix-canonical.json",
+      "chunk": "CANONICAL",
+      "rows": 22
+    }
+  ],
+  "totals": {
+    "rows": 102,
+    "unfinished_register_rows": 80,
+    "unfinished_register_rows_covered": 80,
+    "columns_per_row": 17
+  },
+  "status_counts": {
+    "capability": {
+      "BLOCKED": 12,
+      "BUILDABLE NOW": 1,
+      "FRONTIER": 6,
+      "IMPLEMENTED": 38,
+      "PARTIALLY IMPLEMENTED": 44,
+      "SCIENCE-FICTION-LONG-HORIZON": 1
+    },
+    "evidence_ladder": {
+      "DECLARED": 7,
+      "INDEPENDENTLY VERIFIED": 9,
+      "INTEGRATED": 32,
+      "SCAFFOLDED": 15,
+      "TESTED": 39
+    }
+  },
+  "external_evidence_summary": {
+    "real_world_validated_rows": 0,
+    "used_by_greg_rows": 0,
+    "zero_real_outcome_rows": true,
+    "note": "Fresh-clone replication is independent engineering evidence, not external customer/commercial validation. Zero real cognition outcome rows remain (dependency partition R12.2)."
+  },
+  "selected_next": {
+    "policy": "highest-leverage independently-buildable coherent slice",
+    "selected": "A12/A38/B17 decision-linked Value-of-Information (VOI) organ (cortex.information.voi) and cognitive-metabolism stop/acquire/abstain rules behind the existing reserved gate",
+    "row_ids": [
+      "L3-N-VOI",
+      "L5-COGNITIVE-METABOLISM"
+    ],
+    "previous_completed_slice": "cortex-route-policy/0.4.0 bounded n-part composition, cap honesty and aggregate solver-budget refusal (PR #153 stack)",
+    "basis": "The dependency partition selected_next is already complete, so it was not reselected. Its queue_after item 1 is the next independently buildable causal slice; VOI also supplies the decision-value primitive required by metabolism, active information acquisition and later metaconsensus/routing decisions.",
+    "search_first": [
+      "greg/cognition/solvers.py information value_of_information",
+      "cortex/organs/evidence_causal.py missing-observation naming",
+      "cortex/contracts.py bounded_test/abstain dispositions and receipts",
+      "cortex/genome.py cortex.information.voi reserved profile"
+    ],
+    "not_authority": "Building, qualification and routing eligibility create no execution or consequence authority; reserved activation remains governed.",
+    "matrix_is_a_stopping_condition": false
+  },
+  "queue_after_selected": [
+    "A30/B30 verdict-typed metaconsensus: contradictions CONTESTED, minority views preserved, no averaging",
+    "B29 ProblemGeometry fields: graph structure, constraint density, search-space size, adversariality, identifiability, embodiment",
+    "B04 remaining CognitiveProfile fields",
+    "B06 sympy-native exact-symbolic organ behind reserved gate",
+    "A37 agency instrumentation: memory depth, prediction horizon, adaptability on frozen harness",
+    "B34 passive receipt causal-credit provenance fields",
+    "B32/B64 deterministic cheapest-sufficient cost-aware tie-breaking",
+    "B07 temporal, deontic and bounded first-order formal extensions",
+    "A09/B08 MIP/matching certified solver slice coordinated with A10/B09 graph expansion"
+  ],
+  "verification": "tests/unit/test_full_mind_matrix.py enforces 17 columns, dual status vocabularies, unique canonical lineage, all 80 unfinished register rows covered, directive layer/organ coverage and index/count consistency."
+}

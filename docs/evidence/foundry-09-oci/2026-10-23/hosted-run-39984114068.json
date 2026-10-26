@@ -1,96 +1,145 @@
 {
-  "schema_version": "foundry.hosted-oci-evidence/1",
+  "schema": "foundry.hosted-oci-evidence/1",
   "system": 9,
-  "name": "Containers",
-  "evidence_tier": "SANDBOX_VERIFIED",
+  "recorded_on": "2026-10-26",
   "source": {
     "repository": "dababiyoda/uniimente-kernel",
+    "branch": "claude/greg-full-machine-completion-whgiee",
     "head_sha": "fa80ace79eb1ac2cc4bf745918baf5587e1ae3f6",
+    "integration_pr": 196,
     "source_sha256": {
-      ".github/workflows/canonical-ci.yml": "555fce05094756ba2a5359292146dab5677578fcc75ebc03f71a92fdffc78aea",
+      "scripts/ci/prove_oci.py": "1a53cfecb65f51b07f68832eb6caf7d3f10197895bcfdba3315670681f977423",
+      "foundry/systems/oci.py": "1a817b725ab44c03aa5180818b8837dbaed496bfbff2ef8052282d0ad1e39e52",
       "foundry/oci_entry.py": "7775200feae57c9c7c9ec588a59bc71598244a8d3e925a45879d3d476f31fc7e",
       "foundry/systems/dsl.py": "9024e5b4f06ee3d0d1260c35bb3704d2041c2df8c8175108750ae6b5ef517539",
-      "foundry/systems/oci.py": "1a817b725ab44c03aa5180818b8837dbaed496bfbff2ef8052282d0ad1e39e52",
-      "scripts/ci/prove_oci.py": "1a53cfecb65f51b07f68832eb6caf7d3f10197895bcfdba3315670681f977423",
+      ".github/workflows/canonical-ci.yml": "555fce05094756ba2a5359292146dab5677578fcc75ebc03f71a92fdffc78aea",
       "tests/unit/test_greg_oci.py": "44762455ef91989b51948031d4623b67b5567febd56bffad999f3d6c105de499"
     }
   },
   "local_evidence": {
-    "path": "foundry/evidence/system-09.json",
-    "scope": "Deterministic digest-pinned OCI context packaging and tamper inspection only; no local image build or execution.",
-    "image_built": false
+    "command": "python -m foundry.completion --run 9",
+    "result": {
+      "context_intact": true,
+      "image_built": false,
+      "context_sha256": "b3e1a317447802134f586af84ee06046c21519bebbbbcc6b4465c888343910dd"
+    },
+    "result_sha256": "sha256:9742c24a7b85a1147a5112c89e0aa329d09c1cf1178fdd133bb52575ef61cb49",
+    "proves": [
+      "The reviewed owned source packages into a deterministic digest-pinned context.",
+      "The local exercise reproduces the retained result and result hash."
+    ],
+    "does_not_prove": [
+      "No local OCI image was built or loaded.",
+      "No local container or second-environment execution occurred."
+    ]
   },
   "hosted_execution": {
     "run_id": 39984114068,
-    "run_url": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/39984114068",
     "job_id": 120524216169,
-    "job_name": "OCI reproducibility and second environment",
-    "job_url": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/39984114068/job/120524216169",
-    "job_conclusion": "success",
-    "proof_step_number": 5,
-    "proof_step_name": "Build twice and reproduce in OCI",
-    "proof_step_conclusion": "success",
-    "public_page_observation": "Public job page reports success on October 23, 2026 in 1m 5s; sign-in is required to view logs.",
-    "observed_at": "2026-10-26",
-    "raw_logs_inspected": false,
+    "url": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/39984114068/job/120524216169",
+    "head_sha": "fa80ace79eb1ac2cc4bf745918baf5587e1ae3f6",
+    "status": "completed",
+    "conclusion": "success",
+    "started_at": "2026-10-23T16:18:41Z",
+    "completed_at": "2026-10-23T16:19:46Z",
+    "proof_step": {
+      "number": 5,
+      "name": "Build immutable owned capability twice and run second environment",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-10-23T16:19:21Z",
+      "completed_at": "2026-10-23T16:19:39Z"
+    },
+    "artifact_upload_step_conclusion": "success",
+    "observed_public_page": "The public job page reports success on October 23, 2026 in 1m 5s and says Sign in to view logs.",
+    "proof_contract_inspected_at_source_head": {
+      "script": "scripts/ci/prove_oci.py",
+      "workflow_job": "7 · Owned OCI capability rebuild and execution",
+      "immutable_inputs_resolved_before_build": [
+        "python:3.11-slim-bookworm",
+        "moby/buildkit:buildx-stable-1"
+      ],
+      "success_requires": [
+        "Two independent no-cache Buildx OCI exports have identical parsed layouts, including content-addressed blobs, manifest, config and layers.",
+        "Docker's reported image ID equals the retained OCI config digest or manifest digest.",
+        "All six valid and hostile requests produce container results exactly equal to host evaluation.",
+        "The script reaches report.update(reproduced=True, identical_second_environment=True) and exits zero."
+      ],
+      "container_limits": [
+        "--network=none",
+        "--read-only",
+        "--cap-drop=ALL",
+        "--security-opt=no-new-privileges",
+        "--user=10001:10001",
+        "--memory=128m",
+        "--memory-swap=128m",
+        "--cpus=1",
+        "--pids-limit=64"
+      ],
+      "cleanup": "The disposable Buildx builder is removed in finally.",
+      "authority_created": false,
+      "image_pushed": false
+    },
+    "acceptance_mapping": {
+      "reproducible_OCI_image_with_pinned_inputs": "The exact-head proof step succeeded; the inspected script cannot pass unless the two immutable-input OCI layouts are identical.",
+      "identical_execution_in_second_environment": "The same exact-head proof step succeeded; the inspected script cannot pass unless all six container results equal host evaluation."
+    },
+    "evidence_tier": "SANDBOX_VERIFIED",
     "not_independently_reinspected": true
   },
-  "proof_contract": {
-    "path": "scripts/ci/prove_oci.py",
-    "zero_exit_requires": [
-      "Resolve immutable base and builder addresses.",
-      "Perform two independent no-cache Buildx builds.",
-      "Require identical parsed OCI layouts.",
-      "Accept the config or manifest digest as Docker's reported image ID.",
-      "Execute six valid and hostile cases and require exact container-versus-host result equality.",
-      "Set reproduced=true and identical_second_environment=true only after all cases pass."
-    ],
-    "container_restrictions": [
-      "network=none",
-      "read-only",
-      "non-root user 10001:10001",
-      "all capabilities dropped",
-      "no-new-privileges",
-      "memory and swap 128m",
-      "one CPU",
-      "pids-limit 64"
-    ],
-    "image_pushed": false,
-    "cleanup": "Disposable Buildx builder is removed in finally; report.json is written even on failure."
-  },
-  "artifact": {
-    "name": "owned-oci-capability-evidence",
+  "artifact_metadata": {
     "id": 12515337331,
-    "size_bytes": 94599696,
-    "archive_digest": "sha256:b09d8597f3cf50e701ebdd30e51860b1535c28ce8a37414630390f65a13e97da",
+    "name": "owned-oci-capability-evidence",
+    "workflow_run_id": 39984114068,
+    "workflow_head_sha": "fa80ace79eb1ac2cc4bf745918baf5587e1ae3f6",
+    "size_in_bytes": 94599696,
+    "digest": "sha256:b09d8597f3cf50e701ebdd30e51860b1535c28ce8a37414630390f65a13e97da",
+    "created_at": "2026-10-23T16:19:43Z",
     "expires_at": "2026-11-22T16:19:40Z",
-    "contents_inspected": false,
-    "download_result": "HTTP 401",
-    "digest_boundary": "Archive metadata SHA-256 is not an OCI image digest and does not prove report, case, or layout contents."
+    "expired_when_observed": false,
+    "digest_meaning": "GitHub metadata digest for the uploaded artifact archive; this is not an inspected OCI image digest or report digest."
   },
-  "overall_canonical_ci": {
-    "all_green": false,
-    "successful_jobs": "Canonical jobs 2 through 9 succeeded.",
-    "negative_evidence": "Job 1, Kernel and organ tests, was cancelled after its timeout; the OCI success does not convert that cancellation into success."
+  "access_limits": [
+    {
+      "target": "artifact archive download",
+      "observed_result": "HTTP 401 Unauthorized",
+      "consequence": "No archive was downloaded; its layout, report.json, image digest, OCI layouts and per-case results were not locally inspected."
+    },
+    {
+      "target": "job-log API",
+      "observed_result": "HTTP 403: Must have admin rights to Repository.",
+      "consequence": "No raw job log was obtained."
+    },
+    {
+      "target": "public job page",
+      "observed_result": "Sign in to view logs; job success, date and duration remain publicly visible.",
+      "consequence": "The page independently corroborates the job status but supplies no case-level output."
+    }
+  ],
+  "overall_run_status": {
+    "all_canonical_ci_green": false,
+    "canonical_jobs_2_through_9": "success",
+    "canonical_job_1": "Kernel and organ tests was cancelled after timeout.",
+    "interpretation": "This record relies on the successful OCI job only and does not smooth the cancelled job into an all-CI-pass claim."
   },
   "negative_evidence_retained": [
-    "Earlier Docker 29 Buildx attempt failed; later success does not erase that history.",
-    "Artifact archive and raw logs were not locally inspected; public logs require sign-in and the log API requires repository admin rights.",
-    "No independent reviewer has inspected report.json, per-case outputs, OCI layouts, or a hosted image digest.",
-    "Full GREG/organ images, stronger general-code execution, live activation, full-machine portability, and deployment remain unproven."
+    "The local exercise still returns image_built=false.",
+    "Artifact metadata is not inspection of artifact contents.",
+    "The 401 archive failure, 403 log failure and public sign-in limit are retained.",
+    "An earlier OCI job on run 70a89457 failed under Docker 29/containerd image-ID semantics before the manifest-digest compatibility fix; the fix is present at this source head.",
+    "The former PARTIAL row's full-machine portability, general execution and paused privileged-runtime lineage remains in foundry/completion.yaml.",
+    "This is one restricted-rule capability, not full GREG or organ packaging, microVM/gVisor-class execution, live activation or founder-device acceptance."
   ],
   "completion_boundary": {
-    "capability": "Restricted-rule OCI context packaging with exact-head hosted independent-rebuild and second-environment evidence.",
-    "not_claimed": [
-      "independent case-level artifact verification",
-      "full-machine OCI portability",
-      "system 10 completion",
-      "live activation or deployment",
-      "external contact or spend",
-      "VEPMC increment"
+    "disposition": "Supports COMPLETE for Foundry system 9 at SANDBOX_VERIFIED when combined with the separately reproducible local system-09 record.",
+    "does_not_close": [
+      "Foundry system 10",
+      "full GREG and organ dependency images",
+      "general generated or third-party source admission",
+      "VEPMC or any real-world founder gate"
     ],
-    "stronger_evidence_requires": "Inspect the immutable artifact and raw logs, or commission a fresh independent proof exposing equivalent case-level evidence.",
-    "authority_created": false,
-    "vepmc_delta": 0
-  }
+    "elevation_requires": "Inspect the retained artifact report and raw evidence or obtain a fresh independently reviewed hosted proof before claiming a tier above SANDBOX_VERIFIED."
+  },
+  "authority_created": false,
+  "vepmc_delta": 0
 }

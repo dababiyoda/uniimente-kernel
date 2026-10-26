@@ -1,67 +1,49 @@
-# Foundry system 9: hosted OCI evidence
+# Foundry 9 — owned OCI completion evidence
 
-This record supports a **bounded `SANDBOX_VERIFIED`** completion claim for the
-restricted-rule container capability only. It does not claim live activation,
-full-machine portability, privileged execution, deployment, or VEPMC.
+## Bounded disposition
 
-## Acceptance mapping
+System 9 is `COMPLETE` at `SANDBOX_VERIFIED` for the owned restricted-rule capability only. This is not a full-machine, general-code isolation, deployment, or external-outcome claim. VEPMC remains 0 and no authority is created.
 
-| Criterion | Evidence |
-| --- | --- |
-| Same owned source | Run `39984114068`, job `120524216169`, head `fa80ace79eb1ac2cc4bf745918baf5587e1ae3f6`; source SHA-256 values in `hosted-run-39984114068.json`. |
-| Identical independent rebuild | The successful hosted proof executed `scripts/ci/prove_oci.py`, which performs two no-cache Buildx builds and raises unless their parsed OCI layouts are equal. |
-| Second-environment behavior | The same proof executes six valid/hostile cases in networkless, read-only, non-root, capability-dropped containers and raises unless every result equals host evaluation. Only then does it write `reproduced=true` and `identical_second_environment=true`. |
-| Exact hosted conclusion | OCI job and proof step 5 concluded `success`; overall canonical CI was **not** all green because job 1 was cancelled after its timeout. |
-| Local deterministic evidence | `foundry/evidence/system-09.json` retains `image_built=false`; `python -m foundry.completion --audit` reruns context packaging and compares both result and SHA-256. |
+Two different evidence forms close the two acceptance criteria:
 
-## Evidence boundary
+| Acceptance criterion | Evidence | Boundary |
+|---|---|---|
+| Reproducible OCI image with pinned inputs | Exact-head hosted run `39984114068`, job `120524216169`, proof step 5 succeeded. The inspected `scripts/ci/prove_oci.py` resolves immutable base and builder addresses, performs two independent no-cache Buildx builds, and exits nonzero unless their parsed OCI layouts are identical. | The local Foundry exercise packages only a context and continues to return `image_built: false`. It is not presented as an image build. |
+| Identical capability execution in a second environment | The same proof step succeeded. The script compares six valid and hostile container results with host evaluation and cannot reach success unless all six match. | Per-case output and the artifact-internal `report.json` were not locally inspected. The successful exact-head job is the execution evidence, not a claim that this session reran Docker. |
 
-The artifact metadata identifies immutable artifact `12515337331`, but archive
-download returned HTTP 401 and the job-log API returned HTTP 403. No
-artifact-internal `report.json`, per-case output, OCI layout, or image digest was
-locally inspected. The archive SHA-256 is **not** an OCI image digest and does
-not prove artifact contents. These limitations keep the evidence tier at
-`SANDBOX_VERIFIED`; they are not silently converted into independent case-level
-verification.
+The machine-readable record is `hosted-run-39984114068.json`. The local reproducible record is `foundry/evidence/system-09.json`; `python -m foundry.completion --audit` re-derives that local result and hash. Hosted CI remains responsible for rerunning the real image proof on later heads.
 
-The earlier Docker 29 Buildx failure remains negative historical evidence. The
-successful run is a later hosted result, not a reason to erase that failure.
-System 10 and stronger general-code/full-machine execution remain open.
+## Local validation on 2026-10-26
 
-## Local validation (2026-10-26)
+- The exact-base and changed-tree `tests/unit/test_greg_oci.py` suites each passed **7/7** in a native-filesystem worktree. The working mount's `st_nlink=0` refusal is retained in the deliberation rather than hidden or mislabeled as a project regression.
+- The changed-tree full `python -m foundry.completion --audit` completed: **`PASS: 51/55 complete; 0 problem(s)`**. Systems **10, 26, 28, and 52 remain PARTIAL**. This local audit is neither hosted CI on a child head nor integration.
+- `tests/unit/test_foundry_systems.py` passed **66/66** tests. Its 27 Stripe deprecation warnings are retained as warnings, not rewritten as failures or silent success output.
+- Earlier attempts were inconclusive environmental stops at missing declared packages. Commissioning also failed before its scrubbed child CI could see the target-only pytest installation. A temporary native virtual environment supplied the actual declared packages without changing the repository or weakening environment scrubbing; the focused commissioning rerun then matched its retained result hash exactly.
 
-On a native-filesystem worktree, the exact base and changed tree each passed the
-focused OCI suite (`7 passed`). The changed tree then passed the complete
-Foundry audit:
+## Exact hosted identity
 
-```text
-PASS: 51/55 complete; 0 problem(s)
-PARTIAL: 10, 26, 28, 52
-```
+- Source head: `fa80ace79eb1ac2cc4bf745918baf5587e1ae3f6` on #196's branch.
+- OCI job: `120524216169`, completed `success` from `2026-10-23T16:18:41Z` to `2026-10-23T16:19:46Z`.
+- Proof step: `Build immutable owned capability twice and run second environment`, completed `success`.
+- Artifact: `owned-oci-capability-evidence`, ID `12515337331`, 94,599,696 bytes.
+- Artifact archive metadata digest: `sha256:b09d8597f3cf50e701ebdd30e51860b1535c28ce8a37414630390f65a13e97da`.
+- Artifact expiration metadata: `2026-11-22T16:19:40Z`; unexpired when observed.
 
-The completion-contract suite, including its forged/missing-evidence negative
-tests, passed `66` tests. Its `27` warnings were third-party Stripe deprecation
-warnings. The signed-mission OCI test refuses owned files on `/mnt/agents`
-because that mount reports `st_nlink=0`; the same exact source passes on the
-native filesystem with `st_nlink=1`. The guard was not weakened.
+The archive digest identifies GitHub's uploaded artifact. It is not an OCI image digest and does not prove that the archive contents were inspected.
 
-The first full-audit attempts stopped on missing declared dependencies and two
-commissioning child-CI environment failures (`KeyError: 'proposal'`). Those were
-inconclusive environment attempts, not Foundry evidence mismatches. Installing
-the actual declared packages and exposing them through a native virtual
-environment's normal `.pth` site initialization allowed the intentionally
-scrubbed child CI to run. Focused system 51 then matched its retained result
-hash, followed by the successful full audit above. No project code, fake module,
-live provider call, or scrubbing exception was introduced.
+## Retrieval failures and negative evidence
 
-These are local exact-tree checks, not hosted CI on the eventual child head,
-not an entire-repository test run, and not integration or independent review.
+- Artifact archive download returned **HTTP 401 Unauthorized**. No archive, internal report, image digest, OCI layout, or case result was inspected locally.
+- The job-log API returned **HTTP 403 — “Must have admin rights to Repository.”** No raw log was obtained.
+- The public job page says **“Sign in to view logs.”** It nevertheless confirms the OCI job succeeded on October 23, 2026 in 1m 5s; it supplies no case-level output.
+- Overall Canonical CI is **not** represented as green: jobs 2–9 succeeded, while job 1 (`Kernel and organ tests`) was cancelled after timeout.
+- Earlier run `70a89457` failed the OCI job under Docker 29/containerd image-ID semantics. The manifest-digest compatibility fix is present at the exact head used here; the failure remains lineage, not a hidden result.
+- The previous PARTIAL gap, paused privileged-runtime work, and full-machine/general-execution limitations remain in `state_lineage` in `foundry/completion.yaml`.
 
-## Recovery
+## Recovery and review trigger
 
-Rebuild locally with `foundry.apply package` and inspect with
-`foundry.apply inspect`. The hosted proof removes its disposable builder in
-`finally`. Any local rebuild/result/hash mismatch, source drift, or later
-contradiction of the hosted evidence restores system 9 to `PARTIAL` with the
-failed criterion named. Retain this record and the former gap lineage; stale
-success is never reused.
+Rebuild local context from reviewed owned bytes with `foundry.apply package`; `foundry.query inspect` rejects changed or incomplete context. The hosted proof removes its disposable builder in `finally` and pushes no image.
+
+If a later local reproduction, immutable rebuild, or host/container comparison fails, restore system 9 to `PARTIAL`, name the failed criterion, and retain this record. Do not reuse stale success. Inspect the artifact report/raw evidence or obtain a fresh independently reviewed hosted proof before elevating beyond `SANDBOX_VERIFIED`.
+
+System 10, full GREG and organ dependency images, general source admission, live activation, founder-device acceptance, and every VEPMC/real-world gate remain separate obligations.

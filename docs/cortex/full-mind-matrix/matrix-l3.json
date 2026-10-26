@@ -3,10 +3,45 @@
   "chunk": "L3",
   "created_utc": "2026-10-03",
   "directive_source": "docs/collaboration/founder-directive-full-polyintelligence-mind-2026-10-03.txt (section 12)",
-  "column_contract": ["intended_function", "current_canonical_implementation", "evidence_inspected", "status", "substrate", "input_contract", "output_contract", "epistemic_type", "verifier", "integration_path", "routing_eligibility", "tests", "real_world_evidence", "blocker", "next_build", "dependency", "completion_criterion"],
+  "column_contract": [
+    "intended_function",
+    "current_canonical_implementation",
+    "evidence_inspected",
+    "status",
+    "substrate",
+    "input_contract",
+    "output_contract",
+    "epistemic_type",
+    "verifier",
+    "integration_path",
+    "routing_eligibility",
+    "tests",
+    "real_world_evidence",
+    "blocker",
+    "next_build",
+    "dependency",
+    "completion_criterion"
+  ],
   "status_taxonomies": {
-    "capability": ["IMPLEMENTED", "PARTIALLY IMPLEMENTED", "BUILDABLE NOW", "EXPERIMENTAL", "FRONTIER", "BLOCKED", "SCIENCE-FICTION-LONG-HORIZON"],
-    "evidence_ladder": ["DECLARED", "SCAFFOLDED", "IMPLEMENTED", "INTEGRATED", "TESTED", "INDEPENDENTLY VERIFIED", "USED BY GREG", "REAL-WORLD VALIDATED"]
+    "capability": [
+      "IMPLEMENTED",
+      "PARTIALLY IMPLEMENTED",
+      "BUILDABLE NOW",
+      "EXPERIMENTAL",
+      "FRONTIER",
+      "BLOCKED",
+      "SCIENCE-FICTION-LONG-HORIZON"
+    ],
+    "evidence_ladder": [
+      "DECLARED",
+      "SCAFFOLDED",
+      "IMPLEMENTED",
+      "INTEGRATED",
+      "TESTED",
+      "INDEPENDENTLY VERIFIED",
+      "USED BY GREG",
+      "REAL-WORLD VALIDATED"
+    ]
   },
   "rows": [
     {
@@ -14,11 +49,22 @@
       "title": "L3 specialized intelligence organ family",
       "level": "L3",
       "directive_ref": "L3 organs A-Y; review A04/B03/B05",
-      "register_lineage": ["A04", "B05"],
+      "register_lineage": [
+        "A04",
+        "B05"
+      ],
       "intended_function": "A diverse but canonical set of bounded organs, each callable, governed, typed, routed, verified, tested, integrated, observable and useful; installing a library is not implementing an intelligence.",
       "current_canonical_implementation": "Ten enabled cortex entries (router, Z3 formal, CP-SAT, Fermi, evidence/causal, semantic, deterrence/accountability, schedule extraction, graph/search, continuous LP) plus formed functions and the GREG built-in family manifests on one registry/receipt envelope. Reserved families remain disabled in seed_registry.",
-      "evidence_inspected": ["greg/cognition/catalog.py", "cortex/genome.py", "cortex/organs/", "docs/cortex/verbatim-register.json rows A04/B03/B05"],
-      "status": {"capability": "PARTIALLY IMPLEMENTED", "evidence_ladder": "INTEGRATED"},
+      "evidence_inspected": [
+        "greg/cognition/catalog.py",
+        "cortex/genome.py",
+        "cortex/organs/",
+        "docs/cortex/verbatim-register.json rows A04/B03/B05"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
       "substrate": "Python with pinned open-source solvers; optional loopback local model; no vendor as constitutional infrastructure.",
       "input_contract": "ProblemGeometry plus per-organ schemas; incomplete formalization abstains.",
       "output_contract": "cortex-proof-artifact and cortex-receipt with authority_created=false, execution_authority=none.",
@@ -26,7 +72,13 @@
       "verifier": "Adversarial verification plus engine-specific certificates; import boundary test forbids cortex importing Consequence Gate/adapters/actuators.",
       "integration_path": "Extend existing organs or qualify reserved profiles through the one genome/registry; formed functions only via founder-attached capability path; never duplicate canonical organs.",
       "routing_eligibility": "Hard eligibility before ranking; reserved/withheld organs cannot be selected; aggregate solver budget enforced before formed execution.",
-      "tests": ["tests/unit/test_cortex_pipeline.py", "tests/unit/test_cortex_routes.py", "tests/unit/test_cortex_gates_genome.py", "tests/unit/test_greg_cortex_bridge.py", "tests/integration/test_greg_cortex_mission.py"],
+      "tests": [
+        "tests/unit/test_cortex_pipeline.py",
+        "tests/unit/test_cortex_routes.py",
+        "tests/unit/test_cortex_gates_genome.py",
+        "tests/unit/test_greg_cortex_bridge.py",
+        "tests/integration/test_greg_cortex_mission.py"
+      ],
       "real_world_evidence": "none — integration tests and fresh-clone replication are not external customer outcomes.",
       "blocker": "Several organs blocked on founder attach, real outcomes, calibration, human participants or reachable local model; see per-organ rows.",
       "next_build": "Execute partition queue by causal dependency, beginning with VOI then metaconsensus; organ-specific next builds below.",
@@ -41,8 +93,17 @@
       "register_lineage": [],
       "intended_function": "Interpret and extract language-bound problem structure while preserving sources and admitting model unavailability.",
       "current_canonical_implementation": "cortex.semantic@0.1.0 deterministic source-quoting layer and local-model abstention; cortex.extraction.schedule@0.1.0 controlled-grammar extraction composed into formal solving; GREG semantic interpret family. Loopback 127.0.0.1 only; no automatic paid fallback.",
-      "evidence_inspected": ["cortex/organs/semantic.py", "cortex/organs/schedule_extraction.py", "greg/cognition/solvers.py (semantic)", "docs/cortex/README.md", "docs/cortex/dependency-partition-2026-10-03.json ledger R05.1, addendum B50"],
-      "status": {"capability": "PARTIALLY IMPLEMENTED", "evidence_ladder": "INTEGRATED"},
+      "evidence_inspected": [
+        "cortex/organs/semantic.py",
+        "cortex/organs/schedule_extraction.py",
+        "greg/cognition/solvers.py (semantic)",
+        "docs/cortex/README.md",
+        "docs/cortex/dependency-partition-2026-10-03.json ledger R05.1, addendum B50"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
       "substrate": "Stdlib deterministic layer; optional qwen local model behind loopback OpenAI-compatible endpoint.",
       "input_contract": "Source text/schema for semantic; controlled schedule grammar for extraction; literal free-text intake only at B50 addendum boundary.",
       "output_contract": "sourced_claims with exact spans or typed extraction artifacts; ABSTAIN when model unavailable.",
@@ -50,7 +111,11 @@
       "verifier": "Quoted-span constraints, schedule composition round trips, semantic-unavailable example, held-out arms NOT_RUN without model.",
       "integration_path": "Already on canonical router and GREG bridge; deeper intake decomposed to B51/B52 rather than hidden prompt magic.",
       "routing_eligibility": "Extraction eligible; semantic eligible with local model, otherwise deterministic abstention path.",
-      "tests": ["tests/unit/test_cortex_schedule_composition.py", "tests/unit/test_cortex_routes.py", "tests/unit/test_cortex_npart_composition.py"],
+      "tests": [
+        "tests/unit/test_cortex_schedule_composition.py",
+        "tests/unit/test_cortex_routes.py",
+        "tests/unit/test_cortex_npart_composition.py"
+      ],
       "real_world_evidence": "none — no live founder model endpoint reached from the sandbox (R05.1).",
       "blocker": "Reachable founder model infrastructure for live semantic evaluation; free-text deeper intake not independently buildable beyond literal layer.",
       "next_build": "Maintain deterministic layer; use B29/B04 contract work to structure intake; no paid fallback.",
@@ -62,11 +127,21 @@
       "title": "B — exact/mathematical/symbolic intelligence",
       "level": "L3",
       "directive_ref": "L3 B; review B06",
-      "register_lineage": ["B06"],
+      "register_lineage": [
+        "B06"
+      ],
       "intended_function": "Exact symbolic mathematics beyond numeric approximation: simplification, equality, polynomials and exact arithmetic.",
       "current_canonical_implementation": "GREG exact family (sympy calculate/polynomial) implemented and tested; Z3 exact arithmetic in formal organ; cortex.exact.symbolic remains reserved/disabled.",
-      "evidence_inspected": ["greg/cognition/solvers.py (exact)", "greg/cognition/catalog.py", "cortex/genome.py (cortex.exact.symbolic)", "docs/cortex/dependency-partition-2026-10-03.json B06"],
-      "status": {"capability": "PARTIALLY IMPLEMENTED", "evidence_ladder": "TESTED"},
+      "evidence_inspected": [
+        "greg/cognition/solvers.py (exact)",
+        "greg/cognition/catalog.py",
+        "cortex/genome.py (cortex.exact.symbolic)",
+        "docs/cortex/dependency-partition-2026-10-03.json B06"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "TESTED"
+      },
       "substrate": "sympy; z3-solver.",
       "input_contract": "Exact expressions/polynomials now; planned symbolic-organ schema with declared operations.",
       "output_contract": "exact_calculation artifacts; planned cortex proof artifacts with exactness checks.",
@@ -74,7 +149,10 @@
       "verifier": "Exact recomputation, polynomial root tests, planned symbolic identity tests and adversarial malformed-input cases.",
       "integration_path": "Build B06 behind the existing reserved cortex.exact.symbolic gate and register through the one genome/catalog; preserve GREG exact family rather than duplicating it.",
       "routing_eligibility": "GREG exact eligible; cortex symbolic withheld until qualified.",
-      "tests": ["tests/unit/test_greg_cognition.py", "tests/unit/test_cortex_formal_engines.py"],
+      "tests": [
+        "tests/unit/test_greg_cognition.py",
+        "tests/unit/test_cortex_formal_engines.py"
+      ],
       "real_world_evidence": "none",
       "blocker": "No independently buildable blocker for a bounded symbolic slice; full cortex activation still follows reserved-gate discipline.",
       "next_build": "B06: sympy-native exact-symbolic organ behind reserved gate with contracts, verifier, routing examples and tests (partition queue item 5).",
@@ -86,11 +164,22 @@
       "title": "C — Fermi/estimation intelligence",
       "level": "L3",
       "directive_ref": "L3 C; review A05/B10",
-      "register_lineage": ["A05", "B10"],
+      "register_lineage": [
+        "A05",
+        "B10"
+      ],
       "intended_function": "Decision-grade bounded estimates with explicit assumptions, dependent uncertainty, sensitivity and reference-class discipline.",
       "current_canonical_implementation": "cortex.estimation.fermi@0.1.0 with decomposition, Gaussian-copula dependent Monte Carlo, sensitivity and bounded_estimate proof; GREG estimation family.",
-      "evidence_inspected": ["cortex/organs/estimation.py", "greg/cognition/solvers.py (fermi)", "docs/cortex/examples (estimate dependent inputs)", "docs/cortex/verbatim-register.json A05/B10"],
-      "status": {"capability": "IMPLEMENTED", "evidence_ladder": "INTEGRATED"},
+      "evidence_inspected": [
+        "cortex/organs/estimation.py",
+        "greg/cognition/solvers.py (fermi)",
+        "docs/cortex/examples (estimate dependent inputs)",
+        "docs/cortex/verbatim-register.json A05/B10"
+      ],
+      "status": {
+        "capability": "IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
       "substrate": "numpy/scipy pinned open-source stack.",
       "input_contract": "Estimate decomposition, ranges/distributions, dependence and assumptions.",
       "output_contract": "bounded_estimate artifact with intervals, sensitivity, assumptions and provenance.",
@@ -98,7 +187,10 @@
       "verifier": "Deterministic seeded tests, dependent-input examples, adversarial review of assumptions, freeze manifests for reported runs.",
       "integration_path": "Canonical estimation organ routed by geometry; calibration consumes future real outcomes only through canonical memory.",
       "routing_eligibility": "Eligible for estimation geometry; abstains on missing inputs/dependency.",
-      "tests": ["tests/unit/test_cortex_routes.py", "tests/unit/test_greg_cognition.py"],
+      "tests": [
+        "tests/unit/test_cortex_routes.py",
+        "tests/unit/test_greg_cognition.py"
+      ],
       "real_world_evidence": "none — no outcome calibration set.",
       "blocker": "External calibration requires real outcomes (R12.2).",
       "next_build": "No core rebuild; connect outcome calibration when real outcomes exist.",
@@ -110,11 +202,23 @@
       "title": "D — formal SAT/SMT/Z3 intelligence",
       "level": "L3",
       "directive_ref": "L3 D; review A08/A32/B07",
-      "register_lineage": ["A08", "A32", "B07"],
+      "register_lineage": [
+        "A08",
+        "A32",
+        "B07"
+      ],
       "intended_function": "Deductive constraint solving and entailment with witnesses, UNSAT and a completeness gate from requirements to model.",
       "current_canonical_implementation": "cortex.formal.z3@0.2.0 formed organ; formalization completeness gate implemented; GREG formal family; second formal engine CP-SAT provides degeneracy and independent re-check.",
-      "evidence_inspected": ["cortex/organs/formal.py", "cortex/organs/formal_eval.py", "cortex/organs/cpsat.py", "docs/cortex/verbatim-register.json A08/A32/B07"],
-      "status": {"capability": "IMPLEMENTED", "evidence_ladder": "INTEGRATED"},
+      "evidence_inspected": [
+        "cortex/organs/formal.py",
+        "cortex/organs/formal_eval.py",
+        "cortex/organs/cpsat.py",
+        "docs/cortex/verbatim-register.json A08/A32/B07"
+      ],
+      "status": {
+        "capability": "IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
       "substrate": "z3-solver; ortools for independent checking.",
       "input_contract": "Formal model schema; requirement-to-model completeness must be explicit or FORMALIZATION_INCOMPLETE.",
       "output_contract": "formal_model artifacts, witnesses, UNSAT, entailment results.",
@@ -122,7 +226,10 @@
       "verifier": "Independent engine re-check, brute force small instances, mutation checks, completeness-gate tests.",
       "integration_path": "B07 extends the same formal organ/contracts for temporal, deontic and bounded first-order theories; no new authority for deontic conclusions.",
       "routing_eligibility": "Eligible with complete supported formalization; otherwise abstain/handoff.",
-      "tests": ["tests/unit/test_cortex_formal_engines.py", "tests/unit/test_cortex_pipeline.py"],
+      "tests": [
+        "tests/unit/test_cortex_formal_engines.py",
+        "tests/unit/test_cortex_pipeline.py"
+      ],
       "real_world_evidence": "none",
       "blocker": "Temporal/deontic/first-order extensions unbuilt; deontic output remains normative and cannot create legal authority.",
       "next_build": "B07 formal extensions (partition queue item 9), each with theory-specific verifier and abstention.",
@@ -134,11 +241,21 @@
       "title": "E — constraint/CP/CP-SAT intelligence",
       "level": "L3",
       "directive_ref": "L3 E; review A09",
-      "register_lineage": ["A09"],
+      "register_lineage": [
+        "A09"
+      ],
       "intended_function": "Discrete constraint programming and scheduling with feasible witnesses and certified infeasibility/optimality where proven.",
       "current_canonical_implementation": "cortex.optimization.cpsat@0.2.0 formed certified organ supersedes reserved disabled 0.1.0 profile while preserving SUPERSEDED lineage; schedule extraction composes into it; GREG optimization family also exposes ortools.",
-      "evidence_inspected": ["cortex/organs/cpsat.py", "cortex/genome.py (0.2.0 lineage)", "cortex/organs/schedule_extraction.py", "docs/cortex/dependency-partition-2026-10-03.json A09"],
-      "status": {"capability": "IMPLEMENTED", "evidence_ladder": "INTEGRATED"},
+      "evidence_inspected": [
+        "cortex/organs/cpsat.py",
+        "cortex/genome.py (0.2.0 lineage)",
+        "cortex/organs/schedule_extraction.py",
+        "docs/cortex/dependency-partition-2026-10-03.json A09"
+      ],
+      "status": {
+        "capability": "IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
       "substrate": "ortools CP-SAT.",
       "input_contract": "CP model schema and schedule-composition artifacts; bounded solver calls.",
       "output_contract": "Witness and optimization_certificate; FEASIBLE/OPTIMAL/UNSAT kept distinct.",
@@ -146,7 +263,11 @@
       "verifier": "Independent Z3 re-check where expressible, UNSAT optimality certificates, brute force small instances.",
       "integration_path": "A09 remainder extends the same organ to broader constraint models and coordinates with MIP/matching rather than adding a second constraint router.",
       "routing_eligibility": "Eligible for supported CP/optimization geometry; aggregate solver budget refusal precedes execution.",
-      "tests": ["tests/unit/test_cortex_formal_engines.py", "tests/unit/test_cortex_formed_organs.py", "tests/unit/test_cortex_schedule_composition.py"],
+      "tests": [
+        "tests/unit/test_cortex_formal_engines.py",
+        "tests/unit/test_cortex_formed_organs.py",
+        "tests/unit/test_cortex_schedule_composition.py"
+      ],
       "real_world_evidence": "none",
       "blocker": "Broader MIP/matching and model coverage unbuilt, not externally blocked.",
       "next_build": "A09/B08 coherent solver slice: MIP/matching with certificates and shared formal contracts.",
@@ -158,11 +279,21 @@
       "title": "F — optimization/operations-research intelligence",
       "level": "L3",
       "directive_ref": "L3 F; review B08",
-      "register_lineage": ["B08"],
+      "register_lineage": [
+        "B08"
+      ],
       "intended_function": "OR optimization across discrete and continuous models, preserving FEASIBLE versus OPTIMAL and certificate-backed claims.",
       "current_canonical_implementation": "CP-SAT certified optimization plus cortex.optimization.continuous@0.1.0 LP with duality certificates; GREG optimization family; formed functions supply certified engines under canonical routing.",
-      "evidence_inspected": ["cortex/organs/continuous.py", "cortex/organs/cpsat.py", "cortex/organs/formed.py", "docs/cortex/examples (certified formal optimization)"],
-      "status": {"capability": "IMPLEMENTED", "evidence_ladder": "INTEGRATED"},
+      "evidence_inspected": [
+        "cortex/organs/continuous.py",
+        "cortex/organs/cpsat.py",
+        "cortex/organs/formed.py",
+        "docs/cortex/examples (certified formal optimization)"
+      ],
+      "status": {
+        "capability": "IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
       "substrate": "ortools; scipy; numpy.",
       "input_contract": "Optimization objectives/constraints/bounds in supported schemas; resource_limits include solver budget.",
       "output_contract": "optimization_certificate with primal/dual or UNSAT evidence and honest status.",
@@ -170,7 +301,11 @@
       "verifier": "Duality certificates, CP-SAT optimality certificates, independent recomputation, adversarial verifier.",
       "integration_path": "B08 adds MIP and matching through existing optimization organs and formed-function qualification; no separate OR service or routing plane.",
       "routing_eligibility": "Eligible for supported optimization geometry; missing objective/constraints or excess aggregate budget abstains/refuses.",
-      "tests": ["tests/unit/test_cortex_formal_engines.py", "tests/unit/test_cortex_formed_organs.py", "tests/unit/test_cortex_npart_composition.py"],
+      "tests": [
+        "tests/unit/test_cortex_formal_engines.py",
+        "tests/unit/test_cortex_formed_organs.py",
+        "tests/unit/test_cortex_npart_composition.py"
+      ],
       "real_world_evidence": "none",
       "blocker": "MIP/matching coverage unbuilt; no external blocker for a bounded slice.",
       "next_build": "A09/B08 MIP/matching certified slice, candidate for a subsequent matrix-selected build after VOI/metaconsensus.",
@@ -182,11 +317,21 @@
       "title": "G — graph/network intelligence",
       "level": "L3",
       "directive_ref": "L3 G; review A10/B09",
-      "register_lineage": ["A10", "B09"],
+      "register_lineage": [
+        "A10",
+        "B09"
+      ],
       "intended_function": "Network reasoning with inspectable, independently checkable graph answers.",
       "current_canonical_implementation": "cortex.graph.search@0.2.0 formed organ for shortest paths and max flow with GREG-certified answers; GREG graph family (networkx) and search family.",
-      "evidence_inspected": ["cortex/organs/graphsearch.py", "greg/cognition/solvers.py (graph/search)", "docs/cortex/dependency-partition-2026-10-03.json A10/B09"],
-      "status": {"capability": "IMPLEMENTED", "evidence_ladder": "INTEGRATED"},
+      "evidence_inspected": [
+        "cortex/organs/graphsearch.py",
+        "greg/cognition/solvers.py (graph/search)",
+        "docs/cortex/dependency-partition-2026-10-03.json A10/B09"
+      ],
+      "status": {
+        "capability": "IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
       "substrate": "networkx; stdlib.",
       "input_contract": "Typed nodes/edges, capacities, source/sink and operation.",
       "output_contract": "search_trace with path/flow, cost and verification material.",
@@ -194,7 +339,10 @@
       "verifier": "GREG-certified answers, independent recomputation and formed-organ tests.",
       "integration_path": "A10/B09 extend the same graph organ with further algorithms (including matching where graph-native) and geometry fields from B29.",
       "routing_eligibility": "Eligible for graph/search geometry with complete graph inputs.",
-      "tests": ["tests/unit/test_cortex_formed_organs.py", "tests/unit/test_greg_cortex_bridge.py"],
+      "tests": [
+        "tests/unit/test_cortex_formed_organs.py",
+        "tests/unit/test_greg_cortex_bridge.py"
+      ],
       "real_world_evidence": "none",
       "blocker": "Algorithm breadth unbuilt; no external blocker for bounded additions.",
       "next_build": "A10/B09 graph algorithm expansion, coordinated with A09/B08 matching/MIP to avoid duplicate ownership.",
@@ -206,11 +354,21 @@
       "title": "H — search/algorithmic intelligence",
       "level": "L3",
       "directive_ref": "L3 H; review B13",
-      "register_lineage": ["B13"],
+      "register_lineage": [
+        "B13"
+      ],
       "intended_function": "General algorithmic/heuristic state-space search beyond the graph cases already certified.",
       "current_canonical_implementation": "GREG search state_search and graph/search organ provide bounded search; cortex.search.heuristic reserved (A*/MCTS-style breadth not implemented as a cortex organ).",
-      "evidence_inspected": ["greg/cognition/solvers.py (search)", "cortex/organs/graphsearch.py", "cortex/genome.py (cortex.search.heuristic)", "docs/cortex/dependency-partition-2026-10-03.json B13"],
-      "status": {"capability": "PARTIALLY IMPLEMENTED", "evidence_ladder": "TESTED"},
+      "evidence_inspected": [
+        "greg/cognition/solvers.py (search)",
+        "cortex/organs/graphsearch.py",
+        "cortex/genome.py (cortex.search.heuristic)",
+        "docs/cortex/dependency-partition-2026-10-03.json B13"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "TESTED"
+      },
       "substrate": "networkx; stdlib.",
       "input_contract": "State-space definition, transition function, goal test, bounds.",
       "output_contract": "search_trace with path, expansions and limits; abstention on unbounded/underspecified spaces.",
@@ -218,7 +376,10 @@
       "verifier": "Trace replay and known-instance tests; heuristic optimality must not be claimed without proof.",
       "integration_path": "Any heuristic organ qualifies through reserved cortex.search.heuristic and reuses graph/search contracts.",
       "routing_eligibility": "Existing search eligible; heuristic cortex family withheld.",
-      "tests": ["tests/unit/test_greg_cognition.py", "tests/unit/test_cortex_formed_organs.py"],
+      "tests": [
+        "tests/unit/test_greg_cognition.py",
+        "tests/unit/test_cortex_formed_organs.py"
+      ],
       "real_world_evidence": "none",
       "blocker": "Partition B13: reserved-family attach plus evidence; no measured demand establishing heuristic cortex activation.",
       "next_build": "Do not activate ahead of evidence; define the smallest heuristic benchmark only when a real routing deficit names it.",
@@ -230,11 +391,23 @@
       "title": "I — probabilistic/Bayesian intelligence",
       "level": "L3",
       "directive_ref": "L3 I; review A06/B11",
-      "register_lineage": ["A06", "B11"],
+      "register_lineage": [
+        "A06",
+        "B11"
+      ],
       "intended_function": "Explicit probabilistic updating and prediction that distinguishes uncertainty from ignorance.",
       "current_canonical_implementation": "GREG probabilistic beta_update solver with posterior proof class; estimation organ supplies Monte Carlo uncertainty; unresolved class preserves ignorance. cortex.probabilistic.bayes remains reserved/disabled — the GREG mechanism does not make that cortex organ enabled.",
-      "evidence_inspected": ["greg/cognition/solvers.py (bayesian)", "greg/cognition/contracts.py", "cortex/organs/estimation.py", "cortex/genome.py", "docs/cortex/dependency-partition-2026-10-03.json A06/B11"],
-      "status": {"capability": "PARTIALLY IMPLEMENTED", "evidence_ladder": "TESTED"},
+      "evidence_inspected": [
+        "greg/cognition/solvers.py (bayesian)",
+        "greg/cognition/contracts.py",
+        "cortex/organs/estimation.py",
+        "cortex/genome.py",
+        "docs/cortex/dependency-partition-2026-10-03.json A06/B11"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "TESTED"
+      },
       "substrate": "Python/numpy/scipy.",
       "input_contract": "Prior and observation counts for Beta update; declared distributions for estimation.",
       "output_contract": "posterior / bounded_estimate artifacts with assumptions; no posterior from absent prior/input.",
@@ -242,7 +415,9 @@
       "verifier": "Conjugate-update unit tests and deterministic estimation tests; future calibration against real outcomes.",
       "integration_path": "Extend GREG probabilistic family contracts; cortex Bayesian organ only through reserved attach plus evidence, sharing one receipt envelope.",
       "routing_eligibility": "GREG probabilistic eligible; cortex bayes withheld.",
-      "tests": ["tests/unit/test_greg_cognition.py"],
+      "tests": [
+        "tests/unit/test_greg_cognition.py"
+      ],
       "real_world_evidence": "none — no calibration outcomes.",
       "blocker": "A06/B11: founder attach for cortex family and real outcomes for calibration; richer Bayesian models unbuilt.",
       "next_build": "No unscheduled cortex activation; when attached, begin with conjugate models already present in GREG and prove calibration on real records.",
@@ -254,11 +429,22 @@
       "title": "J — causal intelligence",
       "level": "L3",
       "directive_ref": "L3 J; review A07/B12",
-      "register_lineage": ["A07", "B12"],
+      "register_lineage": [
+        "A07",
+        "B12"
+      ],
       "intended_function": "Causal identification and effect estimation only under explicit designs/assumptions; correlation must never silently become causation.",
       "current_canonical_implementation": "cortex.evidence_causal@0.1.0 with identification gating, refutations, bootstrap confidence intervals, provenance and contradictions; GREG causal treatment_effect family.",
-      "evidence_inspected": ["cortex/organs/evidence_causal.py", "greg/cognition/solvers.py (causal)", "docs/cortex/examples (causal identified, unmeasured-confounding)", "docs/cortex/verbatim-register.json A07/B12"],
-      "status": {"capability": "IMPLEMENTED", "evidence_ladder": "INTEGRATED"},
+      "evidence_inspected": [
+        "cortex/organs/evidence_causal.py",
+        "greg/cognition/solvers.py (causal)",
+        "docs/cortex/examples (causal identified, unmeasured-confounding)",
+        "docs/cortex/verbatim-register.json A07/B12"
+      ],
+      "status": {
+        "capability": "IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
       "substrate": "numpy/scipy; stdlib.",
       "input_contract": "Causal query, identifying design/assumptions, data/evidence and provenance.",
       "output_contract": "causal_identification artifact or UNIDENTIFIED with missing resolving information.",
@@ -266,7 +452,10 @@
       "verifier": "Refutation tests, unmeasured-confounding abstention examples, adversarial verification.",
       "integration_path": "Canonical evidence/causal organ; outcome-based credit uses B34 passive fields before any stronger causal claim.",
       "routing_eligibility": "Eligible for causal/evidence geometry; non-identification is a first-class result.",
-      "tests": ["tests/unit/test_cortex_routes.py", "tests/unit/test_cortex_pipeline.py"],
+      "tests": [
+        "tests/unit/test_cortex_routes.py",
+        "tests/unit/test_cortex_pipeline.py"
+      ],
       "real_world_evidence": "none — fixtures do not establish real effects.",
       "blocker": "Real causal validation needs external intervention/outcome data.",
       "next_build": "B34 passive causal-credit receipt fields; no stronger claims without designs and outcomes.",
@@ -278,11 +467,21 @@
       "title": "K — control/homeostatic intelligence",
       "level": "L3",
       "directive_ref": "L3 K; review A11/B14",
-      "register_lineage": ["A11", "B14"],
+      "register_lineage": [
+        "A11",
+        "B14"
+      ],
       "intended_function": "Bounded feedback/homeostatic control over declared setpoints without acquiring authority or becoming general autonomous survival.",
       "current_canonical_implementation": "GREG control pid solver with control_trace; micro setpoint mechanism; cortex.control.feedback and primitive basal feedback profiles reserved/disabled.",
-      "evidence_inspected": ["greg/cognition/solvers.py (control, micro)", "cortex/genome.py", "docs/cortex/dependency-partition-2026-10-03.json A11/B14"],
-      "status": {"capability": "PARTIALLY IMPLEMENTED", "evidence_ladder": "TESTED"},
+      "evidence_inspected": [
+        "greg/cognition/solvers.py (control, micro)",
+        "cortex/genome.py",
+        "docs/cortex/dependency-partition-2026-10-03.json A11/B14"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "TESTED"
+      },
       "substrate": "Python stdlib/numpy.",
       "input_contract": "Setpoint, measured state, gains and hard bounds.",
       "output_contract": "control_trace with proposed bounded control values; no actuator effect.",
@@ -290,7 +489,9 @@
       "verifier": "Deterministic trajectory/unit tests and bound checks; any physical effect requires separate authorized adapters outside cortex.",
       "integration_path": "Cortex feedback organ only via reserved gate; physical organs attach through existing Kernel authority, never through cognition.",
       "routing_eligibility": "GREG control eligible read-only; cortex feedback withheld.",
-      "tests": ["tests/unit/test_greg_cognition.py"],
+      "tests": [
+        "tests/unit/test_greg_cognition.py"
+      ],
       "real_world_evidence": "none — no physical closed-loop deployment.",
       "blocker": "A11/B14 founder attach plus evidence; no physical hardware/authorization for real control.",
       "next_build": "No activation; define stability/bounds tests when a real homeostatic deficit is named.",
@@ -302,11 +503,20 @@
       "title": "L — sequential-decision intelligence",
       "level": "L3",
       "directive_ref": "L3 L; review B15",
-      "register_lineage": ["B15"],
+      "register_lineage": [
+        "B15"
+      ],
       "intended_function": "Sequential decisions under explicit state/action/reward/transition models with bounded exploration and honest comparison.",
       "current_canonical_implementation": "GREG sequential mdp solver with search_trace; cortex.sequential.bandit reserved; no evidence that bandit/MDP beats simpler routes on frozen comparisons.",
-      "evidence_inspected": ["greg/cognition/solvers.py (sequential)", "cortex/genome.py (cortex.sequential.bandit)", "docs/cortex/dependency-partition-2026-10-03.json B15"],
-      "status": {"capability": "PARTIALLY IMPLEMENTED", "evidence_ladder": "TESTED"},
+      "evidence_inspected": [
+        "greg/cognition/solvers.py (sequential)",
+        "cortex/genome.py (cortex.sequential.bandit)",
+        "docs/cortex/dependency-partition-2026-10-03.json B15"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "TESTED"
+      },
       "substrate": "Python/numpy.",
       "input_contract": "MDP states/actions/transitions/rewards/discount/horizon and bounds.",
       "output_contract": "Policy/value proposal with search_trace; no execution authority.",
@@ -314,7 +524,9 @@
       "verifier": "Known-MDP dynamic-programming tests; future frozen comparisons against constituent/simple routes.",
       "integration_path": "Bandit or richer sequential organs only through reserved gate and canonical evaluation; no autonomous reward hacking or goal creation.",
       "routing_eligibility": "GREG sequential eligible read-only; cortex bandit withheld.",
-      "tests": ["tests/unit/test_greg_cognition.py"],
+      "tests": [
+        "tests/unit/test_greg_cognition.py"
+      ],
       "real_world_evidence": "none — no online outcomes or exploration in reality.",
       "blocker": "B15 attach plus evidence; zero real outcomes for online learning.",
       "next_build": "No activation; build frozen known-MDP comparisons before any bandit qualification.",
@@ -329,8 +541,16 @@
       "register_lineage": [],
       "intended_function": "Choose observations/actions that reduce task-relevant uncertainty under a bounded model, rather than passively scoring all information equally.",
       "current_canonical_implementation": "cortex.meta.active_inference is a reserved disabled genome profile; nearest executable mechanisms are information-value solving, missing-observation naming and bounded_test dispositions. No active-inference loop is implemented.",
-      "evidence_inspected": ["cortex/genome.py (cortex.meta.active_inference)", "greg/cognition/solvers.py (information)", "cortex/organs/evidence_causal.py", "cortex/contracts.py (DISPOSITIONS)"],
-      "status": {"capability": "BLOCKED", "evidence_ladder": "SCAFFOLDED"},
+      "evidence_inspected": [
+        "cortex/genome.py (cortex.meta.active_inference)",
+        "greg/cognition/solvers.py (information)",
+        "cortex/organs/evidence_causal.py",
+        "cortex/contracts.py (DISPOSITIONS)"
+      ],
+      "status": {
+        "capability": "BLOCKED",
+        "evidence_ladder": "SCAFFOLDED"
+      },
       "substrate": "Reserved Python profile; any future implementation must use open/local substrates.",
       "input_contract": "Not enabled; future contract must declare beliefs, observation options, costs and bounded action proposal scope.",
       "output_contract": "Reserved; nearest current outputs are information_value and bounded_test/handoff receipts.",
@@ -338,7 +558,9 @@
       "verifier": "No active loop to verify; future gate must test value against passive VOI and prohibit unauthorized action.",
       "integration_path": "Compile the biological/inspired concept to an explicit mechanism at registration; build on N-VOI rather than a parallel perception stack; reserved attach required.",
       "routing_eligibility": "Withheld (reserved); no route may select cortex.meta.active_inference.",
-      "tests": ["tests/unit/test_cortex_gates_genome.py (reserved seed rule)"],
+      "tests": [
+        "tests/unit/test_cortex_gates_genome.py (reserved seed rule)"
+      ],
       "real_world_evidence": "none",
       "blocker": "Reserved-family attach plus a real perception/evidence deficit; no authorized active-perception environment.",
       "next_build": "First deliver N-VOI and metaconsensus; only then define an active-observation experiment if its expected value beats passive VOI.",
@@ -350,11 +572,23 @@
       "title": "N — information/Value-of-Information intelligence",
       "level": "L3",
       "directive_ref": "L3 N; review A12/B17",
-      "register_lineage": ["A12", "B17"],
+      "register_lineage": [
+        "A12",
+        "B17"
+      ],
       "intended_function": "Value resolving information by its ability to change a consequential decision, including when to stop acquiring information.",
       "current_canonical_implementation": "GREG information value_of_information solver with information_value proof; evidence/causal organ names missing observations; receipts name missing resolving information. cortex.information.voi reserved/disabled; no full decision-linked VOI organ.",
-      "evidence_inspected": ["greg/cognition/solvers.py (information)", "cortex/organs/evidence_causal.py", "cortex/contracts.py", "cortex/genome.py", "docs/cortex/dependency-partition-2026-10-03.json selected_next.queue_after item 1"],
-      "status": {"capability": "PARTIALLY IMPLEMENTED", "evidence_ladder": "TESTED"},
+      "evidence_inspected": [
+        "greg/cognition/solvers.py (information)",
+        "cortex/organs/evidence_causal.py",
+        "cortex/contracts.py",
+        "cortex/genome.py",
+        "docs/cortex/dependency-partition-2026-10-03.json selected_next.queue_after item 1"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "TESTED"
+      },
       "substrate": "Python stdlib/numpy; existing contracts.",
       "input_contract": "Current decision alternatives, uncertainty, candidate observations, cost and consequence bounds.",
       "output_contract": "information_value artifact with expected decision change, cost, stop/acquire/abstain recommendation bounded to read-only cognition.",
@@ -362,7 +596,9 @@
       "verifier": "Analytic small-decision cases, zero/negative-value cases, independence from fabricated probabilities, adversarial checks.",
       "integration_path": "Build behind reserved cortex.information.voi gate using existing GREG information mechanism and canonical receipts; integrate with routing/metabolism, not a second decision system.",
       "routing_eligibility": "GREG information eligible; new cortex VOI withheld until qualified.",
-      "tests": ["tests/unit/test_greg_cognition.py"],
+      "tests": [
+        "tests/unit/test_greg_cognition.py"
+      ],
       "real_world_evidence": "none",
       "blocker": "No external blocker for a bounded deterministic VOI organ slice; reserved activation remains governed.",
       "next_build": "SELECTED NEXT after completed 0.4.0 composition: A12/A38/B17 VOI organ cortex.information.voi behind reserved gate, with tests and routing examples (partition queue item 1).",
@@ -374,11 +610,22 @@
       "title": "O — pattern intelligence",
       "level": "L3",
       "directive_ref": "L3 O; review A15/B16",
-      "register_lineage": ["A15", "B16"],
+      "register_lineage": [
+        "A15",
+        "B16"
+      ],
       "intended_function": "Detect regularities/anomalies as pattern evidence while remaining epistemically separate from causal inference.",
       "current_canonical_implementation": "GREG pattern anomalies solver with pattern_evidence; cortex.pattern.anomaly and basal anomaly patterning reserved/disabled.",
-      "evidence_inspected": ["greg/cognition/solvers.py (pattern)", "greg/cognition/contracts.py (pattern_evidence)", "cortex/genome.py", "docs/cortex/dependency-partition-2026-10-03.json A15/B16"],
-      "status": {"capability": "PARTIALLY IMPLEMENTED", "evidence_ladder": "TESTED"},
+      "evidence_inspected": [
+        "greg/cognition/solvers.py (pattern)",
+        "greg/cognition/contracts.py (pattern_evidence)",
+        "cortex/genome.py",
+        "docs/cortex/dependency-partition-2026-10-03.json A15/B16"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "TESTED"
+      },
       "substrate": "Python/numpy.",
       "input_contract": "Observations and declared detection parameters/baselines; no simulated real baseline permitted for evaluation claims.",
       "output_contract": "pattern_evidence artifacts with scores and limits; no causal_identification output.",
@@ -386,7 +633,10 @@
       "verifier": "Known-pattern/anomaly unit tests; causal organ cannot consume pattern output as identified cause.",
       "integration_path": "Cortex pattern organ only via reserved attach and evidence; share provenance and receipt envelope.",
       "routing_eligibility": "GREG pattern eligible; cortex pattern withheld.",
-      "tests": ["tests/unit/test_greg_cognition.py", "tests/unit/test_cortex_routes.py (causal separation)"],
+      "tests": [
+        "tests/unit/test_greg_cognition.py",
+        "tests/unit/test_cortex_routes.py (causal separation)"
+      ],
       "real_world_evidence": "none",
       "blocker": "A15/B16 attach plus evidence; no real labeled outcome set for detector quality.",
       "next_build": "No activation; if a real deficit appears, qualify a bounded detector with false-positive/negative tests.",
@@ -398,11 +648,23 @@
       "title": "P — simulation/counterfactual intelligence",
       "level": "L3",
       "directive_ref": "L3 P; review A13/B20",
-      "register_lineage": ["A13", "B20"],
+      "register_lineage": [
+        "A13",
+        "B20"
+      ],
       "intended_function": "Executable simulation and counterfactual exploration whose outputs are always labeled generated evidence, not reality.",
       "current_canonical_implementation": "GREG simulation simulate solver and Fermi Monte Carlo; twins/ package outside cortex; cortex.simulation.twin reserved/disabled. No calibrated simulation twin or simulated evaluation baseline.",
-      "evidence_inspected": ["greg/cognition/solvers.py (simulation)", "cortex/organs/estimation.py", "twins/", "cortex/genome.py", "docs/cortex/dependency-partition-2026-10-03.json A13/B20"],
-      "status": {"capability": "PARTIALLY IMPLEMENTED", "evidence_ladder": "TESTED"},
+      "evidence_inspected": [
+        "greg/cognition/solvers.py (simulation)",
+        "cortex/organs/estimation.py",
+        "twins/",
+        "cortex/genome.py",
+        "docs/cortex/dependency-partition-2026-10-03.json A13/B20"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "TESTED"
+      },
       "substrate": "numpy/scipy; existing twins package; no paid service.",
       "input_contract": "Explicit model, initial state, parameters, horizon, seed and calibration provenance where claimed.",
       "output_contract": "simulation_trace labeled generated evidence; calibrated/uncalibrated status explicit.",
@@ -410,7 +672,9 @@
       "verifier": "Deterministic replay and invariants; external claims require real calibration data and holdout error.",
       "integration_path": "Use existing twins/ ownership; cortex twin only via reserved gate, never a duplicate simulation world or evidence tier promotion.",
       "routing_eligibility": "GREG simulation eligible read-only; cortex twin withheld.",
-      "tests": ["tests/unit/test_greg_cognition.py"],
+      "tests": [
+        "tests/unit/test_greg_cognition.py"
+      ],
       "real_world_evidence": "none — uncalibrated simulations cannot supply it.",
       "blocker": "A13/B20 founder attach and real calibration; 'no simulated baselines, ever' for evaluation.",
       "next_build": "No twin activation; specify calibration contract before any external-use proposal.",
@@ -422,11 +686,21 @@
       "title": "Q — game-theoretic intelligence",
       "level": "L3",
       "directive_ref": "L3 Q; review A14",
-      "register_lineage": ["A14"],
+      "register_lineage": [
+        "A14"
+      ],
       "intended_function": "Analyze strategic interaction, incentives and worst-case responses under explicit game models.",
       "current_canonical_implementation": "GREG game minimax family (scipy) and protection/deterrence mechanisms; cortex.game.mechanism reserved. Accountability organ computes bounded expected-value models without treating them as real-world proof.",
-      "evidence_inspected": ["greg/cognition/solvers.py (game)", "greg/cognition/catalog.py (game/protection)", "cortex/organs/deterrence.py", "cortex/genome.py"],
-      "status": {"capability": "PARTIALLY IMPLEMENTED", "evidence_ladder": "INTEGRATED"},
+      "evidence_inspected": [
+        "greg/cognition/solvers.py (game)",
+        "greg/cognition/catalog.py (game/protection)",
+        "cortex/organs/deterrence.py",
+        "cortex/genome.py"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
       "substrate": "scipy/numpy; stdlib.",
       "input_contract": "Players, strategies, payoffs, information and bounds; explicit model assumptions.",
       "output_contract": "game_model artifacts with equilibrium/worst-case analysis and model limits.",
@@ -434,7 +708,10 @@
       "verifier": "Known-game solutions, adversarial review of payoff assumptions, independent recomputation where possible.",
       "integration_path": "Extend GREG game/protection families and reserved cortex.game.mechanism only through its gate; mechanism-design remainder tracked at R.",
       "routing_eligibility": "GREG game and deterrence organ eligible under strategic geometry with handoff for consequential legal/normative actions.",
-      "tests": ["tests/unit/test_greg_cognition.py", "tests/unit/test_cortex_routes.py"],
+      "tests": [
+        "tests/unit/test_greg_cognition.py",
+        "tests/unit/test_cortex_routes.py"
+      ],
       "real_world_evidence": "none — modeled deterrence is not observed behavior.",
       "blocker": "A14 reserved attach plus evidence for broader cortex game organ; real strategic validation absent.",
       "next_build": "No broad activation; improve model/assumption verification when a concrete decision requires it.",
@@ -446,11 +723,21 @@
       "title": "R — mechanism-design intelligence",
       "level": "L3",
       "directive_ref": "L3 R; review B18",
-      "register_lineage": ["B18"],
+      "register_lineage": [
+        "B18"
+      ],
       "intended_function": "Design rules/incentives whose desired behavior survives strategic participants, with lawful bounded interventions and no fabricated adoption.",
       "current_canonical_implementation": "Deterrence/accountability organ uses a closed lawful intervention vocabulary and event-log/evidence structure; settlement/eligibility mechanisms exist structurally in cognition. cortex.game.mechanism reserved; no general mechanism-design solver enabled.",
-      "evidence_inspected": ["cortex/organs/deterrence.py", "cortex/genome.py (cortex.game.mechanism)", "cortex/contracts.py", "docs/cortex/dependency-partition-2026-10-03.json B18"],
-      "status": {"capability": "PARTIALLY IMPLEMENTED", "evidence_ladder": "INTEGRATED"},
+      "evidence_inspected": [
+        "cortex/organs/deterrence.py",
+        "cortex/genome.py (cortex.game.mechanism)",
+        "cortex/contracts.py",
+        "docs/cortex/dependency-partition-2026-10-03.json B18"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
       "substrate": "Python stdlib/scipy where game models require it.",
       "input_contract": "Participants, actions, information, utilities, lawful intervention vocabulary and welfare constraints.",
       "output_contract": "game_model/protection artifacts with incentive analysis and human handoff for consequential interventions.",
@@ -458,7 +745,10 @@
       "verifier": "Incentive counterexamples, adversarial gaming tests, closed-vocabulary validation and collateral-harm vector checks.",
       "integration_path": "Extend existing deterrence/protection ownership; general mechanism designer qualifies only under reserved cortex.game.mechanism and constitutional constraints.",
       "routing_eligibility": "Bounded accountability models eligible; consequential intervention always handoff, never autonomous execution.",
-      "tests": ["tests/unit/test_cortex_routes.py", "tests/unit/test_cortex_pipeline.py"],
+      "tests": [
+        "tests/unit/test_cortex_routes.py",
+        "tests/unit/test_cortex_pipeline.py"
+      ],
       "real_world_evidence": "none — no deployed incentive mechanism or measured participant response.",
       "blocker": "B18 attach plus evidence; real participant behavior and authority required for deployment.",
       "next_build": "Preserve bounded vocabulary; add adversarial gaming cases before proposing any general designer.",
@@ -470,11 +760,21 @@
       "title": "S — adversarial intelligence",
       "level": "L3",
       "directive_ref": "L3 S; review B19",
-      "register_lineage": ["B19"],
+      "register_lineage": [
+        "B19"
+      ],
       "intended_function": "Attack conclusions from other intelligences, find counterexamples/shared assumptions and prevent unsupported recommendation.",
       "current_canonical_implementation": "cortex.verifier.adversarial@0.1.0 model-free attack with findings, shared-dependency recording and critical blocks on recommend; repository mutation checks and preserved failing verifier runs.",
-      "evidence_inspected": ["cortex/organs/adversarial.py", "scripts/ci/check_cortex_mutants.py", "verifier/runs/v4-2026-10-02T22-11-55.982277+00-00.json", "docs/cortex/verbatim-register.json B19"],
-      "status": {"capability": "IMPLEMENTED", "evidence_ladder": "INDEPENDENTLY VERIFIED"},
+      "evidence_inspected": [
+        "cortex/organs/adversarial.py",
+        "scripts/ci/check_cortex_mutants.py",
+        "verifier/runs/v4-2026-10-02T22-11-55.982277+00-00.json",
+        "docs/cortex/verbatim-register.json B19"
+      ],
+      "status": {
+        "capability": "IMPLEMENTED",
+        "evidence_ladder": "INDEPENDENTLY VERIFIED"
+      },
       "substrate": "Python stdlib plus solver-specific checkers; no model required.",
       "input_contract": "Candidate artifact, geometry, evidence, route and verification material.",
       "output_contract": "Findings with severity, counterarguments and blocked/allowed disposition effects.",
@@ -482,7 +782,11 @@
       "verifier": "Mutation testing verifies the verifier; independent fresh-clone replication; failures preserved rather than deleted.",
       "integration_path": "Mandatory canonical verification stage; metaconsensus will consume findings without averaging dissent.",
       "routing_eligibility": "Runs after solver routes; critical findings block recommend.",
-      "tests": ["tests/unit/test_cortex_pipeline.py", "tests/unit/test_cortex_formal_engines.py", "scripts/ci/check_cortex_mutants.py"],
+      "tests": [
+        "tests/unit/test_cortex_pipeline.py",
+        "tests/unit/test_cortex_formal_engines.py",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
       "real_world_evidence": "Verifier FAIL then PASS and fresh-clone replication are real executed engineering evidence, not commercial validation.",
       "blocker": "Coverage limited to implemented attack types; no adversary can prove absence of all flaws.",
       "next_build": "Add attack types with each new organ; wire findings into B30 metaconsensus.",
@@ -494,11 +798,20 @@
       "title": "T — executable mental models",
       "level": "L3",
       "directive_ref": "L3 T; review B28",
-      "register_lineage": ["B28"],
+      "register_lineage": [
+        "B28"
+      ],
       "intended_function": "Explicit executable models of a domain/agent that can be inspected, run and falsified rather than remaining prose.",
       "current_canonical_implementation": "cortex.meta.mental_models reserved/disabled. Executable formal, MDP, game and simulation models exist in their own organs, but there is no shared mental-model organ or model library.",
-      "evidence_inspected": ["cortex/genome.py (cortex.meta.mental_models)", "greg/cognition/solvers.py (sequential/game/simulation)", "docs/cortex/dependency-partition-2026-10-03.json B28"],
-      "status": {"capability": "BLOCKED", "evidence_ladder": "SCAFFOLDED"},
+      "evidence_inspected": [
+        "cortex/genome.py (cortex.meta.mental_models)",
+        "greg/cognition/solvers.py (sequential/game/simulation)",
+        "docs/cortex/dependency-partition-2026-10-03.json B28"
+      ],
+      "status": {
+        "capability": "BLOCKED",
+        "evidence_ladder": "SCAFFOLDED"
+      },
       "substrate": "Reserved Python profile; reuse existing solver substrates if qualified.",
       "input_contract": "Not enabled; future typed model reference, assumptions, state and query.",
       "output_contract": "Reserved; existing organs emit their own formal/game/simulation traces.",
@@ -506,7 +819,9 @@
       "verifier": "Reserved; future model must be executable, replayable and falsified against held-out observations.",
       "integration_path": "Do not build a parallel model world: reference canonical formal/game/simulation artifacts through one mental-model contract if attach is authorized.",
       "routing_eligibility": "Withheld (reserved).",
-      "tests": ["tests/unit/test_cortex_gates_genome.py (reserved seed rule)"],
+      "tests": [
+        "tests/unit/test_cortex_gates_genome.py (reserved seed rule)"
+      ],
       "real_world_evidence": "none",
       "blocker": "B28 founder attach plus evidence; no measured demand for a separate organ beyond existing executable models.",
       "next_build": "No independent build ahead of VOI/metaconsensus; first reuse existing executable models and record the deficit if composition fails.",
@@ -518,11 +833,22 @@
       "title": "U — human intelligence interfaces",
       "level": "L3",
       "directive_ref": "L3 U; review A25",
-      "register_lineage": ["A25"],
+      "register_lineage": [
+        "A25"
+      ],
       "intended_function": "Structured elicitation, human judgment, panels and accountable handoffs where legitimacy, values or lived evidence are required.",
       "current_canonical_implementation": "GREG human human_review family with human_judgment proof; router hands off financial/irreversible/legal/normative/institutional and human-led victim-protection actions; cortex.human.panel reserved. No real panel participants in evidence.",
-      "evidence_inspected": ["greg/cognition/solvers.py (human)", "cortex/routing.py", "docs/cortex/README.md", "cortex/genome.py", "docs/cortex/dependency-partition-2026-10-03.json A25"],
-      "status": {"capability": "PARTIALLY IMPLEMENTED", "evidence_ladder": "INTEGRATED"},
+      "evidence_inspected": [
+        "greg/cognition/solvers.py (human)",
+        "cortex/routing.py",
+        "docs/cortex/README.md",
+        "cortex/genome.py",
+        "docs/cortex/dependency-partition-2026-10-03.json A25"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
       "substrate": "Python contracts and existing mission/founder escalation paths; humans are external participants, not simulated substrates.",
       "input_contract": "Typed review request, evidence packet, question and required role; no synthetic human answers.",
       "output_contract": "human_judgment only when actually supplied by a human; otherwise HUMAN_REVIEW_REQUIRED/handoff.",
@@ -530,7 +856,11 @@
       "verifier": "Handoff routing tests and provenance checks; panel quorum rules must use real distinct participants.",
       "integration_path": "Existing Kernel/mission human authority paths; cortex.human.panel only with founder attach and real participants.",
       "routing_eligibility": "Mandatory handoffs eligible now; automated recommend prohibited for protected consequence classes; panel withheld.",
-      "tests": ["tests/unit/test_cortex_routes.py", "tests/unit/test_cortex_pipeline.py", "tests/unit/test_greg_cognition.py"],
+      "tests": [
+        "tests/unit/test_cortex_routes.py",
+        "tests/unit/test_cortex_pipeline.py",
+        "tests/unit/test_greg_cognition.py"
+      ],
       "real_world_evidence": "none — no real human panel or elicitation recorded.",
       "blocker": "A25 requires real human participants and founder attach; cannot be simulated away.",
       "next_build": "Preserve handoffs; specify panel contract/consent/appeal before requesting founder activation.",
@@ -542,11 +872,21 @@
       "title": "V — heterogeneous model routing over replaceable substrates",
       "level": "L3",
       "directive_ref": "L3 V; review B61",
-      "register_lineage": ["B61"],
+      "register_lineage": [
+        "B61"
+      ],
       "intended_function": "Route tasks across multiple replaceable model/tool substrates by capability, cost and evidence without any vendor becoming constitutional infrastructure.",
       "current_canonical_implementation": "Semantic/proposer interfaces isolate the model behind loopback local endpoints and abstain when unavailable; catalog manifests make solver substrates replaceable. Only a single configured local model path exists; no heterogeneous multi-model router or paid fallback.",
-      "evidence_inspected": ["cortex/organs/semantic.py", "greg/cognition/catalog.py", "docs/cortex/README.md (local model/NOT_RUN)", "docs/cortex/dependency-partition-2026-10-03.json B61"],
-      "status": {"capability": "FRONTIER", "evidence_ladder": "SCAFFOLDED"},
+      "evidence_inspected": [
+        "cortex/organs/semantic.py",
+        "greg/cognition/catalog.py",
+        "docs/cortex/README.md (local model/NOT_RUN)",
+        "docs/cortex/dependency-partition-2026-10-03.json B61"
+      ],
+      "status": {
+        "capability": "FRONTIER",
+        "evidence_ladder": "SCAFFOLDED"
+      },
       "substrate": "OpenAI-compatible loopback client boundary; open/local models preferred; solver substrates sympy/z3/ortools/networkx/scipy.",
       "input_contract": "Task geometry plus substrate manifests, cost/latency and evidence requirements; current live model input limited to configured local endpoint.",
       "output_contract": "Route/receipt identifying actual substrate; unavailable model yields ABSTAIN/NOT_RUN, never a simulated answer.",
@@ -554,7 +894,11 @@
       "verifier": "Frozen cross-substrate comparisons, deterministic replay where possible, availability/abstention tests; no vendor claim without execution.",
       "integration_path": "Extend existing catalog/proposer/semantic interfaces to multiple substrates behind the one router; do not create a model-owned authority or routing plane.",
       "routing_eligibility": "Local configured model only for semantic; deterministic organs route normally; unavailable substrates ineligible.",
-      "tests": ["tests/unit/test_cortex_routes.py", "tests/unit/test_greg_cognition.py", "tests/unit/test_greg_cortex_bridge.py"],
+      "tests": [
+        "tests/unit/test_cortex_routes.py",
+        "tests/unit/test_greg_cognition.py",
+        "tests/unit/test_greg_cortex_bridge.py"
+      ],
       "real_world_evidence": "none — live local model unreachable in sandbox; no multi-substrate external comparison.",
       "blocker": "B61 is a preserved destination requiring real substrates, access authority and comparative outcomes; reachable founder model infrastructure absent (R05.1).",
       "next_build": "Build substrate-neutral contracts through current VOI/geometry work; defer plural live routing until at least two lawful real substrates and frozen comparisons exist.",
@@ -566,11 +910,21 @@
       "title": "W — program synthesis/algorithm construction",
       "level": "L3",
       "directive_ref": "L3 W; review A16/B24; Capability Genesis GENERATE",
-      "register_lineage": ["A16"],
+      "register_lineage": [
+        "A16"
+      ],
       "intended_function": "Construct new algorithms/programs from a declared deficit, then test, adversarially test, verify and reject or register them; invention only after acquire/qualify/adapt/compose are exhausted.",
       "current_canonical_implementation": "cortex.developmental.program_synthesis reserved/disabled; CAPABILITY_DEFICIT and formed-function capability-genesis precedent exist, but GREG does not autonomously synthesize and register new organs. Mechanism Recombination Foundry is a collaboration method, not an executable synthesizer.",
-      "evidence_inspected": ["cortex/genome.py", "greg/cognition/contracts.py (CAPABILITY_DEFICIT abstention)", "docs/cortex/dependency-partition-2026-10-03.json A16/B24/B56", "verifier/runs (formed-function lineage evidence)"],
-      "status": {"capability": "BLOCKED", "evidence_ladder": "SCAFFOLDED"},
+      "evidence_inspected": [
+        "cortex/genome.py",
+        "greg/cognition/contracts.py (CAPABILITY_DEFICIT abstention)",
+        "docs/cortex/dependency-partition-2026-10-03.json A16/B24/B56",
+        "verifier/runs (formed-function lineage evidence)"
+      ],
+      "status": {
+        "capability": "BLOCKED",
+        "evidence_ladder": "SCAFFOLDED"
+      },
       "substrate": "Reserved Python profile; any generated code must run sandboxed with open/local toolchains.",
       "input_contract": "Future typed deficit, specification, examples, resource bounds and forbidden effects; not enabled now.",
       "output_contract": "Candidate program plus tests/proofs and REJECT or registration proposal; no self-activation or authority.",
@@ -578,7 +932,10 @@
       "verifier": "Specification tests, adversarial/fuzz cases, sandbox execution, independent review, formed-function verification before any attach.",
       "integration_path": "Use Capability Genesis and existing deficit/formed-function/Kernel attach path; Founder/authorized-human activation; no second registry or self-modifying authority.",
       "routing_eligibility": "Withheld; deficits abstain/escalate rather than route to an unregistered synthesizer.",
-      "tests": ["tests/unit/test_cortex_gates_genome.py", "tests/unit/test_greg_cognition.py (deficit paths)"],
+      "tests": [
+        "tests/unit/test_cortex_gates_genome.py",
+        "tests/unit/test_greg_cognition.py (deficit paths)"
+      ],
       "real_world_evidence": "none — no GREG-synthesized organ exists; human/AI-collaboration built organs are not autonomous synthesis.",
       "blocker": "A16/B24/B56: real measured deficit, sandbox evidence, founder attach and N4 gate; no real deficit/outcome stream.",
       "next_build": "Maintain honest deficit reporting; acquire/compose existing mechanisms first. Do not build autonomous synthesis without the N4/founder gates.",
@@ -593,8 +950,15 @@
       "register_lineage": [],
       "intended_function": "Translate MICA/CDPE-inspired morphogenetic/cooperative developmental ideas into explicit executable mechanisms with measurable function, not labels.",
       "current_canonical_implementation": "cortex.developmental.mica_field reserved/disabled and genome requires biological concepts to compile to mechanism details at registration. No enabled MICA/CDPE executor; related canonical frontier/destination documents are not implementations.",
-      "evidence_inspected": ["cortex/genome.py (cortex.developmental.mica_field and biological compile rule)", "docs/cortex/dependency-partition-2026-10-03.json frontier rows A48/B44", "docs/cortex/README.md reserved developmental families"],
-      "status": {"capability": "FRONTIER", "evidence_ladder": "SCAFFOLDED"},
+      "evidence_inspected": [
+        "cortex/genome.py (cortex.developmental.mica_field and biological compile rule)",
+        "docs/cortex/dependency-partition-2026-10-03.json frontier rows A48/B44",
+        "docs/cortex/README.md reserved developmental families"
+      ],
+      "status": {
+        "capability": "FRONTIER",
+        "evidence_ladder": "SCAFFOLDED"
+      },
       "substrate": "No selected executable substrate; reserved Python profile only.",
       "input_contract": "Not defined beyond reserved profile; completion requires explicit state, signals, local rules, bounds and query type.",
       "output_contract": "None enabled; future output must be typed developmental/collective trace with falsifiable claims.",
@@ -602,7 +966,9 @@
       "verifier": "Registration rejects uncompiled biology; future verifier must compare mechanism against non-MICA baseline and preserve negative results.",
       "integration_path": "First specify one minimal mechanism under the existing developmental genome and evaluate behind the reserved gate; no second Kernel, morphogenetic authority or duplicate developmental stack.",
       "routing_eligibility": "Withheld (reserved); cannot route.",
-      "tests": ["tests/unit/test_cortex_gates_genome.py (biological mechanism registration rule)"],
+      "tests": [
+        "tests/unit/test_cortex_gates_genome.py (biological mechanism registration rule)"
+      ],
       "real_world_evidence": "none",
       "blocker": "No compiled mechanism, attach, evaluation evidence or demonstrated advantage; underlying destination may require research (A48/B44).",
       "next_build": "Do not rename existing routing as MICA. If pursued, write one executable minimal mechanism and a decisive comparison before any activation request.",
@@ -614,11 +980,22 @@
       "title": "Y — Levin-inspired developmental intelligence",
       "level": "L3",
       "directive_ref": "L3 Y; review B46; do not literalize biology",
-      "register_lineage": ["B46"],
+      "register_lineage": [
+        "B46"
+      ],
       "intended_function": "Multi-scale bounded competency, light-cone-limited information use, repair/reorganization and developmental composition compiled to engineering mechanisms without consciousness/personhood claims.",
       "current_canonical_implementation": "Cognitive cells expose bounded light-cone/projection concepts over the canonical journal; 0.4.0 creates temporary bounded compositions per ProblemGeometry; genome enforces compile-to-mechanism for biological concepts; developmental/ package and reserved morphogenetic/MICA profiles remain separate from enabled cognition.",
-      "evidence_inspected": ["greg/cognition/cells.py", "cortex/routing.py (0.4.0 composition)", "cortex/genome.py", "developmental/", "docs/cortex/verbatim-register.json B46"],
-      "status": {"capability": "PARTIALLY IMPLEMENTED", "evidence_ladder": "INTEGRATED"},
+      "evidence_inspected": [
+        "greg/cognition/cells.py",
+        "cortex/routing.py (0.4.0 composition)",
+        "cortex/genome.py",
+        "developmental/",
+        "docs/cortex/verbatim-register.json B46"
+      ],
+      "status": {
+        "capability": "PARTIALLY IMPLEMENTED",
+        "evidence_ladder": "INTEGRATED"
+      },
       "substrate": "Python stdlib and existing journal/registry; no biological substrate or claim.",
       "input_contract": "Bounded geometry, local observations and explicit competency contracts; no organism-wide opaque state.",
       "output_contract": "Composed read-only artifacts and cell health/light-cone records; no claims of biological sentience.",
@@ -626,7 +1003,11 @@
       "verifier": "Composition/cell tests, cap honesty, independent artifact verification and explicit limits (not general homeostasis or autonomous persistent goals).",
       "integration_path": "Extend cells/composition and canonical developmental ownership; functional morphogenesis tracked separately in L4; no second learning/routing plane.",
       "routing_eligibility": "Existing cells/composition eligible under current gates; reserved developmental profiles withheld.",
-      "tests": ["tests/unit/test_greg_cognition.py", "tests/unit/test_cortex_npart_composition.py", "tests/unit/test_cortex_gates_genome.py"],
+      "tests": [
+        "tests/unit/test_greg_cognition.py",
+        "tests/unit/test_cortex_npart_composition.py",
+        "tests/unit/test_cortex_gates_genome.py"
+      ],
       "real_world_evidence": "none — no real repair/reorganization outcome stream.",
       "blocker": "Unscripted recovery and developmental adaptation lack real outcomes and reserved attach; constitutional limits on self-modification remain.",
       "next_build": "Use VOI/metaconsensus/geometry slices to strengthen bounded multi-scale cognition; pursue morphogenesis only through its evidence gates.",

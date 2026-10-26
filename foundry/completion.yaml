@@ -1376,7 +1376,7 @@
   - foundry/systems/build.py
   - foundry/systems/__init__.py
   - greg/foundry_bridge.py
-  interface: foundry.query toolchain; foundry.apply build|verify
+  interface: foundry.query toolchain; foundry.apply build|verify (system 53)
   limitations: Source bundle of the owned Python packages and data, not a wheel or OCI image; third-party packages are pinned
     by version in the manifest, not vendored.
   recovery: Rebuilds in a separate process must be byte-identical; the bundle runs from an empty directory.

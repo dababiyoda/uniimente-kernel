@@ -1,0 +1,155 @@
+{
+  "schema_version": "founder-deliberation/1",
+  "decision_id": "FOUNDRY-09-OCI-COMPLETION-20261026",
+  "classification": "standard",
+  "contributor": "KIMI",
+  "founder_intent_ids": ["INTENT-0037"],
+  "source_lineage": [
+    "Founder INTENT-0037: reconcile the Mind and close buildable gaps; leave VEPMC and real-world founder gates to the founder.",
+    "OPUS MAXIMUS 97: inspect, reconcile, converge, code, test, and integrate every safe reversible achievable requirement.",
+    "OPUS MAXIMUS 80: record a blocker and continue unrelated safe unblocked requirements.",
+    "OPUS MAXIMUS 60.16: inspect remaining Foundry obligations.",
+    "UNIIMENTE-KERNEL issue 96 and pull 196 coordination state read 2026-10-26.",
+    "System 9 PARTIAL gap in foundry/completion.yaml at fa80ace79eb1ac2cc4bf745918baf5587e1ae3f6.",
+    "GitHub hosted run 39984114068, job 120524216169, exact head fa80ace79eb1ac2cc4bf745918baf5587e1ae3f6."
+  ],
+  "scope": {
+    "system": 9,
+    "name": "Containers",
+    "allowed_paths": [
+      "foundry/completion.yaml system 9 only",
+      "foundry/evidence/system-09.json",
+      "docs/evidence/foundry-09-oci/2026-10-23/",
+      "docs/collaboration/deliberation-foundry-09-oci-completion-20261026.json"
+    ],
+    "forbidden_effects": [
+      "merge or direct default-branch write",
+      "live activation or deployment",
+      "spend or external contact",
+      "privileged escape probe",
+      "VEPMC increment",
+      "new authority, Kernel, GREG, mission, routing, or learning plane",
+      "organ, organ-pin, runtime, workflow, MCP, repair-admission, or unrelated completion-row edits"
+    ]
+  },
+  "problem": "System 9 remained PARTIAL because its local exercise intentionally packages but does not build an OCI image. The same exact source head already has a successful hosted OCI job whose committed proof gates require two identical independent image builds and six container-versus-host case matches. Completion must reconcile that stronger evidence without claiming access to uninspected artifact internals or converting sandbox success into real-world authority.",
+  "alternatives": [
+    {
+      "id": "proposed",
+      "name": "Bounded evidence reconciliation",
+      "mechanism": "Retain the local deterministic context exercise; bind exact-head hosted run and job metadata plus source hashes and committed proof gates; mark only system 9 COMPLETE at SANDBOX_VERIFIED; preserve all former gap text, negative evidence, limitations, and explicit recovery.",
+      "reversible": true
+    },
+    {
+      "id": "current-baseline",
+      "name": "PARTIAL despite hosted proof",
+      "mechanism": "Keep the existing row and require a future machine-local Docker build before any status change.",
+      "reversible": true
+    },
+    {
+      "id": "do-nothing",
+      "name": "Do nothing",
+      "mechanism": "Make no repository change and leave the hosted success as coordination-page prose only.",
+      "reversible": true
+    },
+    {
+      "id": "simplest-viable",
+      "name": "Link the green job",
+      "mechanism": "Change PARTIAL to COMPLETE and link the successful workflow run without a structured evidence record or boundary review.",
+      "reversible": true
+    },
+    {
+      "id": "strongest-competitor",
+      "name": "Require independent artifact and log reinspection",
+      "mechanism": "Keep PARTIAL until a reviewer downloads and inspects report.json, both OCI layouts, per-case outputs, and raw logs, or commissions a fresh independent proof with readable evidence.",
+      "reversible": true
+    },
+    {
+      "id": "reversible-experiment",
+      "name": "Local scoped commit and child draft",
+      "mechanism": "Commit only the evidence, row, and deliberation changes; rerun the OCI suite, full Foundry audit, and completion-contract suite; stage a child draft into pull 196 and let the integrator decide whether the evidence boundary is sufficient.",
+      "reversible": true
+    }
+  ],
+  "review_roles": [
+    {
+      "role": "founder-intent-keeper",
+      "review": "The change performs safe buildable gap closure while leaving merge, activation, VEPMC, and real-world consequence decisions with the founder."
+    },
+    {
+      "role": "repository-truth-reviewer",
+      "review": "The exact base, current destination head, implementation, proof workflow, tests, and completion enforcement were inspected before editing."
+    },
+    {
+      "role": "adversarial-evidence-reviewer",
+      "review": "A successful platform job is not equivalent to inspecting its artifact or raw logs. Completion is therefore explicitly bounded and not called independent case-level verification."
+    },
+    {
+      "role": "failure-and-recovery-reviewer",
+      "review": "Any reproduction mismatch, later source drift, or hosted-evidence contradiction must restore PARTIAL; retained negative evidence and the former gap are not deleted."
+    },
+    {
+      "role": "integration-and-authority-reviewer",
+      "review": "Only completion metadata and documents change. No runtime, organ, workflow, authority, or privileged execution path is introduced."
+    }
+  ],
+  "independence_note": "These are five required self-review roles, not five independent reviewers. Independent human or separate-model review remains pending.",
+  "strengthening_passes": [
+    {
+      "pass": 1,
+      "attacks": [
+        {"id": "D1", "disadvantage": "The artifact archive could not be downloaded (401), so report.json and OCI layouts were not independently inspected."},
+        {"id": "D2", "disadvantage": "Raw job logs require repository admin rights (403); the public page requires sign-in."},
+        {"id": "D3", "disadvantage": "Overall canonical CI on the base was not all green because job 1 was cancelled after its timeout."},
+        {"id": "D4", "disadvantage": "A broad COMPLETE label could be misread as full-machine OCI execution or system 10 completion."},
+        {"id": "D5", "disadvantage": "The local sandbox mount reports st_nlink 0 for owned files, so signed GREG OCI tests refuse them there."},
+        {"id": "D6", "disadvantage": "Marking the row COMPLETE makes every later full audit rerun the packaging exercise; missing dependencies could obscure the actual result."}
+      ],
+      "candidate_after_pass": "Retain the hosted-evidence reconciliation only with structured provenance, explicit evidence-tier and non-claims, native-filesystem validation, and full reproduction."
+    },
+    {
+      "pass": 2,
+      "dispositions": [
+        {"addresses": "D1", "resolution": "Record the artifact ID, digest, size, expiry, retrieval failure, and not_independently_reinspected=true. Do not claim artifact contents or an image digest from the archive digest. Stronger evidence still requires the strongest-competitor path."},
+        {"addresses": "D2", "resolution": "Record the 403 and sign-in boundary. Treat exact run/job/step conclusions as hosted execution metadata, not raw-log review."},
+        {"addresses": "D3", "resolution": "Set all_canonical_ci_green=false and preserve the cancelled job. Claim only the separate successful OCI job and proof step."},
+        {"addresses": "D4", "resolution": "Bind completion to the restricted-rule OCI capability at SANDBOX_VERIFIED; retain the full former gap and name system 10, privileged execution, portability, and deployment as open."},
+        {"addresses": "D5", "resolution": "Preserve the mount refusal as an environmental limitation and verify the exact tree on a native filesystem; do not weaken the unlinked-file guard."},
+        {"addresses": "D6", "resolution": "Record the new local evidence only after the row supports the required schema, then run the complete 55-system audit and the dedicated positive/negative contract tests on the exact committed tree."}
+      ],
+      "material_dissent_retained": "A green platform result plus immutable artifact metadata is weaker than independent case-level report inspection. The strongest competitor remains valid for any claim beyond SANDBOX_VERIFIED. No pass-1 disadvantage was silently dropped."
+    }
+  ],
+  "evidence": [
+    {"tier": "repository-source", "claim": "prove_oci.py requires identical independent rebuild layouts and exact host/container equality for six cases before reproduced=true and zero exit.", "source": "scripts/ci/prove_oci.py at fa80ace79eb1ac2cc4bf745918baf5587e1ae3f6"},
+    {"tier": "hosted-execution-metadata", "claim": "Run 39984114068 job 120524216169 and its OCI proof step succeeded at the exact source head; this is not raw-log or artifact-content inspection.", "source": "GitHub Actions API and public job page read 2026-10-26"},
+    {"tier": "local-test", "claim": "The exact base and changed tree each passed the focused OCI suite on a native filesystem; the mount-specific refusal was retained rather than patched around.", "source": "tests/unit/test_greg_oci.py and tests/integration/test_greg_foundry_worker.py -k oci: 7 passed on each tree"},
+    {"tier": "local-test", "claim": "The exact committed changed tree reran every COMPLETE system successfully: PASS 51/55 complete, 0 problems; systems 10, 26, 28, and 52 remain PARTIAL.", "source": "/tmp/egregore-oci-venv/bin/python -m foundry.completion --audit at efb701f0d235fe408e3d872c99d02ef8fec932f1"},
+    {"tier": "local-test", "claim": "The completion-contract suite, including forged/missing evidence negative tests, passed 66 tests with 27 third-party Stripe deprecation warnings.", "source": "/tmp/egregore-oci-venv/bin/python -m pytest -q -p no:cacheprovider tests/unit/test_foundry_systems.py at efb701f0d235fe408e3d872c99d02ef8fec932f1"}
+  ],
+  "negative_evidence": {
+    "retained": [
+      "Earlier Docker 29 buildx failure and later successful hosted rerun remain in project history.",
+      "Artifact download 401, log API 403, public sign-in requirement, and uninspected artifact internals remain explicit.",
+      "Overall base CI was not all green; cancelled job 1 is not converted into success.",
+      "Local image_built remains false. No local Docker authority or image execution is claimed.",
+      "Full GREG/organ images, stronger general-code execution, live activation, system 10, real-world portability, deployment, and VEPMC remain open.",
+      "Initial audit attempts stopped on unavailable declared dependencies (rfc3161_client, wasmtime, imageio_ffmpeg, stripe, claude_agent_sdk) and one incompatible Pillow interpreter path; these were environmental stops, not passing evidence.",
+      "Large SDK wheel and combined dependency installation attempts timed out and were not used; only hash-checked declared packages were used for the final audit.",
+      "Two commissioning reproduction attempts failed with KeyError proposal because target-only pytest was invisible to the intentionally scrubbed child CI. A native virtual environment with normal .pth dependency visibility fixed the environment without changing scrubbing or project code; focused system 51 then matched its retained result hash.",
+      "The successful audit and 66-test suite are local exact-tree evidence, not hosted child-head CI, an entire-repository test run, integration, deployment, or independent review."
+    ],
+    "deleted": []
+  },
+  "dissent": {
+    "position": "Do not treat this as independent verification of every hosted case or as sufficient evidence for real-world OCI portability.",
+    "resolution_threshold": "A reviewer must inspect the immutable artifact and raw logs, or a fresh independently commissioned proof must expose equivalent case-level evidence, before upgrading the evidence tier.",
+    "review_trigger": "Artifact access becomes available; any source hash or hosted conclusion changes; any audit mismatch occurs; or scope expands beyond the restricted-rule capability."
+  },
+  "decision": "RETAIN",
+  "decision_state": "PROPOSED_PENDING_INTEGRATOR_REVIEW",
+  "rollback": "Revert the scoped child commit or restore only system 9 to PARTIAL while retaining the evidence and deliberation documents. No runtime migration or external effect needs undoing.",
+  "authority_created": false,
+  "vepmc_delta": 0,
+  "merge_authority": "founder-only"
+}

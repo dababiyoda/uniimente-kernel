@@ -10,7 +10,9 @@ included), never silently replaced by the file's copy.
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
+import os
 import pickle
 from dataclasses import asdict
 
@@ -119,7 +121,7 @@ def test_a_line_changed_on_disk_is_refused_by_the_read_and_then_by_every_append(
 
 @pytest.mark.parametrize("field, value", [
     ("record_type", "grant_dispatch_x"), ("hash", "sha256:" + "e" * 64), ("ts_utc", "2000-01-01T00:00:00Z"),
-    ("corrects", "sha256:" + "c" * 64), ("_off", 0), ("_digest", b"\0" * 32),
+    ("corrects", "sha256:" + "c" * 64), ("_off", 0), ("_len", 1), ("_digest", b"\0" * 32),
 ])
 def test_what_stays_in_memory_of_dropped_history_is_held_to_its_digest_on_the_commit_path(tmp_path, field, value):
     """The Commit Witness reconstructs the whole chain. For dropped history that means the skeleton and line
@@ -374,3 +376,126 @@ def test_membership_compares_headers_before_reading_a_payload_back(tmp_path, mon
     real = ledger_module._LineSource.payload
     monkeypatch.setattr(ledger_module._LineSource, "payload", lambda self, rec: reads.append(rec.seq) or real(self, rec))
     assert wanted in led.records and reads == []
+
+
+# Independent mutant audit of #211 (2026-10-28): safeguards no mutant covered, and the replaced-file gap it found.
+
+@pytest.mark.parametrize("reopen", [False, True])
+def test_a_ledger_file_deleted_before_any_read_stops_appends_and_is_never_recreated(tmp_path, reopen):
+    """No old payload was read yet, so no read descriptor exists. The ledger still knows which file it created or
+    loaded: an append refuses, and no new one-line history appears at the path."""
+    led, _, path = grown(tmp_path)
+    if reopen:
+        led.close()
+        led = EvidenceLedger(ANCHOR, path, resident=4)
+    assert led._src._fd is None
+    os.remove(path)
+    with pytest.raises(ValueError, match="replaced after it was opened"):
+        led.append("event", {"n": 1})
+    assert not os.path.exists(path)
+    with pytest.raises(ValueError, match="replaced after it was opened"):
+        led.append("witness", {"w": 1})
+
+
+@pytest.mark.parametrize("reopen", [False, True])
+def test_a_ledger_file_replaced_before_any_read_never_receives_an_append(tmp_path, reopen):
+    """Identical bytes in another file, and no verify_chain first: the Commit Witness and every other append refuse,
+    and the other file is left exactly as it was."""
+    led, _, path = grown(tmp_path)
+    if reopen:
+        led.close()
+        led = EvidenceLedger(ANCHOR, path, resident=4)
+    data = open(path, "rb").read()
+    os.rename(path, path + ".old")
+    open(path, "wb").write(data)
+    for kind in ("witness", "event"):
+        with pytest.raises(ValueError, match="replaced after it was opened"):
+            led.append(kind, {"n": 1})
+    assert open(path, "rb").read() == data and open(path + ".old", "rb").read() == data
+
+
+def test_an_old_payload_is_never_read_from_a_file_that_replaced_the_ledgers(tmp_path):
+    led, _, path = grown(tmp_path)
+    assert led._src._fd is None
+    data = open(path, "rb").read()
+    os.rename(path, path + ".old")
+    open(path, "wb").write(data)
+    with pytest.raises(ValueError, match="replaced after it was opened"):
+        led.records[3]
+
+
+def test_a_ledger_file_deleted_after_open_is_reported_and_stops_appends(tmp_path):
+    """replaced() answers True when the path names no file."""
+    led, _, path = grown(tmp_path)
+    led.records[3]                                  # the read source is open on the original file
+    os.remove(path)
+    ok, why = led.verify_chain()
+    assert not ok and "replaced after it was opened" in why
+    with pytest.raises(ValueError, match="replaced after it was opened"):
+        led.append("event", {"n": 1})
+    assert not os.path.exists(path)
+
+
+def test_a_dropped_records_read_source_swapped_in_memory_is_found(tmp_path):
+    """The skeleton digest does not cover a record's read source, so _verify_dropped checks it is the ledger's own."""
+    led, _, _ = grown(tmp_path)
+    target = led._records[6]
+    assert not target.resident
+
+    class Forged:
+        def payload(self, rec):
+            return {"proposal_id": "forged", "grant_id": "g0"}
+
+    target._src = Forged()
+    ok, why = led.verify_chain()
+    assert not ok and "retained record altered in memory at seq 6" in why
+    with pytest.raises(ValueError, match="altered in memory at seq 6"):
+        led.append("witness", {"w": 1})
+
+
+def test_a_dropped_records_pointer_moved_to_another_records_line_is_refused_when_read(tmp_path):
+    """Record 6's line is verified bytes, so its digest passes; only the hash and seq check keeps record 6's payload
+    from being served as record 5's."""
+    led, _, _ = grown(tmp_path)
+    a, b = led._records[5], led._records[6]
+    assert not a.resident and not b.resident
+    a._off, a._len, a._digest = b._off, b._len, b._digest
+    with pytest.raises(ValueError, match="payload hash mismatch at seq 5: the retained line is another record"):
+        led.records[5]
+
+
+def test_a_payload_altered_in_memory_with_its_pointer_moved_to_a_planted_copy_is_never_dropped(tmp_path):
+    """Review F1's planted copy, now carrying the altered payload: the pointer check accepts the planted line, so only
+    eviction's own re-hash keeps the altered payload out of the dropped-history digest."""
+    path = str(tmp_path / "l.jsonl")
+    led = EvidenceLedger(ANCHOR, path, resident=3)
+    led.append("event", {"amount": 1})
+    target = led._records[1]
+    led.verify_incremental()
+    target.payload["amount"] = 1000000                                    # altered while resident
+    planted = asdict(LedgerRecord(target.seq, target.ts_utc, target.record_type, target.payload,
+                                  target.prev_hash, target.hash, target.corrects, target.hash_version))
+    led.append("note", {"quote": planted})
+    blob = json.dumps(planted).encode()
+    target._off, target._len, target._digest = (open(path, "rb").read().index(blob), len(blob),
+                                                hashlib.sha256(blob).digest())
+    for i in range(4):
+        led.append("note", {"i": i})
+    assert target.resident
+    with pytest.raises(ValueError, match="payload hash mismatch at seq 1"):
+        led.append("witness", {"w": 1})
+
+
+def test_explicit_verification_holds_a_dropped_skeleton_to_its_line_even_when_the_digest_is_recomputed(tmp_path):
+    """The dropped-history digest is itself in memory. A skeleton changed together with it passes the commit path;
+    verify_chain re-derives the record from the file and compares its header."""
+    led, _, _ = grown(tmp_path)
+    target = led._records[6]
+    assert not target.resident
+    target.ts_utc = "2000-01-01T00:00:00Z"
+    digest = hashlib.sha256()
+    for i in range(1, led._dropped_end):
+        digest.update(ledger_module._skeleton(led._records[i]))
+    led._dropped_hash, led._dropped_digest = digest, digest.digest()
+    ok, why = led.verify_chain()
+    assert not ok and "retained record at seq 6 differs from its line in the file" in why

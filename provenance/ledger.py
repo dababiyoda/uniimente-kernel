@@ -95,6 +95,11 @@ def _index_value(table: dict, value, position: int) -> None:
 _PAYLOAD = LedgerRecord.__dict__["payload"]   # the slot itself, under _Retained's payload property
 
 
+def _existing(path: str, flags: int) -> int:
+    """Open ``path`` as asked, but never create it: appending to a new file at a ledger's path would fork history."""
+    return os.open(path, flags & ~os.O_CREAT)
+
+
 class _LineSource:
     """Reads retained lines back from a ledger file, refusing any byte that is not the one verified."""
 
@@ -105,8 +110,22 @@ class _LineSource:
         # counter, not a flag: a failure found while a reconstruction is running is not erased by it.
         self.failures = 0
         self.cleared = 0
+        # The (device, inode) of the file this ledger created or loaded. A path that names another file, or none,
+        # is never read or appended to: writing there would fork history.
+        self.ident = None
         self._fd = None
         self._lock = threading.Lock()
+
+    def bind(self, fd: int) -> None:
+        st = os.fstat(fd)
+        self.ident = (st.st_dev, st.st_ino)
+
+    def foreign(self, fd: int) -> bool:
+        """Whether descriptor ``fd`` is open on another file than the one this ledger created or loaded."""
+        if self.ident is None:
+            return False
+        st = os.fstat(fd)
+        return (st.st_dev, st.st_ino) != self.ident
 
     @property
     def broken(self) -> bool:
@@ -123,17 +142,25 @@ class _LineSource:
     def _open(self) -> int:
         with self._lock:
             if self._fd is None:
-                self._fd = os.open(self.path, os.O_RDONLY | getattr(os, "O_CLOEXEC", 0))
+                fd = os.open(self.path, os.O_RDONLY | getattr(os, "O_CLOEXEC", 0))
+                if self.foreign(fd):
+                    os.close(fd)
+                    self.failures += 1
+                    raise ValueError(f"the ledger file at {self.path} was replaced after it was opened")
+                self._fd = fd
             return self._fd
 
     def replaced(self) -> bool:
-        """Whether the path now names another file than the one this source reads (or none)."""
-        fd = self._open()
+        """Whether the path now names another file than the one this ledger created or loaded (or none)."""
         try:
-            here, there = os.fstat(fd), os.stat(self.path)
+            there = os.stat(self.path)
         except OSError:
             return True
-        return (here.st_dev, here.st_ino) != (there.st_dev, there.st_ino)
+        here = self.ident
+        if here is None:
+            st = os.fstat(self._open())
+            here = (st.st_dev, st.st_ino)
+        return (there.st_dev, there.st_ino) != here
 
     def read(self, rec: "_Retained") -> bytes:
         off, size, digest = rec._off, rec._len, rec._digest
@@ -361,6 +388,7 @@ class EvidenceLedger:
                 if read_only or expected_head:
                     raise ValueError('expected history is missing')
                 with open(path, "x", encoding="utf-8") as fh:
+                    self._src.bind(fh.fileno())
                     fh.write(json.dumps(asdict(self._records[0])) + "\n")
                     fh.flush()
                     os.fsync(fh.fileno())
@@ -469,7 +497,16 @@ class EvidenceLedger:
             rec = self._retain(rec, 0, line)
             # Opening failure is definite; after write starts, acknowledgment is
             # uncertain until flush/fsync finish. Never advance memory early.
-            with open(self.path, "ab") as fh:
+            try:
+                fh = open(self.path, "ab", opener=_existing)     # never creates: a missing file is not this one
+            except FileNotFoundError:
+                fh = None
+            if fh is None or self._src.foreign(fh.fileno()):
+                if fh is not None:
+                    fh.close()
+                self._src.note_failure()
+                raise ValueError(f"the ledger file at {self.path} was replaced after it was opened")
+            with fh:
                 try:
                     offset = fh.seek(0, os.SEEK_END)
                     fh.write(line)
@@ -809,6 +846,7 @@ class EvidenceLedger:
         self._records = []
         failure = None
         with open(path, "rb") as fh:
+            self._src.bind(fh.fileno())
             offset = 0
             while offset < complete_end:
                 chunk = fh.readline()

@@ -566,7 +566,9 @@ def _settlements_in(value, pointer: str = "") -> list[tuple[str, dict]]:
     method entries of a ``*settlements`` list (which may have none)."""
     out = []
     if isinstance(value, dict):
-        if value.get("type") == SETTLED and value.get("method"):
+        # a settled event cited by ledger position without its method is still a settlement: kept and flagged,
+        # never dropped (it credits no mechanism)
+        if value.get("type") == SETTLED and (value.get("method") or value.get("seq") is not None):
             out.append((pointer, value))
         for key, item in value.items():
             if isinstance(item, list) and str(key).endswith("settlements"):
@@ -617,7 +619,11 @@ def _trace_source(path: Path, doc: dict) -> tuple[dict, list[dict]]:
         [str(doc["founder_key"])] if "founder_key" in doc else [])
     environment = [f"{k}: {labels[k]}" for k in ("effects", "state_dir", "clock") if k in labels]
     settled, seen = [], set()
-    for pointer, entry in _settlements_in(doc):
+    cited = _settlements_in(doc)
+    named = {(e.get("seq"), e.get("hash")) for _, e in cited if e.get("method") and e.get("seq") is not None}
+    for pointer, entry in cited:
+        if not entry.get("method") and (entry.get("seq"), entry.get("hash")) in named:
+            continue                      # the same ledger event, cited again elsewhere with its method
         key = (entry.get("seq"), entry.get("hash"), entry.get("method"), pointer if entry.get("seq") is None else "")
         if key in seen or (entry.get("seq") is not None and (entry.get("seq"), entry.get("hash"), entry.get("method"))
                            in {(s, h, m) for s, h, m, _ in seen}):
@@ -630,7 +636,8 @@ def _trace_source(path: Path, doc: dict) -> tuple[dict, list[dict]]:
                         "credited": [], "roles": {}, "receipt": entry.get("receipt"),
                         "ledger_seq": entry.get("seq"), "ledger_hash": entry.get("hash"), "pointer": pointer,
                         **({} if entry.get("seq") is not None else
-                           {"flag": "cited without a ledger position or receipt"})})
+                           {"flag": "cited without a ledger position or receipt"}),
+                        **({} if entry.get("method") else {"flag": "cited by ledger position without its method"})})
     ledger = doc.get("ledger") if isinstance(doc.get("ledger"), dict) else {}
     source = {"path": _display(path), "sha256": _sha(path), "kind": "mission trace",
               "ledger_retained": False, "ledger_head": ledger.get("head"),

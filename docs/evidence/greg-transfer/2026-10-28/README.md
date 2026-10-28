@@ -85,3 +85,26 @@ Re-running the script refuses to overwrite `results.json`. Writing to another pa
 | `DECLARATION.md` | Arms, tiers, sizes, the namespace, the criteria, the predictions, development disclosure, committed before the run |
 | `results.json` | The raw rows (problem, expected answer, both arms' journal metrics, qualification seeds) and `summarise()`'s output |
 | `deliberation.json` | Five roles and exactly two passes; decision EXPERIMENT |
+
+## Review round 1 (2026-10-28, after the run)
+
+The reviewer was `session_01KucyfnwWG7Lgp8QvCTKeHg`, reviewing #213 at `015d6d13`. That is a different session but the same model family, so the review is not fully independent. Its checks:
+- the declaration-to-run diff touches only `README.md`, `deliberation.json` and `results.json`;
+- the recorded script hash equals the hash of the declared script;
+- `summarise(raw)` equals the recorded summary;
+- correctness, recomputed from the recorded answers, matches all 74 arms;
+- `work = asks + qualifications + deficits` holds everywhere;
+- six hidden tasks, re-run on fresh bodies, match their recorded rows exactly.
+
+It found no path by which anything other than retained competence explains the results. Its three low findings change no verdict:
+
+1. **The re-derivation test did not bind the script hash or recompute the correctness flags.**
+   - The test now asserts that `raw.script_sha256` equals the harness's hash. A changed harness needs a new declaration and namespace.
+   - It also recomputes every `*_correct` flag from the recorded answers.
+   - Shown: a recorded answer edited while its flag and the summary are kept passes the old test and fails the new one.
+   - This changes the test only. The script, `CRITERIA`, `summarise()` and every recorded verdict are unchanged.
+2. **The validity floor `qualification_instances_checked > 0` can be met by instances that cannot collide.** Of the 628 rebuilt instances (counts reproduced here):
+   - **302 are comparable** with a hidden tier's function: staffing 154, matching 73, crash 75.
+   - **326 are engine instances** (`graph.max_flow` 222, `lp.optimize` 104) and can never equal a hidden task.
+   - The floor held on comparable instances in this run. The rule is frozen for this run and not changed. **For the next declaration,** count comparable instances only.
+3. **Rebuilt instances were not checked against Genesis's own record.** **For the next declaration,** record each deficit's `vector_digest` and confirm that the rebuilt qualification vector hashes to it.

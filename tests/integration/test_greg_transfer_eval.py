@@ -11,6 +11,7 @@ The pre-registered run itself is recorded in docs/evidence/greg-transfer/2026-10
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -111,12 +112,24 @@ def test_the_construction_problem_is_the_fifteen_step_missions():
 @pytest.mark.skipif(not (EVIDENCE / "results.json").exists(), reason="the pre-registered run is not recorded yet")
 def test_the_recorded_run_re_derives_from_its_own_rows():
     result = json.loads((EVIDENCE / "results.json").read_text())
+    # the run's own harness: a changed script needs a new declaration and namespace, not this record
+    script = (ROOT / "scripts" / "greg_transfer_eval.py").read_bytes()
+    assert result["raw"]["script_sha256"] == hashlib.sha256(script).hexdigest(), "the recorded run's harness changed"
     assert T.summarise(result["raw"]) == result["summary"], "a verdict was edited after the run"
     assert result["raw"]["namespace"] == T.NAMESPACE and result["raw"]["n"] == T.N
     hidden = T.instances()
+    want_construction = T.expected("replay", T.CONSTRUCTION)
     for r in result["raw"]["tasks"]:
         assert r["problem"] == hidden[r["tier"]][r["i"]], "a hidden instance is not the declared generator's"
         assert r["expected"] == T.expected(r["tier"], r["problem"])
+        # the correctness flags the verdicts rest on, recomputed from the recorded answers
+        for side in ("experienced", "control"):
+            task = r[side]["task"]
+            assert r[f"{side}_correct"] == (task["state"] == "ACHIEVED" and T.judge(r["tier"], task["answer"],
+                                                                                    r["expected"])), (side, r["i"])
+        built = r["experienced"]["construction"]
+        assert r["construction_correct"] == (built["state"] == "ACHIEVED"
+                                             and T.judge("replay", built["answer"], want_construction))
 
 
 def test_one_live_cross_family_pair_measures_reuse(tmp_path):

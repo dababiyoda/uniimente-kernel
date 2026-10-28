@@ -1,0 +1,106 @@
+{
+ "vepmc_row": {
+  "mission_id": "m:engineering-brief-2026-09-26",
+  "closure_event_id": "862eac81-9aec-5efe-96b2-d4f8e24b935f",
+  "founder_signed": true,
+  "interface_detached": true,
+  "persistent_runtime": true,
+  "real_capability": true,
+  "approval_boundary": true,
+  "interruption_survived": true,
+  "appraised_verified": true,
+  "founder_accepted": true,
+  "mac_body": false,
+  "counts": false,
+  "missing": [
+   "mac_body"
+  ]
+ },
+ "appraisal": {
+  "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+  "checks": {
+   "achieved_claimed": true,
+   "approval_boundaries_honored": true,
+   "approval_boundary_encountered": true,
+   "arrived_via_inbox": true,
+   "chain_intact": true,
+   "checks_rederived_from_receipts": true,
+   "deliveries_bound_to_evidence": true,
+   "exactly_once": true,
+   "founder_signature_verified": true,
+   "registered_once": true,
+   "world_reobserved": true
+  },
+  "findings": [],
+  "head": "sha256:3219b85c8b371e051567953acc1814210be7906bceed8caf3f12c113b216e4f6",
+  "limits": "shares reviewed Kernel code; not an independent implementation",
+  "mission_id": "m:engineering-brief-2026-09-26",
+  "verdict": "VERIFIED"
+ },
+ "approval": {
+  "request_id": "req-a2d75e7decd624a8be1b10c6",
+  "mission_id": "m:engineering-brief-2026-09-26",
+  "kind": "APPROVAL",
+  "action_id": "deliver-engineering-brief",
+  "scope_digest": "sha256:b728bb09ebb15c5803a367336fbaa5e322f44e9a90078854c889848722d59185",
+  "why_now": "capability 'brief.engineering' outside scope; internal_write exceeds scope ceiling read_only",
+  "recommendation": "approve deliver-engineering-brief (brief.engineering on deliver:briefs) at $0.0: read-only sources, one founder-visible file; nothing in any repository changes",
+  "alternatives": [
+   "reject: the mission will try alternatives or ask again"
+  ],
+  "authority_requested": {
+   "capability": "brief.engineering",
+   "target": "deliver:briefs",
+   "consequence_class": "internal_write",
+   "cost_usd": 0.0
+  },
+  "consequence_of_no_response": "the mission waits; no action is taken",
+  "created_at": "2026-09-26T06:36:57.436363Z",
+  "reality_status": "RECORDED_LOCAL_MESSAGE"
+ },
+ "torn_tail": {
+  "offset": 24035,
+  "bytes": 77,
+  "sha256": "sha256:3fb0f061f8d35f88da8195c1c0fcec480aa396c9c19c79334e838042731d02af",
+  "sidecar": "/tmp/pytest-of-root/pytest-22/test_founder_product_path_surv0/body/ledger.jsonl.unacknowledged-3fb0f061f8d35f88"
+ },
+ "recoveries": [
+  {
+   "boot_id": "boot-398d17cbabb3d608",
+   "previous_unfinished_boots": [
+    "boot-ff8bed7ac9b1393d"
+   ],
+   "action": "missions reconstructed from retained history; uncertain dispatches reconcile, never blind-retry"
+  },
+  {
+   "boot_id": "boot-b9385cd0ac2635dc",
+   "previous_unfinished_boots": [
+    "boot-ff8bed7ac9b1393d",
+    "boot-398d17cbabb3d608"
+   ],
+   "action": "missions reconstructed from retained history; uncertain dispatches reconcile, never blind-retry"
+  }
+ ],
+ "actions": [
+  {
+   "mission_id": "m:engineering-brief-2026-09-26",
+   "action_id": "deliver-engineering-brief",
+   "attempt": 0,
+   "status": "DONE",
+   "reasons": [],
+   "receipt": "sha256:971b5015bd6b3fc31d11158bddbd209e95d2c4df3d2e8bc28562006fca3c2a96",
+   "capability": "brief.engineering",
+   "route": "api",
+   "cost_usd": 0.0,
+   "scope_digest": "sha256:b728bb09ebb15c5803a367336fbaa5e322f44e9a90078854c889848722d59185",
+   "routing": {
+    "chosen": "deliver-engineering-brief",
+    "expected_value": 0.5,
+    "reliability": 0.5,
+    "alternatives": []
+   },
+   "at": "2026-09-26T06:37:01.267598Z"
+  }
+ ],
+ "brief_excerpt": "# GREG engineering brief \u2014 2026-09-26\n\nGenerated 2026-09-26T06:37:01.333513Z from read-only sources. GREG changed nothing in any repository. Pull request titles are untrusted external text.\n\n## Needs your attention (0)\n\n- Nothing flagged.\n\n## Open pull requests\n\n## Local checkouts\n\n| Repo | Branch | HEAD | vs cached origin/main | Uncommitted |\n|---|---|---|---|---|\n| kernel | main | 53fe67d551 | no cached origin/main | 0 |\n\nRecent commits \u2014 kernel:\n- 53fe67d 2026-09-26 first\n\n## Gaps in this brief\n\n- kernel: no cached origin/main; no fetch was performed\n\n## Evidence\n\n- inputs digest: `sha256:3d6fb44d900dd2caad16b3a2df061ab66cad71f4659347fb8f41203e0c2e83d9`\n- renderer: `greg.briefs.render/1`; GitHub calls: 0 (unauthenticated)\n- local Git read without fetch; the receipt retains every input used above\n"
+}

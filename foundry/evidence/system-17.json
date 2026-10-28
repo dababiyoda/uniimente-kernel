@@ -1,0 +1,16 @@
+{
+ "command": "python -m foundry.completion --run 17",
+ "name": "Causal search engines",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "clinic_case_excluded": true,
+  "closest_failed": "freight-pilot-failed",
+  "closest_worked": "freight-pilot-worked",
+  "context_filtered": true,
+  "unmeasured": [
+   "freight-unmeasured"
+  ]
+ },
+ "result_sha256": "sha256:efa2d01dd4c889effebc1912732f3f49b377eca1ec4d0d9639f0224af3c75a13",
+ "system": 17
+}

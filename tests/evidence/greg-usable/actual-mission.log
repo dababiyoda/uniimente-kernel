@@ -1,0 +1,42 @@
+{
+  "first": "d4d575b2bd2a4dfe95527a76e1769107",
+  "later": "a6914452b19a45cdb742b078913121e7",
+  "comparison": {
+    "ref": "sha256:3adf97b1043b2bb136f3f9921d7b54e6263ff078e6368f32705919eaf0564b7d",
+    "rows": [
+      {
+        "case": "wrong-payment-target",
+        "expected": "wrong-target",
+        "baseline": "stale-sdk",
+        "candidate": "wrong-target"
+      },
+      {
+        "case": "unauthorized-restart",
+        "expected": "stop-bypass",
+        "baseline": "optional-version-drift",
+        "candidate": "stop-bypass"
+      },
+      {
+        "case": "consumer-import-blocked",
+        "expected": "broken-import",
+        "baseline": "broken-import",
+        "candidate": "broken-import"
+      },
+      {
+        "case": "engagement-only",
+        "expected": "benefit-unmeasured",
+        "baseline": "benefit-unmeasured",
+        "candidate": "benefit-unmeasured"
+      }
+    ],
+    "baseline_accuracy": 0.5,
+    "candidate_accuracy": 1.0,
+    "decision": "retain",
+    "scope": "brief ordering only",
+    "authority_change": false,
+    "model_calls": 0,
+    "external_cost_usd": 0,
+    "participant_benefit": "not measured"
+  },
+  "control_head": "sha256:29aca4204557f87a0b3cac9d1526a61dfaca5363c65c222628015bed85e359ad"
+}

@@ -1,0 +1,17 @@
+{
+ "command": "python -m foundry.completion --run 20",
+ "name": "Emulators",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "deterministic": true,
+  "naive_client_double_charged": true,
+  "naive_truth": {
+   "charges": 2,
+   "net_amount": 1800,
+   "refunds": 0
+  },
+  "unknown_fault_refused": true
+ },
+ "result_sha256": "sha256:421d4385e677297c39a0c8b57d17c931989c24658c9dae9b321932ae68f3f1b2",
+ "system": 20
+}

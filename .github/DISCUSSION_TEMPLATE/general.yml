@@ -1,0 +1,76 @@
+title: "[UNIIMENTE] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Project cognition prerequisite
+        Before starting a material UNIIMENTE discussion, read:
+        - AGENTS.md
+        - docs/PROJECT_COGNITION_SOP.md
+        - docs/PROJECT_COGNITION_CONTINUITY.md
+        - docs/PROJECT_SOURCE_CENSUS_2026-09-26.md
+        - docs/FOUNDER_INTENT_LEDGER.md
+        - canonical coordination issue #117
+
+        Do not infer the project from one branch, experiment, README, or chat summary. State what sources you actually inspected.
+
+  - type: textarea
+    id: topic
+    attributes:
+      label: Discussion / proposal
+      description: What are you proposing, questioning, or surfacing?
+      placeholder: Describe the product effect, problem, or cross-agent concern.
+    validations:
+      required: true
+
+  - type: textarea
+    id: source_coverage
+    attributes:
+      label: Source coverage
+      description: List the founder-intent records, Project source families, PRs/issues/branches, code, and organ repos you inspected. State unavailable context.
+      placeholder: |
+        Founder intent:
+        Project sources:
+        GitHub evidence:
+        Unavailable:
+    validations:
+      required: true
+
+  - type: textarea
+    id: product_delta
+    attributes:
+      label: Real product effect
+      description: What can actual GREG / UNIIMENTE do after this that it could not do before? If none, what precise blocker does this remove?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: reality
+    attributes:
+      label: Reality status
+      options:
+        - PROPOSED
+        - IMPLEMENTED
+        - INTEGRATED
+        - TESTED
+        - SANDBOXED
+        - LOCAL-REAL
+        - MAC-VERIFIED
+        - PERSISTENT
+        - REBOOT-VERIFIED
+        - EXTERNALLY-VERIFIED
+        - PRODUCTION-AUTHORIZED
+        - BLOCKED
+        - ASPIRATIONAL
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: authority
+    attributes:
+      label: Authority check
+      options:
+        - label: I am not treating model confidence, test success, or discussion consensus as authority.
+          required: true
+        - label: I will route durable founder-intent corrections into the canonical ledger/intent system rather than making this Discussion a parallel constitution.
+          required: true

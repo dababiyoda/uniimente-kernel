@@ -45,7 +45,6 @@ from __future__ import annotations
 
 from collections import defaultdict, deque
 from dataclasses import dataclass, replace
-from fractions import Fraction
 import hashlib
 import inspect
 from itertools import combinations, product
@@ -460,10 +459,13 @@ def direct_crash(p: dict):
 
 
 def encode_crash(p: dict) -> dict:
+    # Only the bounds that hold the deadline: a start at or after time 0, a finish at or before the deadline.
+    # The other two (start <= deadline, finish >= 0) follow from the duration rows, and leaving them out means
+    # every dual of this program is a flow from the project's start to the deadline (_deadline_flow).
     variables, cost, constraints = [], {}, []
     for i, (tid, duration, shortest, c) in enumerate(p["tasks"]):
-        variables += [{"name": f"s{i}", "lower": 0, "upper": p["deadline"]},
-                      {"name": f"f{i}", "lower": 0, "upper": p["deadline"]}]
+        variables += [{"name": f"s{i}", "lower": 0, "upper": None},
+                      {"name": f"f{i}", "lower": None, "upper": p["deadline"]}]
         if c:
             cost[f"s{i}"], cost[f"f{i}"] = c, -c     # cost * (duration - (f - s)), constant dropped
         constraints += [{"name": f"shortest_{i}", "op": ">=", "coefficients": {f"f{i}": 1, f"s{i}": -1},
@@ -488,15 +490,91 @@ def decode_crash(p: dict, lp: dict) -> dict:
         plan.append([tid, round(s), round(f)])
     constant = sum(d * c for _, d, _, c in p["tasks"])
     return {"feasible": True, "plan": plan, "lp_objective": lp["objective"] + constant,
-            "lp_certificate": lp["certificate"]}
+            "lp_certificate": lp["certificate"], "deadline_flow": _deadline_flow(p, lp.get("shadow_prices") or {})}
+
+
+def _deadline_flow(p: dict, prices: dict) -> dict:
+    """The engine's prices read back as a flow from the project's start, along precedences, to the deadline.
+
+    The prices are the LP's dual, in floating point. The constraint matrix is a network matrix and the
+    costs are integers, so an optimal dual is integral: each price is rounded, and certify_crash checks
+    the flow in exact integers. A task carries c + (price on its shortest duration) + (price on its normal
+    duration) units, which stationarity splits into what enters it (from the start or a predecessor) and
+    what leaves it (to a successor or the deadline). The flow is untrusted here; a wrong one fails there."""
+    def price(label):
+        value = prices.get(label, 0)
+        if not isinstance(value, (int, float)) or value != value or abs(value) > 2 ** 62:
+            raise ReductionError(f"the engine's price on {label} is not a number")
+        return round(value)
+
+    ids = [t[0] for t in p["tasks"]]
+    position = {tid: i for i, tid in enumerate(ids)}
+    through = {tid: c + price(f"shortest_{i}") + price(f"normal_{i}") for i, (tid, _d, _s, c) in enumerate(p["tasks"])}
+    arcs = [[a, b, price(f"after_{position[a]}_{position[b]}")] for a, b in p["precedences"]]
+    inflow, outflow = defaultdict(int), defaultdict(int)
+    for a, b, units in arcs:
+        outflow[a] += units
+        inflow[b] += units
+    return {"start": [[t, through[t] - inflow[t]] for t in ids if through[t] - inflow[t]],
+            "arcs": [arc for arc in arcs if arc[2]],
+            "finish": [[t, through[t] - outflow[t]] for t in ids if through[t] - outflow[t]]}
+
+
+def _deadline_bound(p: dict, flow) -> int:
+    """GREG's lower bound on the cost of every plan that meets the deadline, from a flow (exact integers).
+
+    For task i with normal duration d, shortest m, cost c per unit and t units of flow through it,
+    c(d - x) >= g(t) - t x for every duration x in [m, d], where g(t) = min(t d, t m + c (d - m)). Summing,
+    and writing t_i as what enters it (start s_i, arcs) and as what leaves it (arcs, finish f_i), the
+    t_i x_i terms total sum_finish(units f_i) - sum_start(units s_i) + sum_arcs(units (f_a - s_b)), which is at
+    most deadline * F for any plan with s >= 0, f <= deadline and s_b >= f_a. So every on-time plan costs at
+    least sum_i g(t_i) - deadline * F (weak duality for the time-cost LP; Fulkerson 1961). A plan that
+    costs exactly this is the cheapest."""
+    if not isinstance(flow, dict) or set(flow) != {"start", "arcs", "finish"}:
+        raise ReductionError("the answer carries no deadline flow: optimality is not shown")
+    spec = {t: (d, s, c) for t, d, s, c in p["tasks"]}
+    precedences = {tuple(e) for e in p["precedences"]}
+    inflow, outflow, start, finish = defaultdict(int), defaultdict(int), defaultdict(int), defaultdict(int)
+
+    def units(value, what):
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise ReductionError(f"the deadline flow on {what} is not a nonnegative integer")
+        return value
+
+    for side, into in (("start", start), ("finish", finish)):
+        if not isinstance(flow[side], list):
+            raise ReductionError(f"the deadline flow's {side} is malformed")
+        for entry in flow[side]:
+            if not isinstance(entry, list) or len(entry) != 2 or entry[0] not in spec or entry[0] in into:
+                raise ReductionError(f"the deadline flow's {side} entry {entry!r} is malformed")
+            into[entry[0]] = units(entry[1], f"{side} {entry[0]}")
+    if not isinstance(flow["arcs"], list):
+        raise ReductionError("the deadline flow's arcs are malformed")
+    seen = set()
+    for entry in flow["arcs"]:
+        if not isinstance(entry, list) or len(entry) != 3 or tuple(entry[:2]) not in precedences \
+                or tuple(entry[:2]) in seen:
+            raise ReductionError(f"the deadline flow's arc {entry!r} is not a precedence")
+        seen.add(tuple(entry[:2]))
+        amount = units(entry[2], f"{entry[0]} -> {entry[1]}")
+        outflow[entry[0]] += amount
+        inflow[entry[1]] += amount
+    bound = 0
+    for t, (d, m, c) in spec.items():
+        through = start[t] + inflow[t]
+        if through != finish[t] + outflow[t]:
+            raise ReductionError(f"the deadline flow is not conserved at {t}")
+        bound += min(through * d, through * m + c * (d - m))
+    return bound - p["deadline"] * sum(finish.values())
 
 
 def certify_crash(p: dict, answer: dict) -> dict:
-    """Exact feasibility of the plan in the project's own terms, and its cost equal to the certified optimum.
+    """Exact feasibility of the plan in the project's own terms, and its cost equal to a proved lower bound.
 
-    The optimum's lower bound is the LP duality certificate GREG checked on its own encoding;
-    the encoding's faithfulness is established by the frozen brute-force oracle at
-    qualification, not per call. Infeasibility is proved here alone, by a chain."""
+    The bound is computed here, in exact integers and from the original project, from the deadline flow
+    the answer carries (``_deadline_bound``): every on-time plan costs at least that much, so a plan that
+    costs exactly that is the cheapest. Neither the engine's objective nor its floating-point duality gap
+    is trusted. Infeasibility is proved here alone, by a chain."""
     spec = {t: (d, s, c) for t, d, s, c in p["tasks"]}
     if answer.get("feasible") is False:
         chain = answer.get("chain", [])
@@ -526,19 +604,23 @@ def certify_crash(p: dict, answer: dict) -> dict:
             raise ReductionError(f"{b} starts before {a} finishes")
     crash = {t: spec[t][0] - (f - s) for t, (s, f) in timing.items()}
     cost = sum(spec[t][2] * x for t, x in crash.items())
-    target = Fraction(answer["lp_objective"]).limit_denominator(10**6)
-    if abs(Fraction(cost) - target) > Fraction(1, 10**6) * max(1, abs(cost)):
-        raise ReductionError(f"plan cost {cost} differs from the certified optimum {float(target)}")
+    bound = _deadline_bound(p, answer.get("deadline_flow"))
+    if cost != bound:
+        raise ReductionError(f"plan cost {cost} differs from the proved lower bound {bound}")
     makespan, chain = _longest(p, {t: f - s for t, (s, f) in timing.items()})
     return {"certified": True, "feasible": True, "deadline": p["deadline"], "cost": cost,
             "finish": max(f for _, f in timing.values()),
             "schedule": [[t, s, f] for t, (s, f) in sorted(timing.items())],
             "shorten": {t: x for t, x in sorted(crash.items()) if x},
             "critical_chain": chain, "critical_length": makespan,
-            "certificate": {"kind": "plan feasible in exact integers; cost equals the LP optimum whose primal-dual "
-                                    "certificate GREG checked on its own encoding (time-cost trade-off LP)",
+            "certificate": {"kind": "plan feasible in exact integers; its cost equals a lower bound on every on-time "
+                                    "plan, computed in exact integers from a flow through the project network "
+                                    "(time-cost LP weak duality, Fulkerson 1961)",
+                            "deadline_flow": answer["deadline_flow"], "lower_bound": bound,
+                            "arithmetic": "exact integers",
                             "engine_certificate": answer.get("lp_certificate"),
-                            "per_call_trust": "the reduction's encoding, frozen-oracle qualified"}}
+                            "per_call_trust": "none for optimality: the bound is re-proved from the original "
+                                              "project; the engine only proposes the plan and the flow"}}
 
 
 def crash_brute_force(p: dict):
@@ -1144,18 +1226,21 @@ REDUCTIONS: dict[str, Reduction] = {r.function: r for r in (
                   "out": "cost, schedule, shorten, critical_chain; or feasible=false with a chain"},
               resources="one engine call with 2 variables per task and 2 rows per task plus one per precedence; "
                         "none when infeasibility is proved directly",
-              failure="engine returns a fractional or wrong vertex (refused); impossible deadline (proved by a "
-                      "chain without the engine)",
+              failure="engine returns a fractional or wrong vertex, or prices that do not round to a flow proving "
+                      "its plan cheapest (refused); impossible deadline (proved by a chain without the engine)",
               recovery="engine quarantined and re-acquired (HiGHS via SciPy, or GLOP via OR-Tools)",
               evidence="frozen brute force over integer shortenings; 416 seeded engine cases each on SciPy/HiGHS and "
                        "OR-Tools/GLOP and 184 proved without the engine, no mismatch",
               primitive="start/finish variables with duration bounds and precedence differences",
               mutation="infeasibility proved without the engine by a shortest-duration chain; feasibility and cost "
-                       "re-checked in exact integers against the original project",
-              risk="optimality rests on the LP certificate over GREG's own encoding; the encoding is trusted per "
-                   "call because the frozen oracle qualified it (not re-proved per call)",
+                       "re-checked in exact integers against the original project; certificate transport: the "
+                       "engine's LP prices become a flow from the project's start to its deadline, re-proved as "
+                       "a lower bound on every on-time plan in exact integers",
+              risk="none on optimality per call: the bound is re-proved from the original project (#217: the LP's "
+                   "floating-point gap tolerance had let suboptimal plans pass at large durations); an engine's "
+                   "floating-point plan at very large durations can miss a bound by one unit and is refused",
               capability="project.crash: certified cheapest on-time plan or certified impossibility",
-              verifier="exact plan check + LP duality certificate on GREG's encoding + frozen brute force",
+              verifier="exact plan check + exact deadline-flow lower bound (Fulkerson's dual) + frozen brute force",
               interface="Genesis 'constructed' route; mission function project.crash",
               rollback="CAPABILITY_DETACH; the LP engine and the history stay"),
         direct=direct_crash),

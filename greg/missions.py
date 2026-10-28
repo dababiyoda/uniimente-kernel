@@ -2130,10 +2130,15 @@ class MissionEngine:
             streak = 0
             for obs in reversed([e.payload for e in self.journal.replay("mission.observed")
                                  if e.payload["mission_id"] == m.mission_id and e.payload["check_id"] == check_id]):
-                if obs["at"] < since or not is_capability_fault(manifest, obs["detail"], obs.get("failure_class")):
+                # an observation made at the repair's own instant was made before it, by what it replaced
+                if obs["at"] <= since or not is_capability_fault(manifest, obs["detail"], obs.get("failure_class")):
                     break
                 streak += 1
             if streak < 2:
+                continue
+            if self.genesis.repaired_before(manifest.capability_id, detail):
+                # the repair already ran for this failure and the same capability fails the same way: the input,
+                # not the machinery, is at fault, so the sensor-failure path asks the founder instead (DOC-2)
                 continue
             repaired, deferred = self._form(m, manifest.function, now, lambda: self.genesis.repair(
                 mission=m, capability_id=manifest.capability_id, failure=detail, params=params, now=now),

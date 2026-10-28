@@ -760,6 +760,13 @@ class Genesis:
             seed["generation"] = len(opened)
         return "deficit-" + sha256_json(seed)[7:31], None
 
+    def repaired_before(self, capability_id: str, failure: str) -> bool:
+        """Whether this capability was already quarantined for this very failure. A repair that leaves the same
+        capability failing the same way changed nothing, so the failure is the world's, not the machinery's; a
+        second repair would also re-record the same incident and the journal refuses it (review of #201, DOC-2)."""
+        incident = sha256_json({"capability_id": capability_id, "failure": failure})
+        return any(q.get("incident") == incident for q in self._quarantines(capability_id))
+
     def repair(self, *, mission, capability_id: str, failure: str, params: dict, now):
         """A formed capability failed in service: quarantine it with the evidence and re-form the function."""
         manifest = self.registry.manifests[capability_id]

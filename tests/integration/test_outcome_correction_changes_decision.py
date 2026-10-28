@@ -136,7 +136,7 @@ def test_an_authorized_correction_changes_the_later_selection_and_the_ablation_d
         assert all(e.payload["supersedes"] for e in adjudicated)
         # prediction 6: the decision made on contested evidence is listed for recheck
         recheck = settlement.decisions_to_recheck(journal)
-        assert [r["receipt"] for r in recheck] == [mid.hash] and recheck[0]["affected_method"] == cid
+        assert [r["receipt"] for r in recheck] == [mid.hash] and recheck[0]["affected_methods"] == [cid]
         # prediction 7: nothing left to investigate
         trust = gravity._measured_trust(journal)
         assert trust["disputes_to_investigate"] == 0 and trust["conflicting_construction_claims"] == 0

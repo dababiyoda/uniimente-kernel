@@ -380,8 +380,7 @@ def decisions_to_recheck(journal) -> list[dict]:
         if hits:                          # one row per decision, however many resolutions touched its evidence
             out.append({"receipt": record.hash, "problem_id": output.get("problem_id"),
                         "selected": output.get("method_or_composition_selected"),
-                        "affected_method": sorted({w["method"] for w in hits})[0] if len({w["method"] for w in hits}) == 1
-                        else sorted({w["method"] for w in hits}),
+                        "affected_methods": sorted({w["method"] for w in hits}),
                         "rejected_events": sorted({f for w in hits for f in w["rejected"]}),
                         "resolution_events": sorted({w["resolution"] for w in hits}),
                         "why": "decided while settled outcomes of the affected method included reports a "
@@ -769,7 +768,7 @@ def _investigation(identity, seen, state, mission_id, receipts) -> dict:
                 "independent": e.payload.get("source") in INDEPENDENT_SOURCES} for e in live]
     independent = sorted({r["realized"] for r in reports if r["independent"]})
     row = {"kind": "objective_conflict", "world_state": "disputed", "claim": identity, "mission_id": mission_id,
-           "method": first.payload.get("method"), "answer_version": seen[-1][1] and _answer_version(seen[-1][1]),
+           "method": first.payload.get("method"), "answer_version": _answer_version(seen[-1][1]),
            "objective": objective, "sense": sense, "promised": promised, "realized_values": state["values"],
            "realization_events": sorted(e.event_id for e in live), "receipts_for_claim": receipts,
            "reports": reports, "rejected_events": state["rejected"],

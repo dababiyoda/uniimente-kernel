@@ -1,0 +1,25 @@
+            for row in disputes:
+                body = {**row["prepared_resolution"]["body"], "note": "time-clock export, external record"}
+                run.command("REALIZATION", body)
+            arm_c = decide()
+            monkeypatch.setattr(settlement, "_resolutions", lambda journal: [])
+            arm_b_after = decide()                                              # the same history, repair disabled
+            assert compiler._settled_counts(journal)[cid] == (5, 5)
+            monkeypatch.undo()
+            monkeypatch.setattr(compiler, "EVIDENCE_INDEX", tmp_path / "index.json")
+            # predictions 1 and 2, under the frozen rule
+            assert (arm_a, arm_b, arm_b_after) == (cid, cid, cid)
+            assert arm_c == "cognition.flow_maxflow"
+            assert score(arm_c, cid) > score(arm_b, cid) == score(arm_a, cid) == 0.4
+            later = run.ask("later-mission", both)
+            assert later.payload["result"]["output"]["method_or_composition_selected"] == "cognition.flow_maxflow"
+            # prediction 3: every fact kept
+>           assert len(objective_facts(journal)) == 20
+E           AssertionError: assert 16 == 20
+E            +  where 16 = len([Event(type='greg.cognition.realization', source='spiffe://uniimente.internal/greg/body', actor='spiffe://uniimente.in...0fa2-59ae-a661-3ce6e3349cd0', occurred_at='2026-10-28T18:25:34.969978Z', causal_parent=None, policy_version=None), ...])
+E            +    where [Event(type='greg.cognition.realization', source='spiffe://uniimente.internal/greg/body', actor='spiffe://uniimente.in...0fa2-59ae-a661-3ce6e3349cd0', occurred_at='2026-10-28T18:25:34.969978Z', causal_parent=None, policy_version=None), ...] = objective_facts(<greg.journal.Journal object at 0x7fe3155b9b10>)
+tests/integration/test_outcome_correction_changes_decision.py:125: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_outcome_correction_changes_decision.py::test_an_authorized_correction_changes_the_later_selection_and_the_ablation_does_not
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 132.55s (0:02:12)

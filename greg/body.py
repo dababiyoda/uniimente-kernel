@@ -612,7 +612,16 @@ class Body:
             # evidence only: the observed values of one retained forecast, or the realized objective of one
             # construction answer, labelled by source; it scores the method's calibration or world competence and
             # changes no mission, capability or authority
-            from greg.cognition.settlement import record_realization
+            from greg.cognition.settlement import record_realization, record_resolution
+            if "resolves" in body:
+                # a correction of a disputed construction outcome: it accepts one independent observation already
+                # recorded, or invalidates the named reports; every fact stays on the record
+                if set(body) - {"receipt", "resolves", "accept", "note"}:
+                    raise MissionError("a resolution takes receipt, resolves, accept and note")
+                payload = record_resolution(self.journal, receipt=body.get("receipt"), resolves=body.get("resolves"),
+                                            accept=body.get("accept"), note=body.get("note", ""),
+                                            command_digest=digest)
+                return {"receipt": payload["receipt"], "resolves": payload["resolves"], "accept": payload["accept"]}
             if set(body) - {"receipt", "realized", "source", "note"}:
                 raise MissionError("a realization takes receipt, realized, source and note")
             payload = record_realization(self.journal, receipt=body.get("receipt"), realized=body.get("realized"),

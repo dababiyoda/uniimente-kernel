@@ -294,22 +294,38 @@ def test_a_verified_failure_closure_settles_like_a_verified_success_and_a_later_
     assert row["settles"].startswith("only once") and "VERIFIED_UNMET" in row["settles"]
 
 
-@pytest.mark.xfail(strict=True, reason="answer-version alias (directive on #210, 2026-10-28), reproduced: the claim "
-                                       "identity binds mission/check/input/method/version, not the answer, so a "
-                                       "report on one certified answer settles a later, different answer of the "
-                                       "same claim. Unreachable for today's certified optima (the promised value "
-                                       "is unique per input and version); the fix is settlement semantics, owned "
-                                       "by the #196 integrator. Strict: this flips to a failure once fixed.")
 def test_a_report_on_one_answer_never_settles_a_different_later_answer_of_the_same_claim():
+    """Answer-version alias (directive on #210, 2026-10-28), reproduced on ec38d8a5 as a strict xfail and fixed: the
+    claim identity bound mission, check, input, method and version but not the answer, so a report on one certified
+    answer (promise 2) settled a later, different answer of the same check (promise 4), which was no longer asked
+    for. A construction's claim now names its answer (``answer_version``)."""
     journal, first = pending()                                  # promises profit 2
-    later = answer(journal, result={"profit": 4})               # same claim key, a different certified answer
+    later = answer(journal, result={"profit": 4})               # same signed check and input, a different answer
     observe(journal, later)
     appraise(journal, "VERIFIED")
     settlement.record_realization(journal, receipt=first, realized=1, source="founder_reported")
-    credited = [o for o in settlement.measured_outcomes(journal) if o.get("world")]
-    assert all(o["world"]["promised"] == 4 for o in credited), "the later answer inherited the first answer's report"
-    assert any(r.get("promised") == 4 for r in settlement.awaiting_realization(journal)), \
-        "the later answer's world outcome is no longer asked for"
+    outcomes = settlement.measured_outcomes(journal)
+    assert len(outcomes) == 2 and len({o["answer_version"] for o in outcomes}) == 2
+    [reported] = [o for o in outcomes if o.get("world")]
+    [unreported] = [o for o in outcomes if not o.get("world")]
+    assert reported["world"]["promised"] == 2 and reported["world"]["realized"] == 1 and reported["correct"] is False
+    assert unreported["receipt"] == later and unreported["correct"] is True           # certificate only, its own
+    [row] = settlement.awaiting_realization(journal)
+    assert row["receipt"] == later and row["promised"] == 4 and row["world_state"] == "unreported"
+
+
+def test_re_observing_one_unchanged_answer_settles_once_and_never_inflates_competence():
+    journal, first = pending()
+    for n in range(4):                                           # one answer, re-observed on new receipts
+        observe(journal, answer(journal, recorded="again", n=n))
+    appraise(journal, "VERIFIED")
+    [outcome] = settlement.measured_outcomes(journal)
+    [(count, correct)] = [(r["count"], r["correct"]) for r in settlement.competence(journal).values()]
+    assert (count, correct) == (1, 1)
+    settlement.record_realization(journal, receipt=first, realized=2, source="external_record")
+    [(count, correct)] = [(r["count"], r["correct"]) for r in settlement.competence(journal).values()]
+    assert (count, correct) == (1, 1) and settlement.measured_outcomes(journal)[0]["world"]["state"] == "reported"
+
 
 def test_a_corrected_report_is_shown_as_a_conflict_scored_as_neither_never_silently_dropped():
     """Review finding 1 on #210 (...foabg): a second, different value, even on the same receipt, makes settlement

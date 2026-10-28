@@ -437,6 +437,11 @@ def main(argv=None) -> int:
                                 help="forecast: one observed value per horizon step, in order")
             values.add_argument("--objective-value", type=float,
                                 help="construction: one observed scalar value of the named objective")
+            values.add_argument("--resolves", action="append", metavar="EVENT",
+                                help="resolve a disputed construction outcome: a realization event it rules on "
+                                     "(repeat; greg cognition calibration lists a prepared resolution)")
+            q.add_argument("--accept", metavar="EVENT",
+                           help="with --resolves: the independent observation to accept; omit to invalidate them")
             q.add_argument("--source", default="founder_reported",
                            choices=["founder_reported", "external_record", "sensor_observation"])
             q.add_argument("--note", default="")
@@ -935,7 +940,14 @@ def main(argv=None) -> int:
                 print(_drop(home, "BODY_STOP", {}, args))
         elif args.cmd in ("attach", "detach"):
             print(_drop(home, "CAPABILITY_" + args.cmd.upper(), {"capability_id": args.capability_id}, args))
+        elif args.cmd == "realize" and args.resolves:
+            if not args.note.strip():
+                raise BodyError("--note states the basis of the resolution: the independent record that decides it")
+            print(_drop(home, "REALIZATION", {"receipt": args.receipt, "resolves": args.resolves,
+                                              "accept": args.accept, "note": args.note}, args))
         elif args.cmd == "realize":
+            if args.accept:
+                raise BodyError("--accept is used with --resolves")
             realized = args.value
             if args.objective_value is not None:
                 import math

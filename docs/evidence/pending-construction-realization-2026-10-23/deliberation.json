@@ -1,0 +1,324 @@
+{
+  "decision_id": "ADR-20261023-CONSTRUCTION-REALIZATION-INTAKE",
+  "title": "Make construction feedback discoverable and reportable through the existing CLI",
+  "problem": "The accepted construction REALIZATION path requires a scalar, but the pending-outcomes view omits constructions and the only realize CLI option always emits a forecast list. The operator cannot complete this feedback path through the advertised CLI.",
+  "founder_intent_refs": [
+    "https://github.com/dababiyoda/uniimente-kernel/blob/a1c6dbcb2d5b4f1647b0f3569dbbbdf0aae558d3/docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json",
+    "https://github.com/dababiyoda/uniimente-kernel/discussions/89",
+    "https://github.com/dababiyoda/uniimente-kernel/issues/96#issuecomment-6366693337",
+    "https://github.com/dababiyoda/uniimente-kernel/issues/96#issuecomment-6366744166",
+    "Alfonso's current instructions: Do it; apply the Founder-Intent Collaboration Protocol; Resume."
+  ],
+  "baseline": "Kernel #196 at a1c6dbcb2d5b4f1647b0f3569dbbbdf0aae558d3. Existing record_realization, construction registration and promise predicates, signed REALIZATION dispatch, forecast list behavior, tolerance and scoring are reused unchanged. WMI #45 is a separate handed-off increment.",
+  "alternatives": [
+    {
+      "name": "List constructions only",
+      "description": "Expose plans without fixing the CLI's scalar/list mismatch.",
+      "advantages": [
+        "Small read-only change."
+      ],
+      "disadvantages": [
+        "The suggested forecast-form command would still be rejected for construction outcomes."
+      ],
+      "revival_evidence": "Useful only if an already functional alternative scalar reporting interface is supplied."
+    },
+    {
+      "name": "Infer scalar from one --value",
+      "description": "Collapse every single observed value to a scalar.",
+      "advantages": [
+        "No new flag."
+      ],
+      "disadvantages": [
+        "Breaks valid one-step forecasts, whose realization must remain a list."
+      ],
+      "revival_evidence": "A separately designed receipt-aware command that can distinguish types without ambiguity and without writing the live ledger."
+    },
+    {
+      "name": "Reuse the accepted predicates and add an explicit scalar option",
+      "description": "List pending construction objectives using existing recognition/promise helpers; mutually exclusive --objective-value emits one finite scalar while --value retains forecast lists.",
+      "advantages": [
+        "Closes discoverability and actual signed-command usability together.",
+        "No new ledger, authority, contract or scoring rule."
+      ],
+      "disadvantages": [
+        "The view still cannot prove an external outcome.",
+        "Exact-head integration and independent review remain pending."
+      ],
+      "revival_evidence": "Selected as reversible implementation; keep only with body/CLI and compatibility evidence."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Only direct API callers can report construction outcomes; the visible operator feedback list remains incomplete.",
+    "advantages": [
+      "No source or coordination cost."
+    ],
+    "disadvantages": [
+      "Known user-facing feedback break remains.",
+      "Building another learning mechanism would not repair its absent reporting seam."
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Self-review by the one Codex worker: continue the complete machine after WMI's consumer increment by repairing the next observed learning-input seam.",
+      "material_concerns": [
+        "A component does not close BODY + ORGANS + MIND.",
+        "Do not claim a positive real-world dividend from synthetic outcomes."
+      ],
+      "evidence_refs": [
+        "before.txt",
+        "before-cli.txt"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Project existing retained receipts and emit the existing signed REALIZATION body; reuse accepted recognition and promise helpers.",
+      "material_concerns": [
+        "No second ledger or policy.",
+        "No scalar/list ambiguity for one-step forecasts."
+      ],
+      "evidence_refs": [
+        "../../../greg/cognition/settlement.py",
+        "../../../greg/cli.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Attack unsupported/unregistered, tampered, uncertified and objective-less receipts, flag ambiguity, nonfinite values and missing keys.",
+      "material_concerns": [
+        "A pending row cannot certify the world or itself settle competence.",
+        "A new CLI form must not bypass founder signing."
+      ],
+      "evidence_refs": [
+        "../../../tests/unit/test_greg_pending_construction_realization.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Expose the named objective, sense, promise, pinned method version, tolerance and actual scalar reporting command in the existing calibration view.",
+      "material_concerns": [
+        "Reading the view must append no events.",
+        "Respect the integrator's separate branch and the old #168 CLI seam claim."
+      ],
+      "evidence_refs": [
+        "https://github.com/dababiyoda/uniimente-kernel/issues/96#issuecomment-6366744166"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Self-review only; a founder report remains evidence of the report, not independent world verification.",
+      "material_concerns": [
+        "No real buyer/staffing outcome is supplied.",
+        "Existing attribution, tolerance and conflict rules are unchanged."
+      ],
+      "evidence_refs": [
+        "https://github.com/dababiyoda/uniimente-kernel/blob/a1c6dbcb2d5b4f1647b0f3569dbbbdf0aae558d3/docs/collaboration/CONSTRUCTION-REALIZATION-2026-10-22.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The pending projection omits constructions.",
+      "tier": "unit_test",
+      "reference": "before.txt",
+      "finding": "Two behavior assertions fail before source edits: a synthetic accepted-shape construction and an actual portfolio construction executed on a temporary body are both absent."
+    },
+    {
+      "claim": "The existing CLI cannot emit a construction scalar.",
+      "tier": "unit_test",
+      "reference": "before-cli.txt",
+      "finding": "The scalar CLI test fails at argument parsing because the original interface requires repeated --value and has no objective form."
+    },
+    {
+      "claim": "Scoped compatibility checks pass.",
+      "tier": "sandbox_execution",
+      "reference": "after.txt",
+      "finding": "73 passed in 201.40s on Python 3.12.14: pending construction intake, outcome calibration, construction realization/settlement, Goal Gravity and founder tier. Real temporary-body construction, read-only CLI projection and signed scalar reporting exercised."
+    },
+    {
+      "claim": "The new projection causes visibility.",
+      "tier": "unit_test",
+      "reference": "ablation.txt",
+      "finding": "Restoring only the exact baseline projection produces 1 expected failure and 1 pass; scalar CLI remains functional; production hashes unchanged."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "A positive construction-learning dividend has been established.",
+      "tier": "primary_source",
+      "reference": "https://github.com/dababiyoda/uniimente-kernel/blob/a1c6dbcb2d5b4f1647b0f3569dbbbdf0aae558d3/docs/collaboration/CONSTRUCTION-REALIZATION-2026-10-22.md",
+      "finding": "No. The existing realization test outcomes and this new CLI test outcome are synthetic. Realization intake is a prerequisite, not dividend evidence."
+    },
+    {
+      "claim": "Five perspectives establish independent review or receiver acceptance.",
+      "tier": "other",
+      "reference": "README.md",
+      "finding": "No. All perspectives are one Codex worker's self-review. Independent reviewer unassigned; integration owner has not acknowledged this exact head."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "An operator can discover a retained construction's pending objective and report its observed scalar through the existing signed inbox, while forecasts remain compatible.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Repair the existing path rather than add another learning subsystem.",
+        "amplified_value": "Reuse the exact construction and objective predicates accepted by record_realization and its existing authority/scoring path."
+      },
+      {
+        "id": "A2",
+        "statement": "Make the feedback request actionable.",
+        "amplified_value": "Display objective, promise, sense, tolerance and a scalar command that preserves forecast list semantics."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Listing a promise could imply that the world has been verified.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Explicit evidence-limit and authority_created false; no append or settlement in the view; source claims keep their present labels."
+      },
+      {
+        "id": "D2",
+        "statement": "Changing --value shape would break one-step forecasts.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Keep --value as a list; introduce mutually exclusive --objective-value and finite scalar checking."
+      },
+      {
+        "id": "D3",
+        "statement": "A new change in shared source could collide with existing integrator work.",
+        "severity": "medium",
+        "response_type": "governance",
+        "redesigned_response": "Claim exact functions and CLI argument/payload seams; distinguish #168's human-work concern; refresh heads/board and prepare an independent child draft."
+      }
+    ],
+    "comparisons": {
+      "baseline": "The body API already accepts construction scalars; its view and CLI do not expose the complete route.",
+      "do_nothing": "Leaves the reproduced feedback break.",
+      "simplest_viable_alternative": "Listing alone fails practical command execution; scalar-only CLI still leaves plans undiscoverable.",
+      "strongest_competing_architecture": "A receipt-aware form or console could infer expected observations but adds a larger UI/state dependency without improving this bounded path.",
+      "reversible_experiment": "Selected projection plus explicit scalar flag, tested from actual construction to signed CLI to retained realization; independent draft only."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Generalize realization to all optimization methods",
+        "rejection_reason": "Changes accepted domain/scoring semantics and is unnecessary for this known path.",
+        "revival_evidence": "A separately owned intent, objective mapping and falsifiable outcome-verification requirement."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack the strengthened path for scalar/list ambiguity, bogus receipts, source-label laundering, accidental writing, nonfinite values, missing keys and false learning claims.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "gaming",
+        "statement": "A command with both forms or a nonfinite scalar might produce ambiguous or invalid signed evidence.",
+        "strengthening_response": "Argparse mutual exclusion, explicit finite scalar check before signing, and tests that refusal leaves the inbox empty."
+      },
+      {
+        "id": "W2",
+        "category": "fragility",
+        "statement": "A projection can drift from the actual acceptance predicates.",
+        "strengthening_response": "Reuse _constructed, registration versions/functions and _promise; test the actual body acceptance and preserve existing forecast tests."
+      },
+      {
+        "id": "W3",
+        "category": "comprehensibility",
+        "statement": "Pending objective rows and forecast calibration statistics are different evidence types.",
+        "strengthening_response": "Label kind objective and show objective-specific fields; leave forecast calibration statistics unchanged; clarify the existing help text and limitations."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "resolved",
+        "rationale": "View states its verification ceiling, reports no authority and is asserted read-only; actual reports still go through the unchanged signed path.",
+        "owner": "Codex implementation; reviewer unassigned",
+        "review_trigger": "Any future consumer treats pending rows as settled or independently verified outcomes."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "resolved",
+        "rationale": "Explicit mutually exclusive forms preserve a single forecast value as [value] and a construction value as scalar.",
+        "owner": "CLI maintainer",
+        "review_trigger": "CLI form or realization input contract changes."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "experiment",
+        "rationale": "Current concern search/claims do not overlap this realization seam; no owner acknowledgment is fabricated and the integrator's branch remains untouched.",
+        "owner": "Codex task a60f90b8f5e5/construction-realization-intake",
+        "review_trigger": "Before publication, owner update and exact-head intake."
+      }
+    ],
+    "final_design": "Extend the existing read-only pending projection to accepted construction objectives and add --objective-value to the existing signed realize CLI. No change to accepted outcomes, verification, permissions, consequence gates, tolerance or competence rules.",
+    "residual_risks": [
+      {
+        "risk": "A real outcome remains unavailable until a relevant plan is executed and observed.",
+        "mitigation": "Keep the positive-dividend experiment unmeasured; require separately authorized real activity and faithfully sourced reports.",
+        "owner": "Mission operator / Alfonso",
+        "review_trigger": "First actual constructed plan with an observable realized objective."
+      },
+      {
+        "risk": "Copies or repeated reobservations can create multiple pending receipt rows.",
+        "mitigation": "Preserve the accepted per-receipt interface and existing claim settlement semantics; do not infer additional real demand or observations from row count.",
+        "owner": "Cognition maintainer",
+        "review_trigger": "Operator evidence of repeated pending promises causing confusion."
+      },
+      {
+        "risk": "Hosted full-machine checks, independent review and integration are separate from local scoped tests.",
+        "mitigation": "Keep draft; hand off exact commit and evidence; preserve full-machine parent and source pins.",
+        "owner": "session_01FBS4KNJR59nSbdGbxo8Mbx; independent reviewer unassigned",
+        "review_trigger": "Exact-head CI and receiving-session review."
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserved self-review objection; no claim of independent consensus.",
+    "entries": [
+      {
+        "role": "Evidence and Welfare Guardian",
+        "position": "Do not call this a measured learning dividend or external verification.",
+        "rationale": "The new feature makes feedback reportable; the test supplies a synthetic scalar on a temporary body.",
+        "evidence_threshold": "Pre-registered outcome-backed comparison with genuinely realized observations and independent review.",
+        "owner": "Cognition experiment owner and mission operator",
+        "review_trigger": "Any performance, world-outcome or full-machine completion claim."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Authorized reversible development only. Child draft on #196's exact head, with standard exact-head review and integration by the existing owner. No protected merge, activation or real effect is authorized by this record. Retain the forecast CLI form and existing REALIZATION input types.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert only this component commit.",
+      "Preserve signed realization evidence; the existing body/API still understands all retained scalar and list facts.",
+      "Keep the failed-before tests and decision in history."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Projection writes history or silently settles an outcome.",
+    "Scalar mode bypasses signing or changes existing forecast list shape.",
+    "View accepts a construction that the existing registration/receipt/promise predicates refuse.",
+    "Any relevant regression or overlapping live seam claim."
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Codex /root workspace a60f90b8f5e5 task construction-realization-intake; integration session_01FBS4KNJR59nSbdGbxo8Mbx; independent reviewer unassigned",
+  "review_trigger": "Before publication and exact-head intake; relevant owner/source changes; actual-world observation and proposed dividend measurement. Resume 2026-10-25: integration base advanced to fa80ace79eb1ac2cc4bf745918baf5587e1ae3f6 in three unrelated files; scoped source diff empty. Tested parent remains a1c6dbcb. Combined-head CI remains separate."
+}

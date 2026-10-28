@@ -494,14 +494,36 @@ def _forecast_identity(cognitive) -> tuple:
 
 
 def awaiting_realization(journal) -> list[dict]:
-    """Retained forecast receipts with no realization bound yet: what the founder (or a sensor) can report."""
+    """Retained forecasts and construction objectives with no realization bound yet.
+
+    A read-only projection of the same receipts accepted by record_realization;
+    listing an objective neither verifies its world outcome nor settles it.
+    """
     if journal is None:
         return []
     bound = {e.payload["receipt"] for e in journal.replay("cognition.realization")}
+    constructed = _constructed_versions(journal)
+    functions = _constructed_functions(journal)
     out = []
     for record in journal.ledger.by_type("receipt"):
-        cognitive, compiled = _forecast_of((record.payload.get("result") or {}).get("output"))
-        if record.hash in bound or cognitive is None:
+        if record.hash in bound:
+            continue
+        retained = (record.payload.get("result") or {}).get("output")
+        cognitive, compiled = _forecast_of(retained)
+        if cognitive is None:
+            built = _constructed(retained, constructed)
+            method = built["method_or_composition_selected"] if built else None
+            promise = _promise(built, functions.get(method)) if built else None
+            if promise is None:
+                continue
+            objective, sense, promised = promise
+            out.append({"receipt": record.hash, "recorded_at": record.ts_utc, "kind": "objective",
+                        "method": method, "method_version": constructed[method],
+                        "problem_id": built.get("problem_id"), "compile_receipt": built["receipt_id"],
+                        "objective": objective, "sense": sense, "promised": promised,
+                        "tolerance": realization_tolerance(promised), "authority_created": False,
+                        "evidence_limit": "the reported world outcome is not independently verified by this view",
+                        "report_with": f"greg realize {record.hash} --objective-value <observed value> --key <founder key>"})
             continue
         out.append({"receipt": record.hash, "recorded_at": record.ts_utc, "method": cognitive["method"],
                     "method_version": cognitive["method_version"], "problem_id": cognitive.get("problem_id"),

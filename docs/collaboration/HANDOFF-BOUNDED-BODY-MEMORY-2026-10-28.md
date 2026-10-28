@@ -75,7 +75,7 @@ here; this file does not repeat it.
 | Body / runtime | Memory per retained record 2,639 → 1,390 B resident; heap 2,287 → 807 B (final head `e3c6e723`; 1,458 and 833 on `45d65a30`) | sandbox measured |
 | Body / runtime | Run 361 s → 279 s for 1,800 ticks on the final head (334 → 223 on `45d65a30`; concurrent runs; indicative) | sandbox measured |
 | Body / runtime | Ledger file tampering detected while running | unit-tested |
-| Zero trust / evidence | Explicit `verify_chain()` re-derives every dropped record from the file. Commit path: running digest. Replaced files and changed bytes stop appends | unit-tested; independently attacked |
+| Zero trust / evidence | Explicit `verify_chain()` re-derives every dropped record from the file. Commit path: running digest. Every append refuses a file that does not end with this ledger's last line (deleted, replaced, inode reused, FIFO); changed bytes stop appends | unit-tested; three independent attack rounds |
 | Install / doctor | One pip call per engine. `why_missing` and `platform.glibc` in the doctor | unit-tested; real installer run end to end on x86-64 Ubuntu (5 of 5 engines, body, key, designation) |
 | Install / doctor | ARM64 Debian 12 behaviour | derived from PyPI tags only |
 | Infinite Goal Chase, computer use, Capability Genesis, AI workforce, SOP, human work, business runtime, economic/compute | unchanged | see the earlier report |
@@ -84,7 +84,7 @@ here; this file does not repeat it.
 
 `provenance/ledger.py`, `events/spine.py`, `greg/chromebook/install.sh`, `greg/doctor.py`,
 `greg/CHROMEBOOK_FIRST_MISSION.md`, `scripts/measure_body_memory.py` (new), `scripts/ci/check_cortex_mutants.py`
-(one stale mutant repaired, eight ledger mutants added),
+(one stale mutant repaired, 23 ledger mutants added),
 `tests/unit/test_ledger_dropped_payloads.py` (new, 35 tests), `tests/unit/test_greg_chromebook_install.py` (+2),
 `docs/collaboration/FINDING-BODY-MEMORY-2026-10-28.md`, `docs/collaboration/deliberation-bounded-body-memory-20261028.json`,
 `docs/evidence/body-memory-2026-10-28/`, this file.

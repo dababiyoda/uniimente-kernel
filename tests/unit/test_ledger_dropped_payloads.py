@@ -356,19 +356,6 @@ def test_f5_concurrent_readers_never_share_a_payload_object(tmp_path):
     assert second == first and second is not held and second is not first
 
 
-def test_a_ledger_file_replaced_after_open_is_reported_and_stops_appends(tmp_path):
-    import os
-    led, _, path = grown(tmp_path)
-    led.records[3]                                  # the read source is open on the original file
-    data = open(path, "rb").read()
-    os.rename(path, path + ".old")
-    open(path, "wb").write(data)                   # identical bytes, another file
-    ok, why = led.verify_chain()
-    assert not ok and "replaced after it was opened" in why
-    with pytest.raises(ValueError, match="replaced after it was opened"):
-        led.append("event", {"n": 1})
-
-
 def test_membership_compares_headers_before_reading_a_payload_back(tmp_path, monkeypatch):
     led, _, _ = grown(tmp_path)
     wanted = led.records[-1]
@@ -376,64 +363,6 @@ def test_membership_compares_headers_before_reading_a_payload_back(tmp_path, mon
     real = ledger_module._LineSource.payload
     monkeypatch.setattr(ledger_module._LineSource, "payload", lambda self, rec: reads.append(rec.seq) or real(self, rec))
     assert wanted in led.records and reads == []
-
-
-# Independent mutant audit of #211 (2026-10-28): safeguards no mutant covered, and the replaced-file gap it found.
-
-@pytest.mark.parametrize("reopen", [False, True])
-def test_a_ledger_file_deleted_before_any_read_stops_appends_and_is_never_recreated(tmp_path, reopen):
-    """No old payload was read yet, so no read descriptor exists. The ledger still knows which file it created or
-    loaded: an append refuses, and no new one-line history appears at the path."""
-    led, _, path = grown(tmp_path)
-    if reopen:
-        led.close()
-        led = EvidenceLedger(ANCHOR, path, resident=4)
-    assert led._src._fd is None
-    os.remove(path)
-    with pytest.raises(ValueError, match="replaced after it was opened"):
-        led.append("event", {"n": 1})
-    assert not os.path.exists(path)
-    with pytest.raises(ValueError, match="replaced after it was opened"):
-        led.append("witness", {"w": 1})
-
-
-@pytest.mark.parametrize("reopen", [False, True])
-def test_a_ledger_file_replaced_before_any_read_never_receives_an_append(tmp_path, reopen):
-    """Identical bytes in another file, and no verify_chain first: the Commit Witness and every other append refuse,
-    and the other file is left exactly as it was."""
-    led, _, path = grown(tmp_path)
-    if reopen:
-        led.close()
-        led = EvidenceLedger(ANCHOR, path, resident=4)
-    data = open(path, "rb").read()
-    os.rename(path, path + ".old")
-    open(path, "wb").write(data)
-    for kind in ("witness", "event"):
-        with pytest.raises(ValueError, match="replaced after it was opened"):
-            led.append(kind, {"n": 1})
-    assert open(path, "rb").read() == data and open(path + ".old", "rb").read() == data
-
-
-def test_an_old_payload_is_never_read_from_a_file_that_replaced_the_ledgers(tmp_path):
-    led, _, path = grown(tmp_path)
-    assert led._src._fd is None
-    data = open(path, "rb").read()
-    os.rename(path, path + ".old")
-    open(path, "wb").write(data)
-    with pytest.raises(ValueError, match="replaced after it was opened"):
-        led.records[3]
-
-
-def test_a_ledger_file_deleted_after_open_is_reported_and_stops_appends(tmp_path):
-    """replaced() answers True when the path names no file."""
-    led, _, path = grown(tmp_path)
-    led.records[3]                                  # the read source is open on the original file
-    os.remove(path)
-    ok, why = led.verify_chain()
-    assert not ok and "replaced after it was opened" in why
-    with pytest.raises(ValueError, match="replaced after it was opened"):
-        led.append("event", {"n": 1})
-    assert not os.path.exists(path)
 
 
 def test_a_dropped_records_read_source_swapped_in_memory_is_found(tmp_path):
@@ -499,3 +428,230 @@ def test_explicit_verification_holds_a_dropped_skeleton_to_its_line_even_when_th
     led._dropped_hash, led._dropped_digest = digest, digest.digest()
     ok, why = led.verify_chain()
     assert not ok and "retained record at seq 6 differs from its line in the file" in why
+
+
+# The file at the path holds this ledger's history only while it ends with this ledger's last line, byte for byte
+# (independent reviews of #211, 2026-10-28). Content, not (device, inode): a deleted file's inode number is reused
+# by the next file created beside it, and overlayfs copy-up or FUSE can renumber the very same file.
+
+NOT_OURS = "no longer holds this ledger's history"
+
+
+def _other_history(tmp_path, name="other.jsonl", n=6):
+    path = str(tmp_path / name)
+    other = EvidenceLedger("sha256:" + "1" * 64, path)
+    for i in range(n):
+        other.append("event", {"other": i})
+    other.close()
+    return path
+
+
+def _in_thread(fn, timeout=10):
+    import threading
+    box = {}
+
+    def run():
+        try:
+            box["value"] = fn()
+        except BaseException as exc:          # noqa: BLE001 - reported to the test
+            box["error"] = exc
+    t = threading.Thread(target=run, daemon=True)
+    t.start()
+    t.join(timeout)
+    assert not t.is_alive(), "blocked instead of refusing"
+    return box
+
+
+@pytest.mark.parametrize("reopen", [False, True])
+def test_a_ledger_file_deleted_stops_appends_and_is_never_recreated(tmp_path, reopen):
+    led, _, path = grown(tmp_path)
+    if reopen:
+        led.close()
+        led = EvidenceLedger(ANCHOR, path, resident=4)
+    os.remove(path)
+    for kind in ("event", "witness"):
+        with pytest.raises(ValueError, match=NOT_OURS):
+            led.append(kind, {"n": 1})
+    assert not os.path.exists(path)
+    ok, why = led.verify_chain()
+    assert not ok and NOT_OURS in why
+
+
+@pytest.mark.parametrize("reopen", [False, True])
+def test_another_history_put_in_place_never_receives_an_append(tmp_path, reopen):
+    led, _, path = grown(tmp_path)
+    if reopen:
+        led.close()
+        led = EvidenceLedger(ANCHOR, path, resident=4)
+    other = _other_history(tmp_path)
+    data = open(other, "rb").read()
+    os.replace(other, path)
+    for kind in ("witness", "event"):
+        with pytest.raises(ValueError, match=NOT_OURS):
+            led.append(kind, {"n": 1})
+    assert open(path, "rb").read() == data
+    ok, why = led.verify_chain()
+    assert not ok and NOT_OURS in why
+
+
+def test_an_inode_number_reused_by_another_file_is_not_this_ledger(tmp_path):
+    """Deleting the file frees its inode; the next file created beside it usually gets the same number back."""
+    led, _, path = grown(tmp_path)
+    for _ in range(3):
+        os.remove(path)
+        with open(path, "wb") as fh:
+            fh.write(b'{"forged": true}\n')
+        with pytest.raises(ValueError, match=NOT_OURS):
+            led.append("witness", {"w": 1})
+        assert open(path, "rb").read() == b'{"forged": true}\n'
+
+
+def test_two_atomic_saves_over_the_path_never_receive_an_append(tmp_path):
+    import tempfile
+    led, _, path = grown(tmp_path)
+    for i in range(2):
+        fd, tmp = tempfile.mkstemp(dir=str(tmp_path))
+        os.write(fd, b'{"saved": %d}\n' % i)
+        os.close(fd)
+        os.replace(tmp, path)
+        with pytest.raises(ValueError, match=NOT_OURS):
+            led.append("event", {"n": i})
+        assert open(path, "rb").read() == b'{"saved": %d}\n' % i
+
+
+def test_a_file_of_the_same_size_ending_in_another_line_is_not_this_ledger(tmp_path):
+    """The size alone is not the anchor: the last line must be this history's last record, byte for byte."""
+    led, _, path = grown(tmp_path)
+    data = bytearray(open(path, "rb").read())
+    data[-3] = ord("0") if data[-3] != ord("0") else ord("1")
+    with open(path + ".new", "wb") as fh:
+        fh.write(bytes(data))
+    os.replace(path + ".new", path)
+    with pytest.raises(ValueError, match="last line is not this history's last record"):
+        led.append("witness", {"w": 1})
+    assert open(path, "rb").read() == bytes(data)
+
+
+def test_a_byte_identical_copy_put_in_place_continues_the_same_history(tmp_path):
+    """Appending to a file that holds exactly this history forks nothing; reads move to it with the appends."""
+    led, spine, path = grown(tmp_path)
+    led.records[3]                                       # the read source is open on the original file
+    data = open(path, "rb").read()
+    os.rename(path, path + ".old")
+    open(path, "wb").write(data)
+    for i in range(10):                                  # long enough for the first of them to leave memory
+        led.append("event", {"after": i})
+    first_after = len(led.records) - 10
+    assert not led._records[first_after].resident
+    assert led.records[first_after].payload == {"after": 0}
+    assert led.verify_chain()[0]
+    assert open(path + ".old", "rb").read() == data
+    reopened = everything_in_memory(path)
+    assert [asdict(r) for r in reopened.records] == [asdict(r) for r in led.records]
+
+
+def test_an_old_payload_is_never_read_from_another_history_put_in_place(tmp_path):
+    led, _, path = grown(tmp_path)
+    os.replace(_other_history(tmp_path, n=60), path)
+    with pytest.raises(ValueError, match="payload hash mismatch at seq 3"):
+        led.records[3]
+
+
+def test_a_missing_file_is_a_counted_refusal_when_an_old_payload_is_read(tmp_path):
+    """No read descriptor is open yet, and the file is gone: the read refuses as a value error, counted, so the
+    next reconstruction reads the file too."""
+    led, _, path = grown(tmp_path)
+    led.close()
+    led = EvidenceLedger(ANCHOR, path, resident=4, read_only=True)
+    os.remove(path)
+    with pytest.raises(ValueError, match="cannot be read"):
+        led.records[3]
+    assert led._src.broken
+    assert not led.verify_incremental()[0]
+    with pytest.raises((EventError, ValueError)):
+        EventSpine(led)
+
+
+def test_a_small_ledgers_verification_reads_its_file(tmp_path):
+    """Nothing has left memory, yet verify_chain() checks the file the path names: it never reports an intact
+    chain while every append refuses."""
+    path = str(tmp_path / "l.jsonl")
+    led = EvidenceLedger(ANCHOR, path)
+    for i in range(3):
+        led.append("event", {"n": i})
+    os.replace(_other_history(tmp_path), path)
+    ok, why = led.verify_chain()
+    assert not ok and NOT_OURS in why
+    with pytest.raises(ValueError, match=NOT_OURS):
+        led.append("event", {"n": 3})
+    assert not led.verify_chain()[0] and not led.verify_incremental()[0]
+
+
+@pytest.mark.parametrize("reopen", [False, True])
+def test_a_fifo_put_in_place_is_refused_without_blocking(tmp_path, reopen):
+    led, _, path = grown(tmp_path)
+    if reopen:
+        led.close()
+        led = EvidenceLedger(ANCHOR, path, resident=4)
+    os.rename(path, path + ".old")
+    os.mkfifo(path)
+    box = _in_thread(lambda: led.append("witness", {"w": 1}))
+    assert isinstance(box.get("error"), ValueError) and NOT_OURS in str(box["error"])
+    if reopen:                                           # no read descriptor yet: the read opens the FIFO
+        box = _in_thread(lambda: led.records[3])
+        assert isinstance(box.get("error"), ValueError) and "not a regular file" in str(box["error"])
+
+
+def test_opening_reads_one_file_even_if_the_path_is_swapped_while_it_loads(tmp_path, monkeypatch):
+    """The size, the complete end and every line come from one descriptor; the history it loaded is then held
+    to the file at the path, which here is another one, so nothing is appended to it."""
+    led, _, path = grown(tmp_path)
+    led.close()
+    later = str(tmp_path / "later.jsonl")
+    open(later, "wb").write(open(path, "rb").read())
+    continued = EvidenceLedger(ANCHOR, later, resident=4)
+    for i in range(3):
+        continued.append("event", {"later": i})
+    count = len(continued.records)
+    continued.close()
+    real = ledger_module._complete_end
+
+    def swap(fd, size):
+        end = real(fd, size)
+        os.replace(later, path)
+        return end
+    monkeypatch.setattr(ledger_module, "_complete_end", swap)
+    led = EvidenceLedger(ANCHOR, path, resident=4)
+    assert len(led.records) == count - 3
+    with pytest.raises(ValueError, match=NOT_OURS):
+        led.append("event", {"n": 1})
+    monkeypatch.setattr(ledger_module, "_complete_end", real)
+    assert len(everything_in_memory(path).records) == count
+
+
+def test_quarantine_never_truncates_a_file_swapped_in_after_load(tmp_path, monkeypatch):
+    led, _, path = grown(tmp_path)
+    led.close()
+    with open(path, "ab") as fh:
+        fh.write(b'{"seq": 81, "ts_utc": "2026-09-26T00:00:00Z", "record_type": "ev')
+    other = _other_history(tmp_path)
+    data = open(other, "rb").read()
+    real = EvidenceLedger._load
+
+    def load_then_swap(self, p):
+        real(self, p)
+        os.replace(other, path)
+    monkeypatch.setattr(EvidenceLedger, "_load", load_then_swap)
+    with pytest.raises(ValueError, match=NOT_OURS):
+        EvidenceLedger(ANCHOR, path, resident=4, tail="quarantine")
+    assert open(path, "rb").read() == data
+    assert not [n for n in os.listdir(tmp_path) if ".unacknowledged-" in n]
+
+
+def test_a_read_only_observer_verifies_while_its_writer_appends(tmp_path):
+    led, _, path = grown(tmp_path)
+    observer = EvidenceLedger(ANCHOR, path, read_only=True, tail="ignore", resident=4)
+    for i in range(10):
+        led.append("event", {"n": i})
+    assert observer.verify_chain()[0]
+    assert observer.records[3] == led.records[3]

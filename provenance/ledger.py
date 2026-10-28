@@ -16,6 +16,7 @@ import json
 import os
 import copy
 import fcntl
+import stat
 import sys
 import threading
 import time
@@ -95,9 +96,14 @@ def _index_value(table: dict, value, position: int) -> None:
 _PAYLOAD = LedgerRecord.__dict__["payload"]   # the slot itself, under _Retained's payload property
 
 
+_CLOEXEC = getattr(os, "O_CLOEXEC", 0)
+_NONBLOCK = getattr(os, "O_NONBLOCK", 0)
+
+
 def _existing(path: str, flags: int) -> int:
-    """Open ``path`` as asked, but never create it: appending to a new file at a ledger's path would fork history."""
-    return os.open(path, flags & ~os.O_CREAT)
+    """Open ``path`` for reading and appending, never creating it (appending to a new file at a ledger's path would
+    fork history) and never blocking on what is not a regular file (a FIFO put in its place)."""
+    return os.open(path, (flags & ~(os.O_CREAT | os.O_WRONLY)) | os.O_RDWR | _NONBLOCK)
 
 
 class _LineSource:
@@ -110,22 +116,9 @@ class _LineSource:
         # counter, not a flag: a failure found while a reconstruction is running is not erased by it.
         self.failures = 0
         self.cleared = 0
-        # The (device, inode) of the file this ledger created or loaded. A path that names another file, or none,
-        # is never read or appended to: writing there would fork history.
-        self.ident = None
         self._fd = None
-        self._lock = threading.Lock()
-
-    def bind(self, fd: int) -> None:
-        st = os.fstat(fd)
-        self.ident = (st.st_dev, st.st_ino)
-
-    def foreign(self, fd: int) -> bool:
-        """Whether descriptor ``fd`` is open on another file than the one this ledger created or loaded."""
-        if self.ident is None:
-            return False
-        st = os.fstat(fd)
-        return (st.st_dev, st.st_ino) != self.ident
+        # Reentrant: a ledger finalized by a garbage collection that runs inside a read closes this source.
+        self._lock = threading.RLock()
 
     @property
     def broken(self) -> bool:
@@ -141,26 +134,38 @@ class _LineSource:
 
     def _open(self) -> int:
         with self._lock:
-            if self._fd is None:
-                fd = os.open(self.path, os.O_RDONLY | getattr(os, "O_CLOEXEC", 0))
-                if self.foreign(fd):
-                    os.close(fd)
-                    self.failures += 1
-                    raise ValueError(f"the ledger file at {self.path} was replaced after it was opened")
-                self._fd = fd
-            return self._fd
-
-    def replaced(self) -> bool:
-        """Whether the path now names another file than the one this ledger created or loaded (or none)."""
+            if self._fd is not None:
+                return self._fd
+        # Any file may serve a read: every line read is held to the digest of the bytes verified.
         try:
-            there = os.stat(self.path)
-        except OSError:
-            return True
-        here = self.ident
-        if here is None:
-            st = os.fstat(self._open())
-            here = (st.st_dev, st.st_ino)
-        return (there.st_dev, there.st_ino) != here
+            fd = os.open(self.path, os.O_RDONLY | _NONBLOCK | _CLOEXEC)
+        except OSError as exc:
+            self.note_failure()
+            raise ValueError(f"the ledger file at {self.path} cannot be read: {exc.strerror}") from None
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            os.close(fd)
+            self.note_failure()
+            raise ValueError(f"the ledger file at {self.path} is not a regular file")
+        with self._lock:
+            if self._fd is None:
+                self._fd = fd
+                return fd
+            current = self._fd
+        os.close(fd)
+        return current
+
+    def adopt(self, fd: int, *, keep: bool = False) -> None:
+        """Read from the file ``fd`` is open on: the one the path names now, which the ledger has just checked holds
+        its history. A descriptor on a file the path no longer names is closed; ``keep`` makes ``fd`` this source's."""
+        with self._lock:
+            old = self._fd
+            if old is not None and os.path.samestat(os.fstat(old), os.fstat(fd)):
+                if keep:
+                    os.close(fd)
+                return
+            self._fd = fd if keep else None
+        if old is not None:
+            os.close(old)
 
     def read(self, rec: "_Retained") -> bytes:
         off, size, digest = rec._off, rec._len, rec._digest
@@ -356,6 +361,9 @@ class EvidenceLedger:
         self._uncertain = False
         self._closed = False
         self.unacknowledged_tail: dict | None = None
+        # (offset, length, SHA-256) of the last line of this ledger's history in its file. The file at the path is
+        # this ledger's only while it still ends there with that line; appending anywhere else forks history.
+        self._last_line: tuple[int, int, bytes] | None = None
         if tail not in TAIL_POLICIES:
             raise ValueError(f'unknown tail policy {tail!r}')
         if tail == "quarantine" and read_only:
@@ -387,11 +395,12 @@ class EvidenceLedger:
             elif path:
                 if read_only or expected_head:
                     raise ValueError('expected history is missing')
-                with open(path, "x", encoding="utf-8") as fh:
-                    self._src.bind(fh.fileno())
-                    fh.write(json.dumps(asdict(self._records[0])) + "\n")
+                line = (json.dumps(asdict(self._records[0])) + "\n").encode("utf-8")
+                with open(path, "xb") as fh:
+                    fh.write(line)
                     fh.flush()
                     os.fsync(fh.fileno())
+                self._last_line = (0, len(line), hashlib.sha256(line).digest())
             if expected_head and self.head != expected_head:
                 raise ValueError('history differs from expected head: truncation or fork')
             if self.unacknowledged_tail and self._tail_policy == "quarantine":
@@ -405,21 +414,30 @@ class EvidenceLedger:
         tail = self.unacknowledged_tail
         data = tail.pop("_bytes")
         sidecar = f"{self.path}.unacknowledged-{tail['sha256'][7:23]}"
-        try:
-            fd = os.open(sidecar, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-        except FileExistsError:
-            with open(sidecar, "rb") as fh:
-                if fh.read() != data:
-                    raise ValueError('a different quarantined tail already uses this name')
-        else:
-            with os.fdopen(fd, "wb") as fh:
-                fh.write(data)
-                fh.flush()
-                os.fsync(fh.fileno())
-        with open(self.path, "r+b") as fh:
-            fh.truncate(tail["offset"])
-            fh.flush()
-            os.fsync(fh.fileno())
+        # Truncate only the file that was loaded, through the descriptor checked here: the history it holds and,
+        # after it, exactly the unacknowledged bytes found on open.
+        with open(self.path, "r+b", opener=_existing) as led:
+            fd = led.fileno()
+            ok, why = self._holds(fd, exact=False)
+            if ok and (os.fstat(fd).st_size != tail["offset"] + len(data)
+                       or os.pread(fd, len(data), tail["offset"]) != data):
+                ok, why = False, "it no longer ends with the unacknowledged bytes found when it was opened"
+            if not ok:
+                raise self._not_ours(why)
+            try:
+                side = os.open(sidecar, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            except FileExistsError:
+                with open(sidecar, "rb") as fh:
+                    if fh.read() != data:
+                        raise ValueError('a different quarantined tail already uses this name')
+            else:
+                with os.fdopen(side, "wb") as fh:
+                    fh.write(data)
+                    fh.flush()
+                    os.fsync(fh.fileno())
+            led.truncate(tail["offset"])
+            led.flush()
+            os.fsync(fd)
         tail["sidecar"] = sidecar
         self.append("recovery", {
             "kind": "unacknowledged_tail_quarantined", "offset": tail["offset"], "bytes": tail["bytes"],
@@ -499,14 +517,13 @@ class EvidenceLedger:
             # uncertain until flush/fsync finish. Never advance memory early.
             try:
                 fh = open(self.path, "ab", opener=_existing)     # never creates: a missing file is not this one
-            except FileNotFoundError:
-                fh = None
-            if fh is None or self._src.foreign(fh.fileno()):
-                if fh is not None:
-                    fh.close()
-                self._src.note_failure()
-                raise ValueError(f"the ledger file at {self.path} was replaced after it was opened")
+            except OSError as exc:
+                raise self._not_ours(f"it cannot be opened ({exc.strerror})") from None
             with fh:
+                ok, why = self._holds(fh.fileno(), exact=True)
+                if not ok:
+                    raise self._not_ours(why)
+                self._src.adopt(fh.fileno())
                 try:
                     offset = fh.seek(0, os.SEEK_END)
                     fh.write(line)
@@ -516,6 +533,7 @@ class EvidenceLedger:
                     self._uncertain = True
                     raise ReconciliationRequired('append acknowledgment lost') from exc
             rec._off = offset
+            self._last_line = (offset, len(line), rec._digest)
         try:
             self._records.append(rec)
             if self._verified == seq:
@@ -526,6 +544,46 @@ class EvidenceLedger:
             raise ReconciliationRequired('append retained on disk but not in memory; reopen verified history') from exc
         self._evict()
         return _copy_record(rec)
+
+    def _holds(self, fd: int, *, exact: bool) -> tuple[bool, str]:
+        """Whether the file ``fd`` is open on holds this ledger's history: a regular file whose line at the end of
+        that history is this ledger's last line, byte for byte. ``exact``: nothing follows it (the writer's view;
+        an observer's file may already hold the writer's newer lines). Content, not (device, inode): an inode
+        number can be reused by another file, and some filesystems renumber the same one."""
+        if self._last_line is None:
+            return True, ''
+        st = os.fstat(fd)
+        if not stat.S_ISREG(st.st_mode):
+            return False, 'it is not a regular file'
+        off, size, digest = self._last_line
+        end = off + size
+        if st.st_size < end or (exact and st.st_size != end):
+            return False, f'it does not end where this history ends (byte {end}, file {st.st_size} bytes)'
+        if hashlib.sha256(os.pread(fd, size, off)).digest() != digest:
+            return False, "its last line is not this history's last record"
+        return True, ''
+
+    def _not_ours(self, why: str) -> ValueError:
+        """The refusal for a path that no longer holds this ledger's history; later reconstructions read the file."""
+        self._src.note_failure()
+        return ValueError(f"the ledger file at {self.path} no longer holds this ledger's history: {why}")
+
+    def _check_path(self) -> tuple[bool, str]:
+        """Whether the file the path names now holds this ledger's history; reads go to it from then on."""
+        try:
+            fd = os.open(self.path, os.O_RDONLY | _NONBLOCK | _CLOEXEC)
+        except OSError as exc:
+            return False, str(self._not_ours(f"it cannot be opened ({exc.strerror})"))
+        try:
+            ok, why = self._holds(fd, exact=not self.read_only)
+            if not ok:
+                return False, str(self._not_ours(why))
+            self._src.adopt(fd, keep=True)
+            fd = None
+            return True, ''
+        finally:
+            if fd is not None:
+                os.close(fd)
 
     def _retain(self, rec: LedgerRecord, offset: int, line: bytes) -> "_Retained":
         """The retained form of a record whose line (exactly ``line``, at ``offset``) this ledger wrote or
@@ -622,9 +680,6 @@ class EvidenceLedger:
         if digest.digest() != self._dropped_digest:
             return False, f"retained history altered in memory between seq 1 and {end - 1}"
         if read_disk:
-            if self._src.replaced():          # appending to another file would fork history: refuse until it is back
-                self._src.note_failure()
-                return False, f"the ledger file at {self.path} was replaced after it was opened"
             for i in range(1, end):
                 ok, why = self._rederive(i)
                 if not ok:
@@ -666,6 +721,8 @@ class EvidenceLedger:
             if not records:
                 return False, 'empty history'
             ok, reason = self._verify_record(0)
+            if ok and read_disk and src is not None:
+                ok, reason = self._check_path()   # the file at the path, not one it named before, holds this history
             if ok:
                 ok, reason = self._verify_dropped(read_disk)
             if ok:
@@ -832,22 +889,24 @@ class EvidenceLedger:
         # the newest `resident` payloads stay. Failures are reported in the order a whole-file read reported them
         # (a torn tail, then a blank or malformed line anywhere, then the first verification failure).
         from adapters.contract_validation import strict_json
-        size = os.path.getsize(path)
-        complete_end = _complete_end(path, size)
-        if complete_end < size:
-            if self._tail_policy == "refuse":
-                raise ValueError('partial or blank history record')
-            with open(path, "rb") as fh:
-                fh.seek(complete_end)
-                torn = fh.read()
-            self.unacknowledged_tail = {"offset": complete_end, "bytes": len(torn),
-                                        "sha256": "sha256:" + hashlib.sha256(torn).hexdigest(),
-                                        "_bytes": torn}
-        self._records = []
-        failure = None
-        with open(path, "rb") as fh:
-            self._src.bind(fh.fileno())
-            offset = 0
+        # One descriptor for all of it: the size, the complete end, a torn tail and every line come from one file
+        # even if the path is swapped meanwhile, and the line it ends with is the one appends will hold it to.
+        with open(path, "rb", opener=lambda p, f: os.open(p, f | _NONBLOCK)) as fh:
+            st = os.fstat(fh.fileno())
+            if not stat.S_ISREG(st.st_mode):
+                raise ValueError(f'ledger at {path} is not a regular file')
+            size = st.st_size
+            complete_end = _complete_end(fh.fileno(), size)
+            if complete_end < size:
+                if self._tail_policy == "refuse":
+                    raise ValueError('partial or blank history record')
+                torn = os.pread(fh.fileno(), size - complete_end, complete_end)
+                self.unacknowledged_tail = {"offset": complete_end, "bytes": len(torn),
+                                            "sha256": "sha256:" + hashlib.sha256(torn).hexdigest(),
+                                            "_bytes": torn}
+            self._records = []
+            failure = None
+            offset, last = 0, None
             while offset < complete_end:
                 chunk = fh.readline()
                 try:
@@ -866,7 +925,9 @@ class EvidenceLedger:
                     elif (i - self._resident == self._dropped_end
                           and _conforms(self._records[i - self._resident])):
                         self._drop(i - self._resident)     # verified just now from these very bytes, then untouched
+                last = (offset, len(chunk), hashlib.sha256(chunk).digest())
                 offset += len(chunk)
+        self._last_line = last
         if self.unacknowledged_tail and self._tail_policy == "ignore":
             self.unacknowledged_tail.pop("_bytes")
         if failure is None and not self._records:
@@ -879,16 +940,14 @@ class EvidenceLedger:
         self._verified, self._full_at, self._verified_tail = len(records), _monotonic(), records[-1]
 
 
-def _complete_end(path: str, size: int) -> int:
+def _complete_end(fd: int, size: int) -> int:
     """Offset just past the last newline of the file (0 when there is none): the end of its complete lines."""
     block = 1 << 16
-    with open(path, "rb") as fh:
-        end = size
-        while end > 0:
-            start = max(0, end - block)
-            fh.seek(start)
-            found = fh.read(end - start).rfind(b"\n")
-            if found >= 0:
-                return start + found + 1
-            end = start
+    end = size
+    while end > 0:
+        start = max(0, end - block)
+        found = os.pread(fd, end - start, start).rfind(b"\n")
+        if found >= 0:
+            return start + found + 1
+        end = start
     return 0

@@ -87,7 +87,7 @@ simulated clock, 1,800 ticks (`scripts/measure_body_memory.py`; Python 3.11.17, 
 | A reader changes what it was given | no effect on retained evidence | no effect (a new object per read of dropped history) |
 | In-memory alteration of retained history | found by explicit verification, the next Commit Witness, and the hot path within 300 s | the same, for resident payloads and for everything that stays of dropped history |
 | Bytes changed in the file after open | invisible until reopen | refused at the first read of a changed line and by any explicit `verify_chain()`; then every append refuses, the witness included |
-| Ledger file replaced after open (rename) | invisible until reopen | refused by any explicit `verify_chain()` once dropped history exists; then every append refuses |
+| Ledger file deleted, replaced or moved under a running body | invisible until reopen; an append to a deleted path created a new one-line history, and one to a replaced path forked it | every append refuses, the witness included, unless the file at the path ends with this ledger's last line (a byte-identical copy continues the history); a deleted path is never recreated; explicit `verify_chain()` checks the same, for small ledgers too |
 | Tampered file at open | refused | refused |
 | Commit Witness cost | re-hash every retained record (about 9 µs each) | re-hash the 1,024 resident records, plus about 1 µs per dropped record for the running digest |
 
@@ -185,6 +185,30 @@ Eight mutants were added, one per new safeguard. Each is caught by `tests/unit/t
 - a found change forgotten by the next reconstruction;
 - a failure erased by a concurrent reconstruction (F4);
 - a replaced file unnoticed.
+
+A second, independent audit of those mutants found that the replaced-file check ran only on an explicit
+verification, after a first old-payload read. `8e986839` bound the ledger to its file's device and inode. A third
+review of that fix, with every finding re-checked by a separate skeptic, found it unsound:
+- **Inode reuse (high).** On ext4, the next file created after a delete usually gets the same inode number, so
+  appends forked onto it: 19 of 20 trials, and 10 of 10 for two atomic saves.
+- **False refusals (medium, a regression).** Overlayfs copy-up and eviction, and FUSE without stable inode numbers,
+  renumber the same file, so a body would refuse its own appends until restarted.
+- **Smaller defects:**
+  - a FIFO at the path hung appends;
+  - a reentrant-lock deadlock under garbage collection;
+  - `_load` measured one file and read another;
+  - quarantine truncated whatever the path named;
+  - small ledgers reported an intact chain while appends refused;
+  - a missing file surfaced as an uncounted `FileNotFoundError`.
+
+The anchor is now content, not identity. Before every append the file at the path must be a regular file that ends
+exactly where this history ends, with this history's last line (SHA-256). Opens never create and never block.
+Explicit verification checks the same and moves reads to that file. One descriptor serves all of `_load`.
+Quarantine checks the file, then truncates through the checked descriptor. The read source's lock is reentrant.
+
+A byte-identical copy put in place is accepted: appending to it continues the same history. Any other difference is
+a changed line, refused when read and by explicit verification, as in-place tampering always was. Each case has a
+test that fails on `8e986839` or `7d20cd81`. 23 dropped-payload mutants pin the safeguards, all caught.
 
 ## Next measured limit (not changed here; each needs a decision)
 

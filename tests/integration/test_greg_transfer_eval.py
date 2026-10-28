@@ -47,10 +47,22 @@ def raw(rows):
     return {"tasks": rows}
 
 
+def _fresh_crash_certificate(r, p):
+    """A new LP certificate for a recorded crash problem, through GREG's own SciPy runner (test-only, in-process),
+    decoded as the construction decodes it. Whatever the certifier at this tree needs to show optimality (the LP's
+    objective before #218, its exact deadline flow after) comes from this solve, never from the recorded row."""
+    import importlib
+    from greg.cognition import linear
+    namespace = {"MODULE": importlib.import_module("scipy.optimize")}
+    exec(linear.RUNNERS["scipy.lp"], namespace)
+    req = linear.normalize_lp(r.encode_crash(p))
+    return r.decode_crash(p, linear.certify_lp(req, namespace["solve"](req)))
+
+
 def recertify(tier, problem, answer):
     """GREG's own certifier re-run on a recorded answer, from the original problem: feasibility in full, and
-    optimality against the stated bottleneck (staffing, matching) or the oracle's optimum (crash). The certified
-    fields it returns must equal the recorded ones, so an edited row cannot keep its total and pass."""
+    optimality against the stated bottleneck (staffing, matching) or a freshly solved certificate (crash). The
+    certified fields it returns must equal the recorded ones, so an edited row cannot keep its total and pass."""
     from greg import recombine as r
     function = T.FUNCTION[tier]
     if function == "assignment.staffing":
@@ -64,8 +76,9 @@ def recertify(tier, problem, answer):
             "pairs": answer["pairs"], "size": answer["size"], "deficient_right": cut})
         keys = ("size", "pairs", "unmatched_right", "deficiency")
     elif answer["feasible"]:
-        best = T.expected(tier, problem)["cost"]
-        out = r.certify_crash(r.normalize_crash(problem), {"plan": answer["schedule"], "lp_objective": best})
+        p = r.normalize_crash(problem)
+        out = r.certify_crash(p, {**_fresh_crash_certificate(r, p), "plan": answer["schedule"]})
+        assert out["cost"] == T.expected(tier, problem)["cost"]          # and the oracle's optimum agrees
         keys = ("feasible", "deadline", "cost", "finish", "schedule", "shorten")
     else:
         out = r.certify_crash(r.normalize_crash(problem), {

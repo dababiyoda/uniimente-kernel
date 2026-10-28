@@ -132,7 +132,8 @@ def test_one_claim_reobserved_on_many_receipts_is_offered_once_and_leaves_once_a
         observe(journal, receipt)
     [row] = settlement.awaiting_realization(journal)
     assert row["receipt"] == later[-1] and row["receipts_for_claim"] == 3
-    assert "once for the claim" in row["settles"] and row["claim"].startswith("sha256:")
+    assert row["claim"].startswith("sha256:") and row["mission_appraisal"] is None
+    assert row["settles"].startswith("only once the mission's latest appraisal is VERIFIED")
     settlement.record_realization(journal, receipt=first, realized=2, source="founder_reported")   # an older one
     assert settlement.awaiting_realization(journal) == []
 
@@ -259,3 +260,40 @@ def test_a_persistent_mission_reobserving_one_answer_asks_once_and_one_signed_re
         [(count, correct)] = [(r["count"], r["correct"]) for (m, _, _), r in
                               settlement.competence(run.body.journal).items() if m == row["method"]]
         assert (count, correct) == (1, 0), "one claim settles once, however many receipts it left"
+
+
+def appraise(journal, verdict, mission_id="m:pending-fixture"):
+    from greg.sop import REQUIRED_CHECKS
+    journal.record("mission.appraised", {"mission_id": mission_id, "verdict": verdict,
+                                         "checks": {k: verdict.startswith("VERIFIED") for k in REQUIRED_CHECKS}})
+
+
+def test_the_row_says_when_a_report_will_settle_following_the_missions_latest_appraisal():
+    """Review finding 2 on #210 (...foabg): a claim whose mission's latest appraisal is not VERIFIED was offered
+    with an unconditional "settles once"; a report on it is recorded and scores nothing until it is."""
+    journal, receipt = pending()
+    appraise(journal, "VERIFIED")
+    [row] = settlement.awaiting_realization(journal)
+    assert row["mission_appraisal"] == "VERIFIED" and row["settles"].startswith("once for the claim")
+    appraise(journal, "REFUTED")
+    [row] = settlement.awaiting_realization(journal)
+    assert row["mission_appraisal"] == "REFUTED"
+    assert row["settles"].startswith("only once the mission's latest appraisal is VERIFIED")
+
+
+def test_a_corrected_report_is_shown_as_a_conflict_scored_as_neither_never_silently_dropped():
+    """Review finding 1 on #210 (...foabg): a second, different value, even on the same receipt, makes settlement
+    score the claim as neither; the view dropped it from every surface. It is now its own row."""
+    journal, receipt = pending()
+    appraise(journal, "VERIFIED")
+    settlement.record_realization(journal, receipt=receipt, realized=1, source="founder_reported")
+    assert settlement.awaiting_realization(journal) == []                 # settled: nothing to ask
+    settlement.record_realization(journal, receipt=receipt, realized=2, source="founder_reported")
+    [row] = settlement.awaiting_realization(journal)
+    assert row["kind"] == "objective_conflict" and row["realized_values"] == [1, 2]
+    assert len(row["realization_events"]) == 2 and row["promised"] == 2 and row["objective"] == "profit"
+    assert "neither" in row["scored_as"] and row["authority_created"] is False
+    assert "receipt" not in row and "report_with" not in row               # no further report resolves it
+    settlement.record_realization(journal, receipt=receipt, realized=1, source="founder_reported")   # idempotent
+    [again] = settlement.awaiting_realization(journal)
+    assert again["realized_values"] == [1, 2] and len(again["realization_events"]) == 2

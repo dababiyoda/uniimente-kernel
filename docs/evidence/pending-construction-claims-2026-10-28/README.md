@@ -62,3 +62,14 @@ The full local suite and Canonical CI on the pushed head are recorded separately
 ## Rollback
 
 Revert the merge commit of #205 and the fix commit. Retained REALIZATION facts stay readable, because the body contract is unchanged.
+
+## Review fixes (cross-session review by `session_01Kucyfoabgsg6W8H8xj4qea`, 2026-10-28, on `aa83bb78`)
+
+The reviewer is the same model family, so this is not fully independent. It found no blocking defect and two low findings; both are fixed in the view, and no settlement rule changes.
+
+1. **A corrected report no longer vanishes.** A second, different value, even on the same receipt, makes `_world_settled` score the claim as neither. The claim then disappeared from the view, from `measured_outcomes` and from `competence`, with nothing saying so. It is now listed as `kind: "objective_conflict"`, with the claim, the conflicting values, their event ids and "scored as neither". It offers no `report_with`, because no further report resolves it.
+2. **"Settles" follows the mission's appraisal.** Each row carries `mission_appraisal`. `settles` reads "once for the claim" only while the mission's latest appraisal counts for settlement; otherwise it says a report is recorded and scores nothing until a VERIFIED appraisal. The appraisal rule is now one helper, `_settling_appraisals`, which `measured_outcomes` and the view both call, so the two cannot drift.
+
+Evidence:
+- [review-fixes-before.txt](review-fixes-before.txt): the new and updated tests fail on `aa83bb78` (3 failed, 26 passed).
+- [review-fixes-after.txt](review-fixes-after.txt): 110 related tests pass, and the combined-machine test passes with real organs (WMI #47).

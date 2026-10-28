@@ -146,7 +146,7 @@ def test_a_plain_record_put_in_a_dropped_position_is_refused(tmp_path):
     led, _, _ = grown(tmp_path)
     led._records[9] = copy.deepcopy(led._records[9])                   # equal content, but not the retained one
     ok, why = led.verify_chain()
-    assert not ok and "retained record replaced at seq 9" in why
+    assert not ok and "retained record altered in memory at seq 9" in why
 
 
 def test_a_payload_altered_in_memory_is_never_dropped_so_the_file_cannot_quietly_heal_it(tmp_path):
@@ -228,3 +228,149 @@ def test_the_window_must_be_a_positive_count(tmp_path):
     for bad in (0, -1, 2.5, True):
         with pytest.raises(ValueError):
             EvidenceLedger(ANCHOR, str(tmp_path / f"x{bad}.jsonl"), resident=bad)
+
+
+# -- Independent adversarial review of 45d65a30 (2026-10-28): each break reproduced, fixed, and pinned here ---------
+
+def test_f1_a_line_pointer_altered_while_resident_is_never_dropped_and_is_reported(tmp_path):
+    """The reviewer planted a parseable copy of a record (same hash and seq, forged payload) inside a later record's
+    payload, pointed the still-resident record's line pointer at it, and let eviction run: every reader then saw the
+    forgery and nothing detected it. Eviction now requires the pointer to name exactly the record's own bytes."""
+    import hashlib
+    path = str(tmp_path / "l.jsonl")
+    led = EvidenceLedger(ANCHOR, path, resident=3)
+    spine = EventSpine(led)
+    spine.emit(Event(type="money.paid", source=SRC, actor="a", legal_principal="Alfonso Lopez", payload={"amount": 1}))
+    target = led._records[1]
+    forged = {**led.records[1].payload, "payload": {"amount": 1000000}, "legal_principal": "Mallory"}
+    planted = {"hash": target.hash, "seq": 1, "payload": forged}
+    led.append("note", {"quote": planted})
+    blob = json.dumps(planted).encode()
+    target._off, target._len, target._digest = open(path, "rb").read().index(blob), len(blob), \
+        hashlib.sha256(blob).digest()
+    for i in range(4):
+        led.append("note", {"i": i})
+    assert target.resident                                                    # not dropped ...
+    assert spine.replay("money.")[0].payload == {"amount": 1}                 # ... so readers see the original
+    ok, why = led.verify_chain()
+    assert not ok and "retained line pointer altered in memory at seq 1" in why
+    with pytest.raises(ValueError, match="retained line pointer altered in memory at seq 1"):
+        led.append("witness", {"w": 1})
+
+
+@pytest.mark.parametrize("field, value", [("corrects", "None"), ("hash_version", "2"), ("_off", "0"), ("seq", 3.0)])
+def test_f2_a_change_of_type_alone_on_a_dropped_record_is_found(tmp_path, field, value):
+    led, _, _ = grown(tmp_path)
+    target = led._records[3]
+    assert not target.resident
+    setattr(target, field, value)
+    ok, why = led.verify_chain()
+    assert not ok and ("altered in memory" in why or "sequence break" in why)
+    with pytest.raises(ValueError):
+        led.append("witness", {"w": 1})
+
+
+def test_f2_a_pointer_of_the_wrong_type_is_refused_not_crashed_on(tmp_path):
+    led, _, _ = grown(tmp_path)
+    led._records[3]._off = "0"
+    with pytest.raises(ValueError, match="payload hash mismatch at seq 3"):
+        led.records[3]
+
+
+@pytest.mark.parametrize("record_type, corrects", [("note\ud800", None), ("correction", "sha256:\ud800")])
+def test_f3_unusual_text_is_retained_dropped_and_reopened(tmp_path, record_type, corrects):
+    path = str(tmp_path / "l.jsonl")
+    led = EvidenceLedger(ANCHOR, path, resident=2)
+    led.append(record_type, {"x": 1}, corrects=corrects)
+    for i in range(4):
+        led.append("note", {"i": i})                        # drops seq 1: its skeleton must encode
+    assert not led._records[1].resident and led.verify_chain()[0]
+    led.close()
+    assert EvidenceLedger(ANCHOR, path, read_only=True, resident=2).verify_chain()[0]
+
+
+def test_f3_a_str_subclass_record_type_is_stored_as_text_and_never_forks_the_file(tmp_path):
+    class Kind(str):
+        pass
+    path = str(tmp_path / "l.jsonl")
+    led = EvidenceLedger(ANCHOR, path, resident=2)
+    led.append(Kind("note"), {"x": 1})
+    for i in range(4):
+        led.append("note", {"i": i})
+    assert type(led._records[1].record_type) is str
+    led.close()
+    reopened = EvidenceLedger(ANCHOR, path, resident=2)
+    assert reopened.verify_chain()[0] and len(reopened.records) == 6
+    with pytest.raises(ValueError, match="must be text"):
+        reopened.append(5, {"x": 1})                         # refused before anything is written
+    assert len(EvidenceLedger(ANCHOR, path, read_only=True).records) == 6
+
+
+def test_f4_a_reader_refused_while_a_reconstruction_runs_keeps_appends_refused(tmp_path):
+    """A lock-free reader may find changed bytes after a whole-file reconstruction has already passed that line.
+    The reconstruction must not erase that signal: failures are counted, and only those before it started clear."""
+    import threading
+    path = str(tmp_path / "l.jsonl")
+    led = EvidenceLedger(ANCHOR, path, resident=2)
+    for i in range(10):
+        led.append("receipt", {"who": "p5" if i == 2 else "px"})
+    target, last_dropped = 3, led._dropped_end - 1
+    real_read, seen = led._src.read, {}
+
+    def read(rec):
+        data = real_read(rec)
+        if rec.seq == last_dropped and not seen:
+            seen["x"] = 1
+            raw = open(path, "rb").read()
+            open(path, "r+b").write(raw.replace(b'"p5"', b'"p6"', 1))
+            def reader():
+                try:
+                    led.records[target]
+                except ValueError as exc:
+                    seen["refused"] = str(exc)
+            t = threading.Thread(target=reader)
+            t.start()
+            t.join()
+        return data
+
+    led._src.read = read
+    assert led.verify_chain()[0] and "changed on disk" in seen["refused"]
+    led._src.read = real_read
+    assert led._src.broken
+    with pytest.raises(ValueError, match=f"payload hash mismatch at seq {target}"):
+        led.append("witness", {"w": 1})
+
+
+def test_f5_concurrent_readers_never_share_a_payload_object(tmp_path):
+    """The slot is read once: a reader racing eviction gets a copy or a fresh read, never the retained object."""
+    led, _, _ = grown(tmp_path, resident=4)
+    rec = led._records[-1]
+    held = rec.payload
+    rec.payload = None if False else held          # resident
+    first = ledger_module._owned(rec)
+    assert first is not held
+    rec.payload = None                             # as if evicted between two reads
+    second = ledger_module._owned(rec)
+    assert second == first and second is not held and second is not first
+
+
+def test_a_ledger_file_replaced_after_open_is_reported_and_stops_appends(tmp_path):
+    import os
+    led, _, path = grown(tmp_path)
+    led.records[3]                                  # the read source is open on the original file
+    data = open(path, "rb").read()
+    os.rename(path, path + ".old")
+    open(path, "wb").write(data)                   # identical bytes, another file
+    ok, why = led.verify_chain()
+    assert not ok and "replaced after it was opened" in why
+    with pytest.raises(ValueError, match="replaced after it was opened"):
+        led.append("event", {"n": 1})
+
+
+def test_membership_compares_headers_before_reading_a_payload_back(tmp_path, monkeypatch):
+    led, _, _ = grown(tmp_path)
+    wanted = led.records[-1]
+    reads = []
+    real = ledger_module._LineSource.payload
+    monkeypatch.setattr(ledger_module._LineSource, "payload", lambda self, rec: reads.append(rec.seq) or real(self, rec))
+    assert wanted in led.records and reads == []

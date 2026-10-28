@@ -1,0 +1,393 @@
+{
+  "decision_id": "BOUNDED-BODY-MEMORY-20261028",
+  "title": "Keep only the newest ledger payloads in memory; read older ones back from the file, byte-checked",
+  "problem": "A GREG body keeps every ledger record's payload in memory: 2,639 B of resident memory per retained record measured at #196's head 190c58fb (one holding mission, 60 s cadence). At about 18,700 records a day that is about 49 MB a day, so a 4-8 GB Chromebook body that the founder leaves working for weeks runs out of memory long before disk (FINDING-LEDGER-APPEND-COST-2026-10-14, 'Next measured limit'; option 1 'keep payloads on disk').",
+  "founder_intent_refs": [
+    "INTENT-GREG-EMBODIED-2026-09-11",
+    "INTENT-2026-09-22-FIRST-BODY",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-20261019-UPWARD-ASCENT",
+    "HANDOFF-GREG-RECONCILIATION-2026-10-28 founder decision 5 (ledger memory bounding)"
+  ],
+  "baseline": "190c58fb: provenance/ledger.py retains every LedgerRecord with its payload dict; events/spine.py keeps references to every event payload; the Commit Witness reconstructs the whole chain by re-hashing every payload in memory (about 9 us per record).",
+  "alternatives": [
+    {
+      "name": "Proposed: resident window plus byte-checked reads and a running skeleton digest",
+      "description": "File-backed ledgers keep payloads of genesis and the newest RESIDENT_RECORDS (1,024) records; older payloads are re-read with pread and refused unless the bytes' SHA-256 equals the digest bound when they were written or verified; a running SHA-256 over dropped skeletons replaces payload re-hashing on the commit path; explicit verify_chain also re-reads every dropped line; the spine keeps positions.",
+      "advantages": [
+        "Resident memory per record 2,639 -> 1,458 B; heap 2,270 -> 833 B",
+        "Commit-path reconstruction cost drops from O(n x 9 us) to O(window x 9 us + n x ~1 us); the measured run was faster",
+        "File format, hashes and every read API unchanged",
+        "On-disk changes after open become detectable at read time"
+      ],
+      "disadvantages": [
+        "A dropped payload costs a file read and parse per read",
+        "More code in the evidence plane",
+        "Memory still grows about 1.4 KB per record"
+      ],
+      "revival_evidence": "Retained; revisit if a whole-file replay hot path dominates tick time on founder hardware."
+    },
+    {
+      "name": "Literal option 1: payloads on disk, full re-hash from disk at every reconstruction",
+      "description": "The earlier finding's wording: memory holds hashes and offsets; verification still reads everything, now from disk.",
+      "advantages": [
+        "Simplest statement; reconstruction semantics identical"
+      ],
+      "disadvantages": [
+        "Measured 2x slower body (690 s vs 352 s for 1,800 ticks): the Commit Witness re-read and re-parsed every dropped line at every Gate commit"
+      ],
+      "revival_evidence": "Only if Commit Witness reconstruction moves off the per-observation path (a Gate change, founder decision)."
+    },
+    {
+      "name": "Option 2: checkpoint and archive segments",
+      "description": "Anchor the head, seal verified history into segment files, keep only the open segment and signed projection checkpoints in memory.",
+      "advantages": [
+        "The only route to memory that does not grow with history"
+      ],
+      "disadvantages": [
+        "Projections over old segments (mission book, spine views, Gate and passport registries) need signed checkpoints; changes evidence-plane and governance semantics"
+      ],
+      "revival_evidence": "Founder decision on checkpoint semantics; the remaining growth after this change (skeleton 500 B, Gate 120 B, passports 40 B per record) is the measured input."
+    },
+    {
+      "name": "Option 3: fewer records per read-only observation",
+      "description": "A lighter Gate path for read-only sensors (13 records per observation today).",
+      "advantages": [
+        "Cuts every per-record cost at once"
+      ],
+      "disadvantages": [
+        "Changes governance of observations; not an engineering call"
+      ],
+      "revival_evidence": "Founder ruling on read-only observation governance."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "A body observing once a minute grows about 49 MB a day and exhausts a Chromebook's memory in weeks; the founder's persistent-work destination fails on its first body.",
+    "advantages": [
+      "No change to the evidence plane",
+      "No new code to review"
+    ],
+    "disadvantages": [
+      "Persistent operation measured to fail within weeks on founder hardware",
+      "Commit-path reconstruction keeps growing at 9 us per record"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Persistent work while the founder is away is an active N1 requirement; a body that dies of memory in weeks contradicts it. The change keeps every byte of history and adds no authority.",
+      "material_concerns": [
+        "Must not be presented as bounded memory: growth continues at about 1.4 KB per record",
+        "VEPMC is unaffected; founder-device acceptance remains the gate"
+      ],
+      "evidence_refs": [
+        "docs/collaboration/FINDING-BODY-MEMORY-2026-10-28.md",
+        "docs/evidence/body-memory-2026-10-28/"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Commodity mechanisms only (pread, SHA-256, OS page cache). No new store, index service or authority plane. One owner (provenance/ledger.py) for retention; the spine reads through it.",
+      "material_concerns": [
+        "Retained records are now of two kinds (resident, dropped); consumers of the private list must not depend on payload identity for old records",
+        "The genesis record stays resident by design"
+      ],
+      "evidence_refs": [
+        "provenance/ledger.py",
+        "events/spine.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "The integrity guarantees must survive: in-memory alteration found by explicit verification, by the next Commit Witness and by the hot path; nothing appended onto altered history; eviction must not heal an alteration.",
+      "material_concerns": [
+        "The first version failed open: a Commit Witness was appended after a read had found changed bytes on disk",
+        "The commit path relies on a running digest the process itself bound; a consistent in-process rewrite of skeleton and digest evades it, as a consistent in-process rewrite of payloads and hashes evaded the old check",
+        "Independent review found pointer laundering (F1): explicit verify_chain now re-derives every dropped hash from the file and eviction binds the pointer first"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_ledger_dropped_payloads.py",
+        "independent adversarial review recorded in the PR"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Measured faster and smaller on the same scenario; reversible by reverting one commit with no data migration.",
+      "material_concerns": [
+        "Whole-history replays (settlement) now read old events from the file each tick",
+        "A changed file now stops appends until reconciled: correct, but an operator must know how to reopen"
+      ],
+      "evidence_refs": [
+        "scripts/measure_body_memory.py",
+        "docs/evidence/body-memory-2026-10-28/bounded-rss.json"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "No evidence is deleted or rewritten; history files are byte-identical; on-disk tampering after open becomes visible sooner. Negative results (2x slowdown, fail-open) are kept.",
+      "material_concerns": [
+        "Claims must stay at UNIT-TESTED and LOCAL measured tier; nothing is founder-device verified"
+      ],
+      "evidence_refs": [
+        "docs/collaboration/FINDING-BODY-MEMORY-2026-10-28.md"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Resident memory per retained record falls from 2,639 B to 1,458 B on the same body scenario",
+      "tier": "sandbox_execution",
+      "reference": "docs/evidence/body-memory-2026-10-28/baseline-190c58fb-rss.json, bounded-rss.json",
+      "finding": "Slope from 7,820 to 23,420 records; 1,800 ticks each"
+    },
+    {
+      "claim": "Python heap per record falls from about 2,270 B to 833 B; payloads leave the heap",
+      "tier": "sandbox_execution",
+      "reference": "docs/evidence/body-memory-2026-10-28/*heap-attribution.json",
+      "finding": "decoder.py share falls from 65% to a constant window"
+    },
+    {
+      "claim": "Files are byte-identical and every read API equals a ledger holding everything",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_ledger_dropped_payloads.py",
+      "finding": "Line-for-line comparison and readout equality on the same file"
+    },
+    {
+      "claim": "Existing ledger, spine, Gate, mission-book and disclosure suites pass unchanged",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_provenance.py and seven more files (136 tests)",
+      "finding": "All pass; their ledgers are smaller than the window"
+    },
+    {
+      "claim": "An independent differential test matches the old ledger and spine exactly",
+      "tier": "unit_test",
+      "reference": "independent review, test_differential.py (36 random sequences at windows 1-3)",
+      "finding": "Byte-identical files and equal readouts"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Literal option 1 doubled body run time",
+      "tier": "sandbox_execution",
+      "reference": "first-version run, FINDING-BODY-MEMORY-2026-10-28 negative evidence",
+      "finding": "690 s vs 352 s; replaced by the two-level reconstruction"
+    },
+    {
+      "claim": "Memory still grows with history",
+      "tier": "sandbox_execution",
+      "reference": "docs/evidence/body-memory-2026-10-28/bounded-heap-attribution.json",
+      "finding": "Skeleton about 500 B, Gate grants about 120 B, passports about 40 B per record"
+    },
+    {
+      "claim": "The first version failed open after detecting on-disk change",
+      "tier": "unit_test",
+      "reference": "test_a_dropped_line_changed_on_disk_is_refused_when_read_and_stops_further_appends",
+      "finding": "Fixed: every reconstruction reads the file once a read has found a change"
+    },
+    {
+      "claim": "Independent adversarial review of 45d65a30 reproduced five breaks: pointer laundering (high), type-only changes (medium), exceptions after fsync (medium), a race erasing the tamper signal (low-medium), shared payload objects (low)",
+      "tier": "sandbox_execution",
+      "reference": "FINDING-BODY-MEMORY-2026-10-28.md, 'Independent adversarial review'; tests/unit/test_ledger_dropped_payloads.py (13 tests fail on 45d65a30)",
+      "finding": "All five fixed and pinned; a replaced ledger file is now also detected"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "A body's memory no longer holds every payload of its history, with no change to what is written, what any reader sees, or which alterations are detected.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Payloads, the largest share of growth, leave memory",
+        "amplified_value": "Weeks become months on the first body before memory binds; the page cache serves old reads from reclaimable memory"
+      },
+      {
+        "id": "A2",
+        "statement": "The commit path reconstruction gets cheaper",
+        "amplified_value": "Per-observation cost no longer re-hashes all history; measured run 33% faster"
+      },
+      {
+        "id": "A3",
+        "statement": "On-disk changes after open are detected at read time",
+        "amplified_value": "Tampering with the file is refused within the running process, not only at the next restart"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Re-reading dropped payloads costs CPU on whole-history replays",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Fast parse of digest-verified bytes; measured end-to-end run faster; the replay hot path is named as the next CPU limit"
+      },
+      {
+        "id": "D2",
+        "statement": "Commit-path reconstruction no longer re-derives dropped payload hashes",
+        "severity": "medium",
+        "response_type": "protective",
+        "redesigned_response": "A running SHA-256 over dropped skeletons and line digests catches any in-memory change; explicit verify_chain re-reads the bytes; any reopening (the appraiser's included) re-derives every hash"
+      },
+      {
+        "id": "D3",
+        "statement": "An alteration in memory could be healed by eviction",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Only payloads that still hash to their record are dropped, in order; an altered one stays for detection (tested)"
+      },
+      {
+        "id": "D4",
+        "statement": "Memory still grows",
+        "severity": "medium",
+        "response_type": "learning",
+        "redesigned_response": "Remaining growth measured by component and handed to the owners and decisions that can remove it"
+      }
+    ],
+    "comparisons": {
+      "baseline": "Everything in memory: 2,639 B per record, full re-hash per Gate commit",
+      "do_nothing": "Fails the persistent-body requirement within weeks on a Chromebook",
+      "simplest_viable_alternative": "Literal option 1: measured 2x slower; rejected",
+      "strongest_competing_architecture": "Option 2 segments: only route to non-growing memory but needs founder decisions on checkpoint semantics",
+      "reversible_experiment": "This change: one revert, no migration, byte-identical files; window size is a constructor parameter"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Literal option 1: re-derive every dropped hash from disk at every reconstruction",
+        "rejection_reason": "Measured 2x slower body: the Commit Witness re-read and re-parsed every dropped line at every Gate commit (690 s vs 352 s)",
+        "revival_evidence": "Commit Witness reconstruction moved off the per-observation path by a founder decision on the Gate"
+      },
+      {
+        "name": "Option 3: fewer records per read-only observation",
+        "rejection_reason": "Changes the governance of observations; not an engineering call",
+        "revival_evidence": "A founder ruling on read-only observation governance"
+      },
+      {
+        "name": "Compress payloads in memory",
+        "rejection_reason": "Still grows with history and adds CPU per read; the file already holds the bytes",
+        "revival_evidence": "A body without a durable file (none today)"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attacked the strengthened design for fail-open paths, healing, consistency of skeleton tampering, performance cliffs, thread and reader races, and overclaiming.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "fragility",
+        "statement": "After detecting changed bytes on disk, the commit path (which does not read the file) appended a witness",
+        "strengthening_response": "_LineSource.broken forces every reconstruction to read the file until it is intact; test added"
+      },
+      {
+        "id": "W2",
+        "category": "comprehensibility",
+        "statement": "Two kinds of retained record and two reconstruction depths are harder to reason about",
+        "strengthening_response": "Single owner, documented in the module and FINDING-BODY-MEMORY-2026-10-28; tests name each guarantee"
+      },
+      {
+        "id": "W3",
+        "category": "overfit",
+        "statement": "The window size 1,024 was chosen on one scenario",
+        "strengthening_response": "Constructor parameter and module constant; the scenario is the one the earlier finding used; revisit on founder hardware"
+      },
+      {
+        "id": "W4",
+        "category": "fragility",
+        "statement": "Independent review: a line pointer altered while resident was folded into the running digest at eviction, so forged bytes elsewhere in the file were served and verified",
+        "strengthening_response": "Eviction requires the pointer to name exactly the record's bytes; explicit verify_chain re-derives each dropped record's hash from the file; records kept past the window have their pointers judged on the commit path"
+      },
+      {
+        "id": "W5",
+        "category": "fragility",
+        "statement": "Independent review: type-only skeleton changes, post-fsync exceptions, and a race clearing the tamper signal",
+        "strengthening_response": "Type-strict ascii encoding with exact type checks; all fallible work before the write and uncertain-on-failure after it; failure counters instead of a flag"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Measured end-to-end improvement; replay cost is pre-existing linear growth",
+        "owner": "Kernel ledger maintainer",
+        "review_trigger": "Tick time on founder hardware exceeds the 30 s tick interval or a replay dominates a profile"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "resolved",
+        "rationale": "Running digest plus explicit re-read plus reopen re-derivation keep every detection path the old code had",
+        "owner": "Kernel ledger maintainer",
+        "review_trigger": "Any independent review finding an undetected in-memory alteration"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "resolved",
+        "rationale": "Eviction checks the hash first; tested",
+        "owner": "Kernel ledger maintainer",
+        "review_trigger": "A test showing an altered payload dropped"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "deferred",
+        "rationale": "Remaining growth sits in the Gate (pinned), identity registry and the skeleton; each needs a decision or a larger refactor",
+        "owner": "Founder (Gate, option 2); identity owner (passports); ledger maintainer (skeleton packing)",
+        "review_trigger": "Founder decision on the Gate claim scan or option 2"
+      }
+    ],
+    "final_design": "Resident window of 1,024 payloads; byte-checked reads with fast parse; running skeleton digest; explicit verify_chain re-reads every dropped line; commit path and schedule do not read the file unless a read found a change; streaming open; spine keeps positions.",
+    "residual_risks": [
+      {
+        "risk": "A consistent in-process rewrite of skeleton and running digest is not detected in-process",
+        "mitigation": "Same class as before (a consistent in-process rewrite of payloads and hashes was not detected either); reopening and the separate-process appraiser re-derive every hash from the file",
+        "owner": "Kernel ledger maintainer",
+        "review_trigger": "Any proposal to trust in-process verification as an external proof"
+      },
+      {
+        "risk": "Memory still grows about 1.4 KB per record",
+        "mitigation": "Measured and attributed; option 2 and Gate/passport decisions named",
+        "owner": "Founder and Kernel owners",
+        "review_trigger": "Founder-device memory telemetry"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded with threshold; does not block a draft, blocks adoption if met.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "The commit path should keep re-deriving every hash from payload bytes, as before, regardless of cost. (Explicit verify_chain now does; the commit path uses the running digest.)",
+        "rationale": "Re-derivation is independent of any digest this process bound; the running digest is not.",
+        "evidence_threshold": "A demonstrated in-memory alteration the running digest misses but the old re-hash would have caught",
+        "owner": "Kernel ledger maintainer",
+        "review_trigger": "Independent review or mutation testing of _verify_dropped"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "Alfonso Lopez (adoption into #196 and any merge); #196 integrator for intake"
+  },
+  "migration_plan": "None required: the file format and hashes are unchanged, so existing ledgers open as before and are read back by the new code; reverting restores in-memory retention on the same files.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert the commit on the child branch, or decline intake into #196",
+      "No data migration: history files are byte-identical either way"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Any read API returns different data than a ledger holding everything in memory",
+    "Any in-memory or on-disk alteration the old code detected goes undetected",
+    "A record is appended onto history found altered",
+    "Body tick time on founder hardware regresses beyond the old code's"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez decides adoption into the evidence plane (founder decision 5 of HANDOFF-GREG-RECONCILIATION-2026-10-28); the #196 integrator decides intake; session_01Kucyfm6YBHMTjaiC1M9hqD owns the reversible draft. All five roles recommend RETAIN.",
+  "review_trigger": "Independent review result, founder-device measurement, or a founder decision on option 2 or the Gate"
+}

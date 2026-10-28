@@ -44,6 +44,7 @@ The score falls from 0.726 to 0.696 on both packets because #47 stops counting a
 | `ablation.txt` | **Superseded design, kept as recorded.** Without `recommended_next_action` in the receipt summary, 2 of 7 contrast tests failed. Review round 1 removed that field. |
 | `ablation-after-review.txt` | The reverse: with the field put back into the summary, the contrast test fails (1 of 7), so the receipt cannot regain unscanned organ prose silently. |
 | `job8-after-review.txt` | CI job 8's full command on the review-fix tree. |
+| `job8-with-combined.txt` | After the join into #196 (#215): job 8's full command with `test_combined_construction_outcome.py` (#210 with #212) added to its list, since that test needs the same organs. Result: 118 passed, 0 skipped. |
 | `deliberation.json` | Five roles and exactly two passes, validated by the collaboration protocol's `validate_deliberation.py`. Decision: EXPERIMENT. |
 
 WMI's own evidence is in WMI #47, under `docs/evidence/staffing-reader-hardening-2026-10-28/`:

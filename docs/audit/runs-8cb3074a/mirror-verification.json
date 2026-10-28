@@ -1,0 +1,15 @@
+{
+  "run": "mirror-verification",
+  "subject": "dababiyoda/uniimente-kernel main @ 8cb3074a4a837c89aada9bdb5351d7d9b3e4a9c1",
+  "method": "GitHub API file-contents fetch per path; local git blob SHA-1 (sha1('blob {len}\\0' + bytes)) compared against the remote tree's blob SHA for every path; encoding transforms (trailing newline, \\uXXXX escapes) applied only when SHA-arbitrated",
+  "files_total": 291,
+  "files_verified": 291,
+  "missing": 0,
+  "mismatched": 0,
+  "extra_local": 0,
+  "encoding_notes": {
+    "trailing_newline_appended": "most .md/.json/.txt remote blobs end with \\n; applied where SHA required",
+    "unicode_escape_restored": "docs/release/package-3/EVIDENCE_RECORD.json and docs/release/package-4/EVIDENCE_RECORD.json store em-dashes as literal \\u2014 (6 ASCII chars); restored by byte replacement, SHA-verified"
+  },
+  "timestamp_utc": "2026-08-21T19:09:07.825639+00:00"
+}

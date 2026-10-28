@@ -1,0 +1,12 @@
+ts_utc: 2026-08-21T18:57:03.971963+00:00
+command: python3 scripts/ci/check_sealed_developmental.py
+---
+  ok   external_effects = 0 (required 0)
+  ok   authorization_state = 'SIMULATED_NOT_AUTHORIZED' (required 'SIMULATED_NOT_AUTHORIZED')
+  ok   exact_restoration_attempts = 0 (required 0)
+  ok   false_activations = 0 (required 0)
+  ok   verdict = MECHANICS_VALIDATED_NOT_PRODUCTION_AUTHORIZED
+
+sealed developmental state declared and intact (declaration check only — see module docstring)
+---
+exit_code: 0

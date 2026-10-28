@@ -1,0 +1,22 @@
+{
+  "run": "evolution-repair-reproduction",
+  "command": "python3 -m evolution.repair",
+  "compared_against": "docs/release/package-3/EVIDENCE_RECORD.json @ 8cb3074a",
+  "fields_matched": [
+    "spec_sha256",
+    "decision",
+    "baseline_commit",
+    "trials.function_score (all 4 = 1.0)",
+    "trials.qualifies_as_replacement",
+    "selection",
+    "continuity.unchanged",
+    "prediction_review.summary (2/4 fully held)",
+    "capsule.measured_value (1.0)",
+    "secondary_ranking order (B0 < R1 < R3 < R2)"
+  ],
+  "fields_differed": {
+    "ledger.head": "differs by design: the experiment-local ledger is rebuilt per run and its records carry timestamps; records=31 and chain_verifies=true in BOTH runs"
+  },
+  "verdict": "REPRODUCED on every substantive field",
+  "timestamp_utc": "2026-08-21T19:09:07.915434+00:00"
+}

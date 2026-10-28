@@ -1,0 +1,22 @@
+{
+  "run": "evolution-migration-reproduction",
+  "command": "python3 -m evolution.migration",
+  "compared_against": "docs/release/package-4/EVIDENCE_RECORD.json @ 8cb3074a",
+  "fields_matched": [
+    "spec_sha256",
+    "decision (regress)",
+    "base_commit",
+    "trials.score (W0/W1/W2 = 1.0, W3-journal = 0.0)",
+    "trials.qualifies_as_replacement",
+    "selection (W1-projection)",
+    "W3 failing gate: state_survives_migration = false",
+    "malformed_checkpoint_control: refused_before_append, 0 in ledger, same 5 named violations",
+    "rollback (default original after all scopes; original class intact; simulated restart default)",
+    "continuity.unchanged",
+    "prediction_review.summary (3/4 held)",
+    "ledger.records (38)"
+  ],
+  "fields_differed": {},
+  "verdict": "REPRODUCED on every compared field",
+  "timestamp_utc": "2026-08-21T19:09:07.916151+00:00"
+}

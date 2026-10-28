@@ -1,0 +1,9 @@
+{
+  "run": "protocol-wave0-duplicates",
+  "command": "python3 detect_exact_duplicates.py <mirror of main @ 8cb3074a>",
+  "mirror_state": "291/291 blob-SHA-verified vs main@8cb3074a",
+  "exit_code": 0,
+  "timestamp_utc": "2026-08-21T18:59:29.557546+00:00",
+  "stdout_tail": "{\n  \"duplicate_groups\": [],\n  \"undeclared\": []\n}\n",
+  "stderr_tail": ""
+}

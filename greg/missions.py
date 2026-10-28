@@ -472,11 +472,19 @@ def _cut(value) -> dict | None:
     return None
 
 
+def _non_finite(value) -> bool:
+    """The receipt's stand-in for a number that is not finite (authority.bounded)."""
+    from greg.authority import NON_FINITE
+    return isinstance(value, dict) and set(value) == {"non_finite"} and value["non_finite"] in NON_FINITE
+
+
 def _held_back(value) -> str | None:
     """Why a value the receipt did not keep whole cannot stand for the whole, or None. It looks at every depth:
-    a member kept as a prefix, or a list kept to its first RECEIPT_LIST_LIMIT items."""
+    a member kept as a prefix, a list kept to its first RECEIPT_LIST_LIMIT items, or a number kept as a marker."""
     if _cut(value):
         return "holds a member kept as a prefix"
+    if _non_finite(value):
+        return "holds a number that is not finite"
     if isinstance(value, list):
         if len(value) == RECEIPT_LIST_LIMIT:
             return f"is a list at the receipt's {RECEIPT_LIST_LIMIT}-item limit"
@@ -575,8 +583,7 @@ def judge(predicate: dict, output, *, whole: bool = False, recorded_cut: bool = 
     # an incomplete output states its own completeness in full (#201 review, 6); every other verdict on it keeps only
     # what more data could not undo, unless the output names the field in ``decided`` (review of #196, J8: the cut
     # string and the missing field used to be judged before this was asked)
-    declared = isinstance(output, dict) and output.get("complete") is False and path != "complete"
-    vouched = declared and isinstance(output.get("decided"), list) and path in output["decided"]
+    declared, vouched = _declared(output, path)
     incomplete = "the capability reported its observation incomplete"
     try:
         value = _raw_field(output, path, whole=whole, recorded_cut=recorded_cut)
@@ -591,6 +598,9 @@ def judge(predicate: dict, output, *, whole: bool = False, recorded_cut: bool = 
         return TRUE, "present"
     if op == "absent":
         return FALSE, "present"
+    if (not whole and _non_finite(value)) or (isinstance(value, float) and value != value):
+        # NaN, or a number the receipt kept as a marker: no reading of a number (review of #196, J6)
+        return INSUFFICIENT, f"field {path!r} holds a number that is not finite"
     cut = None if whole else _cut(value)
     if cut:
         text, length = cut["prefix"], cut["length"]
@@ -656,13 +666,37 @@ def judge(predicate: dict, output, *, whole: bool = False, recorded_cut: bool = 
 
 
 def _number(value) -> bool:
-    return isinstance(value, (int, float)) and not isinstance(value, bool)
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and value == value
+
+
+def _declared(output, path: str) -> tuple[bool, bool]:
+    """Whether an observation on the way to ``path`` declared itself incomplete (``complete: false``), and whether
+    every one that did vouches for the rest of the path in its ``decided`` list. An observation handed on or nested
+    inside another output (pipeline.inspect, an organ's packet) keeps its declaration (review of #196, J3)."""
+    parts = path.split(".") if path else []
+    node, declared, vouched = output, False, True
+    for i in range(len(parts) + 1):
+        rest = ".".join(parts[i:])
+        if isinstance(node, dict) and node.get("complete") is False and rest != "complete" and not _cut(node):
+            declared = True
+            vouched = vouched and isinstance(node.get("decided"), list) and rest in node["decided"]
+        if i == len(parts):
+            break
+        if isinstance(node, dict) and parts[i] in node:
+            node = node[parts[i]]
+        elif isinstance(node, list) and parts[i].isdigit() and int(parts[i]) < len(node):
+            node = node[int(parts[i])]
+        else:
+            break
+    return declared, declared and vouched
 
 
 def _compare(kept, expected, whole: bool = False) -> bool | None:
     """Whether a value the receipt kept equals ``expected``: True, False, or None when what was kept cannot tell.
     A member kept as a prefix (not in ``whole`` mode) compares by its digest and length; a list at the receipt's item
     limit compares by its kept items and differs from any shorter list; anything else by equality, at every depth."""
+    if not whole and _non_finite(kept):
+        return None
     cut = None if whole else _cut(kept)
     if cut:
         return isinstance(expected, str) and len(expected) == cut["length"] \

@@ -2,10 +2,11 @@
 
     python scripts/ci/check_whole_output_mutants.py
 
-Each mutant removes one safeguard of greg/missions.py ``judge_receipt`` and its callers (engine sensor, refusal
-watch, appraiser re-derivation and preconditions, Goal Gravity), of the receipt bound it reads, or of the rule that
-a check the evidence could not decide is neither pursued nor certified as failed (engine and appraiser), or of the
-judge's limits on declared-incomplete outputs and on paths into a receipt's prefix record. The named test
+Each mutant removes one safeguard: of greg/missions.py ``judge_receipt`` and its callers (engine sensor, refusal
+watch, appraiser re-derivation and preconditions, Goal Gravity); of the receipt bound it reads; of the rule that a
+check the evidence could not decide is neither pursued nor certified as failed (engine and appraiser); of the judge's
+limits on declared-incomplete outputs, on paths into a receipt's prefix record and on numbers that are not finite;
+or of greg/pipeline.py's handoffs and inspection. The named test
 must fail for every mutant. Mutants are applied to a scratch copy of the repository, never to the working tree.
 Exit status 1 if any mutant survives or no longer applies.
 """
@@ -19,6 +20,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[2]
 T = "tests/unit/test_greg_whole_output_judgment.py::"
 U = "tests/unit/test_greg_unmeasured_not_failed.py::"
+H = "tests/unit/test_greg_handoff_evidence.py::"
 W = "tests/unit/test_greg_judge_incomplete_wrappers.py::"
 MUTANTS = [
     ("a check the prefix cannot decide is never read over the whole", "greg/missions.py",
@@ -37,8 +39,8 @@ MUTANTS = [
      "        elif not whole and isinstance(value, list) and part.isdigit() and len(value) == RECEIPT_LIST_LIMIT:",
      T + "test_a_list_at_the_limit_reads_the_same_kept_whole_or_re_read"),
     ("a declared-incomplete output is judged whole once read from the store", "greg/missions.py",
-     '    declared = isinstance(output, dict) and output.get("complete") is False and path != "complete"',
-     '    declared = not whole and isinstance(output, dict) and output.get("complete") is False and path != "complete"',
+     "    declared, vouched = _declared(output, path)\n",
+     "    declared, vouched = _declared(output, path) if not whole else (False, False)\n",
      T + "test_a_declared_incomplete_output_stays_monotone_over_its_whole"),
     ("the engine judges its sensor by the prefix only", "greg/missions.py",
      '"output_artifact": outcome.output_artifact}, self.artifact_root)\n                if detail.startswith',
@@ -103,8 +105,8 @@ MUTANTS = [
      "        if False:",
      W + "test_a_field_an_incomplete_observation_has_not_reached_is_not_absent"),
     ("a field the capability vouches for is no longer judged", "greg/missions.py",
-     '    vouched = declared and isinstance(output.get("decided"), list) and path in output["decided"]',
-     "    vouched = False",
+     '            vouched = vouched and isinstance(node.get("decided"), list) and rest in node["decided"]',
+     "            vouched = False",
      W + "test_a_complete_output_and_a_vouched_field_are_judged_as_before"),
     ("a path steps into the receipt's record of a cut string", "greg/missions.py",
      '        if not whole and _cut(value) and (recorded_cut or part == "prefix"):',
@@ -169,6 +171,22 @@ MUTANTS = [
      '        if not whole and _cut(value) and (recorded_cut or part == "prefix"):',
      '        if not whole and _cut(value) and part == "prefix":',
      W + "test_a_record_the_sensor_itself_returned_is_read_as_data"),
+    # review of #196, J3, J4, J6: handoffs and numbers
+    ("inspection drops the producer's incompleteness", "greg/pipeline.py",
+     '        out["complete"] = False\n', "        pass\n",
+     H + "test_an_inspected_value_keeps_its_producers_incompleteness"),
+    ("incompleteness is read only at the top of the output", "greg/missions.py",
+     "    for i in range(len(parts) + 1):\n        rest = ", "    for i in range(1):\n        rest = ",
+     H + "test_incompleteness_declared_inside_an_output_limits_the_fields_below_it"),
+    ("a handoff binds a value its receipt did not keep whole", "greg/pipeline.py",
+     "            if held and observe is None:", "            if False:",
+     H + "test_a_value_the_receipt_did_not_keep_whole_is_never_handed_on"),
+    ("a number that is not finite reaches the ledger", "greg/authority.py",
+     "    if isinstance(value, float) and not math.isfinite(value):", "    if False:",
+     H + "test_a_number_that_is_not_finite_is_receipted_and_measures_nothing"),
+    ("a number that is not finite is judged as a reading", "greg/missions.py",
+     "    if (not whole and _non_finite(value)) or (isinstance(value, float) and value != value):", "    if False:",
+     H + "test_a_number_that_is_not_finite_is_receipted_and_measures_nothing"),
 ]
 
 

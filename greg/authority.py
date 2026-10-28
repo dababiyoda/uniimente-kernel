@@ -245,9 +245,17 @@ def text_bytes(value: str) -> bytes:
     return value.encode("utf-8", "surrogatepass")
 
 
+NON_FINITE = {"NaN", "Infinity", "-Infinity"}
+
+
 def bounded(value):
-    """Receipts keep evidence, not bulk: long strings keep a prefix plus their digest."""
+    """Receipts keep evidence, not bulk: long strings keep a prefix plus their digest. A number that is not finite
+    (NaN or an infinity, which JSON cannot carry) is kept as ``{"non_finite": ...}``: before, it passed through and
+    made the ledger's strict JSON raise after the action had run, out of every tick (review of #196, J6)."""
     import hashlib
+    import math
+    if isinstance(value, float) and not math.isfinite(value):
+        return {"non_finite": "NaN" if value != value else "Infinity" if value > 0 else "-Infinity"}
     if isinstance(value, str) and len(value) > RECEIPT_TEXT_LIMIT:
         return {"prefix": value[:RECEIPT_TEXT_LIMIT], "truncated": True,
                 "sha256": hashlib.sha256(text_bytes(value)).hexdigest(), "length": len(value)}

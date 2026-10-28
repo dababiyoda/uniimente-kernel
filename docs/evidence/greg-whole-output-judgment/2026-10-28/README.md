@@ -124,6 +124,33 @@ its strategy runs and the appraiser refutes the run; the fix changes ladder sema
 | The same tests with the fixes | pass |
 | `scripts/ci/check_whole_output_mutants.py` | 37 mutants (15 new), 0 survived or stale |
 
+## Follow-up: handoffs, inspection and non-finite numbers (review of #196, J3, J4, J6)
+
+Three more findings from the review of #196's judge, each confirmed by both skeptics, are fixed in the commit that follows `709475cc`:
+
+| Finding | Before | Now |
+| --- | --- | --- |
+| J3 | `pipeline.inspect` dropped a producer's `complete: false`. A `not_contains` on a partly read document passed, and the mission closed VERIFIED | inspection carries the declaration and vouches for the fields it states in full; the judge reads incompleteness on any observation along the predicate's path |
+| J4 | a `$from_action` handoff bound a list the receipt kept to 1000 items, or an object holding a prefix record, as the whole value | refused, as bind edges refuse it; inspection still reports the record as an observation |
+| J6 | NaN or an infinity passed the receipt bound; the ledger's strict JSON then raised after the action had run, out of every tick | kept as `{"non_finite": ...}`; the whole output keeps the number; NaN is no reading (INSUFFICIENT); an infinity is decided over the whole |
+
+| Check | Result |
+| --- | --- |
+| `tests/unit/test_greg_handoff_evidence.py` on `709475cc` | 7 of 8 fail (the control passes) |
+| The same with the fix | 8 passed |
+| `scripts/ci/check_whole_output_mutants.py` | 42 mutants (5 new; the two J8 mutants re-anchored) |
+
+Not changed here:
+
+- J5's deep-nesting case: about 500 levels raise RecursionError in `bounded`. This is pre-existing.
+- A Gate that turns a receipt that cannot be serialized into a refusal. That code is `policy/consequence_gate.py`,
+  which is not this branch's.
+- Handoffs by `$from_action` still read only the receipt. A cut value is refused, not re-read from the kept whole
+  output as a `by: artifact` bind edge does. The resolver has no artifact root, and handing on up to 1 MiB of input
+  changes what the next action receives, so that is a separate change.
+- A sensor that itself returns exactly `{"non_finite": "NaN"}` (or an infinity) is read as the receipt's marker, so
+  a check on that field is INSUFFICIENT. That direction is conservative: no verdict is manufactured.
+
 ## Limits and residuals
 
 - **Size.** Outputs whose canonical JSON exceeds 1 MiB are not kept, so they still ask. Tested: 200 KiB of control

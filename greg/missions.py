@@ -1970,7 +1970,10 @@ class MissionEngine:
                 return {"state": "BLOCKED", "blocker": m.blocker}
             self._schedule(m, now, 30 * streak or 30)
             return {"state": "SENSOR_RETRY", "checks": sorted(errors)}
-        return self._pursue(m, now, failing, evidence)
+        # Only a measured failure is pursued, and only a measured failure closes a mission unmet. Before, a check whose
+        # one reading was unmeasured rode along with another check's real failure: its strategies were dispatched and
+        # the failure closure named it as "re-observed failing" (review of #196, J1). _prepare already subtracted them.
+        return self._pursue(m, now, failing - errors, evidence)
 
     def _settle_uncertain(self, m: MissionState, s: dict, manifest, aid: str, attempt: int, scope_digest: str,
                           now: datetime, record: dict | None = None) -> dict:
@@ -3142,14 +3145,17 @@ class MissionEngine:
         held = {}                            # strategies waiting on a precondition observation says fails
         bound = {}                           # action_id -> (params, binding provenance, source receipts)
         inline = {}                          # action_id -> (params, provenance) of inline $from_action inputs
+        # ``failing`` holds measured failures only. A precondition is honoured only when measured passing, so a check
+        # this observation could not measure still holds the strategies that require it.
+        unmeasured = set(getattr(self, "sensor_errors", ())) - failing
         for index, s in enumerate(m.spec["strategies"]):
             gain = len(set(s["advances"]) & failing)
             if not gain or s["action_id"] in m.failed or s["action_id"] in m.excluded:
                 continue
             if prepare_for is not None and (s["action_id"] == prepare_for or not self._inside_cone(m, s, now)):
                 continue
-            if set(s.get("requires", [])) & failing:
-                held[s["action_id"]] = sorted(set(s["requires"]) & failing)
+            if set(s.get("requires", [])) & (failing | unmeasured):
+                held[s["action_id"]] = sorted(set(s["requires"]) & (failing | unmeasured))
                 continue
             try:      # inputs that cannot resolve (or be consumed) yet hold the strategy: an alternative runs,
                 bound[s["action_id"]], inline_out = self._inputs(m, s)   # or the founder is asked
@@ -3184,6 +3190,9 @@ class MissionEngine:
                        + blamed + "); GREG will not trade one for the other on its own")
             elif tradeoffs and not split:
                 why += "; routes that broke a check which already passed are not repeated (" + blamed + ")"
+            if unmeasured:
+                why += ("; GREG could not measure " + ", ".join(sorted(unmeasured)) + ", so it neither pursues "
+                        "nor relies on " + ("it" if len(unmeasured) == 1 else "them"))
             rid = self._request(m, kind="NO_STRATEGY", scope_digest=key, action_id=None, why=why,
                                 recommendation=("review both views and decide, or add an independent verifier that "
                                                 "can settle the question" if split else
@@ -3201,6 +3210,7 @@ class MissionEngine:
                                 evidence={"failing_checks": sorted(failing), "failed": dict(sorted(m.failed.items())),
                                           "excluded": dict(sorted(m.excluded.items())),
                                           **({"held_by_precondition": held} if held else {}),
+                                          **({"unmeasured_checks": sorted(unmeasured)} if unmeasured else {}),
                                           **({"tradeoffs": tradeoffs} if tradeoffs else {}),
                                           **({"disagreement": split} if split else {})})
             if m.actions_done and not held:

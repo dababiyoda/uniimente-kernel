@@ -44,7 +44,7 @@ from greg.capabilities import BUILTINS, CapabilityManifest, InvocationContext
 from greg.founder import _signing_bytes
 from greg.journal import Journal
 from greg.lightcone import LightCone
-from greg.missions import evaluate_predicate, evaluate_receipt, pre_approved
+from greg.missions import INSUFFICIENT, TRUE, evaluate_receipt, judge, judge_receipt, pre_approved
 from provenance.ledger import EvidenceLedger, sha256_json
 
 REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
@@ -438,8 +438,16 @@ def appraise(request: dict) -> dict:
                 bound = False
                 findings.append(f"{check['check_id']}: receipt not bound to this closure and signed sensor")
             # the receipt's kept output, or the whole output it kept in the body's artifact store, re-hashed here
-            passed, detail = evaluate_receipt(check["predicate"], receipt.payload["result"], artifacts)
-            if passed == unmet:
+            verdict, detail = judge_receipt(check["predicate"], receipt.payload["result"], artifacts)
+            passed = verdict == TRUE
+            if verdict == INSUFFICIENT:
+                # Bytes that cannot decide the predicate prove neither a success nor the claimed failure. Before, an
+                # undecided reading counted as a verified failure, and VERIFIED_UNMET certified a check that was
+                # never measured (review of #196, J2).
+                rederived = False
+                findings.append(f"{check['check_id']}: receipt bytes cannot decide the predicate, so they prove "
+                                + ("no failure" if unmet else "no success") + f" ({detail})")
+            elif passed == unmet:
                 rederived = False
                 findings.append(f"{check['check_id']}: receipt bytes " + (
                     f"satisfy the predicate the closure says fails ({detail})" if unmet
@@ -472,7 +480,10 @@ def appraise(request: dict) -> dict:
                     from greg.pipeline import resolve
                     bound_params, _ = resolve(check["sensor"].get("params", {}), journal, mid)
                     output = adapter(bound_params, ctx)
-                    now_ok, now_detail = evaluate_predicate(check["predicate"], output)
+                    now_verdict, now_detail = judge(check["predicate"], output)
+                    # an undecided re-reading (a list at the item limit, a declared-incomplete output) is no
+                    # measurement of the world, either way
+                    now_ok = None if now_verdict == INSUFFICIENT else now_verdict == TRUE
                     reasons = output.get("findings") if isinstance(output, dict) else None
                     if not now_ok and isinstance(reasons, list) and reasons:
                         # Say why, in the capability's own words: a forged acceptance and a host that cannot
@@ -482,7 +493,9 @@ def appraise(request: dict) -> dict:
                     now_ok, now_detail = None, type(exc).__name__
                 if now_ok is None or now_ok == unmet:
                     reobserved = False
-                    findings.append(f"{check['check_id']}: world no longer matches ({now_detail})")
+                    findings.append(f"{check['check_id']}: " + (
+                        "the world could not be re-measured" if now_ok is None else "world no longer matches")
+                        + f" ({now_detail})")
         checks["checks_rederived_from_receipts"] = rederived
         checks["world_reobserved"] = reobserved
         checks["closure_evidence_bound"] = bound

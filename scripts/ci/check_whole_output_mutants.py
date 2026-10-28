@@ -3,7 +3,8 @@
     python scripts/ci/check_whole_output_mutants.py
 
 Each mutant removes one safeguard of greg/missions.py ``judge_receipt`` and its callers (engine sensor, refusal
-watch, appraiser re-derivation and preconditions, Goal Gravity) or of the receipt bound it reads. The named test
+watch, appraiser re-derivation and preconditions, Goal Gravity), of the receipt bound it reads, or of the rule that
+a check the evidence could not decide is neither pursued nor certified as failed (engine and appraiser). The named test
 must fail for every mutant. Mutants are applied to a scratch copy of the repository, never to the working tree.
 Exit status 1 if any mutant survives or no longer applies.
 """
@@ -16,6 +17,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 T = "tests/unit/test_greg_whole_output_judgment.py::"
+U = "tests/unit/test_greg_unmeasured_not_failed.py::"
 MUTANTS = [
     ("a check the prefix cannot decide is never read over the whole", "greg/missions.py",
      "    if verdict != INSUFFICIENT or record is None:\n        return verdict, detail",
@@ -47,8 +49,8 @@ MUTANTS = [
      '                                 output_artifact=result.get("output_artifact"), **base)', "**base)",
      T + "test_a_required_phrase_past_16_kib_closes_the_mission_without_asking_and_is_verified"),
     ("the appraiser re-derives a closure from the prefix only", "greg/appraisal.py",
-     'passed, detail = evaluate_receipt(check["predicate"], receipt.payload["result"], artifacts)',
-     'passed, detail = evaluate_receipt(check["predicate"], receipt.payload["result"], None)',
+     'verdict, detail = judge_receipt(check["predicate"], receipt.payload["result"], artifacts)',
+     'verdict, detail = judge_receipt(check["predicate"], receipt.payload["result"], None)',
      T + "test_a_required_phrase_past_16_kib_closes_the_mission_without_asking_and_is_verified"),
     ("the appraiser checks a precondition by the prefix only", "greg/appraisal.py",
      'predicates[check_id], receipt.payload["result"], artifacts)[0])',
@@ -65,6 +67,23 @@ MUTANTS = [
     ("a lone surrogate past the cut fails the action", "greg/authority.py",
      '    return value.encode("utf-8", "surrogatepass")', "    return value.encode()",
      T + "test_a_lone_surrogate_past_the_cut_no_longer_fails_the_action_and_is_judged"),
+    # a check the evidence could not decide is neither pursued nor certified as failed (review of #196, J1 and J2)
+    ("an unmeasured check is pursued beside a measured failure", "greg/missions.py",
+     "        return self._pursue(m, now, failing - errors, evidence)",
+     "        return self._pursue(m, now, failing, evidence)",
+     U + "test_an_unmeasured_check_is_not_pursued_beside_a_measured_failure"),
+    ("a precondition the observation could not measure is taken as met", "greg/missions.py",
+     '            if set(s.get("requires", [])) & (failing | unmeasured):',
+     '            if set(s.get("requires", [])) & failing:',
+     U + "test_a_strategy_requiring_an_unmeasured_check_stays_held"),
+    ("the appraiser reads undecided receipt bytes as the claimed failure", "greg/appraisal.py",
+     "            if verdict == INSUFFICIENT:\n                # Bytes that cannot decide",
+     "            if False:\n                # Bytes that cannot decide",
+     U + "test_the_appraiser_does_not_certify_a_failure_its_receipt_cannot_decide"),
+    ("the appraiser reads an undecided re-reading of the world as a measurement", "greg/appraisal.py",
+     "                    now_ok = None if now_verdict == INSUFFICIENT else now_verdict == TRUE",
+     "                    now_ok = now_verdict == TRUE",
+     U + "test_an_undecided_re_reading_of_the_world_is_not_a_reobserved_failure"),
 ]
 
 

@@ -106,7 +106,7 @@ jobs:
         run: python scripts/ci/check_wasm_lifecycle_mutant.py
       - name: Canonical WorkOrder and reobservation mutations
         run: python scripts/ci/check_worker_appraisal_mutants.py
-      - name: Whole-output judgment mutations (a check decided over the output its receipt kept)
+      - name: Whole-output judgment mutations (a check decided over the output its receipt kept, never on what it could not measure)
         run: python scripts/ci/check_whole_output_mutants.py
 
   verifier:

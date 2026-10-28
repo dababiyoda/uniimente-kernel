@@ -66,6 +66,28 @@ with no store, a store that refused the output, or an output claiming its own ar
 
 The full suite on the final head is recorded in the PR.
 
+## Follow-up: an unmeasured check is neither pursued nor certified as failed
+
+Independent review of #196's judge (separate process, findings J1 and J2) found that a check the evidence could not
+decide still counted as failed whenever another check truly failed. This holds at any output size, with or without the
+whole-output read above. Both are fixed on this branch:
+
+- **Engine (J1).** `_step` pursues only measured failures (`failing - errors`), as `_prepare` already did. A strategy
+  whose only purpose is an unmeasured check is no longer dispatched, and a failure closure names only measured
+  failures. A precondition must still be measured passing: an unmeasured one holds the strategy. The NO_STRATEGY ask
+  says which checks GREG could not measure (`unmeasured_checks`).
+- **Appraiser (J2).** It judges three-valued, with `judge_receipt` on the receipt and `judge` on the re-reading. An
+  undecided receipt proves neither a success nor the claimed failure. An undecided re-reading of the world (for
+  example `fs.list`, which keeps at most 1000 entries and says nothing of the rest) is "could not be re-measured",
+  not "still fails". Before, both were read as a verified failure, and VERIFIED_UNMET certified a check that was
+  never measured.
+
+| Check | Result |
+| --- | --- |
+| `tests/unit/test_greg_unmeasured_not_failed.py` | 4 passed |
+| The same tests on this branch before the fix (`2a59329c`) | 3 failed, 1 passed. The test that passes guards the precondition rule, which held before by a different route |
+| `scripts/ci/check_whole_output_mutants.py` | 17 mutants (4 new), 0 survived |
+
 ## Limits and residuals
 
 - **Size.** Outputs whose canonical JSON exceeds 1 MiB are not kept, so they still ask. Tested: 200 KiB of control

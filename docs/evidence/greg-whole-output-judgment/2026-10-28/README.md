@@ -160,6 +160,36 @@ Not changed here:
 - A sensor that itself returns exactly `{"non_finite": "NaN"}` (or an infinity) is read as the receipt's marker, so
   a check on that field is INSUFFICIENT. That direction is conservative: no verdict is manufactured.
 
+## Follow-up: the mutation gate read another mutant's bytecode
+
+Canonical CI job 1 on `c74360cf` ran the full suite and passed it: 7846 passed, 48 skipped, 0 failed. It then
+failed the whole-output gate, reporting "the refusal watch judges a decline by the prefix only" as SURVIVED. The
+same gate on the same commit caught all 22 mutants here. Earlier records said this run was cancelled; it was not.
+
+The cause was the gate, not the product.
+
+- Mutants run one after another in one scratch copy.
+- Python reuses a cached `.pyc` when the source has the same size and the same whole-second mtime.
+- The engine-sensor mutant and the refusal-watch mutant both shorten `greg/missions.py` by 14 bytes. On CI's faster
+  runner they were written within one second, so the refusal-watch test ran the engine mutant's bytecode, in which
+  the refusal watch is intact.
+
+The same mechanism can also report a mutant as caught when its test fails only on the previous mutant's code.
+
+| Check | Result |
+| --- | --- |
+| Refusal-watch mutant applied with no `.pyc` present, on `c74360cf` | test fails (caught) |
+| The same, after importing the engine mutant and stamping the refusal mutant with the same mtime and size | test passes (survives), as in CI |
+| Old harness, every mutant write stamped to one whole-second mtime | 42 mutants, 1 survived: the refusal watch |
+| New harness, same forced collisions | 42 mutants, 0 survived |
+
+The gate now runs each mutant with `python -B` and `PYTHONDONTWRITEBYTECODE=1`. Before each mutant it also removes
+any `__pycache__` that a child process wrote: a confined worker starts with a clean environment and may still write
+bytecode. A surviving mutant prints its test output, so a survivor in CI can be diagnosed from the log.
+
+The repository's other nine mutation gates use the same pattern. Each excludes `__pycache__` only when it copies the
+repository. They are not this branch's files, and they are reported on #96.
+
 ## Limits and residuals
 
 - **Size.** Outputs whose canonical JSON exceeds 1 MiB are not kept, so they still ask. Tested: 200 KiB of control

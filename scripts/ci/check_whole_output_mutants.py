@@ -9,6 +9,13 @@ limits on declared-incomplete outputs, on paths into a receipt's prefix record a
 or of greg/pipeline.py's handoffs and inspection. The named test
 must fail for every mutant. Mutants are applied to a scratch copy of the repository, never to the working tree.
 Exit status 1 if any mutant survives or no longer applies.
+
+Mutants run one after another in one copy, so no run may see another's bytecode. Python reuses a cached .pyc when
+the source has the same size and the same whole-second mtime. Two mutants of one file with equal size deltas,
+written within a second of each other, therefore ran the earlier mutant's code: CI reported the refusal-watch mutant
+SURVIVED on c74360cf although its test fails on that mutant. A stale .pyc could as easily fail a test for a mutant
+that does not break it. Each run writes no bytecode, and any cache a child process wrote (a confined worker gets a
+clean environment) is removed first.
 """
 from pathlib import Path
 import os
@@ -202,15 +209,19 @@ def main() -> int:
                 print("STALE   ", name)
                 bad += 1
                 continue
+            for cache in list(repo.rglob("__pycache__")):
+                shutil.rmtree(cache, ignore_errors=True)
             path.write_text(original.replace(old, new), encoding="utf-8")
             try:
-                run = subprocess.run([sys.executable, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", node],
-                                     cwd=repo, env={**os.environ, "PYTHONPATH": str(repo)},
+                run = subprocess.run([sys.executable, "-B", "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", node],
+                                     cwd=repo, env={**os.environ, "PYTHONPATH": str(repo), "PYTHONDONTWRITEBYTECODE": "1"},
                                      capture_output=True, text=True, timeout=600)
             finally:
                 path.write_text(original, encoding="utf-8")
             caught = run.returncode == 1 and "FAILED " in run.stdout and "ERROR collecting" not in run.stdout
             print("CAUGHT  " if caught else "SURVIVED", name)
+            if not caught:                           # say why, so a survivor in CI can be diagnosed from its log
+                print("\n".join("    " + line for line in (run.stdout + run.stderr).strip().splitlines()[-15:]))
             bad += not caught
     print(f"{len(MUTANTS)} mutants, {bad} survived or stale")
     return 1 if bad else 0

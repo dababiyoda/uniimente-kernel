@@ -14,12 +14,25 @@ Mutants run one after another in one copy, so no run may see another's bytecode.
 the source has the same size and the same whole-second mtime. Two mutants of one file with equal size deltas,
 written within a second of each other, therefore ran the earlier mutant's code: CI reported the refusal-watch mutant
 SURVIVED on c74360cf although its test fails on that mutant. A stale .pyc could as easily fail a test for a mutant
-that does not break it. Each run writes no bytecode, and any cache a child process wrote (a confined worker gets a
-clean environment) is removed first.
+that does not break it. Each run writes no bytecode, any cache a child process wrote (a confined worker gets a clean
+environment) is removed first, and every write is dated to its own whole second, earlier than any file the copy
+started with, so a .pyc written for another version cannot match even if a process that outlived its run wrote it
+after the purge. Each run's whole process group is killed when it ends, however it ends. This defends against caches
+written in good faith by any process at any time; a test written to forge a cache could as easily rewrite the
+sources, and no gate run in place stops it.
+
+Verdicts come from pytest's own per-test reports, written by a small plugin outside the copy, never from its text:
+a line a test prints, a colour code or a quieter summary cannot change one. A mutant is caught only when its own
+named test fails, not as an expected failure, and only after that test passed on the unmutated copy, run alone
+exactly as its mutants are: a test that already fails, skips, is expected to fail, or passes only after another
+test, would otherwise read as catching every mutant aimed at it.
 """
 from pathlib import Path
+import contextlib
+import json
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -209,11 +222,114 @@ MUTANTS = [
 ]
 
 
+REPORTER = """\
+import json, os
+
+_rows = []
+
+
+def pytest_runtest_logreport(report):
+    _rows.append([report.nodeid, report.when, report.outcome, hasattr(report, "wasxfail")])
+
+
+def pytest_sessionfinish(session, exitstatus):
+    with open(os.environ["WHOLE_OUTPUT_GATE_REPORT"], "w", encoding="utf-8") as out:
+        json.dump(_rows, out)
+"""
+
+
+def _pytest(repo: Path, nodes: list[str], tools: Path) -> tuple[int, str, list | None]:
+    """One pytest run in its own session, read through pytest's own reports (a plugin outside the copy writes each
+    test's outcome per phase), never through its text. The session is killed when the run ends, however it ends, so
+    nothing it started can write a cache, or anything else, while the next mutant is in place."""
+    report = tools / "report.json"
+    report.unlink(missing_ok=True)
+    proc = subprocess.Popen([sys.executable, "-B", "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider",
+                             "-p", "whole_output_gate_reporter", *nodes],
+                            cwd=repo, env={**os.environ, "PYTHONPATH": f"{repo}{os.pathsep}{tools}",
+                                           "PYTHONDONTWRITEBYTECODE": "1", "WHOLE_OUTPUT_GATE_REPORT": str(report)},
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
+    out = None
+    try:
+        out = proc.communicate(timeout=600)[0]
+    except subprocess.TimeoutExpired:
+        pass
+    finally:
+        with contextlib.suppress(ProcessLookupError):
+            os.killpg(proc.pid, signal.SIGKILL)
+    if out is None:
+        out = proc.communicate()[0] + "\ntimed out after 600 s"
+    rows = json.loads(report.read_text(encoding="utf-8")) if report.exists() else None
+    return proc.returncode, out, rows
+
+
+def _mine(node: str, rows: list | None) -> list:
+    """The reports for this node: the node itself, any of its parameters, or the tests inside it."""
+    return [r for r in rows or [] if r[0] == node or r[0].startswith((node + "[", node + "::"))]
+
+
+def _passes(node: str, rows: list | None) -> bool:
+    """Every phase of every test under the node passed, none as an expected failure, and at least one test ran."""
+    mine = _mine(node, rows)
+    return any(when == "call" for _, when, _, _ in mine) and all(o == "passed" and not x for _, _, o, x in mine)
+
+
+def _fails(node: str, rows: list | None) -> bool:
+    """A test under the node failed in some phase, and not as an expected failure."""
+    return any(o == "failed" and not x for _, _, o, x in _mine(node, rows))
+
+
+def _caches(repo: Path) -> list[Path]:
+    """Every ``__pycache__`` entry in the copy, including a link (dangling or not), without following links."""
+    found = []
+    for top, dirs, files in os.walk(repo):
+        found += [Path(top) / name for name in dirs + files if name == "__pycache__"]
+    return found
+
+
+def _purge(repo: Path) -> None:
+    """Remove every bytecode cache in the copy; a link is removed, not followed. A directory a running process
+    re-creates meanwhile is harmless (writes are dated apart), but a link that survives stops the gate."""
+    for cache in _caches(repo):
+        if cache.is_symlink() or not cache.is_dir():
+            cache.unlink(missing_ok=True)
+        else:
+            shutil.rmtree(cache, ignore_errors=True)
+    left = [cache for cache in _caches(repo) if cache.is_symlink() or not cache.is_dir()]
+    if left:
+        raise SystemExit(f"cannot remove the bytecode cache {left[0]}")
+
+
+def _write(path: Path, text: str, clock: list[int]) -> None:
+    """Write, then date the file to its own whole second: one apart from every other write, all of them earlier than
+    any file the copy started with. CPython keys a cached .pyc on the source's whole-second mtime and size, so no
+    cache written for another version can match this one, and no write is dated in the future."""
+    path.write_text(text, encoding="utf-8")
+    clock[0] += 1
+    os.utime(path, (clock[0], clock[0]))
+
+
+def _tail(out: str) -> str:
+    return "\n".join("    " + line for line in out.strip().splitlines()[-15:])
+
+
 def main() -> int:
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))      # a stopped gate still kills its pytest session
     bad = 0
-    with tempfile.TemporaryDirectory(prefix="greg-whole-output-mutants-") as temp:
-        repo = Path(temp) / "repo"
+    with tempfile.TemporaryDirectory(prefix="greg-whole-output-mutants-", ignore_cleanup_errors=True) as temp:
+        repo, tools = Path(temp) / "repo", Path(temp) / "tools"
         shutil.copytree(ROOT, repo, ignore=shutil.ignore_patterns(".git", "__pycache__", ".pytest_cache"))
+        tools.mkdir()
+        (tools / "whole_output_gate_reporter.py").write_text(REPORTER, encoding="utf-8")
+        oldest = min(int(p.stat().st_mtime) for p in repo.rglob("*") if p.is_file())
+        clock = [oldest - 2 * len(MUTANTS) - 2]
+        for node in dict.fromkeys(node for *_, node in MUTANTS):
+            _purge(repo)
+            code, out, rows = _pytest(repo, [node], tools)
+            if code != 0 or not _passes(node, rows):
+                print(f"BASELINE {node} does not pass alone on the unmutated copy, so no mutant aimed at it can be judged")
+                print(_tail(out))
+                return 1
         for name, relative, old, new, node in MUTANTS:
             path = repo / relative
             original = path.read_text(encoding="utf-8")
@@ -221,19 +337,16 @@ def main() -> int:
                 print("STALE   ", name)
                 bad += 1
                 continue
-            for cache in list(repo.rglob("__pycache__")):
-                shutil.rmtree(cache, ignore_errors=True)
-            path.write_text(original.replace(old, new), encoding="utf-8")
+            _purge(repo)
+            _write(path, original.replace(old, new), clock)
             try:
-                run = subprocess.run([sys.executable, "-B", "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", node],
-                                     cwd=repo, env={**os.environ, "PYTHONPATH": str(repo), "PYTHONDONTWRITEBYTECODE": "1"},
-                                     capture_output=True, text=True, timeout=600)
+                code, out, rows = _pytest(repo, [node], tools)
             finally:
-                path.write_text(original, encoding="utf-8")
-            caught = run.returncode == 1 and "FAILED " in run.stdout and "ERROR collecting" not in run.stdout
+                _write(path, original, clock)
+            caught = code == 1 and _fails(node, rows)
             print("CAUGHT  " if caught else "SURVIVED", name)
             if not caught:                           # say why, so a survivor in CI can be diagnosed from its log
-                print("\n".join("    " + line for line in (run.stdout + run.stderr).strip().splitlines()[-15:]))
+                print(_tail(out))
             bad += not caught
     print(f"{len(MUTANTS)} mutants, {bad} survived or stale")
     return 1 if bad else 0

@@ -213,6 +213,50 @@ On the fixed tree:
 - the mutation gate gives 45 mutants (3 new), 0 survived or stale;
 - the judgment, handoff, unmeasured, incomplete-evidence and wrapper suites give 116 passed, 1 skipped.
 
+## Follow-up: the gate's own evidence
+
+The gate is evidence, so it was attacked like the judge. An audit of the `a917a7dd` fix, with two skeptics per
+finding, confirmed the bytecode mechanism and the fix for it, and found three ways the gate could still report a
+result the code did not earn:
+
+- **F6.** The gate never ran its tests on the unmutated copy, and it counted any "FAILED " line with exit 1 as a
+  catch. A test that already failed therefore read as catching every mutant aimed at it. Today's full disk did this
+  to every run on this machine.
+- **F3.** The purge ran only before each write. A process that outlived its run could write a `.pyc` after the
+  purge, and a later mutant then ran that code.
+- **F4.** `rmtree(..., ignore_errors=True)` silently left a symlinked `__pycache__` in place, and Python read
+  through it.
+
+Two further rounds of attack on the fix, by separate agents, found that matching pytest's text cannot be made sound.
+A test can print a line that starts with `FAILED <node>`. `-qq` prints no summary, colour codes wrap the node id,
+and "xpassed" contains "passed". They also found that a joint baseline passes a test that only passes after another
+one. The gate now:
+
+- reads pytest's own per-test reports, written by a small plugin outside the copy, never its text;
+- runs each named test alone on the unmutated copy, exactly as its mutants run it, and stops if any phase fails,
+  skips or is an expected failure;
+- counts a mutant as caught only when its own test, a parameter of it or a test inside it fails in some phase, not
+  as an expected failure;
+- dates every write it makes to its own whole second, earlier than any file the copy started with, so no cache
+  written in good faith for another version can match, and no write is dated in the future;
+- kills each run's process group however the run ends, including when the gate itself is stopped;
+- walks the tree itself to remove every cache and removes links without following them. It stops if a link
+  survives; a cache directory a running process writes meanwhile is harmless under the dating.
+
+| Case (previous gate → this gate) | Result |
+| --- | --- |
+| A named test fails, skips or is an expected failure on the unmutated copy | false CAUGHT → stops at BASELINE, no mutant judged |
+| A named test passes only after another test in the same session | false CAUGHT → stops at BASELINE |
+| A harmless mutant's own test passes while another test fails, errors or prints `FAILED <node>` | false CAUGHT → SURVIVED |
+| A test leaves `__pycache__` as a link to a cache of mutated code | false CAUGHT, or a real mutant masked → link removed, correct verdict |
+| A process outside the run caches the previous version, same size, with the new version on disk | stale code ran when the two shared a second → rejected (control: same second → stale code ran) |
+| `-qq`, forced colour, a class node, `]` in a parameter id, a failure in setup | wrong or no verdict → read from the reports, correct |
+| The gate is stopped (SIGTERM, Ctrl-C) mid-run | pytest left running → no pytest left |
+| The real list | 45 of 45 caught in both; this gate first passes all 34 named tests alone (about 215 s against 105 s) |
+
+Boundary: this defends against caches written in good faith by any process, at any time. A test written to forge a
+cache, or a report, could as easily rewrite the sources, and no gate run in place stops that.
+
 ## Limits and residuals
 
 - **Size.** Outputs whose canonical JSON exceeds 1 MiB are not kept, so they still ask. Tested: 200 KiB of control

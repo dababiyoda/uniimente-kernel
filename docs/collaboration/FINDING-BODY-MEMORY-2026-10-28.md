@@ -170,6 +170,22 @@ Kept as reported:
 - The reviewer's differential test matched the old ledger and spine exactly: 36 random operation sequences at
   windows 1, 2 and 3, with byte-identical files.
 
+## CI mutation check
+
+Canonical CI job 6 (`scripts/ci/check_cortex_mutants.py`) failed on `e3c6e723`. Its "a Gate commit trusts the
+incremental check on altered history" mutant named the commit-path line this change rewrote, so it went STALE
+and that safeguard was no longer checked. The mutant now names the new line and is caught again.
+
+Eight mutants were added, one per new safeguard. Each is caught by `tests/unit/test_ledger_dropped_payloads.py`:
+- a changed line served;
+- a payload dropped although its pointer was altered (F1);
+- explicit verification trusting dropped skeletons (F1);
+- the commit path ignoring dropped history;
+- a type-only change passing the digest (F2);
+- a found change forgotten by the next reconstruction;
+- a failure erased by a concurrent reconstruction (F4);
+- a replaced file unnoticed.
+
 ## Next measured limit (not changed here; each needs a decision)
 
 What still grows, per retained record, at 11,720 records (`bounded-heap-attribution.json`):

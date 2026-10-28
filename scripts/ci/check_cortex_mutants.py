@@ -260,8 +260,31 @@ RECOVERY_MUTANTS = [
 COMMIT_CHAIN_TESTS = ["tests/unit/test_consequence_gate.py", "tests/unit/test_ledger_incremental_verification.py"]
 COMMIT_CHAIN_MUTANTS = [
     ("a Gate commit trusts the incremental check on altered history", "provenance/ledger.py",
-     "ok, reason = self.verify_chain() if record_type in COMMIT_RECORD_TYPES else self.verify_incremental()",
+     "ok, reason = (self._reconstruct(read_disk=False) if record_type in COMMIT_RECORD_TYPES\n"
+     "                      else self.verify_incremental())",
      "ok, reason = self.verify_incremental()"),
+]
+
+# 2026-10-28 dropped-payload ledger (#211): older payloads are read back from the file, checked to the byte.
+DROPPED_PAYLOAD_TESTS = ["tests/unit/test_ledger_dropped_payloads.py"]
+DROPPED_PAYLOAD_MUTANTS = [
+    ("a dropped line changed on disk is served", "provenance/ledger.py",
+     "        if len(data) != size or hashlib.sha256(data).digest() != digest:\n",
+     "        if len(data) != size:\n"),
+    ("a payload whose line pointer was altered is dropped (review F1)", "provenance/ledger.py",
+     "and self._verify_record(i)[0] and self._pointer_ok(i)[0]):", "and self._verify_record(i)[0]):"),
+    ("explicit verification trusts the dropped skeletons (review F1)", "provenance/ledger.py",
+     "ok, why = self._rederive(i)", "ok, why = True, ''"),
+    ("the commit path ignores what stays of dropped history", "provenance/ledger.py",
+     "if digest.digest() != self._dropped_digest:", "if False:"),
+    ("a change of type alone passes the dropped-history digest (review F2)", "provenance/ledger.py",
+     '"\\x1f".join(map(ascii, (', '"\\x1f".join(map(str, ('),
+    ("a read that found changed bytes is forgotten by the next reconstruction", "provenance/ledger.py",
+     "read_disk = read_disk or (src is not None and src.broken)", "read_disk = read_disk"),
+    ("a reconstruction erases a failure found while it ran (review F4)", "provenance/ledger.py",
+     "src.cleared = max(src.cleared, mark)", "src.cleared = src.failures"),
+    ("a ledger file replaced after open goes unnoticed", "provenance/ledger.py",
+     "if self._src.replaced():", "if False:"),
 ]
 
 # 2026-10-14 installed-body merge (#137 verifier): a test-key closure is structural evidence, never the founder's path.
@@ -560,6 +583,7 @@ GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("mind construction", MIND_CONSTRUCTION_TESTS, MIND_CONSTRUCTION_MUTANTS),
           ("recovery", RECOVERY_TESTS, RECOVERY_MUTANTS),
           ("evidence chain at commit", COMMIT_CHAIN_TESTS, COMMIT_CHAIN_MUTANTS),
+          ("dropped-payload ledger", DROPPED_PAYLOAD_TESTS, DROPPED_PAYLOAD_MUTANTS),
           ("founder tier", FOUNDER_TIER_TESTS, FOUNDER_TIER_MUTANTS),
           ("founder tier (body)", FOUNDER_TIER_BODY_TESTS, FOUNDER_TIER_BODY_MUTANTS),
           ("closure integrity", CLOSURE_INTEGRITY_TESTS, CLOSURE_INTEGRITY_MUTANTS),

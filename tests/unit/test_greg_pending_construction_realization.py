@@ -133,7 +133,7 @@ def test_one_claim_reobserved_on_many_receipts_is_offered_once_and_leaves_once_a
     [row] = settlement.awaiting_realization(journal)
     assert row["receipt"] == later[-1] and row["receipts_for_claim"] == 3
     assert row["claim"].startswith("sha256:") and row["mission_appraisal"] is None
-    assert row["settles"].startswith("only once the mission's latest appraisal is VERIFIED")
+    assert row["settles"].startswith("only once the mission's latest appraisal is an eligible settling appraisal")
     settlement.record_realization(journal, receipt=first, realized=2, source="founder_reported")   # an older one
     assert settlement.awaiting_realization(journal) == []
 
@@ -278,8 +278,38 @@ def test_the_row_says_when_a_report_will_settle_following_the_missions_latest_ap
     appraise(journal, "REFUTED")
     [row] = settlement.awaiting_realization(journal)
     assert row["mission_appraisal"] == "REFUTED"
-    assert row["settles"].startswith("only once the mission's latest appraisal is VERIFIED")
+    assert row["settles"].startswith("only once the mission's latest appraisal is an eligible settling appraisal")
 
+
+
+def test_a_verified_failure_closure_settles_like_a_verified_success_and_a_later_refutation_withdraws_it():
+    """Directive on #210 (2026-10-28): the shared rule admits VERIFIED and VERIFIED_UNMET (a verified failure
+    closure, never promoted to success); the row must say so, and a later REFUTED withdraws eligibility."""
+    journal, receipt = pending()
+    appraise(journal, "VERIFIED_UNMET")
+    [row] = settlement.awaiting_realization(journal)
+    assert row["mission_appraisal"] == "VERIFIED_UNMET" and row["settles"].startswith("once for the claim")
+    appraise(journal, "REFUTED")
+    [row] = settlement.awaiting_realization(journal)
+    assert row["settles"].startswith("only once") and "VERIFIED_UNMET" in row["settles"]
+
+
+@pytest.mark.xfail(strict=True, reason="answer-version alias (directive on #210, 2026-10-28), reproduced: the claim "
+                                       "identity binds mission/check/input/method/version, not the answer, so a "
+                                       "report on one certified answer settles a later, different answer of the "
+                                       "same claim. Unreachable for today's certified optima (the promised value "
+                                       "is unique per input and version); the fix is settlement semantics, owned "
+                                       "by the #196 integrator. Strict: this flips to a failure once fixed.")
+def test_a_report_on_one_answer_never_settles_a_different_later_answer_of_the_same_claim():
+    journal, first = pending()                                  # promises profit 2
+    later = answer(journal, result={"profit": 4})               # same claim key, a different certified answer
+    observe(journal, later)
+    appraise(journal, "VERIFIED")
+    settlement.record_realization(journal, receipt=first, realized=1, source="founder_reported")
+    credited = [o for o in settlement.measured_outcomes(journal) if o.get("world")]
+    assert all(o["world"]["promised"] == 4 for o in credited), "the later answer inherited the first answer's report"
+    assert any(r.get("promised") == 4 for r in settlement.awaiting_realization(journal)), \
+        "the later answer's world outcome is no longer asked for"
 
 def test_a_corrected_report_is_shown_as_a_conflict_scored_as_neither_never_silently_dropped():
     """Review finding 1 on #210 (...foabg): a second, different value, even on the same receipt, makes settlement

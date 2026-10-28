@@ -588,8 +588,9 @@ def awaiting_realization(journal) -> list[dict]:
                         "claim": identity, "receipts_for_claim": receipts, "mission_id": mission_id,
                         "mission_appraisal": latest_verdict.get(mission_id),
                         "settles": ("once for the claim" if appraised else
-                                    "only once the mission's latest appraisal is VERIFIED: until then a report is "
-                                    "recorded and scores nothing")
+                                    "only once the mission's latest appraisal is an eligible settling appraisal "
+                                    "(VERIFIED, or VERIFIED_UNMET for a verified failure closure, with the required "
+                                    "checks): until then a report is recorded and scores nothing")
                                    + "; a second, different value on any of its receipts is a conflict scored as "
                                      "neither",
                         "evidence_limit": "the reported world outcome is not independently verified by this view",

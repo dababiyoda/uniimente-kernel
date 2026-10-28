@@ -73,3 +73,8 @@ The reviewer is the same model family, so this is not fully independent. It foun
 Evidence:
 - [review-fixes-before.txt](review-fixes-before.txt): the new and updated tests fail on `aa83bb78` (3 failed, 26 passed).
 - [review-fixes-after.txt](review-fixes-after.txt): 110 related tests pass, and the combined-machine test passes with real organs (WMI #47).
+
+## Follow-up to the 2026-10-28 directive on #210
+
+1. **Wording now matches the shared rule.** A row's `settles` names the eligible settling appraisal: VERIFIED, or VERIFIED_UNMET (a verified failure closure, never promoted to success) with the required checks. A new test covers VERIFIED_UNMET and a later REFUTED.
+2. **The answer-version alias is reproduced and pinned, not fixed here.** `_outcome_identity` binds mission, check, input, method and version, not the answer. In a fixture with two different certified answers to one claim (promised 2, then 4), a report on the first is credited to the later answer: `world.promised == 2` on the promise-4 outcome, and the later answer is no longer asked for. For today's constructions this is reasoned to be unreachable, because each objective is a certified optimum whose value is unique per input and version. The fix (versioned answer snapshots plus a selection or dispute rule) is settlement semantics, owned by the #196 integrator. `test_a_report_on_one_answer_never_settles_a_different_later_answer_of_the_same_claim` is a **strict xfail**: it records the defect and turns into a failure the moment the fix lands.

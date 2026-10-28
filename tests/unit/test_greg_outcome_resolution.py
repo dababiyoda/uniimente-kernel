@@ -173,3 +173,19 @@ def test_settlement_itself_refuses_a_signed_resolution_that_accepts_a_founder_re
     signed(journal, "sha256:direct")
     [row] = settlement.awaiting_realization(journal)
     assert row["world_state"] == "disputed" and counts(journal) == []
+
+
+def test_a_resolution_never_relabels_a_reports_source():
+    """Integrator intake condition 2 (#196, 6476642680): a founder signature is attestation, never independent
+    measurement. Every fact keeps the source it was reported with; the settled outcome names the accepted fact's own
+    source; the resolution itself carries no source and cannot turn a founder report into an observation."""
+    journal, receipt = disputed()
+    before = {e.event_id: e.payload["source"] for e in journal.replay("cognition.realization")}
+    resolution = resolve(journal, receipt, list(facts(journal).values()), facts(journal)["external_record:2"])
+    assert "source" not in resolution and "realized" not in resolution
+    after = {e.event_id: e.payload.get("source") for e in journal.replay("cognition.realization")
+             if e.payload.get("kind") == "objective"}
+    assert after == before
+    [outcome] = settlement.measured_outcomes(journal)
+    assert outcome["world"]["source"] == "external_record" and outcome["world"]["state"] == "adjudicated"
+    assert "founder_reported" not in outcome["evidence_tier"]          # the rejected report lends no label

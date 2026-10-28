@@ -71,9 +71,14 @@ MUTANTS = [
      T + "test_a_lone_surrogate_past_the_cut_no_longer_fails_the_action_and_is_judged"),
     # a check the evidence could not decide is neither pursued nor certified as failed (review of #196, J1 and J2)
     ("an unmeasured check is pursued beside a measured failure", "greg/missions.py",
-     "        return self._pursue(m, now, failing - errors, evidence)",
+     "        return self._pursue(m, now, failing - self.inconclusive, evidence)",
      "        return self._pursue(m, now, failing, evidence)",
      U + "test_an_unmeasured_check_is_not_pursued_beside_a_measured_failure"),
+    ("a check whose sensor the capability refused is no longer pursued", "greg/missions.py",
+     "        return self._pursue(m, now, failing - self.inconclusive, evidence)",
+     "        return self._pursue(m, now, failing - errors, evidence)",
+     "tests/integration/test_greg_adversarial_machine.py::"
+     "test_a_more_profitable_offer_that_pressures_buyers_is_refused_and_the_plain_one_is_sold"),
     ("a precondition the observation could not measure is taken as met", "greg/missions.py",
      '            if set(s.get("requires", [])) & (failing | unmeasured):',
      '            if set(s.get("requires", [])) & failing:',

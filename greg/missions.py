@@ -1982,10 +1982,11 @@ class MissionEngine:
                 return {"state": "BLOCKED", "blocker": m.blocker}
             self._schedule(m, now, 30 * streak or 30)
             return {"state": "SENSOR_RETRY", "checks": sorted(errors)}
-        # Only a measured failure is pursued, and only a measured failure closes a mission unmet. Before, a check whose
-        # one reading was unmeasured rode along with another check's real failure: its strategies were dispatched and
-        # the failure closure named it as "re-observed failing" (review of #196, J1). _prepare already subtracted them.
-        return self._pursue(m, now, failing - errors, evidence)
+        # A reading the evidence could not decide (INSUFFICIENT, or a construction the host stopped) is not pursued
+        # and closes nothing. Before, it rode along with another check's real failure: its strategies were dispatched
+        # and the failure closure named it as "re-observed failing" (review of #196, J1). A sensor the capability
+        # refused keeps its route: a strategy may create what it reads (a catalog's offer before its discover).
+        return self._pursue(m, now, failing - self.inconclusive, evidence)
 
     def _settle_uncertain(self, m: MissionState, s: dict, manifest, aid: str, attempt: int, scope_digest: str,
                           now: datetime, record: dict | None = None) -> dict:
@@ -2219,6 +2220,7 @@ class MissionEngine:
     def _observe(self, m: MissionState, now: datetime):
         failing, evidence = set(), []
         sensor_errors = self.sensor_errors = set()
+        inconclusive = self.inconclusive = set()   # the sensor read the world; the evidence could not decide
         self.capability_faults = {}
         self.disagreements = {}
         for check in m.current_checks():
@@ -2273,6 +2275,7 @@ class MissionEngine:
                     # retry path re-observes and then asks the founder; no strategy is blamed.
                     detail = f"sensor inconclusive (incomplete evidence): {detail}"
                     sensor_errors.add(check["check_id"])
+                    inconclusive.add(check["check_id"])
                 fault = outcome.output.get("capability_fault") if isinstance(outcome.output, dict) else None
                 if not passed and isinstance(fault, dict) and self.genesis is not None \
                         and fault.get("capability_id") in self.registry.manifests:
@@ -2288,6 +2291,7 @@ class MissionEngine:
                         # measured. The SENSOR_RETRY path applies; no strategy is blamed for it.
                         detail = f"sensor inconclusive ({failure_class}): {detail}"
                         sensor_errors.add(check["check_id"])
+                        inconclusive.add(check["check_id"])
                 views = disagreement(outcome.output)
                 if views and not passed:
                     self.disagreements[check["check_id"]] = {**views, "observation": outcome.receipt_hash}

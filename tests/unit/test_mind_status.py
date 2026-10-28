@@ -597,6 +597,21 @@ def test_founder_use_is_claimed_only_for_a_key_in_the_founder_registry(monkeypat
     assert M.status()["exercised"]["founder_use"] == ["cognition.exact"]
 
 
+def test_a_trace_citing_a_settlement_without_its_method_is_a_source_that_credits_nothing(monkeypatch, tmp_path):
+    """A step map (organ-staffing-figures loop15) cites a greg.cognition.settled event by ledger position and hash
+    but not its method. The scan listed only files with an attributable settlement, so the falsifier above failed.
+    The file is now a source, it credits no mechanism, and a JSON list document still does not reach the reader."""
+    root = tmp_path / "evidence"
+    (root / "map").mkdir(parents=True)
+    cited = {"steps": {"13": {"events": [{"seq": 542, "hash": "sha256:" + "0" * 64, "type": M.SETTLED}]}}}
+    (root / "map" / "step-map.json").write_text(json.dumps(cited))
+    (root / "map" / "names.json").write_text(json.dumps([M.SETTLED, "greg.mission.achieved"]))
+    monkeypatch.setattr(M, "EXERCISED_ROOTS", (str(root),))
+    ex = M.status()["exercised"]
+    assert [s["path"].endswith("step-map.json") for s in ex["sources"]] == [True]
+    assert ex["settlements"] == [] and ex["mechanisms"] == {}
+
+
 LINEAGE_AVAILABLE = subprocess.run(["git", "cat-file", "-e", f"{M.LINEAGE_179['commit']}^{{commit}}"], cwd=ROOT,
                                    capture_output=True, check=False).returncode == 0
 

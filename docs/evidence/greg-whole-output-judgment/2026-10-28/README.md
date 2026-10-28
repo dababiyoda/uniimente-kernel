@@ -96,22 +96,30 @@ whole-output read above. Both are fixed on this branch:
 ## Follow-up: review of this branch (#209)
 
 A review of `c74360cf` by four lenses (subagents of this session, so self-review, not independent) reproduced each
-finding on the head and on #196's `e6c5058c`. Skeptics confirmed E1 and E2; their other runs did not return. It found
-12 distinct defects in 15 reports (three were found twice). Four were introduced by this branch and one was widened by
-it. Ten are fixed here, each with a test that fails on `c74360cf`:
+finding on the head and on #196's `e6c5058c`, and two skeptics re-ran each one. When `709475cc` was written, only the
+skeptics for E1 and E2 had returned. The final verdicts, received afterwards:
+
+- 15 reports. Both skeptics confirmed 12, which are 9 distinct defects: the nested cut was reported three times and
+  the type error twice.
+- Three of the 9 were introduced by this branch: APR-1, F1 and the type error. Six were pre-existing.
+- `709475cc` fixes eight and part of E2. E2's ladder case and E5 are recorded below. Each fix has a test that fails on
+  `c74360cf`.
+- Both skeptics refuted three reports. EXACT-1000 is not changed here.
+- REUSE and E3, two of the refuted reports, are marked below. `709475cc` had treated them as defects and changed both,
+  so this record no longer counts them as defect fixes.
 
 | Finding | Introduced here | Before | Now |
 | --- | --- | --- | --- |
 | APR-1: J9 refused a record the sensor itself returned | yes | a `pipeline.inspect` check on `value.sha256` asked the founder (SENSOR_FAILURE); the appraiser refuted what #196 verified | only a receipt that recorded a cut has its records refused; a prefix is never read as a whole string |
 | F1: a list of exactly 1000 | yes | the same list closed the mission or stayed open by the length of an unrelated field; the appraiser's re-reading refuted the closure | undecided past item 1000 in every mode; the appraiser judges its fresh re-reading as whole |
 | TYPEERROR / APR-3 / J7: a signed value of another type | the long-text case | `contains 5` over a text past 16 KiB raised TypeError out of `Body.tick` (over a short text it always had) | the check fails; nothing raises |
-| REUSE: a reading reused after a restart | yes | judged on its prefix only: inconclusive where the fresh reading decided | carries the whole output its receipt kept |
+| REUSE: a reading reused after a restart (refuted as a defect by both skeptics) | — | the omission is real, but the engine's reading on that path is the same as on the base, and Goal Gravity skips it; the next fresh reading decides the check | carries the whole output its receipt kept: one fewer undecided reading after a restart; kept as an improvement, not a fix |
 | J-NESTED / F2 / APR-2: a cut below the judged value's own members | no | compared as the receipt's wrapper: a wrong TRUE and wrong FALSEs, kept by `judge_receipt` | compared by digest and length or undecided; the rest over the kept whole |
 | APPRAISER-ARTIFACT-BIND | no | the appraiser re-derived a `by: artifact` bind from the prefix and refuted a correct closure | re-derived from the whole, as the engine bound it |
 | E1: an abstaining cognitive sensor | no | named "re-observed failing" in the failure closure; VERIFIED_UNMET on no measurement | still pursued (Goal Gravity's attach ask depends on it); never certified as failed, by the engine or the appraiser |
 | E4: a refused sensor read | no | named "re-observed failing"; the appraiser then refuted the whole closure | listed as `unmeasured_checks`; the closure names measured failures only |
 | E2: a precondition during preparation | no | a strategy ran in the pass that measured its required check failing | held, as `_step` holds it |
-| E3: the SENSOR_FAILURE streak | widened here | three unmeasured checks asked the founder on the first reading | counts observation rounds |
+| E3: the SENSOR_FAILURE streak (refuted as a defect by both skeptics) | — | counting readings across checks is the base's design: three unmeasured checks asked the founder on the first round, on the base too | counts observation rounds, so a mission with several unmeasured checks retries three rounds before asking, as a one-check mission does. This is a policy change, not a fix; the integrator decides, and reverting it is one hunk in `_pursue` plus its test |
 
 Recorded, not changed here: E2's second case (a required check outside the current ladder rung is never observed, so
 its strategy runs and the appraiser refutes the run; the fix changes ladder semantics and goes to the integrator); E5

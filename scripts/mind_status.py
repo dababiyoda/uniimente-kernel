@@ -657,7 +657,7 @@ def _exercised(rows: list[dict]) -> dict:
                     doc = json.loads(text)
                 except ValueError:
                     continue
-                if not isinstance(doc, dict) and not _settlements_in(doc):
+                if not _settlements_in(doc):
                     continue
                 source, settled = _trace_source(path, doc)
             sources.append(source)

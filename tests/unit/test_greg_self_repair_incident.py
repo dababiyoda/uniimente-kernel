@@ -63,6 +63,9 @@ def _payloads(body, kind):
 
 
 def test_a_failure_one_repair_did_not_cure_asks_the_founder_and_never_crashes(tmp_path, monkeypatch):
+    # The review's trigger, one check. Here the streak fix alone already reaches the founder ask before a second
+    # repair can fire, so this test fails only with both fixes removed; the once-per-incident rule is pinned by the
+    # two-check test below (independent review of #214, finding 1).
     home, _ = _body(tmp_path, monkeypatch, _stand_in(tmp_path, directory=1, missing=1))
     clock = Clock()
     with Body(home, clock=clock) as body:
@@ -88,7 +91,9 @@ def test_a_new_fault_right_after_a_repair_is_not_a_second_strike(tmp_path, monke
         target.rmdir()                             # the next reading fails differently: exit 4, a new incident
         after = _ticks(body, clock, 1)
         # one new fault plus the pre-repair reading at the repair's instant used to make a streak of two, so the
-        # fresh capability was quarantined again on its first reading; now the unmeasured readings reach the founder
+        # fresh capability was quarantined again on its first reading; now the unmeasured readings reach the founder.
+        # The sensor-failure streak counts the earlier readings too, so in this engine a second, different fault is
+        # asked about before it could ever be repaired (independent review of #214, finding 2)
         assert after != ["REPAIRED"], after
         whys = [q["why"] for q in _payloads(body, "capability.state") if q["state"] == "QUARANTINED"]
         assert len(whys) == 1 and "exited 3" in whys[0], whys

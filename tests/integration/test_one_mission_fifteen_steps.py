@@ -509,13 +509,16 @@ def test_one_mission_crosses_all_fifteen_steps(tmp_path, capsys):
     wmi_sha = next(o["content_sha256"] for o in observed if o["organ"] == "wealthmachine")
     [assessment_row] = [i for i in ev(home, "external.ingested", source="organ:wealthmachine")
                         if i["content_sha256"] == wmi_sha]
-    assert not assessment_row["truncated"]
+    assert not assessment_row["truncated"] and assessment_row["trust"] == "untrusted"
     assessment = json.loads(assessment_row["content"])
     [reading] = [r for r in assessment["reasons"] if r.startswith("staffing evidence[")]
     assert "staffed=8, total_demand=9, shortage=1" in reading, assessment["reasons"]
     assert "unverified report" in reading and "not verified" in reading
     first_step = assessment["validation_plan"][0]
-    assert assessment["recommended_next_action"] == first_step == exchange["assessment"]["recommended_next_action"]
+    assert assessment["recommended_next_action"] == first_step
+    # The organ's prose is read where the data plane scanned it, never from the exchange receipt (review of #212).
+    from greg.organs import SUMMARY
+    assert set(exchange["assessment"]) == set(SUMMARY), exchange["assessment"]
     assert "shortage of 1 units" in first_step, assessment["validation_plan"]
     assert assessment["go_no_go"] != "go" and assessment["requires_human_approval"] is True
     steps[9] = {"name": "a real organ process consumes the answer",

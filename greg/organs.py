@@ -105,10 +105,7 @@ print(json.dumps({"body": out.decode(), "headers": headers}))
 # The assessment fields a second, independent WealthMachine run must reproduce exactly.
 REPRODUCIBLE = ("go_no_go", "opportunity_score", "market_alignment", "risk_level", "legal_readiness",
                 "requires_human_approval", "validation_plan", "reasons")
-# What the exchange's receipt carries of the assessment. ``recommended_next_action`` is WealthMachine's first validation
-# step (untrusted organ text): it is where a reported staffing shortage changes WealthMachine's priority (WMI #45).
-SUMMARY = ("go_no_go", "opportunity_score", "risk_level", "legal_readiness", "requires_human_approval",
-           "recommended_next_action")
+SUMMARY = ("go_no_go", "opportunity_score", "risk_level", "legal_readiness", "requires_human_approval")
 
 
 def trace_for(mission_id: str, seed: str) -> str:

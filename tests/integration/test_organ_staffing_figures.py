@@ -153,13 +153,12 @@ def test_a_shortage_changes_reasons_evidence_requests_and_priority_with_nothing_
     assert "8/8 units" in wmi_f["recommended_next_action"]
     assert "shortage of 4 units" in wmi_s["recommended_next_action"]
     assert wmi_f["validation_plan"][1:] == wmi_s["validation_plan"][1:], "evidence requests beyond staffing changed"
-    # GREG sees the changed priority in the exchange's own receipt, not only in the retained organ body.
-    assert out_s["assessment"]["recommended_next_action"] == wmi_s["recommended_next_action"]
+    # The organ's prose stays in the body the data plane scanned; the exchange receipt carries no copy of it.
+    assert "recommended_next_action" not in out_s["assessment"]
 
-    # A shortage can only lower the verdict; a complete report never raises one.
-    assert wmi_s["go_no_go"] != "go"
-    if wmi_f["go_no_go"] == "go":
-        assert wmi_s["go_no_go"] == "needs_more_evidence"
+    # A shortage can only lower the verdict. The precondition is asserted, so a scoring drift fails loudly.
+    assert wmi_f["go_no_go"] == "go"
+    assert wmi_s["go_no_go"] == "needs_more_evidence"
 
     # Arithmetic agreement is never promoted to verification of demand, capacity, optimality or the world.
     for reason in (reason_f, reason_s):
@@ -180,7 +179,6 @@ def test_the_fifteen_step_missions_answer_holds_the_verdict_and_leads_with_its_s
     assert "staffed=8, total_demand=9, shortage=1" in reading and '"Dock2": 1' in reading
     assert wmi["go_no_go"] == "needs_more_evidence"
     assert wmi["recommended_next_action"].startswith("Validate the reported staffing shortage of 1 units")
-    assert out["assessment"]["recommended_next_action"] == wmi["recommended_next_action"]
 
 
 HOSTILE = {

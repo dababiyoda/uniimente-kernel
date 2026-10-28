@@ -440,18 +440,18 @@ def appraise(request: dict) -> dict:
             # the receipt's kept output, or the whole output it kept in the body's artifact store, re-hashed here
             verdict, detail = judge_receipt(check["predicate"], receipt.payload["result"], artifacts)
             passed = verdict == TRUE
-            if verdict == INSUFFICIENT:
-                # Bytes that cannot decide the predicate prove neither a success nor the claimed failure. Before, an
-                # undecided reading counted as a verified failure, and VERIFIED_UNMET certified a check that was
-                # never measured (review of #196, J2).
-                rederived = False
-                findings.append(f"{check['check_id']}: receipt bytes cannot decide the predicate, so they prove "
-                                + ("no failure" if unmet else "no success") + f" ({detail})")
-            elif passed == unmet:
+            if passed == unmet:
                 rederived = False
                 findings.append(f"{check['check_id']}: receipt bytes " + (
                     f"satisfy the predicate the closure says fails ({detail})" if unmet
                     else f"do not satisfy predicate ({detail})"))
+            elif verdict == INSUFFICIENT:
+                # Bytes that cannot decide the predicate prove no failure (an undecided success closure is refused
+                # just above). Before, an undecided reading counted as a verified failure, and VERIFIED_UNMET
+                # certified a check that was never measured (review of #196, J2).
+                rederived = False
+                findings.append(f"{check['check_id']}: receipt bytes cannot decide the predicate, so they prove "
+                                f"no failure ({detail})")
             elif receipt.payload["result"].get("result_class") != "positive":
                 # A refused sensor run is no reading of the world: it proves neither a success nor a failure.
                 rederived = False

@@ -114,6 +114,37 @@ The test is `tests/integration/test_outcome_correction_changes_decision.py`. Sce
   corroboration expectation and the gravity count.
 - 58 tests pass on both trees.
 
+**Further evidence:**
+- [after.txt](after.txt): every settlement-touching test passes on `050e2e42` (463 passed, 1 skipped).
+- [mutants.txt](mutants.txt): 8 of 8 safeguard mutants caught, using [mutants.py](mutants.py). The mutants
+  covered:
+  - identity without the answer version;
+  - a resolution with no accepted founder command;
+  - accepting a non-independent source, both at replay and at record time;
+  - reviving facts a resolution did not name;
+  - treating concordant values as disputed;
+  - dropping corroboration;
+  - accepting a partial resolution.
+- [combined-candidate-job8.txt](combined-candidate-job8.txt): CI job 8's whole set plus the combined test, with
+  real organs, run on both trees:
+  - `8c431b85` (#196 `9e5a0b09` + #212 + #210 `ec38d8a5`): 117 passed, 1 skipped (supervisord not installed
+    locally);
+  - `050e2e42`: 117 passed, 1 skipped.
+- `docs/evidence/greg-data-exposure-ledger.json` is rebuilt for the experiment's declared development seed
+  (`maxflow_instance(3)`).
+
+## Power, inspection and repair (Spider-Web check)
+
+The new power is the founder's ability to resolve a disputed outcome. Every use of it can be:
+
+| Safeguard | How |
+|---|---|
+| Inspected | every fact, resolution and rejected event stays on the record |
+| Challenged | a later disagreeing report reopens the dispute |
+| Restricted | only a recorded independent observation can be accepted; every disagreeing report must be named; a basis must be stated |
+| Revoked | a later resolution rules again on any fact it names |
+| Repaired downstream | `decisions_to_recheck` names the decisions that rested on the rejected evidence |
+
 ## What GREG can do now that it could not before
 
 When two reports about a completed construction disagree, the body now does the following:
@@ -141,3 +172,15 @@ recheck. With the repair disabled, the same history leaves the worse decision in
 - No capability declares an observation of a world objective, so GREG cannot acquire the evidence itself. It asks.
 - The #213 transfer experiment, the compiler's selection rules, Genesis, authority and the mission engine are
   unchanged.
+
+## Next capability deficit (measured, not built here)
+
+Every evidence request today ends with `acquirable_by_body: []`: GREG can say exactly what observation would
+decide a dispute, but it cannot obtain one.
+
+- **Next increment:** a read-only world-observation capability that the founder attaches with a declared source
+  and scope, for example a time-clock export under a read root, or an MCP tool the founder approves. The
+  investigation would then prepare a bounded verification mission (a signed check that reads the declared
+  record) instead of an ask.
+- **Its falsifier:** a dispute that it resolves to the wrong verdict, or a read outside its declared scope.
+- **Its subtraction test:** without it, the same dispute stays open.

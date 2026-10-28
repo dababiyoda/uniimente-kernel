@@ -176,6 +176,11 @@ The cause was the gate, not the product.
 
 The same mechanism can also report a mutant as caught when its test fails only on the previous mutant's code.
 
+Job 1 on `709475cc` showed it again. The full suite passed (7870 passed, 48 skipped), and the gate reported 36 of
+37 caught; the survivor was "a declared-incomplete output is judged whole once read from the store". Mutants 3, 4
+and 5 each lengthen `greg/missions.py` by 14 bytes, so mutant 5's test ran mutant 4's bytecode, where the
+declared-incomplete limit is intact.
+
 | Check | Result |
 | --- | --- |
 | Refusal-watch mutant applied with no `.pyc` present, on `c74360cf` | test fails (caught) |

@@ -21,8 +21,10 @@ at <https://support.google.com/chromebook/answer/9145439>.
 In the Linux Terminal, check `python3 --version` (at least 3.11) and
 `git --version`. Debian in the Linux environment ships without the Python venv
 package: install it with `sudo apt install python3-venv` (the doctor below reports
-it as `python_venv_available`). ARM and Intel Chromebooks both work: every compiled dependency publishes Linux ARM64
-and x86-64 wheels for Python 3.11 (checked on PyPI 2026-09-30), so no compiler is needed.
+it as `python_venv_available`). ARM and Intel Chromebooks both work: every required compiled dependency publishes
+Linux ARM64 and x86-64 wheels for Python 3.11 that Debian 12's glibc 2.36 accepts, so no compiler is needed
+(re-checked against PyPI on 2026-10-28). One optional engine is the exception: the pinned Z3's only Linux ARM64
+wheel needs glibc 2.38, so an ARM Chromebook on Debian 12 runs without Z3 (see the engines paragraph below).
 Keep the repository and `~/.uniimente` **inside Linux
 files**, not on a shared ChromeOS mount. After cloning below, before creating
 any key or body, run `python3 -m greg doctor --chromebook` from the repository.
@@ -35,7 +37,7 @@ checks to diagnose the local runtime. The diagnostic creates no key or body.
 
 ```bash
 sudo apt install -y python3 python3-venv git          # once; skip if already installed
-sudo apt install -y bubblewrap   # optional: only coding workers need it; without it worker.commission refuses
+sudo apt install -y bubblewrap libseccomp2   # recommended: without them GREG's network runs unconfined and worker.commission refuses
 mkdir -p ~/src && cd ~/src
 git clone -b claude/greg-full-machine-completion-whgiee https://github.com/dababiyoda/uniimente-kernel
 cd uniimente-kernel && bash greg/chromebook/install.sh
@@ -59,9 +61,11 @@ After an authorized key rotation, use the newly enrolled key. An enabled service
 and a queued designation are setup states; inspect `greg status` before a mission.
 
 It also installs GREG's open-source reasoning engines (Z3, OR-Tools, SciPy, NetworkX,
-SymPy; about 550 MB, binary wheels only) and prints how many are present. If your
-Chromebook has no wheel for one, the install still finishes and that engine is listed as
-missing; add `--no-engines` to skip the step. N1 needs none of them.
+SymPy; about 550 MB, binary wheels only), one at a time, and prints how many are present. If your
+Chromebook has no wheel for one, the install still finishes with every other engine, and that one is
+listed as missing with the reason (`greg doctor --chromebook`, `engines.engines[].why_missing`). On an ARM
+Chromebook on Debian 12 that is Z3, whose functions then abstain and GREG asks before one is needed. Add
+`--no-engines` to skip the step. N1 needs none of them.
 
 **Manual install (equivalent):**
 
@@ -71,7 +75,8 @@ git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
 git checkout claude/greg-full-machine-completion-whgiee   # the review candidate named in greg/chromebook/REVIEW_BRANCH; use main once merged
 python3 -m venv ~/.uniimente/venv
 ~/.uniimente/venv/bin/pip install -r requirements-dev.txt
-~/.uniimente/venv/bin/pip install --only-binary=:all: -r requirements-cognition.txt   # optional engines
+~/.uniimente/venv/bin/pip install --only-binary=:all: -r requirements-cognition.txt   # optional engines; on an ARM
+# Chromebook this one call fails as a whole (no Z3 wheel for glibc 2.36): install.sh installs them one at a time
 alias greg='~/.uniimente/venv/bin/python -m greg'
 greg doctor --chromebook                            # stop here if not ready
 greg init --read-root ~/src --deliver-root ~/GREG

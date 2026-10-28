@@ -122,11 +122,38 @@ else
   GREG_PY="$VENV/bin/python"
   if [ "$ENGINES" = 1 ]; then
     # Binary wheels only: never compile an engine on the Chromebook. A failure never stops Body 1.
-    if "$VENV/bin/python" -m pip install --quiet --only-binary=:all: -r "$REPO/requirements-cognition.txt"; then
+    # One pip call per engine, every call under the same pins: a machine with no wheel for one engine still gets
+    # all the others. (One call for all of them installed none on an ARM Chromebook: the pinned Z3's Linux ARM64
+    # wheel needs glibc 2.38, and Debian 12, ChromeOS Linux's base, has 2.36. PyPI files, checked 2026-10-28.)
+    PINS="$(mktemp)"
+    "$VENV/bin/python" - "$REPO/requirements-cognition.txt" > "$PINS" <<'PY'
+import sys
+from pathlib import Path
+
+def specs(path):
+    for raw in Path(path).read_text().splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if line.startswith("-r "):
+            yield from specs(Path(path).parent / line[3:].strip())
+        elif line:
+            yield line
+
+print("\n".join(specs(sys.argv[1])))
+PY
+    MISSED=()
+    while IFS= read -r spec; do
+      [ -n "$spec" ] || continue
+      if ! WHY="$("$VENV/bin/python" -m pip install --quiet --only-binary=:all: -c "$PINS" "$spec" 2>&1)"; then
+        MISSED+=("$spec")
+        echo "  not installed: $spec ($(printf '%s\n' "$WHY" | grep -v '^\s*$' | tail -n 1 | cut -c1-160))"
+      fi
+    done < "$PINS"
+    rm -f "$PINS"
+    if [ "${#MISSED[@]}" -eq 0 ]; then
       echo "Open-source reasoning engines installed (Z3, OR-Tools, SciPy, NetworkX, SymPy)."
     else
-      echo "WARNING: some reasoning engines did not install (no binary wheel for this machine?)."
-      echo "Body 1 continues; 'greg doctor --chromebook' lists what is missing, and GREG asks before a function needs it."
+      echo "WARNING: ${#MISSED[@]} reasoning engine requirement(s) did not install: ${MISSED[*]}. Every other engine did."
+      echo "Body 1 continues; 'greg doctor --chromebook' lists what is missing and why, and GREG asks before a function needs it."
     fi
   else
     echo "Skipping the open-source reasoning engines (--no-engines)."

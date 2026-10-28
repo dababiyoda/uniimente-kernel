@@ -18,7 +18,9 @@ from __future__ import annotations
 
 import heapq
 import re
+import sys
 import uuid
+from array import array
 from dataclasses import dataclass, field, asdict
 from types import MappingProxyType
 from datetime import datetime, timezone
@@ -77,15 +79,29 @@ class EventSpine:
         self._refresh()
 
     def _reset_views(self):
+        # Event identity -> 32-byte digest of its content (the hex digest's bytes: half the memory of the string).
         self._bindings, self._pending, self._uncertain_deliveries = {}, {}, set()
-        self._seen_ids = set()
         self._outbox = []
-        self._payloads = []      # every spine event payload, in ledger order (the ledger's own; never handed out)
-        self._by_type = {}       # exact event type -> positions in _payloads
-        self._latest = {}        # event_id -> (payload, record hash) of its last record
-        self._positions = {}     # type prefix -> (payloads seen, matches counted, event_id -> position)
+        # Spine events in ledger order, by number j. The spine keeps where each event is, never its payload: a
+        # payload is read from the ledger when asked for (in memory while recent, from the ledger file after), so
+        # a long-running body's memory does not hold every event it ever recorded (FINDING-BODY-MEMORY-2026-10-28).
+        self._pos = array("q")   # j -> position of its record in the ledger
+        self._types = []         # j -> event type (interned)
+        self._ids = []           # j -> event_id (the same string object as the _bindings key)
+        self._by_type = {}       # exact event type -> j of each event of that type, ascending
+        self._latest = {}        # event_id -> j of its last record
+        self._positions = {}     # type prefix -> (events seen, matches counted, event_id -> position)
         self._folded, self._folded_tail = 0, None
         self._generation = object()  # a cursor from since() is honored only within one history
+
+    @property
+    def _seen_ids(self):
+        """Every event identity retained (formerly a separate set holding the same strings as _bindings' keys)."""
+        return self._bindings.keys()
+
+    @staticmethod
+    def _digest(content_hash: str) -> bytes:
+        return bytes.fromhex(content_hash.split(":", 1)[1])
 
     @staticmethod
     def _event_from_payload(p):
@@ -97,10 +113,14 @@ class EventSpine:
         from provenance.ledger import copy_json
         return Event(**{k: copy_json(p[k]) if k == "payload" else p[k] for k in Event.__dataclass_fields__})
 
+    def _owned(self, j):
+        """Spine event j as an Event the caller owns."""
+        p = self.ledger._owned_payload(self._pos[j])
+        return Event(**{k: p[k] for k in Event.__dataclass_fields__})
+
     def _spine_payloads(self):
-        from provenance.ledger import copy_json
         self._refresh()
-        return [copy_json(p) for p in self._payloads]
+        return [self.ledger._owned_payload(i) for i in self._pos]
 
     def _refresh(self):
         """Verify new history, then fold only the records not folded yet into the views.
@@ -127,11 +147,10 @@ class EventSpine:
             p = rec.payload
             if rec.record_type == "event" and "event_id" in p:
                 ev = self._event_from_payload(p).validate()
-                digest = sha256_json(asdict(ev))
+                digest = self._digest(sha256_json(asdict(ev)))
                 if ev.event_id in self._bindings and self._bindings[ev.event_id] != digest:
                     raise EventError("conflicting durable event identity")
                 self._bindings[ev.event_id] = digest
-                self._seen_ids.add(ev.event_id)
                 direction = p.get("direction")
                 if direction == "outbox_staged":
                     self._pending[ev.event_id] = self._event_copy(p)  # a mediator may touch it
@@ -141,9 +160,15 @@ class EventSpine:
                     self._uncertain_deliveries.discard(ev.event_id)
                     if direction == "outbox_flushed":
                         self._pending.pop(ev.event_id, None)
-                self._by_type.setdefault(p["type"], []).append(len(self._payloads))
-                self._payloads.append(p)
-                self._latest[ev.event_id] = (p, rec.hash)
+                j, kind, eid = len(self._pos), sys.intern(p["type"]), ev.event_id
+                prior = self._latest.get(eid)
+                if prior is not None:
+                    eid = self._ids[prior]    # one string object per identity, however often it is recorded
+                self._by_type.setdefault(kind, array("q")).append(j)
+                self._pos.append(i)
+                self._types.append(kind)
+                self._ids.append(eid)
+                self._latest[eid] = j
             self._folded, self._folded_tail = i + 1, rec
         self._outbox = list(self._pending.values())
 
@@ -153,7 +178,7 @@ class EventSpine:
         with self.ledger._lock:
             self._refresh()
             if event.event_id in self._bindings:
-                if self._bindings[event.event_id] != sha256_json(asdict(event)):
+                if self._bindings[event.event_id] != self._digest(sha256_json(asdict(event))):
                     raise EventError("event id reused with different content")
                 return None
             self.ledger.append("event", {**asdict(event), "direction": direction})
@@ -184,12 +209,11 @@ class EventSpine:
         """Events in ledger order; each is the caller's own copy."""
         self._refresh()
         if not type_prefix:
-            chosen = self._payloads
+            order = range(len(self._pos))
         else:
             lists = [positions for kind, positions in self._by_type.items() if kind.startswith(type_prefix)]
             order = lists[0] if len(lists) == 1 else heapq.merge(*lists)  # positions ascend: ledger order
-            chosen = [self._payloads[i] for i in order]
-        return [self._event_copy(p) for p in chosen]
+        return [self._owned(j) for j in order]
 
     def since(self, type_prefix, cursor=None):
         """Events of this prefix retained after ``cursor``, in ledger order, each the caller's own copy.
@@ -202,10 +226,11 @@ class EventSpine:
         """
         self._refresh()
         start, restarted = 0, True
-        if cursor is not None and cursor[0] is self._generation:  # _payloads only grows within one
+        if cursor is not None and cursor[0] is self._generation:  # the spine only grows within one
             start, restarted = cursor[1], False
-        events = [self._event_copy(p) for p in self._payloads[start:] if p["type"].startswith(type_prefix)]
-        return events, (self._generation, len(self._payloads)), restarted
+        types = self._types
+        events = [self._owned(j) for j in range(start, len(types)) if types[j].startswith(type_prefix)]
+        return events, (self._generation, len(types)), restarted
 
     def positions(self, type_prefix=""):
         """event_id -> position of its last record among the events replay(type_prefix) returns.
@@ -215,25 +240,25 @@ class EventSpine:
         """
         self._refresh()
         seen, count, index = self._positions.get(type_prefix, (0, 0, {}))
-        for i in range(seen, len(self._payloads)):
-            p = self._payloads[i]
-            if p["type"].startswith(type_prefix):
-                index[p["event_id"]] = count
+        types, ids = self._types, self._ids
+        for j in range(seen, len(types)):
+            if types[j].startswith(type_prefix):
+                index[ids[j]] = count
                 count += 1
-        self._positions[type_prefix] = (len(self._payloads), count, index)
+        self._positions[type_prefix] = (len(types), count, index)
         return MappingProxyType(index)
 
     def latest(self, event_id):
         """The last retained record of this event identity as an Event, or None."""
         self._refresh()
         found = self._latest.get(event_id)
-        return None if found is None else self._event_copy(found[0])
+        return None if found is None else self._owned(found)
 
     def record_hash(self, event_id):
         """Ledger hash of the last retained record of this event identity, or None."""
         self._refresh()
         found = self._latest.get(event_id)
-        return None if found is None else found[1]
+        return None if found is None else self.ledger._records[self._pos[found]].hash
 
     def outbox_stage(self, event):
         return self._accept(event, "outbox_staged")

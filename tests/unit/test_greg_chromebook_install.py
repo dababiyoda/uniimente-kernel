@@ -105,6 +105,63 @@ def test_engines_are_best_effort_and_can_be_skipped(tmp_path):
     assert "Reasoning engines present:" in done.stdout
 
 
+def _engine_specs():
+    """Every requirement line the engine step must install, following -r includes, in file order."""
+    def specs(path):
+        for raw in path.read_text().splitlines():
+            line = raw.split("#", 1)[0].strip()
+            if line.startswith("-r "):
+                yield from specs(path.parent / line[3:].strip())
+            elif line:
+                yield line
+    return list(specs(ROOT / "requirements-cognition.txt"))
+
+
+def test_an_engine_without_a_wheel_for_this_machine_costs_only_that_engine(tmp_path):
+    """The pinned Z3's only Linux ARM64 wheel needs glibc 2.38; Debian 12, ChromeOS Linux's base, has 2.36, so pip
+    finds nothing to install there (PyPI files, checked 2026-10-28). One pip call for every engine then failed as
+    a whole and an ARM Chromebook got no engine at all. Here pip is a stand-in that has no wheel for z3-solver."""
+    venv, log = tmp_path / "venv", tmp_path / "pip.log"
+    (venv / "bin").mkdir(parents=True)
+    fake = venv / "bin/python"
+    fake.write_text(f"""#!/bin/sh
+if [ "$1" = "-m" ] && [ "$2" = "pip" ]; then
+  echo "$*" >> {log}
+  case "$*" in
+    *z3-solver*|*requirements-cognition.txt*|*requirements-cortex.txt*)
+      echo "ERROR: No matching distribution found for z3-solver==5.1.0.0" >&2; exit 1 ;;
+  esac
+  exit 0
+fi
+exec {sys.executable} "$@"
+""")
+    fake.chmod(0o755)
+    args = [a for a in dev_args(tmp_path) if a != "--skip-deps"] + ["--venv", str(venv)]
+    out = run(args, tmp_path)
+    assert out.returncode == 0, out.stdout[-3000:] + out.stderr[-3000:]          # Body 1 is still created
+    calls = [line for line in log.read_text().splitlines() if "--only-binary=:all:" in line]
+    specs = _engine_specs()
+    assert len(calls) == len(specs) and [c.rsplit(" ", 1)[-1] for c in calls] == specs   # one call per engine
+    assert all(" -c " in c for c in calls)                                       # each under the same pins
+    assert "not installed: z3-solver==5.1.0.0 (ERROR: No matching distribution found" in out.stdout
+    assert "WARNING: 1 reasoning engine requirement(s) did not install: z3-solver==5.1.0.0. Every other engine did." \
+        in out.stdout
+
+
+def test_the_doctor_says_why_an_engine_has_no_wheel_on_this_machine(monkeypatch):
+    from greg import doctor, mechanisms
+    real = mechanisms.installed
+    monkeypatch.setattr(mechanisms, "installed", lambda name: None if name == "z3-solver" else real(name))
+    monkeypatch.setattr(doctor.platform, "machine", lambda: "aarch64")
+    monkeypatch.setattr(doctor.platform, "libc_ver", lambda: ("glibc", "2.36"))
+    report = doctor.engines()
+    z3 = next(r for r in report["engines"] if r["distribution"] == "z3-solver")
+    assert "z3-solver" in report["missing"] and report["platform"] == {"machine": "aarch64", "glibc": "2.36"}
+    assert "needs glibc 2.38, this system has 2.36" in z3["why_missing"]
+    monkeypatch.setattr(doctor.platform, "machine", lambda: "x86_64")      # x86-64 has a wheel: no such claim
+    assert "why_missing" not in next(r for r in doctor.engines()["engines"] if r["distribution"] == "z3-solver")
+
+
 # -- #138 (b8a0ccd): the actual signer must be the companion's key and the body's enrolled key ----------
 
 def test_existing_private_key_recovers_missing_public_companion(tmp_path):

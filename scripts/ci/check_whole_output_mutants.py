@@ -4,7 +4,8 @@
 
 Each mutant removes one safeguard of greg/missions.py ``judge_receipt`` and its callers (engine sensor, refusal
 watch, appraiser re-derivation and preconditions, Goal Gravity), of the receipt bound it reads, or of the rule that
-a check the evidence could not decide is neither pursued nor certified as failed (engine and appraiser). The named test
+a check the evidence could not decide is neither pursued nor certified as failed (engine and appraiser), or of the
+judge's limits on declared-incomplete outputs and on paths into a receipt's prefix record. The named test
 must fail for every mutant. Mutants are applied to a scratch copy of the repository, never to the working tree.
 Exit status 1 if any mutant survives or no longer applies.
 """
@@ -18,6 +19,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[2]
 T = "tests/unit/test_greg_whole_output_judgment.py::"
 U = "tests/unit/test_greg_unmeasured_not_failed.py::"
+W = "tests/unit/test_greg_judge_incomplete_wrappers.py::"
 MUTANTS = [
     ("a check the prefix cannot decide is never read over the whole", "greg/missions.py",
      "    if verdict != INSUFFICIENT or record is None:\n        return verdict, detail",
@@ -84,6 +86,23 @@ MUTANTS = [
      "                    now_ok = None if now_verdict == INSUFFICIENT else now_verdict == TRUE",
      "                    now_ok = now_verdict == TRUE",
      U + "test_an_undecided_re_reading_of_the_world_is_not_a_reobserved_failure"),
+    # a declared-incomplete output limits every verdict; a path never steps into a receipt's prefix record (J8, J9)
+    ("a cut string of an incomplete output is judged as if complete", "greg/missions.py",
+     '        if declared and not vouched and not (op == "count_gte" and verdict == TRUE):',
+     "        if False:",
+     W + "test_a_long_text_from_an_incomplete_observation_keeps_only_monotone_verdicts"),
+    ("a field an incomplete output has not reached reads as absent", "greg/missions.py",
+     "        if declared:       # a field the observation has not reached yet is not an absent field",
+     "        if False:",
+     W + "test_a_field_an_incomplete_observation_has_not_reached_is_not_absent"),
+    ("a field the capability vouches for is no longer judged", "greg/missions.py",
+     '    vouched = declared and isinstance(output.get("decided"), list) and path in output["decided"]',
+     "    vouched = False",
+     W + "test_a_complete_output_and_a_vouched_field_are_judged_as_before"),
+    ("a path steps into the receipt's record of a cut string", "greg/missions.py",
+     "        if not whole and _cut(value):\n            # the receipt's own record",
+     "        if False:\n            # the receipt's own record",
+     W + "test_a_path_into_the_receipts_prefix_record_decides_nothing"),
 ]
 
 

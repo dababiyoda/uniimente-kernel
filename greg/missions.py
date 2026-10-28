@@ -490,6 +490,10 @@ def _held_back(value) -> str | None:
 def _raw_field(output, path: str, *, whole: bool = False):
     value = output
     for part in path.split(".") if path else []:
+        if not whole and _cut(value):
+            # the receipt's own record of a string it kept as a prefix: its parts describe the cut, not the output,
+            # and its prefix read as a whole string would decide what the receipt did not keep (review of #196, J9)
+            raise LookupError(f"{path} steps into a value the receipt kept only as a prefix")
         if isinstance(value, dict) and part in value:
             value = value[part]
         elif isinstance(value, list) and part.isdigit() and int(part) < len(value):
@@ -560,9 +564,17 @@ def judge(predicate: dict, output, *, whole: bool = False) -> tuple[str, str]:
     capability's own ``complete: false`` still limits it."""
     op = predicate["op"]
     path = predicate.get("field", "")
+    # an incomplete output states its own completeness in full (#201 review, 6); every other verdict on it keeps only
+    # what more data could not undo, unless the output names the field in ``decided`` (review of #196, J8: the cut
+    # string and the missing field used to be judged before this was asked)
+    declared = isinstance(output, dict) and output.get("complete") is False and path != "complete"
+    vouched = declared and isinstance(output.get("decided"), list) and path in output["decided"]
+    incomplete = "the capability reported its observation incomplete"
     try:
         value = _raw_field(output, path, whole=whole)
     except KeyError:
+        if declared:       # a field the observation has not reached yet is not an absent field
+            return INSUFFICIENT, f"field {path!r} absent; {incomplete}"
         return (TRUE if op == "absent" else FALSE), f"field {path!r} absent"
     except LookupError as exc:
         return INSUFFICIENT, str(exc)
@@ -575,19 +587,23 @@ def judge(predicate: dict, output, *, whole: bool = False) -> tuple[str, str]:
     if cut:
         text, length = cut["prefix"], cut["length"]
         kept = f"first {len(text)} of {length} characters kept"
-        if op == "equals":
-            same = isinstance(expected, str) and len(expected) == length \
-                and hashlib.sha256(text_bytes(expected)).hexdigest() == cut["sha256"]
-            return (TRUE if same else FALSE), f"equals {expected!r:.60} by digest of all {length} characters"
-        if op == "count_gte":
-            return (TRUE if length >= expected else FALSE), f"len {length} >= {expected}"
-        if op in ("gte", "lte"):
-            return FALSE, "not numeric"
         if op in ("contains", "not_contains"):
             if isinstance(expected, str) and expected in text:
                 return (TRUE if op == "contains" else FALSE), f"{expected!r:.60} found in the kept prefix"
             return INSUFFICIENT, f"{op} {expected!r:.60}: not in the {kept}; the rest was not retained"
-        raise MissionError(f"unknown predicate op {op!r}")
+        if op == "equals":
+            same = isinstance(expected, str) and len(expected) == length \
+                and hashlib.sha256(text_bytes(expected)).hexdigest() == cut["sha256"]
+            verdict, detail = (TRUE if same else FALSE), f"equals {expected!r:.60} by digest of all {length} characters"
+        elif op == "count_gte":
+            verdict, detail = (TRUE if length >= expected else FALSE), f"len {length} >= {expected}"
+        elif op in ("gte", "lte"):
+            verdict, detail = FALSE, "not numeric"
+        else:
+            raise MissionError(f"unknown predicate op {op!r}")
+        if declared and not vouched and not (op == "count_gte" and verdict == TRUE):
+            return INSUFFICIENT, f"{detail}; {incomplete}"
+        return verdict, detail
     verdict, detail = _judge_whole(op, value, expected)
     partial = not whole and isinstance(value, list) and len(value) == RECEIPT_LIST_LIMIT and op in (
         "equals", "contains", "not_contains", "count_gte")
@@ -602,10 +618,7 @@ def judge(predicate: dict, output, *, whole: bool = False) -> tuple[str, str]:
                 not _cut(v) and v != e for v, e in zip(value, expected))))
         if not decided:
             return INSUFFICIENT, f"{detail}; a member of the list was kept only as a prefix"
-    # an incomplete output still states its own completeness in full (#201 review, 6)
-    declared = isinstance(output, dict) and output.get("complete") is False and path != "complete"
-    if declared and not partial and value is not None and isinstance(output.get("decided"), list) \
-            and path in output["decided"]:
+    if vouched and not partial and value is not None:
         return verdict, f"{detail}; decided by the capability despite an incomplete observation"
     if partial or declared:
         monotone = (op == "contains" and verdict == TRUE) or (op == "not_contains" and verdict == FALSE) \
@@ -613,8 +626,7 @@ def judge(predicate: dict, output, *, whole: bool = False) -> tuple[str, str]:
             or (op == "equals" and verdict == FALSE and partial and not declared and isinstance(expected, list)
                 and expected[:RECEIPT_LIST_LIMIT] != value)
         if not monotone:
-            why = (f"the list was kept to its first {RECEIPT_LIST_LIMIT} items" if partial
-                   else "the capability reported its observation incomplete")
+            why = f"the list was kept to its first {RECEIPT_LIST_LIMIT} items" if partial else incomplete
             return INSUFFICIENT, f"{detail}; {why}"
     return verdict, detail
 

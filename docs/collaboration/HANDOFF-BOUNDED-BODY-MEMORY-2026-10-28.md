@@ -1,7 +1,7 @@
 # Handoff: bounded body memory and ARM Chromebook engines (2026-10-28)
 
 Session `session_01Kucyfm6YBHMTjaiC1M9hqD`, a Claude Code cloud session. Claim: kernel #96, comment 6472033495.
-Branch `claude/bounded-body-memory-arm-engines` on #196's head `190c58fb`. Proposed into #196's branch as a draft.
+Branch `claude/bounded-body-memory-arm-engines` on #196's head `190c58fb`; draft PR #211 into #196's branch.
 The founder's directive asked for the 40-item report: this file is that report, kept short. The earlier
 same-directive report is `HANDOFF-GREG-RECONCILIATION-2026-10-28.md`. It still holds for everything not changed
 here; this file does not repeat it.
@@ -72,8 +72,8 @@ here; this file does not repeat it.
 
 | Area | Change in this session | Reality |
 |---|---|---|
-| Body / runtime | Memory per retained record 2,639 → 1,458 B resident; heap ~2,270 → 833 B | sandbox measured |
-| Body / runtime | Run 334 s → 223 s for 1,800 ticks (concurrent runs; indicative) | sandbox measured |
+| Body / runtime | Memory per retained record 2,639 → 1,390 B resident; heap 2,287 → 807 B (final head `e3c6e723`; 1,458 and 833 on `45d65a30`) | sandbox measured |
+| Body / runtime | Run 361 s → 279 s for 1,800 ticks on the final head (334 → 223 on `45d65a30`; concurrent runs; indicative) | sandbox measured |
 | Body / runtime | Ledger file tampering detected while running | unit-tested |
 | Zero trust / evidence | Explicit `verify_chain()` re-derives every dropped record from the file. Commit path: running digest. Replaced files and changed bytes stop appends | unit-tested; independently attacked |
 | Install / doctor | One pip call per engine. `why_missing` and `platform.glibc` in the doctor | unit-tested; real installer run end to end on x86-64 Ubuntu (5 of 5 engines, body, key, designation) |
@@ -90,7 +90,14 @@ here; this file does not repeat it.
 
 ## 32–33. Tests and CI
 
-See the PR's receipt for exact commands and results. CI runs on push.
+On the final code (`e3c6e723`), locally with Python 3.11, `-n 3`:
+
+- `tests/unit`: 7,255 passed, 109 skipped, 0 failed.
+- `tests/integration`: 464 passed, 51 skipped, 0 failed. The skips need Playwright, bubblewrap or supervisord,
+  none of which this container has.
+- The ledger, provenance and installer files again after the last test edit: 94 passed.
+
+Exact commands, the review and the measurements are in the PR #211 receipt. Canonical CI runs on every push.
 
 ## 34. Negative evidence
 

@@ -118,6 +118,18 @@ Same scenario, 1,800 ticks (`bounded-rss.json`, `bounded-heap-attribution.json`)
 For a body observing once a minute, about 27 MB a day instead of about 49 MB: 1 GB in about five weeks
 instead of under three.
 
+**Re-measured on the final head `e3c6e723`**, after the review fixes below added a canonical-line check at
+eviction (`final-e3c6e723-rss.json`, `final-e3c6e723-heap-attribution.json`; the baseline was re-run beside
+it, `rerun-baseline-190c58fb-rss.json`):
+
+- **Resident memory:** 1,390 B per retained record, against 2,639 (−47%). The baseline reproduced to the byte.
+- **Python heap:** 807 B per record over 900 ticks, against 2,287 (−65%).
+- **Run time:** 279 s against 361 s. Both runs were concurrent with each other and with the integration suite,
+  so treat the time as indicative.
+- At one observation a minute (13 records a tick): about 26 MB a day instead of about 49 MB.
+
+The review fixes cost no measurable memory or time.
+
 ## Independent adversarial review (2026-10-28)
 
 A separate agent, given the diff and the guarantees but not this record, attacked commit `45d65a30`. It

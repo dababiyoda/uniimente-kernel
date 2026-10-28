@@ -1,0 +1,312 @@
+{
+ "scenario": "one holding mission, infinite closure, 60 s cadence, simulated clock",
+ "resident_records": 1024,
+ "python": "3.11.17",
+ "ticks": 900,
+ "points": [
+  {
+   "ticks": 150,
+   "records": 1970,
+   "rss_kb": 75640,
+   "ledger_bytes_on_disk": 1424858,
+   "seconds": 16.8,
+   "heap_kb": 3821.4,
+   "heap_by_file": [
+    {
+     "file": "decoder.py",
+     "kb": 1512.0,
+     "blocks": 20484
+    },
+    {
+     "file": "provenance/ledger.py",
+     "kb": 1055.0,
+     "blocks": 14482
+    },
+    {
+     "file": "<frozen importlib._bootstrap_external>",
+     "kb": 439.8,
+     "blocks": 3190
+    },
+    {
+     "file": "policy/consequence_gate.py",
+     "kb": 243.2,
+     "blocks": 2551
+    },
+    {
+     "file": "greg/capabilities.py",
+     "kb": 117.4,
+     "blocks": 1892
+    },
+    {
+     "file": "identity/machine_passport.py",
+     "kb": 84.2,
+     "blocks": 1096
+    },
+    {
+     "file": "events/spine.py",
+     "kb": 56.0,
+     "blocks": 495
+    },
+    {
+     "file": "validators.py",
+     "kb": 46.2,
+     "blocks": 397
+    }
+   ]
+  },
+  {
+   "ticks": 300,
+   "records": 3920,
+   "rss_kb": 85644,
+   "ledger_bytes_on_disk": 2831558,
+   "seconds": 48.0,
+   "heap_kb": 5328.5,
+   "heap_by_file": [
+    {
+     "file": "provenance/ledger.py",
+     "kb": 2067.2,
+     "blocks": 28659
+    },
+    {
+     "file": "decoder.py",
+     "kb": 1563.3,
+     "blocks": 21052
+    },
+    {
+     "file": "policy/consequence_gate.py",
+     "kb": 475.7,
+     "blocks": 4947
+    },
+    {
+     "file": "<frozen importlib._bootstrap_external>",
+     "kb": 439.8,
+     "blocks": 3190
+    },
+    {
+     "file": "identity/machine_passport.py",
+     "kb": 164.5,
+     "blocks": 2146
+    },
+    {
+     "file": "events/spine.py",
+     "kb": 121.9,
+     "blocks": 1390
+    },
+    {
+     "file": "greg/capabilities.py",
+     "kb": 117.4,
+     "blocks": 1892
+    },
+    {
+     "file": "uuid.py",
+     "kb": 50.0,
+     "blocks": 602
+    }
+   ]
+  },
+  {
+   "ticks": 450,
+   "records": 5870,
+   "rss_kb": 96184,
+   "ledger_bytes_on_disk": 4238258,
+   "seconds": 91.8,
+   "heap_kb": 6915.3,
+   "heap_by_file": [
+    {
+     "file": "provenance/ledger.py",
+     "kb": 3123.7,
+     "blocks": 42761
+    },
+    {
+     "file": "decoder.py",
+     "kb": 1601.0,
+     "blocks": 21503
+    },
+    {
+     "file": "policy/consequence_gate.py",
+     "kb": 718.5,
+     "blocks": 7347
+    },
+    {
+     "file": "<frozen importlib._bootstrap_external>",
+     "kb": 439.8,
+     "blocks": 3190
+    },
+    {
+     "file": "identity/machine_passport.py",
+     "kb": 248.1,
+     "blocks": 3196
+    },
+    {
+     "file": "events/spine.py",
+     "kb": 206.1,
+     "blocks": 2288
+    },
+    {
+     "file": "greg/capabilities.py",
+     "kb": 117.4,
+     "blocks": 1892
+    },
+    {
+     "file": "uuid.py",
+     "kb": 74.9,
+     "blocks": 902
+    }
+   ]
+  },
+  {
+   "ticks": 600,
+   "records": 7820,
+   "rss_kb": 103240,
+   "ledger_bytes_on_disk": 5644958,
+   "seconds": 149.6,
+   "heap_kb": 8332.7,
+   "heap_by_file": [
+    {
+     "file": "provenance/ledger.py",
+     "kb": 4076.4,
+     "blocks": 56866
+    },
+    {
+     "file": "decoder.py",
+     "kb": 1638.5,
+     "blocks": 21954
+    },
+    {
+     "file": "policy/consequence_gate.py",
+     "kb": 942.8,
+     "blocks": 9756
+    },
+    {
+     "file": "<frozen importlib._bootstrap_external>",
+     "kb": 439.8,
+     "blocks": 3190
+    },
+    {
+     "file": "identity/machine_passport.py",
+     "kb": 325.0,
+     "blocks": 4242
+    },
+    {
+     "file": "events/spine.py",
+     "kb": 252.0,
+     "blocks": 3191
+    },
+    {
+     "file": "greg/capabilities.py",
+     "kb": 117.4,
+     "blocks": 1892
+    },
+    {
+     "file": "uuid.py",
+     "kb": 99.8,
+     "blocks": 1202
+    }
+   ]
+  },
+  {
+   "ticks": 750,
+   "records": 9770,
+   "rss_kb": 113872,
+   "ledger_bytes_on_disk": 7051658,
+   "seconds": 222.0,
+   "heap_kb": 9889.9,
+   "heap_by_file": [
+    {
+     "file": "provenance/ledger.py",
+     "kb": 5040.7,
+     "blocks": 70955
+    },
+    {
+     "file": "decoder.py",
+     "kb": 1676.0,
+     "blocks": 22404
+    },
+    {
+     "file": "policy/consequence_gate.py",
+     "kb": 1204.8,
+     "blocks": 12158
+    },
+    {
+     "file": "<frozen importlib._bootstrap_external>",
+     "kb": 439.8,
+     "blocks": 3190
+    },
+    {
+     "file": "identity/machine_passport.py",
+     "kb": 415.3,
+     "blocks": 5299
+    },
+    {
+     "file": "events/spine.py",
+     "kb": 373.9,
+     "blocks": 4083
+    },
+    {
+     "file": "uuid.py",
+     "kb": 124.7,
+     "blocks": 1502
+    },
+    {
+     "file": "greg/capabilities.py",
+     "kb": 117.4,
+     "blocks": 1892
+    }
+   ]
+  },
+  {
+   "ticks": 900,
+   "records": 11720,
+   "rss_kb": 120712,
+   "ledger_bytes_on_disk": 8460078,
+   "seconds": 305.2,
+   "heap_kb": 11505.6,
+   "heap_by_file": [
+    {
+     "file": "provenance/ledger.py",
+     "kb": 6188.7,
+     "blocks": 85051
+    },
+    {
+     "file": "decoder.py",
+     "kb": 1713.5,
+     "blocks": 22854
+    },
+    {
+     "file": "policy/consequence_gate.py",
+     "kb": 1428.7,
+     "blocks": 14559
+    },
+    {
+     "file": "identity/machine_passport.py",
+     "kb": 492.2,
+     "blocks": 6343
+    },
+    {
+     "file": "<frozen importlib._bootstrap_external>",
+     "kb": 439.8,
+     "blocks": 3190
+    },
+    {
+     "file": "events/spine.py",
+     "kb": 423.5,
+     "blocks": 4997
+    },
+    {
+     "file": "uuid.py",
+     "kb": 149.6,
+     "blocks": 1802
+    },
+    {
+     "file": "greg/capabilities.py",
+     "kb": 117.4,
+     "blocks": 1892
+    }
+   ]
+  }
+ ],
+ "rss_bytes_per_record": 4733.7,
+ "disk_bytes_per_record": 721.6,
+ "max_rss_kb": 135768,
+ "heap_bytes_per_record": 807.0
+}

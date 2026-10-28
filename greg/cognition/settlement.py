@@ -29,7 +29,24 @@ def _claim_fields(registration, check, receipt):
 
 
 def _outcome_identity(outcome):
+    """The claim an outcome settles. A construction's outcome also names the certified answer it settles
+    (``answer_version``): two different answers to one signed check are two claims, so a world outcome reported on
+    one is never credited to the other, while re-observing one unchanged answer still settles once."""
+    fields = {field: outcome[field] for field in IDENTITY_FIELDS}
+    if outcome.get("answer_version") is not None:
+        fields["answer_version"] = outcome["answer_version"]
+    return digest(fields)
+
+
+def _base_identity(outcome):
+    """The signed claim without the answer version: how construction outcomes were keyed before it."""
     return digest({field: outcome[field] for field in IDENTITY_FIELDS})
+
+
+def _answer_version(built) -> str:
+    """The certified answer a construction receipt carries: the digest of its certificate output, which holds no
+    timing, so every re-observation of one unchanged answer has the same version and a changed answer a new one."""
+    return digest(built.get("result"))
 
 
 def _valid_receipt(value):
@@ -133,6 +150,7 @@ def _constructed_outcome(built, constructed, registration, check, producer, data
     cost = built.get("cost") or {}
     return {**_claim_fields(registration, check, built), "receipt": data["receipt"],
             "cognitive_receipt": built["receipt_id"], "method": method, "method_version": constructed[method],
+            "answer_version": _answer_version(built),
             "geometry_key": digest({"compiled_geometry": built.get("geometry"),
                                     "subgeometry": built.get("subgeometry"),
                                     "consequence_class": built.get("consequence_class")}),
@@ -179,6 +197,7 @@ def measured_outcomes(journal):
     functions = _constructed_functions(journal) if constructed else {}
     world = _world_realizations(journal)
     world_seen = defaultdict(dict)        # claim identity -> objective realizations on any receipt observed for it
+    claim_receipts = defaultdict(set)     # claim identity -> the ledger receipts its observations carried
     registrations = {e.payload["mission_id"]: e.payload for e in journal.replay("mission.registered")}
     witnesses = {r.payload["witness_id"]: r.payload for r in journal.ledger.by_type("witness")}
     latest_appraisal, observations = _settling_appraisals(journal), {}
@@ -203,6 +222,7 @@ def measured_outcomes(journal):
             if outcome is not None:
                 identity = _outcome_identity(outcome)
                 observations[identity] = outcome
+                claim_receipts[identity].add(data["receipt"])
                 promise = _promise(built, functions.get(outcome["method"]))
                 world_seen[identity].update({e.event_id: e for e in world.get(data["receipt"], {}).values()
                                              if e.payload.get("compile_receipt") == built["receipt_id"]
@@ -238,13 +258,18 @@ def measured_outcomes(journal):
                              **condition_competence.settlement_fields(compiled, check, data["passed"])}
         # Reobservations revise this signed claim; another check/input is not its duplicate.
         observations[_outcome_identity(outcome)] = outcome
-    for identity, events in world_seen.items():
-        if identity in observations and events:
-            settled = _world_settled(observations[identity], list(events.values()))
-            if settled is None:
-                observations.pop(identity)    # conflicting realizations of one claim: scored as neither
-            else:
-                observations[identity] = settled
+    if world_seen:
+        order = _realization_order(journal)
+        resolutions = _resolutions(journal)
+        for identity, events in world_seen.items():
+            if identity in observations and events:
+                facts = sorted(events.values(), key=lambda e: order[e.event_id])
+                state = _world_state(facts, resolutions, claim_receipts[identity])
+                settled = _world_settled(observations[identity], state)
+                if settled is None:
+                    observations.pop(identity)    # a live dispute about one answer: scored as neither
+                else:
+                    observations[identity] = settled
     return list(observations.values())
 
 
@@ -295,21 +320,74 @@ def reconcile(journal):
     for event in journal.replay("cognition.settled"):
         identity = _historical_identity(event.payload, registrations, observations, journal)
         current[identity if identity is not None else event.event_id] = event
-    measured = {}
+    # A construction settled before claims named their answer was keyed by its signed claim alone; its successor
+    # is the answer-versioned outcome of that claim, which supersedes it instead of appearing beside it.
+    legacy = {_base_identity(e.payload): (identity, e) for identity, e in current.items()
+              if e.payload.get("compile_receipt") and "answer_version" not in e.payload
+              and all(field in e.payload for field in IDENTITY_FIELDS)}
+    measured, succeeded = {}, set()
     for outcome in measured_outcomes(journal):
         identity = _outcome_identity(outcome)
         outcome = {**outcome, "outcome_id": identity, "evidence_class": "validated_local_computation", "invalidated": False}
         measured[identity] = outcome
         prior = current.get(identity)
+        if prior is None and outcome.get("answer_version") and _base_identity(outcome) in legacy:
+            old_identity, prior = legacy[_base_identity(outcome)]
+            succeeded.add(old_identity)
         if prior is None or digest({k:v for k,v in prior.payload.items() if k != "supersedes"}) != digest(outcome):
             journal.record("cognition.settled", {**outcome, "supersedes": prior.event_id if prior else None},
                            key=[identity, "revision", digest(outcome), prior.event_id if prior else None],
                            causal_parent=outcome["observation_event"])
     for identity, prior in current.items():
-        if identity not in measured and not prior.payload.get("invalidated"):
+        if identity not in measured and identity not in succeeded and not prior.payload.get("invalidated"):
             revision = {**prior.payload, "invalidated": True, "supersedes": prior.event_id,
                         "reason": "current appraisal no longer supports competence; history retained"}
             journal.record("cognition.settled", revision, key=[identity, "invalidate", prior.event_id], causal_parent=prior.event_id)
+
+
+def decisions_to_recheck(journal) -> list[dict]:
+    """Compile decisions made while evidence that a resolution later rejected was in force.
+
+    Dependency-aware memory for corrections: a founder-signed resolution rejects facts, and every compile receipt
+    retained between the earliest rejected fact and the resolution, that considered the affected method, rested on
+    settled competence that no longer holds. It is listed with why, until a later compile of the same problem
+    exists. Read-only: it recompiles nothing and changes no decision; the time comparison uses the retained UTC
+    stamps of the ledger and the journal."""
+    if journal is None:
+        return []
+    from .compiler import SCHEMA
+    facts = {e.event_id: e for e in journal.replay("cognition.realization") if e.payload.get("kind") == "objective"}
+    windows = []
+    for resolution in _resolutions(journal):
+        data = resolution.payload
+        rejected = [facts[f] for f in data.get("resolves", []) if f != data.get("accept") and f in facts]
+        if rejected:
+            windows.append({"method": rejected[0].payload.get("method"), "resolution": resolution.event_id,
+                            "start": min(e.occurred_at for e in rejected), "end": resolution.occurred_at,
+                            "rejected": sorted(e.event_id for e in rejected)})
+    if not windows:
+        return []
+    compiles = [r for r in journal.ledger.by_type("receipt")
+                if isinstance((r.payload.get("result") or {}).get("output"), dict)
+                and r.payload["result"]["output"].get("schema") == SCHEMA]
+    out = []
+    for record in compiles:
+        output = record.payload["result"]["output"]
+        considered = set(output.get("methods_considered") or []) | {output.get("method_or_composition_selected")}
+        hits = [w for w in windows if w["method"] in considered and w["start"] <= record.ts_utc <= w["end"]
+                and not any(r.payload["result"]["output"].get("problem_id") == output.get("problem_id")
+                            and r.ts_utc > w["end"] for r in compiles)]
+        if hits:                          # one row per decision, however many resolutions touched its evidence
+            out.append({"receipt": record.hash, "problem_id": output.get("problem_id"),
+                        "selected": output.get("method_or_composition_selected"),
+                        "affected_methods": sorted({w["method"] for w in hits}),
+                        "rejected_events": sorted({f for w in hits for f in w["rejected"]}),
+                        "resolution_events": sorted({w["resolution"] for w in hits}),
+                        "why": "decided while settled outcomes of the affected method included reports a "
+                               "founder-signed resolution later rejected",
+                        "recheck_by": "recompile the problem under current evidence (a new signed mission)",
+                        "authority_created": False})
+    return out
 
 
 def receipt_links(journal) -> dict:
@@ -382,29 +460,109 @@ def _world_realizations(journal) -> dict:
     return out
 
 
-def _world_settled(outcome, events) -> dict | None:
-    """The construction outcome as the world settled it, or None when its realizations disagree (scored as neither).
+# Source labels a resolution may accept: a reporter's declaration that the value came from an observation or a record
+# outside the reports themselves. GREG does not verify that declaration: ``source`` is whatever the REALIZATION
+# command said, so this narrows which reports are eligible, it never makes one verified. A founder-reported value
+# is evidence that the founder reported it; a signature proves who said it, not that it is true.
+DECLARED_INDEPENDENT_SOURCES = ("sensor_observation", "external_record")
+SOURCE_INDEPENDENCE = "declared by the reporter, not verified by GREG"
+# The knowledge state of one answer's world outcome. Every fact stays on the record in every state.
+WORLD_STATES = ("unreported", "reported", "verdict_concordant", "disputed", "adjudicated", "invalidated")
+
+
+def _realization_order(journal) -> dict:
+    """event id -> position in journal order. Event ids are random (uuid4), so order is never read from them."""
+    return {e.event_id: i for i, e in enumerate(journal.replay("cognition.realization"))}
+
+
+def _resolutions(journal) -> list:
+    """Founder-signed resolutions, in journal order: realization facts of kind ``resolution`` whose command digest
+    is a REALIZATION command this body accepted. One written any other way resolves nothing."""
+    signed = {e.payload.get("digest") for e in journal.replay("command.accepted")
+              if e.payload.get("kind") == "REALIZATION"}
+    return [e for e in journal.replay("cognition.realization")
+            if e.payload.get("kind") == "resolution" and e.payload.get("command_digest") in signed]
+
+
+def _world_state(facts: list, resolutions: list, receipts) -> dict:
+    """The knowledge state of one answer's world outcome, from its objective facts (journal order) and the
+    founder-signed resolutions.
+
+    A resolution counts for this answer when it was made on one of the answer's receipts, names only facts about
+    this answer, and accepts either nothing (it invalidates the facts it names) or one of them whose reporter declared
+    an independent source (``DECLARED_INDEPENDENT_SOURCES``; the declaration is not verified). Each fact is ruled by the latest such resolution that names it, so a correction can itself
+    be corrected, and a later resolution never revives a fact it does not name. Rejected facts are kept and
+    listed; they stop counting.
+
+    unreported: no fact. reported: one value. adjudicated: one value left after a resolution. invalidated: every
+    fact was rejected (the answer awaits a new report). verdict_concordant: the live values differ but every one of
+    them gives the same verdict under the declared tolerance, so which is true cannot change competence. disputed:
+    the live values give different verdicts: scored as neither until resolved."""
+    by_id = {e.event_id: e for e in facts}
+    applied, ruling = None, {}            # fact -> True (kept) / False (rejected), by the latest resolution naming it
+    for event in resolutions:
+        data = event.payload
+        named, accept = data.get("resolves") or [], data.get("accept")
+        if (data.get("receipt") in receipts and named and set(named) <= set(by_id)
+                and (accept is None or (accept in named
+                                        and by_id[accept].payload.get("source") in DECLARED_INDEPENDENT_SOURCES))):
+            applied = event
+            ruling.update({fact: fact == accept for fact in named})
+    rejected = {fact for fact, kept in ruling.items() if not kept}
+    live = [e for e in facts if e.event_id not in rejected]
+    values = sorted({e.payload["realized"] for e in live if _finite(e.payload.get("realized"))})
+    state = {"live": live, "rejected": sorted(rejected), "values": values,
+             "resolution": applied.event_id if applied is not None else None}
+    if not facts:
+        return {**state, "state": "unreported"}
+    if not values:
+        return {**state, "state": "invalidated"}
+    if len(values) == 1:
+        return {**state, "state": "adjudicated" if applied is not None else "reported"}
+    objective, sense, promised = _promised(live[0].payload)
+    verdicts = {world_met(promised, v, sense) for v in values}
+    return {**state, "state": "verdict_concordant" if len(verdicts) == 1 else "disputed"}
+
+
+def _world_settled(outcome, state) -> dict | None:
+    """The construction outcome as the world settled it; None while its outcome is disputed (scored as neither).
 
     For competence the world verdict supersedes the certificate's: ``correct`` is true only when the answer passed
-    its signed check and the world kept its promise. Both stay on the record (``certificate_correct``, ``world``)."""
-    values = {e.payload["realized"] for e in events if _finite(e.payload.get("realized"))}
-    if len(values) != 1:
+    its signed check and the world kept its promise. Both stay on the record (``certificate_correct``, ``world``).
+    An unreported or invalidated answer keeps its certificate-only outcome; an invalidated one says so."""
+    if state["state"] == "disputed":
         return None
-    first = min(events, key=lambda e: e.event_id)
+    if state["state"] == "unreported":
+        return outcome
+    if state["state"] == "invalidated":
+        return {**outcome, "world": {"state": "invalidated", "rejected_events": state["rejected"],
+                                     "resolution_event": state["resolution"]}}
+    live = state["live"]
+    first = live[0]
     objective, sense, promised = _promised(first.payload)
-    realized = values.pop()
-    met = world_met(promised, realized, sense)
+    values = state["values"]
+    met = world_met(promised, values[0], sense)
+    realized = values[0] if len(values) == 1 else None
+    sources = sorted({e.payload["source"] for e in live})
     return {**outcome, "correct": bool(outcome["correct"] and met), "certificate_correct": outcome["correct"],
-            "world": {"objective": objective, "sense": sense, "promised": promised, "realized": realized,
+            "world": {"state": state["state"], "objective": objective, "sense": sense, "promised": promised,
+                      "realized": realized, **({"realized_values": values} if realized is None else {}),
                       "tolerance": realization_tolerance(promised), "met": met, "source": first.payload["source"],
-                      "realization_events": sorted(e.event_id for e in events)},
-            "evidence_tier": f"realized objective bound to the receipt ({first.payload['source']}); the certificate "
-                             "was checked locally"}
+                      "realization_events": sorted(e.event_id for e in live),
+                      **({"rejected_events": state["rejected"], "resolution_event": state["resolution"]}
+                         if state["resolution"] else {})},
+            "evidence_tier": f"realized objective bound to the receipt ({', '.join(sources)}); the certificate "
+                             "was checked locally"
+                             + ("; a founder-signed resolution accepted a report whose source is "
+                                f"{SOURCE_INDEPENDENCE}" if state["state"] == "adjudicated" else "")
+                             + ("; the reported values differ but agree on the verdict"
+                                if state["state"] == "verdict_concordant" else "")}
 
 
 def _record_objective(journal, *, receipt, built, realized, source, note, command_digest) -> dict:
-    """One realized objective per construction receipt. A repeat of the same value returns the fact already kept; a
-    different value is recorded beside it as a conflict, and the claim is then scored as neither."""
+    """One realized objective per construction receipt and source. A repeat of the same value from the same source
+    returns the fact already kept; the same value from another source is kept beside it as corroboration; a
+    different value is recorded beside it as a conflict (``_world_state`` decides what it does to the claim)."""
     promise = _promise(built, _constructed_functions(journal).get(built["method_or_composition_selected"]))
     if promise is None:
         raise ValueError("this construction's answer promises no realizable objective")
@@ -424,12 +582,84 @@ def _record_objective(journal, *, receipt, built, realized, source, note, comman
         journal.record("cognition.realization", payload, key=receipt, sensitivity="confidential")
         return payload
     if first.payload.get("realized") == realized:
-        return first.payload
+        if first.payload.get("source") == source:
+            return first.payload
+        # the same value under another source label corroborates it: kept, so a second report is not lost
+        key = [receipt, "corroboration", source, repr(realized)]
+        kept = journal.retained("cognition.realization", key)
+        if kept is not None:
+            return kept.payload
+        payload = {**payload, "corroborates": first.event_id}
+        journal.record("cognition.realization", payload, key=key, sensitivity="confidential")
+        return payload
     key = [receipt, "conflict", repr(realized)]
     kept = journal.retained("cognition.realization", key)
     if kept is not None:
         return kept.payload
     payload = {**payload, "conflicts_with": first.event_id}
+    journal.record("cognition.realization", payload, key=key, sensitivity="confidential")
+    return payload
+
+
+def _claim_facts(seen, world) -> list:
+    """The objective facts about one claim's answer, from every receipt that carried it (journal order kept by the
+    caller): a fact counts only when it was recorded on that receipt for that compile receipt and promise."""
+    return [e for receipt, built, promise, _ in seen for e in world.get(receipt, {}).values()
+            if _promised(e.payload) == promise and e.payload.get("compile_receipt") == built["receipt_id"]]
+
+
+def record_resolution(journal, *, receipt: str, resolves, accept, note: str, command_digest: str | None) -> dict:
+    """Resolve a disputed world outcome of one construction answer: a founder-signed, traceable correction.
+
+    ``resolves`` names the recorded facts the resolution rules on, all about the answer carried by ``receipt``.
+    ``accept`` is one of them whose reporter declared an independent source (``DECLARED_INDEPENDENT_SOURCES``: the
+    label is the reporter's, never verified, so this restricts eligibility and proves nothing), or None, which
+    invalidates every named fact (the answer then awaits a new report). An accepting resolution must name every
+    live fact whose value differs from the accepted one, or the dispute would stay open behind it. ``note`` states
+    the basis. Nothing is deleted: rejected facts stay on the record and stop counting. Only a founder-signed
+    REALIZATION command carries it (``command_digest``); settlement ignores one written any other way."""
+    if not command_digest:
+        raise ValueError("a resolution is a founder-signed REALIZATION command")
+    if not isinstance(note, str) or not note.strip():
+        raise ValueError("a resolution states its basis in note: what record decides it")
+    if (not isinstance(resolves, list) or not resolves or len(set(resolves)) != len(resolves)
+            or not all(isinstance(x, str) for x in resolves)):
+        raise ValueError("resolves names one or more distinct realization events")
+    record = journal.ledger.find(receipt)
+    retained = (record.payload.get("result", {}).get("output") if record is not None and
+                record.record_type == "receipt" else None)
+    constructed = _constructed_versions(journal)
+    built = _constructed(retained, constructed) if _compiled(retained) is None else None
+    if built is None:
+        raise ValueError("resolutions bind only to a certified construction answer")
+    world = _world_realizations(journal)
+    claim = next((seen for seen in _construction_claims(journal, constructed, _constructed_functions(journal)).values()
+                  if receipt in {r for r, *_ in seen}), None)
+    if claim is None:
+        raise ValueError("no signed check observed this answer, so it has no settled outcome to resolve")
+    facts = {e.event_id: e for e in _claim_facts(claim, world)}
+    if set(resolves) - set(facts):
+        raise ValueError("resolves names only realization facts recorded about this answer")
+    if accept is not None:
+        if accept not in resolves:
+            raise ValueError("accept is one of the facts the resolution names")
+        if facts[accept].payload.get("source") not in DECLARED_INDEPENDENT_SOURCES:
+            raise ValueError(f"a resolution accepts only a report declared as an independent source "
+                             f"({', '.join(DECLARED_INDEPENDENT_SOURCES)}): a signed report proves who reported it, not "
+                             "that it is true")
+        kept = facts[accept].payload["realized"]
+        current = _world_state(sorted(facts.values(), key=lambda e: _realization_order(journal)[e.event_id]),
+                               _resolutions(journal), {r for r, *_ in claim})
+        unnamed = [e.event_id for e in current["live"] if e.event_id not in resolves and e.payload["realized"] != kept]
+        if unnamed:
+            raise ValueError(f"name every live report that disagrees with the accepted one: {unnamed}")
+    payload = {"receipt": receipt, "kind": "resolution", "compile_receipt": built["receipt_id"],
+               "answer_version": _answer_version(built), "resolves": list(resolves), "accept": accept,
+               "note": note[:300], "command_digest": command_digest, "authority_created": False}
+    key = [receipt, "resolution", sorted(resolves), accept, command_digest]
+    kept_event = journal.retained("cognition.realization", key)
+    if kept_event is not None:
+        return kept_event.payload
     journal.record("cognition.realization", payload, key=key, sensitivity="confidential")
     return payload
 
@@ -529,6 +759,99 @@ def _construction_claims(journal, constructed, functions) -> dict:
     return claims
 
 
+def _investigation(identity, seen, state, mission_id, receipts) -> dict:
+    """A disputed world outcome as actionable work: what is disputed, what evidence would decide it, and whether a
+    resolution can be prepared now from evidence already on the record. It prepares; it never signs or applies."""
+    live = state["live"]
+    first = live[0]
+    objective, sense, promised = _promised(first.payload)
+    tolerance = realization_tolerance(promised)
+    threshold = promised - tolerance if sense == "max" else promised + tolerance
+    side = "at or above" if sense == "max" else "at or below"
+    reports = [{"event": e.event_id, "realized": e.payload.get("realized"),
+                "met": world_met(promised, e.payload["realized"], sense), "receipt": e.payload.get("receipt"),
+                "declared_source": e.payload.get("source"), "independence": SOURCE_INDEPENDENCE,
+                "eligible_to_accept": e.payload.get("source") in DECLARED_INDEPENDENT_SOURCES} for e in live]
+    independent = sorted({r["realized"] for r in reports if r["eligible_to_accept"]})
+    row = {"kind": "objective_conflict", "world_state": "disputed", "claim": identity, "mission_id": mission_id,
+           "method": first.payload.get("method"), "answer_version": _answer_version(seen[-1][1]),
+           "objective": objective, "sense": sense, "promised": promised, "realized_values": state["values"],
+           "realization_events": sorted(e.event_id for e in live), "receipts_for_claim": receipts,
+           "reports": reports, "rejected_events": state["rejected"],
+           "scored_as": "neither correct nor wrong: the reported values disagree on the verdict",
+           "competence_claim": "withheld: no competence is credited for this answer while it is disputed",
+           "distinguishing_observation": (f"an observation of the realized {objective} for this answer from outside "
+                                          f"the disputed reports: "
+                                          f"{side} {threshold:g} it kept its promise, otherwise it did not"),
+           "acceptable_sources": list(DECLARED_INDEPENDENT_SOURCES), "source_independence": SOURCE_INDEPENDENCE,
+           "resolution": "a founder-signed resolution accepting one report declared as an independent source, or "
+                         "invalidating the reports; every value stays recorded", "authority_created": False}
+    if len(independent) == 1:
+        accept = next(r["event"] for r in reports if r["eligible_to_accept"] and r["realized"] == independent[0])
+        row["resolvable_now"] = True
+        row["prepared_resolution"] = {
+            "command": "REALIZATION", "signing": "founder key only; nothing applies until the founder signs it",
+            "body": {"receipt": next(r["receipt"] for r in reports if r["event"] == accept),
+                     "resolves": [r["event"] for r in reports], "accept": accept,
+                     "note": "<basis: the record that decides it, and why its source label can be trusted>"}}
+    else:
+        row["resolvable_now"] = False
+        row["evidence_request"] = {
+            "needed": row["distinguishing_observation"],
+            "why": ("no report declared as an independent source is recorded" if not independent else
+                    f"the reports declared as independent sources disagree too: {independent}"),
+            "how": (f"greg realize {seen[-1][0]} --objective-value <observed> --source external_record "
+                    f"--note <reference> --key <founder key>"),
+            "acquirable_by_body": [],
+            "acquisition_limit": "no capability on this body declares an observation of this world quantity, so "
+                                 "GREG asks for the record rather than guessing it"}
+    return row
+
+
+def _weigh_investigations(journal, rows) -> None:
+    """Whether resolving each dispute could change a selection the compiler makes from settled outcomes, so the
+    work is prioritized by its decision value. For each method it bounds the settled counts by the two extreme
+    resolutions of its open disputes (all kept / all failed promises) and asks whether the inhibition rule, the
+    minimum-evidence floor or a one-sided Fisher comparison with another method crosses its threshold between them.
+    Read-only; an estimate of decision value, never a verdict."""
+    from .compiler import SETTLED_ALPHA, SETTLED_MIN_N, _settled_counts, _settled_inhibition
+    counts = _settled_counts(journal)
+    open_by_method = defaultdict(int)
+    for row in rows:
+        open_by_method[row["method"]] += 1
+    impact = {}
+    for method, d in open_by_method.items():
+        n, k = counts.get(method, (0, 0))
+        low, high = (n + d, k), (n + d, k + d)
+        reasons = []
+        if _settled_inhibition(*low) != _settled_inhibition(*high):
+            reasons.append("the inhibition rule (demotion) differs between the two resolutions")
+        if n < SETTLED_MIN_N <= n + d:
+            reasons.append(f"resolving lifts the method to the {SETTLED_MIN_N}-outcome floor live evidence needs")
+        if n + d >= SETTLED_MIN_N:
+            from scipy.stats import fisher_exact
+            for other, (n_o, k_o) in sorted(counts.items()):
+                if other == method or n_o < SETTLED_MIN_N:
+                    continue
+                def favours(kk, nn):
+                    better = fisher_exact([[kk, nn - kk], [k_o, n_o - k_o]], alternative="greater")[1] < SETTLED_ALPHA
+                    worse = fisher_exact([[k_o, n_o - k_o], [kk, nn - kk]], alternative="greater")[1] < SETTLED_ALPHA
+                    return better, worse
+                if favours(low[1], low[0]) != favours(high[1], high[0]):
+                    reasons.append(f"a settled-outcome preference against {other} differs between the two "
+                                   "resolutions (unadjusted one-sided Fisher; the compiler applies Holm)")
+        impact[method] = {"settled_now": [k, n], "open_disputes": d, "if_all_kept": [high[1], high[0]],
+                          "if_all_failed": [low[1], low[0]], "could_change": reasons}
+    for row in rows:
+        row["decision_impact"] = impact[row["method"]]
+        row["priority"] = "investigate" if impact[row["method"]]["could_change"] else "hold"
+        row["priority_why"] = ("resolving it can change a selection the compiler makes from settled outcomes"
+                               if row["priority"] == "investigate" else
+                               "on current evidence no resolution changes a selection rule; it stays recorded and "
+                               "unscored, and is weighed again as evidence accrues")
+        row["cost"] = "one outside record and one founder-signed resolution; no spend, no contact by GREG"
+
+
 def awaiting_realization(journal) -> list[dict]:
     """Retained forecasts and construction objectives with no realization bound yet.
 
@@ -546,31 +869,26 @@ def awaiting_realization(journal) -> list[dict]:
     functions = _constructed_functions(journal)
     settling = _settling_appraisals(journal)
     latest_verdict = {e.payload["mission_id"]: e.payload.get("verdict") for e in journal.replay("mission.appraised")}
-    offered, conflicts = {}, []           # ledger receipt -> (claim identity, receipts, mission id); conflicted claims
-    for identity, seen in _construction_claims(journal, constructed, functions).items():
-        facts = {e.event_id: e for receipt, built, promise, _ in seen for e in world.get(receipt, {}).values()
-                 if _promised(e.payload) == promise and e.payload.get("compile_receipt") == built["receipt_id"]}
-        receipts = len({receipt for receipt, *_ in seen})
+    claims = _construction_claims(journal, constructed, functions) if constructed else {}
+    order = _realization_order(journal) if claims else {}
+    resolutions = _resolutions(journal) if claims else []
+    offered, conflicts = {}, []           # ledger receipt -> (claim identity, receipts, mission id, state); disputes
+    for identity, seen in claims.items():
+        facts = sorted(_claim_facts(seen, world), key=lambda e: order[e.event_id])
+        receipts = {receipt for receipt, *_ in seen}
         mission_id = seen[-1][3]
-        if not facts:
-            offered[seen[-1][0]] = (identity, receipts, mission_id)
-            continue
-        values = sorted({e.payload["realized"] for e in facts.values() if _finite(e.payload.get("realized"))})
-        if len(values) > 1:               # _world_settled scores it as neither: say so where reports are made
-            first = min(facts.values(), key=lambda e: e.event_id)
-            objective, sense, promised = _promised(first.payload)
-            conflicts.append({"kind": "objective_conflict", "claim": identity, "mission_id": mission_id,
-                              "method": first.payload.get("method"), "objective": objective, "sense": sense,
-                              "promised": promised, "realized_values": values,
-                              "realization_events": sorted(facts), "receipts_for_claim": receipts,
-                              "scored_as": "neither correct nor wrong: the reported values disagree",
-                              "resolution": "none by a further report: every value stays recorded; the claim stays "
-                                            "unscored", "authority_created": False})
+        state = _world_state(facts, resolutions, receipts)
+        if state["state"] in ("unreported", "invalidated"):
+            offered[seen[-1][0]] = (identity, len(receipts), mission_id, state)
+        elif state["state"] == "disputed":    # _world_settled scores it as neither: say so where reports are made
+            conflicts.append(_investigation(identity, seen, state, mission_id, len(receipts)))
+    if conflicts:
+        _weigh_investigations(journal, conflicts)
     out = []
     for record in journal.ledger.by_type("receipt"):
-        if record.hash in bound:
-            continue
         retained = (record.payload.get("result") or {}).get("output")
+        if record.hash in bound and record.hash not in offered:
+            continue
         cognitive, compiled = _forecast_of(retained)
         if cognitive is None:
             if record.hash not in offered:
@@ -578,7 +896,7 @@ def awaiting_realization(journal) -> list[dict]:
             built = _constructed(retained, constructed)
             method = built["method_or_composition_selected"]
             objective, sense, promised = _promise(built, functions.get(method))
-            identity, receipts, mission_id = offered[record.hash]
+            identity, receipts, mission_id, state = offered[record.hash]
             appraised = mission_id in settling
             out.append({"receipt": record.hash, "recorded_at": record.ts_utc, "kind": "objective",
                         "method": method, "method_version": constructed[method],
@@ -588,10 +906,14 @@ def awaiting_realization(journal) -> list[dict]:
                         "claim": identity, "receipts_for_claim": receipts, "mission_id": mission_id,
                         "mission_appraisal": latest_verdict.get(mission_id),
                         "settles": ("once for the claim" if appraised else
-                                    "only once the mission's latest appraisal is VERIFIED: until then a report is "
-                                    "recorded and scores nothing")
+                                    "only once the mission's latest appraisal is an eligible settling appraisal "
+                                    "(VERIFIED, or VERIFIED_UNMET for a verified failure closure, with the required "
+                                    "checks): until then a report is recorded and scores nothing")
                                    + "; a second, different value on any of its receipts is a conflict scored as "
                                      "neither",
+                        "world_state": state["state"],
+                        **({"invalidated_events": state["rejected"], "resolution_event": state["resolution"]}
+                           if state["state"] == "invalidated" else {}),
                         "evidence_limit": "the reported world outcome is not independently verified by this view",
                         "report_with": f"greg realize {record.hash} --objective-value <observed value> --key <founder key>"})
             continue

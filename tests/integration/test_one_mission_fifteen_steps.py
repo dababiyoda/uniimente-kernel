@@ -22,8 +22,9 @@ one body's ledger, every step is asserted on ledger events by id, and a step->ev
     from the passing observation's receipt) with a first-principles test; GREG re-runs the test, and worker.appraise
     ACCEPTS the change in a fresh clone
  9  DALEOBANKS and WealthMachine, two organ processes running their own pinned code in their own interpreters,
-    consume the Mind's answer (bound into DALEOBANKS's seed) over the signed bridge; a second WealthMachine process
-    reproduces the assessment
+    consume the Mind's answer (bound into DALEOBANKS's seed) over the signed bridge; WealthMachine reads its figures
+    (8 of 9 staffed), so validating the shortage becomes its first step and the verdict stays below go; a second
+    WealthMachine process reproduces the assessment
 10  the body is SIGKILLed while that worker is in flight
 11  on restart the in-flight commission is UNCERTAIN and is never retried blind; the founder's signed standing
     mandate settles it with a recorded proof that the run was consequence-inert; the work runs exactly once more.
@@ -102,8 +103,9 @@ GAPS = {
     2: "the observation is a local file drop (greg intake): a local process stands in for an external feed, and no "
        "connector delivers it from outside the host. The wake is timing only: it changes when the "
        "mission observes, never what it may do",
-    9: "the staffing figures reach WealthMachine as packet evidence, but its assessment counts evidence items and does "
-       "not read the figures; each organ signs with its own key, yet WealthMachine holds DALEOBANKS's key to verify it "
+    9: "WealthMachine reads the staffing figures (WMI #45) but checks only the report's internal arithmetic: not the "
+       "original problem, the certificate, the optimality or the world, so a consistent lie still reads as consistent "
+       "(and is labelled unverified); each organ signs with its own key, yet WealthMachine holds DALEOBANKS's key to verify it "
        "(HMAC lets a verifier forge); the organs run pinned code on the body's host and UID, and the second "
        "WealthMachine process makes the assessment REPRODUCED (same-code determinism), not VERIFIED by an "
        "independent party",
@@ -497,13 +499,33 @@ def test_one_mission_crosses_all_fifteen_steps(tmp_path, capsys):
     carried = [e for e in packet["evidence"] if e.startswith("Evidence from GREG's certified staffing plan")]
     assert carried == [seed[seed.index("Evidence from GREG's certified staffing plan"):]], packet["evidence"]
     assert json.loads(carried[0].split(": ", 1)[1]) == answer["receipt"]["result"]       # the whole certified answer
+    # WealthMachine reads the figures (WMI #45), not only counts the evidence item. Its assessment, as the Kernel
+    # verified and retained it, states the reported staffed, demand and shortage as an unverified report, makes
+    # validating the shortage its first step, and keeps the verdict below go; the second WealthMachine process
+    # reproduced those reasons and steps (organs.REPRODUCIBLE). The answer is 8 of 9: the docks need 7 forklift
+    # units and Ana and Ben hold 6.
+    result = answer["receipt"]["result"]
+    assert (result["staffed"], result["total_demand"], result["shortage"]) == (8, 9, 1)
+    wmi_sha = next(o["content_sha256"] for o in observed if o["organ"] == "wealthmachine")
+    [assessment_row] = [i for i in ev(home, "external.ingested", source="organ:wealthmachine")
+                        if i["content_sha256"] == wmi_sha]
+    assert not assessment_row["truncated"]
+    assessment = json.loads(assessment_row["content"])
+    [reading] = [r for r in assessment["reasons"] if r.startswith("staffing evidence[")]
+    assert "staffed=8, total_demand=9, shortage=1" in reading, assessment["reasons"]
+    assert "unverified report" in reading and "not verified" in reading
+    first_step = assessment["validation_plan"][0]
+    assert assessment["recommended_next_action"] == first_step == exchange["assessment"]["recommended_next_action"]
+    assert "shortage of 1 units" in first_step, assessment["validation_plan"]
+    assert assessment["go_no_go"] != "go" and assessment["requires_human_approval"] is True
     steps[9] = {"name": "a real organ process consumes the answer",
                 "events": [ref(organs_done[0])] + [ref(o) for o in observed] + [ref(appraised_organs[-1])],
                 "binding": obind, "organ_heads": exchange["organ_heads"], "packet_id": exchange["packet_id"],
                 "daleobanks_ledger": {"idea_intake_chars": intake_row["payload"]["chars"], "bound_seed_chars": len(seed),
                                       "idea_refined_opportunity": refined["payload"]["opportunity"]},
                 "packet_evidence": packet["evidence"], "sender_identity_isolated": exchange["sender_identity_isolated"],
-                "assessment": exchange["assessment"]}
+                "assessment": exchange["assessment"], "wealthmachine_reading": reading,
+                "wealthmachine_first_validation_step": first_step}
 
     # 10-11. SIGKILL in flight; recovery keeps authority, budget and the unresolved effect
     assert [c["status"] for c in commission] == ["UNCERTAIN", "RECONCILED_NOT_EXECUTED", "DONE"], commission

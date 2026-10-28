@@ -64,16 +64,18 @@ authority:
 health:
   test_command: python -m pytest tests
   last_verified:
-    date: "2026-10-23"
-    commit: 7a45d223b74d6eea3b9ed5bdaeb12a3625b525de
-    tests_passed: 126
-    tests_failed: 2
+    date: "2026-10-28"
+    commit: 0e80582d6d4f5b4d2477e13d2bb48fb4a57be3e6
+    tests_passed: 213
+    tests_failed: 0
     notes: >-
-      Upgraded pin (founder decision 2026-10-23): uniimente-kernel-boundaries at Kernel
-      e7dc0cbc (per-organ bridge keys); CI's DALEOBANKS producer at 664ac98c. The 2
-      failures fail identically on the old pin: both need port 5000, which the build
-      container holds; draft PR #44's CI runs them. Not on main. The capability list
-      above is from the 6549984a inspection and was not regenerated.
+      WealthMachine reads the Mind's staffing figures: WMI #45 (b2c7f234) plus its hardening child #47
+      (0e80582d), which keeps staffing reports out of the demand signals and checks each report's own
+      arithmetic. 211 passed in one run; the 2 port-5000 tests pass run alone once TIME_WAIT sockets clear
+      (they bind without SO_REUSEADDR, pre-existing). Boundaries pin unchanged at Kernel e7dc0cbc; CI's
+      DALEOBANKS producer at 664ac98c. Draft PRs, not on main. Previous pin 7a45d223 (#44, 2026-10-23,
+      126 passed, 2 failed on port 5000). The capability list above is from the 6549984a inspection and
+      was not regenerated.
 shutdown_behavior: Stateless API; in-flight assessments are idempotent by packet id.
 recovery: Recompute assessments from stored packets; engine is deterministic.
 status: active

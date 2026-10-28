@@ -259,7 +259,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: dababiyoda/WealthMachineIntelligence
-          ref: 7a45d223b74d6eea3b9ed5bdaeb12a3625b525de
+          ref: 0e80582d6d4f5b4d2477e13d2bb48fb4a57be3e6
           path: consumers/wmi
           persist-credentials: false
       - uses: actions/checkout@v4
@@ -305,7 +305,8 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       # The organs at their upgraded pins (founder decision 2026-10-23): per-organ bridge keys, and DALEOBANKS
-      # packets that carry stated evidence. Draft PRs DALEOBANKS #96 and WealthMachineIntelligence #44.
+      # packets that carry stated evidence. Draft PRs DALEOBANKS #96 and WealthMachineIntelligence #47 (on #45, on
+      # #44): WealthMachine reads the staffing figures it is sent (step 9, test_organ_staffing_figures.py).
       - uses: actions/checkout@v4
         with:
           repository: dababiyoda/DALEOBANKS
@@ -315,7 +316,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: dababiyoda/WealthMachineIntelligence
-          ref: 7a45d223b74d6eea3b9ed5bdaeb12a3625b525de
+          ref: 0e80582d6d4f5b4d2477e13d2bb48fb4a57be3e6
           path: organs/wealthmachine
           persist-credentials: false
       - uses: actions/setup-python@v5
@@ -355,7 +356,7 @@ jobs:
           GREG_TEST_WMI: "${{ github.workspace }}/organs/wealthmachine"
           GREG_ONE_MACHINE_EVIDENCE: "${{ github.workspace }}/one-machine-evidence/ten-steps"
           GREG_LOOP15_EVIDENCE: "${{ github.workspace }}/one-machine-evidence/loop15"
-        run: python -m pytest -q -rs tests/integration/test_one_machine.py tests/integration/test_one_machine_ten_steps.py tests/integration/test_one_mission_fifteen_steps.py tests/integration/test_one_machine_attacks.py tests/unit/test_greg_organs.py tests/unit/test_greg_organ_bridge.py tests/unit/test_greg_daleobanks_bridge.py tests/unit/test_greg_bind_from_check.py tests/unit/test_greg_model_identity_policy.py
+        run: python -m pytest -q -rs tests/integration/test_one_machine.py tests/integration/test_one_machine_ten_steps.py tests/integration/test_one_mission_fifteen_steps.py tests/integration/test_organ_staffing_figures.py tests/integration/test_one_machine_attacks.py tests/unit/test_greg_organs.py tests/unit/test_greg_organ_bridge.py tests/unit/test_greg_daleobanks_bridge.py tests/unit/test_greg_bind_from_check.py tests/unit/test_greg_model_identity_policy.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -232,6 +232,20 @@ def test_the_turn_reports_measured_trust_from_the_body_record(tmp_path):
     assert report["ledger_writes"] == 0 and report["authority_created"] is False
 
 
+def test_a_conflicted_construction_claim_is_not_counted_as_waiting_for_a_report(monkeypatch):
+    """#196 integration of #210: awaiting_realization also returns conflicted claims (two signed values that
+    disagree). Those are not requests a further report can settle, so the turn counts them apart."""
+    from greg.cognition import settlement
+    rows = [{"receipt": "r1", "kind": "objective"}, {"receipt": "r2", "method": "m"},
+            {"kind": "objective_conflict", "claim": ["c"], "realized_values": [1.0, 2.0]}]
+    monkeypatch.setattr(settlement, "awaiting_realization", lambda journal: rows)
+    monkeypatch.setattr(settlement, "outcome_calibration", lambda journal: {"verdict": "unmeasured", "n": 0})
+    monkeypatch.setattr(settlement, "competence", lambda journal: {})
+    trust = gravity._measured_trust(SimpleNamespace(ledger=object()))
+    assert trust["awaiting_realization"] == 2
+    assert trust["conflicting_construction_claims"] == 1
+
+
 def test_a_turn_on_a_real_body_writes_no_ledger_event_even_when_the_compiler_would_ask(tmp_path):
     """Reproduced defect: a turn's value-of-information compile recorded a CAPABILITY_ATTACH ask on the body,
     contradicting the turn's read-only contract (ledger_writes 0) and opening a second ask channel."""

@@ -1,0 +1,7 @@
+# Ablation after review round 1: greg/organs.py SUMMARY with recommended_next_action put back (the superseded design), WMI 0e80582d, DALEOBANKS 664ac98c
+# command: UNIIMENTE_REQUIRE_ORGANS=1 GREG_REQUIRE_LANDLOCK=1 python -m pytest -q --tb=no -rf tests/integration/test_organ_staffing_figures.py
+# python 3.11.17, bubblewrap 0.9.0, Landlock ABI 7; the tree was restored afterwards (git diff shows only the review fixes)
+F......                                                                  [100%]
+FAILED tests/integration/test_organ_staffing_figures.py::test_a_shortage_changes_reasons_evidence_requests_and_priority_with_nothing_else_changed
+1 failed, 6 passed in 12.57s
+# with the fix in place: 51 passed (test_organ_staffing_figures.py, test_one_mission_fifteen_steps.py, tests/unit/test_greg_organs.py)

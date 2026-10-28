@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from types import SimpleNamespace
 
 from .contracts import CognitiveReceipt, ProblemGeometry, digest
 from . import condition_competence
@@ -493,17 +494,55 @@ def _forecast_identity(cognitive) -> tuple:
     return cognitive["method"], cognitive["method_version"], cognitive["input_digest"]
 
 
+def _construction_claims(journal, constructed, functions) -> dict:
+    """claim identity -> [(ledger receipt, compile receipt, promise)], in observation order, for every observation
+    ``measured_outcomes`` would credit to a construction once its mission is appraised (the same identity, from
+    ``_constructed_outcome``). A construction answer no signed check observed is in no claim: a realization bound to
+    it is recorded but never settles."""
+    registrations = {e.payload["mission_id"]: e.payload for e in journal.replay("mission.registered")}
+    witnesses = {r.payload["witness_id"]: r.payload for r in journal.ledger.by_type("witness")}
+    claims = defaultdict(list)
+    for event in journal.replay("mission.observed"):
+        data = event.payload
+        record = journal.ledger.find(data["receipt"]) if data.get("receipt") else None
+        if record is None or record.record_type != "receipt":
+            continue
+        retained = (record.payload.get("result") or {}).get("output")
+        built = _constructed(retained, constructed) if _compiled(retained) is None else None
+        if built is None:
+            continue
+        registration = registrations.get(data.get("mission_id"), {})
+        check = next((c for c in registration.get("spec", {}).get("success_checks", [])
+                      if c["check_id"] == data.get("check_id")), None)
+        outcome = _constructed_outcome(built, constructed, registration, check,
+                                       witnesses.get(record.payload.get("witness_id"), {}).get("capability"),
+                                       data, event, SimpleNamespace(event_id=None))
+        promise = _promise(built, functions.get(built["method_or_composition_selected"]))
+        if outcome is not None and promise is not None:
+            claims[_outcome_identity(outcome)].append((record.hash, built, promise))
+    return claims
+
+
 def awaiting_realization(journal) -> list[dict]:
     """Retained forecasts and construction objectives with no realization bound yet.
 
     A read-only projection of the same receipts accepted by record_realization;
-    listing an objective neither verifies its world outcome nor settles it.
+    listing an objective neither verifies its world outcome nor settles it. A construction is listed once per
+    signed claim, as ``measured_outcomes`` settles it: a mission that re-observes one answer leaves many receipts
+    for one claim, and a report on any of them settles that claim once, so the claim is offered on its latest
+    receipt and leaves the list once any of its receipts carries a realization.
     """
     if journal is None:
         return []
     bound = {e.payload["receipt"] for e in journal.replay("cognition.realization")}
+    world = _world_realizations(journal)
     constructed = _constructed_versions(journal)
     functions = _constructed_functions(journal)
+    offered = {}                          # ledger receipt -> (claim identity, receipts observed for that claim)
+    for identity, seen in _construction_claims(journal, constructed, functions).items():
+        if not any(_promised(e.payload) == promise and e.payload.get("compile_receipt") == built["receipt_id"]
+                   for receipt, built, promise in seen for e in world.get(receipt, {}).values()):
+            offered[seen[-1][0]] = (identity, len({receipt for receipt, _, _ in seen}))
     out = []
     for record in journal.ledger.by_type("receipt"):
         if record.hash in bound:
@@ -511,17 +550,20 @@ def awaiting_realization(journal) -> list[dict]:
         retained = (record.payload.get("result") or {}).get("output")
         cognitive, compiled = _forecast_of(retained)
         if cognitive is None:
-            built = _constructed(retained, constructed)
-            method = built["method_or_composition_selected"] if built else None
-            promise = _promise(built, functions.get(method)) if built else None
-            if promise is None:
+            if record.hash not in offered:
                 continue
-            objective, sense, promised = promise
+            built = _constructed(retained, constructed)
+            method = built["method_or_composition_selected"]
+            objective, sense, promised = _promise(built, functions.get(method))
+            identity, receipts = offered[record.hash]
             out.append({"receipt": record.hash, "recorded_at": record.ts_utc, "kind": "objective",
                         "method": method, "method_version": constructed[method],
                         "problem_id": built.get("problem_id"), "compile_receipt": built["receipt_id"],
                         "objective": objective, "sense": sense, "promised": promised,
                         "tolerance": realization_tolerance(promised), "authority_created": False,
+                        "claim": identity, "receipts_for_claim": receipts,
+                        "settles": "once for the claim; a different value on another of its receipts is a conflict "
+                                   "scored as neither",
                         "evidence_limit": "the reported world outcome is not independently verified by this view",
                         "report_with": f"greg realize {record.hash} --objective-value <observed value> --key <founder key>"})
             continue

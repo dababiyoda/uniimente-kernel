@@ -105,14 +105,17 @@ The test is `tests/integration/test_outcome_correction_changes_decision.py`. Sce
 - **Fix:** keep a same-value fact from another source as corroboration (item 4 above). Nothing in the declaration
   changed.
 
-**Run 2** passed every prediction:
-- **1, 2:** see the table. A signed mission after the corrections also selects `flow_maxflow`.
+**Run 2** (corrected 2026-10-28 after the cross-session re-review; see [REVIEW-FIXES.md](REVIEW-FIXES.md)):
+- **1, 2:** see the table. A signed mission after the corrections also selects `flow_maxflow`. Since the review, the
+  test also asserts that the frozen rule made the choice: the compiler's settled-outcome preference against the
+  construction, with selection level `preferred_by_settled_outcomes`.
 - **3:** all 20 facts are kept.
 - **4:** before resolution the disputed answers score nothing. The following are refused or ignored:
   - a resolution accepting the founder's report;
   - a resolution with no basis;
   - a resolution written without a founder-signed command (recorded, resolves nothing).
-- **5:**
+- **5: missed as worded.** The declaration said "(4 correct of 10)" for the method; the method total is (5 of 11).
+  What held:
   - the ten corrected claims settle at 4 correct of 10;
   - the settlement records exactly six adjudicated revisions (one per corrected claim, each superseding its
     prior record), and a second `reconcile` adds none.
@@ -121,8 +124,10 @@ The test is `tests/integration/test_outcome_correction_changes_decision.py`. Sce
     corrected claims are (4 of 10). The declaration omitted that answer from the count; no rule changed.
 - **6:** the mission decided on contested evidence is listed once in `decisions_to_recheck`.
 - **7:** Goal Gravity shows 6 disputes to investigate before the corrections and 0 after.
-- **8:** after the setup, no capability state changes, nothing creates authority, nothing is spent, and the
-  evaluation fixture is byte-identical.
+- **8: missed as worded on one point.** The declaration said "other than the two founder attaches"; the setup
+  records three attaches: one founder command and two founder-signed mission `auto_attach` (read only). The test
+  now asserts that list as recorded. The rest held: after the setup no capability state changes, nothing creates
+  authority, nothing is spent, and the evaluation fixture is byte-identical.
 
 **Before the change** ([before-8c431b85.txt](before-8c431b85.txt)), on the pre-change tree:
 - 18 of the new or updated tests fail: the experiment, all 13 resolution tests, the two attribution tests, the

@@ -84,7 +84,7 @@ here; this file does not repeat it.
 
 `provenance/ledger.py`, `events/spine.py`, `greg/chromebook/install.sh`, `greg/doctor.py`,
 `greg/CHROMEBOOK_FIRST_MISSION.md`, `scripts/measure_body_memory.py` (new), `scripts/ci/check_cortex_mutants.py`
-(one stale mutant repaired, 23 ledger mutants added),
+(one stale mutant repaired, 24 ledger mutants added),
 `tests/unit/test_ledger_dropped_payloads.py` (new, 35 tests), `tests/unit/test_greg_chromebook_install.py` (+2),
 `docs/collaboration/FINDING-BODY-MEMORY-2026-10-28.md`, `docs/collaboration/deliberation-bounded-body-memory-20261028.json`,
 `docs/evidence/body-memory-2026-10-28/`, this file.

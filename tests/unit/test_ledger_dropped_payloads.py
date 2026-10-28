@@ -655,3 +655,21 @@ def test_a_read_only_observer_verifies_while_its_writer_appends(tmp_path):
         led.append("event", {"n": i})
     assert observer.verify_chain()[0]
     assert observer.records[3] == led.records[3]
+
+
+def test_an_ordinary_open_failure_propagates_and_is_not_counted_as_another_file(tmp_path, monkeypatch):
+    """Permissions, descriptors or I/O failing the open are a definite failure before the write, as they always were:
+    the error propagates, memory does not advance, and nothing claims the file is another history."""
+    import errno
+    led, _, path = grown(tmp_path)
+    before = led.head
+
+    def denied(p, flags):
+        raise PermissionError(errno.EACCES, "Permission denied", p)
+    monkeypatch.setattr(ledger_module, "_existing", denied)
+    with pytest.raises(PermissionError):
+        led.append("event", {"n": 1})
+    assert led.head == before and not led._src.broken
+    monkeypatch.undo()
+    led.append("event", {"n": 1})
+    assert led.verify_chain()[0]

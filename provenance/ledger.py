@@ -15,6 +15,7 @@ import hashlib
 import json
 import os
 import copy
+import errno
 import fcntl
 import stat
 import sys
@@ -98,6 +99,9 @@ _PAYLOAD = LedgerRecord.__dict__["payload"]   # the slot itself, under _Retained
 
 _CLOEXEC = getattr(os, "O_CLOEXEC", 0)
 _NONBLOCK = getattr(os, "O_NONBLOCK", 0)
+# Open errors meaning the path no longer names this ledger's regular file. Any other (permissions, descriptors, I/O)
+# is an ordinary definite failure and propagates as it always did.
+_GONE = frozenset({errno.ENOENT, errno.ENOTDIR, errno.EISDIR, errno.ELOOP, errno.ENXIO})
 
 
 def _existing(path: str, flags: int) -> int:
@@ -140,6 +144,8 @@ class _LineSource:
         try:
             fd = os.open(self.path, os.O_RDONLY | _NONBLOCK | _CLOEXEC)
         except OSError as exc:
+            if exc.errno not in _GONE:
+                raise
             self.note_failure()
             raise ValueError(f"the ledger file at {self.path} cannot be read: {exc.strerror}") from None
         if not stat.S_ISREG(os.fstat(fd).st_mode):
@@ -518,6 +524,8 @@ class EvidenceLedger:
             try:
                 fh = open(self.path, "ab", opener=_existing)     # never creates: a missing file is not this one
             except OSError as exc:
+                if exc.errno not in _GONE:
+                    raise
                 raise self._not_ours(f"it cannot be opened ({exc.strerror})") from None
             with fh:
                 ok, why = self._holds(fh.fileno(), exact=True)
@@ -573,6 +581,8 @@ class EvidenceLedger:
         try:
             fd = os.open(self.path, os.O_RDONLY | _NONBLOCK | _CLOEXEC)
         except OSError as exc:
+            if exc.errno not in _GONE:
+                return False, f"the ledger file at {self.path} cannot be opened ({exc.strerror})"
             return False, str(self._not_ours(f"it cannot be opened ({exc.strerror})"))
         try:
             ok, why = self._holds(fd, exact=not self.read_only)

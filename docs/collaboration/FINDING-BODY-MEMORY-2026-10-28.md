@@ -208,7 +208,10 @@ Quarantine checks the file, then truncates through the checked descriptor. The r
 
 A byte-identical copy put in place is accepted: appending to it continues the same history. Any other difference is
 a changed line, refused when read and by explicit verification, as in-place tampering always was. Each case has a
-test that fails on `8e986839` or `7d20cd81`. 23 dropped-payload mutants pin the safeguards, all caught.
+test that fails on `8e986839` or `7d20cd81`. Only errors meaning the path no longer names a regular file (`ENOENT`,
+`ENOTDIR`, `EISDIR`, `ELOOP`, `ENXIO`) are refused as another history. Any other open error propagates as it always did:
+the full suite caught `135cc590` reporting a plain `OSError` as another history. 24 dropped-payload mutants pin the
+safeguards, all caught.
 
 ## Next measured limit (not changed here; each needs a decision)
 

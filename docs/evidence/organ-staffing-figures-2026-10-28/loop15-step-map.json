@@ -1,8 +1,8 @@
 {
  "schema": "greg-loop15-step-map/1",
  "mission_id": "m:loop15-staffing",
- "goal_id": "sha256:f5424e16d523b55946ae6229b41d75f7207f690d10aa3c5f8b42c7bece61d6c1",
- "ledger_head": "sha256:1ae7caf9d88d54fcf5a5d6d41944ecf02fa91ed3a582b00469a973f9b6f62419",
+ "goal_id": "sha256:e4935e24cfc44d244dd84c558527c98e0b33872397ff51f2d81784f5e5240406",
+ "ledger_head": "sha256:e94f048ec484e1c22b9e3e3e89dc7914bb6e99ab90e4e024d031e79c9c9cd25b",
  "ledger_records": 578,
  "chain_verified": true,
  "founder_key": "per-test Ed25519 key; NOT Alfonso",
@@ -14,26 +14,26 @@
     {
      "event_id": "0c5a9054-7ed6-5486-9c59-7669094596ba",
      "seq": 3,
-     "hash": "sha256:baf0d236d1992bfec333d93ca608ea554f44fa93b6a5c89ad4419702b0da045f",
+     "hash": "sha256:385813a65236c2f24b8f5c4096aa8ce2aeb96d2a3483a5c78996de04b803de09",
      "type": "greg.mission.registered"
     },
     {
-     "event_id": "80d20c4d-427d-5b87-a2de-44dfcdfffb17",
+     "event_id": "4f980656-3297-568a-8ed8-c7e3ca9bb0da",
      "seq": 554,
-     "hash": "sha256:062e66aa56e0c5508d27230dbadc6ccbe4a7318acbd982d06430f3b9e644db78",
+     "hash": "sha256:1a7a1dd43d98661f2b354e29a226998bccfee99efb992f2bbd77cdf116c300c5",
      "type": "greg.command.accepted"
     },
     {
-     "event_id": "9ff238c3-b1ad-53cc-9ed1-1485fd4953f8",
+     "event_id": "e17a66c9-013d-5909-b2ea-c7b13e2ebe73",
      "seq": 6,
-     "hash": "sha256:95ca49bc9585985e0e555778389632de88d58ae9cff84129dfee363e8ca69535",
+     "hash": "sha256:10fb6420d2809b4a4a563fa1c760d2737fb3632dd68166d6f2c9bcd067f6d516",
      "type": "greg.command.accepted"
     }
    ],
    "records": {
     "egregore.goal_authorized": {
      "seq": 5,
-     "goal_id": "sha256:f5424e16d523b55946ae6229b41d75f7207f690d10aa3c5f8b42c7bece61d6c1"
+     "goal_id": "sha256:e4935e24cfc44d244dd84c558527c98e0b33872397ff51f2d81784f5e5240406"
     }
    },
    "boots": 4,
@@ -45,31 +45,31 @@
     {
      "event_id": "2b9a722e-3e78-5c99-881e-7c392b9b7eed",
      "seq": 123,
-     "hash": "sha256:54ecd6d2ace52811ab969ba3451bdfd748f32c4a8762fd3b8d0ca016ec7cd83c",
+     "hash": "sha256:a7622bfa0f40491f224049c0f8a96093a70139a49869c6aa3c8a0b4a3720f972",
      "type": "greg.external.ingested"
     },
     {
-     "event_id": "92fa38ab-7197-507e-8f91-82beed8cb901",
+     "event_id": "944efc1c-e1db-5dad-b06f-0fc13e0dd310",
      "seq": 129,
-     "hash": "sha256:e31e04a42d627dcc1ea88b0c10d7f2b4fa0191bcd17218c16c420ee1bbf05197",
+     "hash": "sha256:9d91bfa091ed5c711dcdb2258e93d9994538d5f0a6977b4035c83f8adfed5e9d",
      "type": "greg.mission.schedule"
     },
     {
-     "event_id": "8d063b48-ef16-5cf8-a881-5fff0762c3d5",
+     "event_id": "5b4dd853-62fb-51e4-9acd-633491f7d664",
      "seq": 141,
-     "hash": "sha256:ad79d73262603fa852344b9867822b3f4bfc59f1bdb157f30da5a8f770ee89ee",
+     "hash": "sha256:4905ebfd9582ee51d6051fc7bb19faa61a1fdbfab303f9db3be80d19856aae97",
      "type": "greg.mission.observed"
     },
     {
      "event_id": "a5ddcf33-2d6e-5b09-b58f-2d87faa0c399",
      "seq": 178,
-     "hash": "sha256:d3656ead52a84dec837596302fd02ceb7c66f2f42919b828da0eb040bfba3467",
+     "hash": "sha256:58178acecd9da585055aa85567a5b181331161a510d04f75c9986e2cee723f88",
      "type": "greg.decision.withdrawn"
     },
     {
      "event_id": "ac7d3b46-0cb7-564d-bded-0f6376fdb0cd",
      "seq": 179,
-     "hash": "sha256:307339d91ca947ada687340377f68260340cfbb24119c2e8d03d1aca1dfdc00b",
+     "hash": "sha256:63a4618c59b8c6197593f3b30bf3f9160cd6a261d7465ec16b43ce094a0291ae",
      "type": "greg.mission.unblocked"
     }
    ],
@@ -92,7 +92,7 @@
     {
      "event_id": "a0193af7-2685-5a38-bbe9-1e0e4fa9f064",
      "seq": 246,
-     "hash": "sha256:da9aae85950629697ed720cb4857b4260125d38e9413fc88b06dc30b0900768e",
+     "hash": "sha256:2ab384f25d4931ed39c4dff54e614089b838c51841b624a767e4e7ffadae4b4c",
      "type": "greg.mission.action"
     }
    ],
@@ -100,47 +100,47 @@
     {
      "ledger_seq": 31,
      "state": "CAPABILITY_DEFICIT",
-     "receipt_id": "sha256:bc390597ffe0623422817da0915ff61de80ce5855a7b990d5fb97b5b68f8da6d"
+     "receipt_id": "sha256:80b5edcbf43debf344d7decf96c5700976094e7de1f5b5cba7ea94607642ba9f"
     },
     {
      "ledger_seq": 91,
      "state": "CAPABILITY_DEFICIT",
-     "receipt_id": "sha256:68209250ede63107b7073130aa67ddc952d7e962840e82b9ffddd777d1249736"
+     "receipt_id": "sha256:3008f97fb0a81e9c520f57f19e9e5d07d576975eba06b40c8d9853c02f1d30ce"
     },
     {
      "ledger_seq": 150,
      "state": "CAPABILITY_DEFICIT",
-     "receipt_id": "sha256:ffa64a70e0ed8065c210f48393ad66db78237b457b978118d067172d85035a87"
+     "receipt_id": "sha256:b81c366a0fade6e387f36b4da3e96e0fc760568244fa94cd54465e20d6c0e66a"
     },
     {
      "ledger_seq": 206,
      "state": "CAPABILITY_DEFICIT",
-     "receipt_id": "sha256:2b306d8029eab79ccb373b53bfb5754b01c718fc7bf250d071901ac11b9ed11d"
+     "receipt_id": "sha256:0ee837e757b4bd957fafd910841be8b41295666b9c60888164e5a64ce222d486"
     },
     {
      "ledger_seq": 243,
      "state": "CAPABILITY_DEFICIT",
-     "receipt_id": "sha256:607a1208e93df5323e0b12cb8bcee89946a3d5fce5aab60f828824bb1f903259"
+     "receipt_id": "sha256:c74bf42e15ed8280960a35c47203e0a860867d7e7dda96a1ce958b7b96973c5c"
     },
     {
      "ledger_seq": 306,
      "state": "ANSWERED",
-     "receipt_id": "sha256:80da54c06cbfef8338ad8aeba3b7d47da0bd647dd36f3a4333e6c47541dc49e8"
+     "receipt_id": "sha256:7efbc14b5f462ca47489d8db6e27add4fcb3b64f322743afccd0f30f6fdea915"
     },
     {
      "ledger_seq": 381,
      "state": "ANSWERED",
-     "receipt_id": "sha256:09fb48f4c6c09d1dc05ba08353a6f1d6d1c5c88b2ac5ea7847abe02270784277"
+     "receipt_id": "sha256:795fb33cdbbae0c4d938f337603616a7bce4b21bbec5e6c26bb8554d5a8e339e"
     },
     {
      "ledger_seq": 448,
      "state": "ANSWERED",
-     "receipt_id": "sha256:665f2ea560b4323740baabe9e6954364ac247234d1bc39942cdc2b53e0cefc18"
+     "receipt_id": "sha256:b48db300b958b7e48f3d6638a210be8d1c05387cc27b04d290e8b5a32744e16b"
     },
     {
      "ledger_seq": 511,
      "state": "ANSWERED",
-     "receipt_id": "sha256:486a6f6e345dedb285b747b425ba3104c9d3b906549651b84381ddb446ce351e"
+     "receipt_id": "sha256:37e6514f533fa92d3d28fa122a0b3be378b3313b64ee42f368f653f9ffa08973"
     }
    ],
    "methods_considered": [
@@ -155,43 +155,43 @@
     {
      "event_id": "582d5b00-f379-5fe5-bd34-9c325c00b491",
      "seq": 248,
-     "hash": "sha256:752e3b08c608367d198268bf9c37212645a65be6cd3f9bd429c3deba1eee87d3",
+     "hash": "sha256:fa8809da2ea0a94984e159a205d4c5f7817adbede8643b4792d3f974482262b8",
      "type": "greg.genesis.route"
     },
     {
      "event_id": "a81bf167-627c-5c1c-9d2a-b584af1d9ba6",
      "seq": 249,
-     "hash": "sha256:0cf20d3db550aa8a945e9457cecd0b796f86ed27db44183c9a20392ce81b3567",
+     "hash": "sha256:f8d249018a9e5d94f959ba8f39d24848ab8de0443894790ca75b392bac9bbb1b",
      "type": "greg.genesis.route"
     },
     {
      "event_id": "7ec671bb-22b3-582e-af13-562054cbdc5a",
      "seq": 251,
-     "hash": "sha256:f408777a324e22e1856bdf85cd36eb39ea36bbc1785b1a8ea35255a7bf75ec67",
+     "hash": "sha256:4b4b1b239f51d2b341f8afbb0b9c306174bf9ef064a015e97b45293165dd2599",
      "type": "greg.genesis.route"
     },
     {
      "event_id": "950d8a32-9872-51c8-b6a9-c71c72ae6ed3",
      "seq": 252,
-     "hash": "sha256:6fb7c2c7bf6d9b85c5ebb991a9a57a46205a113bf89c442baa7b2c54a8a3e0ea",
+     "hash": "sha256:ac3240b31be8a892f35898e25f51b870152cdaf70ab97e420d077a1c9730ca5d",
      "type": "greg.genesis.route"
     },
     {
      "event_id": "481cb8f0-4f01-5687-b167-486ba4347432",
      "seq": 255,
-     "hash": "sha256:6c3843b836ec76fdf4b9b83bf1385e336e1b28f2201abe33b061068c55763ffa",
+     "hash": "sha256:b36cb3163e08b6de0d8e69be322c1d8dabbaab3e3911090766c381b19740db81",
      "type": "greg.genesis.route"
     },
     {
      "event_id": "f7b1eb67-01eb-5c27-84c3-8884b6a30330",
      "seq": 257,
-     "hash": "sha256:6808cd38a608021582f4e12f3f00f72eda33265601682c515cd1ff8188dfaa6b",
+     "hash": "sha256:8c3ea5e10c37a259c5f7c4858354dc5e3ca938ff019601aedf981cca690d717f",
      "type": "greg.genesis.route"
     },
     {
      "event_id": "131a8d7d-36f7-5fad-b31a-4e0300795cf2",
      "seq": 278,
-     "hash": "sha256:cfb34f21766522811f0074da2436c06a10faeabd9532bae34268ce9714b5dc7c",
+     "hash": "sha256:68fc98d1779516365d79b6d9d64d0500392cb92033878b155d589df18b5e9f91",
      "type": "greg.genesis.route"
     }
    ],
@@ -204,13 +204,13 @@
     {
      "event_id": "fb780b2d-681d-550a-bd19-bdafd0f649c2",
      "seq": 247,
-     "hash": "sha256:2c03d0018bfc0efbb987105413f76832eb43c97fcafa4eadf4de9bf9b8c93312",
+     "hash": "sha256:52229b1620c36791c60da0b4fecd999c813c33bbd371731a6f96a1a0a4d6b4b3",
      "type": "greg.deficit.opened"
     },
     {
      "event_id": "fa36da55-e2bc-50ed-8094-363b7fb9c36b",
      "seq": 250,
-     "hash": "sha256:0618c58cc96a1d7a7d5206e1d31ac9a850f63cb5a64ac1b53b00a8daa74b2e3a",
+     "hash": "sha256:bb4331515655259f2a9161f7cb5eec25049155b2fa27c9aa5b6dec594f609fb7",
      "type": "greg.deficit.opened"
     }
    ],
@@ -226,13 +226,13 @@
     {
      "event_id": "17d88008-63bd-5e85-9d96-f485beaf82e0",
      "seq": 253,
-     "hash": "sha256:88292752a802b983518356518e0a460c6c789481f5fef633332553b9c1868331",
+     "hash": "sha256:ec671d49edbb94927209b66a4b6663bb37a782493c844097caa6f4347b7bb130",
      "type": "greg.genesis.verified"
     },
     {
      "event_id": "8fe86e92-0015-5e96-8e85-2ed9c7349f9b",
      "seq": 276,
-     "hash": "sha256:c44adb1b9e6e66891c51d34d603da3696bc40f8d434acde0ea50afbe3cdc6afc",
+     "hash": "sha256:4f7e279a1a407b2c4f7eddce4da429abfa43fd9ec16a6f05fcef3ebcb9fc1c1f",
      "type": "greg.genesis.verified"
     }
    ],
@@ -248,31 +248,31 @@
     {
      "event_id": "65d78a3a-d794-583b-aa59-c32f535c3471",
      "seq": 258,
-     "hash": "sha256:c2b8f6469d77852f4e832944ff83c42ab4f1b33190c197e83cab2f6246821167",
+     "hash": "sha256:81cdef6377600d9b68012ba209eb74058d4b9ec50cef8ee25070efc74d942e51",
      "type": "greg.decision.requested"
     },
     {
      "event_id": "ef152b90-8469-5a65-a916-acd62d84700a",
      "seq": 280,
-     "hash": "sha256:26f0ce795e0aa453fbaf13b6668ec11c652bc0a48f0e5e63884e9be191a9f978",
+     "hash": "sha256:f585a1be907e54094dbbd1066f247f2ab6bafb0e742d492fe64372ab64a1456e",
      "type": "greg.decision.requested"
     },
     {
-     "event_id": "87bccbb7-43f7-5623-b6b9-f17549d7c767",
+     "event_id": "a7bc657d-9001-5987-9f6a-3f14328d3df0",
      "seq": 260,
-     "hash": "sha256:fd0b384654d5fc2b45149beb36a95b8d7863f82f40f610a280146ba179813866",
+     "hash": "sha256:ab1d48ef2e626ee599438eeeb393ca40c734a8ece307457fb812bc627c862136",
      "type": "greg.command.rejected"
     },
     {
-     "event_id": "4a689769-0122-5a89-9aa2-84505a97d4fc",
+     "event_id": "04a80a70-759f-55b0-ab96-20aa66baeb8e",
      "seq": 267,
-     "hash": "sha256:bb97016b6690225fd87065769377e7b3fd0a0279a29cf28aec6e14db86efc4f4",
+     "hash": "sha256:6124e123fad1c521959e5264de6cbcc0b0c9f61a3da1fb75b780457bef1aa4b7",
      "type": "greg.capability.state"
     },
     {
-     "event_id": "a5a04ed8-3a80-53fb-89a5-e398a874f030",
+     "event_id": "b91e9c68-64ca-520b-a7fc-d1b8b189efe3",
      "seq": 282,
-     "hash": "sha256:e1483d6c7a10f95b8ca3b22dd1094dff7d4668b5538ac41280bd18302629b067",
+     "hash": "sha256:0eca71a776c0cf19500831cde636534a45db861b1b54489eedb4f3b5b76ef93d",
      "type": "greg.capability.state"
     }
    ],
@@ -285,27 +285,27 @@
     {
      "event_id": "a6a90812-0055-5fb3-9200-adab5d27899d",
      "seq": 488,
-     "hash": "sha256:50a8913744175056761802f0c5b01322e9f471c78f14c0d32ef294577bb3565b",
+     "hash": "sha256:bcd87ef9cc4176b7ab8715ba53d9a4e73d18c105be9c68332068340fa818b437",
      "type": "greg.mission.action"
     },
     {
-     "event_id": "4c526ed2-a00c-5d60-b713-d3635aa8ee13",
+     "event_id": "82695115-0ffb-521e-95b0-cf2b37ac7d98",
      "seq": 538,
-     "hash": "sha256:13ca3d9946c012f69afa771feffb3418feb8f43318fd507ca25917b03edf9172",
+     "hash": "sha256:530bbe8d19549e4756878eca520290abe32130821d6965ae91869824800818cc",
      "type": "greg.mission.observed"
     }
    ],
    "binding": {
     "param": "context",
     "from_check": "answered",
-    "from_receipt": "sha256:18e778a007d7f57c058c3cd13840d1391cba863b661439283928065a9c47b4c9",
+    "from_receipt": "sha256:e25235d6f68fe53359c61254580ff275127c23fd30da0cf90b2ce6382c1e86e2",
     "field": "result",
     "value_sha256": "sha256:d14951c56e878979c241540885357a085a23b2a0fb41951a57e1b7c8896d61b6"
    },
    "isolation": "bubblewrap",
    "network": "isolated-network-namespace",
    "greg_tests_passed": true,
-   "commit": "5aa17e3a666f04a9d61e7b17e72b59f082a8d631",
+   "commit": "20654aff80c0cc6134feef7239ea55e13a44c42c",
    "status": "SHOWN"
   },
   "9": {
@@ -314,32 +314,32 @@
     {
      "event_id": "75406120-b239-575c-a4d2-95983c378501",
      "seq": 351,
-     "hash": "sha256:0f4c1f5013638f625c2b8318d1ed63877cd4c154386d3b5db4b3dc8345e8aadd",
+     "hash": "sha256:2d1238cc33fb4421b065dacfb3f12cf82fd9ababae4621916633729980e9d21c",
      "type": "greg.mission.action"
     },
     {
-     "event_id": "d7ac96cd-7f93-54f9-8115-f919da6d6f63",
+     "event_id": "31d729b3-6385-5f60-94bb-e8c2f26c54f9",
      "seq": 343,
-     "hash": "sha256:8b5cc3fac7b88cc6ba25730941a1aecfee003f322a2a2f8f8675cf09dd1aade8",
+     "hash": "sha256:ecd175bc714afcbfceab4c321740cfd289c8e878451046d0175dae2ef03fe472",
      "type": "greg.organ.observed"
     },
     {
-     "event_id": "41dc4e03-2822-5db9-b5a2-374742471dc6",
+     "event_id": "85d50852-d214-583d-86f3-b3cf7e0bf5f9",
      "seq": 345,
-     "hash": "sha256:a6bb677518bf65d972c29354b6bc79022562ef507ece70052e28f6bba7c0b1af",
+     "hash": "sha256:c19abb952f0fbb37769743022c04e67af887cdb54aba76f479550883887b434d",
      "type": "greg.organ.observed"
     },
     {
-     "event_id": "4defbf86-a921-53ed-998c-b37fc3f93de6",
+     "event_id": "50676a7b-7220-514d-a36e-c28a2a9aa5ed",
      "seq": 346,
-     "hash": "sha256:095f59f0499e6da1d706cb73fd9a32bbd0141ebf6d81fe8d76a8a9044fa17cfd",
+     "hash": "sha256:c1abbd3edd67a93f472a51e8c0edc9fa40d9d47417a86b07828b57cd21e44f92",
      "type": "greg.organ.appraised"
     }
    ],
    "binding": {
     "param": "seed",
     "from_check": "answered",
-    "from_receipt": "sha256:abdcfbe2d68d1cdae175ec1778acd3692b1dc0a3380ece512e3e7987e2c8d167",
+    "from_receipt": "sha256:830d60ebbfb85ac50d54e76c83519292099b2ced2e5b2e6f56896d7940905429",
     "field": "result",
     "value_sha256": "sha256:1d46dd0f25a115c6a69e5f57a84f5b42ad2fd9eb13f83538f21a01ece0b1716f"
    },
@@ -347,14 +347,14 @@
     "daleobanks": "664ac98c553759ce754bb684cb248225343edd7e",
     "wealthmachine": "26c697e769108375372171c607ed7f45a3eb4661"
    },
-   "packet_id": "9ceeee14-13a5-461c-8602-7f69f8f742d8",
+   "packet_id": "0bad8834-8a2c-418e-98d1-1b63894e4f92",
    "daleobanks_ledger": {
     "idea_intake_chars": 1153,
     "bound_seed_chars": 1153,
-    "idea_refined_opportunity": "9ceeee14-13a5-461c-8602-7f69f8f742d8"
+    "idea_refined_opportunity": "0bad8834-8a2c-418e-98d1-1b63894e4f92"
    },
    "packet_evidence": [
-    "operator thought 88d96dd6-d418-4613-acf9-101c7d3ed2a7",
+    "operator thought 969c536a-97d4-4946-9f0f-bb83090aa43f",
     "Evidence from GREG's certified staffing plan for the docks and the line: {\n \"assignment\": [\n  [\n   \"Ana\",\n   \"Dock2\",\n   2\n  ],\n  [\n   \"Ben\",\n   \"Dock1\",\n   4\n  ],\n  [\n   \"Cy\",\n   \"Line\",\n   2\n  ]\n ],\n \"authority_created\": false,\n \"bottleneck\": {\n  \"capacity\": 6,\n  \"demand\": 7,\n  \"eligible_workers\": [\n   \"Ana\",\n   \"Ben\"\n  ],\n  \"orders\": [\n   \"Dock1\",\n   \"Dock2\"\n  ],\n  \"why\": \"these orders can only be served by these workers, whose whole capacity is short of their demand; no assignment can do better without more capacity for exactly them\"\n },\n \"certificate\": {\n  \"arithmetic\": \"exact integers\",\n  \"checked_by\": \"GREG, from the original problem; shares no code with the engine\",\n  \"kind\": \"deficiency set (generalized Hall/Koenig): staffed equals demand outside U plus capacity of U's eligible workers\"\n },\n \"certified\": true,\n \"composed_of\": [\n  \"staffing-via-maxflow\"\n ],\n \"engine\": \"networkx 3.6.1\",\n \"shortage\": 1,\n \"staffed\": 8,\n \"total_demand\": 9,\n \"unfilled\": {\n  \"Dock2\": 1\n }\n}"
    ],
    "sender_identity_isolated": true,
@@ -376,7 +376,7 @@
     {
      "event_id": "922579fe-e910-546f-a014-9464afb9408f",
      "seq": 424,
-     "hash": "sha256:07389a8f4d4b157d8be6a38f6f171596a421a0df93513a6fc89454ceddb9b8ab",
+     "hash": "sha256:552fd9a24ce05a60119423c7d2d8a7a9c4e9a5f164552dc73a43268e68850781",
      "type": "greg.mission.action"
     }
    ],
@@ -390,37 +390,37 @@
     {
      "event_id": "922579fe-e910-546f-a014-9464afb9408f",
      "seq": 424,
-     "hash": "sha256:07389a8f4d4b157d8be6a38f6f171596a421a0df93513a6fc89454ceddb9b8ab",
+     "hash": "sha256:552fd9a24ce05a60119423c7d2d8a7a9c4e9a5f164552dc73a43268e68850781",
      "type": "greg.mission.action"
     },
     {
      "event_id": "3122db7c-c2b2-59c3-a6c9-e40cdd17fd30",
      "seq": 425,
-     "hash": "sha256:fa8a88cb5e62fff56d3bad863612c7006b20c9e1cff17ce5e11fc1c9cec9c3c4",
+     "hash": "sha256:85187ab37886cf7e7e1ede12fbbeb9d0ee577838c035648b222112aeb7eac66a",
      "type": "greg.mission.action"
     },
     {
      "event_id": "a6a90812-0055-5fb3-9200-adab5d27899d",
      "seq": 488,
-     "hash": "sha256:50a8913744175056761802f0c5b01322e9f471c78f14c0d32ef294577bb3565b",
+     "hash": "sha256:bcd87ef9cc4176b7ab8715ba53d9a4e73d18c105be9c68332068340fa818b437",
      "type": "greg.mission.action"
     },
     {
-     "event_id": "028927ef-91f5-59bd-9536-9ac04b238ffa",
+     "event_id": "8399989b-b462-5438-b59d-b820c28339bc",
      "seq": 121,
-     "hash": "sha256:f27fdd7385015b0079b17c6240ad3db132861c81f0bad39ab66ae699ebe3d12a",
+     "hash": "sha256:33a3ba30b1b5e226fff447e65093d34f975c8e1fcef5a7cee32d616c53202d7e",
      "type": "greg.body.recovered"
     },
     {
-     "event_id": "44ec50f7-471a-5974-aaa1-24ecd9885144",
+     "event_id": "6447d688-f639-52e7-a0d0-206bf579600f",
      "seq": 418,
-     "hash": "sha256:66cbdbb8b284cfbff9b76070d54a15623709316c85e39ac6239d6b93705a09ac",
+     "hash": "sha256:ef261a0d4690f91e0575fdb9b258181fe407d9aa084e710f609647f354badc45",
      "type": "greg.body.recovered"
     },
     {
-     "event_id": "5d470573-5925-5572-a7dc-b54a417ad351",
+     "event_id": "23e7a639-5d85-5dd2-a4a1-8af220b610d0",
      "seq": 552,
-     "hash": "sha256:070be1000964e4533a8591c850ff4c8cfe637be08d3313f95b4469bf640d006c",
+     "hash": "sha256:79fa88f1e7b60636e63935171a7180e9ac1a84b4556d5989272cfb4e6edb0b2e",
      "type": "greg.body.recovered"
     }
    ],
@@ -442,9 +442,9 @@
    "name": "independent appraisal re-derives the closure",
    "events": [
     {
-     "event_id": "26a6836b-9ae4-5e00-a79b-da0066259547",
+     "event_id": "ba3a3df0-25c7-5069-bc5f-89b9167d0f08",
      "seq": 541,
-     "hash": "sha256:0221a8453848cfd87b3eb33a858c100d06556b04241a4126c6a0027d939ed5bb",
+     "hash": "sha256:08aa75d757b6c59308ac147ce60e80b893d568b5de66ec4b4478dd507c33c53d",
      "type": "greg.mission.appraised"
     }
    ],
@@ -474,13 +474,13 @@
     {
      "event_id": "a7d6a0bb-0d11-5bf7-823c-d394552c53ba",
      "seq": 539,
-     "hash": "sha256:897e104a37ebdbc4e9d8dea49823d17e9f59098f4a864dcf3df2ef7ad7f5278b",
+     "hash": "sha256:4bb3e1a7e0d10b4b6f5453a29817cfb654312d862b101eeda72a8a89aa790758",
      "type": "greg.mission.achieved"
     },
     {
-     "event_id": "309d005a-85a9-563d-b264-93758e0989f4",
+     "event_id": "02c211c7-14cc-53f5-9f7b-197df75dbcc0",
      "seq": 542,
-     "hash": "sha256:b698d127dd0ee2ef62b893ad66322c8e662fb1fdf5738e598d737675d29379b5",
+     "hash": "sha256:440db98fb8fe7c58e053524a9fb8d4015ece45558994764d766fee934e688b3b",
      "type": "greg.cognition.settled",
      "mission_id": "m:loop15-staffing",
      "check_id": "answered",
@@ -496,9 +496,9 @@
    "name": "retained evidence changes a later decision",
    "events": [
     {
-     "event_id": "9895df2b-3d7b-50ba-b4ac-e14d7232cdd7",
+     "event_id": "334a131c-553e-5a4a-803f-6aef398c8c12",
      "seq": 570,
-     "hash": "sha256:4a086f035afeae08695a20af878c40ea65830e5edc8706bc27fd78d5dfbd0e0d",
+     "hash": "sha256:89cc4304f22f8ea1b892775f9818f451106770b9e61a99fa1eaf1d0953dede38",
      "type": "greg.mission.appraised"
     }
    ],
@@ -519,13 +519,13 @@
     {
      "event_id": "d903d2f9-a071-57ee-b399-e9438cb39d0e",
      "seq": 553,
-     "hash": "sha256:aa2abcb26114a5bed8d319fef9bb1ab54ff5e5908d5e89e44cbdee264e33801b",
+     "hash": "sha256:35d98b9ac28bfff0a1e37cad84abbcf2b99d105a5f5adc9e60bf666a5738480a",
      "type": "greg.mission.registered"
     },
     {
      "event_id": "d11f481d-e348-5c81-97c2-cdc0b63ca2a4",
      "seq": 568,
-     "hash": "sha256:c0ac0975ce0be10af3316e3ec2e0b548b03c4bbb4054efc0f909c75075ff3ae5",
+     "hash": "sha256:32ede74d67d1eac6136ab8619cd0a3938a38c530f13c4b74b6595f8187118fa3",
      "type": "greg.mission.achieved"
     }
    ],

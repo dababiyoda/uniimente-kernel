@@ -10,17 +10,21 @@ included), never silently replaced by the file's copy.
 from __future__ import annotations
 
 import copy
+import fcntl
 import hashlib
 import json
 import os
 import pickle
+import signal
+import threading
+import time
 from dataclasses import asdict
 
 import pytest
 
 import provenance.ledger as ledger_module
 from events.spine import Event, EventError, EventSpine
-from provenance.ledger import EvidenceLedger, LedgerRecord
+from provenance.ledger import EvidenceLedger, LedgerRecord, ReconciliationRequired
 
 ANCHOR = "sha256:" + "0" * 64
 SRC = "spiffe://uniimente.internal/test"
@@ -673,3 +677,186 @@ def test_an_ordinary_open_failure_propagates_and_is_not_counted_as_another_file(
     monkeypatch.undo()
     led.append("event", {"n": 1})
     assert led.verify_chain()[0]
+
+
+# Fourth independent review of the content anchor (#211): each test fails on the code before its fix.
+
+def test_a_read_finishes_before_an_append_that_adopts_another_file_closes_its_descriptor(tmp_path):
+    """adopt() closed the cached read descriptor while another thread was between _open() and its pread, so the read
+    failed with EBADF or, the number reused, counted a false failure. The read holds the source's lock; the append
+    waits for it."""
+    led, _, path = grown(tmp_path)
+    assert led.records[2].payload                                    # a read descriptor cached on the original file
+    with open(path, "rb") as fh:
+        data = fh.read()
+    with open(path + ".copy", "wb") as fh:
+        fh.write(data)
+    os.replace(path + ".copy", path)                                 # a byte-identical copy: accepted, then adopted
+    src, real_open, seen = led._src, led._src._open, {}
+
+    def opened():
+        fd = real_open()
+        if "append" not in seen:
+            seen["append"] = threading.Thread(target=lambda: seen.update(seq=led.append("event", {"w": 1}).seq),
+                                              daemon=True)
+            seen["append"].start()
+            seen["append"].join(0.5)                                 # the append would close fd here
+            with open(tmp_path / "unrelated.bin", "wb") as fh:
+                fh.write(b"z" * 4096)
+            seen["other"] = os.open(tmp_path / "unrelated.bin", os.O_RDONLY)   # would take the freed number
+        return fd
+    failures = src.failures
+    src._open = opened
+    try:
+        expected = everything_in_memory(path).records[3].payload
+        assert led.records[3].payload == expected
+    finally:
+        del src._open
+        seen["append"].join(10)
+        os.close(seen["other"])
+    assert src.failures == failures and seen["seq"] == len(led.records) - 1
+    assert led.verify_chain()[0]
+
+
+def _hold_lease(path, kind, release_after=0.3):
+    """A child process takes a lease on the file and gives it up ``release_after`` seconds after the kernel asks."""
+    r, w = os.pipe()
+    pid = os.fork()
+    if pid == 0:
+        try:
+            fd = os.open(path, os.O_RDONLY if kind == fcntl.F_RDLCK else os.O_RDWR)
+            signal.signal(signal.SIGIO, lambda *a: (time.sleep(release_after),
+                                                    fcntl.fcntl(fd, fcntl.F_SETLEASE, fcntl.F_UNLCK)))
+            fcntl.fcntl(fd, fcntl.F_SETLEASE, kind)
+            os.write(w, b"1")
+            time.sleep(5)
+        finally:
+            os._exit(0)
+    os.close(w)
+    ready = os.read(r, 1)
+    os.close(r)
+    if ready != b"1":
+        os.waitpid(pid, 0)
+        pytest.skip("leases unavailable here")
+    return pid
+
+
+@pytest.mark.skipif(not hasattr(fcntl, "F_SETLEASE"), reason="Linux leases")
+def test_an_append_waits_out_a_lease_break_instead_of_refusing(tmp_path):
+    """An NFSv4 delegation, a Samba oplock or any F_SETLEASE holder makes a non-blocking open fail with EWOULDBLOCK
+    while the kernel breaks the lease. That is not another history: wait for the break, as a blocking open does."""
+    path = str(tmp_path / "l.jsonl")
+    led = EvidenceLedger(ANCHOR, path)
+    led.append("event", {"i": 0})
+    led._src.close()                                                  # no descriptor of ours keeps a read lease off
+    pid = _hold_lease(path, fcntl.F_RDLCK)
+    try:
+        assert led.append("event", {"i": 1}).seq == 2 and led._src.failures == 0
+    finally:
+        os.kill(pid, signal.SIGKILL)
+        os.waitpid(pid, 0)
+    assert led.verify_chain()[0]
+
+
+@pytest.mark.skipif(not hasattr(fcntl, "F_SETLEASE"), reason="Linux leases")
+def test_an_observer_open_waits_out_a_lease_break(tmp_path):
+    path = str(tmp_path / "l.jsonl")
+    EvidenceLedger(ANCHOR, path).close()
+    pid = _hold_lease(path, fcntl.F_WRLCK)
+    try:
+        assert EvidenceLedger(ANCHOR, path, read_only=True, tail="ignore").verify_chain()[0]
+    finally:
+        os.kill(pid, signal.SIGKILL)
+        os.waitpid(pid, 0)
+
+
+def test_history_assigned_to_a_file_backed_writer_is_never_appended_onto_its_file(tmp_path):
+    """The file still ends with its own last line, so the anchor alone accepted an append after an earlier snapshot
+    or another valid history was assigned; the line written forked the file, found only at the next open."""
+    led, _, path = grown(tmp_path)
+    full = list(led.records)
+    led.records = full[:5]
+    for record_type in ("event", "witness"):
+        with pytest.raises(ValueError, match="appending would fork it"):
+            led.append(record_type, {"after": "assign"})
+    led.records = full                                                # its own history again: appends continue
+    led.append("event", {"after": "restore"})
+    led.close()
+    assert len(everything_in_memory(path).records) == len(full) + 1
+
+
+def test_bytes_another_writer_appends_after_the_check_are_never_followed_by_ours(tmp_path, monkeypatch):
+    """A writer that ignores the lock appends between the anchor check and our write: nothing of ours is written
+    and the refusal is definite (the next append is refused by the anchor, not left uncertain)."""
+    led, _, path = grown(tmp_path)
+    head, intruder = led.head, b'{"intruder": 1}\n'
+    with open(path, "rb") as fh:
+        before = fh.read()
+    real = led._holds
+
+    def check_then_intrude(fd, *, exact):
+        result = real(fd, exact=exact)
+        if exact:
+            with open(path, "ab") as fh:
+                fh.write(intruder)
+        return result
+    monkeypatch.setattr(led, "_holds", check_then_intrude)
+    with pytest.raises(ValueError, match=NOT_OURS):
+        led.append("witness", {"w": 1})
+    with open(path, "rb") as fh:
+        assert fh.read() == before + intruder and led.head == head
+
+
+def test_bytes_another_writer_appends_during_the_write_leave_the_append_uncertain(tmp_path, monkeypatch):
+    """Bytes landing around ours after the offset check: the file is not this history plus our line, so the
+    append is reported uncertain, never acknowledged."""
+    led, _, path = grown(tmp_path)
+    real, done = os.fsync, []
+
+    def fsync(fd):
+        if not done:
+            done.append(fd)
+            with open(path, "ab") as fh:
+                fh.write(b'{"intruder": 1}\n')
+        return real(fd)
+    monkeypatch.setattr(ledger_module.os, "fsync", fsync)
+    with pytest.raises(ReconciliationRequired):
+        led.append("witness", {"w": 1})
+    monkeypatch.undo()
+    with pytest.raises(ReconciliationRequired, match="uncertain"):
+        led.append("event", {"n": 1})
+
+
+def test_a_fifo_or_device_at_the_writer_lock_is_refused_without_blocking(tmp_path):
+    path = str(tmp_path / "l.jsonl")
+    os.mkfifo(path + ".lock")
+    box = _in_thread(lambda: EvidenceLedger(ANCHOR, path))
+    assert isinstance(box.get("error"), ValueError) and "writer lock" in str(box["error"])
+    os.unlink(path + ".lock")
+    os.symlink(os.devnull, path + ".lock")
+    box = _in_thread(lambda: EvidenceLedger(ANCHOR, path))
+    assert isinstance(box.get("error"), ValueError) and "not a regular file" in str(box["error"])
+    assert not os.path.exists(path)
+
+
+def test_a_fifo_at_the_quarantine_sidecar_name_is_refused_without_blocking(tmp_path):
+    led, _, path = grown(tmp_path)
+    led.close()
+    torn = b'{"seq": 81, "ts_utc": "2026-09-26T00:00:00Z", "record_type": "ev'
+    with open(path, "ab") as fh:
+        fh.write(torn)
+    os.mkfifo(f"{path}.unacknowledged-{hashlib.sha256(torn).hexdigest()[:16]}")
+    box = _in_thread(lambda: EvidenceLedger(ANCHOR, path, resident=4, tail="quarantine"))
+    assert isinstance(box.get("error"), ValueError) and "a different quarantined tail" in str(box["error"])
+    with open(path, "rb") as fh:
+        assert fh.read().endswith(torn)                              # nothing truncated
+
+
+def test_a_writers_verification_reports_bytes_appended_past_its_history(tmp_path):
+    """A writer's file is exactly its history: bytes another process appended are reported by explicit verification
+    itself, not left for the next append to find."""
+    led, _, path = grown(tmp_path)
+    with open(path, "ab") as fh:
+        fh.write(b'{"intruder": 1}\n')
+    ok, reason = led.verify_chain()
+    assert not ok and NOT_OURS in reason

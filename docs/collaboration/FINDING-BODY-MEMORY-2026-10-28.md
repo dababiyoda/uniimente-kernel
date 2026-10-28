@@ -88,6 +88,11 @@ simulated clock, 1,800 ticks (`scripts/measure_body_memory.py`; Python 3.11.17, 
 | In-memory alteration of retained history | found by explicit verification, the next Commit Witness, and the hot path within 300 s | the same, for resident payloads and for everything that stays of dropped history |
 | Bytes changed in the file after open | invisible until reopen | refused at the first read of a changed line and by any explicit `verify_chain()`; then every append refuses, the witness included |
 | Ledger file deleted, replaced or moved under a running body | invisible until reopen; an append to a deleted path created a new one-line history, and one to a replaced path forked it | every append refuses, the witness included, unless the file at the path ends with this ledger's last line (a byte-identical copy continues the history); a deleted path is never recreated; explicit `verify_chain()` checks the same, for small ledgers too |
+| Another writer appends while an append runs (ignoring the lock) | its bytes accepted, ours written after them | refused before our write if they landed after the check; reported uncertain if they land around it |
+| History assigned to a file-backed writer | appends wrote a forked line into the file | appends refused until the history in memory again ends with the file's last record |
+| A FIFO at the ledger, its lock or the quarantine sidecar name | the writer hung | refused without blocking |
+| A lease held on the ledger file | a blocking open waited for its break | the same wait, at most the kernel's lease-break-time plus one second |
+| Body home on a shared or network folder (9p, virtio-fs, FUSE, NFS, SMB) | accepted | refused by the installer (exit 15) and by `greg init`: the ledger's checks see only Linux's cached copy there |
 | Tampered file at open | refused | refused |
 | Commit Witness cost | re-hash every retained record (about 9 µs each) | re-hash the 1,024 resident records, plus about 1 µs per dropped record for the running digest |
 
@@ -210,8 +215,36 @@ A byte-identical copy put in place is accepted: appending to it continues the sa
 a changed line, refused when read and by explicit verification, as in-place tampering always was. Each case has a
 test that fails on `8e986839` or `7d20cd81`. Only errors meaning the path no longer names a regular file (`ENOENT`,
 `ENOTDIR`, `EISDIR`, `ELOOP`, `ENXIO`) are refused as another history. Any other open error propagates as it always did:
-the full suite caught `135cc590` reporting a plain `OSError` as another history. 24 dropped-payload mutants pin the
-safeguards, all caught.
+the full suite caught `135cc590` reporting a plain `OSError` as another history.
+
+A fourth review of the content anchor (`135cc590`), with every finding re-checked by a separate skeptic, confirmed six
+defects and refuted one:
+- **A read raced an append that closes its descriptor (medium, a regression).** With a byte-identical copy put in
+  place, an append adopted the copy and closed the cached read descriptor while another thread was between opening it
+  and reading. The read failed with `EBADF`, or, the number reused, counted a false failure. A read now holds the read
+  source's lock, so the append waits for it.
+- **A lease made opens fail (low, a regression).** `O_NONBLOCK` turns the break of an NFSv4 delegation, a Samba oplock
+  or any `F_SETLEASE` lease into `EWOULDBLOCK`. Opens now wait for the break, at most the kernel's `lease-break-time`
+  plus one second, as a blocking open does.
+- **Assigned history forked the file (low).** After `ledger.records = ...` on a file-backed writer, the file still
+  ended with its own last line, so the next append wrote a forked line. An append now refuses unless the history in
+  memory ends with the record the file ends with.
+- **Bytes another writer appended were accepted (low).** A process ignoring the lock could append between the check
+  and the write. The append now refuses before writing when the file grew after the check. It reports the append
+  uncertain when, after the write, the file is not exactly the checked history plus the new line.
+- **A FIFO at the writer lock or at the quarantine sidecar name hung the writer (low).** Both now open without
+  blocking. A lock that is not a regular file is refused, and so is a sidecar name that is not a regular file holding
+  exactly the torn bytes.
+- **A cached shared folder can hide a replacement (low).** On 9p, virtio-fs and other FUSE filesystems, NFS and SMB,
+  Linux may keep serving its cached copy after the other side replaces or deletes the file, so appends can be
+  acknowledged into an unlinked file. No check inside the ledger sees past that cache. The installer now stops with
+  exit 15, and `greg init` refuses, when the body home is on such a filesystem; the runbook says why.
+- **Refuted:** a crafted file with the same last line but a different middle. It behaves exactly like an in-place
+  edit, which every version allows and the next open finds; putting the bytes back recovers.
+
+Each fix has a test that fails without it. The new offset check made the anchor's exact-size check redundant on the
+append path, so that mutant survived; a new test pins that a writer's explicit verification reports bytes appended
+past its history. 32 dropped-payload mutants pin the safeguards, all caught.
 
 ## Next measured limit (not changed here; each needs a decision)
 

@@ -52,6 +52,11 @@ and accepted designation. It rewrites the command wrapper and default service
 configuration; review any customized service before rerunning. Then skip to step
 2. The manual steps below do the same thing by hand.
 
+Keep the body home inside Linux files (the default is `~/.uniimente/greg`), never in a folder shared with ChromeOS
+(`/mnt/chromeos`) or on a network drive. There, Linux can keep using its cached copy of the evidence ledger after
+the other side replaces or deletes the file, so recorded evidence could vanish without notice. The installer stops
+with code 15 when `--home` or `GREG_HOME` points at such a folder.
+
 The installer derives the public key from your actual signing key and checks it
 against any companion `.pub` file and the body's current enrollment. A mismatch
 stops before service installation or designation; it keeps existing keys and

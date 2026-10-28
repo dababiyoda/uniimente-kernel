@@ -79,6 +79,19 @@ def test_it_refuses_to_pretend_another_linux_is_the_chromebook(tmp_path):
     assert not (tmp_path / "body").exists() and not (tmp_path / "founder.pem").exists()
 
 
+@pytest.mark.parametrize("magic, name", [("1021997", "v9fs"), ("65735546", "fuseblk"), ("6969", "nfs")])
+def test_it_refuses_a_body_home_on_a_shared_or_network_folder(tmp_path, magic, name):
+    (tmp_path / "bin").mkdir()
+    shim = tmp_path / "bin/stat"                                                  # the home's filesystem, as stat reports it
+    shim.write_text(f'#!/bin/sh\ncase "$*" in *%t*) echo {magic} ;; *%T*) echo {name} ;; '
+                    f'*) exec {shutil.which("stat")} "$@" ;; esac\n')
+    shim.chmod(0o755)
+    out = run(dev_args(tmp_path), tmp_path)
+    assert out.returncode == 15, out.stdout[-2000:] + out.stderr[-2000:]
+    assert "shared or network filesystem" in out.stderr and name in out.stderr and "inside Linux files" in out.stderr
+    assert not (tmp_path / "body").exists() and not (tmp_path / "founder.pem").exists()
+
+
 def test_it_stops_with_the_fix_when_no_python_311_exists(tmp_path):
     fake_bin = tmp_path / "fakebin"
     fake_bin.mkdir()

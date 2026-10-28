@@ -287,8 +287,8 @@ DROPPED_PAYLOAD_MUTANTS = [
     ("an append writes onto a file that no longer holds this history", "provenance/ledger.py",
      "                ok, why = self._holds(fh.fileno(), exact=True)", "                ok, why = True, ''"),
     ("an append recreates a deleted ledger file", "provenance/ledger.py",
-     "    return os.open(path, (flags & ~(os.O_CREAT | os.O_WRONLY)) | os.O_RDWR | _NONBLOCK)",
-     "    return os.open(path, (flags & ~os.O_WRONLY) | os.O_RDWR | _NONBLOCK)"),
+     "    return _open_nb(path, (flags & ~(os.O_CREAT | os.O_WRONLY)) | os.O_RDWR)",
+     "    return _open_nb(path, (flags & ~os.O_WRONLY) | os.O_RDWR)"),
     ("the anchor accepts a file that runs past this history's end", "provenance/ledger.py",
      "        if st.st_size < end or (exact and st.st_size != end):", "        if st.st_size < end:"),
     ("the anchor accepts a file ending in another line", "provenance/ledger.py",
@@ -300,7 +300,7 @@ DROPPED_PAYLOAD_MUTANTS = [
     ("reads stay on a file the path no longer names", "provenance/ledger.py",
      "                self._src.adopt(fh.fileno())", "                pass"),
     ("a read blocks on a FIFO put in place", "provenance/ledger.py",
-     "            fd = os.open(self.path, os.O_RDONLY | _NONBLOCK | _CLOEXEC)\n        except OSError as exc:\n"
+     "            fd = _open_nb(self.path, os.O_RDONLY | _CLOEXEC)\n        except OSError as exc:\n"
      "            if exc.errno not in _GONE:\n                raise\n            self.note_failure()",
      "            fd = os.open(self.path, os.O_RDONLY | _CLOEXEC)\n        except OSError as exc:\n"
      "            if exc.errno not in _GONE:\n                raise\n            self.note_failure()"),
@@ -326,6 +326,27 @@ DROPPED_PAYLOAD_MUTANTS = [
      "rec.hash_version, rec._off, rec._len)))", "rec.hash_version, rec._off)))"),
     ("explicit verification skips a dropped record's header", "provenance/ledger.py",
      "                disk.hash_version) != rec._header():", "                disk.hash_version) != rec._header() and False:"),
+    # Fourth independent review of the content anchor (#211).
+    ("a read races an append that closes its descriptor", "provenance/ledger.py",
+     "        with self._lock:\n            data = os.pread(self._open(), size, off)",
+     "        if True:\n            data = os.pread(self._open(), size, off)"),
+    ("a lease break is refused instead of waited out", "provenance/ledger.py",
+     "                deadline = now + _lease_break_seconds() + 1.0", "                deadline = now"),
+    ("history assigned to a writer is appended onto its file", "provenance/ledger.py",
+     "            if prev != self._file_head:", "            if False:"),
+    ("bytes appended after the check are followed by ours", "provenance/ledger.py",
+     "                    if self._last_line is not None and offset != sum(self._last_line[:2]):",
+     "                    if False:"),
+    ("bytes appended around ours are acknowledged", "provenance/ledger.py",
+     "                    if os.fstat(fh.fileno()).st_size != offset + len(line):", "                    if False:"),
+    ("the writer blocks on a FIFO at its lock", "provenance/ledger.py",
+     "os.O_WRONLY | os.O_CREAT | os.O_APPEND | _NONBLOCK | _CLOEXEC, 0o666)",
+     "os.O_WRONLY | os.O_CREAT | os.O_APPEND | _CLOEXEC, 0o666)"),
+    ("the writer locks what is not a regular file", "provenance/ledger.py",
+     "            if not stat.S_ISREG(os.fstat(lfd).st_mode):", "            if False:"),
+    ("quarantine blocks on a FIFO at the sidecar name", "provenance/ledger.py",
+     "                    have = os.open(sidecar, os.O_RDONLY | _NONBLOCK | _CLOEXEC)",
+     "                    have = os.open(sidecar, os.O_RDONLY | _CLOEXEC)"),
 ]
 
 # 2026-10-14 installed-body merge (#137 verifier): a test-key closure is structural evidence, never the founder's path.

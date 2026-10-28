@@ -80,6 +80,16 @@ done
 step() { printf '\n== %s\n' "$*"; }
 fail() { printf 'STOP: %s\n' "$*" >&2; exit "${2:-1}"; }
 
+# The body's evidence ledger must live where this machine's view of its file is the file. On a shared or network
+# folder (ChromeOS's /mnt/chromeos is 9p or virtio-fs; also NFS and SMB) Linux can keep using its cached copy after
+# the other side replaces or deletes the file, so evidence GREG recorded could vanish without notice.
+FS_DIR="$GREG_HOME_DIR"
+while [ ! -e "$FS_DIR" ]; do FS_DIR="$(dirname "$FS_DIR")"; done
+case "$(stat -f -c %t "$FS_DIR" 2>/dev/null || true)" in
+  1021997|65735546|6969|517b|ff534d42|fe534d42)
+    fail "The body home $GREG_HOME_DIR is on a shared or network filesystem ($(stat -f -c %T "$FS_DIR" 2>/dev/null || true)). Keep it inside Linux files, as the default ~/.uniimente/greg is." 15 ;;
+esac
+
 step "1/8 This is ChromeOS Linux"
 [ "$(uname -s)" = "Linux" ] || fail "GREG Body 1 runs inside ChromeOS's Linux environment (Settings > About ChromeOS > Developers)." 10
 if [ -e /dev/.cros_milestone ] || [ -d /opt/google/cros-containers ]; then

@@ -296,3 +296,22 @@ def test_a_launch_that_fails_inside_the_envelope_is_never_reported_as_supervised
     assert summary["status"] == "FAILED" and "BlockingIOError" in summary["worker"]["error"]
     assert summary["worker"]["isolation"]["filesystem"] == "os-confined"
     assert summary["worker"]["supervision"] is None
+
+
+@pytest.mark.parametrize("fstype", ["9p", "virtiofs", "fuse.sshfs", "nfs4", "cifs"])
+def test_init_refuses_a_body_home_on_a_shared_or_network_folder(tmp_path, monkeypatch, fstype):
+    """The manual install path (greg init) refuses what the installer refuses (exit 15): a home whose filesystem may
+    keep serving a cached file after the other side replaced or deleted it."""
+    from greg import body as body_mod
+    shared = tmp_path / "shared folder"
+    shared.mkdir()
+    escaped = str(shared).replace(" ", "\\040")
+    info = tmp_path / "mountinfo"
+    info.write_text("22 1 8:1 / / rw,relatime - ext4 /dev/sda1 rw\n"
+                    f"90 22 0:50 / {escaped} rw,relatime - {fstype} share rw\n")
+    monkeypatch.setattr(body_mod, "_MOUNTINFO", str(info))
+    with pytest.raises(body_mod.BodyError, match="shared or network filesystem"):
+        init_body(shared / "greg", read_roots=[str(tmp_path)])
+    assert not (shared / "greg").exists()
+    assert body_mod.shared_filesystem(tmp_path / "elsewhere") is None            # outside the share: ext4, accepted
+    init_body(tmp_path / "body", read_roots=[str(tmp_path)])                       # and a body is created there

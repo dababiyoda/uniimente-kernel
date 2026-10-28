@@ -83,9 +83,11 @@ here; this file does not repeat it.
 ## 31. Exact code changes
 
 `provenance/ledger.py`, `events/spine.py`, `greg/chromebook/install.sh`, `greg/doctor.py`,
-`greg/CHROMEBOOK_FIRST_MISSION.md`, `scripts/measure_body_memory.py` (new), `scripts/ci/check_cortex_mutants.py`
-(one stale mutant repaired, 24 ledger mutants added),
-`tests/unit/test_ledger_dropped_payloads.py` (new, 35 tests), `tests/unit/test_greg_chromebook_install.py` (+2),
+`greg/CHROMEBOOK_FIRST_MISSION.md`, `greg/body.py` (`greg init` refuses a shared or network home),
+`scripts/measure_body_memory.py` (new), `scripts/ci/check_cortex_mutants.py`
+(one stale mutant repaired, 32 ledger mutants added),
+`tests/unit/test_ledger_dropped_payloads.py` (new, 65 tests), `tests/unit/test_greg_chromebook_install.py` (+5),
+`tests/unit/test_greg_worker_confinement_setting.py` (+5),
 `docs/collaboration/FINDING-BODY-MEMORY-2026-10-28.md`, `docs/collaboration/deliberation-bounded-body-memory-20261028.json`,
 `docs/evidence/body-memory-2026-10-28/`, this file.
 
@@ -110,6 +112,13 @@ Exact commands, the review and the measurements are in the PR #211 receipt. Cano
   - exceptions after fsync;
   - a race that erased the tamper signal;
   - shared payload objects.
+- **Two later fixes were themselves wrong**, each found by a further review and replaced:
+  - the replaced-file check ran only after a first old-payload read;
+  - the (device, inode) binding that replaced it forked onto reused inode numbers and refused a body's own
+    renumbered file.
+- **The content anchor's first version reported every open error as another history** (caught by the full suite)
+  and had six smaller defects found by a fourth review (`FINDING-BODY-MEMORY-2026-10-28.md`).
+- **The ledger cannot see past a shared folder's cache;** the installer and `greg init` refuse such a home instead.
 - **Memory still grows by about 1.4 KB per record.**
 - **Whole-history spine replays read old events from the file:** about 2.3× the old cost per event.
 - **`malloc_trim` reclaims nothing material.**

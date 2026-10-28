@@ -25,6 +25,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import secrets
 import shutil
 import signal
@@ -284,6 +285,37 @@ def _private_write(path: Path, data: bytes):
         fh.write(data)
 
 
+# Filesystems on which Linux may keep serving its cached view of a file after another machine replaces or deletes it:
+# 9p and virtio-fs (a FUSE filesystem; ChromeOS shares /mnt/chromeos over one of them), any FUSE, NFS and SMB. The
+# evidence ledger checks only that cached view there, so recorded evidence could vanish without notice.
+# greg/chromebook/install.sh refuses the same filesystems by their statfs magic.
+_SHARED_FILESYSTEMS = ("9p", "virtiofs", "fuse", "nfs", "cifs", "smb")
+_MOUNTINFO = "/proc/self/mountinfo"
+
+
+def shared_filesystem(path: str | Path) -> str | None:
+    """The type of the shared or network filesystem holding ``path`` (or the nearest ancestor that exists), else None."""
+    p = Path(path).expanduser().absolute()
+    while not p.exists() and p != p.parent:
+        p = p.parent
+    where = str(p.resolve())
+    try:
+        lines = Path(_MOUNTINFO).read_text().splitlines()
+    except OSError:
+        return None
+    found, longest = None, -1
+    for line in lines:
+        left, sep, right = line.partition(" - ")
+        fields = left.split()
+        if not sep or len(fields) < 5 or not right.split():
+            continue
+        mount = re.sub(r"\\([0-7]{3})", lambda m: chr(int(m.group(1), 8)), fields[4])   # mountinfo escapes as \040
+        if mount == "/" or where == mount or where.startswith(mount.rstrip("/") + "/"):
+            if len(mount) >= longest:                       # the innermost mount; a later one over the same point wins
+                found, longest = right.split()[0], len(mount)
+    return found if found and found.startswith(_SHARED_FILESYSTEMS) else None
+
+
 def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Path | None = None,
               local_model: str | None = None, confined_egress: bool = False,
               worker_confinement: str = "required") -> dict:
@@ -299,6 +331,9 @@ def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Pa
     layout = Layout(home)
     if layout.config.exists():
         raise BodyError(f"a body already exists at {layout.home}")
+    if (shared := shared_filesystem(layout.home)) is not None:
+        raise BodyError(f"the body home {layout.home} is on a shared or network filesystem ({shared}); keep it inside "
+                        "Linux files, as the default ~/.uniimente/greg is")
     for d in (layout.home, layout.inbox, layout.processed, layout.rejected, layout.outbox, layout.workspace):
         d.mkdir(parents=True, exist_ok=True)
     os.chmod(layout.home, 0o700)

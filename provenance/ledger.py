@@ -104,10 +104,37 @@ _NONBLOCK = getattr(os, "O_NONBLOCK", 0)
 _GONE = frozenset({errno.ENOENT, errno.ENOTDIR, errno.EISDIR, errno.ELOOP, errno.ENXIO})
 
 
+def _lease_break_seconds() -> float:
+    try:
+        with open("/proc/sys/fs/lease-break-time", "rb") as fh:
+            return float(fh.read())
+    except (OSError, ValueError):
+        return 45.0     # the Linux default
+
+
+def _open_nb(path: str, flags: int) -> int:
+    """os.open with O_NONBLOCK, so what is not a regular file (a FIFO put at the path) never hangs it. On a regular
+    file the open fails with EWOULDBLOCK only while it breaks another process's lease (an NFSv4 server's delegation, a
+    Samba oplock, any F_SETLEASE holder), which a blocking open would wait out: so wait it out here, at most the
+    kernel's lease-break-time, after which the kernel itself removes the lease."""
+    deadline, delay = None, 0.005
+    while True:
+        try:
+            return os.open(path, flags | _NONBLOCK)
+        except BlockingIOError:
+            now = time.monotonic()
+            if deadline is None:
+                deadline = now + _lease_break_seconds() + 1.0
+            elif now >= deadline:
+                raise
+            time.sleep(delay)
+            delay = min(delay * 2, 0.1)
+
+
 def _existing(path: str, flags: int) -> int:
     """Open ``path`` for reading and appending, never creating it (appending to a new file at a ledger's path would
     fork history) and never blocking on what is not a regular file (a FIFO put in its place)."""
-    return os.open(path, (flags & ~(os.O_CREAT | os.O_WRONLY)) | os.O_RDWR | _NONBLOCK)
+    return _open_nb(path, (flags & ~(os.O_CREAT | os.O_WRONLY)) | os.O_RDWR)
 
 
 class _LineSource:
@@ -142,7 +169,7 @@ class _LineSource:
                 return self._fd
         # Any file may serve a read: every line read is held to the digest of the bytes verified.
         try:
-            fd = os.open(self.path, os.O_RDONLY | _NONBLOCK | _CLOEXEC)
+            fd = _open_nb(self.path, os.O_RDONLY | _CLOEXEC)
         except OSError as exc:
             if exc.errno not in _GONE:
                 raise
@@ -177,7 +204,10 @@ class _LineSource:
         off, size, digest = rec._off, rec._len, rec._digest
         if type(off) is not int or type(size) is not int or type(digest) is not bytes or off < 0 or size < 1:
             self._refuse(rec, "its line pointer was altered in memory")
-        data = os.pread(self._open(), size, off)
+        # Under the lock: adopt() and close() close the cached descriptor, and one closed between _open() and the
+        # pread would fail it (EBADF) or, its number reused, read another file. They wait for this read instead.
+        with self._lock:
+            data = os.pread(self._open(), size, off)
         if len(data) != size or hashlib.sha256(data).digest() != digest:
             self._refuse(rec, "the retained line changed on disk")
         return data
@@ -370,6 +400,9 @@ class EvidenceLedger:
         # (offset, length, SHA-256) of the last line of this ledger's history in its file. The file at the path is
         # this ledger's only while it still ends there with that line; appending anywhere else forks history.
         self._last_line: tuple[int, int, bytes] | None = None
+        # The hash of the record that line holds. Appending onto any other head (history assigned to this ledger)
+        # would put a forked line in the file.
+        self._file_head: str | None = None
         if tail not in TAIL_POLICIES:
             raise ValueError(f'unknown tail policy {tail!r}')
         if tail == "quarantine" and read_only:
@@ -378,7 +411,19 @@ class EvidenceLedger:
         if not isinstance(constitution_hash, str) or not constitution_hash.strip():
             raise ValueError('expected constitutional anchor is required')
         if path and not read_only:
-            self._writer = open(path + '.lock', 'a')
+            # Never block on what is not a regular file (a FIFO put at the lock's name): O_NONBLOCK, then refuse it.
+            try:
+                lfd = os.open(path + '.lock', os.O_WRONLY | os.O_CREAT | os.O_APPEND | _NONBLOCK | _CLOEXEC, 0o666)
+            except OSError as exc:
+                if exc.errno != errno.ENXIO:
+                    raise
+                self.close()
+                raise ValueError(f'the writer lock {path}.lock cannot be opened: {exc.strerror}') from None
+            if not stat.S_ISREG(os.fstat(lfd).st_mode):
+                os.close(lfd)
+                self.close()
+                raise ValueError(f'the writer lock {path}.lock is not a regular file')
+            self._writer = os.fdopen(lfd, 'a')
             try:
                 fcntl.flock(self._writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except OSError as exc:
@@ -407,6 +452,7 @@ class EvidenceLedger:
                     fh.flush()
                     os.fsync(fh.fileno())
                 self._last_line = (0, len(line), hashlib.sha256(line).digest())
+                self._file_head = self._records[0].hash
             if expected_head and self.head != expected_head:
                 raise ValueError('history differs from expected head: truncation or fork')
             if self.unacknowledged_tail and self._tail_policy == "quarantine":
@@ -433,9 +479,19 @@ class EvidenceLedger:
             try:
                 side = os.open(sidecar, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
             except FileExistsError:
-                with open(sidecar, "rb") as fh:
-                    if fh.read() != data:
-                        raise ValueError('a different quarantined tail already uses this name')
+                # Never block or read without bound: the existing name must be a regular file of exactly these bytes.
+                try:
+                    have = os.open(sidecar, os.O_RDONLY | _NONBLOCK | _CLOEXEC)
+                except OSError:
+                    have = None
+                same = False
+                if have is not None:
+                    with os.fdopen(have, "rb") as fh:
+                        st = os.fstat(fh.fileno())
+                        same = (stat.S_ISREG(st.st_mode) and st.st_size == len(data)
+                                and fh.read(len(data) + 1) == data)
+                if not same:
+                    raise ValueError('a different quarantined tail already uses this name')
             else:
                 with os.fdopen(side, "wb") as fh:
                     fh.write(data)
@@ -515,6 +571,9 @@ class EvidenceLedger:
         h = sha256_json(body)
         rec = LedgerRecord(seq, ts, record_type, payload, prev, h, corrects, 2)
         if self.path:
+            if prev != self._file_head:
+                raise ValueError(f"the history in memory is not the history in the ledger file at {self.path}; "
+                                 "appending would fork it")
             # The same bytes as before (json.dumps output is ASCII), written in binary to know where they land.
             # The retained form is built before the write, so nothing that can fail is left for after it.
             line = _line_bytes(rec, payload)
@@ -534,14 +593,20 @@ class EvidenceLedger:
                 self._src.adopt(fh.fileno())
                 try:
                     offset = fh.seek(0, os.SEEK_END)
+                    if self._last_line is not None and offset != sum(self._last_line[:2]):
+                        # Another writer appended after the check; nothing of ours is written: a definite refusal.
+                        raise self._not_ours(f"it grew to {offset} bytes after it was checked")
                     fh.write(line)
                     fh.flush()
                     os.fsync(fh.fileno())
+                    if os.fstat(fh.fileno()).st_size != offset + len(line):
+                        raise OSError("the ledger file changed size during the append")   # around ours: uncertain
                 except OSError as exc:
                     self._uncertain = True
                     raise ReconciliationRequired('append acknowledgment lost') from exc
             rec._off = offset
             self._last_line = (offset, len(line), rec._digest)
+            self._file_head = rec.hash
         try:
             self._records.append(rec)
             if self._verified == seq:
@@ -579,7 +644,7 @@ class EvidenceLedger:
     def _check_path(self) -> tuple[bool, str]:
         """Whether the file the path names now holds this ledger's history; reads go to it from then on."""
         try:
-            fd = os.open(self.path, os.O_RDONLY | _NONBLOCK | _CLOEXEC)
+            fd = _open_nb(self.path, os.O_RDONLY | _CLOEXEC)
         except OSError as exc:
             if exc.errno not in _GONE:
                 return False, f"the ledger file at {self.path} cannot be opened ({exc.strerror})"
@@ -901,7 +966,7 @@ class EvidenceLedger:
         from adapters.contract_validation import strict_json
         # One descriptor for all of it: the size, the complete end, a torn tail and every line come from one file
         # even if the path is swapped meanwhile, and the line it ends with is the one appends will hold it to.
-        with open(path, "rb", opener=lambda p, f: os.open(p, f | _NONBLOCK)) as fh:
+        with open(path, "rb", opener=_open_nb) as fh:
             st = os.fstat(fh.fileno())
             if not stat.S_ISREG(st.st_mode):
                 raise ValueError(f'ledger at {path} is not a regular file')
@@ -938,6 +1003,7 @@ class EvidenceLedger:
                 last = (offset, len(chunk), hashlib.sha256(chunk).digest())
                 offset += len(chunk)
         self._last_line = last
+        self._file_head = self._records[-1].hash if self._records else None
         if self.unacknowledged_tail and self._tail_policy == "ignore":
             self.unacknowledged_tail.pop("_bytes")
         if failure is None and not self._records:

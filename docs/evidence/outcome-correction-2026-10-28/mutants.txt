@@ -1,4 +1,4 @@
-Safeguard mutants of the evidence-repair change (/tmp/claude-0/-home-user/b9eb35a4-34e7-5813-9e1a-3773ce53675d/scratchpad/mutants.py, copied as mutants.py); unit set: test_greg_outcome_resolution, test_greg_pending_construction_realization, test_greg_construction_realization (py3.11, -x).
+Safeguard mutants of the evidence-repair change (mutants.py), re-run on the relabelled code; unit set: test_greg_outcome_resolution, test_greg_pending_construction_realization, test_greg_construction_realization (py3.11, -x).
 CAUGHT  M1 answer_version dropped from claim identity: ['test_a_resolution_on_one_answer_cannot_name_another_answers_report']
 CAUGHT  M2 resolutions need no accepted founder command: ['test_a_resolution_no_founder_command_accepted_resolves_nothing']
 CAUGHT  M3 settlement accepts a non-independent observation: ['test_settlement_itself_refuses_a_signed_resolution_that_accepts_a_founder_report']

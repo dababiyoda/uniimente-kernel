@@ -6,11 +6,11 @@ ORIG = F.read_text()
 MUTANTS = {
  "M1 answer_version dropped from claim identity": ('    if outcome.get("answer_version") is not None:\n        fields["answer_version"]', '    if False:\n        fields["answer_version"]'),
  "M2 resolutions need no accepted founder command": ('            if e.payload.get("kind") == "resolution" and e.payload.get("command_digest") in signed]', '            if e.payload.get("kind") == "resolution"]'),
- "M3 settlement accepts a non-independent observation": ('                                        and by_id[accept].payload.get("source") in INDEPENDENT_SOURCES))):\n            applied = event', '                                        ))):\n            applied = event'),
+ "M3 settlement accepts a non-independent observation": ('                                        and by_id[accept].payload.get("source") in DECLARED_INDEPENDENT_SOURCES))):\n            applied = event', '                                        ))):\n            applied = event'),
  "M4 the latest resolution revives facts it does not name": ('            ruling.update({fact: fact == accept for fact in named})', '            ruling = {fact: fact == accept for fact in named}'),
  "M5 verdict-concordant values treated as disputed": ('"verdict_concordant" if len(verdicts) == 1 else "disputed"', '"disputed"'),
  "M6 corroboration from another source dropped": ('        if first.payload.get("source") == source:\n            return first.payload', '        if True:\n            return first.payload'),
- "M7 record time accepts a founder report": ('        if facts[accept].payload.get("source") not in INDEPENDENT_SOURCES:', '        if False:'),
+ "M7 record time accepts a founder report": ('        if facts[accept].payload.get("source") not in DECLARED_INDEPENDENT_SOURCES:', '        if False:'),
  "M8 a partial resolution is accepted": ('        if unnamed:\n            raise', '        if False:\n            raise'),
 }
 TESTS = ["tests/unit/test_greg_outcome_resolution.py", "tests/unit/test_greg_pending_construction_realization.py",

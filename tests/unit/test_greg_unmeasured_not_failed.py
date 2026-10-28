@@ -64,6 +64,7 @@ def test_an_unmeasured_check_is_not_pursued_beside_a_measured_failure(tmp_path, 
     assert "retract" not in {a for a, _ in actions}          # before: dispatched for a check never measured
     [unmet] = [e for e in events(home, "mission.unmet") if e["mission_id"] == "m:mixed"]
     assert unmet["failing_checks"] == ["status"]              # before: ["clean", "status"]
+    assert unmet.get("unmeasured_checks") == ["clean"]         # the closure names it (review of #209, F1)
     [ask] = [r for r in events(home, "decision.requested") if r.get("mission_id") == "m:mixed"]
     assert ask["kind"] == "NO_STRATEGY" and ask["evidence"]["unmeasured_checks"] == ["clean"]
     assert "could not measure clean" in ask["why_now"]

@@ -483,7 +483,7 @@ def _held_back(value) -> str | None:
     a member kept as a prefix, a list kept to its first RECEIPT_LIST_LIMIT items, or a number kept as a marker."""
     if _cut(value):
         return "holds a member kept as a prefix"
-    if _non_finite(value):
+    if _non_finite(value) or (isinstance(value, float) and value != value):
         return "holds a number that is not finite"
     if isinstance(value, list):
         if len(value) == RECEIPT_LIST_LIMIT:
@@ -646,7 +646,7 @@ def judge(predicate: dict, output, *, whole: bool = False, recorded_cut: bool = 
             verdict = TRUE if op == "contains" else FALSE
         elif None in found or partial:
             reason = (f"the list was kept to its first {RECEIPT_LIST_LIMIT} items" if partial
-                      else "a member of the list was kept only in part")
+                      else "a member of the list " + (_held_back(value) or "was kept only in part"))
             return INSUFFICIENT, f"{op} {expected!r:.60}: not among the members kept whole; {reason}"
         else:
             verdict = FALSE if op == "contains" else TRUE
@@ -694,8 +694,10 @@ def _declared(output, path: str) -> tuple[bool, bool]:
 def _compare(kept, expected, whole: bool = False) -> bool | None:
     """Whether a value the receipt kept equals ``expected``: True, False, or None when what was kept cannot tell.
     A member kept as a prefix (not in ``whole`` mode) compares by its digest and length; a list at the receipt's item
-    limit compares by its kept items and differs from any shorter list; anything else by equality, at every depth."""
-    if not whole and _non_finite(kept):
+    limit compares by its kept items and differs from any shorter list; anything else by equality, at every depth.
+    A NaN is no reading in every mode, at every depth: read over the whole output it used to decide (review of #209
+    by a separate session, F3)."""
+    if (not whole and _non_finite(kept)) or (isinstance(kept, float) and kept != kept):
         return None
     cut = None if whole else _cut(kept)
     if cut:
@@ -764,7 +766,8 @@ def judge_receipt(predicate: dict, result: dict | None, artifact_root) -> tuple[
     if whole is None:
         return verdict, detail
     verdict, whole_detail = judge(predicate, whole, whole=True)
-    return verdict, (f"{whole_detail}; decided over the whole output kept at {record['address'][:19]} "
+    how = "still undecided" if verdict == INSUFFICIENT else "decided"   # review of #209 by a separate session, F5
+    return verdict, (f"{whole_detail}; {how} over the whole output kept at {record['address'][:19]} "
                      f"({record.get('bytes')} bytes), re-hashed and bound to its receipt")
 
 
@@ -3334,11 +3337,14 @@ class MissionEngine:
                 # not vote, so it closes on neither (the ask above carries the disagreement to the founder).
                 # Only a failure GREG measured is certified: a refused read, an abstaining receipt or an input not
                 # resolvable yet is pursued like a failure, but is no reading of one (review of #209, E1 and E4).
+                # A check the evidence could not decide is not pursued, so it is not in ``failing``; the closure
+                # still names it as unmeasured, as the ask does (review of #209 by a separate session, F1).
                 unread = failing & (set(getattr(self, "sensor_errors", ())) | set(getattr(self, "unread", ())))
                 if not split and failing - unread:
                     self.journal.record("mission.unmet", {
                         "mission_id": m.mission_id, "failing_checks": sorted(failing - unread),
-                        **({"unmeasured_checks": sorted(unread)} if unread else {}), "actions_done": m.actions_done,
+                        **({"unmeasured_checks": sorted(unread | unmeasured)} if unread | unmeasured else {}),
+                        "actions_done": m.actions_done,
                         "closure_rule": "every admissible strategy ran; these signed checks re-observed failing",
                         "at": iso(now)}, key=[m.mission_id, "unmet", m.actions_done])
             self._block(m, {"type": "decision", "request_id": rid, "why": "no admissible strategy",

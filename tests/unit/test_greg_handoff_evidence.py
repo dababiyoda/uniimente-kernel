@@ -144,8 +144,32 @@ def test_a_number_that_is_not_finite_is_receipted_and_measures_nothing(tmp_path)
     assert judge_receipt({"op": "gte", "field": "peak", "value": 10}, receipt, artifacts)[0] == TRUE   # over the whole
     assert judge_receipt({"op": "gte", "field": "count", "value": 3}, receipt, artifacts)[0] == TRUE
     assert judge({"op": "gte", "field": "ratio", "value": 0}, {"ratio": math.nan}, whole=True)[0] == INSUFFICIENT
+    assert "still undecided over the whole output kept at" in judge_receipt(
+        {"op": "gte", "field": "ratio", "value": 0}, receipt, artifacts)[1]      # never "decided" (review of #209, F5)
     with pytest.raises(BindingError, match="not finite"):
         resolve({"content": {"$from_action": _ref("probe", "ratio", "object")}}, body.journal, "m:hand")
+
+
+def test_a_nan_inside_a_value_is_no_reading_over_the_whole_output_either(tmp_path):
+    """Review of #209 by a separate session, F3: only a NaN at the predicate's own field was INSUFFICIENT. One nested
+    in the value was decided over the whole output (contains 2 FALSE, not_contains 2 TRUE, equals FALSE), while the
+    kept form of the same members was undecided. A NaN is no reading in every mode; a member that is a reading still
+    decides what it can (contains 1)."""
+    home, key, body_id, spec = _body_with(tmp_path)
+    with Body(home) as body:
+        body.apply(signed(key, body_id, "MISSION", spec), channel="inbox")
+        state = body.engine.book.missions["m:hand"]
+        outcome = _produce(body, state, "probe", {"xs": [float("nan"), 1], "pad": "a" * 20000})
+        receipt = body.office.ledger.find(outcome.receipt_hash).payload["result"]
+        artifacts = body.engine.artifact_root
+    assert receipt["output_artifact"]["address"]                                  # cut, and the whole kept
+    for op, value in (("contains", 2), ("not_contains", 2), ("equals", [float("nan"), 1])):
+        verdict, detail = judge_receipt({"op": op, "field": "xs", "value": value}, receipt, artifacts)
+        assert verdict == INSUFFICIENT and "still undecided over the whole output" in detail, (op, detail)
+        assert judge({"op": op, "field": "xs", "value": value}, {"xs": [math.nan, 1]}, whole=True)[0] == INSUFFICIENT
+    assert judge_receipt({"op": "contains", "field": "xs", "value": 1}, receipt, artifacts)[0] == TRUE
+    assert judge({"op": "equals", "field": "xs", "value": [1, 1]}, {"xs": [math.nan, 1]}, whole=True)[0] == INSUFFICIENT
+    assert judge({"op": "equals", "field": "xs", "value": [1]}, {"xs": [math.nan, 1]}, whole=True)[0] == FALSE
 
 
 def test_a_sensor_reading_nan_retries_and_asks_instead_of_crashing_the_body(tmp_path, monkeypatch):

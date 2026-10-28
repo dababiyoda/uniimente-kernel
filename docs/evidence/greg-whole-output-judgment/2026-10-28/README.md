@@ -195,6 +195,24 @@ bytecode. A surviving mutant prints its test output, so a survivor in CI can be 
 The repository's other nine mutation gates use the same pattern. Each excludes `__pycache__` only when it copies the
 repository. They are not this branch's files, and they are reported on #96.
 
+## Follow-up: review by a different session
+
+Session `session_01KucyfmkWSE2nV8bUbyqmk4` reviewed `9057d92a` against #196 `9e5a0b09`. It did not write this
+branch. Its verdict was that the core mechanism holds and that nothing on the mission path decides a wrong TRUE. Its
+run of the mutation gate gave 42 mutants, 0 survived. It made five findings, each reproduced.
+
+| Finding | Disposition |
+| --- | --- |
+| F1: the failure closure (`mission.unmet`) does not name a check the evidence could not decide, though the ask does | Fixed. The closure lists it under `unmeasured_checks`. Pinned by an assertion in `test_an_unmeasured_check_is_not_pursued_beside_a_measured_failure` and by a mutant |
+| F2: a handoff refuses a 1000-item list even when its receipt recorded no cut | Kept. `fs.list` cuts its own listing at 1000 without saying so (`greg/capabilities.py`, `[:1000]`). Handing such a list on as whole is J4, the defect this branch fixed. Recorded under Limits |
+| F3: a NaN nested in a value was decided over the whole output | Fixed. A NaN is no reading in every mode, at every depth (`_compare`). Pinned by `test_a_nan_inside_a_value_is_no_reading_over_the_whole_output_either` and by a mutant |
+| F4: genuine data shaped like `{"non_finite": ...}` is never decidable | Kept. Only receipts write that shape. `pipeline.inspect` hands another receipt's markers on, in a receipt that records no cut. Read as data there, an inspected infinity would make `gte 10` FALSE. INSUFFICIENT is the honest answer. Recorded under Limits |
+| F5: "decided over the whole output" was appended to a verdict still INSUFFICIENT | Fixed: "still undecided over the whole output". Pinned by an assertion and by a mutant |
+
+On the fixed tree:
+- the mutation gate gives 45 mutants (3 new), 0 survived or stale;
+- the judgment, handoff, unmeasured, incomplete-evidence and wrapper suites give 116 passed, 1 skipped.
+
 ## Limits and residuals
 
 - **Size.** Outputs whose canonical JSON exceeds 1 MiB are not kept, so they still ask. Tested: 200 KiB of control

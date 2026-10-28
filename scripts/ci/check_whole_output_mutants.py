@@ -194,6 +194,18 @@ MUTANTS = [
     ("a number that is not finite is judged as a reading", "greg/missions.py",
      "    if (not whole and _non_finite(value)) or (isinstance(value, float) and value != value):", "    if False:",
      H + "test_a_number_that_is_not_finite_is_receipted_and_measures_nothing"),
+    ("a NaN nested in a value is decided over the whole output", "greg/missions.py",
+     "    if (not whole and _non_finite(kept)) or (isinstance(kept, float) and kept != kept):\n        return None",
+     "    if not whole and _non_finite(kept):\n        return None",
+     H + "test_a_nan_inside_a_value_is_no_reading_over_the_whole_output_either"),
+    ("the failure closure drops a check the evidence could not decide", "greg/missions.py",
+     "sorted(unread | unmeasured)} if unread | unmeasured else {}",
+     "sorted(unread)} if unread else {}",
+     U + "test_an_unmeasured_check_is_not_pursued_beside_a_measured_failure"),
+    ("an undecided whole-output reading is called decided", "greg/missions.py",
+     'how = "still undecided" if verdict == INSUFFICIENT else "decided"',
+     'how = "decided"',
+     H + "test_a_number_that_is_not_finite_is_receipted_and_measures_nothing"),
 ]
 
 

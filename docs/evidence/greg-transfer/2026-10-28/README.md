@@ -63,7 +63,7 @@ This is the founder's learning test (directive 2026-10-28, §11) measured as a p
 1. **No statistical learning.** No parameter was fitted and no routing weight changed. This is capability reuse through a governed registry. The direction of the effect follows from the mechanism, so the experiment's information lies in its integrity checks and in the cross-family result, not in a surprise.
 2. **Not a total-cost win per pair.** Each experienced body paid for its construction mission once (work 6), then ran one task. Per pair, the totals are 6 against 6 on the same family and 9 against 6 across families. The gain is in the **marginal** cost of every *later* mission: k later same-family missions cost 0 asks instead of 2k.
 3. **Not real-world.** The problems are synthetic, small (2 to 5 elements per side), and the founder key is a test key. There is no founder device, no real staffing or matching outcome, and no external verification.
-4. **Not an ablation inside one body.** The control arm is the subtraction test: a fresh body without the earlier mission. A body that formed the competence and then detached it before the task was not run.
+4. **Not a declared ablation inside one body.** The control arm is the subtraction test: a fresh body without the earlier mission. A body that formed the competence and then detached it before the task was run only as an undeclared development probe (n=1, see below).
 5. **Not a re-attach probe.** Attach asks were answered by a script that attaches exactly the VERIFIED capabilities each ask names. A real founder may decline, which would leave the experienced body without the competence.
 
 ## Negative and disclosed items
@@ -86,6 +86,7 @@ Re-running the script refuses to overwrite `results.json`. Writing to another pa
 | `results.json` | The raw rows (problem, expected answer, both arms' journal metrics, qualification seeds) and `summarise()`'s output |
 | `deliberation.json` | Five roles and exactly two passes; decision EXPERIMENT |
 | `review-round-2-mutants.py`, `review-round-2-mutants.txt` | Recorded answers edited with their totals kept: the test at `b4c9fa4c` passes all five edits, and the test at this commit fails each one |
+| `dev-detach-probe/` | Undeclared development probe (n=1, namespace `greg-detach-probe`): the founder detaches what the construction mission formed, then a same-family task runs on the same body. `probe.py` and its `output.json` |
 
 ## Review round 1 (2026-10-28, after the run)
 
@@ -131,3 +132,23 @@ Its one new low finding was that `judge_staffing` compares only the scalar `staf
 - A crash schedule shifted.
 
 The test at `b4c9fa4c` passes all five, and the test at this commit fails each one. All 111 recorded answers (74 task arms and 37 constructions) re-certify. The script, `CRITERIA`, `summarise()`, `results.json` and every verdict are unchanged.
+
+## Development probe: detaching the formed competence inside one body (2026-10-28, after review round 2)
+
+**Not a declared experiment.** One instance from namespace `greg-detach-probe` (not the spent `greg-transfer-2026-10-28`), run once per variant by `dev-detach-probe/probe.py`. No verdict rule applies, and the frozen results above are unchanged. Each body first ran the construction mission (work 6), then the founder sent a signed `CAPABILITY_DETACH`, then one same-family task ran with the harness's scripted founder (it attaches only capabilities whose state is `VERIFIED`).
+
+| Founder detached | Later same-family task |
+|---|---|
+| The construction only; its NetworkX engine stays attached | **WAITING** after 16 ticks, the harness's ceiling. One deficit and one attach ask; no qualification (work 2). Genesis does not re-attach or rebuild the capability the founder detached. Its trace reads "founder-detached; explicit attach required", because the construction's id is derived from its reduction and engine, so a rebuild would be the same capability. The ask lists that capability in its evidence as `DETACHED`. |
+| The construction and its engine | **ACHIEVED** and VERIFIED, correct. Genesis formed a different engine (SciPy) and a new construction over it, which the founder attached. Work 6, the same as a fresh body. |
+
+**What it shows (n=1, development tier):**
+- Removing the attached competence removes the transfer. The later mission no longer answers without the founder, so the reuse in the main result comes from the attached competence, not from anything else the body kept.
+- A founder detach is respected. Nothing the founder detached returns without the founder's own signed command.
+
+**What it does not show:**
+- It is n=1, not pre-registered, and synthetic, with a scripted founder.
+- It does not show what a real founder would answer.
+
+**Open question for the founder (not changed here):** after a detach, the re-attach ask recommends the general routes: installing software, providing a connector key, or writing a contract. It does not offer re-attaching the detached capability as an option. That follows the current rule that a founder detach decides against a candidate, which is never asked about again for that need (`MissionEngine._undecided`, section 60). The ask's evidence still names the detached capability and its state. Whether a reversal should also appear as a neutral, costed option (one command, no new qualification) is a policy choice, so it is left to the founder.
+

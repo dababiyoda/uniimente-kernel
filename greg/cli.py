@@ -441,7 +441,8 @@ def main(argv=None) -> int:
                                 help="resolve a disputed construction outcome: a realization event it rules on "
                                      "(repeat; greg cognition calibration lists a prepared resolution)")
             q.add_argument("--accept", metavar="EVENT",
-                           help="with --resolves: the independent observation to accept; omit to invalidate them")
+                           help="with --resolves: the report to accept, one whose reporter declared an independent source "
+                                "(external_record, sensor_observation; declared, not verified); omit to invalidate them")
             q.add_argument("--source", default="founder_reported",
                            choices=["founder_reported", "external_record", "sensor_observation"])
             q.add_argument("--note", default="")
@@ -942,7 +943,7 @@ def main(argv=None) -> int:
             print(_drop(home, "CAPABILITY_" + args.cmd.upper(), {"capability_id": args.capability_id}, args))
         elif args.cmd == "realize" and args.resolves:
             if not args.note.strip():
-                raise BodyError("--note states the basis of the resolution: the independent record that decides it")
+                raise BodyError("--note states the basis of the resolution: the record that decides it")
             print(_drop(home, "REALIZATION", {"receipt": args.receipt, "resolves": args.resolves,
                                               "accept": args.accept, "note": args.note}, args))
         elif args.cmd == "realize":

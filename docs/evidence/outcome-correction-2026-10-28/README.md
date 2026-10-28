@@ -37,7 +37,7 @@ competence, Goal Gravity and the compiler's selection from settled outcomes. It 
    | `invalidated` | every report was rejected | certificate only, and the answer awaits a new report |
 3. **A founder-signed, traceable resolution on the existing REALIZATION command.** The CLI form is
    `greg realize RECEIPT --resolves E1 --resolves E2 --accept E2 --note <basis>`.
-   - It may accept only an observation already recorded from an independent source (`sensor_observation`,
+   - It may accept only a recorded report whose reporter declared an independent source (`sensor_observation`,
      `external_record`), because a signed report proves who reported it, not that it is true. Omitting `--accept`
      invalidates the named reports instead.
    - It must name every live report that disagrees, and it must state its basis.
@@ -52,7 +52,7 @@ competence, Goal Gravity and the compiler's selection from settled outcomes. It 
 5. **A dispute is investigable work** (`awaiting_realization`, `kind: objective_conflict`). Each dispute row gives:
    - the reports, with each one's source and verdict;
    - the distinguishing observation, e.g. "at or above 1.9 it kept its promise";
-   - whether a resolution can be prepared now from an independent observation already recorded, in which case the
+   - whether a resolution can be prepared now from a recorded report declared as an independent source, in which case the
      row carries the unsigned REALIZATION body the founder would sign;
    - otherwise, an evidence request that says exactly what record to obtain and how. No capability on a body
      declares an observation of these world quantities, so GREG asks for the record rather than guessing it.
@@ -65,6 +65,21 @@ competence, Goal Gravity and the compiler's selection from settled outcomes. It 
 7. **Dependency-aware memory.** `decisions_to_recheck` lists every compile decision retained while a later-rejected
    report was in force, if it considered the affected method. A decision leaves the list once that problem is
    compiled again.
+
+## Source labels are declared, not verified (integrator review of `67184991`)
+
+`source` is whatever the REALIZATION command declared: a founder can file a value as `external_record` and then
+accept it. GREG cannot verify the label. So the rule restricts which reports are *eligible* to be accepted, and every
+surface shows the label for what it is:
+
+- dispute rows report `declared_source` and `independence: "declared by the reporter, not verified by GREG"`
+  (formerly `independent: true`);
+- the constant is `DECLARED_INDEPENDENT_SOURCES`;
+- an adjudicated outcome's evidence tier names the accepted source as declared, not verified;
+- the CLI help says the same.
+
+`test_a_founder_report_labelled_external_record_is_eligible_but_shown_as_declared_never_verified` pins it. Where this
+README says "independent" below, read "declared as independent".
 
 ## The decisive experiment: run 1 failed one prediction, then a defect fix, then run 2 passed
 
@@ -141,7 +156,7 @@ The new power is the founder's ability to resolve a disputed outcome. Every use 
 |---|---|
 | Inspected | every fact, resolution and rejected event stays on the record |
 | Challenged | a later disagreeing report reopens the dispute |
-| Restricted | only a recorded independent observation can be accepted; every disagreeing report must be named; a basis must be stated |
+| Restricted | only a recorded report declared as an independent source can be accepted; every disagreeing report must be named; a basis must be stated |
 | Revoked | a later resolution rules again on any fact it names |
 | Repaired downstream | `decisions_to_recheck` names the decisions that rested on the rejected evidence |
 
@@ -151,11 +166,11 @@ When two reports about a completed construction disagree, the body now does the 
 
 1. It names the claim, the answer and the disputed verdicts.
 2. It states the observation that would decide between them.
-3. It prepares the correction when an independent record already exists, or asks for that record when none does.
+3. It prepares the correction when a report declared as an independent source already exists, or asks for that record when none does.
 4. It weighs whether resolving the dispute can change any selection.
 5. It withholds competence until the dispute is resolved.
 
-After the founder signs a correction backed by independent evidence, the corrected competence reaches the
+After the founder signs a correction that accepts a report declared as an independent source, the corrected competence reaches the
 compiler's existing selection rule, and a later decision changes: in the declared world it moves from the
 construction (true rate 0.4) to `flow_maxflow` (1.0). The decision made on contested evidence is flagged for
 recheck. With the repair disabled, the same history leaves the worse decision in place.

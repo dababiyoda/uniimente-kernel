@@ -90,8 +90,8 @@ def test_an_authorized_correction_changes_the_later_selection_and_the_ablation_d
                                           for row in disputes)
         # prediction 4: unsupported corrections are refused or resolve nothing
         first = disputes[0]["prepared_resolution"]["body"]
-        founder_fact = next(r["event"] for r in disputes[0]["reports"] if r["source"] == "founder_reported")
-        with pytest.raises(ValueError, match="accepts only an independent observation"):
+        founder_fact = next(r["event"] for r in disputes[0]["reports"] if r["declared_source"] == "founder_reported")
+        with pytest.raises(ValueError, match="accepts only a report declared as an independent source"):
             run.command("REALIZATION", {**first, "accept": founder_fact, "note": "I am sure"})
         with pytest.raises(ValueError, match="basis"):
             run.command("REALIZATION", {**first, "note": " "})

@@ -460,9 +460,12 @@ def _world_realizations(journal) -> dict:
     return out
 
 
-# Sources that can settle a dispute: an observation or a record outside the reports themselves. A founder-reported
-# value is evidence that the founder reported it; a signature proves who said it, not that it is true.
-INDEPENDENT_SOURCES = ("sensor_observation", "external_record")
+# Source labels a resolution may accept: a reporter's declaration that the value came from an observation or a record
+# outside the reports themselves. GREG does not verify that declaration: ``source`` is whatever the REALIZATION
+# command said, so this narrows which reports are eligible, it never makes one verified. A founder-reported value
+# is evidence that the founder reported it; a signature proves who said it, not that it is true.
+DECLARED_INDEPENDENT_SOURCES = ("sensor_observation", "external_record")
+SOURCE_INDEPENDENCE = "declared by the reporter, not verified by GREG"
 # The knowledge state of one answer's world outcome. Every fact stays on the record in every state.
 WORLD_STATES = ("unreported", "reported", "verdict_concordant", "disputed", "adjudicated", "invalidated")
 
@@ -486,8 +489,8 @@ def _world_state(facts: list, resolutions: list, receipts) -> dict:
     founder-signed resolutions.
 
     A resolution counts for this answer when it was made on one of the answer's receipts, names only facts about
-    this answer, and accepts either nothing (it invalidates the facts it names) or one of them that came from an
-    independent source. Each fact is ruled by the latest such resolution that names it, so a correction can itself
+    this answer, and accepts either nothing (it invalidates the facts it names) or one of them whose reporter declared
+    an independent source (``DECLARED_INDEPENDENT_SOURCES``; the declaration is not verified). Each fact is ruled by the latest such resolution that names it, so a correction can itself
     be corrected, and a later resolution never revives a fact it does not name. Rejected facts are kept and
     listed; they stop counting.
 
@@ -502,7 +505,7 @@ def _world_state(facts: list, resolutions: list, receipts) -> dict:
         named, accept = data.get("resolves") or [], data.get("accept")
         if (data.get("receipt") in receipts and named and set(named) <= set(by_id)
                 and (accept is None or (accept in named
-                                        and by_id[accept].payload.get("source") in INDEPENDENT_SOURCES))):
+                                        and by_id[accept].payload.get("source") in DECLARED_INDEPENDENT_SOURCES))):
             applied = event
             ruling.update({fact: fact == accept for fact in named})
     rejected = {fact for fact, kept in ruling.items() if not kept}
@@ -550,8 +553,8 @@ def _world_settled(outcome, state) -> dict | None:
                          if state["resolution"] else {})},
             "evidence_tier": f"realized objective bound to the receipt ({', '.join(sources)}); the certificate "
                              "was checked locally"
-                             + ("; a founder-signed resolution accepted an independent observation"
-                                if state["state"] == "adjudicated" else "")
+                             + ("; a founder-signed resolution accepted a report whose source is "
+                                f"{SOURCE_INDEPENDENCE}" if state["state"] == "adjudicated" else "")
                              + ("; the reported values differ but agree on the verdict"
                                 if state["state"] == "verdict_concordant" else "")}
 
@@ -581,7 +584,7 @@ def _record_objective(journal, *, receipt, built, realized, source, note, comman
     if first.payload.get("realized") == realized:
         if first.payload.get("source") == source:
             return first.payload
-        # the same value from another source corroborates it: kept, so an independent confirmation is not lost
+        # the same value under another source label corroborates it: kept, so a second report is not lost
         key = [receipt, "corroboration", source, repr(realized)]
         kept = journal.retained("cognition.realization", key)
         if kept is not None:
@@ -609,7 +612,8 @@ def record_resolution(journal, *, receipt: str, resolves, accept, note: str, com
     """Resolve a disputed world outcome of one construction answer: a founder-signed, traceable correction.
 
     ``resolves`` names the recorded facts the resolution rules on, all about the answer carried by ``receipt``.
-    ``accept`` is one of them, which must come from an independent source (``INDEPENDENT_SOURCES``), or None, which
+    ``accept`` is one of them whose reporter declared an independent source (``DECLARED_INDEPENDENT_SOURCES``: the
+    label is the reporter's, never verified, so this restricts eligibility and proves nothing), or None, which
     invalidates every named fact (the answer then awaits a new report). An accepting resolution must name every
     live fact whose value differs from the accepted one, or the dispute would stay open behind it. ``note`` states
     the basis. Nothing is deleted: rejected facts stay on the record and stop counting. Only a founder-signed
@@ -617,7 +621,7 @@ def record_resolution(journal, *, receipt: str, resolves, accept, note: str, com
     if not command_digest:
         raise ValueError("a resolution is a founder-signed REALIZATION command")
     if not isinstance(note, str) or not note.strip():
-        raise ValueError("a resolution states its basis in note: what independent record decides it")
+        raise ValueError("a resolution states its basis in note: what record decides it")
     if (not isinstance(resolves, list) or not resolves or len(set(resolves)) != len(resolves)
             or not all(isinstance(x, str) for x in resolves)):
         raise ValueError("resolves names one or more distinct realization events")
@@ -639,9 +643,10 @@ def record_resolution(journal, *, receipt: str, resolves, accept, note: str, com
     if accept is not None:
         if accept not in resolves:
             raise ValueError("accept is one of the facts the resolution names")
-        if facts[accept].payload.get("source") not in INDEPENDENT_SOURCES:
-            raise ValueError(f"a resolution accepts only an independent observation ({', '.join(INDEPENDENT_SOURCES)})"
-                             ": a signed report proves who reported it, not that it is true")
+        if facts[accept].payload.get("source") not in DECLARED_INDEPENDENT_SOURCES:
+            raise ValueError(f"a resolution accepts only a report declared as an independent source "
+                             f"({', '.join(DECLARED_INDEPENDENT_SOURCES)}): a signed report proves who reported it, not "
+                             "that it is true")
         kept = facts[accept].payload["realized"]
         current = _world_state(sorted(facts.values(), key=lambda e: _realization_order(journal)[e.event_id]),
                                _resolutions(journal), {r for r, *_ in claim})
@@ -763,10 +768,11 @@ def _investigation(identity, seen, state, mission_id, receipts) -> dict:
     tolerance = realization_tolerance(promised)
     threshold = promised - tolerance if sense == "max" else promised + tolerance
     side = "at or above" if sense == "max" else "at or below"
-    reports = [{"event": e.event_id, "realized": e.payload.get("realized"), "source": e.payload.get("source"),
+    reports = [{"event": e.event_id, "realized": e.payload.get("realized"),
                 "met": world_met(promised, e.payload["realized"], sense), "receipt": e.payload.get("receipt"),
-                "independent": e.payload.get("source") in INDEPENDENT_SOURCES} for e in live]
-    independent = sorted({r["realized"] for r in reports if r["independent"]})
+                "declared_source": e.payload.get("source"), "independence": SOURCE_INDEPENDENCE,
+                "eligible_to_accept": e.payload.get("source") in DECLARED_INDEPENDENT_SOURCES} for e in live]
+    independent = sorted({r["realized"] for r in reports if r["eligible_to_accept"]})
     row = {"kind": "objective_conflict", "world_state": "disputed", "claim": identity, "mission_id": mission_id,
            "method": first.payload.get("method"), "answer_version": _answer_version(seen[-1][1]),
            "objective": objective, "sense": sense, "promised": promised, "realized_values": state["values"],
@@ -774,25 +780,26 @@ def _investigation(identity, seen, state, mission_id, receipts) -> dict:
            "reports": reports, "rejected_events": state["rejected"],
            "scored_as": "neither correct nor wrong: the reported values disagree on the verdict",
            "competence_claim": "withheld: no competence is credited for this answer while it is disputed",
-           "distinguishing_observation": (f"an independent observation of the realized {objective} for this answer: "
+           "distinguishing_observation": (f"an observation of the realized {objective} for this answer from outside "
+                                          f"the disputed reports: "
                                           f"{side} {threshold:g} it kept its promise, otherwise it did not"),
-           "acceptable_sources": list(INDEPENDENT_SOURCES),
-           "resolution": "a founder-signed resolution accepting one independent observation, or invalidating the "
-                         "reports; every value stays recorded", "authority_created": False}
+           "acceptable_sources": list(DECLARED_INDEPENDENT_SOURCES), "source_independence": SOURCE_INDEPENDENCE,
+           "resolution": "a founder-signed resolution accepting one report declared as an independent source, or "
+                         "invalidating the reports; every value stays recorded", "authority_created": False}
     if len(independent) == 1:
-        accept = next(r["event"] for r in reports if r["independent"] and r["realized"] == independent[0])
+        accept = next(r["event"] for r in reports if r["eligible_to_accept"] and r["realized"] == independent[0])
         row["resolvable_now"] = True
         row["prepared_resolution"] = {
             "command": "REALIZATION", "signing": "founder key only; nothing applies until the founder signs it",
             "body": {"receipt": next(r["receipt"] for r in reports if r["event"] == accept),
                      "resolves": [r["event"] for r in reports], "accept": accept,
-                     "note": "<basis: the independent record that decides it>"}}
+                     "note": "<basis: the record that decides it, and why its source label can be trusted>"}}
     else:
         row["resolvable_now"] = False
         row["evidence_request"] = {
             "needed": row["distinguishing_observation"],
-            "why": ("no independent observation is recorded" if not independent else
-                    f"the independent observations disagree too: {independent}"),
+            "why": ("no report declared as an independent source is recorded" if not independent else
+                    f"the reports declared as independent sources disagree too: {independent}"),
             "how": (f"greg realize {seen[-1][0]} --objective-value <observed> --source external_record "
                     f"--note <reference> --key <founder key>"),
             "acquirable_by_body": [],
@@ -842,7 +849,7 @@ def _weigh_investigations(journal, rows) -> None:
                                if row["priority"] == "investigate" else
                                "on current evidence no resolution changes a selection rule; it stays recorded and "
                                "unscored, and is weighed again as evidence accrues")
-        row["cost"] = "one independent record and one founder-signed resolution; no spend, no contact by GREG"
+        row["cost"] = "one outside record and one founder-signed resolution; no spend, no contact by GREG"
 
 
 def awaiting_realization(journal) -> list[dict]:

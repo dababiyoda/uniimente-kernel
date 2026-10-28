@@ -48,7 +48,7 @@ def test_a_dispute_is_investigable_work_with_a_prepared_resolution_and_scores_no
     journal, receipt = disputed()
     [row] = settlement.awaiting_realization(journal)
     assert row["kind"] == "objective_conflict" and row["world_state"] == "disputed"
-    assert {(r["source"], r["met"]) for r in row["reports"]} == {("founder_reported", False), ("external_record", True)}
+    assert {(r["declared_source"], r["met"]) for r in row["reports"]} == {("founder_reported", False), ("external_record", True)}
     assert "at or above 1.9" in row["distinguishing_observation"]
     assert row["competence_claim"].startswith("withheld") and counts(journal) == []
     assert row["resolvable_now"] is True
@@ -66,8 +66,8 @@ def test_with_no_independent_observation_it_asks_for_one_instead_of_resolving():
     [row] = settlement.awaiting_realization(journal)
     assert row["resolvable_now"] is False and "prepared_resolution" not in row
     request = row["evidence_request"]
-    assert request["why"] == "no independent observation is recorded" and "--source external_record" in request["how"]
-    with pytest.raises(ValueError, match="accepts only an independent observation"):
+    assert request["why"] == "no report declared as an independent source is recorded" and "--source external_record" in request["how"]
+    with pytest.raises(ValueError, match="accepts only a report declared as an independent source"):
         resolve(journal, receipt, list(facts(journal).values()), facts(journal)["founder_reported:2"])
 
 
@@ -79,7 +79,7 @@ def test_an_authorized_resolution_accepts_the_independent_record_keeps_every_fac
     world = outcome["world"]
     assert world["state"] == "adjudicated" and world["realized"] == 2 and outcome["correct"] is True
     assert world["rejected_events"] == [facts(journal)["founder_reported:1"]] and world["resolution_event"]
-    assert "independent observation" in outcome["evidence_tier"]
+    assert "declared by the reporter, not verified" in outcome["evidence_tier"]
     assert sorted(facts(journal).values()) == sorted(before)              # nothing deleted
     assert counts(journal) == [(1, 1)] and settlement.awaiting_realization(journal) == []
 
@@ -189,3 +189,24 @@ def test_a_resolution_never_relabels_a_reports_source():
     [outcome] = settlement.measured_outcomes(journal)
     assert outcome["world"]["source"] == "external_record" and outcome["world"]["state"] == "adjudicated"
     assert "founder_reported" not in outcome["evidence_tier"]          # the rejected report lends no label
+
+
+def test_a_founder_report_labelled_external_record_is_eligible_but_shown_as_declared_never_verified():
+    """Integrator finding (#196 review of 67184991): ``source`` is whatever the REALIZATION command declared, so a
+    founder can file a value as external_record and then accept it. That stays possible (GREG cannot verify the
+    label); what it must never do is present the label as verification."""
+    journal, receipt = pending()
+    appraise(journal, "VERIFIED")
+    settlement.record_realization(journal, receipt=receipt, realized=1, source="founder_reported")
+    settlement.record_realization(journal, receipt=receipt, realized=2, source="external_record",
+                                  command_digest="sha256:same-founder")      # the founder's own key, labelled external
+    [row] = settlement.awaiting_realization(journal)
+    labelled = next(r for r in row["reports"] if r["declared_source"] == "external_record")
+    assert labelled["independence"] == "declared by the reporter, not verified by GREG"
+    assert labelled["eligible_to_accept"] is True and "independent" not in labelled and "verified" not in labelled
+    assert row["source_independence"] == labelled["independence"]
+    resolve(journal, receipt, list(facts(journal).values()), facts(journal)["external_record:2"])
+    [outcome] = settlement.measured_outcomes(journal)
+    assert outcome["world"]["source"] == "external_record"
+    assert "declared by the reporter, not verified" in outcome["evidence_tier"]
+    assert "verified independent" not in outcome["evidence_tier"]

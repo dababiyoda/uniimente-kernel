@@ -47,6 +47,33 @@ def raw(rows):
     return {"tasks": rows}
 
 
+def recertify(tier, problem, answer):
+    """GREG's own certifier re-run on a recorded answer, from the original problem: feasibility in full, and
+    optimality against the stated bottleneck (staffing, matching) or the oracle's optimum (crash). The certified
+    fields it returns must equal the recorded ones, so an edited row cannot keep its total and pass."""
+    from greg import recombine as r
+    function = T.FUNCTION[tier]
+    if function == "assignment.staffing":
+        cut = answer["bottleneck"]["orders"] if answer["bottleneck"] else []
+        out = r.certify_staffing(r.normalize_staffing(problem), {
+            "assignment": answer["assignment"], "staffed": answer["staffed"], "bottleneck_orders": cut})
+        keys = ("staffed", "total_demand", "shortage", "assignment", "unfilled", "bottleneck")
+    elif function == "assignment.matching":
+        cut = answer["deficiency"]["right"] if answer["deficiency"] else []
+        out = r.certify_matching(r.normalize_matching(problem), {
+            "pairs": answer["pairs"], "size": answer["size"], "deficient_right": cut})
+        keys = ("size", "pairs", "unmatched_right", "deficiency")
+    elif answer["feasible"]:
+        best = T.expected(tier, problem)["cost"]
+        out = r.certify_crash(r.normalize_crash(problem), {"plan": answer["schedule"], "lp_objective": best})
+        keys = ("feasible", "deadline", "cost", "finish", "schedule", "shorten")
+    else:
+        out = r.certify_crash(r.normalize_crash(problem), {
+            "feasible": False, "chain": answer["chain"], "chain_length": answer["shortest_chain_length"]})
+        keys = ("feasible", "deadline", "chain", "shortest_chain_length")
+    assert {k: out[k] for k in keys} == {k: answer[k] for k in keys}, "a recorded answer differs from its certificate"
+
+
 def verdicts(rows):
     return {t: v["verdict"] for t, v in T.summarise(raw(rows))["tiers"].items()}
 
@@ -127,9 +154,13 @@ def test_the_recorded_run_re_derives_from_its_own_rows():
             task = r[side]["task"]
             assert r[f"{side}_correct"] == (task["state"] == "ACHIEVED" and T.judge(r["tier"], task["answer"],
                                                                                     r["expected"])), (side, r["i"])
+            if r[f"{side}_correct"]:
+                recertify(r["tier"], r["problem"], task["answer"])      # the whole answer, not only its total
         built = r["experienced"]["construction"]
         assert r["construction_correct"] == (built["state"] == "ACHIEVED"
                                              and T.judge("replay", built["answer"], want_construction))
+        if r["construction_correct"]:
+            recertify("replay", T.CONSTRUCTION, built["answer"])
 
 
 def test_one_live_cross_family_pair_measures_reuse(tmp_path):

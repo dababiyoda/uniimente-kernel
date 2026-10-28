@@ -85,6 +85,7 @@ Re-running the script refuses to overwrite `results.json`. Writing to another pa
 | `DECLARATION.md` | Arms, tiers, sizes, the namespace, the criteria, the predictions, development disclosure, committed before the run |
 | `results.json` | The raw rows (problem, expected answer, both arms' journal metrics, qualification seeds) and `summarise()`'s output |
 | `deliberation.json` | Five roles and exactly two passes; decision EXPERIMENT |
+| `review-round-2-mutants.py`, `review-round-2-mutants.txt` | Recorded answers edited with their totals kept: the test at `b4c9fa4c` passes all five edits, and the test at this commit fails each one |
 
 ## Review round 1 (2026-10-28, after the run)
 
@@ -108,3 +109,25 @@ It found no path by which anything other than retained competence explains the r
    - **326 are engine instances** (`graph.max_flow` 222, `lp.optimize` 104) and can never equal a hidden task.
    - The floor held on comparable instances in this run. The rule is frozen for this run and not changed. **For the next declaration,** count comparable instances only.
 3. **Rebuilt instances were not checked against Genesis's own record.** **For the next declaration,** record each deficit's `vector_digest` and confirm that the rebuilt qualification vector hashes to it.
+
+## Review round 2 (2026-10-28)
+
+The same reviewer re-checked round 1 at `b4c9fa4c`. Both of its checks held:
+- the declaration-to-run scope is unchanged;
+- an edited `staffed` value now fails the test.
+
+Its one new low finding was that `judge_staffing` compares only the scalar `staffed`. An edited `assignment` row (Ana's 2 changed to 1) still passed, because nothing re-checked the answer's feasibility from the record.
+
+**Fix (test only):** `test_the_recorded_run_re_derives_from_its_own_rows` now re-runs GREG's own certifier from the original problem on every correct arm and every construction. The certifiers are `certify_staffing`, `certify_matching` and `certify_crash`; for crash the optimum is the oracle's. It requires each certified field to equal the recorded one.
+- **Staffing:** feasibility (eligibility, capacities, demands, total) and optimality against the stated bottleneck.
+- **Matching:** that the pairs are allowed and disjoint, and maximality against the stated deficiency.
+- **Crash:** the schedule's bounds, deadline and precedences, and its recomputed cost against the oracle optimum.
+
+**Shown** (`review-round-2-mutants.txt`): five edits, each keeping its total, flag and summary.
+- Ana's units changed from 2 to 1.
+- A worker moved to an order outside their skills.
+- The control arm's unfilled order rewritten.
+- Two matching partners swapped.
+- A crash schedule shifted.
+
+The test at `b4c9fa4c` passes all five, and the test at this commit fails each one. All 111 recorded answers (74 task arms and 37 constructions) re-certify. The script, `CRITERIA`, `summarise()`, `results.json` and every verdict are unchanged.

@@ -1,0 +1,13 @@
+# Review round 2 on #213: recorded answers edited while their totals, flags and summary are kept
+# Command: PYTHONPATH=. python docs/evidence/greg-transfer/2026-10-28/review-round-2-mutants.py <test at b4c9fa4c> tests/integration/test_greg_transfer_eval.py (usage in the script's docstring)
+# Python 3.11.17, Kernel venv (networkx, SciPy); the committed results.json is unchanged
+old (b4c9fa4c)  | Ana 2->1, total kept                           | PASSES (edit not caught)
+old (b4c9fa4c)  | Cy moved to an order Cy is not eligible for    | PASSES (edit not caught)
+old (b4c9fa4c)  | control's unfilled order rewritten             | PASSES (edit not caught)
+old (b4c9fa4c)  | matching pairs swapped (size kept)             | PASSES (edit not caught)
+old (b4c9fa4c)  | crash schedule start shifted (cost kept)       | PASSES (edit not caught)
+new             | Ana 2->1, total kept                           | FAILS: ReductionError: the stated total is not the assignment's total
+new             | Cy moved to an order Cy is not eligible for    | FAILS: ReductionError: Cy is not eligible for Dock1, or the pair repeats
+new             | control's unfilled order rewritten             | FAILS: AssertionError: a recorded answer differs from its certificate
+new             | matching pairs swapped (size kept)             | FAILS: ReductionError: L1-R4 is not an allowed pair
+new             | crash schedule start shifted (cost kept)       | FAILS: ReductionError: plan cost 6 differs from the certified optimum 0.0

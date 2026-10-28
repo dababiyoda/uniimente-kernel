@@ -33,7 +33,7 @@ from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-from greg.authority import ActionOutcome, AuthorityOffice
+from greg.authority import RECEIPT_LIST_LIMIT, ActionOutcome, AuthorityOffice, text_bytes
 from greg.capabilities import CapabilityError, InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
 from greg import asks, improvement, routing
@@ -456,8 +456,8 @@ def signed_cost(spec: dict, action_id: str) -> float:
 # authority.bounded keeps receipts small: a long string becomes its first RECEIPT_TEXT_LIMIT characters plus
 # its digest and length, and a list keeps its first RECEIPT_LIST_LIMIT items with no marker at all (receipts
 # written before this change included). A predicate reads only what was kept, so it decides only what the kept
-# part can prove; everything else is INSUFFICIENT, never FALSE or TRUE.
-RECEIPT_LIST_LIMIT = 1000
+# part can prove; everything else is INSUFFICIENT, never FALSE or TRUE. ``judge_receipt`` then decides an
+# INSUFFICIENT check over the whole output the receipt kept beside it (authority.keep_output), when it kept one.
 TRUE, FALSE, INSUFFICIENT = "TRUE", "FALSE", "INSUFFICIENT"
 INSUFFICIENT_EVIDENCE = "insufficient evidence: "
 
@@ -487,14 +487,14 @@ def _held_back(value) -> str | None:
     return next((why for why in map(_held_back, members) if why), None)
 
 
-def _raw_field(output, path: str):
+def _raw_field(output, path: str, *, whole: bool = False):
     value = output
     for part in path.split(".") if path else []:
         if isinstance(value, dict) and part in value:
             value = value[part]
         elif isinstance(value, list) and part.isdigit() and int(part) < len(value):
             value = value[int(part)]
-        elif isinstance(value, list) and part.isdigit() and len(value) == RECEIPT_LIST_LIMIT:
+        elif not whole and isinstance(value, list) and part.isdigit() and len(value) == RECEIPT_LIST_LIMIT:
             raise LookupError(f"item {part} of {path} lies past the {RECEIPT_LIST_LIMIT} items a receipt keeps")
         else:
             raise KeyError(path)
@@ -544,7 +544,7 @@ def measured(observation: dict) -> bool:
     return not str(observation.get("detail", "")).startswith("sensor ")
 
 
-def judge(predicate: dict, output) -> tuple[str, str]:
+def judge(predicate: dict, output, *, whole: bool = False) -> tuple[str, str]:
     """TRUE, FALSE or INSUFFICIENT: what the retained output proves about one predicate.
 
     A whole value is judged as before. From a kept prefix (a long string, or a list at the receipt's item limit)
@@ -553,11 +553,15 @@ def judge(predicate: dict, output) -> tuple[str, str]:
     that declares itself incomplete (``"complete": false``, e.g. a PDF page with no text layer) gets the same
     treatment for every field: more data could only add to it, unless the output names that field in
     ``"decided"`` (e.g. ``document.text``'s ``found`` once a phrase is found): a field so named, holding a value,
-    is judged whole. ``decided`` vouches for fields of an incomplete output only, never for a cut list."""
+    is judged whole. ``decided`` vouches for fields of an incomplete output only, never for a cut list.
+
+    ``whole``: the output is an action's complete output, never cut by a receipt (read back from the artifact store,
+    or a fresh re-observation): a dict is a dict and a list of RECEIPT_LIST_LIMIT items is all of it. Only the
+    capability's own ``complete: false`` still limits it."""
     op = predicate["op"]
     path = predicate.get("field", "")
     try:
-        value = _raw_field(output, path)
+        value = _raw_field(output, path, whole=whole)
     except KeyError:
         return (TRUE if op == "absent" else FALSE), f"field {path!r} absent"
     except LookupError as exc:
@@ -567,13 +571,13 @@ def judge(predicate: dict, output) -> tuple[str, str]:
         return TRUE, "present"
     if op == "absent":
         return FALSE, "present"
-    cut = _cut(value)
+    cut = None if whole else _cut(value)
     if cut:
         text, length = cut["prefix"], cut["length"]
         kept = f"first {len(text)} of {length} characters kept"
         if op == "equals":
             same = isinstance(expected, str) and len(expected) == length \
-                and hashlib.sha256(expected.encode()).hexdigest() == cut["sha256"]
+                and hashlib.sha256(text_bytes(expected)).hexdigest() == cut["sha256"]
             return (TRUE if same else FALSE), f"equals {expected!r:.60} by digest of all {length} characters"
         if op == "count_gte":
             return (TRUE if length >= expected else FALSE), f"len {length} >= {expected}"
@@ -585,11 +589,11 @@ def judge(predicate: dict, output) -> tuple[str, str]:
             return INSUFFICIENT, f"{op} {expected!r:.60}: not in the {kept}; the rest was not retained"
         raise MissionError(f"unknown predicate op {op!r}")
     verdict, detail = _judge_whole(op, value, expected)
-    partial = isinstance(value, list) and len(value) == RECEIPT_LIST_LIMIT and op in (
+    partial = not whole and isinstance(value, list) and len(value) == RECEIPT_LIST_LIMIT and op in (
         "equals", "contains", "not_contains", "count_gte")
     # a list member longer than the receipt keeps is a wrapper, not the member: it can match nothing, so only a
     # hit on a whole member decides (#201 review, 5a); its length is still the list's own
-    holed = isinstance(value, list) and not partial and op in ("equals", "contains", "not_contains") \
+    holed = not whole and isinstance(value, list) and not partial and op in ("equals", "contains", "not_contains") \
         and any(_cut(v) for v in value)
     if holed:
         decided = (op == "contains" and verdict == TRUE and not _cut(expected)) \
@@ -635,10 +639,41 @@ def _judge_whole(op, value, expected) -> tuple[str, str]:
     raise MissionError(f"unknown predicate op {op!r}")
 
 
-def evaluate_predicate(predicate: dict, output) -> tuple[bool, str]:
+def evaluate_predicate(predicate: dict, output, *, whole: bool = False) -> tuple[bool, str]:
     """Passed only on proof. INSUFFICIENT is not passed, and its detail starts with INSUFFICIENT_EVIDENCE so the
     mission treats it as an unmeasured check (re-observe, then ask), never as a strategy that failed."""
+    verdict, detail = judge(predicate, output, whole=whole)
+    return verdict == TRUE, (INSUFFICIENT_EVIDENCE + detail) if verdict == INSUFFICIENT else detail
+
+
+def judge_receipt(predicate: dict, result: dict | None, artifact_root) -> tuple[str, str]:
+    """What one receipt ``result`` proves about a predicate: its kept output first, then, for a check the kept part
+    cannot decide, the whole output the receipt kept in the body's artifact store (authority.keep_output).
+
+    The whole is read only by the address the ledger recorded, re-hashed on read and checked to cut to exactly the
+    kept output (``artifact_output``), so it is the receipt's own observation, not a newer one. A receipt that kept
+    no whole output (its output was never cut, the store was full, the body has none) is judged as before. A
+    missing, altered or foreign artifact decides nothing: the check stays INSUFFICIENT, with the reason."""
+    output = result.get("output") if isinstance(result, dict) else None
     verdict, detail = judge(predicate, output)
+    record = result.get("output_artifact") if isinstance(result, dict) else None
+    if verdict != INSUFFICIENT or record is None:
+        return verdict, detail
+    try:
+        whole = artifact_output(result, artifact_root, source="the observation")
+    except Unbound as exc:
+        return INSUFFICIENT, f"{detail}; {exc}"
+    if whole is None:
+        return verdict, detail
+    verdict, whole_detail = judge(predicate, whole, whole=True)
+    return verdict, (f"{whole_detail}; decided over the whole output kept at {record['address'][:19]} "
+                     f"({record.get('bytes')} bytes), re-hashed and bound to its receipt")
+
+
+def evaluate_receipt(predicate: dict, result: dict | None, artifact_root) -> tuple[bool, str]:
+    """``evaluate_predicate`` over one receipt result: passed only on proof from the kept output or the whole output
+    the receipt kept (``judge_receipt``)."""
+    verdict, detail = judge_receipt(predicate, result, artifact_root)
     return verdict == TRUE, (INSUFFICIENT_EVIDENCE + detail) if verdict == INSUFFICIENT else detail
 
 
@@ -1913,13 +1948,17 @@ class MissionEngine:
         if errors and errors == failing:
             # The world was not measured; that is not a failed goal. Back off and
             # re-observe; escalate once after repeated measurement failure.
+            # Readings of the mission's other checks (measured and passing) neither extend nor break the streak:
+            # before, one passing check beside one unmeasurable check reset it every tick, so the founder was never
+            # asked and the mission re-observed forever.
             streak = 0
             for obs in reversed([e.payload for e in self.journal.replay("mission.observed")
                                  if e.payload["mission_id"] == m.mission_id]):
-                if obs["check_id"] in errors and not measured(obs):
-                    streak += 1
-                else:
+                if obs["check_id"] not in errors:
+                    continue
+                if measured(obs):
                     break
+                streak += 1
             if streak >= 3:
                 rid = self._request(m, kind="SENSOR_FAILURE", scope_digest=sha256_json(sorted(errors)), action_id=None,
                                     why="the mission cannot measure its success checks",
@@ -2212,7 +2251,8 @@ class MissionEngine:
                 if self.genesis is not None and is_capability_fault(manifest, detail, failure_class):
                     self.capability_faults[check["check_id"]] = (manifest, detail, sensor.get("params", {}))
             else:
-                passed, detail = evaluate_predicate(check["predicate"], outcome.output)
+                passed, detail = evaluate_receipt(check["predicate"], {"output": outcome.output,
+                                                  "output_artifact": outcome.output_artifact}, self.artifact_root)
                 if detail.startswith(INSUFFICIENT_EVIDENCE):
                     # The retained output cannot decide the check: the world was not measured. The sensor
                     # retry path re-observes and then asks the founder; no strategy is blamed.
@@ -2389,7 +2429,8 @@ class MissionEngine:
             approved_scopes=m.approved_scopes)
         if outcome.status != "DONE":
             return None
-        passed, detail = evaluate_predicate(watch["predicate"], outcome.output)
+        passed, detail = evaluate_receipt(watch["predicate"], {"output": outcome.output,
+                                          "output_artifact": outcome.output_artifact}, self.artifact_root)
         # Evidence that cannot decide whether the person declined is recorded as inconclusive. A refusal is never
         # assumed: GREG keeps waiting, and the row says the observation did not decide it.
         inconclusive = detail.startswith(INSUFFICIENT_EVIDENCE)

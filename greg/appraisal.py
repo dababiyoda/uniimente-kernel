@@ -44,7 +44,7 @@ from greg.capabilities import BUILTINS, CapabilityManifest, InvocationContext
 from greg.founder import _signing_bytes
 from greg.journal import Journal
 from greg.lightcone import LightCone
-from greg.missions import evaluate_predicate, pre_approved
+from greg.missions import evaluate_predicate, evaluate_receipt, pre_approved
 from provenance.ledger import EvidenceLedger, sha256_json
 
 REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
@@ -329,6 +329,8 @@ def appraise(request: dict) -> dict:
         checks["chain_intact"] = ok
         journal = Journal(EventSpine(ledger), actor="spiffe://uniimente.internal/greg/appraiser")
         mid = request["mission_id"]
+        # whole outputs the body kept beside cut receipts: read only by a receipt's recorded address, re-hashed
+        artifacts = Path(request["artifact_root"]) if request.get("artifact_root") else None
         seq = {r.payload.get("event_id"): r.seq for r in ledger.by_type("event")}
         registered = [e for e in journal.replay("mission.registered") if e.payload["mission_id"] == mid]
         unmet = False
@@ -435,7 +437,8 @@ def appraise(request: dict) -> dict:
                                                     closure_seq=achieved_seq, since_seq=after)):
                 bound = False
                 findings.append(f"{check['check_id']}: receipt not bound to this closure and signed sensor")
-            passed, detail = evaluate_predicate(check["predicate"], receipt.payload["result"].get("output"))
+            # the receipt's kept output, or the whole output it kept in the body's artifact store, re-hashed here
+            passed, detail = evaluate_receipt(check["predicate"], receipt.payload["result"], artifacts)
             if passed == unmet:
                 rederived = False
                 findings.append(f"{check['check_id']}: receipt bytes " + (
@@ -640,8 +643,8 @@ def appraise(request: dict) -> dict:
                           and o.payload["check_id"] == check_id and seq[o.event_id] < seq[e.event_id]]
                 last = before[-1] if before else None
                 receipt = ledger.find(last["receipt"]) if last and last.get("receipt") else None
-                held = bool(last and last.get("passed") and receipt is not None and evaluate_predicate(
-                    predicates[check_id], receipt.payload["result"].get("output"))[0])
+                held = bool(last and last.get("passed") and receipt is not None and evaluate_receipt(
+                    predicates[check_id], receipt.payload["result"], artifacts)[0])
                 if not held:
                     preconditions_ok = False
                     findings.append(f"{action['action_id']}: ran before {check_id} was observed passing")

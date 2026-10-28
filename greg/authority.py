@@ -42,6 +42,7 @@ class ActionOutcome:
     grant_id: str | None = None
     cost_usd: float = 0.0
     failure_class: str | None = None     # typed where a capability failure was raised (CapabilityError)
+    output_artifact: dict | None = None  # the receipt's record of the whole output kept beside a cut one (keep_output)
 
 
 class AuthorityOffice:
@@ -223,13 +224,22 @@ class AuthorityOffice:
                                      receipt_hash=record.receipt_hash, grant_id=grant["grant_id"],
                                      failure_class=result.get("failure_class"), **base)
             return ActionOutcome("DONE", [], output=result.get("output"), receipt_hash=record.receipt_hash,
-                                 grant_id=grant["grant_id"], cost_usd=cost_usd, **base)
+                                 grant_id=grant["grant_id"], cost_usd=cost_usd,
+                                 output_artifact=result.get("output_artifact"), **base)
         if record.state == "reconciliation_required":
             return ActionOutcome("UNCERTAIN", record.refusal_reasons, grant_id=grant["grant_id"], **base)
         return ActionOutcome("REFUSED", record.refusal_reasons or [record.state], grant_id=grant["grant_id"], **base)
 
 
 RECEIPT_TEXT_LIMIT = 16 * 1024
+RECEIPT_LIST_LIMIT = 1000      # items a receipt keeps of a list; greg/missions.py reads this one constant
+
+
+def text_bytes(value: str) -> bytes:
+    """The bytes a receipt digests a string by: UTF-8, with a lone surrogate (which JSON from an untrusted tool or
+    server can carry) kept as its own code unit instead of failing the action. Identical to UTF-8 for any other
+    string."""
+    return value.encode("utf-8", "surrogatepass")
 
 
 def bounded(value):
@@ -237,11 +247,11 @@ def bounded(value):
     import hashlib
     if isinstance(value, str) and len(value) > RECEIPT_TEXT_LIMIT:
         return {"prefix": value[:RECEIPT_TEXT_LIMIT], "truncated": True,
-                "sha256": hashlib.sha256(value.encode()).hexdigest(), "length": len(value)}
+                "sha256": hashlib.sha256(text_bytes(value)).hexdigest(), "length": len(value)}
     if isinstance(value, dict):
         return {k: bounded(v) for k, v in value.items()}
     if isinstance(value, list):
-        return [bounded(v) for v in value[:1000]]
+        return [bounded(v) for v in value[:RECEIPT_LIST_LIMIT]]
     return value
 
 
@@ -274,7 +284,10 @@ def keep_output(output, artifact_root):
     if artifact_root is None:
         return kept, {"address": None, "unavailable": "this body has no artifact store"}
     try:
-        data = json.dumps(output, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()
+        try:
+            data = json.dumps(output, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()
+        except UnicodeEncodeError:   # a lone surrogate: the same JSON value, written with escapes
+            data = json.dumps(output, sort_keys=True, separators=(",", ":")).encode()
         address, _ = output_store(artifact_root).put(data)
     except (TypeError, ValueError, CapabilityError, OSError) as exc:
         return kept, {"address": None, "unavailable": "whole output not kept: " + str(exc)[:200]}

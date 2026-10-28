@@ -1,0 +1,61 @@
+{
+ "python": "3.11.17",
+ "rows": {
+  "8/8": {
+   "organ_heads": {
+    "daleobanks": "664ac98c553759ce754bb684cb248225343edd7e",
+    "wealthmachine": "7a45d223b74d6eea3b9ed5bdaeb12a3625b525de"
+   },
+   "appraisal": "REPRODUCED",
+   "evidence_items": 2,
+   "go_no_go": "go",
+   "opportunity_score": 0.726,
+   "reasons": [
+    "opportunity score 0.726 meets the 0.55 threshold",
+    "engine risk level: Ultra Low",
+    "[bear] only 2 evidence item(s); demand is asserted, not shown; willingness to pay is untested until a buyer commits value",
+    "[incumbent_response] an incumbent with distribution can copy educational checklist quickly; the durable edge must be trust and cultural specificity, not the artifact itself",
+    "[adoption_friction] audience interest does not imply workflow change; the smallest validation action must measure behavior, not applause",
+    "finance content must remain educational; no personalized advice"
+   ],
+   "validation_plan": [
+    "Post one educational thread on the thesis and offer a free checklist waitlist; measure saves, replies, and signups",
+    "Draft landing-page copy and collect waitlist interest (no payment yet)",
+    "Run 3-5 buyer interviews from engaged repliers"
+   ],
+   "recommended_next_action": "Post one educational thread on the thesis and offer a free checklist waitlist; measure saves, replies, and signups"
+  },
+  "4/8": {
+   "organ_heads": {
+    "daleobanks": "664ac98c553759ce754bb684cb248225343edd7e",
+    "wealthmachine": "7a45d223b74d6eea3b9ed5bdaeb12a3625b525de"
+   },
+   "appraisal": "REPRODUCED",
+   "evidence_items": 2,
+   "go_no_go": "go",
+   "opportunity_score": 0.726,
+   "reasons": [
+    "opportunity score 0.726 meets the 0.55 threshold",
+    "engine risk level: Ultra Low",
+    "[bear] only 2 evidence item(s); demand is asserted, not shown; willingness to pay is untested until a buyer commits value",
+    "[incumbent_response] an incumbent with distribution can copy educational checklist quickly; the durable edge must be trust and cultural specificity, not the artifact itself",
+    "[adoption_friction] audience interest does not imply workflow change; the smallest validation action must measure behavior, not applause",
+    "finance content must remain educational; no personalized advice"
+   ],
+   "validation_plan": [
+    "Post one educational thread on the thesis and offer a free checklist waitlist; measure saves, replies, and signups",
+    "Draft landing-page copy and collect waitlist interest (no payment yet)",
+    "Run 3-5 buyer interviews from engaged repliers"
+   ],
+   "recommended_next_action": "Post one educational thread on the thesis and offer a free checklist waitlist; measure saves, replies, and signups"
+  }
+ },
+ "identical_between_8of8_and_4of8": {
+  "evidence_items": true,
+  "go_no_go": true,
+  "opportunity_score": true,
+  "reasons": true,
+  "validation_plan": true,
+  "recommended_next_action": true
+ }
+}

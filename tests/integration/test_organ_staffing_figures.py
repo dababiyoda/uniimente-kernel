@@ -33,6 +33,7 @@ nx = pytest.importorskip("networkx")
 
 from greg import organs  # noqa: E402
 from greg.cognition import network  # noqa: E402
+from greg.missions import bound_value  # noqa: E402
 from greg.recombine import certify_staffing, decode_staffing, encode_staffing, normalize_staffing  # noqa: E402
 from tests.unit.test_greg_organs import SEED, ctx, journal, live_organs, organ_roots  # noqa: E402,F401
 
@@ -40,6 +41,9 @@ from tests.unit.test_greg_organs import SEED, ctx, journal, live_organs, organ_r
 # DALEOBANKS in exactly the producer format the whole-machine mission uses.
 LABEL = "Evidence from GREG's certified staffing plan"
 SEED_TEMPLATE = SEED + f" {LABEL} for the docks and the line: {{value}}"
+# The fifteen-step mission's organ binding: the certified answer, rendered as JSON (sort_keys, indent=1) into the seed.
+EDGE = {"param": "seed", "from": {"check_id": "answered", "field": "result"}, "type": "object", "render": "json",
+        "template": SEED_TEMPLATE, "max_bytes": 2000}
 
 FULL = {"workers": [{"id": "Ana", "capacity": 4, "skills": ["forklift"]},
                     {"id": "Ben", "capacity": 4, "skills": ["packing"]}],
@@ -64,9 +68,18 @@ def certified(problem: dict) -> dict:
     return certify_staffing(p, decode_staffing(p, network.certify_max_flow(req, claim)))
 
 
+def render(answer: dict) -> str:
+    """The bind's render "json" (greg/missions.py bound_value)."""
+    return json.dumps(answer, sort_keys=True, indent=1, ensure_ascii=False)
+
+
 def seed_for(*answers) -> str:
-    """The seed a mission binds: one report sentence per answer, rendered as the mission's bind renders JSON."""
-    seed = SEED + "".join(f" {LABEL} for the docks and the line: {json.dumps(a)}" for a in answers)
+    """The seed a mission binds: exactly ``bound_value`` for one answer; for several (a hostile seed no single
+    binding produces), one report sentence per answer in the same rendering."""
+    if len(answers) == 1:
+        seed = bound_value(EDGE, {"result": answers[0]})
+    else:
+        seed = SEED + "".join(f" {LABEL} for the docks and the line: {render(a)}" for a in answers)
     assert len(seed) <= organs.MAX_SEED, len(seed)
     return seed
 
@@ -85,7 +98,13 @@ def run(tmp_path, journal, params, seed, mission_id):  # noqa: F811
     return out, body["daleobanks"], body["wealthmachine"]
 
 
-def staffing_reasons(assessment: dict) -> list[str]:
+def readings(assessment: dict) -> list[str]:
+    """WealthMachine's reading of each recognised report (one reason per report)."""
+    return [r for r in assessment["reasons"] if r.startswith("staffing evidence[")]
+
+
+def staffing_lines(assessment: dict) -> list[str]:
+    """Every reason the staffing reports produced: the readings, a divergence note and the verdict cap."""
     return [r for r in assessment["reasons"] if "staffing" in r.lower()]
 
 
@@ -108,6 +127,7 @@ def test_a_shortage_changes_reasons_evidence_requests_and_priority_with_nothing_
     for packet, answer in ((packet_f, full), (packet_s, short)):
         reports = [e for e in packet["evidence"] if e.startswith(LABEL)]
         assert len(reports) == 1 and json.loads(reports[0].split(": ", 1)[1]) == answer
+        assert reports[0].endswith(render(answer)), "the report did not arrive as the mission rendered it"
     assert len(packet_f["evidence"]) == len(packet_s["evidence"]) == 2
 
     # Nothing but the report differs, and the engine scores the two packets identically.
@@ -119,12 +139,14 @@ def test_a_shortage_changes_reasons_evidence_requests_and_priority_with_nothing_
         assert wmi_f[field] == wmi_s[field], field
 
     # The figures are read: different reasons, different evidence requests, a different first step.
-    [reason_f], [reason_s] = staffing_reasons(wmi_f), staffing_reasons(wmi_s)
+    [reason_f], [reason_s] = readings(wmi_f), readings(wmi_s)
     assert "staffed=8, total_demand=8, shortage=0" in reason_f
     assert "staffed=4, total_demand=8, shortage=4" in reason_s and '"Dock": 2' in reason_s and '"Line": 2' in reason_s
-    other_f = [r for r in wmi_f["reasons"] if r not in (reason_f,)]
-    other_s = [r for r in wmi_s["reasons"] if r not in (reason_s,) and "shortfall" not in r]
-    assert other_f == other_s, "a reason other than the staffing reading differs"
+    assert staffing_lines(wmi_f) == [reason_f]                      # a complete report adds only its reading
+    assert staffing_lines(wmi_s) == [reason_s, "reported staffing shortfall or inconsistent evidence requires "
+                                               "validation before proceeding"]
+    other = lambda w: [r for r in w["reasons"] if r not in staffing_lines(w)]   # noqa: E731
+    assert other(wmi_f) == other(wmi_s), "a reason other than the staffing reading differs"
     assert wmi_f["validation_plan"][0] != wmi_s["validation_plan"][0]
     assert wmi_f["recommended_next_action"] == wmi_f["validation_plan"][0]
     assert wmi_s["recommended_next_action"] == wmi_s["validation_plan"][0]
@@ -147,9 +169,23 @@ def test_a_shortage_changes_reasons_evidence_requests_and_priority_with_nothing_
         assert "verified optimal" not in text and "certified plan verified" not in text
 
 
+def test_the_fifteen_step_missions_answer_holds_the_verdict_and_leads_with_its_shortage(tmp_path, journal):
+    from tests.integration.test_greg_mind_constructs_capability import STAFFING
+    params = live_organs()
+    answer = certified(STAFFING)
+    assert (answer["staffed"], answer["total_demand"], answer["shortage"]) == (8, 9, 1)
+    out, packet, wmi = run(tmp_path, journal, params, seed_for(answer), "m:staffing-loop15")
+    assert out["appraisal_verdict"] == "REPRODUCED" and wmi["requires_human_approval"] is True
+    [reading] = readings(wmi)
+    assert "staffed=8, total_demand=9, shortage=1" in reading and '"Dock2": 1' in reading
+    assert wmi["go_no_go"] == "needs_more_evidence"
+    assert wmi["recommended_next_action"].startswith("Validate the reported staffing shortage of 1 units")
+    assert out["assessment"]["recommended_next_action"] == wmi["recommended_next_action"]
+
+
 HOSTILE = {
     # the report cut short: what a size limit or a lossy relay leaves
-    "truncated": lambda full, short: SEED + f" {LABEL} for the docks and the line: " + json.dumps(full)[:-25],
+    "truncated": lambda full, short: SEED + f" {LABEL} for the docks and the line: " + render(full)[:-25],
     # figures that do not add up: staffed 8 of 8 with a shortage of 1
     "inconsistent": lambda full, short: seed_for({**full, "shortage": 1}),
     # two reports for the same request that disagree
@@ -168,20 +204,24 @@ def test_hostile_reports_keep_explicit_uncertainty(tmp_path, journal, case):
     out, packet, wmi = run(tmp_path, journal, params, HOSTILE[case](full, short), f"m:staffing-{case}")
     assert out["appraisal_verdict"] == "REPRODUCED" and out["authority_created"] is False
     assert wmi["requires_human_approval"] is True
-    readings = staffing_reasons(wmi)
-    assert readings and all("unverified" in r or "differ" in r or "shortfall" in r for r in readings), readings
+    lines = staffing_lines(wmi)
+    assert lines and all("unverified" in r or "differ" in r or "shortfall" in r for r in lines), lines
     first = wmi["recommended_next_action"]
-    if case == "replayed":
-        # DALEOBANKS keeps one copy of a repeated statement: no second evidence item, no second reading.
-        assert sum(e.startswith(LABEL) for e in packet["evidence"]) == 1
-        assert len(packet["evidence"]) == 2 and "8/8 units" in first
-        return
-    assert wmi["go_no_go"] != "go", (case, wmi["go_no_go"], readings)
+    assert wmi["go_no_go"] != "go", (case, wmi["go_no_go"], lines)
+    # The packet's evidence count never grows with the hostility: DALEOBANKS carries the report sentence as one item.
+    assert len(packet["evidence"]) == 2 and sum(e.startswith(LABEL) for e in packet["evidence"]) == 1
     if case == "truncated":
-        assert any("malformed or incomplete" in r for r in readings) and first.startswith("Resolve staffing evidence")
+        assert any("malformed or incomplete" in r for r in lines) and first.startswith("Resolve staffing evidence")
     elif case == "inconsistent":
-        assert any("does not equal total_demand" in r for r in readings) and first.startswith("Resolve staffing")
+        assert any("does not equal total_demand" in r for r in lines) and first.startswith("Resolve staffing")
+    elif case == "replayed":
+        # A JSON report ends in "}", so DALEOBANKS cannot split or dedupe the two copies: WMI reads both and names the
+        # second a replay, counted once.
+        assert [r.split(" (unverified")[0] for r in readings(wmi)] == ["staffing evidence[1]", "staffing evidence[1.2]"]
+        assert first == "Resolve staffing evidence[1.2]: repeats staffing evidence[1] (a replayed copy); counted " \
+                        "once; obtain the original plan and inputs"
     elif case == "contradictory":
-        assert any("staffing reports differ" in r for r in readings) and first.startswith("Reconcile differing staffing")
+        assert len(readings(wmi)) == 2 and any("staffing reports differ" in r for r in lines)
+        assert first.startswith("Reconcile differing staffing")
     elif case == "self-promoting":
-        assert "shortage of 4 units" in first and all("unverified report" in r for r in readings[:1])
+        assert "shortage of 4 units" in first and all("unverified report" in r for r in readings(wmi))

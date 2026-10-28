@@ -102,7 +102,8 @@ skeptics for E1 and E2 had returned. The final verdicts, received afterwards:
 - 15 reports. Both skeptics confirmed 12, which are 9 distinct defects: the nested cut was reported three times and
   the type error twice.
 - Three of the 9 were introduced by this branch: APR-1, F1 and the type error. Six were pre-existing.
-- `709475cc` fixes eight and part of E2. E2's ladder case and E5 are recorded below. Each fix has a test that fails on
+- `709475cc` fixes seven of them (APR-1, F1, the type error, the nested cut, the appraiser bind by artifact, E1 and
+  E4) and the preparation case of E2. E2's ladder case and E5 are recorded below. Each fix has a test that fails on
   `c74360cf`.
 - Both skeptics refuted three reports. EXACT-1000 is not changed here.
 - REUSE and E3, two of the refuted reports, are marked below. `709475cc` had treated them as defects and changed both,

@@ -47,3 +47,7 @@ Rebuild local context from reviewed owned bytes with `foundry.apply package`; `f
 If a later local reproduction, immutable rebuild, or host/container comparison fails, restore system 9 to `PARTIAL`, name the failed criterion, and retain this record. Do not reuse stale success. Inspect the artifact report/raw evidence or obtain a fresh independently reviewed hosted proof before elevating beyond `SANDBOX_VERIFIED`.
 
 System 10, full GREG and organ dependency images, general source admission, live activation, founder-device acceptance, and every VEPMC/real-world gate remain separate obligations.
+
+## Receiver verification, 2026-10-28
+
+The integration owner of #196 (session `session_01FBS4KNJR59nSbdGbxo8Mbx`) read the raw log of job `120524216169` through the GitHub job-log API, which this account can reach. The proof step printed `{"reproduced": true, "image": "sha256:cb1a0359804fcb3982c1ceabd00e54070900a4fe461a2e518a5383bc813bc4b0", "cases": 6}`. `scripts/ci/prove_oci.py` prints that line only after both no-cache layouts compare equal (it raises `OCI independent rebuild differs` otherwise) and all six container results equal host evaluation (it raises `container result differs` otherwise). The artifact archive itself was not downloaded, so the per-case `report.json` remains uninspected; the tier stays `SANDBOX_VERIFIED`. Locally on the adopted tree: `tests/unit/test_greg_oci.py` and `tests/unit/test_foundry_systems.py` 73 passed; `python -m foundry.completion --audit` PASS, 51/55 complete, 0 problems.

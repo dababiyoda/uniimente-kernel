@@ -63,11 +63,19 @@ def test_an_authorized_correction_changes_the_later_selection_and_the_ablation_d
         portfolios = [run.ask(f"pf-{i}", PORTFOLIO) for i in range(10)]
         cid = construction_id(run.body)
         states_before = len(journal.replay("capability.state"))
+        # prediction 8 declared "the two founder attaches"; the setup records three attaches: one founder command and
+        # two signed read-only auto_attach (review of #210, record item). Asserted as recorded, not as declared.
+        setup = [e.payload.get("by") for e in journal.replay("capability.state") if e.payload.get("state") == "ATTACHED"]
+        assert setup == ["founder command"] + ["founder-signed mission auto_attach (read_only)"] * 2
 
-        def decide():
-            return compiler.run({"problem_id": "later", "compile": {"geometry": {"geometry": "optimization"},
-                                                                    "data": both, "execute": False}},
-                                registry=run.body.registry, journal=journal)["method_or_composition_selected"]
+        receipts = {}
+
+        def decide(arm=None):
+            receipt = compiler.run({"problem_id": "later", "compile": {"geometry": {"geometry": "optimization"},
+                                                                       "data": both, "execute": False}},
+                                   registry=run.body.registry, journal=journal)
+            receipts[arm] = receipt
+            return receipt["method_or_composition_selected"]
 
         # step 1: adversarial reports, all claiming the promise was kept
         for record in portfolios:
@@ -107,8 +115,13 @@ def test_an_authorized_correction_changes_the_later_selection_and_the_ablation_d
         for row in disputes:
             body = {**row["prepared_resolution"]["body"], "note": "time-clock export, external record"}
             run.command("REALIZATION", body)
-        arm_c = decide()
-        monkeypatch.setattr(settlement, "_resolutions", lambda journal: [])
+        arm_c = decide("C")
+        # prediction 2 asks that the frozen rule decide: the compiler's settled-outcome preference (Holm-adjusted
+        # one-sided Fisher) chose flow_maxflow over the construction (review of #210, record item)
+        preference = receipts["C"].get("settled_preference") or {}
+        assert preference.get("against") == cid and preference.get("preferred") == "cognition.flow_maxflow"
+        assert receipts["C"]["selection_level"] == "preferred_by_settled_outcomes"
+        monkeypatch.setattr(settlement, "_resolutions", lambda journal, signed=None: [])
         arm_b_after = decide()                                              # the same history, repair disabled
         assert compiler._settled_counts(journal)[cid] == (5, 5)
         monkeypatch.undo()

@@ -66,6 +66,10 @@ DEVICE_GOAL_CONTROLS = ("stop_pushing", "lower_priority", "never_use_tactic", "d
                         "forget_route", "revoke_capability")
 VERIFIED_KINDS = ("MISSION", "DECISION", "GOAL", "GOAL_CONTROL")
 KEY_KINDS = ("ROTATE_FOUNDER_KEY", "DEVICE_ENROLL", "DEVICE_REVOKE")
+# Evidence commands verified like founder facts (envelope, fresh nonce, signed validity) so settlement can bind a
+# REALIZATION fact or resolution to the body the founder signed (review of #210, S1/S9). They set no goal, mission
+# or key state, and VERIFIED_KINDS consumers never see them.
+EVIDENCE_KINDS = ("REALIZATION",)
 STOP_KINDS = ("stop_pushing", "change_goal")
 # Signed narrowing controls and the goal-state preference list each one appends to.
 NARROWING = {"never_use_tactic": "never_use_tactic", "do_not_monitor": "do_not_monitor", "ask_before": "ask_before",
@@ -405,7 +409,7 @@ def _accepted(facts: FounderFacts, p: dict, founders: dict, devices: dict, seen_
     if principal is None:
         return None
     if not isinstance(p.get("nonce"), str) or p.get("nonce") != env.get("nonce"):
-        if ckind in VERIFIED_KINDS or ckind in KEY_KINDS:
+        if ckind in VERIFIED_KINDS or ckind in KEY_KINDS or ckind in EVIDENCE_KINDS:
             facts.refused[digest_] = ("its record's nonce is not its signed envelope's: not a record Body.apply "
                                       "wrote; it spends no nonce and counts for nothing")
         return None
@@ -415,10 +419,10 @@ def _accepted(facts: FounderFacts, p: dict, founders: dict, devices: dict, seen_
         except (KeyError, TypeError, ValueError):
             before = True
         if before:
-            if ckind in VERIFIED_KINDS or ckind in KEY_KINDS:
+            if ckind in VERIFIED_KINDS or ckind in KEY_KINDS or ckind in EVIDENCE_KINDS:
                 facts.refused[digest_] = f"{RESTORED_REFUSAL}; not a record Body.apply wrote, it spends no nonce"
             return None
-    if ckind not in VERIFIED_KINDS and ckind not in KEY_KINDS:
+    if ckind not in VERIFIED_KINDS and ckind not in KEY_KINDS and ckind not in EVIDENCE_KINDS:
         return principal
     if env["nonce"] in seen_nonces:
         facts.refused[digest_] = "replayed nonce: an earlier accepted or verified-then-rejected command used it"
@@ -466,9 +470,11 @@ def _founder_fact(facts: FounderFacts, p: dict, env: dict, ckind: str, digest_: 
             devices.pop(body.get("device_key_id"), None)
     except (KeyError, TypeError, ValueError):
         return
-    if ckind not in VERIFIED_KINDS:
+    if ckind not in VERIFIED_KINDS and ckind not in EVIDENCE_KINDS:
         return
     facts.signed[digest_] = {**p, "principal": principal}
+    if ckind in EVIDENCE_KINDS:
+        return
     try:
         if ckind == "GOAL":
             _admit(facts, body, digest_, principal, env, accepted_at)

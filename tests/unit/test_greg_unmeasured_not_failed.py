@@ -90,7 +90,9 @@ def test_the_appraiser_does_not_certify_a_failure_its_receipt_cannot_decide(tmp_
     original = MissionEngine._pursue
 
     def pursue_unmeasured_too(self, m, now, failing, evidence, **kw):
-        return original(self, m, now, set(failing) | set(self.sensor_errors), evidence, **kw)
+        failing = set(failing) | set(self.sensor_errors)
+        self.sensor_errors, self.unread = set(), set()       # the closure no longer knows what it did not measure
+        return original(self, m, now, failing, evidence, **kw)
 
     monkeypatch.setattr(MissionEngine, "_pursue", pursue_unmeasured_too)
     home, key, body_id, data = make_body(tmp_path)
@@ -129,3 +131,129 @@ def test_an_undecided_re_reading_of_the_world_is_not_a_reobserved_failure(tmp_pa
     assert verdict["verdict"] == "REFUTED"                    # before: VERIFIED_UNMET
     assert verdict["checks"]["world_reobserved"] is False
     assert any(f.startswith("many: the world could not be re-measured") for f in verdict["findings"])
+
+
+# -- review of #209: what else the failure closure must not certify -------------------------------------------------
+
+ABSTAIN = {"problem_id": "qualified:game", "operation": "nonexistent_op", "data": {}}
+
+
+def _abstaining(data):
+    status = data / "status.txt"
+    status.write_text("not yet")
+    q = {"check_id": "q", "description": "game value is 0",
+         "sensor": {"capability": "cognition.solve", "target": "cognition:game", "params": ABSTAIN},
+         "predicate": {"op": "equals", "field": "output.value", "value": 0}}
+    return mission("m:abst", checks=[q, note_check("status", status, "shipped")],
+                   strategies=[write_strategy("nudge", "nudge.txt", "nudged", ["status"]),
+                               write_strategy("recompute", "q.txt", "again", ["q"])],
+                   capabilities=["fs.read", "fs.write", "cognition.solve"],
+                   targets=("fs:*", "workspace:*", "cognition:*"))
+
+
+def test_an_abstaining_sensor_is_pursued_but_never_certified_as_failed(tmp_path):
+    """A cognitive receipt that abstained measured nothing. Its cadence is kept (its strategy still runs; the engine
+    never blames it), but the failure closure used to name it "re-observed failing", and the appraiser read the
+    missing answer as that failure and returned VERIFIED_UNMET (review of #209, E1)."""
+    home, key, body_id, data = make_body(tmp_path)
+    submit(home, key, body_id, "MISSION", _abstaining(data))
+    run(home, Clock(), ticks=10, step=600.0)
+    observed = [e for e in events(home, "mission.observed") if e["mission_id"] == "m:abst" and e["check_id"] == "q"]
+    assert observed and all(e["detail"].startswith("sensor inconclusive") for e in observed)
+    assert ("recompute", "DONE") in [(e["action_id"], e["status"]) for e in events(home, "mission.action")
+                                     if e["mission_id"] == "m:abst"]                    # cadence unchanged
+    [unmet] = [e for e in events(home, "mission.unmet") if e["mission_id"] == "m:abst"]
+    assert unmet["failing_checks"] == ["status"] and unmet["unmeasured_checks"] == ["q"]   # before: ["q", "status"]
+    [appraised] = [e for e in events(home, "mission.appraised") if e["mission_id"] == "m:abst"]
+    assert appraised["verdict"] == "VERIFIED_UNMET", appraised["findings"]
+
+
+def test_the_appraiser_does_not_certify_a_failure_on_an_abstaining_receipt(tmp_path, monkeypatch):
+    """Defence in depth: a closure that still names the abstaining check (the engine before this change) is refuted
+    by the separate appraiser, whose re-run of the sensor abstains again and is no re-reading of a failure."""
+    original = MissionEngine._pursue
+
+    def forget_unread(self, m, now, failing, evidence, **kw):
+        self.unread = set()
+        return original(self, m, now, failing, evidence, **kw)
+
+    monkeypatch.setattr(MissionEngine, "_pursue", forget_unread)
+    home, key, body_id, data = make_body(tmp_path)
+    submit(home, key, body_id, "MISSION", _abstaining(data))
+    run(home, Clock(), ticks=10, step=600.0)
+    [unmet] = [e for e in events(home, "mission.unmet") if e["mission_id"] == "m:abst"]
+    assert unmet["failing_checks"] == ["q", "status"]
+    [appraised] = [e for e in events(home, "mission.appraised") if e["mission_id"] == "m:abst"]
+    assert appraised["verdict"] == "REFUTED"                    # before: VERIFIED_UNMET with no findings
+    assert any(f.startswith("q: the receipt abstained") for f in appraised["findings"]), appraised["findings"]
+    assert any(f.startswith("q: the world could not be re-measured") for f in appraised["findings"])
+
+
+def test_a_refused_sensor_is_never_named_a_measured_failure(tmp_path):
+    """A read the capability refused (here: outside the body's read roots) keeps its route, since a strategy may
+    create what it reads, but it is no reading: the closure used to name it "re-observed failing" and the appraiser
+    then refuted the whole closure (review of #209, E4)."""
+    home, key, body_id, data = make_body(tmp_path)
+    status = data / "status.txt"
+    status.write_text("not yet")
+    outside = tmp_path / "outside.txt"
+    outside.write_text("x")
+    spec = mission("m:refu", checks=[note_check("r", outside, "y"), note_check("status", status, "shipped")],
+                   strategies=[write_strategy("nudge", "nudge.txt", "nudged", ["status"]),
+                               write_strategy("maker", "r.txt", "y", ["r"])],
+                   capabilities=["fs.read", "fs.write"])
+    submit(home, key, body_id, "MISSION", spec)
+    run(home, Clock(), ticks=10, step=600.0)
+    [unmet] = [e for e in events(home, "mission.unmet") if e["mission_id"] == "m:refu"]
+    assert unmet["failing_checks"] == ["status"] and unmet["unmeasured_checks"] == ["r"]
+    [appraised] = [e for e in events(home, "mission.appraised") if e["mission_id"] == "m:refu"]
+    assert appraised["verdict"] == "VERIFIED_UNMET", appraised["findings"]          # before: REFUTED
+
+
+def test_three_unmeasured_checks_are_one_round_not_three(tmp_path, no_whole_kept):
+    """The SENSOR_FAILURE streak counts observation rounds. It used to count readings, so three checks that could
+    not be measured asked the founder on the very first observation, with no retry (review of #209, E3)."""
+    home, key, body_id, data = make_body(tmp_path)
+    page = data / "page.txt"
+    page.write_text(FILLER)
+    checks = []
+    for i in range(3):
+        check = note_check(f"u{i}", page, PHRASE + str(i))
+        check["predicate"]["op"] = "not_contains"
+        checks.append(check)
+    submit(home, key, body_id, "MISSION", mission("m:three", checks=checks,
+           strategies=[write_strategy("noop", "noop.txt", "x", ["u0"])], capabilities=["fs.read", "fs.write"]))
+    clock, states = Clock(), []
+    with Body(home, clock=clock) as body:
+        for _ in range(4):
+            states.append(body.tick()["missions"][0]["state"])
+            clock.advance(600.0)
+    assert states[:2] == ["SENSOR_RETRY", "SENSOR_RETRY"], states            # before: BLOCKED on the first tick
+    assert "BLOCKED" in states[2:], states
+    [ask] = [r for r in events(home, "decision.requested") if r.get("mission_id") == "m:three"]
+    assert ask["kind"] == "SENSOR_FAILURE"
+
+
+def test_preparation_holds_a_strategy_whose_precondition_is_observed_failing(tmp_path):
+    """While the founder decides, Goal Gravity preparation pursues only the checks the awaited move does not advance,
+    but a precondition is judged against the whole observation: a strategy that requires a check this pass saw failing
+    is held, as _step would hold it (review of #209, E2)."""
+    from tests.unit.test_greg_goal_gravity import MID, World
+
+    class Requiring(World):
+        def mission_spec(self, **kw):
+            return mission(MID, checks=[note_check("c", self.ws / "c.txt", "ok"),
+                                        note_check("d", self.ws / "d.txt", "shipped")],
+                           strategies=[write_strategy("w", "c.txt", "ok", ["c"], requires=["d"]),
+                                       write_strategy("w2", "d.txt", "shipped", ["d"])],
+                           capabilities=["fs.read", "fs.write"], targets=("fs:*", "workspace:c.txt"),
+                           closure={"kind": "infinite", "ladder": [["c"], ["d"]], "cadence_seconds": 86400}, **kw)
+
+    world = Requiring(tmp_path)
+    world.start()
+    world.tick(6)
+    assert world.book().missions[MID].blocker["action_id"] == "w2"       # awaiting the founder's approval for d
+    (world.ws / "c.txt").write_text("damaged")
+    world.ingest("ops", "c.txt looks broken")
+    world.tick(3, step=30.0)
+    assert (world.ws / "c.txt").read_text() == "damaged"                  # before: w ran with d failing

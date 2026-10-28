@@ -44,7 +44,10 @@ the whole output read through `artifact_output`, with `whole=True`.
 
 **The whole is judged as the value itself:**
 
-- a list of 1000 items is all of it, not "possibly cut";
+- a value shaped like a receipt's record of a cut string is data, not a cut;
+- a list of exactly 1000 items still decides only what more items could not undo, in every mode. A capability may cut
+  its own list there without saying so (`fs.list`), and the appraiser's fresh re-reading must reach the engine's
+  verdict. The first version read it as all of it (corrected after the review of #209, F1);
 - an output that declares itself incomplete (`complete: false`) still proves only monotone facts.
 
 **Anything else keeps INSUFFICIENT, with the reason:** a missing, altered, non-JSON or foreign artifact, a body
@@ -72,10 +75,12 @@ Independent review of #196's judge (separate process, findings J1 and J2) found 
 decide still counted as failed whenever another check truly failed. This holds at any output size, with or without the
 whole-output read above. Both are fixed on this branch:
 
-- **Engine (J1).** `_step` pursues only measured failures (`failing - errors`), as `_prepare` already did. A strategy
-  whose only purpose is an unmeasured check is no longer dispatched, and a failure closure names only measured
-  failures. A precondition must still be measured passing: an unmeasured one holds the strategy. The NO_STRATEGY ask
-  says which checks GREG could not measure (`unmeasured_checks`).
+- **Engine (J1).** `_step` no longer pursues a reading the evidence could not decide (INSUFFICIENT, or a
+  construction the host stopped): `failing - self.inconclusive`. A strategy whose only purpose is such a check is no
+  longer dispatched. A sensor the capability refused keeps its route, since a strategy may create what it reads (the
+  first version, `failing - errors`, broke two canonical shop tests and was corrected in `c74360cf`). A precondition
+  must still be measured passing: an unmeasured one holds the strategy. The NO_STRATEGY ask says which checks GREG
+  could not measure (`unmeasured_checks`).
 - **Appraiser (J2).** It judges three-valued, with `judge_receipt` on the receipt and `judge` on the re-reading. An
   undecided receipt proves neither a success nor the claimed failure. An undecided re-reading of the world (for
   example `fs.list`, which keeps at most 1000 entries and says nothing of the rest) is "could not be re-measured",
@@ -88,6 +93,37 @@ whole-output read above. Both are fixed on this branch:
 | The same tests on this branch before the fix (`2a59329c`) | 3 failed, 1 passed. The test that passes guards the precondition rule, which held before by a different route |
 | `scripts/ci/check_whole_output_mutants.py` | 17 mutants (4 new), 0 survived |
 
+## Follow-up: review of this branch (#209)
+
+A review of `c74360cf` by four lenses (subagents of this session, so self-review, not independent) reproduced each
+finding on the head and on #196's `e6c5058c`. Skeptics confirmed E1 and E2; their other runs did not return. It found
+12 distinct defects in 15 reports (three were found twice). Four were introduced by this branch and one was widened by
+it. Ten are fixed here, each with a test that fails on `c74360cf`:
+
+| Finding | Introduced here | Before | Now |
+| --- | --- | --- | --- |
+| APR-1: J9 refused a record the sensor itself returned | yes | a `pipeline.inspect` check on `value.sha256` asked the founder (SENSOR_FAILURE); the appraiser refuted what #196 verified | only a receipt that recorded a cut has its records refused; a prefix is never read as a whole string |
+| F1: a list of exactly 1000 | yes | the same list closed the mission or stayed open by the length of an unrelated field; the appraiser's re-reading refuted the closure | undecided past item 1000 in every mode; the appraiser judges its fresh re-reading as whole |
+| TYPEERROR / APR-3 / J7: a signed value of another type | the long-text case | `contains 5` over a text past 16 KiB raised TypeError out of `Body.tick` (over a short text it always had) | the check fails; nothing raises |
+| REUSE: a reading reused after a restart | yes | judged on its prefix only: inconclusive where the fresh reading decided | carries the whole output its receipt kept |
+| J-NESTED / F2 / APR-2: a cut below the judged value's own members | no | compared as the receipt's wrapper: a wrong TRUE and wrong FALSEs, kept by `judge_receipt` | compared by digest and length or undecided; the rest over the kept whole |
+| APPRAISER-ARTIFACT-BIND | no | the appraiser re-derived a `by: artifact` bind from the prefix and refuted a correct closure | re-derived from the whole, as the engine bound it |
+| E1: an abstaining cognitive sensor | no | named "re-observed failing" in the failure closure; VERIFIED_UNMET on no measurement | still pursued (Goal Gravity's attach ask depends on it); never certified as failed, by the engine or the appraiser |
+| E4: a refused sensor read | no | named "re-observed failing"; the appraiser then refuted the whole closure | listed as `unmeasured_checks`; the closure names measured failures only |
+| E2: a precondition during preparation | no | a strategy ran in the pass that measured its required check failing | held, as `_step` holds it |
+| E3: the SENSOR_FAILURE streak | widened here | three unmeasured checks asked the founder on the first reading | counts observation rounds |
+
+Recorded, not changed here: E2's second case (a required check outside the current ladder rung is never observed, so
+its strategy runs and the appraiser refutes the run; the fix changes ladder semantics and goes to the integrator); E5
+(after the founder answers SENSOR_FAILURE, the mission re-blocks on the same request every tick); a list of exactly
+1000 items is never decided past its end (conservative; `fs.list` should declare its own cut).
+
+| Check | Result |
+| --- | --- |
+| New and changed tests on `c74360cf` | 24 fail; the other 83 in those four files pass there (guards and controls) |
+| The same tests with the fixes | pass |
+| `scripts/ci/check_whole_output_mutants.py` | 37 mutants (15 new), 0 survived or stale |
+
 ## Limits and residuals
 
 - **Size.** Outputs whose canonical JSON exceeds 1 MiB are not kept, so they still ask. Tested: 200 KiB of control
@@ -96,8 +132,8 @@ whole-output read above. Both are fixed on this branch:
 - **Unicode.** The judge compares code points. A forbidden phrase in another normalization form (NFD text, NFC
   phrase) evades `not_contains` on any value, before and after this change. This is recorded for the integrator and
   the founder, not changed here.
-- **Re-observation.** The appraiser re-observes the world with the raw output and judges it as a receipt would. A
-  re-read list of exactly 1000 items is still "possibly cut" there. This is pre-existing and not changed.
+- **Re-observation.** The appraiser judges its fresh re-reading as a whole output (nothing cut it). A re-read list of
+  exactly 1000 items is still undecided past its end, as it is for the engine.
 - **Trust boundary.** The store and the ledger share a host. Whoever controls the host can rewrite both, as before.
 - **Independence.** The deliberation record (`deliberation.json`, validated) is self-review: five lenses from one
   session. Independent review is requested.

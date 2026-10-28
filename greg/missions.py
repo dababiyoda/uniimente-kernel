@@ -350,15 +350,16 @@ def artifact_output(result: dict, artifact_root, *, source: str = "source"):
     return whole
 
 
-def bound_value(edge: dict, output, whole=None):
+def bound_value(edge: dict, output, whole=None, *, recorded_cut: bool = True):
     """The typed, size-bounded value one edge carries from a receipt's output. ``whole``: the receipt's whole
     output read back from the artifact store (``artifact_output``), used only by an edge that opted in with
-    ``by: artifact``; every other edge reads the kept output and refuses a cut value."""
+    ``by: artifact``; every other edge reads the kept output and refuses a cut value. ``recorded_cut``: whether the
+    receipt recorded cutting its output (``output_artifact``), see ``_raw_field``."""
     source = edge["from"].get("action_id") or "check " + str(edge["from"].get("check_id"))
     by_artifact = edge.get("by") == "artifact"
     from_whole = by_artifact and whole is not None   # re-hashed against the receipt's recorded address
     try:
-        value = _raw_field(whole if from_whole else output, edge["from"]["field"])
+        value = _raw_field(whole if from_whole else output, edge["from"]["field"], recorded_cut=recorded_cut)
     except KeyError:
         raise Unbound(f"{source} output has no {edge['from']['field']}") from None
     except LookupError as exc:
@@ -487,18 +488,23 @@ def _held_back(value) -> str | None:
     return next((why for why in map(_held_back, members) if why), None)
 
 
-def _raw_field(output, path: str, *, whole: bool = False):
+def _raw_field(output, path: str, *, whole: bool = False, recorded_cut: bool = True):
+    """``recorded_cut``: the receipt recorded cutting this output (it carries ``output_artifact``). Only such a
+    receipt made records of cut strings; in one that recorded no cut, a value shaped like one is the sensor's own data
+    (pipeline.inspect returns another receipt's record), and its digest, length and flag are read as they are."""
     value = output
     for part in path.split(".") if path else []:
-        if not whole and _cut(value):
+        if not whole and _cut(value) and (recorded_cut or part == "prefix"):
             # the receipt's own record of a string it kept as a prefix: its parts describe the cut, not the output,
-            # and its prefix read as a whole string would decide what the receipt did not keep (review of #196, J9)
+            # and its prefix read as a whole string would decide what the receipt did not keep (review of #196, J9).
+            # A prefix is never a whole string, whoever kept it; the record's other parts are refused only in a
+            # receipt that recorded a cut (review of #209, APR-1: a pipeline.inspect check on value.sha256)
             raise LookupError(f"{path} steps into a value the receipt kept only as a prefix")
         if isinstance(value, dict) and part in value:
             value = value[part]
         elif isinstance(value, list) and part.isdigit() and int(part) < len(value):
             value = value[int(part)]
-        elif not whole and isinstance(value, list) and part.isdigit() and len(value) == RECEIPT_LIST_LIMIT:
+        elif isinstance(value, list) and part.isdigit() and len(value) == RECEIPT_LIST_LIMIT:
             raise LookupError(f"item {part} of {path} lies past the {RECEIPT_LIST_LIMIT} items a receipt keeps")
         else:
             raise KeyError(path)
@@ -548,7 +554,7 @@ def measured(observation: dict) -> bool:
     return not str(observation.get("detail", "")).startswith("sensor ")
 
 
-def judge(predicate: dict, output, *, whole: bool = False) -> tuple[str, str]:
+def judge(predicate: dict, output, *, whole: bool = False, recorded_cut: bool = True) -> tuple[str, str]:
     """TRUE, FALSE or INSUFFICIENT: what the retained output proves about one predicate.
 
     A whole value is judged as before. From a kept prefix (a long string, or a list at the receipt's item limit)
@@ -559,9 +565,11 @@ def judge(predicate: dict, output, *, whole: bool = False) -> tuple[str, str]:
     ``"decided"`` (e.g. ``document.text``'s ``found`` once a phrase is found): a field so named, holding a value,
     is judged whole. ``decided`` vouches for fields of an incomplete output only, never for a cut list.
 
-    ``whole``: the output is an action's complete output, never cut by a receipt (read back from the artifact store,
-    or a fresh re-observation): a dict is a dict and a list of RECEIPT_LIST_LIMIT items is all of it. Only the
-    capability's own ``complete: false`` still limits it."""
+    ``whole``: the output is an action's complete output, never cut by a receipt (read back from the artifact store):
+    a dict shaped like a receipt's prefix record is data, not a cut. A list of exactly RECEIPT_LIST_LIMIT items still
+    decides only what more items could not undo, in every mode: a capability may cut its own list there without
+    saying so, and the appraiser's fresh re-reading must reach the verdict the engine reached. The capability's own
+    ``complete: false`` limits it too. A signed value of a type the operation does not apply to fails it."""
     op = predicate["op"]
     path = predicate.get("field", "")
     # an incomplete output states its own completeness in full (#201 review, 6); every other verdict on it keeps only
@@ -571,7 +579,7 @@ def judge(predicate: dict, output, *, whole: bool = False) -> tuple[str, str]:
     vouched = declared and isinstance(output.get("decided"), list) and path in output["decided"]
     incomplete = "the capability reported its observation incomplete"
     try:
-        value = _raw_field(output, path, whole=whole)
+        value = _raw_field(output, path, whole=whole, recorded_cut=recorded_cut)
     except KeyError:
         if declared:       # a field the observation has not reached yet is not an absent field
             return INSUFFICIENT, f"field {path!r} absent; {incomplete}"
@@ -587,48 +595,90 @@ def judge(predicate: dict, output, *, whole: bool = False) -> tuple[str, str]:
     if cut:
         text, length = cut["prefix"], cut["length"]
         kept = f"first {len(text)} of {length} characters kept"
-        if op in ("contains", "not_contains"):
-            if isinstance(expected, str) and expected in text:
+        if op in ("contains", "not_contains") and not isinstance(expected, str):
+            # a type the operation does not apply to fails it, as over the whole text; it used to crash the tick
+            # once the whole was read from the store (review of #209)
+            verdict, detail = FALSE, f"{op} {expected!r:.60}: not a string, so no part of a text"
+        elif op in ("contains", "not_contains"):
+            if expected in text:
                 return (TRUE if op == "contains" else FALSE), f"{expected!r:.60} found in the kept prefix"
             return INSUFFICIENT, f"{op} {expected!r:.60}: not in the {kept}; the rest was not retained"
-        if op == "equals":
+        elif op == "equals":
             same = isinstance(expected, str) and len(expected) == length \
                 and hashlib.sha256(text_bytes(expected)).hexdigest() == cut["sha256"]
             verdict, detail = (TRUE if same else FALSE), f"equals {expected!r:.60} by digest of all {length} characters"
-        elif op == "count_gte":
+        elif op == "count_gte" and _number(expected):
             verdict, detail = (TRUE if length >= expected else FALSE), f"len {length} >= {expected}"
-        elif op in ("gte", "lte"):
+        elif op in ("gte", "lte", "count_gte"):
             verdict, detail = FALSE, "not numeric"
         else:
             raise MissionError(f"unknown predicate op {op!r}")
         if declared and not vouched and not (op == "count_gte" and verdict == TRUE):
             return INSUFFICIENT, f"{detail}; {incomplete}"
         return verdict, detail
-    verdict, detail = _judge_whole(op, value, expected)
-    partial = not whole and isinstance(value, list) and len(value) == RECEIPT_LIST_LIMIT and op in (
-        "equals", "contains", "not_contains", "count_gte")
-    # a list member longer than the receipt keeps is a wrapper, not the member: it can match nothing, so only a
-    # hit on a whole member decides (#201 review, 5a); its length is still the list's own
-    holed = not whole and isinstance(value, list) and not partial and op in ("equals", "contains", "not_contains") \
-        and any(_cut(v) for v in value)
-    if holed:
-        decided = (op == "contains" and verdict == TRUE and not _cut(expected)) \
-            or (op == "not_contains" and verdict == FALSE and not _cut(expected)) \
-            or (op == "equals" and (not isinstance(expected, list) or len(expected) != len(value) or any(
-                not _cut(v) and v != e for v, e in zip(value, expected))))
-        if not decided:
-            return INSUFFICIENT, f"{detail}; a member of the list was kept only as a prefix"
+    # A list of exactly RECEIPT_LIST_LIMIT items may have been cut there, by the receipt or by the capability itself
+    # (fs.list cuts its own listing there without saying so), so in every mode it decides only what more items could
+    # not undo. Before, a whole read from the store took it as all of it while the appraiser's fresh re-reading did
+    # not, and the same list closed or stayed open by the length of an unrelated field (review of #209, F1).
+    partial = isinstance(value, list) and len(value) == RECEIPT_LIST_LIMIT
+    if op == "equals":
+        # decided only by what the receipt kept whole: a member kept as a prefix compares by digest and length, and a
+        # list at the limit by its kept items, at every depth (review of #209: a cut below the value's own members
+        # used to be compared as its wrapper, a wrong FALSE and a wrong TRUE)
+        same = _compare(value, expected, whole)
+        verdict, detail = (INSUFFICIENT if same is None else TRUE if same else FALSE), \
+            f"{value!r:.200} == {expected!r:.200}"
+        if same is None:
+            return INSUFFICIENT, f"{detail}; {_held_back(value) or 'part of it was not kept'}"
+    elif op in ("contains", "not_contains") and isinstance(value, list):
+        found = [_compare(v, expected, whole) for v in value]
+        if True in found:
+            verdict = TRUE if op == "contains" else FALSE
+        elif None in found or partial:
+            reason = (f"the list was kept to its first {RECEIPT_LIST_LIMIT} items" if partial
+                      else "a member of the list was kept only in part")
+            return INSUFFICIENT, f"{op} {expected!r:.60}: not among the members kept whole; {reason}"
+        else:
+            verdict = FALSE if op == "contains" else TRUE
+        detail = f"{'' if op == 'contains' else 'not '}contains {expected!r}"
+    else:
+        verdict, detail = _judge_whole(op, value, expected)
+        if partial and op == "count_gte" and verdict == FALSE and _number(expected):
+            return INSUFFICIENT, f"{detail}; the list was kept to its first {RECEIPT_LIST_LIMIT} items"
     if vouched and not partial and value is not None:
         return verdict, f"{detail}; decided by the capability despite an incomplete observation"
-    if partial or declared:
+    if declared:
         monotone = (op == "contains" and verdict == TRUE) or (op == "not_contains" and verdict == FALSE) \
-            or (op == "count_gte" and verdict == TRUE) \
-            or (op == "equals" and verdict == FALSE and partial and not declared and isinstance(expected, list)
-                and expected[:RECEIPT_LIST_LIMIT] != value)
+            or (op == "count_gte" and verdict == TRUE)
         if not monotone:
-            why = f"the list was kept to its first {RECEIPT_LIST_LIMIT} items" if partial else incomplete
-            return INSUFFICIENT, f"{detail}; {why}"
+            return INSUFFICIENT, f"{detail}; {incomplete}"
     return verdict, detail
+
+
+def _number(value) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _compare(kept, expected, whole: bool = False) -> bool | None:
+    """Whether a value the receipt kept equals ``expected``: True, False, or None when what was kept cannot tell.
+    A member kept as a prefix (not in ``whole`` mode) compares by its digest and length; a list at the receipt's item
+    limit compares by its kept items and differs from any shorter list; anything else by equality, at every depth."""
+    cut = None if whole else _cut(kept)
+    if cut:
+        return isinstance(expected, str) and len(expected) == cut["length"] \
+            and hashlib.sha256(text_bytes(expected)).hexdigest() == cut["sha256"]
+    if isinstance(kept, list):
+        at_limit = len(kept) == RECEIPT_LIST_LIMIT
+        if not isinstance(expected, list) or len(expected) < len(kept) or (not at_limit and len(expected) != len(kept)):
+            return False
+        pairs = [_compare(k, e, whole) for k, e in zip(kept, expected)]
+        return False if False in pairs else None if (at_limit or None in pairs) else True
+    if isinstance(kept, dict):
+        if not isinstance(expected, dict) or set(kept) != set(expected):
+            return False
+        pairs = [_compare(kept[k], expected[k], whole) for k in kept]
+        return False if False in pairs else None if None in pairs else True
+    return kept == expected
 
 
 def _judge_whole(op, value, expected) -> tuple[str, str]:
@@ -636,17 +686,19 @@ def _judge_whole(op, value, expected) -> tuple[str, str]:
         return TRUE if ok else FALSE
     if op == "equals":
         return as_verdict(value == expected), f"{value!r:.200} == {expected!r:.200}"
+    # a type the operation does not apply to fails it (both contains and not_contains), never raises: a signed value
+    # of another type used to crash the tick (review of #209)
+    searchable = isinstance(value, list) or (isinstance(value, str) and isinstance(expected, str))
     if op == "contains":
-        return as_verdict((expected in value) if isinstance(value, (str, list)) else False), f"contains {expected!r}"
+        return as_verdict(searchable and expected in value), f"contains {expected!r}"
     if op == "not_contains":
-        return as_verdict((expected not in value) if isinstance(value, (str, list)) else False), \
-            f"not contains {expected!r}"
+        return as_verdict(searchable and expected not in value), f"not contains {expected!r}"
     if op in ("gte", "lte"):
-        if not isinstance(value, (int, float)) or isinstance(value, bool):
+        if not _number(value) or not _number(expected):
             return FALSE, "not numeric"
         return as_verdict(value >= expected if op == "gte" else value <= expected), f"{value} {op} {expected}"
     if op == "count_gte":
-        return as_verdict((len(value) >= expected) if isinstance(value, (list, str)) else False), \
+        return as_verdict(isinstance(value, (list, str)) and _number(expected) and len(value) >= expected), \
             f"len {op} {expected}"
     raise MissionError(f"unknown predicate op {op!r}")
 
@@ -667,8 +719,8 @@ def judge_receipt(predicate: dict, result: dict | None, artifact_root) -> tuple[
     no whole output (its output was never cut, the store was full, the body has none) is judged as before. A
     missing, altered or foreign artifact decides nothing: the check stays INSUFFICIENT, with the reason."""
     output = result.get("output") if isinstance(result, dict) else None
-    verdict, detail = judge(predicate, output)
     record = result.get("output_artifact") if isinstance(result, dict) else None
+    verdict, detail = judge(predicate, output, recorded_cut=record is not None)
     if verdict != INSUFFICIENT or record is None:
         return verdict, detail
     try:
@@ -1963,14 +2015,18 @@ class MissionEngine:
             # Readings of the mission's other checks (measured and passing) neither extend nor break the streak:
             # before, one passing check beside one unmeasurable check reset it every tick, so the founder was never
             # asked and the mission re-observed forever.
-            streak = 0
+            # The streak counts observation rounds, not readings: three unmeasurable checks are one round, not
+            # three (review of #209, E3).
+            rounds = []
             for obs in reversed([e.payload for e in self.journal.replay("mission.observed")
                                  if e.payload["mission_id"] == m.mission_id]):
                 if obs["check_id"] not in errors:
                     continue
                 if measured(obs):
                     break
-                streak += 1
+                if obs.get("at") not in rounds or obs.get("at") is None:
+                    rounds.append(obs.get("at"))
+            streak = len(rounds)
             if streak >= 3:
                 rid = self._request(m, kind="SENSOR_FAILURE", scope_digest=sha256_json(sorted(errors)), action_id=None,
                                     why="the mission cannot measure its success checks",
@@ -2132,7 +2188,8 @@ class MissionEngine:
                 raise Unbound(f"{source} receipt {receipt[:19]} is not on the ledger")
             result = record.payload.get("result", {})
             whole = artifact_output(result, self.artifact_root, source=source) if edge.get("by") == "artifact" else None
-            value = bound_value(edge, result.get("output"), whole)
+            value = bound_value(edge, result.get("output"), whole,
+                                recorded_cut=result.get("output_artifact") is not None)
             _set_path(params, edge["param"], value)
             bindings.append({"param": edge["param"], ("from_check" if "check_id" in edge["from"] else "from_action"): source,
                              "from_receipt": receipt,
@@ -2219,8 +2276,11 @@ class MissionEngine:
 
     def _observe(self, m: MissionState, now: datetime):
         failing, evidence = set(), []
+        self.observed_failing = failing            # every check this pass did not measure passing
         sensor_errors = self.sensor_errors = set()
         inconclusive = self.inconclusive = set()   # the sensor read the world; the evidence could not decide
+        # pursued like any failing check, never certified as one: an abstaining receipt, an input not resolvable yet
+        unread = self.unread = set()
         self.capability_faults = {}
         self.disagreements = {}
         for check in m.current_checks():
@@ -2243,6 +2303,7 @@ class MissionEngine:
                 bound_params, input_bindings = resolve(sensor.get("params", {}), self.journal, m.mission_id)
             except (PendingInput, BindingError) as exc:
                 failing.add(check["check_id"])
+                unread.add(check["check_id"])
                 self.journal.record("mission.input_wait", {"mission_id": m.mission_id,
                     "check_id": check["check_id"], "why": str(exc)}, key=[m.mission_id, check["check_id"], str(exc)])
                 continue
@@ -2301,6 +2362,7 @@ class MissionEngine:
                     # retry cadence (learned routing settles the lead engine's resource failure
                     # from these retries); _record_routing_outcomes never blames the strategy.
                     detail = f"sensor inconclusive ({why}): {detail}"
+                    unread.add(check["check_id"])
             data = {"mission_id": m.mission_id, "check_id": check["check_id"], "passed": passed,
                     "detail": detail[:300], "receipt": outcome.receipt_hash, "rung": m.rung, "at": iso(now),
                     "capability": manifest.capability_id}     # the sensor as resolved (a spec may name a function)
@@ -3161,17 +3223,19 @@ class MissionEngine:
         held = {}                            # strategies waiting on a precondition observation says fails
         bound = {}                           # action_id -> (params, binding provenance, source receipts)
         inline = {}                          # action_id -> (params, provenance) of inline $from_action inputs
-        # ``failing`` holds measured failures only. A precondition is honoured only when measured passing, so a check
-        # this observation could not measure still holds the strategies that require it.
+        # A precondition is honoured only when this pass measured it passing. A check it could not measure, or saw
+        # failing, holds the strategies that require it, whether or not the caller pursues that check here
+        # (preparation leaves out the checks the awaited move advances; review of #209, E2).
         unmeasured = set(getattr(self, "sensor_errors", ())) - failing
+        unproven = failing | unmeasured | set(getattr(self, "observed_failing", ()))
         for index, s in enumerate(m.spec["strategies"]):
             gain = len(set(s["advances"]) & failing)
             if not gain or s["action_id"] in m.failed or s["action_id"] in m.excluded:
                 continue
             if prepare_for is not None and (s["action_id"] == prepare_for or not self._inside_cone(m, s, now)):
                 continue
-            if set(s.get("requires", [])) & (failing | unmeasured):
-                held[s["action_id"]] = sorted(set(s["requires"]) & (failing | unmeasured))
+            if set(s.get("requires", [])) & unproven:
+                held[s["action_id"]] = sorted(set(s["requires"]) & unproven)
                 continue
             try:      # inputs that cannot resolve (or be consumed) yet hold the strategy: an alternative runs,
                 bound[s["action_id"]], inline_out = self._inputs(m, s)   # or the founder is asked
@@ -3234,9 +3298,13 @@ class MissionEngine:
                 # separate process appraises it as it does an achievement, so settlement hears failures too.
                 # Qualified intelligences that disagree are not a measured failure: GREG keeps every view and does
                 # not vote, so it closes on neither (the ask above carries the disagreement to the founder).
-                if not split:
+                # Only a failure GREG measured is certified: a refused read, an abstaining receipt or an input not
+                # resolvable yet is pursued like a failure, but is no reading of one (review of #209, E1 and E4).
+                unread = failing & (set(getattr(self, "sensor_errors", ())) | set(getattr(self, "unread", ())))
+                if not split and failing - unread:
                     self.journal.record("mission.unmet", {
-                        "mission_id": m.mission_id, "failing_checks": sorted(failing), "actions_done": m.actions_done,
+                        "mission_id": m.mission_id, "failing_checks": sorted(failing - unread),
+                        **({"unmeasured_checks": sorted(unread)} if unread else {}), "actions_done": m.actions_done,
                         "closure_rule": "every admissible strategy ran; these signed checks re-observed failing",
                         "at": iso(now)}, key=[m.mission_id, "unmet", m.actions_done])
             self._block(m, {"type": "decision", "request_id": rid, "why": "no admissible strategy",

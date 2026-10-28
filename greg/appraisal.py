@@ -44,7 +44,7 @@ from greg.capabilities import BUILTINS, CapabilityManifest, InvocationContext
 from greg.founder import _signing_bytes
 from greg.journal import Journal
 from greg.lightcone import LightCone
-from greg.missions import INSUFFICIENT, TRUE, evaluate_receipt, judge, judge_receipt, pre_approved
+from greg.missions import INSUFFICIENT, TRUE, evaluate_receipt, judge, judge_receipt, pre_approved, unanswered
 from provenance.ledger import EvidenceLedger, sha256_json
 
 REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
@@ -81,7 +81,7 @@ class _AsOf:
         return [e for e in self._journal.replay(prefix) if self._seq.get(e.event_id, 1 << 60) < self._before]
 
 
-def _handed_params(journal: Journal, seq: dict, invocation: dict, mission_id: str, before: int):
+def _handed_params(journal: Journal, seq: dict, invocation: dict, mission_id: str, before: int, artifact_root=None):
     """The params the engine handed the Gate for this signed sensor or strategy, or None.
 
     greg/missions.py resolves a strategy's signed ``bind`` edges (_bind) and then every inline
@@ -90,7 +90,7 @@ def _handed_params(journal: Journal, seq: dict, invocation: dict, mission_id: st
     retained receipts as they stood before the grant, so a legitimate typed handoff verifies and a
     receipt bound for different params does not. Values are never read from the worker's projection.
     """
-    from greg.missions import Unbound, _set_path, bound_value
+    from greg.missions import Unbound, _set_path, artifact_output, bound_value
     from greg.pipeline import BindingError, resolve
     view = _AsOf(journal, seq, before)
     params = json.loads(json.dumps(invocation.get("params", {})))
@@ -111,7 +111,12 @@ def _handed_params(journal: Journal, seq: dict, invocation: dict, mission_id: st
                 record = journal.ledger.find(held or "")
                 if record is None or record.record_type != "receipt" or record.seq >= before:
                     return None
-                _set_path(params, edge["param"], bound_value(edge, record.payload.get("result", {}).get("output")))
+                result = record.payload.get("result", {})
+                # an edge that opted in binds the whole output the receipt kept, as the engine bound it
+                whole = artifact_output(result, artifact_root, source=edge["param"]) if edge.get("by") == "artifact" \
+                    else None
+                _set_path(params, edge["param"], bound_value(edge, result.get("output"), whole,
+                                                             recorded_cut=result.get("output_artifact") is not None))
         bound, _ = resolve(params, view, mission_id, before_seq=before)
     except (Unbound, BindingError, KeyError, TypeError):
         return None
@@ -120,7 +125,7 @@ def _handed_params(journal: Journal, seq: dict, invocation: dict, mission_id: st
 
 def _invocation_receipt_bound(ledger, journal, seq, receipt, invocation, *, mission_id, command_digest,
                               closure_seq, since_seq, observation=True, claimed_scope=None,
-                              claimed_capability=None) -> bool:
+                              claimed_capability=None, artifact_root=None) -> bool:
     """Match a receipt to the exact signed invocation via existing Gate lineage.
 
     Hash-chain integrity alone does not make an unrelated receipt evidence for this check. No signer
@@ -154,7 +159,7 @@ def _invocation_receipt_bound(ledger, journal, seq, receipt, invocation, *, miss
                                                     and invocation.get("function") == manifest.function):
         return False
     target = invocation["target"]
-    params = _handed_params(journal, seq, invocation, mission_id, grant.seq)
+    params = _handed_params(journal, seq, invocation, mission_id, grant.seq, artifact_root)
     if params is None:
         return False
     cost = float(invocation.get("cost_usd", 0.0))
@@ -434,7 +439,8 @@ def appraise(request: dict) -> dict:
                     or not after < receipt.seq < seq[observation.event_id]
                     or not _invocation_receipt_bound(ledger, journal, seq, receipt, check["sensor"],
                                                     mission_id=mid, command_digest=digest,
-                                                    closure_seq=achieved_seq, since_seq=after)):
+                                                    closure_seq=achieved_seq, since_seq=after,
+                                                    artifact_root=artifacts)):
                 bound = False
                 findings.append(f"{check['check_id']}: receipt not bound to this closure and signed sensor")
             # the receipt's kept output, or the whole output it kept in the body's artifact store, re-hashed here
@@ -452,6 +458,12 @@ def appraise(request: dict) -> dict:
                 rederived = False
                 findings.append(f"{check['check_id']}: receipt bytes cannot decide the predicate, so they prove "
                                 f"no failure ({detail})")
+            elif not passed and unanswered(receipt.payload["result"].get("output")):
+                # A cognitive receipt that abstained answered nothing: its missing field is no reading of a failure
+                # (the engine labels it "sensor inconclusive" and never blames a strategy for it).
+                rederived = False
+                findings.append(f"{check['check_id']}: the receipt abstained "
+                                f"({unanswered(receipt.payload['result'].get('output'))}), so it proves no failure")
             elif receipt.payload["result"].get("result_class") != "positive":
                 # A refused sensor run is no reading of the world: it proves neither a success nor a failure.
                 rederived = False
@@ -480,10 +492,12 @@ def appraise(request: dict) -> dict:
                     from greg.pipeline import resolve
                     bound_params, _ = resolve(check["sensor"].get("params", {}), journal, mid)
                     output = adapter(bound_params, ctx)
-                    now_verdict, now_detail = judge(check["predicate"], output)
-                    # an undecided re-reading (a list at the item limit, a declared-incomplete output) is no
-                    # measurement of the world, either way
-                    now_ok = None if now_verdict == INSUFFICIENT else now_verdict == TRUE
+                    # a fresh output is never cut: a value shaped like a receipt's record in it is the sensor's data
+                    now_verdict, now_detail = judge(check["predicate"], output, whole=True)
+                    # an undecided re-reading (a list at the item limit, a declared-incomplete output) or an
+                    # abstaining one (no answer) is no measurement of the world, either way
+                    now_ok = None if now_verdict == INSUFFICIENT or (now_verdict != TRUE and unanswered(output)) \
+                        else now_verdict == TRUE
                     reasons = output.get("findings") if isinstance(output, dict) else None
                     if not now_ok and isinstance(reasons, list) and reasons:
                         # Say why, in the capability's own words: a forged acceptance and a host that cannot
@@ -538,7 +552,8 @@ def appraise(request: dict) -> dict:
                                                     command_digest=digest, closure_seq=achieved_seq,
                                                     since_seq=since if seq[event.event_id] > since else registered_seq,
                                                     observation=False, claimed_scope=action["scope_digest"],
-                                                    claimed_capability=action["capability"])):
+                                                    claimed_capability=action["capability"],
+                                                    artifact_root=artifacts)):
                 once = False
                 findings.append(
                     f"{action['action_id']}: recorded as settled by a founder reconciliation answer, with no Gate "

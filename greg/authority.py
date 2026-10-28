@@ -134,7 +134,8 @@ class AuthorityOffice:
                 return ActionOutcome("DONE" if positive else "REFUSED", ["retained legacy receipt; no redispatch"],
                                      output=result.get("output"), receipt_hash=old_receipt.hash,
                                      grant_id=old_receipt.payload.get("grant_id"),
-                                     cost_usd=cost_usd if positive else 0.0, **old_base)
+                                     cost_usd=cost_usd if positive else 0.0,
+                                     output_artifact=result.get("output_artifact") if positive else None, **old_base)
             if old_claim is not None:
                 return ActionOutcome("UNCERTAIN", ["retained legacy dispatch; no receipt or blind retry"], **old_base)
         outside = cone.admits(capability=manifest.capability_id, target=target, consequence_class=consequence,
@@ -144,9 +145,11 @@ class AuthorityOffice:
 
         claim, receipt = self._prior(proposal_id)
         if receipt is not None:  # already done before an interruption: reuse, never redo
+            # with the whole output it kept, so a reused reading is judged as the fresh one was (review of #209)
             return ActionOutcome("DONE", ["retained receipt reused after restart"], output=receipt.payload["result"].get("output"),
                                  receipt_hash=receipt.hash, grant_id=receipt.payload.get("grant_id"),
-                                 cost_usd=cost_usd, **base)
+                                 cost_usd=cost_usd, output_artifact=receipt.payload["result"].get("output_artifact"),
+                                 **base)
         if claim is not None:  # the dispatch the claim names, so its reconciliation settles exactly that one
             return ActionOutcome("UNCERTAIN", ["dispatch claimed without receipt; outcome unknown"],
                                  grant_id=claim.payload.get("grant_id"), **base)

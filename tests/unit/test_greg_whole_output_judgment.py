@@ -23,7 +23,7 @@ from greg.artifacts import ArtifactStore
 from greg.authority import RECEIPT_LIST_LIMIT, RECEIPT_TEXT_LIMIT, bounded, keep_output, output_store
 from greg.body import Body
 from greg.missions import FALSE, INSUFFICIENT, TRUE, evaluate_receipt, judge, judge_receipt
-from tests.greg_fixtures import Clock, make_body, mission, note_check, workspace, write_strategy
+from tests.greg_fixtures import Clock, make_body, mission, note_check, signed, workspace, write_strategy
 from tests.unit.test_greg_missions import events, run, submit
 
 FILLER = "proof settlement notice delivery party shall net due. " * 400       # about 22 KiB, no test phrase
@@ -109,18 +109,13 @@ CASES = [
                                                        p("equals", FILLER + PHRASE, "doc.body")]),
     ({"text": "é" * (RECEIPT_TEXT_LIMIT + 10) + "naïve résumé"}, [p("contains", "naïve résumé"),
                                                                   p("not_contains", "naïve résumé")]),
-    # a list of exactly the receipt's item limit beside a cut string: kept, it may have lost items; whole, it has not
-    ({"rows": LONG_ROWS[:RECEIPT_LIST_LIMIT], "text": FILLER}, [p("not_contains", "row1200", "rows"),
-                                                                 p("count_gte", RECEIPT_LIST_LIMIT + 1, "rows"),
-                                                                 p("equals", LONG_ROWS[:RECEIPT_LIST_LIMIT], "rows"),
-                                                                 {"op": "absent", "field": "rows.1200"}]),
     # canonical equivalence is not applied: the judge compares code points, over a cut or not (recorded limit)
     ({"text": FILLER + unicodedata.normalize("NFD", "café")}, [p("contains", unicodedata.normalize("NFD", "café")),
                                                                p("contains", "café"), p("not_contains", "café")]),
 ]
 
 
-@pytest.mark.parametrize("output, predicates", CASES, ids=["text", "list", "member", "nested", "multibyte", "at-limit", "nfd"])
+@pytest.mark.parametrize("output, predicates", CASES, ids=["text", "list", "member", "nested", "multibyte", "nfd"])
 def test_over_a_kept_whole_the_verdict_is_the_verdict_on_the_value_uncut(tmp_path, output, predicates):
     result = receipt(output, tmp_path)
     assert result["output"] != output and result["output_artifact"]["address"]      # the receipt did cut it
@@ -128,6 +123,30 @@ def test_over_a_kept_whole_the_verdict_is_the_verdict_on_the_value_uncut(tmp_pat
         uncut = judge(predicate, output, whole=True)[0]
         assert uncut != INSUFFICIENT
         assert judge_receipt(predicate, result, tmp_path)[0] == uncut, predicate
+
+
+AT_LIMIT = LONG_ROWS[:RECEIPT_LIST_LIMIT]
+
+
+@pytest.mark.parametrize("beside", ["", FILLER], ids=["nothing-cut", "a-cut-string"])
+def test_a_list_at_the_limit_reads_the_same_kept_whole_or_re_read(tmp_path, beside):
+    """A list of exactly the item limit may have been cut there by the capability itself (fs.list cuts its listing
+    there and says nothing), so no mode decides what lies past it: the engine over the kept whole, the appraiser's
+    re-derivation and its fresh re-reading agree. Before, a whole read from the store took it as all of it, and the
+    same list closed the mission or stayed undecided by the length of an unrelated field (review of #209, F1)."""
+    output = {"rows": AT_LIMIT, "text": beside}
+    result = receipt(output, tmp_path)
+    undecided = [p("not_contains", "row1200", "rows"), p("contains", "row1200", "rows"),
+                 p("count_gte", RECEIPT_LIST_LIMIT + 1, "rows"), p("equals", AT_LIMIT, "rows"),
+                 {"op": "absent", "field": "rows.1200"}]
+    for predicate in undecided:
+        assert judge_receipt(predicate, result, tmp_path)[0] == INSUFFICIENT, predicate     # the engine, kept whole
+        assert judge(predicate, output)[0] == INSUFFICIENT, predicate                      # the fresh re-reading
+        assert judge(predicate, output, whole=True)[0] == INSUFFICIENT, predicate
+    for predicate, verdict in [(p("contains", "row999", "rows"), TRUE), (p("not_contains", "row5", "rows"), FALSE),
+                               (p("count_gte", RECEIPT_LIST_LIMIT, "rows"), TRUE),
+                               (p("equals", AT_LIMIT[:-1], "rows"), FALSE)]:
+        assert judge_receipt(predicate, result, tmp_path)[0] == judge(predicate, output)[0] == verdict, predicate
 
 
 # -- section VI.8: malformed encoding -------------------------------------------------------------------------------
@@ -376,3 +395,121 @@ def test_a_fact_past_16_kib_of_a_pdfs_text_closes_with_a_plain_check(tmp_path):
     assert not [r for r in requests if r.get("mission_id") == "m:pdf"]
     observed = [e for e in events(home, "mission.observed") if e["mission_id"] == "m:pdf"]
     assert observed[-1]["passed"] and "decided over the whole output" in observed[-1]["detail"]
+
+
+# -- review of #209 ------------------------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("predicate", [p("contains", 5), p("not_contains", ["a"]), p("count_gte", "many"),
+                                       p("gte", "3"), p("lte", None)])
+def test_a_signed_value_of_another_type_fails_the_check_and_never_crashes_the_tick(tmp_path, predicate):
+    """contains 5 over a text, count_gte "many": the operation does not apply, so the check fails. Over the whole
+    output read from the store it used to raise TypeError, which ended Body.tick (review of #209); over a short text
+    it always had."""
+    long = receipt({"text": FILLER + PHRASE}, tmp_path)
+    assert judge_receipt(predicate, long, tmp_path)[0] == FALSE
+    assert judge(predicate, {"text": "short"})[0] == FALSE
+    assert judge(predicate, {"text": FILLER + PHRASE}, whole=True)[0] == FALSE
+    assert judge({**predicate, "field": "n"}, {"n": 3})[0] == FALSE                 # a number, against a non-number
+
+
+NESTED = [
+    # a 1500-item list beside a cut string, asked whether it contains its own first 1000 items as one member
+    ({"batches": [[f"id{i}" for i in range(1500)]], "log": FILLER},
+     p("contains", [f"id{i}" for i in range(1000)], "batches")),
+    # a list of records, one of which holds a long string
+    ({"rows": [{"t": FILLER + PHRASE}]}, p("not_contains", {"t": FILLER + PHRASE}, "rows")),
+    ({"rows": [{"t": FILLER + PHRASE}]}, p("contains", {"t": FILLER + PHRASE}, "rows")),
+    ({"rows": [{"t": FILLER + PHRASE}]}, p("contains", {"t": FILLER}, "rows")),
+    # an object holding a long string, and a list whose first member is long beside 1299 short ones
+    ({"doc": {"title": "t", "body": FILLER + PHRASE}}, p("equals", {"title": "t", "body": FILLER + PHRASE}, "doc")),
+    ({"doc": {"title": "t", "body": FILLER + PHRASE}}, p("equals", {"title": "t", "body": FILLER}, "doc")),
+    ({"rows": [FILLER] + [str(i) for i in range(1299)]}, p("equals", [FILLER] + [str(i) for i in range(1299)], "rows")),
+    ({"grid": [[str(i) for i in range(1500)], ["x"]]}, p("equals", [[str(i) for i in range(1500)], ["x"]], "grid")),
+    ({"grid": [[str(i) for i in range(1500)], ["x"]]}, p("equals", [[str(i) for i in range(1000)], ["x"]], "grid")),
+]
+
+
+@pytest.mark.parametrize("output, predicate", NESTED)
+def test_a_cut_below_the_judged_value_never_decides_as_its_wrapper(tmp_path, output, predicate):
+    """A long string or a list at the item limit below the judged value's own members used to be compared as the
+    receipt's prefix record: a wrong TRUE (the first case) and wrong FALSEs, and judge_receipt, which reads the
+    kept whole only for an undecided verdict, kept them (review of #209). What the kept part decides is now right,
+    and the rest is decided over the kept whole."""
+    result = receipt(output, tmp_path)
+    truth = judge(predicate, output, whole=True)[0]
+    assert truth != INSUFFICIENT
+    assert judge(predicate, result["output"])[0] in (truth, INSUFFICIENT), predicate
+    assert judge_receipt(predicate, result, tmp_path)[0] == truth, predicate
+
+
+def test_a_reading_reused_after_a_restart_keeps_the_whole_output_its_receipt_kept(tmp_path):
+    """A body stopped between a sensor's receipt and its observation reuses that receipt. The reused outcome used to
+    drop the receipt's record of the whole output, so the same reading was judged on its prefix alone: inconclusive
+    where the fresh reading had decided (review of #209)."""
+    home, key, body_id, data = make_body(tmp_path)
+    page = data / "page.txt"
+    page.write_text(FILLER + PHRASE)
+    check = note_check("c", page, PHRASE)
+    spec = mission("m:reuse", checks=[check], strategies=[write_strategy("w", "w.txt", "x", ["c"])],
+                   capabilities=["fs.read", "fs.write"])
+    with Body(home) as body:
+        body.apply(signed(key, body_id, "MISSION", spec), channel="inbox")
+        state = body.engine.book.missions["m:reuse"]
+        manifest, adapter, _ = body.engine._resolve(check["sensor"])
+
+        def read():
+            return body.office.act(
+                mission_id=state.mission_id, cone=state.cone, command_digest=state.command_digest, manifest=manifest,
+                adapter=adapter, ctx=body.engine._context(state, manifest), params=check["sensor"]["params"],
+                target=check["sensor"]["target"], cost_usd=0.0, expected_outcome="observation captured",
+                evidence_refs=[], attempt="0@restart", spent_usd=0.0, approved_scopes=set())
+
+        first, again = read(), read()
+        artifacts = body.engine.artifact_root
+    assert again.reasons == ["retained receipt reused after restart"] and again.receipt_hash == first.receipt_hash
+    assert first.output_artifact["address"] and again.output_artifact == first.output_artifact
+    assert evaluate_receipt(check["predicate"], {"output": again.output, "output_artifact": again.output_artifact},
+                            artifacts) == evaluate_receipt(check["predicate"], {
+                                "output": first.output, "output_artifact": first.output_artifact}, artifacts)
+    assert evaluate_receipt(check["predicate"], {"output": again.output, "output_artifact": again.output_artifact},
+                            artifacts)[0] is True
+
+
+def test_the_appraiser_re_derives_a_bind_by_artifact_from_the_whole_output(tmp_path):
+    """A strategy that bound a long value by artifact closes its mission; the separate appraiser re-derives the params
+    the engine handed the Gate and used to read only the kept prefix, so it refuted a correct closure ("completed
+    action lacks its signed strategy's Gate receipt"; review of #209)."""
+    from tests.unit.test_greg_artifact_bind import start, tick
+    home, root = start(tmp_path)
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        assert tick(body, clock, 8)[-1] == "ACHIEVED"
+        appraised = body.appraise("m:big")
+    assert appraised["verdict"] == "VERIFIED", appraised["findings"]        # before: REFUTED
+    assert appraised["checks"]["exactly_once"] is True
+
+
+def test_a_check_on_a_record_another_receipt_kept_closes_and_is_verified(tmp_path):
+    """A mission whose check reads, through pipeline.inspect, the digest of a 22 KiB text an earlier action read: the
+    inspecting receipt cut nothing, so the record it returned is its data. J9 had refused to step into it: the
+    founder was asked about a sensor failure, and the appraiser refuted the closure the base verified (review of
+    #209, APR-1)."""
+    import hashlib
+    home, key, body_id, data = make_body(tmp_path)
+    page = data / "contract.txt"
+    page.write_text(FILLER + PHRASE)
+    check = {"check_id": "read_exact", "description": "the read action read exactly the signed contract",
+             "sensor": {"capability": "pipeline.inspect", "target": "pipeline:read",
+                        "params": {"action_id": "read", "field": "text", "type": "object"}},
+             "predicate": {"op": "equals", "field": "value.sha256",
+                           "value": hashlib.sha256((FILLER + PHRASE).encode()).hexdigest()}}
+    strategy = {"action_id": "read", "capability": "fs.read", "params": {"path": str(page)},
+                "target": "fs:contract.txt", "advances": ["read_exact"], "rationale": "read the contract"}
+    submit(home, key, body_id, "MISSION", mission("m:pipe", checks=[check], strategies=[strategy],
+                                                  capabilities=["fs.read", "pipeline.inspect"],
+                                                  targets=("fs:*", "pipeline:*"), ceiling="read_only"))
+    missions, requests = run(home, Clock(), ticks=10, step=600.0)
+    assert missions["m:pipe"].status == "ACHIEVED", [r.get("kind") for r in requests]   # before: SENSOR_FAILURE
+    [appraised] = [e for e in events(home, "mission.appraised") if e["mission_id"] == "m:pipe"]
+    assert appraised["verdict"] == "VERIFIED", appraised["findings"]

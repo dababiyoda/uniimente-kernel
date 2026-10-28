@@ -81,6 +81,24 @@ def test_a_path_into_the_receipts_prefix_record_decides_nothing():
     assert judge(p("not_contains", PHRASE, "text"), receipt)[0] == INSUFFICIENT
 
 
+def test_a_record_the_sensor_itself_returned_is_read_as_data():
+    """pipeline.inspect returns another receipt's record of a cut string: its digest and length are exact facts,
+    and the inspecting receipt cut nothing (it records no output_artifact). Only the prefix stays refused, as a
+    prefix is never a whole string (review of #209, APR-1: J9 had made a check on value.sha256 undecidable)."""
+    import hashlib
+    record = kept({"text": FILLER + PHRASE})["text"]
+    output = {"value": record}
+    digest = hashlib.sha256((FILLER + PHRASE).encode()).hexdigest()
+    result = {"output": output}                                  # the inspecting receipt recorded no cut
+    assert judge_receipt(p("equals", digest, "value.sha256"), result, None)[0] == TRUE
+    assert judge_receipt(p("equals", len(FILLER + PHRASE), "value.length"), result, None)[0] == TRUE
+    assert judge_receipt(p("not_contains", PHRASE, "value.prefix"), result, None)[0] == INSUFFICIENT
+    assert judge(p("equals", digest, "value.sha256"), output, whole=True)[0] == TRUE      # the fresh re-reading
+    # a receipt that recorded a cut still refuses every part of its own record
+    assert judge_receipt(p("equals", digest, "value.sha256"), {**result, "output_artifact": {"address": None}},
+                         None)[0] == INSUFFICIENT
+
+
 def test_over_the_whole_output_the_prefix_record_does_not_exist(tmp_path):
     output = {"text": FILLER + PHRASE}
     receipt, record = keep_output(output, tmp_path)

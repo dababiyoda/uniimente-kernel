@@ -1,4 +1,5 @@
-"""Each mutant removes one safeguard added by the review fixes (S1-S10); the resolution unit tests must catch it.
+"""Each mutant removes one safeguard added by the review fixes (S1-S10, then F1-F8 of the second review of #219); the
+resolution unit tests must catch it.
 
 Usage: python -B mutants-review.py REPO_ROOT > mutants-review.txt
 
@@ -8,12 +9,13 @@ test (for example a collection error), or whose run exceeds the time limit is IN
 
 The gate refuses to run unless git works, greg/, tests/ and this script are unmodified, and the working
 settlement.py equals HEAD's; the unmutated tests must then pass. It records HEAD and the sha256 of settlement.py and
-the three test files (not of every module the tests import). Bytecode is disabled and __pycache__ under greg/ and
+each test file (not of every module the tests import). Bytecode is disabled and __pycache__ under greg/ and
 tests/ is purged before every run. Each mutant is written atomically, and settlement.py is restored on normal exit,
 on an exception and on SIGINT, SIGTERM or SIGHUP; the pytest child's process group is killed with it.
 (Second review of #219, R3: the first version counted any non-zero exit as CAUGHT, and N9 matched only the start of
 its line, so it was recorded as caught although the mutated file did not compile. A check of this branch then found
-that SIGTERM left a mutant in the tree and that a dirty tree was only labelled, not refused.)
+that SIGTERM left a mutant in the tree and that a dirty tree was only labelled, not refused. At #221, N6 and N11 were
+retargeted to the rewritten fact key and Laplace check, N15-N24 cover F1-F8, and the review-2 test file was added.)
 """
 import hashlib, os, platform, shutil, signal, subprocess, sys, tempfile
 from pathlib import Path
@@ -25,18 +27,32 @@ MUTANTS = {
  "N3 S2 any resolution adjudicates": ('held_by_acceptance = any(e.event_id in accepted for e in live)', 'held_by_acceptance = applied is not None'),
  "N4 S2 partial invalidation accepted": ('        if standing:\n            raise', '        if False:\n            raise'),
  "N5 S3 dedupe against rejected facts": ('live = [e for e in existing if ruling.get(e.event_id, True)]', 'live = existing'),
- "N6 S3 one fact per receipt and value": ('key = receipt if not existing else [receipt, "fact", source, repr(realized), len(existing)]', 'key = receipt if not existing else [receipt, "fact", repr(realized)]'),
+ "N6 S3 one fact per receipt and value": ('[receipt, "fact", source, repr(realized), len(existing),\n', '[receipt, "fact", repr(realized),\n'),
  "N7 S4 journal order wins": ('key=lambda item: (item[0], item[1])', 'key=lambda item: item[1]'),
  "N8 S5 succeeded only when prior is None": ('        if outcome.get("answer_version") and _base_identity(outcome) in legacy:', '        if prior is None and outcome.get("answer_version") and _base_identity(outcome) in legacy:'),
  "N9 S6 failed check hidden by dispute": ('        if not outcome["correct"]:        # the signed check failed', '        if False:        # the signed check failed'),
  "N10 S7 unsettleable dispute weighed": ('        if row["mission_id"] not in settling:', '        if False:'),
- "N11 S8 Laplace flips ignored": ('            if min(laplace) < other_mean < max(laplace):', '            if False:'),
+ "N11 S8 Laplace flips ignored": ('            if lo <= mean <= hi:          # inclusive', '            if False:          # inclusive'),
  "N12 S9 unsigned fact eligible (replay)": ('(accept in named and accept in signed_facts', '(accept in named'),
  "N13 S9 unsigned fact eligible (row)": ('"eligible_to_accept": e.event_id in signed_facts\n                and', '"eligible_to_accept": True\n                and'),
  "N14 S10 engine label hashed": ('if k not in ANSWER_PROVENANCE_FIELDS}', 'if True}'),
+ # Second review of #219 (F1-F8), at #221
+ "N15 F1 old answer version not re-derived": ('        current = _current_answer_version(payload, journal)\n', '        current = None\n'),
+ "N16 F2 Holm over pairs only": ('        families = [c for size in range(1, len(tested) + 1) for c in combinations(tested, size)]',
+                                 '        families = [(m,) for m in tested]'),
+ "N17 F3 unsettled fit not compared": ('        others.append(("an unsettled co-eligible fit", UNSETTLED_LAPLACE))', '        pass'),
+ "N18 F3 a tie at a bound ignored": ('            if lo <= mean <= hi:', '            if lo < mean < hi:'),
+ "N19 F4 string order of issued_at": ('out.append((_instant(command["issued_at"]), position, event))', 'out.append((command["issued_at"], position, event))'),
+ "N20 F4 older-signed overlap not refused": ('            if overlap and prior.payload["command_digest"] != command_digest and _instant(prior_at) >= _instant(own):',
+                                            '            if False:'),
+ "N21 F5 unsigned fact absorbs a signed report": ('\n                 and (not command_digest or e.payload.get("command_digest") == command_digest\n                      or e.event_id in signed_facts)), None)',
+                                                  '), None)'),
+ "N22 F6 any principal resolves": (' for d, c in commands.items() if c.get("principal") == "founder"}', ' for d, c in commands.items()}'),
+ "N23 F7 omitted source not defaulted": ('{"source": "founder_reported",       # Body.apply\'s default (F7)\n                                                 **signed', '{**signed'),
+ "N24 F8 memo misses a new founder record": ('records[seen - 1].hash == tail \\\n                    and not any(_founder_record(r) for r in records[seen:]):', 'records[seen - 1].hash == tail:'),
 }
 TESTS = ["tests/unit/test_greg_outcome_resolution.py", "tests/unit/test_greg_pending_construction_realization.py",
-         "tests/unit/test_greg_outcome_resolution_signed.py"]
+         "tests/unit/test_greg_outcome_resolution_signed.py", "tests/unit/test_greg_outcome_resolution_review2.py"]
 COMMAND = [sys.executable, "-B", "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", *TESTS]
 ENV = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
 TIME_LIMIT = 900  # seconds per run; the unmutated set takes about a minute

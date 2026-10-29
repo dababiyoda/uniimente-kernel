@@ -183,6 +183,26 @@ def test_f4_a_resolution_signed_before_one_already_ruling_on_its_facts_is_refuse
         assert run.outcome(other)["world"]["state"] == "adjudicated" and disputes(run.body.journal) == []
 
 
+def test_f4_a_fast_clock_earlier_resolution_refuses_a_later_one_until_re_signed_after_its_time(tmp_path):
+    """The independent check of #220's case: R1 signed on a clock 4 minutes fast, R2 a minute later on a correct
+    clock, naming a fact recorded after R1 was applied. R2 is refused with the reason, never applied as a no-op;
+    signed after R1's time, it takes effect."""
+    with Run(tmp_path) as run:
+        record, (f1, f2) = _accepted_and_external(run, "pf-f4-skew")
+        now = datetime.now(timezone.utc)
+        send(run, {"receipt": record.hash, "resolves": [f1, f2], "accept": f2, "note": "R1"},
+             at=now + timedelta(minutes=4))
+        run.realize(record, PROMISED - 2, source="sensor_observation")
+        f3 = next(x for x in facts(run.body.journal, record.hash).values() if x not in (f1, f2))
+        body = {"receipt": record.hash, "resolves": [f2, f3], "accept": f3, "note": "R2"}
+        with pytest.raises(ValueError, match="fast clock"):
+            send(run, body, at=now + timedelta(minutes=1))
+        assert [e.payload["note"] for e in settlement._resolutions(run.body.journal)] == ["R1"]
+        send(run, {**body, "note": "R2, re-signed"}, at=now + timedelta(minutes=4, seconds=30))
+        outcome = run.outcome(record)
+        assert outcome["world"]["state"] == "adjudicated" and outcome["correct"] is False
+
+
 # --- F5: a signed report is not absorbed by an unsigned fact --------------------------------------------------------
 
 

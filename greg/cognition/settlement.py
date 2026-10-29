@@ -769,7 +769,8 @@ def record_resolution(journal, *, receipt: str, resolves, accept, note: str, com
             if overlap and prior.payload["command_digest"] != command_digest and _instant(prior_at) >= _instant(own):
                 raise ValueError(f"a resolution signed at {prior_at} or later already rules on {overlap}; this one "
                                  f"was signed at {own}, so it would never take effect: sign a new one if still "
-                                 "wanted")
+                                 "wanted (if the earlier one was signed on a fast clock, sign after its time; the "
+                                 "verifier accepts envelopes up to 5 minutes ahead)")
     order = _realization_order(journal)   # once, not per fact (F8)
     current = _world_state(sorted(facts.values(), key=lambda e: order[e.event_id]),
                            resolutions, {r for r, *_ in claim}, signed_facts)

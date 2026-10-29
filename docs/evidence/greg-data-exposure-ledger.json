@@ -217,14 +217,14 @@
  "counts": {
   "by_lineage": {
    "#158": 332,
-   "#179": 142,
+   "#179": 143,
    "both": 42
   },
   "by_role": {
    "P8 held-out": 7,
    "admission held-out": 147,
    "canary": 1,
-   "dev": 273,
+   "dev": 274,
    "held-out": 68,
    "review-pilot": 11,
    "train": 9
@@ -236,7 +236,7 @@
    "admission held-out / #179": 57,
    "canary / #158": 1,
    "dev / #158": 205,
-   "dev / #179": 45,
+   "dev / #179": 46,
    "dev / both": 23,
    "held-out / #158": 13,
    "held-out / #179": 36,
@@ -245,7 +245,7 @@
    "train / #158": 6,
    "train / #179": 3
   },
-  "exposures": 516,
+  "exposures": 517,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -23671,10 +23671,10 @@
      "050e2e4288fa122953e10ec8fa255f148e0039d6"
     ],
     "lines": [
-     56
+     58
     ],
     "path": "tests/integration/test_outcome_correction_changes_decision.py",
-    "sha256": "sha256:206f7f3f81e55a5170367f6f1ca1ca49ad9c639160ca9df69bb2687c3ba6c8c0"
+    "sha256": "sha256:a21068d306bf1b53e191aa2bacae2fefc6c2a1d1eaf55da6816dcec4e07004bd"
    },
    "exposure_commit": "050e2e4288fa122953e10ec8fa255f148e0039d6",
    "family": null,
@@ -23690,14 +23690,14 @@
     "prng": [],
     "resolved": true
    },
-   "id": "#179|tests/integration/test_outcome_correction_changes_decision.py|dev|-|greg.cognition.genomes.flow:maxflow_instance:56",
+   "id": "#179|tests/integration/test_outcome_correction_changes_decision.py|dev|-|greg.cognition.genomes.flow:maxflow_instance:58",
    "lineages": [
     "#179"
    ],
    "looked_at": true,
    "looked_at_basis": "a test asserts on these instances",
    "n": 1,
-   "part": "greg.cognition.genomes.flow:maxflow_instance:56",
+   "part": "greg.cognition.genomes.flow:maxflow_instance:58",
    "present_in": [],
    "program": "test fixture",
    "role": "dev",
@@ -25294,6 +25294,50 @@
     [
      5,
      5
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "86701f7556ffe01db1f3d1493e8238a2e10b4d5c",
+    "line_commits": [
+     "86701f7556ffe01db1f3d1493e8238a2e10b4d5c"
+    ],
+    "lines": [
+     125
+    ],
+    "path": "tests/unit/test_greg_outcome_resolution_review2.py",
+    "sha256": "sha256:e01e3fad19168593eef187a0ee6a9721706fd39fe6d35cd841924f0120a3fdb3"
+   },
+   "exposure_commit": "86701f7556ffe01db1f3d1493e8238a2e10b4d5c",
+   "family": null,
+   "generator": {
+    "code_sha256": "sha256:15f9eb46d7b2681d258d433411e665e91d9222cbae4a4bbd0c0b85129968b37c",
+    "commit": "86701f7556ffe01db1f3d1493e8238a2e10b4d5c",
+    "delegates": [],
+    "function": "maxflow_instance",
+    "key": "greg.cognition.genomes.flow:maxflow_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.flow",
+    "module_file_sha256": "sha256:c4c30d7925a3ef63da2e537571dfefe7a7ec961dc1957fd3f329ab35d8800007",
+    "prng": [],
+    "resolved": true
+   },
+   "id": "#179|tests/unit/test_greg_outcome_resolution_review2.py|dev|-|greg.cognition.genomes.flow:maxflow_instance:125",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 1,
+   "part": "greg.cognition.genomes.flow:maxflow_instance:125",
+   "present_in": [],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     3,
+     3
     ]
    ]
   },

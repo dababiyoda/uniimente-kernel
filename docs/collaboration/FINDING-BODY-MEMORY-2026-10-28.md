@@ -136,6 +136,14 @@ it, `rerun-baseline-190c58fb-rss.json`):
 
 The review fixes cost no measurable memory or time.
 
+**Re-measured on `0dddcf40`**, the code after the fourth and fifth reviews' fixes (the content anchor, the lease
+waits, the line read back after each append), beside a third baseline run (`final-0dddcf40-rss.json`,
+`rerun2-baseline-190c58fb-rss.json`; RSS every 600 ticks, slopes over ticks 600 to 1,800 as above):
+
+- **Resident memory:** 1,389.5 B per retained record, against 2,640.6 (−47%); `e3c6e723` gave 1,390.3.
+- **Run time:** 151.6 s against 222.8 s for 1,800 ticks, the two runs concurrent with each other only.
+- The two ledger files are the same length, 16,911,978 bytes.
+
 ## Independent adversarial review (2026-10-28)
 
 A separate agent, given the diff and the guarantees but not this record, attacked commit `45d65a30`. It

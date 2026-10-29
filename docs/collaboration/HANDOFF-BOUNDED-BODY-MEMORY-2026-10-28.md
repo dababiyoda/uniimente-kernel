@@ -72,8 +72,8 @@ here; this file does not repeat it.
 
 | Area | Change in this session | Reality |
 |---|---|---|
-| Body / runtime | Memory per retained record 2,639 → 1,390 B resident; heap 2,287 → 807 B (on `e3c6e723`; 1,458 and 833 on `45d65a30`) | sandbox measured |
-| Body / runtime | Run 361 s → 279 s for 1,800 ticks on `e3c6e723` (334 → 223 on `45d65a30`; concurrent runs; indicative) | sandbox measured |
+| Body / runtime | Memory per retained record 2,641 → 1,390 B resident on `0dddcf40` (2,639 → 1,390 on `e3c6e723`); heap 2,287 → 807 B (on `e3c6e723`; 1,458 and 833 on `45d65a30`) | sandbox measured |
+| Body / runtime | Run 223 s → 152 s for 1,800 ticks on `0dddcf40` (361 → 279 on `e3c6e723`, 334 → 223 on `45d65a30`; concurrent runs; indicative) | sandbox measured |
 | Body / runtime | Ledger file tampering detected while running | unit-tested |
 | Zero trust / evidence | Explicit `verify_chain()` re-derives every dropped record from the file. Commit path: running digest. Every append refuses a file that does not end with this ledger's last line (deleted, replaced, inode reused, FIFO); changed bytes stop appends | unit-tested; three independent attack rounds |
 | Install / doctor | One pip call per engine. `why_missing` and `platform.glibc` in the doctor | unit-tested; real installer run end to end on x86-64 Ubuntu (5 of 5 engines, body, key, designation) |

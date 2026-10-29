@@ -28,10 +28,16 @@ competence, Goal Gravity and the compiler's selection from settled outcomes. It 
      other provenance fields from the version digest, so records written by `917404cf` carry an older digest.
      `_historical_identity` now re-derives each record's version from its retained compile receipt, so such a
      record becomes the prior of its successor, a revision, instead of being invalidated with a false reason.
-   - *Open (review of #221, F1-a):* when two `917404cf` versions of one answer (for example across an engine-label
-     change) re-derive to one identity, only the latest is revised. The other stays a live settled record, even
-     after the mission's settling appraisal is withdrawn, and `receipt_links` reports it live. Counts are
-     unaffected, because competence is recomputed from `measured_outcomes`.
+   - *Two `917404cf` versions of one answer* (for example across an engine-label change) re-derive to one identity.
+     Since the fixes for the review of #221 (F1-a), `reconcile` closes every live head but the latest with a
+     `merged_into` row, so one live record remains, and none after a withdrawal; later passes write nothing.
+     Re-derivation now runs only for rows whose stored identity is not measured (F1-b).
+   - *Open (round 3 of #221):*
+     - On a body that `8e91315c` reconciled, the identity's latest row is an invalidation. A measured claim then
+       converges in two passes, and a claim disputed at the first pass keeps one live record while it is
+       unmeasured (F1-r3-1).
+     - `receipt_links` skips merge rows, so a shadow chain's own receipt keeps its pre-merge link (R3-N33).
+     - Counts are unaffected throughout, because competence is recomputed from `measured_outcomes`.
 2. **Explicit knowledge states for every answer's world outcome** (`settlement.WORLD_STATES`). Every fact stays on
    the record in every state.
 
@@ -56,12 +62,12 @@ competence, Goal Gravity and the compiler's selection from settled outcomes. It 
      sign REALIZATION in any case), and `test_n2_…` covers the once-per-command guard (mutant N2 is caught).
    - Each fact is ruled by the latest-signed resolution that names it, ordered by the envelope's `issued_at` and
      then journal order (S4). A correction can therefore be corrected, and a later resolution never revives a fact
-     it does not name. Since #221 (F4) `issued_at` is compared as an instant, and a resolution signed at or before
-     a recorded one that names any of the same facts is refused with the reason, never applied as a silent no-op.
+     it does not name. Since #221 (F4) `issued_at` is compared as an instant, and a resolution signed before a
+     recorded one that names any of the same facts is refused with the reason, never applied as a silent no-op.
      That includes the case where the earlier one was signed on a clock up to 5 minutes fast (`CLOCK_SKEW`).
-     Open (review of #221): inbox files are still read in string order of `issued_at`, so when a stamp falls on a
-     whole second a resolution can be checked before one signed earlier (G4-a, about one stamp in a million); and a
-     resolution with an equal `issued_at` is refused, although replay would apply it (G4-d).
+   - An equal `issued_at` is accepted and replays last (G4-d). Inbox files are named by a fixed-width UTC stamp
+     (`inbox_stamp`, in `send_signed` and the remote intake), so the inbox is read in signing order (G4-a). Both
+     are fixes for the review of #221; the G4-a test does not go through either writer (round 3, G4F7-1).
    - A later report that disagrees reopens the dispute.
 4. **Corroboration is kept.** The same value from another source used to be dropped as a repeat, so an independent
    confirmation lost its source. It is now kept as a corroborating fact. Run 1 of the experiment found this defect
@@ -74,26 +80,30 @@ competence, Goal Gravity and the compiler's selection from settled outcomes. It 
      REALIZATION body the founder would sign;
    - otherwise, an evidence request that says exactly what record to obtain and how. No capability on a body
      declares an observation of these world quantities, so GREG asks for the record rather than guessing it.
-6. **Decision value decides priority.** `_weigh_investigations` bounds each method's settled counts between the
-   two extreme resolutions of its open disputes. It then asks whether the inhibition rule, the compiler's
-   settled-outcome preference (`_settled_preference`: one-sided Fisher tests with Holm), or the Laplace rank
-   differs between those bounds, and whether resolving the disputes, either way, lifts the method from below the
-   10-outcome floor to at least 10.
+6. **Decision value decides priority.** `_weigh_investigations` walks each method's settled counts over every
+   resolution of its open disputes: now, and each number of them kept (F2-b). It then asks whether the inhibition
+   rule, the compiler's settled-outcome preference (`_settled_preference`: one-sided Fisher tests with Holm), or
+   the Laplace rank differs across those states, and whether resolving the disputes lifts the method from below
+   the 10-outcome floor to at least 10.
    - Since #221 the preference runs over every family of co-eligible fits with at least 10 settled outcomes, each
-     member ranked first in turn, so Holm adjusts over the family the compiler would form (F2). Above 8 such fits
-     only the pairs and the whole family are run.
-   - The Laplace rank is compared with every settled method, with an unsettled fit (which the compiler reads at
-     1/2) and with a tie at either bound (S8, F3).
+     member ranked first in turn and demoted fits last, as `_rank` orders them, so Holm adjusts over the family
+     the compiler would form (F2, F2-d).
+   - Other disputed methods are walked with it, at their current counts and both extremes (F2-c).
+   - Above 8 such fits, or 3 other disputed methods, the walk is cut short and the row reads `investigate` with
+     the limit stated, never a clean `hold` (F2-a).
+   - The Laplace rank is compared with every settled method, with every other disputed method's reachable range,
+     with an unsettled fit (which the compiler reads at 1/2) and with a tie at either bound (S8, F3, F2-c).
    - Only disputes whose mission holds a settling appraisal and whose signed check passed are weighed (S6, S7).
      The others are `hold`, and the row says why.
    - If one rule differs, the row is `priority: investigate`; otherwise `hold`, kept on record and weighed again as
      evidence accrues.
    - Fixed in #221: the gaps F2 and F3 above, and F5: a signed report is no longer absorbed by an unsigned fact
      with the same source and value.
-   - Open (review of #221): above 8 such fits a change that only a three-way family shows reads `hold` (F2-a); only
-     the two extreme resolutions are evaluated, though the compiler's pick is not monotone in the kept count
-     (F2-b); each disputed method is bounded with the others held at their current counts (F2-c); and a demoted
-     fit is tested as the first fit, which the compiler never does, giving a false `investigate` (F2-d).
+   - The review of #221's gaps F2-a, F2-b and F2-d are fixed, and F2-c is narrowed. Open (round 3 of #221):
+     - the other disputed methods are walked at three states only, so a rare row reads `hold` (F2R-1);
+     - the Laplace check against another disputed method's whole range gives false `investigate`s (F2R-2);
+     - a row cut short by a limit still says a change was found (F2R-3);
+     - with four or more disputed methods the walk is slower than before (F2R-4).
    - Most disputes now read `investigate`, by design: the rule errs toward it, since a false `investigate` costs
      one outside record and a false `hold` hides a decision change.
    - Goal Gravity reports `disputes_to_investigate` and `decisions_to_recheck`.
@@ -145,7 +155,8 @@ see [REVIEW-FIXES.md](REVIEW-FIXES.md)):
 - **1, 2:** see the table. A signed mission after the corrections also selects `flow_maxflow`. As a check added
   after the run, the test also asserts that the compiler's existing selection rule made the choice: its
   settled-outcome preference names the construction `against` and `flow_maxflow` `preferred`, at selection level
-  `preferred_by_settled_outcomes` (`greg/cognition/compiler.py` is unchanged since `3886d727`). The frozen rule,
+  `preferred_by_settled_outcomes` (the compiler's selection rules are unchanged since `3886d727`; #221's
+  `72f57753` only memoizes the Fisher p-value, with the same results). The frozen rule,
   which scores the selected method by its declared true rate, is unchanged.
 - **3:** all 20 facts are kept.
 - **4:** before resolution the disputed answers score nothing. The following are refused or ignored:
@@ -181,13 +192,15 @@ see [REVIEW-FIXES.md](REVIEW-FIXES.md)):
     goal_gravity, Goal Gravity, founder and mission suites (527 passed, 5 skipped), and CI job 8's whole set plus
     the combined test with real organs (117 passed, 1 skipped).
   - [mutants-review.txt](mutants-review.txt): the review fixes' mutants, run with
-    [mutants-review.py](mutants-review.py) on a clean tree and bound to its commit. Re-recorded on #221's fixes
-    F1-F8: 22 of 24 caught, 0 invalid.
-    - N2 (one resolution per signed command) is now caught.
+    [mutants-review.py](mutants-review.py) on a clean tree and bound to its commit. Re-recorded after the fixes for
+    the review of #221, at #221's `5b4e293f` (N25-N36 added): 32 of 36 caught, 0 invalid.
     - N6 (S3's fact key) is harmless on the production path since F5.
-    - N18 (F3's tie at a bound) is MISSED: no test isolates it.
-    - The record at #196 `8e91315c` (13 of 14 caught, N2 missed) is in git history at `be8fbd09`. The first record
-      counted N9, which did not compile, as caught (second review R3).
+    - Three are MISSED, each with no test: N27 (the joint preference walk), N33 (the `receipt_links` skip of merge
+      rows) and N35 (a closed mission's text).
+    - Earlier records are in git history:
+      - `f0094388`: at #221's `5983deeb`, 22 of 24 caught;
+      - `be8fbd09`: at #196's `8e91315c`, 13 of 14 caught, N2 missed.
+    - The first record counted N9, which did not compile, as caught (second review R3).
 - **Not bound to any code:** [broad-review-fixes.txt](broad-review-fixes.txt), a snapshot taken before `b1a3c1af`
   that names no commit or command: 1 failed (the experiment test itself: a `TypeError` in its stale `_resolutions`
   stand-in, fixed in `b1a3c1af`), 750 passed, 1 skipped.
@@ -247,8 +260,8 @@ recheck. With the repair disabled, the same history leaves the worse decision in
 - The decision value is an estimate. Since #221 the preference is checked with Holm over every family of
   co-eligible fits with at least 10 settled outcomes, as the compiler forms it (F2); above 8 such fits, over the
   pairs and the whole family only. It is weighed against every method with settled outcomes and an unsettled fit,
-  since co-eligibility depends on the request. The review of #221 found four gaps that remain open (F2-a to F2-d,
-  item 6).
+  since co-eligibility depends on the request. The fixes for the review of #221 close F2-a, F2-b and F2-d and
+  narrow F2-c; round 3 of #221 found the gaps in item 6 (F2R-1 to F2R-4).
 - The recheck projection compares retained UTC stamps across the ledger and the journal.
 - No capability declares an observation of a world objective, so GREG cannot acquire the evidence itself. It asks.
 - The #213 transfer experiment, the compiler's selection rules, Genesis, authority and the mission engine are

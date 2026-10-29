@@ -78,17 +78,34 @@ while [ $# -gt 0 ]; do
 done
 
 step() { printf '\n== %s\n' "$*"; }
-fail() { printf 'STOP: %s\n' "$*" >&2; exit "${2:-1}"; }
+fail() { printf 'STOP: %s\n' "$1" >&2; exit "${2:-1}"; }
 
 # The body's evidence ledger must live where this machine's view of its file is the file. On a shared or network
-# folder (ChromeOS's /mnt/chromeos is 9p or virtio-fs; also NFS and SMB) Linux can keep using its cached copy after
-# the other side replaces or deletes the file, so evidence GREG recorded could vanish without notice.
+# folder (ChromeOS's /mnt/chromeos is 9p or virtio-fs, a FUSE filesystem; also NFS, SMB and cluster filesystems)
+# Linux can keep using its cached copy after the other side replaces or deletes the file, so evidence GREG recorded
+# could vanish without notice. The filesystem types are statfs's, the list greg/body.py refuses (greg init does too).
 FS_DIR="$GREG_HOME_DIR"
-while [ ! -e "$FS_DIR" ]; do FS_DIR="$(dirname "$FS_DIR")"; done
+case "$FS_DIR" in "~") FS_DIR="$HOME" ;; "~/"*) FS_DIR="$HOME/${FS_DIR#"~/"}" ;; esac   # as greg expands it
+case "$FS_DIR" in /*) ;; *) FS_DIR="$PWD/$FS_DIR" ;; esac
+while [ "$FS_DIR" != / ] && [ ! -e "$FS_DIR" ]; do FS_DIR="$(dirname "$FS_DIR")"; done
 case "$(stat -f -c %t "$FS_DIR" 2>/dev/null || true)" in
-  1021997|65735546|6969|517b|ff534d42|fe534d42)
-    fail "The body home $GREG_HOME_DIR is on a shared or network filesystem ($(stat -f -c %T "$FS_DIR" 2>/dev/null || true)). Keep it inside Linux files, as the default ~/.uniimente/greg is." 15 ;;
+  1021997) FS_NAME="9p" ;;
+  65735546) FS_NAME="FUSE: virtio-fs, sshfs and the like" ;;
+  6969) FS_NAME="NFS" ;;
+  517b) FS_NAME="SMB" ;;
+  ff534d42) FS_NAME="CIFS" ;;
+  fe534d42) FS_NAME="SMB2" ;;
+  c36400) FS_NAME="Ceph" ;;
+  5346414f) FS_NAME="AFS" ;;
+  6b414653) FS_NAME="kAFS" ;;
+  bd00bd0) FS_NAME="Lustre" ;;
+  1161970) FS_NAME="GFS2" ;;
+  7461636f) FS_NAME="OCFS2" ;;
+  73757245) FS_NAME="Coda" ;;
+  20030528) FS_NAME="OrangeFS" ;;
+  *) FS_NAME="" ;;
 esac
+[ -z "$FS_NAME" ] || fail "The body home $GREG_HOME_DIR is on a shared or network filesystem ($FS_NAME). Keep it on this machine's own disk, inside Linux files (the default is ~/.uniimente/greg)." 15
 
 step "1/8 This is ChromeOS Linux"
 [ "$(uname -s)" = "Linux" ] || fail "GREG Body 1 runs inside ChromeOS's Linux environment (Settings > About ChromeOS > Developers)." 10

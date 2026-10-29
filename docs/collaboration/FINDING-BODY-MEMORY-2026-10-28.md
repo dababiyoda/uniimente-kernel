@@ -88,11 +88,12 @@ simulated clock, 1,800 ticks (`scripts/measure_body_memory.py`; Python 3.11.17, 
 | In-memory alteration of retained history | found by explicit verification, the next Commit Witness, and the hot path within 300 s | the same, for resident payloads and for everything that stays of dropped history |
 | Bytes changed in the file after open | invisible until reopen | refused at the first read of a changed line and by any explicit `verify_chain()`; then every append refuses, the witness included |
 | Ledger file deleted, replaced or moved under a running body | invisible until reopen; an append to a deleted path created a new one-line history, and one to a replaced path forked it | every append refuses, the witness included, unless the file at the path ends with this ledger's last line (a byte-identical copy continues the history); a deleted path is never recreated; explicit `verify_chain()` checks the same, for small ledgers too |
-| Another writer appends while an append runs (ignoring the lock) | its bytes accepted, ours written after them | refused before our write if they landed after the check; reported uncertain if they land around it |
+| Another writer appends while an append runs (ignoring the lock) | its bytes accepted, ours written after them | refused before our write if they landed after the check; reported uncertain if they land around or over our line (it is read back after the write) |
 | History assigned to a file-backed writer | appends wrote a forked line into the file | appends refused until the history in memory again ends with the file's last record |
 | A FIFO at the ledger, its lock or the quarantine sidecar name | the writer hung | refused without blocking |
-| A lease held on the ledger file | a blocking open waited for its break | the same wait, at most the kernel's lease-break-time plus one second |
-| Body home on a shared or network folder (9p, virtio-fs, FUSE, NFS, SMB) | accepted | refused by the installer (exit 15) and by `greg init`: the ledger's checks see only Linux's cached copy there |
+| A lease held on the ledger file, its writer lock or a quarantine sidecar | a blocking open waited for its break | the same wait at every one of those opens, at most the kernel's lease-break-time plus one second |
+| `close()` while another thread appends | the writer lock was released while that append still wrote | `close()` waits for the append |
+| Body home on a shared or network folder (9p, any FUSE filesystem including virtio-fs, NFS, SMB, cluster filesystems) | accepted | refused by the installer (exit 15), `greg init`, every body open and `greg foundry restore`, by the filesystem type the kernel reports (`statfs`): the ledger's checks see only Linux's cached copy there |
 | Tampered file at open | refused | refused |
 | Commit Witness cost | re-hash every retained record (about 9 µs each) | re-hash the 1,024 resident records, plus about 1 µs per dropped record for the running digest |
 
@@ -123,7 +124,7 @@ Same scenario, 1,800 ticks (`bounded-rss.json`, `bounded-heap-attribution.json`)
 For a body observing once a minute, about 27 MB a day instead of about 49 MB: 1 GB in about five weeks
 instead of under three.
 
-**Re-measured on the final head `e3c6e723`**, after the review fixes below added a canonical-line check at
+**Re-measured on `e3c6e723`**, after the review fixes below added a canonical-line check at
 eviction (`final-e3c6e723-rss.json`, `final-e3c6e723-heap-attribution.json`; the baseline was re-run beside
 it, `rerun-baseline-190c58fb-rss.json`):
 
@@ -244,7 +245,34 @@ defects and refuted one:
 
 Each fix has a test that fails without it. The new offset check made the anchor's exact-size check redundant on the
 append path, so that mutant survived; a new test pins that a writer's explicit verification reports bytes appended
-past its history. 32 dropped-payload mutants pin the safeguards, all caught.
+past its history.
+
+A fifth review of `f17ce785`, every finding re-checked by three separate skeptics, upheld 20 findings (all low or
+info) and refuted 7. The upheld ones come down to these, all fixed in the next commit:
+- **Leases, still (a regression).** The writer lock and an existing quarantine sidecar opened with a bare `O_NONBLOCK`,
+  so a lease on either refused the body its own ledger or its own crash recovery. Every open of the ledger, its lock
+  and its sidecar now waits out a lease break the same way, and each of those waits has a test.
+- **The shared-folder check chose the mount by its path string.** A share, or a local filesystem hidden under a later
+  mount, was misjudged, so the installer and `greg init` could disagree, and a mount point with a non-UTF-8 name crashed
+  `greg init`. The check now asks the kernel: `statfs(2)` on the home's nearest existing ancestor, the same type the
+  installer reads with `stat -f`, from one list in both. Ceph, AFS, Lustre, GFS2, OCFS2, Coda and OrangeFS are added.
+- **Only `greg init` refused a shared home.** `greg foundry restore` wrote onto one and a body opened on one; both now
+  refuse it.
+- **The installer's walk up the home path** never ended for a relative home in a directory the user cannot search,
+  and took a home given as `~/...` literally. It now starts from the absolute path greg will use and stops at `/`. Its
+  `fail` printed the exit code as part of every message.
+- **A fork while a reader thread held the read lock** hung the child's reads; a forked child now gets a new lock.
+  **`close()` released the writer lock under an append in flight on another thread** (older than this PR); it now
+  waits for that append.
+- **Claims.** The post-write check compared only the size; it now also reads our line back. "Each fix has a test"
+  overstated the lease waits at explicit verification and at old-payload reads; they now have tests. The handoff
+  called `e3c6e723` the final code; it now names the commit each measurement ran on.
+- **Refuted**, among others: the lease wait covering any `EAGAIN` from open (a contrived FUSE trigger, bounded at about
+  46 s), and refusing local FUSE homes such as a rootless container's. That refusal is kept: statfs cannot tell
+  virtio-fs, how ChromeOS shares folders, from other FUSE filesystems, and a refusal with its reason costs less than
+  evidence that vanishes.
+
+46 mutants pin these safeguards, all caught: 39 for the ledger, 6 for the shared-home refusal, 1 for the commit chain.
 
 ## Next measured limit (not changed here; each needs a decision)
 

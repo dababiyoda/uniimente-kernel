@@ -29,7 +29,7 @@ import secrets
 import time
 
 from foundry.systems import cas, seed as seed_store
-from greg.body import Body, BodyError, Layout, _private_write
+from greg.body import Body, BodyError, Layout, _private_write, refuse_shared_home
 from greg.journal import iso
 from greg.missions import TERMINAL
 
@@ -69,6 +69,7 @@ def restore_body(store, seed_address: str, home, *, clock=None) -> dict:
     """Restore ``seed_address`` from ``store`` into an empty ``home``; the body comes back held, never acting."""
     started = time.monotonic()
     store, layout = Path(store), Layout(home)
+    refuse_shared_home(layout.home)                              # before a byte is restored there
     manifest = json.loads(cas.get(store, seed_address))          # refuses a tampered manifest
     try:
         files = seed_store.restore(store, seed_address, layout.home)  # refuses a tampered object

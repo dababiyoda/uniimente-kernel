@@ -79,17 +79,56 @@ def test_it_refuses_to_pretend_another_linux_is_the_chromebook(tmp_path):
     assert not (tmp_path / "body").exists() and not (tmp_path / "founder.pem").exists()
 
 
-@pytest.mark.parametrize("magic, name", [("1021997", "v9fs"), ("65735546", "fuseblk"), ("6969", "nfs")])
-def test_it_refuses_a_body_home_on_a_shared_or_network_folder(tmp_path, magic, name):
-    (tmp_path / "bin").mkdir()
-    shim = tmp_path / "bin/stat"                                                  # the home's filesystem, as stat reports it
-    shim.write_text(f'#!/bin/sh\ncase "$*" in *%t*) echo {magic} ;; *%T*) echo {name} ;; '
-                    f'*) exec {shutil.which("stat")} "$@" ;; esac\n')
+SHARED_MAGICS = {"1021997": "9p", "65735546": "FUSE: virtio-fs, sshfs and the like", "6969": "NFS", "517b": "SMB",
+                 "ff534d42": "CIFS", "fe534d42": "SMB2", "c36400": "Ceph", "5346414f": "AFS", "6b414653": "kAFS",
+                 "bd00bd0": "Lustre", "1161970": "GFS2", "7461636f": "OCFS2", "73757245": "Coda",
+                 "20030528": "OrangeFS"}
+
+
+def _shared_folder_stat(tmp: Path, folder: str, magic: str):
+    """A stat that reports ``magic`` for ``folder`` alone: the real stat answers for every other path, so a guard
+    that asked about a path that does not exist, or about the wrong one, finds no shared folder."""
+    (tmp / "bin").mkdir(exist_ok=True)
+    shim = tmp / "bin/stat"
+    shim.write_text(f'#!/bin/sh\nfor a; do last=$a; done\n'
+                    f'if [ "$last" = "{folder}" ]; then case "$*" in *%t*) echo {magic}; exit 0 ;; esac; fi\n'
+                    f'exec {shutil.which("stat")} "$@"\n')
     shim.chmod(0o755)
-    out = run(dev_args(tmp_path), tmp_path)
+
+
+def _refused(out, name):
     assert out.returncode == 15, out.stdout[-2000:] + out.stderr[-2000:]
-    assert "shared or network filesystem" in out.stderr and name in out.stderr and "inside Linux files" in out.stderr
-    assert not (tmp_path / "body").exists() and not (tmp_path / "founder.pem").exists()
+    assert f"shared or network filesystem ({name})" in out.stderr and "own disk" in out.stderr
+    assert out.stderr.rstrip().endswith("(the default is ~/.uniimente/greg).")      # the exit code is not the message
+
+
+@pytest.mark.parametrize("magic", sorted(SHARED_MAGICS))
+def test_it_refuses_a_body_home_on_a_shared_or_network_folder(tmp_path, magic):
+    share = tmp_path / "share"
+    share.mkdir()
+    _shared_folder_stat(tmp_path, str(share), magic)
+    args = dev_args(tmp_path)
+    args[args.index("--home") + 1] = str(share / "greg" / "body")              # not there yet: its folder is asked
+    out = run(args, tmp_path)
+    _refused(out, SHARED_MAGICS[magic])
+    assert not (share / "greg").exists() and not (tmp_path / "founder.pem").exists()
+
+
+def test_a_relative_or_rootward_body_home_is_checked_where_greg_will_put_it(tmp_path):
+    share = tmp_path / "share"
+    share.mkdir()
+    _shared_folder_stat(tmp_path, os.path.realpath(share), "1021997")
+    args = dev_args(tmp_path)
+    args[args.index("--home") + 1] = "greg/body"                                 # relative to where it runs
+    _refused(run(args, tmp_path, cwd=share), "9p")
+    _shared_folder_stat(tmp_path, "/", "65735546")                                # no ancestor exists but /
+    args[args.index("--home") + 1] = "/greg-no-such-root-dir/body"
+    _refused(run(args, tmp_path), "FUSE: virtio-fs, sshfs and the like")
+    _shared_folder_stat(tmp_path, str(tmp_path / "home"), "6969")                 # "~" as greg expands it
+    args[args.index("--home") + 1] = "~/greg/body"
+    _refused(run(args, tmp_path), "NFS")
+    assert not (share / "greg").exists() and not Path("/greg-no-such-root-dir").exists()
+    assert not (tmp_path / "home/greg").exists()
 
 
 def test_it_stops_with_the_fix_when_no_python_311_exists(tmp_path):

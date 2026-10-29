@@ -21,6 +21,7 @@ import stat
 import sys
 import threading
 import time
+import weakref
 from array import array
 from collections.abc import Sequence
 from dataclasses import dataclass, asdict, fields
@@ -112,15 +113,16 @@ def _lease_break_seconds() -> float:
         return 45.0     # the Linux default
 
 
-def _open_nb(path: str, flags: int) -> int:
+def _open_nb(path: str, flags: int, mode: int = 0o777) -> int:
     """os.open with O_NONBLOCK, so what is not a regular file (a FIFO put at the path) never hangs it. On a regular
     file the open fails with EWOULDBLOCK only while it breaks another process's lease (an NFSv4 server's delegation, a
     Samba oplock, any F_SETLEASE holder), which a blocking open would wait out: so wait it out here, at most the
-    kernel's lease-break-time, after which the kernel itself removes the lease."""
+    kernel's lease-break-time, after which the kernel itself removes the lease. Every open of the ledger, its lock and
+    its quarantine sidecar goes through here."""
     deadline, delay = None, 0.005
     while True:
         try:
-            return os.open(path, flags | _NONBLOCK)
+            return os.open(path, flags | _NONBLOCK, mode)
         except BlockingIOError:
             now = time.monotonic()
             if deadline is None:
@@ -137,6 +139,20 @@ def _existing(path: str, flags: int) -> int:
     return _open_nb(path, (flags & ~(os.O_CREAT | os.O_WRONLY)) | os.O_RDWR)
 
 
+# Every read source, so a forked child can replace their locks: one held by a thread of the parent (a read waiting out a
+# lease break) would otherwise never be released in the child, where that thread does not exist.
+_SOURCES: "weakref.WeakSet[_LineSource]" = weakref.WeakSet()
+
+
+def _after_fork_in_child() -> None:
+    for src in list(_SOURCES):
+        src._lock = threading.RLock()
+
+
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(after_in_child=_after_fork_in_child)
+
+
 class _LineSource:
     """Reads retained lines back from a ledger file, refusing any byte that is not the one verified."""
 
@@ -150,6 +166,7 @@ class _LineSource:
         self._fd = None
         # Reentrant: a ledger finalized by a garbage collection that runs inside a read closes this source.
         self._lock = threading.RLock()
+        _SOURCES.add(self)
 
     @property
     def broken(self) -> bool:
@@ -413,7 +430,7 @@ class EvidenceLedger:
         if path and not read_only:
             # Never block on what is not a regular file (a FIFO put at the lock's name): O_NONBLOCK, then refuse it.
             try:
-                lfd = os.open(path + '.lock', os.O_WRONLY | os.O_CREAT | os.O_APPEND | _NONBLOCK | _CLOEXEC, 0o666)
+                lfd = _open_nb(path + '.lock', os.O_WRONLY | os.O_CREAT | os.O_APPEND | _CLOEXEC, 0o666)
             except OSError as exc:
                 if exc.errno != errno.ENXIO:
                     raise
@@ -481,7 +498,7 @@ class EvidenceLedger:
             except FileExistsError:
                 # Never block or read without bound: the existing name must be a regular file of exactly these bytes.
                 try:
-                    have = os.open(sidecar, os.O_RDONLY | _NONBLOCK | _CLOEXEC)
+                    have = _open_nb(sidecar, os.O_RDONLY | _CLOEXEC)
                 except OSError:
                     have = None
                 same = False
@@ -508,6 +525,17 @@ class EvidenceLedger:
                        "in the sidecar for reconciliation and were not replayed"})
 
     def close(self):
+        if os.getpid() != self._pid:
+            # A forked child closes only its own copies of the descriptors (the parent keeps its writer lock), and
+            # never waits on a lock a parent thread may have held at the fork.
+            self._release()
+            return
+        # After any append in flight on another thread: releasing the writer lock first would let a second writer
+        # open the file while that append still writes to it.
+        with self._lock:
+            self._release()
+
+    def _release(self):
         if self._writer is not None:
             self._writer.close()
             self._writer = None
@@ -599,8 +627,10 @@ class EvidenceLedger:
                     fh.write(line)
                     fh.flush()
                     os.fsync(fh.fileno())
-                    if os.fstat(fh.fileno()).st_size != offset + len(line):
-                        raise OSError("the ledger file changed size during the append")   # around ours: uncertain
+                    # Bytes another writer put around or over ours: the file is not this history plus our line.
+                    if (os.fstat(fh.fileno()).st_size != offset + len(line)
+                            or os.pread(fh.fileno(), len(line), offset) != line):
+                        raise OSError("the ledger file changed during the append")       # uncertain, never acknowledged
                 except OSError as exc:
                     self._uncertain = True
                     raise ReconciliationRequired('append acknowledgment lost') from exc

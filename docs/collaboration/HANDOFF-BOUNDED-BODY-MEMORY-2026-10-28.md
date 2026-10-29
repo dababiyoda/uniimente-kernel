@@ -72,8 +72,8 @@ here; this file does not repeat it.
 
 | Area | Change in this session | Reality |
 |---|---|---|
-| Body / runtime | Memory per retained record 2,639 → 1,390 B resident; heap 2,287 → 807 B (final head `e3c6e723`; 1,458 and 833 on `45d65a30`) | sandbox measured |
-| Body / runtime | Run 361 s → 279 s for 1,800 ticks on the final head (334 → 223 on `45d65a30`; concurrent runs; indicative) | sandbox measured |
+| Body / runtime | Memory per retained record 2,639 → 1,390 B resident; heap 2,287 → 807 B (on `e3c6e723`; 1,458 and 833 on `45d65a30`) | sandbox measured |
+| Body / runtime | Run 361 s → 279 s for 1,800 ticks on `e3c6e723` (334 → 223 on `45d65a30`; concurrent runs; indicative) | sandbox measured |
 | Body / runtime | Ledger file tampering detected while running | unit-tested |
 | Zero trust / evidence | Explicit `verify_chain()` re-derives every dropped record from the file. Commit path: running digest. Every append refuses a file that does not end with this ledger's last line (deleted, replaced, inode reused, FIFO); changed bytes stop appends | unit-tested; three independent attack rounds |
 | Install / doctor | One pip call per engine. `why_missing` and `platform.glibc` in the doctor | unit-tested; real installer run end to end on x86-64 Ubuntu (5 of 5 engines, body, key, designation) |
@@ -83,22 +83,25 @@ here; this file does not repeat it.
 ## 31. Exact code changes
 
 `provenance/ledger.py`, `events/spine.py`, `greg/chromebook/install.sh`, `greg/doctor.py`,
-`greg/CHROMEBOOK_FIRST_MISSION.md`, `greg/body.py` (`greg init` refuses a shared or network home),
-`scripts/measure_body_memory.py` (new), `scripts/ci/check_cortex_mutants.py`
-(one stale mutant repaired, 32 ledger mutants added),
-`tests/unit/test_ledger_dropped_payloads.py` (new, 65 tests), `tests/unit/test_greg_chromebook_install.py` (+5),
-`tests/unit/test_greg_worker_confinement_setting.py` (+5),
+`greg/CHROMEBOOK_FIRST_MISSION.md`, `greg/body.py` and `greg/recovery.py` (`greg init`, every body open and
+`greg foundry restore` refuse a shared or network home), `scripts/measure_body_memory.py` (new),
+`scripts/ci/check_cortex_mutants.py` (one stale mutant repaired; 39 ledger and 6 shared-home mutants added),
+`tests/unit/test_ledger_dropped_payloads.py` (new, 72 tests), `tests/unit/test_greg_shared_home.py` (new, 17 tests),
+`tests/unit/test_greg_chromebook_install.py` (+17),
 `docs/collaboration/FINDING-BODY-MEMORY-2026-10-28.md`, `docs/collaboration/deliberation-bounded-body-memory-20261028.json`,
 `docs/evidence/body-memory-2026-10-28/`, this file.
 
 ## 32–33. Tests and CI
 
-On the final code (`e3c6e723`), locally with Python 3.11, `-n 3`:
+Locally with Python 3.11, `-n 3`:
 
-- `tests/unit`: 7,255 passed, 109 skipped, 0 failed.
-- `tests/integration`: 464 passed, 51 skipped, 0 failed. The skips need Playwright, bubblewrap or supervisord,
-  none of which this container has.
-- The ledger, provenance and installer files again after the last test edit: 94 passed.
+- At `f17ce785`: `tests/unit` 7,293 passed, 109 skipped, 0 failed; `tests/integration` 464 passed, 51 skipped,
+  0 failed. The skips need Playwright, bubblewrap or supervisord, none of which this container has. Canonical CI run
+  997 passed every job on `f17ce785`.
+- At `e3c6e723`: `tests/unit` 7,255 passed; `tests/integration` 464 passed.
+- On the fifth review's fixes (the commit after `f17ce785`): the ledger, witness, mission-book, morning-review,
+  provenance, recovery, restore, installer and shared-home files, 488 passed and 5 skipped; 46 of 46 mutants caught.
+  The full suites run again on that commit and are recorded in the PR #211 receipt.
 
 Exact commands, the review and the measurements are in the PR #211 receipt. Canonical CI runs on every push.
 
@@ -118,7 +121,12 @@ Exact commands, the review and the measurements are in the PR #211 receipt. Cano
     renumbered file.
 - **The content anchor's first version reported every open error as another history** (caught by the full suite)
   and had six smaller defects found by a fourth review (`FINDING-BODY-MEMORY-2026-10-28.md`).
-- **The ledger cannot see past a shared folder's cache;** the installer and `greg init` refuse such a home instead.
+- **The ledger cannot see past a shared folder's cache;** the installer, `greg init`, every body open and restore
+  refuse such a home instead.
+- **A fifth review found that the fourth round's fixes were incomplete** (leases at the lock and sidecar, the
+  shared-folder check reading mount paths instead of asking the kernel, restore and open unchecked) and two older
+  races (`close()` during an append, a fork during a read). All fixed with tests and mutants
+  (`FINDING-BODY-MEMORY-2026-10-28.md`).
 - **Memory still grows by about 1.4 KB per record.**
 - **Whole-history spine replays read old events from the file:** about 2.3× the old cost per event.
 - **`malloc_trim` reclaims nothing material.**

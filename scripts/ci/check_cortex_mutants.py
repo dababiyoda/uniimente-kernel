@@ -338,15 +338,57 @@ DROPPED_PAYLOAD_MUTANTS = [
      "                    if self._last_line is not None and offset != sum(self._last_line[:2]):",
      "                    if False:"),
     ("bytes appended around ours are acknowledged", "provenance/ledger.py",
-     "                    if os.fstat(fh.fileno()).st_size != offset + len(line):", "                    if False:"),
+     "if (os.fstat(fh.fileno()).st_size != offset + len(line)\n", "if (False\n"),
     ("the writer blocks on a FIFO at its lock", "provenance/ledger.py",
-     "os.O_WRONLY | os.O_CREAT | os.O_APPEND | _NONBLOCK | _CLOEXEC, 0o666)",
-     "os.O_WRONLY | os.O_CREAT | os.O_APPEND | _CLOEXEC, 0o666)"),
+     "lfd = _open_nb(path + '.lock', os.O_WRONLY | os.O_CREAT | os.O_APPEND | _CLOEXEC, 0o666)",
+     "lfd = os.open(path + '.lock', os.O_WRONLY | os.O_CREAT | os.O_APPEND | _CLOEXEC, 0o666)"),
     ("the writer locks what is not a regular file", "provenance/ledger.py",
      "            if not stat.S_ISREG(os.fstat(lfd).st_mode):", "            if False:"),
     ("quarantine blocks on a FIFO at the sidecar name", "provenance/ledger.py",
-     "                    have = os.open(sidecar, os.O_RDONLY | _NONBLOCK | _CLOEXEC)",
+     "                    have = _open_nb(sidecar, os.O_RDONLY | _CLOEXEC)",
      "                    have = os.open(sidecar, os.O_RDONLY | _CLOEXEC)"),
+    # Fifth independent review of the content anchor (#211).
+    ("the writer lock open refuses a lease break", "provenance/ledger.py",
+     "lfd = _open_nb(path + '.lock', os.O_WRONLY | os.O_CREAT | os.O_APPEND | _CLOEXEC, 0o666)",
+     "lfd = os.open(path + '.lock', os.O_WRONLY | os.O_CREAT | os.O_APPEND | _NONBLOCK | _CLOEXEC, 0o666)"),
+    ("the quarantine sidecar open refuses a lease break", "provenance/ledger.py",
+     "                    have = _open_nb(sidecar, os.O_RDONLY | _CLOEXEC)",
+     "                    have = os.open(sidecar, os.O_RDONLY | _NONBLOCK | _CLOEXEC)"),
+    ("explicit verification refuses a lease break", "provenance/ledger.py",
+     "            fd = _open_nb(self.path, os.O_RDONLY | _CLOEXEC)\n        except OSError as exc:\n"
+     "            if exc.errno not in _GONE:\n                return False",
+     "            fd = os.open(self.path, os.O_RDONLY | _NONBLOCK | _CLOEXEC)\n        except OSError as exc:\n"
+     "            if exc.errno not in _GONE:\n                return False"),
+    ("an old payload read refuses a lease break", "provenance/ledger.py",
+     "            fd = _open_nb(self.path, os.O_RDONLY | _CLOEXEC)\n        except OSError as exc:\n"
+     "            if exc.errno not in _GONE:\n                raise\n            self.note_failure()",
+     "            fd = os.open(self.path, os.O_RDONLY | _NONBLOCK | _CLOEXEC)\n        except OSError as exc:\n"
+     "            if exc.errno not in _GONE:\n                raise\n            self.note_failure()"),
+    ("a forked child waits forever on a parent thread's read lock", "provenance/ledger.py",
+     "        src._lock = threading.RLock()", "        pass"),
+    ("close releases the writer lock under an append in flight", "provenance/ledger.py",
+     "        with self._lock:\n            self._release()", "        self._release()"),
+    ("an overwrite of our line during the write is acknowledged", "provenance/ledger.py",
+     "                            or os.pread(fh.fileno(), len(line), offset) != line):",
+     "                            or False):"),
+]
+
+# 2026-10-29 shared-folder refusal (#211): a body home where Linux may serve a cached copy of another machine's file.
+SHARED_HOME_TESTS = ["tests/unit/test_greg_shared_home.py"]
+SHARED_HOME_MUTANTS = [
+    ("greg init creates a body on a shared folder", "greg/body.py",
+     "    refuse_shared_home(layout.home)\n", "    pass\n"),
+    ("a body opens on a shared folder", "greg/body.py",
+     "        refuse_shared_home(self.layout.home)\n", "        pass\n"),
+    ("restore writes onto a shared folder", "greg/recovery.py",
+     "    refuse_shared_home(layout.home)                              # before a byte is restored there\n",
+     "    pass\n"),
+    ("a home not yet created is checked at its own missing path", "greg/body.py",
+     "    while not os.path.exists(p) and p != p.parent:\n        p = p.parent\n", ""),
+    ("virtio-fs and other FUSE shares are accepted", "greg/body.py",
+     '0x65735546: "FUSE: virtio-fs, sshfs and the like", ', ""),
+    ("statfs is read at the wrong field", "greg/body.py",
+     "return ctypes.c_long.from_buffer(buf).value & 0xFFFFFFFF", "return ctypes.c_long.from_buffer(buf, 8).value & 0xFFFFFFFF"),
 ]
 
 # 2026-10-14 installed-body merge (#137 verifier): a test-key closure is structural evidence, never the founder's path.
@@ -646,6 +688,7 @@ GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("recovery", RECOVERY_TESTS, RECOVERY_MUTANTS),
           ("evidence chain at commit", COMMIT_CHAIN_TESTS, COMMIT_CHAIN_MUTANTS),
           ("dropped-payload ledger", DROPPED_PAYLOAD_TESTS, DROPPED_PAYLOAD_MUTANTS),
+          ("shared-folder body home", SHARED_HOME_TESTS, SHARED_HOME_MUTANTS),
           ("founder tier", FOUNDER_TIER_TESTS, FOUNDER_TIER_MUTANTS),
           ("founder tier (body)", FOUNDER_TIER_BODY_TESTS, FOUNDER_TIER_BODY_MUTANTS),
           ("closure integrity", CLOSURE_INTEGRITY_TESTS, CLOSURE_INTEGRITY_MUTANTS),

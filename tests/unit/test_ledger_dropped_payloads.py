@@ -10,6 +10,7 @@ included), never silently replaced by the file's copy.
 from __future__ import annotations
 
 import copy
+import errno
 import fcntl
 import hashlib
 import json
@@ -719,26 +720,39 @@ def test_a_read_finishes_before_an_append_that_adopts_another_file_closes_its_de
 
 
 def _hold_lease(path, kind, release_after=0.3):
-    """A child process takes a lease on the file and gives it up ``release_after`` seconds after the kernel asks."""
+    """A child process takes a lease on the file and gives it up ``release_after`` seconds after the kernel asks.
+    Skips only where leases are unsupported; a lease refused because a descriptor is open (EAGAIN) fails the test."""
     r, w = os.pipe()
     pid = os.fork()
     if pid == 0:
         try:
-            fd = os.open(path, os.O_RDONLY if kind == fcntl.F_RDLCK else os.O_RDWR)
-            signal.signal(signal.SIGIO, lambda *a: (time.sleep(release_after),
-                                                    fcntl.fcntl(fd, fcntl.F_SETLEASE, fcntl.F_UNLCK)))
-            fcntl.fcntl(fd, fcntl.F_SETLEASE, kind)
-            os.write(w, b"1")
+            try:
+                fd = os.open(path, os.O_RDONLY if kind == fcntl.F_RDLCK else os.O_RDWR)
+                signal.signal(signal.SIGIO, lambda *a: (time.sleep(release_after),
+                                                        fcntl.fcntl(fd, fcntl.F_SETLEASE, fcntl.F_UNLCK)))
+                fcntl.fcntl(fd, fcntl.F_SETLEASE, kind)
+            except OSError as exc:
+                os.write(w, str(exc.errno).encode())
+                os._exit(0)
+            os.write(w, b"ok")
             time.sleep(5)
         finally:
             os._exit(0)
     os.close(w)
-    ready = os.read(r, 1)
+    ready = os.read(r, 16)
     os.close(r)
-    if ready != b"1":
+    if ready != b"ok":
         os.waitpid(pid, 0)
-        pytest.skip("leases unavailable here")
+        code = int(ready or 0)
+        if code in (errno.EINVAL, errno.ENOSYS, errno.EPERM, errno.EACCES):
+            pytest.skip(f"leases unavailable here ({errno.errorcode.get(code, code)})")
+        pytest.fail(f"the lease was refused ({errno.errorcode.get(code, code)}): a descriptor is still open on {path}")
     return pid
+
+
+def _release(pid):
+    os.kill(pid, signal.SIGKILL)
+    os.waitpid(pid, 0)
 
 
 @pytest.mark.skipif(not hasattr(fcntl, "F_SETLEASE"), reason="Linux leases")
@@ -860,3 +874,136 @@ def test_a_writers_verification_reports_bytes_appended_past_its_history(tmp_path
         fh.write(b'{"intruder": 1}\n')
     ok, reason = led.verify_chain()
     assert not ok and NOT_OURS in reason
+
+
+# Fifth independent review (#211): each test fails on f17ce785.
+LEASES = pytest.mark.skipif(not hasattr(fcntl, "F_SETLEASE"), reason="Linux leases")
+
+
+@LEASES
+def test_the_writer_lock_open_waits_out_a_lease_break(tmp_path):
+    path = str(tmp_path / "l.jsonl")
+    EvidenceLedger(ANCHOR, path).close()
+    pid = _hold_lease(path + ".lock", fcntl.F_RDLCK)
+    try:
+        led = EvidenceLedger(ANCHOR, path)                                   # waits for the break; never refuses
+    finally:
+        _release(pid)
+    assert led.append("event", {"i": 1}).seq == 1
+    led.close()
+
+
+@LEASES
+def test_quarantine_waits_out_a_lease_on_a_sidecar_holding_the_same_bytes(tmp_path):
+    """An earlier quarantine wrote the sidecar and died before truncating: the next open finishes it."""
+    led, _, path = grown(tmp_path)
+    led.close()
+    torn = b'{"seq": 81, "ts_utc": "2026-09-26T00:00:00Z", "record_type": "ev'
+    with open(path, "ab") as fh:
+        fh.write(torn)
+    sidecar = f"{path}.unacknowledged-{hashlib.sha256(torn).hexdigest()[:16]}"
+    with open(sidecar, "wb") as fh:
+        fh.write(torn)
+    pid = _hold_lease(sidecar, fcntl.F_WRLCK)
+    try:
+        led = EvidenceLedger(ANCHOR, path, resident=4, tail="quarantine")
+    finally:
+        _release(pid)
+    assert led.records[-1].record_type == "recovery"
+    with open(path, "rb") as fh:
+        assert not fh.read().endswith(torn)
+    led.close()
+
+
+@LEASES
+def test_explicit_verification_waits_out_a_lease_break(tmp_path):
+    led, _, path = grown(tmp_path)
+    led._src.close()                                                         # no descriptor of ours stops the lease
+    pid = _hold_lease(path, fcntl.F_WRLCK)
+    try:
+        ok, why = led.verify_chain()
+    finally:
+        _release(pid)
+    assert ok, why
+    assert led._src.failures == 0
+
+
+@LEASES
+def test_an_old_payload_read_waits_out_a_lease_break(tmp_path):
+    led, _, path = grown(tmp_path)
+    expected = everything_in_memory(path).records[3].payload
+    led._src.close()
+    pid = _hold_lease(path, fcntl.F_WRLCK)
+    try:
+        assert led.records[3].payload == expected
+    finally:
+        _release(pid)
+    assert led._src.failures == 0
+
+
+def test_a_forked_child_reads_while_a_parent_thread_held_the_read_lock(tmp_path):
+    """A parent thread in a read (waiting out a lease break) holds the read source's lock at the fork; in the child no
+    thread will ever release it, so the child's lock is a new one."""
+    led, _, path = grown(tmp_path)
+    expected = everything_in_memory(path).records[3].payload
+    held, release = threading.Event(), threading.Event()
+
+    def reader():
+        with led._src._lock:
+            held.set()
+            release.wait(10)
+    t = threading.Thread(target=reader, daemon=True)
+    t.start()
+    held.wait(5)
+    pid = os.fork()
+    if pid == 0:
+        signal.alarm(5)                                                      # a hang kills the child: the test fails
+        try:
+            os._exit(0 if led.records[3].payload == expected else 3)
+        except BaseException:
+            os._exit(4)
+    _, status = os.waitpid(pid, 0)
+    release.set()
+    t.join(5)
+    assert os.WIFEXITED(status) and os.WEXITSTATUS(status) == 0, status
+
+
+def test_close_waits_for_an_append_in_flight(tmp_path):
+    """close() releases the writer lock only after an append another thread has started, so a second writer never
+    opens the file while that append still writes to it."""
+    led, _, path = grown(tmp_path)
+    inside, done = threading.Event(), []
+    real_adopt = led._src.adopt
+
+    def slow_adopt(fd, **kw):
+        inside.set()
+        time.sleep(0.3)
+        return real_adopt(fd, **kw)
+    led._src.adopt = slow_adopt
+    t = threading.Thread(target=lambda: done.append(led.append("witness", {"w": 1}).seq), daemon=True)
+    t.start()
+    assert inside.wait(5)
+    led.close()
+    assert done, "close() returned while the append was still writing"
+    t.join(5)
+    second = EvidenceLedger(ANCHOR, path, resident=4)                       # the append is in the file it opens
+    assert second.records[-1].payload == {"w": 1} and second.append("event", {"after": "close"})
+    second.close()
+
+
+def test_an_overwrite_of_our_line_during_the_write_leaves_the_append_uncertain(tmp_path, monkeypatch):
+    """Same length, other bytes: the file is not this history plus our line, so the append is not acknowledged."""
+    led, _, path = grown(tmp_path)
+    real, done = os.fsync, []
+
+    def fsync(fd):
+        if not done:
+            done.append(fd)
+            size = os.path.getsize(path)
+            with open(path, "r+b") as fh:
+                fh.seek(size - 3)
+                fh.write(b"X")
+        return real(fd)
+    monkeypatch.setattr(ledger_module.os, "fsync", fsync)
+    with pytest.raises(ReconciliationRequired):
+        led.append("witness", {"w": 1})

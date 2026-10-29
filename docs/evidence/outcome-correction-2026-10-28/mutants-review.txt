@@ -1,5 +1,11 @@
-Mutants of the review fixes (mutants-review.py); tests: test_greg_outcome_resolution, test_greg_pending_construction_realization, test_greg_outcome_resolution_signed (py3.11, -x).
-N2 is equivalent: a second resolution under one signed digest must carry the identical signed body (S1 body binding), so it can only repeat the same ruling; the one-per-digest guard is kept as defence in depth.
+Mutants of the review fixes, re-recorded 2026-10-29 with the corrected gate (mutants-review.py at the commit below; second review of #219, R3). Raw output follows; the note after it was added by hand.
+git rev-parse HEAD: 2d2d1c5b6c52372579850bf63f65ef79191f117e; greg/, tests/ and docs/evidence/outcome-correction-2026-10-28/mutants-review.py unmodified
+python 3.11.17; command: python -B -m pytest -q -x -p no:cacheprovider tests/unit/test_greg_outcome_resolution.py tests/unit/test_greg_pending_construction_realization.py tests/unit/test_greg_outcome_resolution_signed.py
+sha256 greg/cognition/settlement.py: 4417034f1e5c4a568a3e0b30d69279a40e7460b6312c305360ef8f5b7c32e1fa
+sha256 tests/unit/test_greg_outcome_resolution.py: 2cbf74f697090fc1ae8d66184132990652d819964011bfc2edfa6a831ae64306
+sha256 tests/unit/test_greg_pending_construction_realization.py: 770b57c54945227f4279ee8d5c88009bb31076ca37a1c3c97af8ff190d0b2ea9
+sha256 tests/unit/test_greg_outcome_resolution_signed.py: 13a0448e5f8864dfcba4fb9efa88fafe51fa5bc43d980e355813316868585420
+baseline (no mutant): rc=0 65 passed in 48.08s
 CAUGHT  N1 S1 signed body not compared: ['test_s1_a_resolution_carrying_another_signed_commands_digest_resolves_nothing']
 MISSED  N2 S1 one signed command reused: []
 CAUGHT  N3 S2 any resolution adjudicates: ['test_s2_an_invalidation_must_name_every_live_report_and_never_adjudicates_the_founders_own']
@@ -8,10 +14,12 @@ CAUGHT  N5 S3 dedupe against rejected facts: ['test_s3_a_re_report_after_an_inva
 CAUGHT  N6 S3 one fact per receipt and value: ['test_s3_on_a_body_an_independent_report_matching_a_conflicting_value_is_recorded']
 CAUGHT  N7 S4 journal order wins: ['test_s4_an_older_signed_resolution_delivered_later_never_overrides_a_newer_one']
 CAUGHT  N8 S5 succeeded only when prior is None: ['test_s5_reconcile_supersedes_a_legacy_settlement_once_and_never_invalidates_it_later']
-CAUGHT  N9 S6 failed check hidden by dispute: []
+CAUGHT  N9 S6 failed check hidden by dispute: ['test_s6_a_dispute_on_an_answer_whose_check_failed_is_scored_wrong_and_has_no_decision_value']
 CAUGHT  N10 S7 unsettleable dispute weighed: ['test_s7_a_dispute_whose_mission_cannot_settle_is_held_and_names_the_appraisal']
 CAUGHT  N11 S8 Laplace flips ignored: ['test_s8_a_laplace_rank_flip_between_the_two_resolutions_is_investigated']
 CAUGHT  N12 S9 unsigned fact eligible (replay): ['test_s9_settlement_itself_refuses_a_signed_resolution_accepting_an_unsigned_report']
 CAUGHT  N13 S9 unsigned fact eligible (row): ['test_s9_an_unsigned_report_is_never_eligible_to_be_accepted']
 CAUGHT  N14 S10 engine label hashed: ['test_s10_the_answer_version_ignores_the_engine_label']
-13 of 14 caught
+13 of 14 valid mutants caught; 0 invalid; 1 missed
+
+Note (by hand): N2 is MISSED and not equivalent (second review, question 2). With S1's body binding a second resolution under one signed digest repeats the same ruling, but it sits at a later journal position and time: under an in-process writer it lists a later decision in decisions_to_recheck, makes reconcile write a new revision, and with equal issued_at re-applies an older ruling over a newer one. The guard is load-bearing; no test covers it yet (owed with the F1-F8 fixes). The first record of this file (7e909134) counted N9 as caught although its mutant did not compile.

@@ -23674,7 +23674,7 @@
      58
     ],
     "path": "tests/integration/test_outcome_correction_changes_decision.py",
-    "sha256": "sha256:a21068d306bf1b53e191aa2bacae2fefc6c2a1d1eaf55da6816dcec4e07004bd"
+    "sha256": "sha256:d918a0ab6957a3ae981152e80305c2345c5ecfa52bf275664dc5b753c3ab18c5"
    },
    "exposure_commit": "050e2e4288fa122953e10ec8fa255f148e0039d6",
    "family": null,
@@ -25307,7 +25307,7 @@
      125
     ],
     "path": "tests/unit/test_greg_outcome_resolution_review2.py",
-    "sha256": "sha256:e01e3fad19168593eef187a0ee6a9721706fd39fe6d35cd841924f0120a3fdb3"
+    "sha256": "sha256:78d0d194eb89e700b5238a15823c31bdbe032e0ffccbfbee06a527f16983b061"
    },
    "exposure_commit": "86701f7556ffe01db1f3d1493e8238a2e10b4d5c",
    "family": null,

@@ -367,7 +367,7 @@ def reconcile(journal):
     legacy = {_base_identity(e.payload): (identity, e) for identity, e in current.items()
               if e.payload.get("compile_receipt") and "answer_version" not in e.payload
               and all(field in e.payload for field in IDENTITY_FIELDS)}
-    measured, succeeded = {}, set()
+    measured, succeeded, final = {}, set(), {}
     for outcome in outcomes:
         identity = _outcome_identity(outcome)
         outcome = {**outcome, "outcome_id": identity, "evidence_class": "validated_local_computation", "invalidated": False}
@@ -379,20 +379,34 @@ def reconcile(journal):
             if prior is None:
                 prior = legacy_event
         if prior is None or digest({k:v for k,v in prior.payload.items() if k != "supersedes"}) != digest(outcome):
-            journal.record("cognition.settled", {**outcome, "supersedes": prior.event_id if prior else None},
-                           key=[identity, "revision", digest(outcome), prior.event_id if prior else None],
-                           causal_parent=outcome["observation_event"])
+            written = journal.record("cognition.settled", {**outcome, "supersedes": prior.event_id if prior else None},
+                                     key=[identity, "revision", digest(outcome), prior.event_id if prior else None],
+                                     causal_parent=outcome["observation_event"])
+            if getattr(written, "event_id", None):
+                final[identity] = written.event_id
     # Chains that an earlier answer-version rule kept apart and the current rule merges (one answer re-observed across
-    # an engine-label change): every head but the latest is closed, saying so, so no second live row outlasts the
-    # claim (review of #221, F1-a). Merged rows are kept and never read as the claim's settlement.
+    # an engine-label change, or a body whose earlier pass wrote the new row before invalidating the old head): every
+    # live head but the identity's current row is closed, saying so, so no second live row outlasts the claim (review
+    # of #221, F1-a; round 3, F1-r3-1). A measured claim's duplicate is merged into this pass's final row (F1-r3-2);
+    # an unmeasured claim's is invalidated with it. Merged rows are kept and never read as the claim's settlement.
     for identity, chain_heads in heads.items():
-        for shadow in chain_heads[:-1]:
-            journal.record("cognition.settled", {
-                **shadow.payload, "invalidated": True, "supersedes": shadow.event_id,
-                "merged_into": current[identity].event_id,
-                "reason": "merged: the same answer under the current answer-version rule; its settlement continues "
-                          "in the merged chain"}, key=[identity, "merged", shadow.event_id],
-                causal_parent=shadow.event_id)
+        keep = current[identity].event_id
+        for shadow in chain_heads:
+            if shadow.event_id == keep:
+                continue
+            if identity in measured:
+                journal.record("cognition.settled", {
+                    **shadow.payload, "invalidated": True, "supersedes": shadow.event_id,
+                    "merged_into": final.get(identity, keep),
+                    "reason": "merged: the same answer under the current answer-version rule; its settlement "
+                              "continues in the merged chain"}, key=[identity, "merged", shadow.event_id],
+                    causal_parent=shadow.event_id)
+            else:
+                journal.record("cognition.settled", {
+                    **shadow.payload, "invalidated": True, "supersedes": shadow.event_id,
+                    "reason": "current appraisal no longer supports competence; a duplicate chain of the claim, "
+                              "history retained"}, key=[identity, "invalidate", shadow.event_id],
+                    causal_parent=shadow.event_id)
     for identity, prior in current.items():
         if identity not in measured and identity not in succeeded and not prior.payload.get("invalidated"):
             revision = {**prior.payload, "invalidated": True, "supersedes": prior.event_id,
@@ -450,15 +464,34 @@ def receipt_links(journal) -> dict:
 
     A receipt is immutable once its identity digest is taken, so its own ``outcome_link`` / ``later_appraisal``
     fields stay as issued; the link lives here, keyed by the cognitive receipt and, for a compiled request, by the
-    compile receipt too. The latest settlement decides; an invalidated one links its invalidation."""
-    links = {}
-    for event in journal.replay("cognition.settled"):
+    compile receipt too. The latest settlement decides; an invalidated one links its invalidation. A merge closure
+    (F1-a) links its receipts to the chain it merged into, followed to that chain's latest row, so a merged chain's
+    receipt reads the claim's current settlement (round 3, R3-N33)."""
+    events = journal.replay("cognition.settled")
+    by_id = {e.event_id: e for e in events}
+    successor = {}
+    for event in events:
+        if event.payload.get("supersedes"):
+            successor[event.payload["supersedes"]] = event.event_id
+
+    def latest(event_id):
+        seen = set()
+        while event_id in successor and event_id not in seen:
+            seen.add(event_id)
+            event_id = successor[event_id]
+        return by_id.get(event_id)
+
+    def link_of(event):
         data = event.payload
-        if data.get("merged_into"):       # a closed duplicate chain (F1-a): the merged chain carries the link
-            continue
-        link = {"outcome_link": event.event_id, "later_appraisal": data.get("appraisal_event"),
+        return {"outcome_link": event.event_id, "later_appraisal": data.get("appraisal_event"),
                 "correct": data.get("correct"), "invalidated": bool(data.get("invalidated")),
                 "method": data.get("method"), "method_version": data.get("method_version")}
+
+    links = {}
+    for event in events:
+        data = event.payload
+        target = latest(data["merged_into"]) if data.get("merged_into") else None
+        link = link_of(target if target is not None else event)
         for key in (data.get("cognitive_receipt"), data.get("compile_receipt")):
             if key:
                 links[key] = link
@@ -642,6 +675,7 @@ def _world_state(facts: list, resolutions: list, receipts, signed_facts=frozense
     live = [e for e in facts if e.event_id not in rejected]
     values = sorted({e.payload["realized"] for e in live if _finite(e.payload.get("realized"))})
     state = {"live": live, "rejected": sorted(rejected), "values": values,
+             "sources": {e.event_id: e.payload.get("source") for e in facts},
              "resolution": applied.event_id if applied is not None else None}
     if not facts:
         return {**state, "state": "unreported"}
@@ -937,13 +971,28 @@ def _terminal_missions(journal) -> set:
                if e.payload.get("state") in ("ABANDONED", "SUPERSEDED")})
 
 
-def _unsettled_why(verdict, terminal) -> str:
-    """Why a mission's answers earn no competence, said as it is (review of #221, F7-a, F7-b)."""
-    if verdict is None:
-        return "pending: the mission has no appraisal yet, so nothing is credited until one settles"
+def _awaiting_appraisal(journal) -> set:
+    """Missions with a closure no appraisal has judged yet: an achievement with no appraisal, or a held or unmet
+    closure no ``mission.appraised`` names. The body appraises these on a later tick (``Body._close_out``)."""
+    appraised = {e.payload["mission_id"] for e in journal.replay("mission.appraised")}
+    judged = {e.payload.get("closure_event") for e in journal.replay("mission.appraised")}
+    return ({e.payload["mission_id"] for e in journal.replay("mission.achieved")
+             if e.payload["mission_id"] not in appraised}
+            | {e.payload["mission_id"] for kind in ("mission.held", "mission.unmet") for e in journal.replay(kind)
+               if e.event_id not in judged})
+
+
+def _unsettled_why(verdict, terminal, awaiting=False) -> str:
+    """Why a mission's answers earn no competence, said as it is (review of #221, F7-a, F7-b; round 3, G4F7-3)."""
+    if awaiting:
+        return "pending: a closure of this mission awaits appraisal, so nothing is credited until that appraisal settles"
     if terminal:
-        return (f"final: the mission is closed and its latest appraisal ({verdict}) settles nothing, so nothing is "
+        return ("final: the mission closed without an appraisal, so nothing is credited for this answer"
+                if verdict is None else
+                f"final: the mission is closed and its latest appraisal ({verdict}) settles nothing, so nothing is "
                 "credited for this answer")
+    if verdict is None:
+        return "pending: the mission has no closure yet, so nothing is credited until one is appraised"
     return (f"none: the mission's latest appraisal ({verdict}) settles nothing, so nothing is credited until a new "
             "closure is appraised")
 
@@ -965,13 +1014,14 @@ def _investigation(identity, seen, state, mission_id, receipts, signed_facts=fro
                 "eligible_to_accept": e.event_id in signed_facts
                 and e.payload.get("source") in DECLARED_INDEPENDENT_SOURCES} for e in live]
     independent = sorted({r["realized"] for r in reports if r["eligible_to_accept"]})
+    rejected_eligible = sorted(f for f in state.get("rejected", []) if f in signed_facts
+                               and state.get("sources", {}).get(f) in DECLARED_INDEPENDENT_SOURCES)
     row = {"kind": "objective_conflict", "world_state": "disputed", "claim": identity, "mission_id": mission_id,
            "method": first.payload.get("method"), "answer_version": _answer_version(seen[-1][1]),
            "objective": objective, "sense": sense, "promised": promised, "realized_values": state["values"],
            "realization_events": sorted(e.event_id for e in live), "receipts_for_claim": receipts,
            "reports": reports, "rejected_events": state["rejected"], "check_passed": seen[-1][4],
-           "scored_as": ("nothing: the mission's latest appraisal settles nothing, so this answer is not scored"
-                         if not settles else
+           "scored_as": (f"nothing: {unsettled_why or _unsettled_why(None, False)}" if not settles else
                          "neither correct nor wrong: the reported values disagree on the verdict" if seen[-1][4] else
                          "wrong: the signed check failed, so the dispute cannot change this answer's score"),
            "competence_claim": ((unsettled_why or _unsettled_why(None, False)) if not settles else
@@ -997,7 +1047,7 @@ def _investigation(identity, seen, state, mission_id, receipts, signed_facts=fro
         row["evidence_request"] = {
             "needed": row["distinguishing_observation"],
             "why": ("none of the live reports is a signed report declared as an independent source"
-                    + (f" (rejected by a resolution: {state['rejected']})" if state.get("rejected") else "")
+                    + (f" (rejected by a resolution: {rejected_eligible})" if rejected_eligible else "")
                     if not independent else
                     f"the reports declared as independent sources disagree too: {independent}"),
             "how": (f"greg realize {seen[-1][0]} --objective-value <observed> --source external_record "
@@ -1009,32 +1059,40 @@ def _investigation(identity, seen, state, mission_id, receipts, signed_facts=fro
 
 
 # Above this many co-eligible challengers the preference check reads the pairs and the whole family instead of every
-# subset, and above this many other disputed methods it holds them at their current counts; either way the row is
-# marked for investigation, never read as a clean hold (review of #221, F2-a, F2-c).
+# subset; above this many other disputed methods, or this many joint states of them, it holds them at their current
+# counts. Either way the row is marked for investigation with the limit stated, never read as a clean hold (review
+# of #221, F2-a, F2-c; round 3, F2R-1, F2R-3).
 PREFERENCE_SUBSET_LIMIT = 8
 JOINT_DISPUTE_LIMIT = 3
+JOINT_STATE_LIMIT = 256
 # How _rank reads a fit with no settled outcome on this body (compiler._rank: competence.get(method, 0.5)).
 UNSETTLED_LAPLACE = Fraction(1, 2)
 
 
 def _resolution_states(n, k, d):
-    """Every settled count a method can reach from (n, k) with d open disputes: now, and each number j of them kept.
-    The compiler's pick is not monotone in the kept count (it breaks Holm ties on rounded p, then the name), so the
-    extremes alone can miss a change (review of #221, F2-b)."""
+    """Every settled count a method can reach from (n, k) when its d open disputes all resolve: now, and each
+    number j of them kept. The compiler's pick is not monotone in the kept count (it breaks Holm ties on rounded p,
+    then the name), so the extremes alone can miss a change (review of #221, F2-b)."""
     return [(n, k)] + [(n + d, k + j) for j in range(d + 1)]
 
 
-def _preference_changes(method, states, counts, joint) -> tuple[list[str], list[str]]:
+def _reachable_states(n, k, d):
+    """Every settled count another disputed method can be at while this one's disputes resolve: any a of its d
+    disputes resolved, j of them kept (round 3, F2R-1)."""
+    return [(n + a, k + j) for a in range(d + 1) for j in range(a + 1)]
+
+
+def _preference_changes(method, states, counts, joint, inhibit) -> tuple[list[str], list[str]]:
     """Whether the compiler's settled-outcome preference (``compiler._settled_preference``: one-sided Fisher, Holm
-    over every co-eligible challenger) can select differently as ``method``'s disputes resolve, for any evidence-ranked
-    first fit, any family of co-eligible fits with enough settled outcomes to be tested, and any joint state of the
-    other disputed methods (``joint``: method -> its reachable counts). Fits are ordered as ``compiler._rank`` orders
-    them, demoted last, so a demoted fit is never tested as first (F2-d); the selected fit is the preferred one, or
-    else the first (F2-f). The Holm family is the whole co-eligible set, so a pair alone can hide a change (second
-    review of #219, F2). Returns the reasons and the limits of the walk, each of which marks the row for
-    investigation."""
+    over every co-eligible challenger) can select differently as ``method``'s disputes resolve (``states``), for any
+    evidence-ranked first fit, any family of co-eligible fits with enough settled outcomes to be tested, and any
+    reachable state of the other disputed methods (``joint``: method -> every count it can be at). Fits are ordered
+    as ``compiler._rank`` orders them, demoted last (``inhibit``, memoized), so a demoted fit is never tested as
+    first (F2-d); the selected fit is the preferred one, or else the first (F2-f). The Holm family is the whole
+    co-eligible set, so a pair alone can hide a change (second review of #219, F2). Returns the changes found and
+    the limits of the walk; a limit marks the row for investigation but is not itself a change found."""
     from itertools import combinations, product
-    from .compiler import SETTLED_MIN_N, _settled_inhibition, _settled_preference
+    from .compiler import SETTLED_MIN_N, _settled_preference
     limits = []
     if max(n for n, _ in states) < SETTLED_MIN_N:
         return [], limits
@@ -1048,17 +1106,25 @@ def _preference_changes(method, states, counts, joint) -> tuple[list[str], list[
                       f"fits exceed the subset limit ({PREFERENCE_SUBSET_LIMIT}), and a family in between could "
                       "select differently")
     others = sorted(m for m in joint if m != method and m in tested)
-    if len(others) > JOINT_DISPUTE_LIMIT:
-        limits.append(f"{len(others)} other disputed methods exceed the joint limit ({JOINT_DISPUTE_LIMIT}); they "
-                      "were held at their current counts, and a joint resolution could select differently")
+    joint_states = 1
+    for m in others:
+        joint_states *= len(joint[m])
+    if len(others) > JOINT_DISPUTE_LIMIT or joint_states > JOINT_STATE_LIMIT:
+        limits.append(f"{len(others)} other disputed methods with {joint_states} joint states exceed the joint limits "
+                      f"({JOINT_DISPUTE_LIMIT} methods, {JOINT_STATE_LIMIT} states); they were held at their current "
+                      "counts, and a joint resolution could select differently")
         others = []
+    memo = {}
 
     def selected(first, members, world):
-        eligible = [{"method": m, "demoted": _settled_inhibition(*world.get(m, (0, 0)))}
-                    for m in (first, *sorted(set(members) - {first}))]
-        eligible.sort(key=lambda r: 1 if r["demoted"] else 0)        # _rank's leading key; stable otherwise
-        top = eligible[0]["method"]
-        return (_settled_preference(eligible, world) or {}).get("preferred") or top
+        key = (first, members, tuple(world.get(m, (0, 0)) for m in members))
+        if key not in memo:
+            eligible = [{"method": m, "demoted": inhibit(*world.get(m, (0, 0)))}
+                        for m in (first, *sorted(set(members) - {first}))]
+            eligible.sort(key=lambda r: 1 if r["demoted"] else 0)    # _rank's leading key; stable otherwise
+            top = eligible[0]["method"]
+            memo[key] = ((_settled_preference(eligible, world) or {}).get("preferred") or top, top)
+        return memo[key]
 
     found = {}
     for family in families:
@@ -1070,15 +1136,17 @@ def _preference_changes(method, states, counts, joint) -> tuple[list[str], list[
             for combo in product(*(joint[m] for m in in_family)):
                 base = {**counts, **dict(zip(in_family, combo))}
                 picks = {state: selected(first, members, {**base, method: state}) for state in states}
-                if len(set(picks.values())) > 1:
+                if len({pick for pick, _ in picks.values()}) > 1:
                     found[first] = (members, picks, dict(zip(in_family, combo)))
                     break
     reasons = []
     for first, (members, picks, held) in sorted(found.items()):
-        shown = ", ".join(f"{k} of {n} -> {pick}" for (n, k), pick in picks.items())
-        reasons.append(f"the settled-outcome preference with {first} ranked first among {sorted(members)} (the "
-                       f"compiler's Fisher rule, Holm over that whole family) selects differently as the disputes "
-                       f"resolve: {shown}" + (f"; with {held}" if held else ""))
+        tops = sorted({top for _, top in picks.values()})
+        shown = ", ".join(f"{k} of {n} -> {pick}" for (n, k), (pick, _) in picks.items())
+        others_at = "; ".join(f"{m} at {k} of {n}" for m, (n, k) in held.items())
+        reasons.append(f"the settled-outcome preference with {' or '.join(tops)} ranked first among {sorted(members)} "
+                       f"(the compiler's Fisher rule, Holm over that whole family) selects differently as the "
+                       f"disputes resolve: {shown}" + (f"; with {others_at}" if others_at else ""))
     return reasons, limits
 
 
@@ -1086,14 +1154,17 @@ def _weigh_investigations(journal, rows, settling=None) -> None:
     """Whether resolving each dispute could change a selection the compiler makes from settled outcomes, so the
     work is prioritized by its decision value. Only disputes that a resolution can settle are weighed: the mission
     must hold a settling appraisal (review of #210, S7) and the signed check must have passed (S6). For each method it
-    bounds the settled counts by the two extreme resolutions of those disputes (all kept / all failed promises) and
-    asks, with the compiler's own rules, whether any of these differs between the two bounds: the inhibition rule,
-    the minimum-evidence floor, the settled preference over any family of co-eligible fits (``_preference_changes``:
-    Holm over the whole family, second review F2), or the Laplace rank against any settled fit, an unsettled fit
-    (which ``compiler._rank`` reads at 1/2), or a tie (F3; ``_rank`` breaks a tie by its later keys). Read-only; an
-    estimate of decision value, since which methods are co-eligible depends on the request: it errs toward
-    ``investigate``, whose cost is one outside record."""
+    takes every settled count its disputes can resolve to (now, and each number of them kept) and asks, with the
+    compiler's own rules, whether any of these differs across them: the inhibition rule, the minimum-evidence floor,
+    the settled preference over any family of co-eligible fits with the other disputed methods at any reachable
+    count (``_preference_changes``), or the Laplace rank against a settled fit, a reachable value of another
+    disputed method, or an unsettled fit (which ``compiler._rank`` reads at 1/2), including a tie, which ``_rank``
+    breaks by its later keys (F3). Read-only; an estimate of decision value, since which methods are co-eligible
+    depends on the request: where the walk is cut short it says so and errs toward ``investigate``, whose cost is
+    one outside record."""
+    from functools import lru_cache
     from .compiler import SETTLED_MIN_N, _settled_counts, _settled_inhibition
+    inhibit = lru_cache(maxsize=None)(_settled_inhibition)     # one Wilson bound per count, per weighing (F2R-4)
     settling = _settling_appraisals(journal) if settling is None else settling
     counts = _settled_counts(journal)
     weighable = [r for r in rows if r["mission_id"] in settling and r.get("check_passed", True)]
@@ -1101,58 +1172,65 @@ def _weigh_investigations(journal, rows, settling=None) -> None:
     for row in weighable:
         open_by_method[row["method"]] += 1
     states = {m: _resolution_states(*counts.get(m, (0, 0)), d) for m, d in open_by_method.items()}
+    reachable = {m: _reachable_states(*counts.get(m, (0, 0)), d) for m, d in open_by_method.items()}
 
-    def laplace(m):
-        values = [Fraction(k + 1, n + 2) for n, k in states[m]]
-        return min(values), max(values)
+    def laplace(pairs):
+        return sorted({Fraction(k + 1, n + 2) for n, k in pairs})
 
     impact = {}
     for method, d in open_by_method.items():
         n, k = counts.get(method, (0, 0))
         low, high = (n + d, k), (n + d, k + d)
         reasons = []
-        if len({_settled_inhibition(*state) for state in states[method]}) > 1:
+        if len({inhibit(*state) for state in states[method]}) > 1:
             reasons.append("the inhibition rule (demotion) differs between the possible resolutions")
         if n < SETTLED_MIN_N <= n + d:
             reasons.append(f"resolving lifts the method to the {SETTLED_MIN_N}-outcome floor live evidence needs")
-        joint = {m: [states[m][0], states[m][1], states[m][-1]] for m in states if m != method}   # now and extremes
-        preference, limits = _preference_changes(method, states[method], counts, joint)
-        reasons += preference + limits
-        lo, hi = laplace(method)
+        joint = {m: reachable[m] for m in reachable if m != method}
+        preference, limits = _preference_changes(method, states[method], counts, joint, inhibit)
+        reasons += preference
+        own = laplace(states[method])
+        lo, hi = own[0], own[-1]
         # Laplace order (it orders fits tied on earlier keys; inclusive, since at a tie later keys decide, F3): a
-        # settled fit at its value, another disputed method anywhere in its own reachable interval (F2-c), and an
-        # unsettled fit at 1/2
-        others = [(other, Fraction(k_o + 1, n_o + 2), Fraction(k_o + 1, n_o + 2))
-                  for other, (n_o, k_o) in sorted(counts.items()) if other != method and other not in states]
-        others += [(other, *laplace(other)) for other in sorted(states) if other != method]
-        others.append(("an unsettled co-eligible fit", UNSETTLED_LAPLACE, UNSETTLED_LAPLACE))
-        for other, o_lo, o_hi in others:
-            if lo <= o_hi and o_lo <= hi:
-                where = (f"{float(o_lo):.3f}" if o_lo == o_hi else
-                         f"{float(o_lo):.3f} to {float(o_hi):.3f} as its own disputes resolve")
+        # settled fit at its value, another disputed method at each value it can reach (F2-c, exact values rather
+        # than their hull, F2R-2), and an unsettled fit at 1/2
+        others = [(other, [Fraction(k_o + 1, n_o + 2)]) for other, (n_o, k_o) in sorted(counts.items())
+                  if other != method and other not in states]
+        others += [(other, laplace(reachable[other])) for other in sorted(states) if other != method]
+        others.append(("an unsettled co-eligible fit", [UNSETTLED_LAPLACE]))
+        for other, values in others:
+            inside = [v for v in values if lo <= v <= hi]
+            if inside:
+                where = (f"{float(values[0]):.3f}" if len(values) == 1 else
+                         f"{', '.join(f'{float(v):.3f}' for v in inside[:3])}"
+                         + (f" and {len(inside) - 3} more" if len(inside) > 3 else "")
+                         + " among the values its own disputes reach")
                 reasons.append(f"the Laplace rank against {other} ({where}) flips or ties as the disputes resolve "
                                f"({float(lo):.3f} to {float(hi):.3f}); it orders fits tied on earlier keys")
         impact[method] = {"settled_now": [k, n], "open_disputes": d, "if_all_kept": [high[1], high[0]],
-                          "if_all_failed": [low[1], low[0]], "could_change": reasons,
+                          "if_all_failed": [low[1], low[0]], "could_change": reasons, "walk_limits": limits,
                           "compared_with": "every other method with settled outcomes on this body, every other "
-                                           "disputed method at its reachable counts, and an unsettled fit"
-                                           + ("; " + "; ".join(limits) if limits else "")}
+                                           "disputed method at each count it can reach, and an unsettled fit"}
     for row in rows:
         if row["mission_id"] not in settling:
             row["priority"], row["decision_impact"] = "hold", None
-            row["priority_why"] = ("no resolution can change competence: "
+            row["priority_why"] = ("no resolution changes competence now: "
                                    + (row.get("competence_claim") or _unsettled_why(row.get("mission_appraisal"),
                                                                                      False)))
         elif not row.get("check_passed", True):
             row["priority"], row["decision_impact"] = "hold", None
             row["priority_why"] = "the signed check failed: the answer is scored wrong whatever the world value"
         else:
-            row["decision_impact"] = impact[row["method"]]
-            row["priority"] = "investigate" if impact[row["method"]]["could_change"] else "hold"
-            row["priority_why"] = ("resolving it can change a selection the compiler makes from settled outcomes"
-                                   if row["priority"] == "investigate" else
-                                   "on current evidence no resolution changes a selection rule; it stays recorded "
-                                   "and unscored, and is weighed again as evidence accrues")
+            weighed = impact[row["method"]]
+            row["decision_impact"] = weighed
+            row["priority"] = "investigate" if weighed["could_change"] or weighed["walk_limits"] else "hold"
+            row["priority_why"] = (
+                "resolving it can change a selection the compiler makes from settled outcomes"
+                if weighed["could_change"] else
+                "the walk could not be completed, so a change is not ruled out: " + "; ".join(weighed["walk_limits"])
+                if weighed["walk_limits"] else
+                "on current evidence no resolution changes a selection rule; it stays recorded and unscored, and is "
+                "weighed again as evidence accrues")
         row["cost"] = "one outside record and one founder-signed resolution; no spend, no contact by GREG"
 
 
@@ -1175,6 +1253,7 @@ def awaiting_realization(journal) -> list[dict]:
     latest_verdict = {e.payload["mission_id"]: e.payload.get("verdict") for e in journal.replay("mission.appraised")}
     claims = _construction_claims(journal, constructed, functions) if constructed else {}
     terminal = _terminal_missions(journal) if claims else set()
+    awaiting = _awaiting_appraisal(journal) if claims else set()
     order = _realization_order(journal) if claims else {}
     signed = _signed_realizations(journal) if claims else {}
     resolutions, signed_facts = (_resolutions(journal, signed), _signed_facts(journal, signed)) if claims else ([], set())
@@ -1190,7 +1269,7 @@ def awaiting_realization(journal) -> list[dict]:
             row = _investigation(identity, seen, state, mission_id, len(receipts), signed_facts,
                                  settles=mission_id in settling,
                                  unsettled_why=_unsettled_why(latest_verdict.get(mission_id),
-                                                              mission_id in terminal))
+                                                              mission_id in terminal, mission_id in awaiting))
             row["mission_appraisal"] = latest_verdict.get(mission_id)
             conflicts.append(row)
     if conflicts:

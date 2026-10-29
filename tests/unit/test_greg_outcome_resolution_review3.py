@@ -229,7 +229,7 @@ def test_t_b_a_mission_whose_appraisal_settles_nothing_says_so_whatever_the_chec
     report(journal, receipt, 1, "founder_reported")
     report(journal, receipt, 2, "external_record")
     [row] = settlement.awaiting_realization(journal)
-    assert row["scored_as"].startswith("nothing: the mission's latest appraisal settles nothing")
+    assert row["scored_as"].startswith("nothing: none: the mission's latest appraisal (REFUTED) settles nothing")
     assert row["competence_claim"].startswith("none: the mission's latest appraisal (REFUTED) settles nothing")
     assert row["priority"] == "hold" and "REFUTED" in row["priority_why"]
 

@@ -183,8 +183,12 @@ def _known_method(receipt, compiled, builtins, formed) -> bool:
 def _settling_appraisals(journal) -> dict:
     """mission id -> the appraisal under which its observations settle: its latest one, when that is a verified
     success or a verified failure closure (an outcome ledger that heard only successes would score every method by
-    its survivors; directive section 11: censored outcomes are not success). Any later other verdict withdraws it."""
+    its survivors; directive section 11: censored outcomes are not success). Any later other verdict withdraws it.
+    A bounded mission's achievement is terminal, so it comes after any failure closure of the same mission: once it
+    is recorded, that failure's appraisal no longer settles the mission's observations, and they wait for the
+    achievement's own appraisal (TXT-R4-1)."""
     from greg.sop import REQUIRED_CHECKS
+    achieved = {e.payload["mission_id"] for e in journal.replay("mission.achieved")}
     latest = {}
     for event in journal.replay("mission.appraised"):
         data = event.payload
@@ -193,6 +197,8 @@ def _settling_appraisals(journal) -> dict:
             latest[data["mission_id"]] = event
         else:
             latest.pop(data["mission_id"], None)
+    for mid in [m for m, e in latest.items() if e.payload.get("verdict") == "VERIFIED_UNMET" and m in achieved]:
+        del latest[mid]
     return latest
 
 

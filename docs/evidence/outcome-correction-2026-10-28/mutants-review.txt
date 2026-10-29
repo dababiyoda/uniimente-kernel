@@ -1,17 +1,18 @@
-Mutants of the review fixes, re-recorded 2026-10-29 with the corrected gate (mutants-review.py at the commit below; second review of #219, R3). Raw output follows; the note after it was added by hand.
-git rev-parse HEAD: 2d2d1c5b6c52372579850bf63f65ef79191f117e; greg/, tests/ and docs/evidence/outcome-correction-2026-10-28/mutants-review.py unmodified
-python 3.11.17; command: python -B -m pytest -q -x -p no:cacheprovider tests/unit/test_greg_outcome_resolution.py tests/unit/test_greg_pending_construction_realization.py tests/unit/test_greg_outcome_resolution_signed.py
-sha256 greg/cognition/settlement.py: 4417034f1e5c4a568a3e0b30d69279a40e7460b6312c305360ef8f5b7c32e1fa
-sha256 tests/unit/test_greg_outcome_resolution.py: 2cbf74f697090fc1ae8d66184132990652d819964011bfc2edfa6a831ae64306
+Mutants of the review fixes, re-recorded 2026-10-29 at #221's settlement fixes F1-F8 (mutants-review.py at the commit below; N6 and N11 retargeted, N15-N24 added, the review-2 test file added). Raw output follows; the note after it was added by hand.
+git rev-parse HEAD: 5d2379f1caa8621cc0de82229019760c683dcb48; greg/, tests/ and docs/evidence/outcome-correction-2026-10-28/mutants-review.py unmodified
+python 3.11.17; command: python -B -m pytest -q -x -p no:cacheprovider tests/unit/test_greg_outcome_resolution.py tests/unit/test_greg_pending_construction_realization.py tests/unit/test_greg_outcome_resolution_signed.py tests/unit/test_greg_outcome_resolution_review2.py
+sha256 greg/cognition/settlement.py: e053b04331e0adc3caf24a8bae9bb0bf07b0528d90cfdbc172f620e0eeaa193a
+sha256 tests/unit/test_greg_outcome_resolution.py: 16e0848749ef0c41ad0943bf43330c54742a0cbfce98963109c86fc608e07ba6
 sha256 tests/unit/test_greg_pending_construction_realization.py: 770b57c54945227f4279ee8d5c88009bb31076ca37a1c3c97af8ff190d0b2ea9
 sha256 tests/unit/test_greg_outcome_resolution_signed.py: 13a0448e5f8864dfcba4fb9efa88fafe51fa5bc43d980e355813316868585420
-baseline (no mutant): rc=0 65 passed in 48.08s
+sha256 tests/unit/test_greg_outcome_resolution_review2.py: e01e3fad19168593eef187a0ee6a9721706fd39fe6d35cd841924f0120a3fdb3
+baseline (no mutant): rc=0 79 passed in 211.68s (0:03:31)
 CAUGHT  N1 S1 signed body not compared: ['test_s1_a_resolution_carrying_another_signed_commands_digest_resolves_nothing']
-MISSED  N2 S1 one signed command reused: []
+CAUGHT  N2 S1 one signed command reused: ['test_n2_a_verbatim_copy_of_a_signed_resolution_changes_nothing']
 CAUGHT  N3 S2 any resolution adjudicates: ['test_s2_an_invalidation_must_name_every_live_report_and_never_adjudicates_the_founders_own']
 CAUGHT  N4 S2 partial invalidation accepted: ['test_s2_an_invalidation_must_name_every_live_report_and_never_adjudicates_the_founders_own']
 CAUGHT  N5 S3 dedupe against rejected facts: ['test_s3_a_re_report_after_an_invalidation_is_a_new_fact_not_a_duplicate_of_a_rejected_one']
-CAUGHT  N6 S3 one fact per receipt and value: ['test_s3_on_a_body_an_independent_report_matching_a_conflicting_value_is_recorded']
+MISSED  N6 S3 one fact per receipt and value: []
 CAUGHT  N7 S4 journal order wins: ['test_s4_an_older_signed_resolution_delivered_later_never_overrides_a_newer_one']
 CAUGHT  N8 S5 succeeded only when prior is None: ['test_s5_reconcile_supersedes_a_legacy_settlement_once_and_never_invalidates_it_later']
 CAUGHT  N9 S6 failed check hidden by dispute: ['test_s6_a_dispute_on_an_answer_whose_check_failed_is_scored_wrong_and_has_no_decision_value']
@@ -20,6 +21,27 @@ CAUGHT  N11 S8 Laplace flips ignored: ['test_s8_a_laplace_rank_flip_between_the_
 CAUGHT  N12 S9 unsigned fact eligible (replay): ['test_s9_settlement_itself_refuses_a_signed_resolution_accepting_an_unsigned_report']
 CAUGHT  N13 S9 unsigned fact eligible (row): ['test_s9_an_unsigned_report_is_never_eligible_to_be_accepted']
 CAUGHT  N14 S10 engine label hashed: ['test_s10_the_answer_version_ignores_the_engine_label']
-13 of 14 valid mutants caught; 0 invalid; 1 missed
+CAUGHT  N15 F1 old answer version not re-derived: ['test_f1_rows_written_under_the_old_answer_version_rule_are_revised_never_invalidated']
+CAUGHT  N16 F2 Holm over pairs only: ['test_f2_a_change_only_the_three_way_holm_family_shows_is_investigated']
+CAUGHT  N17 F3 unsettled fit not compared: ['test_f3_a_row_whose_resolution_flips_the_compile_is_investigated[a]']
+MISSED  N18 F3 a tie at a bound ignored: []
+CAUGHT  N19 F4 string order of issued_at: ['test_f4_a_later_resolution_signed_half_a_second_after_a_whole_second_takes_effect']
+CAUGHT  N20 F4 older-signed overlap not refused: ['test_f4_a_resolution_signed_before_one_already_ruling_on_its_facts_is_refused_with_the_reason']
+CAUGHT  N21 F5 unsigned fact absorbs a signed report: ['test_f5_a_signed_report_matching_an_unsigned_fact_is_kept_and_can_be_accepted']
+CAUGHT  N22 F6 any principal resolves: ['test_f6_a_verified_realization_a_device_signed_is_not_founder_evidence']
+CAUGHT  N23 F7 omitted source not defaulted: ['test_f7_a_signed_report_without_a_source_is_shown_as_signed']
+CAUGHT  N24 F8 memo misses a new founder record: ['test_only_a_resolution_the_founder_actually_signed_resolves_a_dispute']
+22 of 24 valid mutants caught; 0 invalid; 2 missed
 
-Note (by hand): N2 is MISSED and not equivalent (second review, question 2). With S1's body binding a second resolution under one signed digest repeats the same ruling, but it sits at a later journal position and time: under an in-process writer it lists a later decision in decisions_to_recheck, makes reconcile write a new revision, and with equal issued_at re-applies an older ruling over a newer one. The guard is load-bearing; no test covers it yet (owed with the F1-F8 fixes). The first record of this file (7e909134) counted N9 as caught although its mutant did not compile.
+Note (by hand): two mutants are MISSED.
+- N6 (S3's fact key without source and count) is harmless on the production path, not equivalent. Since F5 the key
+  also carries the command digest, and Body.apply, the only production caller of record_realization
+  (greg/body.py:628), always passes one; a replayed command is refused by its nonce. So two reports never share a key
+  on that path, with or without the S3 fields. The S3 fields still separate facts written in process with no command
+  digest, a path only tests use; no test covers it.
+- N18 (F3's inclusive interval made strict) is MISSED and not equivalent. test_f3_...[b] puts the crash
+  construction's Laplace mean (1/3) exactly at the lower bound, but the unsettled fit's 1/2 also lies inside that
+  row's bounds, so the row reads investigate either way. A tie with 1/2 outside the bounds (a method at (10, 10) with
+  one open dispute, a fit at (11, 10): 11/13 against [11/13, 12/13]) reads hold under the mutant. The review of #221
+  (finding T-a) found the same gap independently.
+N2, MISSED in the previous record of this file, is now caught by test_n2_a_verbatim_copy_of_a_signed_resolution_changes_nothing. The previous record (2d2d1c5b, settlement.py at #196 8e91315c) stays in git history.

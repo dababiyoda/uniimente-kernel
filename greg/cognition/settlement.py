@@ -182,6 +182,24 @@ def _known_method(receipt, compiled, builtins, formed) -> bool:
     return method is not None and bool(method.cognitive_profile) and method.version == receipt["method_version"]
 
 
+def _mission_order(journal) -> dict:
+    """event id -> position among the journal's mission events, so an observation can be placed before or after
+    an appraisal. A fixture journal without positions falls back to its event list."""
+    positions = getattr(journal, "positions", None)
+    if callable(positions):
+        return positions("mission.")
+    return {getattr(e, "event_id", None): i for i, e in enumerate(getattr(journal, "events", []))}
+
+
+def _before(order, event, appraisal) -> bool:
+    """Whether ``event`` was recorded before ``appraisal``. An appraisal judges the closure it was made for, at the
+    head it re-derived; an observation recorded after it belongs to a later closure, which only its own appraisal
+    can settle, so a success after an appraised failure is never credited under the failure's verdict. Unplaceable
+    events (no position) keep the earlier behaviour."""
+    a, b = order.get(getattr(event, "event_id", None)), order.get(getattr(appraisal, "event_id", None))
+    return a is None or b is None or a < b
+
+
 def _settling_appraisals(journal) -> dict:
     """mission id -> the appraisal under which its observations settle: its latest one, when that is a verified
     success or a verified failure closure (an outcome ledger that heard only successes would score every method by
@@ -212,10 +230,13 @@ def measured_outcomes(journal):
     registrations = {e.payload["mission_id"]: e.payload for e in journal.replay("mission.registered")}
     witnesses = {r.payload["witness_id"]: r.payload for r in journal.ledger.by_type("witness")}
     latest_appraisal, observations = _settling_appraisals(journal), {}
+    order = _mission_order(journal)
     for event in journal.replay("mission.observed"):
         data = event.payload
         if data.get("mission_id") not in latest_appraisal or not data.get("receipt"):
             continue
+        if not _before(order, event, latest_appraisal[data["mission_id"]]):
+            continue      # a later closure's observation waits for its own appraisal (review of #221, TXT-R4-1)
         record = journal.ledger.find(data["receipt"])
         if record is None or record.record_type != "receipt":
             continue
@@ -972,12 +993,22 @@ def _terminal_missions(journal) -> set:
 
 
 def _awaiting_appraisal(journal) -> set:
-    """Missions with a closure no appraisal has judged yet: an achievement with no appraisal, or a held or unmet
-    closure no ``mission.appraised`` names. The body appraises these on a later tick (``Body._close_out``)."""
-    appraised = {e.payload["mission_id"] for e in journal.replay("mission.appraised")}
+    """Missions with a closure no appraisal has judged yet: an achievement with no appraisal recorded after it, or
+    a held or unmet closure no ``mission.appraised`` names. The body appraises these on a later tick
+    (``Body._close_out``; review of #221, TXT-R4-1)."""
+    order = _mission_order(journal)
+    last = {}
+    for e in journal.replay("mission.appraised"):
+        last[e.payload["mission_id"]] = e
     judged = {e.payload.get("closure_event") for e in journal.replay("mission.appraised")}
-    return ({e.payload["mission_id"] for e in journal.replay("mission.achieved")
-             if e.payload["mission_id"] not in appraised}
+    def unjudged(achieved):
+        appraisal = last.get(achieved.payload["mission_id"])
+        if appraisal is None:
+            return True
+        a, b = order.get(getattr(appraisal, "event_id", None)), order.get(getattr(achieved, "event_id", None))
+        return a is not None and b is not None and a < b
+
+    return ({e.payload["mission_id"] for e in journal.replay("mission.achieved") if unjudged(e)}
             | {e.payload["mission_id"] for kind in ("mission.held", "mission.unmet") for e in journal.replay(kind)
                if e.event_id not in judged})
 
@@ -987,7 +1018,8 @@ def _unsettled_why(verdict, terminal, awaiting=False) -> str:
     if awaiting:
         return "pending: a closure of this mission awaits appraisal, so nothing is credited until that appraisal settles"
     if terminal:
-        return ("final: the mission closed without an appraisal, so nothing is credited for this answer"
+        return ("final: the mission ended (abandoned or superseded) without an appraisal, so nothing is credited "
+                "for this answer"
                 if verdict is None else
                 f"final: the mission is closed and its latest appraisal ({verdict}) settles nothing, so nothing is "
                 "credited for this answer")
@@ -1086,18 +1118,21 @@ def _preference_changes(method, states, counts, joint, inhibit) -> tuple[list[st
     """Whether the compiler's settled-outcome preference (``compiler._settled_preference``: one-sided Fisher, Holm
     over every co-eligible challenger) can select differently as ``method``'s disputes resolve (``states``), for any
     evidence-ranked first fit, any family of co-eligible fits with enough settled outcomes to be tested, and any
-    reachable state of the other disputed methods (``joint``: method -> every count it can be at). Fits are ordered
-    as ``compiler._rank`` orders them, demoted last (``inhibit``, memoized), so a demoted fit is never tested as
-    first (F2-d); the selected fit is the preferred one, or else the first (F2-f). The Holm family is the whole
-    co-eligible set, so a pair alone can hide a change (second review of #219, F2). Returns the changes found and
-    the limits of the walk; a limit marks the row for investigation but is not itself a change found."""
+    reachable state of the other disputed methods (``joint``: method -> every count it can be at), settled or not
+    (round 4, W4-4). Fits are ordered as ``compiler._rank`` orders them, demoted last (``inhibit``, memoized), so a
+    demoted fit is never tested as first (F2-d); the selected fit is the preferred one, or else the first (F2-f).
+    The Holm family is the whole co-eligible set, so a pair alone can hide a change (second review of #219, F2). A
+    fit demoted at every count it can reach is never a challenger and never first, so it is left out (W4-1).
+    Returns the changes found and the limits of the walk; a limit marks the row for investigation but is not itself
+    a change found."""
     from itertools import combinations, product
     from .compiler import SETTLED_MIN_N, _settled_preference
     limits = []
     if max(n for n, _ in states) < SETTLED_MIN_N:
         return [], limits
-    tested = sorted(m for m, (n, _) in counts.items()
-                    if m != method and max(s[0] for s in joint.get(m, [(n, 0)])) >= SETTLED_MIN_N)
+    reach = {m: joint[m] if m in joint else [counts[m]] for m in set(counts) | set(joint) if m != method}
+    tested = sorted(m for m, at in reach.items()
+                    if max(n for n, _ in at) >= SETTLED_MIN_N and any(inhibit(*s) is None for s in at))
     if len(tested) <= PREFERENCE_SUBSET_LIMIT:
         families = [c for size in range(1, len(tested) + 1) for c in combinations(tested, size)]
     else:
@@ -1105,40 +1140,47 @@ def _preference_changes(method, states, counts, joint, inhibit) -> tuple[list[st
         limits.append(f"the preference was weighed over pairs and the whole family only: {len(tested)} co-eligible "
                       f"fits exceed the subset limit ({PREFERENCE_SUBSET_LIMIT}), and a family in between could "
                       "select differently")
-    others = sorted(m for m in joint if m != method and m in tested)
-    joint_states = 1
-    for m in others:
-        joint_states *= len(joint[m])
-    if len(others) > JOINT_DISPUTE_LIMIT or joint_states > JOINT_STATE_LIMIT:
-        limits.append(f"{len(others)} other disputed methods with {joint_states} joint states exceed the joint limits "
-                      f"({JOINT_DISPUTE_LIMIT} methods, {JOINT_STATE_LIMIT} states); they were held at their current "
-                      "counts, and a joint resolution could select differently")
+    others = [m for m in tested if m in joint]
+    if len(others) > JOINT_DISPUTE_LIMIT:
+        limits.append(f"{len(others)} other disputed methods exceed the joint method limit ({JOINT_DISPUTE_LIMIT}); "
+                      "they were held at their current counts, and a joint resolution could select differently")
         others = []
-    memo = {}
+    cut = set()
 
     def selected(first, members, world):
-        key = (first, members, tuple(world.get(m, (0, 0)) for m in members))
-        if key not in memo:
-            eligible = [{"method": m, "demoted": inhibit(*world.get(m, (0, 0)))}
-                        for m in (first, *sorted(set(members) - {first}))]
-            eligible.sort(key=lambda r: 1 if r["demoted"] else 0)    # _rank's leading key; stable otherwise
-            top = eligible[0]["method"]
-            memo[key] = ((_settled_preference(eligible, world) or {}).get("preferred") or top, top)
-        return memo[key]
+        eligible = [{"method": m, "demoted": inhibit(*world.get(m, (0, 0)))}
+                    for m in (first, *sorted(set(members) - {first}))]
+        eligible.sort(key=lambda r: 1 if r["demoted"] else 0)        # _rank's leading key; stable otherwise
+        top = eligible[0]["method"]
+        return (_settled_preference(eligible, world) or {}).get("preferred") or top, top
 
     found = {}
     for family in families:
         members = (method, *family)
         in_family = [m for m in others if m in members]
+        size = 1
+        for m in in_family:
+            size *= len(joint[m])
+        if size > JOINT_STATE_LIMIT:                # per family: only this family's other methods are held (W4-7)
+            cut.add((len(in_family), size))
+            in_family = []
         for first in members:
             if first in found:
                 continue
             for combo in product(*(joint[m] for m in in_family)):
-                base = {**counts, **dict(zip(in_family, combo))}
+                base = {**counts, **{m: joint[m][0] for m in others if m not in in_family},
+                        **dict(zip(in_family, combo))}
+                if first != method and inhibit(*base.get(first, (0, 0))):
+                    continue                        # a demoted first is ranked last; another fit is first (W4-9)
                 picks = {state: selected(first, members, {**base, method: state}) for state in states}
                 if len({pick for pick, _ in picks.values()}) > 1:
                     found[first] = (members, picks, dict(zip(in_family, combo)))
                     break
+    if cut:
+        worst = max(cut, key=lambda c: c[1])
+        limits.append(f"a family's {worst[0]} other disputed methods reach {worst[1]} joint states, above the joint "
+                      f"state limit ({JOINT_STATE_LIMIT}); in such families they were held at their current counts, "
+                      "and a joint resolution could select differently")
     reasons = []
     for first, (members, picks, held) in sorted(found.items()):
         tops = sorted({top for _, top in picks.values()})
@@ -1182,7 +1224,7 @@ def _weigh_investigations(journal, rows, settling=None) -> None:
         n, k = counts.get(method, (0, 0))
         low, high = (n + d, k), (n + d, k + d)
         reasons = []
-        if len({inhibit(*state) for state in states[method]}) > 1:
+        if len({inhibit(*state) is not None for state in states[method]}) > 1:      # the flag, not its text (W4-3)
             reasons.append("the inhibition rule (demotion) differs between the possible resolutions")
         if n < SETTLED_MIN_N <= n + d:
             reasons.append(f"resolving lifts the method to the {SETTLED_MIN_N}-outcome floor live evidence needs")
@@ -1194,10 +1236,15 @@ def _weigh_investigations(journal, rows, settling=None) -> None:
         # Laplace order (it orders fits tied on earlier keys; inclusive, since at a tie later keys decide, F3): a
         # settled fit at its value, another disputed method at each value it can reach (F2-c, exact values rather
         # than their hull, F2R-2), and an unsettled fit at 1/2
+        # _rank compares Laplace only within a demotion class, so values of the other class never tie (W4-5)
+        classes = {inhibit(*state) is not None for state in states[method]}
         others = [(other, [Fraction(k_o + 1, n_o + 2)]) for other, (n_o, k_o) in sorted(counts.items())
-                  if other != method and other not in states]
-        others += [(other, laplace(reachable[other])) for other in sorted(states) if other != method]
-        others.append(("an unsettled co-eligible fit", [UNSETTLED_LAPLACE]))
+                  if other != method and other not in states and (inhibit(n_o, k_o) is not None) in classes]
+        others += [(other, laplace([s for s in reachable[other] if (inhibit(*s) is not None) in classes]))
+                   for other in sorted(states) if other != method]
+        others = [(other, values) for other, values in others if values]
+        if False in classes:
+            others.append(("an unsettled co-eligible fit", [UNSETTLED_LAPLACE]))
         for other, values in others:
             inside = [v for v in values if lo <= v <= hi]
             if inside:

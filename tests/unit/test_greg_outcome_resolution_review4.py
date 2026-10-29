@@ -188,7 +188,7 @@ def test_g4f7_1_the_remote_command_endpoint_keeps_signing_order_in_the_inbox(tmp
 
 def test_g4f7_3_the_unsettled_texts_follow_closures_awaiting_appraisal():
     assert settlement._unsettled_why(None, False).startswith("pending: the mission has no closure yet")
-    assert settlement._unsettled_why(None, True).startswith("final: the mission closed without an appraisal")
+    assert settlement._unsettled_why(None, True).startswith("final: the mission ended (abandoned or superseded) without an appraisal")
     assert settlement._unsettled_why("REFUTED", True).startswith("final: the mission is closed")
     assert settlement._unsettled_why("REFUTED", False).startswith("none: the mission's latest appraisal (REFUTED)")
     assert settlement._unsettled_why("REFUTED", True, True).startswith("pending: a closure of this mission awaits")

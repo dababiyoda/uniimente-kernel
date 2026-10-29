@@ -620,7 +620,8 @@ class Body:
                     raise MissionError("a resolution takes receipt, resolves, accept and note")
                 payload = record_resolution(self.journal, receipt=body.get("receipt"), resolves=body.get("resolves"),
                                             accept=body.get("accept"), note=body.get("note", ""),
-                                            command_digest=digest)
+                                            command_digest=digest,
+                                            issued_at=(envelope or {}).get("issued_at"))
                 return {"receipt": payload["receipt"], "resolves": payload["resolves"], "accept": payload["accept"]}
             if set(body) - {"receipt", "realized", "source", "note"}:
                 raise MissionError("a realization takes receipt, realized, source and note")

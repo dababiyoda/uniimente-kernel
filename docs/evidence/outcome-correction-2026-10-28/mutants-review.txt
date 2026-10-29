@@ -1,14 +1,15 @@
-Mutants of the review fixes, re-recorded 2026-10-29 after the fixes for the review of #221 (#221 comment 6491739752), at #221's branch 5b4e293f (mutants-review.py at the commit below; N11, N17, N18 and N20 retargeted, N25-N36 added, multi-file targets, the review-3 test file added). Raw output follows; the note after it was added by hand.
-git rev-parse HEAD: c7bc097feb110967ef3c6993aa088f769c418e9d; greg/, tests/ and docs/evidence/outcome-correction-2026-10-28/mutants-review.py unmodified
-python 3.11.17; command: python -B -m pytest -q -x -p no:cacheprovider tests/unit/test_greg_outcome_resolution.py tests/unit/test_greg_pending_construction_realization.py tests/unit/test_greg_outcome_resolution_signed.py tests/unit/test_greg_outcome_resolution_review2.py tests/unit/test_greg_outcome_resolution_review3.py
+Mutants of the review fixes, re-recorded 2026-10-29 after round 3's fixes on #221 (#221 comment 6499707581; fixes 0070ea2f and 76a59824), at #221's branch 399c6c08 (mutants-review.py at the commit below; N11, N17, N18, N25, N28-N31 and N33 retargeted, N37-N51 added, the review-4 test file added). Raw output follows; the note after it was added by hand.
+git rev-parse HEAD: fa99eb0cb1cda6d0a3160cffd6709ed47885c8d1; greg/, tests/ and docs/evidence/outcome-correction-2026-10-28/mutants-review.py unmodified
+python 3.11.17; command: python -B -m pytest -q -x -p no:cacheprovider tests/unit/test_greg_outcome_resolution.py tests/unit/test_greg_pending_construction_realization.py tests/unit/test_greg_outcome_resolution_signed.py tests/unit/test_greg_outcome_resolution_review2.py tests/unit/test_greg_outcome_resolution_review3.py tests/unit/test_greg_outcome_resolution_review4.py
 sha256 greg/body.py: f07695558d18cff58a5a214e825e1df9f84cffcddf2ef4575ef3701d68c7361f
-sha256 greg/cognition/settlement.py: 9fd4e25363cb1b696248ff6d9e7446e6978fc1be1ff9f776b48604d6669eb35a
+sha256 greg/cognition/settlement.py: aa868dc48836be7186d6d1fa2a1b15cad220bc3bfe6c66d87f28ece0f425c458
 sha256 tests/unit/test_greg_outcome_resolution.py: 469e2e991e32d3e086d821838ffc5838da75cc3ab85b28678d0042c20897dc3b
 sha256 tests/unit/test_greg_pending_construction_realization.py: 770b57c54945227f4279ee8d5c88009bb31076ca37a1c3c97af8ff190d0b2ea9
 sha256 tests/unit/test_greg_outcome_resolution_signed.py: 13a0448e5f8864dfcba4fb9efa88fafe51fa5bc43d980e355813316868585420
 sha256 tests/unit/test_greg_outcome_resolution_review2.py: 78d0d194eb89e700b5238a15823c31bdbe032e0ffccbfbee06a527f16983b061
-sha256 tests/unit/test_greg_outcome_resolution_review3.py: f706665092c9f210fc22c4d8ce49524d77e4724053e14053fcbc2b5f5a8700fb
-baseline (no mutant): rc=0 95 passed in 281.56s (0:04:41)
+sha256 tests/unit/test_greg_outcome_resolution_review3.py: dfd8f6b12ae64c8ab156cd9a5c98c02a30779626bdee5f9d23e28b08d63349be
+sha256 tests/unit/test_greg_outcome_resolution_review4.py: 0afe33584c57eb72c6f89dd3d1f1f49a6b03cc4eb7dfcae68be7f4d5ac053004
+baseline (no mutant): rc=0 110 passed in 321.54s (0:05:21)
 CAUGHT  N1 S1 signed body not compared: ['test_s1_a_resolution_carrying_another_signed_commands_digest_resolves_nothing']
 CAUGHT  N2 S1 one signed command reused: ['test_n2_a_verbatim_copy_of_a_signed_resolution_changes_nothing']
 CAUGHT  N3 S2 any resolution adjudicates: ['test_s2_an_invalidation_must_name_every_live_report_and_never_adjudicates_the_founders_own']
@@ -35,32 +36,53 @@ CAUGHT  N23 F7 omitted source not defaulted: ['test_f7_a_signed_report_without_a
 CAUGHT  N24 F8 memo misses a new founder record: ['test_only_a_resolution_the_founder_actually_signed_resolves_a_dispute']
 CAUGHT  N25 F2-a a walk limit read as a hold: ['test_f2_a_above_the_subset_limit_the_row_is_never_a_clean_hold']
 CAUGHT  N26 F2-b the two extremes only: ['test_f2_b_a_non_monotone_pick_between_the_extremes_is_investigated']
-MISSED  N27 F2-c other disputed methods held (preference): []
+CAUGHT  N27 F2-c other disputed methods held (preference): ['test_f2r_1_another_disputed_method_is_walked_over_every_count_it_can_reach']
 CAUGHT  N28 F2-c other disputed methods held (Laplace): ['test_f2_c_joint_disputes_of_two_methods_are_weighed_together']
 CAUGHT  N29 F2-d a demoted fit tested as first: ['test_f2_d_a_demoted_fit_is_never_tested_as_the_first_fit']
 CAUGHT  N30 F2-f the raw preferred value: ['test_f2_f_the_reason_names_the_selected_fit_never_none']
 CAUGHT  N31 F1-a shadowed chain heads left live: ['test_f1_a_two_old_rule_chains_of_one_answer_leave_one_live_head_and_none_after_a_withdrawal']
-CAUGHT  N32 F1-a merge closures not counted as superseding: ['test_f1_a_two_old_rule_chains_of_one_answer_leave_one_live_head_and_none_after_a_withdrawal']
-MISSED  N33 F1-a merged rows read as links: []
+MISSED  N32 F1-a merge closures not counted as superseding: []
+CAUGHT  N33 F1-a merged rows read as links: ['test_r3_n33_a_merged_chains_own_receipt_links_the_claims_current_settlement']
 CAUGHT  N34 G4-d an equal stamp refused: ['test_g4_d_an_equal_stamp_is_accepted_and_takes_effect']
-MISSED  N35 F7-a a closed mission read as pending a closure: []
+CAUGHT  N35 F7-a a closed mission read as pending a closure: ['test_g4f7_3_the_unsettled_texts_follow_closures_awaiting_appraisal']
 CAUGHT  N36 G4-a raw stamp as the inbox name: ['test_g4_a_the_inbox_reads_a_whole_second_command_before_one_signed_half_a_second_later']
-32 of 36 valid mutants caught; 0 invalid; 4 missed
+CAUGHT  N37 F2R-1 other disputed methods at three states: ['test_f2r_1_another_disputed_method_is_walked_over_every_count_it_can_reach']
+MISSED  N38 F2R-1 the joint state limit ignored: []
+CAUGHT  N39 F2R-2 the Laplace hull: ['test_f2r_2_a_gap_between_another_methods_reachable_values_is_not_a_tie']
+CAUGHT  N40 F2R-3 a walk limit read as a change found: ['test_f2r_3_a_cut_short_walk_reads_investigate_without_claiming_a_change']
+CAUGHT  N41 F2R-3 a walk limit's own text: ['test_f2r_3_a_cut_short_walk_reads_investigate_without_claiming_a_change']
+CAUGHT  N42 F2R-4 the preference memo keyed without the counts: ['test_f2_a_change_only_the_three_way_holm_family_shows_is_investigated']
+MISSED  N43 F2R-5 the named first fit, not the ranked one: []
+CAUGHT  N44 F1-r3-1 only the older heads closed: ['test_f1_r3_1_a_body_reconciled_by_8e91315c_converges_in_one_pass']
+CAUGHT  N45 F1-r3-2 merged into a row this pass supersedes: ['test_f1_r3_1_a_body_reconciled_by_8e91315c_converges_in_one_pass']
+MISSED  N46 F1-r3-1 an unmeasured duplicate merged: []
+CAUGHT  N47 R3-N33 a merge closure linked to its target as written: ['test_r3_n33_a_merged_chains_own_receipt_links_the_claims_current_settlement']
+CAUGHT  N48 G4F7-3 a closure awaiting appraisal ignored: ['test_g4f7_3_the_unsettled_texts_follow_closures_awaiting_appraisal']
+MISSED  N49 G4F7-3 an appraised held closure read as awaiting: []
+CAUGHT  N50 G4F7-6 every rejected fact listed: ['test_g4f7_6_the_evidence_request_lists_only_rejected_independent_signed_reports']
+CAUGHT  N51 G4F7-4 the old scored_as text: ['test_t_b_a_mission_whose_appraisal_settles_nothing_says_so_whatever_the_check[True]']
+45 of 51 valid mutants caught; 0 invalid; 6 missed
 
-Note (by hand): four mutants are MISSED.
+Note (by hand): six mutants are MISSED. Each was applied to a copy of the tree and run on a real body or the
+injected-count helper; all but N6 change what the code writes or says, so each needs a test.
 - N6 (S3's fact key without source and count) is harmless on the production path, not equivalent: since F5 the key
-  also carries the command digest, and Body.apply, the only production caller of record_realization
-  (greg/body.py:628), always passes one. The S3 fields separate only in-process writes with no command digest.
-- N27 (the other disputed methods held at their current counts in the preference walk) is MISSED and not
-  equivalent: test_f2_c_... exercises only the Laplace half of F2-c (N28 is caught). No test needs a joint
-  resolution to change the Holm preference.
-- N33 (merge closures read as receipt links) is MISSED. With the skip, a shadow chain's own receipt keeps linking to
-  its pre-merge row (invalidated False), even after the merged claim is withdrawn; without it, the merge closure, the
-  latest row naming that receipt, links it as closed, as receipt_links' docstring says. The test's two chains share
-  one receipt, so the two behaviours agree there. Older receipts of any chain also link to superseded rows; that
-  predates these fixes.
-- N35 (a closed mission's text read as pending a closure) is MISSED: no test reaches the "final:" branch of
-  _unsettled_why.
-N18, MISSED in the previous record, is now caught, as is N17, by test_f3_on_the_public_path_... (its added assertion
-on the unsettled fit at 1/2). The previous record (5d2379f1, settlement.py at #221 5983deeb: 22 of 24) is in git history at
-f0094388.
+  also carries the command digest, and Body.apply, the only production caller of record_realization, always passes
+  one.
+- N32 (merge closures not counted as superseding) was caught at 5b4e293f. Since round 3 closes every live head but
+  the identity's current row, its only remaining effect is on a later pass: after a merge and then a withdrawal of
+  the settling appraisal, the merged shadow is invalidated a second time, so two rows supersede it. No test counts the
+  rows that supersede a merged shadow.
+- N38 (the joint state limit ignored): no test reaches more than JOINT_STATE_LIMIT (256) joint states with at most
+  JOINT_DISPUTE_LIMIT (3) other disputed methods. Three other tested methods with three open disputes each reach 10
+  counts each, 1,000 joint states; the head states the limit and reads investigate, the mutant walks them all.
+- N43 (the reason names the method given as first, not the fit ranked first): no test reads the "ranked first" name
+  when the named first fit is demoted.
+- N46 (an unmeasured claim's duplicate merged instead of invalidated): no test withdraws the settling appraisal
+  before the pass that closes the duplicate chain. There the head writes an invalidation of the duplicate; the mutant
+  writes a merge closure with merged_into and the "merged:" reason.
+- N49 (a held closure that an appraisal already names read as awaiting): no test appraises a held or unmet closure
+  before reading the row text. There the head says "none: the mission's latest appraisal (REFUTED) settles nothing";
+  the mutant says "pending: a closure of this mission awaits appraisal".
+N27, N33 and N35, MISSED in the previous record, are now caught by the review-4 tests. F2R-4's inhibition memo has no
+mutant, since removing it changes only the time taken. The previous record (c7bc097f, settlement.py at #221 5b4e293f:
+32 of 36) is in git history at 934a5125.

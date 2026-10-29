@@ -348,8 +348,9 @@ def reconcile(journal):
     observations = {e.event_id: e.payload for e in journal.replay("mission.observed")}
     outcomes = measured_outcomes(journal)
     measured_ids = {_outcome_identity(o) for o in outcomes}
-    settled = [e for e in journal.replay("cognition.settled") if not e.payload.get("merged_into")]
-    superseded = {e.payload.get("supersedes") for e in settled}
+    every = journal.replay("cognition.settled")
+    superseded = {e.payload.get("supersedes") for e in every}          # a merge closure supersedes its shadow too
+    settled = [e for e in every if not e.payload.get("merged_into")]
     current, heads = {}, defaultdict(list)
     for event in settled:
         payload = event.payload

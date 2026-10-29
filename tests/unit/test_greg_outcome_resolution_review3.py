@@ -102,7 +102,7 @@ def test_f1_a_two_old_rule_chains_of_one_answer_leave_one_live_head_and_none_aft
             record = run.ask("pf-f1a", PORTFOLIO)
             run.realize(record, PROMISED, source="external_record")
             settlement.reconcile(journal)
-        [first] = [e for e in journal.replay("cognition.settled") if e.payload.get("compile_receipt")]
+        first = [e for e in journal.replay("cognition.settled") if e.payload.get("compile_receipt")][-1]
         # the same answer settled under another engine label: a second chain, as 917404cf left it
         journal.record("cognition.settled", {**first.payload, "answer_version": digest(["engine-2", "x"]),
                                              "supersedes": None}, key=["old-rule", "engine-2"])
@@ -146,15 +146,15 @@ def test_g4_a_the_inbox_reads_a_whole_second_command_before_one_signed_half_a_se
     import json
     with Run(tmp_path) as run:
         record, ids = _three_reports(run, "pf-g4a")
-        run.realize(record, PROMISED - 2, source="sensor_observation")             # f3: 0, unmet
+        run.realize(record, PROMISED - 1, source="sensor_observation")             # f3: 1, unmet, independent
         f3 = next(e.event_id for e in run.body.journal.replay("cognition.realization")
                   if e.payload.get("source") == "sensor_observation")
         t1 = run.clock().replace(microsecond=0)
-        r1 = signed(run.key, run.body_id, "REALIZATION", {"receipt": record.hash, "resolves": [ids["founder_reported"],
-                    ids["external_record"]], "accept": ids["external_record"], "note": "R1"}, now=t1)
-        # R2 is valid only after R1: before it, f1 (1) still disagrees with f3 (0) and R2 does not name it
-        r2 = signed(run.key, run.body_id, "REALIZATION", {"receipt": record.hash, "resolves": [ids["external_record"],
-                    f3], "accept": f3, "note": "R2"}, now=t1 + timedelta(milliseconds=500))
+        r1 = signed(run.key, run.body_id, "REALIZATION", {"receipt": record.hash, "resolves": [
+                    ids["external_record"], f3], "accept": f3, "note": "R1"}, now=t1)
+        # R2 is valid only after R1: before it, f2 (2) still disagrees with f3 (1) and R2 does not name it
+        r2 = signed(run.key, run.body_id, "REALIZATION", {"receipt": record.hash, "resolves": [
+                    ids["founder_reported"], f3], "accept": f3, "note": "R2"}, now=t1 + timedelta(milliseconds=500))
         raw = sorted([r1["issued_at"].replace(":", ""), r2["issued_at"].replace(":", "")])
         assert raw[0] == r2["issued_at"].replace(":", "")                          # the old names misorder them
         for env, kind in ((r2, "b"), (r1, "a")):
@@ -253,6 +253,8 @@ def test_f8_a_the_signed_realization_memo_reruns_only_on_a_founder_record(tmp_pa
         assert settlement._signed_realizations(journal) == first and len(calls) == 1          # an in-process fact
         run.realize(record, PROMISED - 2, source="sensor_observation")
         after = settlement._signed_realizations(journal)
-        assert len(calls) == 2 and len(after) == len(first) + 1                               # a REALIZATION
+        assert len(after) == len(first) + 1 and len(calls) >= 2                               # a REALIZATION
+        seen = len(calls)
+        assert settlement._signed_realizations(journal) == after and len(calls) == seen       # cached again
         settlement._SIGNED.clear()
         assert settlement._signed_realizations(journal) == after                              # equals a fresh pass

@@ -1789,6 +1789,14 @@ def _settled_competence(journal, geometry_class) -> dict:
 SETTLED_ALPHA = 0.05            # family-wise, Holm over the challengers tested against the evidence-ranked first fit
 
 
+@lru_cache(maxsize=4096)
+def _fisher_greater(k_b: int, n_b: int, k_a: int, n_a: int) -> float:
+    """One-sided Fisher exact p that B's correct rate exceeds A's: a pure function of the table, so it is memoized
+    (settlement's decision-value walk asks it for the same few hundred tables many times; review of #221, F2-e)."""
+    from scipy.stats import fisher_exact
+    return float(fisher_exact([[k_b, n_b - k_b], [k_a, n_a - k_a]], alternative="greater")[1])
+
+
 def _settled_preference(eligible: list[dict], settled: dict) -> dict | None:
     """Retained settled outcomes alone can change the choice between two eligible fits (whole-machine trace gap,
     #158, 2026-10-21). The evidence-ranked first fit A is compared with every other undemoted fit B that, like A,
@@ -1804,13 +1812,12 @@ def _settled_preference(eligible: list[dict], settled: dict) -> dict | None:
     n_a, k_a = settled.get(first["method"], (0, 0))
     if n_a < SETTLED_MIN_N:
         return None
-    from scipy.stats import fisher_exact
     tests = []
     for row in eligible[1:]:
         n_b, k_b = settled.get(row["method"], (0, 0))
         if row.get("demoted") or n_b < SETTLED_MIN_N:
             continue
-        p = float(fisher_exact([[k_b, n_b - k_b], [k_a, n_a - k_a]], alternative="greater")[1])
+        p = _fisher_greater(k_b, n_b, k_a, n_a)
         tests.append({"method": row["method"], "settled": [k_b, n_b], "p_one_sided": p})
     if not tests:
         return None

@@ -69,10 +69,12 @@ def test_an_authorized_correction_changes_the_later_selection_and_the_ablation_d
         # two signed read-only auto_attach (review of #210, record item). Asserted as recorded, not as declared.
         setup = [(e.payload.get("capability_id"), e.payload.get("state"), e.payload.get("by"))
                  for e in journal.replay("capability.state")]
-        attached = [row for row in setup if row[1] == "ATTACHED"]
-        assert [row[2] for row in attached] == (["founder command"]
-                                                + ["founder-signed mission auto_attach (read_only)"] * 2)
-        assert attached[0][0] == "cognition.flow_maxflow" and cid in {row[0] for row in attached}
+        auto = "founder-signed mission auto_attach (read_only)"
+        engine = next(row[0] for row in setup if row[0] not in ("cognition.flow_maxflow", cid))
+        # every setup record, not only the attaches: a setup-time QUARANTINED or DETACHED row fails here (review
+        # of #221, T-d)
+        assert setup == [("cognition.flow_maxflow", "ATTACHED", "founder command"), (engine, "ATTACHED", auto),
+                         (cid, "ATTACHED", auto)]
 
         receipts = {}
 

@@ -132,6 +132,8 @@ def test_f3_on_the_public_path_a_laplace_rank_flip_is_investigated(tmp_path):
         [row] = disputes(run.body.journal)
         assert row["priority"] == "investigate"
         assert any(f"Laplace rank against {FLOW}" in r for r in row["decision_impact"]["could_change"])
+        # F3 itself: the unsettled fit at 1/2 equals this lower bound, so only the inclusive check flags it
+        assert any("an unsettled co-eligible fit (0.500)" in r for r in row["decision_impact"]["could_change"])
 
 
 # --- F4: resolutions order by signing instant; an older-signed one is refused with a reason ---------------------------
@@ -168,7 +170,7 @@ def test_f4_a_resolution_signed_before_one_already_ruling_on_its_facts_is_refuse
         record, (f1, f2) = _accepted_and_external(run, "pf-f4-held")
         now = datetime.now(timezone.utc)
         send(run, {"receipt": record.hash, "resolves": [f1, f2], "accept": f2, "note": "newer"}, at=now)
-        with pytest.raises(ValueError, match="already rules on"):
+        with pytest.raises(ValueError, match="would never take effect"):
             send(run, {"receipt": record.hash, "resolves": [f1, f2], "accept": None, "note": "older, held back"},
                  at=now - timedelta(minutes=10))
         outcome = run.outcome(record)
@@ -177,7 +179,7 @@ def test_f4_a_resolution_signed_before_one_already_ruling_on_its_facts_is_refuse
         other, (x, y) = _accepted_and_external(run, "pf-f4-pqr")
         send(run, {"receipt": other.hash, "resolves": [x, y], "accept": y, "note": "P"}, at=now - timedelta(minutes=20))
         send(run, {"receipt": other.hash, "resolves": [y], "accept": y, "note": "Q"}, at=now)
-        with pytest.raises(ValueError, match="already rules on"):
+        with pytest.raises(ValueError, match="would never take effect"):
             send(run, {"receipt": other.hash, "resolves": [x, y], "accept": x, "note": "R"},
                  at=now - timedelta(minutes=10))
         assert run.outcome(other)["world"]["state"] == "adjudicated" and disputes(run.body.journal) == []
@@ -189,13 +191,13 @@ def test_f4_a_fast_clock_earlier_resolution_refuses_a_later_one_until_re_signed_
     signed after R1's time, it takes effect."""
     with Run(tmp_path) as run:
         record, (f1, f2) = _accepted_and_external(run, "pf-f4-skew")
-        now = datetime.now(timezone.utc)
+        now = run.clock()
         send(run, {"receipt": record.hash, "resolves": [f1, f2], "accept": f2, "note": "R1"},
              at=now + timedelta(minutes=4))
         run.realize(record, PROMISED - 2, source="sensor_observation")
         f3 = next(x for x in facts(run.body.journal, record.hash).values() if x not in (f1, f2))
         body = {"receipt": record.hash, "resolves": [f2, f3], "accept": f3, "note": "R2"}
-        with pytest.raises(ValueError, match="fast clock"):
+        with pytest.raises(ValueError, match="If a clock was off"):
             send(run, body, at=now + timedelta(minutes=1))
         assert [e.payload["note"] for e in settlement._resolutions(run.body.journal)] == ["R1"]
         send(run, {**body, "note": "R2, re-signed"}, at=now + timedelta(minutes=4, seconds=30))
@@ -214,7 +216,7 @@ def test_f5_a_signed_report_matching_an_unsigned_fact_is_kept_and_can_be_accepte
         settlement.record_realization(journal, receipt=record.hash, realized=PROMISED, source="external_record")
         [row] = disputes(journal)
         assert row["resolvable_now"] is False
-        assert row["evidence_request"]["why"] == "no signed report declared as an independent source is recorded"
+        assert row["evidence_request"]["why"] == "none of the live reports is a signed report declared as an independent source"
         run.realize(record, PROMISED, source="external_record")          # the founder signs the same report
         [row] = disputes(journal)
         assert row["resolvable_now"] is True
@@ -268,10 +270,10 @@ def test_f6_a_verified_realization_a_device_signed_is_not_founder_evidence(tmp_p
                     command["principal"] = "device:phone"
             return result
 
-        settlement._SIGNED.clear()
+        getattr(settlement, "_SIGNED", {}).clear()
         monkeypatch.setattr(goal_gravity, "founder_facts", as_device)
         assert settlement._signed_realizations(journal) == {}
-        settlement._SIGNED.clear()
+        getattr(settlement, "_SIGNED", {}).clear()
         monkeypatch.undo()
         assert len(settlement._signed_realizations(journal)) == 1
 

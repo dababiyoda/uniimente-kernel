@@ -90,7 +90,7 @@ def test_with_no_independent_observation_it_asks_for_one_instead_of_resolving():
     [row] = settlement.awaiting_realization(journal)
     assert row["resolvable_now"] is False and "prepared_resolution" not in row
     request = row["evidence_request"]
-    assert request["why"] == "no signed report declared as an independent source is recorded" and "--source external_record" in request["how"]
+    assert request["why"] == "none of the live reports is a signed report declared as an independent source" and "--source external_record" in request["how"]
     with pytest.raises(ValueError, match="accepts only a report declared as an independent source"):
         resolve(journal, receipt, list(facts(journal).values()), facts(journal)["founder_reported:2"])
 

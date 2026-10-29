@@ -1254,13 +1254,21 @@ def drop_intake(home: str | Path, *, source: str, content: str, channel: str) ->
     return target
 
 
+def inbox_stamp(issued_at: str) -> str:
+    """A signed issued_at as a fixed-width, sortable inbox name prefix. ``stamp`` drops the fraction at microsecond 0,
+    so raw stamps sort a whole-second command after one signed half a second later, and the inbox is read in name
+    order (review of #221, G4-a)."""
+    from greg.founder import instant
+    return instant(issued_at).astimezone(timezone.utc).strftime("%Y-%m-%dT%H%M%S.%fZ")
+
+
 def send_signed(home: str | Path, key, kind: str, body: dict, *, ttl: timedelta = timedelta(hours=24)) -> Path:
     """Sign one founder command and drop it into the body inbox (any interface, then close)."""
     from greg.founder import sign_command
     layout = Layout(home)
     config = json.loads(layout.config.read_text())
     envelope = sign_command(key, kind, body, body_id=config["body_id"], ttl=ttl)
-    target = layout.inbox / f"{envelope['issued_at'].replace(':', '')}-{kind.lower()}-{envelope['nonce'][:8]}.json"
+    target = layout.inbox / f"{inbox_stamp(envelope['issued_at'])}-{kind.lower()}-{envelope['nonce'][:8]}.json"
     temporary = target.with_suffix(".tmp")
     temporary.write_text(json.dumps(envelope, indent=1))
     temporary.replace(target)

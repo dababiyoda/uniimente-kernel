@@ -25,8 +25,11 @@ competence, Goal Gravity and the compiler's selection from settled outcomes. It 
    - *Legacy records:* settlement records written before this have no answer version. `reconcile` records each
      one's answer-versioned successor as a revision that supersedes it, rather than listing it as invalid.
    - *Open (second review of #219, F1):* S10 later dropped the engine label and other provenance fields from the
-     version digest. Records written by `917404cf`, which carry the older digest, are not yet recognized as the
-     same answer: the first tick after an upgrade writes a successor and invalidates the old record.
+     version digest, and records written by `917404cf`, which carry the older digest, are not recognized as the
+     same answer. On the first tick after an upgrade, `reconcile` writes a successor with no `supersedes` link and
+     then invalidates the old record with the false reason "current appraisal no longer supports competence".
+     `receipt_links` then reports the live settlement as invalidated on every later pass. Counts are unaffected.
+     This brings back S5's symptom for bodies that ran `917404cf`.
 2. **Explicit knowledge states for every answer's world outcome** (`settlement.WORLD_STATES`). Every fact stays on
    the record in every state.
 
@@ -41,17 +44,20 @@ competence, Goal Gravity and the compiler's selection from settled outcomes. It 
 3. **A founder-signed, traceable resolution on the existing REALIZATION command.** The CLI form is
    `greg realize RECEIPT --resolves E1 --resolves E2 --accept E2 --note <basis>`.
    - It may accept only a recorded report whose reporter declared an independent source (`sensor_observation`,
-     `external_record`) and that a verified founder-signed REALIZATION carried (S9), because a signed report proves
-     who reported it, not that it is true. Omitting `--accept` invalidates the named reports instead; an
+     `external_record`) and that a verified signed REALIZATION carried (S9), because a signed report proves who
+     reported it, not that it is true. Omitting `--accept` invalidates the named reports instead; an
      invalidation must name every live report (S2).
    - An accepting resolution must name every live report that disagrees, and every resolution must state its basis.
-   - Settlement counts a resolution only when its digest names a verified founder-signed REALIZATION envelope whose
-     signed body is that resolution (same receipt, resolves and accept), at most once per signed command (S1). One
-     written into the journal any other way resolves nothing.
+   - Settlement counts a resolution only when its digest names a verified REALIZATION envelope whose signed body is
+     that resolution (same receipt, resolves and accept), at most once per signed command (S1). One written into the
+     journal any other way resolves nothing. Open (second review of #219): settlement does not check that the signer
+     is the founder, so a delegated device key's envelope would count (F6); and no test covers the
+     once-per-command guard (mutant N2 survives).
    - Each fact is ruled by the latest-signed resolution that names it, ordered by the envelope's `issued_at` and
      then journal order (S4). A correction can therefore be corrected, and a later resolution never revives a fact
-     it does not name. (Second review of #219, F4: `issued_at` is compared as a string, and the record-time checks
-     assume delivery order; open.)
+     it does not name. Open (second review of #219, F4): `issued_at` is compared as a string; an envelope dated up
+     to 5 minutes in the future (`CLOCK_SKEW`) outranks a correction signed after it; and the record-time checks
+     assume delivery order, so an older-signed resolution delivered late is applied with no effect and no notice.
    - A later report that disagrees reopens the dispute.
 4. **Corroboration is kept.** The same value from another source used to be dropped as a repeat, so an independent
    confirmation lost its source. It is now kept as a corroborating fact. Run 1 of the experiment found this defect
@@ -59,21 +65,24 @@ competence, Goal Gravity and the compiler's selection from settled outcomes. It 
 5. **A dispute is investigable work** (`awaiting_realization`, `kind: objective_conflict`). Each dispute row gives:
    - the reports, with each one's source and verdict;
    - the distinguishing observation, e.g. "at or above 1.9 it kept its promise";
-   - whether a resolution can be prepared now from a recorded report declared as an independent source, in which case the
-     row carries the unsigned REALIZATION body the founder would sign;
+   - whether a resolution can be prepared now, which needs exactly one value held by reports that are declared
+     independent and carried by a verified signed REALIZATION; in that case the row carries the unsigned
+     REALIZATION body the founder would sign;
    - otherwise, an evidence request that says exactly what record to obtain and how. No capability on a body
      declares an observation of these world quantities, so GREG asks for the record rather than guessing it.
 6. **Decision value decides priority.** `_weigh_investigations` bounds each method's settled counts between the
-   two extreme resolutions of its open disputes. It then asks whether the inhibition rule, the 10-outcome floor,
-   the compiler's settled-outcome preference against another method (`_settled_preference`, called on that pair:
-   a one-sided Fisher comparison), or the Laplace rank against another settled method (S8) differs between those
-   bounds.
+   two extreme resolutions of its open disputes. It then asks whether the inhibition rule, the compiler's
+   settled-outcome preference against another method (`_settled_preference`, called on that pair: a one-sided
+   Fisher comparison), or the Laplace rank against another settled method (S8) differs between those bounds, and
+   whether resolving the disputes, either way, lifts the method from below the 10-outcome floor to at least 10.
    - Only disputes whose mission holds a settling appraisal and whose signed check passed are weighed (S6, S7).
      The others are `hold`, and the row says why.
    - If one rule differs, the row is `priority: investigate`; otherwise `hold`, kept on record and weighed again as
      evidence accrues.
    - Known gaps (second review of #219, open): the preference is tested one pair at a time, so Holm adjusts over a
-     single challenger (F2); and the Laplace check skips fits with no settled outcome and exact ties (F3).
+     single challenger (F2); the Laplace check skips fits with no settled outcome and exact ties (F3); and a signed
+     report whose source and value match an unsigned live fact is absorbed, after which the row asks again for the
+     command just applied (F5).
    - Goal Gravity reports `disputes_to_investigate` and `decisions_to_recheck`.
 7. **Dependency-aware memory.** `decisions_to_recheck` lists every compile decision retained while a later-rejected
    report was in force, if it considered the affected method. A decision leaves the list once that problem is
@@ -159,10 +168,12 @@ see [REVIEW-FIXES.md](REVIEW-FIXES.md)):
     goal_gravity, Goal Gravity, founder and mission suites (527 passed, 5 skipped), and CI job 8's whole set plus
     the combined test with real organs (117 passed, 1 skipped).
   - [mutants-review.txt](mutants-review.txt): the review fixes' mutants, run with
-    [mutants-review.py](mutants-review.py) and bound to its commit; see that file for the tally. Its first record
-    counted N9, which did not compile, as caught (second review R3).
-  - [broad-review-fixes.txt](broad-review-fixes.txt) is a snapshot taken before `b1a3c1af` (1 failed, 750 passed).
-    It names no commit or command, so it is not bound to any code.
+    [mutants-review.py](mutants-review.py) on a clean tree and bound to its commit: 13 of 14 caught. N2 (one
+    resolution per signed command) is MISSED: no test covers that guard yet. The first record counted N9, which did
+    not compile, as caught (second review R3).
+- **Not bound to any code:** [broad-review-fixes.txt](broad-review-fixes.txt), a snapshot taken before `b1a3c1af`
+  that names no commit or command: 1 failed (the experiment test itself: a `TypeError` in its stale `_resolutions`
+  stand-in, fixed in `b1a3c1af`), 750 passed, 1 skipped.
 - **On the code before the review fixes:**
   - [after.txt](after.txt): every settlement-touching test passes on `050e2e42` (463 passed, 1 skipped).
   - [mutants.txt](mutants.txt): 8 of 8 safeguard mutants caught at `90c1b118`, using [mutants.py](mutants.py).
@@ -191,7 +202,7 @@ The new power is the founder's ability to resolve a disputed outcome. Every use 
 |---|---|
 | Inspected | every fact, resolution and rejected event stays on the record |
 | Challenged | a later disagreeing report reopens the dispute |
-| Restricted | only a recorded report declared as an independent source, and carried by a verified founder-signed REALIZATION, can be accepted; every disagreeing report must be named; an invalidation must name every live report; a basis must be stated |
+| Restricted | only a recorded report declared as an independent source, and carried by a verified signed REALIZATION, can be accepted (the signer is not yet checked to be the founder: second review F6, open); every disagreeing report must be named; an invalidation must name every live report; a basis must be stated |
 | Revoked | a later resolution rules again on any fact it names |
 | Repaired downstream | `decisions_to_recheck` names the decisions that rested on the rejected evidence |
 
@@ -201,7 +212,7 @@ When two reports about a completed construction disagree, the body now does the 
 
 1. It names the claim, the answer and the disputed verdicts.
 2. It states the observation that would decide between them.
-3. It prepares the correction when a report declared as an independent source already exists, or asks for that record when none does.
+3. It prepares the correction when exactly one value is held by reports declared as independent and carried by a verified signed REALIZATION, or asks for that record otherwise.
 4. It weighs whether resolving the dispute can change any selection.
 5. It withholds competence until the dispute is resolved, unless the answer's signed check failed: that answer is scored wrong whatever the world value.
 
@@ -218,7 +229,8 @@ recheck. With the repair disabled, the same history leaves the worse decision in
   - It is not a measured real-world learning dividend.
 - The decision value is an estimate. The Fisher comparison is pairwise: `_settled_preference` is called on two
   methods at a time, so Holm adjusts over one challenger and the test is unadjusted, whereas the compiler applies
-  Holm over all co-eligible challengers (second review of #219, F2, open). It is weighed against every method with
+  Holm over every undemoted co-eligible challenger with at least 10 settled outcomes, tested against the
+  evidence-ranked first fit (second review of #219, F2, open). It is weighed against every method with
   settled outcomes, since co-eligibility depends on the request.
 - The recheck projection compares retained UTC stamps across the ledger and the journal.
 - No capability declares an observation of a world objective, so GREG cannot acquire the evidence itself. It asks.

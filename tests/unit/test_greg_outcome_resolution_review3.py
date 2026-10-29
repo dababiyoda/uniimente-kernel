@@ -25,7 +25,8 @@ def weigh(monkeypatch, counts, disputes):
     monkeypatch.setattr(compiler, "_settled_counts", lambda journal: counts)
     rows = [{"method": m, "mission_id": "m", "check_passed": True} for m, d in disputes.items() for _ in range(d)]
     settlement._weigh_investigations(object(), rows, settling={"m": object()})
-    return {r["method"]: (r["priority"], r["decision_impact"]["could_change"], r["priority_why"]) for r in rows}
+    return {r["method"]: (r["priority"], r["decision_impact"]["could_change"] + r["decision_impact"]["walk_limits"],
+                          r["priority_why"]) for r in rows}
 
 
 # --- the decision value ----------------------------------------------------------------------------------------
@@ -56,7 +57,7 @@ def test_f2_c_joint_disputes_of_two_methods_are_weighed_together(monkeypatch):
     for method, other in (("construction.X", "construction.Y"), ("construction.Y", "construction.X")):
         priority, reasons, _ = rows[method]
         assert priority == "investigate"
-        assert any(f"Laplace rank against {other}" in r and "as its own disputes resolve" in r for r in reasons)
+        assert any(f"Laplace rank against {other}" in r and "its own disputes reach" in r for r in reasons)
 
 
 def test_f2_d_a_demoted_fit_is_never_tested_as_the_first_fit(monkeypatch):

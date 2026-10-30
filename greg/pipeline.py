@@ -21,6 +21,13 @@ PROTECTED = frozenset({"allowed_paths", "tools", "provider", "max_budget_usd", "
     # mcp.act's reach: which credentials a server is handed (as values or files), which hosts it may reach and
     # which paths it may write are founder-signed literals, never an earlier action's output
     "secrets", "secret_files", "bearer", "hosts", "writable"})
+# browser.session's step program: which operation runs on which element, with which credential, whether it is
+# consequential, and which writes its method gate lets through are founder-signed literals (a fill's value is data)
+PROTECTED = PROTECTED | {"op", "selector", "secret", "consequential", "read_methods"}
+# Keys holding a step program: neither the list itself nor a whole step (a bound list or object) may be an earlier
+# action's output; a scalar under such a key (a solver's integer step count) stays data.
+PROGRAMS = frozenset({"steps"})
+PROGRAM_TYPES = frozenset({"array", "object"})
 TYPES = {"string": str, "object": dict, "array": list, "boolean": bool, "integer": int, "number": (int, float)}
 
 def resolve(params, journal, mission_id, *, before_seq=None, observe=None):
@@ -29,10 +36,15 @@ def resolve(params, journal, mission_id, *, before_seq=None, observe=None):
     Without it (a handoff into the next action's params), a value the producer's receipt did not keep whole is
     refused: the next action gets its whole input or nothing."""
     provenance = []
-    def visit(value, depth=0, protected=False):
+    def visit(value, depth=0, protected=False, program=False):
         if depth > 20:
             raise BindingError("pipeline input nesting exceeds 20")
         if isinstance(value, dict) and "$from_action" in value:
+            if depth == 0:
+                raise BindingError("artifact cannot replace a capability's whole params")
+            kind = value["$from_action"].get("type") if isinstance(value["$from_action"], dict) else None
+            if program and kind in PROGRAM_TYPES:
+                raise BindingError("artifact cannot replace a step program or a whole step")
             if protected or set(value) != {"$from_action"}:
                 raise BindingError("artifact cannot modify an authority or execution scope")
             ref = value["$from_action"]
@@ -94,9 +106,9 @@ def resolve(params, journal, mission_id, *, before_seq=None, observe=None):
                                "receipt": record.hash, "value_digest": sha256_json(output)})
             return copy.deepcopy(output)
         if isinstance(value, dict):
-            return {k: visit(v, depth+1, protected or k in PROTECTED) for k,v in value.items()}
+            return {k: visit(v, depth+1, protected or k in PROTECTED, k in PROGRAMS) for k,v in value.items()}
         if isinstance(value, list):
-            return [visit(v, depth+1, protected) for v in value]
+            return [visit(v, depth+1, protected, program) for v in value]
         return value
     return visit(params), provenance
 
@@ -113,7 +125,10 @@ def inspect(params, ctx):
         raise CapabilityError("pipeline inspection requires its signed mission and producer target")
     observed = []
     try:
-        value, links = resolve({"$from_action": params}, ctx.journal, ctx.mission_id, observe=observed)
+        # under a key: resolve refuses a binding that would be a capability's whole params; ``observe`` reports the
+        # producer's own completeness declaration for this one binding
+        wrapped, links = resolve({"value": {"$from_action": params}}, ctx.journal, ctx.mission_id, observe=observed)
+        value = wrapped["value"]
     except PendingInput:
         return {"available": False, "value": None, "bindings": []}
     except BindingError as exc:

@@ -182,3 +182,30 @@ The fixes close defect classes that real metadata here does not trigger, as the 
 - SPDX-1 and SPDX-2 each say "plus the P0 attach test" fails at `a1d2abf`. Those two tests fail there only with
   `AttributeError`, because `binary_assessment` does not exist at `a1d2abf`. The behavioural fail-before for SPDX-1
   and SPDX-2 rests on the parametrized `deb()` cases and on the review's `system_binary` reproduction.
+
+## The metabolism gate on the fixes (`01f7f7e9`)
+
+The metabolism group ran 98 mutants on `01f7f7e9`. It caught 96; two survived, both in `greg/licensing.py`:
+
+- **"An unparseable expression hides its restrictive names" exposed a real defect.** A Python package's
+  `License-Expression` or one-line `License` field that packaging rejects ("EUPL-1.2 AND (MIT") was read only for
+  restrictive wording. EUPL, OSL and JSON are restrictive only by GREG's table, so beside an MIT classifier the
+  package was CLEARED. DEP-5 already read such a field word by word through `_tree`'s fallback, but no test named a
+  license that wording does not also catch.
+- **"The use election depends on operand order" was a test gap.** No test had OR alternatives tied on verdict, class
+  and held terms, so the final tie-break by name went unheld.
+
+**Fix (`059c734c`).** `_named_restrictions` reads the licenses an unparseable Python declaration names, word by word
+from GREG's table. Exact names only: a word is never read as restrictive wording, so "MIT. Free for commercial and
+non-commercial use." stays cleared. Each part has a test:
+
+- `test_v11_an_unparseable_expression_keeps_restrictive_names_no_rider_reads`: EUPL-1.2, OSL-3.0 and JSON in a DEP-5
+  field, a `License` field and a `License-Expression`; 3 failed on `01f7f7e9`.
+- `test_v8_...`: now also has a whole tie in both operand orders.
+
+Three mutants guard the change. The two survivors and the three new mutants were run through the gate's own harness:
+all 5 caught. The group now holds 101 mutants, every anchor applying once.
+
+**Measured on this host against `01f7f7e9`:** 0 verdict or class changes across 65 test-venv and 87 system-Python
+distributions, 605 DEP-5 files and 1,159 binaries (`named-restrictions-real-diff-venv.json`,
+`named-restrictions-real-diff-system.json`).

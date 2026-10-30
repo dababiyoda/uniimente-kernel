@@ -11,15 +11,37 @@ Control on that body so the founder can look at every view.
 What it is not: the throwaway key is not Alfonso's key and authenticates no one; the rehearsal body
 is not a founder-designated body, so nothing it does counts toward VEPMC; no network, model, money,
 message or publication is used. It reads only the kernel checkout it is pointed at.
+
+The body is marked as a rehearsal body in its body.json (``mark_body``) before the throwaway key is enrolled, and
+greg.metrics.founder_tier never puts its missions at the founder tier, even when that unprotected key signs a
+FOUNDER_TIER attestation itself. The mark guards against promoting a rehearsal by accident, not against an operator
+who edits body.json.
 """
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import tempfile
 import time
 
 REHEARSAL = "REHEARSAL"
+
+
+def mark_body(home: Path) -> dict:
+    """Write the rehearsal mark (greg.metrics.REHEARSAL_MARK) into a body `greg rehearse` has just created.
+
+    body.json is replaced whole, through a new 0600 file as init_body wrote it, so a reader never sees half of it.
+    Called before any key is enrolled, so no command of this body predates the mark."""
+    from greg.body import _private_write
+    from greg.metrics import REHEARSAL_BODY, REHEARSAL_MARK
+    config_file = Path(home) / "body.json"
+    config = json.loads(config_file.read_text())
+    config[REHEARSAL_MARK] = {"label": REHEARSAL, "created_by": "greg rehearse", "founder_tier": REHEARSAL_BODY}
+    temporary = config_file.with_name("body.json.rehearsal-tmp")
+    _private_write(temporary, json.dumps(config, indent=2).encode())
+    os.replace(temporary, config_file)
+    return config
 
 
 def settle(home: Path, mission_id: str, max_ticks: int = 12) -> str:
@@ -47,11 +69,12 @@ def rehearse(*, directory: Path | None = None, kernel_root: Path | None = None, 
     if (work / "body").exists():
         raise FileExistsError(f"{work / 'body'} exists; a rehearsal always starts from a new body")
     work.mkdir(parents=True, exist_ok=True)
-    init_body(work / "body", read_roots=[str(kernel)])
+    home = work / "body"
+    init_body(home, read_roots=[str(kernel)])
+    mark_body(home)                                # before any key exists: no command of this body predates the mark
     keyfile = work / f"{REHEARSAL}-throwaway-founder-key.pem"
     public = generate_founder_key(keyfile, None)
     key = load_founder_key(keyfile, None)
-    home = work / "body"
     with Body(home) as body:
         body.enroll_founder(public)
     send_signed(home, key, "CAPABILITY_ATTACH", {"capability_id": "cognition.dp_knapsack"})

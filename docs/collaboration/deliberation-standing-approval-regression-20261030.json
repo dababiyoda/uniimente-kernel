@@ -1,0 +1,569 @@
+{
+  "decision_id": "STANDING-APPROVAL-REGRESSION-20261030",
+  "title": "Withdraw a standing founder approval when failure evidence names a run it allowed; report the level each tuple has earned, and grant nothing",
+  "problem": "An unpaid founder APPROVAL of an exact scope stays in a mission's approved_scopes until a paid run or a restore voids it (greg/missions.py). Nothing else removes it. Reproduced on real booted bodies at #196 head a6c29bbd, with a test founder key, before any change: (1) ineffective run: a standing mission's approved strategy w-bad ran, the check it advances still failed and the engine recorded routing.outcome ineffective; after w-good healed the check and the world drifted, w-bad ran again under its old approval with no new ask (actions w-bad DONE, w-good DONE, w-bad DONE, w-good DONE); (2) refuted closure: approved strategy w ran, the mission held, the separate appraiser re-read a changed world and recorded REFUTED, and at the next cadence w ran again with no ask (w DONE, w DONE). Directive section 59 also asks a question no GREG surface answered: for capability X, action class Y, target Z and budget B, what level of autonomy has evidence earned?",
+  "founder_intent_refs": [
+    "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN",
+    "INTENT-20261028-OPUS-MAXIMUS-REISSUE, sections 4 (no model or agent manufactures authority), 59 (autonomy is earned per capability, action class, target and budget; no intelligence threshold produces sovereignty), 60 and 67 (kill criteria: second authority plane, autonomous authority escalation, founder burden without gain), the sections the unit spec names",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-20261019-UPWARD-ASCENT",
+    "INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE (first issuance of sections 59-64, repeated word for word in the 2026-10-28 reissue)"
+  ],
+  "baseline": "a6c29bbd (#196 head when the unit started; #196 is now b1950be2, one test file later): approved_scopes is cleared only by a paid DONE run or by decision.withdrawn {voids_approval: true}, which greg/recovery.py records after a restore. routing.outcome ineffective records and REFUTED appraisals are written but never reach a standing approval. autonomy/levels.py (AutonomyTuple, licence levels) is imported by no GREG Python module. No command reports an earned level per tuple.",
+  "alternatives": [
+    {
+      "name": "Proposed: a body-tick regression through the existing withdrawal record, plus a read-only earned-level report",
+      "description": "New greg/autonomy.py. failures() names every completed run that failure evidence covers: routing.outcome ineffective for its receipt; for a founder-reconciled run (no receipt), the first measured failing observation of a check it advances, judged by the engine's own blames_strategy; or a REFUTED appraisal of the closure window that holds the run (the window greg/appraisal.py uses). regress() records autonomy.regressed and then decision.withdrawn {voids_approval: true} for each still-standing APPROVAL of that scope asked before the run, the greg/recovery.py pattern the mission fold already reads. One call line in Body.tick runs it before Goal Gravity and the mission engine select. report() and `greg autonomy` fold the ledger per (capability, action class, target pattern, budget band) into SHADOW, RECOMMENDER or SUPERVISED_CANARY, never higher, and write nothing.",
+      "advantages": [
+        "Closes the reproduced defect: after failure evidence the next selection of the scope asks the founder again (20 real-body tests pass; fail-before rows below)",
+        "Narrows only: it records withdrawals and never adds to approved_scopes or answers",
+        "greg/missions.py, greg/authority.py and greg/appraisal.py untouched; greg/body.py gains one call line and one import name",
+        "Answers section 59's question from the ledger alone, with counts, a Wilson bound and what the next level needs"
+      ],
+      "disadvantages": [
+        "Two more ledger records per regression (autonomy.regressed, decision.withdrawn)",
+        "A ledger fold runs every tick while any approval stands",
+        "Any REFUTED verdict regresses the approvals of runs in its window, including refutations the action did not cause",
+        "Thresholds and tuple boundaries are first choices declared in code, not founder-ratified"
+      ],
+      "revival_evidence": "Retained as the proposal; revisit if founder-device use shows re-asks from refutations the action did not cause are a material share of the founder's asks."
+    },
+    {
+      "name": "Simplest viable: the unit spec's one hook inside greg/missions.py's approval fold",
+      "description": "Discard the scope digest from approved_scopes inside the mission fold on mission.compensation_required or on a REFUTED appraisal attributable to the action, and mark the scope's APPROVAL requests consumed, as the paid branch already does.",
+      "advantages": [
+        "One place, no new event type, no extra ledger records",
+        "No per-tick fold outside the mission book"
+      ],
+      "disadvantages": [
+        "greg/missions.py is edited by open PRs #201, #209, #214, #228 and #229, so it waits on five PRs",
+        "Its headline trigger is vacuous: mission.compensation_required is recorded only by _compensate for ABANDONED or SUPERSEDED missions, which select nothing more (critique 2 of the unit spec; confirmed by review round 2)",
+        "It reads no ineffective evidence and no founder-reconciled run, the two routes this unit's tests and reviews found live"
+      ],
+      "revival_evidence": "After #201, #209, #214, #228 and #229 land, folding the withdrawal into missions.py could replace the extra records if the integrator wants one place; the real-body tests and 21 mutants carry over as its acceptance."
+    },
+    {
+      "name": "Strongest competing design: the whole of WU-09, including a founder-signed AUTONOMY_GRANT",
+      "description": "Part A plus Part B: an AUTONOMY_GRANT founder command (greg/founder.py, one branch in greg/body.py), autonomy/levels.py issuance above A0 bound to a verified founder command id, BOUNDED_AUTONOMY through the grant only, and a manage-by-exception view in greg/mission_control.py.",
+      "advantages": [
+        "Reaches the levels above SUPERVISED_CANARY that section 59 lists",
+        "Lets founder intervention decline for granted tuples (one row per exception)",
+        "Closes the autonomy/levels.py authorized_by string gap"
+      ],
+      "disadvantages": [
+        "Creates a second approval path beside AuthorityOffice's exact-scope approvals unless it is designed as one path, which is a kill criterion of section 67 and an authority-granting change",
+        "Needs a founder decision before it is built (critique 2 of the unit spec)",
+        "Touches greg/founder.py, greg/missions.py, greg/body.py and greg/mission_control.py, the same command surface as WU-06 and WU-12"
+      ],
+      "revival_evidence": "A founder decision on a single authority path for grants above SUPERVISED_CANARY; this unit's report is its read-only input."
+    },
+    {
+      "name": "Staged/reversible experiment: shadow the regression first",
+      "description": "Compute failures() every tick and record what would be withdrawn, without withdrawing, until founder-device use measures how many re-asks the rule would cause.",
+      "advantages": [
+        "Measures founder burden before changing behaviour",
+        "Zero behaviour change on the body"
+      ],
+      "disadvantages": [
+        "Leaves the reproduced defect live: a scope proven ineffective or refuted keeps running unasked during the shadow period",
+        "There is no founder-device use yet to measure (VEPMC 0), so the shadow period has no end condition today"
+      ],
+      "revival_evidence": "If the founder finds the re-asks a burden, a shadow mode for the non-attributable refutation case only could be added behind a founder-signed setting."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "A founder approval given once for an unpaid exact scope keeps authorizing that scope after its run was shown ineffective or its closure was refuted, so GREG re-runs a failing action without asking. No surface answers section 59.",
+    "advantages": [
+      "No change to the body tick or the ledger",
+      "No new code to review"
+    ],
+    "disadvantages": [
+      "The reproduced defect stays live on the canonical mission path",
+      "Wider worker or node autonomy (WU-03, WU-06) would build on approvals that outlive failure",
+      "Section 59's question stays unanswerable from the ledger"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Section 4 says no model may decide it deserves more privileges, and section 59 says autonomy is earned per tuple. An approval that outlives evidence of failure is privilege kept without evidence. This unit removes that and answers section 59 read-only, without creating any level above SUPERVISED_CANARY. It narrows only.",
+      "material_concerns": [
+        "Part B (AUTONOMY_GRANT, levels.py binding, manage-by-exception view) is not built; spec acceptance tests 4, 5 and 7 are unmet and stay NEEDS_FOUNDER_DECISION",
+        "The underlying effect the founder wants (intervention declining without sovereignty) is not shown: in the short run the change adds re-asks, and nothing ran on a founder device",
+        "Tuple boundaries and thresholds are the implementer's first choices, not the founder's"
+      ],
+      "evidence_refs": [
+        "docs/evidence/standing-approval-regression-2026-10-30/README.md",
+        "greg/autonomy.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Existing mechanisms only: the decision.withdrawn voids_approval record greg/recovery.py already writes, the mission fold that already reads it, the engine's routing.outcome and blames_strategy, and the appraiser's own closure windows. No new store, scheduler or authority path. greg/missions.py, greg/authority.py and greg/appraisal.py are untouched.",
+      "material_concerns": [
+        "greg/autonomy.py mirrors greg/appraisal.py's window rule and the mission fold's reconciled-run judgement; a change there must change both (the real-body tests fail on drift, the mutant gate is not yet in CI)",
+        "The journal kind autonomy.regressed has the same name as an event type autonomy/levels.py writes to its own ledger for a licence regression; different ledger and meaning, to reconcile when Part B binds the two",
+        "A standing mission whose first-ranked strategy was regressed waits on the re-ask even when another standing strategy could heal; ranking lives in greg/missions.py"
+      ],
+      "evidence_refs": [
+        "greg/autonomy.py",
+        "greg/body.py (Body.tick, one call line)",
+        "greg/recovery.py (the withdrawal pattern)"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Two review rounds, each by two separate agents of this same session (not independent sessions, not humans), attacked the claims. Round 1 (head c925ebfd) reported 4 findings; round 2 (head 6e1cc639) reported 6. The confirmed defects were reproduced before any change and fixed with real-body tests and mutants: 21 of 21 mutants caught at d8cc8f13, re-run by the final verification. The fixes were checked by rerunning the reviewers' probes and by that final verification, not by a third review.",
+      "material_concerns": [
+        "Round 2's WU09-ATK-1 (medium) showed the round-1 code missed founder-reconciled runs: an unasked rerun at ledger position 46, regression only at 53",
+        "Three narrowing-only guards of the round-2 code are not pinned by any test (their mutants survive), and six earlier reviewer mutants survive as disclosed",
+        "Info findings TF-2, TF-3 and TF-4 were corrected after the final verification, in de114fe5 (records only): the test docstring now names the two tests that start no body, mutant 6's label says it pins the returned list, and the README Limits state that any REFUTED verdict regresses, including refutations the action did not cause",
+        "The mutant script is not wired into Canonical CI"
+      ],
+      "evidence_refs": [
+        "docs/evidence/standing-approval-regression-2026-10-30/README.md (Review round 1, Review round 2)",
+        "scripts/ci/check_standing_approval_regression_mutants.py",
+        "reviewers' probes in the session scratchpad (outside the repository)"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Reversible by reverting the branch; no file format change. The per-tick fold was made n log n after round 1 (counted comparisons 971 and 4,687 at 100 and 400 heals, 4.8x; the round-0 code 42,648 and 680,598, 16.0x; the test bound is 8x). It does nothing when no approval stands.",
+      "material_concerns": [
+        "Founder burden: any REFUTED verdict regresses the approvals of runs in its window, and a reconciled run that worked loses its approval at its hold because the appraisal refutes a window holding a run with no Gate receipt",
+        "On an existing body, failure evidence already on its ledger regresses still-standing approvals the first time this code runs",
+        "Wall time of the fold was not measured on founder hardware; the cost test counts comparisons",
+        "The standing_reconciliation route skips on this host (no bubblewrap), so it is not exercised"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_greg_standing_approval_regression.py (cost test)",
+        "docs/evidence/standing-approval-regression-2026-10-30/README.md (Limits)"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "No evidence is deleted or rewritten; the change appends records and every withdrawal names its evidence. The report writes nothing and says it grants nothing. Negative results (the reconciled-run gap, survivors, unmeasured founder burden) are kept.",
+      "material_concerns": [
+        "Claims must stay at INTEGRATION-TESTED in a container with a test key; nothing is founder-used, live, reboot-verified on a founder device or externally verified; VEPMC 0",
+        "The full unit and integration suite and Canonical CI were not run on this head",
+        "Compensations are counted, never judged: an open compensation of an external effect does not lower a tuple's level, which is a founder policy choice"
+      ],
+      "evidence_refs": [
+        "docs/evidence/standing-approval-regression-2026-10-30/README.md",
+        "greg/autonomy.py report()"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The defect exists on the base: an unpaid standing approval survives an ineffective run and a REFUTED closure, and the scope re-runs unasked",
+      "tier": "sandbox_execution",
+      "reference": "docs/evidence/standing-approval-regression-2026-10-30/README.md, 'The defect, reproduced on a real body'; scratch probe on a6c29bbd (outside the repository)",
+      "finding": "Ineffective case: w-bad DONE, w-good DONE, w-bad DONE, w-good DONE with no new ask after drift. Refuted case: REFUTED, then w DONE, w DONE with no ask"
+    },
+    {
+      "claim": "The new tests fail on the code before each fix",
+      "tier": "unit_test",
+      "reference": "README 'Commands and results', fail-before rows (a)-(d)",
+      "finding": "(a) base + test file: collection error, no greg.autonomy. (b) base + greg/autonomy.py without the body hook or CLI: 4 failed, 5 passed. (c) c925ebfd + round-1 tests: 3 failed, 13 passed. (d) 6e1cc639 + round-2 tests: 2 failed, 4 passed (selection). Tests that pass on old code take their fail-before evidence from mutants"
+    },
+    {
+      "claim": "After the change the scope is asked again and autonomy.regressed is recorded; a verified hold keeps its approval; the ablation fails",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_greg_standing_approval_regression.py (20 tests, real bodies, engine, AuthorityOffice, Gate, separate appraiser process, test key)",
+      "finding": "20 passed at d8cc8f13 (final verification, 24.17 s); 9 passed at round 0 and 16 at round 1"
+    },
+    {
+      "claim": "Every pinned safeguard is load-bearing",
+      "tier": "unit_test",
+      "reference": "scripts/ci/check_standing_approval_regression_mutants.py",
+      "finding": "21 of 21 mutants caught at d8cc8f13 after the unmutated baseline passed (9 round 0, 6 round 1, 6 round 2); re-run by the final verification"
+    },
+    {
+      "claim": "Related suites still pass, including test_guardrail_autonomy_is_not_authority",
+      "tier": "unit_test",
+      "reference": "README 'Related suites' row; final verification runs A and B",
+      "finding": "Implementer, 28 files: 578 passed, 4 skipped (all 4 need bubblewrap). Verifier run A, 29 files: 601 passed, 4 skipped. Verifier run B, 19 more files: 1 failed (a wall-clock TIMEOUT in test_greg_cognition's optimize case under 4 workers; no greg/cognition file changed), then 307 passed, 3 skipped unchanged. Round-2 reviewer, 53 further body-ticking files on 6e1cc639: 1013 passed, 11 skipped"
+    },
+    {
+      "claim": "The per-tick failure fold grows n log n, not quadratically",
+      "tier": "deterministic_fixture",
+      "reference": "tests/unit/test_greg_standing_approval_regression.py, test_the_failure_fold_the_body_runs_every_tick_grows_n_log_n_with_a_standing_history",
+      "finding": "971 and 4,687 counted comparisons at 100 and 400 heals (4.8x) against 42,648 and 680,598 on c925ebfd (16.0x); bound 8x. Round-1 reviewer timing on a synthetic history of 250 to 2,000 holds: 0.012 to 0.674 s before, 0.001 to 0.012 s after"
+    },
+    {
+      "claim": "No second authority source and no broken schema reference",
+      "tier": "sandbox_execution",
+      "reference": "scripts/ci/check_authority_singleton.py, scripts/ci/check_schema_refs.py (final verification)",
+      "finding": "One source of authority for each of 6 governed artifacts; 27 schemas and 130 local refs resolve"
+    },
+    {
+      "claim": "The branch merges cleanly into the current integration head",
+      "tier": "sandbox_execution",
+      "reference": "git merge-tree --write-tree origin/claude/greg-full-machine-completion-whgiee HEAD",
+      "finding": "No conflicts into b1950be2 at d8cc8f13 (tree f5ae642b); b1950be2 adds only tests/unit/test_greg_closure_scoped_claims.py. Tests were not run on the merged tree"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Round 1: the report placed a verified run where its appraisal was recorded, so a late appraisal counted as verified after a later refutation (WU09-R-1)",
+      "tier": "sandbox_execution",
+      "reference": "README 'Review round 1'; reviewer probe on c925ebfd",
+      "finding": "RECOMMENDER with verified_since_last_failure 1 though the latest run was refuted. Fixed: outcomes sit at each run's own ledger position"
+    },
+    {
+      "claim": "Round 1: the per-tick fold re-sorted marks per appraisal and rescanned runs per refuted window (WU09-R-2); window bounds, the ineffective drop and the Wilson condition were untested (F1, F2)",
+      "tier": "sandbox_execution",
+      "reference": "README 'Review round 1'",
+      "finding": "About 4x per doubling of holds. Fixed by one sort, per-mission indexes and bisect. The window-start, window-end, ineffective-drop and Wilson mutants that survived the 9 tests are now caught (mutants 10-13); the 'regressions not severe' mutant became moot when a regression stopped counting as a second drop"
+    },
+    {
+      "claim": "Round 2: a run the founder reconciled as executed and proven ineffective re-ran unasked (WU09-ATK-1, medium)",
+      "tier": "sandbox_execution",
+      "reference": "README 'Review round 2'; reviewer probe test_probe_reconciled.py run in the worktree at 6e1cc639",
+      "finding": "Two-check mission: unasked w-bad rerun at ledger position 46, first regression at 53. Fixed: failures() judges reconciled runs from the observations after them; probe 2 passed after the fix"
+    },
+    {
+      "claim": "Round 2: the report folded no compensations (WU09-ATK-2, low) and two report guards were untested (WU09-TF-1, low)",
+      "tier": "unit_test",
+      "reference": "README 'Review round 2'",
+      "finding": "_blank had no compensation field; mutants X1 and X2 survived 16 tests. Fixed: compensations counted, not judged; tests added, X1 and X2 caught"
+    },
+    {
+      "claim": "Round 2 info findings TF-2, TF-3 and TF-4 were left unfixed by the fix round",
+      "tier": "readme_claim",
+      "reference": "tests/unit/test_greg_standing_approval_regression.py docstring; scripts/ci/check_standing_approval_regression_mutants.py mutant 6; README Limits",
+      "finding": "The docstring says every test runs a real body (the Wilson/band and cost tests do not); mutant 6 is caught only through regress()'s return value because ledger keys already de-duplicate; the README Limits omit that any REFUTED verdict regresses, including non-action causes. Corrected afterwards in de114fe5 (docstring, mutant label, README Limits); no code changed"
+    },
+    {
+      "claim": "Mutants survive outside the script",
+      "tier": "unit_test",
+      "reference": "README Limits",
+      "finding": "Three narrowing-only guards of the round-2 code survive (bound producers, unmeasured reads, the next-run boundary) and six earlier reviewer mutants survive as equivalent or narrowing-only; none can keep an approval standing"
+    },
+    {
+      "claim": "A reconciled run that worked still loses its approval at its hold",
+      "tier": "unit_test",
+      "reference": "test_a_reconciled_run_that_worked_keeps_its_standing_approval",
+      "finding": "The appraisal refutes a window holding a run with no Gate receipt, so the approval falls then: correct narrowing, extra founder burden"
+    },
+    {
+      "claim": "Not exercised or not run",
+      "tier": "other",
+      "reference": "final verification limitations",
+      "finding": "The standing_reconciliation route skips (no bubblewrap); the full unit and integration suite and Canonical CI were not run on this head; nothing ran on a founder device"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "A founder approval of an unpaid exact scope never outlives evidence that a run under it failed, and the founder can read, per (capability, action class, target pattern, budget band), what level the ledger's evidence has earned, with nothing above SUPERVISED_CANARY reachable from evidence and nothing granted.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Failure evidence withdraws a standing approval before the next selection",
+        "amplified_value": "Every later autonomy step (WU-03, WU-06, Part B) builds on approvals that fall on failure, so earned autonomy has a working demotion before any promotion exists. Reverses into a liability if the evidence is too broad and re-asks swamp the founder (D1)"
+      },
+      {
+        "id": "A2",
+        "statement": "Reuses the withdrawal record and fold that restores already use; no edit to missions.py, authority.py or appraisal.py",
+        "amplified_value": "Lands before five open PRs that edit greg/missions.py and stays one authority path. Reverses if the mirrored window and reconciled-run rules drift from their owners (D9)"
+      },
+      {
+        "id": "A3",
+        "statement": "A read-only per-tuple report answers section 59 from the ledger alone",
+        "amplified_value": "The founder sees counts, a Wilson bound, interventions per verified run and what the next level needs; Part B can take it as its only input. Reverses if anyone reads a reported level as a grant; the report says it grants nothing"
+      },
+      {
+        "id": "A4",
+        "statement": "Each safeguard is pinned by a real-body test and a mutant",
+        "amplified_value": "21 mutants make a silent weakening visible, once the script runs in Canonical CI (D9)"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Founder burden: any REFUTED verdict regresses the approvals of runs in its window, including refutations the action did not cause, and a reconciled run that worked loses its approval at its hold",
+        "severity": "medium",
+        "response_type": "governance",
+        "redesigned_response": "Kept conservative (narrowing only); the founder re-approves with one decision; stated as a limit and as dissent, with the attribution rule left to a founder decision"
+      },
+      {
+        "id": "D2",
+        "statement": "A standing mission whose first-ranked strategy was regressed waits on the re-ask even when another standing strategy could heal",
+        "severity": "medium",
+        "response_type": "modularity",
+        "redesigned_response": "Ranking lives in greg/missions.py, which five open PRs edit; recorded as a follow-up for after #209 and #214"
+      },
+      {
+        "id": "D3",
+        "statement": "Failure evidence covers only ineffective receipted runs and REFUTED windows; founder-reconciled runs, REFUSED receipts, collateral blame and signed pre_approved_steps are not covered",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Each excluded case named in the module and README with the reason the mission loop already handles it; reconciled runs were then found live by round 2 and added in Pass 2"
+      },
+      {
+        "id": "D4",
+        "statement": "Tuple boundaries (target scheme, budget bands $0 / up to $1 / $10 / $100 / over $100) and thresholds (5 verified since the last failure, Wilson lower bound 0.5 at z 1.96) are not founder-ratified",
+        "severity": "low",
+        "response_type": "governance",
+        "redesigned_response": "Declared as constants in greg/autonomy.py and printed by the report; the levels change nothing, so a wrong threshold misreports but cannot widen authority"
+      },
+      {
+        "id": "D5",
+        "statement": "On an existing body, failure evidence already on its ledger regresses still-standing approvals the first time the code runs",
+        "severity": "low",
+        "response_type": "evidence",
+        "redesigned_response": "Stated as the upgrade effect; it only narrows, and each withdrawal names its evidence"
+      },
+      {
+        "id": "D6",
+        "statement": "The failure fold runs every tick while an approval stands, and its first version grew about 4x per doubling of holds (round 1, WU09-R-2)",
+        "severity": "medium",
+        "response_type": "protective",
+        "redesigned_response": "One sort of the marks, runs indexed per mission, window runs by bisect, asks indexed by (mission, scope); a counted-comparison test bounds growth at 8x per 4x history (measured 4.8x)"
+      },
+      {
+        "id": "D7",
+        "statement": "The first report ordered runs by where their verdicts landed (WU09-R-1), and the refuted window's bounds, the ineffective drop and the Wilson condition were untested (F1, F2)",
+        "severity": "medium",
+        "response_type": "protective",
+        "redesigned_response": "Outcomes sit at each run's own ledger position; refuted and ineffective runs come from failures(), the evidence regress() uses; tests in both orderings and for each bound; mutants 10-15"
+      },
+      {
+        "id": "D8",
+        "statement": "Part B is not built: no AUTONOMY_GRANT, no binding of autonomy/levels.py issuance to a signed founder command, no manage-by-exception view; spec acceptance tests 4, 5 and 7 are unmet",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Kept out on purpose: a grant path beside AuthorityOffice would be a second approval plane (section 67); left as NEEDS_FOUNDER_DECISION with this report as its input"
+      },
+      {
+        "id": "D9",
+        "statement": "Assurance gaps: the mutant script is not in Canonical CI, and greg/autonomy.py mirrors greg/appraisal.py's window rule and the mission fold's judgement",
+        "severity": "low",
+        "response_type": "evidence",
+        "redesigned_response": "Real-body tests run the real appraiser and fold, so drift fails them in job 1's full suite; wiring the mutant script is handed to the #196 integrator"
+      }
+    ],
+    "comparisons": {
+      "baseline": "a6c29bbd: the approval stands until a paid run or a restore; the scope re-ran unasked after an ineffective run and after a REFUTED closure (reproduced)",
+      "do_nothing": "The defect stays live on the canonical mission path; section 59 stays unanswered",
+      "simplest_viable_alternative": "One hook in greg/missions.py: waits on #201, #209, #214, #228 and #229, and its compensation trigger is vacuous because compensation_required is recorded only for terminal missions",
+      "strongest_competing_architecture": "Whole WU-09 with AUTONOMY_GRANT: reaches the upper levels but adds a grant path beside AuthorityOffice; needs a founder decision first",
+      "reversible_experiment": "This change as a draft child of #196: one revert, no file format change; records already written stay on the ledger and keep narrowing"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "The unit spec's hook inside greg/missions.py",
+        "rejection_reason": "Conflicts with five open PRs and triggers on compensation_required, which no live mission records",
+        "revival_evidence": "#201, #209, #214, #228 and #229 landed and the integrator prefers one place"
+      },
+      {
+        "name": "Make every unpaid approval single-use",
+        "rejection_reason": "Removes standing approvals' purpose: a strategy whose closure was VERIFIED could no longer heal drift unasked (a tested behaviour), and every heal would cost a founder decision",
+        "revival_evidence": "A founder ruling that standing unpaid approvals should not exist"
+      },
+      {
+        "name": "Shadow the regression before enforcing it",
+        "rejection_reason": "Leaves the reproduced defect live, with no founder-device use to end the shadow period",
+        "revival_evidence": "Founder-device evidence that non-attributable refutations dominate the re-asks"
+      },
+      {
+        "name": "AUTONOMY_GRANT in this unit",
+        "rejection_reason": "Authority-granting; risks a second approval plane; needs founder deliberation first",
+        "revival_evidence": "A founder decision on one authority path for grants above SUPERVISED_CANARY"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Pass 1 is the round-0 design strengthened by review round 1 (two reviewers, separate agents of this session, head c925ebfd). Pass 2 re-attacked that strengthened design: review round 2 (two reviewers, separate agents of this session, head 6e1cc639) attacked bypasses, report fidelity and claims; this record then attacked the underlying effect apart from the tests' own success, and the coupling to other owners.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "fragility",
+        "statement": "WU09-ATK-1: a founder-reconciled run has no receipt, so no routing.outcome names it; with two checks no hold closes before drift, and the ineffective scope re-ran unasked (position 46; regression only at 53)",
+        "strengthening_response": "failures() judges a reconciled run from the first observation of each check it advances after the run (before its next run) that passed or measured the world, using the engine's blames_strategy; the report counts reconciled runs apart, never as verified. Two real-body tests (ineffective and worked) and mutants 16-18"
+      },
+      {
+        "id": "W2",
+        "category": "comprehensibility",
+        "statement": "WU09-ATK-2: the report folded no compensations, which the unit spec lists",
+        "strengthening_response": "compensation_required, compensated and compensation_open counted against the original run's tuple; counted, not judged, so levels do not change; test and mutant 19"
+      },
+      {
+        "id": "W3",
+        "category": "fragility",
+        "statement": "WU09-TF-1: two report guards were untested; X1 (a later closure judges a run made before its window) and X2 (VERIFIED_UNMET counted as verified) survived",
+        "strengthening_response": "The ordering test checks the report while the first hold is unappraised; a real-body bounded mission closes unmet; X1 and X2 are mutants 20 and 21, caught"
+      },
+      {
+        "id": "W4",
+        "category": "comprehensibility",
+        "statement": "TF-2, TF-3, TF-4 (info): the test docstring, mutant 6's label and the README Limits overstate or omit; the implementer's first report was stale against the head",
+        "strengthening_response": "Corrected in de114fe5: the docstring, mutant 6's label and the README Limits (including the event-name overlap with autonomy/levels.py) now state what the tests show; the final verification had recomputed every README number it checked"
+      },
+      {
+        "id": "W5",
+        "category": "fragility",
+        "statement": "Three narrowing-only guards of the round-2 code are not pinned (mutants survive)",
+        "strengthening_response": "Disclosed in the README; each mutant only adds withdrawals and cannot keep an approval standing"
+      },
+      {
+        "id": "W6",
+        "category": "other",
+        "statement": "Attack on the underlying effect: the tests show approvals falling, not founder intervention declining; in the short run every regression adds a founder decision, and no founder used it",
+        "strengthening_response": "The report prints founder_interventions and interventions_per_verified_run per tuple so the effect can be measured on real use; claims stay at INTEGRATION-TESTED and the effect claim is left to founder-device evidence"
+      },
+      {
+        "id": "W7",
+        "category": "dependency",
+        "statement": "greg/autonomy.py depends on other owners' records (routing.outcome, mission.appraised windows, decision.requested fact ids, blames_strategy) and shares greg/body.py with #221; the journal kind autonomy.regressed shares its name with an autonomy/levels.py licence event (found while writing this record, not by a reviewer)",
+        "strengthening_response": "Real-body tests fail on record-format drift; #221's body.py hunks are outside Body.tick (checked by the round-2 reviewer); the name overlap is handed to Part B, which must reconcile the two"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Narrowing only and one founder decision restores the approval; an attribution rule needs the appraiser to name causes, which it does not, and a founder decision",
+        "owner": "Alfonso Lopez (policy); greg/autonomy.py maintainer",
+        "review_trigger": "Founder-device use shows re-asks from refutations the action did not cause, or the founder calls the re-asks a burden"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "deferred",
+        "rationale": "Ranking is in greg/missions.py, which five open PRs edit",
+        "owner": "#196 integrator; greg/missions.py owners",
+        "review_trigger": "#209 and #214 merged into #196"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "resolved",
+        "rationale": "Founder-reconciled runs are now covered (W1); REFUSED receipts, collateral blame and pre_approved_steps stay excluded with stated reasons (the loop already keeps the first two out of selection; the third is part of the signed mission)",
+        "owner": "greg/autonomy.py maintainer",
+        "review_trigger": "Any probe showing a scope re-run unasked after failure evidence under a standing approval"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "deferred",
+        "rationale": "Ratification is the founder's; the levels grant nothing meanwhile",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "Founder review of greg/autonomy.py constants, or the Part B decision"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "Withdrawing approvals that existing evidence already shows failed is the intended effect",
+        "owner": "#196 integrator (release note)",
+        "review_trigger": "First run of this code on a body with standing approvals"
+      },
+      {
+        "disadvantage_id": "D6",
+        "outcome": "resolved",
+        "rationale": "Measured 4.8x for a 4x history by counted comparisons, against 16.0x before; the bound is a test",
+        "owner": "greg/autonomy.py maintainer",
+        "review_trigger": "Tick time on founder hardware dominated by the fold"
+      },
+      {
+        "disadvantage_id": "D7",
+        "outcome": "resolved",
+        "rationale": "Ordering by each run's own place, tested both ways; bounds and drops pinned by tests and mutants",
+        "owner": "greg/autonomy.py maintainer",
+        "review_trigger": "A surviving mutant of the report's ordering or window guards"
+      },
+      {
+        "disadvantage_id": "D8",
+        "outcome": "deferred",
+        "rationale": "Authority-granting; must be one authority path, decided by the founder",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "Founder decision on AUTONOMY_GRANT and the levels.py binding"
+      },
+      {
+        "disadvantage_id": "D9",
+        "outcome": "deferred",
+        "rationale": "canonical-ci.yml is edited by #201, #209, #214, #215 and #232, so the wiring is left to the integrator",
+        "owner": "#196 integrator",
+        "review_trigger": "Intake of this PR into #196"
+      }
+    ],
+    "final_design": "greg/autonomy.py: failures() names runs covered by routing.outcome ineffective, by the first measured failing observation after a founder-reconciled run, or by a REFUTED appraisal of the closure window holding the run; regress() records autonomy.regressed then decision.withdrawn {voids_approval: true} for each still-standing APPROVAL asked before the run, idempotently after a crash; one call in Body.tick before Goal Gravity and the engine select; report() and `greg autonomy` fold per tuple into SHADOW, RECOMMENDER or SUPERVISED_CANARY, counting reconciled runs and compensations, writing nothing and granting nothing.",
+    "residual_risks": [
+      {
+        "risk": "Re-asks from refutations the action did not cause add founder burden",
+        "mitigation": "Narrowing only; one decision restores; the report shows interventions per verified run",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "Founder-device use"
+      },
+      {
+        "risk": "A future change to the appraiser's window or the mission fold's judgement drifts from greg/autonomy.py",
+        "mitigation": "Real-body tests run the real appraiser and fold; the mutant gate once wired into Canonical CI",
+        "owner": "#196 integrator; greg/appraisal.py and greg/missions.py owners",
+        "review_trigger": "Any PR touching greg/appraisal.py windows or greg/missions.py reconciliation"
+      },
+      {
+        "risk": "Part B is built as a second approval path",
+        "mitigation": "This record and the PR name section 67's kill criterion; the report grants nothing and caps at SUPERVISED_CANARY",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "Any proposal for AUTONOMY_GRANT"
+      },
+      {
+        "risk": "The standing_reconciliation route is unexercised here",
+        "mitigation": "It goes through routing.founder_reconciled like the tested route",
+        "owner": "#196 integrator",
+        "review_trigger": "A run on a host with bubblewrap (Canonical CI job 1)"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded with thresholds; neither entry blocks a draft. The first blocks nothing unless its threshold is met; the second is a founder policy choice.",
+    "entries": [
+      {
+        "role": "Operator and Maintainer",
+        "position": "Regress only on a refutation attributable to the run's action, as the unit spec worded it, and not on every REFUTED verdict in the window; a reconciled run that worked should not lose its approval merely because it has no Gate receipt.",
+        "rationale": "Every non-attributable re-ask is founder burden without gain (section 67), and the 'Jarvis' effect is declining intervention.",
+        "evidence_threshold": "Founder-device evidence that re-asks from refutations the action did not cause are a material share of the founder's asks, or the founder says so",
+        "owner": "Alfonso Lopez; greg/autonomy.py maintainer",
+        "review_trigger": "First founder-device use, or the appraiser gaining cause attribution"
+      },
+      {
+        "role": "Adversarial Reviewer",
+        "position": "An open compensation of an external or irreversible effect should hold a tuple's level down, not only be counted.",
+        "rationale": "A tuple could read SUPERVISED_CANARY while one of its effects still awaits undoing.",
+        "evidence_threshold": "A founder ruling, or a ledger where a tuple reaches SUPERVISED_CANARY with an external or irreversible compensation open",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "The Part B decision, or the first such ledger"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "Alfonso Lopez (merge, Part B, the thresholds and the attribution rule); #196 integrator for intake"
+  },
+  "migration_plan": "None required: no file format changes. The new journal kind autonomy.regressed and the existing decision.withdrawn are appended. On the first tick of an existing body, failure evidence already on its ledger withdraws still-standing approvals of failed runs; the founder re-approves any scope he still wants standing.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert this branch's commits, or decline intake into #196",
+      "Records already written stay on the append-only ledger: withdrawn approvals stay withdrawn (narrowing), and the founder re-approves what he wants"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Any withdrawal or report path adds to approved_scopes, answers a request or otherwise widens authority",
+    "report() or `greg autonomy` writes to the ledger, or reports a level above SUPERVISED_CANARY",
+    "A scope re-runs without a fresh founder decision after failure evidence named a run under the same standing approval",
+    "A grant path above SUPERVISED_CANARY is added beside AuthorityOffice instead of through one founder-decided authority path",
+    "Founder re-asks caused by this rule increase founder burden without a matching reduction in failed re-runs, on founder-device evidence"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez decides merge, Part B, the thresholds and the attribution rule; the #196 integrator decides intake and wires the mutant gate; session_01Kucyfm6YBHMTjaiC1M9hqD owns the reversible draft. All five roles recommend RETAIN for Part A.",
+  "review_trigger": "Intake into #196, Canonical CI on the merged tree, the founder's Part B decision, or the first founder-device use"
+}

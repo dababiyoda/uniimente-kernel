@@ -126,6 +126,15 @@ The bound is 8x.
     already keeps that strategy out of selection.
   - A collateral regression ("regressed X") is not used as evidence. The fold never re-runs that strategy
     automatically.
+- **Any refutation regresses:** a REFUTED verdict regresses the approvals of the runs in that closure's window even
+  when the action did not cause it (the world changed between the hold and the appraisal, or another strategy broke
+  the check). This only narrows authority; the founder's next approval restores it. Attribution is a founder decision.
+- **Mutant 6** ("one rid returned twice in a call") is caught through the list `regress()` returns. On the ledger, the
+  record keys `[rid, 'regressed']` and `[rid, 'withdrawn', 'regressed']` already keep a run named by two failures to
+  one regression, with or without the guard.
+- **Event name:** the journal kind `autonomy.regressed` shares its name with the licence event `autonomy/levels.py`
+  writes, as payload type `autonomy.regressed` inside an `event` record on its own ledger. The record types differ, so
+  neither reader sees the other's rows; the shared name is a naming hazard only.
 - **Upgrade effect:** on a body that already holds approvals, the failure evidence on its ledger regresses them the
   first time this code runs.
 - **Tuple boundaries:**

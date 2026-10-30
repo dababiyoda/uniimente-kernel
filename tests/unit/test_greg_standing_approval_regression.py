@@ -1,7 +1,9 @@
 """A standing approval falls on failure evidence; the earned-autonomy fold reports and never grants (WU-09 part A).
 
-Every test runs a real body in a temporary home with a real (test) founder key: signed MISSION and DECISION commands,
-the real mission engine, AuthorityOffice and Gate, and the separate appraiser process. The test key is not Alfonso's.
+The behavioural tests run a real body in a temporary home with a real (test) founder key: signed MISSION and DECISION
+commands, the real mission engine, AuthorityOffice and Gate, and the separate appraiser process. The ordering test
+stands in one appraisal with an in-process UNAVAILABLE result. The Wilson/band test and the comparison-count test are
+unit tests on pure functions and a synthetic journal. The test key is not Alfonso's.
 """
 from __future__ import annotations
 

@@ -38,7 +38,7 @@ MUTANTS = [
      INEFFECTIVE),
     ("approvals asked after the failed run withdrawn too", "greg/autonomy.py",
      'or not pos.get(fact_id("decision.requested", rid), ran_at) < ran_at)', "or False)", FRESH),
-    ("one rid regressed twice in a call", "greg/autonomy.py", " or rid in handled\n", "\n", TWICE),
+    ("one rid returned twice in a call (the ledger keys already keep one regression)", "greg/autonomy.py", " or rid in handled\n", "\n", TWICE),
     ("retained regression not reused after a crash", "greg/autonomy.py",
      'journal.retained("autonomy.regressed", key) or ', "", CRASH),
     ("evidence lifts a tuple above the earned ceiling", "greg/autonomy.py",

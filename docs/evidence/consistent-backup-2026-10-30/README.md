@@ -96,6 +96,8 @@ Run from `/home/user/wu14` with `PYTHONDONTWRITEBYTECODE=1 /home/user/venv311/bi
 | `tests/integration/test_greg_backup_process.py` (two real `greg run` processes) | 2 passed. The race test, in each of 7 runs: 19-20 of 20 seeds taken while the body appended, **20 of 20 restored held**; the cadence test's first backup was verified and restored on a second "machine" |
 | `tests/unit/test_greg_restore.py tests/unit/test_greg_restore_fold.py` plus the seed tests of `tests/unit/test_foundry_systems.py` (`-k "restore or seed or Seed or fold"`) | 28 passed |
 | 14 capability, restore, Goal Gravity, platform and Spider-Web suites (`test_greg_capabilities`, `test_greg_capability_ask_label`, `test_greg_goal_gravity_surfaces`, `test_greg_interface`, `test_greg_platform`, `test_greg_spiderweb`, `test_greg_organ_exchange`, `test_greg_routing_integrity`, `test_greg_restore`, `test_greg_restore_fold`, `test_greg_seed_consistency`, `test_greg_backup`, `test_greg_goal_gravity_founder_effect`, `test_greg_goal_gravity_reattack`; `-n 3`) | 168 passed, 3 skipped |
+| `tests/integration/test_greg_first_mission.py tests/integration/test_greg_mission_control.py` | 14 passed |
+| every `tests/unit/test_greg_*.py` plus `tests/unit/test_foundry_systems.py tests/unit/test_ledger_tail_recovery.py` (`-n 3`, 24 min) | 2800 passed, 76 skipped, **3 failed**. All three had one cause: `greg/backup.py` was missing from `foundry/owned-source.json`. That inventory is the confined Foundry worker's read grant (2 `test_greg_mcp_worker` tests: `PermissionError` on `greg/backup.py`) and the packaging inventory (`test_greg_packaging`). Fixed by adding it; those two files then: 6 passed. The rest of the broad run was not repeated after the one-line fix |
 | `python -m foundry.completion --run 46` (system #46's exercise) | unchanged result digest `sha256:3938fd98...` |
 | `python -B scripts/ci/check_consistent_backup_mutants.py` | **16 of 16 mutants caught** (6 seed consistency, 2 earlier recovery point, 8 cadence and drill) |
 
@@ -115,6 +117,8 @@ The independent appraiser judges a backup hold VERIFIED from its receipts. `body
   - Its standing mission expires at its signed horizon (30 days by default) and asks for renewal like any mission.
 - **Not built from the unit's design sketch.** The doctor and Mission Control line ("last verified backup N h old")
   and an availability ask that fires when the RPO elapses without the mission are recorded as follow-ups.
+- **Cost.** `body.backup_status`, `before_dispatch` and every seed each load and verify the whole ledger read-only.
+  The cost grows with history. It was not measured on a large ledger.
 - **A coupling.** `before_dispatch` reads the engine's `greg.mission.dispatching` and grant records. A change to
   those formats falls back to the latest head, and the disk-loss test would then fail on the RECONCILIATION ask.
 - **Untested by a dedicated test.** These are written for a running body's churn, but no test forces their race:

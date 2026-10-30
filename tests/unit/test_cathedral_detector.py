@@ -228,7 +228,7 @@ def test_activity_under_every_floor_is_not_cathedral(tmp_path):
     assert report["activity"]["rose"] is False and report["activity"]["floors_reached"] == []
 
 
-def test_activity_counts_only_git_objects_inside_the_window(tmp_path):
+def test_activity_counts_only_git_objects_inside_the_window(tmp_path, monkeypatch):
     until = datetime(2026, 10, 30, tzinfo=timezone.utc)
     repo = new_repo(tmp_path)
     commit(repo, until - 31 * DAY, {"old.md": "x", "old.py": "x"}, "before the window")
@@ -247,6 +247,9 @@ def test_activity_counts_only_git_objects_inside_the_window(tmp_path):
     counts = cathedral.activity(repo, until - 30 * DAY, until)["counts"]
     assert counts == {"commits": 6, "pr_like_merges": 2, "new_md": 4, "new_py": 1, "new_evidence_readmes": 1}
     assert cathedral.activity(tmp_path / "nowhere", until - DAY, until)["complete"] is False
+    monkeypatch.setenv("PATH", str(tmp_path / "no-git-here"))                  # git missing: incomplete, no crash
+    assert cathedral.activity(repo, until - DAY, until)["complete"] is False
+    monkeypatch.undo()
     empty = tmp_path / "empty"
     empty.mkdir()
     git(empty, "init", "-q")

@@ -111,10 +111,14 @@ def window(*, since: datetime | str | None = None, until: datetime | str | None 
 # -- activity, from git objects -----------------------------------------------------------------------
 
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:
-    # GIT_OPTIONAL_LOCKS=0: a status-like read must not refresh the index or take a lock.
-    return subprocess.run(["git", "-C", str(repo), "-c", "core.quotepath=off", "-c", "log.showSignature=false", *args],
-                          capture_output=True, text=True, timeout=300,
-                          env={**os.environ, "GIT_OPTIONAL_LOCKS": "0", "GIT_TERMINAL_PROMPT": "0", "LC_ALL": "C"})
+    # GIT_OPTIONAL_LOCKS=0: a status-like read must not refresh the index or take a lock. A missing git or a read
+    # that times out is a failed read (returncode 127), reported as incomplete history, never a crash.
+    argv = ["git", "-C", str(repo), "-c", "core.quotepath=off", "-c", "log.showSignature=false", *args]
+    try:
+        return subprocess.run(argv, capture_output=True, text=True, timeout=300,
+                              env={**os.environ, "GIT_OPTIONAL_LOCKS": "0", "GIT_TERMINAL_PROMPT": "0", "LC_ALL": "C"})
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return subprocess.CompletedProcess(argv, 127, "", f"{type(exc).__name__}: {exc}")
 
 
 def activity(repo: Path | str, since: datetime, until: datetime) -> dict:
@@ -123,7 +127,8 @@ def activity(repo: Path | str, since: datetime, until: datetime) -> dict:
     repo = Path(repo)
     out = {"repository": str(repo), "rule": ACTIVITY_RULE}
     if _git(repo, "rev-parse", "--is-inside-work-tree").returncode != 0:
-        return {**out, "complete": False, "counts": None, "why": f"{repo} is not a git repository"}
+        return {**out, "complete": False, "counts": None,
+                "why": f"{repo} is not a git repository, or git could not be run there"}
     if _git(repo, "rev-parse", "--is-shallow-repository").stdout.strip() == "true":
         depth = _git(repo, "rev-list", "--count", "HEAD").stdout.strip()
         return {**out, "complete": False, "shallow": True, "depth": int(depth) if depth.isdigit() else None,

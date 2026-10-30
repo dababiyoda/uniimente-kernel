@@ -62,6 +62,9 @@ MUTANTS = [
     ("the declared window length is ignored", C,
      'span = THRESHOLDS["window_days"] if days is None else days', 'span = 7 if days is None else days', TC),
     ("an empty window is accepted", C, '    if not start < end:\n', '    if False:\n', TC),
+    ("a missing git crashes the detector", C,
+     '        return subprocess.CompletedProcess(argv, 127, "", f"{type(exc).__name__}: {exc}")\n',
+     '        raise\n', TC),
     ("cli --body alone does not read --home", CLI, 'body_home = args.body or home', 'body_home = args.body', TC),
     # reality-claim guard: ceilings
     ("a claim above its declared kind passes", G, '        if rank(rung) > rank(ceiling):\n', '        if False:\n', TG),
@@ -86,6 +89,8 @@ MUTANTS = [
      '    return False\n', TG),
     ("a negation reaches across clauses", G,
      '    clause = max((m.end() for m in CLAUSE_BREAK.finditer(text, 0, start)), default=0)\n', '    clause = 0\n', TG),
+    ("a negation inside a parenthesis hides the label before it", G,
+     r'NEGATED_AFTER = re.compile(r"^[\s:,\-–—]*', r'NEGATED_AFTER = re.compile(r"^[\s:,(\-–—]*', TG),
     ("one-word labels are read in any case", G, '    any_case = len(parts) > 1 and label not in LABEL_CROSSWALK\n',
      '    any_case = True\n', TG),
     ("a negated container marker contradicts a founder-device claim", G,
@@ -102,7 +107,7 @@ MUTANTS = [
     ("a non-monotone crosswalk passes", G, '        elif any(rank(a) > rank(b) for a, b in zip(rungs, rungs[1:])):\n',
      '        elif False:\n', TG),
     ("the directive's first level is dropped", G, 'return tuple(line for line in lines[begin + 1:end] if line)',
-     'return tuple(line for line in lines[begin + 2:end] if line)', TG),
+     'return tuple(line for line in lines[begin + 1:end] if line)[1:]', TG),
     ("a broken crosswalk does not fail the scan", G, '"failing": ladder + failing + stale,', '"failing": failing + stale,',
      TG),
     # reality-claim guard: the allowlist is never silent

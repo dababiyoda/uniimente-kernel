@@ -190,7 +190,7 @@ NEGATORS = re.compile(r"\b(?:not|no|never|nothing|none|without|nor|neither|until
                       r"omits?|omitted|lacks?|lacking|missing|absent|"
                       r"required|needs?|needed|cannot|can't|isn't|aren't|wasn't|beyond|below|above|short of|"
                       r"instead of|rather than|before|no longer)\b", re.I)
-NEGATED_AFTER = re.compile(r"^[\s:,(\-–—]*(?:(?:is|are|was|were|remains?|stays?|still|yet|as|a)\s+)*"
+NEGATED_AFTER = re.compile(r"^[\s:,\-–—]*(?:(?:is|are|was|were|remains?|stays?|still|yet|as|a)\s+)*"
                            r"(?:not\b|blocked|pending|unreached|unreachable|outstanding|deferred|required|needed|"
                            r"missing|absent|refused|forbidden|excluded|awaits|awaiting|requires|unmet|unproven|"
                            r"unverified|open\b)", re.I)
@@ -218,7 +218,8 @@ def _negated(text: str, start: int, end: int) -> bool:
       labelled FOUNDER-USED, LIVE-BOUNDED or ...");
     * a negator before it governs a labelling verb that is followed only by filler or labels ("Nothing built in a
       container may be labelled FOUNDER-USED");
-    * a negating word follows it ("FOUNDER-USED: pending").
+    * a negating word follows it directly ("FOUNDER-USED: pending"), never from inside a parenthesis:
+      "FOUNDER-USED (not a container run)" is a claim of FOUNDER-USED.
 
     A negation written any other way reads as a claim, so the reader over-reports rather than hides: "not a container,
     FOUNDER-USED" is a claim. The second rule can hide one shape, a negator and a labelling verb in one clause that

@@ -30,7 +30,11 @@ PROGRAMS = frozenset({"steps"})
 PROGRAM_TYPES = frozenset({"array", "object"})
 TYPES = {"string": str, "object": dict, "array": list, "boolean": bool, "integer": int, "number": (int, float)}
 
-def resolve(params, journal, mission_id, *, before_seq=None):
+def resolve(params, journal, mission_id, *, before_seq=None, observe=None):
+    """``observe``: a list, for pipeline.inspect, which reports the producer's value as an observation. It receives,
+    per binding, whether the producer declared its own observation incomplete and whether it vouched for this field.
+    Without it (a handoff into the next action's params), a value the producer's receipt did not keep whole is
+    refused: the next action gets its whole input or nothing."""
     provenance = []
     def visit(value, depth=0, protected=False, program=False):
         if depth > 20:
@@ -80,6 +84,18 @@ def resolve(params, journal, mission_id, *, before_seq=None):
             wanted = TYPES[ref["type"]]
             if type(output) not in (wanted if isinstance(wanted, tuple) else (wanted,)):
                 raise BindingError("producer output violates the declared type")
+            from greg.missions import _held_back
+            held = _held_back(output)
+            if held and observe is None:
+                # a list the receipt kept to its first items, or a value holding a string kept as a prefix, is not
+                # the producer's value: handed on, the next action would act on a silently shortened input (review
+                # of #196, J4; bind edges have refused it since #201's review, 5b)
+                raise BindingError(f"producer output {ref['field']} {held}; a part is not handed on as the whole value")
+            if observe is not None:
+                top = result.get("output")
+                declared = isinstance(top, dict) and top.get("complete") is False and ref["field"] != "complete"
+                observe.append((declared, declared and isinstance(top.get("decided"), list)
+                                and ref["field"] in top["decided"]))
             try:
                 encoded = json.dumps(output, allow_nan=False)
             except (TypeError, ValueError) as exc:
@@ -107,12 +123,22 @@ def inspect(params, ctx):
     from greg.capabilities import CapabilityError
     if ctx.journal is None or not ctx.mission_id or ctx.target != "pipeline:" + str(params.get("action_id", "")):
         raise CapabilityError("pipeline inspection requires its signed mission and producer target")
+    observed = []
     try:
-        # under a key: resolve refuses a binding that would be a capability's whole params
-        wrapped, links = resolve({"value": {"$from_action": params}}, ctx.journal, ctx.mission_id)
+        # under a key: resolve refuses a binding that would be a capability's whole params; ``observe`` reports the
+        # producer's own completeness declaration for this one binding
+        wrapped, links = resolve({"value": {"$from_action": params}}, ctx.journal, ctx.mission_id, observe=observed)
         value = wrapped["value"]
     except PendingInput:
         return {"available": False, "value": None, "bindings": []}
     except BindingError as exc:
         raise CapabilityError(str(exc)) from exc
-    return {"available": True, "value": value, "bindings": links, "authority_created": False}
+    out = {"available": True, "value": value, "bindings": links, "authority_created": False}
+    declared, vouched = observed[0] if observed else (False, False)
+    if declared:
+        # the producer declared its observation incomplete (a PDF page with no text layer): the inspected value says
+        # so too, so a check on it keeps only what more data could not undo. Before, inspection dropped the
+        # declaration, and not_contains passed on a partly read document (review of #196, J3)
+        out["complete"] = False
+        out["decided"] = ["available", "bindings", "authority_created"] + (["value"] if vouched else [])
+    return out

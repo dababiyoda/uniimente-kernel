@@ -1229,6 +1229,7 @@ BUILTINS.update({
 # No second intelligence registry, event store, runtime, policy or model router.
 from greg.cognition.catalog import builtin_entries as _cognitive_entries  # noqa: E402
 BUILTINS.update(_cognitive_entries(CapabilityManifest, _lazy))
+from greg.backup import builtin_entries as _bk; BUILTINS.update(_bk(CapabilityManifest, _lazy))  # noqa: E402,E702
 
 
 class CapabilityRegistry:

@@ -158,12 +158,16 @@ def test_a_kept_prefix_is_never_bound_as_the_whole_value():
 # -- #201's independent review (comment 6334826521), findings 5a, 5b and 6 -------------------------------------------
 
 def test_a_list_holding_a_cut_member_proves_only_what_it_holds():
-    """5a: authority.bounded turns a long list element into a wrapper. A cut member is not the whole element, so a
-    miss against it proves nothing; a hit on another member still does."""
+    """5a: authority.bounded turns a long list element into a wrapper. A cut member is not the whole element: it is
+    never matched as its wrapper. It is compared by the digest and length the receipt kept, as a cut string is
+    (review of #209; these three read INSUFFICIENT before, sound but undecided); a hit on another member decides."""
     output = bounded({"items": ["short", FILLER]})
-    assert judge({"op": "not_contains", "field": "items", "value": FILLER}, output)[0] == INSUFFICIENT
-    assert judge({"op": "contains", "field": "items", "value": FILLER}, output)[0] == INSUFFICIENT
-    assert judge({"op": "equals", "field": "items", "value": ["short", FILLER]}, output)[0] == INSUFFICIENT
+    assert judge({"op": "not_contains", "field": "items", "value": FILLER}, output)[0] == FALSE
+    assert judge({"op": "contains", "field": "items", "value": FILLER}, output)[0] == TRUE
+    assert judge({"op": "equals", "field": "items", "value": ["short", FILLER]}, output)[0] == TRUE
+    assert judge({"op": "contains", "field": "items", "value": FILLER + "x"}, output)[0] == FALSE
+    assert judge({"op": "equals", "field": "items", "value": ["short", FILLER[:-1] + "x"]}, output)[0] == FALSE
+    assert judge({"op": "contains", "field": "items", "value": output["items"][1]}, output)[0] == FALSE  # its wrapper
     assert judge({"op": "contains", "field": "items", "value": "short"}, output)[0] == TRUE
     assert judge({"op": "not_contains", "field": "items", "value": "short"}, output)[0] == FALSE
 
@@ -193,6 +197,15 @@ def test_an_incomplete_output_still_decides_its_own_completeness():
     assert judge({"op": "equals", "field": "pages", "value": 3}, {**output, "decided": ["pages"]})[0] == TRUE
 
 # -- on the mission path: a long non-PDF output (fs.read of a 22 KiB text file) -----------------------------------
+# These run with no whole output kept beside the receipt (the store refuses it, as it does an output past 1 MiB), so
+# the receipt's prefix is all the evidence there is. With the whole kept, the check is decided over it instead:
+# tests/unit/test_greg_whole_output_judgment.py.
+
+@pytest.fixture
+def no_whole_kept(monkeypatch):
+    import greg.authority
+    monkeypatch.setattr(greg.authority, "OUTPUT_ARTIFACT_BYTES", 64)
+
 
 def _forbid(check_id, path, text):
     check = note_check(check_id, path, text)
@@ -200,7 +213,7 @@ def _forbid(check_id, path, text):
     return check
 
 
-def test_a_forbidden_phrase_past_16_kib_of_a_text_file_does_not_close_the_mission(tmp_path):
+def test_a_forbidden_phrase_past_16_kib_of_a_text_file_does_not_close_the_mission(tmp_path, no_whole_kept):
     home, key, body_id, data = make_body(tmp_path)
     contract = data / "contract.txt"
     contract.write_text(FILLER + "Either party may terminate without notice.")
@@ -214,7 +227,7 @@ def test_a_forbidden_phrase_past_16_kib_of_a_text_file_does_not_close_the_missio
                             for e in observed)
 
 
-def test_a_required_phrase_past_16_kib_asks_instead_of_blaming_a_strategy(tmp_path):
+def test_a_required_phrase_past_16_kib_asks_instead_of_blaming_a_strategy(tmp_path, no_whole_kept):
     home, key, body_id, data = make_body(tmp_path)
     contract = data / "contract.txt"
     contract.write_text(FILLER + "The renewal term is twelve months.")
@@ -226,7 +239,7 @@ def test_a_required_phrase_past_16_kib_asks_instead_of_blaming_a_strategy(tmp_pa
     assert any(r.get("kind") == "SENSOR_FAILURE" for r in asks)       # the founder learns it cannot be measured
 
 
-def test_a_restarted_body_does_not_turn_an_incomplete_observation_into_a_pass(tmp_path):
+def test_a_restarted_body_does_not_turn_an_incomplete_observation_into_a_pass(tmp_path, no_whole_kept):
     home, key, body_id, data = make_body(tmp_path)
     contract = data / "contract.txt"
     contract.write_text(FILLER + "Either party may terminate without notice.")

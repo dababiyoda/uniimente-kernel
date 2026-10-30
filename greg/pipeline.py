@@ -21,14 +21,21 @@ PROTECTED = frozenset({"allowed_paths", "tools", "provider", "max_budget_usd", "
     # mcp.act's reach: which credentials a server is handed (as values or files), which hosts it may reach and
     # which paths it may write are founder-signed literals, never an earlier action's output
     "secrets", "secret_files", "bearer", "hosts", "writable"})
+# browser.session's step program: which operation runs on which element, with which credential, whether it is
+# consequential, and which writes its method gate lets through are founder-signed literals (a fill's value is data)
+PROTECTED = PROTECTED | {"op", "selector", "secret", "consequential", "read_methods"}
+# Keys holding a step program: neither the list itself nor a whole step may be an earlier action's output.
+PROGRAMS = frozenset({"steps"})
 TYPES = {"string": str, "object": dict, "array": list, "boolean": bool, "integer": int, "number": (int, float)}
 
 def resolve(params, journal, mission_id, *, before_seq=None):
     provenance = []
-    def visit(value, depth=0, protected=False):
+    def visit(value, depth=0, protected=False, program=False):
         if depth > 20:
             raise BindingError("pipeline input nesting exceeds 20")
         if isinstance(value, dict) and "$from_action" in value:
+            if program:
+                raise BindingError("artifact cannot replace a step program or a whole step")
             if protected or set(value) != {"$from_action"}:
                 raise BindingError("artifact cannot modify an authority or execution scope")
             ref = value["$from_action"]
@@ -78,9 +85,9 @@ def resolve(params, journal, mission_id, *, before_seq=None):
                                "receipt": record.hash, "value_digest": sha256_json(output)})
             return copy.deepcopy(output)
         if isinstance(value, dict):
-            return {k: visit(v, depth+1, protected or k in PROTECTED) for k,v in value.items()}
+            return {k: visit(v, depth+1, protected or k in PROTECTED, k in PROGRAMS) for k,v in value.items()}
         if isinstance(value, list):
-            return [visit(v, depth+1, protected) for v in value]
+            return [visit(v, depth+1, protected, program) for v in value]
         return value
     return visit(params), provenance
 

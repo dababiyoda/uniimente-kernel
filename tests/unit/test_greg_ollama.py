@@ -1,6 +1,8 @@
 """Local open-weight cognition uses the existing router and never acquires authority."""
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import hashlib
 import json
+from pathlib import Path
 from threading import Thread
 
 import pytest
@@ -106,21 +108,47 @@ def test_cloud_and_missing_models_are_not_labeled_local(server):
     assert all(call[0] == "GET" for call in LocalOllama.calls)
 
 
-def test_local_route_is_opt_in_and_requires_an_explicit_model():
+def _permit_local_models(tmp_path, monkeypatch):
+    """Apache-2.0 weights for the models these tests select. Selection now refuses a model with no permitting license."""
+    from greg import licensing
+    apache = (Path(__file__).resolve().parents[1] / "fixtures" / "licenses" / "Apache-2.0.txt").read_text().encode()
+    root = tmp_path / "ollama-models"
+    (root / "blobs").mkdir(parents=True)
+    weights = b"GGUF weights"
+    digests = {}
+    for data in (weights, apache):
+        digest = "sha256:" + hashlib.sha256(data).hexdigest()
+        (root / "blobs" / digest.replace(":", "-")).write_bytes(data)
+        digests[data] = digest
+    layers = [
+        {"mediaType": "application/vnd.ollama.image.model", "digest": digests[weights], "size": len(weights)},
+        {"mediaType": licensing.OLLAMA_LICENSE, "digest": digests[apache], "size": len(apache)},
+    ]
+    for name in ("registry.ollama.ai/library/test/small", "registry.ollama.ai/library/test/better"):
+        path = root / "manifests" / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"schemaVersion": 2, "layers": layers}))
+    monkeypatch.setenv("OLLAMA_MODELS", str(root))
+    monkeypatch.setenv("HOME", str(tmp_path / "empty-home"))
+
+
+def test_local_route_is_opt_in_and_requires_an_explicit_model(tmp_path, monkeypatch):
     assert "ollama" not in [r.provider for r in models.available_routes()[0]]
     routes, missing = models.available_routes(config={"order": ["ollama"]})
     assert not routes and "ollama" in missing
+    _permit_local_models(tmp_path, monkeypatch)
     routes, missing = models.available_routes(config={"order": ["ollama"], "ollama_model": "test:small"})
     assert not missing and routes[0].provider == "ollama"
 
 
-def test_first_body_can_opt_in_without_a_key_and_refuses_cloud_before_creation(tmp_path):
+def test_first_body_can_opt_in_without_a_key_and_refuses_cloud_before_creation(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match="cloud"):
         init_body(tmp_path / "refused", read_roots=[], local_model="test:cloud")
     assert not (tmp_path / "refused").exists()
     home = tmp_path / "local"
     config = init_body(home, read_roots=[], local_model="test:small")
     assert config["models"] == {"order": ["ollama"], "ollama_model": "test:small"}
+    _permit_local_models(tmp_path, monkeypatch)
     transport = planner.default_transport(config=config["models"])
     assert transport.name == "router[ollama:test:small]"
 
@@ -144,9 +172,10 @@ def test_local_model_builds_a_bounded_capability_and_original_signed_mission_res
         assert body.journal.replay("mission.appraised")[0].payload["verdict"] == "VERIFIED"
 
 
-def test_founder_detaches_and_replaces_model_while_identity_and_history_survive(tmp_path, server):
+def test_founder_detaches_and_replaces_model_while_identity_and_history_survive(tmp_path, server, monkeypatch):
     from greg.founder import DEVICE_KINDS
     home, key, body_id, _ = make_body(tmp_path)
+    _permit_local_models(tmp_path, monkeypatch)
     assert "MODEL_ROUTE_SET" not in DEVICE_KINDS
 
     def factory(secrets, config):
@@ -178,8 +207,9 @@ def test_founder_detaches_and_replaces_model_while_identity_and_history_survive(
         assert body.config["body_id"] == body_id
 
 
-def test_open_console_discards_detached_model_draft_before_founder_signs(tmp_path, server):
+def test_open_console_discards_detached_model_draft_before_founder_signs(tmp_path, server, monkeypatch):
     home, key, body_id, _ = make_body(tmp_path)
+    _permit_local_models(tmp_path, monkeypatch)
 
     def transport(selection):
         routes, _ = models.available_routes(config=selection)

@@ -112,6 +112,8 @@ def main():
     ap.add_argument('--freeze', action='store_true')
     ap.add_argument('--out', type=Path)
     args = ap.parse_args()
+    # v13 = greg/models.py admits an Ollama model only when licensing.ollama_model and qualify_use permit GREG's use.
+    # The seed path, its static rules and scoring are untouched. v12 is kept byte for byte.
     # v12 = cortex 0.2.2 (the Seed Cortex 0.1.6 repairs ported from PR #167 onto this line, stacked on PR #184):
     # cortex/contracts.py carries CORTEX_VERSION 0.2.2, and greg/cognition/seed_path.py settles an outcome only on the
     # claims that ran; the seed path's static rules and scoring are untouched.
@@ -132,7 +134,7 @@ def main():
     # and freeze-v7-pr169.json: v7 = the door namespace stopped showing the founder's home to the Claude Code CLI;
     # v6 = #26 confined the paid model routes. v5 = the committed converged tree (v4 was written before the final
     # greg/models.py merge and the protobuf pin); v1-v8 kept.
-    manifest = HERE / 'freeze-v12.json'
+    manifest = HERE / 'freeze-v13.json'
     frozen = inputs()
     if args.freeze:
         if manifest.exists():

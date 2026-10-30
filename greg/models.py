@@ -775,12 +775,46 @@ DEFAULT_ROUTE_ORDER: tuple = ()
 PAID_ROUTE_NAMES = frozenset(("anthropic", "openai", "claude-code"))
 
 
+def admitted_ollama_route(model: str):
+    """The local route only when its license permits GREG's use.
+
+    ``licensing.ollama_model`` reads the installed weights' license, and
+    ``qualify_use`` judges that assessment against GREG's use. Anything that is
+    not a permitting verdict — no store, no license, an unreadable layer, an
+    unclassified text, a restricted license — fails closed. The route that is
+    returned carries the assessment and the use qualification.
+    """
+    route = OllamaRoute(model)
+    try:
+        from greg import licensing
+    except Exception as exc:
+        raise RouteError(f"license: license check unavailable ({type(exc).__name__})") from exc
+    try:
+        assessment = licensing.ollama_model(model)
+    except Exception as exc:
+        raise RouteError(f"license: license check failed ({type(exc).__name__})") from exc
+    if not isinstance(assessment, dict):
+        raise RouteError("license: no assessment for this model; it is not selected")
+    subject = assessment.get("subject") if isinstance(assessment.get("subject"), dict) else {}
+    try:
+        qualification = licensing.qualify_use([assessment], licensing.GREG_USE, subject)
+    except Exception as exc:
+        raise RouteError(f"license: use qualification failed ({type(exc).__name__})") from exc
+    if not isinstance(qualification, dict) or qualification.get("verdict") != licensing.COMPATIBLE:
+        why = str(qualification.get("reason") or "") if isinstance(qualification, dict) else ""
+        raise RouteError("license: " + (why or str(assessment.get("reason") or "license does not permit this use")))
+    route.license_assessment = assessment
+    route.license_use = qualification
+    return route
+
+
 def available_routes(secrets=None, *, config: dict | None = None, claude_budget_usd: float = 0.50,
                      egress=None) -> tuple:
     """Every model route this body can reach, in the founder's preference order.
 
     ``egress`` is the body's #26 relay when the founder enabled confined egress: every paid route then reaches its
-    provider only through it. Returns (routes, unavailable) where unavailable names each missing route and why."""
+    provider only through it. Returns (routes, unavailable) where unavailable names each missing route and why.
+    An Ollama model whose license does not permit GREG's use is unavailable, with that reason, and is not selected."""
     config = config or {}
     builders = {
         "anthropic": lambda: AnthropicRoute(secrets.resolve("anthropic_api_key", declared=("anthropic_api_key",)),
@@ -792,7 +826,7 @@ def available_routes(secrets=None, *, config: dict | None = None, claude_budget_
                                       model=config.get("openai_model", "gpt-5.5"),
                                       price=config.get("openai_price_per_mtok"), egress=egress),
         "claude-code": lambda: ClaudeCodeRoute(max_budget_usd=claude_budget_usd, egress=egress),
-        "ollama": lambda: OllamaRoute(config.get("ollama_model")),
+        "ollama": lambda: admitted_ollama_route(config.get("ollama_model")),
     }
     routes, unavailable = [], {}
     for name in config.get("order", DEFAULT_ROUTE_ORDER):
@@ -822,7 +856,10 @@ def validate_route_selection(body: dict) -> dict:
     if "ollama" in order:
         if "ollama_model" not in body:
             raise ValueError("selected Ollama route requires an explicit model")
-        OllamaRoute(body["ollama_model"])
+        try:
+            admitted_ollama_route(body["ollama_model"])
+        except RouteError as exc:
+            raise ValueError(str(exc)) from exc
     elif "ollama_model" in body:
         raise ValueError("cannot retain an Ollama model when its route is detached")
     return {"order": list(order), **({"ollama_model": body["ollama_model"]} if "ollama" in order else {})}

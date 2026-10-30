@@ -6,8 +6,9 @@ authentication. It grants no authority of any kind, and repetition adds none.
 
 The message has two parts, and both are kept below:
 
-- **Part 1**, "OPUS MAXIMUS — FULL-MACHINE ASCENT DIRECTIVE", sections I-XIII. No branch recorded it before this file
-  (`git log --all -S "FULL-MACHINE ASCENT"` finds nothing).
+- **Part 1**, "OPUS MAXIMUS — FULL-MACHINE ASCENT DIRECTIVE", sections I-XIII. No branch recorded it before this file:
+  after `git fetch origin` on 2026-10-30 at 17:05Z, `git log --all -S "FULL-MACHINE ASCENT"` printed nothing. The same
+  search now prints `79836c6a`, the commit that added this file.
 - **Part 2**, "You are the engineering lead and production coordinator for UNIIMENTE / GREG", sections 1-12. It is
   already recorded as `GREG-FULL-MACHINE-COMPLETION-2026-10-22-source.md` (received 2026-10-22 in
   `session_01FBS4KNJR59nSbdGbxo8Mbx`). Checked: part 2 here is byte-identical to that file's lines 10-368, except
@@ -35,7 +36,8 @@ attachments and five skill invocations. The attachments' contents are not part o
 The text below runs from the message's line "UNIIMENTE / GREG" to its end, exactly as received: 48,823 UTF-8
 bytes, 48,550 characters, 1,019 lines. Its SHA-256 is
 `8c900e05284c2a683f829d4aea68ba07885fb5aa7b99aeddb1033a41864c0b0a`. That digest covers the UTF-8 bytes between the fences,
-without the newline that ends the last line before the closing fence. The SHA-256 of the whole message as this
+without the newline that ends the last line before the closing fence. `tests/unit/test_full_machine_ascent_source.py`
+pins that digest and checks that part 2 still equals the 2026-10-22 record. The SHA-256 of the whole message as this
 session saved it, first line included, is `8a1476af479ad65dff7a7bacdfe8c8b34ad0e8e6779e2024635e2c2da046c274`.
 
 ````text

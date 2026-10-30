@@ -74,10 +74,14 @@ def test_a_match_spanning_the_prefix_boundary_is_insufficient():
 
 
 def test_equality_of_a_long_string_is_decided_by_its_digest_and_length():
+    """Equal by digest and length is TRUE; a difference inside the kept prefix is FALSE. Since item 1 (#228) strings
+    compare as one normalization form (NFC), so other code points beyond the prefix are undecided: the rest, not
+    kept, could be another form of the same text (U+212A KELVIN SIGN is canonically "K")."""
     text = FILLER + "end"
     assert judge(p("equals", text), kept(text))[0] == TRUE
-    assert judge(p("equals", text[:-1] + "x"), kept(text))[0] == FALSE         # same length, other bytes
-    assert judge(p("equals", text[:RECEIPT_TEXT_LIMIT]), kept(text))[0] == FALSE   # the prefix is not the value
+    assert judge(p("equals", "q" + text[1:]), kept(text))[0] == FALSE           # differs inside the kept prefix
+    assert judge(p("equals", text[:-1] + "x"), kept(text))[0] == INSUFFICIENT  # same length, other code points
+    assert judge(p("equals", text[:RECEIPT_TEXT_LIMIT]), kept(text))[0] == INSUFFICIENT   # agrees with the prefix
 
 
 def test_unicode_is_counted_in_characters_and_digested_in_utf8():
@@ -160,13 +164,16 @@ def test_a_kept_prefix_is_never_bound_as_the_whole_value():
 def test_a_list_holding_a_cut_member_proves_only_what_it_holds():
     """5a: authority.bounded turns a long list element into a wrapper. A cut member is not the whole element: it is
     never matched as its wrapper. It is compared by the digest and length the receipt kept, as a cut string is
-    (review of #209; these three read INSUFFICIENT before, sound but undecided); a hit on another member decides."""
+    (review of #209; these three read INSUFFICIENT before, sound but undecided); a hit on another member decides.
+    Since item 1 (#228) a value that agrees with the cut member's prefix but not its digest is undecided, as for a
+    cut string; one that differs inside the prefix is decided."""
     output = bounded({"items": ["short", FILLER]})
     assert judge({"op": "not_contains", "field": "items", "value": FILLER}, output)[0] == FALSE
     assert judge({"op": "contains", "field": "items", "value": FILLER}, output)[0] == TRUE
     assert judge({"op": "equals", "field": "items", "value": ["short", FILLER]}, output)[0] == TRUE
-    assert judge({"op": "contains", "field": "items", "value": FILLER + "x"}, output)[0] == FALSE
-    assert judge({"op": "equals", "field": "items", "value": ["short", FILLER[:-1] + "x"]}, output)[0] == FALSE
+    assert judge({"op": "contains", "field": "items", "value": "q" + FILLER[1:]}, output)[0] == FALSE
+    assert judge({"op": "contains", "field": "items", "value": FILLER + "x"}, output)[0] == INSUFFICIENT
+    assert judge({"op": "equals", "field": "items", "value": ["short", FILLER[:-1] + "x"]}, output)[0] == INSUFFICIENT
     assert judge({"op": "contains", "field": "items", "value": output["items"][1]}, output)[0] == FALSE  # its wrapper
     assert judge({"op": "contains", "field": "items", "value": "short"}, output)[0] == TRUE
     assert judge({"op": "not_contains", "field": "items", "value": "short"}, output)[0] == FALSE

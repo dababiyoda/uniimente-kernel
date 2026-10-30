@@ -109,7 +109,7 @@ CASES = [
                                                        p("equals", FILLER + PHRASE, "doc.body")]),
     ({"text": "é" * (RECEIPT_TEXT_LIMIT + 10) + "naïve résumé"}, [p("contains", "naïve résumé"),
                                                                   p("not_contains", "naïve résumé")]),
-    # canonical equivalence is not applied: the judge compares code points, over a cut or not (recorded limit)
+    # one text in either normalization form, over a cut or not (tests/unit/test_greg_faithful_text.py)
     ({"text": FILLER + unicodedata.normalize("NFD", "café")}, [p("contains", unicodedata.normalize("NFD", "café")),
                                                                p("contains", "café"), p("not_contains", "café")]),
 ]

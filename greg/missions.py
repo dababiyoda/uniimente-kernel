@@ -40,6 +40,7 @@ from greg import asks, improvement, routing
 from greg.founder import instant
 from greg.journal import Journal, fact_id, iso
 from greg.lightcone import LightCone
+from greg.textform import canon as _canon, stable as _stable, stable_tail as _stable_tail
 from provenance.ledger import sha256_json
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -472,6 +473,17 @@ def _cut(value) -> dict | None:
     return None
 
 
+def _cut_equals(cut: dict, expected) -> bool | None:
+    """Whether the whole string a receipt kept as ``cut`` is the text ``expected``: True by digest and length, False
+    when they differ within the kept part (or ``expected`` is no string), None otherwise, since two strings with
+    different code points can still be one text and the rest was not kept."""
+    if not isinstance(expected, str):
+        return False
+    if len(expected) == cut["length"] and hashlib.sha256(text_bytes(expected)).hexdigest() == cut["sha256"]:
+        return True
+    return None if _canon(expected).startswith(_canon(_stable(cut["prefix"]))) else False
+
+
 def _non_finite(value) -> bool:
     """The receipt's stand-in for a number that is not finite (authority.bounded)."""
     from greg.authority import NON_FINITE
@@ -508,8 +520,8 @@ def _raw_field(output, path: str, *, whole: bool = False, recorded_cut: bool = T
             # A prefix is never a whole string, whoever kept it; the record's other parts are refused only in a
             # receipt that recorded a cut (review of #209, APR-1: a pipeline.inspect check on value.sha256)
             raise LookupError(f"{path} steps into a value the receipt kept only as a prefix")
-        if isinstance(value, dict) and part in value:
-            value = value[part]
+        if isinstance(value, dict):
+            value = _member(value, part, path)
         elif isinstance(value, list) and part.isdigit() and int(part) < len(value):
             value = value[int(part)]
         elif isinstance(value, list) and part.isdigit() and len(value) == RECEIPT_LIST_LIMIT:
@@ -517,6 +529,19 @@ def _raw_field(output, path: str, *, whole: bool = False, recorded_cut: bool = T
         else:
             raise KeyError(path)
     return value
+
+
+def _member(mapping: dict, part: str, path: str):
+    """The value under the key of ``mapping`` that spells ``part``, in whichever normalization form either is written
+    (a key from external JSON arrives in either): KeyError when no key does, LookupError when two keys spell it, since
+    which of them the path means is unknown (review of #228, 3: ``exists`` used to depend on the key's form)."""
+    wanted = _canon(part)
+    keys = [key for key in mapping if isinstance(key, str) and _canon(key) == wanted]
+    if not keys:
+        raise KeyError(path)
+    if len(keys) > 1:
+        raise LookupError(f"{path}: {len(keys)} keys spell {part!r} in different normalization forms")
+    return mapping[keys[0]]
 
 
 def _field(output, path: str):
@@ -583,14 +608,16 @@ def judge(predicate: dict, output, *, whole: bool = False, recorded_cut: bool = 
     # an incomplete output states its own completeness in full (#201 review, 6); every other verdict on it keeps only
     # what more data could not undo, unless the output names the field in ``decided`` (review of #196, J8: the cut
     # string and the missing field used to be judged before this was asked)
-    declared, vouched = _declared(output, path)
+    declared, vouched, cut_sides = _declared(output, path)
     incomplete = "the capability reported its observation incomplete"
     try:
         value = _raw_field(output, path, whole=whole, recorded_cut=recorded_cut)
     except KeyError:
         if declared:       # a field the observation has not reached yet is not an absent field
-            return INSUFFICIENT, f"field {path!r} absent; {incomplete}"
-        return (TRUE if op == "absent" else FALSE), f"field {path!r} absent"
+            why = _unreadable(output, path)
+            return INSUFFICIENT, f"field {path!r} absent; {incomplete}" + (f": {why}" if why else "")
+        gone = "; the path does not exist" if isinstance(output, dict) and output.get("exists") is False else ""
+        return (TRUE if op == "absent" else FALSE), f"field {path!r} absent{gone}"
     except LookupError as exc:
         return INSUFFICIENT, str(exc)
     expected = predicate.get("value")
@@ -610,12 +637,20 @@ def judge(predicate: dict, output, *, whole: bool = False, recorded_cut: bool = 
             # once the whole was read from the store (review of #209)
             verdict, detail = FALSE, f"{op} {expected!r:.60}: not a string, so no part of a text"
         elif op in ("contains", "not_contains"):
-            if expected in text:
+            # only the part of the prefix no continuation can renormalize: a phrase whose last letter the rest gives
+            # an accent is not in the whole (``_stable``). A text the capability says it kept as its end (stderr's
+            # last bytes) loses its leading marks too: they may belong to a letter it did not keep (review of #228, 1)
+            probe = _stable(text)
+            if "start" in cut_sides and not vouched:
+                probe = _stable_tail(probe)
+            if _canon(expected) in _canon(probe):
                 return (TRUE if op == "contains" else FALSE), f"{expected!r:.60} found in the kept prefix"
             return INSUFFICIENT, f"{op} {expected!r:.60}: not in the {kept}; the rest was not retained"
         elif op == "equals":
-            same = isinstance(expected, str) and len(expected) == length \
-                and hashlib.sha256(text_bytes(expected)).hexdigest() == cut["sha256"]
+            same = _cut_equals(cut, expected)
+            if same is None:
+                return INSUFFICIENT, (f"equals {expected!r:.60}: agrees with the {kept} and differs from the digest in "
+                                      "code points, which another normalization form of the same text would")
             verdict, detail = (TRUE if same else FALSE), f"equals {expected!r:.60} by digest of all {length} characters"
         elif op == "count_gte" and _number(expected):
             verdict, detail = (TRUE if length >= expected else FALSE), f"len {length} >= {expected}"
@@ -652,6 +687,13 @@ def judge(predicate: dict, output, *, whole: bool = False, recorded_cut: bool = 
             verdict = FALSE if op == "contains" else TRUE
         detail = f"{'' if op == 'contains' else 'not '}contains {expected!r}"
     else:
+        if cut_sides and not vouched and isinstance(value, str) and op in ("contains", "not_contains"):
+            # a text the capability says it cut (``cut_at``: stdout at its read ceiling, a page's text, stderr's tail)
+            # is searched only where no continuation at that side can renormalize it: "cafe" kept before a cut that
+            # falls ahead of a combining accent is not in the whole, "café" (review of #228, 1). A text whole in an
+            # output that is not (document.text's words, joined at spaces) is searched whole, as before.
+            value = _stable(value) if "end" in cut_sides else value
+            value = _stable_tail(value) if "start" in cut_sides else value
         verdict, detail = _judge_whole(op, value, expected)
         if partial and op == "count_gte" and verdict == FALSE and _number(expected):
             return INSUFFICIENT, f"{detail}; the list was kept to its first {RECEIPT_LIST_LIMIT} items"
@@ -665,30 +707,48 @@ def judge(predicate: dict, output, *, whole: bool = False, recorded_cut: bool = 
     return verdict, detail
 
 
+def _unreadable(output, path: str) -> str | None:
+    """Why a capability left the field at ``path`` out, when it said so beside it (``<field>_unreadable``)."""
+    *parents, leaf = path.split(".") if path else [""]
+    try:
+        node = _raw_field(output, ".".join(parents), whole=True) if parents else output
+    except LookupError:
+        return None
+    why = node.get(f"{leaf}_unreadable") if isinstance(node, dict) else None
+    return why if isinstance(why, str) else None
+
+
 def _number(value) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool) and value == value
 
 
-def _declared(output, path: str) -> tuple[bool, bool]:
-    """Whether an observation on the way to ``path`` declared itself incomplete (``complete: false``), and whether
-    every one that did vouches for the rest of the path in its ``decided`` list. An observation handed on or nested
-    inside another output (pipeline.inspect, an organ's packet) keeps its declaration (review of #196, J3)."""
+def _declared(output, path: str) -> tuple[bool, bool, frozenset]:
+    """Whether an observation on the way to ``path`` declared itself incomplete (``complete: false``), whether every
+    one that did vouches for the rest of the path in its ``decided`` list, and the sides at which one says it cut the
+    text there (``cut_at``: "end" for a stream's first bytes, "start" for its last). An observation handed on or
+    nested inside another output (pipeline.inspect, an organ's packet) keeps its declaration (review of #196, J3)."""
     parts = path.split(".") if path else []
-    node, declared, vouched = output, False, True
+    node, declared, vouched, sides = output, False, True, frozenset()
     for i in range(len(parts) + 1):
         rest = ".".join(parts[i:])
         if isinstance(node, dict) and node.get("complete") is False and rest != "complete" and not _cut(node):
             declared = True
             vouched = vouched and isinstance(node.get("decided"), list) and rest in node["decided"]
+            cut_at = node.get("cut_at")
+            side = cut_at.get(rest) if isinstance(cut_at, dict) else None
+            sides |= {side} if side in ("start", "end") else ({"start", "end"} if side is not None else set())
         if i == len(parts):
             break
-        if isinstance(node, dict) and parts[i] in node:
-            node = node[parts[i]]
-        elif isinstance(node, list) and parts[i].isdigit() and int(parts[i]) < len(node):
-            node = node[int(parts[i])]
-        else:
+        try:
+            if isinstance(node, dict):
+                node = _member(node, parts[i], path)       # the key the judged path reads, in either form
+            elif isinstance(node, list) and parts[i].isdigit() and int(parts[i]) < len(node):
+                node = node[int(parts[i])]
+            else:
+                break
+        except LookupError:            # KeyError included: the walk ends where the path does
             break
-    return declared, declared and vouched
+    return declared, declared and vouched, sides
 
 
 def _compare(kept, expected, whole: bool = False) -> bool | None:
@@ -701,8 +761,9 @@ def _compare(kept, expected, whole: bool = False) -> bool | None:
         return None
     cut = None if whole else _cut(kept)
     if cut:
-        return isinstance(expected, str) and len(expected) == cut["length"] \
-            and hashlib.sha256(text_bytes(expected)).hexdigest() == cut["sha256"]
+        return _cut_equals(cut, expected)
+    if isinstance(kept, str):
+        return isinstance(expected, str) and _canon(kept) == _canon(expected)
     if isinstance(kept, list):
         at_limit = len(kept) == RECEIPT_LIST_LIMIT
         if not isinstance(expected, list) or len(expected) < len(kept) or (not at_limit and len(expected) != len(kept)):
@@ -710,21 +771,34 @@ def _compare(kept, expected, whole: bool = False) -> bool | None:
         pairs = [_compare(k, e, whole) for k, e in zip(kept, expected)]
         return False if False in pairs else None if (at_limit or None in pairs) else True
     if isinstance(kept, dict):
-        if not isinstance(expected, dict) or set(kept) != set(expected):
+        if not isinstance(expected, dict):
             return False
-        pairs = [_compare(kept[k], expected[k], whole) for k in kept]
+        kept_keys, expected_keys = _text_keys(kept), _text_keys(expected)
+        if kept_keys is None or expected_keys is None:     # two keys of one object are one text in two forms
+            return None
+        if set(kept_keys) != set(expected_keys):
+            return False
+        pairs = [_compare(kept[kept_keys[k]], expected[expected_keys[k]], whole) for k in kept_keys]
         return False if False in pairs else None if None in pairs else True
     return kept == expected
 
 
+def _text_keys(mapping: dict) -> dict | None:
+    """``mapping``'s keys by the text they spell (NFC), or None when two of them spell the same text."""
+    keys = {_canon(k) if isinstance(k, str) else k: k for k in mapping}
+    return keys if len(keys) == len(mapping) else None
+
+
 def _judge_whole(op, value, expected) -> tuple[str, str]:
     def as_verdict(ok):
-        return TRUE if ok else FALSE
-    if op == "equals":
-        return as_verdict(value == expected), f"{value!r:.200} == {expected!r:.200}"
+        return INSUFFICIENT if ok is None else TRUE if ok else FALSE
+    if op == "equals":     # judge decides equals itself; an undecidable comparison is never a FALSE (review of #228)
+        return as_verdict(_compare(value, expected, True)), f"{value!r:.200} == {expected!r:.200}"
     # a type the operation does not apply to fails it (both contains and not_contains), never raises: a signed value
     # of another type used to crash the tick (review of #209)
     searchable = isinstance(value, list) or (isinstance(value, str) and isinstance(expected, str))
+    if isinstance(value, str) and searchable:         # one text, whichever normalization form either side is in
+        value, expected = _canon(value), _canon(expected)
     if op == "contains":
         return as_verdict(searchable and expected in value), f"contains {expected!r}"
     if op == "not_contains":

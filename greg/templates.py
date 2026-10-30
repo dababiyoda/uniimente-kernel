@@ -368,6 +368,36 @@ def word_limit(*, file: Path, max_words: int, workspace_root: Path, horizon_days
     }
 
 
+def file_search(*, file: Path, phrases: list, absent: bool, horizon_days: float = 2) -> dict:
+    """Whether a file of any size mentions some phrases, or never mentions them: one read-only mission over
+    ``fs.search``, which reads the whole file streamed and answers in a few hundred bytes (greg/textquery.py).
+
+    Whitespace runs count as one space, in the file and in the phrases, so a phrase broken across lines is found.
+    Absence is claimed only when every byte was read and decoded; a file cut short by a limit, or not readable as
+    text, leaves the check undecided and GREG asks, with the reason."""
+    if not isinstance(phrases, list) or not phrases or not all(isinstance(p, str) and p.strip() for p in phrases):
+        raise ValueError("phrases must be a nonempty list of nonblank strings")
+    file = Path(file).expanduser().resolve()
+    slug = re.sub(r"[^a-z0-9]+", "-", file.name.lower()).strip("-")[:40] or "file"
+    digest = hashlib.sha256(json.dumps([str(file), phrases, absent]).encode()).hexdigest()[:8]
+    verb = "never mentions" if absent else "mentions"
+    sensor = {"capability": "fs.search", "params": {"path": str(file), "phrases": list(phrases),
+                                                    "whitespace": "collapse"}, "target": f"fs:{file.name}"}
+    return {
+        "mission_id": f"m:{'absent' if absent else 'mentions'}-{slug}-{digest}",
+        "founder_expression": f"Confirm {file} {verb} " + ", ".join(repr(p) for p in phrases) + ".",
+        "intended_effect": f"the whole of {file.name} is read and proven to be one that {verb} the phrases",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": f"phrase_{i}", "description": f"{file.name} {verb} {phrase!r}",
+                            "sensor": sensor,
+                            "predicate": {"op": "equals", "field": f"queries.{i}.found", "value": not absent}}
+                           for i, phrase in enumerate(phrases)],
+        "strategies": [],
+        "light_cone": {"capabilities": ["fs.search"], "targets": ["fs:*"], "max_consequence_class": "read_only",
+                       "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+
+
 def human_work(*, function: str, purpose: str, workspace_root: Path, deliverable: str = "deliverable.pdf",
                horizon_days: float = 30) -> dict:
     """A step only a person may do (directive section 60: "I need a licensed professional for this decision").

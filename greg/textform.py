@@ -2,8 +2,8 @@
 
 Canonically equivalent texts (an accented letter as one code point, or as the letter and a combining accent; KELVIN
 SIGN and K) are one text. Every check that compares text compares it in Unicode Normalization Form C, on both sides
-(greg.missions.judge, greg.business_loop.reconcile), so no verdict depends on which form either side is written in
-(directive of 2026-10-22, section VI test 8).
+(greg.missions.judge, greg.textquery, greg.business_loop.reconcile), so no verdict depends on which form either side is
+written in (directive of 2026-10-22, section VI test 8).
 """
 from __future__ import annotations
 

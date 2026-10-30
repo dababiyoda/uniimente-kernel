@@ -19,6 +19,7 @@ exit evidence, pivot and kill conditions; a claim without evidence refs is
 """
 from __future__ import annotations
 
+import ast
 import json
 from pathlib import Path
 import re
@@ -72,6 +73,12 @@ def validate(data: dict) -> None:
         for kind in node.get("may_be_pulled_forward_by", []):
             if not isinstance(kind, str) or not kind.isupper():
                 raise PathError(f"{node['id']}: pull-forward triggers are decision kinds")
+        # Which tests build the node's structure (greg path --build). Their existence is a unit test's job, not
+        # this load's: `greg path` must run on an install that ships without tests/.
+        rehearsal = node.get("rehearsal")
+        if rehearsal is not None and not (isinstance(rehearsal, list) and rehearsal
+                                          and all(isinstance(r, str) and "::" in r for r in rehearsal)):
+            raise PathError(f"{node['id']}: rehearsal names pytest node ids (path::test)")
     for horizon in data.get("horizons") or []:
         for field in ("covers", "intended_effect", "node", "feasibility", "current_reality",
                       "nearest_precursor", "activation_evidence", "founder_sources"):
@@ -440,9 +447,8 @@ PREDICATES = {"vepmc_at_least_one": vepmc_at_least_one, "genesis_closure": genes
               "human_work_shared": human_work_shared, "venture_compounding": venture_compounding}
 
 
-def position(journal: Journal | None, data: dict | None = None) -> dict:
-    """The one operationally primary node and what stands between GREG and its exit."""
-    data = data or load()
+def _walk(journal: Journal | None, data: dict) -> tuple[list, dict | None, dict]:
+    """(achieved node ids, the active node, every node's measurement): the founder-tier walk of the path."""
     achieved, active, measurements = [], None, {}
     for node in data["nodes"]:
         if node["evidence_source"] == "repository":
@@ -465,6 +471,13 @@ def position(journal: Journal | None, data: dict | None = None) -> dict:
             achieved.append(node["id"])
         elif active is None:
             active = node
+    return achieved, active, measurements
+
+
+def position(journal: Journal | None, data: dict | None = None) -> dict:
+    """The one operationally primary node and what stands between GREG and its exit."""
+    data = data or load()
+    achieved, active, measurements = _walk(journal, data)
     ids = [n["id"] for n in data["nodes"]]
     following = data["nodes"][ids.index(active["id"]) + 1] if active and ids.index(active["id"]) + 1 < len(ids) \
         else None
@@ -533,6 +546,102 @@ def measure(journal: Journal | None, node_id: str, data: dict | None = None) -> 
         out["on_the_path"] = (f"not yet: the path stops at {active} until its exit evidence holds; this measurement "
                               "is reported, not counted")
     return out
+
+
+# -- the build frontier, beside the acceptance frontier ---------------------------------------------
+# Founder correction of 2026-10-30 (INTENT-20261030-BUILD-BEFORE-DEVICE-RUN): "Continue building and doing the
+# prompt verbatim. No real Chromebook run is needed. That is done when we completely build the prompt". The
+# sequence changed, not the evidence rule: the founder-device run is the final acceptance, after the build. So
+# how far the build has reached is read on its own axis, from the predicates' own ``structurally_met``, and it
+# moves nothing on the founder's path: ``achieved`` and ``position()['active']`` (the one operationally primary
+# node, the acceptance frontier) still move only at the founder tier.
+STRUCTURALLY_BUILT, BUILD_OPEN, NO_PREDICATE = "STRUCTURALLY_BUILT", "BUILD_OPEN", "NO_PREDICATE"
+BUILD_RULE = ("the build frontier is the first node, in path order, that is not structurally built; a node without a "
+              "ledger predicate stops it, and a node built past it is reported, never counted. Structural evidence (a "
+              "test key, a fixture, a rehearsal) moves only this frontier; the founder's path moves only at the "
+              "founder tier")
+ACCEPTANCE_PENDING = "founder acceptance pending (final step)"
+MUTANT_GATE = Path(__file__).resolve().parents[1] / "scripts" / "ci" / "check_path_predicate_mutants.py"
+
+
+def mutation_guarded(gate: Path = MUTANT_GATE) -> set:
+    """Node ids whose predicate has a weakening mutant in the path-predicate mutation gate.
+
+    Read from the gate's own ``MUTANTS`` list, parsed and never imported or run. The gate fails when any mutant
+    survives its test. An install without the gate, or a list that is not plain literals, guards nothing."""
+    try:
+        tree = ast.parse(Path(gate).read_text())
+    except (OSError, SyntaxError, ValueError):
+        return set()
+    for stmt in tree.body:
+        if isinstance(stmt, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "MUTANTS" for t in stmt.targets):
+            try:
+                mutants = ast.literal_eval(stmt.value)
+            except ValueError:
+                return set()
+            return {m[1] for m in mutants if isinstance(m, tuple) and len(m) > 1 and isinstance(m[1], str)}
+    return set()
+
+
+def build_status(journal: Journal | None, data: dict | None = None) -> dict:
+    """How much of the path is structurally built, beside the one node the founder's path stops at.
+
+    Per node: STRUCTURALLY_BUILT when its ledger predicate is structurally met on this ledger (a repository node
+    when its attestation says ACHIEVED), BUILD_OPEN when it is not, NO_PREDICATE when the node has no ledger
+    predicate yet (never built, however much code exists for it). ``mutation_guarded`` says whether the mutation
+    gate holds a weakening of the node's predicate that a test catches. Nothing here is founder use, external
+    verification or authority, and nothing here moves ``achieved``."""
+    data = data or load()
+    achieved, active, measurements = _walk(journal, data)
+    guarded = mutation_guarded()
+    rows, built, frontier = [], [], None
+    for node in data["nodes"]:
+        measured = measurements[node["id"]]
+        if node["evidence_source"] == "repository":
+            status = STRUCTURALLY_BUILT if node["attested"].startswith("ACHIEVED") else BUILD_OPEN
+        elif not node.get("predicate"):
+            status = NO_PREDICATE
+        else:
+            status = STRUCTURALLY_BUILT if measured.get("structurally_met") else BUILD_OPEN
+        if frontier is None and status == STRUCTURALLY_BUILT:
+            built.append(node["id"])
+        elif frontier is None:
+            frontier = node
+        rows.append({"id": node["id"], "title": node["title"], "build": status,
+                     "evidence_level": measured.get("evidence_level", measured.get("attested", "NONE")),
+                     "counted": node["id"] in built, "mutation_guarded": node["id"] in guarded,
+                     "operationally_primary": active is not None and node["id"] == active["id"],
+                     **({"why": measured["not_yet_measurable"]} if "not_yet_measurable" in measured else {}),
+                     **({"rehearsed_by": node["rehearsal"]} if node.get("rehearsal") else {})})
+    by_id = {r["id"]: r for r in rows}
+    # The build-phase depth: consecutive predicate nodes, from the first, built on THIS ledger and mutation-guarded.
+    # It is the path's build depth only on one body driven through the product CLI; separate bodies do not add up.
+    depth = 0
+    for node in data["nodes"]:
+        if node["evidence_source"] == "repository":
+            continue
+        row = by_id[node["id"]]
+        if not (node.get("predicate") and row["counted"] and row["mutation_guarded"]):
+            break
+        depth += 1
+    return {
+        "reality_status": "RETAINED_EVIDENCE_PROJECTION",
+        "build_frontier": None if frontier is None else {
+            "id": frontier["id"], "title": frontier["title"], "build": by_id[frontier["id"]]["build"],
+            "gate": frontier["gate"], "measurement": measurements[frontier["id"]]},
+        "acceptance_frontier": None if active is None else {
+            "id": active["id"], "title": active["title"], "operationally_primary": True,
+            "status": ACCEPTANCE_PENDING, "evidence_level": by_id[active["id"]]["evidence_level"]},
+        "achieved": achieved,
+        "built": built,
+        "built_ahead": [{"id": r["id"], "title": r["title"]} for r in rows
+                        if r["build"] == STRUCTURALLY_BUILT and not r["counted"]],
+        "structural_depth": depth,
+        "nodes": rows,
+        "rule": BUILD_RULE,
+        "sequencing": "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN: the founder-device run is the final acceptance, "
+                      "after the build; it is not redefined, and a test key never moves it",
+    }
 
 
 # -- developmental inheritance: rules for placing lineages on the path ---------------------

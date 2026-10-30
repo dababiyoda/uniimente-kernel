@@ -383,3 +383,25 @@ def test_a_name_signed_in_one_form_closes_against_a_file_in_the_other(tmp_path):
     assert missions["m:signed"].status == "ACHIEVED"                               # before: never, and an ask
     appraised = [e for e in events(home, "mission.appraised") if e["mission_id"] == "m:signed"]
     assert appraised and appraised[-1]["verdict"] == "VERIFIED"
+
+
+# -- a failed read is not a measured absence (directive 2026-10-22, section IX scenario 7) ----------------------------
+
+def test_a_directory_or_fifo_where_a_file_was_expected_is_a_failed_read_not_an_absent_file(tmp_path):
+    """Before: fs.read answered ``exists: false`` for anything that was not a regular file, so a directory standing
+    where a log should be read as a measured absence, and the founder was asked what to do about a failed check
+    instead of about a sensor that could not read."""
+    ctx, data = _ctx(tmp_path), tmp_path / "data"
+    (data / "audit.log").mkdir()
+    os.mkfifo(data / "pipe.log")
+    for name in ("audit.log", "pipe.log"):
+        with pytest.raises(CapabilityError, match="not a regular file"):
+            fs_read({"path": str(data / name)}, ctx)
+    missing = fs_read({"path": str(data / "missing.log")}, ctx)
+    assert missing["exists"] is False and "text" not in missing
+
+
+def test_a_check_on_a_missing_file_says_the_path_does_not_exist():
+    verdict, detail = judge({"op": "contains", "field": "text", "value": "x"}, {"path": "/x", "exists": False})
+    assert verdict == FALSE and detail == "field 'text' absent; the path does not exist"
+    assert judge({"op": "contains", "field": "text", "value": "x"}, {"exists": True})[1] == "field 'text' absent"

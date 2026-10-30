@@ -8,7 +8,10 @@ import os, shutil, subprocess, sys, tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 SEED = "foundry/systems/seed.py"
+BACKUP = "greg/backup.py"
+RECOVERY = "greg/recovery.py"
 UNIT = "tests/unit/test_greg_seed_consistency.py"
+CADENCE = "tests/unit/test_greg_backup.py"
 MUTANTS = [
     ("head read from the live ledger after the copy", SEED,
      '"backed_up_at": backed_up_at, "ledger_head": head}',
@@ -22,6 +25,28 @@ MUTANTS = [
      "if rel in DERIVED:\n            derived.append(rel)", "if False:\n            derived.append(rel)", UNIT),
     ("derived heartbeat restored from a seed that carries one", SEED,
      "if rel in DERIVED:                              #", "if False:                                       #", UNIT),
+    ("an earlier recovery point outside the verified ledger accepted", SEED,
+     "        if cut is None:\n", "        if False:\n", CADENCE),
+    ("an earlier recovery point packs the whole ledger", SEED,
+     'prefix, head = b"\\n".join(prefix.split(b"\\n")[:cut.seq + 1]) + b"\\n", end', "head = end", CADENCE),
+    ("a store inside the body home or a read root accepted", BACKUP,
+     "        if store == root or root in store.parents:\n", "        if False:\n", CADENCE),
+    ("read roots not checked", BACKUP,
+     '(("the body home", _home(ctx)), *(("a read root", Path(r).resolve()) for r in ctx.read_roots))',
+     '(("the body home", _home(ctx)),)', CADENCE),
+    ("any target prefix taken as a store", BACKUP,
+     'raw = target[len(PREFIX):] if target.startswith(PREFIX) else ""', 'raw = target.split(":", 1)[-1]', CADENCE),
+    ("a backup counted without its drill", BACKUP, '        proof = drill(store, made["seed"])\n',
+     '        proof = {"restored_head": made["ledger_head"], "restored_records": 0, "held": True, '
+     '"drill_seconds": 0}\n', CADENCE),
+    ("freshness ignores the RPO", BACKUP, '"fresh": age <= rpo,', '"fresh": True,', CADENCE),
+    ("recovery point inside the backup's own dispatch", BACKUP,
+     "end=before_dispatch(home, ctx.grant_id)", "end=None", CADENCE),
+    ("verified evidence not bound to the signed store", BACKUP, ', target=PREFIX + str(store))', ')', CADENCE),
+    ("the drill trusts the restore without re-verifying its file", RECOVERY,
+     "        layout = Layout(home)\n        config = json.loads(layout.config.read_text())\n",
+     '        return {"seed": seed_address, "restored_head": report["ledger_head_at_recovery_point"], '
+     '"held": True}\n', CADENCE),
 ]
 
 

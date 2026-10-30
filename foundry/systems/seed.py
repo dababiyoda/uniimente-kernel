@@ -54,11 +54,13 @@ def _listed(home: Path) -> list[str]:
                   for top, _, names in os.walk(home) for name in names)
 
 
-def make_seed(home: Path, store: Path) -> dict:
+def make_seed(home: Path, store: Path, *, end: str | None = None) -> dict:
+    """Pack ``home`` into ``store``. ``end`` names an earlier recovery point: the hash of the last ledger record to
+    pack, which must lie in the verified prefix (by default the prefix's own last record)."""
     home = Path(home)
     # The recovery point: the verified ledger prefix, read before anything else. Anything the body records after this
     # instant is not in the seed.
-    ledger, head = ledger_prefix(home)
+    ledger, head = ledger_prefix(home, end=end)
     backed_up_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     files, excluded, derived = {}, [], []
     if ledger is not None:
@@ -119,8 +121,9 @@ def ledger_head(ledger: Path) -> str | None:
     return json.loads(lines[-1]).get("hash") if lines else None
 
 
-def ledger_prefix(home: Path) -> tuple[bytes | None, str | None]:
-    """The ledger's complete lines, read once, and the head they end at; ``(None, None)`` without a ledger.
+def ledger_prefix(home: Path, *, end: str | None = None) -> tuple[bytes | None, str | None]:
+    """The ledger's complete lines, read once, and the head they end at; ``(None, None)`` without a ledger. With
+    ``end``, only the lines up to and including the verified record whose hash it is.
 
     In a GREG body (its ``body.json`` names the constitution its history is bound to) the lines are verified exactly
     as ``greg.recovery.restore_body`` verifies a restored ledger: ``SeedError`` when they do not. Any other home has no
@@ -136,6 +139,8 @@ def ledger_prefix(home: Path) -> tuple[bytes | None, str | None]:
     except (OSError, ValueError, AttributeError):
         constitution = None
     if not constitution:
+        if end is not None:
+            raise SeedError("an earlier recovery point needs a GREG body's verifiable ledger")
         lines = prefix.splitlines()
         return prefix, json.loads(lines[-1]).get("hash") if lines else None
     from provenance.ledger import EvidenceLedger
@@ -150,10 +155,15 @@ def ledger_prefix(home: Path) -> tuple[bytes | None, str | None]:
         try:
             ok, why = ledger.verify_chain()
             head = ledger.head
+            cut = ledger.find(end) if end is not None else None
         finally:
             ledger.close()
     if not ok:
         raise SeedError(f"the ledger does not verify, so no seed of it would restore: {why}")
+    if end is not None:
+        if cut is None:
+            raise SeedError(f"the recovery point {end} is not in this body's verified ledger")
+        prefix, head = b"\n".join(prefix.split(b"\n")[:cut.seq + 1]) + b"\n", end   # line i holds record seq i
     return prefix, head
 
 

@@ -6,6 +6,10 @@ head is where its packed ledger ends, every seed restores with ``greg.recovery.r
 every recovery point is a prefix of the body's own history. One restored seed is then run as a body process of its
 own: it stays held, takes no action and publishes its own heartbeat.
 
+The second test is the founder-signed cadence (greg/backup.py) on a body running as its own process: the signed
+mission's first backup lands in the signed store, counts as verified only through the Gate's receipt of its drill, and
+restores on another "machine".
+
 The founder key is a per-test Ed25519 key, not Alfonso's.
 """
 from __future__ import annotations
@@ -20,10 +24,11 @@ import threading
 import time
 
 from foundry.systems import cas, seed
+from greg import backup
 from greg.body import Body, Layout, drop_intake
 from greg.recovery import restore_body
 from provenance.ledger import EvidenceLedger
-from tests.greg_fixtures import make_body
+from tests.greg_fixtures import drop, make_body, signed
 
 ROOT = Path(__file__).resolve().parents[2]
 ENV = {**os.environ, "PYTHONPATH": str(ROOT)}
@@ -133,3 +138,22 @@ def test_twenty_seeds_of_a_running_body_all_restore_held(tmp_path):
     with Body(newest) as held:
         assert held.paused() and held.ledger.find(published["ledger_head"]) is not None
         assert not held.journal.replay("mission.action")
+
+
+def test_a_running_body_takes_a_verified_backup_on_its_signed_cadence(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    store, log = (tmp_path / "offsite").resolve(), tmp_path / "body.log"
+    drop(home, signed(key, body_id, "MISSION", backup.mission(store=store, rpo_seconds=3600, cadence_seconds=60)))
+    body = run_body(home, log)
+    try:
+        wait_for(lambda: backup.verified(home, store), what="a verified backup")
+        assert body.poll() is None, log.read_text()[-3000:]
+    finally:
+        stop(body)
+    [first] = backup.verified(home, store)
+    assert first["restored_head"] == first["ledger_head"] and first["held"] is True
+    target = tmp_path / "new-machine" / "body"
+    assert restore_body(store, first["seed"], target)["ledger_head_at_recovery_point"] == first["ledger_head"]
+    with Body(target) as again:
+        assert again.paused()
+    assert not (Layout(home).home / "objects").exists(), "nothing of the store is inside the body home"

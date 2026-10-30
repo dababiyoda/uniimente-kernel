@@ -114,3 +114,36 @@ def restore_body(store, seed_address: str, home, *, clock=None) -> dict:
                 "DEVICE_ENROLL again for each device still trusted",
                 "a fresh decision on every withdrawn approval",
                 "ROTATE_FOUNDER_KEY again if the founder key was rotated after the recovery point"]}
+
+
+def drill(store, seed_address: str) -> dict:
+    """Prove that one seed restores: ``restore_body`` into a scratch home, re-verify the restored ledger from its
+    file, report the head it was restored to and whether the body came back held, then remove the scratch home.
+
+    The scratch body is never run, so the drill takes no action; it raises ``RestoreError`` (or ``cas.IntegrityError``
+    for a damaged object) when the seed does not restore, and the scratch home is removed whatever the outcome."""
+    import tempfile
+    from provenance.ledger import EvidenceLedger
+    started = time.monotonic()
+    with tempfile.TemporaryDirectory(prefix="greg-restore-drill-") as scratch:
+        home = Path(scratch) / "body"
+        report = restore_body(store, seed_address, home)
+        layout = Layout(home)
+        config = json.loads(layout.config.read_text())
+        try:
+            ledger = EvidenceLedger(config["constitution_hash"], str(layout.ledger), read_only=True)
+        except ValueError as exc:                                 # the ledger verifies itself as it loads
+            raise RestoreError(f"the drill's restored ledger does not re-verify: {exc}") from exc
+        try:
+            ok, why = ledger.verify_chain()
+            at_recovery_point = ledger.find(report["ledger_head_at_recovery_point"])
+            records = len(ledger.records)
+        finally:
+            ledger.close()
+        if not ok or at_recovery_point is None:
+            raise RestoreError(f"the drill's restored ledger does not re-verify: {why}")
+        with Body(home) as body:
+            held = body.paused()
+    return {"seed": seed_address, "restored_head": report["ledger_head_at_recovery_point"],
+            "recovery_point": report["recovery_point"], "restored_records": records, "chain": why, "held": held,
+            "drill_seconds": round(time.monotonic() - started, 3)}

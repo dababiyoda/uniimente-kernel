@@ -315,6 +315,16 @@ def _tree(expression: str, dialect: str) -> dict:
                                 "category": UNCLASSIFIED, "note": "not a parseable license expression"}]}
 
 
+def _named_restrictions(text: str, label: str) -> list:
+    """The licenses ``text`` names, word by word, that GREG's tables hold restrictive, for text no parser accepts
+    ("EUPL-1.2 AND (MIT"). Restrictive wording finds AGPL, SSPL, BUSL and the like anywhere; EUPL, OSL and JSON are
+    restrictive by the table alone, so without this they vanished with the parse. Exact names only: a word is never
+    read as wording here ("non-commercial" in "commercial and non-commercial use" is not a restriction)."""
+    words = [w for w in re.findall(r"[^\s(),]+", text) if w.lower() not in ("and", "or", "with")]
+    return [{"atom": f"{label} mentions '{w[:80]}'", "class": c, "category": _category(c, w)}
+            for w in words[:MAX_WORDS] for c in [_table_class(w, "spdx")] if c in HELD]
+
+
 def _atoms(node: dict) -> list:
     return [node] if "atom" in node else [a for child in node.get("and") or node["or"] for a in _atoms(child)]
 
@@ -365,6 +375,8 @@ def _text_declaration(text: str) -> dict | None:
     if len(lines) <= SHORT_LINES and len(text) <= SHORT_CHARS:
         atoms = [{"atom": f"License field mentions '{phrase}'", "class": cls, "category": _category(cls, phrase)}
                  for phrase, cls in _riders(text)]
+        if one is not None and parsed is None:       # one line packaging rejects: the restrictive names in it count
+            atoms += _named_restrictions(one, "License field")
         if atoms:
             tree = atoms[0] if len(atoms) == 1 else {"and": atoms}
             return {"tree": tree, "class": _held_eval(tree)[0], "id": atoms[0]["atom"], "spdx": False}
@@ -418,7 +430,7 @@ def declared(dist) -> dict:
                 "License-Expression (PEP 639), parsed by packaging.licenses", canonical
         except InvalidLicenseExpression as exc:      # unparseable: unknown, its restrictive wording still counts
             atoms = [{"atom": f"License-Expression mentions '{p}'", "class": c, "category": _category(c, p)}
-                     for p, c in _riders(expression)]
+                     for p, c in _riders(expression)] + _named_restrictions(expression, "License-Expression")
             tree = {"and": atoms + [{"atom": expression[:120], "class": UNKNOWN, "category": UNCLASSIFIED}]}
             basis, shown, note = "License-Expression (PEP 639), unparseable", expression, str(exc)[:160]
             notes.append("the License-Expression is not valid SPDX")

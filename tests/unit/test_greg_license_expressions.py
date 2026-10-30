@@ -449,9 +449,29 @@ def test_v8_the_use_election_does_not_depend_on_operand_order_or_ignore_class():
     for expression in ("GPL-2.0-only OR MIT", "MIT OR GPL-2.0-only"):
         q = L.qualify_use([assess(expression)], USE, {})
         assert [t["id"] for t in q["terms"]] == ["MIT"], expression           # equal verdicts: the less strict class
+    # a whole tie (verdict, class, restrictions) is broken by the names, never by the order they were written in
+    for expression in ("MIT OR BSD-2-Clause", "BSD-2-Clause OR MIT"):
+        q = L.qualify_use([assess(expression)], USE, {})
+        assert [t["id"] for t in q["terms"]] == ["BSD-2-Clause"], expression
 
 
 def test_v9_deep_nesting_fails_closed_instead_of_raising():
     deep = "(" * 200 + "SSPL-1.0" + ")" * 200
     assert p0_attaches(deep) is False
     assert assess(classifiers=[MITC], text=deep)["verdict"] == "FOUNDER_REVIEW"
+
+
+@pytest.mark.parametrize("name, cls", [("EUPL-1.2", N), ("OSL-3.0", N), ("JSON", X)])
+def test_v11_an_unparseable_expression_keeps_restrictive_names_no_rider_reads(name, cls):
+    """The gate's survivor on 01f7f7e9: once free-text riders read AGPL, SSPL, BUSL and the rest, an unparseable
+    expression's restrictive identifiers were tested only through names a rider also catches. EUPL, OSL and JSON
+    are restrictive by GREG's table alone, so dropping the identifiers read from the broken expression released
+    them."""
+    field = f"{name} AND (MIT"
+    assert p0_attaches(field) is False
+    a = assess(classifiers=[MITC], text=field)
+    assert a["verdict"] == "FOUNDER_REVIEW" and a["class"] == cls
+    parsed = deb("non-free and (custom")
+    assert held(parsed) == ["non-free and (custom"]
+    beside = assess(expression=field, classifiers=[MITC])                   # a License-Expression packaging rejects
+    assert f"License-Expression mentions '{name}'" in beside["restrictive"]

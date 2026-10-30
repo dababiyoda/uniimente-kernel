@@ -780,6 +780,13 @@ METABOLISM_MUTANTS = [
      "                                     sorted(str(e[0][\"atom\"]) for e in p[2])))", "                                     0))"),
     ("deep nesting is parsed without a bound", "greg/licensing.py",
      "            if depth > MAX_NESTING:\n                raise ValueError", "            if False:\n                raise ValueError"),
+    ("an unparseable License-Expression loses the restrictive names no wording catches", "greg/licensing.py",
+     'for p, c in _riders(expression)] + _named_restrictions(expression, "License-Expression")',
+     "for p, c in _riders(expression)]"),
+    ("a one-line License field packaging rejects loses the restrictive names in it", "greg/licensing.py",
+     '            atoms += _named_restrictions(one, "License field")\n', "            pass\n"),
+    ("a word of an unparseable field is read as restrictive wording", "greg/licensing.py",
+     'for c in [_table_class(w, "spdx")] if c in HELD]', 'for c in [_lookup(w, "spdx")] if c in HELD]'),
 ]
 
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),

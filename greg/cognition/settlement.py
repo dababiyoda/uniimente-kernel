@@ -182,25 +182,6 @@ def _known_method(receipt, compiled, builtins, formed) -> bool:
     return method is not None and bool(method.cognitive_profile) and method.version == receipt["method_version"]
 
 
-def _mission_order(journal) -> dict:
-    """event id -> position among the journal's mission events, so an observation can be placed before or after
-    an appraisal. A fixture journal without positions falls back to its event list."""
-    positions = getattr(journal, "positions", None)
-    if callable(positions):
-        return positions("mission.")
-    return {getattr(e, "event_id", None): i for i, e in enumerate(getattr(journal, "events", []))}
-
-
-def _before(order, event, appraisal) -> bool:
-    """Whether ``event`` was recorded before ``appraisal``. After an appraised failure closure (VERIFIED_UNMET), an
-    observation recorded later belongs to a later closure, which only its own appraisal can settle, so a success
-    after an appraised failure is never credited under the failure's verdict. After a verified success, an
-    infinite-closure mission keeps re-verifying the same answer, and those observations still count, as before.
-    Unplaceable events (no position) keep the earlier behaviour."""
-    a, b = order.get(getattr(event, "event_id", None)), order.get(getattr(appraisal, "event_id", None))
-    return a is None or b is None or a < b
-
-
 def _settling_appraisals(journal) -> dict:
     """mission id -> the appraisal under which its observations settle: its latest one, when that is a verified
     success or a verified failure closure (an outcome ledger that heard only successes would score every method by
@@ -231,14 +212,10 @@ def measured_outcomes(journal):
     registrations = {e.payload["mission_id"]: e.payload for e in journal.replay("mission.registered")}
     witnesses = {r.payload["witness_id"]: r.payload for r in journal.ledger.by_type("witness")}
     latest_appraisal, observations = _settling_appraisals(journal), {}
-    order = _mission_order(journal)
     for event in journal.replay("mission.observed"):
         data = event.payload
         if data.get("mission_id") not in latest_appraisal or not data.get("receipt"):
             continue
-        settling_event = latest_appraisal[data["mission_id"]]
-        if settling_event.payload.get("verdict") == "VERIFIED_UNMET" and not _before(order, event, settling_event):
-            continue      # after an appraised failure, a later closure waits for its own appraisal (#221, TXT-R4-1)
         record = journal.ledger.find(data["receipt"])
         if record is None or record.record_type != "receipt":
             continue
@@ -995,22 +972,13 @@ def _terminal_missions(journal) -> set:
 
 
 def _awaiting_appraisal(journal) -> set:
-    """Missions with a closure no appraisal has judged yet: an achievement with no appraisal recorded after it, or
-    a held or unmet closure no ``mission.appraised`` names. The body appraises these on a later tick
-    (``Body._close_out``; review of #221, TXT-R4-1)."""
-    order = _mission_order(journal)
-    last = {}
-    for e in journal.replay("mission.appraised"):
-        last[e.payload["mission_id"]] = e
+    """Missions with a closure no appraisal has judged yet: an achievement with no appraisal of its own (one that
+    names no closure_event, as ``Body._close_out`` judges it; an appraisal of an earlier failure or hold names that
+    closure, TXT-R4-1), or a held or unmet closure no ``mission.appraised`` names. The body appraises these on a later
+    tick."""
+    own = {e.payload["mission_id"] for e in journal.replay("mission.appraised") if not e.payload.get("closure_event")}
     judged = {e.payload.get("closure_event") for e in journal.replay("mission.appraised")}
-    def unjudged(achieved):
-        appraisal = last.get(achieved.payload["mission_id"])
-        if appraisal is None:
-            return True
-        a, b = order.get(getattr(appraisal, "event_id", None)), order.get(getattr(achieved, "event_id", None))
-        return a is not None and b is not None and a < b
-
-    return ({e.payload["mission_id"] for e in journal.replay("mission.achieved") if unjudged(e)}
+    return ({e.payload["mission_id"] for e in journal.replay("mission.achieved") if e.payload["mission_id"] not in own}
             | {e.payload["mission_id"] for kind in ("mission.held", "mission.unmet") for e in journal.replay(kind)
                if e.event_id not in judged})
 

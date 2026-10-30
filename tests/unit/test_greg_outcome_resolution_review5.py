@@ -15,7 +15,7 @@ pytest.importorskip("scipy")
 from greg.cognition import compiler, settlement  # noqa: E402
 from greg.cognition.contracts import digest  # noqa: E402
 from tests.unit.test_greg_construction_realization import PROMISED, Run  # noqa: E402
-from tests.unit.test_greg_pending_construction_realization import appraise, observe, pending  # noqa: E402
+from tests.unit.test_greg_pending_construction_realization import appraise, pending  # noqa: E402
 from tests.unit.test_greg_recombine import PORTFOLIO  # noqa: E402
 
 MISSION = "m:pending-fixture"
@@ -28,37 +28,21 @@ def weigh(monkeypatch, counts, disputes):
     return {r["method"]: r for r in rows}
 
 
-# --- TXT-R4-1: an achievement after an appraised failure waits for its own appraisal ---------------------------
+# --- TXT-R4-1: the row text follows the integrator's fix (#196 afcd75f3) -------------------------------------
+# The fix itself (Body._close_out and _settling_appraisals) is #196's, tested by test_greg_achievement_after_unmet.py.
 
 
-def test_txt_r4_1_a_success_after_an_appraised_failure_is_not_credited_under_the_failures_verdict():
-    journal, receipt = pending(observed=False)
-    appraise(journal, "VERIFIED_UNMET")
-    observe(journal, receipt)                                       # the later closure's passing observation
-    assert settlement.measured_outcomes(journal) == []
+def test_txt_r4_1_an_achievement_after_an_appraised_failure_reads_pending_until_its_own_appraisal():
+    journal, _ = pending()
+    journal.record("mission.unmet", {"mission_id": MISSION})
+    unmet = journal.events[-1].event_id
+    journal.record("mission.appraised", {"mission_id": MISSION, "verdict": "VERIFIED_UNMET", "checks": {},
+                                         "closure_event": unmet})
+    assert MISSION not in settlement._awaiting_appraisal(journal)
     journal.record("mission.achieved", {"mission_id": MISSION})
     assert MISSION in settlement._awaiting_appraisal(journal)       # "pending", not "final"
-    appraise(journal, "VERIFIED")                                   # its own appraisal
-    [outcome] = settlement.measured_outcomes(journal)
-    assert outcome["correct"] is True
+    journal.record("mission.appraised", {"mission_id": MISSION, "verdict": "VERIFIED", "checks": {}})
     assert MISSION not in settlement._awaiting_appraisal(journal)
-
-
-def test_txt_r4_1_the_body_appraises_an_achievement_recorded_after_an_earlier_appraisal(tmp_path, monkeypatch):
-    with Run(tmp_path) as run:
-        body, journal = run.body, run.body.journal
-        calls = []
-        monkeypatch.setattr(body, "_appraise_closure", lambda mid, closure, now: calls.append((mid, closure)))
-        journal.record("mission.appraised", {"mission_id": "m:x", "verdict": "VERIFIED_UNMET", "checks": {}},
-                       key=["m:x", "appraised", "unmet"])
-        journal.record("mission.achieved", {"mission_id": "m:x"}, key=["m:x", "achieved"])
-        body._close_out(run.clock())
-        assert ("m:x", None) in calls
-        calls.clear()
-        journal.record("mission.appraised", {"mission_id": "m:x", "verdict": "VERIFIED", "checks": {}},
-                       key=["m:x", "appraised", "achieved"])
-        body._close_out(run.clock())
-        assert ("m:x", None) not in calls                           # judged now: no second appraisal
 
 
 # --- the decision value -------------------------------------------------------------------------------------------

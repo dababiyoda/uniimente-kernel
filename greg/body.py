@@ -982,13 +982,7 @@ class Body:
     def _close_out(self, now):
         """Record where each closure happened and have it appraised by a separate process."""
         contexts = {e.payload["mission_id"] for e in self.journal.replay("mission.closure_context")}
-        # an achievement is judged by an appraisal recorded after it: one made earlier judged an earlier closure
-        # (an appraised unmet closure, then a strategy the founder approved), never this one (review of #221,
-        # TXT-R4-1)
-        order = self.journal.positions("mission.")
-        appraised = {}
-        for e in self.journal.replay("mission.appraised"):
-            appraised[e.payload["mission_id"]] = order.get(e.event_id, -1)
+        appraised = {e.payload["mission_id"] for e in self.journal.replay("mission.appraised")}
         for event in self.journal.replay("mission.achieved"):
             mid = event.payload["mission_id"]
             if mid not in contexts:
@@ -998,7 +992,7 @@ class Body:
                     "hosted": getattr(self, "boot_id", None) is not None,
                     "device_class": doctor.device_class(),   # informational; never part of founder_body
                     "at": iso(now)}, key=[mid, "context"])
-            if appraised.get(mid, -1) < order.get(event.event_id, -1):
+            if mid not in appraised:
                 self._appraise_closure(mid, None, now)
         judged = {e.payload.get("closure_event") for e in self.journal.replay("mission.appraised")}
         for event in self.journal.replay("mission.held") + self.journal.replay("mission.unmet"):

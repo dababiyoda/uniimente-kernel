@@ -1019,6 +1019,17 @@
     "operator:greg.body.status (greg console, phone /api/status, mission control, greg acceptance)"
    ],
    "reason": "macOS only: Body.run's own loop spawns `/usr/sbin/sysctl -n hw.memsize` through record_telemetry with no capability manifest, Gate or worker envelope behind it; the argv is fixed and read-only with a 5 s timeout, and Linux uses os.sysconf and spawns nothing"
+  },
+  {
+   "module": "greg/licensing.py",
+   "qualname": "system_binary",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "body-loop:Body.tick -> MissionEngine._step/_deficit/_after_outage -> _form -> Genesis.resolve -> _manifest_for -> _binary_license/_companions (each installed tool a mission's deficit or formation finds)",
+    "body-loop:Body.tick -> goal_gravity.tick -> _form_requested -> Genesis.form_for_goal -> resolve -> _manifest_for (a founder-signed goal whose plan node needs a function nothing attached serves)"
+   ],
+   "reason": "the argv ([dpkg-query, -S, the binary's real path]), the 5 s timeout (DPKG_TIMEOUT) and the scrubbed environment (PATH=/usr/bin:/bin, LC_ALL=C) are fixed; the executable is resolved by shutil.which('dpkg-query') on the body process's own ambient PATH, not the fixed system roots installed_binary searches, and it runs unconfined with the body's privileges, with no capability manifest, Gate, run_isolated confinement, worker envelope or person-run command behind it (reproduced: a dpkg-query planted earlier on PATH ran); a fix that pins it to a trusted root-owned system path is proposed on branch claude/licensing-binary-pin-20261030 as a separate child PR of #196, and this entry stays known_unmediated after that fix because the spawn remains unconfined on the body loop; a recorded finding, not an approval"
   }
  ]
 }

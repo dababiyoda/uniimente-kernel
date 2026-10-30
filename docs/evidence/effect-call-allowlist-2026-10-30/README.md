@@ -2,6 +2,8 @@
 
 Founder directive of 2026-10-28 (OPUS MAXIMUS build), unit MU-D, items S37 and S67. Base: `b1950be2` (#196 head).
 Round 1 was `78e986bb`..`f4028f3d`. Round 2 answers the fourteen findings of two independent reviews (below).
+The branch has since merged #196 twice, at `4dc0d581` and at `638457a4`; the merges and the one site the base
+added are under "Merges of the PR base" below.
 
 ## What changed
 
@@ -42,13 +44,14 @@ or the #26 relay could only be noticed by a reviewer reading the diff.
   `urlopen`. `exempt_when` is checked against the function's signature: the keyword must be keyword-only with that
   literal as its default.
 - Each site is keyed by (module path, enclosing qualname, callee) with an occurrence count, never by line number.
-- `tests/security/effect-call-allowlist.json`: 92 keys and 105 occurrences across 27 `greg/` and 14 `foundry/systems/`
-  modules (round 1: 67 keys, 79 occurrences); 6 wrappers.
+- `tests/security/effect-call-allowlist.json`: 93 keys and 106 occurrences across 28 `greg/` and 14 `foundry/systems/`
+  modules (round 2: 92 keys, 105 occurrences, 27 `greg/` modules; round 1: 67 keys, 79 occurrences); 6 wrappers.
   - 90 `allowed` entries. Each names what it serves as `kind:detail`: `capability:` (checked against
     `greg.capabilities.BUILTINS`), `confinement:`, `egress:`, `supervised-worker:`, `model-route:`, `founder-command:`,
     `operator:` (a command a person runs) or `installer:`, plus a justification taken from the code.
-  - 2 `known_unmediated` entries (findings, below). Each must serve `body-loop:<the schedule that reaches it>`;
-    `body-loop:` is refused under `allowed`. (Round 1's `mission-appraisal:` kind is replaced by it.)
+  - 3 `known_unmediated` entries (findings, below; round 2 had 2, the third came with the base's licensing code).
+    Each must serve `body-loop:<the schedule that reaches it>`; `body-loop:` is refused under `allowed`. (Round 1's
+    `mission-appraisal:` kind is replaced by it.)
   - Listing a site authorizes nothing.
 - The test fails on an unlisted site (with a ready-to-paste entry, the `known_unmediated` alternative and the
   `wrappers` advice), a star import, a stale entry or wrapper, a count mismatch, and malformed entries (unknown serves
@@ -56,7 +59,7 @@ or the #26 relay could only be noticed by a reviewer reading the diff.
   words, an `exempt_when` whose default does not match).
 - `scripts/ci/check_effect_call_allowlist_mutants.py` runs the mutants.
 
-No source module changed.
+No source module changed, in any round or merge.
 
 **Why `tests/security/`.** `governance/integrity/` holds founder-signed records (its `authorizations.json` changes only
 by an Ed25519 `INTEGRITY_AUTHORIZE` envelope), so an unsigned list there would read as an authorization. `contracts/`
@@ -72,6 +75,11 @@ holds wire schemas; `tests/data/` does not exist. `tests/security/` already hold
   spawns `/usr/sbin/sysctl -n hw.memsize` every `telemetry_every` active ticks through `record_telemetry`, with no
   person-run command behind it. Fixed, read-only argv. Reproduced: a body run for two ticks with the platform set to
   `darwin` recorded `['/usr/sbin/sysctl', '-n', 'hw.memsize']`.
+- **known_unmediated `greg/licensing.py :: system_binary :: subprocess.run`** (base merge, details below). Genesis
+  runs `dpkg-query -S <binary>` from the body's own tick to read an installed tool's DEP-5 license. The argv, the 5 s
+  timeout and the scrubbed environment are fixed; the executable is found on the body's ambient PATH and runs
+  unconfined with the body's privileges. A recorded finding, not an approval: being listed does not make the spawn
+  acceptable, it stops it growing unseen.
 - **`greg/cognition/bridge.py :: run_worker`** (MUD-4/F3). With a founder-selected Ollama model and a problem that has
   sources or a schedule request, it calls `run_isolated(isolate_network=False)`, so the cortex worker runs with full
   network, not loopback only. Reproduced: `run_isolated(..., isolate_network=False)` let a child create a socket;
@@ -84,6 +92,68 @@ holds wire schemas; `tests/data/` does not exist. `tests/security/` already hold
 
 Reachability of the operator-only entries was re-audited with a reverse search over callers by terminal name across
 `greg/`, `foundry/` and `cortex/`, then each hit was checked by hand: only `memory_bytes` is reached by the body loop.
+That audit was of round 2's tree (`b1950be2`); `system_binary` arrived later with the base and is filed above.
+
+## Merges of the PR base
+
+| Merge | Base merged | Conflicts | New effect sites | Result |
+| --- | --- | --- | --- | --- |
+| `275e9d86` | #196 at `4dc0d581` (66 base commits since `b1950be2`, 95 files) | none: no file changed on both sides | 1: `greg/licensing.py :: system_binary :: subprocess.run` | committed with the scan red on that site, left unlisted pending this classification |
+| `10d8fafa` | #196 at `638457a4` (#209's whole-output judgment adopted; 25 commits, 19 files) | none: no file changed on both sides; `foundry/owned-source.json` was not touched by either side, so `refresh_owned_source.py` was not run | 0 | `system_binary` is still the only unlisted site |
+
+**`638457a4` (#209).** It changes five scanned modules: `greg/appraisal.py`, `greg/authority.py`,
+`greg/goal_gravity.py`, `greg/missions.py` and `greg/pipeline.py`. The diff was read for each. What it adds is
+judgment logic and imports of other `greg` modules (`greg.missions`, `greg.authority`) and of `math`; it starts no
+process, opens no connection, listens nowhere and calls no declared wrapper. The scan agrees: before the licensing
+entry it reported the same single unlisted site as at `4dc0d581`, with no stale entry and no count mismatch.
+
+**`4dc0d581`: the licensing site.** The base added it in `bd7e3f9e` (#201/#230, 2026-10-22, "GREG reads PDFs on the
+mission path; acquired system binaries carry their DEP-5 license"); that commit is not in `b1950be2`, where this
+unit was seeded, and reached #196 with the #201/#230 adoption before `4dc0d581`. Line numbers below are from the
+merged tree at `10d8fafa`.
+
+- The call. `system_binary` (greg/licensing.py:679) resolves `dpkg = shutil.which("dpkg-query")` (:684) on the body
+  process's own PATH and runs `subprocess.run([dpkg, "-S", real], capture_output=True, text=True,
+  timeout=DPKG_TIMEOUT, env={"PATH": "/usr/bin:/bin", "LC_ALL": "C"})` (:689; `DPKG_TIMEOUT = 5`, :564). It is plain
+  `subprocess.run`, not `run_isolated`, and no capability manifest, Gate decision, worker envelope or person-run
+  command stands behind it.
+- Who reaches it: the body, on its own schedule.
+  - Missions: `Body.tick` (greg/body.py:947, `engine.tick` at :965) -> `MissionEngine._step` (missions.py:1920,
+    `_form` at :2025), `_deficit` (:2626, `_form` at :2635) or `_after_outage` (:2750, `_form` at :2765) ->
+    `Genesis.resolve` (genesis.py:1238; installed-software rung, `_manifest_for` at :1331) -> `_manifest_for`
+    (:1992, which calls both at :2012) -> `_binary_license` (:665, calling `system_binary` at :667) and `_companions`
+    (:673, `_binary_license` at :680) -> `system_binary`.
+  - Goal Gravity: `Body.tick` -> `goal_gravity.tick` (body.py:962; goal_gravity.py:1361) -> `_tick` (:1384) ->
+    `_form_requested` (:1243, called at :1411) -> `Genesis.form_for_goal` (goal_gravity.py:1270) -> `resolve`
+    (genesis.py:1234) -> the same chain. It runs only when a founder-signed goal record exists.
+  - A second path, `catalog_adapter` -> `licensing.requalify_binary` (genesis.py:607, licensing.py:1195), returns at
+    once while `ACTIVE_BINARY_POLICY` is `"P0"` (licensing.py:980); only the draft `"P4c"` would reach the spawn.
+  - Runtime trace on `10d8fafa` (a scratch pytest plugin wrapping `subprocess.run`, not committed):
+    `tests/unit/test_greg_missions.py::test_capability_genesis_acquires_installed_tool_and_resumes_mission` passed and
+    recorded one spawn, `['/usr/bin/dpkg-query', '-S', '/usr/bin/sha256sum']` with env
+    `{PATH: /usr/bin:/bin, LC_ALL: C}`, from `body.py:965 tick -> missions.py:1665 tick -> :2038 _step -> :2330
+    _observe -> :2635 _deficit -> :2655 _form -> genesis.py:1331 resolve -> :2012 _manifest_for -> :667
+    _binary_license -> licensing.py:689 system_binary`.
+- What is bounded and what is not. The argv shape, the 5 s timeout and the child's scrubbed environment are fixed.
+  The choice of executable and its confinement are not. `installed_binary` (greg/capabilities.py:1290) searches only
+  `/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin`; `system_binary` searches whatever PATH the body inherited. With a
+  builder, the launchd plist puts `~/.local/bin` first on the body's PATH (greg/service.py:38); systemd and
+  supervisord pass on their manager's PATH. A Mac has no system `dpkg-query`, so any `dpkg-query` on that PATH is the
+  one that runs.
+- Probe on `10d8fafa` (scratch directory, deleted afterwards): with a script named `dpkg-query` placed first on PATH,
+  `licensing.system_binary('/usr/bin/sha256sum')` ran it, and it wrote "planted dpkg-query ran as root with args -S
+  /usr/bin/sha256sum" in this container (the body's user here is root); `capabilities.installed_binary('dpkg-query')`
+  still returned `/usr/bin/dpkg-query`. The integration step's probe at `275e9d86` gave the same result.
+- Classification. Under this unit's rule the site is `known_unmediated`, with two `body-loop:` serves naming the
+  mission and Goal Gravity schedules and a reason that says the above. The precedents are `Body.appraise` and
+  `compute.memory_bytes`: the body reaches each on its own with nothing governing the spawn. It is a recorded finding,
+  not an approval, and listing it authorizes nothing.
+- The fix is outside this unit, which changes no source module. A fix that pins the executable to a trusted,
+  root-owned system path is proposed on branch `claude/licensing-binary-pin-20261030` as a separate child PR of #196
+  (when this record was written the branch existed at `638457a4` with no commits of its own). The entry stays
+  `known_unmediated` after that fix: pinning the path decides which binary runs, but the spawn is still unconfined
+  and still on the body loop. Removing the finding needs the spawn behind confinement (for example `run_isolated`)
+  or behind a governed path, and a re-classification.
 
 ## Review findings and dispositions (round 2)
 
@@ -136,6 +206,20 @@ Pass-after on this branch:
 - `ruff check --line-length 120` on both changed Python files (one-line imports in the script, as in its siblings):
   clean. The tree scan takes about 10 s on this shared 4-core machine.
 
+On the merged tree (`10d8fafa`, #196 at `638457a4`, plus the `system_binary` entry):
+
+| Check | Result |
+| --- | --- |
+| `tests/unit/test_effect_call_allowlist.py`, before the entry | **1 failed, 8 passed**: `UNLISTED … greg/licensing.py :: system_binary :: subprocess.run (1 call)`, the only problem reported (same as at `275e9d86`) |
+| the same, after the entry | **9 passed** |
+| `scripts/ci/check_effect_call_allowlist_mutants.py` | BASELINE passes, **52/52 caught**, exit 0, 5m57s. The one new mutant drops the `system_binary` entry and must fail `test_every_effect_call_site_is_listed` naming that site, so "each `known_unmediated` entry removed" still covers every entry (allowlist mutants: 11) |
+| `tests/unit/test_greg_packaging.py`, `test_greg_platform.py`, `test_developmental_inheritance.py` | 3, 19 and 23 passed |
+| `test_greg_license_expressions.py`, `test_greg_license_qualification.py`, `test_greg_license_use_context.py`, `test_greg_model_license.py` and the traced Genesis mission test | 1982 passed |
+| `scripts/ci/check_authority_singleton.py` | rc 0, "exactly one source of authority for each governed artifact" |
+| `scripts/ci/check_schema_refs.py` | rc 0, 27 schemas, 130 local refs, all resolve |
+| test files of modules changed on both sides | none: the unit changes four files of its own and no source module, and neither merge had a file changed on both sides |
+| `ruff check --line-length 120` on the two Python files | only the script's one-line stdlib import (E401, or I001 under the import-sort rules), identical to the committed file |
+
 ## Limitations
 
 The scan is static and reads only `greg/` and `foundry/systems/`. It does not see:
@@ -152,10 +236,23 @@ The scan is static and reads only `greg/` and `foundry/systems/`. It does not se
 Name binding is flow-insensitive, so a reused local name may over-report. The mutants script is not a step in
 `.github/workflows/canonical-ci.yml` (outside this unit's scope); the test itself runs in CI job 1's full pytest run.
 
+The `system_binary` entry's body-loop paths were traced at runtime only for the mission path (one test, the
+installed-software rung); the Goal Gravity path is read from the code. The planted-binary probe ran in this Linux
+container as root; it was not run on a Mac or under launchd, systemd or supervisord, so the PATH each service manager
+hands the body is read from `greg/service.py`, not observed.
+
+**Commit identity.** The six commits on this branch made before 17:55Z on 2026-10-30 (`78e986bb`, `f4028f3d`,
+`f0b5d1a2`, `5c6116a2`, `eca2f86a` and the merge `275e9d86`) carry the placeholder author and committer
+`combined-check <combined-check@local>`. It leaked from a shared git configuration that another workflow of the same
+session had set; worktrees share one config file. History is not rewritten, because these shas are cited as evidence
+here and in the unit's review records. Later commits carry `Claude <noreply@anthropic.com>`. This is a limitation of
+the record, not a defect of the code.
+
 ## Reality level
 
-UNIT-TESTED: static analysis plus mutation testing on scratch copies. Two runtime probes reproduced findings
-(`run_isolated` network; the body loop's `sysctl` spawn, with the spawn intercepted). No runtime effect was blocked,
-nothing ran on a founder device, and no authority, capability or behaviour changed.
+UNIT-TESTED: static analysis plus mutation testing on scratch copies. Three runtime probes reproduced findings
+(`run_isolated` network; the body loop's `sysctl` spawn, with the spawn intercepted; the body loop's `dpkg-query`
+spawn, traced from `Body.tick`, and a planted `dpkg-query` earlier on PATH that it ran). No runtime effect was
+blocked, nothing ran on a founder device, and no authority, capability or behaviour changed.
 
 Rollback: revert the commits. The three files have no dependents.

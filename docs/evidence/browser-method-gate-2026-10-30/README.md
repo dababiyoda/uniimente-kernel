@@ -208,6 +208,27 @@ The reviewers' probes (`review-browser-method-gate-attack/p*.py`), run against t
   - Each of the two layers that remove channels is mutated alone and caught by a test of that layer alone.
 - The existing `scripts/ci/check_pipeline_mutants.py`: **3/3 caught**, rc 0.
 
+## Combined with #209, #228 and #229 (2026-10-30)
+
+`greg/pipeline.py` overlaps the open chain #209 -> #228 -> #229, owned by another session. On a scratch merge of
+#229's head `5968013e` (which contains #228 `a7990bc1` and #209 `9b9945c1`) with `d0306e2f`, the one conflict is
+in `pipeline.inspect()`. It resolves by keeping both sides: the reference wrapped under `value` (this branch's
+whole-params refusal) and `observe=observed` (#209's completeness report). Results on that merged tree:
+
+- `test_greg_pipeline_protected.py` and `test_greg_pipeline.py`: 14 passed.
+- The nine test files #209, #228 and #229 add or change: 206 passed, 2 skipped (bubblewrap; #201's
+  `greg.documents`, absent on both sides).
+- The computer-use suites with the browser required: 38 passed.
+- Mutant gates: browser method gate 26/26, `check_pipeline_mutants.py` 3/3, `check_whole_output_mutants.py`
+  117/117.
+- Controls: dropping `observe=observed`, keeping #229's unwrapped call, or removing the depth-0 refusal each fails
+  a named test.
+
+A separate check found one coverage gap in this branch alone: no test caught `inspect` returning its wrapper
+instead of the value (`value = wrapped` survived 21 tests). On the merged tree #209's tests catch it. This branch
+now has its own test,
+`test_inspection_still_returns_the_producers_value_through_its_wrapped_reference`, and a 27th gate mutant.
+
 ## Limitations
 
 - **GET with side effects.** The gate sees methods, not effects. A logout or unsubscribe link, or a state-changing
@@ -223,7 +244,9 @@ The reviewers' probes (`review-browser-method-gate-attack/p*.py`), run against t
 - **The interception's fail-safe default is not mutation-tested.** A request whose decision raises is refused, but
   no page could make the decision raise.
 - **Confined bodies.** The relay checks origins only. The confined browser test, edited to switch off the new
-  interception, was not run here (no bubblewrap).
+  interception, was not run here (no bubblewrap). It ran on GitHub's runner in `computer-use.yml` run 41078400735
+  (head `d0306e2f`, bubblewrap namespaces usable once the AppArmor restriction was lifted): 52 passed, 0 skipped,
+  with Chromium's own sandbox on as a non-root user.
 - **Registration still accepts whole-params.** `greg/missions.py` registration (`validate_mission`, `inline_refs`)
   still accepts a whole-params `$from_action`. It is refused at `resolve`, so it never dispatches; end-to-end
   dispatch was not run. The bind-edge route (`protected_param`) still accepts `steps` or `steps.N`. A step's `key`

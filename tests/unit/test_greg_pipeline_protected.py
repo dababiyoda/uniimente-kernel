@@ -95,6 +95,15 @@ def test_a_capabilitys_whole_params_are_never_an_earlier_actions_output():
         resolve(ref("params", "object"), JOURNAL, MISSION)
 
 
+def test_inspection_still_returns_the_producers_value_through_its_wrapped_reference():
+    """pipeline.inspect wraps its own reference under a key so the whole-params refusal does not reject it; what it
+    reports must still be the producer's value, not that wrapper (the unwrap line had no test of its own)."""
+    ctx = SimpleNamespace(journal=JOURNAL, mission_id=MISSION, target="pipeline:read")
+    out = pipeline.inspect({"action_id": "read", "field": "text", "type": "string"}, ctx)
+    assert out["available"] is True and out["value"] == "widgets"
+    assert [link["field"] for link in out["bindings"]] == ["text"] and out["authority_created"] is False
+
+
 @pytest.mark.parametrize("params", [{"problem": "pid", "data": {"steps": ref("count", "integer")}},
                                     {"steps": ["warm-up", ref("text", "string")]}], ids=["integer-steps", "string-item"])
 def test_a_scalar_under_a_steps_key_stays_bindable_data(params):

@@ -68,7 +68,7 @@ MUTANTS = [
      [(B, "    if lifted is not None:                  #", "    if False:                               #")]),
     ("the founder surface hides a projection failure as no blockers",
      [(B, "    except Exception as exc:                # a projection failure is shown, never hidden\n        return {",
-       "    except Exception as exc:                # a projection failure is shown, never hidden\n        return [] or {")]),
+       "    except Exception as exc:                # a projection failure is shown, never hidden\n        return []; {")]),
     ("the CLI ignores --mission",
      [("greg/cli.py", "open_blockers(journal, home=home, mission_id=args.mission)",
        "open_blockers(journal, home=home)")]),

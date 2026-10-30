@@ -2295,6 +2295,49 @@
         }
       ],
       "reconciliation": "#138 lineage audit (b8a0ccd, LINEAGE-AUDIT-20260930) placed this PR independently, from metadata and selected source only. The convergence line's own placement of the same PR is kept unchanged; where the two classifications or nodes differ the disagreement is preserved, and neither overrides the other (ported 2026-10-14)."
+    },
+    {
+      "id": "n1.vepmc_is_final_acceptance_not_build_gate",
+      "lineage": [
+        "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN (founder correction, 2026-10-30)",
+        "greg/path.json N1 and the cognition_cortex workstream rule (one project-wide active node, VEPMC)",
+        "docs/opus-maximus/NEXT_WAVE_AND_HORIZONS.md section 1 (VEPMC 0 to 1 as the single bottleneck metric)"
+      ],
+      "intended_effect": "VEPMC 0 -> 1: one founder-signed mission on the founder's designated device that survives an interruption, uses a real capability, honors an approval boundary, is independently appraised and is accepted by Alfonso",
+      "intended_effect_status": "active",
+      "classification": "SUPERSEDED_IMPLEMENTATION_ASSUMPTION",
+      "node": "N1",
+      "changed_axes": [
+        "sequence",
+        "timing",
+        "immediate_priority"
+      ],
+      "surviving_mechanisms": [
+        "greg/CHROMEBOOK_FIRST_MISSION.md (the founder runbook)",
+        "greg/chromebook/install.sh",
+        "greg/metrics.py (vepmc: the nine conditions and the founder tier, unchanged)",
+        "greg/path.py (position: N1 stays the one operationally primary node; build_status reads the build beside it)"
+      ],
+      "adaptation": "The device run moves from the front of the build to its end. The build is measured on its own axis (greg path --build): per node STRUCTURALLY_BUILT, BUILD_OPEN or NO_PREDICATE from the same predicates' structurally_met, beside the acceptance frontier, which stays N1 until a founder-tier closure moves it",
+      "activation_evidence": "The founder declares the prompt built and runs the device acceptance: a closure signed by his enrolled key at the founder tier moves N1 in greg path, and the later nodes are then re-run at the founder tier",
+      "evidence_refs": [
+        "docs/intent/INTENT-20261030-BUILD-BEFORE-DEVICE-RUN.json",
+        "docs/intent/sources/FOUNDER-CORRECTION-2026-10-30-source.md",
+        "tests/unit/test_path_build_frontier.py",
+        "tests/integration/test_greg_chromebook_rehearsal.py"
+      ],
+      "authority_change": "none; the build frontier grants nothing and moves neither achieved, the acceptance frontier nor VEPMC",
+      "inheritance_test": {
+        "q1_original_capability": "VEPMC 0 -> 1 on the founder's designated body, read as the one gate in front of building the later nodes (NEXT_WAVE_AND_HORIZONS section 1: the single bottleneck metric)",
+        "q2_still_in_destination": "Yes: the device run is the founder's final acceptance of the built prompt, and N1 stays the one operationally primary node of greg path",
+        "q3_assumption_that_became_false": "That the device run comes before the later nodes are built. The founder, 2026-10-30: 'No real Chromebook run is needed. That is done when we completely build the prompt'",
+        "q4_replace_without_discarding": "Yes: VEPMC, its nine conditions and the founder tier are unchanged; the build is read beside them from the predicates' structural results",
+        "q5_portable_parts": "The nine VEPMC conditions, the founder tier, the runbook, install.sh and every node predicate's structurally_met",
+        "q6_later_node_parts": "The device run itself, now the last step: N1 moved at the founder tier, then N2 onward re-run at the founder tier on the device",
+        "q7_extract_into_current_path": "build_status and greg path --build (the build frontier beside the acceptance frontier), and one weakening mutant per node predicate (scripts/ci/check_path_predicate_mutants.py)",
+        "q8_incompatible_with_corrected_destination": "Any reading that lets a container, a rehearsal or a test key move N1, achieved or VEPMC, or that labels built work founder-used, live or externally verified",
+        "q9_cheapest_distinguishing_test": "On a test-key ledger that meets N1 and N2 structurally, greg path --build reports the build frontier at N3 while achieved stays ['N0'] and the acceptance frontier stays N1 (tests/unit/test_path_build_frontier.py, with VEPMC's rows stubbed). On one body driven only through the installed greg command with a --no-passphrase key, the same holds and VEPMC founder_tier_count stays 0 (tests/integration/test_greg_chromebook_rehearsal.py)"
+      }
     }
   ],
   "coverage_audit": {

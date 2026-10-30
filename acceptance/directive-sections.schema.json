@@ -29,10 +29,10 @@
                "BODY_VERIFIED", "FOUNDER_ACCEPTED", "AUTHORIZED_LIVE", "EXTERNALLY_VERIFIED",
                "COMMERCIAL_OUTCOME_VERIFIED", "BLOCKED_WITH_REASON"]
     },
-    "rung": {
-      "enum": ["INTENDED", "DESIGNED", "IMPLEMENTED", "INTEGRATED", "UNIT_VERIFIED", "SANDBOX_VERIFIED",
-               "BODY_VERIFIED", "FOUNDER_ACCEPTED", "AUTHORIZED_LIVE", "EXTERNALLY_VERIFIED",
-               "COMMERCIAL_OUTCOME_VERIFIED"]
+    "required": {
+      "description": "A testable ask requires at least UNIT_VERIFIED: a rung below it would be met with no evidence.",
+      "enum": ["UNIT_VERIFIED", "SANDBOX_VERIFIED", "BODY_VERIFIED", "FOUNDER_ACCEPTED", "AUTHORIZED_LIVE",
+               "EXTERNALLY_VERIFIED", "COMMERCIAL_OUTCOME_VERIFIED"]
     },
     "unit": {
       "type": "object",
@@ -64,14 +64,14 @@
       "properties": {
         "id": {"type": "string", "pattern": "^S[0-9]{1,2}\\.A[0-9]+$"},
         "ask": {"type": "string", "minLength": 1, "maxLength": 400},
-        "excerpt": {"type": "string", "minLength": 3, "maxLength": 300},
+        "excerpt": {"type": "string", "minLength": 8, "maxLength": 300},
         "owner_paths": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
         "evidence": {
           "type": "array",
           "items": {"type": "string", "pattern": "^(contract:[A-Z][A-Z0-9-]*|mission:[A-L]\\.[A-Za-z0-9.]+|tests/\\S+)$"}
         },
         "tests_tier": {"enum": ["UNIT_VERIFIED", "SANDBOX_VERIFIED", "BODY_VERIFIED"]},
-        "required_tier": {"$ref": "#/$defs/rung"},
+        "required_tier": {"$ref": "#/$defs/required"},
         "tier": {"$ref": "#/$defs/status"},
         "coverage": {"enum": ["covered", "partial", "gap"]},
         "blocker": {"$ref": "#/$defs/blocker"},

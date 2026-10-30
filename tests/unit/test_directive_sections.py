@@ -177,6 +177,15 @@ def test_done_is_refused_while_an_ask_is_open(world):
     assert f"section {opened['n']}: status PARTIAL is not what its asks compute (OPEN)" in check(doc, world)
 
 
+def test_an_ask_cannot_require_less_than_a_test_or_quote_too_little(world):
+    doc = copy.deepcopy(world[0])
+    section(doc, 13)["asks"][0]["required_tier"] = "IMPLEMENTED"      # would be met with no evidence at all
+    assert any("required_tier" in p for p in check(doc, world))
+    doc = copy.deepcopy(world[0])
+    section(doc, 13)["asks"][0]["excerpt"] = "the"                    # would match almost any section
+    assert any("excerpt" in p for p in check(doc, world))
+
+
 def test_a_founder_or_external_tier_needs_a_founder_or_external_blocker(world):
     beyond = first(world[0], world, lambda a, raw: raw["required_tier"] in d.BEYOND_TESTS)
     doc = copy.deepcopy(world[0])

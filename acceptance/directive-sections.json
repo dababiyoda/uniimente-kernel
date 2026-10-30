@@ -2582,16 +2582,13 @@
      "owner_paths": [
       "greg/computer.py"
      ],
-     "evidence": [
-      "tests/unit/test_greg_computer.py"
-     ],
-     "tests_tier": "SANDBOX_VERIFIED",
+     "evidence": [],
      "required_tier": "SANDBOX_VERIFIED",
-     "tier": "SANDBOX_VERIFIED",
-     "coverage": "partial",
+     "tier": "INTENDED",
+     "coverage": "gap",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "browser.session is not installed or exercised in CI and has no method-level gate",
+      "reason": "browser.session's tests skip at module level without Playwright (collect nothing here or in CI), and it has no method-level gate",
       "unit": "WU-10"
      }
     },

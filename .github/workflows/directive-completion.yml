@@ -1,0 +1,29 @@
+# The 2026-10-28 directive's completion contract (acceptance/directive-sections.json).
+#
+# The full suite already runs tests/unit/test_directive_sections.py (the static check). This workflow adds what the
+# suite does not: pytest's collection over every node the map cites (a cited node that collects nothing fails), and
+# the mutant gate that removes each safeguard of acceptance/directive.py and requires a failing test. It grants,
+# deploys and publishes nothing.
+name: directive-completion
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  directive-completion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Directive map, with every cited node collected
+        run: python -m acceptance directive --collect
+      - name: Every directive-completion safeguard fails its tests when removed
+        run: python scripts/ci/check_directive_sections_mutants.py

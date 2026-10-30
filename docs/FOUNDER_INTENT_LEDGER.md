@@ -2,6 +2,38 @@
 
 # Founder Intent Ledger
 
+## Build the whole prompt first; the device run is its acceptance — 2026-10-30
+
+Founder message in session `session_01Kucyfm6YBHMTjaiC1M9hqD`, verbatim: "Continue building and doing the prompt verbatim. No real Chromebook run is needed. That is done when we completely build the prompt". It answered a report that listed the first Chromebook run (VEPMC 0 to 1) as remaining work. It is intent evidence, not founder authentication.
+
+| Required field | INTENT-20261030-BUILD-BEFORE-DEVICE-RUN |
+| --- | --- |
+| statement | Continue building and doing the prompt verbatim. No real Chromebook run is needed. That is done when we completely build the prompt |
+| source_refs | [verbatim source](intent/sources/FOUNDER-CORRECTION-2026-10-30-source.md); [record](intent/INTENT-20261030-BUILD-BEFORE-DEVICE-RUN.json); the prompt it refers to, `INTENT-20261028-OPUS-MAXIMUS-REISSUE` |
+| owner | Alfonso Lopez decides; the integration owner and implementing sessions on board #96 build |
+| state | active |
+| binding_scope | sequencing of work on the integration line (#196 and its children); reversible implementation and draft review only |
+| constitutional_constraints | changed axis: sequence and timing only. The final effect, the evidence ladder (directive section 56) and the authority envelope are unchanged. Nothing built in a container is labelled founder-used, live or externally verified |
+| success_evidence | later directive nodes land as draft PRs with fail-before/pass-after tests while VEPMC stays 0; `tests/unit/test_founder_correction_20261030.py` |
+| failure_evidence | a container run reported as founder-used; a test key or rehearsal that moves VEPMC or `greg path` N1 |
+| dependencies | `INTENT-20261001-FULL-MACHINE-COMPLETION` (VEPMC already stops no unrelated software work) |
+| conflicts | `opus-maximus/NEXT_WAVE_AND_HORIZONS.md` §1 names the device run the single bottleneck metric; directive §58 warns against jumping to later nodes. Both resolved by founder sequencing: the metric is kept for device acceptance, and §56's evidence labels apply to every later node |
+| next_review_trigger | the founder declares the prompt built, runs the device acceptance, or corrects the sequence again |
+| supersedes | reading VEPMC 0 to 1 as the gate in front of the directive's later nodes (sequencing only) |
+| superseded_by | none |
+| implementation_refs | `greg/metrics.py` (unchanged: nine conditions, founder tier), `opus-maximus/NEXT_WAVE_AND_HORIZONS.md` (dated note) |
+
+## The 77-section master build directive, re-issued with a preamble — 2026-10-28
+
+`INTENT-20261028-OPUS-MAXIMUS-REISSUE` ([record](intent/INTENT-20261028-OPUS-MAXIMUS-REISSUE.json), [complete verbatim text](intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md)): the founder re-sent the 2026-09-30 OPUS MAXIMUS master build directive in full, given twice, behind a new preamble.
+
+The preamble:
+- asks for one persistent GREG whose unified agency emerges from an ecology of computational, institutional, economic and human systems and "Different forms of intelligence as described by levin";
+- asks that the public community influence GREG while GREG helps it;
+- asks for an architecture that absorbs future technology toward "Jarvis/self-driving-car level of mechanistic aliveness", "without confusing that appearance with biological consciousness or allowing operational autonomy to erase legitimate human shutdown authority".
+
+Every section the 2026-09-30 source kept is word for word the same (tested). INTENT-0030 governs the reading: Levin's forms of intelligence compile to the existing multiscale Mind and governed workers, community influence enters as evidence through the untrusted data plane, and "survival" is continuity of function, never a right to survive (section 47). State: active. Authority delta: none. VEPMC: 0.
+
 ## Organ pins upgraded — 2026-10-23
 
 Founder message in the #196 session, verbatim: "All organs should have upgraded pins". It is not founder authentication; it settles the open "organ pin upgrade" decision.

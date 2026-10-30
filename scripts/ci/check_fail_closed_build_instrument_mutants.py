@@ -7,7 +7,13 @@ The safeguards (docs/evidence/fail-closed-build-instrument-2026-10-30/README.md)
   runs the path-predicate gate and this one on every pull request;
 - a body made by `greg rehearse` is marked in body.json before any key is enrolled (greg/rehearsal.py), and
   metrics.founder_tier keeps every mission of a marked body below the founder tier (greg/metrics.py). Over-reach is
-  guarded too: an unmarked body, or a ledger with no body.json beside it, is not read as a rehearsal.
+  guarded too: an unmarked body, or a ledger with no body.json beside it, is not read as a rehearsal;
+- the same holds for a body whose ledger carries a MISSION that opens with the [REHEARSAL] label every `greg rehearse`
+  body signs, so a rehearsal body made before the mark existed, or whose body.json was edited, stays below the tier
+  (review finding MWA-ATK-1); only a label that opens the expression counts, and the label never changes;
+- every founder surface says a rehearsal body is one: `greg status` carries a command for another body as `how`, so
+  the home banner never renders an empty command, and Mission Control's Proof row names the rehearsal body whether or
+  not its key attested (review findings MWA-ATK-2 and MWA-FID-1).
 
 Every mutant runs in a scratch copy of the repository, never the checkout, under ``python -B`` with
 PYTHONDONTWRITEBYTECODE=1, after every ``__pycache__`` in the copy is purged, so no bytecode of the checkout or of an
@@ -27,6 +33,9 @@ ROOT = Path(__file__).resolve().parents[2]
 TIER = "tests/unit/test_greg_rehearsal_founder_tier.py::"
 REHEARSAL = TIER + "test_a_rehearsal_body_never_reaches_the_founder_tier_and_achieved_does_not_move"
 READER = TIER + "test_the_mark_is_read_beside_the_ledger_and_an_unreadable_config_never_grants_the_tier"
+EARLIER = TIER + "test_a_rehearsal_body_made_before_the_mark_is_known_by_the_label_in_its_ledger"
+LABEL = TIER + "test_the_label_marks_the_whole_body_only_when_it_opens_a_missions_expression"
+SURFACES = TIER + "test_every_founder_surface_says_a_rehearsal_body_is_one_and_never_shows_an_empty_command"
 SUPERVISOR = "tests/unit/test_require_supervisor.py::"
 REQUIRED = SUPERVISOR + "test_required_and_missing_every_supervised_rehearsal_fails_with_the_message"
 UNSET = SUPERVISOR + "test_unset_a_missing_supervisord_still_skips"
@@ -61,9 +70,32 @@ MUTANTS = [
     ("a ledger kept in memory reads as a rehearsal", "greg/metrics.py",
      "    if not location:\n        return False\n", "    if not location:\n        return True\n", [READER]),
     ("the status surface advises an attestation on a rehearsal body", "greg/metrics.py",
-     '    advice = ({"rehearsal_body": True, "consequence": REHEARSAL_BODY} if rehearsal_body(journal) else {} if ok'
-     ' else\n',
+     '    advice = ({"rehearsal_body": True, "consequence": REHEARSAL_BODY, "how": REHEARSAL_HOW} if rehearsal else\n'
+     '              {} if ok else\n',
      "    advice = ({} if ok else\n", [REHEARSAL]),
+    ("the status surface gives a rehearsal body no command, so the banner shows an empty one", "greg/metrics.py",
+     '{"rehearsal_body": True, "consequence": REHEARSAL_BODY, "how": REHEARSAL_HOW}',
+     '{"rehearsal_body": True, "consequence": REHEARSAL_BODY}', [SURFACES]),
+    ("Mission Control's Proof row treats a rehearsal body like any other", "greg/mission_control.py",
+     '    if tier.get("rehearsal_body"):', "    if False:", [SURFACES]),
+    ("the ledger's rehearsal label is never read", "greg/metrics.py",
+     "    return any(rehearsal_mission(event.payload) for event in events)\n", "    return False\n",
+     [EARLIER, LABEL]),
+    ("rehearsal_body ignores the body.json mark", "greg/metrics.py",
+     "    if rehearsal_marked(journal):\n        return True\n", "", [SURFACES]),
+    ("founder_tier reads only the body.json mark", "greg/metrics.py",
+     "    rehearsal = rehearsal_body(journal, accepted)\n    seq = ",
+     "    rehearsal = rehearsal_marked(journal)\n    seq = ", [EARLIER, LABEL]),
+    ("the status surface reads only the body.json mark", "greg/metrics.py",
+     "    rehearsal = rehearsal_body(journal, accepted)\n    advice = ",
+     "    rehearsal = rehearsal_marked(journal)\n    advice = ", [EARLIER]),
+    ("the label anywhere in an expression marks the body", "greg/metrics.py",
+     "expression.startswith(REHEARSAL_LABEL)", "REHEARSAL_LABEL in expression", [LABEL]),
+    ("the label changes, so bodies made earlier lose it", "greg/rehearsal.py",
+     'LABEL = f"[{REHEARSAL}]"\n', 'LABEL = f"[{REHEARSAL}-RUN]"\n', [LABEL]),
+    ("greg rehearse signs its First Mission without the label", "greg/rehearsal.py",
+     'founder_expression=f"{LABEL} Run the Founder\'s First Mission with a throwaway key.")',
+     'founder_expression="Run the Founder\'s First Mission with a throwaway key.")', [EARLIER]),
     ("greg rehearse does not mark its body", "greg/rehearsal.py", ORDER, "", [REHEARSAL]),
     ("the mark is written after the key is enrolled", "greg/rehearsal.py", ORDER + ENROL,
      ENROL + "    mark_body(home)\n", [REHEARSAL]),

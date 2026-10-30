@@ -13,9 +13,11 @@ is not a founder-designated body, so nothing it does counts toward VEPMC; no net
 message or publication is used. It reads only the kernel checkout it is pointed at.
 
 The body is marked as a rehearsal body in its body.json (``mark_body``) before the throwaway key is enrolled, and
-greg.metrics.founder_tier never puts its missions at the founder tier, even when that unprotected key signs a
-FOUNDER_TIER attestation itself. The mark guards against promoting a rehearsal by accident, not against an operator
-who edits body.json.
+every MISSION it signs opens its founder_expression with ``LABEL``, so its own hash-chained ledger says so too.
+greg.metrics.founder_tier never puts a mission of a body marked or labelled either way at the founder tier, even
+when that unprotected key signs a FOUNDER_TIER attestation itself. The label covers a body made before the mark
+existed and a body.json edited since. Both guard against promoting a rehearsal by accident, not against an operator
+who builds a body by hand.
 """
 from __future__ import annotations
 
@@ -26,6 +28,9 @@ import tempfile
 import time
 
 REHEARSAL = "REHEARSAL"
+# Opens the founder_expression of every MISSION `greg rehearse` signs, as it has since this file was first written
+# (53ef9d08, 2026-10-14); greg.metrics.rehearsal_body reads it from the ledger.
+LABEL = f"[{REHEARSAL}]"
 
 
 def mark_body(home: Path) -> dict:
@@ -79,7 +84,7 @@ def rehearse(*, directory: Path | None = None, kernel_root: Path | None = None, 
         body.enroll_founder(public)
     send_signed(home, key, "CAPABILITY_ATTACH", {"capability_id": "cognition.dp_knapsack"})
     spec = first_mission(kernel_root=str(kernel), effort_budget=effort_budget, run=REHEARSAL.lower(),
-                         founder_expression=f"[{REHEARSAL}] Run the Founder's First Mission with a throwaway key.")
+                         founder_expression=f"{LABEL} Run the Founder's First Mission with a throwaway key.")
     send_signed(home, key, "MISSION", spec)
     trace = []
     with Body(home) as body:                       # first process: one step, then a simulated crash
@@ -107,7 +112,7 @@ def rehearse(*, directory: Path | None = None, kernel_root: Path | None = None, 
         venture = {"mission_id": vspec["mission_id"], "state": state, "books": books(home, vspec["mission_id"])}
         # A second First Mission reads the first one's retained result: memory across missions, not a cache.
         again = first_mission(kernel_root=str(kernel), effort_budget=effort_budget, run=REHEARSAL.lower() + "-2",
-                              founder_expression=f"[{REHEARSAL}] Run the Founder's First Mission again.")
+                              founder_expression=f"{LABEL} Run the Founder's First Mission again.")
         send_signed(home, key, "MISSION", again)
         second_state = settle(home, again["mission_id"], max_ticks)
         doc = json.loads(next((home / "deliveries" / "first-mission").glob(again["mission_id"].replace(":", "_") + ".json")).read_text())

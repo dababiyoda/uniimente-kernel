@@ -565,6 +565,12 @@ def _ventures(console, p, form) -> str:
 def _tier_line(tier: dict, v: dict) -> str:
     if not tier:
         return "unknown"
+    if tier.get("rehearsal_body"):            # attested or not, no attestation on this body counts, so none is advised
+        signed = (" Its throwaway key signed FOUNDER_TIER; that does not count." if tier.get("enrolled_key_attested")
+                  else "")
+        return (f"<b class=warn>rehearsal body</b>: {_e(tier.get('consequence', ''))}.{signed} "
+                f"<b>{_e(v.get('founder_tier_count', 0))}</b> closure(s) at the founder tier. "
+                f"The tier is reached on another body: <code>{_e(tier.get('how', ''))}</code>")
     if tier.get("enrolled_key_attested"):
         since = ", ".join(a.get("issued_at") or "?" for a in tier.get("attested", []))
         return (f"attested since {_e(since)}; <b>{_e(v.get('founder_tier_count', 0))}</b> closure(s) at the founder tier"

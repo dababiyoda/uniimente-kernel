@@ -35,6 +35,7 @@ from pathlib import Path
 
 from greg import organ_bridge
 from greg.journal import Journal
+from greg.rehearsal import LABEL as REHEARSAL_LABEL
 
 CONDITIONS = ("founder_signed", "interface_detached", "persistent_runtime", "real_capability",
               "approval_boundary", "interruption_survived", "appraised_verified", "founder_accepted", "founder_body")
@@ -243,18 +244,46 @@ NOT_FOUNDER_TIER = ("its signing key never attested passphrase custody: a test k
 
 # A body made by `greg rehearse` holds its throwaway REHEARSAL key on disk with no passphrase, and that key can sign
 # FOUNDER_TIER itself (above), after which its closures would read FOUNDER_TIER and could move `achieved`.
-# greg/rehearsal.py writes REHEARSAL_MARK into the new body's body.json before any key is enrolled, and founder_tier
-# keeps every mission of a marked body below the tier, whatever is signed. Read-side only: the body still accepts
-# the attestation (refusing FOUNDER_TIER and a first_founder_body designation at write time is a greg/body.py change,
-# left to a follow-up). The mark guards against promoting a rehearsal by accident; it does not hold against an
-# operator who edits body.json.
+# greg/rehearsal.py writes REHEARSAL_MARK into the new body's body.json before any key is enrolled, and every MISSION
+# it signs opens its founder_expression with greg.rehearsal.LABEL. founder_tier keeps every mission of a body marked
+# or labelled either way below the tier, whatever is signed. The label sits in the hash-chained ledger, so it also
+# covers a body made before the mark existed (every `greg rehearse` body carries it) and a body.json edited since.
+# Read-side only: the body still accepts the attestation (refusing FOUNDER_TIER and a first_founder_body designation
+# at write time is a greg/body.py change, left to a follow-up). Both guard against promoting a rehearsal by accident;
+# neither holds against an operator who builds a body by hand.
 REHEARSAL_MARK = "rehearsal"
-REHEARSAL_BODY = ("a rehearsal body (made by `greg rehearse`, marked in body.json) never reaches the founder tier, "
-                  "whatever its throwaway key signs")
+REHEARSAL_BODY = (f"a rehearsal body (made by `greg rehearse`: marked in body.json or labelled {REHEARSAL_LABEL} in "
+                  "its ledger) never reaches the founder tier, whatever its throwaway key signs")
+REHEARSAL_HOW = ("greg --home <a new home> init, then enroll and attest your own passphrase-protected key on that "
+                 "body")
 
 
-def rehearsal_body(journal: Journal | None) -> bool:
-    """Whether the body this journal's ledger belongs to is marked as a rehearsal body.
+def rehearsal_mission(command) -> bool:
+    """Whether one accepted command is a MISSION `greg rehearse` signed: its founder_expression opens with
+    greg.rehearsal.LABEL. Only the enrolled founder key may sign a MISSION (a device key is refused), so on a
+    rehearsal body this is its throwaway key's own record, in the hash-chained ledger, which no edit to body.json
+    reaches."""
+    from greg.founder import accepted_body
+    spec = accepted_body(command) if isinstance(command, dict) and command.get("kind") == "MISSION" else None
+    expression = spec.get("founder_expression") if isinstance(spec, dict) else None
+    return isinstance(expression, str) and expression.startswith(REHEARSAL_LABEL)
+
+
+def rehearsal_body(journal: Journal | None, accepted: list | None = None) -> bool:
+    """Whether the body this journal's ledger belongs to is a rehearsal body: marked in body.json
+    (``rehearsal_marked``) or labelled in the ledger by an accepted ``rehearsal_mission``.
+
+    ``accepted`` is the journal's command.accepted events, for a caller that has already replayed them."""
+    if journal is None:
+        return False
+    if rehearsal_marked(journal):
+        return True
+    events = journal.replay("command.accepted") if accepted is None else accepted
+    return any(rehearsal_mission(event.payload) for event in events)
+
+
+def rehearsal_marked(journal: Journal | None) -> bool:
+    """Whether the body this journal's ledger belongs to is marked as a rehearsal body in its body.json.
 
     The mark is read from body.json beside the ledger, where a body keeps both. A ledger with no file (in memory),
     or with no body.json beside it, is not marked. A body.json that is there but cannot be read as a JSON object
@@ -282,10 +311,11 @@ def founder_tier(journal: Journal | None) -> dict:
     if journal is None:
         return {}
     from greg.founder import FOUNDER_TIER_BODY, accepted_body
-    rehearsal = rehearsal_body(journal)
+    accepted = journal.replay("command.accepted")
+    rehearsal = rehearsal_body(journal, accepted)
     seq = {r.payload.get("event_id"): r.seq for r in journal.ledger.by_type("event")}
     commands, attested = {}, {}
-    for event in journal.replay("command.accepted"):
+    for event in accepted:
         command = event.payload
         commands.setdefault(command.get("digest"), command)
         if (command.get("kind") == "FOUNDER_TIER" and command.get("signer") == "founder"
@@ -320,14 +350,18 @@ def tier_status(journal: Journal | None, enrolled: list) -> dict:
     closure was a structural candidate and no surface said why (review of 2026-10-14)."""
     from greg.founder import FOUNDER_TIER_BODY, accepted_body
     attested = {}
-    for event in (journal.replay("command.accepted") if journal is not None else []):
+    accepted = journal.replay("command.accepted") if journal is not None else []
+    for event in accepted:
         command = event.payload
         if (command.get("kind") == "FOUNDER_TIER" and command.get("signer") == "founder"
                 and accepted_body(command) == FOUNDER_TIER_BODY):
             attested.setdefault(command.get("founder_key_id"), command.get("issued_at"))
     ok = bool(enrolled) and all(k in attested for k in enrolled)
-    # On a rehearsal body no attestation helps, so the surface says so instead of advising one.
-    advice = ({"rehearsal_body": True, "consequence": REHEARSAL_BODY} if rehearsal_body(journal) else {} if ok else
+    # On a rehearsal body no attestation helps, so the surface says so and points at another body instead of
+    # advising one here (every founder surface renders `how` as the command to run).
+    rehearsal = rehearsal_body(journal, accepted)
+    advice = ({"rehearsal_body": True, "consequence": REHEARSAL_BODY, "how": REHEARSAL_HOW} if rehearsal else
+              {} if ok else
               {"consequence": "every closure stays a STRUCTURAL_CANDIDATE and greg path does not move",
                "how": "greg founder attest --key ~/.greg-founder.pem (asks your passphrase)"})
     return {"enrolled_key_attested": ok,

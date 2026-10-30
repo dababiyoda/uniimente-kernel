@@ -98,7 +98,7 @@ production") CLEARED the weights, with `auto_attach` true. The fix accepts only 
 | The same file with the fix | 45 passed |
 | The reviewer's licensing suites and `test_greg_section_ix_acquisition_scenarios.py` | 2032 passed, 1 xfailed |
 | `model_license_tree` over the same 121 installed texts | 45 cleared, 75 unclassified, 1 not open (was 46, 74, 1). The one text no longer cleared is pluggy's MIT, whose holder line reads "holger krekel (rather uses bitbucket/hpk42)": "uses" is a normative word. It is held for the founder, a measured cost of one in 46. `copyright-notice-real-diff.json` |
-| 4 mutants added to the metabolism group: notice lines dropped whatever follows; a sentence after the holder accepted; a normative word in the holder accepted; the Apache field unchecked | the whole group, 105 mutants: see the PR's evidence |
+| 4 mutants added to the metabolism group: notice lines dropped whatever follows; a sentence after the holder accepted; a normative word in the holder accepted; the Apache field unchecked | the whole group on `40520bcb`, 105 mutants, each in its own copy: 105 caught, 0 survived or stale. `copyright-notice-mutants-2026-10-30.txt` |
 
 ## Limits
 

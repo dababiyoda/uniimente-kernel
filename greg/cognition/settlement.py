@@ -204,6 +204,69 @@ def _settling_appraisals(journal) -> dict:
     return latest
 
 
+def _mission_positions(journal):
+    if hasattr(journal, "positions"):
+        return journal.positions("mission.")
+    return {e.event_id: i for i, e in enumerate(journal.replay("mission."))}
+
+
+def _closure_scoped_appraisals(journal) -> dict:
+    """mission id -> (closures, appraisals) for a bounded mission that closed unmet and was later achieved.
+
+    Each observation belongs to the first closure recorded at or after it: one before a failure closure settles
+    under that closure's own VERIFIED_UNMET, one after it waits for the achievement's own VERIFIED. A refuted
+    achievement then withdraws only what it claimed, never the failure the appraiser verified (TXT-R5-1), and a
+    failure's appraisal never credits the success that followed it (TXT-R4-1). ``closures`` is a list of
+    (position, closure event id, settling appraisal or None) in ledger order."""
+    from greg.sop import REQUIRED_CHECKS
+    achieved = {e.payload["mission_id"]: e for e in journal.replay("mission.achieved")}
+    unmet = defaultdict(list)
+    for e in journal.replay("mission.unmet"):
+        if e.payload["mission_id"] in achieved:
+            unmet[e.payload["mission_id"]].append(e)
+    if not unmet:
+        return {}
+    position = _mission_positions(journal)
+    verdicts = {}                         # (mission id, closure event id) -> its latest appraisal
+    for event in journal.replay("mission.appraised"):
+        data = event.payload
+        if data["mission_id"] in unmet:
+            closure = data.get("closure_event") or achieved[data["mission_id"]].event_id
+            verdicts[data["mission_id"], closure] = event
+
+    def settling(mid, closure, wanted):
+        event = verdicts.get((mid, closure))
+        if event is None or event.payload.get("verdict") != wanted:
+            return None
+        return event if all(event.payload.get("checks", {}).get(k) is True for k in REQUIRED_CHECKS) else None
+
+    scoped = {}
+    for mid, failures in unmet.items():
+        closures = [(position[f.event_id], f.event_id, settling(mid, f.event_id, "VERIFIED_UNMET")) for f in failures]
+        win = achieved[mid]
+        closures.append((position[win.event_id], win.event_id, settling(mid, win.event_id, "VERIFIED")))
+        scoped[mid] = sorted(closures)
+    return scoped
+
+
+def _observation_appraisal(journal, settling: dict):
+    """The appraisal an observation settles under: its own closure's for a mission that closed unmet and was later
+    achieved, otherwise the mission's settling appraisal (``_settling_appraisals``)."""
+    scoped = _closure_scoped_appraisals(journal)
+    position = _mission_positions(journal) if scoped else {}
+
+    def appraisal(event):
+        mid = event.payload.get("mission_id")
+        if mid not in scoped:
+            return settling.get(mid)
+        at = position.get(event.event_id)
+        for closure_at, _, appraised in scoped[mid]:
+            if at is not None and at <= closure_at:
+                return appraised
+        return scoped[mid][-1][2]
+    return appraisal
+
+
 def measured_outcomes(journal):
     if journal is None:
         return []
@@ -217,10 +280,12 @@ def measured_outcomes(journal):
     claim_receipts = defaultdict(set)     # claim identity -> the ledger receipts its observations carried
     registrations = {e.payload["mission_id"]: e.payload for e in journal.replay("mission.registered")}
     witnesses = {r.payload["witness_id"]: r.payload for r in journal.ledger.by_type("witness")}
-    latest_appraisal, observations = _settling_appraisals(journal), {}
+    observations = {}
+    appraisal_of = _observation_appraisal(journal, _settling_appraisals(journal))
     for event in journal.replay("mission.observed"):
         data = event.payload
-        if data.get("mission_id") not in latest_appraisal or not data.get("receipt"):
+        appraisal = appraisal_of(event)
+        if appraisal is None or not data.get("receipt"):
             continue
         record = journal.ledger.find(data["receipt"])
         if record is None or record.record_type != "receipt":
@@ -235,7 +300,7 @@ def measured_outcomes(journal):
                 next((c for c in registration.get("spec", {}).get("success_checks", [])
                       if c["check_id"] == data["check_id"]), None),
                 witnesses.get(record.payload.get("witness_id"), {}).get("capability"),
-                data, event, latest_appraisal[data["mission_id"]])
+                data, event, appraisal)
             if outcome is not None:
                 identity = _outcome_identity(outcome)
                 observations[identity] = outcome
@@ -265,7 +330,7 @@ def measured_outcomes(journal):
                              "cognitive_receipt": receipt["receipt_id"], "method": receipt["method"],
                              "method_version": receipt["method_version"], "geometry_key": geometry_key(ProblemGeometry(**receipt["geometry"])),
                              "correct": data["passed"], "observation_event": event.event_id,
-                             "appraisal_event": latest_appraisal[data["mission_id"]].event_id,
+                             "appraisal_event": appraisal.event_id,
                              "cost_usd": receipt["money_cost"], "latency": receipt["latency"],
                              "causal_credit": receipt["causal_credit"],
                              "evidence_tier": "locally reobserved and appraised computation; external outcome unproven",

@@ -19,10 +19,13 @@ Neither part grants anything.
 
 2. ``report``: a read-only fold of the journal per (capability, action class, target pattern, budget band). It names
    the level the evidence has earned: SHADOW, RECOMMENDER or SUPERVISED_CANARY, by the thresholds below. A refuted or
-   ineffective run, or a regression, drops the tuple back at once: only verified runs after the latest such failure
-   count towards a level. BOUNDED_AUTONOMY and MANAGE_BY_EXCEPTION are never earned from evidence: they would need a
-   founder-signed grant, which does not exist (NEEDS_FOUNDER_DECISION). A level changes nothing: every action still
-   needs its light cone, its exact-scope approvals and the Gate.
+   ineffective run drops the tuple back at once: only verified runs after the latest such run count towards a level.
+   Runs are ordered by where each run itself sits on the ledger, not by when its verdict was recorded (an appraisal
+   retried after an unavailable run lands late). A regression always names a run that ``failures`` names, which the
+   fold already counts as refuted or ineffective at that run's place, so it is counted but drops nothing a second
+   time. BOUNDED_AUTONOMY and MANAGE_BY_EXCEPTION are never earned from evidence: they would need a founder-signed
+   grant, which does not exist (NEEDS_FOUNDER_DECISION). A level changes nothing: every action still needs its light
+   cone, its exact-scope approvals and the Gate.
 
 Limits: a strategy the founder pre-approved inside the signed mission (``pre_approved_steps``) is part of the signed
 mission and is not withdrawn here. A capability failure (a REFUSED receipt) counts against the level but does not
@@ -31,6 +34,7 @@ a body when this code first runs is regressed by the failure evidence already on
 """
 from __future__ import annotations
 
+from bisect import bisect_left, bisect_right
 import math
 
 from greg.capabilities import BUILTINS
@@ -44,28 +48,34 @@ CANARY_MIN_VERIFIED = 5
 CANARY_MIN_WILSON = 0.5                 # Wilson lower bound of the verified share of every judged run
 WILSON_Z = 1.96
 BUDGET_BANDS = ((0.0, "$0"), (1.0, "up to $1"), (10.0, "up to $10"), (100.0, "up to $100"))
-SEVERE = ("refuted", "ineffective", "regressed")
+SEVERE = ("refuted", "ineffective")
+TUPLE = ("capability", "action_class", "target_pattern", "budget_band")
 ABOVE_CEILING = ("needs a founder-signed grant for this exact tuple; no such grant exists yet "
                  "(NEEDS_FOUNDER_DECISION), so no evidence reaches it")
 
 
 def _closure_windows(journal, pos) -> dict:
-    """appraisal event id -> (mission id, verdict, window start, closure position), as greg/appraisal.py windows a
-    closure: from the registration or the mission's previous hold to the closure the appraisal names."""
-    marks = {}
-    for kind in ("mission.registered", "mission.held", "mission.achieved", "mission.unmet"):
-        for e in journal.replay(kind):
-            marks.setdefault(e.payload.get("mission_id"), []).append((pos.get(e.event_id, -1), kind, e.event_id))
+    """appraisal event id -> (mission id, verdict, window start, closure position, appraisal position), as
+    greg/appraisal.py windows a closure: from the registration or the mission's previous hold to the closure the
+    appraisal names. One pass over the marks in ledger order, so a long standing history costs n log n, not n^2."""
+    marks = sorted((pos.get(e.event_id, -1), e.event_id, kind, e.payload.get("mission_id"))
+                   for kind in ("mission.registered", "mission.held", "mission.achieved", "mission.unmet")
+                   for e in journal.replay(kind))
+    opened, closures, achieved = {}, {}, {}
+    for at, eid, kind, mid in marks:
+        if kind != "mission.registered" and mid in opened:     # a closure: its window opened at the latest start
+            closures[eid] = (mid, opened[mid], at)
+            if kind == "mission.achieved":
+                achieved.setdefault(mid, eid)    # a bounded mission's appraisal names no closure: its achievement
+        if kind in ("mission.registered", "mission.held"):
+            opened[mid] = at
     windows = {}
     for e in journal.replay("mission.appraised"):
         p = e.payload
-        own = sorted(marks.get(p.get("mission_id"), []))
-        closure = next((at for at, kind, eid in own if eid == p["closure_event"]), None) if p.get("closure_event") \
-            else next((at for at, kind, _ in own if kind == "mission.achieved"), None)
-        starts = [at for at, kind, _ in own if kind in ("mission.registered", "mission.held")
-                  and closure is not None and at < closure]
-        if closure is not None and starts:
-            windows[e.event_id] = (p["mission_id"], p.get("verdict"), max(starts), closure, pos.get(e.event_id, -1))
+        closure = closures.get(p["closure_event"] if p.get("closure_event") else achieved.get(p.get("mission_id")))
+        if closure is not None and closure[0] == p.get("mission_id"):
+            mid, start, at = closure
+            windows[e.event_id] = (mid, p.get("verdict"), start, at, pos.get(e.event_id, -1))
     return windows
 
 
@@ -74,6 +84,11 @@ def failures(journal) -> list[dict]:
     pos = journal.positions("")
     runs = [e for e in journal.replay("mission.action") if e.payload.get("status") == "DONE"]
     by_receipt = {e.payload["receipt"]: e for e in runs if e.payload.get("receipt")}
+    own = {}                            # mission id -> its completed runs and their positions, in ledger order
+    for e in runs:
+        mine = own.setdefault(e.payload["mission_id"], ([], []))
+        mine[0].append(pos.get(e.event_id, -1))
+        mine[1].append(e)
     out = []
     for e in journal.replay("routing.outcome"):
         p = e.payload
@@ -83,12 +98,12 @@ def failures(journal) -> list[dict]:
             out.append({"kind": "ineffective", "run": run, "evidence": e.event_id, "at": pos.get(e.event_id, -1),
                         "why": f"it executed and the check it advances still failed ({str(p.get('reason'))[:160]})"})
     for appraisal, (mid, verdict, start, closure, at) in _closure_windows(journal, pos).items():
-        if verdict != "REFUTED":
+        if verdict != "REFUTED" or mid not in own:
             continue
-        for run in runs:
-            if run.payload["mission_id"] == mid and start < pos.get(run.event_id, -1) < closure:
-                out.append({"kind": "refuted", "run": run, "evidence": appraisal, "at": at,
-                            "why": "the independent appraisal refuted the closure this run belongs to"})
+        ats, ran = own[mid]             # the runs strictly inside the window: after its start, before its closure
+        for run in ran[bisect_right(ats, start):bisect_left(ats, closure)]:
+            out.append({"kind": "refuted", "run": run, "evidence": appraisal, "at": at,
+                        "why": "the independent appraisal refuted the closure this run belongs to"})
     return sorted(out, key=lambda f: (f["at"], pos.get(f["run"].event_id, -1)))
 
 
@@ -100,6 +115,10 @@ def regress(journal, book, now) -> list[dict]:
     if not any(m.approved_scopes for m in book.missions.values() if m.status not in TERMINAL):
         return []                       # nothing stands, so nothing can fall
     pos = journal.positions("")
+    asks = {}                           # (mission id, scope) -> the APPROVAL asks of that exact scope
+    for rid, request in sorted(book.requests.items()):
+        if request.get("kind") == "APPROVAL":
+            asks.setdefault((request.get("mission_id"), request.get("scope_digest")), []).append(rid)
     recorded, handled = [], set()
     for failure in failures(journal):
         run = failure["run"].payload
@@ -108,9 +127,8 @@ def regress(journal, book, now) -> list[dict]:
         if m is None or m.status in TERMINAL or scope not in m.approved_scopes:
             continue
         ran_at = pos.get(failure["run"].event_id, -1)
-        for rid, request in sorted(book.requests.items()):
-            if (request.get("kind") != "APPROVAL" or request.get("mission_id") != m.mission_id
-                    or request.get("scope_digest") != scope or (book.answers.get(rid) or {}).get("answer") != "approve"
+        for rid in asks.get((m.mission_id, scope), ()):
+            if ((book.answers.get(rid) or {}).get("answer") != "approve"
                     or rid in book.withdrawn or rid in book.consumed or rid in handled
                     or not pos.get(fact_id("decision.requested", rid), ran_at) < ran_at):
                 continue
@@ -194,7 +212,8 @@ def report(journal) -> dict:
     rows = {}
 
     def row(t: dict) -> dict:
-        return rows.setdefault(tuple(t.values()), _blank(t))
+        key = tuple(t[k] for k in TUPLE)
+        return rows.setdefault(key, _blank(dict(zip(TUPLE, key))))
 
     def strategy_row(mid, aid, capability=None):
         m = book.missions.get(mid)
@@ -218,8 +237,15 @@ def report(journal) -> dict:
             r["approved"] += 1
         elif answer == "reject":
             r["rejected"] += 1
-    windows = sorted(_closure_windows(journal, pos).values(), key=lambda w: w[3])
-    ineffective = {f["run"].event_id: f["at"] for f in failures(journal) if f["kind"] == "ineffective"}
+    judging = {}                        # mission id -> (closure positions, windows) of its appraised closures
+    for w in sorted(_closure_windows(journal, pos).values(), key=lambda w: w[3]):
+        at_closure, own = judging.setdefault(w[0], ([], []))
+        at_closure.append(w[3])
+        own.append(w)
+    severe = {}                         # run event id -> the failure evidence naming it; ineffective outranks refuted
+    for f in failures(journal):
+        if severe.get(f["run"].event_id) != "ineffective":
+            severe[f["run"].event_id] = f["kind"]
     for e in journal.replay("mission.action"):
         p = e.payload
         if not p.get("receipt") or founder_reconciled(p) or p.get("status") not in ("DONE", "REFUSED"):
@@ -233,23 +259,27 @@ def report(journal) -> dict:
             r["outcomes"].append((at, "failed"))
             continue
         r["runs"] += 1
-        if e.event_id in ineffective:   # its closure may still verify: the run itself changed nothing
-            r["ineffective"] += 1
-            r["outcomes"].append((ineffective[e.event_id], "ineffective"))
-            continue
-        # judged by the first appraised closure whose window holds it; an unmet or unavailable closure judges nothing
-        judged = next((w for w in windows if w[0] == p["mission_id"] and w[2] < at < w[3]), None)
-        if judged is None or judged[1] not in ("VERIFIED", "REFUTED"):
+        # failure evidence first (an ineffective run's closure may still verify: the run itself changed nothing);
+        # otherwise the first appraised closure whose window holds it judges it. Window starts never fall as closures
+        # climb, so that is the first closure after the run, if its window opened before the run. An unmet or
+        # unavailable closure judges nothing.
+        kind, judged = severe.get(e.event_id), None
+        closures, windows = judging.get(p["mission_id"], ((), ()))
+        if kind is None:
+            i = bisect_right(closures, at)
+            judged = windows[i] if i < len(windows) and windows[i][2] < at else None
+            kind = "verified" if judged is not None and judged[1] == "VERIFIED" else None
+        if kind is None:
             r["unappraised"] += 1
-        else:
-            kind = "verified" if judged[1] == "VERIFIED" else "refuted"
-            r[kind] += 1
-            r["outcomes"].append((judged[4], kind))
+            continue
+        r[kind] += 1
+        r["outcomes"].append((at, kind))  # the run's own place: runs in the order they ran, not their verdicts' order
     for e in journal.replay("autonomy.regressed"):
-        r = strategy_row(e.payload.get("mission_id"), e.payload.get("action_id"))
+        # counted against the run it names, which the fold above already counts as refuted or ineffective
+        t = e.payload.get("tuple") if isinstance(e.payload.get("tuple"), dict) else {}
+        r = strategy_row(e.payload.get("mission_id"), e.payload.get("action_id"), t.get("capability"))
         if r is not None:
             r["regressed"] += 1
-            r["outcomes"].append((pos.get(e.event_id, -1), "regressed"))
     tuples = []
     for key in sorted(rows):
         r = rows[key]

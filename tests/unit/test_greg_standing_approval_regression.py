@@ -8,6 +8,8 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import operator
+from types import SimpleNamespace
 
 import pytest
 
@@ -55,6 +57,18 @@ def approve_first_ask(home, key, body_id, clock, action_id):
     return asks[0][2]
 
 
+def engine_turns(home, clock, kind="mission.held", count=1, limit=10):
+    """The engine's own turns, without the body's appraisal, until ``count`` closures of ``kind`` are recorded."""
+    with Body(home, clock=clock) as body:
+        body.ingest_inbox()
+        for _ in range(limit):
+            if len(body.journal.replay(kind)) >= count:
+                return
+            body.engine.tick(clock())
+            clock.advance(1)
+    raise AssertionError(f"fewer than {count} {kind} after {limit} engine turns")
+
+
 def ineffective_then_drift(tmp_path):
     """w-bad is approved and runs, but the check it advances still fails; w-good is approved and fixes it; then the
     world drifts. Returns the body, the clock and the approval w-bad ran under."""
@@ -89,6 +103,9 @@ def test_an_ineffective_run_regresses_its_standing_approval_and_the_scope_is_ask
     with Body(home) as body:
         good = [rid for rid, r in body.engine.book.requests.items() if r.get("action_id") == "w-good"]
         assert len(good) == 1 and good[0] not in body.engine.book.withdrawn
+        row = level(autonomy.report(body.journal), fs_tuple())
+    # the report counts the regression against the run it names, which it already counts as ineffective
+    assert row["evidence"]["regressed"] == 1 and row["evidence"]["ineffective"] == 1
 
 
 def test_ablation_without_the_regression_the_ineffective_scope_runs_unasked(tmp_path, monkeypatch):
@@ -131,11 +148,11 @@ def refuted_or_verified_hold(tmp_path, *, refute: bool):
         (ws / "c.txt").write_text("damaged")   # drift after a verified hold
     clock.advance(61)
     run(home, clock, ticks=3)
-    return home, rid
+    return home, key, body_id, clock, ws, rid
 
 
 def test_a_refuted_closure_regresses_the_approval_its_runs_used(tmp_path):
-    home, rid = refuted_or_verified_hold(tmp_path, refute=True)
+    home, *_, rid = refuted_or_verified_hold(tmp_path, refute=True)
     assert runs(home, "m:ref") == ["w"], "the scope ran again after its closure was refuted, without a fresh decision"
     [regressed] = events(home, "autonomy.regressed")
     assert regressed["request_id"] == rid and regressed["evidence"]["kind"] == "refuted"
@@ -143,9 +160,54 @@ def test_a_refuted_closure_regresses_the_approval_its_runs_used(tmp_path):
 
 
 def test_a_verified_hold_keeps_its_standing_approval(tmp_path):
-    home, _ = refuted_or_verified_hold(tmp_path, refute=False)
+    home, *_ = refuted_or_verified_hold(tmp_path, refute=False)
     assert runs(home, "m:ref") == ["w", "w"]                 # earned: the verified scope heals drift unasked
     assert events(home, "autonomy.regressed") == []
+
+
+def test_an_approval_given_after_a_refuted_regression_stands_until_its_own_run_fails(tmp_path):
+    home, key, body_id, clock, ws, rid = refuted_or_verified_hold(tmp_path, refute=True)
+    second = approve_first_ask(home, key, body_id, clock, "w")   # the founder approves again; w heals
+    assert runs(home, "m:ref") == ["w", "w"]
+    assert [a["verdict"] for a in events(home, "mission.appraised")] == ["REFUTED", "VERIFIED"]
+    (ws / "c.txt").write_text("damaged")
+    clock.advance(61)
+    run(home, clock, ticks=3)
+    # the old refutation's window ends at its own closure: it does not reach the run the fresh approval allowed
+    assert [r["request_id"] for r in events(home, "autonomy.regressed")] == [rid]
+    assert runs(home, "m:ref") == ["w", "w", "w"], open_asks(home)
+    with Body(home) as body:
+        assert second not in body.engine.book.withdrawn
+
+
+def test_a_refutation_regresses_only_the_approvals_of_runs_inside_its_closure_window(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    ws = workspace(home, "m:two")
+    drop(home, signed(key, body_id, "MISSION", mission(
+        "m:two", checks=[note_check("c1", ws / "c1.txt", "ok"), note_check("c2", ws / "c2.txt", "ok")],
+        strategies=[write_strategy("w1", "c1.txt", "ok", ["c1"]), write_strategy("w2", "c2.txt", "ok", ["c2"])],
+        capabilities=["fs.read"], closure={"kind": "infinite", "cadence_seconds": 60})))
+    clock = Clock()
+    run(home, clock)
+    first = approve_first_ask(home, key, body_id, clock, "w1")
+    second = approve_first_ask(home, key, body_id, clock, "w2")
+    assert runs(home, "m:two") == ["w1", "w2"]
+    assert [a["verdict"] for a in events(home, "mission.appraised")] == ["VERIFIED"]
+    (ws / "c2.txt").write_text("damaged")              # drift on c2 alone: w2 heals it under its standing approval
+    clock.advance(61)
+    engine_turns(home, clock, count=2)
+    (ws / "c2.txt").write_text("damaged")              # the appraiser re-reads a changed world: that hold is refuted
+    run(home, clock, ticks=2)
+    assert [a["verdict"] for a in events(home, "mission.appraised")] == ["VERIFIED", "REFUTED"]
+    # the refuted window opened at the verified hold: w1's run lies before it, so only w2's approval falls
+    assert [r["request_id"] for r in events(home, "autonomy.regressed")] == [second]
+    (ws / "c1.txt").write_text("damaged")
+    (ws / "c2.txt").write_text("ok")
+    clock.advance(61)
+    run(home, clock, ticks=4)
+    assert runs(home, "m:two") == ["w1", "w2", "w2", "w1"], open_asks(home)   # w1's approval still stands
+    with Body(home) as body:
+        assert first not in body.engine.book.withdrawn
 
 
 def failure_landed_unregressed(tmp_path, monkeypatch):
@@ -272,3 +334,162 @@ def test_wilson_lower_bound_and_bands():
     assert [autonomy.budget_band(c) for c in (0, 0.5, 5, 50, 500)] == ["$0", "up to $1", "up to $10", "up to $100",
                                                                        "over $100"]
     assert autonomy.target_pattern("workspace:c.txt") == "workspace:*" and autonomy.target_pattern("x") == "*"
+
+
+def five_verified_in_cone_runs(tmp_path):
+    """Five bounded in-cone missions whose fs.write run the appraiser verifies: the tuple earns SUPERVISED_CANARY."""
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock()
+    for n in range(autonomy.CANARY_MIN_VERIFIED):
+        ws = workspace(home, f"m:climb{n}")
+        drop(home, signed(key, body_id, "MISSION", mission(
+            f"m:climb{n}", checks=[note_check("c", ws / "c.txt", "ok")],
+            strategies=[write_strategy("w", "c.txt", "ok", ["c"])], capabilities=["fs.read", "fs.write"])),
+            f"{n}.json")
+    run(home, clock, ticks=6)
+    assert [a["verdict"] for a in events(home, "mission.appraised")] == ["VERIFIED"] * autonomy.CANARY_MIN_VERIFIED
+    with Body(home) as body:
+        assert level(autonomy.report(body.journal), fs_tuple())["level"] == "SUPERVISED_CANARY"
+    return home, key, body_id, clock
+
+
+def test_an_ineffective_in_cone_run_drops_the_tuple_to_shadow(tmp_path):
+    home, key, body_id, clock = five_verified_in_cone_runs(tmp_path)
+    # an in-cone run that executes but leaves its check failing: no approval stands, so nothing is regressed
+    ws = workspace(home, "m:bad")
+    drop(home, signed(key, body_id, "MISSION", mission(
+        "m:bad", checks=[note_check("c", ws / "c.txt", "ok")],
+        strategies=[write_strategy("w-bad", "c.txt", "wrong", ["c"])], capabilities=["fs.read", "fs.write"])),
+        "z-bad.json")
+    run(home, clock, ticks=4)
+    assert [o["verdict"] for o in events(home, "routing.outcome")] == ["ineffective"]
+    assert events(home, "autonomy.regressed") == []
+    with Body(home) as body:
+        row = level(autonomy.report(body.journal), fs_tuple())
+    assert row["evidence"]["ineffective"] == 1 and row["evidence"]["verified_since_last_failure"] == 0
+    assert row["level"] == "SHADOW"
+
+
+def test_supervised_canary_also_needs_the_wilson_bound_after_earlier_refutations(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock()
+    refuted = 3
+    for n in range(refuted):                    # bounded in-cone missions whose achievement the appraiser refutes
+        ws = workspace(home, f"m:early{n}")
+        drop(home, signed(key, body_id, "MISSION", mission(
+            f"m:early{n}", checks=[note_check("c", ws / "c.txt", "ok")],
+            strategies=[write_strategy("w", "c.txt", "ok", ["c"])], capabilities=["fs.read", "fs.write"])),
+            f"a{n}.json")
+    engine_turns(home, clock, kind="mission.achieved", count=refuted, limit=12)
+    for n in range(refuted):
+        (workspace(home, f"m:early{n}") / "c.txt").write_text("damaged")
+    run(home, clock, ticks=1)
+    assert [a["verdict"] for a in events(home, "mission.appraised")] == ["REFUTED"] * refuted
+    for n in range(autonomy.CANARY_MIN_VERIFIED):   # then five verified runs of the same tuple, all after them
+        ws = workspace(home, f"m:late{n}")
+        drop(home, signed(key, body_id, "MISSION", mission(
+            f"m:late{n}", checks=[note_check("c", ws / "c.txt", "ok")],
+            strategies=[write_strategy("w", "c.txt", "ok", ["c"])], capabilities=["fs.read", "fs.write"])),
+            f"b{n}.json")
+    run(home, clock, ticks=6)
+    with Body(home) as body:
+        row = level(autonomy.report(body.journal), fs_tuple())
+    evidence = row["evidence"]
+    assert (evidence["refuted"], evidence["verified"]) == (refuted, autonomy.CANARY_MIN_VERIFIED)
+    assert evidence["verified_since_last_failure"] == autonomy.CANARY_MIN_VERIFIED       # the count alone would do
+    assert evidence["wilson_lower"] == round(autonomy.wilson_lower(5, 8), 4) < autonomy.CANARY_MIN_WILSON
+    assert row["level"] == "RECOMMENDER" and "Wilson" in row["next_needs"]
+
+
+@pytest.mark.parametrize("refuted", ["second", "first"])
+def test_runs_are_ordered_by_where_they_ran_not_by_when_their_verdicts_landed(tmp_path, monkeypatch, refuted):
+    """A standing in-cone mission runs w and holds twice (no approval stands, so nothing is regressed). The appraiser
+    is unavailable once on the first hold, so the second hold's verdict is recorded first; the world at each appraisal
+    decides each verdict."""
+    home, key, body_id, _ = make_body(tmp_path)
+    ws = workspace(home, "m:order")
+    drop(home, signed(key, body_id, "MISSION", standing("m:order", [write_strategy("w", "c.txt", "ok", ["c"])], ws,
+                                                        capabilities=("fs.read", "fs.write"))))
+    clock = Clock()
+    engine_turns(home, clock)                      # w runs; the first hold
+    (ws / "c.txt").write_text("damaged")
+    clock.advance(61)
+    engine_turns(home, clock, count=2)             # w runs again; the second hold
+    with Body(home) as body:
+        first, second = [e.event_id for e in body.journal.replay("mission.held")]
+    real, missed = Body.appraise, []
+
+    def unavailable_once(self, mid, *, closure_event=None):
+        if closure_event == first and not missed:
+            missed.append(closure_event)
+            return {"mission_id": mid, "head": self.ledger.head, "verdict": "UNAVAILABLE", "checks": {},
+                    "findings": ["the appraiser timed out (test)"], "appraiser": "separate process"}
+        return real(self, mid, closure_event=closure_event)
+    monkeypatch.setattr(Body, "appraise", unavailable_once)
+    (ws / "c.txt").write_text("damaged" if refuted == "second" else "ok")
+    run(home, clock, ticks=1)                      # the first hold judges nothing yet; the second is judged
+    (ws / "c.txt").write_text("ok" if refuted == "second" else "damaged")
+    run(home, clock, ticks=1)                      # the first hold's retry is judged after it
+    expected = {"first": "REFUTED" if refuted == "first" else "VERIFIED",
+                "second": "REFUTED" if refuted == "second" else "VERIFIED"}
+    assert [(a["closure_event"], a["verdict"]) for a in events(home, "mission.appraised")] == [
+        (second, expected["second"]), (first, expected["first"])]
+    with Body(home) as body:
+        row = level(autonomy.report(body.journal), fs_tuple())
+    assert (row["evidence"]["verified"], row["evidence"]["refuted"]) == (1, 1)
+    if refuted == "second":     # the latest run failed: the earlier verified run, judged later, does not lift it
+        assert row["evidence"]["verified_since_last_failure"] == 0 and row["level"] == "SHADOW"
+    else:                       # the earlier run failed and the later one verified, whatever order the verdicts landed
+        assert row["evidence"]["verified_since_last_failure"] == 1 and row["level"] == "RECOMMENDER"
+
+
+class Position(int):
+    """A ledger position that counts every comparison made with it: the fold's work, measured without a clock."""
+    compared = 0
+
+    def _counted(op):
+        def compare(self, other):
+            Position.compared += 1
+            return op(int(self), int(other))
+        return compare
+    __lt__, __le__, __gt__, __ge__, __eq__, __ne__ = map(_counted, (operator.lt, operator.le, operator.gt,
+                                                                    operator.ge, operator.eq, operator.ne))
+    __hash__ = int.__hash__
+    del _counted
+
+
+class StandingHistory:
+    """A standing mission's history as the engine writes it (its registration, then per heal a run, a hold and that
+    hold's appraisal, every other one refuted), read as the fold reads the journal: by kind and by position."""
+
+    def __init__(self, heals: int):
+        self.events = []
+        self.add("mission.registered", {"mission_id": "m"})
+        for n in range(heals):
+            self.add("mission.action", {"mission_id": "m", "action_id": "w", "status": "DONE", "receipt": f"r{n}",
+                                        "scope_digest": "s"})
+            hold = self.add("mission.held", {"mission_id": "m"})
+            self.add("mission.appraised", {"mission_id": "m", "closure_event": hold.event_id,
+                                           "verdict": "REFUTED" if n % 2 else "VERIFIED"})
+
+    def add(self, kind, payload):
+        self.events.append(SimpleNamespace(type="greg." + kind, event_id=f"e{len(self.events)}", payload=payload))
+        return self.events[-1]
+
+    def replay(self, kind=""):
+        return [e for e in self.events if e.type.startswith("greg." + kind)]
+
+    def positions(self, kind=""):
+        return {e.event_id: Position(i) for i, e in enumerate(self.replay(kind))}
+
+
+def test_the_failure_fold_the_body_runs_every_tick_grows_n_log_n_with_a_standing_history():
+    def work(heals):
+        Position.compared = 0
+        found = autonomy.failures(StandingHistory(heals))
+        assert [f["run"].payload["receipt"] for f in found] == [f"r{n}" for n in range(1, heals, 2)]
+        return Position.compared
+    small, large = work(100), work(400)
+    # n log n grows about 5x for four times the history; re-sorting per appraisal or rescanning every run per
+    # refuted window grows about 16x or more
+    assert large < 8 * small, (small, large)

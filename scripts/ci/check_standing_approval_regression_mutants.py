@@ -15,13 +15,21 @@ FRESH = f"{TESTS}::test_an_approval_given_after_the_regression_stands_until_its_
 TWICE = f"{TESTS}::test_a_run_named_by_two_failures_is_regressed_once"
 CRASH = f"{TESTS}::test_regression_finishes_after_a_crash_between_its_two_records"
 CLIMB = f"{TESTS}::test_the_earned_level_climbs_to_supervised_canary_and_no_higher_and_grants_nothing"
+FRESH_REFUTED = f"{TESTS}::test_an_approval_given_after_a_refuted_regression_stands_until_its_own_run_fails"
+WINDOW = f"{TESTS}::test_a_refutation_regresses_only_the_approvals_of_runs_inside_its_closure_window"
+DROP = f"{TESTS}::test_an_ineffective_in_cone_run_drops_the_tuple_to_shadow"
+WILSON = f"{TESTS}::test_supervised_canary_also_needs_the_wilson_bound_after_earlier_refutations"
+ORDER = f"{TESTS}::test_runs_are_ordered_by_where_they_ran_not_by_when_their_verdicts_landed"
+COST = f"{TESTS}::test_the_failure_fold_the_body_runs_every_tick_grows_n_log_n_with_a_standing_history"
+WINDOW_RUNS = "for run in ran[bisect_right(ats, start):bisect_left(ats, closure)]:"
 MUTANTS = [
     ("body hook removed", "greg/body.py",
      "        autonomy.regress(self.journal, self.engine.book, now)"
      "   # failure evidence withdraws a standing approval first\n", "", INEFFECTIVE),
     ("ineffective evidence ignored", "greg/autonomy.py",
      'if p.get("verdict") == "ineffective" and run is not None', 'if False and run is not None', INEFFECTIVE),
-    ("refuted closures ignored", "greg/autonomy.py", 'if verdict != "REFUTED":', "if True:", REFUTED),
+    ("refuted closures ignored", "greg/autonomy.py", 'if verdict != "REFUTED" or mid not in own:', "if True:",
+     REFUTED),
     ("withdrawal does not void", "greg/autonomy.py", '"voids_approval": True,', '"voids_approval": False,',
      INEFFECTIVE),
     ("approvals asked after the failed run withdrawn too", "greg/autonomy.py",
@@ -32,7 +40,21 @@ MUTANTS = [
     ("evidence lifts a tuple above the earned ceiling", "greg/autonomy.py",
      '        return "SUPERVISED_CANARY"\n', '        return "BOUNDED_AUTONOMY"\n', CLIMB),
     ("a refuted run does not drop the level", "greg/autonomy.py",
-     'SEVERE = ("refuted", "ineffective", "regressed")', 'SEVERE = ("ineffective", "regressed")', CLIMB),
+     'SEVERE = ("refuted", "ineffective")', 'SEVERE = ("ineffective",)', CLIMB),
+    # review round 1 (WU09-F1, F2, R-1, R-2)
+    ("a refuted window reaches runs before its start", "greg/autonomy.py",
+     WINDOW_RUNS, "for run in ran[:bisect_left(ats, closure)]:", WINDOW),
+    ("a refuted window reaches runs after its closure", "greg/autonomy.py",
+     WINDOW_RUNS, "for run in ran[bisect_right(ats, start):]:", FRESH_REFUTED),
+    ("an ineffective run does not drop the level", "greg/autonomy.py",
+     'SEVERE = ("refuted", "ineffective")', 'SEVERE = ("refuted",)', DROP),
+    ("canary ignores the Wilson bound", "greg/autonomy.py",
+     'if recent >= CANARY_MIN_VERIFIED and evidence["wilson_lower"] >= CANARY_MIN_WILSON:',
+     "if recent >= CANARY_MIN_VERIFIED:", WILSON),
+    ("a verified run placed where its verdict landed", "greg/autonomy.py",
+     'r["outcomes"].append((at, kind))', 'r["outcomes"].append((judged[4] if judged else at, kind))', ORDER),
+    ("every run rescanned for each refuted window", "greg/autonomy.py",
+     WINDOW_RUNS, "for run in [r for a, r in zip(ats, ran) if start < a < closure]:", COST),
 ]
 
 

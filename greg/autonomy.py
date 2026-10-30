@@ -11,7 +11,9 @@ Neither part grants anything.
    - **refuted:** the independent appraisal REFUTED the closure whose window holds the run (greg/appraisal.py's
      window: since the registration, or the mission's previous hold, up to the closure);
    - **ineffective:** the run executed, the world was re-observed and the check it advances still failed, as the
-     mission's own loop judged it (the ``routing.outcome`` ``ineffective`` record the engine writes).
+     mission's own loop judged it (the ``routing.outcome`` ``ineffective`` record the engine writes). A run the
+     founder reconciled as executed has no receipt, so the engine writes no such record for it; its effect is read
+     from the observations after it, as the mission fold reads them.
 
    Each regression is recorded first as ``autonomy.regressed`` (the evidence), then as the withdrawal. Only approvals
    asked before the failed run are withdrawn, so an approval the founder gives after the regression stands. A
@@ -21,11 +23,14 @@ Neither part grants anything.
    the level the evidence has earned: SHADOW, RECOMMENDER or SUPERVISED_CANARY, by the thresholds below. A refuted or
    ineffective run drops the tuple back at once: only verified runs after the latest such run count towards a level.
    Runs are ordered by where each run itself sits on the ledger, not by when its verdict was recorded (an appraisal
-   retried after an unavailable run lands late). A regression always names a run that ``failures`` names, which the
-   fold already counts as refuted or ineffective at that run's place, so it is counted but drops nothing a second
-   time. BOUNDED_AUTONOMY and MANAGE_BY_EXCEPTION are never earned from evidence: they would need a founder-signed
-   grant, which does not exist (NEEDS_FOUNDER_DECISION). A level changes nothing: every action still needs its light
-   cone, its exact-scope approvals and the Gate.
+   retried after an unavailable run lands late). A run the founder reconciled as executed is counted apart and never
+   verified (no Gate receipt shows it), but failure evidence naming it counts like any other. A regression always
+   names a run that ``failures`` names, which the fold already counts as refuted or ineffective at that run's place,
+   so it is counted but drops nothing a second time. Compensations (``mission.compensation_required``, closed by
+   ``mission.compensated``) are counted against the run's tuple, never judged: the mission ended, which does not show
+   the run failed. BOUNDED_AUTONOMY and MANAGE_BY_EXCEPTION are never earned from evidence: they would need a
+   founder-signed grant, which does not exist (NEEDS_FOUNDER_DECISION). A level changes nothing: every action still
+   needs its light cone, its exact-scope approvals and the Gate.
 
 Limits: a strategy the founder pre-approved inside the signed mission (``pre_approved_steps``) is part of the signed
 mission and is not withdrawn here. A capability failure (a REFUSED receipt) counts against the level but does not
@@ -39,7 +44,8 @@ import math
 
 from greg.capabilities import BUILTINS
 from greg.journal import fact_id, iso
-from greg.missions import TERMINAL
+from greg.missions import TERMINAL, blames_strategy
+from greg.routing import founder_reconciled
 
 LEVELS = ("SHADOW", "RECOMMENDER", "SUPERVISED_CANARY", "BOUNDED_AUTONOMY", "MANAGE_BY_EXCEPTION")
 EARNED_CEILING = "SUPERVISED_CANARY"    # the highest level evidence alone reaches
@@ -97,6 +103,7 @@ def failures(journal) -> list[dict]:
                 and (run.payload["mission_id"], run.payload["action_id"]) == (p.get("mission_id"), p.get("action_id")):
             out.append({"kind": "ineffective", "run": run, "evidence": e.event_id, "at": pos.get(e.event_id, -1),
                         "why": f"it executed and the check it advances still failed ({str(p.get('reason'))[:160]})"})
+    out += _reconciled_ineffective(journal, pos, runs, own)
     for appraisal, (mid, verdict, start, closure, at) in _closure_windows(journal, pos).items():
         if verdict != "REFUTED" or mid not in own:
             continue
@@ -105,6 +112,58 @@ def failures(journal) -> list[dict]:
             out.append({"kind": "refuted", "run": run, "evidence": appraisal, "at": at,
                         "why": "the independent appraisal refuted the closure this run belongs to"})
     return sorted(out, key=lambda f: (f["at"], pos.get(f["run"].event_id, -1)))
+
+
+def _reconciled_ineffective(journal, pos, runs, own) -> list[dict]:
+    """The founder-reconciled runs the mission's own loop judged ineffective.
+
+    The engine writes ``routing.outcome`` for a receipted run only: a reconciliation has no receipt and never moves
+    routing. Its effect is still judged, as the mission fold judges any DONE run: each check the strategy advances is
+    decided by its first observation after the run (before the strategy's next run) that passed or measured the
+    world. A measured failure there is the fold's "executed but ... still failing", read through the engine's own
+    ``blames_strategy``. A strategy whose output another strategy binds is done, not ineffective, as in the fold.
+    The fold's one other exception (a run already blamed for damaging another check) is not followed: that run counts
+    as ineffective here too, which only narrows."""
+    reconciled = [e for e in runs if founder_reconciled(e.payload)]
+    if not reconciled:                  # the common case costs nothing more
+        return []
+    specs = {e.payload["mission_id"]: e.payload.get("spec") or {} for e in journal.replay("mission.registered")}
+    observed = {}                       # (mission id, check id) -> its observations and their positions, in order
+    for e in journal.replay("mission.observed"):
+        mine = observed.setdefault((e.payload.get("mission_id"), e.payload.get("check_id")), ([], []))
+        mine[0].append(pos.get(e.event_id, -1))
+        mine[1].append(e)
+    out = []
+    for run in reconciled:
+        mid, aid = run.payload["mission_id"], run.payload["action_id"]
+        strategies = specs.get(mid, {}).get("strategies", [])
+        strategy = next((s for s in strategies if s.get("action_id") == aid), None)
+        if strategy is None or any(b.get("from", {}).get("action_id") == aid
+                                   for s in strategies for b in s.get("bind", [])):
+            continue
+        ats, ran = own[mid]
+        at = pos.get(run.event_id, -1)
+        end = next((ats[i] for i in range(bisect_right(ats, at), len(ats)) if ran[i].payload["action_id"] == aid),
+                   None)                # the strategy's next run sets its pending effect afresh
+        blamed = []
+        for check in strategy.get("advances", []):
+            seen, obs = observed.get((mid, check), ((), ()))
+            for i in range(bisect_right(seen, at), len(seen)):
+                if end is not None and seen[i] > end:
+                    break
+                o = obs[i].payload
+                if o.get("passed"):
+                    break
+                reason = f"executed but {check} still failing: {o.get('detail')}"[:300]
+                if blames_strategy(reason):
+                    blamed.append((seen[i], obs[i].event_id, reason))
+                    break               # an unmeasured read decides nothing: the next observation does
+        if blamed:
+            seen_at, evidence, reason = min(blamed)
+            out.append({"kind": "ineffective", "run": run, "evidence": evidence, "at": seen_at,
+                        "why": "the founder reconciled it as executed and the check it advances still failed "
+                               f"({reason[:160]})"})
+    return out
 
 
 def regress(journal, book, now) -> list[dict]:
@@ -199,14 +258,14 @@ def earned_level(evidence: dict) -> str:
 
 
 def _blank(t: dict) -> dict:
-    return {"tuple": t, "strategies": 0, "asked": 0, "approved": 0, "rejected": 0, "runs": 0, "verified": 0,
-            "refuted": 0, "ineffective": 0, "failed": 0, "unappraised": 0, "regressed": 0, "outcomes": []}
+    return {"tuple": t, "strategies": 0, "asked": 0, "approved": 0, "rejected": 0, "runs": 0, "reconciled": 0,
+            "verified": 0, "refuted": 0, "ineffective": 0, "failed": 0, "unappraised": 0, "regressed": 0,
+            "compensation_required": 0, "compensated": 0, "compensation_open": 0, "outcomes": []}
 
 
 def report(journal) -> dict:
     """The earned level of every tuple a signed strategy names, from the journal alone. Writes nothing."""
     from greg.missions import MissionBook
-    from greg.routing import founder_reconciled
     book = MissionBook(journal)          # founder answers count only as re-verified from signed DECISIONs
     pos = journal.positions("")
     rows = {}
@@ -248,12 +307,20 @@ def report(journal) -> dict:
             severe[f["run"].event_id] = f["kind"]
     for e in journal.replay("mission.action"):
         p = e.payload
-        if not p.get("receipt") or founder_reconciled(p) or p.get("status") not in ("DONE", "REFUSED"):
-            continue                    # no receipted run: nothing the Gate saw happen
+        reconciled = p.get("status") == "DONE" and founder_reconciled(p)
+        if not reconciled and (not p.get("receipt") or p.get("status") not in ("DONE", "REFUSED")):
+            continue                    # neither a receipted run nor the founder's word that one ran
         r = strategy_row(p.get("mission_id"), p.get("action_id"), p.get("capability"))
         if r is None:
             continue
         at = pos.get(e.event_id, -1)
+        if reconciled:                  # the founder says it ran; no Gate receipt shows it, so it is never verified,
+            r["reconciled"] += 1        # but failure evidence naming it counts, as for any run
+            kind = severe.get(e.event_id)
+            if kind is not None:
+                r[kind] += 1
+                r["outcomes"].append((at, kind))
+            continue
         if p["status"] == "REFUSED":    # the Gate ran it and the capability failed
             r["failed"] += 1
             r["outcomes"].append((at, "failed"))
@@ -274,6 +341,18 @@ def report(journal) -> dict:
             continue
         r[kind] += 1
         r["outcomes"].append((at, kind))  # the run's own place: runs in the order they ran, not their verdicts' order
+    # A compensation is counted, not judged: the mission ended (abandoned or superseded), which does not show the run
+    # failed. compensated: undone through the Gate, or the founder decided; open: neither yet.
+    closed = {(e.payload.get("mission_id"), e.payload.get("action_id")): e.payload.get("status")
+              for e in journal.replay("mission.compensated")}
+    for e in journal.replay("mission.compensation_required"):
+        p = e.payload
+        r = strategy_row(p.get("mission_id"), p.get("action_id"), p.get("capability"))
+        if r is None:
+            continue
+        r["compensation_required"] += 1
+        settled = closed.get((p.get("mission_id"), p.get("action_id"))) in ("DONE", "FOUNDER_DECIDED")
+        r["compensated" if settled else "compensation_open"] += 1
     for e in journal.replay("autonomy.regressed"):
         # counted against the run it names, which the fold above already counts as refuted or ineffective
         t = e.payload.get("tuple") if isinstance(e.payload.get("tuple"), dict) else {}

@@ -428,6 +428,10 @@ def test_runs_are_ordered_by_where_they_ran_not_by_when_their_verdicts_landed(tm
     monkeypatch.setattr(Body, "appraise", unavailable_once)
     (ws / "c.txt").write_text("damaged" if refuted == "second" else "ok")
     run(home, clock, ticks=1)                      # the first hold judges nothing yet; the second is judged
+    with Body(home) as body:
+        row = level(autonomy.report(body.journal), fs_tuple())
+    # run 1 lies before the second hold's window opened: that verdict does not judge it, so it waits unappraised
+    assert (row["evidence"]["unappraised"], row["evidence"]["verified"]) == (1, int(refuted == "first"))
     (ws / "c.txt").write_text("ok" if refuted == "second" else "damaged")
     run(home, clock, ticks=1)                      # the first hold's retry is judged after it
     expected = {"first": "REFUTED" if refuted == "first" else "VERIFIED",
@@ -493,3 +497,159 @@ def test_the_failure_fold_the_body_runs_every_tick_grows_n_log_n_with_a_standing
     # n log n grows about 5x for four times the history; re-sorting per appraisal or rescanning every run per
     # refuted window grows about 16x or more
     assert large < 8 * small, (small, large)
+
+
+# review round 2 (WU09-ATK-1, WU09-ATK-2, WU09-TF-1)
+
+class Reconciled:
+    """A standing mission with two checks, its fs.write strategies outside the cone. The first approved dispatch writes,
+    then the power fails before its receipt, and the founder answers that it executed: a DONE record with no receipt.
+    The engine records no routing.outcome for such a run, and with two checks no hold closes before the world drifts."""
+
+    def __init__(self, tmp_path, strategies):
+        self.home, self.key, self.body_id, _ = make_body(tmp_path)
+        self.ws = workspace(self.home, "m:two")
+        drop(self.home, signed(self.key, self.body_id, "MISSION", mission(
+            "m:two", checks=[note_check("c1", self.ws / "c1.txt", "ok"), note_check("c2", self.ws / "c2.txt", "ok")],
+            strategies=strategies, capabilities=["fs.read"], closure={"kind": "infinite", "cadence_seconds": 60})))
+        self.clock = Clock()
+
+    def ticks(self, body, n, step=1.0):
+        for _ in range(n):
+            body.tick()
+            self.clock.advance(step)
+
+    def approve(self, body, aid):
+        [rid] = [r["request_id"] for r in body.engine.book.open_requests()
+                 if r["action_id"] == aid and r["kind"] == "APPROVAL"]
+        decide(self.home, self.key, self.body_id, rid)
+        return rid
+
+    def reconcile_first(self, body, aid):
+        """Approve ``aid``; its dispatch takes effect and loses its receipt; the founder says it executed."""
+        real, calls = body.registry.adapters["fs.write"], []
+
+        def effect_then_power_loss(params, ctx):
+            calls.append(params)
+            out = real(params, ctx)
+            if len(calls) == 1:
+                raise RuntimeError("power lost after the effect, before the receipt")
+            return out
+        body.registry.adapters["fs.write"] = effect_then_power_loss
+        self.ticks(body, 4)
+        rid = self.approve(body, aid)
+        self.ticks(body, 4)
+        [rec] = [r["request_id"] for r in body.engine.book.open_requests() if r["kind"] == "RECONCILIATION"]
+        decide(self.home, self.key, self.body_id, rec, "reconcile_executed")
+        self.ticks(body, 4)
+        [reconciled] = [e for e in body.journal.replay("mission.action") if e.payload["status"] == "DONE"]
+        assert reconciled.payload["route"] == "founder_reconciliation" and reconciled.payload["receipt"] is None
+        assert body.journal.replay("routing.outcome") == []    # the engine blames no run without a receipt
+        return rid, reconciled
+
+
+def done_runs(body):
+    return [e.payload["action_id"] for e in body.journal.replay("mission.action") if e.payload["status"] == "DONE"]
+
+
+def test_a_run_the_founder_reconciled_as_executed_and_proven_ineffective_regresses_its_approval(tmp_path):
+    t = Reconciled(tmp_path, [write_strategy("w-bad", "c1.txt", "wrong", ["c1"]),
+                              write_strategy("w-good", "c1.txt", "ok", ["c1"]),
+                              write_strategy("w2", "c2.txt", "ok", ["c2"])])
+    home, key, body_id, ws, clock = t.home, t.key, t.body_id, t.ws, t.clock
+    ticks, approve = t.ticks, t.approve
+    with Body(home, clock=clock) as body:
+        first, reconciled = t.reconcile_first(body, "w-bad")
+        # fail-before: nothing named this run, and its approval stood
+        [regressed] = [r.payload for r in body.journal.replay("autonomy.regressed")]
+        assert regressed["request_id"] == first and regressed["evidence"]["kind"] == "ineffective"
+        assert regressed["evidence"]["run"] == reconciled.event_id and regressed["evidence"]["receipt"] is None
+        assert "reconciled" in regressed["why"] and first in body.engine.book.withdrawn
+        approve(body, "w-good")
+        ticks(body, 4)
+        (ws / "c1.txt").write_text("damaged")              # drift while the mission waits on the w2 decision
+        approve(body, "w2")
+        clock.advance(61)
+        ticks(body, 6, step=61)
+        # w-bad never ran again under its first approval: the founder is asked again
+        assert done_runs(body).count("w-bad") == 1, done_runs(body)
+        asks = [r["request_id"] for r in body.engine.book.open_requests()
+                if r["action_id"] == "w-bad" and r["kind"] == "APPROVAL"]
+        assert len(asks) == 1 and asks[0] != first, body.engine.book.open_requests()
+        row = level(autonomy.report(body.journal), fs_tuple())
+    # the report counts the reconciled run apart, never as verified, and its failure against the tuple
+    assert (row["evidence"]["reconciled"], row["evidence"]["ineffective"]) == (1, 1)
+
+
+def test_a_reconciled_run_that_worked_keeps_its_standing_approval(tmp_path):
+    t = Reconciled(tmp_path, [write_strategy("w1", "c1.txt", "ok", ["c1"]),
+                              write_strategy("w2", "c2.txt", "ok", ["c2"])])
+    with Body(t.home, clock=t.clock) as body:
+        t.reconcile_first(body, "w1")
+        assert (t.ws / "c1.txt").read_text() == "ok"
+        (t.ws / "c1.txt").write_text("damaged")            # drift before any hold, while w2's ask is open
+        t.approve(body, "w2")
+        t.clock.advance(61)
+        t.ticks(body, 6, step=61)
+        # its check passed after it: the reconciled run was effective, so w1 heals unasked under its approval
+        assert done_runs(body) == ["w1", "w1", "w2"] and (t.ws / "c1.txt").read_text() == "ok"
+        pos = body.journal.positions("")
+        rerun = [e for e in body.journal.replay("mission.action")
+                 if e.payload["action_id"] == "w1" and e.payload["status"] == "DONE"][1]
+        regressions = body.journal.replay("autonomy.regressed")
+        assert all(pos[r.event_id] > pos[rerun.event_id] for r in regressions)
+        # what falls later falls at the hold: its appraisal refutes a window holding a run with no Gate receipt
+        assert {r.payload["evidence"]["kind"] for r in regressions} <= {"refuted"}
+
+
+def test_compensations_are_counted_against_the_run_tuple_and_judge_nothing(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock()
+    for mid, extra in (("m:undo", {"compensate": {"capability": "fs.write", "target": "workspace:c.txt",
+                                                  "params": {"relative_path": "c.txt", "content": "original"}}}),
+                       ("m:keep", {})):
+        ws = workspace(home, mid)
+        drop(home, signed(key, body_id, "MISSION", mission(
+            mid, checks=[note_check("c", ws / "c.txt", "ok")],
+            strategies=[write_strategy("w", "c.txt", "ok", ["c"], **extra)], capabilities=["fs.read", "fs.write"],
+            closure={"kind": "infinite", "cadence_seconds": 3600})), f"{mid[2:]}.json")
+    run(home, clock, ticks=6)
+    assert [a["verdict"] for a in events(home, "mission.appraised")] == ["VERIFIED", "VERIFIED"]
+    with Body(home) as body:
+        before = level(autonomy.report(body.journal), fs_tuple())
+    assert before["evidence"]["compensation_required"] == 0
+    for n, mid in enumerate(("m:undo", "m:keep")):
+        drop(home, signed(key, body_id, "LIFECYCLE", {"mission_id": mid, "state": "ABANDONED", "reason": "test"}),
+             f"z{n}.json")
+    run(home, clock, ticks=4)
+    assert [(c["mission_id"], c["status"]) for c in events(home, "mission.compensated")] == [("m:undo", "DONE")]
+    assert sorted(c["mission_id"] for c in events(home, "mission.compensation_required")) == ["m:keep", "m:undo"]
+    with Body(home) as body:
+        after = level(autonomy.report(body.journal), fs_tuple())
+    assert {k: after["evidence"][k] for k in ("compensation_required", "compensated", "compensation_open")} == {
+        "compensation_required": 2, "compensated": 1, "compensation_open": 1}
+    # counted, never judged: the level and every judged count are as before the missions ended
+    assert after["level"] == before["level"] == "RECOMMENDER"
+    assert {k: after["evidence"][k] for k in ("verified", "refuted", "ineffective", "runs")} == {
+        k: before["evidence"][k] for k in ("verified", "refuted", "ineffective", "runs")}
+
+
+def test_an_effective_run_closed_by_an_unmet_closure_stays_unappraised(tmp_path):
+    """A bounded in-cone mission: w2 runs first and leaves c2 failing; w1 fixes c1; nothing is left for c2, so the
+    mission closes unmet and the appraiser verifies that it is unmet. That verdict judges no run as verified."""
+    home, key, body_id, _ = make_body(tmp_path)
+    ws = workspace(home, "m:unmet")
+    drop(home, signed(key, body_id, "MISSION", mission(
+        "m:unmet", checks=[note_check("c1", ws / "c1.txt", "ok"), note_check("c2", ws / "c2.txt", "ok")],
+        strategies=[write_strategy("w2", "c2.txt", "wrong", ["c2"]), write_strategy("w1", "c1.txt", "ok", ["c1"])],
+        capabilities=["fs.read", "fs.write"])))
+    clock = Clock()
+    run(home, clock, ticks=10)
+    assert [a["verdict"] for a in events(home, "mission.appraised")] == ["VERIFIED_UNMET"]
+    assert [(o["action_id"], o["verdict"]) for o in events(home, "routing.outcome")] == [("w2", "ineffective")]
+    assert runs(home, "m:unmet") == ["w2", "w1"]
+    with Body(home) as body:
+        row = level(autonomy.report(body.journal), fs_tuple())
+    assert {k: row["evidence"][k] for k in ("runs", "verified", "ineffective", "unappraised")} == {
+        "runs": 2, "verified": 0, "ineffective": 1, "unappraised": 1}
+    assert row["level"] == "SHADOW"

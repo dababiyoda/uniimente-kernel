@@ -21,6 +21,10 @@ DROP = f"{TESTS}::test_an_ineffective_in_cone_run_drops_the_tuple_to_shadow"
 WILSON = f"{TESTS}::test_supervised_canary_also_needs_the_wilson_bound_after_earlier_refutations"
 ORDER = f"{TESTS}::test_runs_are_ordered_by_where_they_ran_not_by_when_their_verdicts_landed"
 COST = f"{TESTS}::test_the_failure_fold_the_body_runs_every_tick_grows_n_log_n_with_a_standing_history"
+RECONCILED = f"{TESTS}::test_a_run_the_founder_reconciled_as_executed_and_proven_ineffective_regresses_its_approval"
+RECONCILED_OK = f"{TESTS}::test_a_reconciled_run_that_worked_keeps_its_standing_approval"
+COMPENSATION = f"{TESTS}::test_compensations_are_counted_against_the_run_tuple_and_judge_nothing"
+UNMET = f"{TESTS}::test_an_effective_run_closed_by_an_unmet_closure_stays_unappraised"
 WINDOW_RUNS = "for run in ran[bisect_right(ats, start):bisect_left(ats, closure)]:"
 MUTANTS = [
     ("body hook removed", "greg/body.py",
@@ -52,9 +56,26 @@ MUTANTS = [
      'if recent >= CANARY_MIN_VERIFIED and evidence["wilson_lower"] >= CANARY_MIN_WILSON:',
      "if recent >= CANARY_MIN_VERIFIED:", WILSON),
     ("a verified run placed where its verdict landed", "greg/autonomy.py",
-     'r["outcomes"].append((at, kind))', 'r["outcomes"].append((judged[4] if judged else at, kind))', ORDER),
+     'r["outcomes"].append((at, kind))  # the run',
+     'r["outcomes"].append((judged[4] if judged else at, kind))  # the run', ORDER),
     ("every run rescanned for each refuted window", "greg/autonomy.py",
      WINDOW_RUNS, "for run in [r for a, r in zip(ats, ran) if start < a < closure]:", COST),
+    # review round 2 (WU09-ATK-1, ATK-2, TF-1)
+    ("a founder-reconciled run is never judged", "greg/autonomy.py",
+     "    out += _reconciled_ineffective(journal, pos, runs, own)\n", "", RECONCILED),
+    ("a passing observation does not decide a reconciled run", "greg/autonomy.py",
+     '                if o.get("passed"):\n                    break\n', "", RECONCILED_OK),
+    ("the report drops failure evidence naming a reconciled run", "greg/autonomy.py",
+     "            if kind is not None:\n", "            if False:\n", RECONCILED),
+    ("every compensation counted as settled", "greg/autonomy.py",
+     'settled = closed.get((p.get("mission_id"), p.get("action_id"))) in ("DONE", "FOUNDER_DECIDED")',
+     "settled = True", COMPENSATION),
+    ("a later closure judges a run made before its window opened", "greg/autonomy.py",
+     "judged = windows[i] if i < len(windows) and windows[i][2] < at else None",
+     "judged = windows[i] if i < len(windows) else None", ORDER),
+    ("a verified-unmet closure judges its runs verified", "greg/autonomy.py",
+     'kind = "verified" if judged is not None and judged[1] == "VERIFIED" else None',
+     'kind = "verified" if judged is not None and judged[1] in ("VERIFIED", "VERIFIED_UNMET") else None', UNMET),
 ]
 
 

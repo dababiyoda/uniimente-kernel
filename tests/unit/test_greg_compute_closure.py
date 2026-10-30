@@ -6,6 +6,7 @@ quantities are exact; real benchmark timings are reported by the evidence README
 """
 import ast
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -228,9 +229,10 @@ def test_a_sample_missing_a_field_never_counts_as_pressure(hole):
 def test_sample_reads_real_pressure_and_memavailable_on_this_host(tmp_path):
     data = compute.sample(tmp_path)
     for resource in ("cpu", "memory", "io"):
+        readable = os.access(compute.PROC / "pressure" / resource, os.R_OK)    # PSI is absent on some kernels
         for window_ in ("avg10", "avg60"):
             value = data[f"psi_{resource}_some_{window_}"]
-            assert isinstance(value, float) and 0.0 <= value <= 100.0
+            assert (isinstance(value, float) and 0.0 <= value <= 100.0) if readable else value is None
     assert 0 < data["mem_available_bytes"] <= data["mem_total_bytes"]
     assert 0 < data["mem_available_ratio"] <= 1
     for kept in ("at", "machine", "system", "cores", "load1", "load_ratio", "memory_bytes", "disk_total",

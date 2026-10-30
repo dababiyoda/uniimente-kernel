@@ -585,6 +585,7 @@
     "greg/service.py",
     "greg/sop.py",
     "greg/templates.py",
+    "greg/text_interpretation.py",
     "greg/tribunal.py",
     "greg/venture_books.py",
     "greg/venture_rehearsal.py",

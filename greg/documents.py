@@ -4,7 +4,7 @@ Capability Genesis acquires PDF text extraction from installed software (``pdfto
 today; the ``pypdf`` and ``pypdfium2`` packages are recorded fallbacks). The oracle below is written before any
 candidate is searched and shares no code with any of them: a minimal PDF 1.4 writer (one standard Type 1 font,
 uncompressed content streams, an exact cross-reference table) and seeded word lists. A candidate qualifies only
-if the words it extracts, whitespace-normalized, equal the words written, on every case.
+if the words it extracts, in the text interpretation contract's form, equal the words written, on every case.
 
 This proves extraction on PDFs of this shape: text drawn in a standard font, in reading order. Scanned images
 (which need OCR), embedded or subset fonts without a usable encoding, right-to-left scripts and multi-column
@@ -17,9 +17,9 @@ content in pixels; ``pdfimages -list`` reports images per page), makes the extra
 from __future__ import annotations
 
 import random
-import re
-import unicodedata
 import zlib
+
+from greg import text_interpretation
 
 WORDS = ("lease", "renewal", "term", "twelve", "months", "invoice", "total", "due", "net", "thirty", "party",
          "shall", "notice", "delivery", "proof", "settlement", "egregore", "a(b)c", "back\\slash", "50%", "x")
@@ -99,7 +99,7 @@ def oracle_document_text(seed: int) -> list[dict]:
     cases = []
     for index, pages in enumerate(shapes):
         texts = [[str(page)] if isinstance(page, Stamped) else ([] if page is SCAN else page) for page in pages]
-        expected = " ".join(word for page in texts for text in page for word in text.split())
+        expected = fold(" ".join(word for page in texts for text in page for word in text.split()))
         complete = all(page is not SCAN and not isinstance(page, Stamped) and any(text.split() for text in page)
                        for page in pages)
         cases.append({"name": f"case{index}.pdf", "data": write_pdf(pages, compress=bool(index % 2)),
@@ -132,33 +132,14 @@ def coverage(raw: str, images: str | None = None) -> dict:
             "complete": bool(pages) and not empty and imaged is not None and not imaged}
 
 
-# One comparison form for the reader's text and the founder's phrase (#201 review DOC-5, DOC-7). Without it a
-# visible phrase reads "absent" whenever the PDF draws it with a ligature (U+FB01), a typographic apostrophe or
-# a decomposed accent. Case is kept: casefolding would add false hits ("US" in "us").
-FOLDING = "NFKC; typographic quotes and dashes to ASCII; soft hyphens removed; whitespace collapsed"
-_FOLD = str.maketrans({"\u2018": "'", "\u2019": "'", "\u201a": "'", "\u201b": "'", "\u2032": "'",
-                       "\u201c": '"', "\u201d": '"', "\u201e": '"', "\u201f": '"', "\u2033": '"',
-                       "\u2010": "-", "\u2011": "-", "\u2012": "-", "\u2013": "-", "\u2014": "-", "\u2212": "-",
-                       "\u00ad": None})
+# The comparison form and the match live in one contract (greg.text_interpretation), which PDF reading,
+# judgment and appraisal consume too. FOLDING remains the short name a receipt already carried (DOC-7).
+FOLDING = text_interpretation.SUMMARY
 
 
 def fold(text: str) -> str:
-    """The comparison form above: what document.text reports as ``text`` and matches phrases in."""
-    return " ".join(unicodedata.normalize("NFKC", text).translate(_FOLD).split())
-
-
-# A phrase matches only as whole words (#201 review DOC-6): "renewal term" is not in "nonrenewal term", nor
-# "$1,000" in "$1,000,000". Before it: the start, a space or an opening bracket or quote; after it: optional
-# closing punctuation, then a space or the end.
-_BEFORE, _AFTER = r"(?:^|(?<=[\s(\[\"']))", r"(?=[.,;:!?)\]\"']*(?:\s|$))"
-
-
-def _forms(needle: str) -> list[str]:
-    """The phrase as written, and with its hyphens removed: pdftotext joins a line-end hyphen to the next line
-    and drops it ("non-" / "compete" reads "noncompete"), so a hyphenated phrase must also be looked for joined
-    (#201 review DOC-4). Absence needs every form to miss; any form found is found."""
-    joined = needle.replace("-", "")
-    return [needle] + ([joined] if joined != needle and joined.strip() else [])
+    """The contract's comparison form: what document.text reports as ``text`` and matches phrases in."""
+    return text_interpretation.normalize(text)
 
 
 def find_phrase(text: str, params: dict, raw: str | None = None, extras: dict | None = None) -> dict:
@@ -177,10 +158,11 @@ def find_phrase(text: str, params: dict, raw: str | None = None, extras: dict | 
     seen = coverage(raw if raw is not None else text, (extras or {}).get("pdfimages"))
     out = {"words": len(text.split()), "text_sha256": hashlib.sha256(text.encode()).hexdigest(), **seen}
     out["text_form"] = FOLDING          # a predicate on ``text`` must compare in this form (DOC-7)
+    out["interpretation"] = text_interpretation.record()
     if isinstance(phrase, str) and phrase.split():
-        needle, folded = fold(phrase), fold(text)
-        count = sum(len(re.findall(_BEFORE + re.escape(form) + _AFTER, folded)) for form in _forms(needle))
-        out.update({"phrase": needle, "found": True if count else (False if seen["complete"] else None),
+        count = text_interpretation.occurrences(text, phrase)
+        out.update({"phrase": text_interpretation.normalize(phrase),
+                    "found": text_interpretation.phrase_found(text, phrase, complete=seen["complete"]),
                     "occurrences": count, "match": "whole words, in the folded form; a hyphenated phrase also "
                                                    "joined (line-end dehyphenation)"})
         if count:

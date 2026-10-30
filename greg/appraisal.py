@@ -28,6 +28,9 @@ acceptance) and #138 b8a0ccd (closure-bound evidence; ported 2026-10-14 with the
 recomputing scope from the params the engine actually handed the Gate, i.e. after typed
 handoffs were resolved). Limit: this is a separate process running reviewed Kernel code, not an
 independently written implementation or an OS sandbox against the host owner.
+
+A receipt that records a text interpretation contract is re-derived only under that contract
+(``receipt_contract_holds``). A different contract decides nothing.
 """
 from __future__ import annotations
 
@@ -45,6 +48,7 @@ from greg.founder import _signing_bytes
 from greg.journal import Journal
 from greg.lightcone import LightCone
 from greg.missions import evaluate_predicate, pre_approved
+from greg.text_interpretation import agrees
 from provenance.ledger import EvidenceLedger, sha256_json
 
 REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
@@ -53,6 +57,17 @@ REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.int
                 "institution.appraise", "organ.status"}
 REOBSERVABLE.update(cid for cid in BUILTINS if cid.startswith("cognition.") and
                     cid not in ("cognition.semantic", "cognition.compose", "cognition.knowledge"))
+
+
+def receipt_contract_holds(check_id: str, output) -> str | None:
+    """A finding when ``output`` records a text interpretation contract this appraisal does not apply.
+
+    No record: the output is not a text-interpretation reading, and this check does not apply. The same
+    ``agrees`` the judge uses, so appraisal cannot verify a reading under other normalization or matching rules."""
+    recorded = output.get("interpretation") if isinstance(output, dict) else None
+    if recorded is None or agrees(recorded):
+        return None
+    return f"{check_id}: receipt interpretation contract is not the contract appraisal applies"
 DELIVERING = {"brief.engineering": "greg.briefs", "venture.assess": "greg.ventures",
               "organs.exchange": "greg.organ_exchange"}  # re-rendered from receipts
 
@@ -435,7 +450,12 @@ def appraise(request: dict) -> dict:
                                                     closure_seq=achieved_seq, since_seq=after)):
                 bound = False
                 findings.append(f"{check['check_id']}: receipt not bound to this closure and signed sensor")
-            passed, detail = evaluate_predicate(check["predicate"], receipt.payload["result"].get("output"))
+            output = receipt.payload["result"].get("output")
+            contract_finding = receipt_contract_holds(check["check_id"], output)
+            if contract_finding:
+                rederived = False
+                findings.append(contract_finding)
+            passed, detail = evaluate_predicate(check["predicate"], output)
             if passed == unmet:
                 rederived = False
                 findings.append(f"{check['check_id']}: receipt bytes " + (
@@ -640,8 +660,10 @@ def appraise(request: dict) -> dict:
                           and o.payload["check_id"] == check_id and seq[o.event_id] < seq[e.event_id]]
                 last = before[-1] if before else None
                 receipt = ledger.find(last["receipt"]) if last and last.get("receipt") else None
-                held = bool(last and last.get("passed") and receipt is not None and evaluate_predicate(
-                    predicates[check_id], receipt.payload["result"].get("output"))[0])
+                held_output = receipt.payload["result"].get("output") if receipt is not None else None
+                held = bool(last and last.get("passed") and receipt is not None
+                            and not receipt_contract_holds(check_id, held_output) and evaluate_predicate(
+                    predicates[check_id], held_output)[0])
                 if not held:
                     preconditions_ok = False
                     findings.append(f"{action['action_id']}: ran before {check_id} was observed passing")

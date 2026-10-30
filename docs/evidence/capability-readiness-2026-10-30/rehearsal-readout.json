@@ -2,6 +2,10 @@
  "command": "python -m greg rehearse --dir <scratch>/run; python -m greg --home <scratch>/run/body readiness",
  "body": "throwaway rehearsal body, REHEARSAL key (not the founder's); counts_toward_vepmc false",
  "commit": "2dafddff",
+ "reread": {
+  "code": "d4302f0e (review fixes)",
+  "result": "summary, beyond_installed and disagreements identical to the 2dafddff readout: no receipt on this body is blamed and no pre-approval or failure-closure refutation is present"
+ },
  "summary": {
   "capabilities": 163,
   "reached": {

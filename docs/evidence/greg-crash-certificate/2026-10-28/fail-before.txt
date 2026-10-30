@@ -1,0 +1,16 @@
+# fail-before: this PR's tests/unit/test_greg_recombine.py run against greg/recombine.py at 917404cf (#196's head)
+# command: python -m pytest -q -p no:cacheprovider tests/unit/test_greg_recombine.py
+FAILED tests/unit/test_greg_recombine.py::test_a_crash_plan_that_breaks_a_limit_or_overpays_is_refused
+FAILED tests/unit/test_greg_recombine.py::test_without_a_deadline_flow_no_crash_plan_is_called_cheapest
+FAILED tests/unit/test_greg_recombine.py::test_a_flow_that_does_not_prove_its_bound_is_refused[flow0-not conserved at Test]
+FAILED tests/unit/test_greg_recombine.py::test_a_flow_that_does_not_prove_its_bound_is_refused[flow1-not a precedence]
+FAILED tests/unit/test_greg_recombine.py::test_a_flow_that_does_not_prove_its_bound_is_refused[flow2-not a precedence]
+FAILED tests/unit/test_greg_recombine.py::test_a_flow_that_does_not_prove_its_bound_is_refused[flow3-nonnegative integer]
+FAILED tests/unit/test_greg_recombine.py::test_a_flow_that_does_not_prove_its_bound_is_refused[flow4-nonnegative integer]
+FAILED tests/unit/test_greg_recombine.py::test_a_flow_that_does_not_prove_its_bound_is_refused[flow5-nonnegative integer]
+FAILED tests/unit/test_greg_recombine.py::test_a_flow_that_does_not_prove_its_bound_is_refused[flow6-malformed]
+FAILED tests/unit/test_greg_recombine.py::test_a_flow_that_does_not_prove_its_bound_is_refused[flow7-malformed]
+FAILED tests/unit/test_greg_recombine.py::test_a_flow_that_does_not_prove_its_bound_is_refused[flow8-no deadline flow]
+FAILED tests/unit/test_greg_recombine.py::test_the_issue_217_counterexample_suboptimal_vertices_are_refused_at_large_durations
+FAILED tests/unit/test_greg_recombine.py::test_no_flow_bounds_above_the_true_optimum
+13 failed, 26 passed in 35.07s

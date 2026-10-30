@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import http.server
 import json
+import os
 from pathlib import Path
 import threading
 
@@ -17,7 +18,9 @@ from greg.capabilities import BUILTINS, CapabilityError, InvocationContext, Secr
 pytest.importorskip("playwright")
 try:
     computer.chromium()
-except CapabilityError:
+except CapabilityError as exc:
+    if os.environ.get("GREG_REQUIRE_BROWSER") == "1":
+        pytest.fail(f"GREG_REQUIRE_BROWSER=1 and {exc}", pytrace=False)
     pytest.skip("no Chromium installed", allow_module_level=True)
 
 PAGES = {

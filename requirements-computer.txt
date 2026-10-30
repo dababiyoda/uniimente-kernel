@@ -1,0 +1,5 @@
+# Optional computer-use hands (browser.session, browser.render's Playwright route). No paid service.
+# 1.63.0 pins Chromium build 1243 (Chrome for Testing 153.0.8010.12), the build preinstalled at /opt/pw-browsers
+# where it was verified on 2026-10-30 (docs/evidence/browser-method-gate-2026-10-30/README.md). GREG drives the
+# installed Chromium by path (greg/computer.py chromium()); this file installs the Python driver only.
+playwright==1.63.0

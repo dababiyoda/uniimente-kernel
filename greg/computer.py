@@ -71,7 +71,10 @@ class BoundaryStop(Exception):
 
 
 def chromium() -> str:
-    candidates = sorted(glob.glob("/opt/pw-browsers/chromium-*/chrome-linux/chrome"))
+    # Playwright's browser directory: chrome-linux/ in older builds, chrome-linux64/ in newer ones (chromium-1243,
+    # Chrome for Testing 153, which Playwright 1.63 pins). Measured 2026-10-30: the older pattern alone found no
+    # browser here, so the whole computer-use suite skipped even with Playwright installed.
+    candidates = sorted(glob.glob("/opt/pw-browsers/chromium-*/chrome-linux*/chrome"))
     for path in candidates[::-1] + ["/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome"]:
         if os.access(path, os.X_OK):
             return path

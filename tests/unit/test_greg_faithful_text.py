@@ -23,6 +23,7 @@ from dataclasses import replace
 import os
 import random
 import subprocess
+import threading
 import tracemalloc
 import unicodedata
 
@@ -31,7 +32,7 @@ import pytest
 from greg.authority import RECEIPT_TEXT_LIMIT, keep_output
 from greg.business_loop import reconcile
 from greg.capabilities import (BUILTINS, MAX_READ_BYTES, CapabilityError, InvocationContext, SecretBroker,
-                               browser_render, faithful_text, fs_read, http_get, run_cli, with_text)
+                               bounded_read, browser_render, faithful_text, fs_read, http_get, run_cli, with_text)
 import greg.capabilities
 from greg.missions import FALSE, INSUFFICIENT, TRUE, _stable, judge, judge_receipt
 from tests.greg_fixtures import Clock, make_body, mission, note_check
@@ -145,7 +146,8 @@ def test_a_verdict_from_a_kept_prefix_never_contradicts_the_whole(tmp_path):
 # -- decoding: read the bytes in their own encoding, or say no faithful reading exists -------------------------------
 
 @pytest.mark.parametrize("codec, mark", [("utf-16-le", codecs.BOM_UTF16_LE), ("utf-16-be", codecs.BOM_UTF16_BE),
-                                         ("utf-32-le", codecs.BOM_UTF32_LE), ("utf-8", codecs.BOM_UTF8)])
+                                         ("utf-32-le", codecs.BOM_UTF32_LE), ("utf-8", codecs.BOM_UTF8)],
+                         ids=["utf16le", "utf16be", "utf32le", "utf8"])
 def test_a_marked_unicode_file_is_read_in_its_own_encoding(tmp_path, codec, mark):
     ctx = _ctx(tmp_path)
     path = tmp_path / "data" / "notice.txt"
@@ -161,7 +163,7 @@ def test_a_marked_unicode_file_is_read_in_its_own_encoding(tmp_path, codec, mark
     ("Résumé of José, café terms: terminate without notice".encode("latin-1"), "not valid utf-8"),
     (b"terminate \xed\xa0\x80 without notice", "not valid utf-8"),                         # an encoded surrogate
     (codecs.BOM_UTF16_LE + b"t\x00\x00\xd8x\x00", "not valid utf-16"),                    # a lone surrogate
-])
+], ids=["utf16-unmarked", "latin1", "utf8-surrogate", "utf16-lone-surrogate"])
 def test_an_unreadable_file_decides_no_check_on_its_text_either_way(tmp_path, data, why):
     ctx = _ctx(tmp_path)
     path = tmp_path / "data" / "notice.txt"
@@ -190,15 +192,31 @@ def test_a_statement_in_another_encoding_is_not_reported_unmatched(tmp_path):
     out = reconcile(params, ctx)
     assert "matched" not in out and out["complete"] is False                       # before: read with U+FFFD
     assert judge(p("equals", False, "matched"), out)[0] == INSUFFICIENT
-    statement.write_bytes(f"date,description,amount,currency\n2026-10-30,Payé {NFD('CASÉ-41927')},99.00,USD\n"
-                          .encode())
-    out = reconcile({**params, "reference": "CASÉ-41927"}, ctx)                     # signed in NFC
-    assert out["matched"] is True                                                    # before: no posting carries it
+    for posted, signed in ((NFD("CASÉ-41927"), "CASÉ-41927"), ("CASÉ-41927", NFD("CASÉ-41927"))):
+        statement.write_bytes(f"date,description,amount,currency\n2026-10-30,Payé {posted},99.00,USD\n".encode())
+        out = reconcile({**params, "reference": signed}, ctx)
+        assert out["matched"] is True, (posted, signed)                              # before: no posting carries it
+
+
+def test_an_oversized_statement_is_refused_before_it_is_read(tmp_path):
+    ctx = _ctx(tmp_path, "business.reconcile")
+    statement = tmp_path / "data" / "statement.csv"
+    with open(statement, "wb") as stream:
+        stream.truncate(64 * 1024 * 1024)
+    tracemalloc.start()
+    try:
+        with pytest.raises(CapabilityError, match="statement exceeds read ceiling"):
+            reconcile({"path": str(statement), "amount": "99.00", "currency": "USD", "reference": "CASE-41927"}, ctx)
+        peak = tracemalloc.get_traced_memory()[1]
+    finally:
+        tracemalloc.stop()
+    assert peak < MAX_READ_BYTES // 4, peak                                         # before: 64 MiB buffered
 
 
 @pytest.mark.parametrize("body, readable", [(codecs.BOM_UTF16_LE + "terminate without notice".encode("utf-16-le"), True),
                                             ("terminate without notice".encode("utf-16-le"), False),
-                                            ("Payé: terminate without notice".encode("latin-1"), False)])
+                                            ("Payé: terminate without notice".encode("latin-1"), False)],
+                         ids=["utf16-marked", "utf16-unmarked", "latin1"])
 def test_a_fetched_page_is_read_faithfully_or_not_at_all(tmp_path, monkeypatch, body, readable):
     from tests.fake_web import FakeWeb
     FakeWeb({"https://example.com/terms": (200, None, body)}).install(monkeypatch)
@@ -226,6 +244,14 @@ def test_a_page_longer_than_the_kept_text_decides_only_what_more_could_not_undo(
     assert judge(p("equals", len(page.encode()), "dom_bytes"), out)[0] == TRUE             # the whole page's size
     short = _render(monkeypatch, tmp_path, b"<html><title>t</title><p>whole page</p></html>")
     assert "complete" not in short and judge(p("not_contains", "terminate"), short)[0] == TRUE
+
+
+def test_a_page_cut_by_the_dom_limit_decides_only_what_more_could_not_undo(tmp_path, monkeypatch):
+    page = (f"<html><title>t</title><script>var pad = '{'x' * (4 * MAX_READ_BYTES)}';</script>"
+            "<p>Either party may terminate without notice.</p></html>").encode()
+    out = _render(monkeypatch, tmp_path, page)
+    assert out["dom_bytes"] == len(page) and out["complete"] is False                     # before: the cut's size
+    assert judge(p("not_contains", "terminate without notice"), out)[0] == INSUFFICIENT    # before: TRUE
 
 
 def test_a_page_in_another_encoding_decides_nothing_on_its_text(tmp_path, monkeypatch):
@@ -286,6 +312,21 @@ def test_a_file_that_misstates_its_size_is_read_no_further_than_the_ceiling(tmp_
     finally:
         tracemalloc.stop()
     assert peak < 2 * MAX_READ_BYTES, peak
+
+
+def test_a_fifo_swapped_in_for_a_file_is_refused_without_blocking(tmp_path):
+    fifo = tmp_path / "pipe"
+    os.mkfifo(fifo)                                       # no writer: a blocking open would wait forever
+    raised = []
+    def read():
+        try:
+            bounded_read(fifo, "too big")
+        except CapabilityError as exc:
+            raised.append(str(exc))
+    reader = threading.Thread(target=read, daemon=True)
+    reader.start()
+    reader.join(10)
+    assert raised == ["pipe is not a regular file"]
 
 
 def test_a_file_at_the_ceiling_is_still_read(tmp_path):

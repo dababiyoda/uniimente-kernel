@@ -12,11 +12,11 @@ Bounds enforced here, inside the authority office's single-action grant:
 
 * **Network**: only the origins (host and port) the signed params name may be contacted: the
   start URL, absolute ``goto`` URLs on the signed hosts, and ``also_hosts`` (``host`` means
-  port 443, ``host:port`` that port). Every other request and every other WebSocket is
-  aborted and counted; a WebSocket is routed too, since ``context.route`` alone never sees
-  one (measured 2026-10-14: a page's WebSocket reached an unlisted host, and a page on a
-  loopback target reached the body's other loopback ports). The page is untrusted data,
-  never instructions.
+  port 443, ``host:port`` that port). Every other request (each redirect hop included) and
+  every other WebSocket is aborted and counted; a WebSocket is routed on its own, since
+  request interception never sees one (measured 2026-10-14: a page's WebSocket reached an
+  unlisted host, and a page on a loopback target reached the body's other loopback ports).
+  The page is untrusted data, never instructions.
 * **Confined egress (#26)**: on a body that confines egress, Chromium runs in a bubblewrap
   network namespace whose only way out is the body relay's door, allowlisted for exactly
   those origins; every connection, WebSockets included, is decided and journaled there,
@@ -27,23 +27,38 @@ Bounds enforced here, inside the authority office's single-action grant:
   with ``AUTHORITY_BOUNDARY`` and the evidence so far; doing it needs its own approved
   action (``consequence_class`` external_contact or above) through the Gate.
 * **Method gate**: the marker is a declaration; the request is the mechanism. Inside the
-  signed origins only GET, HEAD and OPTIONS leave the browser. Any other method (a POST
-  form that a click or Enter submits, a page script's fetch PUT or DELETE, a beacon, an
-  ``<a ping>``) and any WebSocket to a signed origin is aborted and counted in
-  ``blocked_methods``, unless the signed ``read_methods`` names that method, origin and
-  path exactly (``"POST https://shop.example/search"``); each use is counted in
+  signed origins only GET, HEAD and OPTIONS without a body leave the browser. Any other
+  request (a POST form that a click or Enter submits, a page script's fetch PUT or DELETE,
+  a beacon, an ``<a ping>``, a body sent with OPTIONS) and any WebSocket to a signed origin
+  is aborted and counted in ``blocked_methods``, unless the signed ``read_methods`` names
+  that method, origin and path exactly (``"POST https://shop.example/search"``; a WebSocket
+  as ``"WEBSOCKET wss://..."``, which never passes an HTTP request); each use is counted in
   ``read_methods_used``. A step during which such a request is attempted (opening the
-  start page counts as step 0) ends the session with ``AUTHORITY_BOUNDARY``: the page
-  wanted to act on the world, and continuing would drive a page whose state the signed
-  steps did not anticipate. An attempt is charged to the step during which it is first
-  seen (one seen after the last step, to the last step), so a page timer's request may
-  stop a later step; a request the page has not issued when the session closes is never
-  sent. Requests outside the signed origins keep the network bound
-  above whatever their method. Measured 2026-10-30 (Playwright 1.63, Chromium
-  1243): routing sees form posts, page fetches, dedicated and service workers, beacons
-  and pings. Residual: the gate sees methods, not effects, so a GET with side effects (a
-  logout or unsubscribe link, a state-changing GET API) cannot be detected; and the
-  confined relay checks origins only, so this gate lives in the browser's routing alone.
+  start page counts as step 0) ends the session with ``AUTHORITY_BOUNDARY``, whatever else
+  that step then does: the page wanted to act on the world, and continuing would drive a
+  page whose state the signed steps did not anticipate. An attempt is charged to the step
+  during which it is first seen, so a page timer's request may stop a later step; one
+  first seen after the last step or while the session closes (a page's pagehide or unload
+  beacon) is aborted too and recorded as the session's ``close``. Whenever a write was
+  refused the status is ``AUTHORITY_BOUNDARY``, whatever else stopped the session.
+* **Where the gate sits** (measured 2026-10-30, Playwright 1.63, Chromium 1243): Playwright's
+  page routing misses a request a page sends while it unloads (a keepalive fetch or beacon
+  on pagehide, at navigation or at session close), a shared worker's requests and every
+  redirect hop, so HTTP is decided by request interception on the browser target itself
+  (CDP ``Fetch``), which pauses every request of every page, frame and worker, those
+  unload-time requests and each redirect hop included, until GREG answers it; the origin
+  bound and the method gate are applied to each, and an unanswered request dies with the
+  browser. That interception never sees a WebSocket: page frames get Playwright's routed
+  WebSocket (an injected mock, which measurably reaches dynamically created about:blank
+  frames too); ``WebSocketStream`` and ``SharedWorker`` are disabled in the engine; and
+  before any page script runs, ``Worker``, service-worker registration, ``WebTransport``
+  and ``RTCPeerConnection`` are removed from every frame, since a worker's WebSocket and a
+  QUIC or UDP channel are routes no interception sees. Pages that need a worker therefore
+  lose it. Residuals: the gate sees methods, not effects, so a GET with side effects (a
+  logout or unsubscribe link, a state-changing GET API) cannot be detected; those removals
+  are page-script level, as strong as Playwright's own WebSocket mock and no stronger;
+  WebTransport was not exercised end to end (no HTTP/3 server here); and the confined
+  relay checks origins only.
 * **Credentials**: ``secret`` fills resolve only declared handles through the secret
   broker; an unprovisioned credential stops the session truthfully, it is never guessed.
 * **Challenges**: CAPTCHA / bot challenges are detected and never solved. With
@@ -80,8 +95,14 @@ CHALLENGE_MARKERS = ("client challenge", "captcha", "verify you are human", "are
 TRUST_BUNDLE_ENV = "GREG_BROWSER_TRUST_BUNDLE"
 READ_METHODS = ("GET", "HEAD", "OPTIONS")
 MAX_READ_METHODS = 20
-METHOD_GATE = ("inside the signed origins only GET, HEAD, OPTIONS and the signed read_methods leave the browser; "
-               "a GET with side effects cannot be detected")
+METHOD_GATE = ("inside the signed origins only GET, HEAD and OPTIONS without a body and the signed read_methods leave "
+               "the browser, decided by request interception on the browser target; a GET with side effects cannot "
+               "be detected")
+# Write channels that no request interception sees, closed before any page script runs (see the module docstring).
+ENGINE_OFF = "--disable-blink-features=WebSocketStream,SharedWorker"
+PAGE_PRELUDE = ("for (const name of ['Worker', 'SharedWorker', 'WebSocketStream', 'WebTransport', 'RTCPeerConnection', "
+                "'webkitRTCPeerConnection']) delete globalThis[name];"
+                "delete Navigator.prototype.serviceWorker;")
 DEFAULT_PORTS = {"https": 443, "wss": 443, "http": 80, "ws": 80}
 LOOPBACK = ("127.0.0.1", "localhost", "::1")
 
@@ -136,6 +157,16 @@ def _origin(url: str) -> tuple[str, int] | None:
     return ((parts.hostname or "").lower(), port) if port and parts.hostname else None
 
 
+def _split(url: str, what: str):
+    """``urlsplit`` that refuses a malformed URL as a CapabilityError (an unclosed IPv6 bracket raises ValueError)."""
+    try:
+        parts = urllib.parse.urlsplit(url)
+        parts.port                          # a malformed port raises only when read
+    except ValueError as exc:
+        raise CapabilityError(f"{what} {url!r} is not a valid URL: {exc}") from None
+    return parts
+
+
 def _method_key(method: str, url: str) -> str:
     """``METHOD host:port/path`` of a request or WebSocket (the query is left out: it is the page's data)."""
     host, port = _origin(url) or ("", 0)
@@ -152,7 +183,7 @@ def _read_methods(params: dict, origins: set[tuple[str, int]]) -> set[str]:
     keys = set()
     for entry in entries:
         method, _, url = str(entry).partition(" ") if isinstance(entry, str) else ("", "", "")
-        parts = urllib.parse.urlsplit(url)
+        parts = _split(url, f"read_methods entry {entry!r}:")
         schemes = ("ws", "wss") if method == "WEBSOCKET" else ("http", "https")
         if (not re.fullmatch(r"[A-Z]{3,16}", method) or method in READ_METHODS or parts.scheme not in schemes
                 or not parts.path or parts.query or parts.fragment or _origin(url) is None):
@@ -166,7 +197,7 @@ def _read_methods(params: dict, origins: set[tuple[str, int]]) -> set[str]:
 
 def _validate(params: dict) -> tuple[str, list[dict], set[str], set[tuple[str, int]]]:
     url = str(params.get("url", ""))
-    parts = urllib.parse.urlsplit(url)
+    parts = _split(url, "browser.session start url")
     host = parts.hostname or ""
     loopback = host in LOOPBACK
     if parts.scheme != "https" and not (parts.scheme == "http" and loopback):
@@ -210,40 +241,63 @@ def session(params: dict, ctx: InvocationContext) -> dict:
     on_challenge = params.get("on_challenge", "stop")
     trace, extracted, blocked, blocked_sockets = [], {}, {}, {}
     blocked_methods, read_methods_used, attempts = {}, {}, []   # attempts: every refused method, in order
+    seen = 0                                                    # attempts already charged to a step
     status, boundary = "COMPLETED", None
     deadline = time.monotonic() + min(int(params.get("max_seconds", SESSION_SECONDS)), SESSION_SECONDS)
     # Chromium cannot sandbox itself as root on Linux, nor nest its own user namespace inside GREG's; reported below.
     sandboxed = not (sys.platform.startswith("linux") and os.geteuid() == 0) and not confined
 
-    def gate(method: str, url: str) -> bool:
-        """The method gate for a request to a signed origin: True lets it leave the browser."""
-        if method.upper() in READ_METHODS:
+    def gate(method: str, url: str, *, socket: bool = False, body: bool = False) -> bool:
+        """The method gate for a request or WebSocket to a signed origin: True lets it leave the browser."""
+        method = method.upper()
+        if not socket and method in READ_METHODS and not body:     # a read carries no body (OPTIONS can carry one)
             return True
         key = _method_key(method, url)
-        if key in exceptions:
+        if key in exceptions and socket == (method == "WEBSOCKET"):  # a WEBSOCKET exception passes no HTTP request
             read_methods_used[key] = read_methods_used.get(key, 0) + 1
             return True
         blocked_methods[key] = blocked_methods.get(key, 0) + 1
         attempts.append(key)
         return False
 
-    def allow(route):
-        if _origin(route.request.url) in origins:
-            return route.continue_() if gate(route.request.method, route.request.url) else route.abort()
-        target = (urllib.parse.urlsplit(route.request.url).hostname or "").lower()
-        blocked[target] = blocked.get(target, 0) + 1
-        return route.abort()
+    def outside(url: str, counts: dict) -> bool:
+        try:
+            target = (urllib.parse.urlsplit(url).hostname or "").lower()
+        except ValueError:
+            target = ""
+        counts[target] = counts.get(target, 0) + 1
+        return False
+
+    def decide(request: dict) -> bool:
+        """Origin bound, then method gate, for one paused request (a redirect hop is a request of its own)."""
+        url = request["url"]
+        if _origin(url) not in origins:
+            return outside(url, blocked)
+        return gate(request["method"], url, body=bool(request.get("hasPostData") or request.get("postData")))
+
+    def paused(event):
+        # Every HTTP(S) request of every page, frame and worker, pausing until answered here (see the docstring).
+        try:
+            allowed = decide(event["request"])
+        except Exception:                               # an undecidable request never leaves
+            allowed = False
+        try:
+            if allowed:
+                network.send("Fetch.continueRequest", {"requestId": event["requestId"]})
+            else:
+                network.send("Fetch.failRequest", {"requestId": event["requestId"], "errorReason": "BlockedByClient"})
+        except PlaywrightError:                         # cancelled meanwhile (its page or the browser closed)
+            pass
 
     def allow_socket(ws):
         # Not connecting is the refusal: an unconnected routed WebSocket is answered inside the browser and never
         # opens a connection. (A synchronous close() here never returns: this handler runs on Playwright's loop.)
         # A WebSocket carries writes whatever its handshake's method, so it passes only as a signed exception.
         if _origin(ws.url) in origins:
-            if gate("WEBSOCKET", ws.url):
+            if gate("WEBSOCKET", ws.url, socket=True):
                 ws.connect_to_server()
             return
-        target = (urllib.parse.urlsplit(ws.url).hostname or "").lower()
-        blocked_sockets[target] = blocked_sockets.get(target, 0) + 1
+        outside(ws.url, blocked_sockets)
 
     with tempfile.TemporaryDirectory(prefix="greg-browser-session-") as home:
         home = Path(home)
@@ -251,31 +305,44 @@ def session(params: dict, ctx: InvocationContext) -> dict:
         binary = chromium()
         with contextlib.ExitStack() as stack:      # closes Playwright first, then the door (journals every stream)
             door = stack.enter_context(_door(ctx.egress, home, origins)) if confined else None
-            launch = {"executable_path": binary, "args": [] if sandboxed else ["--no-sandbox"]}
+            launch = {"executable_path": binary, "args": [ENGINE_OFF] + ([] if sandboxed else ["--no-sandbox"])}
             if door is not None:
                 # The door is the namespace's own loopback and nothing else exists there to resolve or reach.
                 launch = {"executable_path": _behind_door(home, binary, door),
-                          "args": ["--no-sandbox", "--proxy-server={door}", "--proxy-bypass-list=<-loopback>",
+                          "args": ["--no-sandbox", ENGINE_OFF, "--proxy-server={door}",
+                                   "--proxy-bypass-list=<-loopback>",
                                    "--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1"]}
             pw = stack.enter_context(sync_playwright())
             browser = pw.chromium.launch(chromium_sandbox=sandboxed, downloads_path=str(home / "downloads"),
                                          env={"HOME": str(home), "PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"},
                                          **launch)
+            # Interception on the browser target, enabled before any context exists so that every request of every
+            # page, frame and worker it will create is paused for ``paused`` (page routing misses unload-time
+            # keepalive requests, shared workers and redirect hops; measured 2026-10-30).
+            network = browser.new_browser_cdp_session()
+            network.on("Fetch.requestPaused", paused)
+            network.send("Fetch.enable", {"patterns": [{"urlPattern": "*", "requestStage": "Request"}]})
             context = browser.new_context(accept_downloads=True, user_agent=params.get("user_agent"),
                                           viewport={"width": 1280, "height": 900})
-            context.route("**/*", allow)
+            context.add_init_script(PAGE_PRELUDE)
             context.route_web_socket(re.compile(".*"), allow_socket)
             page = context.new_page()
             page.set_default_timeout(STEP_TIMEOUT_MS)
-            skipping, seen = False, 0             # seen: attempts already charged to the open or an earlier step
+            skipping = False
             current = (0, {"op": "open", "url": url})
+
+            def unseen() -> list:
+                """Refused writes first seen since the last charge, charged now to the current step."""
+                nonlocal seen
+                keys, seen = attempts[seen:], len(attempts)
+                return keys
 
             def charge():
                 """Refused writes first seen during the current step end the session there (opening is step 0)."""
-                nonlocal seen
-                if len(attempts) > seen:
-                    trace[-1]["blocked_methods"], seen = attempts[seen:], len(attempts)
-                    raise BoundaryStop("AUTHORITY_BOUNDARY", _wrote(*current, trace[-1]["blocked_methods"]))
+                keys = unseen()
+                if keys:
+                    trace[-1]["blocked_methods"] = keys
+                    raise BoundaryStop("AUTHORITY_BOUNDARY", _wrote(*current, keys))
 
             try:
                 page.goto(url, wait_until="domcontentloaded")
@@ -311,26 +378,39 @@ def session(params: dict, ctx: InvocationContext) -> dict:
                             raise BoundaryStop("CHALLENGE", f"after step {index} the site presented a bot "
                                                             "challenge; GREG never solves CAPTCHAs or challenges")
                         skipping = True
-                charge()                              # a write first seen after the last step's own check
             except BoundaryStop as stop:
-                status, boundary = stop.kind, stop.why
-                trace.append(_evidence(page, trace_dir, len(trace), {"op": "boundary"}, stop.kind, note=stop.why))
+                status, boundary, keys = stop.kind, stop.why, unseen()
+                if keys:                           # the stopping step had attempted a write: the write decides
+                    status, boundary = "AUTHORITY_BOUNDARY", _wrote(*current, keys) + f" ({stop.why})"
+                trace.append(_evidence(page, trace_dir, len(trace), {"op": "boundary"}, status, note=boundary))
+                if keys:
+                    trace[-1]["blocked_methods"] = keys
             except PlaywrightError as exc:
-                status, boundary = "STEP_FAILED", str(exc).splitlines()[0][:300]
-                if len(attempts) > seen:           # the step failed after attempting a write: the write decides
-                    status, boundary = "AUTHORITY_BOUNDARY", _wrote(*current, attempts[seen:]) + f" ({boundary})"
+                status, boundary, keys = "STEP_FAILED", str(exc).splitlines()[0][:300], unseen()
+                if keys:                           # the step failed after attempting a write: the write decides
+                    status, boundary = "AUTHORITY_BOUNDARY", _wrote(*current, keys) + f" ({boundary})"
                 trace.append(_evidence(page, trace_dir, len(trace), {"op": "failure"}, "failed", note=boundary))
+                if keys:
+                    trace[-1]["blocked_methods"] = keys
             finally:
-                context.close()
-                browser.close()
+                context.close()                    # the page's unload handlers run here; their writes are paused
+                browser.close()                    # and refused, and one still unanswered dies with the browser
+    closing = attempts[seen:]                      # first seen after the last step's check or while closing
+    if closing:
+        trace.append({"step": len(trace), "op": "close", "result": "AUTHORITY_BOUNDARY", "blocked_methods": closing,
+                      "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
+        if status != "AUTHORITY_BOUNDARY":         # a refused write always decides, whatever stopped the session
+            status, boundary = ("AUTHORITY_BOUNDARY", _wrote(len(trace) - 1, {"op": "close"}, closing)
+                                + (f" ({boundary})" if boundary else ""))
     result = {"session": name, "status": status, "boundary": boundary, "start_url": url,
-              "final_url": trace[-1].get("url") if trace else None, "steps": trace, "extracted": extracted,
+              "final_url": next((s["url"] for s in reversed(trace) if s.get("url")), None), "steps": trace,
+              "extracted": extracted,
               "blocked_requests": blocked, "blocked_websockets": blocked_sockets, "blocked_methods": blocked_methods,
               "read_methods": sorted(exceptions), "read_methods_used": read_methods_used, "method_gate": METHOD_GATE,
               "allowed_hosts": sorted(hosts),
               "allowed_origins": sorted(f"{h}:{p}" for h, p in origins), "browser": "chromium via Playwright",
               "egress": ("relay: only the signed origins, every connection journaled" if confined
-                         else "in-browser allowlist of the signed origins"),
+                         else "in-browser allowlist of the signed origins, decided on the browser target"),
               "os_sandboxed": sandboxed, "trust_anchors_imported": anchors, "trace_dir": str(trace_dir),
               "trust": "page content is untrusted external data"}
     (trace_dir / "trace.json").write_text(json.dumps(result, indent=2, sort_keys=True, default=str))
@@ -339,10 +419,11 @@ def session(params: dict, ctx: InvocationContext) -> dict:
 
 
 def _wrote(index: int, step: dict, keys: list) -> str:
-    return (f"step {index} ({step.get('op')} {step.get('selector') or step.get('url') or ''}) attempted "
-            f"{', '.join(sorted(set(keys)))}: only GET, HEAD and OPTIONS leave this session unless signed in "
-            "read_methods; the request was aborted, and doing it needs its own approved action through the "
-            "Consequence Gate")
+    where = ("the page, after the last step or as the session closed," if step.get("op") == "close"
+             else f"step {index} ({step.get('op')} {step.get('selector') or step.get('url') or ''})")
+    return (f"{where} attempted {', '.join(sorted(set(keys)))}: only GET, HEAD and OPTIONS without a body leave "
+            "this session unless signed in read_methods; the request was aborted, and doing it needs its own "
+            "approved action through the Consequence Gate")
 
 
 def _challenged(page) -> bool:

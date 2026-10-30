@@ -280,3 +280,13 @@ check Memory files for this checkout's entry instructions. Confirm the actual
 source pin and live claim in the session; text files provide context, not enforced
 configuration. Official reference inspected 2026-10-21:
 https://code.claude.com/docs/en/memory . This task does not modify global hooks.
+
+# Enrolled-client gate (2026-10-30 extension)
+
+For clients enrolled by this workspace's operator, covered write tools require a
+current claim before execution. Follow [mandatory enrollment and installation](MANDATORY-GATE-2026-10-30.md).
+The SQLite registry coordinates clients using the same local DB; remote clients
+and tools outside the installed hook coverage still require explicit enrollment.
+Discussion #89 and board #96 remain the source/coordination front door. An expiry
+does not release another worker's claim. Read-only orientation remains available.
+

@@ -301,10 +301,19 @@ MUTANTS = [
      'data = stream.read()',
      F + 'test_a_file_that_misstates_its_size_is_read_no_further_than_the_ceiling'),
     ('a FIFO is read as a file', "greg/capabilities.py",
-     '        if not stat.S_ISREG(info.st_mode):\n'
-     '            raise CapabilityError(f"{path.name} is not a regular file")\n',
+     '    if not stat.S_ISREG(info.st_mode):                  # checked on the descriptor, before Python wraps it\n'
+     '        os.close(fd)\n'
+     '        raise CapabilityError(f"{path.name} is not a regular file")\n',
      '',
      F + 'test_a_fifo_swapped_in_for_a_file_is_refused_without_blocking'),
+    ('a directory where a file should be is read as a missing file', "greg/capabilities.py",
+     '    if not path.exists():   # absence is a measurement of the world; a directory or FIFO there is a failed read',
+     '    if not path.is_file():  # absence is a measurement of the world; a directory or FIFO there is a failed read',
+     F + 'test_a_directory_or_fifo_where_a_file_was_expected_is_a_failed_read_not_an_absent_file'),
+    ('the founder is not told that a checked path does not exist', "greg/missions.py",
+     '        gone = "; the path does not exist" if isinstance(output, dict) and output.get("exists") is False else ""',
+     '        gone = ""',
+     F + 'test_a_check_on_a_missing_file_says_the_path_does_not_exist'),
     ('command output cut at the ceiling is vouched for', "greg/capabilities.py",
      'held += [name] if cut or text is None else []',
      'held += [name] if text is None else []',

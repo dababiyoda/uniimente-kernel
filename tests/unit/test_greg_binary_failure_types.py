@@ -10,6 +10,7 @@ ceiling and its whole first line was stored. DOC-10: a binary that ran past its 
 from __future__ import annotations
 
 import hashlib
+import os
 import signal
 import stat
 import types
@@ -108,3 +109,36 @@ def test_the_version_probe_is_bounded_and_its_line_truncated(tmp_path, monkeypat
     with pytest.raises(CapabilityError) as raised:                  # never TimeoutExpired out of Body.tick
         genesis_mod.Genesis._manifest_for(object(), "text.wordcount", spec, endless, "d")
     assert raised.value.failure_class == "transient"
+
+
+@needs_pdftotext
+def test_text_and_image_listing_come_from_one_snapshot_of_the_input(tmp_path, monkeypatch):
+    """DOC-11: the file is replaced after pdftotext read it and before pdfimages runs. Both must have read the
+    same bytes: the stamped scan's image still counts, so absence is not proved."""
+    from tests.unit.test_greg_document_text import _adapter
+    path = tmp_path / "in.pdf"
+    path.write_bytes(documents.write_pdf([documents.Stamped("BATES-000002")]))
+    real = genesis_mod._companion_outputs
+
+    def swapped(candidate, file, ctx):
+        path.write_bytes(documents.write_pdf([["BATES-000002"]]))       # a clean text page, no image
+        return real(candidate, file, ctx)
+    monkeypatch.setattr(genesis_mod, "_companion_outputs", swapped)
+    spec = genesis_mod.CATALOG["document.text"]["candidates"][0]
+    adapter = genesis_mod.catalog_adapter("document.text", spec, genesis_mod.installed_binary("pdftotext"))
+    manifest = CapabilityManifest.__new__(CapabilityManifest)
+    pdfimages = genesis_mod.installed_binary("pdfimages")
+    object.__setattr__(manifest, "provenance", {"companions": {"pdfimages": {
+        "binary": pdfimages, "binary_sha256": hashlib.sha256(open(pdfimages, "rb").read()).hexdigest()}}})
+    ctx = InvocationContext(workspace=tmp_path / "ws", read_roots=(tmp_path,), secrets=None, manifest=manifest)
+    out = adapter({"path": str(path), "phrase": "automatic renewal"}, ctx)
+    assert out["complete"] is False and out["found"] is None and out["input_sha256"]
+    assert not list((tmp_path / "ws").glob(".in-*")), "the snapshot is removed after the run"
+
+
+def test_a_reader_with_companions_refuses_what_is_not_a_regular_file(tmp_path):
+    fifo = tmp_path / "pipe.pdf"
+    os.mkfifo(fifo)
+    (tmp_path / "ws").mkdir()
+    with pytest.raises(CapabilityError, match="not a regular file"):
+        genesis_mod._snapshot(fifo, tmp_path / "ws")

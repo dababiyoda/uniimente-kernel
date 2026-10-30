@@ -675,6 +675,11 @@ METABOLISM_MUTANTS = [
     ("a phrase is matched inside a longer word", "greg/documents.py", "_BEFORE + re.escape(form) + _AFTER", "re.escape(form)"),
     ("a line-end-dehyphenated phrase is not looked for joined", "greg/documents.py",
      "return [needle] + ([joined] if", "return [needle] + 0 * ([joined] if"),
+    ("a reader's companions read a different copy of the input", "greg/genesis.py",
+     "_snapshot(path, ctx.workspace) if candidate.companions else (path, None)", "(path, None)"),
+    ("a snapshot is taken through a link or of a FIFO", "greg/genesis.py",
+     "        if not stat.S_ISREG(info.st_mode):\n            raise CapabilityError(f\"{path.name} is not a regular file\")",
+     "        if False:\n            raise CapabilityError(f\"{path.name} is not a regular file\")"),
     ("an acquired binary runs without requalification", "greg/genesis.py",
      "requalified, why = licensing.requalify_binary(ctx.manifest, binary)", 'requalified, why = True, ""'),
 ]

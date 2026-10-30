@@ -601,17 +601,58 @@ def catalog_adapter(function: str, candidate: Candidate, binary: str):
         if not requalified:
             raise CapabilityError(f"capability refused: {why}")
         ctx.workspace.mkdir(parents=True, exist_ok=True)
-        argv = [binary if t == "{binary}" else str(path) if t == "{file}" else t for t in candidate.argv]
-        returncode, stdout, stderr = _run_bounded(argv, ctx.workspace, candidate.binary_name)
-        if returncode:
-            raise _exit_refusal(candidate.binary_name, returncode, stderr)
-        raw = stdout.decode("utf-8", errors="replace")
-        value = PARSERS[candidate.parse](raw)
-        if not spec.get("derive"):
-            return {spec["output_field"]: value, "path": str(path)}
-        extras = _companion_outputs(candidate, path, ctx)
-        return {spec["output_field"]: value, "path": str(path), **spec["derive"](value, params, raw, extras)}
+        # with companions, every binary reads one snapshot of the input, so a file replaced between the runs
+        # cannot pair one version's text with another's image listing (#201 review DOC-11)
+        snapshot, digest = _snapshot(path, ctx.workspace) if candidate.companions else (path, None)
+        try:
+            argv = [binary if t == "{binary}" else str(snapshot) if t == "{file}" else t for t in candidate.argv]
+            returncode, stdout, stderr = _run_bounded(argv, ctx.workspace, candidate.binary_name)
+            if returncode:
+                raise _exit_refusal(candidate.binary_name, returncode, stderr)
+            raw = stdout.decode("utf-8", errors="replace")
+            value = PARSERS[candidate.parse](raw)
+            if not spec.get("derive"):
+                return {spec["output_field"]: value, "path": str(path)}
+            extras = _companion_outputs(candidate, snapshot, ctx)
+            return {spec["output_field"]: value, "path": str(path),
+                    **({"input_sha256": digest} if digest else {}), **spec["derive"](value, params, raw, extras)}
+        finally:
+            if snapshot != path:
+                snapshot.unlink(missing_ok=True)
     return adapter
+
+
+SNAPSHOT_MAX = 256 * 1024 ** 2          # bytes of one input copied for a reader with companions
+
+
+def _snapshot(path: Path, workspace: Path) -> tuple[Path, str]:
+    """Copy one regular file, never through a link, into the workspace (bounded), and hash the copy."""
+    import secrets
+    try:
+        fd = os.open(path, os.O_NOFOLLOW | os.O_RDONLY | os.O_NONBLOCK)
+    except OSError as exc:
+        raise CapabilityError(f"could not open {path.name} for reading: {exc.strerror}") from None
+    target = workspace / f".in-{secrets.token_hex(8)}{path.suffix[:16]}"
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode):
+            raise CapabilityError(f"{path.name} is not a regular file")
+        if info.st_size > SNAPSHOT_MAX:
+            raise CapabilityError(f"{path.name} exceeds the {SNAPSHOT_MAX}-byte input ceiling")
+        digest, copied = hashlib.sha256(), 0
+        with os.fdopen(os.dup(fd), "rb") as src, open(target, "xb") as dst:
+            while chunk := src.read(1 << 20):
+                copied += len(chunk)
+                if copied > SNAPSHOT_MAX:
+                    raise CapabilityError(f"{path.name} grew past the {SNAPSHOT_MAX}-byte input ceiling")
+                digest.update(chunk)
+                dst.write(chunk)
+        return target, digest.hexdigest()
+    except BaseException:
+        target.unlink(missing_ok=True)
+        raise
+    finally:
+        os.close(fd)
 
 
 def _binary_license(binary: str) -> dict:

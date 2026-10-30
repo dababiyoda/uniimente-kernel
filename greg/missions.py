@@ -36,6 +36,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 from greg.authority import ActionOutcome, AuthorityOffice
 from greg.capabilities import CapabilityError, InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
+from greg import text_interpretation
 from greg import asks, improvement, routing
 from greg.founder import instant
 from greg.journal import Journal, fact_id, iso
@@ -544,6 +545,23 @@ def measured(observation: dict) -> bool:
     return not str(observation.get("detail", "")).startswith("sensor ")
 
 
+def _text_rules(output):
+    """Whether ``output`` records the text interpretation contract.
+
+    None: it records none, and string predicates compare code points as before. True: it records this contract,
+    and string predicates use it. False: it records a different contract, which this judgment does not apply."""
+    if not isinstance(output, dict) or "interpretation" not in output:
+        return None
+    return text_interpretation.agrees(output.get("interpretation"))
+
+
+def _text_contains(haystack, needle, rules) -> bool:
+    """A phrase occurrence. Under the contract, the contract's match; otherwise a raw substring."""
+    if rules and isinstance(haystack, str) and isinstance(needle, str):
+        return text_interpretation.occurrences(haystack, needle) > 0
+    return needle in haystack
+
+
 def judge(predicate: dict, output) -> tuple[str, str]:
     """TRUE, FALSE or INSUFFICIENT: what the retained output proves about one predicate.
 
@@ -553,15 +571,27 @@ def judge(predicate: dict, output) -> tuple[str, str]:
     that declares itself incomplete (``"complete": false``, e.g. a PDF page with no text layer) gets the same
     treatment for every field: more data could only add to it, unless the output names that field in
     ``"decided"`` (e.g. ``document.text``'s ``found`` once a phrase is found): a field so named, holding a value,
-    is judged whole. ``decided`` vouches for fields of an incomplete output only, never for a cut list."""
+    is judged whole. ``decided`` vouches for fields of an incomplete output only, never for a cut list.
+
+    An output that records ``interpretation`` is read with that contract (``greg.text_interpretation``). A record
+    this judgment does not hold decides nothing. On a contract this judgment holds, ``contains`` and
+    ``not_contains`` use its match, and a fully retained ``found`` must be the bit the contract computes."""
     op = predicate["op"]
     path = predicate.get("field", "")
+    rules = _text_rules(output)
+    if rules is False:
+        return INSUFFICIENT, "interpretation contract on this output is not the contract judgment applies"
     try:
         value = _raw_field(output, path)
     except KeyError:
         return (TRUE if op == "absent" else FALSE), f"field {path!r} absent"
     except LookupError as exc:
         return INSUFFICIENT, str(exc)
+    if rules and path == "found" and isinstance(output.get("text"), str) and isinstance(output.get("phrase"), str):
+        recomputed = text_interpretation.phrase_found(
+            output["text"], output["phrase"], complete=output.get("complete") is not False)
+        if value != recomputed:
+            return INSUFFICIENT, "found does not follow the interpretation contract on the retained text"
     expected = predicate.get("value")
     if op == "exists":
         return TRUE, "present"
@@ -580,11 +610,11 @@ def judge(predicate: dict, output) -> tuple[str, str]:
         if op in ("gte", "lte"):
             return FALSE, "not numeric"
         if op in ("contains", "not_contains"):
-            if isinstance(expected, str) and expected in text:
+            if isinstance(expected, str) and _text_contains(text, expected, rules):
                 return (TRUE if op == "contains" else FALSE), f"{expected!r:.60} found in the kept prefix"
             return INSUFFICIENT, f"{op} {expected!r:.60}: not in the {kept}; the rest was not retained"
         raise MissionError(f"unknown predicate op {op!r}")
-    verdict, detail = _judge_whole(op, value, expected)
+    verdict, detail = _judge_whole(op, value, expected, rules)
     partial = isinstance(value, list) and len(value) == RECEIPT_LIST_LIMIT and op in (
         "equals", "contains", "not_contains", "count_gte")
     # a list member longer than the receipt keeps is a wrapper, not the member: it can match nothing, so only a
@@ -615,16 +645,23 @@ def judge(predicate: dict, output) -> tuple[str, str]:
     return verdict, detail
 
 
-def _judge_whole(op, value, expected) -> tuple[str, str]:
+def _judge_whole(op, value, expected, rules=None) -> tuple[str, str]:
     def as_verdict(ok):
         return TRUE if ok else FALSE
     if op == "equals":
         return as_verdict(value == expected), f"{value!r:.200} == {expected!r:.200}"
     if op == "contains":
-        return as_verdict((expected in value) if isinstance(value, (str, list)) else False), f"contains {expected!r}"
+        if rules and isinstance(value, str):
+            ok = isinstance(expected, str) and _text_contains(value, expected, True)
+        else:
+            ok = (expected in value) if isinstance(value, (str, list)) else False
+        return as_verdict(ok), f"contains {expected!r}"
     if op == "not_contains":
-        return as_verdict((expected not in value) if isinstance(value, (str, list)) else False), \
-            f"not contains {expected!r}"
+        if rules and isinstance(value, str):
+            ok = isinstance(expected, str) and not _text_contains(value, expected, True)
+        else:
+            ok = (expected not in value) if isinstance(value, (str, list)) else False
+        return as_verdict(ok), f"not contains {expected!r}"
     if op in ("gte", "lte"):
         if not isinstance(value, (int, float)) or isinstance(value, bool):
             return FALSE, "not numeric"

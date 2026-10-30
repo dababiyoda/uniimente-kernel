@@ -72,7 +72,7 @@ import time
 from greg.capabilities import (CapabilityError, CapabilityManifest, InvocationContext, installed_binary,
                                run_isolated)
 from greg.artifacts import ArtifactStore
-from greg import builders, documents, licensing, mechanisms, recombine
+from greg import builders, documents, licensing, mechanisms, recombine, text_interpretation
 from greg.cognition import assignment, linear, network
 from greg.journal import Journal, iso
 from greg.mechanisms import PackageCandidate
@@ -121,7 +121,7 @@ PARSERS = {
     "first_hex_token": lambda out: out.split()[0].lower() if out.split() else "",
     "last_hex_token": lambda out: out.strip().split()[-1].lower() if out.split() else "",
     "first_int": lambda out: int(out.split()[0]) if out.split() else -1,
-    "words": documents.fold,               # whitespace collapsed, in the folded comparison form (DOC-5)
+    "words": text_interpretation.normalize,  # the text interpretation contract, same form extraction matches in
 }
 
 CATALOG = {

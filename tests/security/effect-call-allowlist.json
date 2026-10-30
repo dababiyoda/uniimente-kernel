@@ -1,0 +1,722 @@
+{
+ "version": 1,
+ "purpose": "Every effectful call site in greg/ and foundry/systems/ (a child process or a network connection), keyed by module, enclosing qualname and callee with an occurrence count, and what governs it. Read by tests/unit/test_effect_call_allowlist.py; a site missing here, an entry with no site, or a wrong count fails it. Listing a site authorizes nothing: this is a review-time inventory, not a grant.",
+ "rule": "allowed: the site is reached only through a registered capability's adapter (its manifest, signed mission scope and Gate), the confinement those adapters run behind (run_isolated, the worker envelope, the #26 relay and door), the supervised worker path, a founder-signed selection or command, or a command a person runs by hand (greg CLI, installer, python -m harness, CI audit). known_unmediated: the body reaches the site on its own schedule with none of those behind it; each is a finding, kept so it cannot grow silently, not an approval.",
+ "seeded_from": "b1950be215b564dec9665793b891009310d47249",
+ "allowed": [
+  {
+   "module": "foundry/systems/build.py",
+   "qualname": "build_in_subprocess",
+   "callee": "subprocess.run",
+   "count": 2,
+   "serves": [
+    "capability:foundry.apply",
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "APPLY_OPS['verify'] and exercise() rebuild the owned bundle in a child: under GREG_FOUNDRY_STORE (set inside the foundry worker) only the reviewed `greg.foundry_protocol_worker build-owned` recipe, scrubbed env, fixed source root; otherwise build() in a `python -c` child"
+  },
+  {
+   "module": "foundry/systems/build.py",
+   "qualname": "smoke",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only: imports foundry.systems from the extracted bundle in a child with PYTHONPATH=<bundle> and PATH=/usr/bin:/bin, to show the bundle runs on its own"
+  },
+  {
+   "module": "foundry/systems/commissioning.py",
+   "qualname": "Commission._ci",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only (APPLY_OPS is empty: running an agent is a founder-authorized act): runs the frozen contract's own `ci` argv in the commissioned worktree with scrubbed_env() and CI_TIMEOUT"
+  },
+  {
+   "module": "foundry/systems/commissioning.py",
+   "qualname": "git",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only: git with GIT_ENV on the scratch repository the exercise creates; QUERY_OPS['contracts'] reads the store and runs no git"
+  },
+  {
+   "module": "foundry/systems/containers.py",
+   "qualname": "_cleanup",
+   "callee": "subprocess.run",
+   "count": 3,
+   "serves": [
+    "capability:foundry.apply",
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "after run(): deletes the container, lazily unmounts leftovers and removes its state directory, each through _privileged(), which refuses unless the founder's approval variable names this host"
+  },
+  {
+   "module": "foundry/systems/containers.py",
+   "qualname": "run",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:foundry.apply",
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "APPLY_OPS['run'] and exercise(): runc/runsc on a prepared bundle only after privileged_runtime_approved() (the founder's approval variable equals this hostname); refused before any command otherwise"
+  },
+  {
+   "module": "foundry/systems/embassy_wire.py",
+   "qualname": "ForeignAgent.http",
+   "callee": "urllib.request.urlopen",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only (APPLY_OPS is empty: admitting foreign agents is an operator act): the test agents' client to the embassy serve() binds on 127.0.0.1:0"
+  },
+  {
+   "module": "foundry/systems/federation.py",
+   "qualname": "_http",
+   "callee": "urllib.request.urlopen",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "Instance delivery and fetch, reached only from the exercises of federation, commons and company_loop (their APPLY_OPS are empty: fediverse publishing is an external act), against Instances served on 127.0.0.1:0"
+  },
+  {
+   "module": "foundry/systems/media_engine.py",
+   "qualname": "Engine.inspect",
+   "callee": "subprocess.run",
+   "count": 2,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "ffmpeg re-reads a rendered asset; Engine is built only by the exercises of media_engine and company_loop (APPLY_OPS is empty: rendering is an operator act under a ratified canon)"
+  },
+  {
+   "module": "foundry/systems/media_engine.py",
+   "qualname": "Engine.render_video",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "ffmpeg encodes raw frames piped on stdin with a 120 s timeout; same reach as Engine.inspect"
+  },
+  {
+   "module": "foundry/systems/media_engine.py",
+   "qualname": "engine_versions",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "`ffmpeg -version`, called only from Engine.__init__; same reach as Engine.inspect"
+  },
+  {
+   "module": "foundry/systems/promotion.py",
+   "qualname": "_stage_verification",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:foundry.query",
+    "capability:foundry.apply",
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "verification stage of promote() (QUERY_OPS dry_run, APPLY_OPS promote, exercise()): recomputes the DSL cases in the reviewed `greg.foundry_protocol_worker dsl-verify` child with a scrubbed env"
+  },
+  {
+   "module": "foundry/systems/relay_door.py",
+   "qualname": "Door.__init__",
+   "callee": "socket.socket",
+   "count": 1,
+   "serves": [
+    "egress:#26 door (foundry.systems.relay_door.Door)",
+    "capability:browser.render",
+    "capability:browser.session",
+    "capability:mcp.act",
+    "capability:daleobanks.publish",
+    "capability:worker.commission",
+    "model-route:anthropic, openai, claude-code"
+   ],
+   "justification": "the #26 door: an AF_UNIX listener in a directory private to the body's user (refused otherwise) through which a namespaced program reaches only its scoped Relay"
+  },
+  {
+   "module": "foundry/systems/repair.py",
+   "qualname": "_pytest",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "pytest on repair()'s candidate in a temp dir; reached by exercise() and APPLY_OPS['repair'], and greg.foundry_bridge._call refuses every system-52 request (caller source execution needs OS confinement)"
+  },
+  {
+   "module": "foundry/systems/sandbox.py",
+   "qualname": "_listener",
+   "callee": "socket.socket",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only (through probe()): a 127.0.0.1:0 listener that counts escape connections"
+  },
+  {
+   "module": "foundry/systems/sandbox.py",
+   "qualname": "probe",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only: the host-process control of the escape probes; it exits before the external probe (TEST-NET 192.0.2.1, tried only inside the sandbox) and touches the scratch root and the loopback listener"
+  },
+  {
+   "module": "foundry/systems/segmentation.py",
+   "qualname": "Relay.__init__",
+   "callee": "socket.create_connection",
+   "count": 1,
+   "serves": [
+    "egress:#26 relay (foundry.systems.segmentation.Relay)",
+    "capability:http.get",
+    "capability:github.pulls",
+    "capability:browser.session",
+    "founder-command:ANCHOR_CONFIGURE (signed TSA url for proof anchoring)"
+   ],
+   "justification": "the relay's upstream connector, injected as a default: it opens a connection only after the per-identity allowlist check, and every decision is journaled"
+  },
+  {
+   "module": "foundry/systems/segmentation.py",
+   "qualname": "egress_connect",
+   "callee": "socket.socket",
+   "count": 2,
+   "serves": [
+    "egress:#26 relay (foundry.systems.segmentation.Relay)"
+   ],
+   "justification": "runs inside a confined component: adopts the inherited door fd (GREG_EGRESS_FD) and the one fd the relay passes back; it opens no socket of its own"
+  },
+  {
+   "module": "foundry/systems/segmentation.py",
+   "qualname": "exercise.connect",
+   "callee": "socket.create_connection",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only: the proof relay's connector to the loopback organ server the exercise serves on 127.0.0.1"
+  },
+  {
+   "module": "foundry/systems/segmentation.py",
+   "qualname": "run_confined",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "egress:#26 relay (foundry.systems.segmentation.Relay)",
+    "capability:http.get",
+    "capability:github.pulls",
+    "founder-command:ANCHOR_CONFIGURE (signed TSA url for proof anchoring)"
+   ],
+   "justification": "launches a component under the Kernel seccomp filter that denies every socket (_confiner) with exactly one door, the relay, passed by pass_fds"
+  },
+  {
+   "module": "foundry/systems/webserver.py",
+   "qualname": "exercise",
+   "callee": "urllib.request.build_opener",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only: a loopback opener with ProxyHandler({}) (never via a proxy) for the site it serves on 127.0.0.1"
+  },
+  {
+   "module": "foundry/systems/webserver.py",
+   "qualname": "exercise.get",
+   "callee": "urllib.request.build_opener().open",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only: requests to the 127.0.0.1 site through that loopback opener"
+  },
+  {
+   "module": "greg/builders.py",
+   "qualname": "ClaudeCodeBuilder.__init__",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg run --builder claude-code"
+   ],
+   "justification": "default runner: build() calls it with the founder's installed claude CLI (no tools, no MCP, empty cwd, --max-budget-usd), behind the relay door on a confined body; built only by `greg run --builder claude-code`"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "SecretBroker.resolve",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:github.pulls",
+    "capability:browser.session",
+    "model-route:anthropic, openai"
+   ],
+   "justification": "macOS only: a read-only Keychain lookup (`/usr/bin/security find-generic-password -w`) for a credential name resolve() first checks against the declared handles (InvocationContext.secret passes manifest.credentials)"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "_launch",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "confinement:greg.capabilities.run_isolated"
+   ],
+   "justification": "run_isolated's unsupervised spawn: argv is already under sandbox-exec (macOS) or gets the seccomp no-network or Landlock preexec (Linux), scrubbed env; every in-tree caller keeps isolate_network=True; with stop_check it goes to workers.supervised_run instead"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "_render_behind_relay",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:browser.render"
+   ],
+   "justification": "confined browser.render: the browser runs in a bubblewrap network namespace whose only way out is a door to a relay allowlisted for the target alone; without namespaces nothing runs"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "browser_render",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:browser.render"
+   ],
+   "justification": "unconfined browser.render: headless Chrome, fresh profile, resolving only the signed web:<host> target (every other name maps to NOTFOUND)"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "mac_frontmost_app",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:mac.frontmost_app"
+   ],
+   "justification": "macOS osascript query naming the frontmost application; read-only"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "mac_notify",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:mac.notify"
+   ],
+   "justification": "macOS osascript notification shown to the founder"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "mac_screenshot",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:mac.screenshot"
+   ],
+   "justification": "`/usr/sbin/screencapture -x` into the capability's workspace"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "read_only_git",
+   "callee": "subprocess.run",
+   "count": 2,
+   "serves": [
+    "capability:git.inspect",
+    "operator:greg acceptance"
+   ],
+   "justification": "hardened read-only git (fsmonitor off, hooks /dev/null, every filter driver blanked, no global or system config) for git.inspect and the acceptance report's code identity"
+  },
+  {
+   "module": "greg/cognition/code_binding.py",
+   "qualname": "at_commit.read",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:python scripts/build_mind_evidence_index.py"
+   ],
+   "justification": "`git show <commit>:<path>` in the kernel checkout; at_commit is used only by scripts/build_mind_evidence_index.py (the runtime compiler reads code_binding.working_tree)"
+  },
+  {
+   "module": "greg/cognition/evolution.py",
+   "qualname": "_clean_room_violations",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:python -m greg.cognition.evolution --freeze F --out O (P8 protected evolution)"
+   ],
+   "justification": "`git status --porcelain --ignored` of the kernel checkout, to refuse a recorded cycle run from a dirty tree"
+  },
+  {
+   "module": "greg/cognition/evolution.py",
+   "qualname": "_dirty",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:python -m greg.cognition.evolution --freeze F --out O (P8 protected evolution)"
+   ],
+   "justification": "`git ls-tree` of the frozen paths at HEAD, compared by content to find edits git status could hide"
+  },
+  {
+   "module": "greg/cognition/evolution.py",
+   "qualname": "_freeze_commit",
+   "callee": "subprocess.check_output",
+   "count": 1,
+   "serves": [
+    "operator:python -m greg.cognition.evolution --freeze F --out O (P8 protected evolution)"
+   ],
+   "justification": "`git log -1` naming the commit that last changed the freeze"
+  },
+  {
+   "module": "greg/cognition/evolution.py",
+   "qualname": "_freeze_commit",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:python -m greg.cognition.evolution --freeze F --out O (P8 protected evolution)"
+   ],
+   "justification": "`git rev-parse --is-shallow-repository`, so a shallow clone's boundary is never named as the freeze commit"
+  },
+  {
+   "module": "greg/cognition/evolution.py",
+   "qualname": "cycle",
+   "callee": "subprocess.check_output",
+   "count": 1,
+   "serves": [
+    "operator:python -m greg.cognition.evolution --freeze F --out O (P8 protected evolution)"
+   ],
+   "justification": "`git rev-parse HEAD` recorded as the cycle's source_commit"
+  },
+  {
+   "module": "greg/cognition/evolution.py",
+   "qualname": "run_recorded",
+   "callee": "subprocess.check_output",
+   "count": 1,
+   "serves": [
+    "operator:python -m greg.cognition.evolution --freeze F --out O (P8 protected evolution)"
+   ],
+   "justification": "`git rev-parse HEAD`: the commit the clean room checks out"
+  },
+  {
+   "module": "greg/cognition/evolution.py",
+   "qualname": "run_recorded",
+   "callee": "subprocess.run",
+   "count": 3,
+   "serves": [
+    "operator:python -m greg.cognition.evolution --freeze F --out O (P8 protected evolution)"
+   ],
+   "justification": "adds a detached git worktree of HEAD (hooks off), runs the source-only evolution_room entry in it (-E -s -B -P, fresh pycache prefix), then removes the worktree"
+  },
+  {
+   "module": "greg/cognition/evolution_routing.py",
+   "qualname": "ProtectedEvaluator.__call__",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:python cortex/evaluation/evolution/run.py (#155 routing-genome evolution, retained isolated)"
+   ],
+   "justification": "runs the hash-pinned evaluator module (checked before and after the call) in `python -I`; only cortex/evaluation/evolution/run.py constructs a ProtectedEvaluator"
+  },
+  {
+   "module": "greg/cognition/genomes/admission.py",
+   "qualname": "report_header",
+   "callee": "subprocess.check_output",
+   "count": 1,
+   "serves": [
+    "operator:python -m greg.cognition.genomes.admission (genome admission harness)"
+   ],
+   "justification": "`git rev-parse HEAD` recorded in the admission results header"
+  },
+  {
+   "module": "greg/cognition/genomes/admission.py",
+   "qualname": "source_dirty",
+   "callee": "subprocess.run",
+   "count": 2,
+   "serves": [
+    "operator:python -m greg.cognition.genomes.admission (genome admission harness)"
+   ],
+   "justification": "`git ls-tree` and `git hash-object` over the frozen files, binding the bytes run to the recorded commit"
+  },
+  {
+   "module": "greg/cognition/seed_path.py",
+   "qualname": "_worker",
+   "callee": "subprocess.Popen",
+   "count": 1,
+   "serves": [
+    "capability:cognition.seed.solve",
+    "capability:cognition.status"
+   ],
+   "justification": "the seed path's bounded `greg.cognitive_worker` child: scrubbed env, seccomp no-network preexec (Linux) or sandbox-exec deny-network (macOS) except for a semantic claim, STOP polled, killed at the deadline"
+  },
+  {
+   "module": "greg/compute.py",
+   "qualname": "memory_bytes",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg.body.status (greg console, phone /api/status, mission control, greg acceptance)"
+   ],
+   "justification": "macOS only: `/usr/sbin/sysctl -n hw.memsize`, a fixed read-only host query; Linux uses os.sysconf and spawns nothing"
+  },
+  {
+   "module": "greg/computer.py",
+   "qualname": "_trust_profile",
+   "callee": "subprocess.run",
+   "count": 2,
+   "serves": [
+    "capability:browser.session"
+   ],
+   "justification": "certutil creates the disposable session profile's NSS store and imports the operator-configured CA bundle; TLS verification stays on"
+  },
+  {
+   "module": "greg/daleobanks_bridge.py",
+   "qualname": "_behind_door",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:daleobanks.verify",
+    "capability:daleobanks.publish"
+   ],
+   "justification": "DALEOBANKS's interpreter in a bubblewrap namespace whose only way out is a relay allowlisted for the hosts the manifest declares (none for verify); its ledger directory is the one writable place"
+  },
+  {
+   "module": "greg/daleobanks_bridge.py",
+   "qualname": "_run",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:daleobanks.verify",
+    "capability:daleobanks.publish"
+   ],
+   "justification": "unconfined body only: the DALEOBANKS organ script in its own process with a scrubbed env and a 120 s timeout; a confined body (ctx.egress) takes _behind_door instead"
+  },
+  {
+   "module": "greg/doctor.py",
+   "qualname": "chromebook",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg doctor --chromebook",
+    "installer:greg/chromebook/install.sh (step 5/8)"
+   ],
+   "justification": "`systemctl --user show-environment`, read-only, to learn whether a user service can run"
+  },
+  {
+   "module": "greg/doctor.py",
+   "qualname": "confined_egress",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg doctor --chromebook",
+    "installer:greg/chromebook/install.sh (step 5/8)"
+   ],
+   "justification": "a throwaway child that installs the Kernel seccomp filter, proving the host can confine egress; called only from doctor.chromebook()"
+  },
+  {
+   "module": "greg/egress.py",
+   "qualname": "opener",
+   "callee": "urllib.request.build_opener",
+   "count": 1,
+   "serves": [
+    "egress:greg.egress (GREG's one outbound opener)",
+    "capability:http.get",
+    "capability:github.pulls",
+    "capability:foundry.apply",
+    "founder-command:ANCHOR_CONFIGURE (signed TSA url for proof anchoring)"
+   ],
+   "justification": "the one outbound opener: urllib's default chain with NoRedirect, so a 3xx surfaces for open_checked to re-check instead of being followed"
+  },
+  {
+   "module": "greg/egress.py",
+   "qualname": "send",
+   "callee": "urllib.request.build_opener().open",
+   "count": 1,
+   "serves": [
+    "egress:greg.egress (GREG's one outbound opener)",
+    "capability:http.get",
+    "capability:github.pulls",
+    "capability:foundry.apply",
+    "founder-command:ANCHOR_CONFIGURE (signed TSA url for proof anchoring)"
+   ],
+   "justification": "one request through opener(): open_checked (http.get, github.pulls, the containers registry pull) checks https and the allowlist first; anchor._post sends only to the founder-signed ANCHOR_CONFIGURE tsa_url"
+  },
+  {
+   "module": "greg/foundry_bridge.py",
+   "qualname": "_execute",
+   "callee": "subprocess.Popen",
+   "count": 1,
+   "serves": [
+    "capability:foundry.query",
+    "capability:foundry.apply"
+   ],
+   "justification": "the disposable greg.foundry_worker child that runs every foundry.query/apply op, started with _no_network_preexec"
+  },
+  {
+   "module": "greg/mcp_tools.py",
+   "qualname": "_remote_act",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:mcp.act"
+   ],
+   "justification": "GREG's MCP client in a bubblewrap namespace behind a door to a relay allowing only the approved server host; the token reaches it by handle in its environment"
+  },
+  {
+   "module": "greg/models.py",
+   "qualname": "ClaudeCodeRoute.__init__",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "model-route:claude-code"
+   ],
+   "justification": "default runner for the claude CLI route (no tools, no MCP, empty cwd, spend cap), behind the relay door on a confined body; built only when the founder-signed route order names claude-code"
+  },
+  {
+   "module": "greg/models.py",
+   "qualname": "OllamaRoute._request",
+   "callee": "http.client.HTTPConnection",
+   "count": 1,
+   "serves": [
+    "model-route:ollama",
+    "capability:cognition.semantic"
+   ],
+   "justification": "a fixed numeric loopback address (127.0.0.1:<port>) to the founder-selected local Ollama model: no DNS, proxy, redirect or remote base URL"
+  },
+  {
+   "module": "greg/models.py",
+   "qualname": "confined_call",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "model-route:anthropic, openai"
+   ],
+   "justification": "greg.model_child in a network namespace behind a door to a relay scoped to the provider host; the key crosses only stdin"
+  },
+  {
+   "module": "greg/organ_exchange.py",
+   "qualname": "_organ",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:organs.exchange"
+   ],
+   "justification": "one organ in its own process; on a confined body inside a bubblewrap namespace with no door at all and read-only checkouts"
+  },
+  {
+   "module": "greg/organs.py",
+   "qualname": "_head",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:organ.exchange"
+   ],
+   "justification": "`git rev-parse HEAD` (GIT_CONFIG_NOSYSTEM, PATH only) pinning the organ code organ.exchange runs"
+  },
+  {
+   "module": "greg/organs.py",
+   "qualname": "_snapshot",
+   "callee": "subprocess.run",
+   "count": 3,
+   "serves": [
+    "capability:organ.exchange"
+   ],
+   "justification": "`git archive` of the pinned HEAD (hooks off), `tar -x` into the snapshot dir, and `git status` to record uncommitted changes the snapshot leaves out"
+  },
+  {
+   "module": "greg/ventures.py",
+   "qualname": "_git_head",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:venture.assess",
+    "capability:organs.exchange"
+   ],
+   "justification": "`git rev-parse HEAD` on the organ checkouts the receipt names"
+  },
+  {
+   "module": "greg/ventures.py",
+   "qualname": "_organ",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:venture.assess"
+   ],
+   "justification": "one organ in its own process with no GREG secrets, keys or ledger; on a confined body inside a namespace with no door"
+  },
+  {
+   "module": "greg/worker_isolation.py",
+   "qualname": "_backend",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "confinement:greg.worker_isolation",
+    "operator:greg doctor --chromebook"
+   ],
+   "justification": "probe: /usr/bin/true inside the bubblewrap envelope, to learn whether workers and namespaced capabilities can be confined; nothing else runs"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "_git",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:worker.commission",
+    "capability:worker.appraise"
+   ],
+   "justification": "git with _GIT_HARDENING on GREG's private clones and work trees"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "appraise",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:worker.appraise"
+   ],
+   "justification": "`git clone --no-hardlinks` of the work tree into a fresh directory for the independent appraisal"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "private_clone",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:worker.commission",
+    "capability:worker.appraise"
+   ],
+   "justification": "`git clone --no-hardlinks --no-checkout` into a private clone whose origin is then removed, so it reaches no remote"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "supervised_run",
+   "callee": "subprocess.Popen",
+   "count": 1,
+   "serves": [
+    "supervised-worker:greg.workers.supervised_run",
+    "confinement:greg.capabilities.run_isolated"
+   ],
+   "justification": "the supervised worker path itself: file-backed bounded output, STOP polled, the process group killed on stop or timeout"
+  }
+ ],
+ "known_unmediated": [
+  {
+   "module": "greg/body.py",
+   "qualname": "Body.appraise",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "mission-appraisal:greg.appraisal",
+    "operator:greg rehearse"
+   ],
+   "reason": "runs `python -m greg.appraisal` on the body's own schedule when a mission closes (Body._appraise_closure); no capability manifest, Gate or worker envelope stands behind the spawn, and the child, though it runs reviewed GREG code with a scrubbed env and a timeout, is not network- or filesystem-confined (it re-runs only the read-only REOBSERVABLE sensors)"
+  }
+ ]
+}

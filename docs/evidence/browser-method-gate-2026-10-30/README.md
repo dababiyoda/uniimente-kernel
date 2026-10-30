@@ -4,119 +4,230 @@ Branch `claude/browser-method-gate-20261030`, base `a6c29bbd40c1` (#196 head). R
 (a real Chromium driven by Playwright against loopback HTTP servers on this container). The new CI workflow was not
 executed. Nothing was tested on a founder device or behind the confined relay.
 
-## What changed
+Two rounds:
+
+1. The first implementation, `50f8231c`..`7b7ea61e`.
+2. A review round on top of it. Two independent reviews of `7b7ea61e` reported 16 findings (F1-F10, WU10-R1..R6).
+   The review round is described in "Review round" below. Where it corrects a first-round claim, the
+   correction is stated there.
+
+## What changed (first round)
 
 1. **The computer-use suite runs.**
    - `greg/computer.py` `chromium()` looked only for `chromium-*/chrome-linux/chrome`. The preinstalled build here is
-     `/opt/pw-browsers/chromium-1243/chrome-linux64/chrome` (Chrome for Testing 153.0.8010.12). So even with
-     Playwright installed, the capability found no browser and `tests/unit/test_greg_computer.py` skipped as a
-     module. The glob now matches both layouts.
-   - `requirements-computer.txt` pins `playwright==1.63.0`. That wheel's `browsers.json` pins chromium revision 1243,
-     the build preinstalled here; 1.64.1 pins 1248.
+     `/opt/pw-browsers/chromium-1243/chrome-linux64/chrome` (Chrome for Testing 153.0.8010.12). So
+     `tests/unit/test_greg_computer.py` skipped as a whole module even with Playwright installed. The glob now
+     matches both layouts.
+   - `requirements-computer.txt` pins `playwright==1.63.0`. That wheel's `browsers.json` pins chromium revision 1243.
 2. **Browser requirement hook.** With `GREG_REQUIRE_BROWSER=1`, the root `conftest.py` turns
-   `pytest.importorskip("playwright")` into a failure, including in `test_greg_confined_egress.py`. Other optional
-   imports still skip. `test_greg_computer.py` also fails, instead of skipping, when no Chromium is found.
+   `pytest.importorskip("playwright")` into a failure. Other optional imports still skip.
 3. **Method gate in `browser.session`.**
-   - Inside the signed origins, only GET, HEAD and OPTIONS leave the browser. Every other method, and every
-     WebSocket, is aborted and counted in `blocked_methods` as `METHOD host:port/path`.
-   - The exception is a signed `read_methods` entry, for example `"POST https://shop.example/search"`. It names one
-     method, one signed origin and one exact path, so it cannot widen the network bound. Each use is counted in
-     `read_methods_used`.
-   - A step during which a refused write is seen ends the session with `AUTHORITY_BOUNDARY`. Opening the start page
-     counts as step 0. A step that fails after attempting a write is also reported as that write.
-   - The trace's `method_gate` field, and the module docstring, state the GET residual.
-4. **Protected step program in `greg/pipeline.py`.**
-   - `op`, `selector`, `secret`, `consequential` and `read_methods` join `PROTECTED` through a union, so the
-     original set literal and the existing mutant anchors stay byte-identical.
-   - A `$from_action` placed at the `steps` list itself, or at a whole step, is refused.
-   - Binding a fill's `value` still resolves.
+   - Inside the signed origins, only reads leave the browser. Any other request, and any WebSocket, is aborted and
+     counted in `blocked_methods`.
+   - The exception is a signed `read_methods` entry naming that method, origin and exact path.
+   - A step during which a refused write is seen ends the session with `AUTHORITY_BOUNDARY`.
+4. **Protected step program in `greg/pipeline.py`.** `op`, `selector`, `secret`, `consequential` and `read_methods`
+   join `PROTECTED`. A `$from_action` placed at the `steps` list, or at a whole step, is refused. A fill's `value`
+   stays bindable.
 5. **CI and mutation checks.**
-   - `.github/workflows/computer-use.yml` (new) installs `requirements-computer.txt` and the Chromium that the driver
-     pins, into `/opt/pw-browsers`. It then runs the computer-use suites with `GREG_REQUIRE_BROWSER=1`, followed by
-     the mutation check.
-   - `scripts/ci/check_browser_method_gate_mutants.py` (new) runs 12 mutants.
+   - `.github/workflows/computer-use.yml` (new).
+   - `scripts/ci/check_browser_method_gate_mutants.py` (new).
 
-Measured channel coverage with Playwright 1.63 and Chromium 1243 (scratch probe, then pinned in the tests): Playwright
-routing sees each of these:
+## Review round
 
-- a POST form submitted by a click;
-- a POST form submitted by Enter;
-- a page `fetch` PUT or DELETE;
-- `navigator.sendBeacon`;
-- `<a ping>`;
-- a dedicated worker's POST;
-- a service worker's POST.
+All 16 findings were reproduced on `7b7ea61e` with the reviewers' own probes; WU10-R6's second half was confirmed by
+reading `greg/capabilities.py`.
+
+### Where the gate now sits
+
+Measured with Playwright 1.63 and Chromium 1243 in scratch probes, then pinned in the tests below.
+
+**What page routing missed.** Playwright's `context.route` never saw:
+
+- a keepalive fetch or `sendBeacon` sent from `pagehide` or `visibilitychange`, at navigation or at session close (F1, R1);
+- a shared worker's requests (F3);
+- any redirect hop (F4, R2).
+
+**Browser-target interception sees all three.** CDP `Fetch` enabled on the browser target, before the context
+exists, pauses every request of every page, frame and worker until GREG answers it:
+
+- the unload-time requests;
+- the shared worker's POST;
+- each redirect hop, with `redirectedRequestId`.
+
+A request that was paused but never answered when the browser closed was not delivered. **Fix:** HTTP is now
+decided only there, against both the origin bound and the method gate. `context.route` is no longer used.
+
+**What no interception sees.** Neither layer sees a WebSocket. Playwright's routed WebSocket is a page-script mock
+that a dedicated worker's WebSocket and `WebSocketStream` bypass (F2). WebTransport (QUIC) and `RTCPeerConnection`
+(UDP) are outside HTTP interception too (F10).
+
+Two mechanisms were measured and rejected:
+
+- `Network.setBlockedURLs` did not block WebSockets.
+- A `worker-src 'none'` CSP header injected at the response stage was enforced for blob workers but not for
+  `new Worker('/w.js')` or service-worker registration.
+
+**Fix:**
+
+- `--disable-blink-features=WebSocketStream,SharedWorker` turns both off in the engine.
+- An init script deletes `Worker`, `SharedWorker`, `WebSocketStream`, `WebTransport`, `RTCPeerConnection`,
+  `webkitRTCPeerConnection` and `Navigator.prototype.serviceWorker`. It runs in every frame before page scripts,
+  including dynamically created `about:blank` frames (measured).
+
+Pages that need a worker lose it.
+
+### Status rules
+
+- A refused write always decides: whenever `blocked_methods` is non-empty the status is `AUTHORITY_BOUNDARY`, with
+  the original stop kept in the reason (F6).
+- A write first seen after the last step, or while the session closes, is recorded as a final `close` trace record.
+- A read carries no body: OPTIONS with a body is a refused write (F7b). A `WEBSOCKET` exception passes only a
+  WebSocket, never an HTTP request whose method token is `WEBSOCKET` (F7a).
+- A malformed URL in `read_methods` or the start URL is a `CapabilityError`, not a `ValueError` (F9).
+
+### `greg/pipeline.py`
+
+- A `$from_action` that is a capability's whole params is refused (F5, R3). `pipeline.inspect` wraps its reference
+  under a key to keep working.
+- The step-program rule applies only to a bound `array` or `object`, so a solver's integer `steps` binds again (F8).
+- `op`, `selector` and `secret` stay globally protected, as before this round. This is a recorded behaviour change
+  from the base: for example, `foundry_bridge`'s `op` can no longer be an earlier action's output.
+
+### Other changes
+
+- `tests/integration/test_greg_confined_egress.py`: its "allowlist removed" parameter now switches off the
+  browser-target interception, so it still tests the relay alone. Not run here (no bubblewrap).
+- `requirements-computer.txt`: its comment is corrected. Only `browser.session` uses Playwright (R6).
+
+### Corrections to first-round claims
+
+- "Inside the signed origins only GET, HEAD and OPTIONS leave the browser" and "an exception cannot widen the network
+  bound" were false: unload-time requests and redirect hops escaped both (F1, F4, R1, R2).
+- The first round's README said its channel coverage was "pinned in the tests". `<a ping>` and a service worker's POST
+  were seen only in a scratch probe (R5). `<a ping>` is now a test case. Service workers can no longer be registered
+  (tested).
 
 ## Commands and results
 
 Environment:
 
 - Python 3.11 at `/home/user/venv311`, pytest 9.2.0;
-- `playwright==1.63.0`, installed from its manylinux wheel; no browser was downloaded;
-- runs as root, so the Chromium OS sandbox is off, as before this change;
+- `playwright==1.63.0`; no browser was downloaded;
+- runs as root, so the Chromium OS sandbox is off;
 - no bubblewrap.
 
 Every run used `PYTHONDONTWRITEBYTECODE=1 python -B -m pytest -q -p no:cacheprovider`.
 
-**Fail-before** (a temporary detached worktree of `a6c29bbd`, with the three new or changed test files copied in, then
-removed):
+### Fail-before, first round
 
-- On the base, the three new test files gave **10 failed, 2 passed, 1 skipped**.
-  - Skipped: `test_greg_computer.py`, the whole module, "no Chromium installed", although Playwright was installed.
-  - Failed: both browser-required cases, and 8 of 9 pipeline cases.
-  - Passed: the fill-value case, which must pass both before and after, and the "other imports still skip" case.
-- On the base plus only commit `50f8231c`'s `greg/computer.py` (browser discovery, no gate),
-  `test_greg_computer.py` gave **10 failed, 8 passed**. The 8 pre-existing tests passed and all 10 gate tests failed.
-  The server received `POST /order` (by click and by Enter), `PUT /api/cart`, `POST /api/worker`, the WebSocket
-  handshake to `/live`, the load-time `PUT` and `DELETE /api/state` and `POST /beacon`, and `POST /order` alongside
-  the signed `POST /search`.
-- A direct probe of an unmarked POST-form click, followed by an extract:
+A temporary detached worktree of `a6c29bbd`, with the new test files copied in, then removed:
 
-  | Tree | Status | Extracted | Server `POST /order` | `blocked_methods` |
-  | --- | --- | --- | --- | --- |
-  | Base + discovery | `COMPLETED` | `"Ordered"` | 1 | none |
-  | Head | `AUTHORITY_BOUNDARY` | nothing | 0 | `{"POST 127.0.0.1:<port>/order": 1}` |
+- **10 failed, 2 passed, 1 skipped.** `test_greg_computer.py` skipped as a module.
+- On the base plus `50f8231c`'s browser discovery only, `test_greg_computer.py` gave **10 failed, 8 passed**: the
+  server received every write the gate tests send.
 
-**Pass-after** (head `0b0c2bbc` code; this README and the workflow were added later):
+### Fail-before, review round
 
-- The four test files `test_greg_computer.py` (18), `test_greg_browser_required.py` (3),
-  `test_greg_pipeline_protected.py` (9) and `tests/integration/test_greg_pipeline.py` (2), together with the
-  confined-egress browser test, gave **32 passed, 2 skipped**. The skips are the confined-egress browser test's two
-  parameters: no bubblewrap network namespaces here.
-- The same three unit files with `GREG_REQUIRE_BROWSER=1` gave **30 passed**.
-- `test_greg_computer.py` was run five times in a row: 17 of 17 passed each time, before the 18th test was added.
-- Related suites gave **132 passed, 6 skipped**: `test_greg_mission_d_handoffs`, `test_greg_mcp_secret_files_review`,
-  `test_greg_reconciliation`, `test_greg_closure_integrity`, `test_greg_appraisal_closure`,
-  `test_greg_goal_gravity_merge`, `test_greg_sop_compounding`, `test_greg_browser` and `test_greg_packaging`.
-  `tests/unit/test_greg_capabilities.py` and `tests/integration/test_greg_adversarial_machine.py` gave
-  **36 passed**. The full suite was not run (too slow on this machine).
+A temporary detached worktree of `7b7ea61e`, with the round's `test_greg_computer.py` and
+`test_greg_pipeline_protected.py` copied in, then removed. Result: **20 failed, 27 passed**.
 
-**Mutants:**
+The failures, and what the server or listener received on the pre-fix head:
 
-- `python -B scripts/ci/check_browser_method_gate_mutants.py`: **12/12 caught**. Every catching test passed
+- Navigate away (`goto` and link click), session close, and a SCOPE stop followed by close: the server received the
+  pagehide and keepalive POSTs.
+- Unsigned unload beacon: the beacon reached the listener.
+- Redirects:
+  - signed POST then 307: the server received `POST /order`;
+  - signed POST then 307 cross-origin, and GET then 302 cross-origin: the listener received `POST /collect` and
+    `GET /collect`.
+- F6: status `EXPECTATION_FAILED`.
+- F7: the server received the `WEBSOCKET` request and the OPTIONS body.
+- Prelude: the APIs exist.
+- Malformed `read_methods` (2 cases).
+- Pipeline:
+  - whole params resolved;
+  - integer `steps` refused;
+  - a string item under `steps` refused;
+  - the additive check.
+
+Three of the 20 fail only for a structural reason: `PAGE_PRELUDE` does not exist on the old head. These are the
+two layer tests and the worker-without-prelude test.
+
+Two tests passed before and are coverage only:
+
+- `<a ping>` (R5);
+- the deferred last-step write (R4).
+
+The post-loop charge R4 found untested was removed. The close-time accounting now covers its case, under the
+mutant "a write at the close is dropped".
+
+### Review probes
+
+The reviewers' probes (`review-browser-method-gate-attack/p*.py`), run against the fixed tree:
+
+| Probe | Result after the fix |
+| --- | --- |
+| p3, navigate away | `AUTHORITY_BOUNDARY`; four unload POSTs blocked; server writes `[]` |
+| p3, session close | `AUTHORITY_BOUNDARY`; server writes `[]` |
+| p3b (unsigned beacon) | `blocked_requests {'127.0.0.1': 1}`; unsigned origin saw `[]` |
+| p1, p8b, p2, p9 (worker and WebSocketStream channels) | The page cannot construct the APIs; every server saw `[]` |
+| p4, 307 same origin | `AUTHORITY_BOUNDARY`; blocked `POST /order` |
+| p4, 307 to unsigned | Unsigned origin saw `[]` |
+| p5 | Both writes blocked; server writes `[]` |
+| p6 | `AUTHORITY_BOUNDARY`, with the expectation failure in the reason |
+| p10 | Whole params refused; integer `steps` resolves |
+| p13 | WebTransport, WebSocketStream, SharedWorker and RTCPeerConnection are all `undefined` |
+| p11 (registration) | Still accepts whole-params; refused at `resolve`. `greg/missions.py` is out of scope |
+
+### Pass-after
+
+- **Required browser.** With `GREG_REQUIRE_BROWSER=1`: `test_greg_computer.py` (35), `test_greg_browser_required.py`
+  (3), `test_greg_pipeline_protected.py` (12), `tests/integration/test_greg_pipeline.py` (2) and the confined
+  browser test gave **52 passed, 2 skipped**. The skips are the confined test's two parameters: no bubblewrap.
+- **Repeats.** `test_greg_computer.py` (31 tests at the time) was repeated 3 times: 31/31 each time, while other
+  test runs shared the machine.
+- **Binding suites: 190 passed, 4 skipped.** These were `test_greg_mission_d_handoffs`,
+  `test_greg_mcp_secret_files_review`, `test_greg_pipeline`, `test_greg_goal_gravity`, `test_greg_bind_from_check`,
+  `test_greg_pipeline_protected`, `test_greg_appraisal_closure`, `test_greg_closure_integrity`,
+  `test_greg_goal_gravity_merge`, `test_greg_bindings`, `test_greg_sop_compounding` and `test_greg_reconciliation`.
+- **Related suites: 48 passed, 11 skipped.** Eight skips need bubblewrap. The other three are `browser.render`
+  tests that find no browser through `capabilities.chrome_binary()` (the R6 follow-up). These were
+  `test_greg_capabilities`, `test_greg_adversarial_machine`, `test_greg_browser`, `test_greg_packaging` and
+  `test_greg_confined_egress`.
+- The full suite was not run (too slow on this machine).
+
+### Mutants
+
+- `python -B scripts/ci/check_browser_method_gate_mutants.py`: **26/26 caught**, rc 0. Every catching test passed
   unmutated first.
-- The existing `scripts/ci/check_pipeline_mutants.py`: 3/3 caught.
-- The existing residual mutant "an earlier output chooses the credential file" (anchored on the unchanged
-  `PROTECTED` literal) still fails its test when applied (1 failed; 1 passed unmutated).
+  - The round adds 14 mutants. Among them: page routing instead of browser-target interception; a redirect hop not
+    decided; a write at the close dropped; the prelude not installed; WebSocketStream left on in the engine; whole
+    params bindable.
+  - Each of the two layers that remove channels is mutated alone and caught by a test of that layer alone.
+- The existing `scripts/ci/check_pipeline_mutants.py`: **3/3 caught**, rc 0.
 
-## Limitations and follow-ups
+## Limitations
 
 - **GET with side effects.** The gate sees methods, not effects. A logout or unsubscribe link, or a state-changing
-  GET API, on a signed origin cannot be detected.
-- **Confined bodies.** On a confined body the relay checks origins only, so the method gate exists only in the
-  browser's routing. The confined-egress test that removes in-browser routing shows the relay still holds origins,
-  not methods. It was not run here (no bubblewrap).
-- **Telemetry stops a session.** A page that writes to its own origin while loading or after a step (for example,
-  first-party telemetry) now ends the session at the boundary unless the founder signs that exact endpoint in
-  `read_methods`. An attempt is charged to the step during which it is first seen.
-- **Bind edges.** The signed `bind`-edge route in `greg/missions.py` (`protected_param`) now refuses
-  `steps.N.op/selector/secret/consequential`. It still accepts a bind edge onto `steps` or `steps.N`, a whole program
-  or step. Follow-up: an additive check there; that file is edited by open PRs.
-- **Mouse coordinates.** A `mouse` step's `x` and `y` remain bindable through `$from_action`. Protecting them globally
-  would refuse unrelated data keys. The method gate still bounds what any click can send.
-- **CI workflow not run.** `computer-use.yml` was not executed here; it is checked only as YAML. Whether Chromium's
-  OS sandbox starts as a non-root user on the hosted runner is unverified.
-- **Follow-up: install on the Chromebook and report doctor readiness.** `greg/chromebook/install.sh` should install
-  `requirements-computer.txt` from binary wheels without blocking Body 1. `greg/doctor.py` should report
-  browser_session as ready or missing, with the fix, and state the GET residual. Both files are changed by open PR
-  #211, so they are untouched here.
+  GET API, on a signed origin cannot be detected. The same holds for data a page puts in a GET's query to a signed
+  origin.
+- **Page-script-level removals.** The removal of `Worker`, service-worker registration, `WebTransport` and
+  `RTCPeerConnection` is page-script level. It is as strong as Playwright's own WebSocket mock and no stronger. It
+  was verified for the page and for dynamically created `about:blank` frames. A realm the init script does not
+  reach would reopen those channels. `WebSocketStream` and `SharedWorker` are also off in the engine.
+- **WebTransport** was not exercised end to end: there is no HTTP/3 server here.
+- **Pages that need a worker lose it.** A page that sends telemetry writes ends the session at the boundary unless
+  the founder signs that exact endpoint, including at close.
+- **The interception's fail-safe default is not mutation-tested.** A request whose decision raises is refused, but
+  no page could make the decision raise.
+- **Confined bodies.** The relay checks origins only. The confined browser test, edited to switch off the new
+  interception, was not run here (no bubblewrap).
+- **Registration still accepts whole-params.** `greg/missions.py` registration (`validate_mission`, `inline_refs`)
+  still accepts a whole-params `$from_action`. It is refused at `resolve`, so it never dispatches; end-to-end
+  dispatch was not run. The bind-edge route (`protected_param`) still accepts `steps` or `steps.N`. A step's `key`
+  and a `mouse` step's `x` and `y` stay bindable.
+- **Second browser discovery glob.** `greg/capabilities.py` `chrome_binary()` still globs only `chrome-linux/` (R6).
+  `capabilities.py` is edited by open PRs.
+- **CI workflow not run.** `computer-use.yml` was not executed here; it is checked only as YAML.
+- **Chromebook.** Nothing ran on the Chromebook. `install.sh` and `doctor.py` are changed by open PR #211.

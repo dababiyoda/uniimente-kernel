@@ -1073,6 +1073,10 @@ def _investigation(identity, seen, state, mission_id, receipts, signed_facts=fro
 PREFERENCE_SUBSET_LIMIT = 8
 JOINT_DISPUTE_LIMIT = 3
 JOINT_STATE_LIMIT = 256
+# Above this many evaluations of the compiler's preference rule for one method, the walk stops where it is: a count
+# of rule evaluations, so the cut is deterministic, unlike a clock (round 5, W4-1). Changes found before the cut are
+# kept; the row is marked for investigation with the limit stated.
+PREFERENCE_EVALUATION_LIMIT = 100_000
 # How _rank reads a fit with no settled outcome on this body (compiler._rank: competence.get(method, 0.5)).
 UNSETTLED_LAPLACE = Fraction(1, 2)
 
@@ -1122,8 +1126,10 @@ def _preference_changes(method, states, counts, joint, inhibit) -> tuple[list[st
                       "they were held at their current counts, and a joint resolution could select differently")
         others = []
     cut = set()
+    spent = [0, False]                              # rule evaluations so far; whether the evaluation limit was hit
 
     def selected(first, members, world):
+        spent[0] += 1
         eligible = [{"method": m, "demoted": inhibit(*world.get(m, (0, 0)))}
                     for m in (first, *sorted(set(members) - {first}))]
         eligible.sort(key=lambda r: 1 if r["demoted"] else 0)        # _rank's leading key; stable otherwise
@@ -1132,6 +1138,8 @@ def _preference_changes(method, states, counts, joint, inhibit) -> tuple[list[st
 
     found = {}
     for family in families:
+        if spent[1]:
+            break
         members = (method, *family)
         in_family = [m for m in others if m in members]
         size = 1
@@ -1141,6 +1149,8 @@ def _preference_changes(method, states, counts, joint, inhibit) -> tuple[list[st
             cut.add((len(in_family), size))
             in_family = []
         for first in members:
+            if spent[1]:
+                break
             if first in found:
                 continue
             for combo in product(*(joint[m] for m in in_family)):
@@ -1148,10 +1158,16 @@ def _preference_changes(method, states, counts, joint, inhibit) -> tuple[list[st
                         **dict(zip(in_family, combo))}
                 if first != method and inhibit(*base.get(first, (0, 0))):
                     continue                        # a demoted first is ranked last; another fit is first (W4-9)
+                if spent[0] + len(states) > PREFERENCE_EVALUATION_LIMIT:
+                    spent[1] = True
+                    break
                 picks = {state: selected(first, members, {**base, method: state}) for state in states}
                 if len({pick for pick, _ in picks.values()}) > 1:
                     found[first] = (members, picks, dict(zip(in_family, combo)))
                     break
+    if spent[1]:
+        limits.append(f"the walk stopped at the evaluation limit ({PREFERENCE_EVALUATION_LIMIT} evaluations of the "
+                      "preference rule); the families and states not reached could select differently")
     if cut:
         worst = max(cut, key=lambda c: c[1])
         limits.append(f"a family's {worst[0]} other disputed methods reach {worst[1]} joint states, above the joint "

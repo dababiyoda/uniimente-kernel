@@ -66,7 +66,7 @@ answer to exactly the bytes that were read.
 
 | Run | Result |
 | --- | --- |
-| `pytest tests/unit/test_greg_text_query.py` | 27 passed |
+| `pytest tests/unit/test_greg_text_query.py tests/integration/test_greg_section_ix_text_scenarios.py` | 28 + 4 passed |
 | A 12 MiB log, phrase near the end | found; measured 262 KiB peak traced memory, a 534-byte result, 0.1 s (warm process); the test asserts under 2 MiB and 2 KiB |
 | A phrase across a chunk boundary, at 4 offsets | found once, at the right offset |
 | A short phrase inside the carried tail | counted once |
@@ -78,7 +78,7 @@ answer to exactly the bytes that were read.
 | Mission: a 3 MiB clean log | ACHIEVED, no ask, appraiser VERIFIED; a fault appended later is reported by the appraiser on its next appraisal |
 | Mission: a fault at 2 MiB | stays open; the founder is asked `NO_STRATEGY`, not about a sensor failure |
 | Planner words | `never mentions` and `mention` draft the right checks; a note request keeps its own route |
-| 13 mutants, added to `scripts/ci/check_whole_output_mutants.py` (84 in all) | each killed by its named test in a separate copy |
+| 13 mutants, added to `scripts/ci/check_whole_output_mutants.py`, then 5 more for the section IX fixes (89 in all) | 89 of 89 killed, each by its named test in a separate copy |
 
 **Negative result found while building.** Fed one byte at a time, the query missed a phrase it found when fed whole.
 The tail carried between pieces was sliced with a negative index whenever the text so far was shorter than the
@@ -96,6 +96,39 @@ the file after closure and requires the appraiser to see it; the subtraction is 
 | `grep` or `rg` as an acquired capability | No normalization, encoding faithfulness or coverage statement, and an exit code is not a declared reading. A reasonable second implementation behind the same contract, not a replacement for it |
 | Keep larger artifacts in the store | Moves bytes, not proof; a check still reads a cut |
 | Extend #201's `find_phrase` | #201 owns `documents.py`. This module is the shared engine #201 can stream `pdftotext` output through, offered to the #201 lane |
+
+## Section IX scenarios 7 and 8, and the sensing watch
+
+Added after the first push, from the section IX run (`tests/integration/test_greg_section_ix_text_scenarios.py`).
+
+**Scenario 8: valid evidence too narrow for the claim.** A reading capped at 64 KiB of a 2.4 MiB log is authentic:
+its `read_sha256` equals the digest of exactly the first 65536 bytes (checked against the file). It cannot prove the
+whole log never mentions `FATAL`, so the mission stays open, every observation says "byte limit: read the first 65536
+bytes", the founder is asked `SENSOR_FAILURE` and nothing is appraised. The same capped reading proves a phrase it
+found, and that closure is verified.
+
+**Scenario 7: a failed capability hands off truthfully and resumes.** Two defects were found and fixed.
+
+1. *A directory read as an absent file.* `fs.search` and `fs.read` answered `exists: false` for anything that was not
+   a regular file, so a directory standing where the log should be was a measured failure, and the founder was asked
+   `NO_STRATEGY` with the detail "field 'queries.0.found' absent". Only a missing path is now an absence; any other
+   non-regular file is refused on its descriptor, so the founder is asked about the sensor, with the reason on every
+   observation. A check on a missing path says "the path does not exist" (`219c4fa7`, on #228).
+2. *A fixed world stayed unread.* After the third failed reading GREG asked the founder and then read nothing until
+   the founder answered. Measured on the old engine: the directory replaced by a clean log, 60 further ticks over ten
+   simulated hours, no further reading, mission still open. The block now carries its checks and is watched like a
+   `NO_STRATEGY` block, re-read at the mission's cadence with its own signed, read-only sensor, and lifted when the
+   sensor reads again, whatever the reading says:
+   - a clean log: the question is withdrawn as moot (a body event, never the founder's answer), the same signed
+     mission closes and the appraiser verifies it;
+   - a log that now holds the fault: the question becomes `NO_STRATEGY`, about the failed check;
+   - a sensor that stays broken: one question for the whole day, read once an hour (the mission's cadence).
+
+   All three tests fail on the old engine; the cadence test fails because nothing is read at all. Two gate mutants
+   remove the watch and its "reads again" rule.
+
+This changes the shared engine (`greg/missions.py`, the `SENSOR_FAILURE` block and `_watch_while_blocked`). Its owner,
+the #196 integrator, decides intake; it is offered on #96 with this commit.
 
 ## Next
 

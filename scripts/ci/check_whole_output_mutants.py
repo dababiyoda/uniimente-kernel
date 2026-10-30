@@ -47,6 +47,7 @@ H = "tests/unit/test_greg_handoff_evidence.py::"
 W = "tests/unit/test_greg_judge_incomplete_wrappers.py::"
 F = "tests/unit/test_greg_faithful_text.py::"
 Q = "tests/unit/test_greg_text_query.py::"
+S = "tests/integration/test_greg_section_ix_text_scenarios.py::"
 MUTANTS = [
     ("a check the prefix cannot decide is never read over the whole", "greg/missions.py",
      "    if verdict != INSUFFICIENT or record is None:\n        return verdict, detail",
@@ -399,6 +400,14 @@ MUTANTS = [
      'REOBSERVABLE = {"fs.read", "fs.search", "fs.list",',
      'REOBSERVABLE = {"fs.read", "fs.list",',
      Q + 'test_a_large_log_is_proved_clean_and_the_appraiser_agrees'),
+    ('a sensor-failure block is never read again until the founder answers', "greg/missions.py",
+     '                                "failing_checks": sorted(errors), "sensing": True})',
+     '                                })',
+     S + 'test_a_failed_capability_hands_off_truthfully_and_the_mission_resumes_when_the_world_is_fixed'),
+    ('a sensor that reads again on a failing world is still asked about as a broken sensor', "greg/missions.py",
+     '            unread = set(m.blocker["failing_checks"]) & set(self.sensor_errors)',
+     '            unread = set(m.blocker["failing_checks"]) & set(self.sensor_errors) or set(failing)',
+     S + 'test_a_sensor_that_reads_again_on_a_failing_world_turns_the_question_into_the_right_one'),
 ]
 
 

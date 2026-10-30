@@ -39,7 +39,7 @@ and is still reported. An allowlist entry that no longer matches a violation fai
 
 It reads files and prints. It writes, grants, blocks and authorizes nothing.
 
-    python -m governance.reality_claims            # JSON report; exit 1 on a violation or a stale allowlist entry
+    python -m acceptance.claims            # JSON report; exit 1 on a violation or a stale allowlist entry
 """
 from __future__ import annotations
 
@@ -354,7 +354,7 @@ def scan(root: Path | str = ROOT, *, allowlist: dict | None = None) -> dict:
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m governance.reality_claims", description=__doc__.split("\n")[0])
+    parser = argparse.ArgumentParser(prog="python -m acceptance.claims", description=__doc__.split("\n")[0])
     parser.add_argument("--root", default=str(ROOT), help="repository to read (default: this checkout)")
     args = parser.parse_args(argv)
     report = scan(args.root)

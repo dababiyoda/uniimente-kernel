@@ -13,7 +13,7 @@ import pytest
 
 import acceptance
 from foundry.completion import EVIDENCE_TIERS
-from governance import reality_claims as rc
+from acceptance import claims as rc
 from greg import metrics
 from greg.mission_control import REALITY
 
@@ -74,6 +74,7 @@ INFLATED = [
     ("docs/evidence/k/run.json", {"reality": "not a container, FOUNDER-USED"}, "no declared evidence kind"),
     ("docs/evidence/l/run.json", {"reality": "externally verified by the buyer"}, "no declared evidence kind"),
     ("docs/evidence/m/run.json", {"tier": "LIVE", "note": "rehearsal on Linux"}, "rehearsal run labelled LIVE"),
+    ("docs/evidence/m2/run.json", {"reality": "Simulated: no. FOUNDER-USED"}, "no declared evidence kind"),
     ("acceptance/extra.json", {"requirements": [{"tier": "EXTERNALLY_VERIFIED"}]}, "no declared evidence kind"),
     ("tests/evidence/n/summary.json", [{"reality_level": "PRODUCTION-AUTHORIZED"}], "no declared evidence kind"),
     ("foundry/completion.yaml", "9:\n  state: COMPLETE\n  evidence_tier: FOUNDER_ACCEPTED\n", "no declared"),
@@ -93,6 +94,8 @@ CORRECT = [
     {"evidence_level": "STRUCTURAL_CANDIDATE", "evidence_kind": "rehearsal_key"},
     {"note": "FOUNDER-USED", "tier": "BODY_VERIFIED"},
     {"status": "a live page was rendered"},
+    {"reality": "FOUNDER-USED (not a container run)", "evidence_kind": "founder_device_run",
+     "evidence_ref": "ledger sha256:ef"},
     {"reality": "FOUNDER-USED", "evidence_kind": "founder_device_run", "evidence_ref": "ledger sha256:cd",
      "history": "earlier it was not run in a container"},
 ]
@@ -127,6 +130,13 @@ def test_a_violation_another_change_owns_is_allowlisted_with_reason_and_owner_ne
     write(tmp_path, "docs/evidence/a/run.json", {"reality": "LOCAL-REAL (container)"})
     stale = rc.scan(tmp_path, allowlist={key: {"reason": "PR #999", "owner": "session x"}})
     assert stale["violations"] == [] and stale["failing"] == stale["stale_allowlist"] and stale["failing"]
+
+
+def test_a_broken_crosswalk_fails_the_scan(tmp_path, monkeypatch):
+    monkeypatch.delitem(rc.DIRECTIVE_CROSSWALK, "PACKAGED")
+    report = rc.scan(tmp_path)
+    assert report["violations"] == [] and report["failing"] == report["crosswalk_problems"]
+    assert "unmapped ['PACKAGED']" in report["failing"][0]["crosswalk"] and rc.main(["--root", str(tmp_path)]) == 1
 
 
 def test_the_repository_claims_stay_within_their_evidence():

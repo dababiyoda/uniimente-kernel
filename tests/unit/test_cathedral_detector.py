@@ -208,6 +208,16 @@ def test_vertical_progress_and_a_shrinking_count_never_move_the_outcome(monkeypa
     assert vertical["counted_as_outcome"] is False and "never counted as one" in vertical["rule"]
 
 
+def test_vertical_progress_alone_never_lifts_the_verdict(tmp_path, monkeypatch):
+    """A test key built N1 and N2 inside the window; the founder's outcomes did not move: still CATHEDRAL."""
+    until = later()
+    repo = busy_repo(tmp_path, until)
+    _fake_ends(monkeypatch, state(), state(frontier="N3", built=["N0", "N1", "N2"], depth=2, below=["m:t"]))
+    report = cathedral.detect(repo, journal={"since": until - 30 * DAY}, **window(until))
+    assert report["vertical_progress"]["newly_built"] == ["N1", "N2"]
+    assert report["verdict"] == cathedral.CATHEDRAL
+
+
 def test_activity_under_every_floor_is_not_cathedral(tmp_path):
     until = later()
     repo = new_repo(tmp_path)
@@ -222,7 +232,8 @@ def test_activity_counts_only_git_objects_inside_the_window(tmp_path):
     until = datetime(2026, 10, 30, tzinfo=timezone.utc)
     repo = new_repo(tmp_path)
     commit(repo, until - 31 * DAY, {"old.md": "x", "old.py": "x"}, "before the window")
-    commit(repo, until - 10 * DAY, {"docs/evidence/a/README.md": "r", "docs/a.md": "x", "x.py": "x"}, "fix (#12)")
+    commit(repo, until - 10 * DAY, {"docs/evidence/a/README.md": "r", "docs/README.md": "x", "docs/a.md": "x",
+                                    "x.py": "x"}, "fix (#12)")
     git(repo, "mv", "old.py", "renamed.py")
     commit(repo, until - 9 * DAY, {}, "a rename is not a new file")
     git(repo, "rm", "-q", "x.py")
@@ -234,7 +245,7 @@ def test_activity_counts_only_git_objects_inside_the_window(tmp_path):
     git(repo, "merge", "-q", "--no-ff", "-m", "merge side", "side", when=until - 5 * DAY)
     commit(repo, until + DAY, {"future.md": "x"}, "after the window")
     counts = cathedral.activity(repo, until - 30 * DAY, until)["counts"]
-    assert counts == {"commits": 6, "pr_like_merges": 2, "new_md": 3, "new_py": 1, "new_evidence_readmes": 1}
+    assert counts == {"commits": 6, "pr_like_merges": 2, "new_md": 4, "new_py": 1, "new_evidence_readmes": 1}
     assert cathedral.activity(tmp_path / "nowhere", until - DAY, until)["complete"] is False
     empty = tmp_path / "empty"
     empty.mkdir()

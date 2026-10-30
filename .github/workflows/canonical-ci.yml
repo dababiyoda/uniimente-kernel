@@ -212,8 +212,10 @@ jobs:
     # 150 mutants run in parallel, one repository copy per core (about 11 minutes on 4 cores, #194).
     # The joined tree (#196) runs both lineages' mutants: the whole job took 18m04s at 47229e3b (#192, run 39645058690)
     # and 15.5 min at af50537b (#196 before Track B); Track B's residual step alone took 6m04s at 93badaff (run
-    # 39688750571) and now runs the union plus #192's baseline pass. 40 bounds a hung run with that union's headroom.
-    timeout-minutes: 40
+    # 39688750571) and now runs the union plus #192's baseline pass. #201's metabolism group outgrew 40: the job took
+    # 37.5 min at a1d2abf (run 39969265532, mutation step 21m35s) and was cancelled at 40 on b02b3d40 (run 41023976986)
+    # with every step passing (mutation 25m05s, residual 11m55s), one step from the end. 60 bounds a hung run.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

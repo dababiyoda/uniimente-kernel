@@ -74,3 +74,26 @@ def test_a_failure_closure_whose_appraisal_misses_a_required_check_settles_nothi
     appraise(journal, "VERIFIED_UNMET", unmet, failing=(REQUIRED_CHECKS[0],))
     close(journal, "achieved")
     assert settlement.measured_outcomes(journal) == []
+
+
+def test_a_claim_observed_on_both_sides_of_a_verified_failure_closure_settles_under_its_first_observation():
+    # Reviewer cases A and B on a6c29bbd: one observation that settles is enough (not all, not only the latest)
+    journal, receipt = pending()
+    unmet_then_appraised(journal)
+    observe(journal, receipt)
+    close(journal, "achieved")
+    appraise(journal, "REFUTED")
+    [row] = settlement.awaiting_realization(journal)
+    assert row["settles"].startswith("once for the claim")
+
+
+def test_a_claim_observed_on_both_sides_of_an_unsettling_failure_closure_settles_under_its_later_observation():
+    # ... and not only the first
+    journal, receipt = pending()
+    unmet = close(journal, "unmet")
+    appraise(journal, "VERIFIED_UNMET", unmet, failing=(REQUIRED_CHECKS[0],))
+    observe(journal, receipt)
+    close(journal, "achieved")
+    appraise(journal, "VERIFIED")
+    [row] = settlement.awaiting_realization(journal)
+    assert row["settles"].startswith("once for the claim")

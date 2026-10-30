@@ -1,4 +1,4 @@
-# A question about a file of any size is answered over all of it
+# A question about a large file is answered over all of it, within stated limits
 
 Session `session_01KucyfnPRxLT4YY1UibJ3Ee`, branch `claude/greg-bounded-text-query`, child of item 1
 (`claude/greg-faithful-text-evidence`), itself a child of #209 and #196. Claim: #96 comment 6516513997, item 2.

@@ -75,7 +75,10 @@ Command: `python -m pytest -p no:cacheprovider -rA <the tests below>`.
 
 Result on the final tree `0a3e410d`: **2721 passed, 3 skipped, 1 xfailed** in 13 min 52 s. On the first tree `edfa37f7`:
 2696 passed, 3 skipped, 1 xfailed in 13 min 45 s. On both, the skips are no runnable browser here (1) and Playwright not
-installed (2), and the xfail is the binary-policy test that records a P0 hold the founder has not ruled on.
+installed (2). The xfail is `test_greg_binary_policy_options.py::test_under_p4c_a_license_hold_on_one_candidate_does_not_end_self_repair`,
+a strict xfail that records a measured defect under policy P4c, which is not the active policy: a license hold on one
+candidate ends self-repair instead of trying the next, cleared candidate. (An earlier version of this README called it
+a recorded P0 hold; that was wrong.)
 `tests/unit/test_greg_organ_exchange.py` (the memo path) needs `python-dotenv`, which this interpreter lacks, so it ran
 with the kernel venv: 13 passed on each tree.
 
@@ -139,7 +142,7 @@ A recombination counts here only when it produces a useful, repeatable improveme
 
 - **Sources:** #201's `document.text` phrase question (whole extraction in memory); item 1's text form and faithful decoding (#228); the incomplete-observation contract (`complete`/`decided`, #201 and J8); #209's judge.
 - **Residual problem:** a question about a source larger than a receipt keeps (1 MiB) asked the founder; #201 buffered `pdftotext` output to 4 MiB and refused past it.
-- **New capability:** a verdict about a source of any size that a receipt can hold whole (a few hundred bytes), stating its own coverage: bytes read, their digest, encoding, `complete`, `stopped`. A stopped reading proves only what it found.
+- **New capability:** a verdict about a large source (up to 4 GiB and 60 s per query by default, lowered per mission) that a receipt can hold whole (a few hundred bytes), stating its own coverage: bytes read, their digest, encoding, `complete`, `stopped`. A stopped reading proves only what it found.
 - **Why simpler fails:** raising `fs.read`'s ceiling grows memory with the file and the receipt still cuts at 16 KiB. `grep`/`rg` give no normalization, no faithful decoding and no coverage statement. Keeping larger artifacts in the store moves bytes, not proof.
 - **Authority boundary:** read-only, inside the permitted roots; no new capability class.
 - **Evidence contract:** `read_sha256` is the digest of exactly the bytes read (checked by scenario 8); the appraiser re-reads the file.

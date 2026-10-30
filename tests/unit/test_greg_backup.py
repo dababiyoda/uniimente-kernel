@@ -1,20 +1,29 @@
 """A founder-signed backup cadence, each backup proven by a restore drill (WU-14 part 2; greg/backup.py).
 
 The cadence is a standing mission over ``body.backup_status`` and ``body.backup``: nothing is backed up without the
-founder's signature, a backup is written only to the signed store (never inside the body home or a read root), and a
-backup counts as verified only through the Gate's positive receipt of a backup whose seed was restored in a scratch
-home and re-verified. A damaged store or a failed drill records no verified backup and asks the founder once, while
-the body keeps running. After the loss of the disk, the latest verified backup restores, only the records after its
-recovery point are lost, and the cadence resumes once the founder resumes the body.
+founder's signature, a backup is written only to the signed store (never inside the body home or a read root, never a
+store it had to create, never on the body's own filesystem unless the founder accepts it), and a backup counts as
+verified only through the Gate's positive receipt of a backup whose seed was restored in a scratch home, re-verified
+and came back held. A damaged store or a failed drill records no verified backup and asks the founder once, while
+the body keeps running; a store that is gone is never fresh. After the loss of the disk, the latest verified backup
+restores, only the records after its recovery point are lost, and the cadence resumes once the founder resumes the
+body. On one clock, a cadence with an RPO of at least twice its period keeps every recovery point within the RPO.
+
+Most stores here are directories on the test machine's one disk, so their missions sign ``accept_same_filesystem``;
+the tests of that refusal use ``/dev/shm`` as the other filesystem where it is one.
 
 The founder key is a per-test Ed25519 key, not Alfonso's.
 """
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 import json
+import os
 from pathlib import Path
 import shutil
+import subprocess
+import sys
+import tempfile
 
 import pytest
 
@@ -28,6 +37,7 @@ from greg.recovery import RestoreError, restore_body
 from tests.greg_fixtures import Clock, make_body, signed
 
 MID = "m:backup"
+ACCEPT = "accept_same_filesystem"                                       # body.backup's one signed parameter
 
 
 def asks(body: Body) -> list[dict]:
@@ -43,13 +53,32 @@ def world(tmp_path):
     home, key, body_id, data = make_body(tmp_path)
     clock = Clock()
     store = (tmp_path / "offsite").resolve()
+    store.mkdir()                                                     # the founder creates or mounts the store
     return {"home": home, "key": key, "body_id": body_id, "data": data, "clock": clock, "store": store,
             "sign": lambda kind, body: signed(key, body_id, kind, body, now=clock())}
 
 
-def sign_cadence(w, body: Body, **kw) -> None:
-    spec = backup.mission(store=w["store"], rpo_seconds=kw.pop("rpo_seconds", 3600), cadence_seconds=60, **kw)
+def sign_cadence(w, body: Body, *, accept_same_filesystem: bool = True, **kw) -> None:
+    spec = backup.mission(store=kw.pop("store", w["store"]), rpo_seconds=kw.pop("rpo_seconds", 3600),
+                          cadence_seconds=kw.pop("cadence_seconds", 60), **kw)
+    if accept_same_filesystem:                  # what mission(accept_same_filesystem=True) writes (see the spec test)
+        spec["strategies"][0]["params"] = {ACCEPT: True}
     assert body.apply(w["sign"]("MISSION", spec))["status"] == "APPLIED"
+
+
+def refusals(body: Body) -> str:
+    return " ".join(r for a in actions(body) if a["status"] != "DONE" for r in a["reasons"])
+
+
+@pytest.fixture
+def other_filesystem(world):
+    """A store on another filesystem than the body home (``/dev/shm``), where this machine has one."""
+    shm = Path("/dev/shm")
+    if not shm.is_dir() or os.stat(shm).st_dev == os.stat(world["home"]).st_dev:
+        pytest.skip("no second filesystem on this machine")
+    store = Path(tempfile.mkdtemp(prefix="greg-backup-store-", dir=shm)).resolve()
+    yield store
+    shutil.rmtree(store, ignore_errors=True)
 
 
 def test_the_spec_names_only_its_store_and_validates():
@@ -62,6 +91,10 @@ def test_the_spec_names_only_its_store_and_validates():
         {"internal_write", "read_only"}
     with pytest.raises(ValueError, match="absolute"):
         backup.mission(store="relative/store")
+    assert spec["strategies"][0]["params"] == {}, "a store on the body's own filesystem is refused unless accepted"
+    accepted = backup.mission(store="/srv/greg-backups", rpo_seconds=7200, cadence_seconds=600,
+                              accept_same_filesystem=True)
+    assert accepted["strategies"][0]["params"] == {ACCEPT: True} and "own filesystem" in accepted["founder_expression"]
 
 
 def test_without_a_signed_mission_nothing_is_backed_up(world):
@@ -71,7 +104,7 @@ def test_without_a_signed_mission_nothing_is_backed_up(world):
             body.tick()
             world["clock"].advance(61)
         assert not body.ledger.select("witness", capability="body.backup")
-    assert not world["store"].exists()
+    assert not (world["store"] / "objects").exists()
 
 
 def test_a_signed_cadence_writes_a_seed_to_the_store_and_counts_it_only_after_its_drill(world, monkeypatch):
@@ -107,17 +140,167 @@ def context(home: Path, data: Path, capability: str, target: str) -> InvocationC
                              target=target, mission_id=MID)
 
 
-@pytest.mark.parametrize("where", ["the body home", "a read root", "relative", "another prefix"])
+ADAPTERS = (("body.backup", backup.backup, {ACCEPT: True}),
+            ("body.backup_status", backup.status, {"rpo_seconds": 60}))
+
+
+@pytest.mark.parametrize("where", ["the body home", "a read root", "the body home itself", "a read root itself",
+                                   "relative", "another prefix"])
 def test_a_store_inside_the_body_home_or_a_read_root_is_refused_and_nothing_is_written(world, where):
     home, data = world["home"], world["data"]
-    store = {"the body home": Layout(home).home / "backups", "a read root": data / "backups"}.get(where)
+    store = {"the body home": Layout(home).home.resolve() / "backups", "a read root": data.resolve() / "backups",
+             "the body home itself": Layout(home).home.resolve(), "a read root itself": data.resolve()}.get(where)
     target = {"relative": "backup:backups", "another prefix": f"workspace:{data}"}.get(where, f"backup:{store}")
-    for capability, adapter, params in (("body.backup", backup.backup, {}),
-                                        ("body.backup_status", backup.status, {"rpo_seconds": 60})):
+    for capability, adapter, params in ADAPTERS:
         with pytest.raises(CapabilityError, match="inside" if store else "absolute path"):
             adapter(params, context(home, data, capability, target))
     if store:
-        assert not store.exists()
+        assert not (store / "objects").exists() and (store.exists() == where.endswith("itself"))
+
+
+@pytest.mark.parametrize("spelling", ["a trailing slash", "a dot-dot segment", "a glob character"])
+def test_a_target_that_is_not_its_stores_canonical_form_is_refused(world, spelling):
+    home, data, store = world["home"], world["data"], world["store"]
+    if spelling == "a glob character":
+        (store.parent / "backups[1]").mkdir()
+    target = {"a trailing slash": f"backup:{store}/", "a dot-dot segment": f"backup:{store}/../{store.name}",
+              "a glob character": f"backup:{store.parent}/backups[1]"}[spelling]
+    for capability, adapter, params in ADAPTERS:
+        with pytest.raises(CapabilityError, match="glob character" if "glob" in spelling else "canonical form"):
+            adapter(params, context(home, data, capability, target))
+    assert not (store / "objects").exists()
+    with pytest.raises(ValueError, match="glob character"):
+        backup.mission(store=store.parent / "backups[1]")
+
+
+def test_a_store_that_does_not_exist_is_never_created(world):
+    """An unmounted disk leaves its mount point missing: the backup asks instead of writing to the body's own disk."""
+    home, clock = world["home"], world["clock"]
+    store = world["store"].parent / "media" / "usb-backup-disk" / "greg"
+    with Body(home, clock=clock) as body:
+        body.boot()
+        sign_cadence(world, body, store=store)
+        for _ in range(3):
+            body.tick()
+            clock.advance(61)
+        assert "not an existing directory" in refusals(body)
+        assert [a["kind"] for a in asks(body)] == ["NO_STRATEGY"]
+    assert not store.parent.parent.exists() and backup.verified(home, store) == []
+
+
+def test_a_store_on_the_bodys_own_filesystem_needs_the_founders_acceptance(world):
+    home, clock = world["home"], world["clock"]
+    with Body(home, clock=clock) as body:
+        body.boot()
+        sign_cadence(world, body, accept_same_filesystem=False)          # world["store"] shares the home's disk
+        for _ in range(2):
+            body.tick()
+            clock.advance(61)
+        assert "on the body's own filesystem" in refusals(body)
+        assert [a["kind"] for a in asks(body)] == ["NO_STRATEGY"]
+    assert backup.verified(home, world["store"]) == [] and not (world["store"] / "objects").exists()
+
+
+def test_a_store_on_another_filesystem_needs_no_acceptance(world, other_filesystem):
+    home, clock = world["home"], world["clock"]
+    with Body(home, clock=clock) as body:
+        body.boot()
+        sign_cadence(world, body, accept_same_filesystem=False, store=other_filesystem)
+        assert body.tick()["missions"][0]["state"] == "ACTED"
+    [other] = backup.verified(home, other_filesystem)
+    assert other["same_filesystem"] is False and other["restored_head"] == other["ledger_head"]
+
+
+def test_a_store_that_is_gone_or_damaged_is_never_fresh(world):
+    home, data, store, clock = world["home"], world["data"], world["store"], world["clock"]
+    with Body(home, clock=clock) as body:
+        body.boot()
+        sign_cadence(world, body)
+        body.tick()
+    ctx = context(home, data, "body.backup_status", backup.PREFIX + str(store))
+    assert backup.status({"rpo_seconds": 3600}, ctx)["fresh"] is True
+    unplugged = store.with_name("unplugged")
+    store.rename(unplugged)                                           # the disk is unplugged
+    assert backup.status({"rpo_seconds": 3600}, ctx)["why"].startswith("the store is not there")
+    store.mkdir()                                                     # an empty directory where the mount was
+    assert backup.status({"rpo_seconds": 3600}, ctx)["why"].endswith("missing or damaged in the store")
+    store.rmdir()
+    unplugged.rename(store)
+    [latest] = backup.verified(home, store)
+    manifest = json.loads(cas.get(store, latest["seed"]))
+    cas._path(store, manifest["files"]["body.json"]).unlink()         # one object of the backup lost
+    out = backup.status({"rpo_seconds": 3600}, ctx)
+    assert out["fresh"] is False and out["why"].endswith("missing or damaged in the store")
+
+
+def test_a_store_replaced_while_the_backup_is_written_is_refused(world, monkeypatch):
+    home, store, clock = world["home"], world["store"], world["clock"]
+    made = seed.make_seed
+
+    def then_replaced(home_, store_, **kw):                       # the drill alone would pass: same objects
+        out = made(home_, store_, **kw)
+        Path(store_).rename(Path(store_).with_name("unmounted"))
+        shutil.copytree(Path(store_).with_name("unmounted"), store_)
+        return out
+    monkeypatch.setattr(seed, "make_seed", then_replaced)
+    with Body(home, clock=clock) as body:
+        body.boot()
+        sign_cadence(world, body)
+        body.tick()
+        assert "changed while the backup was written" in refusals(body)
+    assert backup.verified(home, store) == []
+
+
+def test_a_drill_whose_restored_body_is_not_held_is_not_a_verified_backup(world, monkeypatch):
+    home, store, clock = world["home"], world["store"], world["clock"]
+    paused = Body.paused
+    monkeypatch.setattr(Body, "paused", lambda self: False if "greg-restore-drill-" in str(self.layout.home)
+                        else paused(self))
+    made = seed.make_seed(home, world["store"].parent / "by-hand")
+    with pytest.raises(RestoreError, match="did not come back held"):
+        recovery.drill(world["store"].parent / "by-hand", made["seed"])
+    with Body(home, clock=clock) as body:
+        body.boot()
+        sign_cadence(world, body)
+        body.tick()
+        assert "did not come back held" in refusals(body)
+    assert backup.verified(home, store) == []
+
+
+@pytest.mark.parametrize("rpo,cadence", [(60, 60), (3000, 3600), (119, 60)])
+def test_an_rpo_shorter_than_twice_the_cadence_is_refused_before_signing(rpo, cadence):
+    with pytest.raises(ValueError, match="half the RPO"):
+        backup.mission(store="/srv/greg-backups", rpo_seconds=rpo, cadence_seconds=cadence)
+    root = Path(__file__).resolve().parents[2]
+    printed = subprocess.run([sys.executable, "-m", "greg.backup", "--store", "/srv/greg-backups", "--rpo-hours", "1"],
+                             cwd=root, env={**os.environ, "PYTHONPATH": str(root)}, capture_output=True, text=True)
+    assert printed.returncode == 2 and "half the RPO" in printed.stderr and not printed.stdout
+
+
+def test_on_one_clock_the_cadence_keeps_the_recovery_point_within_the_rpo(world, monkeypatch):
+    """The body's clock, the seed's time and the sensor's time are one clock (an RPO of 150 s, a cadence of 60 s)."""
+    home, store, clock = world["home"], world["store"], world["clock"]
+    wall = clock
+
+    class OneClock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return wall()
+    monkeypatch.setattr(backup, "_now", wall)
+    monkeypatch.setattr(seed, "datetime", OneClock)
+    states, ages = [], []
+    ctx = context(home, world["data"], "body.backup_status", backup.PREFIX + str(store))
+    with Body(home, clock=clock) as body:
+        body.boot()
+        sign_cadence(world, body, rpo_seconds=150, cadence_seconds=60)
+        for _ in range(8):
+            states.append(body.tick()["missions"][0]["state"])
+            ages.append(backup.status({"rpo_seconds": 150}, ctx)["age_seconds"])
+            clock.advance(61)
+        assert asks(body) == []
+    # Acts when the latest recovery point is older than the RPO, and only then: judged from the latest backup.
+    assert states == ["ACTED", "HOLDING", "HOLDING", "ACTED", "HOLDING", "HOLDING", "ACTED", "HOLDING"]
+    assert len(backup.verified(home, store)) == 3 and max(ages) <= 150 + 61
 
 
 @pytest.mark.parametrize("damage", ["before the backup", "between the seed and its drill"])

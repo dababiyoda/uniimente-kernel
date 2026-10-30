@@ -118,10 +118,11 @@ def restore_body(store, seed_address: str, home, *, clock=None) -> dict:
 
 def drill(store, seed_address: str) -> dict:
     """Prove that one seed restores: ``restore_body`` into a scratch home, re-verify the restored ledger from its
-    file, report the head it was restored to and whether the body came back held, then remove the scratch home.
+    file, require that the body came back held, report the head it was restored to, then remove the scratch home.
 
     The scratch body is never run, so the drill takes no action; it raises ``RestoreError`` (or ``cas.IntegrityError``
-    for a damaged object) when the seed does not restore, and the scratch home is removed whatever the outcome."""
+    for a damaged object) when the seed does not restore, or restores a body that is not held, and the scratch home is
+    removed whatever the outcome."""
     import tempfile
     from provenance.ledger import EvidenceLedger
     started = time.monotonic()
@@ -144,6 +145,8 @@ def drill(store, seed_address: str) -> dict:
             raise RestoreError(f"the drill's restored ledger does not re-verify: {why}")
         with Body(home) as body:
             held = body.paused()
+        if not held:                                              # a restored body that could act at once
+            raise RestoreError("the drill's restored body did not come back held")
     return {"seed": seed_address, "restored_head": report["ledger_head_at_recovery_point"],
             "recovery_point": report["recovery_point"], "restored_records": records, "chain": why, "held": held,
             "drill_seconds": round(time.monotonic() - started, 3)}

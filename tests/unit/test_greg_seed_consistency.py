@@ -6,17 +6,24 @@ consistency: a body appending in between produced a seed whose recorded head is 
 was ``json.loads`` of that line) or pack a ledger no restore accepts. Now the verified ledger prefix is taken first and
 everything else after it, and the files the body derives from its ledger are never packed or restored.
 
+A seed also packs only what it should: never a file reached through a symbolic link or another name of a key (it
+followed links before), never a device or a pipe, and one unreadable file is listed rather than failing the seed. An
+item waiting in the body's intake when the ledger is read is carried even when the running body consumes it before
+the walk reaches it, and one consumed just before is read again by the restored body without a second record.
+
 The founder key is a per-test Ed25519 key, not Alfonso's.
 """
 from __future__ import annotations
 
+import errno
 import json
+import os
 import threading
 
 import pytest
 
 from foundry.systems import cas, seed
-from greg.body import Body, Layout
+from greg.body import Body, Layout, drop_intake
 from greg.recovery import RestoreError, restore_body
 from provenance.ledger import EvidenceLedger
 from tests.greg_fixtures import make_body
@@ -172,3 +179,114 @@ def test_restore_error_is_still_raised_for_a_seed_whose_head_is_not_its_ledger_e
     wrong = cas.put(store, json.dumps({**manifest, "ledger_head": "sha256:" + "0" * 64}, sort_keys=True).encode())
     with pytest.raises(RestoreError, match="not at the head the seed recorded"):
         restore_body(store, wrong, tmp_path / "t" / "body")
+
+
+def test_a_seed_never_follows_a_link_or_packs_another_name_of_a_key(tmp_path):
+    """A confined worker can write links into its workspace; a cloned repository can carry them."""
+    home, *_ = make_body(tmp_path)
+    layout = Layout(home)
+    with Body(home) as body:
+        body.boot()
+    layout.secrets.write_text(json.dumps({"github_token": "ghp_NEVER_IN_A_BACKUP"}))
+    workspace = layout.workspace / "m_other"
+    workspace.mkdir(parents=True, exist_ok=True)
+    (workspace / "report.md").write_text("# real work\n")
+    planted = {"notes.txt": "../../device_ed25519.pem", "cache.bin": "../../witness.key",
+               "config.json": "../../secrets.json", "env.txt": "/proc/self/environ",
+               "readme.md": str(tmp_path / "founder.pem"), "whole-home": "../.."}
+    for name, to in planted.items():
+        os.symlink(to, workspace / name)
+    os.link(layout.device_key, workspace / "hardlinked.pem.txt")
+    os.mkfifo(workspace / "pipe")
+    store = tmp_path / "store"
+    made = seed.make_seed(home, store)
+    manifest = json.loads(cas.get(store, made["seed"]))
+    packed = b"".join(cas.get(store, a) for a in manifest["files"].values())
+    for secret in (layout.device_key.read_bytes(), layout.witness_key.read_bytes(), b"ghp_NEVER_IN_A_BACKUP",
+                   (tmp_path / "founder.pem").read_bytes(), b"PATH="):
+        assert secret not in packed
+    where = {rel.rsplit("/", 1)[-1]: why for rel, why in manifest["not_packed"].items()}
+    assert {name: where[name] for name in planted} == dict.fromkeys(planted, "symbolic link")
+    assert where["hardlinked.pem.txt"] == "another name for excluded key material"
+    assert where["pipe"] == "not a regular file"
+    assert "workspace/m_other/report.md" in manifest["files"] and made["not_packed"] == manifest["not_packed"]
+    target = tmp_path / "new-machine" / "body"
+    restored_held(store, made, target)
+    assert sorted(p.name for p in (Layout(target).workspace / "m_other").iterdir()) == ["report.md"]
+
+
+def test_one_unreadable_file_is_listed_and_never_stops_the_seed(tmp_path, monkeypatch):
+    """A failing sector, or a file the body may not read: the rest of the body is still backed up."""
+    home, *_ = make_body(tmp_path)
+    with Body(home) as body:
+        body.boot()
+    workspace = Layout(home).workspace / "m_other"
+    workspace.mkdir(parents=True, exist_ok=True)
+    (workspace / "scratch.bin").write_bytes(b"unreadable")
+    contents = seed._contents
+
+    def failing(dirfd, name, listed):                  # root reads a mode-000 file, so the I/O error is injected
+        if name == "scratch.bin":
+            raise OSError(errno.EIO, "Input/output error")
+        return contents(dirfd, name, listed)
+    monkeypatch.setattr(seed, "_contents", failing)
+    store = tmp_path / "store"
+    made = seed.make_seed(home, store)
+    assert made["not_packed"] == {"workspace/m_other/scratch.bin": "unreadable: EIO"}
+    restored_held(store, made, tmp_path / "new-machine" / "body")
+
+
+def test_a_home_that_is_a_link_is_backed_up_where_it_leads(tmp_path):
+    home, *_ = make_body(tmp_path)
+    with Body(home) as body:
+        body.boot()
+    link = tmp_path / "greg-home"
+    os.symlink(home, link)
+    store = tmp_path / "store"
+    made = seed.make_seed(link, store)
+    assert {"body.json", "ledger.jsonl"} <= set(json.loads(cas.get(store, made["seed"]))["files"])
+    restored_held(store, made, tmp_path / "new-machine" / "body")
+
+
+@pytest.mark.parametrize("when", ["after the ledger, before the walk", "between listing it and reading it",
+                                  "just before the ledger"])
+def test_an_item_waiting_in_the_intake_is_never_lost_whenever_the_running_body_consumes_it(tmp_path, monkeypatch,
+                                                                                           when):
+    home, *_ = make_body(tmp_path)
+    store = tmp_path / "store"
+    with Body(home) as body:
+        body.boot()
+        item = drop_intake(home, source="drill", content="arrived before the recovery point", channel="test")
+        raw, prefix, read = item.read_bytes(), seed.ledger_prefix, []
+
+        def ledger_then_consumed(h, **kw):
+            if when == "just before the ledger":
+                body.ingest_intake()
+            out = prefix(h, **kw)
+            read.append(True)
+            if when == "after the ledger, before the walk":
+                body.ingest_intake()
+            return out
+
+        def consumed_once_listed(h, walk=None):
+            for rel, dirfd, name in walk(h):
+                if when.startswith("between") and read and rel == f"intake/{item.name}":
+                    body.ingest_intake()                # listed by the walk after the ledger, moved before its read
+                yield rel, dirfd, name
+        monkeypatch.setattr(seed, "ledger_prefix", ledger_then_consumed)
+        if when.startswith("between"):
+            monkeypatch.setattr(seed, "_walk", lambda h, walk=seed._walk: consumed_once_listed(h, walk))
+        made = seed.make_seed(home, store)
+        monkeypatch.undo()
+        assert len(body.journal.replay("external.ingested")) == 1, "the original body consumed it"
+    manifest = json.loads(cas.get(store, made["seed"]))
+    assert cas.get(store, manifest["files"][f"intake/{item.name}"]) == raw
+    target = tmp_path / "new-machine" / "body"
+    restored_held(store, made, target)
+    assert (Layout(target).intake / item.name).is_file(), "still waiting in the restored body"
+    with Body(target) as again:
+        recorded = len(again.journal.replay("external.ingested"))
+        assert recorded == (when == "just before the ledger")
+        again.ingest_intake()                           # read again: a retained fact, never a second record
+        assert len(again.journal.replay("external.ingested")) == 1
+        assert not (Layout(target).intake / item.name).exists()

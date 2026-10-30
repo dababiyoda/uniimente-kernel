@@ -15,8 +15,18 @@ A seed of a running body is consistent by construction, with no lock on the writ
   without its newline was never acknowledged (a write in progress, or one torn by a crash). Those lines must verify as
   one hash chain, exactly as a restore verifies them, and their last record is the seed's ``ledger_head``. Whatever
   the body appends meanwhile, the recorded head is where the packed ledger ends.
+- **The queues just before it.** The items waiting in the body's queues (``QUEUES``: founder commands in ``inbox/``,
+  untrusted items in ``intake/``) are read immediately before the ledger, so an item that was waiting is carried even
+  when the running body consumes it, and moves it aside, after its ledger was read. The restored body reads it again:
+  one the ledger shows consumed is a retained fact (intake) or a spent nonce (inbox), never a second effect.
 - **Then every other file.** A file written after the ledger was read holds at most content newer than the recovery
   point. A file the body moved or removed after it was listed is left out.
+- **Only regular files, never through a link.** Each directory is opened by ``os.fwalk`` without following a
+  symbolic link, and each file is opened with ``O_NOFOLLOW`` after ``lstat`` says it is regular: a link planted in a
+  workspace can never pack a key, a file outside the home or ``/proc``, and a device, pipe or socket is never opened.
+  A file sharing its inode with excluded key material is not packed either. What is left out, and why (a link, not
+  a regular file, unreadable, removed meanwhile), is listed in the manifest's ``not_packed``; one unreadable file
+  never stops a backup.
 - **Derived files are never packed or restored** (``DERIVED``): the body rewrites them from its own ledger. Packed
   after the ledger, the heartbeat could name a head the packed ledger does not hold, and the restored body would
   refuse its own history (``greg.body.Body._require_published_head``); a restored body writes its own on its first
@@ -25,9 +35,11 @@ A seed of a running body is consistent by construction, with no lock on the writ
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import errno
 import json
 import os
 from pathlib import Path
+import stat
 import tempfile
 
 from foundry.systems import cas
@@ -37,6 +49,8 @@ LEDGER = "ledger.jsonl"
 # Rewritten by the body from its ledger (greg.body.Body._heartbeat): never truth of their own, so never packed and
 # never restored.
 DERIVED = ("heartbeat.json", "heartbeat.tmp")
+# A running body consumes the *.json items waiting here into its ledger, then moves them aside (greg.body.Layout).
+QUEUES = ("inbox", "intake")
 
 
 class SeedError(ValueError):
@@ -47,26 +61,119 @@ def _excluded(rel: str) -> bool:
     return any(marker in rel for marker in SECRET_MARKERS)
 
 
-def _listed(home: Path) -> list[str]:
-    # os.walk ignores a directory removed while it is walked (a running body's scratch space); like rglob it does not
-    # descend a symbolic link to a directory.
-    return sorted(os.path.relpath(os.path.join(top, name), home)
-                  for top, _, names in os.walk(home) for name in names)
+def _walk(home: Path):
+    """``(rel, dirfd, name)`` for every entry under ``home`` that is not a directory it descends, in name order.
+
+    ``os.fwalk`` opens each directory itself, relative to its parent's descriptor, and never descends a symbolic link
+    (nor a directory swapped for one while it is walked), so every name it yields lies inside ``home`` by every path
+    component. A link to a directory is yielded as an entry, so it is recorded rather than silently skipped. A
+    directory removed while it is walked (a running body's scratch space) is ignored. A home that is itself a link
+    (``~/.greg`` on another disk, say) is walked where it leads."""
+    root = os.path.realpath(home)
+    for top, dirs, names, dirfd in os.fwalk(root):
+        links = [d for d in dirs if _is_link(dirfd, d)]
+        dirs[:] = sorted(d for d in dirs if d not in links)
+        for name in sorted(names + links):
+            yield os.path.relpath(os.path.join(top, name), root), dirfd, name
+
+
+def _is_link(dirfd: int, name: str) -> bool:
+    try:
+        return stat.S_ISLNK(os.stat(name, dir_fd=dirfd, follow_symlinks=False).st_mode)
+    except OSError:
+        return False
+
+
+def _key_inodes(home: Path) -> frozenset:
+    """The inodes of the key material in ``home``: another name for one of them (a hard link) is never packed."""
+    inodes = set()
+    for rel, dirfd, name in _walk(home):
+        if _excluded(rel):
+            try:
+                info = os.stat(name, dir_fd=dirfd, follow_symlinks=False)
+            except OSError:
+                continue
+            if stat.S_ISREG(info.st_mode):
+                inodes.add((info.st_dev, info.st_ino))
+    return frozenset(inodes)
+
+
+def _why(exc: OSError) -> str:
+    return f"unreadable: {errno.errorcode.get(exc.errno, type(exc).__name__)}"
+
+
+def _contents(dirfd: int, name: str, listed: os.stat_result) -> bytes | None:
+    """The bytes of the regular file ``lstat`` listed, read without following a link (the precedent is
+    ``greg.body._read_intake``); None when another file took its name meanwhile."""
+    fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=dirfd)
+    with os.fdopen(fd, "rb") as handle:
+        opened = os.fstat(handle.fileno())
+        if (opened.st_dev, opened.st_ino) != (listed.st_dev, listed.st_ino) or not stat.S_ISREG(opened.st_mode):
+            return None
+        return handle.read()
+
+
+def _read(dirfd: int, name: str, keys: frozenset) -> tuple[bytes | None, str | None]:
+    """The bytes of one regular file, or why it is not packed."""
+    try:
+        listed = os.stat(name, dir_fd=dirfd, follow_symlinks=False)
+    except FileNotFoundError:
+        return None, "removed while the seed was taken"
+    except OSError as exc:
+        return None, _why(exc)
+    if stat.S_ISLNK(listed.st_mode):
+        return None, "symbolic link"
+    if not stat.S_ISREG(listed.st_mode):
+        return None, "not a regular file"
+    if (listed.st_dev, listed.st_ino) in keys:
+        return None, "another name for excluded key material"
+    try:
+        data = _contents(dirfd, name, listed)
+    except FileNotFoundError:
+        return None, "removed while the seed was taken"
+    except OSError as exc:                 # EIO, a permission the body lacks, a link swapped in (ELOOP)
+        return None, _why(exc)
+    return (data, None) if data is not None else (None, "replaced while the seed was taken")
+
+
+def _waiting(home: Path, keys: frozenset) -> dict:
+    """Every item waiting in the body's queues, read whole: ``{rel: bytes}``."""
+    items = {}
+    for queue in QUEUES:
+        try:
+            dirfd = os.open(Path(home) / queue, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        except OSError:                    # no such queue, or not a directory of this home
+            continue
+        try:
+            for name in sorted(os.listdir(dirfd)):
+                if name.endswith(".json") and not _excluded(f"{queue}/{name}"):
+                    data, why = _read(dirfd, name, keys)
+                    if why is None:
+                        items[f"{queue}/{name}"] = data
+        finally:
+            os.close(dirfd)
+    return items
 
 
 def make_seed(home: Path, store: Path, *, end: str | None = None) -> dict:
     """Pack ``home`` into ``store``. ``end`` names an earlier recovery point: the hash of the last ledger record to
     pack, which must lie in the verified prefix (by default the prefix's own last record)."""
     home = Path(home)
-    # The recovery point: the verified ledger prefix, read before anything else. Anything the body records after this
-    # instant is not in the seed.
+    keys = _key_inodes(home)
+    # The queues, then the recovery point: the verified ledger prefix. Anything the body records after this instant is
+    # not in the seed; an item waiting in a queue just before it is, whatever the body does with it next.
+    waiting = _waiting(home, keys)
     ledger, head = ledger_prefix(home, end=end)
     backed_up_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-    files, excluded, derived = {}, [], []
+    files, excluded, derived, not_packed = {}, [], [], {}
     if ledger is not None:
         files[LEDGER] = cas.put(store, ledger)
-    for rel in _listed(home):
+    for rel, data in waiting.items():
+        files[rel] = cas.put(store, data)
+    for rel, dirfd, name in _walk(home):
         if rel == LEDGER:
+            continue
+        if rel in waiting:
             continue
         if _excluded(rel):
             excluded.append(rel)
@@ -74,18 +181,17 @@ def make_seed(home: Path, store: Path, *, end: str | None = None) -> dict:
         if rel in DERIVED:
             derived.append(rel)
             continue
-        path = home / rel
-        if not path.is_file():
-            continue
-        try:
-            data = path.read_bytes()
-        except FileNotFoundError:          # moved or removed by the running body after it was listed
+        data, why = _read(dirfd, name, keys)
+        if why is not None:
+            not_packed[rel] = why
             continue
         files[rel] = cas.put(store, data)
+    excluded.sort()
+    derived.sort()
     seed = {"format": "uniimente-seed/1", "files": files, "excluded_secrets": excluded, "derived_not_packed": derived,
-            "backed_up_at": backed_up_at, "ledger_head": head}
+            "not_packed": not_packed, "backed_up_at": backed_up_at, "ledger_head": head}
     return {"seed": cas.put(store, json.dumps(seed, sort_keys=True).encode()), "files": len(files), "excluded": excluded,
-            "backed_up_at": seed["backed_up_at"], "ledger_head": seed["ledger_head"]}
+            "not_packed": not_packed, "backed_up_at": seed["backed_up_at"], "ledger_head": seed["ledger_head"]}
 
 
 def restore(store: Path, seed_address: str, target: Path) -> dict:

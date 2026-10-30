@@ -269,7 +269,7 @@ def _measured_trust(journal) -> dict:
     if journal is None or getattr(journal, "ledger", None) is None:
         return {"source": "no body ledger here: no retained receipts to measure", "forecast_calibration": "unmeasured",
                 "settled_outcomes": 0}
-    from greg.cognition.settlement import awaiting_realization, competence, outcome_calibration
+    from greg.cognition.settlement import awaiting_realization, competence, decisions_to_recheck, outcome_calibration
     calibration = outcome_calibration(journal)
     by_method = {}
     for row in calibration.get("levels", []):
@@ -287,6 +287,11 @@ def _measured_trust(journal) -> dict:
             "conflicting_realizations": len(calibration.get("conflicts", [])),
             "awaiting_realization": len(waiting) - conflicted,
             "conflicting_construction_claims": conflicted,
+            # disputes whose resolution can change a settled-outcome selection, and decisions made on evidence a
+            # founder-signed resolution later rejected: work the founder can act on, never acted on here
+            "disputes_to_investigate": sum(1 for row in waiting if row.get("kind") == "objective_conflict"
+                                           and row.get("priority") == "investigate"),
+            "decisions_to_recheck": len(decisions_to_recheck(journal)),
             "settled_outcomes": sum(r["count"] for r in rows.values()),
             "settled_correct": sum(r["correct"] for r in rows.values()),
             "note": "competence and calibration are evidence about methods, never authority"}

@@ -241,9 +241,11 @@ def test_a_conflicted_construction_claim_is_not_counted_as_waiting_for_a_report(
     monkeypatch.setattr(settlement, "awaiting_realization", lambda journal: rows)
     monkeypatch.setattr(settlement, "outcome_calibration", lambda journal: {"verdict": "unmeasured", "n": 0})
     monkeypatch.setattr(settlement, "competence", lambda journal: {})
+    monkeypatch.setattr(settlement, "decisions_to_recheck", lambda journal: [])
     trust = gravity._measured_trust(SimpleNamespace(ledger=object()))
     assert trust["awaiting_realization"] == 2
     assert trust["conflicting_construction_claims"] == 1
+    assert trust["disputes_to_investigate"] == 0 and trust["decisions_to_recheck"] == 0
 
 
 def test_a_turn_on_a_real_body_writes_no_ledger_event_even_when_the_compiler_would_ask(tmp_path):

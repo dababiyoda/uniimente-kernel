@@ -108,6 +108,8 @@ jobs:
         run: python scripts/ci/check_worker_appraisal_mutants.py
       - name: Whole-output judgment mutations (a check decided over the output its receipt kept, never on what it could not measure)
         run: python scripts/ci/check_whole_output_mutants.py
+      - name: Founder-device acceptance tier and live-runtime mutations
+        run: python scripts/ci/check_acceptance_mutants.py
 
   verifier:
     # Its V2 re-runs tests/unit, so inside job 1 it pushed that job past its 30 minutes once the

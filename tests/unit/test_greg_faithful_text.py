@@ -256,6 +256,7 @@ def test_a_page_longer_than_the_kept_text_decides_only_what_more_could_not_undo(
     assert judge(p("contains", "clause."), out)[0] == TRUE                                  # what was kept proves
     assert judge(p("equals", "T" * 300, "title"), out)[0] == INSUFFICIENT                  # before: TRUE, cut at 300
     assert judge(p("equals", len(page.encode()), "dom_bytes"), out)[0] == TRUE             # the whole page's size
+    assert out["cut_at"] == {"text": "end", "title": "end"}          # both kept as their start (review of #228, 1)
     short = _render(monkeypatch, tmp_path, b"<html><title>t</title><p>whole page</p></html>")
     assert "complete" not in short and judge(p("not_contains", "terminate"), short)[0] == TRUE
 
@@ -266,6 +267,7 @@ def test_a_page_cut_by_the_dom_limit_decides_only_what_more_could_not_undo(tmp_p
     out = _render(monkeypatch, tmp_path, page)
     assert out["dom_bytes"] == len(page) and out["complete"] is False                     # before: the cut's size
     assert judge(p("not_contains", "terminate without notice"), out)[0] == INSUFFICIENT    # before: TRUE
+    assert out["cut_at"] == {"text": "end", "title": "end"}
 
 
 def test_a_page_in_another_encoding_decides_nothing_on_its_text(tmp_path, monkeypatch):
@@ -405,3 +407,133 @@ def test_a_check_on_a_missing_file_says_the_path_does_not_exist():
     verdict, detail = judge({"op": "contains", "field": "text", "value": "x"}, {"path": "/x", "exists": False})
     assert verdict == FALSE and detail == "field 'text' absent; the path does not exist"
     assert judge({"op": "contains", "field": "text", "value": "x"}, {"exists": True})[1] == "field 'text' absent"
+
+
+# -- review of #228 (session_01Kucyfm2rRpECfxggpZqMes): a text the capability cut itself, keys, marks, links --------
+
+def _incomplete(cut_at=None, **fields):
+    return {**fields, "complete": False, "decided": [], **({"cut_at": cut_at} if cut_at else {})}
+
+
+def test_a_text_the_capability_cut_itself_is_searched_only_where_no_continuation_can_renormalize():
+    """Finding 1. A text a capability cut and declared incomplete (``complete: false``) was searched whole, so a
+    phrase that ended where the cut fell ahead of a combining accent was "found": the whole holds "café", not "cafe".
+    The capability names the side it cut at (``cut_at``), and the text is searched only where the rest cannot change
+    it."""
+    end = _incomplete({"text": "end"}, text="..cafe")
+    assert judge(p("contains", "cafe"), end)[0] == INSUFFICIENT                                    # before: TRUE
+    assert judge(p("not_contains", "cafe"), end)[0] == INSUFFICIENT                                # before: FALSE
+    assert judge(p("contains", "caf"), end)[0] == TRUE                                             # still provable
+    # a tail (stderr keeps its last bytes) may begin with marks of a character it did not keep: in the whole,
+    # "é" + "x", not a bare accent followed by "x"; a vowel jamo there joins a consonant before it into one syllable
+    start = {"stderr": "start"}
+    assert judge(p("not_contains", "́x", "stderr"), _incomplete(start, stderr="́x and more"))[0] \
+        == INSUFFICIENT                                                                            # before: FALSE
+    assert judge(p("contains", "ᅡx", "stderr"), _incomplete(start, stderr="ᅡx and more"))[0] == INSUFFICIENT
+    assert judge(p("contains", "x and more", "stderr"), _incomplete(start, stderr="́x and more"))[0] == TRUE
+    # a side the judge does not know is read as both
+    assert judge(p("contains", "x and more", "stderr"),
+                 _incomplete({"stderr": "middle"}, stderr="́x and more"))[0] == INSUFFICIENT
+    # a field the capability vouches for in ``decided`` is judged whole; so is a text whole in an output that is
+    # not (document.text's words on a partly scanned PDF: what more pages add comes after a space)
+    assert judge(p("contains", "cafe"), {**end, "decided": ["text"]})[0] == TRUE
+    assert judge(p("contains", "cafe"), _incomplete(text="..cafe"))[0] == TRUE
+
+
+def test_command_output_cut_before_an_accent_does_not_contain_the_bare_letter(tmp_path, monkeypatch):
+    """Finding 1's reproduction through the real run_cli: stdout cut at the read ceiling between "cafe" and its
+    accent."""
+    ctx = replace(_ctx(tmp_path), manifest=replace(BUILTINS["fs.read"][0], binaries=("/bin/report",)))
+    stdout = b"x" * (MAX_READ_BYTES - 4) + "café tail".encode()
+    monkeypatch.setattr(greg.capabilities, "run_isolated",
+                        lambda argv, **kw: subprocess.CompletedProcess(argv, 0, stdout, "é".encode() * 2001))
+    out = run_cli({"argv": ["/bin/report"]}, ctx)
+    assert out["stdout"].endswith("cafe") and out["complete"] is False
+    assert out["cut_at"] == {"stdout": "end", "stderr": "start"}
+    assert judge(p("contains", "cafe", "stdout"), out)[0] == INSUFFICIENT                          # before: TRUE
+    assert judge(p("contains", "cafe", "stdout"), {"stdout": stdout.decode()}, whole=True)[0] == FALSE
+    # the receipt's own cut of a tail the capability cut: its leading marks are not the whole's either
+    kept = keep_output(_incomplete({"stderr": "start"}, stderr="́x" + FILLER), tmp_path)[0]
+    assert set(kept["stderr"]) >= {"prefix", "sha256", "length"}
+    assert judge(p("not_contains", "́x", "stderr"), kept)[0] == INSUFFICIENT                 # before: FALSE
+
+
+def test_a_verdict_on_a_text_cut_on_either_side_never_contradicts_the_whole():
+    """Finding 1, as a property: whatever was cut at the side declared, a TRUE or FALSE from what was kept is the
+    whole's."""
+    rng = random.Random(228)
+    for head, kept_text, tail, phrase in zip(_strings(rng, 3000, 6), _strings(rng, 3000, 10),
+                                             _strings(rng, 3000, 6), _strings(rng, 3000, 3)):
+        for side, whole in (("end", kept_text + tail), ("start", head + kept_text), ("both", head + kept_text + tail)):
+            for op in ("contains", "not_contains"):
+                for value in (phrase, NFD(phrase), NFC(phrase)):
+                    verdict = judge(p(op, value), _incomplete({"text": side}, text=kept_text))[0]
+                    if verdict != INSUFFICIENT:
+                        assert verdict == judge(p(op, value), {"text": whole}, whole=True)[0], (side, whole, value)
+
+
+def test_a_field_path_names_a_key_in_either_normalization_form():
+    """Finding 3. ``exists`` and ``absent`` used to depend on the form a key was written in; a key from external
+    JSON arrives in either. Two keys spelling the path's text leave the check undecided."""
+    out = {NFD("café"): "x"}
+    assert judge(p("exists", None, NFC("café")), out)[0] == TRUE                                   # before: FALSE
+    assert judge(p("absent", None, NFC("café")), out)[0] == FALSE                                  # before: TRUE
+    assert judge(p("exists", None, NFD("café")), out)[0] == TRUE
+    assert judge(p("absent", None, "cafe"), out)[0] == TRUE
+    assert judge(p("exists", None, NFC("café")), {NFC("café"): 1, NFD("café"): 2})[0] == INSUFFICIENT
+    # an incomplete observation under a key in the other form still limits the verdict on what it holds
+    nested = {NFD("café"): _incomplete({"text": "end"}, text="..cafe")}
+    assert judge(p("contains", "cafe", NFC("café") + ".text"), nested)[0] == INSUFFICIENT
+    assert judge(p("equals", "..cafe", NFC("café") + ".text"), nested)[0] == INSUFFICIENT
+
+
+def test_an_undecidable_whole_comparison_is_never_false():
+    from greg.missions import _judge_whole
+    colliding = {SIGNED: 1, NFD(SIGNED): 2}
+    assert _judge_whole("equals", colliding, dict(colliding))[0] == INSUFFICIENT                   # before: FALSE
+
+
+def test_a_utf8_mark_before_utf16_bytes_is_refused_like_unmarked_utf8():
+    """Finding 4: the NUL guard tested the codec name "utf-8", and a UTF-8 byte-order mark reads as "utf-8-sig"."""
+    text, why = faithful_text(codecs.BOM_UTF8 + "a\x00b".encode("utf-16-le"))
+    assert text is None and "NUL" in why                                          # before: 'a\x00\x00\x00b\x00'
+    assert faithful_text(codecs.BOM_UTF8 + "café".encode()) == ("café", "utf-8-sig")
+
+
+def test_a_link_swapped_in_after_the_path_was_checked_is_not_followed(tmp_path):
+    secret = tmp_path / "outside.txt"
+    secret.write_text("not for the sensor")
+    link = tmp_path / "data.txt"
+    link.symlink_to(secret)
+    with pytest.raises(CapabilityError, match="became a link"):
+        bounded_read(link, "too big")                                             # before: read outside the roots
+
+
+def test_a_repository_whose_history_is_not_utf8_is_a_failed_read_not_a_crash(tmp_path):
+    from greg.capabilities import git_inspect
+    repo = tmp_path / "data" / "repo"
+    repo.mkdir(parents=True)
+    env = {"PATH": "/usr/bin:/bin", "HOME": str(tmp_path), "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
+           "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t", "GIT_CONFIG_GLOBAL": "/dev/null"}
+    def git(*args, data=b""):
+        return subprocess.run(["git", "-C", str(repo), *args], check=True, env=env, capture_output=True,
+                              input=data).stdout.decode().strip()
+    git("init", "-q")
+    tree = git("hash-object", "-t", "tree", "-w", "--stdin")
+    # a commit object as older tools stored it: a Latin-1 subject and no encoding header (``git commit`` itself now
+    # re-encodes such a message)
+    commit = git("hash-object", "-t", "commit", "-w", "--stdin", data=(
+        f"tree {tree}\nauthor t <t@t> 0 +0000\ncommitter t <t@t> 0 +0000\n\n".encode() + "caf\u00e9".encode("latin-1")))
+    git("update-ref", "HEAD", commit)
+    with pytest.raises(CapabilityError, match="not valid UTF-8"):                 # before: UnicodeDecodeError
+        git_inspect({"path": str(repo)}, _ctx(tmp_path, "git.inspect"))
+
+
+def test_a_kept_prefix_is_searched_in_either_form_of_the_phrase(tmp_path):
+    """Finding 5: no test held the needle's normalization in the cut path. A name in the kept prefix is found whichever
+    form the founder signed it in."""
+    kept = keep_output({"text": f"Signed by {SIGNED}. " + FILLER}, tmp_path)[0]
+    assert set(kept["text"]) >= {"prefix", "sha256", "length"}
+    for phrase in (SIGNED, NFD(SIGNED)):
+        assert judge(p("contains", phrase), kept)[0] == TRUE                       # mutant: INSUFFICIENT for NFD
+        assert judge(p("not_contains", phrase), kept)[0] == FALSE

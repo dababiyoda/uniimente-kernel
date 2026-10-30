@@ -137,3 +137,35 @@ Mutants are listed in `scripts/ci/check_whole_output_mutants.py`, so Canonical C
 
 Revert this branch's commits. No data migration. Receipts written before it keep their meaning: their text was
 decoded with replacement, and the judge reads them as recorded.
+
+## Independent review and its fixes (2026-10-30)
+
+A separate session (`session_01Kucyfm2rRpECfxggpZqMes`) reviewed this branch at `00dea61` and `f12858a`. It ran every
+repro it reports; it pushed nothing. Each confirmed finding is fixed with a test that fails on `6de575f7`:
+`test_greg_faithful_text.py` gives 10 failed and 34 passed there, and 44 passed after. The 10 are eight of the nine
+new tests and two browser tests with a new `cut_at` assertion. The ninth new test, for the needle, passes on the
+base: it holds a safeguard that already worked and that nothing tested.
+
+| Finding | Fix |
+| --- | --- |
+| 1 (high): a text the capability cut itself (stdout at the read ceiling, a page's text or title, stderr's tail) was searched whole, so `contains "cafe"` held when the cut fell before a combining accent, and the whole reads "café" | The capability names the side it cut (`cut_at`: run_cli's stdout at its end and stderr at its start; a page's text and title at their ends), and the judge searches only the part the rest cannot change. At a cut end it drops the last segment start and what follows (`textform.stable`). At a cut start it drops everything before the first segment start (`textform.stable_tail`, the mirror rule), in a receipt's prefix of such a text too. A side it does not know reads as both. A property test cuts 3,000 random texts at each declared side: no verdict from the kept part contradicts the whole |
+| 2 (medium): three tests passing on the base failed at the head | `greg/textform.py` is in `foundry/owned-source.json`. The two `incomplete_evidence` tests now expect INSUFFICIENT for a string whose kept part agrees with the expected text but whose digest differs, as the review recommended: a tail the receipt did not keep can make it canonically equal (U+212A KELVIN SIGN reads "K"). A difference inside the kept part stays FALSE |
+| 3 (low-medium): `exists` and `absent` depended on the form a key was written in | A path segment names the key that spells it in either form. Two keys spelling it leave the check INSUFFICIENT. The walk that finds a declared-incomplete observation uses the same rule, so one nested under a key in the other form still limits the verdict |
+| 4 (low): a UTF-8 byte-order mark before UTF-16 bytes passed the NUL guard | The guard covers `utf-8-sig` |
+| 5 (low): no test held the needle's normalization in the cut path | A test, and 15 gate mutants: the four safeguards the review found unguarded in the gate, and every fix above |
+
+The review's suspicions:
+
+- **Applied:**
+  - `bounded_read` opens with `O_NOFOLLOW`, so a link swapped in after the roots were checked is refused.
+  - `git.inspect` turns history that is not UTF-8 into a failed read instead of a `UnicodeDecodeError`. `git commit` now re-encodes such a message, so the test writes the commit object directly.
+  - `_judge_whole`'s unreachable `equals` branch reads an undecidable comparison as INSUFFICIENT, never FALSE.
+  - The `textform` docstring no longer names a module that is not on this branch.
+- **Kept:** an `equals` on an object whose two keys spell one text stays INSUFFICIENT, so such a mission does not close. Equal key spellings cannot tell which value the expected key means.
+
+**Where the fix departs from the review:** the review proposed trimming every declared-incomplete text. The first
+version did that, and the gate's baseline refused it. `test_a_declared_incomplete_output_stays_monotone_over_its_whole`
+holds a phrase at the very end of `document.text`'s words: that text is whole and the document is not, and what more
+pages add comes after a space. Trimming there turns a provable TRUE into INSUFFICIENT. The capability knows where it
+cut, so it says so, and a text it did not cut keeps its verdicts. A capability that cuts a text without saying where
+is the open risk. The two that cut text here, `run.cli` and `browser.render`, both say so, each held by a gate mutant.

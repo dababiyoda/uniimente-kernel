@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, asdict
 import codecs
+import errno
 import glob
 import hashlib
 from html.parser import HTMLParser
@@ -309,8 +310,8 @@ def faithful_text(data: bytes, *, cut: bool = False) -> tuple[str | None, str]:
         text = codecs.getincrementaldecoder(codec)().decode(data, final=not cut)
     except UnicodeDecodeError as exc:
         return None, f"not valid {codec.removesuffix('-sig')} at byte {exc.start}"
-    if codec == "utf-8" and "\x00" in text:
-        return None, "holds NUL bytes: UTF-16 or UTF-32 without a byte-order mark, or not text"
+    if codec in ("utf-8", "utf-8-sig") and "\x00" in text:     # a UTF-8 mark before UTF-16 bytes too (review of #228)
+        return None, "holds NUL bytes: UTF-16 or UTF-32 read as UTF-8, or not text"
     return text, codec
 
 
@@ -327,7 +328,12 @@ def with_text(out: dict, data: bytes, *, cut: bool = False) -> dict:
 def bounded_read(path: Path, refusal: str) -> bytes:
     """The bytes of the regular file at ``path``, refused (``refusal``) before more than MAX_READ_BYTES + 1 of them
     are read: by its size when the file states one, by the read itself when it does not (a /proc file states 0)."""
-    fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)                             # a FIFO swapped in never blocks
+    try:   # a FIFO swapped in never blocks; a link swapped in after the roots were checked is not followed
+        fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
+    except OSError as exc:
+        if exc.errno == errno.ELOOP:
+            raise CapabilityError(f"{path.name} became a link after its path was checked") from None
+        raise
     info = os.fstat(fd)
     if not stat.S_ISREG(info.st_mode):                  # checked on the descriptor, before Python wraps it
         os.close(fd)
@@ -560,8 +566,10 @@ def run_cli(params, ctx: InvocationContext, *, isolate_network: bool = True, tim
     except subprocess.TimeoutExpired:      # a refusal with a cause, never an "uncertain external effect"
         raise CapabilityError(f"{argv[0]} did not finish within {timeout}s", failure_class="transient") from None
     # stdout keeps its first MAX_READ_BYTES and stderr its last 4000 bytes; a field cut or not faithfully readable is
-    # left out of ``decided``, so a check on it decides only what more output could not undo (greg.missions.judge)
-    out, held = {"argv": argv, "returncode": proc.returncode}, []
+    # left out of ``decided``, so a check on it decides only what more output could not undo, and a cut field names
+    # the side it was cut at (``cut_at``), so its text is searched only where the rest cannot change it
+    # (greg.missions.judge)
+    out, held, cut_at = {"argv": argv, "returncode": proc.returncode}, [], {}
     for name, data, cut in (("stdout", proc.stdout[:MAX_READ_BYTES], len(proc.stdout) > MAX_READ_BYTES),
                             ("stderr", proc.stderr[-4000:], len(proc.stderr) > 4000)):
         if cut and name == "stderr":     # a tail begins mid-character at worst: drop those continuation bytes
@@ -569,8 +577,9 @@ def run_cli(params, ctx: InvocationContext, *, isolate_network: bool = True, tim
         text, how = faithful_text(data, cut=cut and name == "stdout")
         out |= {name: text} if text is not None else {f"{name}_unreadable": how}
         held += [name] if cut or text is None else []
+        cut_at |= {name: "end" if name == "stdout" else "start"} if cut and text is not None else {}
     if held:
-        out |= {"complete": False, "decided": sorted(set(out) - set(held))}
+        out |= {"complete": False, "decided": sorted(set(out) - set(held))} | ({"cut_at": cut_at} if cut_at else {})
     return out
 
 
@@ -598,7 +607,10 @@ def git_inspect(params, ctx: InvocationContext) -> dict:
     repo = _inside(Path(params["path"]), ctx.read_roots)
     def git(*args):
         return read_only_git(repo, *args, home=ctx.workspace)
-    head, status, log = git("rev-parse", "HEAD"), git("status", "--porcelain"), git("log", "--oneline", "-10")
+    try:
+        head, status, log = git("rev-parse", "HEAD"), git("status", "--porcelain"), git("log", "--oneline", "-10")
+    except UnicodeDecodeError as exc:   # a commit subject or file name that is not UTF-8: a failed read, not a crash
+        raise CapabilityError(f"git output is not valid UTF-8 at byte {exc.start}") from None
     if head.returncode:
         raise CapabilityError("not a git repository")
     return {"path": str(repo), "head": head.stdout.strip(), "dirty": bool(status.stdout.strip()),
@@ -740,7 +752,8 @@ def browser_render(params, ctx: InvocationContext) -> dict:
     # decides only what more of the page could not undo (greg.missions.judge)
     held = [name for name, whole in (("text", len(text) <= MAX_READ_BYTES), ("title", len(title) <= 300))
             if dom_cut or not whole]
-    return out | ({"complete": False, "decided": sorted(set(out) - set(held))} if held else {})
+    return out | ({"complete": False, "decided": sorted(set(out) - set(held)), "cut_at": dict.fromkeys(held, "end")}
+                  if held else {})
 
 
 def _render_behind_relay(argv, relay, host: str, port: int, loopback: bool, profile: Path, env: dict):

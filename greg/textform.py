@@ -2,7 +2,7 @@
 
 Canonically equivalent texts (an accented letter as one code point, or as the letter and a combining accent; KELVIN
 SIGN and K) are one text. Every check that compares text compares it in Unicode Normalization Form C, on both sides
-(greg.missions.judge, greg.textquery, business.reconcile), so no verdict depends on which form either side is
+(greg.missions.judge, greg.textquery, greg.business_loop.reconcile), so no verdict depends on which form either side is
 written in (directive of 2026-10-22, section VI test 8).
 """
 from __future__ import annotations
@@ -29,13 +29,30 @@ def composes_backward() -> frozenset:
     return frozenset(seconds)
 
 
+def _segment_start(char: str, backward: frozenset) -> bool:
+    """Whether ``char`` starts a normalization segment of its own: a starter that joins nothing before it. No mark
+    after it moves before it and nothing before it composes with what follows it, so NFC of a text split there is
+    NFC of each side, joined."""
+    first = unicodedata.normalize("NFD", char)[0]
+    return unicodedata.combining(first) == 0 and not {ord(first), ord(char)} & backward
+
+
 def stable(prefix: str) -> str:
     """The longest start of ``prefix`` whose NFC form begins the NFC form of every string ``prefix`` starts: all of
     it before its last character that starts a new normalization segment (a starter that joins nothing before it).
     That character may still compose with marks that follow it, so it is left out with what follows it."""
     backward = composes_backward()
     for i in range(len(prefix) - 1, -1, -1):
-        first = unicodedata.normalize("NFD", prefix[i])[0]
-        if unicodedata.combining(first) == 0 and not {ord(first), ord(prefix[i])} & backward:
+        if _segment_start(prefix[i], backward):
             return prefix[:i]
     return ""
+
+
+def stable_tail(suffix: str) -> str:
+    """The mirror of ``stable`` for a text kept as its end (a stream's last bytes): the longest end of ``suffix``
+    whose NFC form ends the NFC form of every string ending in ``suffix``. Its leading marks, and a leading character
+    that composes with what came before it (a Hangul vowel, the second half of a canonical pair), may belong to
+    a character that was not kept, so everything before its first segment start is left out."""
+    backward = composes_backward()
+    return next((suffix[i:] for i in range(len(suffix)) if _segment_start(suffix[i], backward)), "")
+

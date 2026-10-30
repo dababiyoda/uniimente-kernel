@@ -7,6 +7,9 @@ TESTS=['tests/unit/test_greg_node_revoke.py']
 F='greg/founder.py'
 C='greg/compute.py'
 B='greg/body.py'
+R='greg/recovery.py'
+L='greg/lightcone.py'
+I='greg/cli.py'
 MUTANTS=[
     # founder key only
     ('a device may never be delegated NODE_REVOKE',F,
@@ -20,6 +23,10 @@ MUTANTS=[
      'if not required <= set(body) <= required | {"expires_at"}:','if not required <= set(body):'),
     ('node_id is a bounded string',C,
      '    if not isinstance(node_id, str) or not 1 <= len(node_id) <= 128:\n        raise','    if False:\n        raise'),
+    ('node_id has an upper bound',C,
+     'not 1 <= len(node_id) <= 128:','not 1 <= len(node_id):'),
+    ('the node_id bound admits 128 characters',C,
+     'not 1 <= len(node_id) <= 128:','not 1 <= len(node_id) <= 127:'),
     ('a node key is exactly 64 hex characters',C,
      'if isinstance(value, str) and len(value) == 64:','if isinstance(value, str):'),
     ('a node key decodes to exactly 32 bytes',C,
@@ -47,6 +54,10 @@ MUTANTS=[
      '    found += [e.payload.get("new_public_key") for e in journal.replay("founder.key_rotated")]\n',''),
     ('a device key, even revoked, is a principal key',C,
      '    found += [e.payload.get("public_key") for e in journal.replay("device.enrolled")]\n',''),
+    ("this body's own identity key never becomes a node key",C,
+     '    if _body_id_of(raw) in own:\n','    if False:\n'),
+    ("no node takes this body's own id",C,
+     '    if node_id in own:\n','    if False:\n'),
     ('each active node has its own key',C,
      '    if any(n["state"] == "ACTIVE" and bytes.fromhex(n["node_public_key"]) == raw for n in nodes.values()):','    if False:'),
     ('only an active node holds its key',C,
@@ -62,6 +73,24 @@ MUTANTS=[
      '    if node is None:\n        raise','    if False:\n        raise'),
     ('a revoked node is not revoked twice',C,
      '    if node["state"] == "REVOKED":\n','    if False:\n'),
+    # restore: an enrollment from before the recovery point is voided, as device delegations are
+    ('a restore voids the unrevoked node enrollments',R,
+     '        nodes = compute.unrevoked_nodes(body.journal, now=now)\n','        nodes = []\n'),
+    ('a restore records each void as a revocation',R,
+     '        compute.void_for_restore(body.journal, nodes, restore_id=restore_id, now=now)\n',''),
+    ('a restore voids expired enrollments too, so a clock set back revives none',C,
+     'if v["state"] != "REVOKED")','if v["state"] == "ACTIVE")'),
+    ("a restore's revocation ends an enrollment like the founder's",C,
+     '        elif event.type == "greg.node.revoked":\n','        elif event.type == "greg.node.revoked" and data.get("by") != "restore":\n'),
+    # a light cone out of float range is a refusal, never an exception past every caller
+    ('an out-of-range light-cone budget is a scope error',L,
+     '        except OverflowError:   # a JSON integer','        except ZeroDivisionError:   # a JSON integer'),
+    # greg node list reads beside a running body
+    ('node list never opens the ledger as its writer',I,
+     '                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:\n'
+     '                    data = {"nodes": list(compute.node_states(journal).values())}',
+     '                with Body(home) as b:\n'
+     '                    data = {"nodes": list(compute.node_states(b.journal).values())}'),
     ('the same signed revocation applied again returns its record',C,
      '        if event.payload.get("command_digest") == command_digest:\n            return {"node_id"','        if False:\n            return {"node_id"'),
 ]

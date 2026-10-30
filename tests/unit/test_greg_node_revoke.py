@@ -11,11 +11,14 @@ import json
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 import pytest
 
+from foundry.systems import seed
 from greg import cli, compute
-from greg.body import Body
+from greg.body import Body, Layout
 from greg.founder import (COMMAND_KINDS, DEVICE_KINDS, FounderAuthError, FounderVerifier, key_id, public_bytes,
                           sign_command, stamp)
-from tests.greg_fixtures import Clock, drop, horizon, make_body, signed
+from greg.lightcone import LightCone, ScopeError
+from greg.recovery import restore_body
+from tests.greg_fixtures import Clock, drop, horizon, make_body, mission, note_check, signed, workspace, write_strategy
 from tests.unit.test_greg_missions import events, run
 
 CONE = {"capabilities": ["fs.read"], "targets": ["fs:node2/*"], "max_consequence_class": "read_only",
@@ -204,6 +207,7 @@ def test_a_bad_expiry_is_refused(tmp_path, given, why):
 @pytest.mark.parametrize("body, why", [
     ({"node_id": "body-2", "node_public_key": "ab" * 32, "light_cone": CONE, "extra": 1}, "optionally expires_at"),
     ({"node_id": "", "node_public_key": "ab" * 32}, "1..128 characters"),
+    ({"node_id": "x" * 129, "node_public_key": "ab" * 32}, "1..128 characters"),
     ({"node_id": ["x"], "node_public_key": "ab" * 32}, "1..128 characters"),
     ({"node_id": "body-2", "node_public_key": "ab" * 31}, "32-byte Ed25519"),
     ({"node_id": "body-2", "node_public_key": "ab" * 31 + "  "}, "32-byte Ed25519"),       # 64 characters, 31 bytes
@@ -216,6 +220,87 @@ def test_a_malformed_enrollment_is_refused(tmp_path, body, why):
     with pytest.raises(ValueError, match=why):
         apply(home, key, body_id, "NODE_ENROLL", body)
     assert not events(home, "node.enrolled")
+
+
+def test_a_node_id_of_128_characters_is_enrolled(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    apply(home, key, body_id, "NODE_ENROLL", enroll_body("n" * 128, new_key()[1]))
+    assert states(home)["n" * 128]["state"] == "ACTIVE"
+
+
+def test_this_bodys_own_identity_key_and_id_never_become_a_node(tmp_path):
+    """A node is another machine. The body's own identity key (whose private half is in this body's home) is not a
+    node key under any node_id, and no node takes this body's own id."""
+    home, key, body_id, _ = make_body(tmp_path)
+    own = json.loads(Layout(home).config.read_text())["device_public_key"]
+    for given in (own, own.upper()):
+        with pytest.raises(ValueError, match="this body's own identity key"):
+            apply(home, key, body_id, "NODE_ENROLL", enroll_body("body-2", given))
+    with pytest.raises(ValueError, match="this body's own id"):
+        apply(home, key, body_id, "NODE_ENROLL", enroll_body(body_id, new_key()[1]))
+    assert not events(home, "node.enrolled")
+
+
+def test_a_restore_voids_every_node_enrollment_from_before_it(tmp_path):
+    """A restored body knows nothing after its recovery point. A node the founder revoked after the backup (its key
+    perhaps compromised) must not come back ACTIVE: like device delegations, every node enrollment not already
+    revoked is voided whatever the clock says, and the founder enrolls again each node still trusted."""
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock()
+
+    def sign(kind, body):
+        return sign_command(key, kind, body, body_id=body_id, now=clock())
+
+    keys = {n: new_key()[1] for n in ("body-2", "body-3", "body-4", "body-5")}
+    real_now = datetime.now(timezone.utc)
+    with Body(home, clock=clock) as b:
+        for node_id in ("body-2", "body-3", "body-4"):
+            b.apply(sign("NODE_ENROLL", enroll_body(node_id, keys[node_id])))
+        b.apply(sign("NODE_ENROLL", enroll_body("body-5", keys["body-5"],
+                                                expires_at=stamp(real_now + timedelta(hours=1)))))
+        b.apply(sign("NODE_REVOKE", {"node_id": "body-4"}))           # revoked before the backup: stays as it is
+    made = seed.make_seed(home, tmp_path / "seed-store")
+    clock.advance(60)
+    with Body(home, clock=clock) as b:                               # after the backup: the founder revokes body-2
+        b.apply(sign("NODE_REVOKE", {"node_id": "body-2"}))
+    home.rename(home.parent / "lost-machine")
+    clock.advance(2 * 3600)                                          # the restoring machine's clock is past body-5's
+    report = restore_body(tmp_path / "seed-store", made["seed"], home, clock=clock)   # expiry; a later one is not
+    assert report["voided"]["node_enrollments"] == ["body-2", "body-3", "body-5"]
+    assert any("NODE_ENROLL again" in need for need in report["needs_from_founder"])
+    restored = states(home, now=real_now)                            # a clock set back cannot revive body-5
+    assert {k: v["state"] for k, v in restored.items()} == {n: "REVOKED" for n in keys}
+    assert restored["body-3"]["revoked_by_restore"] == report["restore_id"]
+    assert "revoked_by_restore" not in restored["body-4"]
+    clock.advance(1)
+    with Body(home, clock=clock) as b:   # a node still trusted is enrolled again by a command issued after the restore
+        b.apply(sign("NODE_ENROLL", enroll_body("body-3", keys["body-3"])))
+        assert set(compute.active_nodes(b.journal, now=real_now)) == {"body-3"}
+
+
+def test_an_out_of_range_light_cone_budget_is_a_refusal_not_a_crash(tmp_path):
+    """float(10**400) raises OverflowError, which no ingest path catches: a founder-signed command with such a
+    budget would stop the running body on every restart. The cone refuses it as a scope error instead."""
+    huge = {**cone(), "budget_usd": 10 ** 400}
+    with pytest.raises(ScopeError, match="finite and nonnegative"):
+        LightCone.from_dict(huge)
+    home, key, body_id, _ = make_body(tmp_path)
+    note = workspace(home, "m:huge") / "n.txt"
+    bad_mission = mission("m:huge", checks=[note_check("n", note, "x")],
+                          strategies=[write_strategy("w", "n.txt", "x", ["n"])], capabilities=["fs.read"],
+                          ceiling="read_only")
+    bad_mission["light_cone"]["budget_usd"] = 10 ** 400
+    drop(home, signed(key, body_id, "NODE_ENROLL", {**enroll_body("body-2", new_key()[1]), "light_cone": huge}),
+         "a-node.json")
+    drop(home, signed(key, body_id, "MISSION", bad_mission), "b-mission.json")
+    drop(home, signed(key, body_id, "NODE_ENROLL", enroll_body("body-3", new_key()[1])), "c-node.json")
+    run(home, Clock(), ticks=1)                                      # the body runs on through both
+    reasons = [e["reason"] for e in events(home, "command.rejected")]
+    assert len(reasons) == 2 and all("finite and nonnegative" in r for r in reasons)
+    layout = Layout(home)
+    assert sorted(p.name for p in layout.rejected.glob("*.json")) == ["a-node.json", "b-mission.json"]
+    assert not list(layout.inbox.glob("*.json"))
+    assert {k: v["state"] for k, v in states(home).items()} == {"body-3": "ACTIVE"}
 
 
 def test_an_unknown_or_already_revoked_node_cannot_be_revoked(tmp_path):
@@ -276,7 +361,8 @@ def test_cli_enrolls_revokes_and_lists_nodes(tmp_path, capsys):
     cli_out("node", "enroll", "body-2", "--pubkey", node_public, "--cone", str(cone_file), "--expires-at", expires,
             "--key", str(keyfile), "--no-passphrase")
     run(home, Clock(), ticks=1)
-    listed = json.loads(cli_out("node", "list"))["nodes"]
+    with Body(home):   # a running body holds the ledger's one writer: the list reads beside it, never as a writer
+        listed = json.loads(cli_out("node", "list"))["nodes"]
     assert [(n["node_id"], n["state"], n["expires_at"]) for n in listed] == [("body-2", "ACTIVE", expires)]
     cli_out("node", "revoke", "body-2", "--key", str(keyfile), "--no-passphrase")
     run(home, Clock(), ticks=1)

@@ -1,0 +1,215 @@
+{
+ "command": "python -m greg rehearse --dir <scratch>/run; python -m greg --home <scratch>/run/body readiness",
+ "body": "throwaway rehearsal body, REHEARSAL key (not the founder's); counts_toward_vepmc false",
+ "commit": "2dafddff",
+ "summary": {
+  "capabilities": 163,
+  "reached": {
+   "KNOWN": 163,
+   "INSTALLED": 159,
+   "CREDENTIALLED": 0,
+   "GRANTED": 0,
+   "EXERCISED": 8,
+   "VERIFIED": 8
+  },
+  "not_applicable": {
+   "KNOWN": 0,
+   "INSTALLED": 0,
+   "CREDENTIALLED": 161,
+   "GRANTED": 0,
+   "EXERCISED": 0,
+   "VERIFIED": 0
+  },
+  "first_missing": {
+   "KNOWN": 0,
+   "INSTALLED": 4,
+   "CREDENTIALLED": 2,
+   "GRANTED": 157,
+   "EXERCISED": 0,
+   "VERIFIED": 0,
+   "none": 0
+  }
+ },
+ "beyond_installed": [
+  {
+   "capability_id": "artifact.store",
+   "reached": [
+    "KNOWN",
+    "INSTALLED",
+    "EXERCISED",
+    "VERIFIED"
+   ],
+   "first_missing": "GRANTED",
+   "why": "no open founder-signed mission's light cone admits it; 2 single-action grant(s) were issued for it before, each spent by its one act",
+   "track_record": {
+    "done": 2,
+    "failed": 0,
+    "ineffective": 0,
+    "refuted": 0,
+    "verified": 2,
+    "founder_reconciled": 0,
+    "reliability": 0.75
+   }
+  },
+  {
+   "capability_id": "cognition.dp_knapsack",
+   "reached": [
+    "KNOWN",
+    "INSTALLED",
+    "EXERCISED",
+    "VERIFIED"
+   ],
+   "first_missing": "GRANTED",
+   "why": "no open founder-signed mission's light cone admits it; 2 single-action grant(s) were issued for it before, each spent by its one act",
+   "track_record": {
+    "done": 2,
+    "failed": 0,
+    "ineffective": 0,
+    "refuted": 0,
+    "verified": 2,
+    "founder_reconciled": 0,
+    "reliability": 0.75
+   }
+  },
+  {
+   "capability_id": "foundry.apply",
+   "reached": [
+    "KNOWN",
+    "INSTALLED",
+    "EXERCISED",
+    "VERIFIED"
+   ],
+   "first_missing": "GRANTED",
+   "why": "no open founder-signed mission's light cone admits it; 6 single-action grant(s) were issued for it before, each spent by its one act",
+   "track_record": {
+    "done": 6,
+    "failed": 0,
+    "ineffective": 0,
+    "refuted": 0,
+    "verified": 6,
+    "founder_reconciled": 0,
+    "reliability": 0.875
+   }
+  },
+  {
+   "capability_id": "foundry.query",
+   "reached": [
+    "KNOWN",
+    "INSTALLED",
+    "EXERCISED",
+    "VERIFIED"
+   ],
+   "first_missing": "GRANTED",
+   "why": "no open founder-signed mission's light cone admits it; 24 single-action grant(s) were issued for it before, each spent by its one act",
+   "track_record": null
+  },
+  {
+   "capability_id": "institution.appraise",
+   "reached": [
+    "KNOWN",
+    "INSTALLED",
+    "EXERCISED",
+    "VERIFIED"
+   ],
+   "first_missing": "GRANTED",
+   "why": "no open founder-signed mission's light cone admits it; 28 single-action grant(s) were issued for it before, each spent by its one act",
+   "track_record": null
+  },
+  {
+   "capability_id": "institution.compose",
+   "reached": [
+    "KNOWN",
+    "INSTALLED",
+    "EXERCISED",
+    "VERIFIED"
+   ],
+   "first_missing": "GRANTED",
+   "why": "no open founder-signed mission's light cone admits it; 2 single-action grant(s) were issued for it before, each spent by its one act",
+   "track_record": {
+    "done": 2,
+    "failed": 0,
+    "ineffective": 0,
+    "refuted": 0,
+    "verified": 2,
+    "founder_reconciled": 0,
+    "reliability": 0.75
+   }
+  },
+  {
+   "capability_id": "institution.dossier",
+   "reached": [
+    "KNOWN",
+    "INSTALLED",
+    "EXERCISED",
+    "VERIFIED"
+   ],
+   "first_missing": "GRANTED",
+   "why": "no open founder-signed mission's light cone admits it; 2 single-action grant(s) were issued for it before, each spent by its one act",
+   "track_record": {
+    "done": 2,
+    "failed": 0,
+    "ineffective": 0,
+    "refuted": 0,
+    "verified": 2,
+    "founder_reconciled": 0,
+    "reliability": 0.75
+   }
+  },
+  {
+   "capability_id": "institution.survey",
+   "reached": [
+    "KNOWN",
+    "INSTALLED",
+    "EXERCISED",
+    "VERIFIED"
+   ],
+   "first_missing": "GRANTED",
+   "why": "no open founder-signed mission's light cone admits it; 2 single-action grant(s) were issued for it before, each spent by its one act",
+   "track_record": {
+    "done": 2,
+    "failed": 0,
+    "ineffective": 0,
+    "refuted": 0,
+    "verified": 2,
+    "founder_reconciled": 0,
+    "reliability": 0.75
+   }
+  }
+ ],
+ "not_installed_on_this_host": [
+  {
+   "capability_id": "browser.render",
+   "why": "binary /Applications/Google Chrome.app/Contents/MacOS/Google Chrome not installed or not executable"
+  },
+  {
+   "capability_id": "mac.frontmost_app",
+   "why": "requires darwin; this body runs linux"
+  },
+  {
+   "capability_id": "mac.notify",
+   "why": "requires darwin; this body runs linux"
+  },
+  {
+   "capability_id": "mac.screenshot",
+   "why": "requires darwin; this body runs linux"
+  }
+ ],
+ "disagreements": [
+  {
+   "capability_id": "foundry.query",
+   "readers": [
+    "greg.routing.track_record",
+    "readiness VERIFIED"
+   ],
+   "detail": "an independent appraisal verified a closure that judged its receipts, but routing counts no verified action for it (track_record reads completed actions only, not the observation receipts a closure cites)"
+  },
+  {
+   "capability_id": "institution.appraise",
+   "readers": [
+    "greg.routing.track_record",
+    "readiness VERIFIED"
+   ],
+   "detail": "an independent appraisal verified a closure that judged its receipts, but routing counts no verified action for it (track_record reads completed actions only, not the observation receipts a closure cites)"
+  }
+ ]
+}

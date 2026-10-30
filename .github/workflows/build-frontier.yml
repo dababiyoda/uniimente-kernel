@@ -1,0 +1,51 @@
+name: Build frontier
+
+# The build frontier (`greg path --build`, greg/path.py build_status) counts a node only while the path-predicate
+# mutation gate (scripts/ci/check_path_predicate_mutants.py, #236) lists a live weakening of its predicate. Only a
+# run of that gate shows that the weakening is caught, and before this workflow nothing in CI ran it. It runs here on
+# every proposed change, beside Canonical CI; canonical-ci.yml is not edited (open PRs edit it).
+#
+# The supervised rehearsals that build N1 and N2 on one body run with GREG_REQUIRE_SUPERVISOR=1: where supervisord is
+# missing they fail instead of reading as skipped (tests/supervisor_requirement.py). supervisord comes from
+# requirements-dev.txt (supervisor>=4.2). The cognition requirements are installed as in Canonical CI job 1, where the
+# gates' named tests and the rehearsals already run inside the full suite.
+#
+# No step needs unprivileged user namespaces, so Ubuntu 24.04's AppArmor restriction on them is left in place.
+# bubblewrap is not installed here: the installer then reports that it cannot confine GREG's network, and the
+# rehearsal asserts exactly what the installer reports (it passes unconfined in a container without bubblewrap). The
+# mutation gates run plain pytest in a scratch copy of the checkout.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-frontier-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build_frontier:
+    name: "Build frontier: predicate and rehearsal-body mutations, supervised rehearsals (never skipped)"
+    runs-on: ubuntu-latest
+    # Bounds a hung run, not a speed target: locally the path-predicate gate took about 80 s, this unit's gate a few
+    # minutes and the two rehearsal modules about 90 s.
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-dev.txt -r requirements-cognition.txt
+      - name: Path-predicate mutation gate (every listed weakening must be caught)
+        run: python scripts/ci/check_path_predicate_mutants.py
+      - name: Fail-closed build instrument mutations (supervisor requirement, rehearsal bodies)
+        run: python scripts/ci/check_fail_closed_build_instrument_mutants.py
+      - name: Supervised rehearsals with supervisord required (a missing supervisor fails, never skips)
+        env:
+          GREG_REQUIRE_SUPERVISOR: "1"
+        run: python -m pytest -q -rs tests/integration/test_greg_chromebook_rehearsal.py tests/integration/test_greg_vepmc_path.py

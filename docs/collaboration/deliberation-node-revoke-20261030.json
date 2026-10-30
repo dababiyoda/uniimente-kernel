@@ -1,0 +1,532 @@
+{
+  "decision_id": "NODE-REVOKE-20261030",
+  "title": "Let the founder revoke an enrolled compute node and enroll it again later, keep a node's key apart from every key that speaks for the founder, a device or this body, and void nodes on restore",
+  "problem": "Directive section 49 says every physical node gets its own identity, bounded capability, explicit enrollment, scoped authority and revocation. Before this unit a node was only a node.enrolled ledger row. Measured by the unit's test file on the base 66f9d5ac (29 failed, 2 passed): NODE_REVOKE was an unknown command kind; a second NODE_ENROLL for the same node_id was refused by a fact-identity EventError, so a node_id could never be enrolled again; the founder's key, a device key and this body's own identity key were accepted as node keys; a 129-character node_id was accepted; a device delegation record naming NODE_ENROLL verified for it; `greg node` did not exist. Review of the first version found two more: a body restored from a backup listed a node revoked after that backup as ACTIVE, and a founder-signed light cone with budget_usd 10**400 raised OverflowError past every ingest path, so the running body stopped on every restart.",
+  "founder_intent_refs": [
+    "INTENT-20261028-OPUS-MAXIMUS-REISSUE (directive section 49 MULTIPLE BODIES: 'Every physical node gets: its own identity; bounded capability; explicit enrollment; scoped authority; revocation.'; also sections 3 ONE GREG, 4 ALFONSO REMAINS ROOT AUTHORITY, 48 and 58 INFRASTRUCTURE SCALING CLOSURE ('Measured compute bottleneck -> alternatives -> economics -> founder authorization -> enrollment -> workload -> measured improvement'), 71 and 72, the sections the WU-06 unit spec serves; recorded on #227)",
+    "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN (build the whole directive first; the founder-device run comes after, as its acceptance; recorded on #227)",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-20261019-UPWARD-ASCENT (existing device-delegation, fact-identity, light-cone and fail-closed restore mechanisms are reused for nodes; this is integration of existing mechanisms, not an invention claim)"
+  ],
+  "baseline": "PR base e78e5ef0 (#238's head). The unit was built on 66f9d5ac; e78e5ef0 adds only #238's deliberation JSON and a 4-line host-test change, and was merged into the unit as 927f0704 with no conflicts. At the base: greg/founder.py lists NODE_ENROLL but no NODE_REVOKE, and FounderVerifier accepts a device for any kind its delegation record lists; greg/compute.py enroll_node checks the key's length, parses the light cone and records one node.enrolled fact keyed by node_id; nothing in greg/ reads node.enrolled; there is no node CLI; greg/recovery.py restore_body voids device delegations and approvals but not nodes; LightCone.from_dict calls float() on budget_usd without catching OverflowError.",
+  "alternatives": [
+    {
+      "name": "Proposed: founder-only NODE_REVOKE, revocable and expiring enrollments with key separation, restore voiding and a node CLI",
+      "description": "NODE_REVOKE is a founder-key command kind, and the verifier refuses a device any kind outside DEVICE_KINDS whatever its delegation record lists. enroll_node refuses an active node_id, a node_id outside 1..128 characters or equal to this body's id, any key ever enrolled for the founder or delegated to a device, this body's own identity key and another active node's key; it accepts an optional expires_at and records each enrollment as its own fact [node_id, command_digest]. revoke_node, node_states, active_nodes, unrevoked_nodes and void_for_restore are new in greg/compute.py; greg/body.py gains one 2-line dispatch branch; restore_body voids every unrevoked enrollment; LightCone.from_dict turns an out-of-range budget into ScopeError; `greg node enroll|revoke|list`.",
+      "advantages": [
+        "Section 49's revocation exists: one founder-signed command ends a node's enrollment, and the same node_id can be enrolled again afterwards",
+        "A node key can never be a key that has spoken for the founder (rotated-out keys included), a device (revoked delegations included) or this body",
+        "A restore cannot bring back a node the founder revoked after the backup",
+        "One founder-signed command with an out-of-range budget no longer stops the body, for every light cone (mission, appraisal, Goal Gravity, node)",
+        "Reuses existing mechanisms only; greg/body.py changes by 2 lines"
+      ],
+      "disadvantages": [
+        "Admission only: nothing yet leases work to a node or verifies anything a node signs, so no capacity is added",
+        "enroll_node judges expires_at by this host's clock, because the NODE_ENROLL dispatch line passes no clock and greg/body.py is held for #221",
+        "Key separation is one-way: DEVICE_ENROLL and ROTATE_FOUNDER_KEY do not yet refuse an active node's key",
+        "After a restore the founder must enroll each still-trusted node again"
+      ],
+      "revival_evidence": "Retained as proposed; revisit when part a2 (node receipts) is designed or #221 merges."
+    },
+    {
+      "name": "Simplest viable: NODE_REVOKE alone",
+      "description": "Add NODE_REVOKE to COMMAND_KINDS and record node.revoked; leave enrollment, the fact identity, restore and the CLI unchanged.",
+      "advantages": [
+        "Smallest diff; closes the literal 'revocation' word of section 49"
+      ],
+      "disadvantages": [
+        "A revoked node_id still could never be enrolled again, because the fact identity is keyed by node_id alone",
+        "The founder's key, a device key or this body's key could still be enrolled as a node key",
+        "A restore would bring back a revoked node",
+        "No way for the founder to issue or read it without hand-writing an envelope"
+      ],
+      "revival_evidence": "None expected; the measured base defects each defeat revocation in a real sequence (revoke then re-enrol; restore after revoke)."
+    },
+    {
+      "name": "Strongest competing design: the whole WU-06 unit now (a and b)",
+      "description": "`greg node serve` with its own key and inbox, a `node.run` capability that leases in-cone actions, Ed25519 node receipts verified against the enrolled key, consumed nonces, lease expiry and revocation, a two-process test on this host, and the N8 predicate infrastructure_scaling_closed in greg/path.py.",
+      "advantages": [
+        "Would make a node do work and give N8 a predicate",
+        "Exercises revocation against a real consumer (receipts)"
+      ],
+      "disadvantages": [
+        "Two processes on one 4-core host add no capacity, so a 'compute.improvement VERIFIED with the leased workload' would be parallelism on the same hardware, not infrastructure scaling (both unit-spec critiques)",
+        "Consequence laundering: node.run's manifest class would be judged, not the leased inner action's, unless each inner action is admitted as itself",
+        "A third inbox beside greg/remote.py, which #221 edits",
+        "Depends on WU-10, WU-09 and MU-C (method gate, earned autonomy, credential handles)"
+      ],
+      "revival_evidence": "Part a2 as an EXPERIMENT after #221 merges (reuse its inbox), with WU-10, WU-09 and MU-C in place; part b with a predicate that requires a different machine identity and reports 'same_host: no capacity added' otherwise."
+    },
+    {
+      "name": "Staged or reversible experiment: part a2 leasing restricted to read_only and internal_write",
+      "description": "Lease only read_only and internal_write inner actions, each admitted by AuthorityOffice and the Gate as itself with node.run's class equal to the inner class; check node receipts against active_nodes (a restore's revocations included).",
+      "advantages": [
+        "Bounded consequence class; tests revocation against a real consumer"
+      ],
+      "disadvantages": [
+        "Still adds no capacity on one host",
+        "Needs this unit's revocation and two-way key separation first"
+      ],
+      "revival_evidence": "This unit landed, #221 merged, and two-way key separation in place."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "A node enrolled once is admitted for good: a compromised node key cannot be revoked, its node_id can never be enrolled again, the founder's own key or the body's key can be enrolled as a machine identity, and any later receipt check (part a2) would rest on enrollments that no command can end. Section 49's revocation stays unmet.",
+    "advantages": [
+      "No change to greg/founder.py, greg/compute.py, greg/recovery.py or greg/lightcone.py",
+      "Nothing to review while nothing consumes node enrollments"
+    ],
+    "disadvantages": [
+      "Section 49 revocation unmet, and part a2 would have nothing to check receipts against",
+      "A founder-signed cone with an out-of-range budget keeps crash-looping the body (pre-existing, made reachable by any new node CLI)"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Section 49 names revocation as something every physical node gets, and it was missing. This closes it for admission with the founder key as the only signer, and it keeps the destination: the lease fabric, node-signed receipts and the N8 predicate stay open as parts a2 and b, not dropped.",
+      "material_concerns": [
+        "Must not be presented as infrastructure scaling (section 58) or as N8: no node does work and no capacity is added",
+        "VEPMC is 0 and unchanged; the founder-device run is the later acceptance under INTENT-20261030-BUILD-BEFORE-DEVICE-RUN",
+        "All keys used are test keys; no second machine was involved"
+      ],
+      "evidence_refs": [
+        "docs/evidence/node-revoke-2026-10-30/README.md",
+        "docs/opus-maximus/ONE_GREG_SYSTEM_SPEC.md (NODE_REVOKE row)"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Existing mechanisms only: FounderVerifier and the DEVICE_REVOKE pattern, journal fact identities, LightCone, and restore_body's fail-closed voiding. No new store, inbox, scheduler or authority path. greg/body.py gains one 2-line dispatch branch beside NODE_ENROLL. node_states is the one read-only fold that enrollment, revocation, restore and `greg node list` all read.",
+      "material_concerns": [
+        "enroll_node uses this host's clock because the NODE_ENROLL dispatch passes none; revoke_node and the restore get the body's clock",
+        "This body's own key is recognised through body_id, a 64-bit digest of the key read from founder.enrolled and body.booted, not the raw key, because enroll_node is not handed the body config",
+        "greg/recovery.py's import lines conflict textually with #211 (bounded body memory): both sides edit adjacent import lines; the resolution keeps both",
+        "Stacked on #238; lands in #196 through #238"
+      ],
+      "evidence_refs": [
+        "greg/compute.py (node_states, enroll_node, revoke_node, void_for_restore)",
+        "greg/recovery.py",
+        "greg/body.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Two adversarial reviews of the round-1 head e19c172c were done by separate agents of this same session, one attack and one fidelity. They are not independent sessions and not humans. The attack review confirmed F1 (restore resurrects a revoked node), F2 (body's own key accepted), F3 (cone overflow crashes the body), F4 (one-way key separation) and F5 (host clock); the fidelity review confirmed FID-1 (README said 'crashed'), FID-2 (node_id upper bound untested), FID-3 (`node list` read-only untested) and FID-4 (expiry boundary untested). Round 2 reproduced and fixed F1, F2, F3, FID-1, FID-2 and FID-3. F4 and F5 stay as disclosed limitations; FID-4 was not addressed. The attack review refuted replaying an old NODE_ENROLL after a revoke and re-applying a stale envelope after a crash window: both leave the node REVOKED.",
+      "material_concerns": [
+        "Key separation is one-way: after NODE_ENROLL with key K, a founder-signed DEVICE_ENROLL with K is accepted and the node stays ACTIVE (F4)",
+        "With the body clock a day behind the host, an enrollment valid by the body clock is refused (F5)",
+        "FID-4: changing the EXPIRED boundary from >= to > survives every test",
+        "Nothing consumes active_nodes yet, so revocation is correct state, not yet a stopped node"
+      ],
+      "evidence_refs": [
+        "docs/evidence/node-revoke-2026-10-30/README.md (Review findings, round 2)",
+        "tests/unit/test_greg_node_revoke.py",
+        "scripts/ci/check_node_revoke_mutants.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "The founder operates nodes with `greg node enroll`, `greg node revoke` (signed like `greg device revoke`) and `greg node list`, which reads through observe() and works while a body holds the writer lock. A refused enrollment goes to rejected/ and the body keeps running. Reversible by reverting the branch; revocations already written stay on the append-only ledger.",
+      "material_concerns": [
+        "After a restore every node is voided and must be enrolled again; the restore report says so under needs_from_founder",
+        "A node whose light-cone horizon has passed still lists as ACTIVE unless its expires_at passed; LightCone.admits refuses its actions",
+        "The mutant gate is not wired into canonical-ci.yml; the #196 integrator must add it",
+        "The full suite was not run locally; Canonical CI on this head has not reported"
+      ],
+      "evidence_refs": [
+        "greg/cli.py (node enroll, revoke, list)",
+        "docs/evidence/node-revoke-2026-10-30/README.md (round-2 CLI session)"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Nothing is deleted or rewritten: revocations and restore voids are appended records, and the round-1 wording error ('crashed') is corrected and recorded, not erased. No personal data is involved. Claims stay at INTEGRATION-TESTED plus two LOCAL-REAL CLI sessions with test keys. Whether a restore should void every node, and whether an elapsed cone horizon should list a node as EXPIRED, are the founder's choices.",
+      "material_concerns": [
+        "Restore voiding adds founder work after every restore (one NODE_ENROLL per trusted node)",
+        "`greg node list` can show ACTIVE for a node whose cone no longer admits any action, which may mislead the founder",
+        "The CLI session outputs live in the session scratchpad and are not committed; the README rows record them"
+      ],
+      "evidence_refs": [
+        "docs/evidence/node-revoke-2026-10-30/README.md (Limitations, Reality level)"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The final test file fails on the base for the defects it targets",
+      "tier": "unit_test",
+      "reference": "docs/evidence/node-revoke-2026-10-30/README.md (fail-before at 66f9d5ac); tests/unit/test_greg_node_revoke.py",
+      "finding": "29 failed, 2 passed at 66f9d5ac, reproduced by the final verifier from a tree export; the 2 passes are malformed keys decoding to 31 bytes, which the base already refused by length"
+    },
+    {
+      "claim": "The round-2 regression tests fail on the round-1 head",
+      "tier": "unit_test",
+      "reference": "docs/evidence/node-revoke-2026-10-30/README.md (fail-before at e19c172c)",
+      "finding": "3 failed, 28 passed at e19c172c: the own-identity-key test (DID NOT RAISE), the restore test (KeyError 'node_enrollments') and the cone-overflow test (OverflowError)"
+    },
+    {
+      "claim": "The unit's tests pass and every safeguard is pinned by a caught mutant",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_greg_node_revoke.py; scripts/ci/check_node_revoke_mutants.py",
+      "finding": "31 passed; 35/35 mutants caught (founder.py 2, body.py 1, recovery.py 2, lightcone.py 1, cli.py 1, compute.py 28), unmutated run passes, exit 0, at 6e0d3349 and again at the merged head 927f0704"
+    },
+    {
+      "claim": "Existing suites that import the changed modules still pass at the unit head",
+      "tier": "unit_test",
+      "reference": "final verification at 6e0d3349: 60 test files importing greg.founder, greg.compute, greg.recovery, greg.lightcone or greg.cli, plus test_developmental_inheritance.py and test_greg_platform.py",
+      "finding": "928 passed, 27 skipped, 0 failed (955 collected); skips are host-dependent (no Chromium, no bubblewrap or Landlock ABI 3, optional packages, recovery scenarios marked NOT RUN)"
+    },
+    {
+      "claim": "Revocation, refusal and restore voiding work through real CLI processes and the body's own run loop",
+      "tier": "sandbox_execution",
+      "reference": "docs/evidence/node-revoke-2026-10-30/README.md (round-1 and round-2 CLI sessions)",
+      "finding": "body-2 ACTIVE then REVOKED; the body's own key and a 10**400 budget refused with the body running on and the inbox empty; a restore from a seed taken while body-2 was ACTIVE reported voided ['body-2'] and 'NODE_ENROLL again for each node still trusted', and the restored body lists body-2 REVOKED by the restore (test key, scratch home)"
+    },
+    {
+      "claim": "Merging #238's update into the unit changed nothing the unit depends on",
+      "tier": "unit_test",
+      "reference": "merge commit 927f0704 (parents 6e0d3349 and e78e5ef0)",
+      "finding": "No conflicts; foundry/owned-source.json already current. test_greg_node_revoke 31, test_greg_compute_closure 48, test_greg_packaging 3, test_greg_platform 19, test_developmental_inheritance 23 (124 passed); node-revoke mutants 35/35, compute-closure mutants 51/51; check_authority_singleton and check_schema_refs pass"
+    },
+    {
+      "claim": "The unit merges cleanly into #196's current head and most open PRs that touch its files",
+      "tier": "other",
+      "reference": "git merge-tree --write-tree of 927f0704 with #196 638457a4, #221 9571ac90, #235 ac5ff82f and #237 91f9aeff",
+      "finding": "All clean. #196's head 638457a4 already contains #234 (drill() in greg/recovery.py) and #236 (greg/cli.py)"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Key separation is one-way",
+      "tier": "unit_test",
+      "reference": "attack review F4 probe (session scratchpad, not committed)",
+      "finding": "NODE_ENROLL with key K, then founder-signed DEVICE_ENROLL with K: APPLIED, node still ACTIVE. Not fixed; the reverse checks belong in greg/body.py branches #221 touches"
+    },
+    {
+      "claim": "Enrollment time is this host's clock, not the body's",
+      "tier": "unit_test",
+      "reference": "attack review F5 probe (session scratchpad, not committed)",
+      "finding": "With the body clock a day behind the host, an expires_at 12 h ahead of the body clock was refused. Not fixed; needs now=now on the NODE_ENROLL dispatch line after #221"
+    },
+    {
+      "claim": "The EXPIRED boundary is not pinned",
+      "tier": "unit_test",
+      "reference": "fidelity review FID-4 (extra_mutants.py, session scratchpad)",
+      "finding": "Changing 'now >= instant(expires)' to '>' survives every test; not addressed in round 2"
+    },
+    {
+      "claim": "greg/recovery.py conflicts textually with #211",
+      "tier": "other",
+      "reference": "git merge-tree --write-tree of 927f0704 with #211 head d0049e81",
+      "finding": "CONFLICT in greg/recovery.py import lines: #211 adds refuse_shared_home to the greg.body import, this unit adds 'from greg import compute' above it; the union of both lines resolves it"
+    },
+    {
+      "claim": "The wider parallel regression net was not green on the merged tree",
+      "tier": "sandbox_execution",
+      "reference": "integration step for 927f0704 (logs in the session scratchpad, not committed)",
+      "finding": "63 related files, pytest -n 3 or -n 2, three runs: 1, 3 and 1 failures, a different set each time (a goal-gravity process test with fixed sleep windows; cognition tests abstaining with TIMEOUT). All pass serially on the merged tree. On #238's head alone, 6-way concurrent runs failed 12 of 12 for the same tests with the same errors. The merge changed no code"
+    },
+    {
+      "claim": "The full suite and Canonical CI have not run on this head",
+      "tier": "other",
+      "reference": "final verification and integration records",
+      "finding": "Not run locally on this shared 4-core host; Canonical CI is triggered by opening the PR"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "The founder can end a node's enrollment with one founder-signed command and enroll the same node_id again later; while enrolled, a node's key is never a key that has spoken for the founder, a device or this body; a restored body never revives a node revoked after its backup; and `greg node list` reports each node as ACTIVE, REVOKED or EXPIRED without writing.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Revocation exists, founder key only, and a node_id can be enrolled again after it",
+        "amplified_value": "Part a2 can check every node receipt against active_nodes, so one signed command stops a compromised node; section 49's lifecycle (enroll, revoke, re-enroll, expire) is complete at the admission layer"
+      },
+      {
+        "id": "A2",
+        "statement": "A node key can never be a founder, device or body identity key, nor another active node's key",
+        "amplified_value": "A node can never become a second founder or impersonate this body; part a2's receipts can never be confused with founder commands. Reverses into a liability only while the reverse direction stays unchecked (D2)"
+      },
+      {
+        "id": "A3",
+        "statement": "A restore voids nodes exactly as it voids devices",
+        "amplified_value": "One fail-closed recovery story for every delegated identity; a revocation the original applied after the backup cannot be lost"
+      },
+      {
+        "id": "A4",
+        "statement": "An out-of-range light-cone budget is a refusal for every cone",
+        "amplified_value": "Fixes the class, not the instance: mission, appraisal, Goal Gravity and node cones share LightCone.from_dict, so no founder-signed command can crash-loop the body this way"
+      },
+      {
+        "id": "A5",
+        "statement": "Each enrollment is its own fact and the same signed command replays to its retained record",
+        "amplified_value": "Crash replay after power loss changes nothing (checked end to end through Body.apply by the fidelity review); an enrollment written by the base code still reads as ACTIVE and can be revoked and re-enrolled"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "enroll_node judges expires_at, and stamps 'at', by this host's clock",
+        "severity": "medium",
+        "response_type": "governance",
+        "redesigned_response": "revoke_node and the restore get the body's clock; the enrollment limit is stated in code and README; the one-line fix (now=now on the NODE_ENROLL dispatch) is handed to the greg/body.py owner after #221"
+      },
+      {
+        "id": "D2",
+        "statement": "Key separation is one-way: DEVICE_ENROLL and ROTATE_FOUNDER_KEY do not refuse an active node's key",
+        "severity": "medium",
+        "response_type": "protective",
+        "redesigned_response": "enroll_node refuses every key that ever spoke for the founder (rotated-out keys too) or a device (revoked too) and this body's key; the reverse needs greg/body.py branches #221 touches; today only a founder-signed command can create the overlap"
+      },
+      {
+        "id": "D3",
+        "statement": "This body's own key is recognised by its 64-bit body_id digest, not the raw key",
+        "severity": "low",
+        "response_type": "evidence",
+        "redesigned_response": "A digest collision gives a false refusal, never an acceptance; the test reads the real key from body.json, so a change to how init_body derives body_id fails it"
+      },
+      {
+        "id": "D4",
+        "statement": "After a restore the founder must enroll every still-trusted node again",
+        "severity": "low",
+        "response_type": "governance",
+        "redesigned_response": "Listed in the restore report's needs_from_founder, the same burden devices already carry"
+      },
+      {
+        "id": "D5",
+        "statement": "Admission, not activation: no node does work, no capacity is added, N8 stays unmet",
+        "severity": "medium",
+        "response_type": "learning",
+        "redesigned_response": "Parts a2 and b are named with the unit-spec critiques' conditions: inner actions admitted as themselves, read_only/internal_write only at first, and a predicate that requires a different machine identity"
+      },
+      {
+        "id": "D6",
+        "statement": "An elapsed light-cone horizon does not make a node EXPIRED in node_states",
+        "severity": "low",
+        "response_type": "evidence",
+        "redesigned_response": "LightCone.admits refuses every action past the horizon; the display gap is stated and left to a founder decision"
+      },
+      {
+        "id": "D7",
+        "statement": "greg/recovery.py's import lines conflict textually with #211",
+        "severity": "low",
+        "response_type": "modularity",
+        "redesigned_response": "The conflict is two adjacent import lines; keep both. The unit's other recovery.py hunks are separate lines, and the merge into #196's head (which holds #234's drill()) is clean"
+      }
+    ],
+    "comparisons": {
+      "baseline": "A node is one node.enrolled row: never revocable, never re-enrollable, any founder, device or body key accepted, not voided on restore",
+      "do_nothing": "Section 49 revocation unmet; part a2 would have nothing to check receipts against; a cone overflow keeps crash-looping the body",
+      "simplest_viable_alternative": "NODE_REVOKE alone: still no re-enrollment (fact identity keyed by node_id), no key separation, and a restore revives revoked nodes",
+      "strongest_competing_architecture": "Whole WU-06 now (lease fabric, node receipts, two-process test, N8): adds no capacity on one host, risks consequence laundering and a third inbox, and depends on WU-10, WU-09 and MU-C",
+      "reversible_experiment": "This unit: revert the branch; recorded revocations stay on the append-only ledger and the old code ignores them; a2 follows as an EXPERIMENT"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Whole WU-06 (parts a and b) in one change",
+        "rejection_reason": "Same-host leasing proves no capacity; both unit-spec critiques asked for a split with a1 first",
+        "revival_evidence": "#221 merged, WU-10/WU-09/MU-C in place, and a second machine identity available for N8"
+      },
+      {
+        "name": "Make transport-layer key expiry (Tailscale, WireGuard) or SPIFFE/SPIRE the node identity and revocation authority",
+        "rejection_reason": "It would put node authority outside the founder-signed ledger, a second authority path; none is installed and no node is off-host yet",
+        "revival_evidence": "The first off-host node: the transport then mirrors the ledger's active_nodes, never replaces it"
+      },
+      {
+        "name": "Let a delegated device (the founder's phone) sign NODE_REVOKE as a narrowing control, like BODY_STOP",
+        "rejection_reason": "The unit spec asks for founder key only, and DEVICE_KINDS is kept as it was; widening it is the founder's call",
+        "revival_evidence": "A founder ruling that node revocation is an emergency control a phone should hold"
+      },
+      {
+        "name": "Reimplement greg/remote.py's inbox in a new greg/nodes.py now",
+        "rejection_reason": "A third inbox beside the one #221 edits, with no owner record",
+        "revival_evidence": "#221 merged; reuse its inbox for part a2"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Two adversarial reviews of the round-1 head e19c172c, by separate agents of this same session (attack and fidelity), re-attacked the design for resurrection through restore, impersonation by keys the body already holds, crash paths reachable from the new CLI, replay and crash-window races, clock skew, untested safeguards and overclaimed wording. The integration step then merged #238's update and probed the merged tree. The underlying effect was attacked separately: does revocation stop anything today?",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "fragility",
+        "statement": "F1: a body restored from a backup listed a node revoked after that backup as ACTIVE",
+        "strengthening_response": "restore_body voids every unrevoked enrollment, expired ones included so a clock set back revives none, records each as node.revoked by: restore, lists them under voided.node_enrollments and asks for NODE_ENROLL again; regression test and 4 mutants"
+      },
+      {
+        "id": "W2",
+        "category": "gaming",
+        "statement": "F2: this body's own identity key could be enrolled as a node key, so the body could later sign 'node receipts' for itself",
+        "strengthening_response": "enroll_node refuses that key (through body_id) and a node_id equal to this body's id; regression test and 2 mutants"
+      },
+      {
+        "id": "W3",
+        "category": "fragility",
+        "statement": "F3: a founder-signed light cone with budget_usd 10**400 raised OverflowError past every ingest path and stopped the body on every restart (pre-existing, newly reachable through `greg node enroll --cone`)",
+        "strengthening_response": "LightCone.from_dict refuses it with ScopeError for every cone; both NODE_ENROLL and MISSION go to rejected/ and the body runs on; regression test and 1 mutant"
+      },
+      {
+        "id": "W4",
+        "category": "comprehensibility",
+        "statement": "FID-1: the round-1 README said re-enrollment 'crashed'; it was a recorded refusal",
+        "strengthening_response": "README corrected; the base failure messages were re-checked by the final verifier"
+      },
+      {
+        "id": "W5",
+        "category": "overfit",
+        "statement": "FID-2 and FID-3: the node_id upper bound and `greg node list` being read-only had no test; FID-4: the EXPIRED boundary has none",
+        "strengthening_response": "129- and 128-character cases and a list run under a held Body, with 3 mutants that survived round 1's tests and are caught now. FID-4 not addressed; recorded as a residual risk"
+      },
+      {
+        "id": "W6",
+        "category": "dependency",
+        "statement": "The unit is stacked on #238 and its greg/recovery.py import lines conflict with #211",
+        "strengthening_response": "#238's update merged as 927f0704 with no conflicts and re-tested; merge-tree with #196's head 638457a4, #221, #235 and #237 is clean; the #211 conflict is named for the integrator with its resolution"
+      },
+      {
+        "id": "W7",
+        "category": "other",
+        "statement": "Effect attack: nothing consumes active_nodes outside enrollment, restore and the list, so a revoked node is correct state, not a stopped machine",
+        "strengthening_response": "The claim is limited to admission; part a2 must check receipts against active_nodes, a restore's revocations included, and that is a kill criterion for it"
+      },
+      {
+        "id": "W8",
+        "category": "fragility",
+        "statement": "The wider parallel regression net on the merged tree failed 1 to 3 timing tests per run",
+        "strengthening_response": "Each passes serially on the merged tree; the same tests fail 12 of 12 on #238's head alone under the same concurrency; the merge changed no code, so they are not this unit's and were not changed"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "deferred",
+        "rationale": "The fix is one line in greg/body.py, which #221 holds; the limit is stated and revoke_node and the restore already use the body clock",
+        "owner": "greg/body.py owner (#221)",
+        "review_trigger": "#221 merges"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "deferred",
+        "rationale": "Only a founder-signed DEVICE_ENROLL or ROTATE_FOUNDER_KEY can create the overlap, and nothing yet trusts a node key; the reverse checks need greg/body.py",
+        "owner": "greg/body.py owner (#221); part a2 must not start before it",
+        "review_trigger": "#221 merges, or part a2 is designed"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "False refusals only, never a false acceptance; a derivation change fails the test",
+        "owner": "greg/compute.py maintainer",
+        "review_trigger": "#221 merges and enroll_node can be handed the raw device_public_key"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "accepted",
+        "rationale": "Fail-closed on authority after a restore is the existing rule for devices; the burden is one signed command per trusted node",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "The founder's first real restore"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "deferred",
+        "rationale": "Parts a2 and b need WU-10, WU-09, MU-C, #221 and a second machine identity",
+        "owner": "WU-06 a2/b builder; #196 integrator for sequencing",
+        "review_trigger": "#221 merges and WU-10, WU-09 and MU-C land"
+      },
+      {
+        "disadvantage_id": "D6",
+        "outcome": "deferred",
+        "rationale": "Display only; the cone already refuses actions; whether to fold the horizon is the founder's choice",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "Founder review of this draft"
+      },
+      {
+        "disadvantage_id": "D7",
+        "outcome": "accepted",
+        "rationale": "A two-line textual conflict with a known resolution; whichever of #211 and this unit lands second resolves it",
+        "owner": "#196 integrator",
+        "review_trigger": "Intake of #211 or of this unit (through #238) into #196"
+      }
+    ],
+    "final_design": "Founder-only NODE_REVOKE; the verifier refuses a device any kind outside DEVICE_KINDS; enroll_node with node_id bounds, an optional expiry, per-enrollment facts, idempotent replay and refusal of founder, device, body and other active node keys; revoke_node; the read-only node_states fold; restore_body voiding every unrevoked enrollment; LightCone.from_dict refusing an out-of-range budget; `greg node enroll|revoke|list`; 31 tests and 35 mutants.",
+    "residual_risks": [
+      {
+        "risk": "A founder-signed DEVICE_ENROLL or ROTATE_FOUNDER_KEY can reuse an active node's key (F4)",
+        "mitigation": "Disclosed; nothing trusts a node key yet; part a2 must not start before two-way separation",
+        "owner": "greg/body.py owner (#221)",
+        "review_trigger": "#221 merges or part a2 is designed"
+      },
+      {
+        "risk": "Enrollment expiry judged by the host clock (F5)",
+        "mitigation": "Disclosed; one-line follow-up named",
+        "owner": "greg/body.py owner (#221)",
+        "review_trigger": "#221 merges"
+      },
+      {
+        "risk": "The EXPIRED boundary (>= vs >) is not pinned by any test (FID-4)",
+        "mitigation": "Recorded; a one-assertion test and one mutant would pin it",
+        "owner": "greg/compute.py maintainer",
+        "review_trigger": "Next change to node_states"
+      },
+      {
+        "risk": "Not run in the full suite or in Canonical CI at this head; the mutant gate is not wired into CI",
+        "mitigation": "Canonical CI is triggered by opening the PR; the integrator adds the mutant gate",
+        "owner": "#196 integrator",
+        "review_trigger": "Canonical CI reports on this head"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded with thresholds; neither entry blocks this draft. The first blocks part a2; the second asks for a founder ruling before adoption.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not build part a2 (node-signed receipts) until DEVICE_ENROLL and ROTATE_FOUNDER_KEY refuse an active node's key and enroll_node uses the body's clock.",
+        "rationale": "Once a receipt check trusts active_nodes, a key shared between a node and a device or the founder would let one key speak in two roles.",
+        "evidence_threshold": "Tests showing DEVICE_ENROLL and ROTATE_FOUNDER_KEY refused with an active node's key, and enrollment judged by a test clock",
+        "owner": "WU-06 a2 builder",
+        "review_trigger": "Design of part a2"
+      },
+      {
+        "role": "Evidence and Welfare Guardian",
+        "position": "`greg node list` should not show ACTIVE for a node whose light-cone horizon has passed, or should say that its cone admits nothing.",
+        "rationale": "The founder reads that list to decide which machines are trusted; ACTIVE for a node that can do nothing misinforms.",
+        "evidence_threshold": "A founder ruling on folding the horizon into node state",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "Founder review of this draft"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "Alfonso Lopez (adoption, any merge, restore voiding of nodes, the horizon display); #196 integrator for intake"
+  },
+  "migration_plan": "None required. An enrollment written by the base code (fact key node_id, no expires_at) reads as ACTIVE under the new fold, and can be revoked and then enrolled again without a fact collision (checked by the fidelity review). New records are additive; the old code ignores node.revoked.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert this branch's commits on the child branch, or decline intake into #196 through #238",
+      "Revocations and restore voids already written stay on the append-only ledger; the reverted code ignores them, so a revoked node reads as enrolled again until a re-applied change"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "A device key, or a node's own key, can sign NODE_ENROLL or NODE_REVOKE",
+    "A key enrolled for the founder, delegated to a device, or held by this body is accepted as a node key",
+    "A restored body lists as ACTIVE a node that was not enrolled after the restore",
+    "A refused node command stops the running body",
+    "Part a2 checks a receipt against anything other than active_nodes, or accepts one from a revoked or restore-voided node"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez decides adoption, restore voiding of nodes and the horizon display; the #196 integrator decides intake (through #238), wires scripts/ci/check_node_revoke_mutants.py into canonical-ci.yml and resolves the greg/recovery.py import conflict with #211; session_01Kucyfm6YBHMTjaiC1M9hqD owns the reversible draft. Four roles recommend RETAIN; the Evidence and Welfare Guardian asks for the founder's decision.",
+  "review_trigger": "Canonical CI on the PR head; #221 merging (body clock and two-way key separation); intake of #211 or #238 into #196; design of WU-06 part a2; the founder's ruling on the horizon display"
+}

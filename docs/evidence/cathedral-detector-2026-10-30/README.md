@@ -126,7 +126,7 @@ Python 3.11 venv (`/home/user/venv311`). Every pytest run used
 | `scripts/ci/check_authority_singleton.py` | exactly one source of authority |
 | `python scripts/ci/check_cathedral_detector_mutants.py` (scratch copy, `python -B`, bytecode purged before each mutant) | 108/108 caught, unmutated PASS, exit 0 (run on an exact copy of `16801b8d`) |
 | `python -m acceptance.claims` on this tree | PASS: 5064 claims in 503 files, 0 violations, 1 allowlisted (the cortex example), 0 unreadable |
-| `python -m greg --home <undesignated test body> cathedral --body` on this tree | INSUFFICIENT_HISTORY (shallow clone, 1491 commits reachable; and no founder designation). Nothing in the body changed. |
+| `python -m greg --home <undesignated test body> cathedral --body` on this tree | INSUFFICIENT_HISTORY (shallow clone, 1495 commits reachable at `ac8c23df`; and no founder designation). Nothing in the body changed. |
 
 **Mutant history.**
 

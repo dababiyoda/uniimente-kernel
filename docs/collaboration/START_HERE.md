@@ -283,6 +283,10 @@ https://code.claude.com/docs/en/memory . This task does not modify global hooks.
 
 # Enrolled-client gate (2026-10-30 extension)
 
+For independent cloud containers, use the optional
+[shared GitHub claim registry](SHARED-REGISTRY-2026-10-30.md). It extends this gate
+with conditional shared admission; actual client enrollment is still required.
+
 For clients enrolled by this workspace's operator, covered write tools require a
 current claim before execution. Follow [mandatory enrollment and installation](MANDATORY-GATE-2026-10-30.md).
 The SQLite registry coordinates clients using the same local DB; remote clients

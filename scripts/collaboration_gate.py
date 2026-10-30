@@ -119,13 +119,21 @@ def load_json(path):
 
 
 class Gate:
-    def __init__(self, workspace, db=None):
+    def __init__(self, workspace, db=None, remote=None):
         self.workspace = no_symlinks(workspace).resolve()
         require(self.workspace.is_dir(), 'workspace must exist')
         raw_db = Path(db or self.workspace / '.uniimente/collaboration.sqlite')
         require('..' not in raw_db.parts, 'database traversal refused')
         self.db = no_symlinks(raw_db).resolve()
         require(self.db.is_relative_to(self.workspace), 'database must be under shared workspace')
+        self.remote = remote
+
+    def canonical_repo(self, manifest):
+        """Resolve one GitHub identity across independent clones; reject ambiguity."""
+        origin = git(manifest['repository'], 'remote', 'get-url', 'origin')
+        match = re.fullmatch(r'(?:https://github\.com/|git@github\.com:)([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?)(?:\.git)?/?', origin)
+        require(match is not None, 'remote coordination requires an unambiguous github.com origin')
+        return match.group(1).lower()
 
     def connection(self, create=False):
         no_symlinks(self.db)
@@ -187,6 +195,10 @@ class Gate:
 
     def enroll(self, manifest):
         manifest = self.validate(manifest)
+        if self.remote:
+            # Reserve centrally first. On an uncertain/local failure retain the
+            # exclusion for explicit reconciliation rather than silently freeing it.
+            self.remote.reserve(manifest, self.canonical_repo(manifest))
         db = self.connection(create=True)
         try:
             sid = manifest['session_id']
@@ -218,12 +230,19 @@ class Gate:
     def check(self, session):
         db = self.connection()
         try:
-            return self.active(db, session)
+            manifest = self.active(db, session)
         finally:
             db.close()
+        if self.remote:
+            self.remote.check(manifest, self.canonical_repo(manifest))
+        return manifest
 
     def release(self, session):
         identity(session)
+        if self.remote:
+            self.remote.release(session)
+            if not self.db.exists():
+                return
         db = self.connection()
         try:
             require(db.execute('SELECT 1 FROM claims WHERE session=? AND state!=?',
@@ -238,6 +257,9 @@ class Gate:
         identity(receiver)
         require(receiver != session, 'self handoff refused')
         url(reference)
+        if self.remote:
+            self.check(session)
+            self.remote.handoff(session, receiver, reference)
         db = self.connection()
         try:
             self.active(db, session)
@@ -251,6 +273,8 @@ class Gate:
     def finish(self, session):
         """Release normal completed work without discarding a pending transfer."""
         identity(session)
+        if self.remote:
+            self.remote.finish(session)
         if not self.db.exists():
             return
         db = self.connection()
@@ -263,10 +287,29 @@ class Gate:
         finally:
             db.close()
 
-    def accept(self, session, sender, reference):
+    def accept(self, session, sender, reference, manifest=None):
         identity(session)
         require(session != sender, 'self acceptance refused')
         url(reference)
+        if self.remote:
+            require(manifest is not None, 'remote acceptance requires a fresh receiver --manifest')
+            manifest = self.validate(manifest)
+            require(manifest['session_id'] == session, 'receiver manifest session differs')
+            self.remote.accept(manifest, self.canonical_repo(manifest), sender, reference)
+            if self.db.exists():
+                db = self.connection()
+                try:
+                    row = db.execute('SELECT state,receiver FROM claims WHERE session=?', (sender,)).fetchone()
+                    if row is not None and row == ('handoff', session):
+                        db.execute('UPDATE claims SET state=? WHERE session=?', ('released', sender))
+                        self.event(db, 'remote_accept', session, {'sender': sender, 'reference': reference})
+                    db.commit()
+                finally:
+                    db.close()
+            # The receiver may be in a separate container. Local enrollment uses
+            # its own HEAD/snapshots, and reconciles the exact central acceptance.
+            self.enroll(manifest)
+            return
         db = self.connection()
         try:
             row = db.execute('SELECT manifest,state,receiver FROM claims WHERE session=?', (sender,)).fetchone()
@@ -316,22 +359,35 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--workspace', required=True, type=Path)
     parser.add_argument('--db', type=Path)
+    parser.add_argument('--remote-registry', help='GitHub owner/repo holding the coordination registry')
+    parser.add_argument('--remote-branch', help='Explicit coordination/ branch; never the default branch')
     commands = parser.add_subparsers(dest='action', required=True)
     enroll = commands.add_parser('enroll'); enroll.add_argument('--manifest', required=True, type=Path)
     for action in ('check', 'release', 'finish', 'handoff', 'accept'):
         sub = commands.add_parser(action); sub.add_argument('--session', required=True)
         if action == 'handoff': sub.add_argument('--receiver', required=True); sub.add_argument('--reference', required=True)
-        if action == 'accept': sub.add_argument('--from-session', required=True); sub.add_argument('--reference', required=True)
+        if action == 'accept':
+            sub.add_argument('--from-session', required=True); sub.add_argument('--reference', required=True)
+            sub.add_argument('--manifest', type=Path)
     commands.add_parser('hook')
     args = parser.parse_args(argv)
     try:
-        gate = Gate(args.workspace, args.db)
+        require(bool(args.remote_registry) == bool(args.remote_branch), 'both remote registry and branch are required')
+        remote = None
+        if args.remote_registry:
+            try:
+                from scripts.remote_collaboration_registry import RemoteRegistry
+            except ModuleNotFoundError:
+                from remote_collaboration_registry import RemoteRegistry
+            remote = RemoteRegistry(args.remote_registry, args.remote_branch)
+        gate = Gate(args.workspace, args.db, remote)
         if args.action == 'enroll': gate.enroll(load_json(args.manifest))
         elif args.action == 'check': gate.check(args.session)
         elif args.action == 'release': gate.release(args.session)
         elif args.action == 'finish': gate.finish(args.session)
         elif args.action == 'handoff': gate.handoff(args.session, args.receiver, args.reference)
-        elif args.action == 'accept': gate.accept(args.session, args.from_session, args.reference)
+        elif args.action == 'accept': gate.accept(args.session, args.from_session, args.reference,
+                                                 load_json(args.manifest) if args.manifest else None)
         else:
             raw = sys.stdin.read(4 * 1024 * 1024 + 1)
             require(len(raw) <= 4 * 1024 * 1024, 'hook input too large')

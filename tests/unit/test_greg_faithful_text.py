@@ -61,6 +61,23 @@ def _ctx(tmp_path, capability="fs.read"):
                              secrets=SecretBroker(tmp_path / "secrets.json"), manifest=BUILTINS[capability][0])
 
 
+def _peak(call, *, warm):
+    """``call``'s refusal and the most memory it held, measured after ``warm`` ran once (imports and caches on the
+    same path), outside pytest's own bookkeeping, so a test run alone measures what one run in the suite does."""
+    for attempt in (warm, call):
+        tracemalloc.start()
+        try:
+            try:
+                attempt()
+                refused = None
+            except CapabilityError as exc:
+                refused = str(exc)
+            peak = tracemalloc.get_traced_memory()[1]
+        finally:
+            tracemalloc.stop()
+    return refused, peak
+
+
 # -- normalization: one text, whichever form it is written in --------------------------------------------------------
 
 def test_a_forbidden_name_in_another_normalization_form_is_found():
@@ -204,17 +221,13 @@ def test_an_oversized_statement_is_refused_before_it_is_read(tmp_path):
     statement = tmp_path / "data" / "statement.csv"
     with open(statement, "wb") as stream:
         stream.truncate(64 * 1024 * 1024)
-    tracemalloc.start()
-    try:
-        with pytest.raises(CapabilityError, match="statement exceeds read ceiling"):
-            reconcile({"path": str(statement), "amount": "99.00", "currency": "USD", "reference": "CASE-41927"}, ctx)
-        peak = tracemalloc.get_traced_memory()[1]
-    finally:
-        tracemalloc.stop()
-    assert peak < MAX_READ_BYTES // 4, peak                                         # before: 64 MiB buffered
+    params = {"path": str(statement), "amount": "99.00", "currency": "USD", "reference": "CASE-41927"}
+    refused, peak = _peak(lambda: reconcile(params, ctx), warm=lambda: reconcile(params, ctx))
+    assert refused == "statement exceeds read ceiling" and peak < MAX_READ_BYTES // 4, peak   # before: 64 MiB
 
 
-@pytest.mark.parametrize("body, readable", [(codecs.BOM_UTF16_LE + "terminate without notice".encode("utf-16-le"), True),
+@pytest.mark.parametrize("body, readable", [(codecs.BOM_UTF16_LE + "terminate without notice".encode("utf-16-le"),
+                                             True),
                                             ("terminate without notice".encode("utf-16-le"), False),
                                             ("Payé: terminate without notice".encode("latin-1"), False)],
                          ids=["utf16-marked", "utf16-unmarked", "latin1"])
@@ -287,13 +300,8 @@ def test_an_oversized_file_is_refused_before_it_is_read(tmp_path):
     huge = tmp_path / "data" / "huge.log"
     with open(huge, "wb") as stream:
         stream.truncate(64 * 1024 * 1024)                                           # sparse: no disk used
-    tracemalloc.start()
-    try:
-        with pytest.raises(CapabilityError, match="file exceeds read ceiling"):
-            fs_read({"path": str(huge)}, ctx)
-        peak = tracemalloc.get_traced_memory()[1]
-    finally:
-        tracemalloc.stop()
+    refused, peak = _peak(lambda: fs_read({"path": str(huge)}, ctx), warm=lambda: fs_read({"path": str(huge)}, ctx))
+    assert refused == "file exceeds read ceiling"
     assert peak < MAX_READ_BYTES // 4, peak             # refused by its stated size, nothing read; before: 64 MiB
 
 
@@ -305,14 +313,9 @@ def test_a_file_that_misstates_its_size_is_read_no_further_than_the_ceiling(tmp_
     real = os.fstat
     monkeypatch.setattr(greg.capabilities.os, "fstat",                              # a /proc file states size 0
                         lambda fd: os.stat_result((*real(fd)[:6], 0, *real(fd)[7:])))
-    tracemalloc.start()
-    try:
-        with pytest.raises(CapabilityError, match="file exceeds read ceiling"):
-            fs_read({"path": str(growing)}, ctx)
-        peak = tracemalloc.get_traced_memory()[1]
-    finally:
-        tracemalloc.stop()
-    assert peak < 2 * MAX_READ_BYTES, peak
+    read = lambda: fs_read({"path": str(growing)}, ctx)      # noqa: E731
+    refused, peak = _peak(read, warm=read)
+    assert refused == "file exceeds read ceiling" and peak < 2 * MAX_READ_BYTES, peak    # before: 64 MiB
 
 
 def test_a_fifo_swapped_in_for_a_file_is_refused_without_blocking(tmp_path):

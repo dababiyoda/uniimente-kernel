@@ -727,7 +727,7 @@ MODEL_LIMITS = ("read from the model's own license layers in the local Ollama st
 # /usr/share/common-licenses/Apache-2.0 and on 15 copies shipped by installed Python packages.
 APACHE_2_TERMS_SHA256 = "bd01d1cbace1131cd60e3341a451ccd492ef00582e93b8a2b5a4caa1c919fe7a"
 _APACHE_HEADER = r"(?:apache license,? version 2\.0,? january 2004 https?://www\.apache\.org/licenses/? ?)?"
-_APACHE_NOTICE = (r"copyright .{0,300}? licensed under the apache license, version 2\.0 \(the \"license\"\); you may not "
+_APACHE_NOTICE = (r"(copyright .{0,300}?) licensed under the apache license, version 2\.0 \(the \"license\"\); you may not "
                   r"use this file except in compliance with the license\. you may obtain a copy of the license at "
                   r"https?://www\.apache\.org/licenses/license-2\.0 unless required by applicable law or agreed to in "
                   r"writing, software distributed under the license is distributed on an \"as is\" basis, without "
@@ -750,8 +750,19 @@ _MIT_TERMS = ("permission is hereby granted, free of charge, to any person obtai
               "or copyright holders be liable for any claim, damages or other liability, whether in an action of "
               "contract, tort or otherwise, arising from, out of or in connection with the software or the use or "
               "other dealings in the software.")
-_MIT_HEADER = re.compile(r"(?:the )?mit license(?: \(mit\))?|(?:copyright|\(c\)|\u00a9)\b.*|all rights reserved\.?",
-                         re.I)
+_MIT_TITLE = re.compile(r"(?:the )?mit license(?: \(mit\))?|all rights reserved\.?")
+# A copyright notice and nothing else: "Copyright (c) <years> <holder>", where the holder is a name. Terms hide in
+# this field when it is free text (the review of #230: "Copyright 2024 Acme. Licensee shall not use the model to
+# train other models" was dropped as boilerplate and the weights CLEARED). After its address and URL are set aside,
+# a holder may end in a full stop but not contain one, except after an initial or in a company suffix, and holds
+# no normative word.
+_COPYRIGHT = re.compile(r"(?:copyright|\(c\)|\u00a9)(?:\s*(?:\(c\)|\u00a9))*\s+(.{1,200}?)(?:\.?\s*all rights reserved)?\.?")
+_HOLDER_ASIDE = re.compile(r"<[^<>\s]+>|\(?https?://[^\s)]+\)?|[^\s<>()]+@[^\s<>()]+\.\w+"
+                           r"|\b(?:inc|ltd|co|corp|llc|l\.l\.c|gmbh|ag|s\.a|b\.v|e\.v|pty|plc|jr|sr|[a-z])\.")
+_NORMATIVE = re.compile(r"\b(?:shall|must|may|might|can|cannot|will|not|no|nor|only|never|solely|exclusively|except|"
+                        r"unless|without|subject|limit\w*|prohibit\w*|restrict\w*|licen[cs]\w*|permi\w*|use[ds]?|"
+                        r"using|agree\w*|condition\w*|terms?|research|commercial\w*|production|users?|train\w*|"
+                        r"deploy\w*|distribut\w*)\b")
 
 
 def _flat(text: str) -> str:
@@ -776,11 +787,21 @@ def _text_riders(text: str) -> list:
     return found
 
 
+def _copyright_only(line: str) -> bool:
+    """Whether a flat line is a copyright notice and nothing more (``_COPYRIGHT``)."""
+    m = _COPYRIGHT.fullmatch(line)
+    if not m:
+        return False
+    holder = _HOLDER_ASIDE.sub(" ", m.group(1))
+    return not re.search(r"[.;:!?]", holder) and not _NORMATIVE.search(holder)
+
+
 def _standard_text(text: str) -> tuple[str | None, str]:
     """(SPDX id, other text) when ``text`` holds the standard Apache-2.0 or MIT terms, else (None, its flat form).
     Apache-2.0: the terms hash to the standard, and only its title header, its appendix or its boilerplate notice
-    may stand beside them. MIT: the terms are the standard ones word for word, after only a title and copyright
-    lines. Anything else beside the terms is returned, for the caller to leave unclassified."""
+    may stand beside them, the notice's copyright field a copyright notice only. MIT: the terms are the standard ones
+    word for word, after only a title and copyright notices. Anything else beside the terms is returned, for the
+    caller to leave unclassified."""
     flat = _flat(text)
     start = flat.find("terms and conditions for use, reproduction, and distribution")
     end = flat.find("end of terms and conditions")
@@ -789,7 +810,8 @@ def _standard_text(text: str) -> tuple[str | None, str]:
         if hashlib.sha256(flat[start:stop].encode()).hexdigest() == APACHE_2_TERMS_SHA256:
             before = re.sub("^" + _APACHE_HEADER, "", flat[:start]).strip()
             after = flat[stop:].strip()
-            if after and re.fullmatch(f"(?:{_APACHE_APPENDIX}|{_APACHE_NOTICE})", after):
+            notice = re.fullmatch(f"(?:{_APACHE_APPENDIX}|{_APACHE_NOTICE})", after) if after else None
+            if notice and _copyright_only(next(g for g in notice.groups() if g)):
                 after = ""
             return "Apache-2.0", " ".join(x for x in (before, after) if x)
     lines = text.splitlines()
@@ -797,7 +819,8 @@ def _standard_text(text: str) -> tuple[str | None, str]:
     if first is not None:
         rest = _flat("\n".join(lines[first:]))
         if rest.startswith(_MIT_TERMS):
-            before = [line.strip() for line in lines[:first] if line.strip() and not _MIT_HEADER.fullmatch(line.strip())]
+            before = [line.strip() for line in lines[:first]
+                      if _flat(line) and not _MIT_TITLE.fullmatch(_flat(line)) and not _copyright_only(_flat(line))]
             return "MIT", " ".join(before + [rest[len(_MIT_TERMS):].strip()]).strip()
     return None, flat
 

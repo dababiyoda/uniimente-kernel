@@ -101,6 +101,43 @@ def test_terms_added_beside_a_standard_text_are_held():
     assert b["held"] and "may not be used to train" in b["reason"]
 
 
+MIT_TERMS_AT = MIT.index("Permission is hereby granted")
+SMUGGLED = {
+    "mit header": MIT[:MIT_TERMS_AT] + "Copyright 2024 Acme. Licensee shall not use the model to train other models; "
+                  "usage is limited to 700 million monthly active users.\n\n" + MIT[MIT_TERMS_AT:],
+    "mit header, no full stop": MIT[:MIT_TERMS_AT] + "Copyright 2024 Acme, for research use only\n\n" + MIT[MIT_TERMS_AT:],
+    "mit header, no listed word": MIT[:MIT_TERMS_AT] + "Copyright 2024 Acme. Weights are for evaluation and audit "
+                                  "purposes.\n\n" + MIT[MIT_TERMS_AT:],
+    "apache notice": APACHE.replace("[yyyy] [name of copyright owner]", "2024 Acme. These weights may be used only for "
+                                    "research and evaluation, never in production or by any company with over 700 "
+                                    "million monthly active users."),
+}
+
+
+@pytest.mark.parametrize("where", SMUGGLED)
+def test_terms_written_into_a_copyright_notice_are_held(tmp_path, where):
+    """The review of #230 (blocking): a line starting "Copyright" was dropped whatever followed it, and the Apache
+    notice's copyright field took 300 characters of anything, so Llama-style terms there CLEARED the weights."""
+    root = store(tmp_path, "registry.ollama.ai/library/acme/1b", licenses=(SMUGGLED[where],))
+    a = licensing.ollama_model("acme:1b", root)
+    assert a["verdict"] == "FOUNDER_REVIEW" and a["held"] and not a["auto_attach"], a["reason"]
+    assert "with other terms beside it" in a["reason"]
+
+
+@pytest.mark.parametrize("line", [
+    "Copyright (c) 2016 Nathaniel J. Smith <njs@pobox.com> and other contributors",   # h11
+    "Copyright (c) Meta Platforms, Inc. and affiliates.",
+    "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)",
+    "Copyright (c) 2015-present, Facebook, Inc.",
+    "Copyright 2024 Acme. All rights reserved.",
+    "© 2023 The Contributors",
+])
+def test_a_plain_copyright_notice_beside_the_terms_is_still_cleared(line):
+    assert verdict(MIT[:MIT_TERMS_AT] + line + "\n\n" + MIT[MIT_TERMS_AT:])["verdict"] == "CLEARED", line
+    holder = line.split(" ", 2)[-1] if line.startswith("Copyright (c)") else line.split(" ", 1)[-1]
+    assert verdict(APACHE.replace("[yyyy] [name of copyright owner]", holder))["verdict"] == "CLEARED", holder
+
+
 @pytest.mark.parametrize("short_id,title", MODEL_FAMILIES)
 def test_model_community_and_responsible_ai_licenses_are_held_in_any_declaration(short_id, title):
     """By text title, by Hugging Face short id, and in a DEP-5 file: the same family is not open source."""

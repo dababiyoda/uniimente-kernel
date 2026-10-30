@@ -787,6 +787,17 @@ METABOLISM_MUTANTS = [
      '            atoms += _named_restrictions(one, "License field")\n', "            pass\n"),
     ("a word of an unparseable field is read as restrictive wording", "greg/licensing.py",
      'for c in [_table_class(w, "spdx")] if c in HELD]', 'for c in [_lookup(w, "spdx")] if c in HELD]'),
+    # review of #230 (blocking): terms written into a copyright notice cleared the weights
+    ("any line that starts as a copyright notice is dropped beside the terms", "greg/licensing.py",
+     '    return not re.search(r"[.;:!?]", holder) and not _NORMATIVE.search(holder)\n', "    return True\n"),
+    ("a sentence after the holder's name is part of the notice", "greg/licensing.py",
+     '    return not re.search(r"[.;:!?]", holder) and not _NORMATIVE.search(holder)\n',
+     "    return not _NORMATIVE.search(holder)\n"),
+    ("a normative word in the holder's name is part of the notice", "greg/licensing.py",
+     '    return not re.search(r"[.;:!?]", holder) and not _NORMATIVE.search(holder)\n',
+     '    return not re.search(r"[.;:!?]", holder)\n'),
+    ("the Apache notice's copyright field takes any text", "greg/licensing.py",
+     "            if notice and _copyright_only(next(g for g in notice.groups() if g)):", "            if notice:"),
 ]
 
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),

@@ -1,0 +1,7 @@
+# tests/unit/test_greg_model_license.py with the fix's tests, on 376889d0 (before the fix)
+FAILED tests/unit/test_greg_model_license.py::test_terms_written_into_a_copyright_notice_are_held[mit header]
+FAILED tests/unit/test_greg_model_license.py::test_terms_written_into_a_copyright_notice_are_held[mit header, no full stop]
+FAILED tests/unit/test_greg_model_license.py::test_terms_written_into_a_copyright_notice_are_held[mit header, no listed word]
+FAILED tests/unit/test_greg_model_license.py::test_terms_written_into_a_copyright_notice_are_held[apache notice]
+FAILED tests/unit/test_greg_model_license.py::test_a_plain_copyright_notice_beside_the_terms_is_still_cleared[\xa9 2023 The Contributors]
+5 failed, 40 passed in 0.48s

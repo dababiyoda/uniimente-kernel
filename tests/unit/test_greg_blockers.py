@@ -98,11 +98,11 @@ def no_strategy_ask(tmp_path):
 
 
 def sensor_failure(tmp_path):
-    """decision / SENSOR_FAILURE: three observations in a row could not measure the check (the phrase lies past the
-    16 KiB a receipt keeps, so the evidence is incomplete)."""
+    """decision / SENSOR_FAILURE: three observations in a row could not measure the check. The file is 200 KiB of
+    control characters, whose canonical JSON is over 1 MiB, so the store refuses the whole output and the evidence
+    stays incomplete (since #209 a phrase past 16 KiB in an ordinary file is decided over the whole output)."""
     home, key, body_id, data = make_body(tmp_path)
-    (data / "contract.txt").write_text("proof settlement notice delivery party shall net due. " * 400
-                                       + "The renewal term is twelve months.")
+    (data / "contract.txt").write_text("\x01" * (200 * 1024) + "The renewal term is twelve months.")
     drop(home, signed(key, body_id, "MISSION", mission(
         "m:sense", checks=[note_check("term", data / "contract.txt", "twelve months")], strategies=[],
         capabilities=["fs.read"], ceiling="read_only")))

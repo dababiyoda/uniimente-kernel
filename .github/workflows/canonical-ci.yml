@@ -106,6 +106,14 @@ jobs:
         run: python scripts/ci/check_wasm_lifecycle_mutant.py
       - name: Canonical WorkOrder and reobservation mutations
         run: python scripts/ci/check_worker_appraisal_mutants.py
+      - name: Whole-output judgment mutations (a check decided over the output its receipt kept, never on what it could not measure)
+        run: python scripts/ci/check_whole_output_mutants.py
+      - name: Founder-device acceptance tier and live-runtime mutations
+        run: python scripts/ci/check_acceptance_mutants.py
+      - name: Path predicates and build frontier mutations
+        run: python scripts/ci/check_path_predicate_mutants.py
+      - name: Consistent backup mutations
+        run: python scripts/ci/check_consistent_backup_mutants.py
 
   verifier:
     # Its V2 re-runs tests/unit, so inside job 1 it pushed that job past its 30 minutes once the
@@ -212,8 +220,10 @@ jobs:
     # 150 mutants run in parallel, one repository copy per core (about 11 minutes on 4 cores, #194).
     # The joined tree (#196) runs both lineages' mutants: the whole job took 18m04s at 47229e3b (#192, run 39645058690)
     # and 15.5 min at af50537b (#196 before Track B); Track B's residual step alone took 6m04s at 93badaff (run
-    # 39688750571) and now runs the union plus #192's baseline pass. 40 bounds a hung run with that union's headroom.
-    timeout-minutes: 40
+    # 39688750571) and now runs the union plus #192's baseline pass. #201's metabolism group outgrew 40: the job took
+    # 37.5 min at a1d2abf (run 39969265532, mutation step 21m35s) and was cancelled at 40 on b02b3d40 (run 41023976986)
+    # with every step passing (mutation 25m05s, residual 11m55s), one step from the end. 60 bounds a hung run.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -221,9 +231,17 @@ jobs:
           python-version: "3.11"
       # requirements-cognition adds NetworkX and SciPy: the open-source engines genesis qualifies.
       - run: pip install -r requirements-dev.txt -r requirements-cortex.txt -r requirements-cognition.txt
+      # pdftotext (poppler-utils) is the system binary document.text acquires (#201). Without it the document tests
+      # skip and their mutants survive (run 39729783774), so it is provisioned and then required, never skipped.
+      - name: Provision poppler-utils (the acquired document reader)
+        run: sudo apt-get update -q && sudo apt-get install -y -q poppler-utils
       - name: Cortex tests with the solvers and open-source engines present (no skips)
-        run: python -m pytest -q tests/unit/test_cortex_gates_genome.py tests/unit/test_cortex_routes.py tests/unit/test_cortex_pipeline.py tests/unit/test_cortex_traceability.py tests/unit/test_cortex_register.py tests/unit/test_cortex_formal_engines.py tests/unit/test_cortex_schedule_composition.py tests/unit/test_cortex_crossgeo.py tests/unit/test_greg_cortex_bridge.py tests/integration/test_greg_cortex_mission.py tests/unit/test_greg_open_source_genesis.py
+        env:
+          GREG_REQUIRE_PDFTOTEXT: "1"
+        run: python -m pytest -q tests/unit/test_cortex_gates_genome.py tests/unit/test_cortex_routes.py tests/unit/test_cortex_pipeline.py tests/unit/test_cortex_traceability.py tests/unit/test_cortex_register.py tests/unit/test_cortex_formal_engines.py tests/unit/test_cortex_schedule_composition.py tests/unit/test_cortex_crossgeo.py tests/unit/test_greg_cortex_bridge.py tests/integration/test_greg_cortex_mission.py tests/unit/test_greg_open_source_genesis.py tests/unit/test_greg_document_text.py tests/unit/test_greg_license_qualification.py
       - name: Mutation check (every safeguard-removing mutant must be caught)
+        env:
+          GREG_REQUIRE_PDFTOTEXT: "1"
         run: python scripts/ci/check_cortex_mutants.py
       - name: Canonical GREG seed-path cognition, signed authority and process recovery
         run: python -m pytest -q tests/unit/test_greg_cognition_seed_path.py tests/unit/test_greg_seed_compat.py tests/integration/test_greg_cognition_process.py
@@ -307,6 +325,7 @@ jobs:
       # The organs at their upgraded pins (founder decision 2026-10-23): per-organ bridge keys, and DALEOBANKS
       # packets that carry stated evidence. Draft PRs DALEOBANKS #96 and WealthMachineIntelligence #47 (on #45, on
       # #44): WealthMachine reads the staffing figures it is sent (step 9, test_organ_staffing_figures.py).
+      # test_combined_construction_outcome.py (#210 with #212) needs the same organs, so it runs here too.
       - uses: actions/checkout@v4
         with:
           repository: dababiyoda/DALEOBANKS
@@ -356,7 +375,7 @@ jobs:
           GREG_TEST_WMI: "${{ github.workspace }}/organs/wealthmachine"
           GREG_ONE_MACHINE_EVIDENCE: "${{ github.workspace }}/one-machine-evidence/ten-steps"
           GREG_LOOP15_EVIDENCE: "${{ github.workspace }}/one-machine-evidence/loop15"
-        run: python -m pytest -q -rs tests/integration/test_one_machine.py tests/integration/test_one_machine_ten_steps.py tests/integration/test_one_mission_fifteen_steps.py tests/integration/test_organ_staffing_figures.py tests/integration/test_one_machine_attacks.py tests/unit/test_greg_organs.py tests/unit/test_greg_organ_bridge.py tests/unit/test_greg_daleobanks_bridge.py tests/unit/test_greg_bind_from_check.py tests/unit/test_greg_model_identity_policy.py
+        run: python -m pytest -q -rs tests/integration/test_one_machine.py tests/integration/test_one_machine_ten_steps.py tests/integration/test_one_mission_fifteen_steps.py tests/integration/test_organ_staffing_figures.py tests/integration/test_combined_construction_outcome.py tests/integration/test_one_machine_attacks.py tests/unit/test_greg_organs.py tests/unit/test_greg_organ_bridge.py tests/unit/test_greg_daleobanks_bridge.py tests/unit/test_greg_bind_from_check.py tests/unit/test_greg_model_identity_policy.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

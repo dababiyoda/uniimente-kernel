@@ -8,7 +8,7 @@ check the evidence could not decide is neither pursued nor certified as failed (
 limits on declared-incomplete outputs, on paths into a receipt's prefix record and on numbers that are not finite;
 of greg/pipeline.py's handoffs and inspection; or of faithful text: one normalization form on both sides of every
 comparison, decoding without replacement, cut output declared cut, and files refused before they are buffered
-(greg/capabilities.py, greg/business_loop.py). The named test
+(greg/textform.py, greg/capabilities.py, greg/business_loop.py). The named test
 must fail for every mutant. Mutants are applied to a scratch copy of the repository, never to the working tree.
 Exit status 1 if any mutant survives or no longer applies.
 
@@ -224,7 +224,7 @@ MUTANTS = [
      H + "test_a_number_that_is_not_finite_is_receipted_and_measures_nothing"),
     # faithful text evidence (tests/unit/test_greg_faithful_text.py): one normalization form, faithful decoding,
     # declared cuts, refusal before buffering
-    ('text is compared in its code points, not as NFC', "greg/missions.py",
+    ('text is compared in its code points, not as NFC', "greg/textform.py",
      'return unicodedata.normalize("NFC", text)',
      'return text',
      F + 'test_a_forbidden_name_in_another_normalization_form_is_found'),
@@ -232,19 +232,19 @@ MUTANTS = [
      'if _canon(expected) in _canon(_stable(text)):',
      'if _canon(expected) in _canon(text):',
      F + 'test_a_prefix_ending_before_an_accent_no_longer_contains_the_bare_letter'),
-    ('the stable part keeps the starter the rest may compose with', "greg/missions.py",
+    ('the stable part keeps the starter the rest may compose with', "greg/textform.py",
      '            return prefix[:i]\n    return ""',
      '            return prefix[:i + 1]\n    return ""',
      F + 'test_the_stable_part_of_a_prefix_starts_the_normalized_whole_whatever_follows'),
-    ('a starter that composes backwards is taken as a boundary', "greg/missions.py",
+    ('a starter that composes backwards is taken as a boundary', "greg/textform.py",
      ' and not {ord(first), ord(prefix[i])} & backward',
      '',
      F + 'test_the_stable_part_of_a_prefix_starts_the_normalized_whole_whatever_follows'),
-    ('a character whose decomposition starts with a mark is taken as a boundary', "greg/missions.py",
+    ('a character whose decomposition starts with a mark is taken as a boundary', "greg/textform.py",
      'first = unicodedata.normalize("NFD", prefix[i])[0]',
      'first = prefix[i]',
      F + 'test_the_stable_part_of_a_prefix_starts_the_normalized_whole_whatever_follows'),
-    ('Hangul jamo are taken as boundaries', "greg/missions.py",
+    ('Hangul jamo are taken as boundaries', "greg/textform.py",
      'seconds = set(range(0x1161, 0x1176)) | set(range(0x11A8, 0x11C3))',
      'seconds = set()',
      F + 'test_the_stable_part_of_a_prefix_starts_the_normalized_whole_whatever_follows'),
@@ -322,7 +322,7 @@ MUTANTS = [
      '"trust": "untrusted-external-data", "egress": route, "text": body.decode("utf-8", "replace")}, b"")',
      F + 'test_a_fetched_page_is_read_faithfully_or_not_at_all[utf16-unmarked]'),
     ('a case reference signed in one normalization form misses a statement in the other', "greg/business_loop.py",
-     'wanted = unicodedata.normalize("NFC", reference)',
+     'wanted = canon(reference)',
      'wanted = reference',
      F + 'test_a_statement_in_another_encoding_is_not_reported_unmatched'),
     ('an oversized statement is read before it is refused', "greg/business_loop.py",

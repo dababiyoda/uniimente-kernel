@@ -26,12 +26,10 @@ import os
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-import functools
 import hashlib
 import json
 from pathlib import Path
 from typing import Any
-import unicodedata
 
 from jsonschema import Draft202012Validator, FormatChecker
 
@@ -42,6 +40,7 @@ from greg import asks, improvement, routing
 from greg.founder import instant
 from greg.journal import Journal, fact_id, iso
 from greg.lightcone import LightCone
+from greg.textform import canon as _canon, stable as _stable
 from provenance.ledger import sha256_json
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -472,38 +471,6 @@ def _cut(value) -> dict | None:
             and isinstance(value["length"], int) and value["length"] > len(value["prefix"]):
         return value
     return None
-
-
-def _canon(text: str) -> str:
-    """Text as a check compares it: Unicode Normalization Form C. Canonically equivalent texts (an accented letter as
-    one code point, or as the letter and a combining accent) are one text, so a forbidden phrase written in another
-    form no longer passes ``not_contains``, nor does a required one fail ``contains`` or ``equals`` (§VI-8). Lengths
-    (``count_gte``) still count the code points kept."""
-    return unicodedata.normalize("NFC", text)
-
-
-@functools.cache
-def _composes_backward() -> frozenset:
-    """Starters that can join the character before them under NFC: the second half of a canonical pair, and the
-    Hangul vowel and final-consonant jamo, which compose by rule instead of by table."""
-    seconds = set(range(0x1161, 0x1176)) | set(range(0x11A8, 0x11C3))
-    for point in range(0x30000):           # no canonical decomposition lies above U+2FA1D
-        parts = unicodedata.decomposition(chr(point)).split()
-        if len(parts) == 2 and not parts[0].startswith("<"):
-            seconds.add(int(parts[1], 16))
-    return frozenset(seconds)
-
-
-def _stable(prefix: str) -> str:
-    """The longest start of a kept prefix whose NFC form begins the NFC form of every string it is a prefix of: all of
-    it before its last character that starts a new normalization segment (a starter that joins nothing before it).
-    That character may still compose with marks the receipt did not keep, so it is left out with what follows it."""
-    backward = _composes_backward()
-    for i in range(len(prefix) - 1, -1, -1):
-        first = unicodedata.normalize("NFD", prefix[i])[0]
-        if unicodedata.combining(first) == 0 and not {ord(first), ord(prefix[i])} & backward:
-            return prefix[:i]
-    return ""
 
 
 def _cut_equals(cut: dict, expected) -> bool | None:

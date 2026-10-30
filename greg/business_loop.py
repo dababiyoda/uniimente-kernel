@@ -26,9 +26,9 @@ from decimal import Decimal, InvalidOperation
 import hashlib
 import io
 from pathlib import Path
-import unicodedata
 
 from greg.capabilities import CapabilityError, InvocationContext, _inside, bounded_read, faithful_text
+from greg.textform import canon
 
 DEFAULT_COLUMNS = {"amount": "amount", "currency": "currency", "reference": "description"}
 _STRIP = str.maketrans("", "", " ,$€£¥ ")
@@ -79,9 +79,9 @@ def reconcile(params: dict, ctx: InvocationContext) -> dict:
                 "detail": f"statement lacks the signed columns {missing}; header is {sorted(rows[0])}"}
     minor = bool(params.get("minor_units"))
     hits, near = [], []
-    wanted = unicodedata.normalize("NFC", reference)    # one text, whichever normalization form either side is in
+    wanted = canon(reference)          # one text, whichever normalization form either side is in
     for index, row in enumerate(rows):
-        if wanted not in unicodedata.normalize("NFC", row.get(columns["reference"]) or ""):
+        if wanted not in canon(row.get(columns["reference"]) or ""):
             continue
         amount = parse_amount(row.get(columns["amount"]), minor_units=minor)
         same_currency = (row.get(columns["currency"]) or "").strip().upper() == currency

@@ -34,7 +34,8 @@ from greg.business_loop import reconcile
 from greg.capabilities import (BUILTINS, MAX_READ_BYTES, CapabilityError, InvocationContext, SecretBroker,
                                bounded_read, browser_render, faithful_text, fs_read, http_get, run_cli, with_text)
 import greg.capabilities
-from greg.missions import FALSE, INSUFFICIENT, TRUE, _stable, judge, judge_receipt
+from greg.missions import FALSE, INSUFFICIENT, TRUE, judge, judge_receipt
+from greg.textform import stable as _stable
 from tests.greg_fixtures import Clock, make_body, mission, note_check
 from tests.unit.test_greg_missions import events, run, submit
 

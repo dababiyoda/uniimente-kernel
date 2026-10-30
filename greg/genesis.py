@@ -121,7 +121,7 @@ PARSERS = {
     "first_hex_token": lambda out: out.split()[0].lower() if out.split() else "",
     "last_hex_token": lambda out: out.strip().split()[-1].lower() if out.split() else "",
     "first_int": lambda out: int(out.split()[0]) if out.split() else -1,
-    "words": lambda out: " ".join(out.split()),
+    "words": documents.fold,               # whitespace collapsed, in the folded comparison form (DOC-5)
 }
 
 CATALOG = {

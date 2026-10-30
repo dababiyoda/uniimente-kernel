@@ -135,7 +135,8 @@ OSS_TESTS = ["tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_gre
 # catch it first instead of the slower genesis suites before them (job 6 hit its 40-minute limit with them merged)
 METABOLISM_TESTS = ["tests/unit/test_greg_document_text.py", "tests/unit/test_greg_license_qualification.py",
                     "tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_greg_license_use_context.py",
-                    "tests/unit/test_greg_genesis_restore.py", "tests/unit/test_greg_binary_failure_types.py"]
+                    "tests/unit/test_greg_genesis_restore.py", "tests/unit/test_greg_binary_failure_types.py",
+                    "tests/unit/test_greg_document_phrase.py"]
 OSS_MUTANTS = [
     ("certificate skips edge feasibility", "greg/cognition/network.py",
      "if exact[b] > exact[a] + w + tolerance(exact[a] + w):", "if False:"),
@@ -668,6 +669,12 @@ METABOLISM_MUTANTS = [
      'except subprocess.TimeoutExpired:\n            raise CapabilityError(f"{name} did not finish',
      'except ZeroDivisionError:\n            raise CapabilityError(f"{name} did not finish'),
     ("a binary's version line is stored whole", "greg/genesis.py", "[line[:VERSION_LINE] for line in", "[line for line in"),
+    # phrase matching (review of #201 at a1d2abf, DOC-4, DOC-5, DOC-6)
+    ("ligatures and compatibility forms are compared raw", "greg/documents.py", 'unicodedata.normalize("NFKC", text)', "text"),
+    ("typographic quotes and dashes are compared raw", "greg/documents.py", ".translate(_FOLD).split()", ".split()"),
+    ("a phrase is matched inside a longer word", "greg/documents.py", "_BEFORE + re.escape(form) + _AFTER", "re.escape(form)"),
+    ("a line-end-dehyphenated phrase is not looked for joined", "greg/documents.py",
+     "return [needle] + ([joined] if", "return [needle] + 0 * ([joined] if"),
     ("an acquired binary runs without requalification", "greg/genesis.py",
      "requalified, why = licensing.requalify_binary(ctx.manifest, binary)", 'requalified, why = True, ""'),
 ]

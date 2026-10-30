@@ -1,0 +1,46 @@
+{
+  "aborted": false,
+  "after_active": [],
+  "after_sha": "c7981427c5bcfec634c217425cdae36b9f3a5afb",
+  "before_active": 0,
+  "before_sha": "0629a2aac6a1a8bc2ba01db862993593b762c5a6",
+  "containers": "not_run",
+  "disjoint": {
+    "active_sessions": 2,
+    "admitted": 2,
+    "diagnostics": []
+  },
+  "handoff": {
+    "accept": 0,
+    "diagnostics": [],
+    "handoff": 0
+  },
+  "harness_still_active": [],
+  "hooks": {
+    "in_scope": 0,
+    "outside": 2
+  },
+  "live_blockers": [
+    "The published gate reads `git remote get-url origin` and accepts only a bare https://github.com/owner/repo or git@github.com:owner/repo URL. In this environment a global insteadOf rewrite supplies a credential userinfo URL, so both unmodified workers were refused before a Contents write."
+  ],
+  "overlap": {
+    "code": 2,
+    "diagnostics": [],
+    "mentions_conflict": true
+  },
+  "pin": "31d0c57af90d714da7d9be2c6d6317a41fdc9ca3",
+  "processes": 2,
+  "product_races": [],
+  "recorded_from": "python3 tests/harness/concurrent_worker_enrollment.py --live",
+  "rewrite_bypass": true,
+  "transport": "github-contents",
+  "unmodified_client": {
+    "active_sessions": 0,
+    "admitted": 0,
+    "diagnostics": [
+      "Collaboration gate blocked: remote coordination requires an unambiguous github.com origin",
+      "Collaboration gate blocked: remote coordination requires an unambiguous github.com origin"
+    ]
+  },
+  "unmodified_sha_unchanged": true
+}

@@ -1,5 +1,5 @@
 tests/unit/test_greg_license_expressions.py run against greg/licensing.py at a1d2abfb (byte-identical copy),
-Python 3.11, packaging 26.3, 2026-10-30T07:08Z. Summary: 1810 failed, 25 passed in 31.16s
+Python 3.11, packaging 26.3, 2026-10-30T07:16Z. Summary: 1811 failed, 25 passed in 40.73s
 Named failures (the 1,750 oracle cases of test_the_evaluator_matches_an_independent_dnf_expansion are counted, not listed):
 test_a_dep5_addition_is_classified_and_only_an_exception_keeps_the_base_class[Apache-2.0 with Commons-Clause-not_open_source]
 test_a_dep5_addition_is_classified_and_only_an_exception_keeps_the_base_class[Apache-2.0 with Commons Clause-not_open_source]
@@ -59,6 +59,7 @@ test_open_source_source_available_restricted_use_and_unclassified_are_distinguis
 test_open_source_source_available_restricted_use_and_unclassified_are_distinguished[JSON-restricted_use]
 test_open_source_source_available_restricted_use_and_unclassified_are_distinguished[LicenseRef-Acme-unclassified]
 test_dep5_records_which_files_each_license_covers_and_the_assumption_it_rests_on
+test_a_header_summary_that_disagrees_with_the_files_stanzas_is_recorded_and_both_apply
 test_a_files_stanza_without_a_license_is_unclassified_not_ignored
 test_the_structured_use_verdict_states_reasons_and_uncertainty
 Oracle failures: 1750

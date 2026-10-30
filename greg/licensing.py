@@ -565,8 +565,13 @@ def dep5(text: str) -> dict | None:
                           "stanza": "header" if index == 0 else "files", "tree": tree})
     if not terms:
         return None
+    header = [t["class"] for t in terms if t["stanza"] == "header"]
+    stanzas = [t["class"] for t in terms if t["stanza"] == "files"]
+    disagree = bool(header and stanzas and header[0] != _worst(stanzas))
     return {"expression": " AND ".join(dict.fromkeys(t["id"] for t in terms)), "terms": terms,
-            "class": _worst([t["class"] for t in terms]), "held": any(t["held"] for t in terms)}
+            "class": _worst([t["class"] for t in terms]), "held": any(t["held"] for t in terms),
+            "uncertainty": ["the header's License summary and the Files stanzas declare different classes; every one "
+                            "applies"] if disagree else []}
 
 
 def binary_assessment(package: str, text: str | None) -> dict:
@@ -592,7 +597,8 @@ def binary_assessment(package: str, text: str | None) -> dict:
     return {"verdict": verdict, "class": worst, "held": bool(held), "auto_attach": not held, "reason": reason[:400],
             "obligations": sorted({OBLIGATIONS[a["class"]] for a in elected} or {OBLIGATIONS[worst]}),
             "categories": sorted({a["category"] for a in elected} or {_category(worst)}),
-            "uncertainty": ([FILES_ASSUMPTION] if parsed else ["no DEP-5 copyright file could be read"])
+            "uncertainty": ([FILES_ASSUMPTION] + parsed["uncertainty"] if parsed else
+                            ["no DEP-5 copyright file could be read"])
             + ([f"not classified by GREG: {', '.join(unknown)[:200]}"] if unknown else []),
             "parts": [part], "policy": "binary: held on any known network-copyleft or not-open term",
             "parser": "dpkg-query + DEP-5 (GREG reader)", "limits": LIMITS}

@@ -647,6 +647,8 @@ METABOLISM_MUTANTS = [
     ("the use verdict mixes terms across alternatives", "greg/licensing.py",
      "    return min(parts, key=lambda p: (VERDICT_ORDER.index(p[0]), p[1]))",
      "    return (max((p[0] for p in parts), key=VERDICT_ORDER.index), 0, [e for p in parts for e in p[2]])"),
+    ("a DEP-5 header that disagrees with its Files stanzas is not reported", "greg/licensing.py",
+     'disagree = bool(header and stanzas and header[0] != _worst(stanzas))', "disagree = False"),
     ("source-available and restricted-use terms are not distinguished", "greg/licensing.py",
      "return SOURCE_AVAILABLE if _SOURCE_AVAILABLE.search(_norm(ident)) else RESTRICTED_USE",
      "return RESTRICTED_USE"),

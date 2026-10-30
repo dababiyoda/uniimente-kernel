@@ -10,7 +10,10 @@ legal review, and it claims no legal certainty.
   Section VII lists the expression semantics this record covers.
 - **Rules this work keeps:** an unknown license is never cleared automatically. A restrictive term is never hidden
   by an unknown one beside it. AGPL is open source with conditions, not illegal. A founder signature never creates
-  rights a license withholds. `packaging.licenses` stays the SPDX parser; no custom SPDX engine is added.
+  rights a license withholds. `packaging.licenses` still validates and canonicalizes every SPDX expression. It
+  exposes no expression tree, so evaluating AND/OR stays GREG's residual, as `_evaluate` already was at `a1d2abf`.
+  That evaluator is now shared with DEP-5 short names, which `packaging` does not parse. No SPDX list or engine is
+  copied.
 
 ## What the assessor answers
 
@@ -64,7 +67,8 @@ hold, and `_use_eval` for the use verdict.
   - a second License line in one paragraph is kept;
   - a Files line inside a paragraph starts a new stanza;
   - a Files stanza without a License is unclassified rather than skipped;
-  - a stand-alone License paragraph still applies to nothing.
+  - a stand-alone License paragraph still applies to nothing;
+  - a header License summary that disagrees with the Files stanzas is recorded as uncertainty, and both apply.
 
 ## Findings, re-verified at `a1d2abfb`
 
@@ -95,11 +99,11 @@ code with the parser or the evaluator. It checks four things:
 - a restriction present in every conjunction is always reported;
 - the elected terms form one conjunction.
 
-**Test file:** `tests/unit/test_greg_license_expressions.py`, 1,835 tests. Run against `a1d2abf`'s
-`greg/licensing.py`, 1,810 fail and 25 pass (`license-expressions-fail-before.txt`, beside this record). The 25 that
-pass are cases with no defect at `a1d2abf`, kept as non-regression pins. Of the 1,810 failures:
+**Test file:** `tests/unit/test_greg_license_expressions.py`, 1,836 tests. Run against `a1d2abf`'s
+`greg/licensing.py`, 1,811 fail and 25 pass (`license-expressions-fail-before.txt`, beside this record). The 25 that
+pass are cases with no defect at `a1d2abf`, kept as non-regression pins. Of the 1,811 failures:
 
-- 60 named cases, each listed in that file with its assertion;
+- 61 named cases, each listed in that file with its assertion;
 - the 1,750 oracle cases. They fail because `a1d2abf` has no `restrictive` field; the class check alone fails on
   every parenthesised DEP-5 case.
 
@@ -119,7 +123,7 @@ clearance.
 
 Each new safeguard has a mutant in `scripts/ci/check_cortex_mutants.py` (open-source metabolism group, whose test
 list now starts with `test_greg_license_expressions.py`). The five entries whose code moved were re-pointed at the
-equivalent new code; 17 entries are new.
+equivalent new code; 18 entries are new.
 
 - **First run:** every `greg/licensing.py` mutant in the group (42) was run with the gate's own `_run_one` against
   the group's tests. 40 were caught; 2 survived:
@@ -128,8 +132,9 @@ equivalent new code; 17 entries are new.
     patterns from the name lookup.
   - "a second License line in one DEP-5 paragraph overwrites the first": the test put the restrictive line last,
     where an overwrite keeps it. The test now puts it first and checks both terms.
-- **Rerun:** both caught. The full rerun of all 42 on the final tree is recorded in the commit that adds
-  `BINARY_LICENSE_POLICY.md`.
+- **Rerun:** both caught. All 42 were rerun on commit `4f995317`: 42 caught, 0 survived, 0 stale.
+- **Added afterwards:** the 43rd mutant, for the DEP-5 header disagreement, is caught too. Every line of output is in
+  `license-mutants-2026-10-30.txt`.
 
 ## Limits
 
@@ -139,7 +144,8 @@ equivalent new code; 17 entries are new.
   from, so this side is conservative.
 - An exception name containing the word `and` or `or` splits into two names. That is conservative: the extra name
   is unknown.
-- Source-available and restricted-use terms stay `incompatible` in the use verdict. The category changes the
-  reason and the evidence a D-LIC-1 clearance needs, not the verdict.
+- Source-available and restricted-use terms stay `incompatible` in the use verdict, and a D-LIC-1 clearance needs
+  permission evidence for both. The category changes only the reason: for a source-available term, that evidence
+  may be the license's own grant (internal, non-production or non-service use) read against GREG's use.
 - Under P4c (a draft, not active), a card qualified before these trees existed is requalified once: its terms now
   carry trees, so the assessment digest differs.

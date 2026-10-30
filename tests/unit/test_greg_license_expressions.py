@@ -290,6 +290,13 @@ def test_dep5_records_which_files_each_license_covers_and_the_assumption_it_rest
     assert a["verdict"] == "CLEARED_WITH_OBLIGATIONS" and any("Files stanza" in u for u in a["uncertainty"])
 
 
+def test_a_header_summary_that_disagrees_with_the_files_stanzas_is_recorded_and_both_apply():
+    a = L.binary_assessment("tool", "Format: x\nLicense: Expat\n\nFiles: *\nCopyright: a\nLicense: AGPL-3+\n")
+    assert a["verdict"] == "FOUNDER_REVIEW" and any("header" in u for u in a["uncertainty"])
+    agree = L.binary_assessment("tool", "Format: x\nLicense: GPL-3+\n\nFiles: *\nCopyright: a\nLicense: GPL-3+\n")
+    assert not any("header" in u for u in agree["uncertainty"])
+
+
 def test_a_files_stanza_without_a_license_is_unclassified_not_ignored():
     p = L.dep5("Format: x\n\nFiles: *\nCopyright: a\nLicense: MIT\n\nFiles: blob/*\nCopyright: b\n")
     assert p["class"] == U and p["terms"][-1]["files"] == ["blob/*"]

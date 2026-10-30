@@ -689,6 +689,8 @@ class Body:
             return {"stop": True, "persisted": True}
         if kind == "NODE_ENROLL":
             return compute.enroll_node(self.journal, body, digest)
+        if kind == "NODE_REVOKE":                # founder key only (DEVICE_KINDS excludes it)
+            return compute.revoke_node(self.journal, body, digest, now=now)
         if kind == "SOP_RATIFY":
             return sop.ratify(self.journal, body, digest)
         if kind == "FOUNDER_TIER":               # founder key only (DEVICE_KINDS excludes it)

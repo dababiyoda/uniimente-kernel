@@ -9,6 +9,7 @@ restore on top of it and fails closed on authority:
   own commit, so the history stays verifiable by its hash chain.
 - **The restore is recorded** with its recovery point. Everything after that point is unknown here, so the body:
   - voids every device delegation, so a revocation the original applied after the backup cannot be lost;
+  - voids every node enrollment not already revoked, for the same reason (``greg/compute.py`` void_for_restore);
   - withdraws every approval a live mission still holds, because the original may have acted on it; it is asked
     again;
   - holds itself paused until a founder-key command issued after the restore resumes it.
@@ -29,6 +30,7 @@ import secrets
 import time
 
 from foundry.systems import cas, seed as seed_store
+from greg import compute
 from greg.body import Body, BodyError, Layout, _private_write
 from greg.journal import iso
 from greg.missions import TERMINAL
@@ -88,9 +90,10 @@ def restore_body(store, seed_address: str, home, *, clock=None) -> dict:
                      if answer["answer"] == "approve" and rid not in book.withdrawn
                      and (m := book.missions.get(answer["mission_id"])) is not None and m.status not in TERMINAL]
         devices = sorted(body.device_keys())
+        nodes = compute.unrevoked_nodes(body.journal, now=now)
         record = {"restore_id": restore_id, "seed": seed_address, "recovery_point": manifest.get("backed_up_at"),
                   "ledger_head_at_recovery_point": head, "restored_at": iso(now), "witness_key": "fresh",
-                  "voided": {"device_delegations": devices, "approvals": approvals},
+                  "voided": {"device_delegations": devices, "approvals": approvals, "node_enrollments": nodes},
                   "hold": RESTORE_HOLD,
                   "unknown_after_recovery_point": [
                       "commands, revocations, decisions and stops the original applied after the recovery point",
@@ -101,6 +104,7 @@ def restore_body(store, seed_address: str, home, *, clock=None) -> dict:
         for kid in devices:
             body.journal.record("device.revoked", {"device_key_id": kid, "by": "restore", "restore_id": restore_id,
                                                    "at": iso(now)}, key=[kid, restore_id])
+        compute.void_for_restore(body.journal, nodes, restore_id=restore_id, now=now)
         for rid in approvals:
             body.journal.record("decision.withdrawn", {
                 "request_id": rid, "mission_id": book.answers[rid]["mission_id"], "voids_approval": True,
@@ -112,5 +116,6 @@ def restore_body(store, seed_address: str, home, *, clock=None) -> dict:
             "needs_from_founder": [
                 "a founder-key BODY_RESUME issued after the restore (declares the original gone)",
                 "DEVICE_ENROLL again for each device still trusted",
+                "NODE_ENROLL again for each node still trusted",
                 "a fresh decision on every withdrawn approval",
                 "ROTATE_FOUNDER_KEY again if the founder key was rotated after the recovery point"]}

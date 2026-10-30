@@ -150,3 +150,43 @@ def cognitive_knowledge(journal: Journal) -> list[dict]:
             else:
                 row['scores'].append(outcome['score'])
     return [groups[k] for k in sorted(groups)]
+
+
+# Sensors and acquired readers. A method that did not measure the world is recorded on
+# mission.observed with a detail the engine prefixes "sensor " (the same marker as
+# greg.missions.measured). Later selection reads this projection. It is recomputed from
+# the journal, bounded to the newest observations, and it never receives or rewrites a
+# signed check.
+OBSERVATION_WINDOW = 64
+
+
+def observation_method_failed(observation: dict) -> bool:
+    """True when this observation did not measure the world.
+
+    A predicate miss is a measurement: its detail does not start with "sensor ".
+    """
+    return str(observation.get("detail", "")).startswith("sensor ")
+
+
+def observation_competence(journal) -> dict[str, dict]:
+    """Latest retained outcome per capability, inside the newest OBSERVATION_WINDOW observations that name one.
+
+    ``method_failed`` is the only fact selection uses. Older than the window, a failure no longer ranks.
+    No journal, no memory. The payloads are not copied back and are not signed checks.
+    """
+    if journal is None:
+        return {}
+    named = [e.payload for e in journal.replay("mission.observed")
+             if isinstance(e.payload, dict) and e.payload.get("capability")]
+    latest = {}
+    for payload in named[-OBSERVATION_WINDOW:]:
+        latest[payload["capability"]] = {"method_failed": observation_method_failed(payload)}
+    return latest
+
+
+def rank_observation_methods(items, competence: dict, capability_id):
+    """Stable order: a method whose latest in-window observation failed sorts after the others.
+
+    Nothing is removed. ``items`` are not signed checks; this does not write into them.
+    """
+    return sorted(items, key=lambda item: 1 if competence.get(capability_id(item), {}).get("method_failed") else 0)

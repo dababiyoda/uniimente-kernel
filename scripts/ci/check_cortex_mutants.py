@@ -232,7 +232,8 @@ MIND_CONSTRUCTION_MUTANTS = [
 ]
 
 # 2026-10-14: governed recovery (opossum half-open, mutated) and the re-escalation fixes it exposed.
-RECOVERY_TESTS = ["tests/integration/test_greg_capability_recovery.py"]
+RECOVERY_TESTS = ["tests/unit/test_greg_self_repair_incident.py",
+                  "tests/integration/test_greg_capability_recovery.py"]
 RECOVERY_MUTANTS = [
     ("a quarantined capability is probed before its backoff", "greg/genesis.py",
      "            if now < since + wait:\n", "            if False:\n"),
@@ -254,6 +255,12 @@ RECOVERY_MUTANTS = [
     ("a recorded qualification is re-run on the same deficit", "greg/genesis.py",
      '            if prior is not None:\n                self._route(deficit_id, "installed_package"',
      '            if False:\n                self._route(deficit_id, "installed_package"'),
+    # review of #201, DOC-2: one self-repair per incident, and its streak counts only readings made after it
+    ("a repair repeats for an incident it already repaired (the journal then crash-loops the body)",
+     "greg/missions.py", "            if self.genesis.repaired_before(manifest.capability_id, detail):",
+     "            if False:"),
+    ("a reading at the repair's own instant counts toward the next repair", "greg/missions.py",
+     'if obs["at"] <= since or not is_capability_fault', 'if obs["at"] < since or not is_capability_fault'),
 ]
 
 # 2026-10-14 installed-body merge: appends verify only new history (e2440a6); a Gate commit verifies all of it.

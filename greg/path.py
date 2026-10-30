@@ -570,47 +570,115 @@ ACCEPTANCE_STATUS = {STRUCTURALLY_BUILT: ACCEPTANCE_PENDING, BUILD_OPEN: ACCEPTA
                      NO_PREDICATE: ACCEPTANCE_UNMEASURABLE}
 MUTANT_GATE = Path(__file__).resolve().parents[1] / "scripts" / "ci" / "check_path_predicate_mutants.py"
 MUTATION_GUARD_RULE = ("mutation_guarded: the path-predicate mutation gate (scripts/ci/check_path_predicate_mutants.py) "
-                       "lists a live weakening of the node's predicate: its text occurs exactly once in the source, the "
-                       "replacement changes it, and the test it names is defined. Whether that test catches it is "
-                       "evidenced only by a run of the gate, never by this read")
+                       "lists a live weakening of the node's predicate: its text occurs exactly once in greg/path.py, "
+                       "inside the node's predicate or a function that predicate calls, the replacement changes it, "
+                       "and the test it names is defined. The gate runs exactly the list read here. Whether that test "
+                       "catches it is evidenced only by a run of the gate, never by this read")
+PREDICATE_SOURCE = "greg/path.py"
 
 
 def _gate_mutants(gate: Path) -> list:
     """The gate's ``MUTANTS``, parsed and never imported or run; [] when the gate is absent or the list is not a list
-    of plain literals. A literal that is not a list (``None``, a number, a set) reads as nothing, never a crash."""
+    of plain literals. A literal that is not a list (``None``, a number, a set) reads as nothing, never a crash.
+
+    The gate runs this same read, so it must be the whole story (review WU01-ATK-2): ``MUTANTS`` is bound once, by
+    one top-level assignment, and named nowhere else in the gate (no second assignment, ``.clear()``, ``+=``,
+    ``del``, alias, attribute, ``global``, or ``"MUTANTS"`` string). A gate that names it again could run another
+    list, so it reads as nothing."""
     try:
         tree = ast.parse(Path(gate).read_text())
     except (OSError, SyntaxError, ValueError, MemoryError, RecursionError):
         return []
-    for stmt in tree.body:
-        if isinstance(stmt, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "MUTANTS" for t in stmt.targets):
-            try:
-                mutants = ast.literal_eval(stmt.value)
-            except (ValueError, TypeError, MemoryError, RecursionError):   # e.g. {[1]: 2}: unhashable while evaluated
-                return []
-            return list(mutants) if isinstance(mutants, (list, tuple)) else []
-    return []
+    bindings = [s for s in tree.body if isinstance(s, ast.Assign) and len(s.targets) == 1
+                and isinstance(s.targets[0], ast.Name) and s.targets[0].id == "MUTANTS"]
+    if len(bindings) != 1:
+        return []
+    for node in ast.walk(tree):
+        if ((isinstance(node, ast.Name) and node.id == "MUTANTS" and node is not bindings[0].targets[0])
+                or (isinstance(node, (ast.Global, ast.Nonlocal)) and "MUTANTS" in node.names)
+                or (isinstance(node, ast.Constant) and node.value == "MUTANTS")
+                or "MUTANTS" in (getattr(node, "name", None), getattr(node, "asname", None),
+                                 getattr(node, "arg", None), getattr(node, "attr", None))):
+            return []
+    try:
+        mutants = ast.literal_eval(bindings[0].value)
+    except (ValueError, TypeError, MemoryError, RecursionError):   # e.g. {[1]: 2}: unhashable while evaluated
+        return []
+    return list(mutants) if isinstance(mutants, (list, tuple)) else []
+
+
+def _predicate_lines(root: Path) -> dict:
+    """{node id: set of 1-based lines of greg/path.py}: the node's predicate (``PREDICATES[name]``) and every
+    module-level function it reaches by name, as written in the repository at ``root``. {} when unreadable."""
+    try:
+        tree = ast.parse((root / PREDICATE_SOURCE).read_text())
+        nodes = json.loads((root / "greg" / "path.json").read_text())["nodes"]
+    except (OSError, SyntaxError, ValueError, KeyError, TypeError, MemoryError, RecursionError):
+        return {}
+    functions = {s.name: s for s in tree.body if isinstance(s, (ast.FunctionDef, ast.AsyncFunctionDef))}
+    table = next((s.value for s in tree.body if isinstance(s, ast.Assign) and isinstance(s.value, ast.Dict)
+                  and any(isinstance(t, ast.Name) and t.id == "PREDICATES" for t in s.targets)), None)
+    named = {} if table is None else {k.value: v.id for k, v in zip(table.keys, table.values)
+                                      if isinstance(k, ast.Constant) and isinstance(v, ast.Name)}
+    lines = {}
+    for node in nodes if isinstance(nodes, list) else []:
+        if not (isinstance(node, dict) and isinstance(node.get("id"), str) and isinstance(node.get("predicate"), str)):
+            continue
+        start = named.get(node["predicate"])
+        reached, todo = set(), [start] if start in functions else []
+        while todo:
+            name = todo.pop()
+            if name not in reached:
+                reached.add(name)
+                todo += [n.id for n in ast.walk(functions[name]) if isinstance(n, ast.Name) and n.id in functions]
+        if reached:
+            lines[node["id"]] = {line for f in reached
+                                 for line in range(functions[f].lineno, functions[f].end_lineno + 1)}
+    return lines
+
+
+def _test_defined(root: Path, test: str) -> bool:
+    """Whether ``path::name`` (or ``path::Class::name``) names a test pytest would collect: a ``test*`` function
+    defined at module level, or in that class, in the parsed file. Text that only looks like one (a ``def`` in a
+    docstring or a string, a nested function, a helper) is not a test."""
+    file, _, name = test.partition("::")
+    parts = [p.split("[")[0] for p in name.split("::")] if name else []
+    try:
+        tree = ast.parse((root / file).read_text())
+    except (OSError, SyntaxError, ValueError, MemoryError, RecursionError):
+        return False
+    body = tree.body
+    for cls in parts[:-1]:
+        body = next((s.body for s in body if isinstance(s, ast.ClassDef) and s.name == cls), None)
+        if body is None:
+            return False
+    found = [s for s in body if isinstance(s, (ast.FunctionDef, ast.AsyncFunctionDef))]
+    return bool(parts) and parts[-1].startswith("test") and any(s.name == parts[-1] for s in found)
 
 
 def _mutant_liveness(gate: Path) -> list:
     """(mutant, [why it cannot be run as written]) for every listed mutant; an empty list means live.
 
     Live: a (name, node or None, file, old, new, test) literal whose ``old`` text occurs exactly once in ``file``,
-    whose ``new`` text differs from it, and whose test (``path::name``) is defined. Files are read relative to the
-    repository that holds the gate (``<root>/scripts/ci/<gate>``). A stale or no-op mutant weakens nothing, and a
-    mutant naming no test can be caught by nothing; a run of the gate fails on each, and this read says so without
-    running it."""
+    whose ``new`` text differs from it, and whose test (``path::name``) is defined (``_test_defined``). A mutant
+    tagged with a node must also sit on that node's predicate: in greg/path.py, inside the predicate or a function
+    it calls (``_predicate_lines``); text anywhere else weakens some other code. Files are read relative to the
+    repository that holds the gate (``<root>/scripts/ci/<gate>``). A stale, no-op or off-target mutant weakens
+    nothing of its node, and a mutant naming no test can be caught by nothing; this read says so without running
+    the gate."""
     root = Path(gate).resolve().parent.parent.parent
+    predicate_lines = None
     out = []
     for mutant in _gate_mutants(gate):
         if not (isinstance(mutant, tuple) and len(mutant) == 6 and (mutant[1] is None or isinstance(mutant[1], str))
                 and all(isinstance(mutant[i], str) for i in (0, 2, 3, 4, 5))):
             out.append((mutant, ["not a (name, node, file, old, new, test) literal"]))
             continue
-        _name, _node, relative, old, new, test = mutant
+        _name, node, relative, old, new, test = mutant
         why = []
         try:
-            found = (root / relative).read_text().count(old)
+            text = (root / relative).read_text()
+            found = text.count(old)
         except (OSError, ValueError):
             found = None
             why.append(f"no file {relative}")
@@ -618,14 +686,15 @@ def _mutant_liveness(gate: Path) -> list:
             why.append(f"stale: its text occurs {found} times in {relative}")
         if new == old:
             why.append("no-op: its replacement equals its text")
-        file, _, test_name = test.partition("::")
-        try:
-            defined = bool(test_name) and re.search(rf"^\s*def {re.escape(test_name.split('::')[-1].split('[')[0])}\(",
-                                                    (root / file).read_text(), re.M)
-        except (OSError, ValueError):
-            defined = False
-        if not defined:
+        if not _test_defined(root, test):
             why.append(f"no test {test}")
+        if node is not None and found == 1:
+            predicate_lines = _predicate_lines(root) if predicate_lines is None else predicate_lines
+            first = text[:text.index(old)].count("\n") + 1
+            span = set(range(first, first + old.count("\n") - old.endswith("\n") + 1))
+            on_source = (root / relative).resolve() == (root / PREDICATE_SOURCE).resolve()
+            if not (on_source and span <= predicate_lines.get(node, set())):
+                why.append(f"off target: its text is not in {node}'s predicate in {PREDICATE_SOURCE}")
         out.append((mutant, why))
     return out
 

@@ -10,10 +10,10 @@ from __future__ import annotations
 
 import contextlib
 import copy
+import importlib.util
 import io
 import json
 from pathlib import Path
-import re
 
 import pytest
 
@@ -207,19 +207,48 @@ def test_mutation_guarded_reads_the_gate_and_covers_every_node_predicate(tmp_pat
     weird.write_text("MUTANTS = [(name, 'N1') for name in 'ab']\n")             # not plain literals: never read
     assert devpath.mutation_guarded(weird) == set()
     weird.write_text(f"MUTANTS = [{LIVE!r}, ('b', None, 'src.py', 'x = 1\\n', 'x = 3\\n', 'tests/test_x.py::test_x')]\n")
-    assert devpath.mutation_guarded(weird) == {"N9"} and devpath.mutant_problems(weird) == []
+    assert devpath.mutation_guarded(weird) == {"N1"} and devpath.mutant_problems(weird) == []
 
 
-LIVE = ("a", "N9", "src.py", "x = 1\n", "x = 2\n", "tests/test_x.py::test_x")
+# A greg/path.py with five predicates (N1 "one" on lines 1-2, N2 "two" calling the helper _shared, N3, N4, N6), an
+# uncalled function, and a path whose N9 has no predicate.
+MINI_PREDICATES = ('def one(journal):\n    return "one"\n\n\ndef _shared():\n    return "shared"\n\n\n'
+                   'def two(journal):\n    _shared()\n    return "two"\n\n\n'
+                   'def three(journal):\n    return "three"\n\n\ndef four(journal):\n    return "four"\n\n\n'
+                   'def six(journal):\n    return "six"\n\n\ndef unused():\n    return "unused"\n\n\n'
+                   'PREDICATES = {"one": one, "two": two, "three": three, "four": four, "six": six}\n')
+MINI_NODES = [{"id": "N1", "predicate": "one"}, {"id": "N2", "predicate": "two"}, {"id": "N3", "predicate": "three"},
+              {"id": "N4", "predicate": "four"}, {"id": "N6", "predicate": "six"}, {"id": "N9"}]
+
+
+def mutant(name, node, word, test="tests/test_x.py::test_x", file="greg/path.py") -> tuple:
+    """A mutant that edits the line `    return "<word>"`."""
+    return (name, node, file, f'    return "{word}"\n', f'    return "{word}!"\n', test)
+
+
+LIVE = mutant("a", "N1", "one")
 
 
 def _mini_repo(root: Path) -> Path:
-    """A repository holding one source line, one test and the gate's place (<root>/scripts/ci/gate.py)."""
+    """A repository holding the predicates above, one source line, one test and the gate's place
+    (<root>/scripts/ci/gate.py)."""
     (root / "scripts" / "ci").mkdir(parents=True)
     (root / "tests").mkdir()
+    (root / "greg").mkdir()
+    (root / "greg" / "path.py").write_text(MINI_PREDICATES)
+    (root / "greg" / "path.json").write_text(json.dumps({"nodes": MINI_NODES}))
     (root / "src.py").write_text("x = 1\n")
     (root / "tests" / "test_x.py").write_text("def test_x():\n    assert True\n")
     return root / "scripts" / "ci" / "gate.py"
+
+
+def _real_repo(root: Path) -> tuple[Path, str]:
+    """The real gate's text, and its place beside the real source and tests (symlinked)."""
+    gate = root / "scripts" / "ci" / "check_path_predicate_mutants.py"
+    gate.parent.mkdir(parents=True)
+    for name in ("greg", "tests"):
+        (root / name).symlink_to(ROOT / name)
+    return gate, (ROOT / "scripts/ci/check_path_predicate_mutants.py").read_text()
 
 
 def test_a_stale_no_op_or_untested_mutant_guards_nothing(tmp_path):
@@ -227,11 +256,11 @@ def test_a_stale_no_op_or_untested_mutant_guards_nothing(tmp_path):
     was stale (its text gone from the source) or a no-op. A listed mutant now guards only while it can run as
     written; whether its test catches it is still shown only by running the gate, and the output says so."""
     gate = _mini_repo(tmp_path)
-    mutants = [("stale", "N1", "src.py", "y = 1\n", "y = 2\n", "tests/test_x.py::test_x"),
-               ("no-op", "N2", "src.py", "x = 1\n", "x = 1\n", "tests/test_x.py::test_x"),
-               ("untested", "N3", "src.py", "x = 1\n", "x = 2\n", "tests/test_x.py::test_gone"),
-               ("no file", "N4", "gone.py", "x = 1\n", "x = 2\n", "tests/test_x.py::test_x"),
-               ("live", "N6", "src.py", "x = 1\n", "x = 2\n", "tests/test_x.py::test_x")]
+    mutants = [mutant("stale", "N1", "won"),
+               ("no-op", "N2", "greg/path.py", '    return "two"\n', '    return "two"\n', "tests/test_x.py::test_x"),
+               mutant("untested", "N3", "three", test="tests/test_x.py::test_gone"),
+               mutant("no file", "N4", "four", file="gone.py"),
+               mutant("live", "N6", "six")]
     gate.write_text(f"MUTANTS = {mutants!r}\n")
     assert devpath.mutation_guarded(gate) == {"N6"}
     problems = dict(devpath.mutant_problems(gate))
@@ -240,12 +269,7 @@ def test_a_stale_no_op_or_untested_mutant_guards_nothing(tmp_path):
     assert "live" not in problems
 
     # The reviewer's reproduction on the real gate: N3's mutant made stale and N4's a no-op.
-    repo = tmp_path / "real"                                   # the real gate, beside the real source and tests
-    gate = repo / "scripts" / "ci" / "check_path_predicate_mutants.py"
-    gate.parent.mkdir(parents=True)
-    for name in ("greg", "tests"):
-        (repo / name).symlink_to(ROOT / name)
-    real = (ROOT / "scripts/ci/check_path_predicate_mutants.py").read_text()
+    gate, real = _real_repo(tmp_path / "real")
     n3 = "'        if not (observed and observed[-1][\"passed\"]):\\n            missing.append(\"payment_reconciled\")\\n',"
     n4 = "'        missing = [f\"sop_run_not_{c}\" for c in off_body]\\n',"
     assert real.count(n3) == 1 and real.count(n4) == 1
@@ -308,15 +332,140 @@ def test_a_repository_node_not_attested_achieved_stops_the_build(monkeypatch):
     assert status["structural_depth"] == 0 and [r["id"] for r in status["built_ahead"]][:2] == ["N1", "N2"]
 
 
+def test_a_gate_that_could_run_another_list_guards_nothing(tmp_path):
+    """Review WU01-ATK-2 (a): the read took the first `MUTANTS = [...]`, so a gate that later reassigned, cleared or
+    filtered its list was read as guarding nodes it never ran. A list now counts only when the gate binds it once
+    and names it nowhere else, and the gate runs that same read (test_the_gate_runs_only_what_the_build_frontier_
+    counts)."""
+    gate = _mini_repo(tmp_path)
+    listed = f"MUTANTS = [{LIVE!r}]\n"
+    gate.write_text(listed)
+    assert devpath.mutation_guarded(gate) == {"N1"}
+    for later in ("MUTANTS = []", "MUTANTS.clear()", "MUTANTS += []", "del MUTANTS[0]", "MUTANTS[:] = []",
+                  "mutants = MUTANTS", "for m in MUTANTS:\n    pass", "print(len(MUTANTS))",
+                  "def f():\n    global MUTANTS", "globals()['MUTANTS'] = []", "from os import sep as MUTANTS",
+                  "def MUTANTS():\n    pass", "MUTANTS: list = []", "import sys\nsys.modules[__name__].MUTANTS = []"):
+        gate.write_text(listed + later + "\n")
+        assert devpath.mutation_guarded(gate) == set(), later
+
+
+def test_a_mutant_off_its_nodes_predicate_guards_nothing(tmp_path):
+    """Review WU01-ATK-2 (b): a mutant tagged with a node counted for it wherever its text was, a README line
+    included. It now guards its node only from inside that node's predicate in greg/path.py, or a function the
+    predicate calls."""
+    gate = _mini_repo(tmp_path)
+    (tmp_path / "README.md").write_text("one\n")
+    test = "tests/test_x.py::test_x"
+    mutants = [("readme", "N1", "README.md", "one\n", "won\n", test),
+               # Line 2 of tests/test_x.py: inside N1's line numbers, but not in greg/path.py.
+               ("same line, another file", "N1", "tests/test_x.py", "    assert True\n", "    assert False\n", test),
+               mutant("another node's predicate", "N3", "one"),
+               mutant("a function no predicate calls", "N4", "unused"),
+               mutant("a helper another predicate calls", "N1", "shared"),
+               mutant("a helper its predicate calls", "N2", "shared"),
+               mutant("its own predicate", "N6", "six")]
+    gate.write_text(f"MUTANTS = {mutants!r}\n")
+    assert devpath.mutation_guarded(gate) == {"N2", "N6"}
+    problems = dict(devpath.mutant_problems(gate))
+    assert set(problems) == {"readme", "same line, another file", "another node's predicate",
+                             "a function no predicate calls", "a helper another predicate calls"}
+    assert all(why.startswith("off target") for why in problems.values()), problems
+
+    # The reviewer's case on the real gate: N3's mutant, its text unchanged, aimed at a README holding that text.
+    gate, real = _real_repo(tmp_path / "real")
+    tag = '"N3", "greg/path.py",'
+    assert real.count(tag) == 1
+    gate.write_text(real.replace(tag, '"N3", "README.md",'))
+    (gate.parents[2] / "README.md").write_text(
+        '        if not (observed and observed[-1]["passed"]):\n            missing.append("payment_reconciled")\n')
+    assert devpath.mutation_guarded(gate) == PREDICATE_NODES - {"N3"}
+
+
+def test_only_a_test_pytest_would_collect_makes_a_mutant_live(tmp_path):
+    """Review WU01-ATK-2 (c): the test lookup was a regex over the file's text, so `def test_gone():` inside a
+    docstring kept a removed test defined. A test is now found in the parsed module, where pytest collects it."""
+    gate = _mini_repo(tmp_path)
+    (tmp_path / "tests" / "test_y.py").write_text(
+        '"""Notes.\n\ndef test_in_docstring():\n"""\nNOTE = "def test_in_string():"\n\n\n'
+        'def helper():\n    def test_nested():\n        pass\n\n\n'
+        'class TestKind:\n    def test_method(self):\n        pass\n\n\n'
+        'def test_real():\n    pass\n')
+    defined = {"test_in_docstring": False, "test_in_string": False, "test_nested": False, "helper": False,
+               "test_method": False, "TestKind::test_real": False, "TestKind::test_method": True,
+               "test_real": True, "test_real[1]": True}
+    for name, expected in defined.items():
+        listed = mutant("a", "N1", "one", test=f"tests/test_y.py::{name}")
+        gate.write_text(f"MUTANTS = [{listed!r}]\n")
+        assert (devpath.mutation_guarded(gate) == {"N1"}) is expected, name
+
+
+def _run_gate(root: Path, files: dict, mutants: list, monkeypatch, capsys) -> tuple[int, list]:
+    """Run this tree's gate on a small repository holding ``files`` and a gate file that lists ``mutants``."""
+    for relative, text in {**files, "scripts/ci/check_path_predicate_mutants.py": f"MUTANTS = {mutants!r}\n"}.items():
+        (root / relative).parent.mkdir(parents=True, exist_ok=True)
+        (root / relative).write_text(text)
+    spec = importlib.util.spec_from_file_location("path_predicate_gate",
+                                                  ROOT / "scripts/ci/check_path_predicate_mutants.py")
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+    monkeypatch.setattr(gate, "ROOT", root)
+    monkeypatch.setattr(gate, "MUTANTS", mutants)          # what a gate that ran its own list would run
+    code = gate.main()
+    return code, capsys.readouterr().out.splitlines()
+
+
+LAZY = {"greg/path.json": '{"nodes": []}', "pkg/__init__.py": "", "pkg/lazy.py": "VALUE = 1\n",
+        "pkg/user.py": "from pkg.lazy import VALUE\n", "pkg/core.py": "def double(x):\n    return 2 * x\n",
+        "tests/test_pkg.py": "def test_double():\n"
+                             "    from pkg import core, user                 # imported here, after collection\n"
+                             "    assert core.double(user.VALUE) == 2\n"}
+
+
+def test_the_gate_never_counts_a_mutant_that_breaks_an_import_as_caught(tmp_path, monkeypatch, capsys):
+    """Review WU01-ATK-1: a mutant that broke a module its test imports lazily made the test FAIL rather than ERROR
+    at collection, and the gate printed CAUGHT. A mutated module that does not import, or a test that fails on a
+    syntax or import error, is now INVALID; only a failure on behaviour is a catch."""
+    test = "tests/test_pkg.py::test_double"
+    mutants = [("a syntax error in a lazily imported module", None, "pkg/lazy.py", "VALUE = 1\n",
+                "VALUE = 1\ndef broken(:\n", test),
+               ("a module that raises while it is imported", None, "pkg/lazy.py", "VALUE = 1\n",
+                'VALUE = 1\nraise RuntimeError("broken at import")\n', test),
+               ("a name another module imports is removed", None, "pkg/lazy.py", "VALUE = 1\n",
+                "VALUE_RENAMED = 1\n", test),
+               ("double adds", None, "pkg/core.py", "    return 2 * x\n", "    return 2 + x\n", test)]
+    code, lines = _run_gate(tmp_path, LAZY, mutants, monkeypatch, capsys)
+    assert code == 1 and lines[-1] == "1/4 caught", lines
+    assert [line for line in lines if line.startswith("CAUGHT")] == ["CAUGHT double adds"]
+    invalid = [line for line in lines if line.startswith("INVALID")]
+    assert len(invalid) == 3, lines
+    assert "does not import" in invalid[0] and "SyntaxError" in invalid[0]
+    assert "does not import" in invalid[1] and "RuntimeError" in invalid[1]
+    assert "failed on ImportError" in invalid[2]
+
+
+def test_the_gate_runs_only_what_the_build_frontier_counts(tmp_path, monkeypatch, capsys):
+    """Review WU01-ATK-2: the gate ran its own MUTANTS, so a mutant tagged N3 that edited other code ran, was caught,
+    and guarded N3. The gate now runs the list greg.path reads, and refuses, unrun, every mutant that read would
+    not count."""
+    files = {"greg/__init__.py": "", "greg/path.py": MINI_PREDICATES, "greg/path.json": json.dumps({"nodes": [
+                 {"id": "N3", "predicate": "three"}]}),
+             "pkg/__init__.py": "", "pkg/core.py": "def double(x):\n    return 2 * x\n",
+             "tests/test_mini.py": "from greg.path import three\nfrom pkg.core import double\n\n\n"
+                                   "def test_three():\n    assert three(None) == 'three'\n\n\n"
+                                   "def test_double():\n    assert double(1) == 2\n"}
+    mutants = [mutant("three weakened", "N3", "three", test="tests/test_mini.py::test_three"),
+               ("off its node's predicate", "N3", "pkg/core.py", "    return 2 * x\n", "    return 2 + x\n",
+                "tests/test_mini.py::test_double")]
+    code, lines = _run_gate(tmp_path, files, mutants, monkeypatch, capsys)
+    assert code == 1 and lines[-1] == "1/2 caught", lines
+    assert lines[0].startswith("NOT_LIVE off its node's predicate: off target"), lines
+    assert [line for line in lines if line.startswith(("CAUGHT", "SURVIVED", "INVALID"))] == ["CAUGHT three weakened"]
+
+
 def _missing_rehearsals(data: dict) -> list:
-    missing = []
-    for node in data["nodes"]:
-        for ref in node.get("rehearsal", []):
-            file, name = ref.split("::")
-            source = ROOT / file
-            if not source.exists() or not re.search(rf"^def {re.escape(name)}\(", source.read_text(), re.M):
-                missing.append(ref)
-    return missing
+    """Rehearsal references that name no test pytest would collect (the gate's own reading of a test id)."""
+    return [ref for node in data["nodes"] for ref in node.get("rehearsal", [])
+            if not devpath._test_defined(ROOT, ref)]
 
 
 def test_every_rehearsal_reference_names_a_test_that_exists():

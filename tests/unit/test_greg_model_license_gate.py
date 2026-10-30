@@ -9,8 +9,9 @@ a pull fetches the one its runner selects (server/images.go PullModel, pullSelec
 legacy "downgrade anchor" at the old path, a regular file holding the pulled manifest plus a layer naming it
 (server/images.go writePullDowngradeAnchor; manifest.go WriteLegacyAnchor), so 3358d660's reader read the anchor:
 the same licenses, bound to the anchor's digest instead of the manifest Ollama serves. A store without an anchor
-(after ``ollama cp``, server/images.go CopyModel, or a failed best-effort write) was unassessed, and a model
-re-pulled with other terms kept the earlier anchor's verdict until the anchor was rewritten.
+(after ``ollama cp``, server/images.go CopyModel, or a failed best-effort write) was unassessed, and a legacy
+manifest that differs from the v2 one (an older Ollama pulling after a downgrade) was read in place of the one
+Ollama 0.40 serves.
 
 ``licensing.admit_model_selection`` is the selection gate the body and the console can call before a route is built:
 a held, missing or unreadable model leaves the founder's order with the reason; a cleared one carries its evidence.
@@ -128,8 +129,9 @@ def test_a_registry_host_with_a_port_is_filed_as_ollama_escapes_it(tmp_path):
     assert a is not None and a["verdict"] == "CLEARED", a
 
 
-def test_a_re_pull_with_other_terms_is_read_from_v2_not_from_the_earlier_anchor(tmp_path):
-    """An anchor left by an earlier pull (Apache) and the manifest a later pull linked (Llama): Ollama serves v2."""
+def test_a_legacy_manifest_that_differs_from_the_v2_one_is_not_read(tmp_path):
+    """A legacy manifest (Apache) beside a different v2 manifest (Llama), as an older Ollama leaves one when it
+    pulls after a downgrade: Ollama 0.40 serves v2."""
     root = tmp_path / "models"
     anchor(root, manifest(root, (APACHE,), weights=b"earlier weights"))
     digest = link(root, manifest(root, (LLAMA,), weights=b"later weights"))
@@ -195,7 +197,7 @@ def test_g10_a_v2_link_out_of_the_store_or_to_a_blob_of_another_name_is_not_read
 def test_a_name_is_matched_to_the_stored_one_ignoring_case_as_ollama_does(tmp_path):
     """Ollama maps a requested name to the stored spelling ignoring case, a v2 entry before a legacy one (manifest.go
     FindName, FindNamedManifestForRunner; routes.go getExistingName). On 4f5ce7e5 "Qwen3.5:4b" missed the v2 link
-    and read the lower-cased legacy anchor of an earlier pull."""
+    and read the lower-cased legacy manifest beside it."""
     root = tmp_path / "models"
     link(root, manifest(root, (LLAMA,), weights=b"new weights"))
     anchor(root, manifest(root, (APACHE,), weights=b"old weights"))

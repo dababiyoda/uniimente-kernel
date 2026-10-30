@@ -26,6 +26,24 @@ Bounds enforced here, inside the authority office's single-action grant:
   accept terms, log in) is never executed by this capability. The session stops there
   with ``AUTHORITY_BOUNDARY`` and the evidence so far; doing it needs its own approved
   action (``consequence_class`` external_contact or above) through the Gate.
+* **Method gate**: the marker is a declaration; the request is the mechanism. Inside the
+  signed origins only GET, HEAD and OPTIONS leave the browser. Any other method (a POST
+  form that a click or Enter submits, a page script's fetch PUT or DELETE, a beacon, an
+  ``<a ping>``) and any WebSocket to a signed origin is aborted and counted in
+  ``blocked_methods``, unless the signed ``read_methods`` names that method, origin and
+  path exactly (``"POST https://shop.example/search"``); each use is counted in
+  ``read_methods_used``. A step during which such a request is attempted (opening the
+  start page counts as step 0) ends the session with ``AUTHORITY_BOUNDARY``: the page
+  wanted to act on the world, and continuing would drive a page whose state the signed
+  steps did not anticipate. An attempt is charged to the step during which it is first
+  seen (one seen after the last step, to the last step), so a page timer's request may
+  stop a later step; a request the page has not issued when the session closes is never
+  sent. Requests outside the signed origins keep the network bound
+  above whatever their method. Measured 2026-10-30 (Playwright 1.63, Chromium
+  1243): routing sees form posts, page fetches, dedicated and service workers, beacons
+  and pings. Residual: the gate sees methods, not effects, so a GET with side effects (a
+  logout or unsubscribe link, a state-changing GET API) cannot be detected; and the
+  confined relay checks origins only, so this gate lives in the browser's routing alone.
 * **Credentials**: ``secret`` fills resolve only declared handles through the secret
   broker; an unprovisioned credential stops the session truthfully, it is never guessed.
 * **Challenges**: CAPTCHA / bot challenges are detected and never solved. With
@@ -60,6 +78,10 @@ SESSION_SECONDS = 300
 CHALLENGE_MARKERS = ("client challenge", "captcha", "verify you are human", "are you a robot",
                      "unusual traffic", "attention required")
 TRUST_BUNDLE_ENV = "GREG_BROWSER_TRUST_BUNDLE"
+READ_METHODS = ("GET", "HEAD", "OPTIONS")
+MAX_READ_METHODS = 20
+METHOD_GATE = ("inside the signed origins only GET, HEAD, OPTIONS and the signed read_methods leave the browser; "
+               "a GET with side effects cannot be detected")
 DEFAULT_PORTS = {"https": 443, "wss": 443, "http": 80, "ws": 80}
 LOOPBACK = ("127.0.0.1", "localhost", "::1")
 
@@ -114,6 +136,34 @@ def _origin(url: str) -> tuple[str, int] | None:
     return ((parts.hostname or "").lower(), port) if port and parts.hostname else None
 
 
+def _method_key(method: str, url: str) -> str:
+    """``METHOD host:port/path`` of a request or WebSocket (the query is left out: it is the page's data)."""
+    host, port = _origin(url) or ("", 0)
+    host = f"[{host}]" if ":" in host else host
+    return f"{method.upper()} {host}:{port}{urllib.parse.urlsplit(url).path or '/'}"
+
+
+def _read_methods(params: dict, origins: set[tuple[str, int]]) -> set[str]:
+    """The signed exceptions to the method gate, as ``_method_key`` strings. An exception names one method, one
+    signed origin and one exact path; it never widens the network bound."""
+    entries = params.get("read_methods", [])
+    if not isinstance(entries, list) or len(entries) > MAX_READ_METHODS:
+        raise CapabilityError(f"read_methods is a list of at most {MAX_READ_METHODS} 'METHOD url' entries")
+    keys = set()
+    for entry in entries:
+        method, _, url = str(entry).partition(" ") if isinstance(entry, str) else ("", "", "")
+        parts = urllib.parse.urlsplit(url)
+        schemes = ("ws", "wss") if method == "WEBSOCKET" else ("http", "https")
+        if (not re.fullmatch(r"[A-Z]{3,16}", method) or method in READ_METHODS or parts.scheme not in schemes
+                or not parts.path or parts.query or parts.fragment or _origin(url) is None):
+            raise CapabilityError(f"read_methods entry {entry!r} is 'METHOD url': a method other than "
+                                  f"{'/'.join(READ_METHODS)} and an exact path with no query")
+        if _origin(url) not in origins:
+            raise CapabilityError(f"read_methods entry {entry!r} names an origin this session is not signed for")
+        keys.add(_method_key(method, url))
+    return keys
+
+
 def _validate(params: dict) -> tuple[str, list[dict], set[str], set[tuple[str, int]]]:
     url = str(params.get("url", ""))
     parts = urllib.parse.urlsplit(url)
@@ -146,6 +196,7 @@ def session(params: dict, ctx: InvocationContext) -> dict:
     from playwright.sync_api import Error as PlaywrightError, sync_playwright
 
     url, steps, hosts, origins = _validate(params)
+    exceptions = _read_methods(params, origins)
     confined = ctx.egress is not None
     if confined:
         from greg.worker_isolation import WorkerIsolationError, _backend
@@ -158,14 +209,27 @@ def session(params: dict, ctx: InvocationContext) -> dict:
     trace_dir.mkdir(parents=True, exist_ok=True)
     on_challenge = params.get("on_challenge", "stop")
     trace, extracted, blocked, blocked_sockets = [], {}, {}, {}
+    blocked_methods, read_methods_used, attempts = {}, {}, []   # attempts: every refused method, in order
     status, boundary = "COMPLETED", None
     deadline = time.monotonic() + min(int(params.get("max_seconds", SESSION_SECONDS)), SESSION_SECONDS)
     # Chromium cannot sandbox itself as root on Linux, nor nest its own user namespace inside GREG's; reported below.
     sandboxed = not (sys.platform.startswith("linux") and os.geteuid() == 0) and not confined
 
+    def gate(method: str, url: str) -> bool:
+        """The method gate for a request to a signed origin: True lets it leave the browser."""
+        if method.upper() in READ_METHODS:
+            return True
+        key = _method_key(method, url)
+        if key in exceptions:
+            read_methods_used[key] = read_methods_used.get(key, 0) + 1
+            return True
+        blocked_methods[key] = blocked_methods.get(key, 0) + 1
+        attempts.append(key)
+        return False
+
     def allow(route):
         if _origin(route.request.url) in origins:
-            return route.continue_()
+            return route.continue_() if gate(route.request.method, route.request.url) else route.abort()
         target = (urllib.parse.urlsplit(route.request.url).hostname or "").lower()
         blocked[target] = blocked.get(target, 0) + 1
         return route.abort()
@@ -173,8 +237,10 @@ def session(params: dict, ctx: InvocationContext) -> dict:
     def allow_socket(ws):
         # Not connecting is the refusal: an unconnected routed WebSocket is answered inside the browser and never
         # opens a connection. (A synchronous close() here never returns: this handler runs on Playwright's loop.)
+        # A WebSocket carries writes whatever its handshake's method, so it passes only as a signed exception.
         if _origin(ws.url) in origins:
-            ws.connect_to_server()
+            if gate("WEBSOCKET", ws.url):
+                ws.connect_to_server()
             return
         target = (urllib.parse.urlsplit(ws.url).hostname or "").lower()
         blocked_sockets[target] = blocked_sockets.get(target, 0) + 1
@@ -201,10 +267,20 @@ def session(params: dict, ctx: InvocationContext) -> dict:
             context.route_web_socket(re.compile(".*"), allow_socket)
             page = context.new_page()
             page.set_default_timeout(STEP_TIMEOUT_MS)
-            skipping = False
+            skipping, seen = False, 0             # seen: attempts already charged to the open or an earlier step
+            current = (0, {"op": "open", "url": url})
+
+            def charge():
+                """Refused writes first seen during the current step end the session there (opening is step 0)."""
+                nonlocal seen
+                if len(attempts) > seen:
+                    trace[-1]["blocked_methods"], seen = attempts[seen:], len(attempts)
+                    raise BoundaryStop("AUTHORITY_BOUNDARY", _wrote(*current, trace[-1]["blocked_methods"]))
+
             try:
                 page.goto(url, wait_until="domcontentloaded")
                 trace.append(_evidence(page, trace_dir, 0, {"op": "open", "url": url}, "ok"))
+                charge()
                 if _challenged(page):
                     if on_challenge != "skip":
                         raise BoundaryStop("CHALLENGE", "the site presented a bot challenge; GREG never solves "
@@ -214,7 +290,7 @@ def session(params: dict, ctx: InvocationContext) -> dict:
                 for index, step in enumerate(steps, start=1):
                     if time.monotonic() > deadline:
                         raise BoundaryStop("BUDGET", "session wall-time budget exhausted")
-                    op = step["op"]
+                    op, current = step["op"], (index, step)
                     if skipping and op != "goto":
                         trace.append({"step": index, "op": op, "result": "skipped_after_challenge"})
                         continue
@@ -228,24 +304,30 @@ def session(params: dict, ctx: InvocationContext) -> dict:
                     if op in ("extract", "extract_all", "download") and step.get("as"):
                         extracted[step["as"]] = value
                     trace.append(_evidence(page, trace_dir, index, step, "ok", value=value))
+                    charge()
                     if _challenged(page):
                         trace[-1]["result"] = "challenge_detected"
                         if on_challenge != "skip":
                             raise BoundaryStop("CHALLENGE", f"after step {index} the site presented a bot "
                                                             "challenge; GREG never solves CAPTCHAs or challenges")
                         skipping = True
+                charge()                              # a write first seen after the last step's own check
             except BoundaryStop as stop:
                 status, boundary = stop.kind, stop.why
                 trace.append(_evidence(page, trace_dir, len(trace), {"op": "boundary"}, stop.kind, note=stop.why))
             except PlaywrightError as exc:
                 status, boundary = "STEP_FAILED", str(exc).splitlines()[0][:300]
+                if len(attempts) > seen:           # the step failed after attempting a write: the write decides
+                    status, boundary = "AUTHORITY_BOUNDARY", _wrote(*current, attempts[seen:]) + f" ({boundary})"
                 trace.append(_evidence(page, trace_dir, len(trace), {"op": "failure"}, "failed", note=boundary))
             finally:
                 context.close()
                 browser.close()
     result = {"session": name, "status": status, "boundary": boundary, "start_url": url,
               "final_url": trace[-1].get("url") if trace else None, "steps": trace, "extracted": extracted,
-              "blocked_requests": blocked, "blocked_websockets": blocked_sockets, "allowed_hosts": sorted(hosts),
+              "blocked_requests": blocked, "blocked_websockets": blocked_sockets, "blocked_methods": blocked_methods,
+              "read_methods": sorted(exceptions), "read_methods_used": read_methods_used, "method_gate": METHOD_GATE,
+              "allowed_hosts": sorted(hosts),
               "allowed_origins": sorted(f"{h}:{p}" for h, p in origins), "browser": "chromium via Playwright",
               "egress": ("relay: only the signed origins, every connection journaled" if confined
                          else "in-browser allowlist of the signed origins"),
@@ -254,6 +336,13 @@ def session(params: dict, ctx: InvocationContext) -> dict:
     (trace_dir / "trace.json").write_text(json.dumps(result, indent=2, sort_keys=True, default=str))
     result["trace_sha256"] = "sha256:" + hashlib.sha256((trace_dir / "trace.json").read_bytes()).hexdigest()
     return result
+
+
+def _wrote(index: int, step: dict, keys: list) -> str:
+    return (f"step {index} ({step.get('op')} {step.get('selector') or step.get('url') or ''}) attempted "
+            f"{', '.join(sorted(set(keys)))}: only GET, HEAD and OPTIONS leave this session unless signed in "
+            "read_methods; the request was aborted, and doing it needs its own approved action through the "
+            "Consequence Gate")
 
 
 def _challenged(page) -> bool:
@@ -388,4 +477,4 @@ def session_status(params: dict, ctx: InvocationContext) -> dict:
     return {"session": name, "present": True, "status": trace["status"], "boundary": trace.get("boundary"),
             "steps": len(trace["steps"]), "screenshots_intact": intact, "extracted": trace.get("extracted", {}),
             "extracted_keys": sorted(trace.get("extracted", {})), "final_url": trace.get("final_url"),
-            "blocked_requests": trace.get("blocked_requests", {})}
+            "blocked_requests": trace.get("blocked_requests", {}), "blocked_methods": trace.get("blocked_methods", {})}

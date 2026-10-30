@@ -603,7 +603,8 @@ def judge(predicate: dict, output, *, whole: bool = False, recorded_cut: bool = 
     except KeyError:
         if declared:       # a field the observation has not reached yet is not an absent field
             return INSUFFICIENT, f"field {path!r} absent; {incomplete}"
-        return (TRUE if op == "absent" else FALSE), f"field {path!r} absent"
+        gone = "; the path does not exist" if isinstance(output, dict) and output.get("exists") is False else ""
+        return (TRUE if op == "absent" else FALSE), f"field {path!r} absent{gone}"
     except LookupError as exc:
         return INSUFFICIENT, str(exc)
     expected = predicate.get("value")

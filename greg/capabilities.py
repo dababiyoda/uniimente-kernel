@@ -327,10 +327,12 @@ def with_text(out: dict, data: bytes, *, cut: bool = False) -> dict:
 def bounded_read(path: Path, refusal: str) -> bytes:
     """The bytes of the regular file at ``path``, refused (``refusal``) before more than MAX_READ_BYTES + 1 of them
     are read: by its size when the file states one, by the read itself when it does not (a /proc file states 0)."""
-    with open(os.open(path, os.O_RDONLY | os.O_NONBLOCK), "rb") as stream:     # a FIFO swapped in never blocks
-        info = os.fstat(stream.fileno())
-        if not stat.S_ISREG(info.st_mode):
-            raise CapabilityError(f"{path.name} is not a regular file")
+    fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)                             # a FIFO swapped in never blocks
+    info = os.fstat(fd)
+    if not stat.S_ISREG(info.st_mode):                  # checked on the descriptor, before Python wraps it
+        os.close(fd)
+        raise CapabilityError(f"{path.name} is not a regular file")
+    with open(fd, "rb") as stream:
         if info.st_size > MAX_READ_BYTES:
             raise CapabilityError(refusal)
         data = stream.read(MAX_READ_BYTES + 1)
@@ -341,7 +343,7 @@ def bounded_read(path: Path, refusal: str) -> bytes:
 
 def fs_read(params, ctx: InvocationContext) -> dict:
     path = _inside(Path(params["path"]), ctx.read_roots + (ctx.workspace,))
-    if not path.is_file():  # absence is a measurement of the world, not a sensor failure
+    if not path.exists():   # absence is a measurement of the world; a directory or FIFO there is a failed read
         return {"path": str(path), "exists": False}
     data = bounded_read(path, "file exceeds read ceiling")
     return with_text({"path": str(path), "exists": True, "bytes": len(data),

@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/acceptance/directive-sections.schema.json",
+  "title": "Directive completion contract: the 77 sections of the 2026-10-28 directive and their testable asks",
+  "description": "One record per numbered section. Section count, order, headings, excerpts, cited evidence, computed tiers, blockers and statuses are checked against the source and this tree by python -m acceptance check.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "source", "reading", "units", "sections"],
+  "properties": {
+    "version": {"const": "directive-sections/1"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["directive", "sha256", "criterion", "intent_refs"],
+      "properties": {
+        "directive": {"type": "string", "pattern": "^docs/intent/sources/.+\\.md$"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "criterion": {"type": "string", "minLength": 1},
+        "intent_refs": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "reading": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "units": {"type": "array", "items": {"$ref": "#/$defs/unit"}},
+    "sections": {"type": "array", "items": {"$ref": "#/$defs/section"}}
+  },
+  "$defs": {
+    "status": {
+      "enum": ["INTENDED", "DESIGNED", "IMPLEMENTED", "INTEGRATED", "UNIT_VERIFIED", "SANDBOX_VERIFIED",
+               "BODY_VERIFIED", "FOUNDER_ACCEPTED", "AUTHORIZED_LIVE", "EXTERNALLY_VERIFIED",
+               "COMMERCIAL_OUTCOME_VERIFIED", "BLOCKED_WITH_REASON"]
+    },
+    "rung": {
+      "enum": ["INTENDED", "DESIGNED", "IMPLEMENTED", "INTEGRATED", "UNIT_VERIFIED", "SANDBOX_VERIFIED",
+               "BODY_VERIFIED", "FOUNDER_ACCEPTED", "AUTHORIZED_LIVE", "EXTERNALLY_VERIFIED",
+               "COMMERCIAL_OUTCOME_VERIFIED"]
+    },
+    "unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "source", "depends_on"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[A-Z]{1,2}[0-9]*-[A-Z0-9]+[a-z0-9]*$"},
+        "title": {"type": "string", "minLength": 1},
+        "source": {"type": "string", "minLength": 1},
+        "depends_on": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "note": {"type": "string"}
+      }
+    },
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["n", "heading", "status", "asks"],
+      "properties": {
+        "n": {"type": "integer", "minimum": 1},
+        "heading": {"type": "string", "minLength": 1},
+        "status": {"enum": ["DONE", "PARTIAL", "OPEN"]},
+        "asks": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/ask"}}
+      }
+    },
+    "ask": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "ask", "excerpt", "owner_paths", "evidence", "required_tier", "tier", "coverage"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^S[0-9]{1,2}\\.A[0-9]+$"},
+        "ask": {"type": "string", "minLength": 1, "maxLength": 400},
+        "excerpt": {"type": "string", "minLength": 3, "maxLength": 300},
+        "owner_paths": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "evidence": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^(contract:[A-Z][A-Z0-9-]*|mission:[A-L]\\.[A-Za-z0-9.]+|tests/\\S+)$"}
+        },
+        "tests_tier": {"enum": ["UNIT_VERIFIED", "SANDBOX_VERIFIED", "BODY_VERIFIED"]},
+        "required_tier": {"$ref": "#/$defs/rung"},
+        "tier": {"$ref": "#/$defs/status"},
+        "coverage": {"enum": ["covered", "partial", "gap"]},
+        "blocker": {"$ref": "#/$defs/blocker"},
+        "note": {"type": "string"}
+      }
+    },
+    "blocker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "reason"],
+      "properties": {
+        "class": {"enum": ["FOUNDER_ONLY", "EXTERNAL", "BUILDABLE_NOT_BUILT", "PRINCIPLE"]},
+        "reason": {"type": "string", "minLength": 1},
+        "unit": {"type": "string", "minLength": 1},
+        "guarded_by": {
+          "oneOf": [
+            {"const": "UNGUARDED"},
+            {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^tests/\\S+$"}}
+          ]
+        }
+      }
+    }
+  }
+}

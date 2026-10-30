@@ -1,8 +1,13 @@
-"""python -m acceptance {check,run,report}: the whole-machine acceptance harness (Missions A-L).
+"""python -m acceptance {check,run,report,directive}: the whole-machine acceptance harness (Missions A-L).
 
-  check   validate missions.json and completion-contract.json against this tree (static; no test runs)
-  run     run every cited test once, then report what each requirement, mission and function attained
-  report  the same report from a recorded outcomes file, without running anything
+  check      validate missions.json, completion-contract.json and directive-sections.json against this tree
+             (static; no test runs)
+  run        run every cited test once, then report what each requirement, mission and function attained
+  report     the same report from a recorded outcomes file, without running anything
+  directive  the 2026-10-28 directive section by section: each section's status computed from its asks, the
+             BUILDABLE_NOT_BUILT asks in dependency order, and whether the prompt is completely built
+             (--collect also runs pytest's collection over every node the map cites; --outcomes recomputes
+             the tiers from a recorded run)
 
 ``run`` exits 0 only when every tested requirement and every Mission L trace link attained its declared
 tier and no cited test failed, errored or collected nothing (a requirement of coverage 'gap' declares no tier,
@@ -23,6 +28,7 @@ import sys
 import tempfile
 
 from acceptance import CONTRACT, MANIFEST, ROOT, load, minimal_nodes, problems, report, shortfall_names
+from acceptance import directive
 
 
 def _head() -> str | None:
@@ -99,6 +105,10 @@ def main(argv=None) -> int:
     rep = sub.add_parser("report")
     rep.add_argument("--outcomes", required=True)
     rep.add_argument("--out")
+    dire = sub.add_parser("directive")
+    dire.add_argument("--collect", action="store_true", help="also check that every cited node collects a test")
+    dire.add_argument("--outcomes", help="recompute tiers from a recorded outcomes file")
+    dire.add_argument("--out")
     args = parser.parse_args(argv)
 
     manifest, contract = load(MANIFEST), load(CONTRACT)
@@ -106,11 +116,27 @@ def main(argv=None) -> int:
     if found:
         print("acceptance manifest or contract is unsound:", *found, sep="\n  ")
         return 2
+    if args.cmd in ("check", "directive"):
+        sections = directive.load_map()
+        found = directive.directive_problems(sections, manifest, contract)
+        if args.cmd == "directive" and args.collect and not found:
+            found = directive.collect_problems(directive.cited_nodes(sections))
+        if found:
+            print("directive map is unsound:", *found, sep="\n  ")
+            return 2
+        outcomes = json.loads(Path(args.outcomes).read_text()) if getattr(args, "outcomes", None) else None
+        drep = directive.directive_report(sections, manifest, contract, outcomes)
     if args.cmd == "check":
         nodes = _nodes(manifest, None)
         print(f"sound: {len(manifest['missions'])} missions, "
               f"{sum(len(m['requirements']) for m in manifest['missions'])} requirements, "
               f"{len(nodes)} distinct test nodes, {len(contract['functions'])} contract functions")
+        print(directive.summary_line(drep))
+        return 0
+    if args.cmd == "directive":
+        if args.out:
+            Path(args.out).write_text(json.dumps(drep, indent=1, sort_keys=True) + "\n")
+        directive.print_report(drep, sections)
         return 0
     meta = {"head": _head(), "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")}
     if args.cmd == "run":

@@ -8,9 +8,9 @@ own: it stays held, takes no action and publishes its own heartbeat.
 
 The second test is the founder-signed cadence (greg/backup.py) on a body running as its own process: the signed
 mission's first backup lands in the signed store, counts as verified only through the Gate's receipt of its drill, and
-restores on another "machine". Its store is on another filesystem (``/dev/shm``) where this machine has one; otherwise
-the mission signs that it accepts the body's own. ``greg.backup`` is imported inside it, so the first test also runs
-on a tree that predates the cadence (the fail-before run).
+restores on another "machine". Its store is on the body's own filesystem, which the mission signs that it accepts:
+this machine's only other writable filesystem is a tmpfs, which a backup refuses as held in memory. ``greg.backup`` is
+imported inside it, so the first test also runs on a tree that predates the cadence (the fail-before run).
 
 The founder key is a per-test Ed25519 key, not Alfonso's.
 """
@@ -21,6 +21,7 @@ import os
 from pathlib import Path
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import tempfile
@@ -147,12 +148,10 @@ def test_a_running_body_takes_a_verified_backup_on_its_signed_cadence(tmp_path):
     from greg import backup
     home, key, body_id, _ = make_body(tmp_path)
     log = tmp_path / "body.log"
-    shm = Path("/dev/shm")
-    other = shm.is_dir() and os.stat(shm).st_dev != os.stat(home).st_dev
-    store = Path(tempfile.mkdtemp(prefix="greg-backup-store-", dir=shm if other else tmp_path)).resolve()
+    store = Path(tempfile.mkdtemp(prefix="greg-backup-store-", dir=tmp_path)).resolve()
     try:
         drop(home, signed(key, body_id, "MISSION", backup.mission(store=store, rpo_seconds=3600, cadence_seconds=60,
-                                                                 accept_same_filesystem=not other)))
+                                                                 accept_same_filesystem=True)))
         body = run_body(home, log)
         try:
             wait_for(lambda: backup.verified(home, store), what="a verified backup")
@@ -161,7 +160,8 @@ def test_a_running_body_takes_a_verified_backup_on_its_signed_cadence(tmp_path):
             stop(body)
         [first] = backup.verified(home, store)
         assert first["restored_head"] == first["ledger_head"] and first["held"] is True
-        assert first["same_filesystem"] is not other
+        assert first["same_filesystem"] is True
+        assert stat.S_IMODE(os.lstat(store / "objects").st_mode) == 0o700, "private to the body's user"
         target = tmp_path / "new-machine" / "body"
         assert restore_body(store, first["seed"], target)["ledger_head_at_recovery_point"] == first["ledger_head"]
         with Body(target) as again:

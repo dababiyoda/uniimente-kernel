@@ -18,6 +18,9 @@ from __future__ import annotations
 import errno
 import json
 import os
+from pathlib import Path
+import shutil
+import tempfile
 import threading
 
 import pytest
@@ -290,3 +293,87 @@ def test_an_item_waiting_in_the_intake_is_never_lost_whenever_the_running_body_c
         again.ingest_intake()                           # read again: a retained fact, never a second record
         assert len(again.journal.replay("external.ingested")) == 1
         assert not (Layout(target).intake / item.name).exists()
+
+
+def test_a_tool_calls_credential_file_is_never_packed(tmp_path):
+    """An approved ``mcp.act`` holds the credential a server reads from a file in the mission workspace, in plaintext,
+    for the length of the call (``greg.mcp_tools._invoke``); a body killed mid-call leaves it until it next opens."""
+    home, *_ = make_body(tmp_path)
+    with Body(home) as body:
+        body.boot()
+    workspace = Layout(home).workspace / "m_sync"
+    workspace.mkdir(parents=True, exist_ok=True)
+    secret = b'{"type": "service_account", "private_key": "-----BEGIN PRIVATE KEY-----\\nNEVER_IN_A_BACKUP\\n"}'
+    held = Path(tempfile.mkdtemp(prefix="cred-gdrive-", dir=workspace))            # exactly as _invoke makes it
+    fd = os.open(held / "google_application_credentials", os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    os.write(fd, secret)
+    os.close(fd)
+    scratch = Path(tempfile.mkdtemp(prefix="mcp-gdrive-", dir=workspace))          # the server's scratch home
+    (scratch / "token-cache.json").write_bytes(b"NEVER_IN_A_BACKUP either")
+    (workspace / "cred-notes.md").write_text("# a mission's own notes about credentials\n")   # not a call's directory
+    store = tmp_path / "store"
+    made = seed.make_seed(home, store)
+    manifest = json.loads(cas.get(store, made["seed"]))
+    packed = b"".join(cas.get(store, a) for a in manifest["files"].values())
+    assert b"NEVER_IN_A_BACKUP" not in packed
+    rels = {f"workspace/m_sync/{held.name}/google_application_credentials",
+            f"workspace/m_sync/{scratch.name}/token-cache.json"}
+    assert rels <= set(manifest["excluded_secrets"]) and not rels & set(manifest["files"])
+    assert "workspace/m_sync/cred-notes.md" in manifest["files"]
+    restored_held(store, made, tmp_path / "new-machine" / "body")
+
+
+@pytest.mark.parametrize("queue", ["intake", "inbox"])
+def test_a_queue_that_is_a_link_packs_nothing_from_where_it_leads(tmp_path, queue):
+    home, *_ = make_body(tmp_path)
+    with Body(home) as body:
+        body.boot()
+    outside = tmp_path / "elsewhere"
+    outside.mkdir()
+    (outside / "cloud-creds.json").write_text(json.dumps({"token": "NEVER_IN_A_BACKUP"}))
+    shutil.rmtree(home / queue, ignore_errors=True)
+    os.symlink(outside, home / queue)
+    store = tmp_path / "store"
+    made = seed.make_seed(home, store)
+    manifest = json.loads(cas.get(store, made["seed"]))
+    assert not [rel for rel in manifest["files"] if rel.startswith(f"{queue}/")]
+    assert b"NEVER_IN_A_BACKUP" not in b"".join(cas.get(store, a) for a in manifest["files"].values())
+    assert manifest["not_packed"][queue] == "symbolic link"
+
+
+@pytest.mark.parametrize("swap", ["another file", "a symbolic link to a key"])
+def test_a_file_swapped_between_its_listing_and_its_open_is_never_packed(tmp_path, monkeypatch, swap):
+    """The race a confined worker or a running body can win: ``lstat`` lists a regular file, and before ``open`` its
+    name holds another file or a link. What the name then holds is never packed."""
+    home, *_ = make_body(tmp_path)
+    layout = Layout(home)
+    with Body(home) as body:
+        body.boot()
+    workspace = layout.workspace / "m_other"
+    workspace.mkdir(parents=True, exist_ok=True)
+    report = workspace / "report.md"
+    report.write_text("# listed\n")
+    source = tmp_path / "swap-source"                         # outside the home: never packed in its own right
+    source.write_text("SWAPPED_IN after the listing\n")
+    real_open, swapped = os.open, []
+
+    def swapping_open(path, flags, *args, dir_fd=None, **kwargs):
+        if path == "report.md" and dir_fd is not None and not swapped:
+            swapped.append(True)
+            if swap == "another file":
+                os.replace(source, report)
+            else:
+                report.unlink()
+                os.symlink(layout.device_key, report)
+        return real_open(path, flags, *args, dir_fd=dir_fd, **kwargs)
+    monkeypatch.setattr(os, "open", swapping_open)
+    store = tmp_path / "store"
+    made = seed.make_seed(home, store)
+    monkeypatch.undo()
+    manifest = json.loads(cas.get(store, made["seed"]))
+    packed = b"".join(cas.get(store, a) for a in manifest["files"].values())
+    assert swapped and b"SWAPPED_IN" not in packed and layout.device_key.read_bytes() not in packed
+    assert "workspace/m_other/report.md" not in manifest["files"]
+    # O_NOFOLLOW refuses the link at open (ELOOP); a regular file swapped in is caught by its inode.
+    assert manifest["not_packed"]["workspace/m_other/report.md"] == (
+        "replaced while the seed was taken" if swap == "another file" else "unreadable: ELOOP")

@@ -31,6 +31,13 @@ A seed of a running body is consistent by construction, with no lock on the writ
   after the ledger, the heartbeat could name a head the packed ledger does not hold, and the restored body would
   refuse its own history (``greg.body.Body._require_published_head``); a restored body writes its own on its first
   turn. The ledger's lookup indexes live in memory and are rebuilt on every open.
+- **A tool call's credential scratch is never packed.** An approved ``mcp.act`` writes the credential a server reads
+  from a file, in plaintext, to ``workspace/<mission>/cred-<server>-<8>/`` (and a server's scratch home to
+  ``mcp-...``) for the length of the call (``greg.mcp_tools.LEFTOVER``); one killed mid-call leaves it until the body
+  next opens. Such files are listed with the excluded secrets.
+- **A stored object that has rotted is rewritten.** An unchanged file's object is shared by every seed; if its bytes
+  no longer hash to its address, the correct bytes this seed holds replace it atomically and the repair is listed in
+  ``repaired_objects``, instead of every later seed failing on it.
 """
 from __future__ import annotations
 
@@ -59,6 +66,24 @@ class SeedError(ValueError):
 
 def _excluded(rel: str) -> bool:
     return any(marker in rel for marker in SECRET_MARKERS)
+
+
+def _call_scratch(rel: str) -> bool:
+    """Whether ``rel`` lies in a tool call's credential or scratch directory, ``workspace/<mission>/<LEFTOVER>/``,
+    which ``greg.mcp_tools.sweep_leftovers`` removes when the body opens."""
+    from greg.mcp_tools import LEFTOVER
+    parts = rel.split("/")
+    return len(parts) > 3 and parts[0] == "workspace" and LEFTOVER.fullmatch(parts[2]) is not None
+
+
+def _put(store: Path, data: bytes, repaired: list) -> str:
+    """``cas.put``, except that an existing object whose bytes no longer hash to its address is rewritten from
+    ``data`` (which does) and its address appended to ``repaired``."""
+    try:
+        return cas.put(store, data)
+    except cas.IntegrityError:
+        repaired.append(cas.repair(store, data))
+        return repaired[-1]
 
 
 def _walk(home: Path):
@@ -165,17 +190,17 @@ def make_seed(home: Path, store: Path, *, end: str | None = None) -> dict:
     waiting = _waiting(home, keys)
     ledger, head = ledger_prefix(home, end=end)
     backed_up_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-    files, excluded, derived, not_packed = {}, [], [], {}
+    files, excluded, derived, not_packed, repaired = {}, [], [], {}, []
     if ledger is not None:
-        files[LEDGER] = cas.put(store, ledger)
+        files[LEDGER] = _put(store, ledger, repaired)
     for rel, data in waiting.items():
-        files[rel] = cas.put(store, data)
+        files[rel] = _put(store, data, repaired)
     for rel, dirfd, name in _walk(home):
         if rel == LEDGER:
             continue
         if rel in waiting:
             continue
-        if _excluded(rel):
+        if _excluded(rel) or _call_scratch(rel):
             excluded.append(rel)
             continue
         if rel in DERIVED:
@@ -185,13 +210,15 @@ def make_seed(home: Path, store: Path, *, end: str | None = None) -> dict:
         if why is not None:
             not_packed[rel] = why
             continue
-        files[rel] = cas.put(store, data)
+        files[rel] = _put(store, data, repaired)
     excluded.sort()
     derived.sort()
     seed = {"format": "uniimente-seed/1", "files": files, "excluded_secrets": excluded, "derived_not_packed": derived,
-            "not_packed": not_packed, "backed_up_at": backed_up_at, "ledger_head": head}
-    return {"seed": cas.put(store, json.dumps(seed, sort_keys=True).encode()), "files": len(files), "excluded": excluded,
-            "not_packed": not_packed, "backed_up_at": seed["backed_up_at"], "ledger_head": seed["ledger_head"]}
+            "not_packed": not_packed, "backed_up_at": backed_up_at, "ledger_head": head,
+            **({"repaired_objects": sorted(set(repaired))} if repaired else {})}
+    return {"seed": _put(store, json.dumps(seed, sort_keys=True).encode(), repaired), "files": len(files),
+            "excluded": excluded, "not_packed": not_packed, "repaired": sorted(set(repaired)),
+            "backed_up_at": seed["backed_up_at"], "ledger_head": seed["ledger_head"]}
 
 
 def restore(store: Path, seed_address: str, target: Path) -> dict:

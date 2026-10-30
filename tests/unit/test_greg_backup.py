@@ -9,8 +9,10 @@ the body keeps running; a store that is gone is never fresh. After the loss of t
 restores, only the records after its recovery point are lost, and the cadence resumes once the founder resumes the
 body. On one clock, a cadence with an RPO of at least twice its period keeps every recovery point within the RPO.
 
-Most stores here are directories on the test machine's one disk, so their missions sign ``accept_same_filesystem``;
-the tests of that refusal use ``/dev/shm`` as the other filesystem where it is one.
+Most stores here are directories on the test machine's one disk, so their missions sign ``accept_same_filesystem``.
+This machine's only other writable filesystem is ``/dev/shm``, a tmpfs, which a backup refuses as held in memory
+(tested); the tests that need a store on another filesystem use it with that one check stubbed, as a stand-in for a
+second disk.
 
 The founder key is a per-test Ed25519 key, not Alfonso's.
 """
@@ -21,6 +23,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -70,13 +73,19 @@ def refusals(body: Body) -> str:
     return " ".join(r for a in actions(body) if a["status"] != "DONE" for r in a["reasons"])
 
 
-@pytest.fixture
-def other_filesystem(world):
-    """A store on another filesystem than the body home (``/dev/shm``), where this machine has one."""
+def shm_store(world) -> Path:
     shm = Path("/dev/shm")
     if not shm.is_dir() or os.stat(shm).st_dev == os.stat(world["home"]).st_dev:
         pytest.skip("no second filesystem on this machine")
-    store = Path(tempfile.mkdtemp(prefix="greg-backup-store-", dir=shm)).resolve()
+    return Path(tempfile.mkdtemp(prefix="greg-backup-store-", dir=shm)).resolve()
+
+
+@pytest.fixture
+def other_filesystem(world, monkeypatch):
+    """A store on another filesystem than the body home: ``/dev/shm``, with the memory-filesystem refusal stubbed so
+    that it stands in for a second disk (this machine has no other writable filesystem)."""
+    store = shm_store(world)
+    monkeypatch.setattr(backup, "_volatile", lambda path: None)
     yield store
     shutil.rmtree(store, ignore_errors=True)
 
@@ -223,8 +232,10 @@ def test_a_store_that_is_gone_or_damaged_is_never_fresh(world):
     store.rename(unplugged)                                           # the disk is unplugged
     assert backup.status({"rpo_seconds": 3600}, ctx)["why"].startswith("the store is not there")
     store.mkdir()                                                     # an empty directory where the mount was
+    assert backup.status({"rpo_seconds": 3600}, ctx)["why"].endswith("a link or on another filesystem")
+    (store / "objects").mkdir()
     assert backup.status({"rpo_seconds": 3600}, ctx)["why"].endswith("missing or damaged in the store")
-    store.rmdir()
+    shutil.rmtree(store)
     unplugged.rename(store)
     [latest] = backup.verified(home, store)
     manifest = json.loads(cas.get(store, latest["seed"]))
@@ -303,25 +314,18 @@ def test_on_one_clock_the_cadence_keeps_the_recovery_point_within_the_rpo(world,
     assert len(backup.verified(home, store)) == 3 and max(ages) <= 150 + 61
 
 
-@pytest.mark.parametrize("damage", ["before the backup", "between the seed and its drill"])
-def test_a_damaged_store_records_no_verified_backup_asks_once_and_the_body_keeps_running(world, monkeypatch, damage):
+def test_a_store_damaged_between_the_seed_and_its_drill_records_no_verified_backup_asks_once_and_the_body_runs(
+        world, monkeypatch):
     home, store, clock = world["home"], world["store"], world["clock"]
     body_json = cas.put(store, Layout(home).config.read_bytes())
+    made = seed.make_seed
 
-    def corrupt():
+    def then_damaged(*args, **kwargs):
+        out = made(*args, **kwargs)
         path = cas._path(store, body_json)
         path.write_bytes(path.read_bytes() + b" ")
-
-    if damage == "before the backup":
-        corrupt()
-    else:
-        made = seed.make_seed
-
-        def then_damaged(*args, **kwargs):
-            out = made(*args, **kwargs)
-            corrupt()
-            return out
-        monkeypatch.setattr(seed, "make_seed", then_damaged)
+        return out
+    monkeypatch.setattr(seed, "make_seed", then_damaged)
     with Body(home, clock=clock) as body:
         body.boot()
         sign_cadence(world, body)
@@ -329,9 +333,42 @@ def test_a_damaged_store_records_no_verified_backup_asks_once_and_the_body_keeps
             assert "missions" in body.tick()                          # the body keeps running
             clock.advance(61)
         [refused] = [a for a in actions(body) if a["status"] != "DONE"]
-        assert ("restore drill" if damage.startswith("between") else "no seed") in " ".join(refused["reasons"])
+        assert "restore drill" in " ".join(refused["reasons"])
         assert [a["kind"] for a in asks(body)] == ["NO_STRATEGY"], "exactly one ask"
     assert backup.verified(home, store) == []
+
+
+def test_a_rotten_object_is_never_fresh_and_the_next_backup_rewrites_it(world, monkeypatch):
+    """One flipped bit in an object the latest backup needs: it no longer restores, so it is not fresh, and the next
+    backup rewrites the object from the correct bytes it holds instead of failing on it ever after."""
+    home, data, store, clock = world["home"], world["data"], world["store"], world["clock"]
+    with Body(home, clock=clock) as body:
+        body.boot()
+        sign_cadence(world, body)
+        assert body.tick()["missions"][0]["state"] == "ACTED"
+        clock.advance(61)
+        assert body.tick()["missions"][0]["state"] == "HOLDING"     # re-observed: the backup did what it should
+        [first] = backup.verified(home, store)
+        manifest = json.loads(cas.get(store, first["seed"]))
+        ctx = context(home, data, "body.backup_status", backup.PREFIX + str(store))
+        assert backup.status({"rpo_seconds": 3600}, ctx)["fresh"] is True
+        rotten = cas._path(store, manifest["files"]["body.json"])     # an unchanged file: every later seed shares it
+        raw = bytearray(rotten.read_bytes())
+        raw[0] ^= 1
+        rotten.write_bytes(bytes(raw))
+        with pytest.raises(cas.IntegrityError):
+            restore_body(store, first["seed"], store.parent / "would-be-machine" / "body")
+        out = backup.status({"rpo_seconds": 3600}, ctx)
+        assert out["fresh"] is False and out["current"] is False and out["why"].endswith("missing or damaged in "
+                                                                                          "the store")
+        clock.advance(61)
+        assert body.tick()["missions"][0]["state"] == "ACTED"         # due again: a new backup, not an ask
+        assert asks(body) == []
+    second = backup.verified(home, store)[-1]
+    assert second["repaired_objects"] == 1
+    assert json.loads(cas.get(store, second["seed"]))["repaired_objects"] == [manifest["files"]["body.json"]]
+    assert cas.intact(store, manifest["files"]["body.json"])
+    restore_body(store, first["seed"], store.parent / "new-machine" / "body")   # the repair heals the older seed too
 
 
 def test_disk_loss_restores_the_latest_verified_backup_and_the_cadence_resumes_after_the_founder(world):
@@ -426,3 +463,198 @@ def test_the_founder_signs_the_printed_cadence_with_the_existing_mission_command
         registered = body.engine.book.missions[MID].spec
         assert registered["closure"] == {"kind": "infinite", "cadence_seconds": 900}
         assert registered["success_checks"][0]["sensor"]["params"] == {"rpo_seconds": 21600}
+
+
+def one_clock(monkeypatch, clock) -> None:
+    """The body's clock, the seed's time and the sensor's time as one clock, so that hours can pass in a test."""
+    class OneClock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return clock()
+    monkeypatch.setattr(backup, "_now", clock)
+    monkeypatch.setattr(seed, "datetime", OneClock)
+
+
+@pytest.mark.parametrize("rpo,cadence,down", [(86400, 3600, 48 * 3600), (7200, 3600, 9 * 3600)],
+                         ids=["a weekend off after a backup", "a night asleep after a backup"])
+def test_a_body_stopped_between_a_backup_and_its_first_read_keeps_its_cadence_without_an_ask(world, monkeypatch, rpo,
+                                                                                             cadence, down):
+    """The engine judges a backup by the next read of its check. Stopped, asleep or paused before that read for longer
+    than the RPO, the body used to find the backup it had just taken stale, blame it and stop the cadence on a founder
+    ask although nothing had failed. The first read now judges the backup as it was taken; the next one by age."""
+    home, data, store, clock = world["home"], world["data"], world["store"], world["clock"]
+    one_clock(monkeypatch, clock)
+    with Body(home, clock=clock) as body:
+        body.boot()
+        sign_cadence(world, body, rpo_seconds=rpo, cadence_seconds=cadence)
+        assert body.tick()["missions"][0]["state"] == "ACTED"
+    clock.advance(down)                                                # the body is stopped, asleep or paused
+    out = backup.status({"rpo_seconds": rpo}, context(home, data, "body.backup_status", backup.PREFIX + str(store)))
+    assert out["fresh"] is False and out["current"] is True and "first read" in out["why"]
+    states = []
+    with Body(home, clock=clock) as body:
+        body.boot()
+        for _ in range(3):
+            states.append(body.tick()["missions"][0]["state"])
+            clock.advance(cadence + 1)
+        assert asks(body) == []
+    # The first read judges the backup as taken; one cadence later the next read finds it due and takes a new one.
+    assert states == ["HOLDING", "ACTED", "HOLDING"]
+    first, second = backup.verified(home, store)
+    assert second["seed"] != first["seed"] and second["restored_head"] == second["ledger_head"]
+
+
+def test_a_backup_already_older_than_the_rpo_when_taken_is_judged_by_its_age_at_its_first_read(world, monkeypatch):
+    home, data, store, clock = world["home"], world["data"], world["store"], world["clock"]
+    one_clock(monkeypatch, clock)
+
+    class Behind(datetime):                                            # a seed stamped an hour and a half too early
+        @classmethod
+        def now(cls, tz=None):
+            return clock() - timedelta(seconds=5400)
+    monkeypatch.setattr(seed, "datetime", Behind)
+    with Body(home, clock=clock) as body:
+        body.boot()
+        sign_cadence(world, body)                                      # RPO 3600
+        assert body.tick()["missions"][0]["state"] == "ACTED"
+    out = backup.status({"rpo_seconds": 3600}, context(home, data, "body.backup_status", backup.PREFIX + str(store)))
+    assert out["first_read"] is True and out["current"] is False and out["fresh"] is False
+
+
+def test_a_store_held_in_memory_is_refused(world):
+    """A tmpfs store is gone after every reboot, including the one after a disk failure."""
+    home, clock = world["home"], world["clock"]
+    store = shm_store(world)
+    try:
+        if backup._volatile(store) != "tmpfs":
+            pytest.skip("/dev/shm is not a tmpfs here")
+        assert backup._volatile(home) is None
+        with Body(home, clock=clock) as body:
+            body.boot()
+            sign_cadence(world, body, store=store)                     # even with the same-filesystem acceptance
+            for _ in range(2):
+                body.tick()
+                clock.advance(61)
+            assert "held in memory" in refusals(body)
+            assert [a["kind"] for a in asks(body)] == ["NO_STRATEGY"]
+        assert backup.verified(home, store) == [] and not (store / "objects").exists()
+    finally:
+        shutil.rmtree(store, ignore_errors=True)
+
+
+@pytest.mark.parametrize("where", ["the read root itself", "a directory inside the read root"])
+def test_a_store_whose_objects_directory_is_a_link_is_refused_and_nothing_lands_where_it_leads(world, where):
+    home, data, store = world["home"], world["data"], world["store"]
+    elsewhere = (data / "objects-on-the-body-disk").resolve()
+    elsewhere.mkdir()
+    if where == "the read root itself":
+        os.symlink(elsewhere, store / "objects")
+    else:
+        (store / "objects").mkdir(mode=0o700)
+        os.symlink(elsewhere, store / "objects" / "ab")                 # one fan-out directory
+    ctx = context(home, data, "body.backup", backup.PREFIX + str(store))
+    with pytest.raises(CapabilityError, match="not a directory" if where.endswith("itself") else "symbolic links"):
+        backup.backup({ACCEPT: True}, ctx)
+    assert list(elsewhere.iterdir()) == []
+
+
+def test_a_store_whose_objects_directory_is_another_filesystem_is_refused(world, monkeypatch):
+    home, data, store = world["home"], world["data"], world["store"]
+    lstat = os.lstat
+
+    def other_device(path, *args, **kwargs):                           # a separate mount at <store>/objects
+        info = lstat(path, *args, **kwargs)
+        if str(path) == str(store / "objects"):
+            return os.stat_result((*tuple(info)[:2], info.st_dev + 1, *tuple(info)[3:10]))
+        return info
+    monkeypatch.setattr(os, "lstat", other_device)
+    with pytest.raises(CapabilityError, match="another filesystem than the store"):
+        backup.backup({ACCEPT: True}, context(home, data, "body.backup", backup.PREFIX + str(store)))
+    monkeypatch.undo()
+    assert not [p for p in (store / "objects").iterdir()]
+
+
+@pytest.mark.parametrize("inside", ["objects", "objects/ab"])
+def test_a_read_root_inside_the_stores_objects_is_refused(world, inside):
+    home, data, store = world["home"], world["data"], world["store"]
+    root = store / inside
+    root.mkdir(parents=True)
+    for capability, adapter, params in ADAPTERS:
+        ctx = context(home, data, capability, backup.PREFIX + str(store))
+        ctx = InvocationContext(workspace=ctx.workspace, read_roots=(data, root), secrets=ctx.secrets,
+                                manifest=ctx.manifest, target=ctx.target, mission_id=MID)
+        with pytest.raises(CapabilityError, match="inside the backup store's objects directory"):
+            adapter(params, ctx)
+    assert list(root.iterdir()) == []
+
+
+def test_a_backup_is_private_to_the_bodys_user(world, monkeypatch):
+    """The body home is 0700; its backup must not be readable by other users of the store's machine either."""
+    home, data, store = world["home"], world["data"], world["store"]
+    (store / "objects").mkdir(mode=0o755)
+    os.chmod(store / "objects", 0o755)                                 # left open by an earlier tool
+    ctx = context(home, data, "body.backup", backup.PREFIX + str(store))
+    backup.backup({ACCEPT: True}, ctx)
+    assert stat.S_IMODE(os.lstat(store / "objects").st_mode) == 0o700
+    os.chmod(store / "objects", 0o755)
+    monkeypatch.setattr(os, "chmod", lambda *args, **kwargs: None)   # a filesystem that ignores permissions
+    with pytest.raises(CapabilityError, match="cannot be made private"):
+        backup.backup({ACCEPT: True}, ctx)
+
+
+def test_a_store_whose_objects_directory_is_replaced_while_the_backup_is_written_is_refused(world, monkeypatch):
+    home, data, store = world["home"], world["data"], world["store"]
+    made = seed.make_seed
+
+    def then_replaced(home_, store_, **kw):
+        out = made(home_, store_, **kw)
+        objects = Path(store_) / "objects"
+        objects.rename(Path(store_) / "objects.moved")
+        shutil.copytree(Path(store_) / "objects.moved", objects)       # same objects, another directory
+        return out
+    monkeypatch.setattr(seed, "make_seed", then_replaced)
+    with pytest.raises(CapabilityError, match="changed while the backup was written"):
+        backup.backup({ACCEPT: True}, context(home, data, "body.backup", backup.PREFIX + str(store)))
+
+
+def test_status_is_not_fresh_once_the_stores_objects_directory_is_a_link(world):
+    home, data, store, clock = world["home"], world["data"], world["store"], world["clock"]
+    with Body(home, clock=clock) as body:
+        body.boot()
+        sign_cadence(world, body)
+        body.tick()
+    ctx = context(home, data, "body.backup_status", backup.PREFIX + str(store))
+    assert backup.status({"rpo_seconds": 3600}, ctx)["fresh"] is True
+    copy = (data / "copy-of-objects").resolve()                       # intact copies, on the body's own disk
+    shutil.copytree(store / "objects", copy)
+    shutil.rmtree(store / "objects")
+    os.symlink(copy, store / "objects")
+    out = backup.status({"rpo_seconds": 3600}, ctx)
+    assert out["fresh"] is False and out["why"].endswith("a link or on another filesystem")
+
+
+def test_status_is_not_fresh_once_a_store_taken_on_another_filesystem_is_on_the_bodys(world, other_filesystem,
+                                                                                     monkeypatch):
+    home, data, clock = world["home"], world["data"], world["clock"]
+    with Body(home, clock=clock) as body:
+        body.boot()
+        sign_cadence(world, body, accept_same_filesystem=False, store=other_filesystem)
+        assert body.tick()["missions"][0]["state"] == "ACTED"
+    ctx = context(home, data, "body.backup_status", backup.PREFIX + str(other_filesystem))
+    assert backup.status({"rpo_seconds": 3600}, ctx)["fresh"] is True
+    identity = backup._identity
+
+    def unmounted(path, **kwargs):                       # the disk is gone and its mount point is on the body's disk
+        found = identity(path, **kwargs)
+        return (os.stat(home).st_dev, found[1]) if found and Path(path) == other_filesystem else found
+    monkeypatch.setattr(backup, "_identity", unmounted)
+    out = backup.status({"rpo_seconds": 3600}, ctx)
+    assert out["fresh"] is False and out["why"].startswith("the store is now on the body's own filesystem")
+
+
+def test_a_backup_takes_no_parameter_but_the_signed_acceptance(world):
+    home, data, store = world["home"], world["data"], world["store"]
+    with pytest.raises(CapabilityError, match="takes only"):
+        backup.backup({ACCEPT: True, "end": "sha256:" + "0" * 64},
+                      context(home, data, "body.backup", backup.PREFIX + str(store)))
+    assert not (store / "objects").exists()

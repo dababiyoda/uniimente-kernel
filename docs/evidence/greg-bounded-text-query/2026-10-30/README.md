@@ -67,7 +67,7 @@ answer to exactly the bytes that were read.
 | Run | Result |
 | --- | --- |
 | `pytest tests/unit/test_greg_text_query.py` | 27 passed |
-| A 12 MiB log, phrase near the end | found; peak traced memory under 2 MiB; result under 2 KiB |
+| A 12 MiB log, phrase near the end | found; measured 262 KiB peak traced memory, a 534-byte result, 0.1 s (warm process); the test asserts under 2 MiB and 2 KiB |
 | A phrase across a chunk boundary, at 4 offsets | found once, at the right offset |
 | A short phrase inside the carried tail | counted once |
 | An accent in the next chunk | `cafe au` absent, `café au` found |

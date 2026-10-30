@@ -7,17 +7,63 @@ only when the body's own retained history shows it; otherwise NOT_YET with the s
 produce it. Nothing here signs, attaches, starts or stops anything.
 
 Reality labels: the report says FOUNDER-DEVICE only when a founder-signed first-body designation exists on this
-ledger and the mission ran after it. Ledger evidence cannot prove who held the keyboard or that the machine is
-Alfonso's; the report says so. A rehearsal body (``greg rehearse``) is never founder-device evidence.
+ledger, the First Mission ran after it, and that mission's signature is at the founder tier (greg/metrics.py
+founder_tier: the key attested passphrase custody before the mission was registered, the rule that gates N1). A
+designated body whose mission a test key or a ``--no-passphrase`` key signed reads LOCAL-DESIGNATED with the reason.
+Ledger evidence cannot prove who held the keyboard or that the machine is Alfonso's; the report says so. A rehearsal
+body (``greg rehearse``) is never founder-device evidence.
 """
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
 RUNBOOK = "greg/CHROMEBOOK_FIRST_MISSION.md"
+STALE_HEARTBEAT_SECONDS = 180           # the console's and Mission Control's rule: older is not a running body
+START_SLACK_SECONDS = 2                 # /proc/stat's boot time is whole seconds; clock steps of a second or two
+
+
+def _started_after(pid: int, at: datetime) -> bool | None:
+    """Whether process ``pid`` started after ``at``, so that it cannot have written a heartbeat dated ``at``: the pid
+    was reused after the writer died. Read from Linux's /proc (field 22 of /proc/<pid>/stat, ticks after boot); None
+    where that cannot be read."""
+    try:
+        ticks = int(Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[19])
+        boot = next(int(line.split()[1]) for line in Path("/proc/stat").read_text().splitlines()
+                    if line.startswith("btime "))
+        started = boot + ticks / os.sysconf("SC_CLK_TCK")
+    except (OSError, ValueError, IndexError, StopIteration):
+        return None
+    return started > at.timestamp() + START_SLACK_SECONDS
+
+
+def _runtime(heartbeat: dict) -> dict:
+    """Whether a body process is running now: a RUNNING or PAUSED heartbeat under three minutes old, written by a
+    process that still exists. The heartbeat file outlives its process, so its state alone proves nothing, and a
+    process that started after the heartbeat was written holds a reused pid, not the writer's."""
+    try:
+        at = datetime.fromisoformat(str(heartbeat["at"]).replace("Z", "+00:00"))
+        age = (datetime.now(timezone.utc) - at).total_seconds()
+    except (KeyError, TypeError, ValueError):
+        at = age = None
+    pid = heartbeat.get("pid")
+    alive = None
+    if isinstance(pid, int) and not isinstance(pid, bool) and pid > 0:
+        try:
+            os.kill(pid, 0)
+            alive = True
+        except ProcessLookupError:
+            alive = False
+        except PermissionError:            # it exists, under another user
+            alive = True
+    reused = _started_after(pid, at) if alive and age is not None else None
+    running = (heartbeat.get("state") in ("RUNNING", "PAUSED") and age is not None
+               and 0 <= age < STALE_HEARTBEAT_SECONDS and alive is True and reused is not True)
+    return {"running": running, "state": heartbeat.get("state"), "pid": pid, "process_alive": alive,
+            "started_after_heartbeat": reused, "age_seconds": None if age is None else round(age, 1)}
 
 
 def _passed(journal, mission_id: str, check_id: str) -> bool:
@@ -86,6 +132,7 @@ def report(home: str | Path) -> dict:
         recovered = len(journal.replay("body.recovered"))
         accepted = len([e for e in journal.replay("critique.recorded") if e.payload["verdict"] == "accept"])
         vepmc = metrics.vepmc(journal)
+        tiers = metrics.founder_tier(journal)
         designated = bool(journal.replay("body.designated"))
         lifecycle = [e.payload for e in journal.replay("mission.lifecycle")]
         memory = None
@@ -100,7 +147,7 @@ def report(home: str | Path) -> dict:
     code = _code(layout.home)
     rows = {r["mission_id"]: r for r in vepmc["missions"]}
     first_row = next((rows[m] for m in verified_first if m in rows), None)
-    heartbeat = st.get("background") or {}
+    runtime = _runtime(st.get("background") or {})
     props = [
         ("ledger_chain_verified", ok, "the hash chain of every retained record verifies", "—"),
         ("code_identified", bool(code["commit"]) and code["dirty"] is False,
@@ -108,8 +155,9 @@ def report(home: str | Path) -> dict:
          "1. Install (clone the review branch; do not edit tracked files)"),
         ("founder_key_enrolled", bool(st["security"]["founder_keys_enrolled"]), "a founder key is enrolled", "1. Install"),
         ("first_body_designated", designated, "a founder-signed first-body designation is on this ledger", "1. Install (step 8/8)"),
-        ("supervised_runtime", heartbeat.get("state") in ("RUNNING", "PAUSED"), "the supervised body reports a heartbeat",
-         "1. Install (service)"),
+        ("supervised_runtime", runtime["running"],
+         "a body process is running now: its heartbeat is RUNNING or PAUSED, under three minutes old, and the "
+         "process that wrote it exists (runtime names what was read)", "1. Install (service)"),
         ("engine_attached_by_founder", bool(attach), "you attached the exact selection engine with your key",
          "4. First Mission: Attach in Mission Control"),
         ("first_mission_verified", bool(verified_first), "a First Mission closed and its appraisal re-derived it",
@@ -137,16 +185,22 @@ def report(home: str | Path) -> dict:
          "6a. A hosted MCP server: GREG renders the page you name, and Chromium's own background connections are "
          "refused at the relay"),
     ]
-    tier = ("FOUNDER-DEVICE (ledger evidence; physical ownership and presence are not provable from a ledger)"
-            if designated and first_row and first_row.get("founder_body") else
-            "LOCAL (not a founder-designated body run; not founder-device evidence)")
+    on_body = bool(designated and first_row and first_row.get("founder_body"))
+    signature = tiers.get(first_row["mission_id"], {}) if first_row else {}
+    if on_body and signature.get("tier") == metrics.FOUNDER_TIER:
+        tier = "FOUNDER-DEVICE (ledger evidence; physical ownership and presence are not provable from a ledger)"
+    elif on_body:
+        tier = ("LOCAL-DESIGNATED (the First Mission ran on the designated body, but its signature is not at the "
+                f"founder tier: {signature.get('why_not', 'no founder-tier record')}; not founder-device evidence)")
+    else:
+        tier = "LOCAL (not a founder-designated body run; not founder-device evidence)"
     out = {"kind": "greg-founder-device-acceptance/1", "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
            "body_id": st["body_id"], "home": str(layout.home), "reality": tier, "chain": chain if not ok else "verified",
            "code": code,
            "properties": [{"property": p, "status": "PASS" if v else "NOT_YET", "means": means, "runbook": step}
                           for p, v, means, step in props],
            "passed": sum(1 for _, v, _, _ in props if v), "total": len(props),
-           "first_mission": first_row, "egress": egress, "vepmc": vepmc["VEPMC"], "recoveries": recovered,
+           "first_mission": first_row, "signature_tier": signature, "runtime": runtime, "egress": egress, "vepmc": vepmc["VEPMC"], "recoveries": recovered,
            "acceptances": accepted,
            "runbook": RUNBOOK, "authority_created": False}
     return out

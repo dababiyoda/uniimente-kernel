@@ -43,9 +43,22 @@ WORD_LIMIT = re.compile(r"\b(under|at most|no more than|fewer than|below)\s+(\d{
 FILE_PATH = re.compile(r"(~?/[^\s'\"“”]+)")
 CODE_WORK = re.compile(r"^\s*(?:improve|change|fix|modify|update|extend)\s+(?:the\s+)?(?P<name>[\w.-]+)"
                        r"(?:\s+(?:repo|repository|code(?:base)?))?\s*[:\u2014-]\s*(?P<objective>\S.*)$", re.I | re.S)
-QUOTED = re.compile(r"[\"“']([^\"”']{1,400})[\"”']")
 MENTIONS = re.compile(r"\b(?:mention(?:s|ed)?|contain(?:s|ed)?|include(?:s|d)?)\b", re.I)
-NEVER = re.compile(r"\b(?:never|not|no longer|doesn'?t|does not|nowhere)\b", re.I)
+# A phrase to search for: double or curly quotes, or single quotes that stand at word boundaries, so the apostrophe in
+# "doesn't" or "server's" never opens a phrase and one inside 'don't panic' never closes it.
+PHRASE = re.compile(r"[\"\u201c]([^\"\u201c\u201d]{1,400})[\"\u201d]"
+                    r"|\u2018((?:[^\u2018\u2019\n]|(?<=\w)\u2019(?=\w)){1,400})\u2019"
+                    r"|(?<!\w)'((?:[^'\n]|(?<=\w)'(?=\w)){1,400})'(?!\w)")
+# Polarity is read only outside the phrases and the path. A negation counts only where it governs the mention verb
+# ("never mentions", "doesn't contain", "is not mentioned", "mentions none of"); any other negating or limiting word
+# leaves the founder's meaning open, and GREG asks.
+_NOT = (r"(?:never|not|cannot|no\s+longer|nowhere"
+        r"|(?:does|do|did|is|are|was|were|has|have|had|ca|can|wo|could|would|should|must)n['\u2019]?t)")
+NEGATED_VERB = re.compile(r"\b" + _NOT + r"\s+(?:\w+\s+)?(?:mention|contain|include)\w*\b"
+                          r"|\b(?:mention|contain|include)\w*\s+(?:no|none\s+of|neither|nothing\s+like|nowhere)\b",
+                          re.I)
+LOOSE_POLARITY = re.compile(r"\b(?:" + _NOT + r"|no|none|neither|nor|nothing|without|except|unless|only|just|"
+                            r"instead|rather|other\s+than|apart\s+from|besides)\b", re.I)
 SCHEDULE = re.compile(r"\b(?:shift|window)\s*:?\s*(?:is\s+)?\d{1,5}\s*(?:h|hours?)\b.*\btakes\s+\d", re.I | re.S)
 NETWORK = re.compile(r"\b(?:(?:shortest|cheapest|fastest|quickest)\s+(?:route|path|way)|(?:maximum|max|most)\s+"
                      r"(?:flow|units|throughput|capacity))\s+from\s+\w+\s+to\s+\w+", re.I)
@@ -147,8 +160,21 @@ def _search_route(text: str, ctx: PlannerContext) -> dict | None:
     file, question = _readable_file(text, ctx, "template:file-search")
     if question:
         return None
-    phrases = [m.group(1) for m in QUOTED.finditer(text)][:16]
-    absent = bool(NEVER.search(text))
+    phrases = [next(g for g in m.groups() if g is not None) for m in PHRASE.finditer(text)][:16]
+    rest = FILE_PATH.sub(" ", PHRASE.sub(" ", text))
+    verbs = list(MENTIONS.finditer(rest))
+    if not phrases or not verbs:
+        return None                         # the mention verb was inside a quoted phrase: not a search request
+    negated = [v for v in verbs if any(n.start() <= v.start() < n.end() for n in NEGATED_VERB.finditer(rest))]
+    loose = LOOSE_POLARITY.findall(NEGATED_VERB.sub(" ", rest))
+    if loose or 0 < len(negated) < len(verbs):
+        why = (f"outside the quotes, {', '.join(repr(w) for w in dict.fromkeys(w.lower() for w in loose))} "
+               "could change that") if loose else "the request says both"
+        return {"status": "NEEDS_INPUT", "origin": "template:file-search", "questions": [
+            f"Should {file} mention {', '.join(repr(p) for p in phrases)}, or never mention "
+            f"{'them' if len(phrases) > 1 else 'it'}? GREG cannot tell: {why}. Ask again with only \"mentions\" or "
+            "\"never mentions\" outside the quotes."]}
+    absent = bool(negated)
     spec = templates.file_search(file=file, phrases=phrases, absent=absent)
     spec["founder_expression"] = text
     return _proposal(spec, "template:file-search", notes=[
@@ -484,7 +510,7 @@ def template_route(text: str, ctx: PlannerContext) -> dict | None:
         return proposal                     # a tool on an MCP server the founder installed, named in the words
     if templates.FIRST_MISSION_WORDS.search(text):      # the founder's first mission: where am I going, what next
         return _first_mission_route(text, ctx)
-    if MENTIONS.search(text) and FILE_PATH.search(text) and QUOTED.search(text) and \
+    if MENTIONS.search(text) and FILE_PATH.search(text) and PHRASE.search(text) and \
             (proposal := _search_route(text, ctx)) is not None:
         return proposal                     # whether a file of any size mentions, or never mentions, a phrase
     if BRIEF.search(text):
@@ -508,11 +534,11 @@ def template_route(text: str, ctx: PlannerContext) -> dict | None:
                 "questions": ["Which Kernel boundary package commit (40 hex) and version must every organ pin? "
                               "Use `greg mission new repo-guardian --pin ... --version ...` once known."]}
     if NOTE.search(text):
-        quoted = QUOTED.search(text)
+        quoted = PHRASE.search(text)
         if not quoted or ctx.workspace is None:
             return {"status": "NEEDS_INPUT", "origin": "template:workspace-note",
                     "questions": ["Put the exact note text in quotes."]}
-        body = quoted.group(1)
+        body = next(g for g in quoted.groups() if g is not None)
         spec = templates.workspace_note(text=body, must_contain=body.split()[0],
                                         workspace_file=Path(ctx.workspace) / "m_first-note" / "note.txt")
         spec["founder_expression"] = text

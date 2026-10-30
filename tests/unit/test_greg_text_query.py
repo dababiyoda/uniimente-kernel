@@ -302,6 +302,66 @@ def test_the_founders_words_become_a_read_only_search_mission(tmp_path):
     assert unrelated["origin"] == "template:workspace-note"                       # other routes keep their words
 
 
+@pytest.mark.parametrize("words, phrases, present", [
+    ('Check that {f} mentions "connection not established"', ["connection not established"], [True]),
+    ("Check that {f} doesn't mention \"FATAL\"", ["FATAL"], [False]),
+    ("Check that {f} doesn’t mention ‘FATAL’", ["FATAL"], [False]),
+    ("Check that {f} mentions 'don't panic'", ["don't panic"], [True]),
+    ("Check that the server's log {f} mentions \"OK\"", ["OK"], [True]),
+    ('Check that {f} contains none of "FATAL", "panic"', ["FATAL", "panic"], [False, False]),
+    ('"FATAL" is not mentioned in {f}', ["FATAL"], [False]),
+])
+def test_only_words_outside_the_quotes_say_whether_a_phrase_must_appear(tmp_path, words, phrases, present):
+    """The review of #229 (blocking): polarity was read over the whole request, quoted phrase included, so "mentions
+    "connection not established"" drafted a check that the file never mentions it, and the apostrophe in "doesn't"
+    opened a quote, so the phrase searched for was "t mention "."""
+    (tmp_path / "data").mkdir()
+    (tmp_path / "data" / "app.log").write_text("ok\n")
+    ctx = PlannerContext(read_roots=(str(tmp_path / "data"),), capabilities=[], workspace=tmp_path / "ws")
+    proposal = template_route(words.format(f=tmp_path / "data" / "app.log"), ctx)
+    assert proposal["status"] == "PROPOSED" and proposal["origin"] == "template:file-search"
+    checks = validate_mission(proposal["spec"])["success_checks"]
+    assert checks[0]["sensor"]["params"]["phrases"] == phrases
+    assert [c["predicate"]["value"] for c in checks] == present
+
+
+@pytest.mark.parametrize("words, unclear", [
+    ('Check that {f} mentions "OK", not just "WARN"', "'not', 'just'"),
+    ('Check that {f} mentions "OK" but never mentions "FATAL"', "the request says both"),
+])
+def test_words_that_leave_the_polarity_open_are_asked_not_guessed(tmp_path, words, unclear):
+    (tmp_path / "data").mkdir()
+    (tmp_path / "data" / "app.log").write_text("ok\n")
+    ctx = PlannerContext(read_roots=(str(tmp_path / "data"),), capabilities=[], workspace=tmp_path / "ws")
+    asked = template_route(words.format(f=tmp_path / "data" / "app.log"), ctx)
+    assert asked["status"] == "NEEDS_INPUT" and asked["origin"] == "template:file-search" and "spec" not in asked
+    assert unclear in asked["questions"][0] and "never mention them?" in asked["questions"][0]
+
+
+def test_an_apostrophe_inside_a_note_keeps_the_whole_note(tmp_path):
+    """The same defect in the planner's note route: "don't" cut the note to "don"."""
+    ctx = PlannerContext(read_roots=(str(tmp_path),), capabilities=[], workspace=tmp_path / "ws")
+    note = template_route(f'Note "don\'t forget the invoice" in {tmp_path / "todo.txt"}', ctx)
+    assert note["origin"] == "template:workspace-note"
+    assert note["spec"]["success_checks"][0]["predicate"]["value"] == "don't"
+    assert "don't forget the invoice" in json.dumps(note["spec"]["strategies"])
+
+
+def test_a_phrase_with_not_in_it_closes_only_on_a_file_that_mentions_it(tmp_path):
+    """The same review's consequence: an inverted check certified a file that lacks the phrase."""
+    for name, text, closes in (("lacks.log", "connection established\n", False),
+                               ("has.log", "warn: connection not established\n", True)):
+        root = tmp_path / name.split(".")[0]
+        root.mkdir()
+        home, key, body_id, data = make_body(root)
+        (data / name).write_text(text)
+        ctx = PlannerContext(read_roots=(str(data),), capabilities=[], workspace=root / "ws")
+        spec = template_route(f'Check that {data / name} mentions "connection not established"', ctx)["spec"]
+        submit(home, key, body_id, "MISSION", spec)
+        missions, _ = run(home, Clock(), ticks=4, step=600.0)
+        assert (missions[spec["mission_id"]].status == "ACHIEVED") is closes
+
+
 def test_a_utf8_mark_before_utf16_bytes_is_refused_like_unmarked_utf8(tmp_path):
     """The review of #228 (finding 4), applied to the query's own decoder: its NUL guard tested the codec name
     "utf-8", and a UTF-8 byte-order mark reads as "utf-8-sig"."""

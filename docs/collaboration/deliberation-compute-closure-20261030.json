@@ -1,0 +1,606 @@
+{
+  "decision_id": "COMPUTE-CLOSURE-20261030",
+  "title": "Measure memory and IO pressure, ask again when a compute bottleneck outlives the founder's answer, name the heaviest measured workload, and verify a change before it is credited",
+  "problem": "At b1950be2 (#196 head), greg/compute.py sampled load and disk only, so memory pressure, the real limit on a 4-8 GB Chromebook, could never be named a bottleneck. recommend() built request_id from the resource name alone ('req-compute-' + sha256_json({'resource': ...})), so after one answered cpu ask every later sustained cpu bottleneck produced the same id and recommend() returned None for good; this was reproduced on a real body with a signed DECISION (test key). The ask's first option was fixed text ('optimize the heaviest mission workload first') with nothing measuring which workload was heaviest. Nothing benchmarked the body and nothing checked whether a change helped. Directive section 48's chain (TELEMETRY, BOTTLENECK, QUANTIFY, TEST SOFTWARE OPTIMIZATION, ... BENCHMARK, VERIFY IMPROVEMENT) therefore stopped at BOTTLENECK, and only once per resource.",
+  "founder_intent_refs": [
+    "INTENT-20261028-OPUS-MAXIMUS-REISSUE (directive sections 48 COMPUTE SCALING, 58 INFRASTRUCTURE SCALING CLOSURE, 60 GREG MAY ASK FOR RESOURCES and 71 TRUE OPUS MAXIMUS; recorded on #227)",
+    "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN (build the whole directive first; the founder-device run comes after, as its acceptance; recorded on #227)",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-20261019-UPWARD-ASCENT",
+    "INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE (section 60: every resource ask carries evidence, alternatives, costs, expected effect, uncertainty and authority requirements, with no manufactured urgency; implemented as the one path greg/asks.py)",
+    "INTENT-GREG-EMBODIED-2026-09-11 (justified compute growth on the owned body)"
+  ],
+  "baseline": "b1950be2: compute.sample() records cores, load1, load_ratio, memory_bytes and disk figures. bottleneck() fires on load_ratio >= 0.9 or free disk < 10% over the last 5 samples. recommend() keys the COMPUTE ask on the resource name only and returns None whenever a decision.requested row with that id exists, answered or not. The ask lists four fixed options (optimization, cloud burst, an additional node, do nothing) and says 'no ROI claim'. There is no step timing, no benchmark, no improvement check and no `greg compute` command. greg/body.py calls record_telemetry and recommend.",
+  "alternatives": [
+    {
+      "name": "Proposed (as built): pressure telemetry, an epoch-keyed re-ask, measured step timing, a stdlib benchmark and a contention-guarded verdict",
+      "description": "Only greg/compute.py (above enroll_node) and greg/cli.py change; greg/body.py's existing calls carry the new behaviour. sample() adds PSI 'some avg10/avg60' for cpu, memory and io, and MemTotal, MemAvailable and their ratio; an unreadable or negative field is None, never 0. Rules: memory (PSI avg60 >= 10% or MemAvailable/MemTotal < 10%), io (PSI avg60 >= 20%), precedence memory, io, cpu, disk, other held rules listed in also_sustained; a sample missing a field never counts. ask_state() reads COMPUTE asks through asks.open_requests and the mission book's counted answers: only a founder-signed answer or a withdrawal closes an ask. request_id carries an epoch (closed asks for that resource; epoch 0 keeps the old id). No ask while one is pending; a re-ask needs all 5 window samples after the close. step_times() reads the ledger's existing record times (latest mission.dispatching intent to first mission.action) and voids any step with a body-loop record between intent and outcome, recovered steps, capability-less outcomes and negative spans. quantify() names the capability with the largest share of timed step time in the window and labels the delay figure 'estimate (method: ...)'. benchmark() runs a fixed stdlib workload (seeded sha256 chain, scratch Journal/EvidenceLedger append-and-verify, one interpreter spawn) and measures per-replicate contention. verify_improvement() runs a one-sided rank-sum permutation test (exact up to 50,000 arrangements, alpha 0.05), a noise floor of the before run's IQR over its median, and returns VERIFIED only when contention did not ease in the after run's favour (tolerance 0.05). CLI: `greg compute status` (read-only via observe()), `benchmark --out FILE` (refuses the body home, never overwrites a non-benchmark file), `verify --before A --after B`.",
+      "advantages": [
+        "A bottleneck that outlives the founder's answer is asked about again (live run: epoch-1 ask on the fifth sample after the signed answer), never while an ask is pending",
+        "Memory and IO pressure can be named (unit-tested); unreadable fields are None, never 0",
+        "The ask's optimization option names the measured heaviest workload (live run: fs.write, 100% of measured step time) and excludes founder approval waits and downtime",
+        "A before/after verdict that refused credit to host drift on this host: 0 of 9 same-code pairs VERIFIED with the guard (2 of 9 by statistics alone), the busy-loop pair INCONCLUSIVE, and a real code change VERIFIED 3 of 3",
+        "Stdlib only, no network, no prices fetched, no purchase; the CLI never writes the body ledger; greg/body.py unchanged"
+      ],
+      "disadvantages": [
+        "The contention guard is a proxy: drift that shows neither as descheduling nor as PSI stall time (frequency or thermal scaling, a cache-heavy neighbour) is not caught",
+        "On this busy shared host 6 of 9 same-code pairs were INCONCLUSIVE, so a noisy body may get few verdicts",
+        "After a signed reject GREG asks again one sustained window later (about 50 minutes at the default 30 s tick, telemetry every 20 ticks, 5 samples), indefinitely while the bottleneck holds",
+        "compute.benchmark and compute.improvement are not ledger records, and recommend() still runs uncontained in Body.run; both need greg/body.py",
+        "Section 48's economic model is not built: there is no founder-entered price, no payback figure, and the ask states 'unpriced: no ROI claim'"
+      ],
+      "revival_evidence": "Retained as proposed; revisit on the first founder-device telemetry, on the founder's ruling on re-ask after a reject, or if a same-code series on founder hardware yields VERIFIED."
+    },
+    {
+      "name": "Simplest viable: add the epoch and the pending block to request_id only",
+      "description": "Fix the defect that silenced a resource forever after one answered ask, and change nothing else.",
+      "advantages": [
+        "Smallest change: one function in greg/compute.py",
+        "Removes the reproduced defect"
+      ],
+      "disadvantages": [
+        "Memory pressure stays invisible, though it is the limit on the founder's 4-8 GB Chromebook",
+        "The ask still names no measured workload, so 'optimize first' has no target",
+        "No benchmark and no improvement check: section 48's BENCHMARK and VERIFY IMPROVEMENT steps stay absent",
+        "Leaves the unit's acceptance tests for memory, quantification, benchmark and verification unmet"
+      ],
+      "revival_evidence": "If the founder rejects the telemetry, timing or benchmark parts, the epoch and pending block alone (ask_state and the request_id change) still stand as the defect fix."
+    },
+    {
+      "name": "Strongest competing design: commodity monitoring and benchmarking (node_exporter/Prometheus alerting, pyperf or hyperfine, scipy.stats.mannwhitneyu)",
+      "description": "Collect pressure with a metrics agent and alert on it, benchmark with a dedicated harness, and test the difference with scipy, keeping only the COMPUTE ask in GREG.",
+      "advantages": [
+        "Mature tools with calibrated warm-up, outlier and system-tuning handling (pyperf), and alert silencing and back-off (Alertmanager)",
+        "Dashboards and long retention come with them"
+      ],
+      "disadvantages": [
+        "None of pyperf, psutil, prometheus_client, hyperfine, node_exporter or prometheus is installed here, so nothing could be measured in this unit",
+        "An alert raised outside greg/asks.py is not a section 60 ask (evidence, alternatives, costs, expected effect, uncertainty, authority) and never reaches the founder's ask surfaces",
+        "scipy in greg/compute.py would make the body core depend on the optional cognition wheels (spec critique); the stdlib test matched it in the reviewer's check",
+        "A resident metrics daemon adds memory on the 4-8 GB body whose memory pressure it would measure"
+      ],
+      "revival_evidence": "Preferred if a fleet of bodies (section 49) needs shared dashboards, or if the founder's device shows the stdlib benchmark too noisy to give verdicts; pyperf is the first candidate for the benchmark harness."
+    },
+    {
+      "name": "Staged, reversible experiment: this branch as a draft child of #196",
+      "description": "The behaviour reaches the body only through its existing record_telemetry and recommend calls. An ask requests no spend and buys nothing; the CLI writes only the files it names. The founder sees the first real re-ask, named workload and verdicts on his own body before adoption; one revert removes the change.",
+      "advantages": [
+        "No purchase, rental, installation, network call or new authority at any step",
+        "Old ledgers stay readable both ways: epoch 0 keeps the legacy id, and the old bottleneck() reads only load_ratio and disk_free_ratio",
+        "The trial exercises exactly what section 48 and section 71 describe, on founder hardware"
+      ],
+      "disadvantages": [
+        "Every result so far is from a shared Linux container with generated test keys",
+        "The re-ask cadence after a reject is live in the trial unless the founder rules on it first"
+      ],
+      "revival_evidence": "This is how the proposed design is meant to be adopted; it is the review trigger for the decision below."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "After one answered cpu ask GREG never asks about cpu again, however long the bottleneck lasts; memory pressure on a Chromebook is never named; 'optimize first' names no workload; and no growth decision can be checked by a benchmark. Section 48 stays stopped at BOTTLENECK, and section 71's 'I tested software optimization first' has nothing behind it.",
+    "advantages": [
+      "No change to compute.py or cli.py",
+      "No new asks reach the founder"
+    ],
+    "disadvantages": [
+      "A reproduced defect silences a resource after its first answered ask",
+      "The body's real limit on founder hardware is unmeasured",
+      "No way to tell whether a change helped, or whether a speed-up was host drift"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Section 48 asks for TELEMETRY, BOTTLENECK, QUANTIFY, TEST SOFTWARE OPTIMIZATION, ..., BENCHMARK, VERIFY IMPROVEMENT, and section 71 has GREG say 'Compute is now the measured bottleneck. I tested software optimization first.' Before this unit the chain stopped at BOTTLENECK, once per resource. Now telemetry covers memory and io, QUANTIFY names the heaviest measured workload, the ask can be raised again, and BENCHMARK and VERIFY IMPROVEMENT exist as founder-run commands. Nothing is bought and nothing argues from the body's continuation.",
+      "material_concerns": [
+        "COMPARE LOCAL / CLOUD / NEW HARDWARE and ECONOMIC MODEL are still fixed-text options: no founder-entered prices and no payback; design sketch item 6 is built only for the unpriced case",
+        "The benchmark measures a fixed synthetic workload, not GREG's missions; this must not be presented as 'GREG keeps a change only when it measurably helps its missions'",
+        "Reality is LOCAL-REAL on a shared container host; VEPMC stays 0, and per INTENT-20261030-BUILD-BEFORE-DEVICE-RUN the device run is the later acceptance, not a reason to stop"
+      ],
+      "evidence_refs": [
+        "docs/evidence/compute-closure-2026-10-30/README.md",
+        "docs/evidence/compute-closure-2026-10-30/runs/live-body-reask.json",
+        "docs/evidence/compute-closure-2026-10-30/runs/live-mission-step-timing.json"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Existing mechanisms carry the change: asks.open_requests and the mission book's counted answers decide whether an ask is closed; asks.resource_request, record and screen carry the ask; the ledger's existing record times give step timing, so greg/body.py needs no edit; Linux PSI and /proc/meminfo give pressure; a stdlib permutation test replaces scipy; the CLI reads through observe() and writes only files outside the body home. Only greg/compute.py above enroll_node and greg/cli.py changed.",
+      "material_concerns": [
+        "record_telemetry and recommend run uncontained in Body.run: an exception there stops the body loop (reviewer probe test_probe_uncontained still passes); the fix needs greg/body.py, held by #221 and #235",
+        "Step timing depends on record-type prefixes (LOOP_RECORDS: mission., decision., body., command., compute.telemetry); a capability that writes such records mid-dispatch would leave its steps untimed (none observed)",
+        "compute.benchmark and compute.improvement are files, not ledger records, and are not bound to the COMPUTE ask they verify",
+        "greg/cli.py is also edited by #235 and #236; their hunks differ from this branch's, and git merge-tree against aee286ee and 44b3df96 is clean"
+      ],
+      "evidence_refs": [
+        "greg/compute.py",
+        "greg/cli.py",
+        "git merge-tree origin/claude/greg-full-machine-completion-whgiee HEAD (fast-forward at b1950be2)"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Two adversarial reviews of 416a2e54 were done by separate agents of this same session, one attack and one fidelity. They confirmed WU05-F1 to F3 and F5, found F4 plausible, and confirmed F1-verify, F2 to F7 (fidelity). Round 2 reproduced and fixed every code finding except body containment (deferred, needs greg/body.py) and the avoidable phone-test skip (not addressed). The verdict guard now refuses credit to measured drift, but it is a proxy.",
+      "material_concerns": [
+        "The guard sees this process's descheduling and host PSI stall time only; 2 of 2 false positives caught in one series is not a measured false-positive rate",
+        "The attack reviewer suggested interleaving before and after replicates (ABAB) or re-running the baseline (A-B-A); neither is built",
+        "test_sample_reads_real_pressure_and_memavailable_on_this_host asserts numeric PSI without a skip, so it fails on a host without /proc/pressure",
+        "The reviewer probes that reproduced F1, F3 and F4 are not committed, so their results cannot be re-run from the branch"
+      ],
+      "evidence_refs": [
+        "docs/evidence/compute-closure-2026-10-30/runs/fail-before-review-at-416a2e54.log",
+        "docs/evidence/compute-closure-2026-10-30/runs/same-code-series.json",
+        "docs/evidence/compute-closure-2026-10-30/runs/contention-pair/verdict.json"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Reversible by revert with no migration. Per sample, telemetry reads three PSI files and /proc/meminfo; the benchmark runs only when the founder invokes it and nothing schedules it. 51 mutants pin the safeguards, and 48 tests run in the full suite.",
+      "material_concerns": [
+        "scripts/ci/check_compute_closure_mutants.py is not called from canonical-ci.yml, which #201, #209, #214, #215 and #232 also edit; the #196 integrator must wire it",
+        "On a busy body most verdicts are INCONCLUSIVE (6 of 9 here); CONTENTION_TOLERANCE 0.05 and the pressure thresholds are declared, not calibrated on a Chromebook",
+        "PSI may be absent on some Crostini kernels; only the MemAvailable, load and disk rules then apply",
+        "The CLI guard's samefile branch (case-insensitive volumes, bind mounts) is not exercised on this Linux filesystem"
+      ],
+      "evidence_refs": [
+        "scripts/ci/check_compute_closure_mutants.py",
+        "docs/evidence/compute-closure-2026-10-30/runs/mutants.log",
+        ".github/workflows/canonical-ci.yml (job 1 runs the full suite; no step for this mutant script)"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "No evidence was deleted: the round-1 benchmark files are kept as pre-fix evidence, and verify-contention-removed.json is relabelled as a VERIFIED produced by host drift. Three overclaims were corrected in the records: the round-1 commit title 'mutants for every safeguard' (22 mutants), the product delta that claimed memory, io and the named workload on a real body loop, and the positive control's 'contention shifts within tolerance'. On the ask itself: it argues from telemetry, requests no spend and says nothing is bought, but after a signed reject GREG now asks again about every 50 minutes while the bottleneck holds. Before this unit a rejected compute ask was never repeated. Whether that is pressure under section 60 is the founder's call.",
+      "material_concerns": [
+        "No back-off after a reject and no signed 'stop asking about this resource' control",
+        "All signatures in tests and live runs use a generated test key; no founder-device or external verification",
+        "Not verifiable from the committed evidence: the README's upper load1 bound of 6.2 (the highest recorded value is 6.11)"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_greg_compute_closure.py::test_after_a_signed_answer_a_still_sustained_cpu_bottleneck_is_asked_again",
+        "docs/evidence/compute-closure-2026-10-30/runs/verify-contention-removed.json",
+        "docs/evidence/compute-closure-2026-10-30/README.md (Review round 2; Limitations)"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The final test file fails on the base for the defects it targets",
+      "tier": "unit_test",
+      "reference": "docs/evidence/compute-closure-2026-10-30/runs/fail-before-at-b1950be2.log",
+      "finding": "46 failed, 2 passed at b1950be2; the re-ask and memory tests fail with 'assert (None is not None)'; the 2 that pass are the legacy epoch-0 id test and the stdlib scan"
+    },
+    {
+      "claim": "The round-2 regression tests fail on the round-1 head",
+      "tier": "unit_test",
+      "reference": "docs/evidence/compute-closure-2026-10-30/runs/fail-before-review-at-416a2e54.log",
+      "finding": "16 failed, 32 passed at 416a2e54; the 16 are exactly the round-2 regression tests"
+    },
+    {
+      "claim": "The new tests pass and every named safeguard is pinned by a caught mutant",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_greg_compute_closure.py; scripts/ci/check_compute_closure_mutants.py; runs/mutants.log",
+      "finding": "48 passed; 51/51 mutants caught and the unmutated suite passes"
+    },
+    {
+      "claim": "Related suites and every cli.main caller still pass",
+      "tier": "unit_test",
+      "reference": "final verification at 66f9d5ac",
+      "finding": "compute_closure plus the related body/compute suites: 197 passed, 2 skipped (Chromium); the 15 unit files that call cli.main: 255 passed; all 18 cli.main files: 262 passed, 1 skipped; the 6 other greg.cli importers: 92 passed, 7 skipped; check_authority_singleton and check_schema_refs pass"
+    },
+    {
+      "claim": "An unchanged Body.run asks, holds while pending, and asks again after a signed answer",
+      "tier": "sandbox_execution",
+      "reference": "docs/evidence/compute-closure-2026-10-30/runs/live-body-reask.json (scripts/live_reask.py)",
+      "finding": "Epoch-0 cpu ask; still 1 ask while pending and for four samples after the signed answer (test key); the fifth sample raised req-compute-6fd9caca746117be at epoch 1, citing the first ask; asks.screen returned an empty list"
+    },
+    {
+      "claim": "The ask names the measured heaviest workload, and an approval wait is not booked as step time",
+      "tier": "sandbox_execution",
+      "reference": "docs/evidence/compute-closure-2026-10-30/runs/live-mission-step-timing.json (scripts/live_steps.py)",
+      "finding": "A straight-through fs.write step measured 0.014 s; a paid mission's 2 s approval wait was not booked; recommend() on the real window named fs.write at 100% of measured step time"
+    },
+    {
+      "claim": "The verdict refuses credit for host drift on unchanged code",
+      "tier": "sandbox_execution",
+      "reference": "docs/evidence/compute-closure-2026-10-30/runs/same-code-series.json; runs/contention-pair/verdict.json",
+      "finding": "10 same-code runs, 9 pairs: 2 VERIFIED by statistics alone, 0 with the guard (6 INCONCLUSIVE, 3 NOT_IMPROVED); removing 4 busy loops gave p = 0.00058 but INCONCLUSIVE (cpu_wait_share 0.5731 -> 0.1258)"
+    },
+    {
+      "claim": "A real code change is still credited",
+      "tier": "sandbox_execution",
+      "reference": "docs/evidence/compute-closure-2026-10-30/runs/code-change-pairs.json (scripts/code_change_pair.py)",
+      "finding": "Removing a 0.15 s delay from the ledger step: VERIFIED in 3 of 3 attempts, effect 0.24-0.28, p 0.00029-0.0055; in attempt 3 psi_cpu_share rose by 0.0552 (busier after) and the verdict still credited the change"
+    },
+    {
+      "claim": "The stdlib rank-sum p-values are right",
+      "tier": "sandbox_execution",
+      "reference": "attack review claims_checked (reviewer probe, not committed); tests/unit/test_greg_compute_closure.py::test_tied_samples_take_midranks_so_the_exact_p_value_is_right",
+      "finding": "0.0 maximum difference against an independent exact enumeration with ties over 200 random cases; agreement with scipy mannwhitneyu exact on tie-free samples"
+    },
+    {
+      "claim": "The branch merges into its base and alongside the open PRs that share greg/cli.py",
+      "tier": "other",
+      "reference": "git merge-tree against origin/claude/greg-full-machine-completion-whgiee (b1950be2), #235 head aee286ee and #236 head 44b3df96",
+      "finding": "Fast-forward onto b1950be2 (merge tree equals the head tree); clean merge-tree against both #235 and #236"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Round 1's verifier called unchanged code VERIFIED when only host load changed",
+      "tier": "sandbox_execution",
+      "reference": "runs/verify-contention-removed.json (round 1, kept); fidelity review same-code pairs (reviewer scratch, not committed)",
+      "finding": "Round-1 contention-removed pair VERIFIED with no code change; the fidelity reviewer got VERIFIED on same-code pairs at p = 0.0055 (effect 35% vs 22.6% floor) and p = 0.00058. Fixed in round 2 by the contention guard"
+    },
+    {
+      "claim": "Round 1 booked the founder's approval wait and the body's downtime as capability step time",
+      "tier": "sandbox_execution",
+      "reference": "attack review WU05-F1 probes (not committed); regression tests test_on_a_real_body_the_founders_approval_wait_is_not_booked_as_step_time and test_on_a_real_body_downtime_before_the_gate_claimed_a_dispatch_is_not_step_time",
+      "finding": "4.266 s booked for a write of about 0.05 s after a 4 s approval wait; 3.139 s booked after a 3 s downtime. Fixed in round 2"
+    },
+    {
+      "claim": "Round 1's CLI guard could be bypassed to overwrite the body ledger",
+      "tier": "sandbox_execution",
+      "reference": "attack review WU05-F3 probe (not committed); test_cli_benchmark_guard_expands_the_home_and_never_overwrites_a_file_it_did_not_write",
+      "finding": "`greg --home ~/body compute benchmark --out ~/body/ledger.jsonl` returned rc 0 and replaced ledger.jsonl. Fixed in round 2"
+    },
+    {
+      "claim": "An exception in recommend() still stops the body loop",
+      "tier": "sandbox_execution",
+      "reference": "attack review WU05-F4 (test_probe_uncontained, not committed)",
+      "finding": "The two reproduced crash inputs are fixed in compute.py, but a monkeypatched TypeError in compute.recommend still escapes Body.run; containment needs greg/body.py"
+    },
+    {
+      "claim": "Memory and io naming were never exercised on real pressure",
+      "tier": "sandbox_execution",
+      "reference": "runs/live-body-reask.json; runs/compute-status-real-body.json",
+      "finding": "Memory PSI read 0.0 throughout and io PSI was low; memory and io naming are UNIT-TESTED only"
+    },
+    {
+      "claim": "A noisy host gets few verdicts",
+      "tier": "sandbox_execution",
+      "reference": "runs/same-code-series.json",
+      "finding": "cpu_wait_share moved by 0.06 to 0.18 between consecutive runs, more than the 0.05 tolerance every time; 6 of 9 same-code pairs were INCONCLUSIVE"
+    },
+    {
+      "claim": "The live re-ask window is not production spacing",
+      "tier": "sandbox_execution",
+      "reference": "runs/live-body-reask.json",
+      "finding": "The five window samples were about 0.1 s apart and share one load average (load_ratio 1.113 in each); production spacing is about 10 minutes"
+    },
+    {
+      "claim": "Records overclaimed before correction",
+      "tier": "historical_artifact",
+      "reference": "commit 54b37052 title; README before 66f9d5ac",
+      "finding": "'mutants for every safeguard' covered 22 (now 51; title kept as written, README corrects it); 'contention shifts within tolerance' for the positive control was wrong for attempt 3 (corrected in 66f9d5ac)"
+    },
+    {
+      "claim": "Part of the unit's design sketch is not built",
+      "tier": "readme_claim",
+      "reference": "unit spec WU-05 design sketch items 6 and 8; greg/compute.py",
+      "finding": "No founder-entered prices or payback figure (only 'unpriced: no ROI claim'); the noise floor is the before run's IQR over its median, not two idle runs; scipy.stats.mannwhitneyu was replaced by a stdlib test"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "The body measures the pressures that actually limit a small machine, keeps asking about a bottleneck that outlives an answer (one ask per resource at a time), names the measured heaviest workload so optimization is tried first, and lets the founder check whether a change measurably helped, with no purchase, network call or new authority.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "A COMPUTE ask is a question per epoch, not per resource forever",
+        "amplified_value": "The ask becomes a standing signal the founder can answer more than once; epoch 0 keeps the legacy id, so ledgers that already hold an ask are not asked twice"
+      },
+      {
+        "id": "A2",
+        "statement": "Memory and IO pressure are measured, and unreadable fields are None, never 0",
+        "amplified_value": "The founder's Chromebook limit becomes visible to section 48's TELEMETRY step; a missing field can never fabricate pressure"
+      },
+      {
+        "id": "A3",
+        "statement": "QUANTIFY names the capability with the largest share of measured step time in the bottleneck window",
+        "amplified_value": "'Test software optimization first' gets a concrete target, or says the load comes from outside GREG's missions"
+      },
+      {
+        "id": "A4",
+        "statement": "`greg compute benchmark` and `greg compute verify` give a before/after verdict",
+        "amplified_value": "Section 48's BENCHMARK and VERIFY IMPROVEMENT steps exist, so a growth decision can be checked rather than assumed"
+      },
+      {
+        "id": "A5",
+        "statement": "Stdlib only, read-only CLI, greg/body.py untouched",
+        "amplified_value": "No new dependency, no new writer of the ledger, and no conflict with #221 or #235 on body.py"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "'Mission-hours delayed per week' attributes all excess step time to the bottleneck, which the journal cannot establish",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "The figure is labelled 'estimate (method: ...)' in the ask and its uncertainty, never 'measured'; capabilities with no history before the window are listed as unbaselined"
+      },
+      {
+        "id": "D2",
+        "statement": "The spec's scipy.stats.mannwhitneyu would make the body core depend on the optional cognition wheels",
+        "severity": "medium",
+        "response_type": "modularity",
+        "redesigned_response": "A stdlib one-sided rank-sum permutation test, exact up to 50,000 arrangements and seeded beyond; a test pins midranks for ties and the stdlib scan test keeps compute.py free of scipy"
+      },
+      {
+        "id": "D3",
+        "statement": "'Two idle benchmark runs agree within the noise floor' would flake on a shared CI host, and no idle host exists here",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Verdict logic is asserted on fixtures; real benchmarks are reported, never asserted in CI; the noise floor is the before run's IQR over its median"
+      },
+      {
+        "id": "D4",
+        "statement": "The memory (PSI 10%, MemAvailable 10%) and io (PSI 20%) thresholds and the precedence are declared, not validated on a Chromebook, and PSI may be absent on Crostini kernels",
+        "severity": "medium",
+        "response_type": "learning",
+        "redesigned_response": "Thresholds are module constants; an unreadable field is None and never counts; the MemAvailable rule works without PSI"
+      },
+      {
+        "id": "D5",
+        "statement": "Re-asking after an answer can become pressure under section 60, including after a signed reject",
+        "severity": "medium",
+        "response_type": "governance",
+        "redesigned_response": "No ask while one is pending; a re-ask needs a full 5-sample window measured after the close; the ask argues from telemetry, requests no spend and says nothing is bought"
+      },
+      {
+        "id": "D6",
+        "statement": "compute.benchmark and compute.improvement cannot be ledger records without a path in greg/body.py",
+        "severity": "medium",
+        "response_type": "modularity",
+        "redesigned_response": "The CLI writes files only and never the ledger; recording on the ledger is a named follow-up for the greg/body.py owner"
+      },
+      {
+        "id": "D7",
+        "statement": "Step time read from ledger record times is wall clock: a host suspend inside a step inflates it",
+        "severity": "low",
+        "response_type": "evidence",
+        "redesigned_response": "Recovered steps and steps interrupted by body-loop records are not timed; the suspend case is stated as a limitation"
+      },
+      {
+        "id": "D8",
+        "statement": "Section 48's COMPARE and ECONOMIC MODEL steps are not built: no founder-entered prices and no payback",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "The ask keeps 'unpriced: no ROI claim' and fetches no price; nothing is invented"
+      }
+    ],
+    "comparisons": {
+      "baseline": "b1950be2: load and disk only; request_id keyed on the resource name, so one answered cpu ask silenced cpu for good; the optimization option names no workload; no benchmark or verification",
+      "do_nothing": "The reproduced defect stays, memory pressure stays invisible, and no compute decision can be checked",
+      "simplest_viable_alternative": "Epoch and pending block only: fixes the defect but leaves memory, quantification, benchmark and verification absent",
+      "strongest_competing_architecture": "Metrics agent with alerting, a pyperf-style harness and scipy: mature, but none is installed here, alerts bypass greg/asks.py, and scipy would enter the body core",
+      "reversible_experiment": "This branch as a draft child of #196: behaviour reaches the body only through its existing calls, asks spend nothing, the CLI writes only named files, and one revert removes it"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "scipy.stats.mannwhitneyu inside greg/compute.py",
+        "rejection_reason": "Makes the body core depend on the optional cognition wheels; the stdlib exact test agreed with scipy's exact test on tie-free samples in the reviewer's check",
+        "revival_evidence": "scipy becomes a core dependency of the body for another reason"
+      },
+      {
+        "name": "Record compute.benchmark and compute.improvement on the ledger from the CLI",
+        "rejection_reason": "The body is the ledger's one writer while it runs; the CLI must not open the ledger as a writer",
+        "revival_evidence": "A sanctioned path in greg/body.py (a signed or founder-dropped file the body applies)"
+      },
+      {
+        "name": "A hard CI gate on two benchmark runs agreeing",
+        "rejection_reason": "Shared CI hosts are not idle; the gate would flake",
+        "revival_evidence": "A dedicated quiet runner, or a calibration run on the founder's device"
+      },
+      {
+        "name": "Time steps directly inside greg/body.py",
+        "rejection_reason": "#221 holds greg/body.py; the journal already records the times needed",
+        "revival_evidence": "#221 lands and the body.py owner wants a dispatch-start event that is not deduplicated"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Re-attacked as deployed at 416a2e54 by two adversarial reviews done by separate agents of this same session (attack and fidelity), then verified again at 66f9d5ac. Targets: what step time actually measures, whether VERIFIED can be produced by the host alone, the CLI's write guard, crash paths in the body loop, test races, the mutant coverage claim, and whether the records claim more than the evidence shows.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "fragility",
+        "statement": "WU05-F1: a re-dispatch reused the deduplicated first intent, so the founder's approval wait and the body's downtime were booked as capability step time (4.266 s and 3.139 s reproduced on real bodies)",
+        "strengthening_response": "Timing starts at the latest intent and is voided by any body-loop record between intent and outcome (LOOP_RECORDS); regression tests fail at 416a2e54; mutants for each record family"
+      },
+      {
+        "id": "W2",
+        "category": "fragility",
+        "statement": "WU05-F2 and F1-verify: VERIFIED for unchanged code when only host load changed; the start-of-run snapshots could point the wrong way",
+        "strengthening_response": "Per-replicate contention (this process's off-CPU share during the chain, host PSI stall shares) and end conditions are recorded; VERIFIED needs contention measured during both runs and not eased in the after run's favour; every verdict carries its scope. Same-code series 0 of 9 VERIFIED, real code change 3 of 3"
+      },
+      {
+        "id": "W3",
+        "category": "fragility",
+        "statement": "WU05-F3: a home given as a literal '~/...' bypassed the --out guard, and the probe overwrote ledger.jsonl",
+        "strengthening_response": "The guard resolves the home through Layout(home).home, also checks samefile, and refuses to overwrite any file that is not an earlier benchmark result; a regression test and CLI mutants pin both"
+      },
+      {
+        "id": "W4",
+        "category": "fragility",
+        "statement": "WU05-F4: a None capability or a window of 0 s steps made recommend() raise TypeError, and recommend runs uncontained in Body.run",
+        "strengthening_response": "Capability-less outcomes are not timed and a 0 s window names no workload (tests and mutants); containment in Body._contained is deferred to the greg/body.py owner"
+      },
+      {
+        "id": "W5",
+        "category": "comprehensibility",
+        "statement": "F2-mutants: 'mutants for every safeguard' covered 22; ten safeguards, one reachable in production (same-slot reconciliation), survived removal with all tests green",
+        "strengthening_response": "Tests and mutants added for each: 51 mutants, all caught; the commit title is kept as written and the README records the correction"
+      },
+      {
+        "id": "W6",
+        "category": "fragility",
+        "statement": "F3-flaky: the benchmark scratch-directory assertion raced other benchmarks sharing TMPDIR (reviewer: 2 of 9 parallel runs failed)",
+        "strengthening_response": "The test uses a private tempfile.tempdir; with a background benchmark loop the old test failed 2 of 3 runs and the new one 0 of 3 (a plain 3x3 parallel run did not trigger the race either way)"
+      },
+      {
+        "id": "W7",
+        "category": "comprehensibility",
+        "statement": "F4 and F5 (fidelity): the product delta claimed memory, io and the named workload on a real body loop; the live scripts and the busy-loop command were not committed",
+        "strengthening_response": "Memory and io are stated as UNIT-TESTED only; live_steps.py now calls recommend() on a real window (fs.write named); all five evidence scripts are committed under docs/evidence/compute-closure-2026-10-30/scripts/"
+      },
+      {
+        "id": "W8",
+        "category": "other",
+        "statement": "F6 and F7 (fidelity): the phone-asks test was skipped though Chromium is installed (chrome-linux64, not the chrome-linux the discovery globs); the mutant script is not in CI",
+        "strengthening_response": "Not addressed in round 2: the reviewer's run with GREG_CHROMIUM set passed at 416a2e54, but the final head ran with both Chromium tests skipped. The CI wiring is left to the #196 integrator because canonical-ci.yml is held by five open PRs"
+      },
+      {
+        "id": "W9",
+        "category": "comprehensibility",
+        "statement": "Final verification: the README said the positive control's contention shifts were all within tolerance; attempt 3's psi_cpu_share rose by 0.0552",
+        "strengthening_response": "Corrected in 66f9d5ac (README only): the guard refuses credit only when contention eased, so a busier after run that is still faster is VERIFIED"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "The label prevents a measured claim; the figure informs, it decides nothing",
+        "owner": "compute.py maintainer",
+        "review_trigger": "A founder decision that relies on the delay figure, or a suspend observed inside a timed step on founder hardware"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "resolved",
+        "rationale": "The stdlib test matched an independent exact enumeration (0.0 maximum difference over 200 cases) and scipy's exact test on tie-free samples; the midrank and seeded-permutation paths are tested and mutated",
+        "owner": "compute.py maintainer",
+        "review_trigger": "Any change to _rank_sum_p or EXACT_LIMIT"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Replaced the idle-run noise floor with the before run's IQR plus the W2 contention guard; real runs stay reported, not asserted. The spec's two-idle-runs floor is not used",
+        "owner": "compute.py maintainer",
+        "review_trigger": "A same-code series on founder hardware, or a quiet CI runner becoming available"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "deferred",
+        "rationale": "No Chromebook telemetry exists; memory PSI read 0.0 on this host, so the memory and io rules are unit-tested only",
+        "owner": "Founder-device run (INTENT-20261030-BUILD-BEFORE-DEVICE-RUN acceptance); compute.py maintainer for recalibration",
+        "review_trigger": "First telemetry from the founder's Chromebook, including whether /proc/pressure exists there"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "deferred",
+        "rationale": "Pending block and post-close window hold (tests, mutants, live run), but after a signed reject GREG re-asks about every 50 minutes while the bottleneck holds; a back-off or a signed stop-asking control is a founder decision (attack review WU05-F5)",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "Founder review of this draft"
+      },
+      {
+        "disadvantage_id": "D6",
+        "outcome": "deferred",
+        "rationale": "greg/body.py is held by #221 and #235; this unit does not edit it",
+        "owner": "greg/body.py owner (#221, #235)",
+        "review_trigger": "#221 or #235 lands"
+      },
+      {
+        "disadvantage_id": "D7",
+        "outcome": "accepted",
+        "rationale": "Pass 2 narrowed timing to steps that ran straight through (W1); the suspend case remains and is stated",
+        "owner": "compute.py maintainer",
+        "review_trigger": "A timed step longer than its window on founder hardware"
+      },
+      {
+        "disadvantage_id": "D8",
+        "outcome": "deferred",
+        "rationale": "Prices are the founder's to enter; nothing is fetched or invented, and the ask says it is unpriced",
+        "owner": "Next compute unit, after the founder chooses a price source",
+        "review_trigger": "The founder enters prices or names a price source"
+      }
+    ],
+    "final_design": "As built at 66f9d5ac: PSI and MemAvailable telemetry with None for unreadable fields; memory, io, cpu and disk rules with declared precedence; ask state read through asks.open_requests with an epoch in request_id, no ask while pending and a re-ask only after a full window measured after the close; step timing from the latest intent, voided by any body-loop record before the outcome; the heaviest workload named in the ask and the delay labelled an estimate; a stdlib benchmark with per-replicate contention; a one-sided permutation verdict that also requires contention not to have eased in the after run's favour and states its scope; a read-only `greg compute status`, a guarded `benchmark --out`, and `verify`. 48 tests and 51 caught mutants.",
+    "residual_risks": [
+      {
+        "risk": "The contention guard misses drift that shows neither as descheduling nor as PSI stall time",
+        "mitigation": "Verdicts carry their scope; the round-1 drift VERIFIED is kept as a labelled negative; ABAB interleaving is recorded as dissent",
+        "owner": "compute.py maintainer",
+        "review_trigger": "A same-code VERIFIED on founder hardware"
+      },
+      {
+        "risk": "An exception in compute.recommend or record_telemetry stops Body.run",
+        "mitigation": "Both reproduced crash inputs are fixed and mutated; containment is handed to the greg/body.py owner",
+        "owner": "greg/body.py owner (#221, #235)",
+        "review_trigger": "#221 or #235 lands"
+      },
+      {
+        "risk": "Repeated asks after a signed reject feel like pressure",
+        "mitigation": "One ask per resource at a time, a full measured window between asks, no spend requested; the cadence is put to the founder",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "Founder review of this draft"
+      },
+      {
+        "risk": "The real-PSI test fails rather than skips on a host without /proc/pressure",
+        "mitigation": "Recorded here for the integrator; Canonical CI runs on Linux runners",
+        "owner": "#196 integrator",
+        "review_trigger": "Canonical CI on the PR head, or a run on a host without PSI"
+      },
+      {
+        "risk": "The mutant gate does not run in CI, so a later change can remove a safeguard unnoticed",
+        "mitigation": "The integrator adds `python scripts/ci/check_compute_closure_mutants.py` to canonical-ci.yml",
+        "owner": "#196 integrator",
+        "review_trigger": "Intake into #196"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded with thresholds; neither entry blocks a draft. The first blocks adoption until the founder rules on re-ask after a reject; the second blocks any growth decision that rests on a single VERIFIED from a noisy host.",
+    "entries": [
+      {
+        "role": "Evidence and Welfare Guardian",
+        "position": "Do not let GREG re-ask after a signed reject until the founder chooses a back-off or a signed 'stop asking about this resource' control.",
+        "rationale": "Section 60 forbids manufactured urgency. Before this unit a rejected compute ask was never repeated; now it is repeated about every 50 minutes while the bottleneck holds.",
+        "evidence_threshold": "A founder ruling, or a re-ask rule that after a reject requires a measured change in the bottleneck metrics",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "Founder review of this draft"
+      },
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Before a growth decision rests on VERIFIED, interleave before and after replicates (ABAB) in one invocation, or re-run the baseline (A-B-A), instead of relying on the contention proxy alone.",
+        "rationale": "The proxy cannot see frequency or thermal scaling or cache contention, and 2 of 2 false positives caught is not a false-positive rate.",
+        "evidence_threshold": "A same-code series on founder hardware with any VERIFIED, or a pre-registered false-positive measurement above alpha",
+        "owner": "compute.py maintainer",
+        "review_trigger": "The first founder use of `greg compute verify` for a growth decision"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "Alfonso Lopez (adoption, any merge, the re-ask cadence after a reject, and the pressure thresholds); #196 integrator for intake"
+  },
+  "migration_plan": "None required. The new telemetry fields are additive; older samples without them never count as memory or io pressure, because a missing field never counts. Epoch 0 keeps the legacy request_id, so a ledger that already holds a COMPUTE ask is not asked twice. Benchmark results are plain JSON files outside the body home.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert this branch's commits, or decline intake into #196",
+      "No data migration: the old bottleneck() reads only load_ratio and disk_free_ratio, so extra telemetry fields are ignored; an epoch-1 ask already on a ledger stays as a recorded ask, and the old recommend() finds its own epoch-0 id present and asks nothing new",
+      "Benchmark files written by the CLI can be left or deleted; nothing in the body reads them"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "A COMPUTE ask raised while another ask for the same resource is pending, or a re-ask without a full SUSTAINED_SAMPLES window measured after the close",
+    "An unreadable telemetry field recorded as 0, or a missing field counted as pressure",
+    "`greg compute` writing to the body home or ledger, or compute.py making a network call, purchase, rental or installation",
+    "A same-code VERIFIED on founder hardware that the contention guard does not explain, repeated in a pre-registered series",
+    "The founder rules that re-asking after a reject is pressure and no back-off is built: then regress the re-ask to answers other than reject"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez decides adoption, the re-ask cadence after a reject (back-off or a signed stop-asking control) and the pressure thresholds; the #196 integrator decides intake and wires the mutant gate into canonical-ci.yml; session_01Kucyfm6YBHMTjaiC1M9hqD owns the reversible draft. Three roles recommend RETAIN, the Adversarial Reviewer recommends EXPERIMENT, and the Evidence and Welfare Guardian asks for the founder's decision.",
+  "review_trigger": "Canonical CI on the PR head; the founder's ruling on re-ask after a reject; the first founder-device telemetry (PSI on the Crostini kernel, real memory pressure); the greg/body.py change (#221 or #235) that adds containment or a ledger path for compute.benchmark and compute.improvement; WU-06a1 (node revocation), which is built on this branch."
+}

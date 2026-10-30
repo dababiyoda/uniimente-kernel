@@ -24,6 +24,9 @@
     greg gravity authorize --from-mission M --print-only > g.json; greg gravity authorize g.json --key K
     greg gravity authorize g.json --supersedes GOAL --key K   replace an admitted goal (the old one is kept)
     greg gravity goals | greg gravity evidence GOAL   read-only; greg gravity control GOAL --kind stop_pushing --value true --key K
+    greg compute status                       read-only: pressure, the sustained bottleneck, COMPUTE asks, step time
+    greg compute benchmark --out B.json       a fixed workload in a scratch directory; writes B.json only
+    greg compute verify --before A.json --after B.json   did the change measurably help
 
 The CLI never opens the ledger as a writer while the body runs: commands are
 signed files dropped into the body inbox, so any interface can close at any time.
@@ -540,6 +543,19 @@ def main(argv=None) -> int:
     gv.add_argument("--print-only", action="store_true", help="authorize: print the GOAL body without signing")
     gv.add_argument("--supersedes", help="authorize: replace this admitted goal (id or prefix); it stays on the "
                                          "ledger as superseded")
+    cp = sub.add_parser("compute", help="the body's compute: measured pressure, a fixed benchmark and before/after "
+                                        "verification; it buys, rents and installs nothing")
+    cps = cp.add_subparsers(dest="compute_cmd", required=True)
+    cps.add_parser("status", help="read-only: a live sample, the sustained bottleneck, the COMPUTE asks per "
+                                  "resource and measured mission step time")
+    cb = cps.add_parser("benchmark", help="run the fixed workload in a scratch directory; writes --out only, "
+                                          "never the body's ledger and never over a file that is not a benchmark")
+    cb.add_argument("--out", required=True)
+    cb.add_argument("--runs", type=int, default=None, help="replicates (default 7; verify needs at least 5)")
+    cv = cps.add_parser("verify", help="did --after measurably beat --before (one-sided permutation test above "
+                                       "the before run's noise, on a host no quieter than before)")
+    cv.add_argument("--before", required=True)
+    cv.add_argument("--after", required=True)
     pr = sub.add_parser("presence", help="was the body actually running: measured availability, absences, late work")
     pr.add_argument("--hours", type=float, default=72.0)
     mcp = sub.add_parser("mcp", help="MCP tool servers you installed under GREG's read roots (read-only)")
@@ -865,6 +881,48 @@ def main(argv=None) -> int:
             except (gravity.GravityError, LeverageRefused) as exc:     # a refusal, reported like any other
                 raise BodyError(f"gravity refused the situation: {exc}") from exc
             print(json.dumps(data, indent=1))
+        elif args.cmd == "compute":
+            from greg import compute
+            # The body is the ledger's one writer: these read it through a read-only view, or touch files only.
+            if args.compute_cmd == "status":
+                where = Path(home) if Path(home).exists() else Path.home()
+                if Layout(home).ledger.exists():
+                    with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                        data = {"sample": compute.sample(where), **compute.status(journal)}
+                else:
+                    data = {"sample": compute.sample(where), "reality_status": "NO_BODY_LEDGER"}
+                print(json.dumps(data, indent=1))
+            elif args.compute_cmd == "benchmark":
+                out = Path(args.out).expanduser().resolve()
+                body_home = Layout(home).home              # the home the body itself uses: '~' expanded, resolved
+                if any(p == body_home or (p.exists() and body_home.exists() and p.samefile(body_home))
+                       for p in (out, *out.parents)):
+                    raise BodyError("benchmark results live outside the body; the CLI writes nothing in its home")
+                if out.exists():                           # it replaces only its own earlier result, never a file
+                    try:
+                        kept = json.loads(out.read_text())
+                    except (OSError, ValueError, UnicodeDecodeError):
+                        kept = None
+                    if not isinstance(kept, dict) or kept.get("kind") != "compute.benchmark":
+                        raise BodyError(f"{out} exists and is not a benchmark result; the CLI will not overwrite it")
+                runs = compute.BENCHMARK_RUNS if args.runs is None else args.runs
+                if runs < 1:
+                    raise BodyError("--runs must be at least 1")
+                result = compute.benchmark(runs)
+                tmp = out.with_name(out.name + ".tmp")
+                try:
+                    tmp.write_text(json.dumps(result, indent=1))
+                    tmp.replace(out)
+                except OSError as exc:
+                    raise BodyError(f"cannot write {out}: {exc.strerror}") from None
+                shown = {k: result[k] for k in ("runs", "median_seconds", "iqr_seconds", "deterministic")}
+                print(json.dumps({"written": str(out), **shown}, indent=1))
+            else:
+                try:
+                    runs = [json.loads(Path(p).expanduser().read_text()) for p in (args.before, args.after)]
+                    print(json.dumps(compute.verify_improvement(*runs), indent=1))
+                except (OSError, ValueError) as exc:
+                    raise BodyError(f"cannot compare these benchmark files: {exc}") from None
         elif args.cmd == "presence":
             from greg import presence
             now = datetime.now(timezone.utc)

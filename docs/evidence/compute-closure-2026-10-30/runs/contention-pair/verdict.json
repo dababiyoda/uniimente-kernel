@@ -1,0 +1,38 @@
+{
+ "kind": "compute.improvement",
+ "alpha": 0.05,
+ "n_before": 7,
+ "n_after": 7,
+ "scope": "the fixed workload's speed on this host at two times: the code and the host together. A change is credited only when the contention measured during both runs did not move in its favour, so a change that works by lowering the host's load (an optimized workload) shows in the next telemetry window, not here",
+ "contention": {
+  "before": {
+   "cpu_wait_share": 0.5731,
+   "psi_cpu_share": 0.6904,
+   "psi_io_share": 0.0458,
+   "psi_memory_share": 0.0
+  },
+  "after": {
+   "cpu_wait_share": 0.1258,
+   "psi_cpu_share": 0.4412,
+   "psi_io_share": 0.0419,
+   "psi_memory_share": 0.0
+  },
+  "tolerance": 0.05,
+  "shift": {
+   "cpu_wait_share": -0.4473,
+   "psi_cpu_share": -0.2492,
+   "psi_io_share": -0.0039,
+   "psi_memory_share": 0.0
+  }
+ },
+ "same_host": true,
+ "p_value": 0.000583,
+ "method": "exact (3432 arrangements)",
+ "median_before": 0.705379,
+ "median_after": 0.416191,
+ "relative_effect": 0.409975,
+ "noise_floor": 0.396364,
+ "verdict": "INCONCLUSIVE",
+ "reason": "faster, but the host was measurably quieter during the after run (cpu_wait_share 0.5731 -> 0.1258, psi_cpu_share 0.6904 -> 0.4412), so the speed-up cannot be credited to the change; run both under the same conditions",
+ "busy_loops_during_before": 4
+}

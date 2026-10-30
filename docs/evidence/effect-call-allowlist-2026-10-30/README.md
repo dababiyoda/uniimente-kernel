@@ -2,8 +2,8 @@
 
 Founder directive of 2026-10-28 (OPUS MAXIMUS build), unit MU-D, items S37 and S67. Base: `b1950be2` (#196 head).
 Round 1 was `78e986bb`..`f4028f3d`. Round 2 answers the fourteen findings of two independent reviews (below).
-The branch has since merged #196 twice, at `4dc0d581` and at `638457a4`; the merges and the one site the base
-added are under "Merges of the PR base" below.
+The branch has since merged #196 three times, at `4dc0d581`, `638457a4` and `a986fc74`; the merges and the one site
+the base added are under "Merges of the PR base" below.
 
 ## What changed
 
@@ -93,6 +93,8 @@ holds wire schemas; `tests/data/` does not exist. `tests/security/` already hold
 Reachability of the operator-only entries was re-audited with a reverse search over callers by terminal name across
 `greg/`, `foundry/` and `cortex/`, then each hit was checked by hand: only `memory_bytes` is reached by the body loop.
 That audit was of round 2's tree (`b1950be2`); `system_binary` arrived later with the base and is filed above.
+`a986fc74` added `fs.search` to `greg/appraisal.py`'s `REOBSERVABLE` set. It is a read-only, streamed file read, so
+the `Body.appraise` reason ("it re-runs only the read-only `REOBSERVABLE` sensors") still holds.
 
 ## Merges of the PR base
 
@@ -100,6 +102,7 @@ That audit was of round 2's tree (`b1950be2`); `system_binary` arrived later wit
 | --- | --- | --- | --- | --- |
 | `275e9d86` | #196 at `4dc0d581` (66 base commits since `b1950be2`, 95 files) | none: no file changed on both sides | 1: `greg/licensing.py :: system_binary :: subprocess.run` | committed with the scan red on that site, left unlisted pending this classification |
 | `10d8fafa` | #196 at `638457a4` (#209's whole-output judgment adopted; 25 commits, 19 files) | none: no file changed on both sides; `foundry/owned-source.json` was not touched by either side, so `refresh_owned_source.py` was not run | 0 | `system_binary` is still the only unlisted site |
+| `640e6eb9` | #196 at `a986fc74` (#228's faithful text and #229's section IX adopted; 29 commits, 19 files) | none: no file changed on both sides; only the base changed `foundry/owned-source.json` (2 lines), so there was no conflict to resolve. `refresh_owned_source.py`, run on a scratch checkout of the merge, added and removed nothing | 0 | the scan passes with the `system_binary` entry from `77d5e9b8`; no stale entry, no count mismatch |
 
 **`638457a4` (#209).** It changes five scanned modules: `greg/appraisal.py`, `greg/authority.py`,
 `greg/goal_gravity.py`, `greg/missions.py` and `greg/pipeline.py`. The diff was read for each. What it adds is
@@ -107,10 +110,30 @@ judgment logic and imports of other `greg` modules (`greg.missions`, `greg.autho
 process, opens no connection, listens nowhere and calls no declared wrapper. The scan agrees: before the licensing
 entry it reported the same single unlisted site as at `4dc0d581`, with no stale entry and no count mismatch.
 
+**`a986fc74` (#228, #229).** It changes eight scanned modules: `greg/appraisal.py`, `greg/business_loop.py`,
+`greg/capabilities.py`, `greg/missions.py`, `greg/planner.py` and `greg/templates.py`, and adds `greg/textform.py`
+and `greg/textquery.py`. The diff was read for each. What it adds:
+- file reads: `capabilities.bounded_read` and `textquery`'s streamed read open a path with
+  `os.open(O_RDONLY | O_NONBLOCK | O_NOFOLLOW)` and check the descriptor is a regular file. Reading a file is not an
+  effect under this unit's rule (a child process, a connection or a listener);
+- decoding and normalization (`faithful_text`, `textform.canon`), and the cut and undecided fields that `run_cli`,
+  `http_get`, `browser_render` and `fs.read` now return. Their spawns and connections are the ones already listed,
+  with unchanged counts;
+- a new read-only capability, `fs.search`, its planner route and its mission template; judge changes in
+  `greg/missions.py`; and a watched sensing block. The watch re-reads a blocked mission's sensors through the
+  existing `_observe` and returns (WAITING or RESUMED) before the self-repair branch, so it opens no new path to
+  `Genesis` or `system_binary`. No added line calls `_form`, `genesis`, `licensing` or `_self_repair`.
+
+It starts no process, opens no connection, listens nowhere and calls no declared wrapper. The scan agrees: with the
+entries from `77d5e9b8`, **9 passed** on the merged tree, so nothing is unlisted or stale and no count changed.
+No new site was classified, and no entry was added.
+
 **`4dc0d581`: the licensing site.** The base added it in `bd7e3f9e` (#201/#230, 2026-10-22, "GREG reads PDFs on the
 mission path; acquired system binaries carry their DEP-5 license"); that commit is not in `b1950be2`, where this
 unit was seeded, and reached #196 with the #201/#230 adoption before `4dc0d581`. Line numbers below are from the
-merged tree at `10d8fafa`.
+merged tree at `10d8fafa`. `a986fc74` changed none of `greg/licensing.py`, `greg/genesis.py`, `greg/body.py` or
+`greg/goal_gravity.py`, so their numbers hold at `640e6eb9`; `greg/missions.py` grew, and its numbers at `640e6eb9`
+are `_step` :2008 (`_form` at :2113), `_deficit` :2732 (:2741) and `_after_outage` :2856 (:2871).
 
 - The call. `system_binary` (greg/licensing.py:679) resolves `dpkg = shutil.which("dpkg-query")` (:684) on the body
   process's own PATH and runs `subprocess.run([dpkg, "-S", real], capture_output=True, text=True,
@@ -134,6 +157,9 @@ merged tree at `10d8fafa`.
     `{PATH: /usr/bin:/bin, LC_ALL: C}`, from `body.py:965 tick -> missions.py:1665 tick -> :2038 _step -> :2330
     _observe -> :2635 _deficit -> :2655 _form -> genesis.py:1331 resolve -> :2012 _manifest_for -> :667
     _binary_license -> licensing.py:689 system_binary`.
+  - The same trace on `640e6eb9` recorded the same single spawn, argv and env, from `body.py:965 tick ->
+    missions.py:1753 tick -> :2126 _step -> :2421 _observe -> :2741 _deficit -> :2761 _form -> genesis.py:1331
+    resolve -> :2012 _manifest_for -> :667 _binary_license -> licensing.py:689 system_binary`.
 - What is bounded and what is not. The argv shape, the 5 s timeout and the child's scrubbed environment are fixed.
   The choice of executable and its confinement are not. `installed_binary` (greg/capabilities.py:1290) searches only
   `/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin`; `system_binary` searches whatever PATH the body inherited. With a
@@ -143,17 +169,18 @@ merged tree at `10d8fafa`.
 - Probe on `10d8fafa` (scratch directory, deleted afterwards): with a script named `dpkg-query` placed first on PATH,
   `licensing.system_binary('/usr/bin/sha256sum')` ran it, and it wrote "planted dpkg-query ran as root with args -S
   /usr/bin/sha256sum" in this container (the body's user here is root); `capabilities.installed_binary('dpkg-query')`
-  still returned `/usr/bin/dpkg-query`. The integration step's probe at `275e9d86` gave the same result.
+  still returned `/usr/bin/dpkg-query`. The integration step's probe at `275e9d86` gave the same result, and so did
+  a re-run at `640e6eb9` (the planted script exited 1, and `system_binary` returned `None`).
 - Classification. Under this unit's rule the site is `known_unmediated`, with two `body-loop:` serves naming the
   mission and Goal Gravity schedules and a reason that says the above. The precedents are `Body.appraise` and
   `compute.memory_bytes`: the body reaches each on its own with nothing governing the spawn. It is a recorded finding,
   not an approval, and listing it authorizes nothing.
 - The fix is outside this unit, which changes no source module. A fix that pins the executable to a trusted,
   root-owned system path is proposed on branch `claude/licensing-binary-pin-20261030` as a separate child PR of #196
-  (when this record was written the branch existed at `638457a4` with no commits of its own). The entry stays
-  `known_unmediated` after that fix: pinning the path decides which binary runs, but the spawn is still unconfined
-  and still on the body loop. Removing the finding needs the spawn behind confinement (for example `run_isolated`)
-  or behind a governed path, and a re-classification.
+  (when this record was written the branch existed at `638457a4` with no commits of its own, and it still had none
+  when the record was updated for `640e6eb9`). The entry stays `known_unmediated` after that fix: pinning the path
+  decides which binary runs, but the spawn is still unconfined and still on the body loop. Removing the finding needs
+  the spawn behind confinement (for example `run_isolated`) or behind a governed path, and a re-classification.
 
 ## Review findings and dispositions (round 2)
 
@@ -220,6 +247,24 @@ On the merged tree (`10d8fafa`, #196 at `638457a4`, plus the `system_binary` ent
 | test files of modules changed on both sides | none: the unit changes four files of its own and no source module, and neither merge had a file changed on both sides |
 | `ruff check --line-length 120` on the two Python files | only the script's one-line stdlib import (E401, or I001 under the import-sort rules), identical to the committed file |
 
+On the merged tree `640e6eb9` (#196 at `a986fc74`). Each check ran in a clean detached worktree of that commit, so
+nothing uncommitted was read:
+
+| Check | Result |
+| --- | --- |
+| `tests/unit/test_effect_call_allowlist.py` | **9 passed**: no unlisted site, no stale entry, no count mismatch |
+| `scripts/ci/check_effect_call_allowlist_mutants.py` | BASELINE passes, **52/52 caught**, 0 survived, 0 stale, exit 0, 6m51s |
+| `tests/unit/test_greg_packaging.py`, `test_greg_platform.py`, `test_developmental_inheritance.py` | 3, 19 and 23 passed |
+| `scripts/ci/check_authority_singleton.py` | rc 0, "exactly one source of authority for each governed artifact" |
+| `scripts/ci/check_schema_refs.py` | rc 0, 27 schemas, 130 local refs, all resolve |
+| `scripts/refresh_owned_source.py` | added nothing, removed nothing; the committed inventory already matches |
+| runtime trace of `test_capability_genesis_acquires_installed_tool_and_resumes_mission` | 1 passed; the one `dpkg-query -S` spawn, from `Body.tick` (stack above) |
+| planted `dpkg-query` probe | the planted script ran as root; `installed_binary` still returned `/usr/bin/dpkg-query` |
+| test files of modules changed on both sides | none: this merge, like the two before it, had no file changed on both sides, and the unit changes no source module |
+
+Counts at `640e6eb9` are the same as at `77d5e9b8`: 93 keys and 106 occurrences across 28 `greg/` and 14
+`foundry/systems/` modules, 90 `allowed`, 3 `known_unmediated` and 6 wrappers.
+
 ## Limitations
 
 The scan is static and reads only `greg/` and `foundry/systems/`. It does not see:
@@ -252,7 +297,8 @@ the record, not a defect of the code.
 
 UNIT-TESTED: static analysis plus mutation testing on scratch copies. Three runtime probes reproduced findings
 (`run_isolated` network; the body loop's `sysctl` spawn, with the spawn intercepted; the body loop's `dpkg-query`
-spawn, traced from `Body.tick`, and a planted `dpkg-query` earlier on PATH that it ran). No runtime effect was
-blocked, nothing ran on a founder device, and no authority, capability or behaviour changed.
+spawn, traced from `Body.tick`, and a planted `dpkg-query` earlier on PATH that it ran). The `dpkg-query` trace and
+probe were re-run at `640e6eb9`. No runtime effect was blocked, nothing ran on a founder device, and no authority,
+capability or behaviour changed. The `system_binary` entry is a recorded finding, not an approval.
 
 Rollback: revert the commits. The three files have no dependents.

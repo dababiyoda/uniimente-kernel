@@ -14,6 +14,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
+from greg import acceptance
 from greg.acceptance import report
 from greg.body import Body
 from greg.templates import first_mission
@@ -72,7 +73,7 @@ def now(seconds_ago: float = 0) -> str:
 def test_a_heartbeat_from_a_live_process_written_just_now_is_a_running_body(tmp_path):
     home, *_ = make_body(tmp_path)
     for state in ("RUNNING", "PAUSED"):
-        assert runtime_status(home, pid=os.getpid(), at=now(5), state=state) == "PASS"
+        assert runtime_status(home, pid=os.getpid(), at=now(), state=state) == "PASS"   # this process predates it
 
 
 @pytest.mark.parametrize("why, heartbeat", [
@@ -85,9 +86,26 @@ def test_a_heartbeat_from_a_live_process_written_just_now_is_a_running_body(tmp_
     ("its process is not a number", lambda: {"pid": True, "at": now(5), "state": "RUNNING"}),
     ("the body is held", lambda: {"pid": os.getpid(), "at": now(5), "state": "HELD"}),
 ])
-def test_a_heartbeat_is_not_a_running_body_when(tmp_path, why, heartbeat):
+def test_a_heartbeat_is_not_a_running_body_when(tmp_path, monkeypatch, why, heartbeat):
+    # Each case tests one reason alone, so its process is taken to predate the heartbeat: this test process may well
+    # have started after a heartbeat dated minutes ago, which would fail every case for that reason instead.
+    # The start time itself is read for real by the live-process test and the reused-pid test.
+    monkeypatch.setattr(acceptance, "_started_after", lambda pid, at: False, raising=False)
     home, *_ = make_body(tmp_path)
     assert runtime_status(home, **heartbeat()) == "NOT_YET", why
+
+
+def test_a_process_started_after_the_heartbeat_did_not_write_it(tmp_path):
+    """The independent review of #231: any live process with the heartbeat's pid counted. A process that started after
+    the heartbeat was written holds a reused pid, not the writer's (Linux; elsewhere the start time is not read)."""
+    home, *_ = make_body(tmp_path)
+    late = subprocess.Popen(["sleep", "60"])
+    try:
+        assert runtime_status(home, pid=late.pid, at=now(30), state="RUNNING") == "NOT_YET"      # before: PASS
+        assert acceptance._runtime({"pid": late.pid, "at": now(30), "state": "RUNNING"})["started_after_heartbeat"]
+    finally:
+        late.kill()
+        late.wait()
 
 
 def test_no_heartbeat_at_all_is_not_a_running_body(tmp_path):
@@ -105,4 +123,5 @@ def test_the_report_names_the_signature_tier_and_the_runtime_it_read(tmp_path):
     (home / "heartbeat.json").write_text(json.dumps({"pid": pid, "at": now(5), "state": "RUNNING"}))
     runtime = report(home)["runtime"]
     assert runtime == {"running": False, "state": "RUNNING", "pid": pid, "process_alive": False,
+                       "started_after_heartbeat": None,
                        "age_seconds": runtime["age_seconds"]} and 0 <= runtime["age_seconds"] < 180

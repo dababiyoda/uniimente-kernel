@@ -23,16 +23,32 @@ from pathlib import Path
 
 RUNBOOK = "greg/CHROMEBOOK_FIRST_MISSION.md"
 STALE_HEARTBEAT_SECONDS = 180           # the console's and Mission Control's rule: older is not a running body
+START_SLACK_SECONDS = 2                 # /proc/stat's boot time is whole seconds; clock steps of a second or two
+
+
+def _started_after(pid: int, at: datetime) -> bool | None:
+    """Whether process ``pid`` started after ``at``, so that it cannot have written a heartbeat dated ``at``: the pid
+    was reused after the writer died. Read from Linux's /proc (field 22 of /proc/<pid>/stat, ticks after boot); None
+    where that cannot be read."""
+    try:
+        ticks = int(Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[19])
+        boot = next(int(line.split()[1]) for line in Path("/proc/stat").read_text().splitlines()
+                    if line.startswith("btime "))
+        started = boot + ticks / os.sysconf("SC_CLK_TCK")
+    except (OSError, ValueError, IndexError, StopIteration):
+        return None
+    return started > at.timestamp() + START_SLACK_SECONDS
 
 
 def _runtime(heartbeat: dict) -> dict:
     """Whether a body process is running now: a RUNNING or PAUSED heartbeat under three minutes old, written by a
-    process that still exists. The heartbeat file outlives its process, so its state alone proves nothing."""
+    process that still exists. The heartbeat file outlives its process, so its state alone proves nothing, and a
+    process that started after the heartbeat was written holds a reused pid, not the writer's."""
     try:
         at = datetime.fromisoformat(str(heartbeat["at"]).replace("Z", "+00:00"))
         age = (datetime.now(timezone.utc) - at).total_seconds()
     except (KeyError, TypeError, ValueError):
-        age = None
+        at = age = None
     pid = heartbeat.get("pid")
     alive = None
     if isinstance(pid, int) and not isinstance(pid, bool) and pid > 0:
@@ -43,10 +59,11 @@ def _runtime(heartbeat: dict) -> dict:
             alive = False
         except PermissionError:            # it exists, under another user
             alive = True
+    reused = _started_after(pid, at) if alive and age is not None else None
     running = (heartbeat.get("state") in ("RUNNING", "PAUSED") and age is not None
-               and 0 <= age < STALE_HEARTBEAT_SECONDS and alive is True)
+               and 0 <= age < STALE_HEARTBEAT_SECONDS and alive is True and reused is not True)
     return {"running": running, "state": heartbeat.get("state"), "pid": pid, "process_alive": alive,
-            "age_seconds": None if age is None else round(age, 1)}
+            "started_after_heartbeat": reused, "age_seconds": None if age is None else round(age, 1)}
 
 
 def _passed(journal, mission_id: str, check_id: str) -> bool:

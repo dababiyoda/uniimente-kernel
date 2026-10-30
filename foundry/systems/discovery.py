@@ -21,14 +21,11 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from capabilities.genome import CONSEQUENCE_CLASSES
+from provenance.digests import compact_json_bytes as _canon
 
 
 class DiscoveryError(ValueError):
     pass
-
-
-def _canon(value) -> bytes:
-    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
 
 
 def _t(s: str) -> datetime:

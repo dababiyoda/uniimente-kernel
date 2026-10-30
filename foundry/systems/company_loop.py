@@ -48,10 +48,6 @@ class CompanyLoopError(RuntimeError):
     pass
 
 
-def _canon(v) -> bytes:
-    return json.dumps(v, sort_keys=True, separators=(",", ":")).encode()
-
-
 class CompanyLoop:
     def __init__(self, root: Path, *, clock, persona: dict, allowed_topics: list[str], kill_criteria: dict | None = None):
         from foundry.systems.kernel_stack import agent, gate_stack

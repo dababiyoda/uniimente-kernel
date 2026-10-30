@@ -41,6 +41,7 @@ from pathlib import Path
 
 from foundry.systems import cas
 from greg import egress
+from provenance.digests import compact_json_bytes as _canon, sha256_tagged as _digest
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE_DATE_EPOCH = 1_788_000_000
@@ -161,14 +162,6 @@ def _gzip(data: bytes) -> bytes:
     with gzip.GzipFile(filename="", mode="wb", fileobj=out, mtime=0, compresslevel=9) as gz:
         gz.write(data)
     return out.getvalue()
-
-
-def _canon(value) -> bytes:
-    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
-
-
-def _digest(data: bytes) -> str:
-    return "sha256:" + hashlib.sha256(data).hexdigest()
 
 
 CAPABILITY = '''import json, sys

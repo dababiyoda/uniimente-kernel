@@ -443,6 +443,7 @@
     "greg/artifacts.py",
     "greg/asks.py",
     "greg/authority.py",
+    "greg/autonomy.py",
     "greg/body.py",
     "greg/briefs.py",
     "greg/builders.py",

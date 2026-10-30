@@ -1,8 +1,11 @@
 """Each mutant removes one safeguard added by the review fixes (S1-S10, F1-F8 of the second review of #219, then the
-fixes for the review of #221 and for its rounds 3 and 4, and #196's TXT-R4-1); the resolution unit tests must catch
-it.
+fixes for the review of #221 and for its rounds 3 to 5, and #196's TXT-R4-1 to TXT-R6-1); the resolution unit tests
+must catch it.
 
-Usage: python -B mutants-review.py REPO_ROOT > mutants-review.txt
+Usage: python -B mutants-review.py REPO_ROOT [NFIRST-NLAST] > mutants-review.txt
+
+With a range such as N1-N10, only the mutants numbered in it run, and the header and the summary say so. A run can then
+be split into parts, each in its own worktree at the same commit, and the parts together cover every mutant.
 
 A mutant counts as CAUGHT only when at least one test FAILS on an assertion or an error inside a test. A mutant whose
 target text is missing or occurs more than once, whose mutated file does not compile, whose run fails without a FAILED
@@ -22,9 +25,12 @@ name a target file other than settlement.py, and the review-3 test file was adde
 N18, N25, N28-N31 and N33 were retargeted to the rewritten walk, reconcile and receipt links, N37-N51 cover those fixes,
 and the review-4 test file was added. After round 4's fixes and #196's afcd75f3, N27-N30 and N38 were retargeted, N42
 was retired with the memo it mutated, N52-N64 cover those fixes, and the review-5 and achievement-after-unmet test
-files were added.)
+files were added. After round 5's fixes and #196's 4ec00605, N65 and N66 cover the evaluation limit, N67-N73 the
+closure-scoped settlement, and the review-6 and closure-scoped test files were added. After #196's a6c29bbd, N10 was
+retargeted to the claim's own appraisal, N74-N79 cover it, and the closure-scoped claims test file was added. A full
+run of five hours was then cut by a container restart, so the range argument was added to split a run into parts.)
 """
-import hashlib, os, platform, shutil, signal, subprocess, sys, tempfile
+import hashlib, os, platform, re, shutil, signal, subprocess, sys, tempfile
 from pathlib import Path
 ROOT = Path(sys.argv[1]).resolve()
 SETTLEMENT = "greg/cognition/settlement.py"
@@ -40,7 +46,7 @@ MUTANTS = {
  "N7 S4 journal order wins": ('key=lambda item: (item[0], item[1])', 'key=lambda item: item[1]'),
  "N8 S5 succeeded only when prior is None": ('        if outcome.get("answer_version") and _base_identity(outcome) in legacy:', '        if prior is None and outcome.get("answer_version") and _base_identity(outcome) in legacy:'),
  "N9 S6 failed check hidden by dispute": ('        if not outcome["correct"]:        # the signed check failed', '        if False:        # the signed check failed'),
- "N10 S7 unsettleable dispute weighed": ('        if row["mission_id"] not in settling:', '        if False:'),
+ "N10 S7 unsettleable dispute weighed": ('        if not settles(row):', '        if False:'),
  "N11 S8 Laplace flips ignored": ('            if inside:', '            if False:'),
  "N12 S9 unsigned fact eligible (replay)": ('(accept in named and accept in signed_facts', '(accept in named'),
  "N13 S9 unsigned fact eligible (row)": ('"eligible_to_accept": e.event_id in signed_facts\n                and', '"eligible_to_accept": True\n                and'),
@@ -126,13 +132,64 @@ MUTANTS = {
                                                                    '    for mid in []:'),
  "N64 TXT-R4-1 an achievement read as appraised by a failure's appraisal": ('    own = {e.payload["mission_id"] for e in journal.replay("mission.appraised") if not e.payload.get("closure_event")}',
                                                                             '    own = {e.payload["mission_id"] for e in journal.replay("mission.appraised")}'),
+ # Round 5 of the review of #221 (comment 6515476874), fixed on #221's branch at d7cf7b5a: the evaluation limit (W4-1).
+ "N65 W4-1 the evaluation limit ignored": ('                if spent[0] + len(states) > PREFERENCE_EVALUATION_LIMIT:', '                if False:'),
+ "N66 W4-1 the evaluation limit not stated": ('    if spent[1]:\n        limits.append(', '    if False:\n        limits.append('),
+ # TXT-R5-1, fixed in #196's 4ec00605 (merged at 488bf841): each observation settles under its own closure's appraisal.
+ "N67 TXT-R5-1 no closure scoping": ('        if mid not in scoped:\n            return settling.get(mid)',
+                                     '        if True:\n            return settling.get(mid)'),
+ "N68 TXT-R5-1 an appraisal naming no closure not given to the achievement": (
+     '            closure = data.get("closure_event") or achieved[data["mission_id"]].event_id',
+     '            closure = data.get("closure_event")'),
+ "N69 TXT-R5-1 a closure's appraisal without the required checks": (
+     '        return event if all(event.payload.get("checks", {}).get(k) is True for k in REQUIRED_CHECKS) else None',
+     '        return event'),
+ "N70 TXT-R5-1 the achievement settles under VERIFIED_UNMET": ('settling(mid, win.event_id, "VERIFIED")',
+                                                              'settling(mid, win.event_id, "VERIFIED_UNMET")'),
+ "N71 TXT-R5-1 an observation after every closure unsettled": ('        return scoped[mid][-1][2]', '        return None'),
+ "N72 TXT-R5-1 the last closure decides every observation": (
+     '            if at is not None and at <= closure_at:\n                return appraised',
+     '            if False:\n                return appraised'),
+ "N73 TXT-R5-1 a failure closure settles under VERIFIED": ('settling(mid, f.event_id, "VERIFIED_UNMET")',
+                                                          'settling(mid, f.event_id, "VERIFIED")'),
+ # TXT-R6-1, fixed in #196's a6c29bbd (merged at a83fcd5e; its cases A and B in b1950be2, merged at 9571ac90):
+ # offered and disputed claims follow the appraisals of their own observations' closures.
+ "N74 TXT-R6-1 the offered row reads the mission-level rule": (
+     '            identity, receipts, mission_id, state, appraised = offered[record.hash]\n',
+     '            identity, receipts, mission_id, state, _ = offered[record.hash]\n'
+     '            appraised = mission_id in settling\n'),
+ "N75 TXT-R6-1 the weighing reads the mission-level rule": (
+     '        return row["claim_settles"] if "claim_settles" in row else row["mission_id"] in settling',
+     '        return row["mission_id"] in settling'),
+ "N76 TXT-R6-1 every observation of a claim must settle": (
+     '        return any(appraisal_of(obs[5]) is not None for obs in seen)',
+     '        return all(appraisal_of(obs[5]) is not None for obs in seen)'),
+ "N77 TXT-R6-1 only a claim's latest observation decides": (
+     '        return any(appraisal_of(obs[5]) is not None for obs in seen)',
+     '        return appraisal_of(seen[-1][5]) is not None'),
+ "N78 TXT-R6-1 only a claim's first observation decides": (
+     '        return any(appraisal_of(obs[5]) is not None for obs in seen)',
+     '        return appraisal_of(seen[0][5]) is not None'),
+ "N79 TXT-R6-1 the dispute row carries no claim_settles": ('            row["claim_settles"] = claim_settles(seen)\n', ''),
 }
 MUTANTS = {name: (spec if len(spec) == 3 else (SETTLEMENT, *spec)) for name, spec in MUTANTS.items()}
+ALL = len(MUTANTS)
+PART = sys.argv[2] if len(sys.argv) > 2 else None
+if PART is not None:
+    bounds = re.fullmatch(r"N(\d+)-N(\d+)", PART)
+    if bounds is None or len(sys.argv) > 3:
+        sys.exit("usage: mutants-review.py REPO_ROOT [NFIRST-NLAST]")
+    low, high = int(bounds[1]), int(bounds[2])
+    MUTANTS = {name: spec for name, spec in MUTANTS.items() if low <= int(name.split()[0][1:]) <= high}
+    if not MUTANTS:
+        sys.exit(f"refused: no mutant in {PART}")
 TARGETS = sorted({path for path, _, _ in MUTANTS.values()})
 TESTS = ["tests/unit/test_greg_outcome_resolution.py", "tests/unit/test_greg_pending_construction_realization.py",
          "tests/unit/test_greg_outcome_resolution_signed.py", "tests/unit/test_greg_outcome_resolution_review2.py",
          "tests/unit/test_greg_outcome_resolution_review3.py", "tests/unit/test_greg_outcome_resolution_review4.py",
-         "tests/unit/test_greg_outcome_resolution_review5.py", "tests/unit/test_greg_achievement_after_unmet.py"]
+         "tests/unit/test_greg_outcome_resolution_review5.py", "tests/unit/test_greg_achievement_after_unmet.py",
+         "tests/unit/test_greg_outcome_resolution_review6.py", "tests/unit/test_greg_closure_scoped_settlement.py",
+         "tests/unit/test_greg_closure_scoped_claims.py"]
 COMMAND = [sys.executable, "-B", "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", *TESTS]
 ENV = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
 TIME_LIMIT = 1800  # seconds per run; the unmutated set takes about six minutes
@@ -201,6 +258,8 @@ for path in TARGETS:
     if (ROOT / path).read_text() != ORIG[path]:
         sys.exit(f"refused: the working {path} differs from HEAD's")
 print(f"git rev-parse HEAD: {head}; greg/, tests/ and {script_path} unmodified")
+if PART is not None:
+    print(f"part {PART} only: {len(MUTANTS)} of the {ALL} mutants")
 print(f"python {platform.python_version()}; command: {' '.join(['python', *COMMAND[1:]])}")
 for path in TARGETS:
     print(f"sha256 {path}: {sha256(ROOT / path)}")
@@ -251,4 +310,5 @@ finally:
     purge_bytecode()
 valid = [r for r in rows if not r.startswith("INVALID")]
 print(f"{sum(r.startswith('CAUGHT') for r in rows)} of {len(valid)} valid mutants caught; "
-      f"{len(rows) - len(valid)} invalid; {sum(r.startswith('MISSED') for r in rows)} missed")
+      f"{len(rows) - len(valid)} invalid; {sum(r.startswith('MISSED') for r in rows)} missed"
+      + (f" (part {PART})" if PART is not None else ""))

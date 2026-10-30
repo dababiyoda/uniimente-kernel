@@ -47,7 +47,10 @@ jobs:
     # review rounds' regression tests, not a hang (#180). This job now carries both lineages' tests, so it keeps
     # the larger of the two limits. On the joined tree (#196) the job took 65 minutes at 78da0332; #158's admission v8
     # (83 genomes) adds its tests, and on its own line the full suite alone took 38 minutes at 14608914. Raised to 90.
-    timeout-minutes: 90
+    # ubuntu-latest then moved to a runner where bubblewrap namespaces work, so the confined tests that used to skip
+    # now run: the full suite took 86 minutes at dacf6975 and fa80ace7 (7795 passed at fa80ace7, run 39984114068), and
+    # the job was cancelled at 90 during the mutation steps that follow it. Raised to 120.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
         with:
@@ -112,8 +115,8 @@ jobs:
     # Same rationale as job 1 (#180): V2 re-runs tests/unit, which Track B's Mind tests enlarged; bounds a hung run.
     # On the joined tree (#196) V2 covers both lineages' tests/unit: 25 min in #192's job 9, 29m10s inside Track B's
     # job 1; 60 kept that union clear until the joined suite reached 59 min (2026-10-22, 58a2fad1) and was cancelled at
-    # 60 on 40ce615d. 90 matches job 1, which runs the same tests/unit.
-    timeout-minutes: 90
+    # 60 on 40ce615d. 120 matches job 1, which runs the same tests/unit (70 minutes here at fa80ace7).
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
         with:
@@ -264,7 +267,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: dababiyoda/WealthMachineIntelligence
-          ref: 7a45d223b74d6eea3b9ed5bdaeb12a3625b525de
+          ref: 0e80582d6d4f5b4d2477e13d2bb48fb4a57be3e6
           path: consumers/wmi
           persist-credentials: false
       - uses: actions/checkout@v4
@@ -310,7 +313,8 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       # The organs at their upgraded pins (founder decision 2026-10-23): per-organ bridge keys, and DALEOBANKS
-      # packets that carry stated evidence. Draft PRs DALEOBANKS #96 and WealthMachineIntelligence #44.
+      # packets that carry stated evidence. Draft PRs DALEOBANKS #96 and WealthMachineIntelligence #47 (on #45, on
+      # #44): WealthMachine reads the staffing figures it is sent (step 9, test_organ_staffing_figures.py).
       - uses: actions/checkout@v4
         with:
           repository: dababiyoda/DALEOBANKS
@@ -320,7 +324,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: dababiyoda/WealthMachineIntelligence
-          ref: 7a45d223b74d6eea3b9ed5bdaeb12a3625b525de
+          ref: 0e80582d6d4f5b4d2477e13d2bb48fb4a57be3e6
           path: organs/wealthmachine
           persist-credentials: false
       - uses: actions/setup-python@v5
@@ -360,7 +364,7 @@ jobs:
           GREG_TEST_WMI: "${{ github.workspace }}/organs/wealthmachine"
           GREG_ONE_MACHINE_EVIDENCE: "${{ github.workspace }}/one-machine-evidence/ten-steps"
           GREG_LOOP15_EVIDENCE: "${{ github.workspace }}/one-machine-evidence/loop15"
-        run: python -m pytest -q -rs tests/integration/test_one_machine.py tests/integration/test_one_machine_ten_steps.py tests/integration/test_one_mission_fifteen_steps.py tests/integration/test_one_machine_attacks.py tests/unit/test_greg_organs.py tests/unit/test_greg_organ_bridge.py tests/unit/test_greg_daleobanks_bridge.py tests/unit/test_greg_bind_from_check.py tests/unit/test_greg_model_identity_policy.py
+        run: python -m pytest -q -rs tests/integration/test_one_machine.py tests/integration/test_one_machine_ten_steps.py tests/integration/test_one_mission_fifteen_steps.py tests/integration/test_organ_staffing_figures.py tests/integration/test_one_machine_attacks.py tests/unit/test_greg_organs.py tests/unit/test_greg_organ_bridge.py tests/unit/test_greg_daleobanks_bridge.py tests/unit/test_greg_bind_from_check.py tests/unit/test_greg_model_identity_policy.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

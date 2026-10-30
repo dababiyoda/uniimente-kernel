@@ -1,0 +1,11 @@
+CI job 8's whole set + tests/integration/test_combined_construction_outcome.py, real organs (DALEOBANKS 664ac98c, WMI #47 0e80582d, organ venvs from their own requirements), bubblewrap usable, UNIIMENTE_REQUIRE_ORGANS=1, GREG_REQUIRE_LANDLOCK=1; py3.11, local.
+
+== combined candidate before this round: 8c431b85 = #196 9e5a0b09 + #212 + #210 ec38d8a5
+SKIPPED [1] tests/integration/test_one_machine_ten_steps.py:225: supervisord (requirements-dev) not installed
+117 passed, 1 skipped in 178.56s (0:02:58)
+
+== this round: 050e2e42
+SKIPPED [1] tests/integration/test_one_machine_ten_steps.py:225: supervisord (requirements-dev) not installed
+117 passed, 1 skipped in 177.81s (0:02:57)
+
+test_organ_staffing_figures.py: different staffing figures change WealthMachine's reasons, evidence requests and validation priority on the real organ path; test_combined_construction_outcome.py: one construction outcome pending once, settled once by one signed report, competence (1,1) -> (1,0), WMI's retained assessment byte-identical.

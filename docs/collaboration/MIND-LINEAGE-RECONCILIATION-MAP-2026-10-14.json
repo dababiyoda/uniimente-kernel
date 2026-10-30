@@ -2641,8 +2641,8 @@
    "path": "tests/unit/test_genomes_stochastic.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "modified",
+   "note": "present in one lineage only (pr158); kept, then modified on #196 (dacf6975): the dev-seed budget test reports wall vs thread and process CPU and the thread count on a timing failure; then (after a 3.7 s CPU-bound verify of a ~10 ms bootstrap_ci check in CI job 1) the trace/profile hooks, host load and stolen ticks, and a step over its bound is timed once more with the faster run judged; bounds and every other test unchanged"
   },
   {
    "path": "tests/unit/test_genomes_strategic.py",

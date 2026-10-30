@@ -612,7 +612,16 @@ class Body:
             # evidence only: the observed values of one retained forecast, or the realized objective of one
             # construction answer, labelled by source; it scores the method's calibration or world competence and
             # changes no mission, capability or authority
-            from greg.cognition.settlement import record_realization
+            from greg.cognition.settlement import record_realization, record_resolution
+            if "resolves" in body:
+                # a correction of a disputed construction outcome: it accepts one independent observation already
+                # recorded, or invalidates the named reports; every fact stays on the record
+                if set(body) - {"receipt", "resolves", "accept", "note"}:
+                    raise MissionError("a resolution takes receipt, resolves, accept and note")
+                payload = record_resolution(self.journal, receipt=body.get("receipt"), resolves=body.get("resolves"),
+                                            accept=body.get("accept"), note=body.get("note", ""),
+                                            command_digest=digest)
+                return {"receipt": payload["receipt"], "resolves": payload["resolves"], "accept": payload["accept"]}
             if set(body) - {"receipt", "realized", "source", "note"}:
                 raise MissionError("a realization takes receipt, realized, source and note")
             payload = record_realization(self.journal, receipt=body.get("receipt"), realized=body.get("realized"),
@@ -972,7 +981,10 @@ class Body:
     def _close_out(self, now):
         """Record where each closure happened and have it appraised by a separate process."""
         contexts = {e.payload["mission_id"] for e in self.journal.replay("mission.closure_context")}
-        appraised = {e.payload["mission_id"] for e in self.journal.replay("mission.appraised")}
+        # an achievement is judged as its own closure: an appraisal of an earlier failure or hold of the same
+        # mission (it names that closure_event) never stands in for the appraisal of its success (TXT-R4-1)
+        appraised = {e.payload["mission_id"] for e in self.journal.replay("mission.appraised")
+                     if not e.payload.get("closure_event")}
         for event in self.journal.replay("mission.achieved"):
             mid = event.payload["mission_id"]
             if mid not in contexts:

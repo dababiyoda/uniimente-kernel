@@ -350,7 +350,7 @@ def main(argv=None) -> int:
     vp = css.add_parser("verify-package", help="recipient side: check a presentation without any GREG state")
     vp.add_argument("presentation")
     css.add_parser("calibration", help="read-only: forecast calibration from realized values bound to receipts, "
-                                       "and the forecast receipts still awaiting a realization")
+                                       "and forecasts/construction objectives still awaiting a realization")
     cm = css.add_parser("mission")
     cm.add_argument("--request", required=True, help="bounded cognition request JSON")
     cm.add_argument("--id", required=True, help="durable mission identity")
@@ -431,9 +431,18 @@ def main(argv=None) -> int:
         if name == "lifecycle":
             q.add_argument("mission_id"); q.add_argument("state"); q.add_argument("--reason", default="")
         if name == "realize":
-            q.add_argument("receipt", help="ledger hash of the forecast receipt (greg cognition calibration lists them)")
-            q.add_argument("--value", type=float, action="append", required=True,
-                           help="one observed value per forecast horizon step, in order")
+            q.add_argument("receipt", help="ledger hash of the forecast or construction receipt (greg cognition calibration lists them)")
+            values = q.add_mutually_exclusive_group(required=True)
+            values.add_argument("--value", type=float, action="append",
+                                help="forecast: one observed value per horizon step, in order")
+            values.add_argument("--objective-value", type=float,
+                                help="construction: one observed scalar value of the named objective")
+            values.add_argument("--resolves", action="append", metavar="EVENT",
+                                help="resolve a disputed construction outcome: a realization event it rules on "
+                                     "(repeat; greg cognition calibration lists a prepared resolution)")
+            q.add_argument("--accept", metavar="EVENT",
+                           help="with --resolves: the report to accept, one whose reporter declared an independent source "
+                                "(external_record, sensor_observation; declared, not verified); omit to invalidate them")
             q.add_argument("--source", default="founder_reported",
                            choices=["founder_reported", "external_record", "sensor_observation"])
             q.add_argument("--note", default="")
@@ -932,8 +941,21 @@ def main(argv=None) -> int:
                 print(_drop(home, "BODY_STOP", {}, args))
         elif args.cmd in ("attach", "detach"):
             print(_drop(home, "CAPABILITY_" + args.cmd.upper(), {"capability_id": args.capability_id}, args))
+        elif args.cmd == "realize" and args.resolves:
+            if not args.note.strip():
+                raise BodyError("--note states the basis of the resolution: the record that decides it")
+            print(_drop(home, "REALIZATION", {"receipt": args.receipt, "resolves": args.resolves,
+                                              "accept": args.accept, "note": args.note}, args))
         elif args.cmd == "realize":
-            print(_drop(home, "REALIZATION", {"receipt": args.receipt, "realized": args.value, "source": args.source,
+            if args.accept:
+                raise BodyError("--accept is used with --resolves")
+            realized = args.value
+            if args.objective_value is not None:
+                import math
+                if not math.isfinite(args.objective_value):
+                    raise BodyError("--objective-value requires one finite number")
+                realized = args.objective_value
+            print(_drop(home, "REALIZATION", {"receipt": args.receipt, "realized": realized, "source": args.source,
                                               "note": args.note}, args))
         elif args.cmd == "lifecycle":
             print(_drop(home, "LIFECYCLE", {"mission_id": args.mission_id, "state": args.state,

@@ -135,7 +135,7 @@ OSS_TESTS = ["tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_gre
 # catch it first instead of the slower genesis suites before them (job 6 hit its 40-minute limit with them merged)
 METABOLISM_TESTS = ["tests/unit/test_greg_document_text.py", "tests/unit/test_greg_license_qualification.py",
                     "tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_greg_license_use_context.py",
-                    "tests/unit/test_greg_genesis_restore.py"]
+                    "tests/unit/test_greg_genesis_restore.py", "tests/unit/test_greg_binary_failure_types.py"]
 OSS_MUTANTS = [
     ("certificate skips edge feasibility", "greg/cognition/network.py",
      "if exact[b] > exact[a] + w + tolerance(exact[a] + w):", "if False:"),
@@ -655,6 +655,19 @@ METABOLISM_MUTANTS = [
     ("a changed companion is trusted at restart", "greg/genesis.py",
      'pinned = [(binary, manifest.provenance.get("binary_sha256"))] + [',
      'pinned = [(binary, manifest.provenance.get("binary_sha256"))] + 0 * ['),
+    # failure types and limits (review of #201 at a1d2abf, DOC-3, GATE-5, GATE-6, DOC-10)
+    ("an unreadable input counts against the reader", "greg/genesis.py",
+     'f"{name} could not read this input (exit status {returncode}): {tail}"', 'f"{name} exited {returncode}: {tail}"'),
+    ("a kill at a ceiling is not typed as a budget", "greg/genesis.py",
+     'failure_class="budget_exceeded")\n    return CapabilityError(f"{name} could not read',
+     'failure_class=None)\n    return CapabilityError(f"{name} could not read'),
+    ("a changed companion is untyped", "greg/genesis.py",
+     'quarantine required",\n                                  failure_class="executor_error")',
+     'quarantine required")'),
+    ("a binary's timeout escapes untyped", "greg/genesis.py",
+     'except subprocess.TimeoutExpired:\n            raise CapabilityError(f"{name} did not finish',
+     'except ZeroDivisionError:\n            raise CapabilityError(f"{name} did not finish'),
+    ("a binary's version line is stored whole", "greg/genesis.py", "[line[:VERSION_LINE] for line in", "[line for line in"),
     ("an acquired binary runs without requalification", "greg/genesis.py",
      "requalified, why = licensing.requalify_binary(ctx.manifest, binary)", 'requalified, why = True, ""'),
 ]

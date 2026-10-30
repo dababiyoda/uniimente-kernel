@@ -596,13 +596,13 @@ def judge(predicate: dict, output, *, whole: bool = False, recorded_cut: bool = 
     # what more data could not undo, unless the output names the field in ``decided`` (review of #196, J8: the cut
     # string and the missing field used to be judged before this was asked)
     declared, vouched = _declared(output, path)
-    incomplete = "the capability reported its observation incomplete"
+    why = _why_incomplete(output, path) if declared else None
+    incomplete = "the capability reported its observation incomplete" + (f": {why}" if why else "")
     try:
         value = _raw_field(output, path, whole=whole, recorded_cut=recorded_cut)
     except KeyError:
         if declared:       # a field the observation has not reached yet is not an absent field
-            why = _unreadable(output, path)
-            return INSUFFICIENT, f"field {path!r} absent; {incomplete}" + (f": {why}" if why else "")
+            return INSUFFICIENT, f"field {path!r} absent; {incomplete}"
         return (TRUE if op == "absent" else FALSE), f"field {path!r} absent"
     except LookupError as exc:
         return INSUFFICIENT, str(exc)
@@ -682,15 +682,26 @@ def judge(predicate: dict, output, *, whole: bool = False, recorded_cut: bool = 
     return verdict, detail
 
 
-def _unreadable(output, path: str) -> str | None:
-    """Why a capability left the field at ``path`` out, when it said so beside it (``<field>_unreadable``)."""
-    *parents, leaf = path.split(".") if path else [""]
-    try:
-        node = _raw_field(output, ".".join(parents), whole=True) if parents else output
-    except LookupError:
-        return None
-    why = node.get(f"{leaf}_unreadable") if isinstance(node, dict) else None
-    return why if isinstance(why, str) else None
+def _why_incomplete(output, path: str) -> str | None:
+    """Why the observation on the way to ``path`` is incomplete, when it says: a ``<field>_unreadable`` beside the
+    field, else the ``unreadable`` or ``stopped`` reason of the nearest output that declared itself incomplete."""
+    parts = path.split(".") if path else []
+    node, why = output, None
+    for i in range(len(parts) + 1):
+        if isinstance(node, dict):
+            if i == len(parts) - 1 and isinstance(node.get(f"{parts[i]}_unreadable"), str):
+                return node[f"{parts[i]}_unreadable"]
+            if node.get("complete") is False:
+                why = next((node[k] for k in ("unreadable", "stopped") if isinstance(node.get(k), str)), why)
+        if i == len(parts):
+            break
+        if isinstance(node, dict) and parts[i] in node:
+            node = node[parts[i]]
+        elif isinstance(node, list) and parts[i].isdigit() and int(parts[i]) < len(node):
+            node = node[int(parts[i])]
+        else:
+            break
+    return why
 
 
 def _number(value) -> bool:

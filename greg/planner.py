@@ -44,6 +44,8 @@ FILE_PATH = re.compile(r"(~?/[^\s'\"“”]+)")
 CODE_WORK = re.compile(r"^\s*(?:improve|change|fix|modify|update|extend)\s+(?:the\s+)?(?P<name>[\w.-]+)"
                        r"(?:\s+(?:repo|repository|code(?:base)?))?\s*[:\u2014-]\s*(?P<objective>\S.*)$", re.I | re.S)
 QUOTED = re.compile(r"[\"“']([^\"”']{1,400})[\"”']")
+MENTIONS = re.compile(r"\b(?:mention(?:s|ed)?|contain(?:s|ed)?|include(?:s|d)?)\b", re.I)
+NEVER = re.compile(r"\b(?:never|not|no longer|doesn'?t|does not|nowhere)\b", re.I)
 SCHEDULE = re.compile(r"\b(?:shift|window)\s*:?\s*(?:is\s+)?\d{1,5}\s*(?:h|hours?)\b.*\btakes\s+\d", re.I | re.S)
 NETWORK = re.compile(r"\b(?:(?:shortest|cheapest|fastest|quickest)\s+(?:route|path|way)|(?:maximum|max|most)\s+"
                      r"(?:flow|units|throughput|capacity))\s+from\s+\w+\s+to\s+\w+", re.I)
@@ -137,6 +139,24 @@ def _words_route(text: str, ctx: PlannerContext, match) -> dict:
     return _proposal(spec, "template:word-limit",
                      notes=["GREG has no word-count capability yet: it will acquire and verify one (read-only)",
                             "filing the record asks you first, and happens only within the limit"])
+
+
+def _search_route(text: str, ctx: PlannerContext) -> dict | None:
+    """A file the words name, read whole for the quoted phrases, however large. Words that name no readable file
+    fall through to the routes after this one."""
+    file, question = _readable_file(text, ctx, "template:file-search")
+    if question:
+        return None
+    phrases = [m.group(1) for m in QUOTED.finditer(text)][:16]
+    absent = bool(NEVER.search(text))
+    spec = templates.file_search(file=file, phrases=phrases, absent=absent)
+    spec["founder_expression"] = text
+    return _proposal(spec, "template:file-search", notes=[
+        "read-only: GREG reads the whole file as a stream, in bounded memory, and changes nothing",
+        "line breaks and runs of spaces count as one space; accented letters match in either Unicode form",
+        ("absence is claimed only after every byte is read and decoded; a file cut short or not readable as text "
+         "leaves the answer open, and GREG asks you with the reason") if absent else
+        "a phrase found anywhere in the file closes the check"])
 
 
 def _verify_route(text: str, ctx: PlannerContext) -> dict:
@@ -464,6 +484,9 @@ def template_route(text: str, ctx: PlannerContext) -> dict | None:
         return proposal                     # a tool on an MCP server the founder installed, named in the words
     if templates.FIRST_MISSION_WORDS.search(text):      # the founder's first mission: where am I going, what next
         return _first_mission_route(text, ctx)
+    if MENTIONS.search(text) and FILE_PATH.search(text) and QUOTED.search(text) and \
+            (proposal := _search_route(text, ctx)) is not None:
+        return proposal                     # whether a file of any size mentions, or never mentions, a phrase
     if BRIEF.search(text):
         repos = ctx.repos()
         named = {n: r for n, r in repos.items() if n.lower() in lowered}

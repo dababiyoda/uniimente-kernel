@@ -8,7 +8,8 @@ check the evidence could not decide is neither pursued nor certified as failed (
 limits on declared-incomplete outputs, on paths into a receipt's prefix record and on numbers that are not finite;
 of greg/pipeline.py's handoffs and inspection; or of faithful text: one normalization form on both sides of every
 comparison, decoding without replacement, cut output declared cut, and files refused before they are buffered
-(greg/textform.py, greg/capabilities.py, greg/business_loop.py). The named test
+(greg/textform.py, greg/capabilities.py, greg/business_loop.py); or of the bounded text query that reads a whole
+file of any size (greg/textquery.py, its planner route). The named test
 must fail for every mutant. Mutants are applied to a scratch copy of the repository, never to the working tree.
 Exit status 1 if any mutant survives or no longer applies.
 
@@ -45,6 +46,7 @@ U = "tests/unit/test_greg_unmeasured_not_failed.py::"
 H = "tests/unit/test_greg_handoff_evidence.py::"
 W = "tests/unit/test_greg_judge_incomplete_wrappers.py::"
 F = "tests/unit/test_greg_faithful_text.py::"
+Q = "tests/unit/test_greg_text_query.py::"
 MUTANTS = [
     ("a check the prefix cannot decide is never read over the whole", "greg/missions.py",
      "    if verdict != INSUFFICIENT or record is None:\n        return verdict, detail",
@@ -269,8 +271,8 @@ MUTANTS = [
      '        pass',
      F + 'test_a_forbidden_name_in_another_normalization_form_is_found'),
     ("an unreadable field's reason is not shown to the founder", "greg/missions.py",
-     'return why if isinstance(why, str) else None',
-     'return None',
+     '                return node[f"{parts[i]}_unreadable"]',
+     '                return None',
      F + 'test_an_unreadable_contract_is_asked_about_not_certified'),
     ('UTF-8 holding NUL is read as text', "greg/capabilities.py",
      'if codec == "utf-8" and "\\x00" in text:',
@@ -329,6 +331,60 @@ MUTANTS = [
      'data = bounded_read(path, "statement exceeds read ceiling")',
      'data = path.read_bytes()',
      F + 'test_an_oversized_statement_is_refused_before_it_is_read'),
+    # bounded text query (tests/unit/test_greg_text_query.py): every byte read, in bounded memory, coverage stated
+    ('a match carried across two pieces is cut off by a short tail', "greg/textquery.py",
+     'keep = window[max(0, len(window) - self.overlap):] if self.overlap else ""',
+     'keep = window[len(window) - self.overlap:] if self.overlap else ""',
+     Q + 'test_a_query_fed_in_any_pieces_answers_the_same'),
+    ('a match inside the carried tail is counted twice', "greg/textquery.py",
+     'at = window.find(phrase, max(0, len(self._tail) - len(phrase) + 1))',
+     'at = window.find(phrase, 0)',
+     Q + 'test_a_short_phrase_in_the_carried_tail_is_counted_once'),
+    ('a piece is searched before its normalization settles', "greg/textquery.py",
+     'ready = self._open if final else stable(self._open)',
+     'ready = self._open',
+     Q + 'test_an_accent_in_the_next_chunk_is_part_of_the_letter_before_it'),
+    ('an endless run of marks is held in memory', "greg/textquery.py",
+     '        if len(self._open) > MAX_OPEN_CHARS:\n',
+     '        if False:\n',
+     Q + 'test_marks_with_no_starter_are_refused_before_memory_grows'),
+    ('a phrase found before an unreadable byte is reported found', "greg/textquery.py",
+     '"found": True if count and readable else (False if complete else None)',
+     '"found": True if count else (False if complete else None)',
+     Q + 'test_a_byte_that_is_not_utf8_midway_leaves_every_answer_open'),
+    ('absence is claimed on a reading stopped short', "greg/textquery.py",
+     'complete = self.finished and not self.unreadable and stopped is None',
+     'complete = not self.unreadable',
+     Q + 'test_a_reading_stopped_by_its_byte_limit_proves_what_it_found_and_nothing_it_did_not'),
+    ('a file exactly at the byte limit is called cut', "greg/textquery.py",
+     'stopped = None if not stream.read(1) else f"byte limit: read the first {limit} bytes"',
+     'stopped = f"byte limit: read the first {limit} bytes"',
+     Q + 'test_a_file_exactly_at_the_byte_limit_is_read_whole'),
+    ('the time limit is ignored', "greg/textquery.py",
+     '            if time.monotonic() > deadline:\n',
+     '            if False:\n',
+     Q + 'test_a_reading_stopped_by_its_time_limit_says_so'),
+    ('a query reads UTF-16 without a mark as text', "greg/textquery.py",
+     '        if self.codec == "utf-8" and "\\x00" in text:\n',
+     '        if False:\n',
+     Q + 'test_a_utf16_log_is_read_in_its_own_encoding_or_not_at_all'),
+    ('a FIFO swapped in for a file is opened and read', "greg/textquery.py",
+     '        if not stat.S_ISREG(info.st_mode):\n'
+     '            raise CapabilityError(f"{path.name} is not a regular file")\n',
+     '',
+     Q + 'test_a_fifo_swapped_in_after_the_file_check_is_refused_without_blocking'),
+    ('the founder is not told why a reading stopped', "greg/missions.py",
+     'why = next((node[k] for k in ("unreadable", "stopped") if isinstance(node.get(k), str)), why)',
+     'pass',
+     Q + 'test_a_reading_stopped_by_its_byte_limit_proves_what_it_found_and_nothing_it_did_not'),
+    ('words forbidding a phrase draft a check that it is present', "greg/planner.py",
+     '    absent = bool(NEVER.search(text))\n',
+     '    absent = False\n',
+     Q + 'test_the_founders_words_become_a_read_only_search_mission'),
+    ('the appraiser trusts a whole-file search instead of reading the file again', "greg/appraisal.py",
+     'REOBSERVABLE = {"fs.read", "fs.search", "fs.list",',
+     'REOBSERVABLE = {"fs.read", "fs.list",',
+     Q + 'test_a_large_log_is_proved_clean_and_the_appraiser_agrees'),
 ]
 
 

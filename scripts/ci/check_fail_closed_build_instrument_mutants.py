@@ -121,7 +121,7 @@ MUTANTS = [
      "@pytest.fixture(autouse=True)\n", "@pytest.fixture\n", [REQUIRED]),
     ("the workflow does not require supervisord", ".github/workflows/build-frontier.yml",
      '          GREG_REQUIRE_SUPERVISOR: "1"\n', '          GREG_REQUIRE_SUPERVISOR: "0"\n', [REQUIRED_IN_CI]),
-    ("the workflow does not run the path-predicate gate", ".github/workflows/build-frontier.yml",
+    ("Canonical CI does not run the path-predicate gate", ".github/workflows/canonical-ci.yml",
      "        run: python scripts/ci/check_path_predicate_mutants.py\n", "        run: \"true\"\n", [GATES]),
     ("the workflow does not run this gate", ".github/workflows/build-frontier.yml",
      "        run: python scripts/ci/check_fail_closed_build_instrument_mutants.py\n", "        run: \"true\"\n",

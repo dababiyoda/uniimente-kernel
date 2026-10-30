@@ -1,9 +1,10 @@
 name: Build frontier
 
 # The build frontier (`greg path --build`, greg/path.py build_status) counts a node only while the path-predicate
-# mutation gate (scripts/ci/check_path_predicate_mutants.py, #236) lists a live weakening of its predicate. Only a
-# run of that gate shows that the weakening is caught, and before this workflow nothing in CI ran it. It runs here on
-# every proposed change, beside Canonical CI; canonical-ci.yml is not edited (open PRs edit it).
+# mutation gate (scripts/ci/check_path_predicate_mutants.py, #236) lists a live weakening of its predicate. Canonical
+# CI runs that gate on every proposed change (adopted with #236 in #196's 4dc0d581), so it is not repeated here; this
+# workflow runs, beside Canonical CI, what Canonical CI does not: this unit's gate and the rehearsals with supervisord
+# required. canonical-ci.yml is not edited (open PRs edit it).
 #
 # The supervised rehearsals that build N1 and N2 on one body run with GREG_REQUIRE_SUPERVISOR=1: where supervisord is
 # missing they fail instead of reading as skipped (tests/supervisor_requirement.py). supervisord comes from
@@ -28,10 +29,10 @@ concurrency:
 
 jobs:
   build_frontier:
-    name: "Build frontier: predicate and rehearsal-body mutations, supervised rehearsals (never skipped)"
+    name: "Build frontier: rehearsal-body mutations, supervised rehearsals (never skipped)"
     runs-on: ubuntu-latest
-    # Bounds a hung run, not a speed target: locally the path-predicate gate took about 80 s, this unit's gate a few
-    # minutes and the two rehearsal modules about 90 s.
+    # Bounds a hung run, not a speed target: locally this unit's gate took a few minutes and the two rehearsal
+    # modules about 90 s.
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -41,8 +42,6 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r requirements-dev.txt -r requirements-cognition.txt
-      - name: Path-predicate mutation gate (every listed weakening must be caught)
-        run: python scripts/ci/check_path_predicate_mutants.py
       - name: Fail-closed build instrument mutations (supervisor requirement, rehearsal bodies)
         run: python scripts/ci/check_fail_closed_build_instrument_mutants.py
       - name: Supervised rehearsals with supervisord required (a missing supervisor fails, never skips)

@@ -13,7 +13,7 @@ frontier). **Branch:** `claude/fail-closed-build-instrument-20261030`.
   `greg rehearse` body has signed into its ledger since the command was written.
 - `greg status`, the home banner and Mission Control's Proof row say a rehearsal body is one, and point at another body
   for the founder tier.
-- The path-predicate mutation gate now has a CI workflow that runs it on every pull request.
+- The path-predicate mutation gate runs on every pull request. At this unit's base no workflow ran it; this unit added a step for it, and #196 later added it to Canonical CI (`4dc0d581`). After merging #196's `a986fc74` the step was removed from `build-frontier.yml` so the gate runs once, in Canonical CI (see "Merged with #196" below).
 
 Nothing grants, widens or moves authority.
 
@@ -51,7 +51,7 @@ Nothing grants, widens or moves authority.
 3. **`.github/workflows/build-frontier.yml`** (new; `canonical-ci.yml` is not edited). On every pull request it:
    - installs `requirements-dev.txt` (it provides `supervisor>=4.2`) and `requirements-cognition.txt`, as Canonical CI
      job 1 does;
-   - runs `scripts/ci/check_path_predicate_mutants.py`, which nothing in CI ran before;
+   - ran `scripts/ci/check_path_predicate_mutants.py`, which nothing in CI ran at the base (removed after the merge with #196, whose Canonical CI now runs it);
    - runs this unit's mutant gate;
    - runs both rehearsal modules with `GREG_REQUIRE_SUPERVISOR=1`.
 
@@ -200,3 +200,11 @@ Notes:
 
 **Reality level:** UNIT-TESTED and INTEGRATION-TESTED in a Linux container (real supervisord, real `greg rehearse`
 bodies, test keys). Nothing here is founder-used, device-verified or externally verified. VEPMC stays 0.
+
+## Merged with #196 (`a986fc74`)
+
+- #196 adopted #236, #234, #209, #228 and #229 after this unit's base `44b3df96`, and from `4dc0d581` its Canonical CI runs `scripts/ci/check_path_predicate_mutants.py`. `build-frontier.yml` ran the same gate a second time on every pull request.
+- The merge of `a986fc74` into this branch was clean. After it, the path-predicate step was removed from `build-frontier.yml`. The workflow now runs this unit's gate and the supervised rehearsals, which Canonical CI does not run with supervisord required.
+- `tests/unit/test_build_frontier_workflow.py` now asserts that Canonical CI runs the path-predicate gate, and that `build-frontier.yml` runs this unit's gate and the rehearsals. The mutant that removed the gate from `build-frontier.yml` now removes it from `canonical-ci.yml` ("Canonical CI does not run the path-predicate gate").
+- The consolidation the dissent asks for (this unit's gate and the supervised rehearsals inside `canonical-ci.yml`) is still left to the #196 integrator, because open PRs edit that file.
+

@@ -24,6 +24,7 @@
     greg gravity authorize --from-mission M --print-only > g.json; greg gravity authorize g.json --key K
     greg gravity authorize g.json --supersedes GOAL --key K   replace an admitted goal (the old one is kept)
     greg gravity goals | greg gravity evidence GOAL   read-only; greg gravity control GOAL --kind stop_pushing --value true --key K
+    greg cathedral [--days N | --since T] [--body [HOME]]   read-only: git activity against founder-tier outcomes
 
 The CLI never opens the ledger as a writer while the body runs: commands are
 signed files dropped into the body inbox, so any interface can close at any time.
@@ -579,6 +580,15 @@ def main(argv=None) -> int:
     fdr2.add_argument("--seed", required=True, help="the seed's sha256: address, as `greg foundry seed` printed it")
     sub.add_parser("learning", help="brief corrections per labelled brief, and every learned change kept, rejected or reverted")
     sub.add_parser("acceptance", help="read-only founder-device acceptance report from this body's own ledger")
+    cd = sub.add_parser("cathedral", help="read-only: the constitution's cathedral kill condition over a window, git "
+                                          "activity against founder-tier outcomes; asks, pauses and grants nothing")
+    cd.add_argument("--repo", help="the git repository whose activity is measured (default: this kernel checkout)")
+    cdw = cd.add_mutually_exclusive_group()
+    cdw.add_argument("--days", type=float, help="window length ending at --until (default 30)")
+    cdw.add_argument("--since", help="window start, ISO 8601 (UTC when no offset is given)")
+    cd.add_argument("--until", help="window end, ISO 8601 (default: now)")
+    cd.add_argument("--body", nargs="?", const="", default=None, metavar="HOME",
+                    help="read outcomes from a body's ledger, read-only: the body at --home, or HOME")
     rh = sub.add_parser("rehearse", help="credential-free rehearsal: a throwaway body and REHEARSAL key run the "
                                           "Founder's First Mission end to end")
     rh.add_argument("--dir"); rh.add_argument("--kernel-root"); rh.add_argument("--effort", type=int, default=8)
@@ -808,6 +818,22 @@ def main(argv=None) -> int:
             from greg import metrics, routing
             with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
                 data = metrics.vepmc(journal) if args.cmd == "vepmc" else routing.routing_knowledge(journal)
+            print(json.dumps(data, indent=1))
+        elif args.cmd == "cathedral":
+            from greg import cathedral
+            try:
+                since, until = cathedral.window(since=args.since, until=args.until, days=args.days)
+            except cathedral.CathedralError as exc:
+                raise BodyError(str(exc)) from None
+            repo = args.repo or str(cathedral.KERNEL_ROOT)
+            if args.body is None:
+                data = cathedral.detect(repo, since=since, until=until)
+            else:
+                body_home = args.body or home
+                if not Layout(body_home).ledger.exists():
+                    raise BodyError(f"no body ledger at {body_home}: nothing to read outcomes from")
+                with observe(body_home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    data = cathedral.detect(repo, journal=journal, since=since, until=until, body=str(body_home))
             print(json.dumps(data, indent=1))
         elif args.cmd == "path":
             from greg import path as devpath

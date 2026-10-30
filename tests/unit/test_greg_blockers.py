@@ -59,7 +59,7 @@ def complete(record):
 # -- one real body per blocker type ---------------------------------------------------------------------------
 
 def paid_approval(tmp_path):
-    """decision / APPROVAL with resource spend: the budget stop (greg/missions.py _spend_ask)."""
+    """decision / APPROVAL with resource spend for a paid action outside the cone (a scope stop on a paid move)."""
     home, key, body_id, _ = make_body(tmp_path)
     ws = workspace(home, "m:paid")
     drop(home, signed(key, body_id, "MISSION", mission(
@@ -69,6 +69,60 @@ def paid_approval(tmp_path):
     clock = Clock()
     ticks(home, clock, 4)
     return home, key, body_id, clock, "m:paid"
+
+
+def over_budget(tmp_path):
+    """decision / APPROVAL with resource spend: the budget stop, a paid action inside the cone whose cost exceeds the
+    signed budget (greg/lightcone.py refuses it; greg/missions.py _spend_ask asks)."""
+    home, key, body_id, _ = make_body(tmp_path)
+    ws = workspace(home, "m:over")
+    drop(home, signed(key, body_id, "MISSION", mission(
+        "m:over", checks=[note_check("filed", ws / "f.txt", "filed")],
+        strategies=[write_strategy("file", "f.txt", "filed", ["filed"], cost_usd=2.0)],
+        capabilities=["fs.read", "fs.write"], budget=1.0)))
+    clock = Clock()
+    ticks(home, clock, 4)
+    return home, key, body_id, clock, "m:over"
+
+
+def no_strategy_ask(tmp_path):
+    """decision / NO_STRATEGY: every strategy for a failing check is exhausted; the blocker carries failing_checks,
+    so the engine also watches them (greg/missions.py _watch_while_blocked)."""
+    home, key, body_id, _ = make_body(tmp_path)
+    ws = workspace(home, "m:none")
+    drop(home, signed(key, body_id, "MISSION", mission("m:none", checks=[note_check("c", ws / "c.txt", "x")],
+                                                          strategies=[], capabilities=["fs.read"])))
+    clock = Clock()
+    ticks(home, clock, 1)
+    return home, key, body_id, clock, "m:none"
+
+
+def sensor_failure(tmp_path):
+    """decision / SENSOR_FAILURE: three observations in a row could not measure the check (the phrase lies past the
+    16 KiB a receipt keeps, so the evidence is incomplete)."""
+    home, key, body_id, data = make_body(tmp_path)
+    (data / "contract.txt").write_text("proof settlement notice delivery party shall net due. " * 400
+                                       + "The renewal term is twelve months.")
+    drop(home, signed(key, body_id, "MISSION", mission(
+        "m:sense", checks=[note_check("term", data / "contract.txt", "twelve months")], strategies=[],
+        capabilities=["fs.read"], ceiling="read_only")))
+    clock = Clock()
+    ticks(home, clock, 8, step=600)
+    return home, key, body_id, clock, "m:sense"
+
+
+def sensor_scope(tmp_path):
+    """decision / SENSOR_SCOPE: a read-only sensor whose capability lies outside the mission's cone."""
+    home, key, body_id, data = make_body(tmp_path)
+    (data / "d").mkdir()
+    check = {"check_id": "listed", "description": "the folder is listed", "predicate": {"op": "exists",
+             "field": "entries"}, "sensor": {"capability": "fs.list", "params": {"path": str(data / "d")},
+                                             "target": "fs:d"}}
+    drop(home, signed(key, body_id, "MISSION", mission("m:scope", checks=[check], strategies=[],
+                                                          capabilities=["fs.read"], ceiling="read_only")))
+    clock = Clock()
+    ticks(home, clock, 2)
+    return home, key, body_id, clock, "m:scope"
 
 
 def expired_mandate(tmp_path):
@@ -158,8 +212,10 @@ def unobservable_sensor(tmp_path):
     return home, key, body_id, clock, "m:nostrat"
 
 
-SHOWN = [(paid_approval, "decision"), (expired_mandate, "decision"), (interrupted_write, "reconciliation"),
-         (missing_capability, "capability"), (person_step, "human_work"), (host_outage, "outage")]
+SHOWN = [(paid_approval, "decision"), (over_budget, "decision"), (expired_mandate, "decision"),
+         (no_strategy_ask, "decision"), (sensor_failure, "decision"), (sensor_scope, "decision"),
+         (interrupted_write, "reconciliation"), (missing_capability, "capability"), (person_step, "human_work"),
+         (host_outage, "outage")]
 
 
 # -- fail-before: the outage blocker had no required authority anywhere --------------------------------------
@@ -233,13 +289,143 @@ def test_the_typed_fields_say_what_each_kind_needs(tmp_path):
     assert "reconcile_executed" in rec["required_evidence"] and "attempt 0" in rec["blocker"]
 
 
+def test_each_decision_ask_kind_names_its_ask_and_what_it_asks(tmp_path):
+    """The five decision asks greg/missions.py raises: APPROVAL (scope stop and budget stop), SCOPE_RENEWAL (above),
+    NO_STRATEGY, SENSOR_FAILURE and SENSOR_SCOPE."""
+    home, *_, mid = over_budget(tmp_path)
+    [over] = records(home, mission_id=mid)
+    assert "APPROVAL" in over["blocker"] and "$2.00 for this one action" in over["blocker"]
+    assert "exceeds budget 1.0" in over["why"] and '"cost_usd": 2.0' in over["required_authority"]
+
+    home, *_, mid = no_strategy_ask(sub(tmp_path, "nostrat"))
+    [none] = records(home, mission_id=mid)
+    assert "NO_STRATEGY" in none["blocker"] and "no admissible strategy" in none["why"]
+    assert none["reconsider_when"] == ("founder revises mission; meanwhile GREG re-observes c at the mission's cadence "
+                                       "and withdraws the ask if they pass without any GREG action")
+    assert '"failing_checks": ["c"]' in none["required_authority"]
+
+    home, *_, mid = sensor_failure(sub(tmp_path, "sense"))
+    [sense] = records(home, mission_id=mid)
+    assert "SENSOR_FAILURE" in sense["blocker"] and "cannot measure its success checks" in sense["why"]
+    assert '"checks": ["term"]' in sense["required_authority"] and "repair or replace the sensor" in sense["next_move"]
+
+    home, *_, mid = sensor_scope(sub(tmp_path, "scope"))
+    [scope] = records(home, mission_id=mid)
+    assert "SENSOR_SCOPE" in scope["blocker"] and "outside the mission scope" in scope["why"]
+    assert '"capability": "fs.list"' in scope["required_authority"] and "greg decide" in scope["next_move"]
+
+
 def test_a_paused_mission_says_so_first(tmp_path):
     home, key, body_id, clock, mid = paid_approval(tmp_path)
     drop(home, signed(key, body_id, "LIFECYCLE", {"mission_id": mid, "state": "PAUSED", "reason": "not now"}))
     with Body(home, clock=clock) as body:
         body.ingest_inbox()
     [record] = records(home)
-    assert record["next_move"].startswith("the mission is paused; nothing moves until a signed LIFECYCLE ACTIVE")
+    assert record["next_move"].startswith("mission paused (signed LIFECYCLE): nothing moves until a signed "
+                                          "LIFECYCLE ACTIVE for this mission")
+    assert record["reconsider_when"].startswith("only once the hold lifts (a signed LIFECYCLE ACTIVE")
+
+
+# -- a pause or hold keeps the next tick away: what it would lift stays listed, with what lifts the hold ---------
+
+def test_a_paused_mission_whose_decision_was_answered_stays_listed_with_its_pause(tmp_path):
+    """Review TB-1 / F4: ``_step`` returns PAUSED before any resolution, so an answered decision of a paused mission
+    is still held. It was hidden, and the pause with it."""
+    from greg.missions import MISSION_RESUME_LIFTS
+    home, key, body_id, clock, mid = paid_approval(tmp_path)
+    [asked] = records(home)
+    rid = asked["blocker"].split("ask ", 1)[1].split()[0]
+    drop(home, signed(key, body_id, "LIFECYCLE", {"mission_id": mid, "state": "PAUSED", "reason": "not now"}))
+    drop(home, signed(key, body_id, "DECISION", {"request_id": rid, "answer": "approve"}))
+    ticks(home, clock, 3, step=60)
+    with Body(home, clock=clock) as body:
+        m = body.engine.book.missions[mid]
+        assert m.paused and m.blocker["request_id"] == rid                    # still held after three ticks
+    [record] = records(home)
+    complete(record)
+    assert record["blocker"] == asked["blocker"] and record["source_event"] == asked["source_event"]
+    assert record["next_move"].startswith(f"mission paused (signed LIFECYCLE): nothing moves until "
+                                          f"{MISSION_RESUME_LIFTS}. Then: nothing to answer")
+    assert "founder answered approve" in record["next_move"] and "greg decide" not in record["next_move"]
+    assert record["required_authority"].startswith(MISSION_RESUME_LIFTS)
+    assert record["required_evidence"].startswith("none required: nothing more is needed: founder answered approve")
+    drop(home, signed(key, body_id, "LIFECYCLE", {"mission_id": mid, "state": "ACTIVE", "reason": "go"}))
+    ticks(home, clock, 1)
+    assert [r["blocker"] for r in records(home)] != [asked["blocker"]]        # resumed: the answer lifted it
+
+
+def test_a_withdrawn_ask_never_sends_the_founder_to_answer_it(tmp_path):
+    """Review TB-2 / F2: a body that died between ``decision.withdrawn`` and ``mission.unblocked`` (the window
+    ``_finish_withdrawal`` closes) left a blocker typed 'answer it: greg decide', which ``MissionEngine.answer``
+    refuses. The next tick lifts it, so it is not listed; while the mission is paused it is, with nothing to answer."""
+    from greg.missions import MissionError, active_constraint
+    home, key, body_id, clock, mid = paid_approval(tmp_path)
+    [asked] = records(home)
+    rid = asked["blocker"].split("ask ", 1)[1].split()[0]
+    with Body(home, clock=clock) as body:                      # exactly what _withdraw_spent_paid_asks records first
+        body.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": mid, "why": "moot: probe",
+                                                   "at": "2026-10-30T00:00:00Z"}, key=[rid, "withdrawn"])
+        body.engine.book.rebuild()
+        m = body.engine.book.missions[mid]
+        assert m.blocker["request_id"] == rid                                   # held: the unblock never came
+        assert active_constraint(m, body.engine.book)["blocker"]["lifted_by"] == "the next tick"
+        with pytest.raises(MissionError, match="withdrawn"):
+            body.engine.answer({"request_id": rid, "answer": "approve"}, "sha256:" + "0" * 64)
+    assert records(home) == [] and morning_projection(home)["blockers"] == []
+    drop(home, signed(key, body_id, "LIFECYCLE", {"mission_id": mid, "state": "PAUSED", "reason": "not now"}))
+    with Body(home, clock=clock) as body:
+        body.ingest_inbox()
+    [record] = records(home)
+    complete(record)
+    assert "greg decide" not in record["next_move"] and "awaiting founder" not in record["required_evidence"]
+    assert "Then: nothing to answer" in record["next_move"] and "the body withdrew its ask: moot: probe" in \
+        record["next_move"]
+
+
+def test_a_body_pause_names_what_lifts_it_and_never_says_nothing_for_you_to_do(tmp_path):
+    """Review F3: under a signed BODY_PAUSE the body ticks no mission, so an outage's 'nothing for you to do' was
+    false and its retry time could already have passed."""
+    from greg.body import RESUME_LIFTS
+    home, key, body_id, clock, mid = host_outage(tmp_path)
+    drop(home, signed(key, body_id, "BODY_PAUSE", {"reason": "away"}))
+    with Body(home, clock=clock) as body:
+        body.ingest_inbox()
+        clock.advance(7200)                                                    # past the back-off
+        body.tick()
+    [record] = records(home)
+    complete(record)
+    assert record["kind"] == "outage" and "nothing for you to do" not in record["next_move"]
+    assert record["next_move"].startswith(f"body paused (signed BODY_PAUSE): nothing moves until {RESUME_LIFTS}. "
+                                          "Then: GREG re-runs the search for no.such.function after ")
+    assert record["reconsider_when"].startswith(f"only once the hold lifts ({RESUME_LIFTS}): after ")
+    assert morning_projection(home)["blockers"] == [record]
+
+
+def test_a_pause_file_is_a_hold_too_and_an_answered_decision_under_it_stays_listed(tmp_path):
+    home, key, body_id, clock, mid = paid_approval(tmp_path)
+    [asked] = records(home)
+    rid = asked["blocker"].split("ask ", 1)[1].split()[0]
+    Layout(home).pause_file.write_text("")
+    drop(home, signed(key, body_id, "DECISION", {"request_id": rid, "answer": "approve"}))
+    with Body(home, clock=clock) as body:
+        body.ingest_inbox()
+    [record] = records(home)
+    complete(record)
+    assert record["next_move"].startswith("PAUSE file in the body home: nothing moves until removing that file on "
+                                          "this machine. Then: nothing to answer")
+    Layout(home).pause_file.unlink()
+    assert records(home) == []                                                 # the next tick lifts it now
+
+
+def test_a_paused_self_clearing_no_strategy_blocker_is_listed_with_its_pause(tmp_path):
+    home, key, body_id, clock, mid = unobservable_sensor(tmp_path)
+    assert records(home) == []
+    drop(home, signed(key, body_id, "LIFECYCLE", {"mission_id": mid, "state": "PAUSED", "reason": "not now"}))
+    with Body(home, clock=clock) as body:
+        body.ingest_inbox()
+    [record] = records(home)
+    complete(record)
+    assert record["kind"] == "no_strategy" and "re-evaluate strategies at cadence" in record["next_move"]
 
 
 def test_a_self_clearing_no_strategy_blocker_is_typed_but_not_listed(tmp_path):
@@ -372,6 +558,58 @@ def test_an_incomplete_record_is_refused_never_shown(tmp_path, monkeypatch):
         records(home)
     with pytest.raises(blockers.BlockerError):
         blockers._none("   ")
+
+
+# -- a founder surface shows why the blockers could not be computed, and keeps every other section ------------------
+
+def unrestorable(home, clock, tmp_path):
+    """A formed catalog capability whose pinned binary path is now a directory: ``Genesis.restore`` raises, as the
+    body's own start does."""
+    from greg.capabilities import BUILTINS
+    manifest = BUILTINS["fs.list"][0].to_dict()
+    replaced = tmp_path / "replaced-binary"
+    replaced.mkdir()
+    manifest.update(capability_id="formed.probe", provider="installed:bin:probe", binaries=[str(replaced)])
+    with Body(home, clock=clock) as body:
+        body.journal.record("capability.registered", {
+            "manifest": manifest, "state": "VERIFIED", "origin": {"kind": "catalog", "binary_name": "probe",
+                                                                 "argv": [], "parse": "text",
+                                                                 "function": manifest["function"]}},
+            key=["formed-probe"])
+
+
+def test_a_capability_that_no_longer_restores_leaves_the_morning_report_and_mission_control_standing(tmp_path):
+    """Review F1: the projection builds a Genesis view; when a formed capability no longer restores (the state in
+    which the body itself cannot start) the morning report and Mission Control crashed with it."""
+    from greg.body import status
+    from greg.console import Console
+    from greg.mission_control import projection, render_view
+    home, key, body_id, clock, mid = person_step(tmp_path)
+    unrestorable(home, clock, tmp_path)
+    with pytest.raises(IsADirectoryError):
+        Body(home, clock=clock).__enter__()                                   # the body cannot start either
+    report = morning_projection(home)
+    assert report["blockers"]["error"].startswith("IsADirectoryError: ")
+    assert "could not be computed" in report["blockers"]["unavailable"]
+    assert report["q12_decisions_required"] and report["report_digest"]          # every other section stands
+    assert [m["mission_id"] for m in status(home)["missions"] if m["active_constraint"]] == [mid]
+    assert projection(Console(home))["blockers"] == report["blockers"]
+    page = render_view(Console(home), "goals", {})
+    assert "Blocked goals" in page and "could not be computed" in page and "IsADirectoryError" in page
+    with pytest.raises(IsADirectoryError):                                      # the dedicated command fails loudly
+        cli(home)
+
+
+def test_a_record_the_projection_cannot_type_is_shown_as_unavailable_not_as_a_crash(tmp_path, monkeypatch):
+    from greg import blockers
+    from greg.console import Console
+    from greg.mission_control import projection
+    home, *_ = host_outage(tmp_path)
+    good = blockers.TYPES["outage"]
+    monkeypatch.setitem(blockers.TYPES, "outage", lambda *a: {**good(*a), "next_move": ""})
+    report = morning_projection(home)
+    assert report["blockers"]["error"].startswith("BlockerError: ") and "next_move" in report["blockers"]["error"]
+    assert projection(Console(home))["blockers"]["error"] == report["blockers"]["error"]
 
 
 # -- no secret value, no secret store ---------------------------------------------------------------------------

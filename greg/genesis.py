@@ -402,6 +402,13 @@ def run_formed(manifest, adapter, data: dict) -> dict:
         return adapter(params, InvocationContext(workspace=Path(tmp), read_roots=(), secrets=None, manifest=manifest))
 
 
+def _refusing_adapter(why: str):
+    """The adapter of a restored capability that has nothing left to run: a founder attach may reach it, it never serves."""
+    def adapter(params, ctx):
+        raise CapabilityError(f"cannot run: {why}")
+    return adapter
+
+
 def package_adapter(function: str, candidate: PackageCandidate):
     """Adapter bound to one qualified package; re-pinned and certificate-checked on every call.
 
@@ -930,7 +937,7 @@ class Genesis:
                     why = "a shared dependency changed since qualification"
             except CapabilityError as exc:
                 why = str(exc)
-        adapter = package_adapter(origin["function"], candidate) if candidate else (lambda params, ctx: None)
+        adapter = package_adapter(origin["function"], candidate) if candidate else _refusing_adapter(why)
         self.registry.register(manifest, adapter, state=self._restored_state(
             cid, state, why, [cid, "quarantine", manifest.provenance.get("package_digest"), why]))
 

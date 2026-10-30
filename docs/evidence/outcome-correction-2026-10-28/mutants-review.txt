@@ -1,15 +1,17 @@
-Mutants of the review fixes, re-recorded 2026-10-29 after round 3's fixes on #221 (#221 comment 6499707581; fixes 0070ea2f and 76a59824), at #221's branch 399c6c08 (mutants-review.py at the commit below; N11, N17, N18, N25, N28-N31 and N33 retargeted, N37-N51 added, the review-4 test file added). Raw output follows; the note after it was added by hand.
-git rev-parse HEAD: fa99eb0cb1cda6d0a3160cffd6709ed47885c8d1; greg/, tests/ and docs/evidence/outcome-correction-2026-10-28/mutants-review.py unmodified
-python 3.11.17; command: python -B -m pytest -q -x -p no:cacheprovider tests/unit/test_greg_outcome_resolution.py tests/unit/test_greg_pending_construction_realization.py tests/unit/test_greg_outcome_resolution_signed.py tests/unit/test_greg_outcome_resolution_review2.py tests/unit/test_greg_outcome_resolution_review3.py tests/unit/test_greg_outcome_resolution_review4.py
-sha256 greg/body.py: f07695558d18cff58a5a214e825e1df9f84cffcddf2ef4575ef3701d68c7361f
-sha256 greg/cognition/settlement.py: aa868dc48836be7186d6d1fa2a1b15cad220bc3bfe6c66d87f28ece0f425c458
+Mutants of the review fixes, re-recorded 2026-10-30 after round 4's fixes on #221 (#221 comment 6510355399; fixes 2778dce6, 1780299a and 3381779d) and #196's afcd75f3 (merged at 59d72e33), at #221's branch 7f99b96b (mutants-review.py at the commit below; N27-N30 and N38 retargeted, N42 retired, N52-N64 added, the review-5 and achievement-after-unmet test files added). Raw output follows; the note after it was added by hand.
+git rev-parse HEAD: b4bc837ffe3cc032feffde4fc6acd7248d51bfb1; greg/, tests/ and docs/evidence/outcome-correction-2026-10-28/mutants-review.py unmodified
+python 3.11.17; command: python -B -m pytest -q -x -p no:cacheprovider tests/unit/test_greg_outcome_resolution.py tests/unit/test_greg_pending_construction_realization.py tests/unit/test_greg_outcome_resolution_signed.py tests/unit/test_greg_outcome_resolution_review2.py tests/unit/test_greg_outcome_resolution_review3.py tests/unit/test_greg_outcome_resolution_review4.py tests/unit/test_greg_outcome_resolution_review5.py tests/unit/test_greg_achievement_after_unmet.py
+sha256 greg/body.py: 04dacb591c31eccb159d45d294d54fd1d7c13b1f32dce1a09ec76b9c3ee4d4ad
+sha256 greg/cognition/settlement.py: 0c661ddebd23c65aca6204f638e18bb571e8ccff7cdac3537ce134b6d0f82d6f
 sha256 tests/unit/test_greg_outcome_resolution.py: 469e2e991e32d3e086d821838ffc5838da75cc3ab85b28678d0042c20897dc3b
 sha256 tests/unit/test_greg_pending_construction_realization.py: 770b57c54945227f4279ee8d5c88009bb31076ca37a1c3c97af8ff190d0b2ea9
 sha256 tests/unit/test_greg_outcome_resolution_signed.py: 13a0448e5f8864dfcba4fb9efa88fafe51fa5bc43d980e355813316868585420
 sha256 tests/unit/test_greg_outcome_resolution_review2.py: 78d0d194eb89e700b5238a15823c31bdbe032e0ffccbfbee06a527f16983b061
-sha256 tests/unit/test_greg_outcome_resolution_review3.py: dfd8f6b12ae64c8ab156cd9a5c98c02a30779626bdee5f9d23e28b08d63349be
-sha256 tests/unit/test_greg_outcome_resolution_review4.py: 0afe33584c57eb72c6f89dd3d1f1f49a6b03cc4eb7dfcae68be7f4d5ac053004
-baseline (no mutant): rc=0 110 passed in 321.54s (0:05:21)
+sha256 tests/unit/test_greg_outcome_resolution_review3.py: 2290b849eefff7035665148ec4cc1f7eab0de9e8d16c5076d165335738b0e385
+sha256 tests/unit/test_greg_outcome_resolution_review4.py: 12a24516998d2b271840b9fd1994953ea5d9ab4c29e74aa7f8c045d787e59ff0
+sha256 tests/unit/test_greg_outcome_resolution_review5.py: b7e1194357b719305ebed6225246dee08845a73a359049b12ab4643980a1e0a4
+sha256 tests/unit/test_greg_achievement_after_unmet.py: 560e5edde914fac0899eba48e6fa95d545e1df28dcea763dffae1b95234f1960
+baseline (no mutant): rc=0 123 passed in 283.21s (0:04:43)
 CAUGHT  N1 S1 signed body not compared: ['test_s1_a_resolution_carrying_another_signed_commands_digest_resolves_nothing']
 CAUGHT  N2 S1 one signed command reused: ['test_n2_a_verbatim_copy_of_a_signed_resolution_changes_nothing']
 CAUGHT  N3 S2 any resolution adjudicates: ['test_s2_an_invalidation_must_name_every_live_report_and_never_adjudicates_the_founders_own']
@@ -34,11 +36,11 @@ CAUGHT  N21 F5 unsigned fact absorbs a signed report: ['test_f5_a_signed_report_
 CAUGHT  N22 F6 any principal resolves: ['test_f6_a_verified_realization_a_device_signed_is_not_founder_evidence']
 CAUGHT  N23 F7 omitted source not defaulted: ['test_f7_a_signed_report_without_a_source_is_shown_as_signed']
 CAUGHT  N24 F8 memo misses a new founder record: ['test_only_a_resolution_the_founder_actually_signed_resolves_a_dispute']
-CAUGHT  N25 F2-a a walk limit read as a hold: ['test_f2_a_above_the_subset_limit_the_row_is_never_a_clean_hold']
+CAUGHT  N25 F2-a a walk limit read as a hold: ['test_f2r_3_a_cut_short_walk_reads_investigate_without_claiming_a_change']
 CAUGHT  N26 F2-b the two extremes only: ['test_f2_b_a_non_monotone_pick_between_the_extremes_is_investigated']
 CAUGHT  N27 F2-c other disputed methods held (preference): ['test_f2r_1_another_disputed_method_is_walked_over_every_count_it_can_reach']
 CAUGHT  N28 F2-c other disputed methods held (Laplace): ['test_f2_c_joint_disputes_of_two_methods_are_weighed_together']
-CAUGHT  N29 F2-d a demoted fit tested as first: ['test_f2_d_a_demoted_fit_is_never_tested_as_the_first_fit']
+MISSED  N29 F2-d a demoted fit tested as first: []
 CAUGHT  N30 F2-f the raw preferred value: ['test_f2_f_the_reason_names_the_selected_fit_never_none']
 CAUGHT  N31 F1-a shadowed chain heads left live: ['test_f1_a_two_old_rule_chains_of_one_answer_leave_one_live_head_and_none_after_a_withdrawal']
 MISSED  N32 F1-a merge closures not counted as superseding: []
@@ -47,42 +49,75 @@ CAUGHT  N34 G4-d an equal stamp refused: ['test_g4_d_an_equal_stamp_is_accepted_
 CAUGHT  N35 F7-a a closed mission read as pending a closure: ['test_g4f7_3_the_unsettled_texts_follow_closures_awaiting_appraisal']
 CAUGHT  N36 G4-a raw stamp as the inbox name: ['test_g4_a_the_inbox_reads_a_whole_second_command_before_one_signed_half_a_second_later']
 CAUGHT  N37 F2R-1 other disputed methods at three states: ['test_f2r_1_another_disputed_method_is_walked_over_every_count_it_can_reach']
-MISSED  N38 F2R-1 the joint state limit ignored: []
+CAUGHT  N38 F2R-1 the joint state limit ignored: ['test_n38_the_joint_state_limit_applies_per_family_and_is_named']
 CAUGHT  N39 F2R-2 the Laplace hull: ['test_f2r_2_a_gap_between_another_methods_reachable_values_is_not_a_tie']
 CAUGHT  N40 F2R-3 a walk limit read as a change found: ['test_f2r_3_a_cut_short_walk_reads_investigate_without_claiming_a_change']
 CAUGHT  N41 F2R-3 a walk limit's own text: ['test_f2r_3_a_cut_short_walk_reads_investigate_without_claiming_a_change']
-CAUGHT  N42 F2R-4 the preference memo keyed without the counts: ['test_f2_a_change_only_the_three_way_holm_family_shows_is_investigated']
 MISSED  N43 F2R-5 the named first fit, not the ranked one: []
 CAUGHT  N44 F1-r3-1 only the older heads closed: ['test_f1_r3_1_a_body_reconciled_by_8e91315c_converges_in_one_pass']
 CAUGHT  N45 F1-r3-2 merged into a row this pass supersedes: ['test_f1_r3_1_a_body_reconciled_by_8e91315c_converges_in_one_pass']
-MISSED  N46 F1-r3-1 an unmeasured duplicate merged: []
+CAUGHT  N46 F1-r3-1 an unmeasured duplicate merged: ['test_n46_an_unmeasured_duplicate_is_invalidated_not_merged']
 CAUGHT  N47 R3-N33 a merge closure linked to its target as written: ['test_r3_n33_a_merged_chains_own_receipt_links_the_claims_current_settlement']
 CAUGHT  N48 G4F7-3 a closure awaiting appraisal ignored: ['test_g4f7_3_the_unsettled_texts_follow_closures_awaiting_appraisal']
-MISSED  N49 G4F7-3 an appraised held closure read as awaiting: []
+CAUGHT  N49 G4F7-3 an appraised held closure read as awaiting: ['test_txt_r4_1_an_achievement_after_an_appraised_failure_reads_pending_until_its_own_appraisal']
 CAUGHT  N50 G4F7-6 every rejected fact listed: ['test_g4f7_6_the_evidence_request_lists_only_rejected_independent_signed_reports']
 CAUGHT  N51 G4F7-4 the old scored_as text: ['test_t_b_a_mission_whose_appraisal_settles_nothing_says_so_whatever_the_check[True]']
-45 of 51 valid mutants caught; 0 invalid; 6 missed
+CAUGHT  N52 W4-4 an unsettled disputed method left out of the walk: ['test_w4_4_a_disputed_method_with_no_settled_outcome_is_in_the_walk']
+CAUGHT  N53 W4-1 a fit demoted at every count kept in the walk: ['test_f2_a_above_the_subset_limit_the_row_is_never_a_clean_hold']
+MISSED  N54 W4-7 the state limit over every other method: []
+CAUGHT  N55 W4-7 a cut family not stated: ['test_n38_the_joint_state_limit_applies_per_family_and_is_named']
+CAUGHT  N56 W4-3 the demotion texts compared: ['test_w4_3_a_method_demoted_at_every_reachable_count_is_not_an_inhibition_change[counts0-disputes0]']
+CAUGHT  N57 W4-5 a settled fit of the other demotion class compared: ['test_w4_5_laplace_is_not_compared_across_demotion_classes']
+MISSED  N58 W4-5 another disputed method's other-class values compared: []
+MISSED  N59 W4-5 the unsettled fit compared with a demoted method: []
+MISSED  N60 W4-9 a demoted first fit walked: []
+CAUGHT  N61 TXT-R4-3 the old ended-without-appraisal text: ['test_g4f7_3_the_unsettled_texts_follow_closures_awaiting_appraisal']
+CAUGHT  N62 TXT-R4-1 a failure's appraisal stands in for the achievement's: ['test_an_achievement_after_an_appraised_unmet_closure_is_appraised']
+CAUGHT  N63 TXT-R4-1 VERIFIED_UNMET still settles an achieved mission: ['test_a_failure_appraisal_does_not_settle_a_mission_achieved_after_it']
+CAUGHT  N64 TXT-R4-1 an achievement read as appraised by a failure's appraisal: ['test_txt_r4_1_an_achievement_after_an_appraised_failure_reads_pending_until_its_own_appraisal']
+55 of 63 valid mutants caught; 0 invalid; 8 missed
 
-Note (by hand): six mutants are MISSED. Each was applied to a copy of the tree and run on a real body or the
-injected-count helper; all but N6 change what the code writes or says, so each needs a test.
+Note (by hand): eight mutants are MISSED. Each was applied to a copy of the tree and run through the injected-count
+helper (_weigh_investigations on injected settled counts, or _preference_changes directly) or on a real body. Six
+change what the code writes or says with no test for it; for each, one case below passes at the head and fails under
+its mutant (checked in a scratch tree, not committed: the tests are the author's to add).
 - N6 (S3's fact key without source and count) is harmless on the production path, not equivalent: since F5 the key
   also carries the command digest, and Body.apply, the only production caller of record_realization, always passes
   one.
-- N32 (merge closures not counted as superseding) was caught at 5b4e293f. Since round 3 closes every live head but
-  the identity's current row, its only remaining effect is on a later pass: after a merge and then a withdrawal of
-  the settling appraisal, the merged shadow is invalidated a second time, so two rows supersede it. No test counts the
-  rows that supersede a merged shadow.
-- N38 (the joint state limit ignored): no test reaches more than JOINT_STATE_LIMIT (256) joint states with at most
-  JOINT_DISPUTE_LIMIT (3) other disputed methods. Three other tested methods with three open disputes each reach 10
-  counts each, 1,000 joint states; the head states the limit and reads investigate, the mutant walks them all.
-- N43 (the reason names the method given as first, not the fit ranked first): no test reads the "ranked first" name
-  when the named first fit is demoted.
-- N46 (an unmeasured claim's duplicate merged instead of invalidated): no test withdraws the settling appraisal
-  before the pass that closes the duplicate chain. There the head writes an invalidation of the duplicate; the mutant
-  writes a merge closure with merged_into and the "merged:" reason.
-- N49 (a held closure that an appraisal already names read as awaiting): no test appraises a held or unmet closure
-  before reading the row text. There the head says "none: the mission's latest appraisal (REFUTED) settles nothing";
-  the mutant says "pending: a closure of this mission awaits appraisal".
-N27, N33 and N35, MISSED in the previous record, are now caught by the review-4 tests. F2R-4's inhibition memo has no
-mutant, since removing it changes only the time taken. The previous record (c7bc097f, settlement.py at #221 5b4e293f:
-32 of 36) is in git history at 934a5125.
+- N59 (the unsettled fit compared whatever the method's demotion class) is equivalent. A count is demoted only when
+  its 95% Wilson upper bound is below 1/2, and that bound is never below k/n, so k < n/2 and the Laplace value
+  (k+1)/(n+2) is below 1/2: the unsettled fit, read at 1/2, never falls between the values of a method demoted at
+  every count. Checked for every count with n <= 3,000 (2,144,863 demoted counts; the largest Laplace value 0.482)
+  and on 400 random maps (no row differs). It is kept so that a change to the demotion threshold that makes the guard
+  matter is seen.
+- N32 (merge closures not counted as superseding): test_n32_a_merged_shadow_is_closed_once_even_after_a_withdrawal
+  asserts on the inserted shadow. The row the mutant closes twice is the original chain's head, merged into the row
+  the pass writes: under the mutant it is superseded by the merge closure and again by the withdrawal's
+  invalidation. Case: add to that test that no cognition.settled row is superseded twice.
+- N29 (the rank sort removed): since W4-9 a demoted first is skipped unless it is the method itself, and no test has
+  the method demoted at every count it can reach. Without the sort that method stays first, and the walk reports a
+  change the compiler never makes: over 400 random such maps, 72 false changes under the mutant, 0 at the head.
+  Case: _preference_changes("X", _resolution_states(30, 3, 1), {"X": (30, 3), "A": (20, 7), "B": (19, 2)}, {},
+  inhibit) == ([], []).
+- N43 (the reason names the first fit given, not the fit ranked first): no test reads the names ranked first when the
+  method's own demotion moves another fit up. Case: X (7, 1) with 4 disputes beside A (19, 11), B (10, 7) and
+  C (26, 19): a reason contains "with A or X ranked first among ['A', 'X']"; the mutant says "with X ranked first".
+- N54 (the state limit taken over every other disputed method, not the family's own): no test has a family inside
+  JOINT_STATE_LIMIT while the other disputed methods together exceed it. Case: X (34, 20) with 1 dispute, Z (14, 12)
+  with 4, ZP and ZQ (20, 15) with 3 each. The head finds the change "with construction.Z at 13 of 15" in the family
+  {X, Z} (15 joint states) and states the limit for the family of all three (1,500); the mutant cuts every family,
+  finds no change, and names 2 other disputed methods in the limit. The priority is investigate either way: the
+  family of all the others is always walked, and is over the limit whenever their total is.
+- N58 (another disputed method's values of the other demotion class compared): the W4-5 test covers a settled fit
+  only (N57). Case: X (3, 0) with 1 dispute, undemoted at every count, and Y (31, 4) with 4, demoted at every count it
+  can reach. The ground truth (compiler.run's ranking block at every reachable joint state) finds no change for either
+  row; the head reads hold for both, the mutant investigate for both, by a Laplace tie _rank never compares. Over 400
+  random maps, 13 rows differ, 2 in priority.
+- N60 (a demoted first walked): it only adds a reason that repeats a change already found. With a demoted first, the
+  fit ranked first is the first undemoted member, which the walk also takes as first at the same states, or every
+  member is demoted and _settled_preference has no challenger. Over 400 random maps, 2 rows differ, each by a second
+  reason for the family {X, Y}, none in priority. Case: X (11, 3) with 4 disputes and Y (23, 7) with 2: one
+  preference reason for {X, Y} at the head, two under the mutant.
+N38, N46 and N49, MISSED in the previous record, are now caught. b4bc837f's subject says six retargets; there are
+five (N27-N30 and N38). The previous record (fa99eb0c, settlement.py at #221 399c6c08: 45 of 51) is in git history
+at 9c1f1c44.

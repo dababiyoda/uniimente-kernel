@@ -32,6 +32,10 @@ Open-Source Metabolism workstream, increment 1. Session `session_013k41DnwrjzpXL
 
 - **Assessment:** `licensing.assess(dist, deps)` reads, in order, `License-Expression` (PEP 639), then trove classifiers, then the legacy `License` field (exact short names, or an SPDX expression stored there).
   - OR takes the best term, AND the worst, and WITH a linking exception downgrades strong copyleft.
+  - Since the review of `a1d2abf` (SPDX-3, SPDX-4, SPDX-5, SPDX-7): classifiers and the License field are read
+    beside an expression; restrictive spellings, LicenseRef fields and restrictive families at every version
+    count; inclusive "commercial and non-commercial" wording does not. OR elects one whole alternative, so its
+    obligations are never mixed with another's. See `docs/evidence/oss-metabolism-201-fixes/LICENSE_EXPRESSIONS.md`.
   - Every `common_mode` dependency that runs in the same interpreter is assessed with the package.
 - **Classes:** permissive → CLEARED. Weak or strong copyleft → CLEARED_WITH_OBLIGATIONS; the obligations are stated on the card. Network copyleft, not open source, or unclassified → FOUNDER_REVIEW.
 - **Card:** the Mechanism Card carries `license_assessment`, so the founder's CAPABILITY_ATTACH ask carries it too.

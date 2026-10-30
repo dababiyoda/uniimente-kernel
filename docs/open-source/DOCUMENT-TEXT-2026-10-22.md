@@ -94,6 +94,10 @@ Each finding below is fixed in the next commit with a test that fails before the
    - A binary is now held when **any** term is network copyleft or not open.
    - Spellings added: SPDX (`AGPL-3.0+`, `AGPL-3.0-or-later`, `SSPL-1`, `BUSL-1.1`) and Debian's `non-free` and `proprietary`.
    - Across the host's 833 copyright files, the hold fires on none: no false positives here.
+   - Correction (review of `a1d2abf`, SPDX-1, SPDX-2, SPDX-6): the hold covered separate Files paragraphs only. Inside
+     one License field (`non-free and custom`), in a DEP-5 `with` addition (`Apache-2.0 with Commons-Clause`) and
+     in a second License line of one paragraph, the restrictive term was still dropped. Fixed with tests in
+     `docs/evidence/oss-metabolism-201-fixes/LICENSE_EXPRESSIONS.md`.
 2. **Serious: a receipt keeps a 16 KiB prefix of long text, and predicates read only that prefix.** A phrase after the prefix was missed, and a forbidden one would have been missed too. `document.text` now answers `phrase` over the whole extraction (`found`, `occurrences`, `words`, `text_sha256`).
    - Plain `contains` / `not_contains` on `text` still reads the prefix (`missions._field`). That is an integrator-owned seam; a patch is proposed on #96.
 3. **Moderate: binary output was unbounded.** It is now refused above `mechanisms.MAX_OUTPUT` (4 MB).

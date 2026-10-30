@@ -22,6 +22,38 @@ KERNEL_ROOT = Path(__file__).resolve().parents[1]
 
 
 BUILDERS = ("none", "claude-code", "models")
+# Supervisor-captured stdout/stderr. launchd has no rotator of its own; install()
+# also writes logs/greg-logs.rotate for the host's newsyslog or logrotate.
+LOG_MAX_BYTES = 1_048_576
+LOG_BACKUPS = 3
+
+
+def _supervisor_logs(home: Path, stem: str) -> str:
+    return (
+        f"stdout_logfile={home / 'logs' / f'{stem}.out.log'}\n"
+        f"stdout_logfile_maxbytes={LOG_MAX_BYTES}\n"
+        f"stdout_logfile_backups={LOG_BACKUPS}\n"
+        f"stderr_logfile={home / 'logs' / f'{stem}.err.log'}\n"
+        f"stderr_logfile_maxbytes={LOG_MAX_BYTES}\n"
+        f"stderr_logfile_backups={LOG_BACKUPS}\n"
+    )
+
+
+def log_rotate_config(home: Path) -> str:
+    """A logrotate/newsyslog-shaped cap for the four supervisor log files."""
+    home = Path(home)
+    paths = " ".join(str(home / "logs" / name) for name in (
+        "body.out.log", "body.err.log", "remote.out.log", "remote.err.log"))
+    return (
+        f"{paths}\n"
+        "{\n"
+        "    rotate 3\n"
+        "    size 1M\n"
+        "    copytruncate\n"
+        "    missingok\n"
+        "    notifempty\n"
+        "}\n"
+    )
 
 
 def command(home: Path, python: str | None = None, tick_seconds: float = 30, builder: str = "none") -> list[str]:
@@ -77,7 +109,7 @@ def supervisord_program(home: Path, python: str | None = None, *, name: str = "g
         f"environment=PYTHONPATH=\"{KERNEL_ROOT}\",PYTHONDONTWRITEBYTECODE=\"1\"\n"
         "autostart=true\nautorestart=unexpected\nexitcodes=0\nstartsecs=1\nstartretries=100\n"
         "stopsignal=TERM\nstopwaitsecs=30\n"
-        f"stdout_logfile={home / 'logs' / 'body.out.log'}\nstderr_logfile={home / 'logs' / 'body.err.log'}\n")
+        + _supervisor_logs(home, "body"))
 
 
 REMOTE_LABEL = "ai.uniimente.greg.remote"
@@ -106,6 +138,7 @@ def install(home: Path, platform: str, *, target_dir: Path | None = None, remote
     """Write (but do not load) the supervisor file. Loading is a separate founder step."""
     home = Path(home)
     (home / "logs").mkdir(parents=True, exist_ok=True)
+    (home / "logs" / "greg-logs.rotate").write_text(log_rotate_config(home))
     if remote:
         if platform == "macos":
             target = (target_dir or Path.home() / "Library" / "LaunchAgents") / f"{REMOTE_LABEL}.plist"
@@ -120,8 +153,7 @@ def install(home: Path, platform: str, *, target_dir: Path | None = None, remote
             target = (target_dir or home) / "supervisord-greg-remote.conf"
             data = (f"[program:greg-remote]\ncommand={' '.join(remote_command(home))}\ndirectory={KERNEL_ROOT}\n"
                     f"environment=PYTHONPATH=\"{KERNEL_ROOT}\"\nautostart=true\nautorestart=true\n"
-                    f"stdout_logfile={home / 'logs' / 'remote.out.log'}\n"
-                    f"stderr_logfile={home / 'logs' / 'remote.err.log'}\n").encode()
+                    + _supervisor_logs(home, "remote")).encode()
         else:
             raise ValueError("platform must be macos, linux or supervisord")
         target.parent.mkdir(parents=True, exist_ok=True)

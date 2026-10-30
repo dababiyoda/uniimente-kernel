@@ -103,7 +103,7 @@ worktree root unless stated.
 | Run | Result |
 |---|---|
 | Reproduce: both rehearsal modules with the default `PATH` (supervisord only in `/home/user/venv311/bin`) | **4 skipped** |
-| Fail-before: the three new test files, plus the helper, on a detached worktree at `44b3df96` | **4 failed, 2 passed** in 21.5 s (note 1) |
+| Fail-before: the two new test files `test_require_supervisor.py` and `test_greg_rehearsal_founder_tier.py`, plus the helper, on a detached worktree at `44b3df96` | **4 failed, 2 passed** in 21.5 s (note 1) |
 | Probe on `44b3df96`: `greg rehearse` body, self-signed `FOUNDER_TIER`, then a MISSION, VEPMC rows stubbed | tier `FOUNDER_TIER`, `achieved` `['N0', 'N1']`, active `N2` |
 | The same probe after the change | tier `STRUCTURAL_CANDIDATE`, `achieved` `['N0']`, active `N1`; `body.json` carries the mark |
 | Pass-after: `test_require_supervisor.py`, `test_greg_rehearsal_founder_tier.py` | **6 passed** in 22.4 s |

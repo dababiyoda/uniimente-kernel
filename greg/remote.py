@@ -131,7 +131,8 @@ def handle(home: Path, method: str, path: str, headers, body: bytes, *, now: dat
                 raise RemoteError(403, str(exc))
         if len(list(layout.inbox.glob("*.json"))) >= MAX_PENDING:
             raise RemoteError(429, "inbox full; the body is not keeping up")
-        name = f"{envelope['issued_at'].replace(':', '')}-remote-{envelope['kind'].lower()}-{envelope['nonce'][:8]}"
+        from greg.body import inbox_stamp
+        name = f"{inbox_stamp(envelope['issued_at'])}-remote-{envelope['kind'].lower()}-{envelope['nonce'][:8]}"
         target = layout.inbox / f"{name}-{secrets.token_hex(4)}.json"
         tmp = target.with_suffix(".tmp")
         tmp.write_text(json.dumps(envelope))

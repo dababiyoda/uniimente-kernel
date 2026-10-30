@@ -393,7 +393,23 @@
       "activation_evidence": "a founder decision signed on the iPhone 17 (Safari 17+ ships Ed25519 WebCrypto) is accepted by Body 1",
       "founder_sources": [
         "docs/intent/sources/FIRST-BODY-HARDWARE-2026-09-26-source.md"
-      ]
+      ],
+      "enabling_interfaces": {
+        "value": [
+          "verified HTTPS path",
+          "Ed25519 WebCrypto"
+        ],
+        "source": [
+          "greg/path.json#prerequisite",
+          "greg/path.json#activation_evidence"
+        ]
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "unrecorded": "no condition that would falsify this capability is recorded on the path, in its founder sources, in PR #155's destination falsifiers or in the 2026-10-28 directive; section 8 asks for one"
+      }
     },
     {
       "id": "voice",
@@ -411,7 +427,16 @@
       "activation_evidence": "local speech round trip measured on the body",
       "founder_sources": [
         "INTENT-20260930-open-source-first"
-      ]
+      ],
+      "enabling_interfaces": {
+        "unrecorded": "no interface for this capability is named on the path, in its founder sources or in the 2026-10-28 directive; section 8 asks for its enabling interfaces"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "unrecorded": "no condition that would falsify this capability is recorded on the path, in its founder sources, in PR #155's destination falsifiers or in the 2026-10-28 directive; section 8 asks for one"
+      }
     },
     {
       "id": "model_plurality",
@@ -525,7 +550,30 @@
       "activation_evidence": "a signed mission completes through OS automation or visual control on a designated desktop body",
       "founder_sources": [
         "INTENT-2026-09-22-FIRST-BODY"
-      ]
+      ],
+      "enabling_interfaces": {
+        "value": [
+          "APIs",
+          "native application interfaces",
+          "CLI",
+          "filesystem",
+          "browser protocols",
+          "OS automation",
+          "Accessibility",
+          "scripting",
+          "screen understanding",
+          "pointer input",
+          "keyboard input",
+          "computer-use models"
+        ],
+        "source": "docs/intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md#31-computer-use"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "unrecorded": "no condition that would falsify this capability is recorded on the path, in its founder sources, in PR #155's destination falsifiers or in the 2026-10-28 directive; section 8 asks for one"
+      }
     },
     {
       "id": "mac_support",
@@ -547,7 +595,21 @@
       "activation_evidence": "greg/mac/verify_mac_body.sh passes on that Mac and it enrolls under its own identity",
       "founder_sources": [
         "docs/intent/sources/FIRST-BODY-HARDWARE-2026-09-26-source.md"
-      ]
+      ],
+      "enabling_interfaces": {
+        "value": [
+          "launchd plist",
+          "sandbox-exec",
+          "Keychain"
+        ],
+        "source": "greg/path.json#current_reality"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "unrecorded": "no condition that would falsify this capability is recorded on the path, in its founder sources, in PR #155's destination falsifiers or in the 2026-10-28 directive; section 8 asks for one"
+      }
     },
     {
       "id": "workflows_and_sops",
@@ -569,7 +631,16 @@
       "activation_evidence": "N4 exit",
       "founder_sources": [
         "INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING"
-      ]
+      ],
+      "enabling_interfaces": {
+        "unrecorded": "no interface for this capability is named on the path, in its founder sources or in the 2026-10-28 directive; section 8 asks for its enabling interfaces"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "unrecorded": "no condition that would falsify this capability is recorded on the path, in its founder sources, in PR #155's destination falsifiers or in the 2026-10-28 directive; section 8 asks for one"
+      }
     },
     {
       "id": "agent_organizations",
@@ -591,7 +662,17 @@
       "activation_evidence": "N5 exit",
       "founder_sources": [
         "INTENT-2026-09-25-EGREGORE-ECOLOGY"
-      ]
+      ],
+      "enabling_interfaces": {
+        "unrecorded": "no interface for this capability is named on the path, in its founder sources or in the 2026-10-28 directive; section 8 asks for its enabling interfaces"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "value": "If the swarm does not outperform the simpler form under the same constraints, retain the simpler form.",
+        "source": "docs/intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md#39-organizational-morphogenesis"
+      }
     },
     {
       "id": "persistent_organs",
@@ -610,6 +691,21 @@
       "activation_evidence": "a registered organ with lifecycle and shutdown, justified by closure history",
       "founder_sources": [
         "INTENT-0030"
+      ],
+      "enabling_interfaces": {
+        "unrecorded": "no interface for this capability is named on the path, in its founder sources or in the 2026-10-28 directive; section 8 asks for its enabling interfaces"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": [
+        {
+          "recorded_as": "frontier_backcasts/robust_unscripted_organ_formation/nearest_falsifiable_experiment"
+        },
+        {
+          "value": "a formed capability is used once and never again, or bypasses founder attach",
+          "source": "greg/cognition/advantage.py#DESTINATIONS"
+        }
       ]
     },
     {
@@ -631,7 +727,17 @@
       "founder_sources": [
         "INTENT-2026-09-22-FIRST-BODY",
         "INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE"
-      ]
+      ],
+      "enabling_interfaces": {
+        "value": "greg.asks",
+        "source": "greg/path.json#frontier_backcasts/large_scale_human_machine_coordination/nearest_falsifiable_experiment"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "recorded_as": "frontier_backcasts/large_scale_human_machine_coordination/nearest_falsifiable_experiment"
+      }
     },
     {
       "id": "business_operation",
@@ -654,7 +760,20 @@
       "founder_sources": [
         "INTENT-2026-09-22-FIRST-BODY",
         "INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE"
-      ]
+      ],
+      "enabling_interfaces": {
+        "unrecorded": "no interface for this capability is named on the path, in its founder sources or in the 2026-10-28 directive; section 8 asks for its enabling interfaces"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "value": [
+          "Revenue generated through deception is failure.",
+          "Engagement that destroys trust is failure."
+        ],
+        "source": "docs/intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md#44-business-objective-function"
+      }
     },
     {
       "id": "community_feedback",
@@ -672,7 +791,17 @@
       "activation_evidence": "a community signal changes a priority only after outcome evaluation",
       "founder_sources": [
         "INTENT-2026-09-25-EGREGORE-ECOLOGY"
-      ]
+      ],
+      "enabling_interfaces": {
+        "value": "an authorized public channel (DALEOBANKS)",
+        "source": "greg/path.json#prerequisite"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "unrecorded": "no condition that would falsify this capability is recorded on the path, in its founder sources, in PR #155's destination falsifiers or in the 2026-10-28 directive; section 8 asks for one"
+      }
     },
     {
       "id": "decision_relevant_knowledge",
@@ -691,7 +820,17 @@
       "activation_evidence": "a decision memo whose sources and uncertainty Alfonso can audit",
       "founder_sources": [
         "INTENT-0030"
-      ]
+      ],
+      "enabling_interfaces": {
+        "unrecorded": "no interface for this capability is named on the path, in its founder sources or in the 2026-10-28 directive; section 8 asks for its enabling interfaces"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "value": "a founder decision made with a material fact GREG had authorized access to but did not surface",
+        "source": "greg/cognition/advantage.py#DESTINATIONS"
+      }
     },
     {
       "id": "daleobanks_media_engine",
@@ -710,7 +849,17 @@
       "activation_evidence": "first authorized publication with measured outcome",
       "founder_sources": [
         "PR #68 intent.daleobanks_role (founder upload section 18)"
-      ]
+      ],
+      "enabling_interfaces": {
+        "unrecorded": "no interface for this capability is named on the path, in its founder sources or in the 2026-10-28 directive; section 8 asks for its enabling interfaces"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "value": "Engagement that destroys trust is failure.",
+        "source": "docs/intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md#44-business-objective-function"
+      }
     },
     {
       "id": "research_in_organ",
@@ -729,7 +878,17 @@
       "activation_evidence": "a typed contract consumed by one GREG mission",
       "founder_sources": [
         "PR #68 intent.research_in_role (founder upload section 21)"
-      ]
+      ],
+      "enabling_interfaces": {
+        "value": "a typed contract consumed by one GREG mission",
+        "source": "greg/path.json#activation_evidence"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "unrecorded": "no condition that would falsify this capability is recorded on the path, in its founder sources, in PR #155's destination falsifiers or in the 2026-10-28 directive; section 8 asks for one"
+      }
     },
     {
       "id": "economic_compounding",
@@ -750,7 +909,16 @@
       "founder_sources": [
         "PR #68 intent.economic_research_flywheel (founder upload section 23)",
         "INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE"
-      ]
+      ],
+      "enabling_interfaces": {
+        "unrecorded": "no interface for this capability is named on the path, in its founder sources or in the 2026-10-28 directive; section 8 asks for its enabling interfaces"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "recorded_as": "frontier_backcasts/self_financed_research_infrastructure/nearest_falsifiable_experiment"
+      }
     },
     {
       "id": "pumpstation_rail",
@@ -769,7 +937,16 @@
       "activation_evidence": "that testnet transaction with dispute and settlement recorded",
       "founder_sources": [
         "PR #68 intent.pumpstation_role"
-      ]
+      ],
+      "enabling_interfaces": {
+        "unrecorded": "no interface for this capability is named on the path, in its founder sources or in the 2026-10-28 directive; section 8 asks for its enabling interfaces"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "unrecorded": "no condition that would falsify this capability is recorded on the path, in its founder sources, in PR #155's destination falsifiers or in the 2026-10-28 directive; section 8 asks for one"
+      }
     },
     {
       "id": "selective_web3_settlement",
@@ -787,7 +964,16 @@
       "activation_evidence": "a settlement that fails without a shared ledger",
       "founder_sources": [
         "PR #68 intent.selective_web3 (founder upload section 24)"
-      ]
+      ],
+      "enabling_interfaces": {
+        "unrecorded": "no interface for this capability is named on the path, in its founder sources or in the 2026-10-28 directive; section 8 asks for its enabling interfaces"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "unrecorded": "no condition that would falsify this capability is recorded on the path, in its founder sources, in PR #155's destination falsifiers or in the 2026-10-28 directive; section 8 asks for one"
+      }
     },
     {
       "id": "compute_growth",
@@ -810,7 +996,17 @@
       "activation_evidence": "N8 exit",
       "founder_sources": [
         "INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE"
-      ]
+      ],
+      "enabling_interfaces": {
+        "value": "a recorded BODY_AVAILABILITY or COMPUTE decision",
+        "source": "greg/path.json#prerequisite"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "unrecorded": "no condition that would falsify this capability is recorded on the path, in its founder sources, in PR #155's destination falsifiers or in the 2026-10-28 directive; section 8 asks for one"
+      }
     },
     {
       "id": "multi_body",
@@ -830,7 +1026,17 @@
       "activation_evidence": "two bodies sharing one mission history without shared universal credentials",
       "founder_sources": [
         "INTENT-2026-09-22-FIRST-BODY"
-      ]
+      ],
+      "enabling_interfaces": {
+        "value": "NODE_ENROLL",
+        "source": "greg/path.json#current_reality"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "recorded_as": "frontier_backcasts/reliable_multi_body_agency/nearest_falsifiable_experiment"
+      }
     },
     {
       "id": "continuity",
@@ -850,7 +1056,17 @@
       "activation_evidence": "restore drill on replacement hardware",
       "founder_sources": [
         "INTENT-0030"
-      ]
+      ],
+      "enabling_interfaces": {
+        "unrecorded": "no interface for this capability is named on the path, in its founder sources or in the 2026-10-28 directive; section 8 asks for its enabling interfaces"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "value": "a restore drill loses founder intent, ledger history or the ability to swap the model",
+        "source": "greg/cognition/advantage.py#DESTINATIONS"
+      }
     },
     {
       "id": "future_technology_absorption",
@@ -889,7 +1105,16 @@
       "activation_evidence": "a mission check derived from an image with provenance",
       "founder_sources": [
         "INTENT-20260930-open-source-first"
-      ]
+      ],
+      "enabling_interfaces": {
+        "unrecorded": "no interface for this capability is named on the path, in its founder sources or in the 2026-10-28 directive; section 8 asks for its enabling interfaces"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "unrecorded": "no condition that would falsify this capability is recorded on the path, in its founder sources, in PR #155's destination falsifiers or in the 2026-10-28 directive; section 8 asks for one"
+      }
     },
     {
       "id": "sensors_actuators",
@@ -910,7 +1135,17 @@
       "activation_evidence": "N9 exit",
       "founder_sources": [
         "PR #68 intent.embodiments_long_range"
-      ]
+      ],
+      "enabling_interfaces": {
+        "value": "the same Gate and receipts",
+        "source": "greg/path.json#intended_effect"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "unrecorded": "no condition that would falsify this capability is recorded on the path, in its founder sources, in PR #155's destination falsifiers or in the 2026-10-28 directive; section 8 asks for one"
+      }
     },
     {
       "id": "robotics",
@@ -929,7 +1164,17 @@
       "activation_evidence": "one receipted robotic task inside a founder envelope",
       "founder_sources": [
         "PR #68 intent.embodiments_long_range"
-      ]
+      ],
+      "enabling_interfaces": {
+        "value": "a simulated actuator contract",
+        "source": "greg/path.json#frontier_backcasts/advanced_robotic_embodiment/nearest_falsifiable_experiment"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "recorded_as": "frontier_backcasts/advanced_robotic_embodiment/nearest_falsifiable_experiment"
+      }
     },
     {
       "id": "situational_awareness",
@@ -948,6 +1193,22 @@
       "activation_evidence": "an escalation derived from public data that Alfonso found useful",
       "founder_sources": [
         "docs/FOUNDER_EFFECT_COMPILER.md"
+      ],
+      "enabling_interfaces": {
+        "value": "a typed contract to the HUD tool",
+        "source": "greg/path.json#prerequisite"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": [
+        {
+          "recorded_as": "frontier_backcasts/persistent_spatial_ecology/nearest_falsifiable_experiment"
+        },
+        {
+          "value": "a public, available warning relevant to the founder's consented location is not surfaced",
+          "source": "greg/cognition/advantage.py#DESTINATIONS"
+        }
       ]
     },
     {
@@ -972,7 +1233,16 @@
       "activation_evidence": "N10 exit",
       "founder_sources": [
         "PR #68 intent.embodiments_long_range (founder upload section 16)"
-      ]
+      ],
+      "enabling_interfaces": {
+        "unrecorded": "no interface for this capability is named on the path, in its founder sources or in the 2026-10-28 directive; section 8 asks for its enabling interfaces"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "unrecorded": "no condition that would falsify this capability is recorded on the path, in its founder sources, in PR #155's destination falsifiers or in the 2026-10-28 directive; section 8 asks for one"
+      }
     },
     {
       "id": "multispecies_horizon",
@@ -991,7 +1261,16 @@
       "founder_sources": [
         "PR #68 intent.multispecies_horizon (founder upload section 17)"
       ],
-      "prohibited_if": "any route that bypasses biosafety, welfare or legal review"
+      "prohibited_if": "any route that bypasses biosafety, welfare or legal review",
+      "enabling_interfaces": {
+        "unrecorded": "no interface for this capability is named on the path, in its founder sources or in the 2026-10-28 directive; section 8 asks for its enabling interfaces"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "unrecorded": "no condition that would falsify this capability is recorded on the path, in its founder sources, in PR #155's destination falsifiers or in the 2026-10-28 directive; section 8 asks for one"
+      }
     },
     {
       "id": "developmental_research",
@@ -1012,6 +1291,26 @@
       "founder_sources": [
         "INTENT-0030",
         "PR #68 meta.three_horizons"
+      ],
+      "enabling_interfaces": {
+        "unrecorded": "no interface for this capability is named on the path, in its founder sources or in the 2026-10-28 directive; section 8 asks for its enabling interfaces"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": [
+        {
+          "recorded_as": "frontier_backcasts/generalized_morphogenetic_repair/nearest_falsifiable_experiment"
+        },
+        {
+          "recorded_as": "frontier_backcasts/cross_substrate_developmental_compilation/nearest_falsifiable_experiment"
+        },
+        {
+          "recorded_as": "frontier_backcasts/substrate_independent_developmental_intelligence/nearest_falsifiable_experiment"
+        },
+        {
+          "recorded_as": "workstreams/cognition_cortex/nodes/P10/falsification"
+        }
       ]
     },
     {
@@ -1030,7 +1329,16 @@
       "activation_evidence": "measured participant capability improvement",
       "founder_sources": [
         "PR #68 intent.regenerative_civilization (founder upload section 15)"
-      ]
+      ],
+      "enabling_interfaces": {
+        "unrecorded": "no interface for this capability is named on the path, in its founder sources or in the 2026-10-28 directive; section 8 asks for its enabling interfaces"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "unrecorded": "no condition that would falsify this capability is recorded on the path, in its founder sources, in PR #155's destination falsifiers or in the 2026-10-28 directive; section 8 asks for one"
+      }
     },
     {
       "id": "jarvis_integration",
@@ -1049,7 +1357,17 @@
       "activation_evidence": "declining founder interventions per verified outcome across mission classes",
       "founder_sources": [
         "INTENT-0030"
-      ]
+      ],
+      "enabling_interfaces": {
+        "value": "one interface, one ledger, one Gate",
+        "source": "greg/path.json#current_reality"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "recorded_as": "frontier_backcasts/jarvis_environmental_awareness/nearest_falsifiable_experiment"
+      }
     },
     {
       "id": "competency_compiler",
@@ -1091,7 +1409,16 @@
       "activation_evidence": "P4 exit",
       "founder_sources": [
         "INTENT-20261001-greg-seed-genome"
-      ]
+      ],
+      "enabling_interfaces": {
+        "unrecorded": "no interface for this capability is named on the path, in its founder sources or in the 2026-10-28 directive; section 8 asks for its enabling interfaces"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "recorded_as": "workstreams/cognition_cortex/nodes/P4/falsification"
+      }
     },
     {
       "id": "cognitive_ecology",
@@ -1117,6 +1444,42 @@
       "founder_sources": [
         "INTENT-20261001-greg-seed-genome",
         "INTENT-2026-09-25-EGREGORE-ECOLOGY"
+      ],
+      "enabling_interfaces": {
+        "value": "contracts/cortex-receipt.schema.json",
+        "source": "greg/path.json#frontier_backcasts/substrate_adaptive_cognition/current_precursor"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": [
+        {
+          "recorded_as": "frontier_backcasts/automatic_invention_of_intelligence_families/nearest_falsifiable_experiment"
+        },
+        {
+          "recorded_as": "frontier_backcasts/substrate_adaptive_cognition/nearest_falsifiable_experiment"
+        },
+        {
+          "recorded_as": "frontier_backcasts/open_ended_cognitive_organization_generation/nearest_falsifiable_experiment"
+        },
+        {
+          "recorded_as": "workstreams/cognition_cortex/nodes/P6/falsification"
+        },
+        {
+          "recorded_as": "workstreams/cognition_cortex/nodes/P8/falsification"
+        },
+        {
+          "recorded_as": "workstreams/cognition_cortex/nodes/P9/falsification"
+        },
+        {
+          "recorded_as": "workstreams/cognition_cortex/nodes/P10/falsification"
+        },
+        {
+          "recorded_as": "workstreams/cognition_cortex/nodes/P11/falsification"
+        },
+        {
+          "recorded_as": "workstreams/cognition_cortex/nodes/P12/falsification"
+        }
       ]
     },
     {
@@ -1162,7 +1525,18 @@
         "INTENT-0030",
         "docs/FOUNDER_EFFECT_COMPILER.md#give-uniimente-an-immune-system"
       ],
-      "placement": "added by the 2026-10-14 Mind-lineage convergence: the Founder Effect Compiler's immune-system example had no horizon on the one Backcast GPS (PR #155's advantage.DESTINATIONS carried it in code only)"
+      "placement": "added by the 2026-10-14 Mind-lineage convergence: the Founder Effect Compiler's immune-system example had no horizon on the one Backcast GPS (PR #155's advantage.DESTINATIONS carried it in code only)",
+      "enabling_interfaces": {
+        "value": "a ledgered incident record type for detection, containment and recovery",
+        "source": "greg/path.json#prerequisite"
+      },
+      "feasible_when": {
+        "recorded_as": "prerequisite"
+      },
+      "falsified_by": {
+        "value": "a replayed incident is missed, or legitimate novelty is quarantined",
+        "source": "greg/cognition/advantage.py#DESTINATIONS"
+      }
     }
   ],
   "workstreams": [

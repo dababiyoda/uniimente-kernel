@@ -38,6 +38,18 @@ BUILDABILITY = ("BUILDABLE_NOW", "EXPERIMENTAL_NOW", "FRONTIER_RESEARCH", "SCIEN
 BACKCAST_FIELDS = ("destination", "current_precursor", "missing_capabilities", "active_gate", "gate_crossing_evidence",
                    "dependencies", "single_bottleneck_metric", "nearest_falsifiable_experiment", "buildability_status",
                    "risk", "authority_implications", "activation_condition")
+# Directive 2026-10-28 section 8: a capability not yet buildable keeps its "enabling interfaces", the "conditions
+# that would make it feasible" and the "conditions that would falsify it". Each entry is one of
+#   {"recorded_as": ref}             the text already on the path (a field of the horizon, or a/b/c/field);
+#   {"value": v, "source": s}        v copied verbatim from s (a repository file, or PATH_SOURCE + ref, checked here);
+#   {"unrecorded": reason}           no source says it yet; the gap is named, never filled with invented text.
+# A field holds one entry, or a list of recorded entries. Recording one grants and activates nothing.
+SECTION_8_FIELDS = ("enabling_interfaces", "feasible_when", "falsified_by")
+PATH_SOURCE = "greg/path.json#"
+# The path fields a recorded_as may name for each element, so a pointer cannot satisfy one with unrelated text.
+SECTION_8_POINTERS = {"enabling_interfaces": (),
+                      "feasible_when": ("prerequisite", "activation_condition", "gate_crossing_evidence"),
+                      "falsified_by": ("nearest_falsifiable_experiment", "falsification")}
 
 
 class PathError(ValueError):
@@ -91,6 +103,11 @@ def validate(data: dict) -> None:
         if horizon["feasibility"] != "CURRENTLY_BUILDABLE" and not horizon.get("prerequisite") \
                 and horizon["feasibility"] not in ("FRONTIER",):
             raise PathError(f"horizon {horizon['id']}: a later capability names its prerequisite")
+        for field in SECTION_8_FIELDS:
+            if field in horizon or horizon["feasibility"] != "CURRENTLY_BUILDABLE":
+                problem = section_8_problem(data, horizon, field)
+                if problem:
+                    raise PathError(f"horizon {horizon['id']}: {field} {problem}")
     horizon_ids = {h["id"] for h in data.get("horizons") or []}
     for item in data.get("frontier_backcasts") or []:
         missing = [f for f in BACKCAST_FIELDS if not item.get(f)]
@@ -100,6 +117,75 @@ def validate(data: dict) -> None:
             raise PathError(f"frontier {item['id']}: unknown buildability {item['buildability_status']}")
         if item.get("node") not in ids or item.get("horizon") not in horizon_ids:
             raise PathError(f"frontier {item['id']}: unknown node or horizon")
+
+
+def _texts(value) -> list[str] | None:
+    """A non-empty text, or a non-empty list of non-empty texts, as a list; anything else is not recorded text."""
+    if isinstance(value, str) and value.strip():
+        return [value]
+    if isinstance(value, list) and value and all(isinstance(v, str) and v.strip() for v in value):
+        return value
+    return None
+
+
+def resolve_text(data: dict, horizon: dict, ref: str) -> str | None:
+    """The recorded text at ``ref``: a field of ``horizon``, or a path such as frontier_backcasts/<id>/<field>
+    whose list steps select by ``id``. A section 8 entry is an object, never text, so no entry resolves to another."""
+    if not isinstance(ref, str) or not ref:
+        return None
+    parts = ref.split("/")
+    node = horizon if len(parts) == 1 else data
+    for part in parts:
+        if isinstance(node, dict):
+            node = node.get(part)
+        elif isinstance(node, list):
+            node = next((x for x in node if isinstance(x, dict) and x.get("id") == part), None)
+        else:
+            return None
+    texts = _texts(node)
+    return "\n".join(texts) if texts else None
+
+
+def section_8_problem(data: dict, horizon: dict, field: str) -> str | None:
+    """Why ``horizon[field]`` does not record a section 8 element, or None when it does."""
+    if field not in horizon:
+        return "missing (directive 2026-10-28 section 8)"
+    value = horizon[field]
+    if isinstance(value, dict) and set(value) == {"unrecorded"}:
+        return None if _texts(value["unrecorded"]) else "unrecorded needs a reason"
+    entries = value if isinstance(value, list) and value else [value]
+    for entry in entries:
+        if not isinstance(entry, dict) or set(entry) not in ({"recorded_as"}, {"value", "source"}, {"unrecorded"}):
+            return "must be one of recorded_as, value with source, or unrecorded"
+        if "unrecorded" in entry:
+            return "unrecorded stands alone, not in a list"
+        if "recorded_as" in entry:
+            refs = entry["recorded_as"] if isinstance(entry["recorded_as"], list) else [entry["recorded_as"]]
+            for ref in refs:
+                if not isinstance(ref, str) or ref.rsplit("/", 1)[-1] not in SECTION_8_POINTERS[field]:
+                    return f"recorded_as {ref!r} names no field that records {field}"
+                if resolve_text(data, horizon, ref) is None:
+                    return f"recorded_as {ref!r} does not resolve to recorded text"
+            continue
+        values, sources = _texts(entry["value"]), _texts(entry["source"])
+        if values is None:
+            return "value must be recorded text"
+        if sources is None:
+            return "value needs its source"
+        inside = [s[len(PATH_SOURCE):] for s in sources if s.startswith(PATH_SOURCE)]
+        if inside and len(inside) == len(sources):
+            texts = [resolve_text(data, horizon, ref) or "" for ref in inside]
+            for item in values:
+                if not any(item in text for text in texts):
+                    return f"value {item!r} is not in its source {sources}"
+    return None
+
+
+def section_8_gaps(data: dict) -> dict:
+    """Section 8 field -> the horizons whose entry is unrecorded, for ``greg path``."""
+    return {field: sorted(h["id"] for h in data.get("horizons") or []
+                          if isinstance(h.get(field), dict) and set(h[field]) == {"unrecorded"})
+            for field in SECTION_8_FIELDS}
 
 
 # -- ledger predicates: exit evidence the body itself holds --------------------------------
@@ -512,7 +598,9 @@ def position(journal: Journal | None, data: dict | None = None) -> dict:
         "horizons": {"total": len(horizons),
                      "at_active_node": [h["id"] for h in horizons if active and h["node"] == active["id"]],
                      "by_feasibility": {f: sorted(h["id"] for h in horizons if h["feasibility"] == f)
-                                        for f in FEASIBILITY if any(h["feasibility"] == f for h in horizons)}},
+                                        for f in FEASIBILITY if any(h["feasibility"] == f for h in horizons)},
+                     # Directive section 8 elements no source records yet: a named gap, not a pass.
+                     "section_8_unrecorded": section_8_gaps(data)},
         "destination": data["destination"],
         "rule": "a correction reroutes; it does not delete. Not now is not never.",
     }

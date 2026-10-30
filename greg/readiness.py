@@ -254,8 +254,8 @@ def verdict_timeline(journal, receipts: dict) -> dict:
     return {cid: sorted(rows, key=lambda row: row[0]) for cid, rows in timeline.items()}
 
 
-def _exercised(cid: str, receipts: dict) -> dict:
-    mine = [(h, positive) for h, (c, positive) in receipts.items() if c == cid]
+def _exercised(mine: list) -> dict:
+    """``mine``: [(receipt hash, positive)] of one capability, in ledger order."""
     positive = [h for h, ok in mine if ok]
     refused = len(mine) - len(positive)
     if not positive:
@@ -300,6 +300,9 @@ def ladder(journal, *, secrets, now: datetime | None = None, providers: dict | N
         handles = f"the secret store could not be read ({type(exc).__name__})"
     live = _live_missions(journal, now)
     receipts, issued = _receipts(journal)
+    by_capability = defaultdict(list)
+    for receipt, (cid, positive) in receipts.items():
+        by_capability[cid].append((receipt, positive))
     timeline = verdict_timeline(journal, receipts)
     record = routing.track_record(journal) if journal is not None else {}
     inventory = {row["capability_id"]: row for row in registry.inventory()}
@@ -311,7 +314,7 @@ def ladder(journal, *, secrets, now: datetime | None = None, providers: dict | N
                  "INSTALLED": _installed(manifest),
                  "CREDENTIALLED": _credentialled(manifest, handles),
                  "GRANTED": _granted(cid, manifest, state, live, issued.get(cid, [])),
-                 "EXERCISED": _exercised(cid, receipts),
+                 "EXERCISED": _exercised(by_capability.get(cid, [])),
                  "VERIFIED": _verified(timeline.get(cid, []))}
         reached = [r for r in RUNGS if rungs[r]["status"] == REACHED]
         first = next((r for r in RUNGS if rungs[r]["status"] == MISSING), None)

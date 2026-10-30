@@ -46,10 +46,10 @@ def _cli(home: Path, *args: str) -> tuple[int, str, str]:
     return code, out.getvalue(), err.getvalue()
 
 
-def _note_mission(home: Path, mid: str, text: str = "hello", **kw) -> dict:
+def _note_mission(home: Path, mid: str, text: str = "hello", capabilities=("fs.read", "fs.write"), **kw) -> dict:
     ws = workspace(home, mid)
     return mission(mid, checks=[note_check("n", ws / "n.txt", text)],
-                   strategies=[write_strategy("w", "n.txt", text, ["n"])], capabilities=["fs.read", "fs.write"], **kw)
+                   strategies=[write_strategy("w", "n.txt", text, ["n"])], capabilities=list(capabilities), **kw)
 
 
 def _run_to_closure(home: Path, key, body_id: str, mid: str, text: str = "hello") -> None:
@@ -70,20 +70,23 @@ def _verdicts(home: Path, mid: str) -> list:
         return [e.payload["verdict"] for e in journal.replay("mission.appraised") if e.payload["mission_id"] == mid]
 
 
-def _write_through_gate(body: Body, mid: str, *, content: str = "done") -> str:
-    """One fs.write through the real AuthorityOffice and Gate for an open mission, recorded as the engine does."""
+def _act_through_gate(body: Body, mid: str, capability: str, params: dict, target: str) -> str:
+    """One action through the real AuthorityOffice and Gate for an open mission, recorded as the engine does."""
     state = body.engine.book.missions[mid]
-    manifest, adapter, _ = body.engine._resolve({"capability": "fs.write"})
+    manifest, adapter, _ = body.engine._resolve({"capability": capability})
     outcome = body.office.act(
         mission_id=mid, cone=state.cone, command_digest=state.command_digest, manifest=manifest, adapter=adapter,
-        ctx=body.engine._context(state, manifest), params={"relative_path": "n.txt", "content": content},
-        target="workspace:n.txt", cost_usd=0.0, expected_outcome="strategy executed", evidence_refs=[], attempt=0,
-        spent_usd=0.0, approved_scopes=set())
+        ctx=body.engine._context(state, manifest), params=params, target=target, cost_usd=0.0,
+        expected_outcome="strategy executed", evidence_refs=[], attempt=0, spent_usd=0.0, approved_scopes=set())
     assert outcome.status == "DONE", outcome.reasons
     body.journal.record("mission.action", {
-        "mission_id": mid, "action_id": "w", "attempt": 0, "status": "DONE", "capability": "fs.write",
+        "mission_id": mid, "action_id": "w", "attempt": 0, "status": "DONE", "capability": capability,
         "receipt": outcome.receipt_hash, "scope_digest": outcome.scope_digest}, key=[mid, "w", 0])
     return outcome.receipt_hash
+
+
+def _write_through_gate(body: Body, mid: str, *, content: str = "done") -> str:
+    return _act_through_gate(body, mid, "fs.write", {"relative_path": "n.txt", "content": content}, "workspace:n.txt")
 
 
 # -- fail-before: the command did not exist --------------------------------------------------------------------------
@@ -164,11 +167,17 @@ def test_a_secret_value_never_appears_in_the_output(tmp_path):
 def test_a_live_grant_and_a_receipt_read_exercised(tmp_path):
     home, key, body_id, _ = make_body(tmp_path)
     mid = "m:open"
+    spec = _note_mission(home, mid, capabilities=("fs.read", "fs.write", "cognition.graph"),
+                         targets=("fs:*", "workspace:*", "cognition:*"))
     with Body(home) as body:
-        body.apply(signed(key, body_id, "MISSION", _note_mission(home, mid)), channel="inbox")
+        body.apply(signed(key, body_id, "MISSION", spec), channel="inbox")
         granted_only = readiness.report(home)
         receipt = _write_through_gate(body, mid)
     assert _row(granted_only, "fs.write")["reached"] == ["KNOWN", "INSTALLED", "GRANTED"]
+    # a live cone names it, but a capability the founder never attached is not granted by it
+    unattached = _row(granted_only, "cognition.graph")["rungs"]["GRANTED"]
+    assert unattached["status"] == "missing" and unattached["evidence"][0]["ref"] == mid
+    assert "a live grant names it, but its lifecycle state is VERIFIED" in unattached["why"]
     report = readiness.report(home)
     write = _row(report, "fs.write")
     assert write["reached"] == ["KNOWN", "INSTALLED", "GRANTED", "EXERCISED"]
@@ -230,9 +239,20 @@ def test_a_refused_invocation_is_not_exercise(tmp_path):
 # -- VERIFIED: an independent appraisal; a later REFUTED or ineffective verdict drops it ------------------------------
 
 def test_an_independent_verified_appraisal_reads_verified(tmp_path):
-    home, key, body_id, _ = make_body(tmp_path)
+    home, key, body_id, data = make_body(tmp_path)
+    listing = mission("m:list", checks=[note_check("n", data / "absent.txt", "x")],
+                      strategies=[{"action_id": "w", "capability": "fs.list", "params": {"path": str(data)},
+                                   "target": "fs:data", "advances": ["n"], "rationale": "list"}],
+                      capabilities=["fs.read", "fs.list"], targets=("fs:*",), ceiling="read_only")
+    with Body(home) as body:                            # exercised in another mission that no appraisal judges
+        body.apply(signed(key, body_id, "MISSION", listing), channel="inbox")
+        _act_through_gate(body, "m:list", "fs.list", {"path": str(data)}, "fs:data")
+        body.apply(signed(key, body_id, "LIFECYCLE", {"mission_id": "m:list", "state": "PAUSED",
+                                                      "reason": "keep it out of the ticks"}), channel="inbox")
     _run_to_closure(home, key, body_id, "m:first")
     report = readiness.report(home)
+    assert _row(report, "fs.list")["rungs"]["EXERCISED"]["status"] == "reached"
+    assert _row(report, "fs.list")["rungs"]["VERIFIED"]["status"] == "missing"
     for cid in ("fs.write", "fs.read"):                 # the strategy and the closure's sensor
         row = _row(report, cid)
         assert {"EXERCISED", "VERIFIED"} <= set(row["reached"]), row

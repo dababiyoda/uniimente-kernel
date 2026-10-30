@@ -1,8 +1,24 @@
-"""Each mutant removes one safeguard added by the review fixes (S1-S10); the resolution unit tests must catch it."""
-import subprocess, sys
+"""Each mutant removes one safeguard added by the review fixes (S1-S10); the resolution unit tests must catch it.
+
+Usage: python -B mutants-review.py REPO_ROOT > mutants-review.txt
+
+A mutant counts as CAUGHT only when at least one test FAILS on an assertion or an error inside a test. A mutant whose
+target text is missing or occurs more than once, whose mutated file does not compile, whose run fails without a FAILED
+test (for example a collection error), or whose run exceeds the time limit is INVALID: it tested nothing.
+
+The gate refuses to run unless git works, greg/, tests/ and this script are unmodified, and the working
+settlement.py equals HEAD's; the unmutated tests must then pass. It records HEAD and the sha256 of settlement.py and
+the three test files (not of every module the tests import). Bytecode is disabled and __pycache__ under greg/ and
+tests/ is purged before every run. Each mutant is written atomically, and settlement.py is restored on normal exit,
+on an exception and on SIGINT, SIGTERM or SIGHUP; the pytest child's process group is killed with it.
+(Second review of #219, R3: the first version counted any non-zero exit as CAUGHT, and N9 matched only the start of
+its line, so it was recorded as caught although the mutated file did not compile. A check of this branch then found
+that SIGTERM left a mutant in the tree and that a dirty tree was only labelled, not refused.)
+"""
+import hashlib, os, platform, shutil, signal, subprocess, sys, tempfile
 from pathlib import Path
-ROOT = Path(sys.argv[1]); F = ROOT / "greg/cognition/settlement.py"
-ORIG = F.read_text()
+ROOT = Path(sys.argv[1]).resolve(); F = ROOT / "greg/cognition/settlement.py"
+SCRIPT = Path(__file__).resolve()
 MUTANTS = {
  "N1 S1 signed body not compared": ('\n                or not _signed_body_matches(data, command["body"], ("receipt", "resolves", "accept"))):', '):'),
  "N2 S1 one signed command reused": ('command is None or data["command_digest"] in seen', 'command is None'),
@@ -12,7 +28,7 @@ MUTANTS = {
  "N6 S3 one fact per receipt and value": ('key = receipt if not existing else [receipt, "fact", source, repr(realized), len(existing)]', 'key = receipt if not existing else [receipt, "fact", repr(realized)]'),
  "N7 S4 journal order wins": ('key=lambda item: (item[0], item[1])', 'key=lambda item: item[1]'),
  "N8 S5 succeeded only when prior is None": ('        if outcome.get("answer_version") and _base_identity(outcome) in legacy:', '        if prior is None and outcome.get("answer_version") and _base_identity(outcome) in legacy:'),
- "N9 S6 failed check hidden by dispute": ('        if not outcome["correct"]:        # the signed check failed', '        if False:'),
+ "N9 S6 failed check hidden by dispute": ('        if not outcome["correct"]:        # the signed check failed', '        if False:        # the signed check failed'),
  "N10 S7 unsettleable dispute weighed": ('        if row["mission_id"] not in settling:', '        if False:'),
  "N11 S8 Laplace flips ignored": ('            if min(laplace) < other_mean < max(laplace):', '            if False:'),
  "N12 S9 unsigned fact eligible (replay)": ('(accept in named and accept in signed_facts', '(accept in named'),
@@ -21,16 +37,114 @@ MUTANTS = {
 }
 TESTS = ["tests/unit/test_greg_outcome_resolution.py", "tests/unit/test_greg_pending_construction_realization.py",
          "tests/unit/test_greg_outcome_resolution_signed.py"]
+COMMAND = [sys.executable, "-B", "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", *TESTS]
+ENV = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
+TIME_LIMIT = 900  # seconds per run; the unmutated set takes about a minute
+
+
+def git(*args):
+    r = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
+    if r.returncode != 0:
+        sys.exit(f"refused: git {' '.join(args)} failed ({r.stderr.strip()})")
+    return r.stdout
+
+
+def sha256(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+MODE = F.stat().st_mode
+
+
+def write(text):
+    """Write settlement.py atomically, so an interruption never leaves a partly written file."""
+    fd, tmp = tempfile.mkstemp(dir=F.parent, prefix=".mutant-", suffix=".py")
+    with os.fdopen(fd, "w") as handle:
+        handle.write(text)
+    os.chmod(tmp, MODE)
+    os.replace(tmp, F)
+
+
+def purge_bytecode():
+    for top in ("greg", "tests"):
+        for cache in (ROOT / top).rglob("__pycache__"):
+            shutil.rmtree(cache, ignore_errors=True)
+
+
+def run():
+    """Run the tests in their own process group; on a time-out or an interruption the whole group is killed."""
+    purge_bytecode()
+    proc = subprocess.Popen(COMMAND, cwd=ROOT, env=ENV, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                            start_new_session=True)
+    try:
+        out, _ = proc.communicate(timeout=TIME_LIMIT)
+    except subprocess.TimeoutExpired:
+        os.killpg(proc.pid, signal.SIGKILL)
+        proc.communicate()
+        return None, []
+    except BaseException:
+        os.killpg(proc.pid, signal.SIGKILL)
+        proc.wait()
+        raise
+    failing = [l.split("::")[-1].split(" ")[0] for l in out.splitlines() if l.startswith("FAILED")]
+    return (proc.returncode, out), failing
+
+
+def on_signal(signum, frame):
+    raise SystemExit(f"interrupted by signal {signum}")
+
+
+head = git("rev-parse", "HEAD").strip()
+script_path = SCRIPT.relative_to(ROOT) if SCRIPT.is_relative_to(ROOT) else SCRIPT
+dirty = git("status", "--porcelain", "--", "greg", "tests", str(script_path)).strip()
+if dirty:
+    sys.exit(f"refused: greg/, tests/ or the gate itself is modified:\n{dirty}")
+ORIG = git("show", f"HEAD:{F.relative_to(ROOT)}")
+if F.read_text() != ORIG:
+    sys.exit("refused: the working settlement.py differs from HEAD's")
+print(f"git rev-parse HEAD: {head}; greg/, tests/ and {script_path} unmodified")
+print(f"python {platform.python_version()}; command: {' '.join(['python', *COMMAND[1:]])}")
+print(f"sha256 greg/cognition/settlement.py: {sha256(F)}")
+for t in TESTS:
+    print(f"sha256 {t}: {sha256(ROOT / t)}")
+for signum in (signal.SIGTERM, signal.SIGHUP):
+    signal.signal(signum, on_signal)
 rows = []
 try:
+    base, failing = run()
+    if base is None:
+        sys.exit(f"baseline exceeded {TIME_LIMIT} s")
+    tail = (base[1].strip().splitlines() or [""])[-1]
+    print(f"baseline (no mutant): rc={base[0]} {tail}")
+    if base[0] != 0:
+        sys.exit("baseline fails: no mutant result would mean anything")
     for name, (old, new) in MUTANTS.items():
-        assert ORIG.count(old) == 1, (name, ORIG.count(old))
-        F.write_text(ORIG.replace(old, new))
-        r = subprocess.run([sys.executable, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", *TESTS],
-                           cwd=ROOT, capture_output=True, text=True)
-        failing = [l.split("::")[-1].split(" ")[0] for l in r.stdout.splitlines() if l.startswith("FAILED")]
-        rows.append(f"{'CAUGHT ' if r.returncode else 'MISSED '} {name}: {failing[:1]}")
+        if ORIG.count(old) != 1:
+            rows.append(f"INVALID {name}: target occurs {ORIG.count(old)} times")
+            print(rows[-1], flush=True)
+            continue
+        mutated = ORIG.replace(old, new)
+        try:
+            compile(mutated, str(F), "exec")
+        except SyntaxError as exc:
+            rows.append(f"INVALID {name}: the mutated file does not compile ({exc.msg}, line {exc.lineno})")
+            print(rows[-1], flush=True)
+            continue
+        write(mutated)
+        result, failing = run()
+        if result is None:
+            rows.append(f"INVALID {name}: the run exceeded {TIME_LIMIT} s")
+        elif result[0] == 0:
+            rows.append(f"MISSED  {name}: []")
+        elif failing:
+            rows.append(f"CAUGHT  {name}: {failing[:1]}")
+        else:
+            tail = (result[1].strip().splitlines() or [""])[-1]
+            rows.append(f"INVALID {name}: rc={result[0]} with no FAILED test ({tail})")
         print(rows[-1], flush=True)
 finally:
-    F.write_text(ORIG)
-print(f"{sum(r.startswith('CAUGHT') for r in rows)} of {len(rows)} caught")
+    write(ORIG)
+    purge_bytecode()
+valid = [r for r in rows if not r.startswith("INVALID")]
+print(f"{sum(r.startswith('CAUGHT') for r in rows)} of {len(valid)} valid mutants caught; "
+      f"{len(rows) - len(valid)} invalid; {sum(r.startswith('MISSED') for r in rows)} missed")

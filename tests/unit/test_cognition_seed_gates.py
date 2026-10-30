@@ -78,17 +78,6 @@ def test_verifier_refutes_integer_violation():
     assert verify("optimization",d,a,"optimization_certificate")["verdict"]=="REFUTED"
 
 
-def test_verifier_refutes_a_constraint_violation_alone():
-    # x breaks x>=3 while the objective (min y), bound and gap stay honest, so only constraint_substitution can refute;
-    # the seed gate's constraint mutant needs this case (the integer-violation case above also fails the bound checks)
-    d={"variables":{"x":[0,8],"y":[0,8]},"constraints":[{"coefficients":{"x":1},"op":">=","rhs":3}],
-       "objective":{"coefficients":{"y":1},"sense":"min"}}
-    a=optimization(d,asdict(ProblemGeometry())); assert a["output"]["solver_status"]=="OPTIMAL"
-    a["output"]["solution"]["x"]=0
-    r=verify("optimization",d,a,"optimization_certificate")
-    assert r["verdict"]=="REFUTED" and [k for k,ok in r["checks"].items() if not ok]==["constraint_substitution"]
-
-
 def test_unsupported_proof_type_never_crosses_jurisdiction():
     a=formal(MODEL,asdict(ProblemGeometry()))
     with pytest.raises(CognitionError):verify("formal",MODEL,a,"causal_identification")

@@ -4,7 +4,7 @@ import ast, json, shutil, subprocess, sys, tempfile, time
 ROOT=Path(__file__).resolve().parents[2]
 MUTANTS=[
  ('eligibility','greg/cognition/cortex.py','eligible, reason = registry.usable(cid)','eligible, reason = True, "mutant ignores detach"','tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it'),
- ('constraint','greg/cognition/verification.py','checks["constraint_substitution"] = bool(valid)','checks["constraint_substitution"] = True','tests/unit/test_cognition_seed_gates.py::test_verifier_refutes_a_constraint_violation_alone'),
+ ('constraint','greg/cognition/verification.py','checks["constraint_substitution"] = bool(valid)','checks["constraint_substitution"] = True','tests/unit/test_cognition_seed_constraint_isolation.py::test_verifier_refutes_a_constraint_violation_alone'),
  ('unknown','greg/cognition/solvers.py','str(status).upper()','"SAT" if str(status) == "unknown" else str(status).upper()','tests/unit/test_cognition_seed_gates.py::test_real_solver_unknown_not_sat_or_optimal'),
  ('evidence','greg/cognition/evidence.py','if s.get("digest") != digest(s["text"]):','if False:','tests/unit/test_cognition_seed_gates.py::test_forged_or_stale_evidence_abstains'),
  ('duplicate_settlement','greg/cognition/settlement.py','if prior is None or digest({k:v for k,v in prior.payload.items() if k != "supersedes"}) != digest(outcome):','if True:','tests/integration/test_greg_cognition_mission.py::test_cognition_is_durable_receipted_and_reobserved_on_the_existing_body'),

@@ -97,6 +97,35 @@ the file after closure and requires the appraiser to see it; the subtraction is 
 | Keep larger artifacts in the store | Moves bytes, not proof; a check still reads a cut |
 | Extend #201's `find_phrase` | #201 owns `documents.py`. This module is the shared engine #201 can stream `pdftotext` output through, offered to the #201 lane |
 
+## The founder's words: which way a phrase must go (review of #229, blocking)
+
+The independent review at `ca5dd7e5` found that the planner read polarity over the whole request, quoted phrase
+included. *Check that app.log mentions "connection not established"* drafted a check that the file never mentions
+it, so the mission closed on a file lacking the phrase. Reproducing it found a worse case: the apostrophe in
+"doesn't" opened a quote, so *doesn't mention "FATAL"* searched for the phrase `t mention `.
+
+**Now:**
+
+- **Phrases** are read only between double or curly quotes, or between single quotes that stand at word boundaries.
+  An apostrophe in "doesn't", "server's" or 'don't panic' neither opens nor closes one. The note route reads its text
+  the same way: `Note "don't forget the invoice"` had kept only "don".
+- **Polarity** is read only from the words outside the phrases and the path. A negation counts only where it governs
+  the mention verb: "never mentions", "doesn't contain" (straight or curly apostrophe), "is not mentioned",
+  "contains none of".
+- **Unclear wording is asked about, not guessed.** If any other negating or limiting word appears ("not just",
+  "only", "except"), or one request both requires and forbids, GREG asks: *Should app.log mention 'OK', 'WARN', or
+  never mention them?*
+
+| Run | Result |
+| --- | --- |
+| The new tests on `ca5dd7e5` | 10 of 11 fail (`planner-polarity-fail-before.txt`). The passive case ("is not mentioned") was already read right. |
+| `tests/unit/test_greg_text_query.py` with the fix | 41 passed |
+| Every planner test file, plus the section IX text scenarios, on `76ce1b40` | 228 passed, 1 skipped |
+| A mission on the mission path: *mentions "connection not established"* over a file without the phrase, and over one with it | open, and ACHIEVED. Before the fix, the first closed. |
+| 6 gate mutants: polarity read inside the quotes; an apostrophe ending a single-quoted phrase; curly quotes ignored; a curly apostrophe not negating; a stray negation ignored; a mixed request guessed | all caught: the whole-output gate holds 117 on `76ce1b40` (with the cadence mutant), 117 of 117 caught, each by its named test in a separate copy |
+
+**Limit.** One polarity per request. *Mentions "OK" but never "FATAL"* is asked about, not split into two checks.
+
 ## Section IX scenarios 7 and 8, and the sensing watch
 
 Added after the first push, from the section IX run (`tests/integration/test_greg_section_ix_text_scenarios.py`).
@@ -126,6 +155,12 @@ found, and that closure is verified.
 
    All three tests fail on the old engine; the cadence test fails because nothing is read at all. Two gate mutants
    remove the watch and its "reads again" rule.
+
+   The review of #229 asked which third test fails without the watch, and answering it found a gap. A mutant that
+   removes only the watch's own hourly schedule survived all three: the cadence test ticks hourly, so it cannot tell
+   a re-read at the cadence from a re-read on every tick. A fourth test ticks every ten minutes for six hours. With the
+   schedule removed the broken path is read 36 times; with it, 6. A third gate mutant removes the schedule
+   (`76ce1b40`).
 
 This changes the shared engine (`greg/missions.py`, the `SENSOR_FAILURE` block and `_watch_while_blocked`). Its owner,
 the #196 integrator, decides intake; it is offered on #96 with this commit.

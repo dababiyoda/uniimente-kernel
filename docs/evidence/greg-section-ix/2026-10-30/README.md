@@ -4,8 +4,8 @@ Directive of 2026-10-22, sections IX and X, re-issued 2026-10-30. Session `sessi
 
 **Reality tier: SANDBOX.** Runs use in-process bodies with per-test founder keys, real files, the real installed
 `pdftotext` and the real separate-process appraiser. Founder-device acceptance is not part of this run (founder
-instruction of 2026-10-30: "Full machine NOT NESESARY"), and VEPMC stays 0. That acceptance is deferred by the
-founder, not dropped.
+instruction of 2026-10-30: "Full machine NOT NESESARY"), and VEPMC stays 0. That acceptance is outstanding,
+not dropped.
 
 ## The tree
 
@@ -53,7 +53,7 @@ Command: `python -m pytest -p no:cacheprovider -rA <the tests below>`.
 | 2 | A long non-PDF output whose required phrase appears after the retained preview | `tests/unit/test_greg_whole_output_judgment.py::test_a_required_phrase_past_16_kib_closes_the_mission_without_asking_and_is_verified`; `tests/unit/test_greg_text_query.py::test_a_large_log_is_proved_clean_and_the_appraiser_agrees` | #209; #229 | passed (both) |
 | 3 | A long output in which a forbidden phrase appears after the preview | `tests/unit/test_greg_whole_output_judgment.py::test_a_forbidden_phrase_past_16_kib_is_decided_failing_not_asked`; `tests/unit/test_greg_text_query.py::test_a_fault_deep_in_a_large_log_keeps_the_mission_open` | #209; #229 | passed (both): decided failing, `NO_STRATEGY`, never a sensor question |
 | 4 | An incomplete observation that is safely replayed after obtaining complete evidence | `tests/unit/test_greg_whole_output_judgment.py::test_an_incomplete_observation_is_kept_and_a_restarted_body_decides_the_next_one` | #209 | passed: the prefix-only reading is kept undecided; a restarted body decides the next, complete one |
-| 5 | A held or unknown-license component that cannot be silently attached | `tests/integration/test_greg_section_ix_acquisition_scenarios.py::test_a_reader_whose_package_declares_a_held_license_waits_for_the_founder` (AGPL-3+, Llama-2-Community, CC-BY-NC-4.0); `tests/unit/test_greg_model_license.py` (model weights, 35) | licensing child PR | passed: no attach, `deficit.awaiting_attach` names the license. The Llama-2 case fails on `083c91ea`. |
+| 5 | A held or unknown-license component that cannot be silently attached | `tests/integration/test_greg_section_ix_acquisition_scenarios.py::test_a_reader_whose_package_declares_a_held_license_waits_for_the_founder` (AGPL-3+, Llama-2-Community, CC-BY-NC-4.0); `tests/unit/test_greg_model_license.py` (model weights: 45 on `0a3e410d`, 35 on `edfa37f7`) | licensing child PR | passed: no attach, `deficit.awaiting_attach` names the license. The Llama-2 case fails on `083c91ea`. |
 | 6 | A known compatible component that is reused without unnecessary reconstruction | `tests/integration/test_greg_section_ix_acquisition_scenarios.py::test_a_second_pdf_mission_reuses_the_reader_the_first_acquired` | licensing child PR | passed: no second deficit, qualification or attach; every reading by `acquired.document.text.pdftotext` |
 | 7 | A failed capability that produces a truthful, resumable handoff rather than a false success | `tests/integration/test_greg_section_ix_text_scenarios.py`, four scenario 7 tests (three on `edfa37f7`) | #229 | passed: a broken sensor asks once and is read hourly, not on every tick; a fixed world closes the same signed mission without a founder answer, verified; a failing world becomes `NO_STRATEGY` |
 | 8 | A mission whose evidence is technically valid but insufficient for the requested claim | `tests/integration/test_greg_section_ix_text_scenarios.py::test_evidence_that_is_valid_but_too_narrow_never_proves_an_absence` | #229 | passed: an authentic 64 KiB reading of a 2.4 MiB log never proves an absence |
@@ -154,7 +154,7 @@ A recombination counts here only when it produces a useful, repeatable improveme
 
 - **Sources:** #201's acquisition of the installed `pdftotext` (dpkg provenance, DEP-5 copyright file), the licensing lane's one expression tree (SPDX and DEP-5, `AND`/`OR`/`WITH`), #201's memory and output ceilings for acquired binaries.
 - **Residual problem:** an acquired binary's licence was read by a parser that let an unknown name mask a restrictive one, and a held licence could be attached.
-- **New capability:** an acquired tool is attached only when its recorded provenance, its licence verdict and its confinement all hold at attach time, and each is shown separately to the founder. Extended to model weights: an installed Ollama model's own license layers are read from its content-addressed store, classified by their terms (not their title), and bound to the weight digests, so a model under Llama, Gemma, OpenRAIL or research-only terms is held, and a changed weight changes the qualification.
+- **New capability:** an acquired tool is attached only when its recorded provenance, its licence verdict and its confinement all hold at attach time, and each is shown separately to the founder. Extended to model weights: an installed Ollama model's own license layers are read from its content-addressed store, classified by their terms (not their title), and bound to the weight digests, so `licensing.ollama_model` holds a model under Llama, Gemma, OpenRAIL or research-only terms, and a changed weight changes the qualification. It is not yet wired into the model route (`OllamaRoute`, the models lane's), so a configured model still runs without consulting it, and it was tested against Ollama's recorded store format, not a live store.
 - **Why simpler fails:** `packaging.licenses` canonicalizes SPDX but does not read DEP-5 stanzas or classify restrictions; a single verdict string hides which fact failed.
 - **Authority boundary:** a licence verdict never attaches anything; unknown and restrictive declarations go to the founder.
 - **Evidence contract:** the qualification report states the ceilings applied; the licence assessment lists the terms and the files each covers.
@@ -176,7 +176,7 @@ A recombination counts here only when it produces a useful, repeatable improveme
 
 - **Sources:** #209's reading of a cut observation from the artifact store after a restart; the appraiser's re-observation ("world no longer matches"); the NO_STRATEGY block's watch, which re-reads at the mission's cadence and withdraws a moot ask (`_watch_while_blocked`); the SENSOR_FAILURE block.
 - **Residual problem (measured):** after the third failed round GREG stopped reading and waited for the founder, even once the world was fixed: 60 ticks, ten simulated hours, no further reading.
-- **New capability:** a SENSOR_FAILURE block is watched like a NO_STRATEGY block, with one mutation: it is lifted when the sensor reads again, whatever the reading says. A fixed world closes the same signed mission without the founder; a sensor that reads again on a failing world turns the question into the right one (NO_STRATEGY); a sensor that stays broken keeps its one question and is read only at the mission's cadence.
+- **New capability:** a SENSOR_FAILURE block is watched like a NO_STRATEGY block, with one mutation: it is lifted when the sensor reads again, whatever the reading says. After its one question, a fixed world closes the same signed mission with no founder answer; a sensor that reads again on a failing world turns the question into the right one (NO_STRATEGY); a sensor that stays broken keeps its one question and is read only at the mission's cadence.
 - **Why simpler fails:** re-reading every tick spends reads on a broken sensor; waiting only on the founder keeps a transient failure as a question; lifting the block only when the check passes would leave a readable-but-failing world asked about as a broken sensor.
 - **Authority boundary:** the re-read is the mission's own signed, read-only sensor; the withdrawal is a body event and is never the founder's answer; a recurrence opens a new ask (a new epoch), never revives the withdrawn one.
 - **Evidence contract:** `decision.withdrawn` records why and the evidence of the re-read; earlier failed observations stay on the record unchanged.
@@ -201,7 +201,7 @@ A recombination counts here only when it produces a useful, repeatable improveme
 
 - **Sources:** `greg.metrics.founder_tier` (the rule that gates N1 in `greg path`); the console's 180-second heartbeat freshness; `greg acceptance`'s reality label and `supervised_runtime` property.
 - **What it does:** the report the founder sends with their judgment labels a run FOUNDER-DEVICE only at the founder tier, and calls a body running only when a live process wrote its heartbeat within three minutes.
-- **Honest label:** existing rules applied where the report had its own weaker reading. It prepares the founder-device run the founder has deferred.
+- **Honest label:** existing rules applied where the report had its own weaker reading. It prepares the founder-device run, which the founder wrote on 2026-10-30 is not needed for this build; it is outstanding, not dropped.
 - **Acceptance test:** `tests/unit/test_greg_acceptance_reality.py`, 9 failing on `b1950be2` (8 behavioural), and 2 more on `be3f0c31` after the review's reused-pid finding; `scripts/ci/check_acceptance_mutants.py`, 8 of 8 on `ef6049dd`.
 
 ## Limits

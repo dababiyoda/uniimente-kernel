@@ -1006,7 +1006,7 @@ def _forecast_identity(cognitive) -> tuple:
 
 
 def _construction_claims(journal, constructed, functions) -> dict:
-    """claim identity -> [(ledger receipt, compile receipt, promise, mission id, check passed)], in observation order, for every observation
+    """claim identity -> [(ledger receipt, compile receipt, promise, mission id, check passed, observation event)], in observation order, for every observation
     ``measured_outcomes`` would credit to a construction once its mission is appraised (the same identity, from
     ``_constructed_outcome``). A construction answer no signed check observed is in no claim: a realization bound to
     it is recorded but never settles."""
@@ -1031,7 +1031,7 @@ def _construction_claims(journal, constructed, functions) -> dict:
         promise = _promise(built, functions.get(built["method_or_composition_selected"]))
         if outcome is not None and promise is not None:
             claims[_outcome_identity(outcome)].append((record.hash, built, promise, data["mission_id"],
-                                                        bool(data.get("passed"))))
+                                                        bool(data.get("passed")), event))
     return claims
 
 
@@ -1266,7 +1266,9 @@ def _weigh_investigations(journal, rows, settling=None) -> None:
     inhibit = lru_cache(maxsize=None)(_settled_inhibition)     # one Wilson bound per count, per weighing (F2R-4)
     settling = _settling_appraisals(journal) if settling is None else settling
     counts = _settled_counts(journal)
-    weighable = [r for r in rows if r["mission_id"] in settling and r.get("check_passed", True)]
+    def settles(row):         # the claim's own appraisal when awaiting_realization resolved it (TXT-R6-1)
+        return row["claim_settles"] if "claim_settles" in row else row["mission_id"] in settling
+    weighable = [r for r in rows if settles(r) and r.get("check_passed", True)]
     open_by_method = defaultdict(int)
     for row in weighable:
         open_by_method[row["method"]] += 1
@@ -1316,7 +1318,7 @@ def _weigh_investigations(journal, rows, settling=None) -> None:
                           "compared_with": "every other method with settled outcomes on this body, every other "
                                            "disputed method at each count it can reach, and an unsettled fit"}
     for row in rows:
-        if row["mission_id"] not in settling:
+        if not settles(row):
             row["priority"], row["decision_impact"] = "hold", None
             row["priority_why"] = ("no resolution changes competence now: "
                                    + (row.get("competence_claim") or _unsettled_why(row.get("mission_appraisal"),
@@ -1358,6 +1360,10 @@ def awaiting_realization(journal) -> list[dict]:
     claims = _construction_claims(journal, constructed, functions) if constructed else {}
     terminal = _terminal_missions(journal) if claims else set()
     awaiting = _awaiting_appraisal(journal) if claims else set()
+    appraisal_of = _observation_appraisal(journal, settling) if claims else None
+
+    def claim_settles(seen):  # as measured_outcomes: the claim settles under any of its observations' appraisals
+        return any(appraisal_of(obs[5]) is not None for obs in seen)
     order = _realization_order(journal) if claims else {}
     signed = _signed_realizations(journal) if claims else {}
     resolutions, signed_facts = (_resolutions(journal, signed), _signed_facts(journal, signed)) if claims else ([], set())
@@ -1368,13 +1374,14 @@ def awaiting_realization(journal) -> list[dict]:
         mission_id = seen[-1][3]
         state = _world_state(facts, resolutions, receipts, signed_facts)
         if state["state"] in ("unreported", "invalidated"):
-            offered[seen[-1][0]] = (identity, len(receipts), mission_id, state)
+            offered[seen[-1][0]] = (identity, len(receipts), mission_id, state, claim_settles(seen))
         elif state["state"] == "disputed":    # _world_settled scores it as neither: say so where reports are made
             row = _investigation(identity, seen, state, mission_id, len(receipts), signed_facts,
-                                 settles=mission_id in settling,
+                                 settles=claim_settles(seen),
                                  unsettled_why=_unsettled_why(latest_verdict.get(mission_id),
                                                               mission_id in terminal, mission_id in awaiting))
             row["mission_appraisal"] = latest_verdict.get(mission_id)
+            row["claim_settles"] = claim_settles(seen)
             conflicts.append(row)
     if conflicts:
         _weigh_investigations(journal, conflicts, settling)
@@ -1390,8 +1397,7 @@ def awaiting_realization(journal) -> list[dict]:
             built = _constructed(retained, constructed)
             method = built["method_or_composition_selected"]
             objective, sense, promised = _promise(built, functions.get(method))
-            identity, receipts, mission_id, state = offered[record.hash]
-            appraised = mission_id in settling
+            identity, receipts, mission_id, state, appraised = offered[record.hash]
             out.append({"receipt": record.hash, "recorded_at": record.ts_utc, "kind": "objective",
                         "method": method, "method_version": constructed[method],
                         "problem_id": built.get("problem_id"), "compile_receipt": built["receipt_id"],

@@ -1,1 +1,1 @@
-{"version":1,"claims":{},"audit":[{"at":"2026-10-30T14:55:04Z","action":"reserve","session":"codex-sha-probe-20261030","detail":{"probe":true,"no_worker_enrollment":true}},{"at":"2026-10-30T14:55:25Z","action":"finish","session":"codex-sha-probe-20261030","detail":{"probe_complete":true,"stale_sha_refused":409,"active_claims":0}}]}
+{"version":1,"claims":{},"audit":[]}

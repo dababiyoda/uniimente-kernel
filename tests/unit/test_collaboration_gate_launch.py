@@ -6,7 +6,7 @@ import subprocess
 import sys
 import unittest
 import uuid
-import test_collaboration_gate as gate_tests
+from tests.unit import test_collaboration_gate as gate_tests
 
 SOURCE = Path(__file__).resolve().parents[2]
 
@@ -44,6 +44,7 @@ class LauncherIntegrationTests(unittest.TestCase):
         result = self.run_cli('start', '--manifest', str(self.manifest), '--claude-bin', str(self.client))
         self.assertEqual(result.returncode, 0, result.stderr)
         args = json.loads(self.log.read_text())
+        self.assertNotIn('-p', args)
         self.assertEqual(args[args.index('--session-id') + 1], self.claim['session_id'])
         config = Path(args[args.index('--settings') + 1])
         hook = json.loads(config.read_text())['hooks']['PreToolUse'][0]['hooks'][0]
@@ -58,6 +59,17 @@ class LauncherIntegrationTests(unittest.TestCase):
         admitted = subprocess.run([hook['command'], *hook['args']], input=json.dumps(event),
                                    capture_output=True, text=True)
         self.assertEqual(admitted.returncode, 0, admitted.stderr)
+
+    def test_prompt_uses_headless_mode_and_preserves_literal_text(self):
+        self.assertEqual(self.run_cli('install', '--repo', str(self.fixture.repo)).returncode, 0)
+        for prompt in ('Perform the scoped task', '-literal option-like text', ''):
+            with self.subTest(prompt=prompt):
+                result = self.run_cli('start', '--manifest', str(self.manifest),
+                                      '--claude-bin', str(self.client), '--prompt=' + prompt)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                args = json.loads(self.log.read_text())
+                self.assertEqual(args[-2:], ['-p', prompt])
+                self.assertEqual(args.count('-p'), 1)
 
     def test_client_exit_preserves_offered_handoff_for_receiver(self):
         receiver = str(uuid.uuid4())

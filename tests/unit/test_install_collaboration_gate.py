@@ -22,6 +22,15 @@ class InstallationTests(unittest.TestCase):
             settings(self.repo, self.root, self.root)
         self.assertFalse((self.repo / '.claude').exists())
 
+    def test_repository_parent_traversal_cannot_install_outside_workspace(self):
+        workspace = self.root / 'shared'
+        workspace.mkdir()
+        outside = self.root / 'outside'
+        outside.mkdir()
+        with self.assertRaisesRegex(ValueError, 'traversal'):
+            settings(workspace / '..' / 'outside', workspace, self.root, True)
+        self.assertFalse((outside / '.claude').exists())
+
     def test_preserves_existing_hooks_and_permissions_and_is_repeatable(self):
         path = self.repo / '.claude/settings.local.json'
         path.parent.mkdir()

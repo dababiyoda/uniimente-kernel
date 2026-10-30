@@ -1,5 +1,39 @@
 # Gate validation and deployment receipt
 
+## Follow-up repair after real-worker testing
+
+The original 77-test unittest result below did not cover pytest's package
+collection. Canonical CI run 41016367214 failed jobs 1 and 9. Two Claude workers
+independently identified the bare sibling import in the launcher test. The
+repair imports through `tests.unit`, matching the real repository package.
+The partial local source preparation restores the existing empty
+`tests/unit/__init__.py` for verification; that file is not a new remote change.
+
+The launcher now uses `-p` whenever `--prompt` is supplied, including an empty
+prompt. No prompt retains interactive mode. An independent Codex reviewer also
+found installer `..` traversal could pass lexical workspace containment; the
+installer now rejects it before mutation and resolves paths after symlink checks.
+Regression tests retain literal prompt arguments and prove outside settings are
+not created. Current local result: **25 gate/installer/launcher + 5 workspace +
+49 receipt = 79 distinct tests pass**. Pytest is unavailable in this local runtime;
+hosted collection and a real launcher call remain separate checks.
+
+Worker-reported integration evidence (not directly executed by this coordinator):
+[#196 integrator's real Claude Code 2.1.314 test](https://github.com/dababiyoda/uniimente-kernel/pull/206#issuecomment-6516958131)
+used headless child clients in an isolated workspace. Missing enrollment refused
+Write; a scoped Write succeeded; an outside Write and overlapping claim were
+refused; only the named receiver could accept the pending handoff. The worker
+called Claude directly with `-p`, exposing the launcher bug fixed here.
+Two other workers ran isolated direct-hook tests, not real harness invocations:
+[#215](https://github.com/dababiyoda/uniimente-kernel/pull/206#issuecomment-6516930726),
+[#221](https://github.com/dababiyoda/uniimente-kernel/pull/221#issuecomment-6516926048).
+All three still report their live sessions UNENROLLED. The integrator reports
+no harness restriction and offers adoption after a green revision; another
+worker requires its session owner's instruction. Their distinct reports are
+retained rather than inferred into uniform authority or installation status.
+
+The following original receipt remains historical evidence for `44fcb227`.
+
 Implementation scope: two new scripts, three test files, one decision/runbook,
 this evidence record and the existing START_HERE pointer. Existing #206 installer
 and #193 checker are reused. No product runtime source is changed.

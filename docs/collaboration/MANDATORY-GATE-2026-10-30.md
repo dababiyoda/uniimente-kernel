@@ -44,6 +44,10 @@ python scripts/install_collaboration_gate.py --workspace /absolute/shared check 
 python scripts/install_collaboration_gate.py --workspace /absolute/shared start --manifest /absolute/claim.json
 ```
 
+For a headless worker, add `--prompt 'Perform the claimed task'` to `start`.
+Supplying `--prompt` selects Claude's `-p` print mode; omitting it preserves
+interactive startup. Do not run interactive startup in an unattended CI job.
+
 The source checkout may be specified with `--source /absolute/reviewed/kernel`.
 Each repository/client needs installation and a startup test. Repositories are
 not discovered by guessing directories; point the installer at each actual

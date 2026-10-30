@@ -13,10 +13,12 @@ import uuid
 
 def safe_path(path):
     path = Path(path).absolute()
+    if '..' in path.parts:
+        raise ValueError(f'parent traversal refused: {path}')
     for parent in (path, *path.parents):
         if parent.is_symlink():
             raise ValueError(f"symlink configuration/source refused: {path}")
-    return path
+    return path.resolve()
 
 
 def settings(repo, workspace, source, install=False):
@@ -86,8 +88,8 @@ def start(manifest, workspace, source, claude='claude', prompt=None):
         'Honor the admitted bounded claim and release/hand off with evidence.')
     args = [claude, '--session-id', session, '--settings', str(config),
             '--append-system-prompt', instructions]
-    if prompt:
-        args.append(prompt)
+    if prompt is not None:
+        args.extend(['-p', prompt])
     try:
         return subprocess.run(args, cwd=repo).returncode
     finally:
@@ -105,7 +107,7 @@ def main():
     run = commands.add_parser('start')
     run.add_argument('--manifest', type=Path, required=True)
     run.add_argument('--claude-bin', default='claude')
-    run.add_argument('--prompt')
+    run.add_argument('--prompt', help='Run once in headless print mode; omit for an interactive session')
     a = p.parse_args()
     try:
         if a.action == 'start':

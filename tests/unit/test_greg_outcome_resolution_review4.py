@@ -61,7 +61,7 @@ def test_f2r_2_a_gap_between_another_methods_reachable_values_is_not_a_tie(monke
 
 
 def test_f2r_3_a_cut_short_walk_reads_investigate_without_claiming_a_change(monkeypatch):
-    counts = {"construction.A": (30, 30), **{f"fit.f{i}": (10 + i, 0) for i in range(9)}}
+    counts = {"construction.A": (30, 30), **{f"fit.f{i}": (20, 10) for i in range(9)}}   # undemoted, never preferred
     row = weigh(monkeypatch, counts, {"construction.A": 1})["construction.A"]
     assert row["decision_impact"]["could_change"] == [] and row["decision_impact"]["walk_limits"]
     assert row["priority"] == "investigate"
@@ -73,7 +73,7 @@ def test_jointly_more_than_three_other_disputed_methods_is_a_stated_limit(monkey
     rows = weigh(monkeypatch, counts, {m: 1 for m in counts})
     for row in rows.values():
         assert row["priority"] == "investigate"
-        assert any("exceed the joint limits" in w for w in row["decision_impact"]["walk_limits"])
+        assert any("exceed the joint method limit" in w for w in row["decision_impact"]["walk_limits"])
 
 
 def test_f2r_4_the_inhibition_rule_is_computed_once_per_count(monkeypatch):

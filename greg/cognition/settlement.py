@@ -192,10 +192,11 @@ def _mission_order(journal) -> dict:
 
 
 def _before(order, event, appraisal) -> bool:
-    """Whether ``event`` was recorded before ``appraisal``. An appraisal judges the closure it was made for, at the
-    head it re-derived; an observation recorded after it belongs to a later closure, which only its own appraisal
-    can settle, so a success after an appraised failure is never credited under the failure's verdict. Unplaceable
-    events (no position) keep the earlier behaviour."""
+    """Whether ``event`` was recorded before ``appraisal``. After an appraised failure closure (VERIFIED_UNMET), an
+    observation recorded later belongs to a later closure, which only its own appraisal can settle, so a success
+    after an appraised failure is never credited under the failure's verdict. After a verified success, an
+    infinite-closure mission keeps re-verifying the same answer, and those observations still count, as before.
+    Unplaceable events (no position) keep the earlier behaviour."""
     a, b = order.get(getattr(event, "event_id", None)), order.get(getattr(appraisal, "event_id", None))
     return a is None or b is None or a < b
 
@@ -235,8 +236,9 @@ def measured_outcomes(journal):
         data = event.payload
         if data.get("mission_id") not in latest_appraisal or not data.get("receipt"):
             continue
-        if not _before(order, event, latest_appraisal[data["mission_id"]]):
-            continue      # a later closure's observation waits for its own appraisal (review of #221, TXT-R4-1)
+        settling_event = latest_appraisal[data["mission_id"]]
+        if settling_event.payload.get("verdict") == "VERIFIED_UNMET" and not _before(order, event, settling_event):
+            continue      # after an appraised failure, a later closure waits for its own appraisal (#221, TXT-R4-1)
         record = journal.ledger.find(data["receipt"])
         if record is None or record.record_type != "receipt":
             continue

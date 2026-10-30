@@ -39,7 +39,8 @@ def test_f2_a_above_the_subset_limit_the_row_is_never_a_clean_hold(monkeypatch):
               **{f"fit.f{i}": (10 + i, 3) for i in range(7)}}
     priority, reasons, _ = weigh(monkeypatch, counts, {"construction.B": 1})["construction.B"]
     assert priority == "investigate"
-    assert any("pairs and the whole family only" in r for r in reasons)
+    # round 4 prunes the seven demoted fillers (W4-1), so the walk fits the subset limit and finds the change itself
+    assert any("fit.A ranked first among" in r and "fit.C" in r for r in reasons)
 
 
 def test_f2_b_a_non_monotone_pick_between_the_extremes_is_investigated(monkeypatch):

@@ -44,7 +44,8 @@
    "title": "Build frontier beside the acceptance frontier on `greg path` (the 2026-10-30 correction as a route placement)",
    "source": "gap map of the 77 sections against #196 head 4ec00605 (session 2026-10-30), program rank 1",
    "depends_on": [],
-   "note": "Its base, feb531d2 (INTENT-20261030-BUILD-BEFORE-DEVICE-RUN), is this map's base"
+   "note": "Its base, feb531d2 (INTENT-20261030-BUILD-BEFORE-DEVICE-RUN), is this map's base",
+   "closed_by": "#236, adopted into #196 by 2161dbe2: `greg path --build` computes the build frontier beside the acceptance frontier from the body's ledger (greg/path.py build_status), and the 2026-10-30 correction is placed on N1 (n1.vepmc_is_final_acceptance_not_build_gate); tests/unit/test_path_build_frontier.py"
   },
   {
    "id": "WU-02",
@@ -154,7 +155,8 @@
    "id": "WU-14",
    "title": "Consistent backups from a running body on a founder-signed cadence, each proven by a restore drill",
    "source": "gap map of the 77 sections against #196 head 4ec00605 (session 2026-10-30), program rank 14",
-   "depends_on": []
+   "depends_on": [],
+   "closed_by": "#234, adopted into #196 by a5b88f2f: a consistent seed of a running body (foundry/systems/seed.py) on a founder-signed cadence, each counted only after its restore drill (greg/backup.py); tests/unit/test_greg_backup.py, tests/integration/test_greg_backup_process.py (a real `greg run` process)"
   },
   {
    "id": "MU-B",
@@ -1261,17 +1263,18 @@
      "excerpt": "UPDATE CURRENT POSITION ↓ RECOMPUTE DEVELOPMENTAL PATH",
      "owner_paths": [
       "greg/path.py",
-      "greg/path.json"
+      "greg/path.json",
+      "greg/cli.py",
+      "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_path_build_frontier.py::test_a_fresh_body_has_both_frontiers_at_n1_and_the_cli_prints_them",
+      "tests/unit/test_path_build_frontier.py::test_test_key_closures_move_only_the_build_frontier",
+      "tests/unit/test_path_build_frontier.py::test_the_correction_is_placed_on_n1_and_cannot_change_the_destination"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "greg path reports only the founder-tier frontier; the correction is not yet a route placement",
-      "unit": "WU-01"
-     }
+     "tier": "UNIT_VERIFIED",
+     "coverage": "covered"
     }
    ]
   },
@@ -3942,20 +3945,22 @@
      "excerpt": "* disks; * computers;",
      "owner_paths": [
       "greg/recovery.py",
-      "foundry/systems/seed.py"
+      "foundry/systems/seed.py",
+      "greg/backup.py"
      ],
      "evidence": [
-      "tests/unit/test_greg_restore.py"
+      "tests/unit/test_greg_restore.py",
+      "tests/unit/test_greg_seed_consistency.py",
+      "tests/unit/test_greg_backup.py::test_a_signed_cadence_writes_a_seed_to_the_store_and_counts_it_only_after_its_drill",
+      "tests/unit/test_greg_backup.py::test_a_drill_whose_restored_body_is_not_held_is_not_a_verified_backup",
+      "tests/unit/test_greg_backup.py::test_disk_loss_restores_the_latest_verified_backup_and_the_cadence_resumes_after_the_founder",
+      "tests/integration/test_greg_backup_process.py::test_twenty_seeds_of_a_running_body_all_restore_held",
+      "tests/integration/test_greg_backup_process.py::test_a_running_body_takes_a_verified_backup_on_its_signed_cadence"
      ],
      "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "SANDBOX_VERIFIED",
      "tier": "SANDBOX_VERIFIED",
-     "coverage": "partial",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Seeds restore into a fresh home; no consistent backup from a running body on a cadence with a drill",
-      "unit": "WU-14"
-     }
+     "coverage": "covered"
     },
     {
      "id": "S47.A3",
@@ -5274,15 +5279,14 @@
       "greg/path.py",
       "greg/path.json"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_path_build_frontier.py::test_a_fresh_body_has_both_frontiers_at_n1_and_the_cli_prints_them",
+      "tests/unit/test_path_build_frontier.py::test_test_key_closures_move_only_the_build_frontier",
+      "tests/unit/test_path_build_frontier.py::test_a_founder_tier_closure_moves_the_acceptance_frontier_and_never_past_the_build"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No build frontier",
-      "unit": "WU-01"
-     }
+     "tier": "UNIT_VERIFIED",
+     "coverage": "covered"
     },
     {
      "id": "S68.A5",
@@ -5393,16 +5397,14 @@
       "greg/path.json"
      ],
      "evidence": [
-      "tests/unit/test_developmental_inheritance.py::test_exactly_one_primary_node_and_it_moves_only_on_ledger_evidence"
+      "tests/unit/test_developmental_inheritance.py::test_exactly_one_primary_node_and_it_moves_only_on_ledger_evidence",
+      "tests/unit/test_path_build_frontier.py::test_test_key_closures_move_only_the_build_frontier",
+      "tests/unit/test_path_build_frontier.py::test_a_node_without_a_predicate_stops_the_build",
+      "tests/unit/test_path_build_frontier.py::test_without_a_body_ledger_nothing_is_built_and_the_frontiers_say_why"
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
-     "coverage": "partial",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "greg path names the acceptance node; with no build frontier the bottleneck to build is not computed (the 2026-10-30 correction)",
-      "unit": "WU-01"
-     }
+     "coverage": "covered"
     },
     {
      "id": "S69.A6",

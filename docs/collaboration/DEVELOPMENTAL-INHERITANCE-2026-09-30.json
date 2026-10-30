@@ -2323,7 +2323,8 @@
       "evidence_refs": [
         "docs/intent/INTENT-20261030-BUILD-BEFORE-DEVICE-RUN.json",
         "docs/intent/sources/FOUNDER-CORRECTION-2026-10-30-source.md",
-        "tests/unit/test_path_build_frontier.py"
+        "tests/unit/test_path_build_frontier.py",
+        "tests/integration/test_greg_chromebook_rehearsal.py"
       ],
       "authority_change": "none; the build frontier grants nothing and moves neither achieved, the acceptance frontier nor VEPMC",
       "inheritance_test": {
@@ -2335,7 +2336,7 @@
         "q6_later_node_parts": "The device run itself, now the last step: N1 moved at the founder tier, then N2 onward re-run at the founder tier on the device",
         "q7_extract_into_current_path": "build_status and greg path --build (the build frontier beside the acceptance frontier), and one weakening mutant per node predicate (scripts/ci/check_path_predicate_mutants.py)",
         "q8_incompatible_with_corrected_destination": "Any reading that lets a container, a rehearsal or a test key move N1, achieved or VEPMC, or that labels built work founder-used, live or externally verified",
-        "q9_cheapest_distinguishing_test": "On a test-key ledger that meets N1 and N2 structurally, greg path --build reports the build frontier at N3 while achieved stays ['N0'], the acceptance frontier stays N1 and founder_tier_count stays 0 (tests/unit/test_path_build_frontier.py)"
+        "q9_cheapest_distinguishing_test": "On a test-key ledger that meets N1 and N2 structurally, greg path --build reports the build frontier at N3 while achieved stays ['N0'] and the acceptance frontier stays N1 (tests/unit/test_path_build_frontier.py, with VEPMC's rows stubbed). On one body driven only through the installed greg command with a --no-passphrase key, the same holds and VEPMC founder_tier_count stays 0 (tests/integration/test_greg_chromebook_rehearsal.py)"
       }
     }
   ],

@@ -71,9 +71,11 @@ Rehearsal readout (throwaway body, REHEARSAL key, no network, models or money): 
 EXERCISED and VERIFIED (`artifact.store`, `cognition.dp_knapsack`, `foundry.apply`, `foundry.query`,
 `institution.appraise`, `institution.compose`, `institution.dossier`, `institution.survey`). Their first missing rung
 is GRANTED, because every rehearsal mission closed: the next use needs a new signed mission. 4 are not installed on
-this host: three `mac.*` require darwin, and `browser.render`'s manifest declares linux and darwin but names one
-binary, the macOS path `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`, so it cannot be INSTALLED on
-any Linux body whatever browser is present. 2 lack their `github_token`; 157 have no live grant.
+this host: three `mac.*` require darwin, and `browser.render` finds no browser. Its manifest resolves the binary with
+`capabilities.chrome_binary()`, which looks for `GREG_CHROMIUM`, a `chrome` or `chromium` on the path, and
+`/opt/pw-browsers/chromium-*/chrome-linux/chrome`. The Playwright build here is in `chrome-linux64/`, so it falls back
+to the macOS path. With `GREG_CHROMIUM` set to that build, `browser.render` reads INSTALLED (checked in final
+verification). 2 lack their `github_token`; 157 have no live grant.
 
 ## Limitations and negatives
 

@@ -1,8 +1,48 @@
 {
  "version": 1,
- "purpose": "Every effectful call site in greg/ and foundry/systems/ (a child process or a network connection), keyed by module, enclosing qualname and callee with an occurrence count, and what governs it. Read by tests/unit/test_effect_call_allowlist.py; a site missing here, an entry with no site, or a wrong count fails it. Listing a site authorizes nothing: this is a review-time inventory, not a grant.",
- "rule": "allowed: the site is reached only through a registered capability's adapter (its manifest, signed mission scope and Gate), the confinement those adapters run behind (run_isolated, the worker envelope, the #26 relay and door), the supervised worker path, a founder-signed selection or command, or a command a person runs by hand (greg CLI, installer, python -m harness, CI audit). known_unmediated: the body reaches the site on its own schedule with none of those behind it; each is a finding, kept so it cannot grow silently, not an approval.",
+ "purpose": "Every effectful call site in greg/ and foundry/systems/ (a child process, an outbound connection or an inbound listener, and every caller of a declared wrapper), keyed by module, enclosing qualname and callee with an occurrence count, and what governs it. Read by tests/unit/test_effect_call_allowlist.py; a site missing here, an entry with no site, or a wrong count fails it. Listing a site authorizes nothing: this is a review-time inventory, not a grant.",
+ "rule": "allowed: the site is reached only through a registered capability's adapter (its manifest, signed mission scope and Gate), the confinement those adapters run behind (run_isolated, the worker envelope, the #26 relay and door), the supervised worker path, a founder-signed selection or command, or a command a person runs by hand (greg CLI, installer, python -m harness, CI audit). known_unmediated: the body reaches the site on its own schedule (body-loop:) with none of those behind it; each is a finding, kept so it cannot grow silently, not an approval. wrappers: in-tree functions that pass an effect on with no check of their own; every call or reference to one is a site, keyed by the wrapper's dotted name, unless it keeps the wrapper's exempt_when keywords at their literal.",
  "seeded_from": "b1950be215b564dec9665793b891009310d47249",
+ "wrappers": [
+  {
+   "module": "greg/egress.py",
+   "qualname": "send",
+   "exempt_when": {},
+   "why": "sends one request through opener() without the https and allowlist check open_checked applies first"
+  },
+  {
+   "module": "greg/egress.py",
+   "qualname": "opener",
+   "exempt_when": {},
+   "why": "returns the raw outbound opener; its open() checks no scheme, host or allowlist"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "run_isolated",
+   "exempt_when": {
+    "isolate_network": true
+   },
+   "why": "with isolate_network other than True and no confine or confine_to it spawns with no network filter (macOS: no sandbox-exec; Linux: preexec=None)"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "_spawn",
+   "exempt_when": {},
+   "why": "launches whatever preexec it is handed, including None; only run_isolated decides the confinement"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "_launch",
+   "exempt_when": {},
+   "why": "runs argv with the preexec it is handed, including None; it applies no confinement of its own"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "supervised_run",
+   "exempt_when": {},
+   "why": "starts argv under the preexec_fn and env it is handed and only adds STOP polling and bounded output; the envelope comes from the caller"
+  }
+ ],
  "allowed": [
   {
    "module": "foundry/systems/build.py",
@@ -78,6 +118,26 @@
    "justification": "exercise() only (APPLY_OPS is empty: admitting foreign agents is an operator act): the test agents' client to the embassy serve() binds on 127.0.0.1:0"
   },
   {
+   "module": "foundry/systems/embassy_wire.py",
+   "qualname": "serve",
+   "callee": "http.server.ThreadingHTTPServer",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "listener bound to 127.0.0.1:0 only; started only by exercise() (APPLY_OPS is empty: admitting foreign agents is an operator act)"
+  },
+  {
+   "module": "foundry/systems/federation.py",
+   "qualname": "Instance.serve",
+   "callee": "http.server.ThreadingHTTPServer",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "listener bound to 127.0.0.1:0 only; Instances are served only by the exercises of federation, commons and company_loop (their APPLY_OPS are empty: fediverse publishing is an external act)"
+  },
+  {
    "module": "foundry/systems/federation.py",
    "qualname": "_http",
    "callee": "urllib.request.urlopen",
@@ -86,6 +146,16 @@
     "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
    ],
    "justification": "Instance delivery and fetch, reached only from the exercises of federation, commons and company_loop (their APPLY_OPS are empty: fediverse publishing is an external act), against Instances served on 127.0.0.1:0"
+  },
+  {
+   "module": "foundry/systems/mcp_gateway.py",
+   "qualname": "_remote",
+   "callee": "httpx2.AsyncClient",
+   "count": 1,
+   "serves": [
+    "capability:mcp.act"
+   ],
+   "justification": "a url provider is built only by greg.mcp_remote.main, the confined client mcp_tools._remote_act starts in the namespace whose only way out is a door to a relay allowing the approved server host on 443"
   },
   {
    "module": "foundry/systems/media_engine.py",
@@ -118,6 +188,16 @@
    "justification": "`ffmpeg -version`, called only from Engine.__init__; same reach as Engine.inspect"
   },
   {
+   "module": "foundry/systems/payments.py",
+   "qualname": "start_emulator",
+   "callee": "http.server.ThreadingHTTPServer",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "the local Stripe emulator bound to 127.0.0.1:0; started only by the exercises of marketplace, company_loop and agent_commerce (APPLY_OPS of payments is empty: charging is a gate-executed act)"
+  },
+  {
    "module": "foundry/systems/promotion.py",
    "qualname": "_stage_verification",
    "callee": "subprocess.run",
@@ -144,6 +224,16 @@
     "model-route:anthropic, openai, claude-code"
    ],
    "justification": "the #26 door: an AF_UNIX listener in a directory private to the body's user (refused otherwise) through which a namespaced program reaches only its scoped Relay"
+  },
+  {
+   "module": "foundry/systems/repair.py",
+   "qualname": "_Runner.run",
+   "callee": "greg.workers.supervised_run",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "runs one candidate's tests only inside prepare_worker's bubblewrap envelope with network=False, and refuses unless the evidence says network_isolated bubblewrap; APPLY_OPS['repair_source'] is refused by greg.foundry_bridge for system 52, so exercise() is its only caller"
   },
   {
    "module": "foundry/systems/repair.py",
@@ -201,6 +291,16 @@
   },
   {
    "module": "foundry/systems/segmentation.py",
+   "qualname": "exercise",
+   "callee": "http.server.ThreadingHTTPServer",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only: a test origin bound to 127.0.0.1:0 for the relay to reach (APPLY_OPS is empty)"
+  },
+  {
+   "module": "foundry/systems/segmentation.py",
    "qualname": "exercise.connect",
    "callee": "socket.create_connection",
    "count": 1,
@@ -243,6 +343,27 @@
    "justification": "exercise() only: requests to the 127.0.0.1 site through that loopback opener"
   },
   {
+   "module": "foundry/systems/webserver.py",
+   "qualname": "serve",
+   "callee": "http.server.ThreadingHTTPServer",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "refuses any non-loopback host without a recorded Consequence Gate grant; called only by exercise() on 127.0.0.1:0 and by its refusal check on 0.0.0.0, which raises before binding"
+  },
+  {
+   "module": "greg/anchor.py",
+   "qualname": "_post",
+   "callee": "greg.egress.send",
+   "count": 1,
+   "serves": [
+    "egress:greg.egress (GREG's one outbound opener)",
+    "founder-command:ANCHOR_CONFIGURE (signed TSA url for proof anchoring)"
+   ],
+   "justification": "POSTs a timestamp query only to the tsa_url of the founder-signed ANCHOR_CONFIGURE; send surfaces a redirect as an error, so the request is never re-sent elsewhere"
+  },
+  {
    "module": "greg/builders.py",
    "qualname": "ClaudeCodeBuilder.__init__",
    "callee": "subprocess.run",
@@ -267,12 +388,22 @@
   {
    "module": "greg/capabilities.py",
    "qualname": "_launch",
+   "callee": "greg.workers.supervised_run",
+   "count": 1,
+   "serves": [
+    "confinement:greg.capabilities.run_isolated"
+   ],
+   "justification": "run_isolated's supervised spawn when a stop_check is given: argv and the isolating preexec come from run_isolated, and _die_with_body is added before it"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "_launch",
    "callee": "subprocess.run",
    "count": 1,
    "serves": [
     "confinement:greg.capabilities.run_isolated"
    ],
-   "justification": "run_isolated's unsupervised spawn: argv is already under sandbox-exec (macOS) or gets the seccomp no-network or Landlock preexec (Linux), scrubbed env; every in-tree caller keeps isolate_network=True; with stop_check it goes to workers.supervised_run instead"
+   "justification": "run_isolated's unsupervised spawn, reached only through _spawn: under sandbox-exec (macOS) or with the seccomp no-network or Landlock preexec (Linux) when isolate_network, confine or confine_to apply; with isolate_network False and neither, preexec is None and the child has full network (those callers are listed as run_isolated sites)"
   },
   {
    "module": "greg/capabilities.py",
@@ -283,6 +414,16 @@
     "capability:browser.render"
    ],
    "justification": "confined browser.render: the browser runs in a bubblewrap network namespace whose only way out is a door to a relay allowlisted for the target alone; without namespaces nothing runs"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "_spawn",
+   "callee": "greg.capabilities._launch",
+   "count": 1,
+   "serves": [
+    "confinement:greg.capabilities.run_isolated"
+   ],
+   "justification": "passes run_isolated's preexec (the seccomp or Landlock filter, or None) through unchanged and maps a refusal byte to CapabilityError"
   },
   {
    "module": "greg/capabilities.py",
@@ -334,6 +475,38 @@
     "operator:greg acceptance"
    ],
    "justification": "hardened read-only git (fsmonitor off, hooks /dev/null, every filter driver blanked, no global or system config) for git.inspect and the acceptance report's code identity"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "run_cli",
+   "callee": "greg.capabilities.run_isolated",
+   "count": 1,
+   "serves": [
+    "confinement:greg.capabilities.run_cli"
+   ],
+   "justification": "passes its own isolate_network (default True) through; refuses an argv[0] not in the invoking capability's manifest.binaries; no in-tree capability calls run_cli (tests only)"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "run_isolated",
+   "callee": "greg.capabilities._spawn",
+   "count": 2,
+   "serves": [
+    "confinement:greg.capabilities.run_isolated"
+   ],
+   "justification": "the two spawns: with the isolating preexec when isolate_network, confine or confine_to apply, otherwise with preexec=None; the callers that pass isolate_network other than True are listed as run_isolated sites"
+  },
+  {
+   "module": "greg/cognition/bridge.py",
+   "qualname": "run_worker",
+   "callee": "greg.capabilities.run_isolated",
+   "count": 1,
+   "serves": [
+    "capability:cognition.cortex",
+    "capability:cognition.cortex.semantic",
+    "model-route:ollama"
+   ],
+   "justification": "isolate_network=semantic_model is None: when the founder-selected route config names an Ollama model and the problem has sources or a schedule request, the cortex worker runs with no network filter at all, not loopback only; otherwise the no-network filter applies"
   },
   {
    "module": "greg/cognition/code_binding.py",
@@ -457,16 +630,6 @@
    "justification": "the seed path's bounded `greg.cognitive_worker` child: scrubbed env, seccomp no-network preexec (Linux) or sandbox-exec deny-network (macOS) except for a semantic claim, STOP polled, killed at the deadline"
   },
   {
-   "module": "greg/compute.py",
-   "qualname": "memory_bytes",
-   "callee": "subprocess.run",
-   "count": 1,
-   "serves": [
-    "operator:greg.body.status (greg console, phone /api/status, mission control, greg acceptance)"
-   ],
-   "justification": "macOS only: `/usr/sbin/sysctl -n hw.memsize`, a fixed read-only host query; Linux uses os.sysconf and spawns nothing"
-  },
-  {
    "module": "greg/computer.py",
    "qualname": "_trust_profile",
    "callee": "subprocess.run",
@@ -475,6 +638,16 @@
     "capability:browser.session"
    ],
    "justification": "certutil creates the disposable session profile's NSS store and imports the operator-configured CA bundle; TLS verification stays on"
+  },
+  {
+   "module": "greg/console.py",
+   "qualname": "serve",
+   "callee": "http.server.ThreadingHTTPServer",
+   "count": 1,
+   "serves": [
+    "operator:greg console"
+   ],
+   "justification": "the console listener on 127.0.0.1:<port>, started only by `greg console`; it signs only for the owner holding the one-time link"
   },
   {
    "module": "greg/daleobanks_bridge.py",
@@ -522,6 +695,19 @@
   },
   {
    "module": "greg/egress.py",
+   "qualname": "open_checked",
+   "callee": "greg.egress.send",
+   "count": 1,
+   "serves": [
+    "egress:greg.egress (GREG's one outbound opener)",
+    "capability:http.get",
+    "capability:github.pulls",
+    "capability:foundry.apply"
+   ],
+   "justification": "check() refuses anything but https to an allowlisted host before the first send and again on every redirect hop, at most MAX_HOPS, dropping credentials across origins"
+  },
+  {
+   "module": "greg/egress.py",
    "qualname": "opener",
    "callee": "urllib.request.build_opener",
    "count": 1,
@@ -537,6 +723,16 @@
   {
    "module": "greg/egress.py",
    "qualname": "send",
+   "callee": "greg.egress.opener",
+   "count": 1,
+   "serves": [
+    "egress:greg.egress (GREG's one outbound opener)"
+   ],
+   "justification": "send's one opener; send itself is a declared wrapper, so each of its callers is listed"
+  },
+  {
+   "module": "greg/egress.py",
+   "qualname": "send",
    "callee": "urllib.request.build_opener().open",
    "count": 1,
    "serves": [
@@ -546,7 +742,7 @@
     "capability:foundry.apply",
     "founder-command:ANCHOR_CONFIGURE (signed TSA url for proof anchoring)"
    ],
-   "justification": "one request through opener(): open_checked (http.get, github.pulls, the containers registry pull) checks https and the allowlist first; anchor._post sends only to the founder-signed ANCHOR_CONFIGURE tsa_url"
+   "justification": "one request through opener(), with no check of its own; send is a declared wrapper, so each caller (open_checked, anchor._post) is listed with the check it applies"
   },
   {
    "module": "greg/foundry_bridge.py",
@@ -558,6 +754,46 @@
     "capability:foundry.apply"
    ],
    "justification": "the disposable greg.foundry_worker child that runs every foundry.query/apply op, started with _no_network_preexec"
+  },
+  {
+   "module": "greg/mcp_login.py",
+   "qualname": "_callback_server",
+   "callee": "asyncio.start_server",
+   "count": 1,
+   "serves": [
+    "operator:greg mcp login"
+   ],
+   "justification": "the OAuth redirect listener on 127.0.0.1:0 for one authorization during `greg mcp login`, closed when the login ends"
+  },
+  {
+   "module": "greg/mcp_login.py",
+   "qualname": "login",
+   "callee": "httpx2.AsyncClient",
+   "count": 1,
+   "serves": [
+    "operator:greg mcp login"
+   ],
+   "justification": "runs in the founder's own `greg mcp login` process, not behind the relay: remote_url allows only https on 443 with no credentials in the URL, and the client talks to that server and its OAuth endpoints"
+  },
+  {
+   "module": "greg/mcp_login.py",
+   "qualname": "register_token",
+   "callee": "httpx2.AsyncClient",
+   "count": 1,
+   "serves": [
+    "operator:greg mcp token"
+   ],
+   "justification": "runs in the founder's own `greg mcp token` process, not behind the relay: one list_tools call to the remote_url-checked https server with the founder's bearer token"
+  },
+  {
+   "module": "greg/mcp_remote.py",
+   "qualname": "renew",
+   "callee": "httpx2.Client",
+   "count": 1,
+   "serves": [
+    "capability:mcp.act"
+   ],
+   "justification": "one refresh POST inside the confined client, through the door to a relay allowing only the approved server host and the token host recorded at login, on 443"
   },
   {
    "module": "greg/mcp_tools.py",
@@ -631,6 +867,16 @@
    "justification": "`git archive` of the pinned HEAD (hooks off), `tar -x` into the snapshot dir, and `git status` to record uncommitted changes the snapshot leaves out"
   },
   {
+   "module": "greg/remote.py",
+   "qualname": "make_server",
+   "callee": "http.server.ThreadingHTTPServer",
+   "count": 1,
+   "serves": [
+    "operator:greg serve"
+   ],
+   "justification": "refuses any non-loopback host (ValueError) and is started only by `greg serve`; the phone reaches it through the founder's own TLS proxy"
+  },
+  {
    "module": "greg/ventures.py",
    "qualname": "_git_head",
    "callee": "subprocess.run",
@@ -661,6 +907,39 @@
     "operator:greg doctor --chromebook"
    ],
    "justification": "probe: /usr/bin/true inside the bubblewrap envelope, to learn whether workers and namespaced capabilities can be confined; nothing else runs"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "ClaudeCodeWorker.__init__",
+   "callee": "greg.workers.supervised_run",
+   "count": 1,
+   "serves": [
+    "capability:worker.commission",
+    "supervised-worker:greg.workers.supervised_run"
+   ],
+   "justification": "the injected runner default; _run calls it only with prepare_worker's envelope (bubblewrap, a relay door when egress is confined) or, under the founder's supervised choice, the Landlock floor"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "CliAgentWorker.__init__",
+   "callee": "greg.workers.supervised_run",
+   "count": 1,
+   "serves": [
+    "capability:worker.commission",
+    "supervised-worker:greg.workers.supervised_run"
+   ],
+   "justification": "the injected runner default; _run calls it only with prepare_worker's envelope or, under the founder's supervised choice, the Landlock floor"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "ScriptWorker.__init__",
+   "callee": "greg.workers.supervised_run",
+   "count": 1,
+   "serves": [
+    "capability:worker.commission",
+    "supervised-worker:greg.workers.supervised_run"
+   ],
+   "justification": "the injected runner default; run calls it only with prepare_worker's envelope with network=False and an isolated interpreter reading the script from stdin"
   },
   {
    "module": "greg/workers.py",
@@ -696,6 +975,18 @@
   },
   {
    "module": "greg/workers.py",
+   "qualname": "run_tests",
+   "callee": "greg.workers.supervised_run",
+   "count": 1,
+   "serves": [
+    "capability:worker.commission",
+    "capability:worker.appraise",
+    "supervised-worker:greg.workers.supervised_run"
+   ],
+   "justification": "a work order's acceptance tests in prepare_worker's no-network envelope; where the envelope cannot confine and the founder chose supervised it uses run_isolated(isolate_network=True) instead"
+  },
+  {
+   "module": "greg/workers.py",
    "qualname": "supervised_run",
    "callee": "subprocess.Popen",
    "count": 1,
@@ -713,10 +1004,21 @@
    "callee": "subprocess.run",
    "count": 1,
    "serves": [
-    "mission-appraisal:greg.appraisal",
+    "body-loop:Body._appraise_closure (each mission closure)",
     "operator:greg rehearse"
    ],
    "reason": "runs `python -m greg.appraisal` on the body's own schedule when a mission closes (Body._appraise_closure); no capability manifest, Gate or worker envelope stands behind the spawn, and the child, though it runs reviewed GREG code with a scrubbed env and a timeout, is not network- or filesystem-confined (it re-runs only the read-only REOBSERVABLE sensors)"
+  },
+  {
+   "module": "greg/compute.py",
+   "qualname": "memory_bytes",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "body-loop:Body.run -> compute.record_telemetry -> sample (every telemetry_every active ticks)",
+    "operator:greg.body.status (greg console, phone /api/status, mission control, greg acceptance)"
+   ],
+   "reason": "macOS only: Body.run's own loop spawns `/usr/sbin/sysctl -n hw.memsize` through record_telemetry with no capability manifest, Gate or worker envelope behind it; the argv is fixed and read-only with a 5 s timeout, and Linux uses os.sysconf and spawns nothing"
   }
  ]
 }

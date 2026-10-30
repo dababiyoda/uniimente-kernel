@@ -442,6 +442,12 @@ MUTANTS = [
      '            unread = set(m.blocker["failing_checks"]) & set(self.sensor_errors)',
      '            unread = set(m.blocker["failing_checks"]) & set(self.sensor_errors) or set(failing)',
      S + 'test_a_sensor_that_reads_again_on_a_failing_world_turns_the_question_into_the_right_one'),
+    # review of #229 (comment 6521322932): the hourly cadence test ticks at the cadence, so removing the watch's own
+    # schedule survived it; the broken path was then read on every tick
+    ('a broken sensor is read on every tick, not at the mission\'s cadence', "greg/missions.py",
+     '            if unread:\n                self._schedule(m, now, m.spec["closure"].get("cadence_seconds", 3600))\n',
+     '            if unread:\n',
+     S + 'test_a_sensor_that_stays_broken_is_not_read_faster_than_the_missions_cadence'),
     # review of #228 (session_01Kucyfm2rRpECfxggpZqMes): its finding 5 and the safeguards it found unguarded, and the
     # fixes for findings 1, 3 and 4 and its suspicions
     ('a kept prefix is searched with the phrase in the form it was signed', "greg/missions.py",

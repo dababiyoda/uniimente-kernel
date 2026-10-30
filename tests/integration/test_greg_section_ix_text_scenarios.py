@@ -92,6 +92,18 @@ def test_a_sensor_that_stays_broken_asks_once_and_is_read_only_at_the_missions_c
     assert 20 <= len(later) <= 25 and all("not a regular file" in e["detail"] for e in later)   # hourly, no more
 
 
+def test_a_sensor_that_stays_broken_is_not_read_faster_than_the_missions_cadence(tmp_path):
+    """The hourly test above ticks at the cadence, so it cannot tell a re-read at the cadence from a re-read on every
+    tick: it passed with the sensing watch's own schedule removed. Ticked every ten minutes, the watch still reads
+    the broken path about hourly, not six times an hour."""
+    home, key, body_id, target, clock, observed = _broken_sensor_mission(tmp_path)
+    missions, requests = run(home, clock, ticks=36, step=600.0)                   # six hours
+    assert missions["m:audit"].status != "ACHIEVED"
+    assert _asks(requests, "m:audit") == ["SENSOR_FAILURE"]
+    later = _observed(home, "m:audit")[len(observed):]
+    assert 5 <= len(later) <= 7 and all("not a regular file" in e["detail"] for e in later)    # hourly, not 36
+
+
 def test_a_sensor_that_reads_again_on_a_failing_world_turns_the_question_into_the_right_one(tmp_path):
     home, key, body_id, target, clock, observed = _broken_sensor_mission(tmp_path)
     target.rmdir()

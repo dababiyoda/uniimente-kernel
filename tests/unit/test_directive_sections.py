@@ -502,6 +502,14 @@ def test_a_mission_l_requirement_is_capped_by_its_trace(world):
     outcomes.update({n: {"outcome": "failed", "reason": "x"} for n in body if n not in tests})
     got = d.ask_status(l3, d.evidence_report(manifest, contract, outcomes), outcomes)
     assert got["tier"] == "IMPLEMENTED" and got["coverage"] == "partial" and got["met"] is False
+    # L2 covers its whole obligation, so only the trace can cap its coverage: a link that fell short does.
+    l2 = {**l3, "evidence": ["mission:L.L2"]}
+    assert d.ask_status(l2, rep, None)["coverage"] == "covered"
+    tests = set(next(r for r in mission_l["requirements"] if r["id"] == "L2")["tests"])
+    outcomes = {n: {"outcome": "passed", "reason": ""} for n in d._manifest_nodes(manifest)}
+    outcomes.update({n: {"outcome": "failed", "reason": "x"} for n in body if n not in tests})
+    got = d.ask_status(l2, d.evidence_report(manifest, contract, outcomes), outcomes)
+    assert got["coverage"] == "partial" and got["met"] is False
 
 
 def test_an_ask_never_covers_more_than_the_contract_function_it_cites(world):

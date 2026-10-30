@@ -1,0 +1,62 @@
+name: Computer use
+
+# browser.session drives a real Chromium through Playwright. Canonical CI does not install Playwright, so there
+# tests/unit/test_greg_computer.py skips as a whole module. This workflow installs the pinned driver
+# (requirements-computer.txt) and the Chromium build that driver pins, then runs the computer-use suites with
+# GREG_REQUIRE_BROWSER=1: a missing Playwright or Chromium fails the run instead of skipping it (conftest.py).
+# The browser goes to /opt/pw-browsers, where greg/computer.py chromium() looks on a body. The confined-egress
+# browser test additionally needs bubblewrap network namespaces; on a runner without them it skips and says why.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: computer-use-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  browser:
+    name: "Browser session against real Chromium"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: /opt/pw-browsers
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dev dependencies and the pinned Playwright driver
+        run: pip install -r requirements-dev.txt -r requirements-computer.txt
+      - name: Install the Chromium build the driver pins, where a GREG body looks for it
+        run: |
+          sudo mkdir -p /opt/pw-browsers && sudo chown "$USER" /opt/pw-browsers
+          python -m playwright install --with-deps chromium
+          ls /opt/pw-browsers
+      - name: Provision bubblewrap for the confined browser test and report whether this runner can use it
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q bubblewrap
+          if bwrap --unshare-user --unshare-pid --unshare-net --die-with-parent --ro-bind / / -- /usr/bin/true; then
+            echo "bubblewrap namespaces: usable"
+          else
+            echo "bubblewrap namespaces: NOT usable on this runner; the confined browser test skips and says why"
+          fi
+      - name: Computer-use suites (browser required, skip reasons shown)
+        env:
+          GREG_REQUIRE_BROWSER: "1"
+        run: >
+          python -m pytest -q -rs
+          tests/unit/test_greg_computer.py
+          tests/unit/test_greg_browser_required.py
+          tests/unit/test_greg_pipeline_protected.py
+          "tests/integration/test_greg_confined_egress.py::test_a_browser_session_drives_pages_behind_the_relay_and_nothing_else_leaves"
+      - name: Method gate and step-program mutants (each must be caught)
+        env:
+          GREG_REQUIRE_BROWSER: "1"
+        run: python -B scripts/ci/check_browser_method_gate_mutants.py

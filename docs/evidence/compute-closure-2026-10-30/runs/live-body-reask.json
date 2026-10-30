@@ -1,0 +1,92 @@
+{
+ "host_load1_start": 4.8984375,
+ "after_first_window": {
+  "samples": 5,
+  "asks": [
+   [
+    "req-compute-8d19e9b61114ae70",
+    "cpu",
+    0
+   ]
+  ]
+ },
+ "first_window_samples": [
+  {
+   "at": "2026-10-30T12:14:56.425595Z",
+   "load_ratio": 1.225,
+   "psi_cpu_some_avg60": 18.85,
+   "psi_memory_some_avg60": 0.0,
+   "psi_io_some_avg60": 3.28,
+   "mem_available_ratio": 0.9063,
+   "disk_free_ratio": 0.0836
+  },
+  {
+   "at": "2026-10-30T12:14:56.532882Z",
+   "load_ratio": 1.225,
+   "psi_cpu_some_avg60": 18.85,
+   "psi_memory_some_avg60": 0.0,
+   "psi_io_some_avg60": 3.28,
+   "mem_available_ratio": 0.905,
+   "disk_free_ratio": 0.0836
+  },
+  {
+   "at": "2026-10-30T12:14:56.646886Z",
+   "load_ratio": 1.225,
+   "psi_cpu_some_avg60": 18.85,
+   "psi_memory_some_avg60": 0.0,
+   "psi_io_some_avg60": 3.28,
+   "mem_available_ratio": 0.9042,
+   "disk_free_ratio": 0.0836
+  },
+  {
+   "at": "2026-10-30T12:14:56.759129Z",
+   "load_ratio": 1.225,
+   "psi_cpu_some_avg60": 18.85,
+   "psi_memory_some_avg60": 0.0,
+   "psi_io_some_avg60": 3.28,
+   "mem_available_ratio": 0.9035,
+   "disk_free_ratio": 0.0836
+  },
+  {
+   "at": "2026-10-30T12:14:56.877137Z",
+   "load_ratio": 1.225,
+   "psi_cpu_some_avg60": 18.85,
+   "psi_memory_some_avg60": 0.0,
+   "psi_io_some_avg60": 3.28,
+   "mem_available_ratio": 0.9025,
+   "disk_free_ratio": 0.0836
+  }
+ ],
+ "while_pending": 1,
+ "four_samples_after_answer": 1,
+ "after_fifth_sample": [
+  [
+   "req-compute-8d19e9b61114ae70",
+   "cpu",
+   0,
+   []
+  ],
+  [
+   "req-compute-6fd9caca746117be",
+   "cpu",
+   1,
+   [
+    "req-compute-8d19e9b61114ae70"
+   ]
+  ]
+ ],
+ "ask_state": {
+  "resource": "cpu",
+  "epoch": 1,
+  "pending": [
+   "req-compute-6fd9caca746117be"
+  ],
+  "closed": [
+   "req-compute-8d19e9b61114ae70"
+  ],
+  "closed_at": 17
+ },
+ "first_option": "software/workload optimization (no spend); the journal records no mission step timing yet, so no workload is named",
+ "screen": [],
+ "host_load1_end": 4.8984375
+}

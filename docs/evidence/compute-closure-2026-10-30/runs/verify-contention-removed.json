@@ -1,0 +1,15 @@
+{
+ "kind": "compute.improvement",
+ "alpha": 0.05,
+ "n_before": 7,
+ "n_after": 7,
+ "same_host": true,
+ "verdict": "VERIFIED",
+ "reason": "faster beyond the before run's noise, and unlikely by chance",
+ "p_value": 0.000291,
+ "method": "exact (3432 arrangements)",
+ "median_before": 0.626331,
+ "median_after": 0.310148,
+ "relative_effect": 0.504818,
+ "noise_floor": 0.283343
+}

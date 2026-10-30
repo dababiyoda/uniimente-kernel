@@ -1,0 +1,15 @@
+{
+ "kind": "compute.improvement",
+ "alpha": 0.05,
+ "n_before": 7,
+ "n_after": 7,
+ "same_host": true,
+ "verdict": "NOT_IMPROVED",
+ "reason": "not faster beyond chance",
+ "p_value": 0.267483,
+ "method": "exact (3432 arrangements)",
+ "median_before": 0.347004,
+ "median_after": 0.350399,
+ "relative_effect": -0.009784,
+ "noise_floor": 0.256115
+}

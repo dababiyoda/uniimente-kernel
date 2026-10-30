@@ -7,7 +7,8 @@ executed. Nothing was tested on a founder device or behind the confined relay.
 Two rounds:
 
 1. The first implementation, `50f8231c`..`7b7ea61e`.
-2. A review round on top of it. Two independent reviews of `7b7ea61e` reported 16 findings (F1-F10, WU10-R1..R6).
+2. A review round on top of it. Two adversarial reviews of `7b7ea61e`, by separate agents of this session, reported
+   16 findings (F1-F10, WU10-R1..R6).
    The review round is described in "Review round" below. Where it corrects a first-round claim, the
    correction is stated there.
 

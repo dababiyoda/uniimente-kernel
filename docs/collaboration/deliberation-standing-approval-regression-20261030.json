@@ -119,7 +119,7 @@
       "material_concerns": [
         "Round 2's WU09-ATK-1 (medium) showed the round-1 code missed founder-reconciled runs: an unasked rerun at ledger position 46, regression only at 53",
         "Three narrowing-only guards of the round-2 code are not pinned by any test (their mutants survive), and six earlier reviewer mutants survive as disclosed",
-        "Info findings TF-2, TF-3 and TF-4 are not fixed in the repository: the test docstring says every test runs a real body (two do not), mutant 6's label overstates what it shows, and the evidence README's Limits omit that any REFUTED verdict regresses, including refutations the action did not cause",
+        "Info findings TF-2, TF-3 and TF-4 were corrected after the final verification, in de114fe5 (records only): the test docstring now names the two tests that start no body, mutant 6's label says it pins the returned list, and the README Limits state that any REFUTED verdict regresses, including refutations the action did not cause",
         "The mutant script is not wired into Canonical CI"
       ],
       "evidence_refs": [
@@ -235,10 +235,10 @@
       "finding": "_blank had no compensation field; mutants X1 and X2 survived 16 tests. Fixed: compensations counted, not judged; tests added, X1 and X2 caught"
     },
     {
-      "claim": "Round 2 info findings TF-2, TF-3 and TF-4 are not fixed in the repository",
+      "claim": "Round 2 info findings TF-2, TF-3 and TF-4 were left unfixed by the fix round",
       "tier": "readme_claim",
       "reference": "tests/unit/test_greg_standing_approval_regression.py docstring; scripts/ci/check_standing_approval_regression_mutants.py mutant 6; README Limits",
-      "finding": "The docstring says every test runs a real body (the Wilson/band and cost tests do not); mutant 6 is caught only through regress()'s return value because ledger keys already de-duplicate; the README Limits omit that any REFUTED verdict regresses, including non-action causes. Stated in this record and the PR"
+      "finding": "The docstring says every test runs a real body (the Wilson/band and cost tests do not); mutant 6 is caught only through regress()'s return value because ledger keys already de-duplicate; the README Limits omit that any REFUTED verdict regresses, including non-action causes. Corrected afterwards in de114fe5 (docstring, mutant label, README Limits); no code changed"
     },
     {
       "claim": "Mutants survive outside the script",
@@ -403,7 +403,7 @@
         "id": "W4",
         "category": "comprehensibility",
         "statement": "TF-2, TF-3, TF-4 (info): the test docstring, mutant 6's label and the README Limits overstate or omit; the implementer's first report was stale against the head",
-        "strengthening_response": "Not changed in the repository by this unit; the omitted limit and the overstatements are stated in this record and the PR, and the final verification recomputed every README number it checked"
+        "strengthening_response": "Corrected in de114fe5: the docstring, mutant 6's label and the README Limits (including the event-name overlap with autonomy/levels.py) now state what the tests show; the final verification had recomputed every README number it checked"
       },
       {
         "id": "W5",

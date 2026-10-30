@@ -61,7 +61,7 @@ Rules (full text in `acceptance/README.md`):
 | open, EXTERNAL | 20 |
 | open, PRINCIPLE guarded by named tests | 13 |
 | open, PRINCIPLE UNGUARDED | 0 |
-| listed lines no ask answers yet (all sections but 13) | 655 |
+| listed lines no ask answers yet (in 55 sections) | 655 |
 
 Round 1 reported DONE 3 (13, 15, 69). Sections 15 and 69 were DONE on too few asks (findings MWB-2, F2): section 69
 had one ask for twelve bullets and four prohibitions. Both now carry asks for every listed line and compute PARTIAL.
@@ -205,7 +205,8 @@ All commands ran with `PYTHONDONTWRITEBYTECODE=1 python -B` and `-p no:cacheprov
   shows the blocker exists), and whether a line set aside is truly not an ask.
 - The in-tree pin can be edited together with the map; only `--against` a base (CI on pull requests) refuses that.
   A push to `main` or a local run without `--against` does not ratchet.
-- 655 listed lines in 76 sections have no ask yet: the map was audited line by line only for sections 13, 15 and 69.
+- 655 listed lines in 55 sections have no ask yet (10 sections have every listed line accounted for and 12 list
+  none): the map was audited line by line only for sections 13, 15 and 69.
   Until they are mapped, "completely built" stays NO for that reason too, and other sections may hide asks.
 - Statuses are static ceilings. A run can only lower them. The LOCAL runs cover the own-node asks and the principles'
   guards; the 9 met asks that cite mission requirements rest on the acceptance run's BODY tests, not re-run here. The

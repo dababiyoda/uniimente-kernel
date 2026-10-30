@@ -6,6 +6,7 @@
     greg founder public --key K               print the public half of your key (writes no body state)
     greg mission submit mission.json --key K  signed goal -> inbox; the body runs it
     greg status | greg decisions | greg morning
+    greg readiness [--capability ID]          each capability: KNOWN..VERIFIED, with evidence (read-only)
     greg intake --source feed://ops --channel ops < note.txt   untrusted data for the running body (never a command)
     greg decide REQUEST_ID approve|reject --key K
     greg critique EVENT_ID --verdict reject --evidence-type founder_judgment --text ... --key K
@@ -489,6 +490,9 @@ def main(argv=None) -> int:
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
+    rd = sub.add_parser("readiness", help="read-only: each capability's rungs KNOWN, INSTALLED, CREDENTIALLED, GRANTED, "
+                                          "EXERCISED, VERIFIED, with evidence and the first missing rung (no secret value)")
+    rd.add_argument("--capability", action="append", default=[], help="show only this capability (repeatable)")
     pp = sub.add_parser("path", help="where GREG stands on its developmental path: active node, gate, exit evidence, horizons")
     pp.add_argument("--node", help="read one node's own measurement (e.g. N6), even past where the path stops")
     tr = sub.add_parser("treasury", help="venture books: verified revenue through your waterfall (node N7); moves no money")
@@ -805,6 +809,9 @@ def main(argv=None) -> int:
             with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
                 data = metrics.vepmc(journal) if args.cmd == "vepmc" else routing.routing_knowledge(journal)
             print(json.dumps(data, indent=1))
+        elif args.cmd == "readiness":
+            from greg import readiness
+            print(json.dumps(readiness.report(home, capabilities=args.capability or None), indent=1))
         elif args.cmd == "path":
             from greg import path as devpath
 

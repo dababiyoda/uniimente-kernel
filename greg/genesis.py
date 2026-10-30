@@ -121,7 +121,7 @@ PARSERS = {
     "first_hex_token": lambda out: out.split()[0].lower() if out.split() else "",
     "last_hex_token": lambda out: out.strip().split()[-1].lower() if out.split() else "",
     "first_int": lambda out: int(out.split()[0]) if out.split() else -1,
-    "words": lambda out: " ".join(out.split()),
+    "words": documents.fold,               # whitespace collapsed, in the folded comparison form (DOC-5)
 }
 
 CATALOG = {
@@ -475,6 +475,8 @@ def package_adapter(function: str, candidate: PackageCandidate):
 # answer is refused without ever being buffered; RLIMIT_AS bounds its memory (a decompression bomb). The
 # limiter is the standard library's ``resource`` applied in a child of the isolated process, then ``execv``.
 BINARY_MEMORY = 2 * 1024 ** 3
+BINARY_SECONDS = 30                      # wall clock per run (run_isolated's default, now stated and typed)
+VERSION_LINE = 200                       # characters of a binary's --version kept on its card
 _LIMITER = (
     "import os, resource, signal, sys\n"
     "signal.signal(signal.SIGXFSZ, signal.SIG_DFL)\n"     # Python ignores it; the binary must die at the ceiling
@@ -528,8 +530,13 @@ def _run_bounded(argv: list, workspace: Path, name: str) -> tuple[int, bytes, st
     tag = secrets.token_hex(8)
     out, err = workspace / f".out-{tag}", workspace / f".err-{tag}"
     try:
-        proc = run_isolated([sys.executable, "-I", "-c", _LIMITER, str(out), str(err), str(mechanisms.MAX_OUTPUT + 1),
-                             str(BINARY_MEMORY), *argv], cwd=workspace)
+        try:
+            proc = run_isolated([sys.executable, "-I", "-c", _LIMITER, str(out), str(err),
+                                 str(mechanisms.MAX_OUTPUT + 1), str(BINARY_MEMORY), *argv], cwd=workspace,
+                                timeout=BINARY_SECONDS)
+        except subprocess.TimeoutExpired:
+            raise CapabilityError(f"{name} did not finish within {BINARY_SECONDS}s",
+                                  failure_class="transient") from None
         if proc.returncode == -signal.SIGXFSZ:
             raise CapabilityError(f"capability refused: {name} output exceeds {mechanisms.MAX_OUTPUT} bytes "
                                   "(killed at the ceiling by SIGXFSZ, never buffered)")
@@ -544,6 +551,20 @@ def _run_bounded(argv: list, workspace: Path, name: str) -> tuple[int, bytes, st
         err.unlink(missing_ok=True)
 
 
+def _exit_refusal(name: str, returncode: int, stderr: str) -> CapabilityError:
+    """What a non-zero exit says. A binary reading arbitrary files refuses inputs it cannot read (pdftotext exits 1
+    on a file that is not a PDF, 99 on one with no pages): that is the world, never evidence against the binary,
+    so it is untyped and matches no fault marker. A kill at a ceiling GREG set (memory, CPU) is a budget. Evidence
+    against the binary itself is a changed hash or a failed oracle, typed where those are raised."""
+    import signal
+    tail = stderr[-200:]
+    if returncode in (-signal.SIGKILL, -signal.SIGXCPU) or (
+            returncode == -signal.SIGABRT and ("bad_alloc" in tail or "memory" in tail.lower())):
+        return CapabilityError(f"{name} stopped at a resource ceiling (signal {-returncode}): {tail}".rstrip(": "),
+                               failure_class="budget_exceeded")
+    return CapabilityError(f"{name} could not read this input (exit status {returncode}): {tail}".rstrip(": "))
+
+
 def _companion_outputs(candidate: Candidate, path: Path, ctx: InvocationContext) -> dict:
     """Run each pinned companion binary on the same file; its raw output, or None when it is not on this body."""
     pinned = ctx.manifest.provenance.get("companions") or {}
@@ -554,11 +575,12 @@ def _companion_outputs(candidate: Candidate, path: Path, ctx: InvocationContext)
             outputs[name] = None
             continue
         if hashlib.sha256(Path(entry["binary"]).read_bytes()).hexdigest() != entry["binary_sha256"]:
-            raise CapabilityError(f"installed {name} changed since verification; quarantine required")
+            raise CapabilityError(f"installed {name} changed since verification; quarantine required",
+                                  failure_class="executor_error")
         argv = [entry["binary"] if t == "{binary}" else str(path) if t == "{file}" else t for t in template]
         returncode, stdout, stderr = _run_bounded(argv, ctx.workspace, name)
         if returncode:
-            raise CapabilityError(f"{name} exited {returncode}: {stderr[-200:]}".rstrip(": "))
+            raise _exit_refusal(name, returncode, stderr)
         outputs[name] = stdout.decode("utf-8", errors="replace")
     return outputs
 
@@ -579,17 +601,58 @@ def catalog_adapter(function: str, candidate: Candidate, binary: str):
         if not requalified:
             raise CapabilityError(f"capability refused: {why}")
         ctx.workspace.mkdir(parents=True, exist_ok=True)
-        argv = [binary if t == "{binary}" else str(path) if t == "{file}" else t for t in candidate.argv]
-        returncode, stdout, stderr = _run_bounded(argv, ctx.workspace, candidate.binary_name)
-        if returncode:
-            raise CapabilityError(f"{candidate.binary_name} exited {returncode}: {stderr[-200:]}".rstrip(": "))
-        raw = stdout.decode("utf-8", errors="replace")
-        value = PARSERS[candidate.parse](raw)
-        if not spec.get("derive"):
-            return {spec["output_field"]: value, "path": str(path)}
-        extras = _companion_outputs(candidate, path, ctx)
-        return {spec["output_field"]: value, "path": str(path), **spec["derive"](value, params, raw, extras)}
+        # with companions, every binary reads one snapshot of the input, so a file replaced between the runs
+        # cannot pair one version's text with another's image listing (#201 review DOC-11)
+        snapshot, digest = _snapshot(path, ctx.workspace) if candidate.companions else (path, None)
+        try:
+            argv = [binary if t == "{binary}" else str(snapshot) if t == "{file}" else t for t in candidate.argv]
+            returncode, stdout, stderr = _run_bounded(argv, ctx.workspace, candidate.binary_name)
+            if returncode:
+                raise _exit_refusal(candidate.binary_name, returncode, stderr)
+            raw = stdout.decode("utf-8", errors="replace")
+            value = PARSERS[candidate.parse](raw)
+            if not spec.get("derive"):
+                return {spec["output_field"]: value, "path": str(path)}
+            extras = _companion_outputs(candidate, snapshot, ctx)
+            return {spec["output_field"]: value, "path": str(path),
+                    **({"input_sha256": digest} if digest else {}), **spec["derive"](value, params, raw, extras)}
+        finally:
+            if snapshot != path:
+                snapshot.unlink(missing_ok=True)
     return adapter
+
+
+SNAPSHOT_MAX = 256 * 1024 ** 2          # bytes of one input copied for a reader with companions
+
+
+def _snapshot(path: Path, workspace: Path) -> tuple[Path, str]:
+    """Copy one regular file, never through a link, into the workspace (bounded), and hash the copy."""
+    import secrets
+    try:
+        fd = os.open(path, os.O_NOFOLLOW | os.O_RDONLY | os.O_NONBLOCK)
+    except OSError as exc:
+        raise CapabilityError(f"could not open {path.name} for reading: {exc.strerror}") from None
+    target = workspace / f".in-{secrets.token_hex(8)}{path.suffix[:16]}"
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode):
+            raise CapabilityError(f"{path.name} is not a regular file")
+        if info.st_size > SNAPSHOT_MAX:
+            raise CapabilityError(f"{path.name} exceeds the {SNAPSHOT_MAX}-byte input ceiling")
+        digest, copied = hashlib.sha256(), 0
+        with os.fdopen(os.dup(fd), "rb") as src, open(target, "xb") as dst:
+            while chunk := src.read(1 << 20):
+                copied += len(chunk)
+                if copied > SNAPSHOT_MAX:
+                    raise CapabilityError(f"{path.name} grew past the {SNAPSHOT_MAX}-byte input ceiling")
+                digest.update(chunk)
+                dst.write(chunk)
+        return target, digest.hexdigest()
+    except BaseException:
+        target.unlink(missing_ok=True)
+        raise
+    finally:
+        os.close(fd)
 
 
 def _binary_license(binary: str) -> dict:
@@ -787,11 +850,9 @@ class Genesis:
                 except CapabilityError:
                     intact = False
                 self.registry.register(manifest, builders.built_adapter(origin["contract"], path, origin["source_sha256"]),
-                                       state=state if intact else "QUARANTINED")
-                if not intact and state != "QUARANTINED":
-                    self._restore_note({"capability_id": cid, "state": "QUARANTINED",
-                                                             "why": "built source missing or changed since verification"},
-                                        key=[cid, "quarantine", origin["source_sha256"]])
+                                       state=self._restored_state(cid, state, None if intact else
+                                                                  "built source missing or changed since verification",
+                                                                  [cid, "quarantine", origin["source_sha256"]]))
                 continue
             if origin.get("kind") == "package":
                 self._restore_package(cid, manifest, origin, state)
@@ -800,15 +861,21 @@ class Genesis:
                 self._restore_composed(cid, manifest, origin, state)
                 continue
             binary = manifest.binaries[0]
-            candidate = Candidate(origin["binary_name"], tuple(origin["argv"]), origin["parse"])
-            intact = Path(binary).exists() and hashlib.sha256(
-                Path(binary).read_bytes()).hexdigest() == manifest.provenance.get("binary_sha256")
+            # the catalog's own candidate, so its companions (pdfimages beside pdftotext) run after a restart too;
+            # the registration record keeps only the main binary's argv
+            candidate = next((c for c in CATALOG.get(origin["function"], {}).get("candidates", ())
+                              if isinstance(c, Candidate) and c.binary_name == origin["binary_name"]
+                              and list(c.argv) == list(origin["argv"]) and c.parse == origin["parse"]),
+                             Candidate(origin["binary_name"], tuple(origin["argv"]), origin["parse"]))
+            pinned = [(binary, manifest.provenance.get("binary_sha256"))] + [
+                (c.get("binary"), c.get("binary_sha256")) for c in (manifest.provenance.get("companions") or {}).values()
+                if isinstance(c, dict)]
+            intact = all(path and Path(path).exists() and hashlib.sha256(Path(path).read_bytes()).hexdigest() == digest
+                         for path, digest in pinned)
             self.registry.register(manifest, catalog_adapter(origin["function"], candidate, binary),
-                                   state=state if intact else "QUARANTINED")
-            if not intact and state != "QUARANTINED":
-                self._restore_note({"capability_id": cid, "state": "QUARANTINED",
-                                                         "why": "binary missing or changed since verification"},
-                                    key=[cid, "quarantine", manifest.provenance.get("binary_sha256")])
+                                   state=self._restored_state(cid, state, None if intact else
+                                                              "binary missing or changed since verification",
+                                                              [cid, "quarantine", manifest.provenance.get("binary_sha256")]))
         if record:
             self._finish_attaches()
 
@@ -830,6 +897,16 @@ class Genesis:
                     "completed_at_restart": "the body stopped between the attach and this record"},
                     key=[data["deficit_id"], "resolved"])
                 resolved.add(data["deficit_id"])
+
+    def _restored_state(self, cid, state, why, key):
+        """The state a capability resumes in. Changed or missing pieces quarantine it, but never over the founder's
+        own DETACHED: a detach is his decision and survives any restart (the adapter re-checks every pin before a
+        run, so a later attach of a changed capability still refuses to serve it)."""
+        if why is None or state == "DETACHED":
+            return state
+        if state != "QUARANTINED":
+            self._restore_note({"capability_id": cid, "state": "QUARANTINED", "why": why}, key=key)
+        return "QUARANTINED"
 
     def _restore_note(self, payload, key):
         if getattr(self, "_recording", True):
@@ -854,10 +931,8 @@ class Genesis:
             except CapabilityError as exc:
                 why = str(exc)
         adapter = package_adapter(origin["function"], candidate) if candidate else (lambda params, ctx: None)
-        self.registry.register(manifest, adapter, state="QUARANTINED" if why else state)
-        if why and state != "QUARANTINED":
-            self._restore_note({"capability_id": cid, "state": "QUARANTINED", "why": why},
-                                key=[cid, "quarantine", manifest.provenance.get("package_digest"), why])
+        self.registry.register(manifest, adapter, state=self._restored_state(
+            cid, state, why, [cid, "quarantine", manifest.provenance.get("package_digest"), why]))
 
     def _restore_composed(self, cid, manifest, origin, state):
         """A constructed capability is trusted again only with the same reduction code over the same engine."""
@@ -870,11 +945,8 @@ class Genesis:
         elif origin["target_capability_id"] not in self.registry.manifests:
             why = "the engine it was qualified over is no longer registered"
         path = found[0] if found else []
-        self.registry.register(manifest, recombine.composed_adapter(path, self.registry),
-                               state="QUARANTINED" if why else state)
-        if why and state != "QUARANTINED":
-            self._restore_note({"capability_id": cid, "state": "QUARANTINED", "why": why},
-                                key=[cid, "quarantine", origin["chain_digest"], why])
+        self.registry.register(manifest, recombine.composed_adapter(path, self.registry), state=self._restored_state(
+            cid, state, why, [cid, "quarantine", origin["chain_digest"], why]))
 
     # -- the loop -------------------------------------------------------------------
     def _deficit_for(self, mission_id: str, function: str):
@@ -1911,8 +1983,16 @@ class Genesis:
                         "runtime": "isolated interpreter per call; never in the body process"})
 
     def _manifest_for(self, function, candidate: Candidate, binary: str, deficit_id: str) -> CapabilityManifest:
-        version = run_isolated([binary, "--version"], cwd=Path(tempfile.gettempdir()), timeout=10)
-        version_text = (version.stdout or version.stderr).decode("utf-8", errors="replace").splitlines()[:1]
+        # the probe is a run like any other: under the output and memory ceilings, its timeout typed transient
+        with tempfile.TemporaryDirectory(prefix="greg-version-") as probe:
+            try:
+                _, out, err = _run_bounded([binary, "--version"], Path(probe), candidate.binary_name)
+                version_text = [line[:VERSION_LINE] for line in
+                                ((out.decode("utf-8", errors="replace") or err).splitlines()[:1])]
+            except CapabilityError as exc:
+                if exc.failure_class == "transient":
+                    raise                                   # the host, not the binary: no verdict either way
+                version_text = [f"unknown ({str(exc)[:VERSION_LINE]})"]   # identity is the hash, not this line
         manifest = CapabilityManifest(
             capability_id=f"acquired.{function}.{candidate.binary_name}", version="1.0.0",
             provider="installed:" + binary, function=function, description=CATALOG[function]["description"],

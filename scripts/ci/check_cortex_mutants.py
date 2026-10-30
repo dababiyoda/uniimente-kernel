@@ -133,9 +133,11 @@ OSS_TESTS = ["tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_gre
              "tests/unit/test_greg_cognition.py"]
 # license qualification, document.text and the binary ceilings: their own group, so each mutant runs the tests that
 # catch it first instead of the slower genesis suites before them (job 6 hit its 40-minute limit with them merged)
-METABOLISM_TESTS = ["tests/unit/test_greg_license_expressions.py", "tests/unit/test_greg_document_text.py",
-                    "tests/unit/test_greg_license_qualification.py", "tests/unit/test_greg_open_source_genesis.py",
-                    "tests/unit/test_greg_license_use_context.py", "tests/unit/test_greg_model_license.py"]
+METABOLISM_TESTS = ["tests/unit/test_greg_license_expressions.py", "tests/unit/test_greg_model_license.py",
+                    "tests/unit/test_greg_document_text.py", "tests/unit/test_greg_license_qualification.py",
+                    "tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_greg_license_use_context.py",
+                    "tests/unit/test_greg_genesis_restore.py", "tests/unit/test_greg_binary_failure_types.py",
+                    "tests/unit/test_greg_document_phrase.py"]
 OSS_MUTANTS = [
     ("certificate skips edge feasibility", "greg/cognition/network.py",
      "if exact[b] > exact[a] + w + tolerance(exact[a] + w):", "if False:"),
@@ -686,6 +688,38 @@ METABOLISM_MUTANTS = [
      'if now["assessment_digest"] != recorded.get("assessment_digest"):', "if False:"),
     ("a never-qualified capability runs under P4c", "greg/licensing.py",
      'return False, "no use qualification recorded; requalification required"', 'return True, ""'),
+    # restart (review of #201 at a1d2abf, GATE-1 and GATE-2/DOC-8)
+    ("a founder's detach is quarantined over at restart", "greg/genesis.py",
+     'if why is None or state == "DETACHED":', "if why is None:"),
+    ("a restarted reader loses its companions", "greg/genesis.py",
+     'if isinstance(c, Candidate) and c.binary_name == origin["binary_name"]', "if False"),
+    ("a changed companion is trusted at restart", "greg/genesis.py",
+     'pinned = [(binary, manifest.provenance.get("binary_sha256"))] + [',
+     'pinned = [(binary, manifest.provenance.get("binary_sha256"))] + 0 * ['),
+    # failure types and limits (review of #201 at a1d2abf, DOC-3, GATE-5, GATE-6, DOC-10)
+    ("an unreadable input counts against the reader", "greg/genesis.py",
+     'f"{name} could not read this input (exit status {returncode}): {tail}"', 'f"{name} exited {returncode}: {tail}"'),
+    ("a kill at a ceiling is not typed as a budget", "greg/genesis.py",
+     'failure_class="budget_exceeded")\n    return CapabilityError(f"{name} could not read',
+     'failure_class=None)\n    return CapabilityError(f"{name} could not read'),
+    ("a changed companion is untyped", "greg/genesis.py",
+     'quarantine required",\n                                  failure_class="executor_error")',
+     'quarantine required")'),
+    ("a binary's timeout escapes untyped", "greg/genesis.py",
+     'except subprocess.TimeoutExpired:\n            raise CapabilityError(f"{name} did not finish',
+     'except ZeroDivisionError:\n            raise CapabilityError(f"{name} did not finish'),
+    ("a binary's version line is stored whole", "greg/genesis.py", "[line[:VERSION_LINE] for line in", "[line for line in"),
+    # phrase matching (review of #201 at a1d2abf, DOC-4, DOC-5, DOC-6)
+    ("ligatures and compatibility forms are compared raw", "greg/documents.py", 'unicodedata.normalize("NFKC", text)', "text"),
+    ("typographic quotes and dashes are compared raw", "greg/documents.py", ".translate(_FOLD).split()", ".split()"),
+    ("a phrase is matched inside a longer word", "greg/documents.py", "_BEFORE + re.escape(form) + _AFTER", "re.escape(form)"),
+    ("a line-end-dehyphenated phrase is not looked for joined", "greg/documents.py",
+     "return [needle] + ([joined] if", "return [needle] + 0 * ([joined] if"),
+    ("a reader's companions read a different copy of the input", "greg/genesis.py",
+     "_snapshot(path, ctx.workspace) if candidate.companions else (path, None)", "(path, None)"),
+    ("a snapshot is taken through a link or of a FIFO", "greg/genesis.py",
+     "        if not stat.S_ISREG(info.st_mode):\n            raise CapabilityError(f\"{path.name} is not a regular file\")",
+     "        if False:\n            raise CapabilityError(f\"{path.name} is not a regular file\")"),
     ("an acquired binary runs without requalification", "greg/genesis.py",
      "requalified, why = licensing.requalify_binary(ctx.manifest, binary)", 'requalified, why = True, ""'),
     # model-weight licenses (directive 2026-10-22 section VII): the license an installed Ollama model carries

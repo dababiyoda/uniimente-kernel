@@ -1,0 +1,10 @@
+Safeguard mutants of the evidence-repair change (mutants.py), re-run on the relabelled code; unit set: test_greg_outcome_resolution, test_greg_pending_construction_realization, test_greg_construction_realization (py3.11, -x).
+CAUGHT  M1 answer_version dropped from claim identity: ['test_a_resolution_on_one_answer_cannot_name_another_answers_report']
+CAUGHT  M2 resolutions need no accepted founder command: ['test_a_resolution_no_founder_command_accepted_resolves_nothing']
+CAUGHT  M3 settlement accepts a non-independent observation: ['test_settlement_itself_refuses_a_signed_resolution_that_accepts_a_founder_report']
+CAUGHT  M4 the latest resolution revives facts it does not name: ['test_a_new_disagreeing_report_after_a_resolution_reopens_the_dispute_and_a_later_resolution_governs']
+CAUGHT  M5 verdict-concordant values treated as disputed: ['test_values_that_differ_but_agree_on_the_verdict_settle_without_investigation']
+CAUGHT  M6 corroboration from another source dropped: ['test_one_realization_per_receipt_a_repeat_is_idempotent_and_a_different_value_is_scored_as_neither']
+CAUGHT  M7 record time accepts a founder report: ['test_with_no_independent_observation_it_asks_for_one_instead_of_resolving']
+CAUGHT  M8 a partial resolution is accepted: ['test_malformed_or_partial_resolutions_are_refused[partial]']
+8 of 8 caught

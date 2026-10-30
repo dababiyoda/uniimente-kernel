@@ -5,6 +5,8 @@ WealthMachine answers "go" and organ.exchange's receipt said "go", while organs.
 answer to needs_more_evidence because the packet leaves governing_bottleneck unevidenced. Two governed
 implementations of Bridge A disagreed on what the founder may be told.
 """
+import re
+
 from greg import organs
 from greg.organ_exchange import binding_verdict
 from greg.ventures import VERDICT_RANK
@@ -20,7 +22,8 @@ ASSESSMENT = {"id": "a-1", "schema_version": "1.1", "created_at": "2026-10-30T00
 
 def test_an_engine_go_on_a_packet_with_unevidenced_canonical_fields_is_capped():
     verdict, why = organs._binding(PACKET, ASSESSMENT)
-    assert verdict == "needs_more_evidence" and "governing_bottleneck" in why and "cap the engine's 'go'" in why
+    # the reason may say "cap" or "caps" (#242 rewords the shared rule); what it must name is the field and the cap
+    assert verdict == "needs_more_evidence" and "governing_bottleneck" in why and re.search(r"caps? the engine's 'go'", why)
 
 
 def test_the_cap_never_raises_a_lower_verdict():

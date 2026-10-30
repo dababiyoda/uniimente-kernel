@@ -30,10 +30,15 @@ still moves only at the founder tier. The new view reports structure and never c
      - `mutation_guard`: what `mutation_guarded` means, printed with every `greg path --build`.
    - `position()`'s loop moved into `_walk()`, which both readers share. `position()`'s output is unchanged.
    - `mutation_guarded()` parses the gate's `MUTANTS` list with `ast.literal_eval`, without importing or running it.
-     A node counts only for a **live** mutant: its text occurs exactly once in its file, its replacement differs,
-     and its named test is defined (`mutant_problems()` says why any mutant is not live). An install without the
-     gate, or a `MUTANTS` literal that is not a list, guards nothing and never crashes. It shows a mutant is listed
-     and live, never that it is caught: only a run of the gate shows that.
+     A node counts only for a **live** mutant (`mutant_problems()` says why any mutant is not live):
+     - its text occurs exactly once in its file, and its replacement differs;
+     - its named test is one pytest would collect, found in the parsed test module (not a `def` in a docstring, a
+       nested function or a helper);
+     - for a node-tagged mutant, its text sits in `greg/path.py` inside that node's predicate or a function the
+       predicate calls (review round 2).
+     The list counts only when the gate binds `MUTANTS` once and names it nowhere else, and the gate runs exactly
+     this read. An install without the gate, or a `MUTANTS` literal that is not a list, guards nothing and never
+     crashes. The read shows a mutant is listed and live, never that it is caught: only a run of the gate shows that.
    - `validate()` checks only the shape of the new `rehearsal` field. Whether the tests it names exist is checked by
      a unit test, because `greg path` must load on installs that ship without `tests/`.
 2. **`greg/cli.py`**: `greg path --build`. It cannot be combined with `--node`. The plain `greg path` view is
@@ -48,24 +53,35 @@ still moves only at the founder tier. The new view reports structure and never c
    - Changed axes: sequence, timing and immediate_priority. The intended effect stays active.
    - It answers all nine inheritance questions. q9 cites the unit test for the frontiers (VEPMC rows stubbed there)
      and the integration rehearsal for `founder_tier_count` 0 on a real one-body ledger.
-5. **`scripts/ci/check_path_predicate_mutants.py`**: 21 mutants.
+5. **`scripts/ci/check_path_predicate_mutants.py`**: 33 mutants.
    - Seven weaken a node predicate: N1, N2, N3, N4, N6, and N7 twice.
-   - Fourteen weaken the build frontier or its read of the gate:
+   - Twenty-six weaken the build frontier, its read of the gate, or the gate's own rule for a catch:
      - a structural row sets `met`; a structural node joins `achieved`;
      - a node without a predicate counts as built; a node past the frontier is counted; an unmeasured node counts
        as built; a repository node counts as built whatever its attestation;
      - the depth counts an unguarded node; every node reads as guarded whatever the gate lists;
      - a stale, a no-op, or an untested mutant still guards its node;
      - an unhashable literal crashes the read; a literal that is not a list is read as one;
-     - the acceptance status ignores the acceptance node's build.
-   - A no-op mutant (replacement equal to its text) is refused as `NO_OP`, like a stale one.
+     - the acceptance status ignores the acceptance node's build;
+     - review round 2: a gate that names its list again is still read; the gate runs its own list, or a mutant
+       the read would not count; a mutant off its node's predicate, in another file at a matching line, in a helper
+       its predicate calls (helpers dropped) or in any function (every function counted); a `def` in a docstring,
+       a helper or a nested function counts as a test; a mutated module that does not import is run and counted;
+       a test that fails on an import error counts as a catch.
+   - The gate runs exactly the list `greg.path` reads (`_mutant_liveness`). A mutant that read would not count is
+     reported `NOT_LIVE` and not run, and coverage counts only live mutants.
    - Each mutant runs in a scratch copy, under `python -B` with `PYTHONDONTWRITEBYTECODE=1`, after every
      `__pycache__` is purged.
-   - The named tests must pass unmutated before any mutant runs. A collection or import error never counts as a
-     catch.
-   - The gate also fails if any predicate node has no mutant.
+   - The named tests must pass unmutated before any mutant runs. A mutant counts as caught only when its test fails
+     on behaviour. These are `INVALID`, never caught:
+     - a mutated Python file that does not import under its dotted name (checked before its test runs);
+     - a test that fails on a `SyntaxError`, `ImportError` or `ModuleNotFoundError`, including one raised by a
+       module the test imports lazily;
+     - a collection error.
+   - The gate also fails if any predicate node has no live mutant.
 6. **Tests**
-   - New: `tests/unit/test_path_build_frontier.py`, 15 tests (11, plus 4 from the review round).
+   - New: `tests/unit/test_path_build_frontier.py`, 20 tests (11, plus 4 from the first review round and 5 from the
+     second).
    - `tests/integration/test_greg_chromebook_rehearsal.py` now runs `greg path --build` through the installed
      command twice: after N1, and after the two genesis closures.
 
@@ -136,6 +152,41 @@ reproduction logs stay with the session and are not committed.
    The repository rule was already correct at `76853dfc`, so its test is a guard, not a defect reproduction. That
    finding's evidence is its mutant: it survived there and is caught now.
 
+### Review round 2 (2026-10-30)
+
+Two reviewers reported three findings against `66745a89`. Each was reproduced here before it was fixed. The
+reproduction scripts and logs stay in the session scratchpad and are not committed.
+
+| Finding | Reproduced | Disposition |
+|---|---|---|
+| WU01-ATK-1 (low): the gate counted a mutant that broke a lazily imported module as caught. The test FAILED rather than ERRORed at collection, so the "never on an import error" rule did not apply | yes: a copy of the gate holding only a syntax-error mutant on `greg/venture_books.py` (imported inside the N7 test) printed `CAUGHT`, `1/1 caught` | **fixed**: the mutated Python file must import under its dotted name before its test runs, and a test that fails on a syntax or import error is `INVALID`. In a copy of the fixed gate, the reviewer's exact mutant is `NOT_LIVE` (off target), the same edit untagged is `INVALID` (`SyntaxError`), and an equivalent mutant survives: 0/3 caught, exit 1 |
+| WU01-ATK-2 (low): the static read could disagree with what the gate runs or counts | yes, all three cases: (a) `MUTANTS = [...]` followed by `MUTANTS = []` or `MUTANTS.clear()` read as `{N3}`; (b) a README line tagged N3 read as `{N3}` with no problem; (c) a `def test_gone():` inside a docstring made the test defined | **fixed**: (a) the gate runs exactly the read, which counts a list only when `MUTANTS` is bound once and named nowhere else; (b) a node-tagged mutant must sit in `greg/path.py`, inside its node's predicate or a function the predicate calls; (c) a test is found in the parsed module, as pytest collects it. The rehearsal-reference check uses the same lookup. Not fixed: the gate is still not in CI (see limitations) |
+| WU01-FID-1 (low): the round-1 implementer report was stale against the branch (head, commit count, mutant and test counts, the unconditional "final step") | yes: the head was `66745a89`, five commits past `feb531d2`, with 21 mutants and 15 tests | **fixed in the report**: this README was already accurate. The unit's report is regenerated from it at this round's head |
+
+| Review-round-2 run | Result |
+|---|---|
+| Fail-before: the new `tests/unit/test_path_build_frontier.py` on a detached worktree at `66745a89` | **6 failed, 14 passed** (see note 6) |
+| Pass-after: `tests/unit/test_path_build_frontier.py` | **20 passed** |
+| `python -B scripts/ci/check_path_predicate_mutants.py` at `c7908b8e` | **33/33 caught**, exit 0, 167 s |
+| Negative control (copy of the fixed gate): the reviewer's mutant, the same edit untagged, an equivalent mutant | **0/3 caught**, exit 1: `NOT_LIVE`, `INVALID`, `SURVIVED_OR_INVALID`, and six `UNCOVERED` |
+| Related suites (note 2's 21 files, plus test_developmental_inertness, test_evidence_bundle_digests and test_greg_goal_gravity_founder_effect) | **539 passed** in 1038.93 s (see note 7) |
+| `tests/unit/test_path_build_frontier.py` and `tests/unit/test_developmental_inheritance.py` at `c7908b8e` | **43 passed** |
+| Integration: rehearsal and VEPMC path, supervisord on `PATH`, at `c7908b8e` | **4 passed** in 134.70 s, none skipped |
+| `scripts/ci/check_authority_singleton.py` | exit 0 |
+
+6. The five new tests each fail on the defect:
+   - a reassigned list still reads as `{N1}`;
+   - off-target mutants guard N1, N3 and N4;
+   - a docstring-only test counts as defined;
+   - the gate prints `4/4 caught` for three import-breaking mutants and `2/2 caught` with the off-target mutant
+     run.
+
+   The sixth failure is the rehearsal-reference test, which now calls the new `_test_defined`. It is a refactor, not
+   a defect reproduction.
+7. The related run imported `greg/path.py` before two small read fixes in `c7908b8e`: an attribute store to
+   `MUTANTS` reads as nothing, and a malformed path node reads as no predicate rather than raising. Every file that
+   calls the changed functions, the gate and the integration rehearsal were re-run at `c7908b8e` (rows above).
+
 **Measured on the rehearsal ledger.** This is one body, driven only through the installed `greg` command, with a
 `--no-passphrase` key.
 - After N1: the build frontier is N2. `built` is N0 and N1, and `achieved` is N0 only.
@@ -148,7 +199,8 @@ reproduction logs stay with the session and are not committed.
 
 - **The gate is not in CI.** It is not wired into `canonical-ci.yml`, which is a hot file on other open PRs and the
   repository's single official workflow.
-  - `mutation_guarded` means "the gate lists a live weakening mutant for this node". That is checked on every read.
+  - `mutation_guarded` means "the gate lists a live weakening mutant for this node, inside its predicate". That is
+    checked on every read, and the gate runs exactly that read.
   - "Its test catches it" is evidenced only where the gate is run, as here. A mutant whose named test exists but
     cannot catch it stays guarded until the gate runs (review F1's scenario).
   - Considered and deferred: a gate-written receipt, keyed to source hashes, that `mutation_guarded` would require.
@@ -156,6 +208,19 @@ reproduction logs stay with the session and are not committed.
     re-run. Wiring the gate into CI is the cheaper fix.
 - **One mutant per predicate is not exhaustive.** At least one weakening per predicate is caught. That does not
   show that every weakening is.
+- **What the gate's read and its catch rule still cannot see (review round 2):**
+  - A node's mutant counts only inside `greg/path.py`. A weakening in a module a predicate delegates to (for
+    example `greg/metrics.py` or `greg/venture_books.py`) is refused as `NOT_LIVE` when tagged with the node, and
+    when untagged it runs but guards no node. All seven node mutants today are in `greg/path.py`. The N5 and N8 predicates must follow this, or extend the target rule in the
+    same PR.
+  - A predicate's reach is every module-level function of `greg/path.py` it names, transitively. A helper it names
+    but never calls still counts as part of it.
+  - The read is static. It refuses any second naming of `MUTANTS`, but code that reaches the list without naming it
+    (built strings run with `exec`) is out of its view. The gate runs the read, so a run of the gate cannot diverge
+    from it.
+  - A catch is refused for a mutated file that does not import, and for a test failing on a syntax or import error.
+    A mutant that makes some other module raise a different exception while it is imported lazily (a
+    `RuntimeError` at its top level, say) would still count as caught.
 - **`structural_depth` is the build-phase depth only on one body driven through the CLI.**
   - Today that body reaches N2.
   - N3, N4, N6 and N7 are structurally met only on separate unit-test bodies, which do not add up.

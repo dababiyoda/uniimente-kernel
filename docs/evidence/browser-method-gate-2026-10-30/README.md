@@ -201,7 +201,7 @@ The reviewers' probes (`review-browser-method-gate-attack/p*.py`), run against t
 ### Mutants
 
 - `python -B scripts/ci/check_browser_method_gate_mutants.py`: **26/26 caught**, rc 0. Every catching test passed
-  unmutated first.
+  unmutated first. With the inspection mutant added after the combined check (below): **27/27 caught**, rc 0.
   - The round adds 14 mutants. Among them: page routing instead of browser-target interception; a redirect hop not
     decided; a write at the close dropped; the prelude not installed; WebSocketStream left on in the engine; whole
     params bindable.

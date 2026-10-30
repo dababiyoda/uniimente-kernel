@@ -47,9 +47,9 @@ from greg.lightcone import LightCone
 from greg.missions import INSUFFICIENT, TRUE, evaluate_receipt, judge, judge_receipt, pre_approved, unanswered
 from provenance.ledger import EvidenceLedger, sha256_json
 
-REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
-                "memory.precedents", "artifact.inspect", "cognition.status", "foundry.query", "pipeline.inspect",
-                "worker.appraise", "browser.trace", "daleobanks.outcome", "organs.exchange_status",
+REOBSERVABLE = {"fs.read", "fs.search", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit",
+                "brief.freshness", "memory.precedents", "artifact.inspect", "cognition.status", "foundry.query",
+                "pipeline.inspect", "worker.appraise", "browser.trace", "daleobanks.outcome", "organs.exchange_status",
                 "institution.appraise", "organ.status"}
 REOBSERVABLE.update(cid for cid in BUILTINS if cid.startswith("cognition.") and
                     cid not in ("cognition.semantic", "cognition.compose", "cognition.knowledge"))

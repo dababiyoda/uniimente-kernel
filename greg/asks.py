@@ -379,10 +379,11 @@ NOT_ANSWERABLE = {
 
 
 def surface(request: dict) -> dict:
-    """The fields every founder surface (console, phone, status, morning report) shows."""
-    keys = ("request_id", "kind", "mission_id", "resource", "why_now", "recommendation", "expected_effect",
-            "options", "alternatives", "uncertainty", "authority_requested", "evidence",
-            "consequence_of_no_response", "deadline", "deadline_evidence", "wording_withheld", "answered",
+    """The fields every founder surface (console, phone, status, morning report) shows. ``action_id`` and an
+    APPROVAL's ``bound_params`` view are display data: an answer binds the scope digest, never these."""
+    keys = ("request_id", "kind", "mission_id", "action_id", "resource", "why_now", "recommendation",
+            "expected_effect", "options", "alternatives", "uncertainty", "authority_requested", "bound_params",
+            "evidence", "consequence_of_no_response", "deadline", "deadline_evidence", "wording_withheld", "answered",
             "unsigned_answer_recorded", "unsigned_answer_cause", "unsigned_answer_why")
     shown = {k: request[k] for k in keys if k in request}
     if request.get("kind") in ANSWER_ONLY_RECORDS:

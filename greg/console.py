@@ -286,6 +286,71 @@ def _page(title: str, body: str, *, refresh: bool = False) -> bytes:
             ).encode()
 
 
+def _number(v) -> str:
+    """JavaScript's String(n) for the double JSON.parse makes of ``v``, so the phone prints the same text."""
+    from decimal import Decimal
+    try:
+        f = float(v)
+    except OverflowError:                  # an integer past the largest double: JSON.parse makes it an infinity
+        return "Infinity" if v > 0 else "-Infinity"
+    if f != f or f in (float("inf"), float("-inf")):
+        return "NaN" if f != f else "Infinity" if f > 0 else "-Infinity"
+    if f == 0:
+        return "0"
+    _, digits, exponent = Decimal(repr(abs(f))).normalize().as_tuple()   # repr: the shortest round-trip digits
+    s, k = "".join(map(str, digits)), len(digits)
+    n = exponent + k                       # abs(f) = 0.s * 10**n (ECMA-262 Number::toString)
+    if k <= n <= 21:
+        text = s + "0" * (n - k)
+    elif 0 < n <= 21:
+        text = s[:n] + "." + s[n:]
+    elif -6 < n <= 0:
+        text = "0." + "0" * -n + s
+    else:
+        text = s[0] + ("." + s[1:] if k > 1 else "") + "e" + ("+" if n > 0 else "-") + str(abs(n - 1))
+    return ("-" if f < 0 else "") + text
+
+
+def _shown(v) -> str:
+    """One ask value as every answer surface prints it; greg/phone/core.js shownValue prints the same text."""
+    if isinstance(v, str):
+        return v
+    if v is None:
+        return "null"
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, (int, float)):
+        return _number(v)
+    if isinstance(v, (list, tuple)):
+        return ", ".join(_shown(x) for x in v)
+    if isinstance(v, dict):
+        return "{" + ", ".join(f"{k}: {_shown(v[k])}" for k in sorted(v, key=str)) + "}"
+    return str(v)
+
+
+COVERS = "Approving covers this exact scope: "
+
+
+def approval_covers(r: dict) -> str:
+    """What approving one APPROVAL covers: the scope its digest binds (greg/authority.py scope_digest: mission,
+    capability, params, target, consequence class, cost, and a paid scope's spend state). Display only: the answer
+    binds the digest, never this text. greg/phone/core.js askTerms prints the same sentence."""
+    cost = (r.get("authority_requested") or {}).get("cost_usd")
+    p = r.get("bound_params")
+    parts = ([f"mission {r['mission_id']}"] if r.get("mission_id") else []) + \
+        ["the capability, target, consequence class and cost above"]
+    if isinstance(cost, (int, float)) and not isinstance(cost, bool) and cost > 0:
+        parts.append("the mission's spend and budget when it was asked (one paid approval funds one run)")
+    if isinstance(p, dict) and isinstance(p.get("json"), str):
+        whole = p.get("length") == len(p["json"])
+        size = _shown(p.get("length")) if whole else f"the first {len(p['json'])} of {_shown(p.get('length'))}"
+        parts.append(f"params {p['json']}{'' if whole else '…'} ({size} characters of canonical JSON, "
+                     f"{_shown(p.get('sha256'))})")
+    else:
+        parts.append("params: not recorded with this ask")
+    return COVERS + "; ".join(parts) + "." + (f" Asked for action {r['action_id']}." if r.get("action_id") else "")
+
+
 def _ask_details(r: dict) -> str:
     """Section 60 on the page: what each option costs and does, how sure GREG is, what it needs."""
     parts = []
@@ -335,27 +400,30 @@ def _ask_details(r: dict) -> str:
                         f"({_e((mech.get('license_assessment') or {}).get('verdict') or 'not assessed')}), "
                         f"{_e(source)}; qualified on {_e(q.get('cases'))} frozen cases with {_e(q.get('failures'))} "
                         f"failures; {_e(mech.get('competence'))}" if mech else ""))
-    reach = {k: v for k, v in (r.get("authority_requested") or {}).items()
+    requested = r.get("authority_requested") or {}
+    reach = {k: v for k, v in requested.items()
              if k in ("tool", "remote_server", "may_write", "may_reach", "credentials")}
+    if "malformed" in requested:     # first, so the reach list below never reads as a narrow reach
+        parts.append("<br><b>This scope is malformed:</b> " + _e(_shown(requested["malformed"])))
     if reach:
         # The approval is bound to this exact scope; show it before the founder answers (increment 20).
-        shown = lambda v: ", ".join(map(str, v)) if isinstance(v, list) else str(v)
         parts.append("<br><b>Approving lets it:</b><ul>"
                      + (f"<li>run <code>{_e(reach['tool'])}</code></li>" if "tool" in reach else "")
                      + (f"<li>on the remote server <code>{_e(reach['remote_server'])}</code></li>"
                         if "remote_server" in reach else "")
-                     + (f"<li>write: <code>{_e(shown(reach['may_write']))}</code> (nothing else)</li>"
+                     + (f"<li>write: <code>{_e(_shown(reach['may_write']))}</code> (nothing else)</li>"
                         if "may_write" in reach else "")
-                     + (f"<li>reach: {_e(shown(reach['may_reach']))}</li>" if "may_reach" in reach else "")
-                     + (f"<li>credentials: {_e(shown(reach['credentials']))}</li>" if "credentials" in reach else "")
+                     + (f"<li>reach: {_e(_shown(reach['may_reach']))}</li>" if "may_reach" in reach else "")
+                     + (f"<li>credentials: {_e(_shown(reach['credentials']))}</li>" if "credentials" in reach else "")
                      + "</ul>")
-    # The exact scope an answer binds, every key: a withheld recommendation was the only other place most of it
-    # showed, and a key outside the reach list (a malformed mcp scope) was dropped. The reach list is not repeated.
-    scope = {**({"action": r["action_id"]} if r.get("action_id") else {}),
-             **{k: v for k, v in (r.get("authority_requested") or {}).items() if k not in reach}}
-    if scope:
-        parts.append("<br><b>Exact scope of this ask:</b> " + _e("; ".join(
-            f"{k}: {', '.join(map(str, v)) if isinstance(v, list) else v}" for k, v in scope.items())))
+    # Every key the ask requests: a withheld recommendation was the only other place most of it showed, and a key
+    # outside the reach list was dropped. Neither the reach list nor the malformed line above is repeated.
+    rest = {k: v for k, v in requested.items() if k not in reach and k != "malformed"}
+    if rest:
+        parts.append("<br><b>Authority requested:</b> "
+                     + _e("; ".join(f"{k}: {_shown(v)}" for k, v in rest.items())))
+    if r.get("kind") == "APPROVAL":
+        parts.append("<br><b>" + _e(COVERS) + "</b>" + _e(approval_covers(r)[len(COVERS):]))
     if r.get("consequence_of_no_response"):
         parts.append("<br><b>If you do not answer:</b> " + _e(r["consequence_of_no_response"]))
     return "".join(parts)

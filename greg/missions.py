@@ -188,6 +188,18 @@ def exact_reach(capability_id: str, params: dict) -> dict:
             "credentials": sorted(credentials) or "none"}
 
 
+PARAMS_SHOWN = 500     # characters of an APPROVAL's params its ask keeps for the founder to read
+
+
+def params_view(params) -> dict:
+    """What an APPROVAL shows of the params its scope digest binds (AuthorityOffice.scope_digest): their canonical
+    JSON, the exact text ``sha256_json`` hashes (ASCII, so an invisible or look-alike character shows as an escape),
+    cut to PARAMS_SHOWN characters, with the length and sha256 of the whole. Display only: no authority path reads
+    it, and the approval stays bound to the scope digest."""
+    text = json.dumps(params, sort_keys=True, separators=(",", ":"), default=str)
+    return {"json": text[:PARAMS_SHOWN], "length": len(text), "sha256": sha256_json(params)}
+
+
 # Capabilities whose network access runs behind the body's #26 relay when the body confines egress. A capability
 # that decides its own confinement from ``ctx.egress`` (the organ exchange runs its organs with no network at all)
 # must be listed, or a confined body hands it None and it runs with the body's network.
@@ -1644,7 +1656,7 @@ class MissionEngine:
                        # the same reach the loop's ask shows: one scope has one request, whichever path asks first
                        **exact_reach(scope["capability"], s.get("params", {})),
                        **({"spend": f"${cost:.2f} for this one action"} if cost > 0 else {})},
-            now=now, resource=resource, evidence=evidence, quoted=quoted)
+            now=now, resource=resource, evidence=evidence, quoted=quoted, params=s.get("params", {}))
 
     # -- the loop ---------------------------------------------------------------
     def tick(self, now: datetime, *, should_stop=None) -> list[dict]:
@@ -1709,7 +1721,7 @@ class MissionEngine:
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,
                  resource: dict | None = None, evidence: dict | None = None, quoted: tuple = (),
                  instance: dict | None = None, consequence: str = "the mission waits; no action is taken",
-                 move_digest: str | None = None) -> str:
+                 move_digest: str | None = None, params: dict | None = None) -> str:
         """One escalation per exact scope, recorded through the founder-ask contract (greg/asks.py).
 
         ``resource`` makes it a section-60 resource ask: evidence, costed options with their
@@ -1719,7 +1731,8 @@ class MissionEngine:
         none is given, which is the same for an unpaid scope), so a goal still finds its ask, and
         the answer to it, after the mission spends. ``instance`` binds the
         request to one occurrence inside its scope (a RECONCILIATION names the one dispatch it
-        settles), so an answer about one occurrence is never reused for another (#178)."""
+        settles), so an answer about one occurrence is never reused for another (#178). ``params`` are the params
+        an APPROVAL's scope digest binds; the ask keeps a bounded view of them for the founder (``params_view``)."""
         epoch = 0
         while True:
             rid = "req-" + sha256_json({"mission": m.mission_id, "kind": kind, "scope": scope_digest,
@@ -1740,6 +1753,8 @@ class MissionEngine:
                    "created_at": iso(now), "reality_status": "RECORDED_LOCAL_MESSAGE"}
         if kind == "APPROVAL":
             message["move_digest"] = move_digest or scope_digest
+            if params is not None:
+                message["bound_params"] = params_view(params)
         if evidence is not None:
             message["evidence"] = evidence
         if resource is not None:
@@ -3058,7 +3073,7 @@ class MissionEngine:
                           requested={"capability": manifest.capability_id, "target": target,
                                      "consequence_class": manifest.consequence_class, "cost_usd": 0.0}, now=now,
                           evidence={"original_receipt": original, "lifecycle": m.status},
-                          consequence="the executed effect stands; nothing is run for it")
+                          consequence="the executed effect stands; nothing is run for it", params=params)
             return "WAITING"
         outcome = self.office.act(
             mission_id=mid, cone=m.cone, command_digest=m.command_digest, manifest=manifest, adapter=adapter,
@@ -3077,7 +3092,7 @@ class MissionEngine:
                           requested={"capability": manifest.capability_id, "target": target,
                                      "consequence_class": manifest.consequence_class, "cost_usd": 0.0}, now=now,
                           evidence={"original_receipt": original, "lifecycle": m.status},
-                          consequence="the executed effect stands; nothing is run for it")
+                          consequence="the executed effect stands; nothing is run for it", params=params)
             return "WAITING"
         self.journal.record("mission.compensated", {**record, "status": outcome.status, "receipt": outcome.receipt_hash,
                                                     "reasons": [str(r)[:300] for r in outcome.reasons], "at": iso(now)},
@@ -3536,7 +3551,7 @@ class MissionEngine:
                                            **({"spend": f"${float(s['cost_usd']):.2f} for this one action"}
                                               if float(s.get("cost_usd", 0.0)) > 0 else {})},
                                 now=now, resource=self._spend_ask(m, s, outcome, routing_decision)
-                                if float(s.get("cost_usd", 0.0)) > 0 else None)
+                                if float(s.get("cost_usd", 0.0)) > 0 else None, params=bound_params)
             self._block(m, {"type": "decision", "request_id": rid, "action_id": aid, "why": record["reasons"][:3],
                             "reconsider": "founder approves or rejects this exact scope"})
             return {"state": "WAITING", "blocker": m.blocker}

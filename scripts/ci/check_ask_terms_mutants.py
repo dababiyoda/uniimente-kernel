@@ -1,41 +1,109 @@
-"""Every surface that offers an answer must keep showing the exact scope and what silence does (directive part 2 §9).
+"""Every surface that offers an answer must keep showing the authority an ask requests, what approving covers, and
+what silence does, and must offer only answers the body applies (directive part 2 §9).
 
 Each named test must pass unmutated in the copy first (a skipped or failing test is INVALID, never a catch), and a
-mutant is caught only when its named test fails.
+mutant is caught only when its named test fails. A mutant is one or more exact replacements in one file.
 """
 from pathlib import Path
 import os, shutil, subprocess, sys, tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 FILE = "tests/unit/test_greg_ask_terms_surfaces.py"
-PAGES = FILE + "::test_console_and_mission_control_show_the_exact_scope_and_what_silence_does"
-ACTION = FILE + "::test_the_console_names_the_action_when_the_projection_carries_it"
+PAGES = FILE + "::test_console_and_mission_control_show_the_authority_requested_and_what_silence_does"
 ESCAPE = FILE + "::test_the_console_escapes_the_scope_and_the_consequence"
+REAL = FILE + "::test_a_real_approval_shows_the_exact_scope_approving_covers"
+FORMAT = FILE + "::test_both_surfaces_print_values_alike"
 PHONE = FILE + "::test_the_phone_shows_the_same_terms_and_sends_only_answers_the_body_applies"
+PHONE_REAL = FILE + "::test_the_phone_shows_what_a_real_approval_covers"
+
+CONSOLE, CORE, APP = "greg/console.py", "greg/phone/core.js", "greg/phone/app.js"
+TERMS = '    for (const line of askTerms(r)) card.append(el("p", line));'
+SKIP = "    if (r.answerable === false) { box.append(card); continue; }"
+MALFORMED_JS = ('if ("malformed" in requested) lines.push("This scope is malformed: " '
+                '+ shownValue(requested.malformed));\n')
+AUTHORITY_JS = ('if (rest.length) lines.push("Authority requested: " + rest.map(([k, v]) => `${k}: ${shownValue(v)}`)'
+                '.join("; "));\n')
 MUTANTS = [
-    ("console drops what silence does", "greg/console.py",
-     'if r.get("consequence_of_no_response"):\n        parts.append("<br><b>If you do not answer:',
-     'if False:\n        parts.append("<br><b>If you do not answer:', PAGES),
-    ("console shows only the reach keys again", "greg/console.py",
-     ".items() if k not in reach}", ".items() if k in reach}", PAGES),
-    ("console repeats the reach keys", "greg/console.py", ".items() if k not in reach}", ".items()}", PAGES),
-    ("console drops the action", "greg/console.py",
-     '**({"action": r["action_id"]} if r.get("action_id") else {}),', "", ACTION),
-    ("console stops escaping the consequence", "greg/console.py",
-     '_e(r["consequence_of_no_response"])', 'r["consequence_of_no_response"]', ESCAPE),
-    ("console stops escaping the scope", "greg/console.py",
-     '"<br><b>Exact scope of this ask:</b> " + _e(', '"<br><b>Exact scope of this ask:</b> " + str(', ESCAPE),
-    ("phone drops what silence does", "greg/phone/core.js",
-     "if (r.consequence_of_no_response) lines.push", "if (false) lines.push", PHONE),
-    ("phone scope omits authority_requested", "greg/phone/core.js",
-     "...(r.authority_requested || {}) });", "});", PHONE),
-    ("phone answers a RECONCILIATION with approve", "greg/phone/core.js",
-     'if (r.kind === "RECONCILIATION")', 'if (r.kind === "NEVER")', PHONE),
-    ("phone page never renders the terms", "greg/phone/app.js",
-     'for (const line of askTerms(r)) card.append(el("p", line));', "", PHONE),
-    ("phone page sends approve whatever the button", "greg/phone/app.js",
-     "{ request_id: r.request_id, answer, reason: reason.value }",
-     '{ request_id: r.request_id, answer: "approve", reason: reason.value }', PHONE),
+    # console and Mission Control (one rendering part)
+    ("console drops what silence does", CONSOLE,
+     [('if r.get("consequence_of_no_response"):\n        parts.append("<br><b>If you do not answer:',
+       'if False:\n        parts.append("<br><b>If you do not answer:')], PAGES),
+    ("console shows only the reach keys again", CONSOLE,
+     [('if k not in reach and k != "malformed"}', "if k in reach}")], PAGES),
+    ("console repeats the reach keys", CONSOLE, [('if k not in reach and k != "malformed"}', 'if k != "malformed"}')],
+     PAGES),
+    ("console puts the malformed marker after the reach list (as before)", CONSOLE,
+     [('    if "malformed" in requested:', '    if False:'),
+      ('if k not in reach and k != "malformed"}', "if k not in reach}")], PAGES),
+    ("console drops the paid clause of what approving covers", CONSOLE,
+     [("if isinstance(cost, (int, float)) and not isinstance(cost, bool) and cost > 0:", "if False:")], PAGES),
+    ("console drops the action an approval was asked for", CONSOLE,
+     [("""(f" Asked for action {r['action_id']}." if r.get("action_id") else "")""", '""')], REAL),
+    ("console drops the params an approval covers", CONSOLE,
+     [('if isinstance(p, dict) and isinstance(p.get("json"), str):', "if False:")], REAL),
+    ("console drops the mission an approval covers", CONSOLE,
+     [("""([f"mission {r['mission_id']}"] if r.get("mission_id") else [])""", "[]")], REAL),
+    ("console shows cut params as whole", CONSOLE, [('whole = p.get("length") == len(p["json"])', "whole = True")],
+     REAL),
+    ("console stops escaping the consequence", CONSOLE,
+     [('_e(r["consequence_of_no_response"])', 'r["consequence_of_no_response"]')], ESCAPE),
+    ("console stops escaping the authority requested", CONSOLE,
+     [('+ _e("; ".join(f"{k}: {_shown(v)}" for k, v in rest.items())))',
+       '+ str("; ".join(f"{k}: {_shown(v)}" for k, v in rest.items())))')], ESCAPE),
+    ("console stops escaping what approving covers", CONSOLE,
+     [("+ _e(approval_covers(r)[len(COVERS):]))", "+ approval_covers(r)[len(COVERS):])")], ESCAPE),
+    ("console prints numbers as Python does", CONSOLE, [("        return _number(v)", "        return str(v)")],
+     FORMAT),
+    ("console prints null as Python does", CONSOLE, [('        return "null"', '        return "None"')], FORMAT),
+    ("console prints dicts as Python does", CONSOLE,
+     [('return "{" + ", ".join(f"{k}: {_shown(v[k])}" for k in sorted(v, key=str)) + "}"', "return str(v)")], FORMAT),
+    # the data behind them: the engine records the bound params, the projection carries them
+    ("an APPROVAL records no params", "greg/missions.py",
+     [('                message["bound_params"] = params_view(params)', "                pass")], REAL),
+    ("the loop's APPROVAL records no params", "greg/missions.py",
+     [('if float(s.get("cost_usd", 0.0)) > 0 else None, params=bound_params)',
+       'if float(s.get("cost_usd", 0.0)) > 0 else None, params=None)')], REAL),
+    ("the params view keeps the whole text", "greg/missions.py",
+     [('"json": text[:PARAMS_SHOWN]', '"json": text')], REAL),
+    ("the params view hashes another form", "greg/missions.py",
+     [('"sha256": sha256_json(params)}', '"sha256": sha256_json({"params": params})}')], REAL),
+    ("the projection drops the action id", "greg/asks.py",
+     [('"mission_id", "action_id", "resource"', '"mission_id", "resource"')], REAL),
+    ("the projection drops the bound params", "greg/asks.py",
+     [('"authority_requested", "bound_params",', '"authority_requested",')], REAL),
+    # the phone
+    ("phone drops what silence does", CORE,
+     [("if (r.consequence_of_no_response) lines.push", "if (false) lines.push")], PHONE),
+    ("phone drops the authority requested", CORE,
+     [('if (rest.length) lines.push("Authority requested: "', 'if (false) lines.push("Authority requested: "')], PHONE),
+    ("phone puts the malformed marker after the authority line", CORE,
+     [("  " + MALFORMED_JS + "  " + AUTHORITY_JS, "  " + AUTHORITY_JS + "  " + MALFORMED_JS)], PHONE),
+    ("phone answers a RECONCILIATION with approve", CORE,
+     [('if (r.kind === "RECONCILIATION")', 'if (r.kind === "NEVER")')], PHONE),
+    ("phone's It happened sends reconcile_not_executed", CORE,
+     [('[["It happened", "reconcile_executed"], ["It did not happen", "reconcile_not_executed"]]',
+       '[["It happened", "reconcile_not_executed"], ["It did not happen", "reconcile_executed"]]')], PHONE),
+    ("phone's Reject sends approve", CORE,
+     [('[["Approve", "approve"], ["Reject", "reject"]]', '[["Approve", "reject"], ["Reject", "approve"]]')], PHONE),
+    ("askAnswers offers answers on an ask no DECISION closes", CORE,
+     [("  if (r.answerable === false) return [];\n", "")], PHONE),
+    ("phone page never renders the terms", APP, [(TERMS, "")], PHONE),
+    ("phone page renders the terms only after the unanswerable skip", APP,
+     [(TERMS, "    //"), (SKIP, SKIP + "\n" + TERMS)], PHONE),
+    ("phone page sends approve whatever the button", APP,
+     [("{ request_id: r.request_id, answer, reason: reason.value }",
+       '{ request_id: r.request_id, answer: "approve", reason: reason.value }')], PHONE),
+    ("phone drops what approving covers", CORE,
+     [('if (r.kind === "APPROVAL") lines.push(approvalCovers(r));', "")], PHONE_REAL),
+    ("phone drops the params an approval covers", CORE,
+     [('if (p !== null && typeof p === "object" && typeof p.json === "string") {', "if (false) {")], PHONE_REAL),
+    ("phone shows cut params as whole", CORE, [("whole = p.length === shownLength", "whole = true")], PHONE_REAL),
+    ("phone prints dicts as JSON", CORE,
+     [('if (typeof v === "object") return "{" + Object.keys(v).sort(byCodePoint)',
+       'if (typeof v === "object") return JSON.stringify(v); if (0) return "{" + Object.keys(v).sort(byCodePoint)')],
+     FORMAT),
+    ("phone sorts keys by UTF-16 unit", CORE, [(".sort(byCodePoint)", ".sort()")], FORMAT),
+    ("phone joins lists with String()", CORE, [("return v.map(shownValue).join", "return v.join")], FORMAT),
 ]
 
 
@@ -51,18 +119,25 @@ def main():
         repo = Path(temp) / "repo"
         shutil.copytree(ROOT, repo, ignore=shutil.ignore_patterns(".git", "__pycache__", ".pytest_cache"))
         valid = {}
-        for node in dict.fromkeys(m[4] for m in MUTANTS):
+        for node in dict.fromkeys(m[3] for m in MUTANTS):
             clean = run(repo, node)
             summary = clean.stdout.strip().splitlines()[-1] if clean.stdout.strip() else ""
             valid[node] = clean.returncode == 0 and " passed" in summary and "skipped" not in summary
-        for name, relative, old, new, node in MUTANTS:
+        for name, relative, replacements, node in MUTANTS:
             path = repo / relative
             original = path.read_text()
-            if original.count(old) != 1:
+            mutated_text = original
+            stale = False
+            for old, new in replacements:
+                if mutated_text.count(old) != 1:
+                    stale = True
+                    break
+                mutated_text = mutated_text.replace(old, new)
+            if stale:
                 print("STALE", name); bad += 1; continue
             if not valid[node]:
                 print("INVALID", name, "(its test does not pass unmutated)"); bad += 1; continue
-            path.write_text(original.replace(old, new))
+            path.write_text(mutated_text)
             try:
                 mutated = run(repo, node)
             finally:

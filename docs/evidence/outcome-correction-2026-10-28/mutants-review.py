@@ -1,5 +1,5 @@
 """Each mutant removes one safeguard added by the review fixes (S1-S10, F1-F8 of the second review of #219, then the
-fixes for the review of #221); the resolution unit tests must catch it.
+fixes for the review of #221 and for its round 3); the resolution unit tests must catch it.
 
 Usage: python -B mutants-review.py REPO_ROOT > mutants-review.txt
 
@@ -17,7 +17,9 @@ its line, so it was recorded as caught although the mutated file did not compile
 that SIGTERM left a mutant in the tree and that a dirty tree was only labelled, not refused. At #221, N6 and N11 were
 retargeted to the rewritten fact key and Laplace check, N15-N24 cover F1-F8, and the review-2 test file was added.
 After the fixes for the review of #221, N11, N17, N18 and N20 were retargeted, N25-N36 cover those fixes, a mutant may
-name a target file other than settlement.py, and the review-3 test file was added.)
+name a target file other than settlement.py, and the review-3 test file was added. After round 3's fixes, N11, N17,
+N18, N25, N28-N31 and N33 were retargeted to the rewritten walk, reconcile and receipt links, N37-N51 cover those fixes,
+and the review-4 test file was added.)
 """
 import hashlib, os, platform, shutil, signal, subprocess, sys, tempfile
 from pathlib import Path
@@ -36,7 +38,7 @@ MUTANTS = {
  "N8 S5 succeeded only when prior is None": ('        if outcome.get("answer_version") and _base_identity(outcome) in legacy:', '        if prior is None and outcome.get("answer_version") and _base_identity(outcome) in legacy:'),
  "N9 S6 failed check hidden by dispute": ('        if not outcome["correct"]:        # the signed check failed', '        if False:        # the signed check failed'),
  "N10 S7 unsettleable dispute weighed": ('        if row["mission_id"] not in settling:', '        if False:'),
- "N11 S8 Laplace flips ignored": ('            if lo <= o_hi and o_lo <= hi:', '            if False:'),
+ "N11 S8 Laplace flips ignored": ('            if inside:', '            if False:'),
  "N12 S9 unsigned fact eligible (replay)": ('(accept in named and accept in signed_facts', '(accept in named'),
  "N13 S9 unsigned fact eligible (row)": ('"eligible_to_accept": e.event_id in signed_facts\n                and', '"eligible_to_accept": True\n                and'),
  "N14 S10 engine label hashed": ('if k not in ANSWER_PROVENANCE_FIELDS}', 'if True}'),
@@ -44,8 +46,8 @@ MUTANTS = {
  "N15 F1 old answer version not re-derived": ('        current = _current_answer_version(payload, journal)\n', '        current = None\n'),
  "N16 F2 Holm over pairs only": ('        families = [c for size in range(1, len(tested) + 1) for c in combinations(tested, size)]',
                                  '        families = [(m,) for m in tested]'),
- "N17 F3 unsettled fit not compared": ('        others.append(("an unsettled co-eligible fit", UNSETTLED_LAPLACE, UNSETTLED_LAPLACE))', '        pass'),
- "N18 F3 a tie at a bound ignored": ('            if lo <= o_hi and o_lo <= hi:', '            if lo < o_hi and o_lo < hi:'),
+ "N17 F3 unsettled fit not compared": ('        others.append(("an unsettled co-eligible fit", [UNSETTLED_LAPLACE]))', '        pass'),
+ "N18 F3 a tie at a bound ignored": ('            inside = [v for v in values if lo <= v <= hi]', '            inside = [v for v in values if lo < v < hi]'),
  "N19 F4 string order of issued_at": ('out.append((_instant(command["issued_at"]), position, event))', 'out.append((command["issued_at"], position, event))'),
  "N20 F4 older-signed overlap not refused": ('            if overlap and prior.payload["command_digest"] != command_digest and _instant(prior_at) > _instant(own):',
                                             '            if False:'),
@@ -55,32 +57,57 @@ MUTANTS = {
  "N23 F7 omitted source not defaulted": ('{"source": "founder_reported",       # Body.apply\'s default (F7)\n                                                 **signed', '{**signed'),
  "N24 F8 memo misses a new founder record": ('records[seen - 1].hash == tail \\\n                    and not any(_founder_record(r) for r in records[seen:]):', 'records[seen - 1].hash == tail:'),
  # The review of #221 (comment 6491739752), fixed on #221's branch
- "N25 F2-a a walk limit read as a hold": ('        reasons += preference + limits', '        reasons += preference'),
+ "N25 F2-a a walk limit read as a hold": ('            row["priority"] = "investigate" if weighed["could_change"] or weighed["walk_limits"] else "hold"',
+                                          '            row["priority"] = "investigate" if weighed["could_change"] else "hold"'),
  "N26 F2-b the two extremes only": ('    return [(n, k)] + [(n + d, k + j) for j in range(d + 1)]', '    return [(n + d, k), (n + d, k + d)]'),
  "N27 F2-c other disputed methods held (preference)": ('    others = sorted(m for m in joint if m != method and m in tested)', '    others = []'),
- "N28 F2-c other disputed methods held (Laplace)": ('        others += [(other, *laplace(other)) for other in sorted(states) if other != method]',
-                                                   '        others += [(other, Fraction(counts.get(other, (0, 0))[1] + 1, counts.get(other, (0, 0))[0] + 2),'
-                                                   ' Fraction(counts.get(other, (0, 0))[1] + 1, counts.get(other, (0, 0))[0] + 2))'
+ "N28 F2-c other disputed methods held (Laplace)": ('        others += [(other, laplace(reachable[other])) for other in sorted(states) if other != method]',
+                                                   '        others += [(other, [Fraction(counts.get(other, (0, 0))[1] + 1, counts.get(other, (0, 0))[0] + 2)])'
                                                    ' for other in sorted(states) if other != method]'),
- "N29 F2-d a demoted fit tested as first": ('        eligible.sort(key=lambda r: 1 if r["demoted"] else 0)        # _rank\'s leading key; stable otherwise',
-                                           '        pass'),
- "N30 F2-f the raw preferred value": ('        return (_settled_preference(eligible, world) or {}).get("preferred") or top',
-                                      '        return (_settled_preference(eligible, world) or {}).get("preferred")'),
- "N31 F1-a shadowed chain heads left live": ('        for shadow in chain_heads[:-1]:', '        for shadow in []:'),
+ "N29 F2-d a demoted fit tested as first": ('            eligible.sort(key=lambda r: 1 if r["demoted"] else 0)    # _rank\'s leading key; stable otherwise',
+                                           '            pass'),
+ "N30 F2-f the raw preferred value": ('            memo[key] = ((_settled_preference(eligible, world) or {}).get("preferred") or top, top)',
+                                      '            memo[key] = ((_settled_preference(eligible, world) or {}).get("preferred"), top)'),
+ "N31 F1-a shadowed chain heads left live": ('        for shadow in chain_heads:', '        for shadow in []:'),
  "N32 F1-a merge closures not counted as superseding": ('    superseded = {e.payload.get("supersedes") for e in every}',
                                                         '    superseded = {e.payload.get("supersedes") for e in every if not e.payload.get("merged_into")}'),
- "N33 F1-a merged rows read as links": ('        if data.get("merged_into"):       # a closed duplicate chain (F1-a): the merged chain carries the link\n            continue\n',
-                                        ''),
+ "N33 F1-a merged rows read as links": ('        target = latest(data["merged_into"]) if data.get("merged_into") else None', '        target = None'),
  "N34 G4-d an equal stamp refused": ('_instant(prior_at) > _instant(own):', '_instant(prior_at) >= _instant(own):'),
  "N35 F7-a a closed mission read as pending a closure": ('    if terminal:\n', '    if False:\n'),
  "N36 G4-a raw stamp as the inbox name": ("greg/body.py", '    return instant(issued_at).astimezone(timezone.utc).strftime("%Y-%m-%dT%H%M%S.%fZ")',
                                           '    return issued_at.replace(":", "")'),
+ # Round 3 of the review of #221 (comment 6499707581), fixed on #221's branch. F2R-4's inhibition memo is not a mutant:
+ # removing it changes only the time taken, which no test here measures.
+ "N37 F2R-1 other disputed methods at three states": ('        joint = {m: reachable[m] for m in reachable if m != method}',
+                                                      '        joint = {m: [states[m][0], states[m][1], states[m][-1]] for m in states if m != method}'),
+ "N38 F2R-1 the joint state limit ignored": ('    if len(others) > JOINT_DISPUTE_LIMIT or joint_states > JOINT_STATE_LIMIT:',
+                                             '    if len(others) > JOINT_DISPUTE_LIMIT:'),
+ "N39 F2R-2 the Laplace hull": ('            inside = [v for v in values if lo <= v <= hi]',
+                                '            inside = values if values[0] <= hi and lo <= values[-1] else []'),
+ "N40 F2R-3 a walk limit read as a change found": ('        reasons += preference\n', '        reasons += preference + limits\n'),
+ "N41 F2R-3 a walk limit's own text": ('"the walk could not be completed, so a change is not ruled out: " + "; ".join(weighed["walk_limits"])',
+                                        '"resolving it can change a selection the compiler makes from settled outcomes"'),
+ "N42 F2R-4 the preference memo keyed without the counts": ('        key = (first, members, tuple(world.get(m, (0, 0)) for m in members))',
+                                                            '        key = (first, members)'),
+ "N43 F2R-5 the named first fit, not the ranked one": ('        tops = sorted({top for _, top in picks.values()})', '        tops = [first]'),
+ "N44 F1-r3-1 only the older heads closed": ('        for shadow in chain_heads:', '        for shadow in chain_heads[:-1]:'),
+ "N45 F1-r3-2 merged into a row this pass supersedes": ('                    "merged_into": final.get(identity, keep),',
+                                                        '                    "merged_into": keep,'),
+ "N46 F1-r3-1 an unmeasured duplicate merged": ('            if identity in measured:', '            if True:'),
+ "N47 R3-N33 a merge closure linked to its target as written": ('        target = latest(data["merged_into"]) if data.get("merged_into") else None',
+                                                                '        target = by_id.get(data["merged_into"]) if data.get("merged_into") else None'),
+ "N48 G4F7-3 a closure awaiting appraisal ignored": ('    if awaiting:\n', '    if False:\n'),
+ "N49 G4F7-3 an appraised held closure read as awaiting": ('               if e.event_id not in judged})', '               })'),
+ "N50 G4F7-6 every rejected fact listed": ('+ (f" (rejected by a resolution: {rejected_eligible})" if rejected_eligible else "")',
+                                           '+ (f" (rejected by a resolution: {state[\'rejected\']})" if state.get("rejected") else "")'),
+ "N51 G4F7-4 the old scored_as text": ('"scored_as": (f"nothing: {unsettled_why or _unsettled_why(None, False)}" if not settles else',
+                                       '"scored_as": ("nothing: the mission\'s latest appraisal settles nothing, so this answer is not scored" if not settles else'),
 }
 MUTANTS = {name: (spec if len(spec) == 3 else (SETTLEMENT, *spec)) for name, spec in MUTANTS.items()}
 TARGETS = sorted({path for path, _, _ in MUTANTS.values()})
 TESTS = ["tests/unit/test_greg_outcome_resolution.py", "tests/unit/test_greg_pending_construction_realization.py",
          "tests/unit/test_greg_outcome_resolution_signed.py", "tests/unit/test_greg_outcome_resolution_review2.py",
-         "tests/unit/test_greg_outcome_resolution_review3.py"]
+         "tests/unit/test_greg_outcome_resolution_review3.py", "tests/unit/test_greg_outcome_resolution_review4.py"]
 COMMAND = [sys.executable, "-B", "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", *TESTS]
 ENV = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
 TIME_LIMIT = 1800  # seconds per run; the unmutated set takes about six minutes

@@ -8,8 +8,9 @@ The registry is ``function_owner_records`` in docs/collaboration/ARCHITECTURE-OW
 
 1. every module and qualname the registry names exists (read from the source with ``ast``; nothing is imported);
 2. no module under greg/ imports an alternate whose status is RETIRED or HISTORICAL: ``import``, ``from ... import``
-   (relative ones too), ``as`` aliases, attribute access through an aliased module, function-level imports and
-   ``importlib.import_module`` / ``__import__`` with a constant name;
+   (relative ones too), ``as`` aliases, attribute access through an aliased module, function-level imports,
+   ``importlib.import_module`` / ``__import__`` with a constant name and a capability bound with
+   ``_lazy("<module>", "<function>")`` (greg/capabilities.py);
 3. a module-level definition in greg/, foundry/, egregore/, omnimorph/, autonomy/ or governance/ whose name matches a
    record's markers, outside that record's canonical, candidate and alternate modules and its ``distinct`` names,
    fails with the record to add. This is a NAME HEURISTIC: a re-implementation under a name no marker matches, a
@@ -239,9 +240,13 @@ def references(tree: ast.Module, module: str, is_package: bool) -> list[tuple[in
         elif isinstance(node, ast.Call):
             func = node.func
             name = func.attr if isinstance(func, ast.Attribute) else func.id if isinstance(func, ast.Name) else ""
-            if name in ("import_module", "__import__") and node.args and isinstance(node.args[0], ast.Constant) \
-                    and isinstance(node.args[0].value, str):
-                out.append((node.lineno, node.args[0].value))
+            consts = [a.value if isinstance(a, ast.Constant) and isinstance(a.value, str) else None
+                      for a in node.args[:2]]
+            if name in ("import_module", "__import__") and consts and consts[0]:
+                out.append((node.lineno, consts[0]))
+            elif name == "_lazy" and consts and consts[0]:
+                # greg/capabilities.py binds a capability to "<module>", "<function>" and imports it on first call
+                out.append((node.lineno, consts[0] + (f".{consts[1]}" if len(consts) > 1 and consts[1] else "")))
     for node in ast.walk(tree):
         if isinstance(node, ast.Attribute):
             chain, value = [node.attr], node.value
@@ -361,15 +366,18 @@ def test_the_import_guard_sees_aliases_attributes_relative_and_lazy_imports(tmp_
         "greg/star.py": "from greg.old import *\n",
         "greg/whole_module.py": "import greg.gone\n",
         "greg/dynamic.py": "import importlib\nM = importlib.import_module('greg.gone')\n",
+        "greg/wired.py": "def _lazy(m, n): pass\nB = {'x': _lazy('greg.old', 'LADDER')}\n",
+        "greg/wired_module.py": "def _lazy(m, n): pass\nB = {'x': _lazy('greg.gone', handler)}\n",
+        "greg/wired_fine.py": "def _lazy(m, n): pass\nB = {'x': _lazy('greg.old', 'keep')}\n",
         "greg/sub/__init__.py": "from ..old import LADDER\n",
         "greg/fine.py": "from greg.old import keep\nimport greg.owner\n",
     })
     found = retired_imports(HISTORICAL, root)
     for name in ("direct", "aliased", "module_alias", "parent_alias", "dotted", "relative", "relative_module", "lazy",
-                 "star", "whole_module", "dynamic"):
+                 "star", "whole_module", "dynamic", "wired", "wired_module"):
         assert any(line.startswith(f"greg/{name}.py:") for line in found), name
     assert any(line.startswith("greg/sub/__init__.py:") for line in found)
-    assert not any(line.startswith(("greg/fine.py:", "greg/old.py:")) for line in found)
+    assert not any(line.startswith(("greg/fine.py:", "greg/old.py:", "greg/wired_fine.py:")) for line in found)
 
 
 def test_the_definition_guard_sees_classes_constants_and_guarded_blocks(tmp_path):

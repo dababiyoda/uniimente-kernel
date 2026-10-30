@@ -1,0 +1,56 @@
+{
+ "intent_id": "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN",
+ "title": "Build the whole directive first; the founder-device run comes after, as its acceptance",
+ "statement": "Continue building and doing the prompt verbatim. No real Chromebook run is needed. That is done when we completely build the prompt",
+ "exact_source_excerpt": "Continue building and doing the prompt verbatim. No real Chromebook run is needed. That is done when we completely build the prompt",
+ "source_refs": [
+  "docs/intent/sources/FOUNDER-CORRECTION-2026-10-30-source.md",
+  "docs/intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md",
+  "docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json"
+ ],
+ "source_location": "docs/intent/sources/FOUNDER-CORRECTION-2026-10-30-source.md",
+ "source_date": "2026-10-30",
+ "changed_axis": "sequence and timing (CLAUDE.md developmental-inheritance axes). The final intended effect, the evidence standard and the authority envelope are unchanged.",
+ "intended_effect": "Building every buildable node of the 2026-10-28 directive no longer waits for the founder-device run. That run becomes the acceptance step after the build, not a gate in front of it.",
+ "executable_interpretation": "Agents keep building the directive's later nodes in dependency order (capability genesis, the business loop, SOP compounding, the AI workforce, the human work fabric, multi-venture, multi-body and compute, physical interfaces, future-technology absorption), each as a reviewable draft PR into the integration line. Nothing built in a container may be labelled FOUNDER-USED, REBOOT-VERIFIED on the founder's device, LIVE-BOUNDED, EXTERNALLY-VERIFIED or COMMERCIALLY-VALIDATED. VEPMC still moves only on the founder's designated device, with the founder's key and acceptance (greg/metrics.py founder_tier). A test key never moves it.",
+ "owner": "Alfonso Lopez (founder authority); integration owner and implementing sessions on board #96",
+ "state": "active",
+ "status": "active",
+ "authority_level": "active_requirement",
+ "consequence_class": "sequencing",
+ "binding_scope": "Work selection and sequencing on the integration line (#196 and its children). Reversible implementation, tests and draft review only. No merge, deployment, spending, publishing, credential, outside-contact or live-activation authority.",
+ "constitutional_constraints": [
+  "Chat text is intent evidence, not founder authentication; it authorizes no runtime act",
+  "The evidence ladder of directive section 56 is unchanged: tests prove software behavior, not whole-product operation, founder use, welfare or market success",
+  "VEPMC (directive section 57) is not redefined: a closure signed with a test key or a fixture key never counts",
+  "Capability growth creates no authority; building is not installation, installation is not activation, activation is not consequence authority"
+ ],
+ "success_evidence": [
+  "Later directive nodes land as draft PRs into the integration line with fail-before/pass-after tests while VEPMC stays 0",
+  "tests/unit/test_founder_correction_20261030.py: the verbatim sentence is in the source, the record has every required ledger field, and VEPMC still requires the founder tier"
+ ],
+ "failure_evidence": [
+  "Any surface that reports a container run as founder-used, live or externally verified",
+  "Any change that lets a test key or a rehearsal move VEPMC or greg path N1"
+ ],
+ "dependencies": [
+  "INTENT-20261028-OPUS-MAXIMUS-REISSUE (the prompt this correction refers to)",
+  "INTENT-20261001-FULL-MACHINE-COMPLETION (VEPMC already does not stop unrelated software completion)"
+ ],
+ "conflicts": [
+  "docs/opus-maximus/NEXT_WAVE_AND_HORIZONS.md section 1 calls item 1 (VEPMC 0 to 1 on the Chromebook) the single bottleneck metric. Resolved here: VEPMC stays the device-acceptance metric, but no longer sequences the build. A dated note is added there; the table is kept as written.",
+  "Directive section 58 says not to jump to later nodes because they are more exciting. Resolved by founder authority: the jump is the founder's own sequencing decision, not excitement. The evidence labels of section 56 still apply to every later node."
+ ],
+ "next_review_trigger": "The founder declares the prompt completely built, or runs the device acceptance, or corrects this sequencing again",
+ "supersedes": [
+  "The reading of VEPMC 0 to 1 as the gate that precedes building the directive's later nodes (sequencing only; the metric itself is kept)"
+ ],
+ "superseded_by": [],
+ "implementation_refs": [
+  "docs/FOUNDER_INTENT_LEDGER.md",
+  "docs/opus-maximus/NEXT_WAVE_AND_HORIZONS.md",
+  "greg/metrics.py",
+  "tests/unit/test_founder_correction_20261030.py"
+ ],
+ "authority_delta": "none"
+}

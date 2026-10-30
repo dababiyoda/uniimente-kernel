@@ -2124,8 +2124,11 @@ class MissionEngine:
                                     recommendation="repair or replace the sensor capability, or revise the check",
                                     alternatives=["attach another capability for this function", "abandon"],
                                     requested={"checks": sorted(errors)}, now=now)
+                # watched like a NO_STRATEGY block: re-read at the mission's cadence, and resumed when the sensor
+                # reads again (section IX scenario 7: before, a fixed world stayed unread until the founder answered)
                 self._block(m, {"type": "decision", "request_id": rid, "why": "repeated sensor failure",
-                                "reconsider": "founder repairs sensing"})
+                                "reconsider": "founder repairs sensing, or the sensor reads again",
+                                "failing_checks": sorted(errors), "sensing": True})
                 return {"state": "BLOCKED", "blocker": m.blocker}
             self._schedule(m, now, 30 * streak or 30)
             return {"state": "SENSOR_RETRY", "checks": sorted(errors)}
@@ -2495,6 +2498,21 @@ class MissionEngine:
         failing, evidence = self._observe(m, now)
         if failing is None:
             return {"state": "BLOCKED", "blocker": m.blocker}
+        if m.blocker.get("sensing"):
+            # A sensing block waits only while its checks stay unread. Once they read again the question is moot,
+            # whatever the reading says: the mission resumes and decides on the measured world (a failing check is
+            # then pursued or asked about as itself, not as a broken sensor).
+            unread = set(m.blocker["failing_checks"]) & set(self.sensor_errors)
+            if unread:
+                self._schedule(m, now, m.spec["closure"].get("cadence_seconds", 3600))
+                return {"state": "WAITING", "blocker": m.blocker, "still_unread": sorted(unread)}
+            rid = m.blocker["request_id"]
+            why = "world re-observed: the checks the sensor could not read are read again; GREG took no other action"
+            self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id, "why": why,
+                                                       "evidence": evidence, "at": iso(now)}, key=[rid, "withdrawn"])
+            self._unblock(m, why)
+            self.book.rebuild()
+            return {"state": "RESUMED", "why": why}
         if failing and self.capability_faults and m.blocker["type"] != "human_work":
             # A formed capability faulting is repairable machinery, not a reason to wait on the founder:
             # the same two-strike self-repair runs; the next observation then withdraws a moot blocker.

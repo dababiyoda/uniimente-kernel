@@ -46,15 +46,10 @@ def _asks(requests, mission_id):
     return [r.get("kind") for r in requests if r.get("mission_id") == mission_id]
 
 
-def test_a_failed_capability_hands_off_truthfully_and_the_mission_resumes_when_the_world_is_fixed(tmp_path):
-    """Scenario 7. The sensor fails (the path is a directory, which fs.search refuses). The mission does not close,
-    the founder is asked about the sensor, not told the phrase was found or absent, and the refusal's reason is on
-    the record. After the third failed round GREG stops re-reading and waits, so fixing the world alone does not
-    move it; the founder's one signed answer does. The same signed mission then closes without being signed again,
-    the question is answered, and the separate appraiser verifies the closure."""
+def _broken_sensor_mission(tmp_path):
     home, key, body_id, data = make_body(tmp_path)
     target = data / "audit.log"
-    target.mkdir()
+    target.mkdir()                                                                # fs.search refuses a directory
     _submit(home, key, body_id, "m:audit", [_never("clean", target, "FATAL")])
     clock = Clock()
     missions, requests = run(home, clock, ticks=12, step=600.0)
@@ -63,22 +58,48 @@ def test_a_failed_capability_hands_off_truthfully_and_the_mission_resumes_when_t
     assert observed and not any(e["passed"] for e in observed)
     assert all("not a regular file" in e["detail"] for e in observed)            # the reason is kept
     assert _asks(requests, "m:audit") == ["SENSOR_FAILURE"]                      # asked about the sensor
+    return home, key, body_id, target, clock, observed
+
+
+def test_a_failed_capability_hands_off_truthfully_and_the_mission_resumes_when_the_world_is_fixed(tmp_path):
+    """Scenario 7. The sensor fails (the path is a directory, which fs.search refuses). The mission does not close,
+    the founder is asked about the sensor, not told the phrase was found or absent, and the refusal's reason is on
+    the record. GREG keeps re-reading at the mission's cadence. When the world is fixed, the question is withdrawn
+    as moot, the same signed mission closes without being signed again, and the separate appraiser verifies it.
+    Before: after the third failed round nothing was read again until the founder answered."""
+    home, key, body_id, target, clock, observed = _broken_sensor_mission(tmp_path)
     target.rmdir()
     target.write_text("all quiet\n" * 5000)                                       # the world is fixed
-    missions, requests = run(home, clock, ticks=6, step=600.0)
-    assert missions["m:audit"].status != "ACHIEVED"                               # waiting for the founder, not polling
-    assert len(_observed(home, "m:audit")) == len(observed)
-    [ask] = [r for r in requests if r.get("mission_id") == "m:audit"]
-    submit(home, key, body_id, "DECISION", {"request_id": ask["request_id"], "answer": "approve",
-                                            "reason": "the log is back where it belongs"})
-    missions, requests = run(home, clock, ticks=6, step=600.0)
+    missions, requests = run(home, clock, ticks=12, step=600.0)
     assert missions["m:audit"].status == "ACHIEVED"
-    assert _asks(requests, "m:audit") == []                                      # the question is answered
+    assert _asks(requests, "m:audit") == []
+    [withdrawn] = [e for e in events(home, "decision.withdrawn") if e["mission_id"] == "m:audit"]
+    assert "read again" in withdrawn["why"]                                       # withdrawn, never answered
+    assert not [e for e in events(home, "decision.answered")]
     assert [e for e in events(home, "mission.submitted") if e.get("mission_id") == "m:audit"][1:] == []
     appraised = [e for e in events(home, "mission.appraised") if e["mission_id"] == "m:audit"]
     assert appraised and appraised[-1]["verdict"] == "VERIFIED"
     after = _observed(home, "m:audit")
     assert after[: len(observed)] == observed                                     # the failures stay on the record
+
+
+def test_a_sensor_that_stays_broken_asks_once_and_is_read_only_at_the_missions_cadence(tmp_path):
+    home, key, body_id, target, clock, observed = _broken_sensor_mission(tmp_path)
+    missions, requests = run(home, clock, ticks=24, step=3600.0)                  # one day
+    assert missions["m:audit"].status != "ACHIEVED"
+    assert _asks(requests, "m:audit") == ["SENSOR_FAILURE"]                      # the same one question
+    later = _observed(home, "m:audit")[len(observed):]
+    assert 20 <= len(later) <= 25 and all("not a regular file" in e["detail"] for e in later)   # hourly, no more
+
+
+def test_a_sensor_that_reads_again_on_a_failing_world_turns_the_question_into_the_right_one(tmp_path):
+    home, key, body_id, target, clock, observed = _broken_sensor_mission(tmp_path)
+    target.rmdir()
+    target.write_text("ok\nFATAL: ledger corrupt\n")                             # readable, and the fault is real
+    missions, requests = run(home, clock, ticks=12, step=600.0)
+    assert missions["m:audit"].status != "ACHIEVED"
+    assert _asks(requests, "m:audit") == ["NO_STRATEGY"]                         # a failed check, not a sensor
+    assert [e["why"] for e in events(home, "decision.withdrawn") if e["mission_id"] == "m:audit"]
 
 
 def test_evidence_that_is_valid_but_too_narrow_never_proves_an_absence(tmp_path):

@@ -787,11 +787,9 @@ class Genesis:
                 except CapabilityError:
                     intact = False
                 self.registry.register(manifest, builders.built_adapter(origin["contract"], path, origin["source_sha256"]),
-                                       state=state if intact else "QUARANTINED")
-                if not intact and state != "QUARANTINED":
-                    self._restore_note({"capability_id": cid, "state": "QUARANTINED",
-                                                             "why": "built source missing or changed since verification"},
-                                        key=[cid, "quarantine", origin["source_sha256"]])
+                                       state=self._restored_state(cid, state, None if intact else
+                                                                  "built source missing or changed since verification",
+                                                                  [cid, "quarantine", origin["source_sha256"]]))
                 continue
             if origin.get("kind") == "package":
                 self._restore_package(cid, manifest, origin, state)
@@ -800,15 +798,21 @@ class Genesis:
                 self._restore_composed(cid, manifest, origin, state)
                 continue
             binary = manifest.binaries[0]
-            candidate = Candidate(origin["binary_name"], tuple(origin["argv"]), origin["parse"])
-            intact = Path(binary).exists() and hashlib.sha256(
-                Path(binary).read_bytes()).hexdigest() == manifest.provenance.get("binary_sha256")
+            # the catalog's own candidate, so its companions (pdfimages beside pdftotext) run after a restart too;
+            # the registration record keeps only the main binary's argv
+            candidate = next((c for c in CATALOG.get(origin["function"], {}).get("candidates", ())
+                              if isinstance(c, Candidate) and c.binary_name == origin["binary_name"]
+                              and list(c.argv) == list(origin["argv"]) and c.parse == origin["parse"]),
+                             Candidate(origin["binary_name"], tuple(origin["argv"]), origin["parse"]))
+            pinned = [(binary, manifest.provenance.get("binary_sha256"))] + [
+                (c.get("binary"), c.get("binary_sha256")) for c in (manifest.provenance.get("companions") or {}).values()
+                if isinstance(c, dict)]
+            intact = all(path and Path(path).exists() and hashlib.sha256(Path(path).read_bytes()).hexdigest() == digest
+                         for path, digest in pinned)
             self.registry.register(manifest, catalog_adapter(origin["function"], candidate, binary),
-                                   state=state if intact else "QUARANTINED")
-            if not intact and state != "QUARANTINED":
-                self._restore_note({"capability_id": cid, "state": "QUARANTINED",
-                                                         "why": "binary missing or changed since verification"},
-                                    key=[cid, "quarantine", manifest.provenance.get("binary_sha256")])
+                                   state=self._restored_state(cid, state, None if intact else
+                                                              "binary missing or changed since verification",
+                                                              [cid, "quarantine", manifest.provenance.get("binary_sha256")]))
         if record:
             self._finish_attaches()
 
@@ -830,6 +834,16 @@ class Genesis:
                     "completed_at_restart": "the body stopped between the attach and this record"},
                     key=[data["deficit_id"], "resolved"])
                 resolved.add(data["deficit_id"])
+
+    def _restored_state(self, cid, state, why, key):
+        """The state a capability resumes in. Changed or missing pieces quarantine it, but never over the founder's
+        own DETACHED: a detach is his decision and survives any restart (the adapter re-checks every pin before a
+        run, so a later attach of a changed capability still refuses to serve it)."""
+        if why is None or state == "DETACHED":
+            return state
+        if state != "QUARANTINED":
+            self._restore_note({"capability_id": cid, "state": "QUARANTINED", "why": why}, key=key)
+        return "QUARANTINED"
 
     def _restore_note(self, payload, key):
         if getattr(self, "_recording", True):
@@ -854,10 +868,8 @@ class Genesis:
             except CapabilityError as exc:
                 why = str(exc)
         adapter = package_adapter(origin["function"], candidate) if candidate else (lambda params, ctx: None)
-        self.registry.register(manifest, adapter, state="QUARANTINED" if why else state)
-        if why and state != "QUARANTINED":
-            self._restore_note({"capability_id": cid, "state": "QUARANTINED", "why": why},
-                                key=[cid, "quarantine", manifest.provenance.get("package_digest"), why])
+        self.registry.register(manifest, adapter, state=self._restored_state(
+            cid, state, why, [cid, "quarantine", manifest.provenance.get("package_digest"), why]))
 
     def _restore_composed(self, cid, manifest, origin, state):
         """A constructed capability is trusted again only with the same reduction code over the same engine."""
@@ -870,11 +882,8 @@ class Genesis:
         elif origin["target_capability_id"] not in self.registry.manifests:
             why = "the engine it was qualified over is no longer registered"
         path = found[0] if found else []
-        self.registry.register(manifest, recombine.composed_adapter(path, self.registry),
-                               state="QUARANTINED" if why else state)
-        if why and state != "QUARANTINED":
-            self._restore_note({"capability_id": cid, "state": "QUARANTINED", "why": why},
-                                key=[cid, "quarantine", origin["chain_digest"], why])
+        self.registry.register(manifest, recombine.composed_adapter(path, self.registry), state=self._restored_state(
+            cid, state, why, [cid, "quarantine", origin["chain_digest"], why]))
 
     # -- the loop -------------------------------------------------------------------
     def _deficit_for(self, mission_id: str, function: str):

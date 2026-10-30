@@ -134,7 +134,8 @@ OSS_TESTS = ["tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_gre
 # license qualification, document.text and the binary ceilings: their own group, so each mutant runs the tests that
 # catch it first instead of the slower genesis suites before them (job 6 hit its 40-minute limit with them merged)
 METABOLISM_TESTS = ["tests/unit/test_greg_document_text.py", "tests/unit/test_greg_license_qualification.py",
-                    "tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_greg_license_use_context.py"]
+                    "tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_greg_license_use_context.py",
+                    "tests/unit/test_greg_genesis_restore.py"]
 OSS_MUTANTS = [
     ("certificate skips edge feasibility", "greg/cognition/network.py",
      "if exact[b] > exact[a] + w + tolerance(exact[a] + w):", "if False:"),
@@ -646,6 +647,14 @@ METABOLISM_MUTANTS = [
      'if now["assessment_digest"] != recorded.get("assessment_digest"):', "if False:"),
     ("a never-qualified capability runs under P4c", "greg/licensing.py",
      'return False, "no use qualification recorded; requalification required"', 'return True, ""'),
+    # restart (review of #201 at a1d2abf, GATE-1 and GATE-2/DOC-8)
+    ("a founder's detach is quarantined over at restart", "greg/genesis.py",
+     'if why is None or state == "DETACHED":', "if why is None:"),
+    ("a restarted reader loses its companions", "greg/genesis.py",
+     'if isinstance(c, Candidate) and c.binary_name == origin["binary_name"]', "if False"),
+    ("a changed companion is trusted at restart", "greg/genesis.py",
+     'pinned = [(binary, manifest.provenance.get("binary_sha256"))] + [',
+     'pinned = [(binary, manifest.provenance.get("binary_sha256"))] + 0 * ['),
     ("an acquired binary runs without requalification", "greg/genesis.py",
      "requalified, why = licensing.requalify_binary(ctx.manifest, binary)", 'requalified, why = True, ""'),
 ]

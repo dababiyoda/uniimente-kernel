@@ -575,6 +575,9 @@ def main(argv=None) -> int:
     fdr2.add_argument("--seed", required=True, help="the seed's sha256: address, as `greg foundry seed` printed it")
     sub.add_parser("learning", help="brief corrections per labelled brief, and every learned change kept, rejected or reverted")
     sub.add_parser("acceptance", help="read-only founder-device acceptance report from this body's own ledger")
+    bl = sub.add_parser("blockers", help="read-only: each open mission blocker, typed: why, when it is reconsidered, "
+                                         "the evidence and authority it needs, and the next move")
+    bl.add_argument("--mission", default=None, help="only this mission's blocker")
     rh = sub.add_parser("rehearse", help="credential-free rehearsal: a throwaway body and REHEARSAL key run the "
                                           "Founder's First Mission end to end")
     rh.add_argument("--dir"); rh.add_argument("--kernel-root"); rh.add_argument("--effort", type=int, default=8)
@@ -960,6 +963,10 @@ def main(argv=None) -> int:
         elif args.cmd == "lifecycle":
             print(_drop(home, "LIFECYCLE", {"mission_id": args.mission_id, "state": args.state,
                                             "reason": args.reason}, args))
+        elif args.cmd == "blockers":
+            from greg import blockers
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                print(json.dumps(blockers.open_blockers(journal, home=home, mission_id=args.mission), indent=1))
         elif args.cmd == "acceptance":
             from greg import acceptance
             return acceptance.main(home)

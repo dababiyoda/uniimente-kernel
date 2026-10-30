@@ -29,7 +29,6 @@ branches alone; the same engine takes any repository path.
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import re
@@ -38,6 +37,7 @@ import subprocess
 from pathlib import Path
 
 from foundry.systems import cas
+from provenance.digests import compact_json_bytes as _canon, sha256_json as _sha
 
 FORBIDDEN = {"subprocess": r"\bsubprocess\b", "socket": r"\bsocket\b", "os.system": r"\bos\.system\b",
              "os.environ": r"\bos\.environ\b|\bgetenv\b", "eval/exec": r"\b(eval|exec)\s*\(", "__import__": r"__import__",
@@ -51,14 +51,6 @@ PASSTHROUGH_ENV = ("PATH", "LANG", "LC_ALL", "PYTHONIOENCODING")
 
 class CommissionError(RuntimeError):
     pass
-
-
-def _canon(v) -> bytes:
-    return json.dumps(v, sort_keys=True, separators=(",", ":")).encode()
-
-
-def _sha(v) -> str:
-    return "sha256:" + hashlib.sha256(_canon(v)).hexdigest()
 
 
 def git(repo: Path, *args: str, check: bool = True) -> str:

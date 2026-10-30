@@ -38,6 +38,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey,
 
 from foundry.systems import reputation
 from foundry.systems.webserver import Site
+from provenance.digests import compact_json_bytes as _canon, sha256_json as _sha
 
 POST_LIMIT = 5
 POST_WINDOW = timedelta(hours=1)
@@ -49,14 +50,6 @@ TIERS = ("free", "supporter")
 
 class CommunityError(ValueError):
     pass
-
-
-def _canon(v) -> bytes:
-    return json.dumps(v, sort_keys=True, separators=(",", ":")).encode()
-
-
-def _sha(v) -> str:
-    return "sha256:" + hashlib.sha256(_canon(v)).hexdigest()
 
 
 def _t(s: str) -> datetime:

@@ -23,11 +23,7 @@ that is the frozen design's real result, not a bug to quietly relocate.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
-
-def _now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+from provenance.digests import utc_now_z as _now
 
 
 class EngineError(RuntimeError):

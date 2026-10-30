@@ -15,12 +15,8 @@ from __future__ import annotations
 
 import sys
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from importlib.abc import MetaPathFinder
-
-
-def _now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+from provenance.digests import utc_now_z as _now
 
 
 class ComponentUnavailable(ModuleNotFoundError):

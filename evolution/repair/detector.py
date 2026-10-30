@@ -20,9 +20,9 @@ package appears here, and no report this module produces names a module path.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 
 from evolution.repair.candidate import FunctionOutput
+from provenance.digests import utc_now_z as _now
 
 #: Symptoms are institutional, not implementational. Each says something about
 #: a capability's observable behaviour, never about a file.
@@ -35,10 +35,6 @@ SYMPTOM_KINDS = (
     "refusal_incorrect",      # the refusal behaviour changed
     "health_check_failed",    # the capability is not self-consistent
 )
-
-
-def _now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 @dataclass(frozen=True)

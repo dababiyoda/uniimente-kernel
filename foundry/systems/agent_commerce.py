@@ -40,6 +40,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey,
 from business.commercial_loop import ACCEPTED_VERIFICATIONS
 from foundry.systems import accounting, cas, discovery, dsl, reputation
 from foundry.systems.webserver import Site, verify_served
+from provenance.digests import compact_json_bytes as _canon
 
 CARD_PATH = "/.well-known/agent.json"
 CHALLENGE_TTL = timedelta(minutes=15)
@@ -49,10 +50,6 @@ PRICING_FIELDS = {"rule", "constants", "buyer_variables", "example"}
 
 class CommerceError(ValueError):
     pass
-
-
-def _canon(value) -> bytes:
-    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
 
 
 def _t(s: str) -> datetime:

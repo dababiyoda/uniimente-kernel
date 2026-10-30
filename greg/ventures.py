@@ -10,9 +10,11 @@
       -> one decision memo       delivered to Alfonso; nothing is executed
 
 Emergent rule no organ applies alone: **a score may not outrun missing evidence.**
-The binding verdict is the WealthMachine verdict capped by the RailScout status, so
-a "go" from the venture engine on a packet with no evidenced buyer is delivered as
-``needs_more_evidence``, with both verdicts shown.
+The binding verdict is the WealthMachine verdict capped by the RailScout status and
+by canonical fields the packet leaves unevidenced. ``governing_bottleneck`` is one of
+those fields: it is mapped only from a source-bound failure the appraisal cites, never
+from the engine's score or from the cheapest test. A "go" that outruns either gap is
+delivered as ``needs_more_evidence``, with both verdicts shown.
 
 Second rule, from the Mind (directive section 16): **a revenue figure may not outrun its
 causal support.** When the signal carries an economics block, the mission first asks
@@ -39,13 +41,15 @@ import sys
 import tempfile
 import uuid
 
+from adapters.daleobanks_opportunity import VERDICT_RANK as VERDICT_RANK
+from adapters.daleobanks_opportunity import justified_verdict
 from greg.capabilities import CapabilityError, InvocationContext, _inside
 
 KERNEL_ROOT = Path(__file__).resolve().parents[1]
 RENDERER = "greg.ventures/one-greg-1"
 ORGAN_TIMEOUT_SECONDS = 60
 NAMESPACE = uuid.UUID("2f0c6f86-3f1d-4b4e-9f2c-7a1e4c0d5b21")
-VERDICT_RANK = {"kill": 0, "needs_more_evidence": 1, "defer": 2, "go": 3}
+_GOVERNING_LAYERS = frozenset({"proof", "trust", "eligibility", "routing", "settlement", "coordination"})
 
 _RAILSCOUT = """
 import json, sys
@@ -133,14 +137,33 @@ def packet_from_appraisal(receipt: dict) -> dict:
     }
 
 
-def binding_verdict(railscout_status: str, wmi_verdict: str) -> tuple[str, str]:
-    """A score may not outrun missing evidence."""
-    if railscout_status == "READY_FOR_HUMAN_REVIEW":
-        return wmi_verdict, "evidence complete for review; the venture engine verdict stands"
-    capped = min(wmi_verdict, "needs_more_evidence", key=lambda v: VERDICT_RANK.get(v, 1))
-    if capped != wmi_verdict:
-        return capped, f"RailScout status {railscout_status} caps the engine's '{wmi_verdict}'"
-    return capped, f"RailScout status {railscout_status}; engine verdict already no higher"
+def evidenced_governing_bottleneck(appraisal: dict) -> str:
+    """The failure RailScout bound to source claims. No claim ids means the bottleneck is unstated."""
+    failure = appraisal.get("failure") if isinstance(appraisal.get("failure"), dict) else {}
+    layer, description, claim_ids = failure.get("layer"), failure.get("description"), failure.get("claim_ids")
+    claims = appraisal.get("claims") if isinstance(appraisal.get("claims"), list) else []
+    known = {claim.get("id") for claim in claims if isinstance(claim, dict)}
+    if (isinstance(layer, str) and layer in _GOVERNING_LAYERS
+            and isinstance(description, str) and description.strip()
+            and isinstance(claim_ids, list) and claim_ids
+            and all(isinstance(claim_id, str) and claim_id in known for claim_id in claim_ids)):
+        return f"{layer}: {description.strip()}"
+    return ""
+
+
+def binding_verdict(railscout_status: str, wmi_verdict: str,
+                    unresolved: list[str] | None = None,
+                    evidence: list | None = None) -> tuple[str, str]:
+    """A score may not outrun missing evidence, including an unmapped governing bottleneck.
+
+    ``unresolved is None`` means the canonical gaps were not checked, so the bottleneck
+    counts as unevidenced. Pass the adapter's list, including ``[]``, only after reading it.
+    An empty evidence list is a gap, the same rule the organ-exchange verdict uses.
+    """
+    gaps = ["governing_bottleneck"] if unresolved is None else list(unresolved)
+    if railscout_status != "READY_FOR_HUMAN_REVIEW":
+        gaps.append(f"railscout:{railscout_status}")
+    return justified_verdict(wmi_verdict, gaps, evidence)
 
 
 class LedgerReader:
@@ -221,6 +244,19 @@ def _render_revenue(inputs: dict) -> list[str]:
     return lines + [""]
 
 
+def _canonical_view(packet: dict, appraisal: dict, assessment: dict) -> dict:
+    """Adapt the organ packet. A claim-bound failure is stated as governing_bottleneck for that
+    adaptation only; the packet sent to the venture engine is left unchanged."""
+    stated = evidenced_governing_bottleneck(appraisal)
+    subject = dict(packet)
+    if stated:
+        subject["governing_bottleneck"] = stated
+    canonical = _canonical(subject, assessment)
+    if stated and "governing_bottleneck" not in canonical["packet_unresolved"]:
+        canonical = {**canonical, "governing_bottleneck": stated}
+    return canonical
+
+
 def _canonical(packet: dict, assessment: dict) -> dict:
     sys.path.insert(0, str(KERNEL_ROOT)) if str(KERNEL_ROOT) not in sys.path else None
     from adapters import daleobanks_opportunity, wealthmachine_assessment
@@ -239,10 +275,16 @@ STABLE_ASSESSMENT = ("go_no_go", "opportunity_score", "market_alignment", "risk_
                      "validation_plan", "recommended_next_action", "requires_human_approval")
 
 
-def flip_condition(appraisal: dict, engine_verdict: str, verdict: str) -> str:
+def flip_condition(appraisal: dict, engine_verdict: str, verdict: str,
+                   unresolved: list[str] | None = None) -> str:
     """Value of information: which evidence stands between this signal and a different verdict."""
     if verdict != engine_verdict:
-        return (f"Evidencing {', '.join(appraisal['missing']) or 'the contested topics'} is what stands between "
+        named = list(appraisal.get("missing") or [])
+        for field in unresolved or []:
+            if field not in named:
+                named.append(field)
+        subject = ", ".join(named) if named else "the contested topics"
+        return (f"Evidencing {subject} is what stands between "
                 f"this signal and the engine's '{engine_verdict}'. Smallest next step: {appraisal['next_action']}.")
     if appraisal["status"] == "READY_FOR_HUMAN_REVIEW":
         return f"Evidence is complete enough for your review; the decision is yours: {appraisal['next_action']}."
@@ -271,6 +313,8 @@ def render(inputs: dict) -> str:
     lines += ["", "## What is not evidenced", ""]
     lines += [f"- {m}" for m in appraisal["missing"]] or ["- nothing listed"]
     lines += [f"- canonical packet fields unresolved: {', '.join(inputs['canonical']['packet_unresolved']) or 'none'}"]
+    if inputs["canonical"].get("governing_bottleneck"):
+        lines += [f"- governing bottleneck mapped from the source-bound failure: {inputs['canonical']['governing_bottleneck']}"]
     if appraisal.get("strongest_counterexample"):
         c = appraisal["strongest_counterexample"]
         lines += ["", "## Strongest counterexample", "", f"{c['assertion']} — \"{c['excerpt']}\""]
@@ -339,15 +383,18 @@ def assess(params, ctx: InvocationContext) -> dict:
     packet = packet_from_appraisal(receipt)
     assessment = _organ(_WEALTHMACHINE, packet, str(p["wmi_root"]), str(KERNEL_ROOT), cwd=p["wmi_root"],
                         confined=confined)
-    verdict, why = binding_verdict(receipt["appraisal"]["status"], assessment["go_no_go"])
+    canonical = _canonical_view(packet, receipt["appraisal"], assessment)
+    verdict, why = binding_verdict(receipt["appraisal"]["status"], assessment["go_no_go"],
+                                   canonical["packet_unresolved"], packet.get("evidence"))
     receipts = cognition_receipts(ctx, params["cognition"]) if params.get("cognition") else None
     inputs = {"renderer": RENDERER, "manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
               "railscout": receipt, "packet": packet,
-              "assessment": assessment, "canonical": _canonical(packet, assessment),
+              "assessment": assessment, "canonical": canonical,
               "binding": {"verdict": verdict, "why": why},
               "cognition": receipts,
               "revenue": revenue_conclusion((receipts or {}).get("revenue"), (receipts or {}).get("causal")),
-              "flip": flip_condition(receipt["appraisal"], assessment["go_no_go"], verdict),
+              "flip": flip_condition(receipt["appraisal"], assessment["go_no_go"], verdict,
+                                     canonical["packet_unresolved"]),
               "organs": {"railscout_head": _git_head(p["railscout_root"]), "wmi_head": _git_head(p["wmi_root"])},
               "paths": {k: str(v) for k, v in p.items()}}
     if "economics_sha256" in params:
@@ -408,7 +455,8 @@ def verify_delivery(output: dict, deliver_root: Path | None, ledger=None, *, con
     if not path.is_file() or path.read_bytes() != expected:
         return False, "delivered memo differs from the render of the receipted inputs"
     if inputs["flip"] != flip_condition(inputs["railscout"]["appraisal"], inputs["assessment"]["go_no_go"],
-                                        inputs["binding"]["verdict"]):
+                                        inputs["binding"]["verdict"],
+                                        (inputs.get("canonical") or {}).get("packet_unresolved")):
         return False, "the stated verdict-change condition is not derived from the organ outputs"
     receipts = inputs.get("cognition") or {}
     # Every memo assessed since the revenue section carries a conclusion; one receipted before it carries neither a
@@ -437,10 +485,17 @@ def verify_delivery(output: dict, deliver_root: Path | None, ledger=None, *, con
             return False, "the packet is not the deterministic mapping of the appraisal"
         engine = _organ(_WEALTHMACHINE, inputs["packet"], str(paths["wmi_root"]), str(KERNEL_ROOT),
                         cwd=paths["wmi_root"], confined=confined)
+        recomputed = _canonical_view(inputs["packet"], again["appraisal"], engine)
     except (CapabilityError, OSError, ValueError) as exc:
         return False, f"organ re-run failed: {exc}"
     if any(engine[k] != inputs["assessment"][k] for k in STABLE_ASSESSMENT):
         return False, "WealthMachine does not reproduce the receipted assessment"
-    if binding_verdict(again["appraisal"]["status"], engine["go_no_go"])[0] != inputs["binding"]["verdict"]:
+    stored = inputs.get("canonical") or {}
+    if recomputed["packet_unresolved"] != stored.get("packet_unresolved"):
+        return False, "canonical unresolved fields are not the adapters' result"
+    if recomputed.get("governing_bottleneck") != stored.get("governing_bottleneck"):
+        return False, "governing bottleneck is not the evidenced mapping"
+    if binding_verdict(again["appraisal"]["status"], engine["go_no_go"],
+                       recomputed["packet_unresolved"], inputs["packet"].get("evidence"))[0] != inputs["binding"]["verdict"]:
         return False, "binding verdict is not the rule applied to the organ outputs"
     return True, "memo equals the render of the receipt; RailScout and WealthMachine reproduce it"

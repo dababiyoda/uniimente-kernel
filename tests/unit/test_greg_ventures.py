@@ -38,10 +38,11 @@ def appraise(manifest, source_root):
     market = manifest.get("market", {})
     missing = [k for k in ("buyer", "budget_owner") if not (market.get(k) and market.get("evidence", {}).get(k))]
     claims = [dict(c, byte_start=0, byte_end=len(c["excerpt"])) for c in manifest["claims"]]
+    failure = manifest.get("failure") or {"layer": "proof", "description": "proof gap"}
     appraisal = {"question": manifest["question"], "transaction": manifest["transaction"],
                  "status": "NEEDS_EVIDENCE" if missing else "READY_FOR_HUMAN_REVIEW",
                  "missing": missing, "sources": sources, "claims": claims, "market": market,
-                 "failure": {"layer": "proof", "description": "proof gap"},
+                 "failure": failure,
                  "candidate": {"current_form": "a verifier service"},
                  "next_action": "Find independent evidence for buyer" if missing else "Ask the named buyer",
                  "strongest_counterexample": None}
@@ -74,7 +75,7 @@ def _write(path: Path, text: str) -> Path:
     return path
 
 
-def _manifest(signal: Path, *, buyer_evidenced=False) -> Path:
+def _manifest(signal: Path, *, buyer_evidenced=False, bottleneck_evidenced=False) -> Path:
     text = "Operators lose a week reconciling delivery proof before invoices are paid.\n"
     _write(signal / "01-signal.txt", text)
     market = {"buyer": "regional freight brokers" if buyer_evidenced else "",
@@ -87,6 +88,8 @@ def _manifest(signal: Path, *, buyer_evidenced=False) -> Path:
                 "claims": [{"id": "C1", "source_id": "s1", "topic": "pain", "assertion": "reconciliation takes a week",
                             "excerpt": text.strip(), "stance": "supports", "kind": "observation"}],
                 "market": market}
+    if bottleneck_evidenced:
+        manifest["failure"] = {"layer": "proof", "description": "proof gap", "claim_ids": ["C1"]}
     return _write(signal / "manifest.json", json.dumps(manifest, indent=1))
 
 
@@ -112,8 +115,17 @@ def test_binding_verdict_never_outruns_the_evidence():
     assert ventures.binding_verdict("NEEDS_EVIDENCE", "go")[0] == "needs_more_evidence"
     assert ventures.binding_verdict("NEEDS_EVIDENCE", "defer")[0] == "needs_more_evidence"
     assert ventures.binding_verdict("NEEDS_EVIDENCE", "kill")[0] == "kill", "a lower verdict is never raised"
-    assert ventures.binding_verdict("READY_FOR_HUMAN_REVIEW", "go")[0] == "go"
-    assert ventures.binding_verdict("SOMETHING_NEW", "go")[0] == "needs_more_evidence", "unknown status caps"
+    assert ventures.binding_verdict("READY_FOR_HUMAN_REVIEW", "go")[0] == "needs_more_evidence", \
+        "an unchecked governing bottleneck is not evidence"
+    assert ventures.binding_verdict("READY_FOR_HUMAN_REVIEW", "go", ["governing_bottleneck"])[0] == "needs_more_evidence"
+    assert ventures.binding_verdict("READY_FOR_HUMAN_REVIEW", "kill", ["governing_bottleneck"])[0] == "kill"
+    assert ventures.binding_verdict("READY_FOR_HUMAN_REVIEW", "go", [])[0] == "go", \
+        "a go stands only when the canonical gaps, including the bottleneck, were checked and are empty"
+    assert ventures.binding_verdict("READY_FOR_HUMAN_REVIEW", "go", [], [])[0] == "needs_more_evidence", \
+        "an empty evidence list caps a go"
+    assert ventures.binding_verdict("READY_FOR_HUMAN_REVIEW", "GO", [])[0] == "needs_more_evidence", \
+        "an unrecognized label is not a stronger verdict"
+    assert ventures.binding_verdict("SOMETHING_NEW", "go", [])[0] == "needs_more_evidence", "unknown status caps"
 
 
 def test_packet_never_invents_an_unevidenced_buyer():
@@ -144,10 +156,25 @@ def test_assess_caps_the_engine_and_the_appraiser_reproduces_it(tmp_path, organs
     assert ventures.assess(organs, ctx)["path"] == out["path"], "idempotent: same receipt, same file"
 
 
-def test_evidenced_buyer_lets_the_engine_verdict_stand(tmp_path, organs):
+def test_evidenced_buyer_still_cannot_outrun_an_unmapped_bottleneck(tmp_path, organs):
     _manifest(Path(organs["source_root"]), buyer_evidenced=True)
     out = ventures.assess(organs, _ctx(tmp_path, [tmp_path / "data"]))
-    assert out["verdict"] == "go" and out["inputs"]["packet"]["audience"] == "regional freight brokers"
+    assert out["engine_verdict"] == "go" and out["inputs"]["packet"]["audience"] == "regional freight brokers"
+    assert "governing_bottleneck" in out["inputs"]["canonical"]["packet_unresolved"]
+    assert out["verdict"] == "needs_more_evidence"
+    assert "governing_bottleneck" in Path(out["path"]).read_text()
+    assert "governing_bottleneck" not in out["inputs"]["packet"], "the organ packet is not given an invented bottleneck"
+
+
+def test_a_claim_bound_bottleneck_maps_and_the_engine_go_can_stand(tmp_path, organs):
+    _manifest(Path(organs["source_root"]), buyer_evidenced=True, bottleneck_evidenced=True)
+    out = ventures.assess(organs, _ctx(tmp_path, [tmp_path / "data"]))
+    assert out["engine_verdict"] == "go" and out["verdict"] == "go"
+    assert "governing_bottleneck" not in out["inputs"]["canonical"]["packet_unresolved"]
+    assert out["inputs"]["canonical"]["governing_bottleneck"] == "proof: proof gap"
+    assert "governing_bottleneck" not in out["inputs"]["packet"]
+    text = Path(out["path"]).read_text()
+    assert "**Binding verdict: go**" in text and "proof: proof gap" in text
 
 
 @pytest.mark.parametrize("tamper, finding", [
@@ -262,7 +289,7 @@ def test_standing_mission_reassesses_when_evidence_changes_and_each_hold_is_appr
         done = [e for e in body.journal.replay("mission.action") if e.payload["status"] == "DONE"]
         assert len(done) == 1 and len(list(folder.glob("*.md"))) == 1, "unchanged evidence: nothing re-runs"
 
-        _manifest(Path(organs["source_root"]), buyer_evidenced=True)   # new evidenced buyer/budget
+        _manifest(Path(organs["source_root"]), buyer_evidenced=True, bottleneck_evidenced=True)
         assert "ACTED" in _tick(body, clock, 4)
         memos = sorted(p.read_text() for p in folder.glob("*.md"))
         assert len(memos) == 2 and any("**Binding verdict: go**" in m for m in memos), "nothing overwritten"

@@ -224,6 +224,10 @@ architecture_ownership_records:
 # the evidence does not settle the owner; the candidates and the evidence on each side are recorded instead.
 # Owners were read from what greg/ and the CLI import and call at b1950be2, not chosen.
 # Checked by tests/unit/test_canonical_owner_guard.py (mutants: scripts/ci/check_canonical_owner_guard_mutants.py).
+# The test pins every record, entry and canonical module set: removing one, adding a second canonical module, or
+# resolving a NEEDS_FOUNDER_DECISION record without a founder_ruling (an accepted decision or active intent record
+# that names the record) fails until the pin in the test changes in the same reviewed diff. Adding a candidate, an
+# alternate or a distinct entry needs no test change.
 # Status: PROPOSED, like every record in this file. A status here attaches, activates, retires or grants nothing.
 function_owner_records:
 
@@ -257,10 +261,16 @@ function_owner_records:
           a measured CapabilityDeficit where organization topology, not member capability, is the bottleneck, and an
           OMNIMORPH-composed organ closes it where a #48 team formed under the same grant does not
           (FOUNDER_EFFECT_COMPILER resourcefulness ladder, step 9)
-    distinct: []
+    distinct:
+      - module: greg.mcp_tools
+        qualnames: [act]
+        why: "the mcp.act capability: one MCP tool call inside exactly what the founder signed for that use, not a team's act"
     migration_path: >-
       a GREG-level team runner (the program's WU-03 greg/teams.py) forms its teams through #48 on foundry.apply, or is
       recorded here as an ALTERNATE with its retirement condition; the guard refuses it otherwise
+    # A registered name defined in at least three other guarded modules is not checked by name (the structural copy
+    # check still applies); the test refuses a name that is not that common.
+    generic_names: [report]
     markers:
       - '_?([A-Z][A-Za-z0-9]*)?Teams?([A-Z][A-Za-z0-9]*)?'
       - '_?([A-Z0-9]+_)*TEAMS?(_[A-Z0-9]+)*'
@@ -300,18 +310,40 @@ function_owner_records:
         qualnames: [CommercialLoop, STAGES]
         status: ALTERNATE
         reason: >-
-          the Kernel's phase-7 commercial loop whose stage order greg/business_loop.py follows; imported by
-          closure/commercial_registry.py only, by no module under greg/
+          the Kernel's phase-7 commercial loop runner (CommercialLoop, which advances a CustomerCase through STAGES),
+          whose stage order greg/business_loop.py follows. CommercialLoop is imported by closure/commercial_registry.py
+          only, and by no module under greg/. The module itself is not dormant: foundry/outcome_bridge.py (imported
+          by foundry/__init__.py, so loaded whenever greg's foundry.apply path imports foundry.systems), #37
+          marketplace and #54 agent_commerce import its observation vocabulary, recorded as distinct below
         retirement_condition: >-
           GREG's business case checks the same STAGES (a parity test pins one order), or the founder retires the
-          phase-7 closure in closure/commercial_registry.py
+          phase-7 closure in closure/commercial_registry.py; either way ACCEPTED_VERIFICATIONS, OBSERVED,
+          observation_problems and CustomerCase stay importable (or move together with foundry/outcome_bridge.py,
+          foundry/systems/marketplace.py and foundry/systems/agent_commerce.py), because the Foundry reads them
     distinct:
+      - module: business.commercial_loop
+        qualnames: [ACCEPTED_VERIFICATIONS, OBSERVED, CustomerCase, observation_problems]
+        why: >-
+          the observation vocabulary (which verifications count, when a customer or payment is observed) and the
+          case record that foundry/outcome_bridge.py, #37 marketplace and #54 agent_commerce import on greg's
+          foundry.apply path; not part of the CommercialLoop runner, and it stays when that runner retires
       - module: foundry.systems.media_company
-        qualnames: [assemble]
-        why: "the #49 store the rehearsal drives; its pluralism is governed by foundry.systems.ALTERNATES and foundry/completion.yaml"
+        qualnames: [assemble, reconcile]
+        why: >-
+          the #49 store the rehearsal drives; its reconcile reconciles the #49 assembly state, not a customer case.
+          Its pluralism is governed by foundry.systems.ALTERNATES and foundry/completion.yaml
       - module: foundry.systems.offers
         qualnames: [fulfill]
         why: "the #54 store the rehearsal drives; same registry"
+      - module: greg.cognition.settlement
+        qualnames: [reconcile]
+        why: "appends revisions to a mission's cognition credit from its observations; settles credit, not money"
+      - module: greg.metrics
+        qualnames: [STAGES]
+        why: "the stage names of the sandbox whole-machine measure, not a commercial order"
+      - module: foundry.systems.promotion
+        qualnames: [STAGES]
+        why: "the #16 promotion pipeline (spec to ratification), not a commercial order"
     migration_path: >-
       a second commercial runtime on the mission path is recorded here first; the real case stays the one
       business_loop_closed counts
@@ -342,6 +374,11 @@ function_owner_records:
         evidence:
           - "greg/goal_gravity.py runs GoalGravityLoop.turn in body mode (no gate, executor or grant)"
           - "its standalone gate and executor mode stays for non-body ledgers; ADR-GOAL-GRAVITY-002 graft 9 keeps both lineages"
+      - side: A
+        module: egregore.goals
+        qualnames: [GoalRegistry, GoalSpec]
+        evidence:
+          - "the goal store side A runs on: greg/goal_gravity.py imports GoalRegistry and GoalSpec, and greg/cli.py _goal_id resolves a goal-id prefix through GoalRegistry"
       - side: B
         module: greg.gravity
         qualnames: [select, step]
@@ -353,13 +390,39 @@ function_owner_records:
       which Goal Gravity runtime is canonical: docs/FOUNDER_INTENT_LEDGER.md lists it among the open founder decisions,
       and docs/opus-maximus/INTENT_CONFLICT_MATRIX.md row 19 keeps the choice open
     safe_default: "both run; one orders, one wakes and prepares; neither adds, drops or widens a mission"
-    alternates: []
-    distinct: []
+    review_trigger: >-
+      the founder's ruling on the canonical Goal Gravity runtime (docs/FOUNDER_INTENT_LEDGER.md open founder
+      decisions; docs/opus-maximus/INTENT_CONFLICT_MATRIX.md row 19). The ruling is cited here as founder_ruling
+    alternates:
+      - module: egregore.goal_chase
+        qualnames: [GoalChase]
+        status: RESEARCH
+        reason: >-
+          the Infinite Goal Chase engine (#93/#97/#109): a sandbox-only composition over the Kernel spine, gate and
+          causal memory, run from egregore/goal_chase_sandbox.py and goal_chase_host.py. No module under greg/ imports
+          it. docs/collaboration/GREG-BODY-DECISION-2026-09-25.md: "GoalChase retained as sealed experiment/benchmark;
+          not unsealed"; goal-gravity-completeness-critique-2026-10-13 counts it among four goal/mission engines
+        revival_condition: >-
+          the founder unseals it (GREG-BODY-DECISION-2026-09-25), and on the same signed goals it closes a goal the
+          canonical runtime does not, or with fewer founder asks; until then it serves only as a sealed benchmark
+    distinct:
+      - module: greg.missions
+        qualnames: [MissionEngine]
+        why: >-
+          the mission engine: runs one signed mission's actions. Both candidates order or prepare its missions and
+          neither replaces it (GREG-BODY-DECISION-2026-09-25: greg/missions.py is the product's goal pursuit)
+      - module: egregore.local_mission
+        qualnames: [run_once]
+        why: "one bounded local repository-audit proof; by its own docstring not a general scheduler or goal engine"
+    migration_path: >-
+      the founder's ruling makes one side canonical and records the other as an ALTERNATE with its retirement
+      condition, or splits them into two recorded functions (one orders, one wakes and prepares); GoalChase stays
+      RESEARCH until it is unsealed
     markers:
       - '_?([A-Z][A-Za-z0-9]*)?Gravity([A-Z][A-Za-z0-9]*)?'
       - '_?(goal_)?gravity_(tick|turn|step|select|loop|runtime|order)(_[a-z0-9]+)*'
-      - '_?([a-z0-9]+_)*goal_(runtime|loop|pursuit)(_[a-z0-9]+)*'
-      - '_?([A-Z][A-Za-z0-9]*)?Goal(Runtime|Loop|Pursuit)([A-Z][A-Za-z0-9]*)?'
+      - '_?([a-z0-9]+_)*goal_(runtime|loop|pursuit|chase)(_[a-z0-9]+)*'
+      - '_?([A-Z][A-Za-z0-9]*)?Goal(Runtime|Loop|Pursuit|Chase)([A-Z][A-Za-z0-9]*)?'
 
   - record_id: OWN-FN-STATUS-EVIDENCE-LADDER
     function: the evidence level a status claim states
@@ -377,14 +440,26 @@ function_owner_records:
           - "audit() refuses a Foundry row whose evidence_tier is not in it; `greg foundry status|run` (greg/cli.py) imports the module, but only audit() reads the tuple"
       - side: B
         module: acceptance
-        qualnames: [STATUSES, LADDER, rank]
+        qualnames: [STATUSES, LADDER, TEST_TIERS, rank]
         evidence:
           - "ranks every requirement, trace link and mission of the full-machine acceptance harness (`python -m acceptance`, tests/unit/test_acceptance_harness.py); no module under greg/ imports it"
           - "the same twelve names as EVIDENCE_TIERS; neither imports the other, and neither is section 56's seventeen-level list"
+          - "TEST_TIERS is B's own slice (UNIT_VERIFIED, SANDBOX_VERIFIED, BODY_VERIFIED): the highest status any test can establish"
+      - side: C
+        module: greg.path
+        qualnames: [EVIDENCE_STATUS]
+        evidence:
+          - "on the mission path: greg/path.py load() validates every greg/path.json node and refuses one whose evidence_status is not verified_by_execution, verified_by_inspection, asserted or unresolved; the body, the CLI, goal_gravity, gravity and the tribunal read the path through it"
+          - "a four-value vocabulary for the evidence behind each path node's status claim; it shares no name with A or B"
     decision_needed: >-
       which tuple owns the status-claim vocabulary, and whether it becomes section 56's seventeen levels; the
-      program's WU-13 governance/reality_ladder.py would be a third copy
-    safe_default: "both stay; a claim names its level in the vocabulary of the harness that checks it"
+      program's WU-13 governance/reality_ladder.py would be a fourth copy. Part of the same decision: whether
+      section 56's ladder also absorbs the domain ladders recorded as distinct below (mechanism lifecycle in the
+      mind coverage record, verifier strength in evolution capsules)
+    safe_default: "all three stay; a claim names its level in the vocabulary of the harness that checks it"
+    review_trigger: >-
+      the founder's ruling on section 56's ladder, or WU-13's governance/reality_ladder.py when it lands: it joins
+      this record as a candidate instead of becoming an unrecorded fourth tuple
     alternates:
       - module: greg.mission_control
         qualnames: [REALITY]
@@ -406,8 +481,26 @@ function_owner_records:
       - module: greg.institution
         qualnames: [SCORING_MODEL]
         why: "a leverage prior that reads reality strings: a consumer, not a ladder"
+      - module: evolution.capsule
+        qualnames: [VERIFIER_LEVELS]
+        why: "ranks who or what verified an evolution capsule (formal proof down to intrinsic confidence): the verifier's strength, not how far a claim reached in reality"
+      - module: scripts.build_mind_coverage_record
+        qualnames: [STATUSES]
+        why: >-
+          the build stage of one cognition mechanism in the mind coverage record (absent to exercised), the same kind
+          of label as scripts/mind_status.py LABELS; whether section 56 absorbs it is part of the decision above
+      - module: greg.cognition.genome_library
+        qualnames: [STATUSES]
+        why: "a genome's role in the library (default for a geometry, niche, experimental, superseded...), not a claim's evidence"
+      - module: egregore.brief_learning
+        qualnames: [rank]
+        why: "orders brief findings by kind"
+    migration_path: >-
+      the founder's ruling names the canonical tuple; the others import it or are recorded here as ALTERNATE with
+      their retirement condition; Mission Control's REALITY stays HISTORICAL unless it is the one chosen
     markers:
       - '_?([A-Z0-9]+_)*(EVIDENCE|REALITY|STATUS|CLAIM)_(TIERS?|LEVELS?|LADDER|RUNGS?)(_[A-Z0-9]+)*'
+      - '_?([A-Z0-9]+_)*(EVIDENCE|VERIFIER|VERIFICATION)_(STATUS(ES)?|LEVELS?|TIERS?|STRENGTHS?)(_[A-Z0-9]+)*'
       - '_?(REALITY|LADDER|REALITY_LADDER|EVIDENCE_LADDER)'
       - '_?([a-z0-9]+_)*(evidence|reality)_(tiers|levels|ladder|rungs)(_[a-z0-9]+)*'
       - '_?([A-Z][A-Za-z0-9]*)?(Reality|Evidence)(Ladder|Tiers?|Levels?|Rungs?)([A-Z][A-Za-z0-9]*)?'
@@ -438,6 +531,12 @@ function_owner_records:
       whether autonomy/levels.py's A0-A9 or section 59's five levels (as #235 implements them) is the ladder GREG
       reports, and which module owns it
     safe_default: "no level grants anything; every action still needs its light cone, its exact-scope approvals and the Gate"
+    review_trigger: >-
+      PR #235 landing (it must add greg.autonomy here as candidate side B), or the founder's ruling on section 59's
+      five levels against autonomy/levels.py's A0-A9
+    migration_path: >-
+      #235's greg.autonomy joins as candidate side B; the founder's ruling makes one ladder canonical and records
+      the other as an ALTERNATE with its retirement condition, or maps one onto the other with a parity test
     alternates: []
     distinct:
       - module: greg.missions
@@ -464,15 +563,19 @@ function_owner_records:
     owner_status: CANONICAL
     canonical:
       - module: greg.improvement
-        qualnames: [_close_regressions, _reopen_regressions, attention_close_condition, claim_close_condition]
+        qualnames: [_close_regressions, _reopen_regressions, founder_revert, attention_close_condition,
+                    claim_close_condition]
     evidence:
-      - "greg/tribunal.py critique opens a regression (state OPEN, with its close condition); improvement.learn, called from Body.tick, is the only writer of critique.regression_closed and critique.regression_reopened"
-      - "greg/tribunal.py and greg/resilience.py only read those two events"
+      - "greg/tribunal.py critique opens a regression (state OPEN, with its close condition, from improvement.attention_close_condition or claim_close_condition)"
+      - "greg/improvement.py writes critique.regression_closed and critique.regression_reopened, from two callers: learn (called from Body.tick) closes and reopens through _close_regressions and _reopen_regressions; founder_revert, which tribunal.critique calls on a founder-signed rejection of a retained improvement, reopens through _reopen_regressions"
+      - "no other module writes those two events; greg/tribunal.py reads both and greg/resilience.py reads regression_closed"
     alternates: []
     distinct:
       - module: greg.tribunal
         qualnames: [critique]
-        why: "opens a regression and lists the open ones; closes none"
+        why: >-
+          opens a regression and lists the open ones; a founder rejection it records reopens a regression only by
+          calling improvement.founder_revert; it closes none
       - module: greg.goal_gravity
         qualnames: [_reopen]
         why: "reopens a completed goal whose plan node regressed, not a regression record"
@@ -503,20 +606,34 @@ function_owner_records:
     evidence:
       - "organ.exchange (greg/capabilities.py BUILTINS -> greg.organs.exchange) is the capability the one-machine template signs (greg/templates.py one_machine) and tests/integration/test_one_mission_fifteen_steps.py runs"
       - "docs/opus-maximus/REPOSITORY_CONVERGENCE_MAP.md: #178's exchange is canonical on the one-machine mission, the other a registered alternate"
+      - "the alternate has three greg users: greg/capabilities.py binds organs.exchange and organs.exchange_status to its exchange and status with _lazy, and greg/appraisal.py re-renders every organs.exchange delivery at appraisal through importlib.import_module(DELIVERING[...]).verify_delivery, DELIVERING mapping 'organs.exchange' to 'greg.organ_exchange'"
     alternates:
       - module: greg.organ_exchange
-        qualnames: [exchange, status]
+        qualnames: [exchange, status, verify_delivery]
         status: ALTERNATE
         reason: >-
           the organs.exchange capability: an earlier signed exchange that ends in one memo to the founder, reached
-          from the organ-exchange template (greg/templates.py organ_exchange)
+          from the organ-exchange template (greg/templates.py organ_exchange); appraisal re-renders its deliveries
+          through its verify_delivery
         retirement_condition: >-
           greg.organs.exchange delivers the founder memo the organ-exchange template needs, the template signs
-          organ.exchange, and the properties tests/unit/test_greg_organ_exchange.py checks hold against it
+          organ.exchange, and the properties tests/unit/test_greg_organ_exchange.py checks hold against it; and,
+          because retained ledgers keep organs.exchange actions that appraisal re-renders, verify_delivery stays
+          importable (or moves to the owner and DELIVERING follows it) for as long as such a closure can be appraised
     distinct:
       - module: greg.templates
         qualnames: [organ_exchange]
         why: "the mission template that signs the alternate capability"
+      - module: greg.briefs
+        qualnames: [verify_delivery]
+        why: "re-renders a brief for appraisal (DELIVERING 'brief.engineering'): the same interface for a different deliverable"
+      - module: greg.ventures
+        qualnames: [verify_delivery]
+        why: "re-renders a venture memo for appraisal (DELIVERING 'venture.assess'): the same interface for a different deliverable"
+    migration_path: >-
+      the organ-exchange template signs organ.exchange; the capabilities.py bindings and the DELIVERING entry then
+      follow the owner, and the alternate becomes HISTORICAL once no retained closure needs its verify_delivery
+    generic_names: [status]
     markers:
       - '_?([a-z0-9]+_)*(signed|authenticated)_exchange(_[a-z0-9]+)*'
       - '_?organs?_exchange(_[a-z0-9]+)*'
@@ -543,6 +660,7 @@ function_owner_records:
       a node or relay transport (the program's WU-06 nodes.py) drops through one of these two, or records itself
       here as an ALTERNATE with its retirement condition
     markers:
+      - '_?([a-z0-9]+_)*send_signed(_[a-z0-9]+)*'
       - '_?([A-Z][A-Za-z0-9]*)?Inbox([A-Z][A-Za-z0-9]*)?'
       - '_?([a-z0-9]+_)*(drop|deliver|relay|forward|post|push)_(to_)?(inbox|envelope|command)s?(_[a-z0-9]+)*'
       - '_?([a-z0-9]+_)*inbox_(drop|write|put|deliver|relay|transport)(_[a-z0-9]+)*'

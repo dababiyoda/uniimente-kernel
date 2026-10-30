@@ -773,7 +773,7 @@
    "serves": [
     "operator:greg mcp login"
    ],
-   "justification": "runs in the founder's own `greg mcp login` process, not behind the relay: remote_url allows only https on 443 with no credentials in the URL, and the client talks to that server and its OAuth endpoints"
+   "justification": "runs in the founder's own `greg mcp login` process, not behind the relay: remote_url allows only https on 443 with no credentials in the URL, and the client talks to that server and the OAuth endpoints it advertises"
   },
   {
    "module": "greg/mcp_login.py",
@@ -917,7 +917,7 @@
     "capability:worker.commission",
     "supervised-worker:greg.workers.supervised_run"
    ],
-   "justification": "the injected runner default; _run calls it only with prepare_worker's envelope (bubblewrap, a relay door when egress is confined) or, under the founder's supervised choice, the Landlock floor"
+   "justification": "the injected runner default; _run calls it only with prepare_worker's envelope (bubblewrap, a relay door when egress is confined) or, under the founder's supervised choice and with no door, the supervised fallback with the Landlock floor where the host has it"
   },
   {
    "module": "greg/workers.py",
@@ -928,7 +928,7 @@
     "capability:worker.commission",
     "supervised-worker:greg.workers.supervised_run"
    ],
-   "justification": "the injected runner default; _run calls it only with prepare_worker's envelope or, under the founder's supervised choice, the Landlock floor"
+   "justification": "the injected runner default; _run calls it only with prepare_worker's envelope or, under the founder's supervised choice and with no door, the supervised fallback with the Landlock floor where the host has it"
   },
   {
    "module": "greg/workers.py",

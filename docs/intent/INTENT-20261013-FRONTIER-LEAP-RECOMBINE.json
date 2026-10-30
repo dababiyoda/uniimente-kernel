@@ -105,5 +105,22 @@
   "failure_condition": "a constructed capability is attached without founder signature, answers without its problem-level certificate, keeps serving over a detached or quarantined engine, or a new reduction is admitted without a frozen oracle that passes through the real engine",
   "next_gate": "reductions demanded by real founder missions; Goal Gravity waking a compiled question; VPL on a family only construction serves",
   "review_trigger": "every new reduction, any certificate fault in service, founder correction",
-  "named_skill": "mechanism-recombination-foundry (reasoning), install-recursive-founder-intent-collaboration-protocol (records); one agent performed every review role, which is not independent peer review"
+  "named_skill": "mechanism-recombination-foundry (reasoning), install-recursive-founder-intent-collaboration-protocol (records); one agent performed every review role, which is not independent peer review",
+  "affected_systems": {
+    "unrecorded": "not recorded in this record; directive 2026-10-28 section 11 lists this field"
+  },
+  "authority_level": {
+    "unrecorded": "not recorded in this record; directive 2026-10-28 section 11 lists this field; authority_scope is kept as written and is not an authority level"
+  },
+  "consequence_class": {
+    "unrecorded": "not recorded in this record; directive 2026-10-28 section 11 lists this field"
+  },
+  "unresolved_questions": {
+    "unrecorded": "not recorded in this record; directive 2026-10-28 section 11 lists this field"
+  },
+  "normalization_2026_10_30": {
+    "contract": "contracts/intent-record.schema.json",
+    "rule": "Additive: the fields named in copied repeat this record's own words under their canonical names, and a field this record's source does not supply carries an unrecorded marker; no recorded statement, state or meaning was changed.",
+    "copied": {}
+  }
 }

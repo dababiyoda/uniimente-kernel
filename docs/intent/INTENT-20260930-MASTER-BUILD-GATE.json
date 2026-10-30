@@ -66,5 +66,34 @@
     "Founder decides whether and when the convergence candidate and these repairs are merged and used on the designated physical body."
   ],
   "supersedes": [],
-  "superseded_by": []
+  "superseded_by": [],
+  "constitutional_constraints": [
+    "capability growth never increases sovereignty",
+    "external content and model output are data, not authority",
+    "building != installation != activation != consequence authority",
+    "biological metaphors describe effects rather than required software geometry",
+    "exactly one operationally primary node: N1, VEPMC 0 -> 1",
+    "exactly two constitutional strengthening passes for the selected gate repairs",
+    "historical failures and superseded implementation claims remain evidence"
+  ],
+  "success_evidence": {
+    "unrecorded": "not recorded in this record; the Founder Intent Ledger's Required Intent Record lists this field; evidence_refs is kept as written and does not separate success from failure evidence"
+  },
+  "failure_evidence": {
+    "unrecorded": "not recorded in this record; the Founder Intent Ledger's Required Intent Record lists this field; evidence_refs is kept as written and does not separate success from failure evidence"
+  },
+  "dependencies": {
+    "unrecorded": "not recorded in this record; the Founder Intent Ledger's Required Intent Record lists this field"
+  },
+  "next_review_trigger": "Exact-tree CI/review; first real founder body run; any founder correction; any false VERIFIED appraisal or installer key mismatch",
+  "intended_effect": "One founder-sovereign institutional identity, authority/evidence lineage and goal architecture continue bounded real missions through interface closure and interruption; only sufficiently evidenced closures are verified and only legitimate founder acceptance can support the real embodied milestone.",
+  "normalization_2026_10_30": {
+    "contract": "contracts/intent-record.schema.json",
+    "rule": "Additive: the fields named in copied repeat this record's own words under their canonical names, and a field this record's source does not supply carries an unrecorded marker; no recorded statement, state or meaning was changed.",
+    "copied": {
+      "constitutional_constraints": "constraints",
+      "next_review_trigger": "review_trigger",
+      "intended_effect": "intended_observable_effect"
+    }
+  }
 }

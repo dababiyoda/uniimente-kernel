@@ -89,5 +89,25 @@
     "tests/unit/test_convergence_map_names_the_live_seal.py",
     "tests/integration/test_greg_ebfc5f7_review.py"
   ],
-  "reality_status": "LABORATORY-VERIFIED in one Linux container: INTEGRATION and SANDBOX-WHOLE-MACHINE. Not founder-device, not external, not commercial. VEPMC 0."
+  "reality_status": "LABORATORY-VERIFIED in one Linux container: INTEGRATION and SANDBOX-WHOLE-MACHINE. Not founder-device, not external, not commercial. VEPMC 0.",
+  "intended_effect": {
+    "unrecorded": "not recorded in this record; directive 2026-10-28 section 11 lists this field"
+  },
+  "affected_systems": {
+    "unrecorded": "not recorded in this record; directive 2026-10-28 section 11 lists this field"
+  },
+  "authority_level": {
+    "unrecorded": "not recorded in this record; directive 2026-10-28 section 11 lists this field"
+  },
+  "consequence_class": {
+    "unrecorded": "not recorded in this record; directive 2026-10-28 section 11 lists this field"
+  },
+  "unresolved_questions": {
+    "unrecorded": "not recorded in this record; directive 2026-10-28 section 11 lists this field"
+  },
+  "normalization_2026_10_30": {
+    "contract": "contracts/intent-record.schema.json",
+    "rule": "Additive: the fields named in copied repeat this record's own words under their canonical names, and a field this record's source does not supply carries an unrecorded marker; no recorded statement, state or meaning was changed.",
+    "copied": {}
+  }
 }

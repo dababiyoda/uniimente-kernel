@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/intent-record.schema.json",
+  "title": "Founder Intent Record",
+  "description": "One material founder intention, as docs/intent/*.json records it. Required: the fifteen fields of the Founder Intent Ledger's Required Intent Record and the five that directive 2026-10-28 section 11 adds (intended observable effect, affected systems, authority level, consequence class, unresolved questions); section 11's 'evidence' is success_evidence plus failure_evidence. A field the record's source does not supply carries {\"unrecorded\": \"<reason>\"} and is never filled with invented text; what identifies a record (id, statement, source lineage, owner, state) can never be unrecorded. Other fields a record carries are kept as written (additionalProperties). A record carries no authority: it preserves what Alfonso intended, and grants, signs or activates nothing.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "intent_id",
+    "statement",
+    "source_refs",
+    "owner",
+    "state",
+    "binding_scope",
+    "constitutional_constraints",
+    "success_evidence",
+    "failure_evidence",
+    "dependencies",
+    "conflicts",
+    "next_review_trigger",
+    "supersedes",
+    "superseded_by",
+    "implementation_refs",
+    "intended_effect",
+    "affected_systems",
+    "authority_level",
+    "consequence_class",
+    "unresolved_questions"
+  ],
+  "properties": {
+    "intent_id": {
+      "type": "string",
+      "pattern": "^INTENT-[0-9A-Za-z]([0-9A-Za-z-]*[0-9A-Za-z])?$"
+    },
+    "statement": {
+      "$ref": "#/$defs/text",
+      "description": "Faithful statement; when the record holds only the founder's exact words, those words"
+    },
+    "source_refs": {
+      "$ref": "#/$defs/text_list",
+      "description": "Source lineage"
+    },
+    "owner": {
+      "$ref": "#/$defs/text"
+    },
+    "state": {
+      "$ref": "#/$defs/lifecycle"
+    },
+    "binding_scope": {
+      "$ref": "#/$defs/text_or_unrecorded"
+    },
+    "constitutional_constraints": {
+      "$ref": "#/$defs/texts_or_unrecorded"
+    },
+    "success_evidence": {
+      "$ref": "#/$defs/texts_or_unrecorded"
+    },
+    "failure_evidence": {
+      "$ref": "#/$defs/texts_or_unrecorded"
+    },
+    "dependencies": {
+      "$ref": "#/$defs/texts_or_unrecorded"
+    },
+    "conflicts": {
+      "$ref": "#/$defs/texts_or_none_or_unrecorded"
+    },
+    "next_review_trigger": {
+      "$ref": "#/$defs/text_or_unrecorded"
+    },
+    "supersedes": {
+      "$ref": "#/$defs/texts_or_none_or_unrecorded",
+      "description": "Intent ids or formulations this record replaces; scripts/ci/check_intent_continuity.py lets an id leave the tree only when a record present at HEAD names it here"
+    },
+    "superseded_by": {
+      "$ref": "#/$defs/texts_or_none_or_unrecorded"
+    },
+    "implementation_refs": {
+      "$ref": "#/$defs/texts_or_unrecorded"
+    },
+    "intended_effect": {
+      "$ref": "#/$defs/text_or_unrecorded",
+      "description": "Intended observable effect (section 11); older records state it as intended_outcome or intended_observable_effect"
+    },
+    "affected_systems": {
+      "$ref": "#/$defs/texts_or_unrecorded"
+    },
+    "authority_level": {
+      "$ref": "#/$defs/text_or_unrecorded"
+    },
+    "consequence_class": {
+      "$ref": "#/$defs/text_or_unrecorded"
+    },
+    "unresolved_questions": {
+      "$ref": "#/$defs/texts_or_unrecorded"
+    },
+    "status": {
+      "$ref": "#/$defs/lifecycle",
+      "description": "Older name for state; must agree with it"
+    },
+    "lifecycle_state": {
+      "$ref": "#/$defs/lifecycle",
+      "description": "Older name for state; must agree with it"
+    },
+    "normalization_2026_10_30": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "rule",
+        "copied"
+      ],
+      "properties": {
+        "contract": {
+          "const": "contracts/intent-record.schema.json"
+        },
+        "rule": {
+          "$ref": "#/$defs/text"
+        },
+        "copied": {
+          "type": "object",
+          "description": "Canonical field -> the field of this same record it was copied from, verbatim",
+          "additionalProperties": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "superseded"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "superseded_by": {
+            "$ref": "#/$defs/text_list"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "lifecycle": {
+      "enum": [
+        "active",
+        "implemented",
+        "deferred",
+        "superseded",
+        "prohibited",
+        "exploratory"
+      ]
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "text_list": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/text"
+      }
+    },
+    "unrecorded": {
+      "type": "object",
+      "description": "The record's source does not supply this field; the reason says why. Never counted as recorded.",
+      "additionalProperties": false,
+      "required": [
+        "unrecorded"
+      ],
+      "properties": {
+        "unrecorded": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "text_or_unrecorded": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/text"
+        },
+        {
+          "$ref": "#/$defs/unrecorded"
+        }
+      ]
+    },
+    "texts_or_unrecorded": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/text"
+        },
+        {
+          "$ref": "#/$defs/text_list"
+        },
+        {
+          "$ref": "#/$defs/unrecorded"
+        }
+      ]
+    },
+    "texts_or_none_or_unrecorded": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/text"
+        },
+        {
+          "type": "array",
+          "maxItems": 0,
+          "description": "Recorded as none"
+        },
+        {
+          "$ref": "#/$defs/text_list"
+        },
+        {
+          "$ref": "#/$defs/unrecorded"
+        }
+      ]
+    }
+  }
+}

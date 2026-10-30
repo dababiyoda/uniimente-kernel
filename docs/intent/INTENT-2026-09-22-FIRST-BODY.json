@@ -27,5 +27,40 @@
   },
   "unresolved_questions": ["Which runtime composition from draft #70/#87, if either, should be canonical after independent comparison?", "What authenticated founder enrollment and remote-channel design will be authorized for a live body?", "Which first real bounded mission and approval envelope does Alfonso choose for live graduation?"],
   "created_at": "2026-09-22T19:46:22Z",
-  "updated_at": "2026-09-22T19:46:22Z"
+  "updated_at": "2026-09-22T19:46:22Z",
+  "source_refs": [
+    "2026-09-22 message headed UNIIMENTE / GREG — OPUS MAXIMUS RECONCILIATION DIRECTIVE, especially sections 3–14, 19–33, 39–49, 61–73, 77–81. Exact selected wording retained in docs/collaboration/FIRST_BODY_DECISION_2026-09-22.md; complete source is the founder's message, not this normalization."
+  ],
+  "state": "active",
+  "binding_scope": {
+    "unrecorded": "not recorded in this record; the Founder Intent Ledger's Required Intent Record lists this field"
+  },
+  "constitutional_constraints": {
+    "unrecorded": "not recorded in this record; the Founder Intent Ledger's Required Intent Record lists this field"
+  },
+  "success_evidence": {
+    "unrecorded": "not recorded in this record; the Founder Intent Ledger's Required Intent Record lists this field; evidence_refs is kept as written and does not separate success from failure evidence"
+  },
+  "failure_evidence": {
+    "unrecorded": "not recorded in this record; the Founder Intent Ledger's Required Intent Record lists this field; evidence_refs is kept as written and does not separate success from failure evidence"
+  },
+  "dependencies": {
+    "unrecorded": "not recorded in this record; the Founder Intent Ledger's Required Intent Record lists this field"
+  },
+  "supersedes": {
+    "unrecorded": "not recorded in this record; the Founder Intent Ledger's Required Intent Record lists this field"
+  },
+  "superseded_by": {
+    "unrecorded": "not recorded in this record; the Founder Intent Ledger's Required Intent Record lists this field"
+  },
+  "intended_effect": "One coherent GREG interface to a durable institution that can continue and recover founder-authorized missions on owned compute, mediate capabilities through the existing Kernel, present truthful evidence and decisions to Alfonso, and progressively operate real business functions when earned and authorized.",
+  "normalization_2026_10_30": {
+    "contract": "contracts/intent-record.schema.json",
+    "rule": "Additive: the fields named in copied repeat this record's own words under their canonical names, and a field this record's source does not supply carries an unrecorded marker; no recorded statement, state or meaning was changed.",
+    "copied": {
+      "source_refs": "source_location",
+      "state": "status",
+      "intended_effect": "intended_outcome"
+    }
+  }
 }

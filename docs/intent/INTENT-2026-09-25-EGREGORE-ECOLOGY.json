@@ -90,5 +90,13 @@
     "closure/greg_registry.py",
     "greg/mac/verify_mac_body.sh",
     "docs/collaboration/GREG-BODY-DECISION-2026-09-25.md"
-  ]
+  ],
+  "intended_effect": "Alfonso installs GREG on hardware he owns, enrolls his Ed25519 key, gives it signed persistent missions, closes every interface, and the body keeps pursuing them under an OS supervisor: observing, acting through the Kernel Gate, acquiring missing capabilities, waiting economically, escalating once, recovering after crashes, stopping on command, and reporting truthfully each morning.",
+  "normalization_2026_10_30": {
+    "contract": "contracts/intent-record.schema.json",
+    "rule": "Additive: the fields named in copied repeat this record's own words under their canonical names, and a field this record's source does not supply carries an unrecorded marker; no recorded statement, state or meaning was changed.",
+    "copied": {
+      "intended_effect": "intended_outcome"
+    }
+  }
 }

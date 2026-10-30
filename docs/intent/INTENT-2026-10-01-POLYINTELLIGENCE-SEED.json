@@ -39,5 +39,40 @@
     "Downstream organ consumption and independent real-world outcome adapter"
   ],
   "created_at": "2026-10-01T15:00:00Z",
-  "updated_at": "2026-10-01T15:00:00Z"
+  "updated_at": "2026-10-01T15:00:00Z",
+  "source_refs": [
+    "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt"
+  ],
+  "state": "active",
+  "binding_scope": {
+    "unrecorded": "not recorded in this record; the Founder Intent Ledger's Required Intent Record lists this field"
+  },
+  "constitutional_constraints": {
+    "unrecorded": "not recorded in this record; the Founder Intent Ledger's Required Intent Record lists this field"
+  },
+  "success_evidence": {
+    "unrecorded": "not recorded in this record; the Founder Intent Ledger's Required Intent Record lists this field; evidence_refs is kept as written and does not separate success from failure evidence"
+  },
+  "failure_evidence": {
+    "unrecorded": "not recorded in this record; the Founder Intent Ledger's Required Intent Record lists this field; evidence_refs is kept as written and does not separate success from failure evidence"
+  },
+  "dependencies": {
+    "unrecorded": "not recorded in this record; the Founder Intent Ledger's Required Intent Record lists this field"
+  },
+  "supersedes": {
+    "unrecorded": "not recorded in this record; the Founder Intent Ledger's Required Intent Record lists this field"
+  },
+  "superseded_by": {
+    "unrecorded": "not recorded in this record; the Founder Intent Ledger's Required Intent Record lists this field"
+  },
+  "intended_effect": "Different epistemic geometries receive real bounded computation or truthful non-answers with recoverable evidence, without adding sovereignty.",
+  "normalization_2026_10_30": {
+    "contract": "contracts/intent-record.schema.json",
+    "rule": "Additive: the fields named in copied repeat this record's own words under their canonical names, and a field this record's source does not supply carries an unrecorded marker; no recorded statement, state or meaning was changed.",
+    "copied": {
+      "source_refs": "source_location",
+      "state": "status",
+      "intended_effect": "intended_outcome"
+    }
+  }
 }

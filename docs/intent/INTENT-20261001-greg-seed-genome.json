@@ -46,5 +46,25 @@
   "cortex/evaluation/crossgeo.py",
   "tests/integration/test_greg_cortex_rehearsal.py",
   "greg/path.json"
- ]
+ ],
+ "intended_effect": {
+  "unrecorded": "not recorded in this record; directive 2026-10-28 section 11 lists this field"
+ },
+ "affected_systems": {
+  "unrecorded": "not recorded in this record; directive 2026-10-28 section 11 lists this field"
+ },
+ "authority_level": {
+  "unrecorded": "not recorded in this record; directive 2026-10-28 section 11 lists this field"
+ },
+ "consequence_class": {
+  "unrecorded": "not recorded in this record; directive 2026-10-28 section 11 lists this field"
+ },
+ "unresolved_questions": {
+  "unrecorded": "not recorded in this record; directive 2026-10-28 section 11 lists this field"
+ },
+ "normalization_2026_10_30": {
+  "contract": "contracts/intent-record.schema.json",
+  "rule": "Additive: the fields named in copied repeat this record's own words under their canonical names, and a field this record's source does not supply carries an unrecorded marker; no recorded statement, state or meaning was changed.",
+  "copied": {}
+ }
 }

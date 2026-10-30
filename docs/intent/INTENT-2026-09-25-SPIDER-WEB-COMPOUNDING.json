@@ -75,5 +75,13 @@
     "greg/metrics.py",
     "docs/CANONICAL_EXECUTION_ORDER.md (Spider-Web Compounding Rule)",
     "docs/collaboration/REPOSITORY-METABOLISM-2026-09-25.json"
-  ]
+  ],
+  "intended_effect": "GREG completes larger classes of founder-authorized missions with less intervention, lower cost, greater reliability and stronger evidence, because each surviving capability is typed to the control points it strengthens and each closure changes future routing.",
+  "normalization_2026_10_30": {
+    "contract": "contracts/intent-record.schema.json",
+    "rule": "Additive: the fields named in copied repeat this record's own words under their canonical names, and a field this record's source does not supply carries an unrecorded marker; no recorded statement, state or meaning was changed.",
+    "copied": {
+      "intended_effect": "intended_outcome"
+    }
+  }
 }

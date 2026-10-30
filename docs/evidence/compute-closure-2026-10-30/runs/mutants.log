@@ -3,22 +3,52 @@ CAUGHT no new ask while one is pending
 CAUGHT re-ask only on a window after the answer
 CAUGHT only a signed answer closes an ask
 CAUGHT a withdrawal closes an ask at its position
+CAUGHT an ask row under another identity is not an ask
+CAUGHT the epoch counts only this resource's asks
 CAUGHT unparseable /proc text is None, never 0
+CAUGHT a negative /proc reading is None
 CAUGHT unreadable PSI is None, never 0
 CAUGHT a missing field never counts as pressure
 CAUGHT memory rule
 CAUGHT declared precedence
 CAUGHT MemAvailable floor
 CAUGHT io rule
-CAUGHT steps timed inside the window only
+CAUGHT status reports the sustained bottleneck
+CAUGHT a loop record between intent and outcome voids the timing
+CAUGHT loop record: mission
+CAUGHT loop record: decision
+CAUGHT loop record: body
+CAUGHT loop record: command
+CAUGHT loop record: telemetry
+CAUGHT timed from the latest intent of the slot
+CAUGHT an outcome with no intent before it is not timing
+CAUGHT an outcome without a capability is not timing
 CAUGHT a recovered step is not timing
+CAUGHT a negative span is not timing
+CAUGHT steps timed inside the window only
+CAUGHT the baseline is taken before the window
+CAUGHT no workload is named when the window took 0 s
 CAUGHT the delay is labelled an estimate
+CAUGHT benchmark scratch is removed
+CAUGHT a scratch ledger that fails verification stops the benchmark
+CAUGHT varying output is not deterministic
+CAUGHT contention is measured during every replicate
+CAUGHT conditions are recorded at the end of a run
 CAUGHT verify: above the noise floor
 CAUGHT verify: significance
 CAUGHT verify: one-sided, after faster
+CAUGHT verify: midranks keep ties exact
 CAUGHT verify: minimum replicates
 CAUGHT verify: same workload
-CAUGHT benchmark scratch is removed
+CAUGHT verify: contention measured during both runs
+CAUGHT verify: a quieter host credits no change
+CAUGHT verify: a busier host may mask a change
+CAUGHT verify: the declared contention tolerance
+CAUGHT verify: same host reported
 CAUGHT cli writes nothing in the body home
+CAUGHT cli expands ~ in the body home as the body does
+CAUGHT cli never overwrites a file it did not write
+CAUGHT cli --runs must be at least 1
 UNMUTATED PASS
-22/22 mutants caught
+51/51 mutants caught
+exit 0

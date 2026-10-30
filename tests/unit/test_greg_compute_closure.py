@@ -7,7 +7,9 @@ quantities are exact; real benchmark timings are reported by the evidence README
 import ast
 import json
 from pathlib import Path
+import sys
 import tempfile
+import time
 
 import pytest
 
@@ -16,7 +18,7 @@ from greg import asks, compute
 from greg.body import Body
 from greg.journal import PRINCIPAL, SOURCE, Journal, fact_id
 from provenance.ledger import EvidenceLedger
-from tests.greg_fixtures import Clock, drop, make_body, signed
+from tests.greg_fixtures import Clock, drop, make_body, mission, note_check, signed, workspace, write_strategy
 
 ROOT = Path(__file__).resolve().parents[2]
 N = compute.SUSTAINED_SAMPLES
@@ -141,6 +143,21 @@ def test_a_pending_compute_ask_for_the_resource_blocks_a_new_one_whatever_its_id
         assert compute.recommend(body.journal) is None
 
 
+def test_an_ask_row_under_another_identity_is_not_an_ask_and_does_not_advance_the_epoch(tmp_path):
+    home, *_ = make_body(tmp_path)
+    with Body(home) as body:
+        window(body.journal, "2026-10-30T00:00", **CPU)
+        found = compute.bottleneck(body.journal)
+        # not keyed on its request id, so no founder surface shows it (asks.open_requests) and nobody can answer it
+        body.journal.record("decision.requested", {"request_id": "req-compute-copy", "kind": "COMPUTE",
+                                                   "mission_id": None, "evidence": {"bottleneck": found}},
+                            key=["copy", "elsewhere"])
+        state = compute.ask_state(body.journal, "cpu")
+        first = compute.recommend(body.journal)
+    assert state["epoch"] == 0 and state["closed"] == [] and state["pending"] == []
+    assert first["request_id"] == "req-compute-" + compute.sha256_json({"resource": "cpu"})[7:23]
+
+
 def test_one_open_ask_per_resource_not_one_for_all_compute(tmp_path):
     home, *_ = make_body(tmp_path)
     with Body(home) as body:
@@ -240,6 +257,8 @@ def test_unreadable_or_malformed_pressure_is_none_never_zero(tmp_path, monkeypat
     assert data["psi_io_some_avg10"] == 0.0 and data["psi_io_some_avg60"] == 7.5           # a real zero stays zero
     assert data["mem_total_bytes"] == 4000000 * 1024 and data["mem_available_bytes"] is None
     assert data["mem_available_ratio"] is None
+    (proc / "pressure" / "cpu").write_text("some avg10=-1.00 avg60=-0.50 avg300=0.00 total=-5\n")
+    assert compute._pressure("cpu") == (None, None) and compute._stall_totals()["cpu"] is None   # not a reading
 
 
 # --- quantify: step timing and the heaviest measured workload ----------------------------------------------------
@@ -320,32 +339,224 @@ def test_steps_outside_the_bottleneck_window_point_outside_greg():
     assert "no GREG mission step ran in the bottleneck window" in message["options"][0]["option"]
 
 
+def fixture_journal():
+    return Journal(EventSpine(EvidenceLedger("compute-closure-fixture")), actor="spiffe://uniimente.internal/t")
+
+
+def test_a_step_that_waited_for_the_founder_or_for_a_restart_is_not_timed():
+    """Review finding WU05-F1: a re-dispatch reuses its deduplicated first intent, so the founder's approval wait and
+    the body's downtime were booked as capability time and could name the wrong heaviest workload."""
+    journal = fixture_journal()
+    # APPROVAL: the intent, the ask and the block, the founder's answer an hour later, then the same intent runs
+    intent = {"mission_id": "m:a", "action_id": "pay", "attempt": 0, "capability": "fs.write"}
+    emit(journal, "mission.dispatching", intent, "2026-10-30T10:00:00Z", ["m:a", "pay", 0, "s"])
+    emit(journal, "decision.requested", {"request_id": "req-a", "mission_id": "m:a", "kind": "APPROVAL"},
+         "2026-10-30T10:00:01Z", "req-a")
+    emit(journal, "mission.blocked", {"mission_id": "m:a", "blocker": {"request_id": "req-a"}},
+         "2026-10-30T10:00:01Z", ["m:a", "blocked"])
+    emit(journal, "decision.answered", {"request_id": "req-a", "mission_id": "m:a", "answer": "approve"},
+         "2026-10-30T11:00:00Z", ["req-a", "answered"])
+    emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T11:00:02Z", ["m:a", "pay", "a"])
+    # RESTART: the intent, then the body stops before the Gate claims the dispatch and boots ten minutes later
+    intent = {"mission_id": "m:b", "action_id": "w", "attempt": 0, "capability": "fs.write"}
+    emit(journal, "mission.dispatching", intent, "2026-10-30T12:00:00Z", ["m:b", "w", 0, "s"])
+    emit(journal, "body.booted", {"boot_id": "boot-2"}, "2026-10-30T12:10:00Z", "boot-2")
+    emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T12:10:02Z", ["m:b", "w", "a"])
+    # a later intent for the same slot (its scope changed) that ran straight through: timed from that intent
+    intent = {"mission_id": "m:c", "action_id": "w", "attempt": 0, "capability": "fs.write"}
+    emit(journal, "mission.dispatching", intent, "2026-10-30T13:00:00Z", ["m:c", "w", 0, "s1"])
+    emit(journal, "mission.observed", {"mission_id": "m:c", "check_id": "n"}, "2026-10-30T13:30:00Z", ["m:c", "o"])
+    emit(journal, "mission.dispatching", intent, "2026-10-30T13:30:01Z", ["m:c", "w", 0, "s2"])
+    emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T13:30:04Z", ["m:c", "w", "a"])
+    # a capability's own record inside its dispatch is not an interruption
+    intent = {"mission_id": "m:d", "action_id": "f", "attempt": 0, "capability": "foundry.repair"}
+    emit(journal, "mission.dispatching", intent, "2026-10-30T14:00:00Z", ["m:d", "f", 0, "s"])
+    emit(journal, "foundry.committing", {"mission_id": "m:d"}, "2026-10-30T14:00:01Z", ["m:d", "commit"])
+    emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T14:00:02Z", ["m:d", "f", "a"])
+    assert [(s["mission_id"], s["seconds"]) for s in compute.step_times(journal)] == [("m:c", 3.0), ("m:d", 2.0)]
+
+
+
+@pytest.mark.parametrize("between", ["mission.observed", "decision.answered", "body.booted", "command.accepted",
+                                     "compute.telemetry"])
+def test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing(between):
+    """The body is single-threaded: only its loop writes these, never a dispatch in progress (compute.LOOP_RECORDS)."""
+    journal = fixture_journal()
+    intent = {"mission_id": "m:a", "action_id": "w", "attempt": 0, "capability": "fs.write"}
+    emit(journal, "mission.dispatching", intent, "2026-10-30T10:00:00Z", ["m:a", "w", 0, "s"])
+    emit(journal, between, {"mission_id": "m:a"}, "2026-10-30T10:30:00Z", ["between", between])
+    emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T10:30:02Z", ["m:a", "w", "a"])
+    assert compute.step_times(journal) == []
+
+def test_reconciliations_outcomes_without_an_intent_and_a_stepped_clock_are_not_timing():
+    journal = fixture_journal()
+    # an UNCERTAIN dispatch, then the founder's reconciliation of that same dispatch twenty minutes later
+    intent = {"mission_id": "m:r", "action_id": "c", "attempt": 0, "capability": "worker.commission"}
+    emit(journal, "mission.dispatching", intent, "2026-10-30T00:11:00Z", ["m:r", "c", 0, "s"])
+    emit(journal, "mission.action", {**intent, "status": "UNCERTAIN"}, "2026-10-30T00:11:05Z", ["m:r", "c", "u"])
+    emit(journal, "mission.action", {**intent, "status": "DONE", "route": "founder_reconciliation"},
+         "2026-10-30T00:31:00Z", ["m:r", "c", "reconciled"])
+    # refused before any intent was written
+    emit(journal, "mission.action", {"mission_id": "m:n", "action_id": "x", "attempt": 0, "status": "REFUSED",
+                                     "capability": "fs.write"}, "2026-10-30T00:40:00Z", ["m:n", "x", "a"])
+    # the clock stepped back between the intent and the outcome
+    intent = {"mission_id": "m:s", "action_id": "w", "attempt": 0, "capability": "fs.write"}
+    emit(journal, "mission.dispatching", intent, "2026-10-30T00:50:00Z", ["m:s", "w", 0, "s"])
+    emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T00:49:00Z", ["m:s", "w", "a"])
+    assert [s["seconds"] for s in compute.step_times(journal)] == [5.0]
+
+
+def journal_with_window(steps):
+    journal = fixture_journal()
+    for i in range(N):
+        emit(journal, "compute.telemetry", {"at": f"t{i}", "cores": 4, "load_ratio": 1.5, "disk_free_ratio": 0.5},
+             f"2026-10-30T00:{i * 10:02d}:00Z", f"t{i}")
+        if i == 1:
+            steps(journal)
+    return journal
+
+
+def test_a_step_without_a_capability_or_a_window_of_zero_second_steps_never_breaks_the_ask():
+    """Review finding WU05-F4: a capability-less outcome beside a named one, or a 0 s total, raised in recommend()."""
+    def unnamed(journal):
+        step(journal, "m:a", "x", "fs.write", "2026-10-30T00:11:00Z", "2026-10-30T00:11:06Z")
+        emit(journal, "mission.dispatching", {"mission_id": "m:a", "action_id": "y", "attempt": 0,
+                                              "capability": "fs.write"}, "2026-10-30T00:12:00Z", ["m:a", "y", "d"])
+        emit(journal, "mission.action", {"mission_id": "m:a", "action_id": "y", "attempt": 0, "status": "REFUSED",
+                                         "reasons": ["pipeline input unavailable"]},     # no capability: its input
+             "2026-10-30T00:12:06Z", ["m:a", "y", "a"])
+    message = compute.recommend(journal_with_window(unnamed))
+    asks.validate(message)
+    assert [r["capability"] for r in message["evidence"]["workload"]["by_capability"]] == ["fs.write"]
+    zero = compute.recommend(journal_with_window(
+        lambda j: step(j, "m:a", "x", "fs.write", "2026-10-30T00:11:00Z", "2026-10-30T00:11:00Z")))
+    asks.validate(zero)
+    assert zero["evidence"]["workload"]["heaviest"] is None
+    assert "no measurable time" in zero["options"][0]["option"]
+
+
+WAIT = 1.0      # seconds the founder or the body takes; hours in life
+
+
+def paid_write(home, key, body_id, mid):
+    ws = workspace(home, mid)
+    drop(home, signed(key, body_id, "MISSION", mission(
+        mid, checks=[note_check("filed", ws / "f.txt", "filed")], capabilities=["fs.read"], budget=1.0,
+        strategies=[write_strategy("file", "f.txt", "filed", ["filed"], cost_usd=0.5, rationale="file now")])))
+
+
+def plain_write(home, key, body_id, mid):
+    ws = workspace(home, mid)
+    drop(home, signed(key, body_id, "MISSION", mission(
+        mid, checks=[note_check("done", ws / "f.txt", "done")], capabilities=["fs.read", "fs.write"],
+        strategies=[write_strategy("w", "f.txt", "done", ["done"])])))
+
+
+def test_on_a_real_body_the_founders_approval_wait_is_not_booked_as_step_time(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    paid_write(home, key, body_id, "m:urgent-taxes")
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        for _ in range(4):
+            body.tick()
+            clock.advance(1)
+        rid = next(e.payload["request_id"] for e in body.journal.replay("decision.requested")
+                   if e.payload["kind"] == "APPROVAL")
+    time.sleep(WAIT)
+    drop(home, signed(key, body_id, "DECISION", {"request_id": rid, "answer": "approve"}))
+    with Body(home, clock=clock) as body:
+        for _ in range(6):
+            body.tick()
+            clock.advance(1)
+        assert len(body.journal.replay("mission.dispatching")) == 1        # the approved run reused the intent
+        assert [e.payload["status"] for e in body.journal.replay("mission.action")] == ["DONE"]
+        assert compute.step_times(body.journal) == []
+
+
+class Killed(BaseException):
+    pass
+
+
+def test_on_a_real_body_downtime_before_the_gate_claimed_a_dispatch_is_not_step_time(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    plain_write(home, key, body_id, "m:write-once")
+    clock = Clock()
+    with pytest.raises(Killed):
+        with Body(home, clock=clock) as body:
+            act = body.engine.office.act
+
+            def die(*args, **kwargs):           # the process dies inside the dispatch, before the Gate claims it
+                if kwargs.get("manifest") is not None and kwargs["manifest"].capability_id == "fs.write":
+                    raise Killed()
+                return act(*args, **kwargs)
+            body.engine.office.act = die
+            for _ in range(8):
+                body.tick()
+                clock.advance(1)
+    time.sleep(WAIT)
+    with Body(home, clock=clock) as body:
+        for _ in range(12):
+            body.tick()
+            clock.advance(40)
+        actions = [e.payload for e in body.journal.replay("mission.action")]
+        assert [a["status"] for a in actions] == ["DONE"] and not actions[0]["routing"].get("recovered")
+        assert compute.step_times(body.journal) == []
+
+
+def test_on_a_real_body_a_dispatch_that_ran_straight_through_is_timed(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    plain_write(home, key, body_id, "m:write-once")
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        for _ in range(6):
+            body.tick()
+            clock.advance(1)
+        steps = compute.step_times(body.journal)
+    assert [(s["mission_id"], s["capability"]) for s in steps] == [("m:write-once", "fs.write")]
+    assert 0 <= steps[0]["seconds"] < WAIT
+
+
 # --- benchmark and verification -----------------------------------------------------------------------------------
 
 SMALL = {"sha256_rounds": 2000, "ledger_records": 3}
 
 
-def test_the_benchmark_is_deterministic_scratch_only_and_reports_median_iqr_and_host(tmp_path):
+def test_the_benchmark_is_deterministic_scratch_only_and_reports_median_iqr_and_host(tmp_path, monkeypatch):
     home, *_ = make_body(tmp_path)
     ledger = home / "ledger.jsonl"
-    before = sorted(Path(tempfile.gettempdir()).glob("greg-benchmark-*"))
+    # A private temporary directory: any other benchmark on this host shares the default one (review finding F3).
+    scratch = tmp_path / "tmp"
+    scratch.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(scratch))
     held = ledger.read_bytes() if ledger.exists() else None
     one = compute.benchmark(3, workload=SMALL)
     two = compute.benchmark(3, workload=SMALL)
     assert (ledger.read_bytes() if ledger.exists() else None) == held          # never the body's ledger
-    assert sorted(Path(tempfile.gettempdir()).glob("greg-benchmark-*")) == before   # scratch removed
+    assert list(scratch.iterdir()) == []                                       # scratch removed
     for result in (one, two):
         assert result["runs"] == 3 and len(result["samples_seconds"]) == 3 and result["deterministic"] is True
         assert result["median_seconds"] > 0 and result["iqr_seconds"] >= 0
         assert set(result["component_medians"]) == {"sha256_chain", "ledger_append_verify", "process_spawn"}
         assert result["host"]["cores"] >= 1 and result["host"]["python"]
+        assert set(result["host"]["conditions_at_end"]) == set(result["host"]["conditions"])
         assert result["network"] == "none"
+        per_run = result["contention"]["per_run"]                              # measured during every replicate
+        assert len(per_run) == 3 and all(set(c) == set(compute.CONTENTION_MEASURES) for c in per_run)
+        assert all(0.0 <= c["cpu_wait_share"] <= 1.0 for c in per_run)
+        assert result["contention"]["medians"]["cpu_wait_share"] is not None
     assert one["workload_digest"] == two["workload_digest"] and one["output_digest"] == two["output_digest"]
     assert compute.benchmark(1, workload={**SMALL, "seed": "other"})["workload_digest"] != one["workload_digest"]
 
 
-def bench(samples, digest="w1"):
-    return {"samples_seconds": samples, "workload_digest": digest, "host": {"machine": "x86_64", "cores": 4}}
+QUIET = {"cpu_wait_share": 0.02, "psi_cpu_share": 0.10, "psi_io_share": 0.01, "psi_memory_share": 0.0}
+
+
+def bench(samples, digest="w1", contention=QUIET, host=None):
+    """A benchmark result as ``benchmark`` writes it; by default both runs met the same measured contention."""
+    run = {"samples_seconds": samples, "workload_digest": digest, "host": host or {"machine": "x86_64", "cores": 4}}
+    if contention is not None:
+        run["contention"] = {"medians": dict(contention)}
+    return run
 
 
 BEFORE = [1.00, 1.02, 0.98, 1.01, 0.99, 1.03, 0.97]
@@ -393,6 +604,68 @@ def test_large_samples_use_a_seeded_permutation_test_that_repeats_exactly():
     assert one["method"].startswith("seeded permutation") and one == two and one["verdict"] == "VERIFIED"
 
 
+def test_tied_samples_take_midranks_so_the_exact_p_value_is_right():
+    # 126 of the 252 arrangements put three or more of the five 1.0s on the after side
+    p_value, method = compute._rank_sum_p([1.0, 1.0, 2.0, 2.0, 2.0], [1.0, 1.0, 1.0, 2.0, 2.0])
+    assert method.startswith("exact") and p_value == 0.5
+
+
+BUSY = {"cpu_wait_share": 0.45, "psi_cpu_share": 0.80, "psi_io_share": 0.20, "psi_memory_share": 0.0}
+FASTER = [0.80, 0.82, 0.79, 0.81, 0.78, 0.83, 0.80]
+
+
+def test_the_same_code_on_a_quieter_host_is_never_verified():
+    """Review findings WU05-F2 and F1-verify: only ambient load changed between the runs, and verify said VERIFIED."""
+    result = compute.verify_improvement(bench(BEFORE, contention=BUSY), bench(FASTER, contention=QUIET))
+    assert result["verdict"] == "INCONCLUSIVE" and "quieter" in result["reason"]
+    assert result["p_value"] <= compute.ALPHA and result["relative_effect"] > result["noise_floor"]  # it was faster
+    assert result["contention"]["before"] == BUSY and result["contention"]["after"] == QUIET
+    assert result["contention"]["shift"]["cpu_wait_share"] == -0.43
+    assert "the code and the host together" in result["scope"]
+    io_eased = {**QUIET, "psi_io_share": 0.01 + compute.CONTENTION_TOLERANCE + 0.01}      # one measure is enough
+    assert compute.verify_improvement(bench(BEFORE, contention=io_eased), bench(FASTER))["verdict"] == "INCONCLUSIVE"
+    within = {**QUIET, "cpu_wait_share": 0.02 + compute.CONTENTION_TOLERANCE - 0.01}       # inside the tolerance
+    assert compute.verify_improvement(bench(BEFORE, contention=within), bench(FASTER))["verdict"] == "VERIFIED"
+
+
+def test_no_change_on_a_busier_host_is_inconclusive_and_a_speed_up_despite_it_is_verified():
+    masked = compute.verify_improvement(bench(BEFORE), bench(BEFORE, contention=BUSY))
+    assert masked["verdict"] == "INCONCLUSIVE" and "busier" in masked["reason"]
+    assert compute.verify_improvement(bench(BEFORE), bench(FASTER, contention=BUSY))["verdict"] == "VERIFIED"
+
+
+def test_a_verdict_needs_contention_measured_during_both_runs():
+    for before, after in ((bench(BEFORE, contention=None), bench(FASTER)), (bench(BEFORE), FASTER),
+                          (bench(BEFORE, contention=dict.fromkeys(QUIET)), bench(FASTER))):
+        result = compute.verify_improvement(before, after)
+        assert result["verdict"] == "INCONCLUSIVE" and "no contention was measured" in result["reason"]
+
+
+def test_verify_reports_whether_both_runs_used_the_same_host():
+    one = {"machine": "x86_64", "cores": 4, "conditions": {"load1": 1.0}}
+    later = {**one, "conditions": {"load1": 3.0}, "conditions_at_end": {"load1": 2.0}}
+    assert compute.verify_improvement(bench(BEFORE, host=one), bench(BEFORE, host=later))["same_host"] is True
+    assert compute.verify_improvement(bench(BEFORE, host=one), bench(BEFORE, host={**one, "cores": 8}))[
+        "same_host"] is False
+
+
+def test_a_scratch_ledger_that_fails_verification_stops_the_benchmark_and_varying_output_is_flagged(tmp_path,
+                                                                                                     monkeypatch):
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    real = EvidenceLedger.verify_chain
+
+    def tampered(self, *args, **kwargs):        # only the benchmark's own final check sees a broken chain
+        caller = sys._getframe(1).f_globals.get("__name__")
+        return (False, "tampered") if caller == "greg.compute" else real(self, *args, **kwargs)
+    with monkeypatch.context() as patched:
+        patched.setattr(EvidenceLedger, "verify_chain", tampered)
+        with pytest.raises(RuntimeError, match="failed verification"):
+            compute.benchmark(1, workload=SMALL)
+    outputs = iter(["a", "b"])
+    monkeypatch.setattr(compute, "_sha256_chain", lambda seed, rounds: next(outputs))
+    assert compute.benchmark(2, workload=SMALL)["deterministic"] is False
+
+
 # --- the CLI: read-only status, files only ---------------------------------------------------------------------
 
 def test_cli_compute_reads_the_body_and_writes_only_the_files_it_names(tmp_path, capsys):
@@ -419,6 +692,35 @@ def test_cli_compute_reads_the_body_and_writes_only_the_files_it_names(tmp_path,
                      "--after", str(tmp_path / "b.json")]) == 0
     assert json.loads(capsys.readouterr().out)["verdict"] == "VERIFIED"
     assert ledger.read_bytes() == held                                     # the CLI never wrote the body's ledger
+
+
+def test_cli_benchmark_guard_expands_the_home_and_never_overwrites_a_file_it_did_not_write(tmp_path, monkeypatch,
+                                                                                          capsys):
+    """Review finding WU05-F3: a home given as '~/body' slipped past the guard and --out replaced the ledger."""
+    from greg import cli
+    home, *_ = make_body(tmp_path)                                         # tmp_path/body
+    monkeypatch.setenv("HOME", str(tmp_path))
+    ledger = home / "ledger.jsonl"
+    held = ledger.read_bytes()
+    assert cli.main(["--home", "~/body", "compute", "status"]) == 0        # '~/body' is the real body
+    capsys.readouterr()
+    for out in ("~/body/ledger.jsonl", "~/body/results.json", str(home / "inbox" / ".." / "x.json")):
+        assert cli.main(["--home", "~/body", "compute", "benchmark", "--runs", "1", "--out", out]) == 2
+        assert "outside the body" in capsys.readouterr().err
+    assert ledger.read_bytes() == held and not (home / "results.json").exists()
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    foreign = elsewhere / "ledger.jsonl"
+    foreign.write_text("another body's ledger\n")
+    assert cli.main(["--home", str(home), "compute", "benchmark", "--runs", "1", "--out", str(foreign)]) == 2
+    assert "not a benchmark result" in capsys.readouterr().err and foreign.read_text() == "another body's ledger\n"
+    assert cli.main(["--home", str(home), "compute", "benchmark", "--runs", "0",
+                     "--out", str(elsewhere / "b.json")]) == 2
+    assert "--runs must be at least 1" in capsys.readouterr().err
+    mine = elsewhere / "bench.json"
+    for _ in range(2):                                                     # its own earlier result is replaced
+        assert cli.main(["--home", str(home), "compute", "benchmark", "--runs", "1", "--out", str(mine)]) == 0
+    assert json.loads(mine.read_text())["kind"] == "compute.benchmark"
 
 
 def test_compute_stays_stdlib_and_never_provisions():

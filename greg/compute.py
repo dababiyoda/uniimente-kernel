@@ -18,12 +18,15 @@ What is measured, and how (directive sections 48, 58, 60, 71):
   founder ask per resource at a time, and asks again only when a full window measured after the founder's
   answer still shows it.
 * ``quantify`` reads mission step timing the ledger already records (the write-ahead intent to the recorded
-  outcome) and names the heaviest measured workload. Its delay figure is an estimate and says so.
-* ``benchmark`` runs a fixed stdlib workload in a scratch directory; ``verify_improvement`` decides with a
-  one-sided permutation test whether a change measurably helped. Nothing here uses the network or prices.
+  outcome, for steps that ran straight through: never the founder's approval wait or the body's downtime) and names
+  the heaviest measured workload. Its delay figure is an estimate and says so.
+* ``benchmark`` runs a fixed stdlib workload in a scratch directory and measures the contention each replicate met;
+  ``verify_improvement`` decides with a one-sided permutation test whether a change measurably helped, and credits
+  it only when that contention did not ease in its favour. Nothing here uses the network or prices.
 """
 from __future__ import annotations
 
+import bisect
 from datetime import datetime
 import hashlib
 import itertools
@@ -84,18 +87,28 @@ def _finite(value) -> float | None:
     return number if math.isfinite(number) and number >= 0 else None
 
 
-def _pressure(resource: str) -> tuple[float | None, float | None]:
-    """PSI 'some' avg10 and avg60 (percent) for cpu, memory or io; None where the kernel offers none."""
+def _psi_some(resource: str) -> dict:
+    """The raw fields of the 'some' line of /proc/pressure/<resource>; empty where the kernel offers none."""
     try:
         text = (PROC / "pressure" / resource).read_text()
     except (OSError, UnicodeDecodeError):
-        return None, None
+        return {}
     for line in text.splitlines():
         head, _, rest = line.partition(" ")
         if head == "some":
-            fields = dict(token.partition("=")[::2] for token in rest.split())
-            return _finite(fields.get("avg10")), _finite(fields.get("avg60"))
-    return None, None
+            return dict(token.partition("=")[::2] for token in rest.split())
+    return {}
+
+
+def _pressure(resource: str) -> tuple[float | None, float | None]:
+    """PSI 'some' avg10 and avg60 (percent) for cpu, memory or io; None where the kernel offers none."""
+    fields = _psi_some(resource)
+    return _finite(fields.get("avg10")), _finite(fields.get("avg60"))
+
+
+def _stall_totals() -> dict:
+    """PSI 'some' stall time (microseconds since boot) per resource, host-wide; None where unreadable."""
+    return {resource: _finite(_psi_some(resource).get("total")) for resource in ("cpu", "memory", "io")}
 
 
 def _meminfo() -> dict:
@@ -217,30 +230,47 @@ def _when(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
-def step_times(journal: Journal) -> list[dict]:
-    """Every timed mission step: the ledger record time of its write-ahead intent (``mission.dispatching``) to that
-    of its first recorded outcome (``mission.action``). Wall clock, so it includes the Gate and the capability.
+# Records only the body's loop writes, never a dispatch in progress (the body is single-threaded, and a dispatch
+# writes its intent, its capability's own records and its outcome). One of these between a step's intent and its
+# outcome means the step did not run straight through: it waited for the founder (an APPROVAL asked, blocked and
+# answered), the body stopped and booted again, or the body moved on to other work before the same intent ran.
+LOOP_RECORDS = ("mission.", "decision.", "body.", "command.", "compute.telemetry")
 
-    Not timing: an outcome with no intent (refused before dispatch), an outcome recovered after a restart (the gap
-    is downtime), a later record of the same dispatch (a reconciliation), and a negative span (the clock stepped)."""
-    started = {}
+
+def step_times(journal: Journal) -> list[dict]:
+    """Every timed mission step: the ledger record time of its latest write-ahead intent (``mission.dispatching``)
+    to that of its first recorded outcome (``mission.action``). Wall clock, so it includes the Gate and the
+    capability.
+
+    Not timing: an outcome with no intent before it (refused before dispatch) or with no capability (its input
+    failed, not a capability), an outcome recovered after a restart, a step with a loop record between its intent
+    and its outcome (LOOP_RECORDS: the founder's approval wait or the body's downtime is not the capability's time;
+    a later record of the same dispatch, a reconciliation, always has the first outcome between), and a negative
+    span (the clock stepped)."""
+    positions = journal.positions("")
+    loop = sorted(positions[event_id] for kind in LOOP_RECORDS for event_id in journal.positions(kind)
+                  if event_id in positions)
+    intents = {}
     for e in journal.replay("mission.dispatching"):
         p = e.payload
-        started.setdefault((p.get("mission_id"), p.get("action_id"), p.get("attempt")), e.occurred_at)
-    positions = journal.positions("")
-    steps, seen = [], set()
+        if positions.get(e.event_id) is not None:
+            intents.setdefault((p.get("mission_id"), p.get("action_id"), p.get("attempt")), []).append(
+                (positions[e.event_id], e.occurred_at))
+    steps = []
     for e in journal.replay("mission.action"):
         p = e.payload
-        slot = (p.get("mission_id"), p.get("action_id"), p.get("attempt"))
-        if slot in seen or slot not in started:
+        end = positions.get(e.event_id)
+        begun = [i for i in intents.get((p.get("mission_id"), p.get("action_id"), p.get("attempt")), ())
+                 if end is not None and i[0] < end]
+        if not begun or not isinstance(p.get("capability"), str) or (p.get("routing") or {}).get("recovered"):
             continue
-        seen.add(slot)
-        if (p.get("routing") or {}).get("recovered"):
+        start, started_at = max(begun)
+        if bisect.bisect_right(loop, start) < bisect.bisect_left(loop, end):
             continue
-        seconds = (_when(e.occurred_at) - _when(started[slot])).total_seconds()
+        seconds = (_when(e.occurred_at) - _when(started_at)).total_seconds()
         if seconds >= 0:
-            steps.append({"mission_id": p.get("mission_id"), "capability": p.get("capability"),
-                          "seconds": seconds, "position": positions.get(e.event_id)})
+            steps.append({"mission_id": p.get("mission_id"), "capability": p["capability"],
+                          "seconds": seconds, "position": end})
     return steps
 
 
@@ -258,8 +288,9 @@ def quantify(journal: Journal, window: list) -> dict:
     delay = {"basis": DELAY_METHOD, "excess_step_seconds": None, "window_seconds": round(span, 3),
              "mission_hours_delayed_per_week": None, "latency_inflation": {}, "unbaselined_capabilities": []}
     if not inside:
-        work["note"] = ("no GREG mission step ran in the bottleneck window: the load may come from outside "
-                        "GREG's missions" if steps else "the journal records no mission step timing yet")
+        work["note"] = ("no GREG mission step ran in the bottleneck window, so the load may come from outside "
+                        "GREG's missions" if steps else
+                        "the journal records no mission step timing yet, so no workload is named")
         return {"workload": work, "delay": delay}
     by_capability = {}
     for s in inside:
@@ -268,7 +299,11 @@ def quantify(journal: Journal, window: list) -> dict:
     rows = sorted(({"capability": c, "steps": len(v), "seconds": round(sum(v), 3),
                     "share": round(sum(v) / total, 4) if total > 0 else None} for c, v in by_capability.items()),
                   key=lambda r: (-r["seconds"], str(r["capability"])))
-    work.update(heaviest=rows[0], by_capability=rows)
+    work["by_capability"] = rows
+    if total > 0:
+        work["heaviest"] = rows[0]
+    else:                               # every timed step took 0 s on the record clock: no share to rank by
+        work["note"] = "the window's timed mission steps took no measurable time, so no workload is named"
     baseline = {}
     for s in before:
         baseline.setdefault(s["capability"], []).append(s["seconds"])
@@ -289,11 +324,7 @@ def _optimization_option(work: dict) -> str:
     if heaviest is not None:
         return (f"software/workload optimization (no spend): start with {heaviest['capability']}, "
                 f"{heaviest['share']:.0%} of measured mission step time in the bottleneck window")
-    if work.get("recorded"):
-        return ("software/workload optimization (no spend); no GREG mission step ran in the bottleneck window, "
-                "so the load may come from outside GREG's missions")
-    return "software/workload optimization (no spend); the journal records no mission step timing yet, so no " \
-           "workload is named"
+    return f"software/workload optimization (no spend); {work.get('note') or 'no workload is named'}"
 
 
 def recommend(journal: Journal) -> dict | None:
@@ -374,15 +405,40 @@ MIN_REPLICATES = 5           # per side; 5 against 5 gives an exact p as small a
 EXACT_LIMIT = 50_000         # arrangements enumerated exactly; beyond this a seeded permutation sample
 PERMUTATIONS = 20_000
 PERMUTATION_SEED = 20261030
+# What competed with each replicate, as a share of its time. The chain's time off the CPU is always measured;
+# the PSI shares are host-wide stall time and None on a kernel without PSI.
+CONTENTION_MEASURES = ("cpu_wait_share", "psi_cpu_share", "psi_io_share", "psi_memory_share")
+# A difference in a measure's median between two runs above this (a share of each replicate's time) is a
+# different host, not the same host at two times. Declared, not learned.
+CONTENTION_TOLERANCE = 0.05
+VERDICT_SCOPE = ("the fixed workload's speed on this host at two times: the code and the host together. A change "
+                 "is credited only when the contention measured during both runs did not move in its favour, so a "
+                 "change that works by lowering the host's load (an optimized workload) shows in the next telemetry "
+                 "window, not here")
+
+
+def _conditions() -> dict:
+    load1 = os.getloadavg()[0] if hasattr(os, "getloadavg") else None
+    return {"load1": round(load1, 3) if load1 is not None else None, **pressure()}
 
 
 def host_facts() -> dict:
-    """What a benchmark ran on, and the pressure when it started (a contended run is not an idle one)."""
-    load1 = os.getloadavg()[0] if hasattr(os, "getloadavg") else None
+    """What a benchmark ran on, and the load and pressure when it started. These are lagging averages read once,
+    so they cannot tell a contended run from a quiet one; the per-replicate contention is what verify compares."""
     return {"machine": platform.machine(), "system": platform.system(), "release": platform.release(),
             "python": platform.python_version(), "implementation": platform.python_implementation(),
-            "cores": os.cpu_count() or 1, "memory_bytes": memory_bytes(),
-            "conditions": {"load1": round(load1, 3) if load1 is not None else None, **pressure()}}
+            "cores": os.cpu_count() or 1, "memory_bytes": memory_bytes(), "conditions": _conditions()}
+
+
+def _contention(stalls_before: dict, stalls_after: dict, chain_cpu: float, chain_wall: float, wall: float) -> dict:
+    """What competed with one replicate: the share of the sha256 chain's wall time this process spent off the CPU,
+    and, per resource, the PSI 'some' stall time the host accumulated over the replicate as a share of it."""
+    out = {"cpu_wait_share": round(min(1.0, max(0.0, 1 - chain_cpu / chain_wall)), 4) if chain_wall > 0 else None}
+    for resource in ("cpu", "io", "memory"):
+        a, b = stalls_before.get(resource), stalls_after.get(resource)
+        out[f"psi_{resource}_share"] = (round(min(1.0, (b - a) / 1e6 / wall), 4)
+                                        if a is not None and b is not None and b >= a and wall > 0 else None)
+    return out
 
 
 def _sha256_chain(seed: str, rounds: int) -> str:
@@ -426,24 +482,31 @@ def benchmark(runs: int = BENCHMARK_RUNS, *, workload: dict | None = None) -> di
     spec = {**BENCHMARK_WORKLOAD, **(workload or {})}
     host, started = host_facts(), iso(utcnow())
     parts = {"sha256_chain": [], "ledger_append_verify": [], "process_spawn": []}
-    totals, outputs = [], set()
+    totals, outputs, contention = [], set(), []
     for _ in range(runs):
-        t0 = time.perf_counter()
+        stalls, c0, t0 = _stall_totals(), time.process_time(), time.perf_counter()
         outputs.add(_sha256_chain(spec["seed"], int(spec["sha256_rounds"])))
-        t1 = time.perf_counter()
+        c1, t1 = time.process_time(), time.perf_counter()
         _scratch_ledger(spec["seed"], int(spec["ledger_records"]))
         t2 = time.perf_counter()
         subprocess.run([sys.executable, "-I", "-c", "pass"], check=True, capture_output=True, timeout=60)
         t3 = time.perf_counter()
+        contention.append(_contention(stalls, _stall_totals(), c1 - c0, t1 - t0, t3 - t0))
         for name, seconds in zip(parts, (t1 - t0, t2 - t1, t3 - t2)):
             parts[name].append(round(seconds, 6))
         totals.append(round(t3 - t0, 6))
+    host["conditions_at_end"] = _conditions()
     q1, median, q3 = _quartiles(totals)
+    medians = {}
+    for measure in CONTENTION_MEASURES:
+        values = [c[measure] for c in contention if c[measure] is not None]
+        medians[measure] = round(statistics.median(values), 4) if len(values) == len(contention) else None
     return {"kind": "compute.benchmark", "workload": spec, "workload_digest": sha256_json(spec), "runs": runs,
             "samples_seconds": totals, "components_seconds": parts,
             "component_medians": {k: round(statistics.median(v), 6) for k, v in parts.items()},
             "median_seconds": round(median, 6), "iqr_seconds": round(q3 - q1, 6),
             "relative_iqr": round((q3 - q1) / median, 6) if median > 0 else None,
+            "contention": {"per_run": contention, "medians": medians},
             "deterministic": len(outputs) == 1, "output_digest": sorted(outputs)[0], "host": host,
             "started_at": started, "finished_at": iso(utcnow()), "network": "none",
             "reality_status": "MEASURED_ON_THIS_HOST"}
@@ -481,19 +544,34 @@ def _rank_sum_p(before: list, after: list) -> tuple[float, str]:
     return (hits + 1) / (PERMUTATIONS + 1), f"seeded permutation (seed {PERMUTATION_SEED}, {PERMUTATIONS} draws)"
 
 
+def _contention_medians(run) -> dict | None:
+    found = run.get("contention", {}).get("medians") if isinstance(run, dict) and \
+        isinstance(run.get("contention"), dict) else None
+    if not isinstance(found, dict):
+        return None
+    return {m: found.get(m) if isinstance(found.get(m), (int, float)) and not isinstance(found.get(m), bool)
+            and math.isfinite(found.get(m)) else None for m in CONTENTION_MEASURES}
+
+
 def verify_improvement(before, after, *, alpha: float = ALPHA) -> dict:
     """Did ``after`` measurably beat ``before``? Each is a benchmark result (or a list of seconds).
 
-    VERIFIED needs both a one-sided permutation p-value at most ``alpha`` and a relative improvement of the medians
-    above the noise floor, the before run's IQR over its median. INCONCLUSIVE when a side has fewer than
-    MIN_REPLICATES samples or the two ran different workloads; NOT_IMPROVED otherwise. A different host is reported,
-    not refused: a new node is exactly what an after run may measure."""
+    VERIFIED needs a one-sided permutation p-value at most ``alpha``, a relative improvement of the medians above
+    the noise floor (the before run's IQR over its median), and contention measured during both runs that did not
+    ease in the after run's favour. INCONCLUSIVE when a side has fewer than MIN_REPLICATES samples, the two ran
+    different workloads, no contention was measured during both, the after run was faster on a measurably quieter
+    host (its speed cannot be credited to the change), or it was not faster on a measurably busier one (the change
+    may be masked); NOT_IMPROVED otherwise. A different host is reported, not refused: a new node is exactly what an
+    after run may measure."""
     b, a = _seconds(before), _seconds(after)
     digests = [run.get("workload_digest") for run in (before, after) if isinstance(run, dict)]
     hosts = [run.get("host") for run in (before, after) if isinstance(run, dict)]
+    measured = {"before": _contention_medians(before), "after": _contention_medians(after),
+                "tolerance": CONTENTION_TOLERANCE}
     result = {"kind": "compute.improvement", "alpha": alpha, "n_before": len(b), "n_after": len(a),
-              "same_host": ({k: v for k, v in (hosts[0] or {}).items() if k != "conditions"}
-                            == {k: v for k, v in (hosts[1] or {}).items() if k != "conditions"})
+              "scope": VERDICT_SCOPE, "contention": measured,
+              "same_host": ({k: v for k, v in (hosts[0] or {}).items() if not k.startswith("conditions")}
+                            == {k: v for k, v in (hosts[1] or {}).items() if not k.startswith("conditions")})
               if len(hosts) == 2 else None}
     if len(digests) == 2 and digests[0] != digests[1]:
         return {**result, "verdict": "INCONCLUSIVE", "reason": "the two benchmarks ran different workloads"}
@@ -505,14 +583,33 @@ def verify_improvement(before, after, *, alpha: float = ALPHA) -> dict:
     noise_floor = (q3 - q1) / median_before
     effect = (median_before - median_after) / median_before
     p_value, method = _rank_sum_p(b, a)
-    verified = p_value <= alpha and effect > noise_floor
-    reason = ("faster beyond the before run's noise, and unlikely by chance" if verified else
-              "not faster beyond chance" if p_value > alpha else
-              "faster, but within the before run's own noise")
-    return {**result, "verdict": "VERIFIED" if verified else "NOT_IMPROVED", "reason": reason,
-            "p_value": round(p_value, 6), "method": method, "median_before": round(median_before, 6),
-            "median_after": round(median_after, 6), "relative_effect": round(effect, 6),
-            "noise_floor": round(noise_floor, 6)}
+    stats = {"p_value": round(p_value, 6), "method": method, "median_before": round(median_before, 6),
+             "median_after": round(median_after, 6), "relative_effect": round(effect, 6),
+             "noise_floor": round(noise_floor, 6)}
+    cb, ca = measured["before"], measured["after"]
+    shifts = {m: round(ca[m] - cb[m], 4) for m in CONTENTION_MEASURES
+              if cb is not None and ca is not None and cb[m] is not None and ca[m] is not None}
+    measured["shift"] = shifts
+    if not shifts:
+        return {**result, **stats, "verdict": "INCONCLUSIVE",
+                "reason": "no contention was measured during both runs, so a faster after run cannot be told apart "
+                          "from a quieter host"}
+    quieter = sorted(m for m, d in shifts.items() if d < -CONTENTION_TOLERANCE)
+    busier = sorted(m for m, d in shifts.items() if d > CONTENTION_TOLERANCE)
+    faster = p_value <= alpha and effect > noise_floor
+    if faster and quieter:
+        return {**result, **stats, "verdict": "INCONCLUSIVE",
+                "reason": "faster, but the host was measurably quieter during the after run (" + ", ".join(
+                    f"{m} {cb[m]} -> {ca[m]}" for m in quieter) + "), so the speed-up cannot be credited to the "
+                    "change; run both under the same conditions"}
+    if not faster and busier:
+        return {**result, **stats, "verdict": "INCONCLUSIVE",
+                "reason": "not faster, but the host was measurably busier during the after run (" + ", ".join(
+                    f"{m} {cb[m]} -> {ca[m]}" for m in busier) + "), which may mask the change; run both under the "
+                    "same conditions"}
+    reason = ("faster beyond the before run's noise, unlikely by chance, on a host no quieter than before" if faster
+              else "not faster beyond chance" if p_value > alpha else "faster, but within the before run's own noise")
+    return {**result, **stats, "verdict": "VERIFIED" if faster else "NOT_IMPROVED", "reason": reason}
 
 
 def enroll_node(journal: Journal, body: dict, command_digest: str) -> dict:

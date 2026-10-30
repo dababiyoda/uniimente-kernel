@@ -549,11 +549,11 @@ def main(argv=None) -> int:
     cps.add_parser("status", help="read-only: a live sample, the sustained bottleneck, the COMPUTE asks per "
                                   "resource and measured mission step time")
     cb = cps.add_parser("benchmark", help="run the fixed workload in a scratch directory; writes --out only, "
-                                          "never the body's ledger")
+                                          "never the body's ledger and never over a file that is not a benchmark")
     cb.add_argument("--out", required=True)
     cb.add_argument("--runs", type=int, default=None, help="replicates (default 7; verify needs at least 5)")
-    cv = cps.add_parser("verify", help="did --after measurably beat --before (one-sided permutation test "
-                                       "above the before run's noise)")
+    cv = cps.add_parser("verify", help="did --after measurably beat --before (one-sided permutation test above "
+                                       "the before run's noise, on a host no quieter than before)")
     cv.add_argument("--before", required=True)
     cv.add_argument("--after", required=True)
     pr = sub.add_parser("presence", help="was the body actually running: measured availability, absences, late work")
@@ -894,8 +894,17 @@ def main(argv=None) -> int:
                 print(json.dumps(data, indent=1))
             elif args.compute_cmd == "benchmark":
                 out = Path(args.out).expanduser().resolve()
-                if Path(home).resolve() in (out, *out.parents):
+                body_home = Layout(home).home              # the home the body itself uses: '~' expanded, resolved
+                if any(p == body_home or (p.exists() and body_home.exists() and p.samefile(body_home))
+                       for p in (out, *out.parents)):
                     raise BodyError("benchmark results live outside the body; the CLI writes nothing in its home")
+                if out.exists():                           # it replaces only its own earlier result, never a file
+                    try:
+                        kept = json.loads(out.read_text())
+                    except (OSError, ValueError, UnicodeDecodeError):
+                        kept = None
+                    if not isinstance(kept, dict) or kept.get("kind") != "compute.benchmark":
+                        raise BodyError(f"{out} exists and is not a benchmark result; the CLI will not overwrite it")
                 runs = compute.BENCHMARK_RUNS if args.runs is None else args.runs
                 if runs < 1:
                     raise BodyError("--runs must be at least 1")

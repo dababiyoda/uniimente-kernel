@@ -1,13 +1,25 @@
 {
+ "wait_seconds": 2.0,
  "achieved": [
-  "m:compute-closure-steps"
+  "m:compute-closure-steps",
+  "m:compute-closure-approval"
+ ],
+ "actions": [
+  [
+   "m:compute-closure-steps",
+   "DONE"
+  ],
+  [
+   "m:compute-closure-approval",
+   "DONE"
+  ]
  ],
  "steps": [
   {
    "mission_id": "m:compute-closure-steps",
    "capability": "fs.write",
-   "seconds": 0.04747,
-   "position": 7
+   "seconds": 0.014253,
+   "position": 13
   }
  ],
  "quantify": {
@@ -17,14 +29,14 @@
    "heaviest": {
     "capability": "fs.write",
     "steps": 1,
-    "seconds": 0.047,
+    "seconds": 0.014,
     "share": 1.0
    },
    "by_capability": [
     {
      "capability": "fs.write",
      "steps": 1,
-     "seconds": 0.047,
+     "seconds": 0.014,
      "share": 1.0
     }
    ]
@@ -32,12 +44,60 @@
   "delay": {
    "basis": "estimate (method: for each capability, the median step time in the bottleneck window minus its median before the window, summed over the window's steps and scaled from the window's span to 7 days; all excess is attributed to the bottleneck, which the journal cannot establish)",
    "excess_step_seconds": null,
-   "window_seconds": 2.258,
+   "window_seconds": 6.179,
    "mission_hours_delayed_per_week": null,
    "latency_inflation": {},
    "unbaselined_capabilities": [
     "fs.write"
    ]
   }
+ },
+ "samples": [
+  {
+   "at": "2026-10-30T13:33:22.303158Z",
+   "load_ratio": 0.997,
+   "psi_cpu_some_avg60": 11.23,
+   "psi_memory_some_avg60": 0.0,
+   "psi_io_some_avg60": 1.85,
+   "mem_available_ratio": 0.9254
+  },
+  {
+   "at": "2026-10-30T13:33:28.476123Z",
+   "load_ratio": 0.998,
+   "psi_cpu_some_avg60": 10.32,
+   "psi_memory_some_avg60": 0.0,
+   "psi_io_some_avg60": 1.8,
+   "mem_available_ratio": 0.9244
+  },
+  {
+   "at": "2026-10-30T13:33:28.478667Z",
+   "load_ratio": 0.998,
+   "psi_cpu_some_avg60": 10.32,
+   "psi_memory_some_avg60": 0.0,
+   "psi_io_some_avg60": 1.8,
+   "mem_available_ratio": 0.9244
+  },
+  {
+   "at": "2026-10-30T13:33:28.480855Z",
+   "load_ratio": 0.998,
+   "psi_cpu_some_avg60": 10.32,
+   "psi_memory_some_avg60": 0.0,
+   "psi_io_some_avg60": 1.8,
+   "mem_available_ratio": 0.9244
+  },
+  {
+   "at": "2026-10-30T13:33:28.482804Z",
+   "load_ratio": 0.998,
+   "psi_cpu_some_avg60": 10.32,
+   "psi_memory_some_avg60": 0.0,
+   "psi_io_some_avg60": 1.8,
+   "mem_available_ratio": 0.9244
+  }
+ ],
+ "ask": {
+  "request_id": "req-compute-8d19e9b61114ae70",
+  "bottleneck": "cpu",
+  "first_option": "software/workload optimization (no spend): start with fs.write, 100% of measured mission step time in the bottleneck window",
+  "delay_basis": "estimate (method: for each capability, the median step time in the bottleneck window minus its median before the window, summed over the window's steps and scaled from the window's span to 7 days; all excess is attributed to the bottleneck, which the journal cannot establish)"
  }
 }

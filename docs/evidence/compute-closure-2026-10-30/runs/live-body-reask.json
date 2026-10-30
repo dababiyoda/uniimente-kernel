@@ -1,5 +1,5 @@
 {
- "host_load1_start": 4.8984375,
+ "host_load1_start": 4.45361328125,
  "after_first_window": {
   "samples": 5,
   "asks": [
@@ -12,49 +12,49 @@
  },
  "first_window_samples": [
   {
-   "at": "2026-10-30T12:14:56.425595Z",
-   "load_ratio": 1.225,
-   "psi_cpu_some_avg60": 18.85,
+   "at": "2026-10-30T13:33:39.683553Z",
+   "load_ratio": 1.113,
+   "psi_cpu_some_avg60": 14.33,
    "psi_memory_some_avg60": 0.0,
-   "psi_io_some_avg60": 3.28,
-   "mem_available_ratio": 0.9063,
-   "disk_free_ratio": 0.0836
+   "psi_io_some_avg60": 1.8,
+   "mem_available_ratio": 0.9089,
+   "disk_free_ratio": 0.0797
   },
   {
-   "at": "2026-10-30T12:14:56.532882Z",
-   "load_ratio": 1.225,
-   "psi_cpu_some_avg60": 18.85,
+   "at": "2026-10-30T13:33:39.793259Z",
+   "load_ratio": 1.113,
+   "psi_cpu_some_avg60": 14.33,
    "psi_memory_some_avg60": 0.0,
-   "psi_io_some_avg60": 3.28,
-   "mem_available_ratio": 0.905,
-   "disk_free_ratio": 0.0836
+   "psi_io_some_avg60": 1.8,
+   "mem_available_ratio": 0.9088,
+   "disk_free_ratio": 0.0797
   },
   {
-   "at": "2026-10-30T12:14:56.646886Z",
-   "load_ratio": 1.225,
-   "psi_cpu_some_avg60": 18.85,
+   "at": "2026-10-30T13:33:39.913178Z",
+   "load_ratio": 1.113,
+   "psi_cpu_some_avg60": 14.33,
    "psi_memory_some_avg60": 0.0,
-   "psi_io_some_avg60": 3.28,
-   "mem_available_ratio": 0.9042,
-   "disk_free_ratio": 0.0836
+   "psi_io_some_avg60": 1.8,
+   "mem_available_ratio": 0.9087,
+   "disk_free_ratio": 0.0797
   },
   {
-   "at": "2026-10-30T12:14:56.759129Z",
-   "load_ratio": 1.225,
-   "psi_cpu_some_avg60": 18.85,
+   "at": "2026-10-30T13:33:40.022835Z",
+   "load_ratio": 1.113,
+   "psi_cpu_some_avg60": 14.33,
    "psi_memory_some_avg60": 0.0,
-   "psi_io_some_avg60": 3.28,
-   "mem_available_ratio": 0.9035,
-   "disk_free_ratio": 0.0836
+   "psi_io_some_avg60": 1.8,
+   "mem_available_ratio": 0.9087,
+   "disk_free_ratio": 0.0797
   },
   {
-   "at": "2026-10-30T12:14:56.877137Z",
-   "load_ratio": 1.225,
-   "psi_cpu_some_avg60": 18.85,
+   "at": "2026-10-30T13:33:40.133758Z",
+   "load_ratio": 1.113,
+   "psi_cpu_some_avg60": 14.33,
    "psi_memory_some_avg60": 0.0,
-   "psi_io_some_avg60": 3.28,
-   "mem_available_ratio": 0.9025,
-   "disk_free_ratio": 0.0836
+   "psi_io_some_avg60": 1.8,
+   "mem_available_ratio": 0.9087,
+   "disk_free_ratio": 0.0797
   }
  ],
  "while_pending": 1,
@@ -88,5 +88,5 @@
  },
  "first_option": "software/workload optimization (no spend); the journal records no mission step timing yet, so no workload is named",
  "screen": [],
- "host_load1_end": 4.8984375
+ "host_load1_end": 4.45361328125
 }

@@ -1632,7 +1632,7 @@
      "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "C.R3 and C.R6 are partial: the package route is not BODY_VERIFIED and binary licenses are not inspected (C.G10, C.G12)"
+      "reason": "C.R3 and C.R6 are partial: the package route is not BODY_VERIFIED (C.G10), and missions.json still lists C.G12 (binary licenses not inspected) open, though #201 (bd7e3f9e) now records an installed binary's DEP-5 license where the body has dpkg"
      }
     },
     {

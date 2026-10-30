@@ -194,6 +194,56 @@ without an id, and S15-A and S69-A come from this map's round-2 review.
 
 All commands ran with `PYTHONDONTWRITEBYTECODE=1 python -B` and `-p no:cacheprovider`.
 
+## After merging #196 at `4dc0d581` (2026-10-30)
+
+The sections "Result on this tree" and "BUILDABLE_NOT_BUILT asks in dependency order" above describe `caf42d3d`,
+before this merge. Merging #196's head `4dc0d581` brought in #201/#230, #234 and #236. Two of them built units this
+map listed as not built:
+
+| Unit | Built by | Asks now met | New evidence |
+| --- | --- | --- | --- |
+| WU-01 | #236 (`2161dbe2`): `greg path --build` computes the build frontier beside the acceptance frontier from the ledger, and the correction is placed on N1 | S12.A3, S68.A4, S69.A5 (UNIT_VERIFIED, covered) | `tests/unit/test_path_build_frontier.py` (3 nodes each) |
+| WU-14 | #234 (`a5b88f2f`): a consistent seed of a running body on a founder-signed cadence, counted only after its restore drill | S47.A2 (SANDBOX_VERIFIED, covered) | `tests/unit/test_greg_seed_consistency.py`, 3 nodes of `tests/unit/test_greg_backup.py`, 2 of `tests/integration/test_greg_backup_process.py` |
+
+Both units record `closed_by`. No ask was removed or retired, the pin is unchanged, and no check changed.
+
+- S47.A2 stays SANDBOX_VERIFIED. The real-process backup test is not in `missions.json`'s `body_process_tests`.
+- #234 deferred a known limit (WU14-R2-7): a backup holds the largest file in memory and has no time bound.
+- Restoring onto real replacement hardware and an off-site store stays open as S47.A5 (EXTERNAL).
+
+On the merged tree, `python -m acceptance check` prints:
+
+    directive: 77 sections (DONE 1, PARTIAL 53, OPEN 23); 77/272 asks met at the static ceiling (no test ran);
+    130 open asks building can still close; 655 listed lines no ask answers yet; prompt completely built: NO;
+    every section done: NO
+
+The section statuses do not change. Sections 12, 47, 68 and 69 still have open asks or unanswered listed lines.
+`directive --collect` now collects 141 distinct nodes (129 before). The buildable list has 68 rows (70 before):
+WU-01 and WU-14 left it.
+
+| Command (merged tree) | Result |
+| --- | --- |
+| The 14 nodes the four asks cite | 44 passed, 0 skipped |
+| `directive --collect --against 4dc0d581` | exit 0: no pin at the base; all 141 nodes collect |
+| `directive --against a0ef65ee` (this branch before the merge) | exit 0: the pinned asks hold |
+| `tests/unit/test_directive_sections.py`, `tests/unit/test_greg_path_cli.py` | 37 passed |
+| `scripts/ci/check_directive_sections_mutants.py` on the tree at `c49572d7` | 85/85 caught, exit 0, in 30 min (the S17.A4 reason below changes text only) |
+| `test_acceptance_harness`, `test_founder_correction_20261030`, `test_greg_packaging`, `test_greg_platform`, `test_developmental_inheritance`, `test_greg_foundry_worker` | 115 passed (56 + 4 + 3 + 19 + 23 + 10) |
+
+One reason was corrected; its status and blocker class did not change:
+
+- S17.A4 said "binary licenses are not inspected (C.G10, C.G12)". #201 (`bd7e3f9e`) now records an installed
+  binary's DEP-5 license where the body has dpkg (`greg/genesis.py` `_binary_license`). The reason now says so.
+  The ask stays open: C.R3 and C.R6 are partial in `acceptance/missions.json`, which still lists C.G12 open.
+  Updating that manifest is its owner's call.
+
+Not changed, though related:
+
+- S57.A4 (MU-G) stays open. #236's per-node `rehearsal` field names a test for each node. It is not a founder-mode
+  acceptance driver.
+- S69.A6 (S69-A) stays open. `4dc0d581` runs two more mutant gates in Canonical CI. Nothing checks that every gate in
+  `scripts/ci` runs in a workflow.
+
 ## Limitations
 
 - The map is a reviewed reading of the directive. Mechanically checked: section count and order, headings, that each

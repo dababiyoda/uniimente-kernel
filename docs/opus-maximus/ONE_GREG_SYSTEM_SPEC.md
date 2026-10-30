@@ -31,6 +31,7 @@ There is one ledger per body and one mission engine. No organ, worker, model, ph
 | `BODY_PAUSE` / `BODY_RESUME` / `BODY_STOP` | Body-wide pause, resume and stop | Founder or device |
 | `BODY_DESIGNATE` | Name this body as the intended first execution body | Founder key |
 | `NODE_ENROLL` | Admit another compute node with its own bounded identity | Founder key |
+| `NODE_REVOKE` | End one node's current enrollment (a node_id is enrolled again only after a revocation or its expiry) | Founder key |
 | `SOP_RATIFY` | Promote an observed procedure into a reusable capability | Founder key |
 | `MODEL_ROUTE_SET` | Replace cognition routes, never authority | Founder key |
 | `ROTATE_FOUNDER_KEY`, `DEVICE_ENROLL`, `DEVICE_REVOKE`, `ANCHOR_CONFIGURE` | Key and anchoring administration | Founder key |

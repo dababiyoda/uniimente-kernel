@@ -16,6 +16,8 @@
                                                   passphrase-protected key, the founder-tier attestation)
     greg founder attest --key K                   founder-tier attestation alone (e.g. after key rotation)
     greg device enroll --pubkey HEX --label phone --key K   delegate a narrow key to a phone
+    greg node enroll NODE_ID --pubkey HEX --cone CONE.json --key K   admit a node's own key (founder-signed)
+    greg node revoke NODE_ID --key K | greg node list   end a node's enrollment; read-only node states
     greg serve                                   loopback remote channel for the phone
     greg anchor configure --tsa-url URL --roots ROOTS.pem --key K   timestamp the ledger head externally
     greg anchor export --roots R.pem --out W.json   witness bundle kept OUTSIDE GREG
@@ -459,6 +461,19 @@ def main(argv=None) -> int:
     for q in (de, dr):
         q.add_argument("--key", required=True); q.add_argument("--no-passphrase", action="store_true")
         q.add_argument("--ttl-hours", type=int, default=24)
+    nd = sub.add_parser("node", help="other compute nodes: admit or revoke one (founder-signed), or list them; a node "
+                                     "never signs a founder command")
+    nds = nd.add_subparsers(dest="node_cmd", required=True)
+    ne = nds.add_parser("enroll", help="founder-signed: admit a node's own key under a bounded light cone")
+    ne.add_argument("node_id"); ne.add_argument("--pubkey", required=True, help="the node's Ed25519 public key (hex)")
+    ne.add_argument("--cone", required=True, help="light cone JSON file: capabilities, targets, max_consequence_class, "
+                                                  "budget_usd, horizon")
+    ne.add_argument("--expires-at", help="ISO 8601 instant with a timezone; the node is inactive from then on")
+    nr = nds.add_parser("revoke", help="founder-signed: end a node's current enrollment"); nr.add_argument("node_id")
+    for q in (ne, nr):
+        q.add_argument("--key", required=True); q.add_argument("--no-passphrase", action="store_true")
+        q.add_argument("--ttl-hours", type=int, default=24)
+    nds.add_parser("list", help="read-only: each enrolled node and whether it is active, revoked or expired")
     an = sub.add_parser("anchor", help="RFC 3161 time anchoring of the ledger head")
     ans = an.add_subparsers(dest="anchor_cmd", required=True)
     ac = ans.add_parser("configure", help="founder-signed: timestamp the ledger head at this TSA")
@@ -1063,6 +1078,24 @@ def main(argv=None) -> int:
                                                 "expires_at": expires.isoformat().replace("+00:00", "Z")}, args))
         elif args.cmd == "device" and args.device_cmd == "revoke":
             print(_drop(home, "DEVICE_REVOKE", {"device_key_id": args.device_key_id}, args))
+        elif args.cmd == "node" and args.node_cmd == "enroll":
+            try:
+                cone = json.loads(Path(args.cone).expanduser().read_text())
+            except (OSError, ValueError) as exc:
+                raise BodyError(f"cannot read the light cone {args.cone}: {exc}") from None
+            print(_drop(home, "NODE_ENROLL", {"node_id": args.node_id, "node_public_key": args.pubkey,
+                                              "light_cone": cone,
+                                              **({"expires_at": args.expires_at} if args.expires_at else {})}, args))
+        elif args.cmd == "node" and args.node_cmd == "revoke":
+            print(_drop(home, "NODE_REVOKE", {"node_id": args.node_id}, args))
+        elif args.cmd == "node":
+            from greg import compute
+            if Layout(home).ledger.exists():   # the body is the ledger's one writer: read it through a read-only view
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    data = {"nodes": list(compute.node_states(journal).values())}
+            else:
+                data = {"nodes": [], "reality_status": "NO_BODY_LEDGER"}
+            print(json.dumps(data, indent=1))
         elif args.cmd == "anchor" and args.anchor_cmd == "configure":
             print(_drop(home, "ANCHOR_CONFIGURE", {"tsa_url": args.tsa_url,
                                                    "tsa_roots_pem": Path(args.roots).read_text(),

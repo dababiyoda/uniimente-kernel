@@ -153,8 +153,9 @@ runs. Memory PSI read 0.0 throughout.
   - Verdict **INCONCLUSIVE**: cpu wait share 0.57 → 0.13, PSI cpu share 0.69 → 0.44.
   - The lagging start snapshots pointed the other way (load1 5.68 → 6.11).
 - **Positive control: a real code change** ([runs](runs/code-change-pairs.json)). Removing a 0.15 s delay from the
-  ledger step was **VERIFIED in 3 of 3 attempts**: effect 24-28%, p 0.0003-0.006, contention shifts within
-  tolerance.
+  ledger step was **VERIFIED in 3 of 3 attempts**: effect 24-28%, p 0.0003-0.006. No contention measure eased by
+  more than the 0.05 tolerance. In the third attempt PSI cpu share rose by 0.055, past the tolerance on the busier
+  side, and the after run was still faster.
 
 ## Limitations
 

@@ -223,6 +223,15 @@ def test_a_fifo_swapped_in_after_the_file_check_is_refused_without_blocking(tmp_
     assert raised == ["pipe is not a regular file"]
 
 
+def test_a_directory_where_a_file_was_expected_is_a_failed_read_not_an_absent_file(tmp_path):
+    """Before: a directory read as ``exists: false``, so "never mentions" on it was a measured failure and the
+    founder was asked what to do about the check, not told the sensor could not read (section IX scenario 7)."""
+    ctx = _ctx(tmp_path)
+    (tmp_path / "data" / "audit.log").mkdir()
+    with pytest.raises(CapabilityError, match="audit.log is not a regular file"):
+        _search({"path": str(tmp_path / "data" / "audit.log"), "phrases": ["x"]}, ctx)
+
+
 def test_reads_stay_inside_the_permitted_roots(tmp_path):
     ctx = _ctx(tmp_path)
     (tmp_path / "secret.txt").write_text("founder secret")

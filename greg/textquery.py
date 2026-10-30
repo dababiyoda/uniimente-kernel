@@ -147,13 +147,15 @@ def fs_search(params, ctx: InvocationContext) -> dict:
         raise CapabilityError(f"fs.search: {exc}") from None
     if not 0 < limit <= MAX_BYTES or not 0 < seconds <= MAX_SECONDS:
         raise CapabilityError(f"fs.search reads at most {MAX_BYTES} bytes for at most {MAX_SECONDS:g} seconds")
-    if not path.is_file():   # absence is a measurement of the world, not a sensor failure
+    if not path.exists():    # absence is a measurement of the world; a directory or FIFO there is a failed read
         return {"path": str(path), "exists": False}
     deadline, stopped = time.monotonic() + seconds, None
-    with open(os.open(path, os.O_RDONLY | os.O_NONBLOCK), "rb") as stream:     # a FIFO swapped in never blocks
-        info = os.fstat(stream.fileno())
-        if not stat.S_ISREG(info.st_mode):
-            raise CapabilityError(f"{path.name} is not a regular file")
+    fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)                             # a FIFO swapped in never blocks
+    info = os.fstat(fd)
+    if not stat.S_ISREG(info.st_mode):                  # checked on the descriptor, before Python wraps it
+        os.close(fd)
+        raise CapabilityError(f"{path.name} is not a regular file")
+    with open(fd, "rb") as stream:
         while not query.unreadable:
             if query.read >= limit:
                 stopped = None if not stream.read(1) else f"byte limit: read the first {limit} bytes"

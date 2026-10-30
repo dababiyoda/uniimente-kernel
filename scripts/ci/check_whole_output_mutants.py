@@ -369,10 +369,15 @@ MUTANTS = [
      '        if False:\n',
      Q + 'test_a_utf16_log_is_read_in_its_own_encoding_or_not_at_all'),
     ('a FIFO swapped in for a file is opened and read', "greg/textquery.py",
-     '        if not stat.S_ISREG(info.st_mode):\n'
-     '            raise CapabilityError(f"{path.name} is not a regular file")\n',
+     '    if not stat.S_ISREG(info.st_mode):                  # checked on the descriptor, before Python wraps it\n'
+     '        os.close(fd)\n'
+     '        raise CapabilityError(f"{path.name} is not a regular file")\n',
      '',
      Q + 'test_a_fifo_swapped_in_after_the_file_check_is_refused_without_blocking'),
+    ('a directory where a log should be is searched as a missing file', "greg/textquery.py",
+     '    if not path.exists():    # absence is a measurement of the world',
+     '    if not path.is_file():   # absence is a measurement of the world',
+     Q + 'test_a_directory_where_a_file_was_expected_is_a_failed_read_not_an_absent_file'),
     ('the founder is not told why a reading stopped', "greg/missions.py",
      'why = next((node[k] for k in ("unreadable", "stopped") if isinstance(node.get(k), str)), why)',
      'pass',

@@ -1,0 +1,59 @@
+{
+ "version": "directive-local-run/2",
+ "head": "5d10433e",
+ "scope": "Round 1's run (58 nodes, base feb531d2) merged with round 2's supplementary run of the 15 nodes it lacked or that changed: the nodes of every statically met ask that cites only its own pytest nodes, and every PRINCIPLE's guards. Asks citing mission requirements or contract functions were not run (their mission nodes are not in these outcomes).",
+ "command": "ACCEPTANCE_OUTCOMES=<file> PATH=/home/user/venv311/bin:$PATH PYTHONDONTWRITEBYTECODE=1 python -B -m pytest -q -rs -p acceptance._plugin -p no:cacheprovider <15 nodes>",
+ "round2_pytest_summary": "238 passed, 3 skipped, 73 subtests passed in 96.31s",
+ "round2_items": {
+  "passed": 238,
+  "skipped": 3
+ },
+ "merged_items": {
+  "passed": 845,
+  "skipped": 29
+ },
+ "static_met": 73,
+ "static_met_own_nodes_only": 64,
+ "static_met_citing_missions_or_contract_not_run": [
+  "S3.A2",
+  "S16.A2",
+  "S19.A1",
+  "S24.A1",
+  "S25.A2",
+  "S28.A3",
+  "S29.A1",
+  "S34.A1",
+  "S64.A1"
+ ],
+ "met_in_run": 58,
+ "own_node_asks_short_in_run": {
+  "S28.A2": [
+   "tests/integration/test_greg_phone_e2e.py::test_phone_page_approves_a_real_decision_and_stops_the_body: skipped: Skipped: needs supervisord and a Chromium binary"
+  ],
+  "S31.A1": [
+   "tests/integration/test_greg_confined_egress.py::test_a_browser_session_drives_pages_behind_the_relay_and_nothing_else_leaves[kept]: skipped: Skipped: no bubblewrap network namespaces here: worker OS filesystem isolation unavailable: Landlock alone does not isolate untrusted acceptance processes/network; bubblewrap is unavailable on this host",
+   "tests/integration/test_greg_confined_egress.py::test_a_browser_session_drives_pages_behind_the_relay_and_nothing_else_leaves[removed]: skipped: Skipped: no bubblewrap network namespaces here: worker OS filesystem isolation unavailable: Landlock alone does not isolate untrusted acceptance processes/network; bubblewrap is unavailable on this host"
+  ],
+  "S45.A1": [
+   "tests/unit/test_greg_media_case.py::test_real_daleobanks_consumes_the_minds_receipts: skipped: Skipped: set GREG_TEST_DALEOBANKS to a real checkout",
+   "tests/unit/test_greg_task_fabric.py::test_on_the_real_daleobanks_its_own_checks_pass_a_distorted_draft_and_the_mind_holds_it_back: skipped: Skipped: set GREG_TEST_DALEOBANKS to a DALEOBANKS checkout"
+  ],
+  "S50.A2": [
+   "tests/integration/test_greg_mcp_mission.py::test_a_mission_that_does_not_name_mcp_call_never_starts_a_server: skipped: Skipped: bubblewrap namespaces unavailable on this host",
+   "tests/integration/test_greg_mcp_mission.py::test_a_signed_mission_closes_on_a_tool_the_founder_installed: skipped: Skipped: bubblewrap namespaces unavailable on this host"
+  ],
+  "S60.A1": [
+   "tests/integration/test_greg_phone_asks.py::test_the_phone_shows_what_each_option_costs_and_never_the_withheld_plea: skipped: Skipped: needs a Chromium binary"
+  ],
+  "S72.A1": [
+   "tests/integration/test_greg_phone_e2e.py::test_phone_page_approves_a_real_decision_and_stops_the_body: skipped: Skipped: needs supervisord and a Chromium binary"
+  ]
+ },
+ "principles_guard_fell_short": {
+  "S31.A6": [
+   "tests/unit/test_greg_worker_isolation.py::test_acceptance_child_has_no_host_network_credentials_or_body_access: skipped: Skipped: worker OS filesystem isolation unavailable: Landlock alone does not isolate untrusted acceptance processes/network; bubblewrap is unavailable on this host",
+   "tests/unit/test_greg_worker_isolation.py::test_confined_interpreter_retains_virtualenv_and_installed_pytest: skipped: Skipped: worker OS filesystem isolation unavailable: Landlock alone does not isolate untrusted acceptance processes/network; bubblewrap is unavailable on this host"
+  ]
+ },
+ "summary_line_in_run": "directive: 77 sections (DONE 1, PARTIAL 46, OPEN 30); 58/272 asks met in this run; 150 open asks building can still close; 655 listed lines no ask answers yet; prompt completely built: NO; every section done: NO"
+}

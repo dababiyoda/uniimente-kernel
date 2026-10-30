@@ -287,6 +287,7 @@ def test_a_run_recomputes_tiers_and_a_failed_node_reopens_its_section(world):
     static = d.directive_report(doc, manifest, contract)
     ran = d.directive_report(doc, manifest, contract, passed)
     assert ran["ran"] and [s["status"] for s in ran["sections"]] == [s["status"] for s in static["sections"]]
+    assert "asks met in this run" in d.summary_line(ran) and "static ceiling" not in d.summary_line(ran)
     done = next(s for s in static["sections"] if s["status"] == "DONE")
     target = next(a for a in done["asks"] if any(e.startswith("tests/") for e in ask(doc, a["id"])["evidence"]))
     node = next(e for e in ask(doc, target["id"])["evidence"] if e.startswith("tests/"))
@@ -306,6 +307,7 @@ def test_the_cli_prints_counts_and_refuses_an_unsound_map(world, monkeypatch, ca
                           timeout=300, env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"})
     assert proc.returncode == 0, proc.stdout + proc.stderr
     assert "directive: 77 sections (DONE " in proc.stdout and "prompt completely built: NO" in proc.stdout
+    assert "asks met at the static ceiling (no test ran)" in proc.stdout       # a ceiling is never read as a run
     assert "BUILDABLE_NOT_BUILT asks in dependency order:" in proc.stdout
     broken = copy.deepcopy(world[0])
     broken["sections"] = broken["sections"][1:]

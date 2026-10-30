@@ -49,7 +49,7 @@ def test_a_mission_checks_a_fact_inside_a_pdf_by_acquiring_installed_software(tm
     [resolved] = events(home, "deficit.resolved")
     assert resolved["capability_id"] == "acquired.document.text.pdftotext"
     [verified] = [e for e in events(home, "genesis.verified") if e["capability_id"].endswith("pdftotext")]
-    assert verified["passed"] and verified["report"]["failures"] == [] and verified["report"]["cases"] == 8
+    assert verified["passed"] and verified["report"]["failures"] == [] and verified["report"]["cases"] == 12
     with Body(home) as body:
         manifest = body.registry.manifests["acquired.document.text.pdftotext"]
     license_ = manifest.provenance.get("license_assessment")
@@ -279,8 +279,8 @@ def test_a_phrase_found_on_a_text_page_of_a_partly_scanned_pdf_is_still_found(tm
 
 @needs_pdftotext
 def test_the_oracle_rejects_a_reader_that_claims_a_scanned_page_was_read(tmp_path, monkeypatch):
-    monkeypatch.setattr(documents, "coverage", lambda raw, images=None: {"pages": 1, "pages_without_text": [],
-                                                                          "complete": True})
+    monkeypatch.setattr(documents, "coverage", lambda raw, images=None, **_: {"pages": 1, "pages_without_text": [],
+                                                                               "complete": True})
     home, key, body_id, data = make_body(tmp_path)
     lease = data / "lease.pdf"
     lease.write_bytes(documents.write_pdf(LEASE, compress=True))
@@ -290,7 +290,8 @@ def test_the_oracle_rejects_a_reader_that_claims_a_scanned_page_was_read(tmp_pat
     assert missions["m:lease"].status != "ACHIEVED"
     [verified] = [e for e in events(home, "genesis.verified") if e["capability_id"].endswith("pdftotext")]
     assert not verified["passed"]
-    assert {f["case"] for f in verified["report"]["failures"]} == {"case3.pdf", "case6.pdf", "case7.pdf"}
+    assert {f["case"] for f in verified["report"]["failures"]} == {"case3.pdf", "case6.pdf", "case7.pdf", "case8.pdf",
+                                                                   "case9.pdf", "case10.pdf", "case11.pdf"}
 
 
 def _adapter(tmp_path, binary, argv):
@@ -356,11 +357,14 @@ def test_a_stamped_scan_never_proves_a_phrase_absent(tmp_path):
 
 
 def test_without_an_image_listing_no_page_is_vouched_for():
+    from tests.unit.test_greg_document_reading import FONTS, Blank
     raw = "one two\f three four\f"
     assert documents.coverage(raw)["complete"] is False
     assert documents.coverage(raw)["image_check"] == "unavailable on this body"
     listing = "page   num  type\n------------------\n"
-    assert documents.coverage(raw, listing)["complete"] is True
+    # an image listing alone no longer vouches (#201 review DOC-1): the fonts and the ink must be checked too
+    assert documents.coverage(raw, listing)["complete"] is False
+    assert documents.coverage(raw, listing, fonts=FONTS, tools=Blank())["complete"] is True
     assert documents.coverage(raw, listing + "   2     0 image\n")["pages_with_images"] == [2]
 
 
@@ -418,14 +422,16 @@ def test_a_writer_that_honours_sigxfsz_is_killed_at_the_ceiling(tmp_path):
 
 @pytest.mark.skipif(not __import__("sys").platform.startswith("linux"), reason="/proc/self/fd is Linux")
 def test_a_binary_that_swaps_its_spool_file_is_refused(tmp_path):
-    # finding 3: the parent read its spool file by path, through a link the binary planted (/dev/zero: unbounded)
+    # finding 3: the parent read its spool file by path, through a link the binary planted (/dev/zero: unbounded).
+    # Where Landlock confines the binary's writes (#201 directive VIII) it cannot unlink or plant anything at all;
+    # elsewhere the parent's own check refuses the swapped file. Either way /dev/zero is never read.
     import sys
     from greg.capabilities import CapabilityError
     swap = "import os; p = os.readlink('/proc/self/fd/1'); os.unlink(p); os.symlink('/dev/zero', p)"
     call, _ = _adapter(tmp_path, sys.executable, ("{binary}", "-I", "-c", swap))
-    with pytest.raises(CapabilityError, match="spool file .* was replaced"):
+    with pytest.raises(CapabilityError, match="spool file .* was replaced|Permission denied"):
         call()
     fifo = "import os; p = os.readlink('/proc/self/fd/1'); os.unlink(p); os.mkfifo(p)"
     call, _ = _adapter(tmp_path, sys.executable, ("{binary}", "-I", "-c", fifo))
-    with pytest.raises(CapabilityError, match="no longer a regular file"):
+    with pytest.raises(CapabilityError, match="no longer a regular file|Permission denied"):
         call()

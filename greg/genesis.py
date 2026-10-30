@@ -115,6 +115,9 @@ class Candidate:
     # (pdfimages beside pdftotext: which pages carry an image). Each is pinned by hash in the manifest; one
     # that is missing on the body is reported as missing, never assumed.
     companions: tuple = ()             # ((binary_name, argv), ...)
+    # Installed binaries pinned like companions but run only when the function's derive step needs them
+    # (pdftoppm: whether a page's ink is all in its words). One missing on the body is recorded as missing.
+    tools: tuple = ()                  # (binary_name, ...)
 
 
 PARSERS = {
@@ -142,8 +145,13 @@ CATALOG = {
         "description": "The words of a PDF in reading order, whitespace-normalized (text drawn in a standard font; "
                        "no OCR of scanned images)",
         "oracle": documents.oracle_document_text, "output_field": "text", "derive": documents.find_phrase,
+        "exit_meanings": documents.POPPLER_EXIT,
+        # pdfimages: which pages carry an image; pdffonts: whether a Type 3 font draws glyphs as pictures (#201
+        # review DOC-1); pdftoppm, on demand: whether every page's ink lies in its words' boxes (DOC-1, DOC-12)
         "candidates": (Candidate("pdftotext", ("{binary}", "-enc", "UTF-8", "-q", "{file}", "-"), "words",
-                                 companions=(("pdfimages", ("{binary}", "-list", "{file}")),)),),
+                                 companions=(("pdfimages", ("{binary}", "-list", "{file}")),
+                                             ("pdffonts", ("{binary}", "{file}"))),
+                                 tools=("pdftoppm",)),),
     },
     # Open-source packages (founder correction 2026-10-01, #144): installed engines, never installed by GREG.
     "graph.shortest_path": {
@@ -472,13 +480,18 @@ def package_adapter(function: str, candidate: PackageCandidate):
 
 # An acquired binary runs under ceilings it cannot raise: its stdout and stderr go to files in the
 # workspace, and RLIMIT_FSIZE stops it at the first byte past the output ceiling (SIGXFSZ), so an oversized
-# answer is refused without ever being buffered; RLIMIT_AS bounds its memory (a decompression bomb). The
-# limiter is the standard library's ``resource`` applied in a child of the isolated process, then ``execv``.
+# answer is refused without ever being buffered; RLIMIT_AS bounds its memory (a decompression bomb); the run is
+# killed after BINARY_TIMEOUT seconds. Where the kernel offers Landlock, the binary also cannot create, delete,
+# rename or open for writing any file (#201 directive VIII: filesystem writes bounded): it writes only the two
+# output files opened before it starts, each at most the output ceiling. The limiter is the standard library's
+# ``resource`` (and Landlock's three system calls through ``ctypes``) applied in a child of the isolated process,
+# then ``execv``.
 BINARY_MEMORY = 2 * 1024 ** 3
+BINARY_TIMEOUT = 30
 _LIMITER = (
     "import os, resource, signal, sys\n"
     "signal.signal(signal.SIGXFSZ, signal.SIG_DFL)\n"     # Python ignores it; the binary must die at the ceiling
-    "out, err, cap, mem = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])\n"
+    "out, err, cap, mem, fs = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), sys.argv[5]\n"
     "for fd, path in ((1, out), (2, err)):\n"
     "    f = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)\n"
     "    os.dup2(f, fd)\n"
@@ -489,14 +502,38 @@ _LIMITER = (
     "except (ValueError, OSError):\n"
     "    if sys.platform.startswith('linux'):\n"     # enforceable here: a ceiling that did not take is a refusal
     "        raise\n"
-    "os.execv(sys.argv[5], sys.argv[5:])\n")
+    "if fs == 'landlock':\n"                          # no file may be created, removed or opened for writing
+    "    import ctypes, struct\n"
+    "    libc = ctypes.CDLL(None, use_errno=True)\n"
+    "    libc.syscall.restype = ctypes.c_long\n"
+    "    abi = libc.syscall(444, None, 0, 1)\n"
+    "    write = 0x2 | (0x1ff << 4) | (0x2000 if abi >= 2 else 0) | (0x4000 if abi >= 3 else 0)\n"
+    "    attr = struct.pack('Q', write)\n"
+    "    ruleset = libc.syscall(444, attr, len(attr), 0)\n"
+    "    if abi < 1 or ruleset < 0 or libc.prctl(38, 1, 0, 0, 0) or libc.syscall(446, ruleset, 0):\n"
+    "        raise SystemExit('filesystem confinement did not take: ' + os.strerror(ctypes.get_errno()))\n"
+    "    os.close(ruleset)\n"
+    "os.execv(sys.argv[6], sys.argv[6:])\n")
+
+
+def _write_confinement() -> str | None:
+    """'landlock' when the binary can be kept from writing any file on this host, else None."""
+    from greg import isolation
+    status = isolation.available() if sys.platform.startswith("linux") else {}
+    return "landlock" if status.get("available") and (status.get("abi") or 0) >= 1 else None
 
 
 def ceilings() -> dict:
     """The ceilings an acquired binary runs under on this body, as the qualification report states them."""
+    confined = _write_confinement()
     return {"output_bytes": mechanisms.MAX_OUTPUT, "memory_bytes": BINARY_MEMORY,
             "memory_enforced": sys.platform.startswith("linux"),
-            "memory_note": None if sys.platform.startswith("linux") else "RLIMIT_AS is not enforced on this platform"}
+            "memory_note": None if sys.platform.startswith("linux") else "RLIMIT_AS is not enforced on this platform",
+            "seconds": BINARY_TIMEOUT,
+            "filesystem_writes": (f"only its stdout and stderr files, each at most {mechanisms.MAX_OUTPUT} bytes "
+                                  "(Landlock: it can create or open no other file for writing)" if confined else
+                                  f"each file it writes at most {mechanisms.MAX_OUTPUT} bytes; where it may write is "
+                                  "not confined on this host (no Landlock)")}
 
 
 def _read_spool(path: Path, limit: int) -> bytes | None:
@@ -521,6 +558,38 @@ def _read_spool(path: Path, limit: int) -> bytes | None:
         os.close(fd)
 
 
+def _spool_size(path: Path) -> int:
+    """The size of a spool file, never following a link the binary may have planted; 0 when it is gone."""
+    try:
+        return os.lstat(path).st_size
+    except OSError:
+        return 0
+
+
+def _exit_reason(returncode: int, meanings: dict | None) -> str:
+    """What an exit status means: a documented code of the binary, or the signal that ended it."""
+    if returncode < 0:
+        import signal
+        try:
+            name = signal.Signals(-returncode).name
+        except ValueError:
+            name = f"signal {-returncode}"
+        return {"SIGABRT": "SIGABRT: aborted (an internal failure, or an allocation refused at the memory ceiling)",
+                "SIGKILL": "SIGKILL: killed", "SIGSEGV": "SIGSEGV: crashed on this input",
+                "SIGXCPU": "SIGXCPU: over the processor-time limit"}.get(name, f"{name}: ended by a signal")
+    return (meanings or {}).get(returncode, "")
+
+
+def _exit_refusal(name: str, returncode: int, stderr: str, meanings: dict | None) -> CapabilityError:
+    """A refusal that names the exit status, its documented meaning and the binary's last words, so the cause
+    reaches the mission record even when the binary was told to be quiet (#201 directive VIII)."""
+    meaning = _exit_reason(returncode, meanings)
+    if returncode < 0 and any(word in stderr.lower() for word in ("out of memory", "bad_alloc", "cannot allocate")):
+        meaning = f"stopped at the memory ceiling of {BINARY_MEMORY} bytes"
+    head = f"{name} exited {returncode}" + (f" ({meaning})" if meaning else "")
+    return CapabilityError(f"{head}: {stderr[-200:]}".rstrip(": "))
+
+
 def _run_bounded(argv: list, workspace: Path, name: str) -> tuple[int, bytes, str]:
     """Run one acquired binary under the output and memory ceilings; (returncode, stdout, stderr tail)."""
     import secrets
@@ -529,9 +598,12 @@ def _run_bounded(argv: list, workspace: Path, name: str) -> tuple[int, bytes, st
     out, err = workspace / f".out-{tag}", workspace / f".err-{tag}"
     try:
         proc = run_isolated([sys.executable, "-I", "-c", _LIMITER, str(out), str(err), str(mechanisms.MAX_OUTPUT + 1),
-                             str(BINARY_MEMORY), *argv], cwd=workspace)
+                             str(BINARY_MEMORY), _write_confinement() or "none", *argv], cwd=workspace,
+                            timeout=BINARY_TIMEOUT)
         if proc.returncode == -signal.SIGXFSZ:
-            raise CapabilityError(f"capability refused: {name} output exceeds {mechanisms.MAX_OUTPUT} bytes "
+            # the stream that reached the ceiling, so a flood of warnings is not reported as an oversized answer
+            stream = "stderr" if _spool_size(err) > mechanisms.MAX_OUTPUT >= _spool_size(out) else "output"
+            raise CapabilityError(f"capability refused: {name} {stream} exceeds {mechanisms.MAX_OUTPUT} bytes "
                                   "(killed at the ceiling by SIGXFSZ, never buffered)")
         stdout = _read_spool(out, mechanisms.MAX_OUTPUT) or b""
         if len(stdout) > mechanisms.MAX_OUTPUT:
@@ -558,9 +630,58 @@ def _companion_outputs(candidate: Candidate, path: Path, ctx: InvocationContext)
         argv = [entry["binary"] if t == "{binary}" else str(path) if t == "{file}" else t for t in template]
         returncode, stdout, stderr = _run_bounded(argv, ctx.workspace, name)
         if returncode:
-            raise CapabilityError(f"{name} exited {returncode}: {stderr[-200:]}".rstrip(": "))
+            meanings = CATALOG.get(getattr(ctx.manifest, "function", None), {}).get("exit_meanings")
+            raise _exit_refusal(name, returncode, stderr, meanings)
         outputs[name] = stdout.decode("utf-8", errors="replace")
+        outputs.setdefault("stderr", {})[name] = stderr       # a damaged document is reported here, exit 0
     return outputs
+
+
+class _PageReaders:
+    """The pinned readers a derive step runs on page ranges of the same file (``documents.ink_check``'s
+    ``tools``): word boxes from the acquired binary itself (``-tsv``) and the page render from its on-demand
+    tool ``pdftoppm``, each under the same ceilings as every other run. A run that cannot finish is reported as
+    missing with its reason; the coverage it would have vouched for is then not claimed."""
+
+    def __init__(self, binary: str, path: Path, ctx: InvocationContext):
+        self.binary, self.path, self.ctx = binary, path, ctx
+        self.pages_per_run = max(1, mechanisms.MAX_OUTPUT // (documents.INK_SCALE ** 2 + 64) - 1)
+
+    def _tool(self, name: str) -> tuple[str | None, str]:
+        prov = self.ctx.manifest.provenance
+        entry = (prov.get("companions") or {}).get(name)
+        if name not in (prov.get("on_demand") or ()):
+            return None, f"{name} was not pinned when this reader was qualified"
+        if not entry:
+            return None, f"{name} is not installed on this body"
+        if not Path(entry["binary"]).is_file() or \
+                hashlib.sha256(Path(entry["binary"]).read_bytes()).hexdigest() != entry["binary_sha256"]:
+            raise CapabilityError(f"installed {name} changed since verification; quarantine required")
+        return entry["binary"], ""
+
+    def _run(self, argv: list, name: str):
+        try:
+            returncode, stdout, stderr = _run_bounded(argv, self.ctx.workspace, name)
+        except CapabilityError as exc:
+            return None, str(exc)[:200], ""
+        except subprocess.TimeoutExpired:
+            return None, f"{name} did not finish within {BINARY_TIMEOUT}s", ""
+        if returncode:
+            return None, str(_exit_refusal(name, returncode, stderr, documents.POPPLER_EXIT))[:200], stderr
+        return stdout, "", stderr
+
+    def boxes(self, first: int, last: int):
+        out, why, stderr = self._run([self.binary, "-enc", "UTF-8", "-q", "-cropbox", "-tsv", "-f", str(first),
+                                      "-l", str(last), str(self.path), "-"], "pdftotext")
+        return (out.decode("utf-8", errors="replace") if out is not None else None), why, stderr
+
+    def render(self, first: int, last: int):
+        tool, why = self._tool("pdftoppm")
+        if tool is None:
+            return None, why, ""
+        # not -q: a page the renderer could only partly draw says so on stderr
+        return self._run([tool, "-gray", "-scale-to", str(documents.INK_SCALE), "-cropbox", "-f", str(first),
+                          "-l", str(last), str(self.path)], "pdftoppm")
 
 
 def catalog_adapter(function: str, candidate: Candidate, binary: str):
@@ -582,12 +703,14 @@ def catalog_adapter(function: str, candidate: Candidate, binary: str):
         argv = [binary if t == "{binary}" else str(path) if t == "{file}" else t for t in candidate.argv]
         returncode, stdout, stderr = _run_bounded(argv, ctx.workspace, candidate.binary_name)
         if returncode:
-            raise CapabilityError(f"{candidate.binary_name} exited {returncode}: {stderr[-200:]}".rstrip(": "))
+            raise _exit_refusal(candidate.binary_name, returncode, stderr, spec.get("exit_meanings"))
         raw = stdout.decode("utf-8", errors="replace")
         value = PARSERS[candidate.parse](raw)
         if not spec.get("derive"):
             return {spec["output_field"]: value, "path": str(path)}
         extras = _companion_outputs(candidate, path, ctx)
+        if candidate.tools:
+            extras["pages"] = _PageReaders(binary, path, ctx)
         return {spec["output_field"]: value, "path": str(path), **spec["derive"](value, params, raw, extras)}
     return adapter
 
@@ -601,9 +724,9 @@ def _binary_license(binary: str) -> dict:
 
 
 def _companions(candidate: Candidate) -> dict:
-    """Pin each companion binary the body has: path, content hash and its own DEP-5 license."""
+    """Pin each companion and on-demand tool the body has: path, content hash and its own DEP-5 license."""
     pinned = {}
-    for name, _ in candidate.companions:
+    for name in [name for name, _ in candidate.companions] + list(candidate.tools):
         found = installed_binary(name)
         if found:
             pinned[name] = {"binary": found, "binary_sha256": hashlib.sha256(Path(found).read_bytes()).hexdigest(),
@@ -1923,6 +2046,7 @@ class Genesis:
             provenance={"binary": binary, "binary_sha256": hashlib.sha256(Path(binary).read_bytes()).hexdigest(),
                         "version": version_text[0] if version_text else "unknown", "deficit_id": deficit_id,
                         **_binary_license(binary), "companions": _companions(candidate),
+                        **({"on_demand": list(candidate.tools)} if candidate.tools else {}),
                         "builder": "none: existing installed software acquired by search"})
         # what this binary's terms permit for the use GREG actually makes of it, bound to the assessed facts
         manifest.provenance["use_qualification"] = licensing.capability_qualification(manifest)

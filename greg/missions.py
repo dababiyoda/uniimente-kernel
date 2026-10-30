@@ -568,6 +568,9 @@ def judge(predicate: dict, output) -> tuple[str, str]:
     if op == "absent":
         return FALSE, "present"
     cut = _cut(value)
+    phrase = _phrase_verdict(op, path, value, cut, expected, output)
+    if phrase is not None:
+        return phrase
     if cut:
         text, length = cut["prefix"], cut["length"]
         kept = f"first {len(text)} of {length} characters kept"
@@ -613,6 +616,31 @@ def judge(predicate: dict, output) -> tuple[str, str]:
                    else "the capability reported its observation incomplete")
             return INSUFFICIENT, f"{detail}; {why}"
     return verdict, detail
+
+
+def _phrase_verdict(op, path, value, cut, expected, output) -> tuple[str, str] | None:
+    """A 'contains' or 'not_contains' check on a text field whose capability declares it is matched as a phrase
+    (``text_match``: document.text's whitespace-normalized words, #201 review DOC-6, DOC-7): judged by the same rules
+    as the capability's own ``found`` (``greg.documents.phrase_state``), so a founder's value with a newline, a
+    double space, a typographic apostrophe or another Unicode form is the phrase the reader would match, and a
+    phrase inside a longer word is neither present nor absent. A hit holds even in a kept prefix or an incomplete
+    output; absence only over the whole text of a complete one. None for every other check."""
+    from greg import documents
+    declared = output.get("text_match") if isinstance(output, dict) else None
+    if op not in ("contains", "not_contains") or not isinstance(declared, dict) \
+            or declared.get(path) != documents.PHRASE_RULES or not isinstance(expected, str) or not expected.split():
+        return None
+    text = cut["prefix"] if cut else value
+    if not isinstance(text, str):
+        return None
+    state, _, why = documents.phrase_state(text, expected, prefix=bool(cut))
+    if state is True:
+        return (TRUE if op == "contains" else FALSE), why
+    if state is None:
+        return INSUFFICIENT, why
+    if output.get("complete") is False and path != "complete":
+        return INSUFFICIENT, f"{why}; the capability reported its observation incomplete"
+    return (FALSE if op == "contains" else TRUE), why
 
 
 def _judge_whole(op, value, expected) -> tuple[str, str]:

@@ -79,6 +79,58 @@ def test_it_refuses_to_pretend_another_linux_is_the_chromebook(tmp_path):
     assert not (tmp_path / "body").exists() and not (tmp_path / "founder.pem").exists()
 
 
+SHARED_MAGICS = {"1021997": "9p", "65735546": "FUSE: virtio-fs, sshfs and the like", "6969": "NFS", "517b": "SMB",
+                 "ff534d42": "CIFS", "fe534d42": "SMB2", "c36400": "Ceph", "5346414f": "AFS", "6b414653": "kAFS",
+                 "bd00bd0": "Lustre", "1161970": "GFS2", "7461636f": "OCFS2", "73757245": "Coda",
+                 "20030528": "OrangeFS"}
+
+
+def _shared_folder_stat(tmp: Path, folder: str, magic: str):
+    """A stat that reports ``magic`` for ``folder`` alone: the real stat answers for every other path, so a guard
+    that asked about a path that does not exist, or about the wrong one, finds no shared folder."""
+    (tmp / "bin").mkdir(exist_ok=True)
+    shim = tmp / "bin/stat"
+    shim.write_text(f'#!/bin/sh\nfor a; do last=$a; done\n'
+                    f'if [ "$last" = "{folder}" ]; then case "$*" in *%t*) echo {magic}; exit 0 ;; esac; fi\n'
+                    f'exec {shutil.which("stat")} "$@"\n')
+    shim.chmod(0o755)
+
+
+def _refused(out, name):
+    assert out.returncode == 15, out.stdout[-2000:] + out.stderr[-2000:]
+    assert f"shared or network filesystem ({name})" in out.stderr and "own disk" in out.stderr
+    assert out.stderr.rstrip().endswith("(the default is ~/.uniimente/greg).")      # the exit code is not the message
+
+
+@pytest.mark.parametrize("magic", sorted(SHARED_MAGICS))
+def test_it_refuses_a_body_home_on_a_shared_or_network_folder(tmp_path, magic):
+    share = tmp_path / "share"
+    share.mkdir()
+    _shared_folder_stat(tmp_path, str(share), magic)
+    args = dev_args(tmp_path)
+    args[args.index("--home") + 1] = str(share / "greg" / "body")              # not there yet: its folder is asked
+    out = run(args, tmp_path)
+    _refused(out, SHARED_MAGICS[magic])
+    assert not (share / "greg").exists() and not (tmp_path / "founder.pem").exists()
+
+
+def test_a_relative_or_rootward_body_home_is_checked_where_greg_will_put_it(tmp_path):
+    share = tmp_path / "share"
+    share.mkdir()
+    _shared_folder_stat(tmp_path, os.path.realpath(share), "1021997")
+    args = dev_args(tmp_path)
+    args[args.index("--home") + 1] = "greg/body"                                 # relative to where it runs
+    _refused(run(args, tmp_path, cwd=share), "9p")
+    _shared_folder_stat(tmp_path, "/", "65735546")                                # no ancestor exists but /
+    args[args.index("--home") + 1] = "/greg-no-such-root-dir/body"
+    _refused(run(args, tmp_path), "FUSE: virtio-fs, sshfs and the like")
+    _shared_folder_stat(tmp_path, str(tmp_path / "home"), "6969")                 # "~" as greg expands it
+    args[args.index("--home") + 1] = "~/greg/body"
+    _refused(run(args, tmp_path), "NFS")
+    assert not (share / "greg").exists() and not Path("/greg-no-such-root-dir").exists()
+    assert not (tmp_path / "home/greg").exists()
+
+
 def test_it_stops_with_the_fix_when_no_python_311_exists(tmp_path):
     fake_bin = tmp_path / "fakebin"
     fake_bin.mkdir()
@@ -103,6 +155,63 @@ def test_engines_are_best_effort_and_can_be_skipped(tmp_path):
     done = run(dev_args(tmp_path) + ["--no-engines"], tmp_path)
     assert done.returncode == 0, done.stdout[-3000:] + done.stderr[-3000:]
     assert "Reasoning engines present:" in done.stdout
+
+
+def _engine_specs():
+    """Every requirement line the engine step must install, following -r includes, in file order."""
+    def specs(path):
+        for raw in path.read_text().splitlines():
+            line = raw.split("#", 1)[0].strip()
+            if line.startswith("-r "):
+                yield from specs(path.parent / line[3:].strip())
+            elif line:
+                yield line
+    return list(specs(ROOT / "requirements-cognition.txt"))
+
+
+def test_an_engine_without_a_wheel_for_this_machine_costs_only_that_engine(tmp_path):
+    """The pinned Z3's only Linux ARM64 wheel needs glibc 2.38; Debian 12, ChromeOS Linux's base, has 2.36, so pip
+    finds nothing to install there (PyPI files, checked 2026-10-28). One pip call for every engine then failed as
+    a whole and an ARM Chromebook got no engine at all. Here pip is a stand-in that has no wheel for z3-solver."""
+    venv, log = tmp_path / "venv", tmp_path / "pip.log"
+    (venv / "bin").mkdir(parents=True)
+    fake = venv / "bin/python"
+    fake.write_text(f"""#!/bin/sh
+if [ "$1" = "-m" ] && [ "$2" = "pip" ]; then
+  echo "$*" >> {log}
+  case "$*" in
+    *z3-solver*|*requirements-cognition.txt*|*requirements-cortex.txt*)
+      echo "ERROR: No matching distribution found for z3-solver==5.1.0.0" >&2; exit 1 ;;
+  esac
+  exit 0
+fi
+exec {sys.executable} "$@"
+""")
+    fake.chmod(0o755)
+    args = [a for a in dev_args(tmp_path) if a != "--skip-deps"] + ["--venv", str(venv)]
+    out = run(args, tmp_path)
+    assert out.returncode == 0, out.stdout[-3000:] + out.stderr[-3000:]          # Body 1 is still created
+    calls = [line for line in log.read_text().splitlines() if "--only-binary=:all:" in line]
+    specs = _engine_specs()
+    assert len(calls) == len(specs) and [c.rsplit(" ", 1)[-1] for c in calls] == specs   # one call per engine
+    assert all(" -c " in c for c in calls)                                       # each under the same pins
+    assert "not installed: z3-solver==5.1.0.0 (ERROR: No matching distribution found" in out.stdout
+    assert "WARNING: 1 reasoning engine requirement(s) did not install: z3-solver==5.1.0.0. Every other engine did." \
+        in out.stdout
+
+
+def test_the_doctor_says_why_an_engine_has_no_wheel_on_this_machine(monkeypatch):
+    from greg import doctor, mechanisms
+    real = mechanisms.installed
+    monkeypatch.setattr(mechanisms, "installed", lambda name: None if name == "z3-solver" else real(name))
+    monkeypatch.setattr(doctor.platform, "machine", lambda: "aarch64")
+    monkeypatch.setattr(doctor.platform, "libc_ver", lambda: ("glibc", "2.36"))
+    report = doctor.engines()
+    z3 = next(r for r in report["engines"] if r["distribution"] == "z3-solver")
+    assert "z3-solver" in report["missing"] and report["platform"] == {"machine": "aarch64", "glibc": "2.36"}
+    assert "needs glibc 2.38, this system has 2.36" in z3["why_missing"]
+    monkeypatch.setattr(doctor.platform, "machine", lambda: "x86_64")      # x86-64 has a wheel: no such claim
+    assert "why_missing" not in next(r for r in doctor.engines()["engines"] if r["distribution"] == "z3-solver")
 
 
 # -- #138 (b8a0ccd): the actual signer must be the companion's key and the body's enrolled key ----------

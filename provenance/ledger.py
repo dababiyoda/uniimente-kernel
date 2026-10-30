@@ -15,11 +15,16 @@ import hashlib
 import json
 import os
 import copy
+import errno
 import fcntl
+import stat
+import sys
 import threading
 import time
+import weakref
+from array import array
 from collections.abc import Sequence
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, fields
 from datetime import datetime, timezone
 
 GENESIS_PREV = "sha256:" + "0" * 64
@@ -33,6 +38,13 @@ _monotonic = time.monotonic
 # source is a reviewed, hash-bound subject (evolution/repair/subjects.py SR-002) and so cannot change silently
 # (installed-body merge; FINDING-LEDGER-APPEND-COST-2026-10-14).
 COMMIT_RECORD_TYPES = ("witness",)
+# A file-backed ledger keeps the payloads of its newest RESIDENT_RECORDS records in memory, exactly as before.
+# An older payload is dropped from memory and read back from the ledger file when asked for; the bytes read
+# must have the SHA-256 of the line this ledger itself wrote or verified, or the read is refused. Nothing
+# written changes: the same lines, the same hashes. A body's memory then grows with the small per-record
+# skeleton, not with history's payloads (FINDING-LEDGER-APPEND-COST-2026-10-14, "Next measured limit",
+# option 1; docs/collaboration/FINDING-BODY-MEMORY-2026-10-28.md).
+RESIDENT_RECORDS = 1024
 
 
 class ReconciliationRequired(RuntimeError):
@@ -53,7 +65,7 @@ def sha256_json(obj) -> str:
     ).hexdigest()
 
 
-@dataclass
+@dataclass(slots=True)
 class LedgerRecord:
     seq: int
     ts_utc: str
@@ -83,9 +95,243 @@ def _index_value(table: dict, value, position: int) -> None:
         pass
 
 
+_PAYLOAD = LedgerRecord.__dict__["payload"]   # the slot itself, under _Retained's payload property
+
+
+_CLOEXEC = getattr(os, "O_CLOEXEC", 0)
+_NONBLOCK = getattr(os, "O_NONBLOCK", 0)
+# Open errors meaning the path no longer names this ledger's regular file. Any other (permissions, descriptors, I/O)
+# is an ordinary definite failure and propagates as it always did.
+_GONE = frozenset({errno.ENOENT, errno.ENOTDIR, errno.EISDIR, errno.ELOOP, errno.ENXIO})
+
+
+def _lease_break_seconds() -> float:
+    try:
+        with open("/proc/sys/fs/lease-break-time", "rb") as fh:
+            return float(fh.read())
+    except (OSError, ValueError):
+        return 45.0     # the Linux default
+
+
+def _open_nb(path: str, flags: int, mode: int = 0o777) -> int:
+    """os.open with O_NONBLOCK, so what is not a regular file (a FIFO put at the path) never hangs it. On a regular
+    file the open fails with EWOULDBLOCK only while it breaks another process's lease (an NFSv4 server's delegation, a
+    Samba oplock, any F_SETLEASE holder), which a blocking open would wait out: so wait it out here, at most the
+    kernel's lease-break-time, after which the kernel itself removes the lease. Every open of the ledger, its lock and
+    its quarantine sidecar goes through here."""
+    deadline, delay = None, 0.005
+    while True:
+        try:
+            return os.open(path, flags | _NONBLOCK, mode)
+        except BlockingIOError:
+            now = time.monotonic()
+            if deadline is None:
+                deadline = now + _lease_break_seconds() + 1.0
+            elif now >= deadline:
+                raise
+            time.sleep(delay)
+            delay = min(delay * 2, 0.1)
+
+
+def _existing(path: str, flags: int) -> int:
+    """Open ``path`` for reading and appending, never creating it (appending to a new file at a ledger's path would
+    fork history) and never blocking on what is not a regular file (a FIFO put in its place)."""
+    return _open_nb(path, (flags & ~(os.O_CREAT | os.O_WRONLY)) | os.O_RDWR)
+
+
+# Every read source, so a forked child can replace their locks: one held by a thread of the parent (a read waiting out a
+# lease break) would otherwise never be released in the child, where that thread does not exist.
+_SOURCES: "weakref.WeakSet[_LineSource]" = weakref.WeakSet()
+
+
+def _after_fork_in_child() -> None:
+    for src in list(_SOURCES):
+        src._lock = threading.RLock()
+
+
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(after_in_child=_after_fork_in_child)
+
+
+class _LineSource:
+    """Reads retained lines back from a ledger file, refusing any byte that is not the one verified."""
+
+    def __init__(self, path: str):
+        self.path = path
+        # Reads that found changed bytes, and how many of those a later whole-file reconstruction has answered.
+        # While failures > cleared every reconstruction, the commit path's included, reads the whole file. A
+        # counter, not a flag: a failure found while a reconstruction is running is not erased by it.
+        self.failures = 0
+        self.cleared = 0
+        self._fd = None
+        # Reentrant: a ledger finalized by a garbage collection that runs inside a read closes this source.
+        self._lock = threading.RLock()
+        _SOURCES.add(self)
+
+    @property
+    def broken(self) -> bool:
+        return self.failures > self.cleared
+
+    def note_failure(self) -> None:
+        with self._lock:
+            self.failures += 1
+
+    def _refuse(self, rec, why: str) -> None:
+        self.note_failure()
+        raise ValueError(f"payload hash mismatch at seq {getattr(rec, 'seq', '?')}: {why}")
+
+    def _open(self) -> int:
+        with self._lock:
+            if self._fd is not None:
+                return self._fd
+        # Any file may serve a read: every line read is held to the digest of the bytes verified.
+        try:
+            fd = _open_nb(self.path, os.O_RDONLY | _CLOEXEC)
+        except OSError as exc:
+            if exc.errno not in _GONE:
+                raise
+            self.note_failure()
+            raise ValueError(f"the ledger file at {self.path} cannot be read: {exc.strerror}") from None
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            os.close(fd)
+            self.note_failure()
+            raise ValueError(f"the ledger file at {self.path} is not a regular file")
+        with self._lock:
+            if self._fd is None:
+                self._fd = fd
+                return fd
+            current = self._fd
+        os.close(fd)
+        return current
+
+    def adopt(self, fd: int, *, keep: bool = False) -> None:
+        """Read from the file ``fd`` is open on: the one the path names now, which the ledger has just checked holds
+        its history. A descriptor on a file the path no longer names is closed; ``keep`` makes ``fd`` this source's."""
+        with self._lock:
+            old = self._fd
+            if old is not None and os.path.samestat(os.fstat(old), os.fstat(fd)):
+                if keep:
+                    os.close(fd)
+                return
+            self._fd = fd if keep else None
+        if old is not None:
+            os.close(old)
+
+    def read(self, rec: "_Retained") -> bytes:
+        off, size, digest = rec._off, rec._len, rec._digest
+        if type(off) is not int or type(size) is not int or type(digest) is not bytes or off < 0 or size < 1:
+            self._refuse(rec, "its line pointer was altered in memory")
+        # Under the lock: adopt() and close() close the cached descriptor, and one closed between _open() and the
+        # pread would fail it (EBADF) or, its number reused, read another file. They wait for this read instead.
+        with self._lock:
+            data = os.pread(self._open(), size, off)
+        if len(data) != size or hashlib.sha256(data).digest() != digest:
+            self._refuse(rec, "the retained line changed on disk")
+        return data
+
+    def line(self, rec: "_Retained") -> dict:
+        """The whole retained line, parsed. Its bytes are the ones strictly parsed and hash-verified before (their
+        SHA-256 is checked), so the standard parser yields exactly what that parse yielded."""
+        line = json.loads(self.read(rec))
+        if type(line) is not dict or line.get("hash") != rec.hash or line.get("seq") != rec.seq:
+            self._refuse(rec, "the retained line is another record")
+        return line
+
+    def payload(self, rec: "_Retained") -> dict:
+        """The record's payload as a new object (the caller's own)."""
+        return self.line(rec)["payload"]
+
+    def close(self) -> None:
+        with self._lock:
+            if self._fd is not None:
+                os.close(self._fd)
+                self._fd = None
+
+
+class _Retained(LedgerRecord):
+    """A record a file-backed ledger retains. While the record is among the newest RESIDENT_RECORDS its payload
+    is the object in memory, as for any record; after that only its skeleton stays, and ``payload`` reads the
+    line back from the file (a new object on every read). Other code sees an ordinary record."""
+    __slots__ = ("_off", "_len", "_digest", "_src")
+
+    @property
+    def payload(self):
+        p = _PAYLOAD.__get__(self, _Retained)
+        return self._src.payload(self) if p is None else p
+
+    @payload.setter
+    def payload(self, value):
+        _PAYLOAD.__set__(self, value)
+
+    @property
+    def resident(self) -> bool:
+        return _PAYLOAD.__get__(self, _Retained) is not None
+
+    def _header(self) -> tuple:
+        return (self.seq, self.ts_utc, self.record_type, self.prev_hash, self.hash, self.corrects, self.hash_version)
+
+    def _fields(self) -> tuple:
+        return (self.seq, self.ts_utc, self.record_type, self.payload, self.prev_hash, self.hash, self.corrects,
+                self.hash_version)
+
+    def __eq__(self, other):
+        if not isinstance(other, LedgerRecord):
+            return NotImplemented
+        theirs = (other.seq, other.ts_utc, other.record_type, other.prev_hash, other.hash, other.corrects,
+                  other.hash_version)
+        return self._header() == theirs and self.payload == other.payload   # the payload last: it may read the file
+
+    __hash__ = None
+
+    def __copy__(self):
+        return LedgerRecord(*self._fields())
+
+    def __deepcopy__(self, memo):
+        return LedgerRecord(*copy.deepcopy(self._fields(), memo))
+
+    def __reduce__(self):
+        return (LedgerRecord, self._fields())
+
+
+def _owned(rec: "LedgerRecord") -> dict:
+    """The record's payload as the caller's own object. The slot is read once: a resident payload is copied, a
+    dropped one is read back from the file (already a new object), whatever eviction does meanwhile."""
+    if type(rec) is _Retained:
+        held = _PAYLOAD.__get__(rec, _Retained)
+        return rec._src.payload(rec) if held is None else copy_json(held)
+    return copy_json(rec.payload)
+
+
+def _handout(rec: "LedgerRecord", owned=None) -> "LedgerRecord":
+    """The caller's own copy of a retained record. ``owned``, when given, is a payload object the caller owns."""
+    return LedgerRecord(rec.seq, rec.ts_utc, rec.record_type, _owned(rec) if owned is None else owned,
+                        rec.prev_hash, rec.hash, rec.corrects, rec.hash_version)
+
+
 def _copy_record(rec: "LedgerRecord") -> "LedgerRecord":
-    return LedgerRecord(rec.seq, rec.ts_utc, rec.record_type, copy_json(rec.payload), rec.prev_hash, rec.hash,
-                        rec.corrects, rec.hash_version)
+    return _handout(rec)
+
+
+def _conforms(rec) -> bool:
+    """The exact types a dropped record's skeleton must keep; a change of type alone is an alteration."""
+    return (type(rec) is _Retained and type(rec.seq) is int and type(rec.record_type) is str
+            and type(rec.prev_hash) is str and type(rec.hash) is str and type(rec.ts_utc) is str
+            and (rec.corrects is None or type(rec.corrects) is str) and type(rec.hash_version) is int
+            and type(rec._off) is int and type(rec._len) is int and type(rec._digest) is bytes
+            and len(rec._digest) == 32)
+
+
+def _skeleton(rec: "_Retained") -> bytes:
+    """What stays in memory of a record whose payload was dropped, as bytes the dropped-history digest covers.
+    ascii() keeps types apart (None from 'None', 2 from '2') and is ASCII for any string, lone surrogates too."""
+    return "\x1f".join(map(ascii, (rec.seq, rec.record_type, rec.prev_hash, rec.hash, rec.ts_utc, rec.corrects,
+                                   rec.hash_version, rec._off, rec._len))).encode("ascii") + b"\x1e" + rec._digest
+
+
+def _line_bytes(rec: "LedgerRecord", payload) -> bytes:
+    """The line this ledger writes for a record (byte-identical to what it has always written)."""
+    return (json.dumps(asdict(LedgerRecord(rec.seq, rec.ts_utc, rec.record_type, payload, rec.prev_hash, rec.hash,
+                                           rec.corrects, rec.hash_version)), allow_nan=False) + "\n").encode("utf-8")
 
 
 class RecordsView(Sequence):
@@ -150,8 +396,16 @@ class EvidenceLedger:
 
     def __init__(self, constitution_hash: str, path: str | None = None,
                  *, read_only: bool = False, expected_head: str | None = None,
-                 tail: str = "refuse"):
+                 tail: str = "refuse", resident: int | None = None):
         self.path = path
+        # Payloads of records older than the newest `resident` ones live only in the file (RESIDENT_RECORDS).
+        # An in-memory ledger has no file to read them back from, so it keeps every payload.
+        resident = RESIDENT_RECORDS if resident is None else resident
+        if type(resident) is not int or resident < 1:
+            raise ValueError('resident must be a positive record count')
+        self._resident = resident if path else None
+        self._src = _LineSource(path) if path else None
+        self._reset_dropped()
         self.constitution_hash = constitution_hash
         self.read_only = read_only
         self._lock = threading.RLock()
@@ -160,6 +414,12 @@ class EvidenceLedger:
         self._uncertain = False
         self._closed = False
         self.unacknowledged_tail: dict | None = None
+        # (offset, length, SHA-256) of the last line of this ledger's history in its file. The file at the path is
+        # this ledger's only while it still ends there with that line; appending anywhere else forks history.
+        self._last_line: tuple[int, int, bytes] | None = None
+        # The hash of the record that line holds. Appending onto any other head (history assigned to this ledger)
+        # would put a forked line in the file.
+        self._file_head: str | None = None
         if tail not in TAIL_POLICIES:
             raise ValueError(f'unknown tail policy {tail!r}')
         if tail == "quarantine" and read_only:
@@ -168,7 +428,19 @@ class EvidenceLedger:
         if not isinstance(constitution_hash, str) or not constitution_hash.strip():
             raise ValueError('expected constitutional anchor is required')
         if path and not read_only:
-            self._writer = open(path + '.lock', 'a')
+            # Never block on what is not a regular file (a FIFO put at the lock's name): O_NONBLOCK, then refuse it.
+            try:
+                lfd = _open_nb(path + '.lock', os.O_WRONLY | os.O_CREAT | os.O_APPEND | _CLOEXEC, 0o666)
+            except OSError as exc:
+                if exc.errno != errno.ENXIO:
+                    raise
+                self.close()
+                raise ValueError(f'the writer lock {path}.lock cannot be opened: {exc.strerror}') from None
+            if not stat.S_ISREG(os.fstat(lfd).st_mode):
+                os.close(lfd)
+                self.close()
+                raise ValueError(f'the writer lock {path}.lock is not a regular file')
+            self._writer = os.fdopen(lfd, 'a')
             try:
                 fcntl.flock(self._writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except OSError as exc:
@@ -191,10 +463,13 @@ class EvidenceLedger:
             elif path:
                 if read_only or expected_head:
                     raise ValueError('expected history is missing')
-                with open(path, "x", encoding="utf-8") as fh:
-                    fh.write(json.dumps(asdict(self._records[0])) + "\n")
+                line = (json.dumps(asdict(self._records[0])) + "\n").encode("utf-8")
+                with open(path, "xb") as fh:
+                    fh.write(line)
                     fh.flush()
                     os.fsync(fh.fileno())
+                self._last_line = (0, len(line), hashlib.sha256(line).digest())
+                self._file_head = self._records[0].hash
             if expected_head and self.head != expected_head:
                 raise ValueError('history differs from expected head: truncation or fork')
             if self.unacknowledged_tail and self._tail_policy == "quarantine":
@@ -208,21 +483,40 @@ class EvidenceLedger:
         tail = self.unacknowledged_tail
         data = tail.pop("_bytes")
         sidecar = f"{self.path}.unacknowledged-{tail['sha256'][7:23]}"
-        try:
-            fd = os.open(sidecar, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-        except FileExistsError:
-            with open(sidecar, "rb") as fh:
-                if fh.read() != data:
+        # Truncate only the file that was loaded, through the descriptor checked here: the history it holds and,
+        # after it, exactly the unacknowledged bytes found on open.
+        with open(self.path, "r+b", opener=_existing) as led:
+            fd = led.fileno()
+            ok, why = self._holds(fd, exact=False)
+            if ok and (os.fstat(fd).st_size != tail["offset"] + len(data)
+                       or os.pread(fd, len(data), tail["offset"]) != data):
+                ok, why = False, "it no longer ends with the unacknowledged bytes found when it was opened"
+            if not ok:
+                raise self._not_ours(why)
+            try:
+                side = os.open(sidecar, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            except FileExistsError:
+                # Never block or read without bound: the existing name must be a regular file of exactly these bytes.
+                try:
+                    have = _open_nb(sidecar, os.O_RDONLY | _CLOEXEC)
+                except OSError:
+                    have = None
+                same = False
+                if have is not None:
+                    with os.fdopen(have, "rb") as fh:
+                        st = os.fstat(fh.fileno())
+                        same = (stat.S_ISREG(st.st_mode) and st.st_size == len(data)
+                                and fh.read(len(data) + 1) == data)
+                if not same:
                     raise ValueError('a different quarantined tail already uses this name')
-        else:
-            with os.fdopen(fd, "wb") as fh:
-                fh.write(data)
-                fh.flush()
-                os.fsync(fh.fileno())
-        with open(self.path, "r+b") as fh:
-            fh.truncate(tail["offset"])
-            fh.flush()
-            os.fsync(fh.fileno())
+            else:
+                with os.fdopen(side, "wb") as fh:
+                    fh.write(data)
+                    fh.flush()
+                    os.fsync(fh.fileno())
+            led.truncate(tail["offset"])
+            led.flush()
+            os.fsync(fd)
         tail["sidecar"] = sidecar
         self.append("recovery", {
             "kind": "unacknowledged_tail_quarantined", "offset": tail["offset"], "bytes": tail["bytes"],
@@ -231,9 +525,22 @@ class EvidenceLedger:
                        "in the sidecar for reconciliation and were not replayed"})
 
     def close(self):
+        if os.getpid() != self._pid:
+            # A forked child closes only its own copies of the descriptors (the parent keeps its writer lock), and
+            # never waits on a lock a parent thread may have held at the fork.
+            self._release()
+            return
+        # After any append in flight on another thread: releasing the writer lock first would let a second writer
+        # open the file while that append still writes to it.
+        with self._lock:
+            self._release()
+
+    def _release(self):
         if self._writer is not None:
             self._writer.close()
             self._writer = None
+        if getattr(self, "_src", None) is not None:
+            self._src.close()     # a later read of an old payload reopens the file read-only
         self._closed = True
 
     def __del__(self):
@@ -251,10 +558,15 @@ class EvidenceLedger:
         with self._lock:
             self._records = [_copy_record(r if isinstance(r, LedgerRecord) else LedgerRecord(**r)) for r in records]
             self._verified, self._full_at, self._verified_tail = 0, None, None
+            self._reset_dropped()  # assigned records are plain copies with no line in the file: all stay resident
 
     @property
     def head(self) -> str:
         return self._records[-1].hash
+
+    def _owned_payload(self, i: int) -> dict:
+        """The payload of retained record ``i`` as the caller's own object (the event spine reads through this)."""
+        return _owned(self._records[i])
 
     def append(self, record_type: str, payload: dict, *, corrects: str | None = None) -> LedgerRecord:
         with self._lock:
@@ -265,11 +577,16 @@ class EvidenceLedger:
             raise WriterConflict('not the active ledger writer')
         if self._uncertain:
             raise ReconciliationRequired('previous append is uncertain; reopen verified history')
-        ok, reason = self.verify_chain() if record_type in COMMIT_RECORD_TYPES else self.verify_incremental()
+        ok, reason = (self._reconstruct(read_disk=False) if record_type in COMMIT_RECORD_TYPES
+                      else self.verify_incremental())
         if not ok:
             raise ValueError(reason)
         if record_type in ('genesis', 'constitution_transition'):
             raise ValueError('unsupported constitutional transition; separate authority decision required')
+        if not isinstance(record_type, str) or not (corrects is None or isinstance(corrects, str)):
+            raise ValueError('record type and correction ancestry must be text')
+        record_type = str.__str__(record_type)               # an exact str: what reading the line back yields
+        corrects = corrects if corrects is None else str.__str__(corrects)
         # Snapshot caller data. Integrity does not establish truth or permission.
         payload = json.loads(json.dumps(payload, allow_nan=False))
         if not isinstance(payload, dict):
@@ -282,38 +599,251 @@ class EvidenceLedger:
         h = sha256_json(body)
         rec = LedgerRecord(seq, ts, record_type, payload, prev, h, corrects, 2)
         if self.path:
+            if prev != self._file_head:
+                raise ValueError(f"the history in memory is not the history in the ledger file at {self.path}; "
+                                 "appending would fork it")
+            # The same bytes as before (json.dumps output is ASCII), written in binary to know where they land.
+            # The retained form is built before the write, so nothing that can fail is left for after it.
+            line = _line_bytes(rec, payload)
+            rec = self._retain(rec, 0, line)
             # Opening failure is definite; after write starts, acknowledgment is
             # uncertain until flush/fsync finish. Never advance memory early.
-            with open(self.path, "a", encoding="utf-8") as fh:
+            try:
+                fh = open(self.path, "ab", opener=_existing)     # never creates: a missing file is not this one
+            except OSError as exc:
+                if exc.errno not in _GONE:
+                    raise
+                raise self._not_ours(f"it cannot be opened ({exc.strerror})") from None
+            with fh:
+                ok, why = self._holds(fh.fileno(), exact=True)
+                if not ok:
+                    raise self._not_ours(why)
+                self._src.adopt(fh.fileno())
                 try:
-                    fh.write(json.dumps(asdict(rec), allow_nan=False) + "\n")
+                    offset = fh.seek(0, os.SEEK_END)
+                    if self._last_line is not None and offset != sum(self._last_line[:2]):
+                        # Another writer appended after the check; nothing of ours is written: a definite refusal.
+                        raise self._not_ours(f"it grew to {offset} bytes after it was checked")
+                    fh.write(line)
                     fh.flush()
                     os.fsync(fh.fileno())
+                    # Bytes another writer put around or over ours: the file is not this history plus our line.
+                    if (os.fstat(fh.fileno()).st_size != offset + len(line)
+                            or os.pread(fh.fileno(), len(line), offset) != line):
+                        raise OSError("the ledger file changed during the append")       # uncertain, never acknowledged
                 except OSError as exc:
                     self._uncertain = True
                     raise ReconciliationRequired('append acknowledgment lost') from exc
-        self._records.append(rec)
-        if self._verified == seq:
-            # Built here from the verified head and hashed above: verified by construction.
-            self._verified, self._verified_tail = seq + 1, rec
+            rec._off = offset
+            self._last_line = (offset, len(line), rec._digest)
+            self._file_head = rec.hash
+        try:
+            self._records.append(rec)
+            if self._verified == seq:
+                # Built here from the verified head and hashed above: verified by construction.
+                self._verified, self._verified_tail = seq + 1, rec
+        except BaseException as exc:          # durable, but not in memory: never write this sequence number again
+            self._uncertain = True
+            raise ReconciliationRequired('append retained on disk but not in memory; reopen verified history') from exc
+        self._evict()
         return _copy_record(rec)
+
+    def _holds(self, fd: int, *, exact: bool) -> tuple[bool, str]:
+        """Whether the file ``fd`` is open on holds this ledger's history: a regular file whose line at the end of
+        that history is this ledger's last line, byte for byte. ``exact``: nothing follows it (the writer's view;
+        an observer's file may already hold the writer's newer lines). Content, not (device, inode): an inode
+        number can be reused by another file, and some filesystems renumber the same one."""
+        if self._last_line is None:
+            return True, ''
+        st = os.fstat(fd)
+        if not stat.S_ISREG(st.st_mode):
+            return False, 'it is not a regular file'
+        off, size, digest = self._last_line
+        end = off + size
+        if st.st_size < end or (exact and st.st_size != end):
+            return False, f'it does not end where this history ends (byte {end}, file {st.st_size} bytes)'
+        if hashlib.sha256(os.pread(fd, size, off)).digest() != digest:
+            return False, "its last line is not this history's last record"
+        return True, ''
+
+    def _not_ours(self, why: str) -> ValueError:
+        """The refusal for a path that no longer holds this ledger's history; later reconstructions read the file."""
+        self._src.note_failure()
+        return ValueError(f"the ledger file at {self.path} no longer holds this ledger's history: {why}")
+
+    def _check_path(self) -> tuple[bool, str]:
+        """Whether the file the path names now holds this ledger's history; reads go to it from then on."""
+        try:
+            fd = _open_nb(self.path, os.O_RDONLY | _CLOEXEC)
+        except OSError as exc:
+            if exc.errno not in _GONE:
+                return False, f"the ledger file at {self.path} cannot be opened ({exc.strerror})"
+            return False, str(self._not_ours(f"it cannot be opened ({exc.strerror})"))
+        try:
+            ok, why = self._holds(fd, exact=not self.read_only)
+            if not ok:
+                return False, str(self._not_ours(why))
+            self._src.adopt(fd, keep=True)
+            fd = None
+            return True, ''
+        finally:
+            if fd is not None:
+                os.close(fd)
+
+    def _retain(self, rec: LedgerRecord, offset: int, line: bytes) -> "_Retained":
+        """The retained form of a record whose line (exactly ``line``, at ``offset``) this ledger wrote or
+        verified. Strings it shares with the previous record are shared, not duplicated."""
+        kind = sys.intern(rec.record_type) if type(rec.record_type) is str else rec.record_type
+        kept = _Retained(rec.seq, rec.ts_utc, kind, rec.payload, rec.prev_hash, rec.hash, rec.corrects,
+                         rec.hash_version)
+        if self._records and kept.prev_hash == self._records[-1].hash:
+            kept.prev_hash = self._records[-1].hash
+        kept._off, kept._len, kept._digest, kept._src = offset, len(line), hashlib.sha256(line).digest(), self._src
+        return kept
+
+    # -- dropped payloads --------------------------------------------------------------------------------
+    # records[1:_dropped_end] keep only their skeleton in memory; the genesis record and every newer record keep
+    # their payload. One running SHA-256 covers those skeletons and their line digests in order, so any change to
+    # what stays in memory of dropped history is found by recomputing it (no file read), the way a changed payload
+    # in memory is found by re-hashing it.
+
+    def _reset_dropped(self) -> None:
+        self._dropped_end = 1
+        self._dropped_hash = hashlib.sha256()
+        self._dropped_digest = self._dropped_hash.digest()
+
+    def _drop(self, i: int) -> None:
+        rec = self._records[i]
+        self._dropped_hash.update(_skeleton(rec))
+        rec.payload = None
+        self._dropped_end = i + 1
+
+    def _pointer_ok(self, i: int) -> tuple[bool, str]:
+        """Whether resident record i's line pointer names exactly the bytes of that record. Checked before its payload
+        is dropped: once dropped, reads trust the pointer's digest, so a pointer altered while the payload was still
+        in memory must not be folded into the dropped-history digest (independent review F1, 2026-10-28)."""
+        rec = self._records[i]
+        if type(rec) is not _Retained or not _conforms(rec) or rec._src is not self._src or not rec.resident:
+            return True, ''                    # not droppable (assigned, loaded with unusual types, or dropped): no claim
+        held = _PAYLOAD.__get__(rec, _Retained)
+        try:
+            line = _line_bytes(rec, held)
+            if len(line) == rec._len and hashlib.sha256(line).digest() == rec._digest:
+                return True, ''
+            # A line this ledger did not write itself (an older writer's formatting): compare the file's record.
+            disk = LedgerRecord(**self._src.line(rec))
+            if disk == LedgerRecord(rec.seq, rec.ts_utc, rec.record_type, held, rec.prev_hash, rec.hash, rec.corrects,
+                                    rec.hash_version):
+                return True, ''
+        except (TypeError, ValueError):
+            pass
+        return False, f"retained line pointer altered in memory at seq {i}"
+
+    def _evict(self) -> None:
+        """Drop from memory the payloads of records older than the newest ``resident`` ones.
+
+        Only a payload that still hashes to its record, and whose line pointer still names that record's bytes, is
+        dropped, in order. Anything altered in memory stays (and so does everything after it), so a reconstruction
+        still finds the alteration instead of the file quietly serving the original. Never raises: dropping is an
+        optimization, and the record it could not drop stays for reconstruction to judge.
+        """
+        if self._resident is None:
+            return
+        records, end, start = self._records, len(self._records) - self._resident, self._dropped_end
+        try:
+            for i in range(start, end):
+                rec = records[i]
+                if not (type(rec) is _Retained and _conforms(rec) and rec.resident and rec._src is self._src
+                        and self._verify_record(i)[0] and self._pointer_ok(i)[0]):
+                    break
+                self._drop(i)
+        except Exception:
+            pass
+        if self._dropped_end != start:
+            self._dropped_digest = self._dropped_hash.digest()
+
+    def _verify_dropped(self, read_disk: bool) -> tuple[bool, str]:
+        """Check what stays in memory of dropped history against its running digest; with ``read_disk``, also
+        re-derive every dropped record from the file: its bytes must be the ones verified and must hash to it."""
+        records, end = self._records, self._dropped_end
+        if end <= 1:
+            return True, ''
+        if end > len(records):
+            return False, 'retained history is shorter than its dropped prefix'
+        digest = hashlib.sha256()
+        for i in range(1, end):
+            rec = records[i]
+            if not _conforms(rec) or rec._src is not self._src or rec.seq != i:
+                return False, f"retained record altered in memory at seq {i}"
+            if rec.prev_hash != records[i - 1].hash:
+                return False, f"chain break at seq {i}"
+            if rec.resident:     # a payload put back after it was dropped is held to its record like any other
+                ok, why = self._verify_record(i)
+                if not ok:
+                    return False, why
+            digest.update(_skeleton(rec))
+        if digest.digest() != self._dropped_digest:
+            return False, f"retained history altered in memory between seq 1 and {end - 1}"
+        if read_disk:
+            for i in range(1, end):
+                ok, why = self._rederive(i)
+                if not ok:
+                    return False, why
+        return True, ''
+
+    def _rederive(self, i: int) -> tuple[bool, str]:
+        """Reconstruct dropped record i from the file alone and hold it to the skeleton in memory."""
+        rec = self._records[i]
+        try:
+            disk = LedgerRecord(**self._src.line(rec))
+        except (TypeError, ValueError) as exc:
+            return False, str(exc) or f"payload hash mismatch at seq {i}"
+        if (disk.seq, disk.ts_utc, disk.record_type, disk.prev_hash, disk.hash, disk.corrects,
+                disk.hash_version) != rec._header():
+            return False, f"retained record at seq {i} differs from its line in the file"
+        return self._check(i, disk, disk.payload)
 
     def seal(self, *, sealed_by: str, reason: str) -> LedgerRecord:
         """Seal the head (shutdown propagation step 5). Returns the seal record."""
         return self.append("seal", {"sealed_by": sealed_by, "reason": reason, "head": self.head})
 
     def verify_chain(self) -> tuple[bool, str]:
-        """Independently reconstruct and verify every link (evidence closure)."""
+        """Independently reconstruct and verify every link (evidence closure).
+
+        Records still in memory are re-hashed from their payloads, as always. For history whose payloads were
+        dropped, what stays in memory is checked against its running digest and every line in the file against the
+        digest of the bytes that were hash-verified (RESIDENT_RECORDS)."""
+        return self._reconstruct(read_disk=True)
+
+    def _reconstruct(self, *, read_disk: bool) -> tuple[bool, str]:
         with self._lock:
+            src = self._src
+            # Once a read has found changed bytes in the file, every reconstruction (the commit path's included)
+            # reads all of it until one finds it intact; failures found while this one runs stay counted.
+            read_disk = read_disk or (src is not None and src.broken)
+            mark = src.failures if src is not None else 0
             records = self._records
             if not records:
                 return False, 'empty history'
-            for i in range(len(records)):
-                ok, reason = self._verify_record(i)
-                if not ok:
-                    self._verified, self._full_at = 0, None
-                    return False, reason
+            ok, reason = self._verify_record(0)
+            if ok and read_disk and src is not None:
+                ok, reason = self._check_path()   # the file at the path, not one it named before, holds this history
+            if ok:
+                ok, reason = self._verify_dropped(read_disk)
+            if ok:
+                limit = len(records) - self._resident if self._resident is not None else 0
+                for i in range(max(1, self._dropped_end), len(records)):
+                    ok, reason = self._verify_record(i)
+                    if ok and i < limit:          # kept in memory past the window: its pointer is judged too
+                        ok, reason = self._pointer_ok(i)
+                    if not ok:
+                        break
+            if not ok:
+                self._verified, self._full_at = 0, None
+                return False, reason
             self._verified, self._full_at, self._verified_tail = len(records), _monotonic(), records[-1]
+            if src is not None and read_disk:
+                src.cleared = max(src.cleared, mark)
             return True, f"chain intact: {len(records)} records"
 
     def verify_incremental(self) -> tuple[bool, str]:
@@ -326,10 +856,12 @@ class EvidenceLedger:
         """
         with self._lock:
             records, done = self._records, self._verified
+            if self._src is not None and self._src.broken:
+                return self._reconstruct(read_disk=False)   # reads the file: a read found changed bytes in it
             if (self._full_at is None or not 0 < done <= len(records)
                     or records[done - 1] is not self._verified_tail
                     or _monotonic() - self._full_at >= FULL_VERIFY_SECONDS):
-                return self.verify_chain()
+                return self._reconstruct(read_disk=False)
             for i in range(done, len(records)):
                 ok, reason = self._verify_record(i)
                 if not ok:
@@ -342,7 +874,17 @@ class EvidenceLedger:
         rec = self._records[i]
         if type(rec.seq) is not int or rec.seq != i:
             return False, f"sequence break at {i}"
-        if (type(rec.payload) is not dict or type(rec.hash_version) is not int
+        try:
+            payload = rec.payload        # read back from the file, byte-checked, if no longer in memory
+        except ValueError as exc:
+            return False, str(exc)
+        return self._check(i, rec, payload)
+
+    def _check(self, i: int, rec: LedgerRecord, payload) -> tuple[bool, str]:
+        """Re-derive record i's hash from its fields and ``payload``, and its link to record i - 1."""
+        if type(rec.seq) is not int or rec.seq != i:
+            return False, f"sequence break at {i}"
+        if (type(payload) is not dict or type(rec.hash_version) is not int
                 or rec.hash_version not in (1, 2)):
             return False, f'unsupported record at {i}'
         if rec.record_type == 'constitution_transition':
@@ -350,7 +892,7 @@ class EvidenceLedger:
         if i == 0:
             expected = {'kind': 'genesis', 'constitution_hash': self.constitution_hash}
             if (rec.prev_hash != GENESIS_PREV or rec.record_type != 'genesis'
-                    or rec.payload != expected or rec.corrects is not None
+                    or payload != expected or rec.corrects is not None
                     or rec.hash_version != 1):
                 return False, "genesis structure or expected constitution mismatch"
             if sha256_json({'seq': 0, 'payload': expected, 'prev_hash': GENESIS_PREV}) != rec.hash:
@@ -360,7 +902,7 @@ class EvidenceLedger:
             return False, 'second genesis refused'
         if rec.prev_hash != self._records[i - 1].hash:
             return False, f"chain break at seq {i}"
-        body = {"seq": rec.seq, "record_type": rec.record_type, "payload": rec.payload,
+        body = {"seq": rec.seq, "record_type": rec.record_type, "payload": payload,
                 "prev_hash": rec.prev_hash, "corrects": rec.corrects}
         if rec.hash_version == 2:
             body.update(ts_utc=rec.ts_utc, hash_version=2)
@@ -377,7 +919,7 @@ class EvidenceLedger:
     def _reset_index(self) -> None:
         self._indexed, self._indexed_tail = 0, None
         self._by_hash: dict[str, int] = {}               # hash -> position of its first record
-        self._by_type: dict[str, list[int]] = {}         # record type -> positions
+        self._by_type: dict[str, array] = {}             # record type -> positions (8 bytes each)
         self._by_field: dict[str, dict[str, dict]] = {}  # record type -> payload field -> value -> positions
 
     def _index_new(self) -> None:
@@ -387,8 +929,8 @@ class EvidenceLedger:
             done = 0
         for i in range(done, len(records)):
             rec = records[i]
-            self._by_hash.setdefault(rec.hash, i)
-            self._by_type.setdefault(rec.record_type, []).append(i)
+            self._by_hash.setdefault(rec.hash, rec.seq if rec.seq == i else i)   # one int object per record, not two
+            self._by_type.setdefault(rec.record_type, array("q")).append(i)
             for field, table in self._by_field.get(rec.record_type, {}).items():
                 _index_value(table, rec.payload.get(field), i)
         if len(records) > done:
@@ -422,45 +964,96 @@ class EvidenceLedger:
             positions = self._by_type.get(record_type, ())
             if where:
                 field, value = next(iter(where.items()))
-                fields = self._by_field.setdefault(record_type, {})
-                if field not in fields:
-                    table = fields[field] = {}
+                tables = self._by_field.setdefault(record_type, {})
+                if field not in tables:
+                    table = tables[field] = {}
                     for i in positions:
                         _index_value(table, records[i].payload.get(field), i)
                 try:
-                    positions = fields[field].get(value, ())
+                    positions = tables[field].get(value, ())
                 except TypeError:     # an unhashable value is never indexed: compare record by record
                     pass
-            return [_copy_record(records[i]) for i in positions if records[i].record_type == record_type
-                    and all(records[i].payload.get(f) == v for f, v in where.items())]
+            found = []
+            for i in positions:
+                rec = records[i]
+                if rec.record_type != record_type:
+                    continue
+                held = _PAYLOAD.__get__(rec, _Retained) if type(rec) is _Retained else rec.payload
+                if held is None:                # dropped: read once from the file; that object is the caller's
+                    owned = rec._src.payload(rec)
+                    if all(owned.get(f) == v for f, v in where.items()):
+                        found.append(_handout(rec, owned))
+                elif all(held.get(f) == v for f, v in where.items()):
+                    found.append(_copy_record(rec))
+            return found
 
     def _load(self, path: str) -> None:
         # Durable history supplies transition truth only after full verification.
         # Hash consistency is not factual appraisal, permission or authentication.
-        loaded = []
-        with open(path, "rb") as fh:
-            raw = fh.read()
-        complete_end = raw.rfind(b"\n") + 1
-        if complete_end < len(raw):
-            if self._tail_policy == "refuse":
-                raise ValueError('partial or blank history record')
-            torn = raw[complete_end:]
-            self.unacknowledged_tail = {"offset": complete_end, "bytes": len(torn),
-                                        "sha256": "sha256:" + hashlib.sha256(torn).hexdigest(),
-                                        "_bytes": torn}
-        try:
-            from adapters.contract_validation import strict_json
-            for chunk in raw[:complete_end].split(b"\n")[:-1]:
-                line = chunk.decode("utf-8") + "\n"
-                if not line.strip():
+        # Read line by line and verified as read, so opening a long history never holds all of it in memory: only
+        # the newest `resident` payloads stay. Failures are reported in the order a whole-file read reported them
+        # (a torn tail, then a blank or malformed line anywhere, then the first verification failure).
+        from adapters.contract_validation import strict_json
+        # One descriptor for all of it: the size, the complete end, a torn tail and every line come from one file
+        # even if the path is swapped meanwhile, and the line it ends with is the one appends will hold it to.
+        with open(path, "rb", opener=_open_nb) as fh:
+            st = os.fstat(fh.fileno())
+            if not stat.S_ISREG(st.st_mode):
+                raise ValueError(f'ledger at {path} is not a regular file')
+            size = st.st_size
+            complete_end = _complete_end(fh.fileno(), size)
+            if complete_end < size:
+                if self._tail_policy == "refuse":
                     raise ValueError('partial or blank history record')
-                d = strict_json(line)
-                loaded.append(LedgerRecord(**d))
-        except (TypeError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-            raise ValueError('malformed retained history') from exc
+                torn = os.pread(fh.fileno(), size - complete_end, complete_end)
+                self.unacknowledged_tail = {"offset": complete_end, "bytes": len(torn),
+                                            "sha256": "sha256:" + hashlib.sha256(torn).hexdigest(),
+                                            "_bytes": torn}
+            self._records = []
+            failure = None
+            offset, last = 0, None
+            while offset < complete_end:
+                chunk = fh.readline()
+                try:
+                    line = chunk.decode("utf-8")
+                    if not line.strip():
+                        raise ValueError('partial or blank history record')
+                    rec = LedgerRecord(**strict_json(line))
+                except (TypeError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+                    raise ValueError('malformed retained history') from exc
+                if failure is None:
+                    i = len(self._records)
+                    self._records.append(self._retain(rec, offset, chunk))
+                    ok, msg = self._verify_record(i)
+                    if not ok:
+                        failure = msg
+                    elif (i - self._resident == self._dropped_end
+                          and _conforms(self._records[i - self._resident])):
+                        self._drop(i - self._resident)     # verified just now from these very bytes, then untouched
+                last = (offset, len(chunk), hashlib.sha256(chunk).digest())
+                offset += len(chunk)
+        self._last_line = last
+        self._file_head = self._records[-1].hash if self._records else None
         if self.unacknowledged_tail and self._tail_policy == "ignore":
             self.unacknowledged_tail.pop("_bytes")
-        self._records = loaded
-        ok, msg = self.verify_chain()
-        if not ok:
-            raise ValueError(f"ledger at {path} failed verification on load: {msg}")
+        if failure is None and not self._records:
+            failure = self.verify_chain()[1]
+        if failure is not None:
+            self._verified, self._full_at = 0, None
+            raise ValueError(f"ledger at {path} failed verification on load: {failure}")
+        records = self._records
+        self._dropped_digest = self._dropped_hash.digest()
+        self._verified, self._full_at, self._verified_tail = len(records), _monotonic(), records[-1]
+
+
+def _complete_end(fd: int, size: int) -> int:
+    """Offset just past the last newline of the file (0 when there is none): the end of its complete lines."""
+    block = 1 << 16
+    end = size
+    while end > 0:
+        start = max(0, end - block)
+        found = os.pread(fd, end - start, start).rfind(b"\n")
+        if found >= 0:
+            return start + found + 1
+        end = start
+    return 0

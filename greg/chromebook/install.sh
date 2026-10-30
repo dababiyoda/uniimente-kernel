@@ -78,7 +78,34 @@ while [ $# -gt 0 ]; do
 done
 
 step() { printf '\n== %s\n' "$*"; }
-fail() { printf 'STOP: %s\n' "$*" >&2; exit "${2:-1}"; }
+fail() { printf 'STOP: %s\n' "$1" >&2; exit "${2:-1}"; }
+
+# The body's evidence ledger must live where this machine's view of its file is the file. On a shared or network
+# folder (ChromeOS's /mnt/chromeos is 9p or virtio-fs, a FUSE filesystem; also NFS, SMB and cluster filesystems)
+# Linux can keep using its cached copy after the other side replaces or deletes the file, so evidence GREG recorded
+# could vanish without notice. The filesystem types are statfs's, the list greg/body.py refuses (greg init does too).
+FS_DIR="$GREG_HOME_DIR"
+case "$FS_DIR" in "~") FS_DIR="$HOME" ;; "~/"*) FS_DIR="$HOME/${FS_DIR#"~/"}" ;; esac   # as greg expands it
+case "$FS_DIR" in /*) ;; *) FS_DIR="$PWD/$FS_DIR" ;; esac
+while [ "$FS_DIR" != / ] && [ ! -e "$FS_DIR" ]; do FS_DIR="$(dirname "$FS_DIR")"; done
+case "$(stat -f -c %t "$FS_DIR" 2>/dev/null || true)" in
+  1021997) FS_NAME="9p" ;;
+  65735546) FS_NAME="FUSE: virtio-fs, sshfs and the like" ;;
+  6969) FS_NAME="NFS" ;;
+  517b) FS_NAME="SMB" ;;
+  ff534d42) FS_NAME="CIFS" ;;
+  fe534d42) FS_NAME="SMB2" ;;
+  c36400) FS_NAME="Ceph" ;;
+  5346414f) FS_NAME="AFS" ;;
+  6b414653) FS_NAME="kAFS" ;;
+  bd00bd0) FS_NAME="Lustre" ;;
+  1161970) FS_NAME="GFS2" ;;
+  7461636f) FS_NAME="OCFS2" ;;
+  73757245) FS_NAME="Coda" ;;
+  20030528) FS_NAME="OrangeFS" ;;
+  *) FS_NAME="" ;;
+esac
+[ -z "$FS_NAME" ] || fail "The body home $GREG_HOME_DIR is on a shared or network filesystem ($FS_NAME). Keep it on this machine's own disk, inside Linux files (the default is ~/.uniimente/greg)." 15
 
 step "1/8 This is ChromeOS Linux"
 [ "$(uname -s)" = "Linux" ] || fail "GREG Body 1 runs inside ChromeOS's Linux environment (Settings > About ChromeOS > Developers)." 10
@@ -122,11 +149,38 @@ else
   GREG_PY="$VENV/bin/python"
   if [ "$ENGINES" = 1 ]; then
     # Binary wheels only: never compile an engine on the Chromebook. A failure never stops Body 1.
-    if "$VENV/bin/python" -m pip install --quiet --only-binary=:all: -r "$REPO/requirements-cognition.txt"; then
+    # One pip call per engine, every call under the same pins: a machine with no wheel for one engine still gets
+    # all the others. (One call for all of them installed none on an ARM Chromebook: the pinned Z3's Linux ARM64
+    # wheel needs glibc 2.38, and Debian 12, ChromeOS Linux's base, has 2.36. PyPI files, checked 2026-10-28.)
+    PINS="$(mktemp)"
+    "$VENV/bin/python" - "$REPO/requirements-cognition.txt" > "$PINS" <<'PY'
+import sys
+from pathlib import Path
+
+def specs(path):
+    for raw in Path(path).read_text().splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if line.startswith("-r "):
+            yield from specs(Path(path).parent / line[3:].strip())
+        elif line:
+            yield line
+
+print("\n".join(specs(sys.argv[1])))
+PY
+    MISSED=()
+    while IFS= read -r spec; do
+      [ -n "$spec" ] || continue
+      if ! WHY="$("$VENV/bin/python" -m pip install --quiet --only-binary=:all: -c "$PINS" "$spec" 2>&1)"; then
+        MISSED+=("$spec")
+        echo "  not installed: $spec ($(printf '%s\n' "$WHY" | grep -v '^\s*$' | tail -n 1 | cut -c1-160))"
+      fi
+    done < "$PINS"
+    rm -f "$PINS"
+    if [ "${#MISSED[@]}" -eq 0 ]; then
       echo "Open-source reasoning engines installed (Z3, OR-Tools, SciPy, NetworkX, SymPy)."
     else
-      echo "WARNING: some reasoning engines did not install (no binary wheel for this machine?)."
-      echo "Body 1 continues; 'greg doctor --chromebook' lists what is missing, and GREG asks before a function needs it."
+      echo "WARNING: ${#MISSED[@]} reasoning engine requirement(s) did not install: ${MISSED[*]}. Every other engine did."
+      echo "Body 1 continues; 'greg doctor --chromebook' lists what is missing and why, and GREG asks before a function needs it."
     fi
   else
     echo "Skipping the open-source reasoning engines (--no-engines)."

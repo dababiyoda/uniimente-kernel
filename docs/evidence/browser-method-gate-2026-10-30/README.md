@@ -230,5 +230,10 @@ The reviewers' probes (`review-browser-method-gate-attack/p*.py`), run against t
   and a `mouse` step's `x` and `y` stay bindable.
 - **Second browser discovery glob.** `greg/capabilities.py` `chrome_binary()` still globs only `chrome-linux/` (R6).
   `capabilities.py` is edited by open PRs.
-- **CI workflow not run.** `computer-use.yml` was not executed here; it is checked only as YAML.
+- **CI sandbox.** The first run of `computer-use.yml` (run 41076926687, head `c88e7b42`) failed 30 of 52: GitHub's
+  Ubuntu 24.04 runner sets `kernel.apparmor_restrict_unprivileged_userns=1`, so Chromium's own sandbox, which GREG
+  turns on for a non-root user, aborts at launch ("No usable sandbox!"). The workflow now lifts that AppArmor
+  restriction before the suites run. The code is unchanged: run here as the non-root user `ubuntu`, where no
+  AppArmor restriction exists, the sandboxed launch passes. A founder body on Ubuntu 23.10+ with that restriction
+  would hit the same abort; GREG does not detect it or say what to change.
 - **Chromebook.** Nothing ran on the Chromebook. `install.sh` and `doctor.py` are changed by open PR #211.

@@ -39,6 +39,16 @@ jobs:
           sudo mkdir -p /opt/pw-browsers && sudo chown "$USER" /opt/pw-browsers
           python -m playwright install --with-deps chromium
           ls /opt/pw-browsers
+      - name: Let unprivileged user namespaces through AppArmor so Chromium can sandbox itself as a non-root user
+        # Ubuntu 23.10+ runners set kernel.apparmor_restrict_unprivileged_userns=1; Chromium's own sandbox then dies
+        # at launch ("No usable sandbox!"). GREG launches with chromium_sandbox=True when not root, so the runner is
+        # configured to support that sandbox rather than the code turning it off.
+        run: |
+          if [ -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          else
+            echo "no AppArmor user-namespace restriction on this runner"
+          fi
       - name: Provision bubblewrap for the confined browser test and report whether this runner can use it
         run: |
           sudo apt-get update -q && sudo apt-get install -y -q bubblewrap

@@ -149,3 +149,36 @@ equivalent new code; 18 entries are new.
   may be the license's own grant (internal, non-production or non-service use) read against GREG's use.
 - Under P4c (a draft, not active), a card qualified before these trees existed is requalified once: its terms now
   carry trees, so the assessment digest differs.
+
+## Independent verification of `083c91ea`, and the fixes
+
+A separate verification lane, with its own extracts of `a1d2abfb` and `083c91ea`, reproduced every claimed fix.
+It also found ten defects (`verification-083c91ea.json`, beside this record). It ran a 20,000-case differential
+fuzz, a 605-file DEP-5 corpus diff and its own reproductions. Two of the defects are regressions against
+`a1d2abfb`, both in the direction of clearing what was held. All ten are fixed here. Each has a test that fails on
+the committed head (`verifier-findings-fail-before.txt`: 26 failed) and passes after.
+
+| # | Finding | Fix |
+| --- | --- | --- |
+| V1 · regression | The inclusive mask cleared "Commercial and non-commercial use require a separate license" | The mask applies only to a sentence that grants; a sentence with restricting words (require, prohibit, separate license, without permission, fee) keeps its phrase |
+| V2 · regression | A License line before its Files line was cut off, and P0 attached an AGPL binary | Field order inside a paragraph is not significant (deb822). Only a second Files line, or one in the header paragraph, starts a stanza |
+| V3 | An unparseable field lost multi-word restrictive names ("Server Side Public License (MongoDB)") | The fallback also applies the riders to the whole text |
+| V4 | `Elastic-2.0` in free text, `SSPLv1` and `BUSLv1.1` cleared beside a classifier | Version-tolerant SSPL and BUSL riders; the `Elastic-2.0` id is matched in free text |
+| V5 | An unparseable License-Expression returned before the classifiers and the License field were read | It is unknown, its riders count, and the declarations beside it are read as for a valid one |
+| V6 | Unlisted restrictive classifiers beside an expression cleared silently; a non-commercial classifier was absorbed by a BUSL alternative | Shareware, Free To Use But Restricted and AFPL are listed as not open. A non-OSI classifier GREG does not list counts as unknown, and an unlisted OSI one is recorded. A restrictive non-OSI classifier never "agrees" with an alternative |
+| V7 | A name only like a known family ("AGPL-3+-with-customer-terms") was read as that family, so the P4c draft found it compatible; an unknown addition to AGPL was dropped | Such a term is marked `unlisted`. It keeps its class, so P0 still holds it, but its use verdict is uncertain and the uncertainty names it |
+| V8 | OR: the P0 hold was not monotone; the use election depended on operand order and ignored class | With no cleared alternative, a known restriction in any alternative holds. This reverses the earlier "avoidable restriction" choice: an unknown alternative is not evidence the restriction can be avoided. The use election breaks ties by class, then held terms, then the terms themselves |
+| V9 | About 200 nested parentheses raised RecursionError | Nesting past 32 levels is unparseable and fails closed |
+| V10 | Two inaccuracies in this record | Corrected below |
+
+**Measured on this host after the fixes:** 0 verdict or class changes across 65 test-venv and 87 system-Python
+distributions, 605 DEP-5 files and 1,159 binaries in `/usr/bin`, comparing the committed head with the fixed tree.
+The fixes close defect classes that real metadata here does not trigger, as the original fixes did.
+
+**Errata (V10).** The original wording is kept above. The corrections:
+
+- "834 DEP-5 copyright files in `/usr/share/doc`": there are 834 copyright files. 606 carry a Format header, and 605
+  parse as DEP-5.
+- SPDX-1 and SPDX-2 each say "plus the P0 attach test" fails at `a1d2abf`. Those two tests fail there only with
+  `AttributeError`, because `binary_assessment` does not exist at `a1d2abf`. The behavioural fail-before for SPDX-1
+  and SPDX-2 rests on the parametrized `deb()` cases and on the review's `system_binary` reproduction.

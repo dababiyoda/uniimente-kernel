@@ -96,7 +96,8 @@ TROVE = {
     "OSI Approved :: GNU Affero General Public License v3": NETWORK_COPYLEFT,
     "OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)": NETWORK_COPYLEFT,
     "Other/Proprietary License": NOT_OPEN, "Freeware": NOT_OPEN, "Free For Educational Use": NOT_OPEN,
-    "Free For Home Use": NOT_OPEN, "Free for non-commercial use": NOT_OPEN,
+    "Free For Home Use": NOT_OPEN, "Free for non-commercial use": NOT_OPEN, "Shareware": NOT_OPEN,
+    "Free To Use But Restricted": NOT_OPEN, "Aladdin Free Public License (AFPL)": NOT_OPEN,
 }
 # A bare ``License`` field (legacy metadata) is matched only against these exact short names.
 TEXT = {"mit": PERMISSIVE, "mit license": PERMISSIVE, "the mit license": PERMISSIVE, "bsd": PERMISSIVE,
@@ -131,9 +132,12 @@ _SOURCE_AVAILABLE = re.compile(r"busl|bsl-?1\.1|business-source|sspl|server-side
 # agreements, the DeepSeek and DeepFloyd licenses, Mistral's non-production and research licenses, and research-only
 # terms. Each attaches conditions to the model and what is made with it (an acceptable-use policy, use restrictions
 # passed to every downstream user, a user-count threshold, research-only use).
-RIDERS = ((r"commons-?clause", NOT_OPEN), (r"server-side-public-license|(?<![a-z0-9])sspl(?![a-z])", NOT_OPEN),
-          (r"business-source-license|(?<![a-z0-9])busl(?![a-z])|(?<![a-z0-9])bsl-?1\.1(?![0-9])", NOT_OPEN),
-          (r"elastic-license|(?<![a-z0-9])elv2(?![a-z0-9])", NOT_OPEN), (r"polyform", NOT_OPEN),
+RIDERS = ((r"commons-?clause", NOT_OPEN),
+          (r"server-side-public-license|(?<![a-z0-9])sspl(?:-?v?[0-9][0-9.]*)?(?![a-z])", NOT_OPEN),
+          (r"business-source-license|(?<![a-z0-9])busl(?:-?v?[0-9][0-9.]*)?(?![a-z])|(?<![a-z0-9])bsl-?1\.1(?![0-9])",
+           NOT_OPEN),
+          (r"elastic-license|(?<![a-z0-9])elv2(?![a-z0-9])|(?<![a-z0-9])elastic-2\.0(?![0-9])", NOT_OPEN),
+          (r"polyform", NOT_OPEN),
           (r"non-?commercial|not-for-commercial|evaluation-only|(?<![a-z])by-n[cd](?![a-z])", NOT_OPEN),
           (r"(?<![a-z0-9])llama-?[2-9](?:\.[0-9]+)?(?![0-9])", NOT_OPEN), (r"(?<![a-z0-9])gemma(?![a-z0-9])", NOT_OPEN),
           (r"(?<![a-z])(?:open-?)?rail(?:-m|-license|-[0-9.]+|\+\+)?(?![a-z])", NOT_OPEN),
@@ -143,6 +147,20 @@ RIDERS = ((r"commons-?clause", NOT_OPEN), (r"server-side-public-license|(?<![a-z
           (r"(?<![a-z])agpl|affero", NETWORK_COPYLEFT))
 INCLUSIVE = (r"(?<![a-z])(?<!non-)commercial-?(?:and/or|and|or|&|/)-?non-?commercial"
              r"|non-?commercial-?(?:and/or|and|or|&|/)-?commercial")
+# A sentence that restricts ("Commercial and non-commercial use require a separate license") keeps its phrase, so
+# the rider still reads it; only a sentence that grants both is masked.
+RESTRICTING = (r"requir|prohibit|forbid|not-permitted|not-allowed|not-be-used|may-not|must-not|cannot|must-obtain"
+               r"|separate-licen|(?:without|written|prior|explicit|express|separate)-permission"
+               r"|(?<!without-)(?<!no-)restrict|purchase|royalt|(?<![a-z])paid(?![a-z])|(?<![a-z])fees?(?![a-z])")
+
+
+def _masked(text: str) -> str:
+    """``text`` normalized, its inclusive commercial phrases masked in every sentence that does not restrict."""
+    out = []
+    for sentence in re.split(r"(?<=[.!?;])\s+|\n+", text):
+        norm = _norm(sentence)
+        out.append(norm if re.search(RESTRICTING, norm) else re.sub(INCLUSIVE, " ", norm))
+    return " ".join(out)
 # The phrases are searched only in a short declaration. A full license text (scipy's bundles the GPL of its
 # compiled runtime, which says "noncommercially") is not interpreted: a rider inside one is not detected.
 SHORT_LINES, SHORT_CHARS = 5, 600
@@ -162,7 +180,7 @@ def _norm(text: str) -> str:
 
 def _riders(text: str) -> list:
     """(matched wording, class) for each restrictive rider in ``text``."""
-    norm = re.sub(INCLUSIVE, " ", _norm(text))
+    norm = _masked(text)
     return [(m.group(0), cls) for pattern, cls in RIDERS for m in [re.search(pattern, norm)] if m]
 
 
@@ -174,9 +192,9 @@ def _category(cls: str, ident: str = "") -> str:
     return SOURCE_AVAILABLE if _SOURCE_AVAILABLE.search(_norm(ident)) else RESTRICTED_USE
 
 
-def _lookup(name: str, dialect: str) -> str:
-    """One license name: Debian's spelling first (DEP-5), then the SPDX identifier, then a GPL-family -only/-or-later
-    variant, then restrictive wording in the name (a family at any version). Anything else is unknown."""
+def _table_class(name: str, dialect: str) -> str:
+    """One license name in GREG's tables: Debian's spelling first (DEP-5), then the SPDX identifier, then a
+    GPL-family -only/-or-later variant. Anything else is unknown."""
     key = _norm(name)
     keys = [key, key.rstrip("+")]
     if re.match(r"^[al]?gpl-", key):
@@ -185,6 +203,14 @@ def _lookup(name: str, dialect: str) -> str:
         cls = (DEBIAN.get(k) if dialect == "dep5" else None) or SPDX_CLASS.get(k)
         if cls:
             return cls
+    return UNKNOWN
+
+
+def _lookup(name: str, dialect: str) -> str:
+    """One license name: GREG's tables, then restrictive wording in the name (a family at any version)."""
+    cls = _table_class(name, dialect)
+    if cls != UNKNOWN:
+        return cls
     held = [cls for _, cls in _riders(name)]
     return _worst(held) if held else UNKNOWN
 
@@ -196,6 +222,7 @@ def _atom(name: str, dialect: str) -> dict:
     addition is never hidden by an unknown base."""
     base, *rest = re.split(r"\s+with\s+", name.strip(), maxsplit=1, flags=re.I)
     cls = _lookup(base, dialect)
+    unlisted = cls != UNKNOWN and _table_class(base, dialect) == UNKNOWN     # named like a family, terms unread
     if rest:
         addition = rest[0]
         extra = _lookup(addition, dialect) if dialect == "dep5" else UNKNOWN
@@ -204,8 +231,10 @@ def _atom(name: str, dialect: str) -> dict:
                 cls = WEAK_COPYLEFT
         else:
             restrictive = [c for c in (cls, extra) if c in HELD]
+            unlisted = unlisted or UNKNOWN in (cls, extra) or _table_class(addition, dialect) == UNKNOWN
             cls = _worst(restrictive or [cls, extra])        # a restrictive addition is never hidden by an unknown
-    return {"atom": name.strip()[:120], "class": cls, "category": _category(cls, name)}
+    atom = {"atom": name.strip()[:120], "class": cls, "category": _category(cls, name)}
+    return {**atom, "unlisted": True} if unlisted and cls != UNKNOWN else atom
 
 
 def _parse(expression: str, dialect: str) -> dict:
@@ -215,16 +244,20 @@ def _parse(expression: str, dialect: str) -> dict:
     first: WITH, AND, OR; in DEP-5 a comma before "and"/"or" binds loosest ("GPL-1+ or Artistic, and BSD-3-clause"
     is (GPL-1+ or Artistic) and BSD-3-clause), and a bare comma lists licenses that all apply. Parentheses group."""
     tokens = re.findall(r"\(|\)|,|[^\s(),]+", expression)
-    position = 0
+    position = depth = 0
 
     def peek():
         return tokens[position].lower() if position < len(tokens) else None
 
     def unit():
-        nonlocal position
+        nonlocal position, depth
         if peek() == "(":
             position += 1
+            depth += 1
+            if depth > MAX_NESTING:
+                raise ValueError("parentheses nested too deeply")
             node = sequence()
+            depth -= 1
             if peek() != ")":
                 raise ValueError("unbalanced parenthesis")
             position += 1
@@ -266,14 +299,18 @@ def _parse(expression: str, dialect: str) -> dict:
     return node
 
 
+MAX_NESTING, MAX_WORDS = 32, 256
+
+
 def _tree(expression: str, dialect: str) -> dict:
     """``_parse``, failing closed: an unparseable expression is unknown, and every restrictive name in it still
     counts."""
     try:
         return _parse(expression, dialect)
-    except ValueError:
+    except ValueError:                        # malformed, or nested past MAX_NESTING
         words = [w for w in re.findall(r"[^\s(),]+", expression) if w.lower() not in ("and", "or", "with")]
-        held = [a for a in (_atom(w, dialect) for w in words) if a["class"] in HELD]
+        held = [a for a in (_atom(w, dialect) for w in words[:MAX_WORDS]) if a["class"] in HELD]
+        held += [{"atom": f"mentions '{p}'", "class": c, "category": _category(c, p)} for p, c in _riders(expression)]
         return {"and": held + [{"atom": expression.strip()[:120] or "(empty)", "class": UNKNOWN,
                                 "category": UNCLASSIFIED, "note": "not a parseable license expression"}]}
 
@@ -291,7 +328,9 @@ def _held_eval(node: dict) -> tuple[str, bool, list]:
     parts = [_held_eval(child) for child in node.get("and") or node["or"]]
     if "and" in node:
         return _worst([p[0] for p in parts]), any(p[1] for p in parts), [a for p in parts for a in p[2]]
-    return min(parts, key=lambda p: (ORDER.index(p[0]), p[1]))
+    cls, _, elected = min(parts, key=lambda p: (ORDER.index(p[0]), p[1]))
+    cleared = any(ORDER.index(p[0]) <= ORDER.index(CLEARED_UP_TO) for p in parts)
+    return cls, not cleared and any(p[1] for p in parts), elected
 
 
 def _part_tree(part: dict) -> dict:
@@ -341,7 +380,9 @@ def _text_declaration(text: str) -> dict | None:
 def _part(name, basis, shown, tree, uncertainty=()) -> dict:
     cls, _, elected = _held_eval(tree)
     unknown = [a["atom"] for a in elected if a["class"] == UNKNOWN]
-    notes = list(uncertainty) + ([f"not classified by GREG: {', '.join(unknown)[:200]}"] if unknown else [])
+    unlisted = [a["atom"] for a in elected if a.get("unlisted")]
+    notes = list(uncertainty) + ([f"not classified by GREG: {', '.join(unknown)[:200]}"] if unknown else []) + \
+        ([f"named like a known family, not in GREG's tables: {', '.join(unlisted)[:200]}"] if unlisted else [])
     return {"distribution": name, "basis": basis, "expression": shown, "class": cls,
             "terms": [{"id": a["atom"], "class": a["class"], "category": a["category"]} for a in _atoms(tree)],
             "tree": tree, "restrictive": [a["atom"] for a in elected if a["class"] in HELD], "uncertainty": notes}
@@ -369,23 +410,31 @@ def declared(dist) -> dict:
         trove = [t for t in trove if t != "OSI Approved"]
     trove_atoms = [{"atom": t, "class": TROVE.get(t, UNKNOWN), "category": _category(TROVE.get(t, UNKNOWN), t)}
                    for t in trove]
-    notes = []
+    notes, note = [], None
     if expression:
         try:
             canonical = str(canonicalize_license_expression(expression))
-        except InvalidLicenseExpression as exc:
+            tree, basis, shown = _tree(canonical, "spdx"), \
+                "License-Expression (PEP 639), parsed by packaging.licenses", canonical
+        except InvalidLicenseExpression as exc:      # unparseable: unknown, its restrictive wording still counts
             atoms = [{"atom": f"License-Expression mentions '{p}'", "class": c, "category": _category(c, p)}
                      for p, c in _riders(expression)]
-            return {**_part(name, "License-Expression (PEP 639), unparseable", expression,
-                            {"and": atoms + [{"atom": expression[:120], "class": UNKNOWN, "category": UNCLASSIFIED}]},
-                            ["the License-Expression is not valid SPDX"]), "note": str(exc)[:160]}
-        tree, basis, shown = _tree(canonical, "spdx"), "License-Expression (PEP 639), parsed by packaging.licenses", \
-            canonical
+            tree = {"and": atoms + [{"atom": expression[:120], "class": UNKNOWN, "category": UNCLASSIFIED}]}
+            basis, shown, note = "License-Expression (PEP 639), unparseable", expression, str(exc)[:160]
+            notes.append("the License-Expression is not valid SPDX")
         cls = _held_eval(tree)[0]
         present = {a["class"] for a in _atoms(tree)}
         for atom in trove_atoms:         # a classifier naming a class no term of the expression has contradicts it
-            if atom["class"] == UNKNOWN or atom["class"] in present:
+            if atom["class"] == UNKNOWN:
+                if atom["atom"].startswith("OSI Approved"):
+                    notes.append(f"classifier '{atom['atom']}' is not classified by GREG; the expression governs")
+                else:                    # a non-OSI license GREG does not list: its terms are unknown and count
+                    tree = {"and": [tree, atom]}
+                    basis += "; a classifier GREG cannot classify"
                 continue
+            if atom["class"] in present and (atom["class"] not in HELD or atom["atom"].startswith("OSI Approved")):
+                continue                 # it names an alternative: agreement. A non-OSI restriction names no license
+                                         # of the expression, so it always counts
             if ORDER.index(atom["class"]) > ORDER.index(cls) or atom["class"] in HELD:
                 tree = {"and": [tree, atom]}
                 basis += "; a classifier declares something stricter"
@@ -423,7 +472,8 @@ def declared(dist) -> dict:
         elif text_class != UNKNOWN and text_class != cls:
             notes.append(f"declarations disagree: the License field ('{text_decl['id']}') is less strict than the "
                          "primary declaration; the stricter declaration governs")
-    return _part(name, basis, shown, tree, notes)
+    part = _part(name, basis, shown, tree, notes)
+    return {**part, "note": note} if note else part
 
 
 def _elected(part: dict) -> list:
@@ -520,8 +570,9 @@ def _held_terms(terms) -> list:
 
 def _dep5_stanzas(text: str) -> list:
     """The paragraphs of a DEP-5 file as {field: [values]}. A continuation line extends the field above it (a
-    multi-line Files list; a License's text, which is not read). A non-indented Files line inside a paragraph that
-    already has fields starts a new stanza, and a repeated License line is kept, not overwritten."""
+    multi-line Files list; a License's text, which is not read). Field order inside a paragraph is not significant
+    (deb822): a License line before its Files line belongs to it. A second Files line in one paragraph, or a Files
+    line in the header paragraph, starts a new stanza; a repeated License line is kept, not overwritten."""
     stanzas, fields, last = [], {}, None
     for line in text.splitlines():
         if not line.strip():
@@ -540,7 +591,7 @@ def _dep5_stanzas(text: str) -> list:
             continue
         key, value = line.split(":", 1)
         key = key.strip().lower()
-        if key == "files" and fields:
+        if key == "files" and ("files" in fields or "format" in fields):
             stanzas.append(fields)
             fields = {}
         fields.setdefault(key, []).append(value.strip())
@@ -701,7 +752,7 @@ def _text_riders(text: str) -> list:
     "noncommercially" is not a non-commercial restriction; network copyleft is read from a declaration, not
     searched for in a text (the GPL-3.0 names the Affero GPL in section 13). GPL-1 and GPL-2 section 3c ("allowed
     only for noncommercial distribution") limits one way of offering source, not use, and is masked."""
-    norm = re.sub(r"only-for-non-?commercial-distribution", " ", re.sub(INCLUSIVE, " ", _norm(text)))
+    norm = re.sub(r"only-for-non-?commercial-distribution", " ", _masked(text))
     found = []
     for pattern, cls in RIDERS:
         if cls != NOT_OPEN:
@@ -937,12 +988,16 @@ def _use_eval(node: dict, use: dict) -> tuple[str, int, list]:
     elected terms are one alternative's; terms are never mixed across alternatives."""
     if "atom" in node:
         verdict, why = _term_verdict(node["class"], use, node.get("category") or _category(node["class"], node["atom"]))
+        if node.get("unlisted") and verdict == COMPATIBLE:
+            verdict, why = UNCERTAIN, ("named like a known license family but not in GREG's tables: its own terms, "
+                                       "or an addition to them, are unread")
         return verdict, ORDER.index(node["class"]), [(node, verdict, why)]
     parts = [_use_eval(child, use) for child in node.get("and") or node["or"]]
     if "and" in node:
         return (max((p[0] for p in parts), key=VERDICT_ORDER.index), max(p[1] for p in parts),
                 [e for p in parts for e in p[2]])
-    return min(parts, key=lambda p: (VERDICT_ORDER.index(p[0]), p[1]))
+    return min(parts, key=lambda p: (VERDICT_ORDER.index(p[0]), p[1], sum(e[0]["class"] in HELD for e in p[2]),
+                                     sorted(str(e[0]["atom"]) for e in p[2])))
 
 
 def qualify_use(assessments, use: dict, subject: dict) -> dict:
@@ -972,13 +1027,15 @@ def qualify_use(assessments, use: dict, subject: dict) -> dict:
             for atom, verdict, why in elected:
                 terms.append({"id": str(atom["atom"])[:120], "class": atom["class"],
                               "category": atom.get("category") or _category(atom["class"], atom["atom"]),
-                              "verdict": verdict, "why": why})
+                              "verdict": verdict, "why": why, **({"unlisted": True} if atom.get("unlisted") else {})})
             not_elected += [{"id": str(a["atom"])[:120], "class": a["class"]} for a in _atoms(tree)
                             if id(a) not in chosen]
     worst = max((t["verdict"] for t in terms), key=VERDICT_ORDER.index, default=UNCERTAIN)
     blocking = [t for t in terms if t["verdict"] != COMPATIBLE]
     uncertainty += [f"{t['id']}: not classified by GREG" for t in terms
                     if t["class"] == UNKNOWN and f"{t['id']}: not classified by GREG" not in uncertainty]
+    uncertainty += [f"{t['id']}: named like a known family, not in GREG's tables" for t in terms if t.get("unlisted")
+                    and f"{t['id']}: named like a known family, not in GREG's tables" not in uncertainty]
     return {"verdict": worst, "use": dict(use), "use_digest": _digest(use),
             "assessment_digest": _digest({"subject": subject, "facts": facts}), "terms": terms,
             "not_elected": not_elected, "uncertainty": uncertainty, "limits": LIMITS,

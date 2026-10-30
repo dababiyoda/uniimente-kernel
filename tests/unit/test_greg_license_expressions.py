@@ -107,12 +107,19 @@ def test_an_unparseable_field_is_unknown_and_still_shows_its_restrictive_names()
 
 
 def test_on_a_tie_or_elects_the_alternative_without_a_known_restriction():
-    # both alternatives are unclassified; one also carries AGPL. GREG need not rely on the AGPL one, so P0 keeps its
-    # prior behaviour for the unknown instead of reporting the avoidable AGPL term as binding.
+    """OR elects the alternative GREG would rely on (on a tie, one without a known restriction), whatever the order.
+    Under P0 the hold is monotone (verification of 083c91ea, finding 8): with no cleared alternative, a known
+    restriction in any alternative holds, so a stricter alternative never releases a hold. An unknown alternative
+    is not evidence that the restriction can be avoided."""
     parsed = deb("(AGPL-3+ and custom) or other-custom")
-    assert (parsed["class"], held(parsed)) == (U, [])
+    assert parsed["class"] == U and held(parsed) == ["(AGPL-3+ and custom) or other-custom"]
     assert assess("(AGPL-3.0-only AND LicenseRef-A) OR LicenseRef-B")["restrictive"] == []
     assert assess("LicenseRef-B OR (AGPL-3.0-only AND LicenseRef-A)")["restrictive"] == []
+    for weaker, stricter in (("non-free or Sundry", "(non-free and Sundry) or Sundry"),
+                             ("MIT or AGPL-3+", "(MIT and non-free) or AGPL-3+")):
+        assert not p0_attaches(stricter) or p0_attaches(weaker), (weaker, stricter)
+    assert p0_attaches("non-free or Sundry") is False and p0_attaches("(non-free and Sundry) or Sundry") is False
+    assert p0_attaches("MIT or AGPL-3+") is True                # a cleared alternative is relied on
 
 
 def test_a_binary_whose_field_pairs_a_restriction_with_an_unknown_is_held_under_p0():
@@ -367,3 +374,84 @@ def test_the_evaluator_matches_an_independent_dnf_expansion(dialect, shape, comb
     elected = sorted(t["id"] for t in q["terms"])
     assert any(elected == sorted({names[i] for i in conj}) or elected == sorted(names[i] for i in conj)
                for conj in _dnf(shape, classes)), text
+
+
+# -- independent verification of 083c91ea (workflow verify:licensing, 2026-10-30): ten findings -------------------
+
+@pytest.mark.parametrize("field", ["Commercial and non-commercial use require a separate license",
+                                   "Commercial or non-commercial use prohibited without permission",
+                                   "prohibited noncommercial OR commercial"])
+def test_v1_a_restriction_that_contains_the_inclusive_phrase_is_still_read(field):
+    """Regression against a1d2abf: the inclusive mask cleared these beside an MIT classifier."""
+    assert assess(classifiers=[MITC], text=field)["verdict"] == "FOUNDER_REVIEW"
+
+
+def test_v2_a_license_line_before_its_files_line_belongs_to_that_stanza():
+    """Regression against a1d2abf: the License was cut off, so P0 attached an AGPL binary."""
+    p = L.dep5("Format: x\n\nCopyright: a\nLicense: AGPL-3+\nFiles: *\n")
+    assert p["class"] == N and held(p) == ["AGPL-3+"]
+    assert L.attach_check(Binary("Format: x\n\nCopyright: a\nLicense: AGPL-3+\nFiles: *\n"), "P0")[0] is False
+    q = L.dep5("Format: x\nLicense: MIT\nFiles: *\nLicense: SSPL-1.0\n")       # header then Files, no blank line
+    assert held(q) == ["SSPL-1.0"] and [t["stanza"] for t in q["terms"]] == ["header", "files"]
+
+
+@pytest.mark.parametrize("field", ["Apache-2.0 with Commons Clause (see LICENSE)", "Business Source License 1.1 (see below)",
+                                   "Server Side Public License (MongoDB)", "Elastic License 2.0 (see LICENSE)"])
+def test_v3_an_unparseable_field_keeps_its_multi_word_restrictive_names(field):
+    assert p0_attaches(field) is False
+
+
+@pytest.mark.parametrize("field", ["Elastic-2.0 (see LICENSE.txt)", "Elastic-2.0, see LICENSE", "SSPLv1", "BUSLv1.1"])
+def test_v4_other_spellings_of_listed_not_open_licenses_count_beside_a_classifier(field):
+    a = assess(classifiers=[MITC], text=field)
+    assert a["verdict"] == "FOUNDER_REVIEW" and a["class"] == X, field
+
+
+def test_v5_an_unparseable_expression_still_reads_the_declarations_beside_it():
+    a = assess("MIT AND", ["License :: Other/Proprietary License"])
+    assert "Other/Proprietary License" in a["restrictive"]
+    assert L.qualify_use([a], USE, {})["verdict"] == L.INCOMPATIBLE        # D-LIC-1 would need permission evidence
+    b = assess("MIT AND", text="Commons Clause applies")
+    assert any("commons" in r.lower() for r in b["restrictive"])
+
+
+@pytest.mark.parametrize("expression, classifiers, verdict", [
+    ("MIT", ["License :: Shareware"], "FOUNDER_REVIEW"),
+    ("MIT", ["License :: Free To Use But Restricted"], "FOUNDER_REVIEW"),
+    ("MIT", ["License :: Aladdin Free Public License (AFPL)"], "FOUNDER_REVIEW"),
+    ("MIT", ["License :: Repoze Public License"], "FOUNDER_REVIEW"),             # non-OSI, not listed: unknown terms
+    ("MIT OR BUSL-1.1", ["License :: Free for non-commercial use"], "FOUNDER_REVIEW"),
+    ("MIT OR BUSL-1.1", ["License :: Other/Proprietary License"], "FOUNDER_REVIEW")])
+def test_v6_a_restrictive_or_unknown_classifier_beside_an_expression_is_never_silent(expression, classifiers, verdict):
+    assert assess(expression, classifiers)["verdict"] == verdict
+
+
+def test_v6_an_unrecognised_osi_classifier_beside_an_expression_is_recorded():
+    a = assess("MIT", ["License :: OSI Approved :: Academic Free License (AFL)"])
+    assert a["verdict"] == "CLEARED" and any("not classified by GREG" in u for u in a["uncertainty"])
+
+
+@pytest.mark.parametrize("field", ["AGPL-3+-with-customer-terms", "Affero-Custom-Terms",
+                                   "AGPL-3+ with Additional-Use-Restriction"])
+def test_v7_a_name_only_like_a_known_family_is_never_compatible_under_p4c(field):
+    copyright_text = f"Format: x\n\nFiles: *\nCopyright: a\nLicense: {field}\n"
+    assert L.attach_check(Binary(copyright_text), "P0")[0] is False           # P0 still holds it
+    assert L.attach_check(Binary(copyright_text), "P4c")[0] is False          # P4c no longer reads it as AGPL-3.0
+    q = L.qualify_use([L.binary_assessment("tool", copyright_text)], USE, {})
+    assert q["verdict"] == L.UNCERTAIN and any("not in GREG's tables" in u for u in q["uncertainty"])
+    assert L.attach_check(Binary("Format: x\n\nFiles: *\nCopyright: a\nLicense: AGPL-3+\n"), "P4c")[0] is True
+
+
+def test_v8_the_use_election_does_not_depend_on_operand_order_or_ignore_class():
+    one = L.qualify_use([assess("(AGPL-3.0-only AND LicenseRef-A) OR LicenseRef-B")], USE, {})
+    two = L.qualify_use([assess("LicenseRef-B OR (AGPL-3.0-only AND LicenseRef-A)")], USE, {})
+    assert [t["id"] for t in one["terms"]] == [t["id"] for t in two["terms"]] == ["LicenseRef-B"]
+    for expression in ("GPL-2.0-only OR MIT", "MIT OR GPL-2.0-only"):
+        q = L.qualify_use([assess(expression)], USE, {})
+        assert [t["id"] for t in q["terms"]] == ["MIT"], expression           # equal verdicts: the less strict class
+
+
+def test_v9_deep_nesting_fails_closed_instead_of_raising():
+    deep = "(" * 200 + "SSPL-1.0" + ")" * 200
+    assert p0_attaches(deep) is False
+    assert assess(classifiers=[MITC], text=deep)["verdict"] == "FOUNDER_REVIEW"

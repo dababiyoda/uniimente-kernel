@@ -61,13 +61,14 @@ def _decision(m, b: dict, request: dict, state: str) -> dict:
                        "withdraws the ask if they pass without any GREG action")
     out = {"blocker": f"founder decision: {kind} ask {rid}"
                       + (f" on action {b['action_id']}" if b.get("action_id") else "")
-                      + (f" ({request['authority_requested']['spend']})"
-                         if request.get("resource") == "spend" else ""),
+                      + (f" ({spend})" if request.get("resource") == "spend"
+                         and (spend := (request.get("authority_requested") or {}).get("spend")) else ""),
            "why": _join(b.get("why"), request.get("why_now")), "reconsider_when": reconsider}
     if kind in NOT_ANSWERABLE:              # no DECISION lifts it: the engine refuses one (MissionEngine.answer)
         return {**out, "required_evidence": _none(f"a {kind} ask is lifted by your signed command alone, "
                                                   "not by evidence"),
-                "required_authority": NOT_ANSWERABLE[kind], "next_move": asks.NOT_ANSWERABLE[kind]}
+                "required_authority": NOT_ANSWERABLE[kind],
+                "next_move": asks.NOT_ANSWERABLE.get(kind, NOT_ANSWERABLE[kind])}
     return {**out,
             "required_evidence": f"your signed DECISION on {rid}, accepted on this body's ledger; the mission book "
                                  "counts no other row as your answer (now: " + state + ")",

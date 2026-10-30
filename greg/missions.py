@@ -26,10 +26,12 @@ import os
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
+import functools
 import hashlib
 import json
 from pathlib import Path
 from typing import Any
+import unicodedata
 
 from jsonschema import Draft202012Validator, FormatChecker
 
@@ -472,6 +474,49 @@ def _cut(value) -> dict | None:
     return None
 
 
+def _canon(text: str) -> str:
+    """Text as a check compares it: Unicode Normalization Form C. Canonically equivalent texts (an accented letter as
+    one code point, or as the letter and a combining accent) are one text, so a forbidden phrase written in another
+    form no longer passes ``not_contains``, nor does a required one fail ``contains`` or ``equals`` (§VI-8). Lengths
+    (``count_gte``) still count the code points kept."""
+    return unicodedata.normalize("NFC", text)
+
+
+@functools.cache
+def _composes_backward() -> frozenset:
+    """Starters that can join the character before them under NFC: the second half of a canonical pair, and the
+    Hangul vowel and final-consonant jamo, which compose by rule instead of by table."""
+    seconds = set(range(0x1161, 0x1176)) | set(range(0x11A8, 0x11C3))
+    for point in range(0x30000):           # no canonical decomposition lies above U+2FA1D
+        parts = unicodedata.decomposition(chr(point)).split()
+        if len(parts) == 2 and not parts[0].startswith("<"):
+            seconds.add(int(parts[1], 16))
+    return frozenset(seconds)
+
+
+def _stable(prefix: str) -> str:
+    """The longest start of a kept prefix whose NFC form begins the NFC form of every string it is a prefix of: all of
+    it before its last character that starts a new normalization segment (a starter that joins nothing before it).
+    That character may still compose with marks the receipt did not keep, so it is left out with what follows it."""
+    backward = _composes_backward()
+    for i in range(len(prefix) - 1, -1, -1):
+        first = unicodedata.normalize("NFD", prefix[i])[0]
+        if unicodedata.combining(first) == 0 and not {ord(first), ord(prefix[i])} & backward:
+            return prefix[:i]
+    return ""
+
+
+def _cut_equals(cut: dict, expected) -> bool | None:
+    """Whether the whole string a receipt kept as ``cut`` is the text ``expected``: True by digest and length, False
+    when they differ within the kept part (or ``expected`` is no string), None otherwise, since two strings with
+    different code points can still be one text and the rest was not kept."""
+    if not isinstance(expected, str):
+        return False
+    if len(expected) == cut["length"] and hashlib.sha256(text_bytes(expected)).hexdigest() == cut["sha256"]:
+        return True
+    return None if _canon(expected).startswith(_canon(_stable(cut["prefix"]))) else False
+
+
 def _non_finite(value) -> bool:
     """The receipt's stand-in for a number that is not finite (authority.bounded)."""
     from greg.authority import NON_FINITE
@@ -589,7 +634,8 @@ def judge(predicate: dict, output, *, whole: bool = False, recorded_cut: bool = 
         value = _raw_field(output, path, whole=whole, recorded_cut=recorded_cut)
     except KeyError:
         if declared:       # a field the observation has not reached yet is not an absent field
-            return INSUFFICIENT, f"field {path!r} absent; {incomplete}"
+            why = _unreadable(output, path)
+            return INSUFFICIENT, f"field {path!r} absent; {incomplete}" + (f": {why}" if why else "")
         return (TRUE if op == "absent" else FALSE), f"field {path!r} absent"
     except LookupError as exc:
         return INSUFFICIENT, str(exc)
@@ -610,12 +656,16 @@ def judge(predicate: dict, output, *, whole: bool = False, recorded_cut: bool = 
             # once the whole was read from the store (review of #209)
             verdict, detail = FALSE, f"{op} {expected!r:.60}: not a string, so no part of a text"
         elif op in ("contains", "not_contains"):
-            if expected in text:
+            # only the part of the prefix no continuation can renormalize: a phrase whose last letter the rest gives
+            # an accent is not in the whole (``_stable``)
+            if _canon(expected) in _canon(_stable(text)):
                 return (TRUE if op == "contains" else FALSE), f"{expected!r:.60} found in the kept prefix"
             return INSUFFICIENT, f"{op} {expected!r:.60}: not in the {kept}; the rest was not retained"
         elif op == "equals":
-            same = isinstance(expected, str) and len(expected) == length \
-                and hashlib.sha256(text_bytes(expected)).hexdigest() == cut["sha256"]
+            same = _cut_equals(cut, expected)
+            if same is None:
+                return INSUFFICIENT, (f"equals {expected!r:.60}: agrees with the {kept} and differs from the digest in "
+                                      "code points, which another normalization form of the same text would")
             verdict, detail = (TRUE if same else FALSE), f"equals {expected!r:.60} by digest of all {length} characters"
         elif op == "count_gte" and _number(expected):
             verdict, detail = (TRUE if length >= expected else FALSE), f"len {length} >= {expected}"
@@ -665,6 +715,17 @@ def judge(predicate: dict, output, *, whole: bool = False, recorded_cut: bool = 
     return verdict, detail
 
 
+def _unreadable(output, path: str) -> str | None:
+    """Why a capability left the field at ``path`` out, when it said so beside it (``<field>_unreadable``)."""
+    *parents, leaf = path.split(".") if path else [""]
+    try:
+        node = _raw_field(output, ".".join(parents), whole=True) if parents else output
+    except LookupError:
+        return None
+    why = node.get(f"{leaf}_unreadable") if isinstance(node, dict) else None
+    return why if isinstance(why, str) else None
+
+
 def _number(value) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool) and value == value
 
@@ -701,8 +762,9 @@ def _compare(kept, expected, whole: bool = False) -> bool | None:
         return None
     cut = None if whole else _cut(kept)
     if cut:
-        return isinstance(expected, str) and len(expected) == cut["length"] \
-            and hashlib.sha256(text_bytes(expected)).hexdigest() == cut["sha256"]
+        return _cut_equals(cut, expected)
+    if isinstance(kept, str):
+        return isinstance(expected, str) and _canon(kept) == _canon(expected)
     if isinstance(kept, list):
         at_limit = len(kept) == RECEIPT_LIST_LIMIT
         if not isinstance(expected, list) or len(expected) < len(kept) or (not at_limit and len(expected) != len(kept)):
@@ -710,21 +772,34 @@ def _compare(kept, expected, whole: bool = False) -> bool | None:
         pairs = [_compare(k, e, whole) for k, e in zip(kept, expected)]
         return False if False in pairs else None if (at_limit or None in pairs) else True
     if isinstance(kept, dict):
-        if not isinstance(expected, dict) or set(kept) != set(expected):
+        if not isinstance(expected, dict):
             return False
-        pairs = [_compare(kept[k], expected[k], whole) for k in kept]
+        kept_keys, expected_keys = _text_keys(kept), _text_keys(expected)
+        if kept_keys is None or expected_keys is None:     # two keys of one object are one text in two forms
+            return None
+        if set(kept_keys) != set(expected_keys):
+            return False
+        pairs = [_compare(kept[kept_keys[k]], expected[expected_keys[k]], whole) for k in kept_keys]
         return False if False in pairs else None if None in pairs else True
     return kept == expected
+
+
+def _text_keys(mapping: dict) -> dict | None:
+    """``mapping``'s keys by the text they spell (NFC), or None when two of them spell the same text."""
+    keys = {_canon(k) if isinstance(k, str) else k: k for k in mapping}
+    return keys if len(keys) == len(mapping) else None
 
 
 def _judge_whole(op, value, expected) -> tuple[str, str]:
     def as_verdict(ok):
         return TRUE if ok else FALSE
     if op == "equals":
-        return as_verdict(value == expected), f"{value!r:.200} == {expected!r:.200}"
+        return as_verdict(_compare(value, expected, True)), f"{value!r:.200} == {expected!r:.200}"
     # a type the operation does not apply to fails it (both contains and not_contains), never raises: a signed value
     # of another type used to crash the tick (review of #209)
     searchable = isinstance(value, list) or (isinstance(value, str) and isinstance(expected, str))
+    if isinstance(value, str) and searchable:         # one text, whichever normalization form either side is in
+        value, expected = _canon(value), _canon(expected)
     if op == "contains":
         return as_verdict(searchable and expected in value), f"contains {expected!r}"
     if op == "not_contains":

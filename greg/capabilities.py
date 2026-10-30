@@ -17,6 +17,7 @@ Computer-use route preference (structured before visual):
 from __future__ import annotations
 
 from dataclasses import dataclass, field, asdict
+import codecs
 import glob
 import hashlib
 from html.parser import HTMLParser
@@ -24,6 +25,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -289,15 +291,61 @@ def _inside(path: Path, roots) -> Path:
     raise CapabilityError(f"path {path} outside permitted roots")
 
 
+# A byte-order mark names its encoding; UTF-32's is looked for before UTF-16's, which it begins with.
+BYTE_ORDER_MARKS = ((codecs.BOM_UTF32_LE, "utf-32"), (codecs.BOM_UTF32_BE, "utf-32"), (codecs.BOM_UTF8, "utf-8-sig"),
+                    (codecs.BOM_UTF16_LE, "utf-16"), (codecs.BOM_UTF16_BE, "utf-16"))
+
+
+def faithful_text(data: bytes, *, cut: bool = False) -> tuple[str | None, str]:
+    """The text ``data`` holds and the encoding it was read in, or None and why no faithful reading exists.
+
+    Text a predicate judges must be the text the bytes hold. A decode that replaces what it cannot read, or reads
+    UTF-16 as UTF-8, turns a phrase that is there into one that looks absent, and ``not_contains`` passes on it
+    (§VI-8). The encoding is the one a byte-order mark names, else UTF-8, read strictly; UTF-8 holding NUL is refused
+    as well, since UTF-16 or UTF-32 without a mark, or a file that is not text, reads that way. ``cut``: ``data`` is
+    the start of a longer stream, so a character the cut split is left out instead of refused."""
+    codec = next((name for mark, name in BYTE_ORDER_MARKS if data.startswith(mark)), "utf-8")
+    try:
+        text = codecs.getincrementaldecoder(codec)().decode(data, final=not cut)
+    except UnicodeDecodeError as exc:
+        return None, f"not valid {codec.removesuffix('-sig')} at byte {exc.start}"
+    if codec == "utf-8" and "\x00" in text:
+        return None, "holds NUL bytes: UTF-16 or UTF-32 without a byte-order mark, or not text"
+    return text, codec
+
+
+def with_text(out: dict, data: bytes, *, cut: bool = False) -> dict:
+    """``out`` with the text ``data`` holds and its encoding, or, when it has no faithful reading, with the reason
+    instead (``text_unreadable``). Such an output declares itself incomplete and vouches only for the fields it read
+    whole (``complete: false``, ``decided``), so no check on its text decides either way (greg.missions.judge)."""
+    text, how = faithful_text(data, cut=cut)
+    if text is not None:
+        return {**out, "text": text, "encoding": how}
+    return {**out, "text_unreadable": how, "complete": False, "decided": sorted([*out, "text_unreadable"])}
+
+
+def bounded_read(path: Path, refusal: str) -> bytes:
+    """The bytes of the regular file at ``path``, refused (``refusal``) before more than MAX_READ_BYTES + 1 of them
+    are read: by its size when the file states one, by the read itself when it does not (a /proc file states 0)."""
+    with open(os.open(path, os.O_RDONLY | os.O_NONBLOCK), "rb") as stream:     # a FIFO swapped in never blocks
+        info = os.fstat(stream.fileno())
+        if not stat.S_ISREG(info.st_mode):
+            raise CapabilityError(f"{path.name} is not a regular file")
+        if info.st_size > MAX_READ_BYTES:
+            raise CapabilityError(refusal)
+        data = stream.read(MAX_READ_BYTES + 1)
+    if len(data) > MAX_READ_BYTES:
+        raise CapabilityError(refusal)
+    return data
+
+
 def fs_read(params, ctx: InvocationContext) -> dict:
     path = _inside(Path(params["path"]), ctx.read_roots + (ctx.workspace,))
     if not path.is_file():  # absence is a measurement of the world, not a sensor failure
         return {"path": str(path), "exists": False}
-    data = path.read_bytes()
-    if len(data) > MAX_READ_BYTES:
-        raise CapabilityError("file exceeds read ceiling")
-    return {"path": str(path), "exists": True, "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest(),
-            "text": data.decode("utf-8", errors="replace")}
+    data = bounded_read(path, "file exceeds read ceiling")
+    return with_text({"path": str(path), "exists": True, "bytes": len(data),
+                      "sha256": hashlib.sha256(data).hexdigest()}, data)
 
 
 def fs_list(params, ctx: InvocationContext) -> dict:
@@ -509,9 +557,19 @@ def run_cli(params, ctx: InvocationContext, *, isolate_network: bool = True, tim
         proc = run_isolated(argv, cwd=ctx.workspace, isolate_network=isolate_network, timeout=timeout)
     except subprocess.TimeoutExpired:      # a refusal with a cause, never an "uncertain external effect"
         raise CapabilityError(f"{argv[0]} did not finish within {timeout}s", failure_class="transient") from None
-    return {"argv": argv, "returncode": proc.returncode,
-            "stdout": proc.stdout[:MAX_READ_BYTES].decode("utf-8", errors="replace"),
-            "stderr": proc.stderr[-4000:].decode("utf-8", errors="replace")}
+    # stdout keeps its first MAX_READ_BYTES and stderr its last 4000 bytes; a field cut or not faithfully readable is
+    # left out of ``decided``, so a check on it decides only what more output could not undo (greg.missions.judge)
+    out, held = {"argv": argv, "returncode": proc.returncode}, []
+    for name, data, cut in (("stdout", proc.stdout[:MAX_READ_BYTES], len(proc.stdout) > MAX_READ_BYTES),
+                            ("stderr", proc.stderr[-4000:], len(proc.stderr) > 4000)):
+        if cut and name == "stderr":     # a tail begins mid-character at worst: drop those continuation bytes
+            data = data[next((i for i in range(min(4, len(data))) if not 0x80 <= data[i] < 0xC0), 0):]
+        text, how = faithful_text(data, cut=cut and name == "stdout")
+        out |= {name: text} if text is not None else {f"{name}_unreadable": how}
+        held += [name] if cut or text is None else []
+    if held:
+        out |= {"complete": False, "decided": sorted(set(out) - set(held))}
+    return out
 
 
 READ_ONLY_GIT_ENV = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "GIT_CONFIG_NOSYSTEM": "1",
@@ -575,8 +633,8 @@ def http_get(params, ctx: InvocationContext) -> dict:
         route = "body-process"
     if len(body) > MAX_READ_BYTES:
         raise CapabilityError("response exceeds read ceiling")
-    return {"url": url, "final_url": final_url, "status": status, "sha256": hashlib.sha256(body).hexdigest(),
-            "text": body.decode("utf-8", errors="replace"), "trust": "untrusted-external-data", "egress": route}
+    return with_text({"url": url, "final_url": final_url, "status": status, "sha256": hashlib.sha256(body).hexdigest(),
+                      "trust": "untrusted-external-data", "egress": route}, body)
 
 
 CHROME_CANDIDATES = (
@@ -664,15 +722,23 @@ def browser_render(params, ctx: InvocationContext) -> dict:
                 route = f"relay: only {authority}, every request journaled"
         except subprocess.TimeoutExpired as exc:
             raise CapabilityError("browser did not finish rendering within 45 seconds") from exc
-    dom = proc.stdout[:MAX_READ_BYTES * 4]
-    if proc.returncode or not dom.strip():
+    if proc.returncode or not proc.stdout.strip():
         raise CapabilityError("browser could not render the page: " + proc.stderr.decode("utf-8", "replace")[-300:])
+    dom_cut = len(proc.stdout) > MAX_READ_BYTES * 4
+    out = {"url": url, "dom_sha256": hashlib.sha256(proc.stdout).hexdigest(), "dom_bytes": len(proc.stdout),
+           "browser": Path(binary).name, "os_sandboxed": sandboxed, "egress": route, "trust": "untrusted-external-data"}
+    dom, how = faithful_text(proc.stdout[:MAX_READ_BYTES * 4], cut=dom_cut)
+    if dom is None:
+        return {**out, "text_unreadable": how, "complete": False, "decided": sorted([*out, "text_unreadable"])}
     parser = _VisibleText()
-    parser.feed(dom.decode("utf-8", errors="replace"))
-    text = "\n".join(parser.parts)[:MAX_READ_BYTES]
-    return {"url": url, "title": parser.title.strip()[:300], "text": text, "dom_sha256": hashlib.sha256(dom).hexdigest(),
-            "dom_bytes": len(dom), "browser": Path(binary).name, "os_sandboxed": sandboxed,
-            "egress": route, "trust": "untrusted-external-data"}
+    parser.feed(dom)
+    text, title = "\n".join(parser.parts), parser.title.strip()
+    out |= {"title": title[:300], "text": text[:MAX_READ_BYTES]}
+    # a page cut by the DOM limit, or text or title cut by their own, is kept as its start: a check on what was cut
+    # decides only what more of the page could not undo (greg.missions.judge)
+    held = [name for name, whole in (("text", len(text) <= MAX_READ_BYTES), ("title", len(title) <= 300))
+            if dom_cut or not whole]
+    return out | ({"complete": False, "decided": sorted(set(out) - set(held))} if held else {})
 
 
 def _render_behind_relay(argv, relay, host: str, port: int, loopback: bool, profile: Path, env: dict):

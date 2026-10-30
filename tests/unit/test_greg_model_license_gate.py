@@ -5,8 +5,12 @@ Ollama 0.40 (tag v0.40.0, 2026-10-06; main 4d22e65, 2026-10-29) no longer writes
 the manifest as a blob and names it by a relative link at ``manifests-v2/<host>/<namespace>/<model>/<tag>``, the
 default registry spelled ``ollama.com`` and a host's ":" written "%3A" (manifest/paths.go; manifest/manifest.go
 writeManifestData, linkManifest), and the name may be a manifest list with one child manifest per runner, of which
-a pull fetches the one its runner selects (server/images.go PullModel, pullSelectedManifest). On 3358d660 every
-model pulled that way was unassessed, so a gate that holds unassessed models would hold all of them.
+a pull fetches the one its runner selects (server/images.go PullModel, pullSelectedManifest). A pull also writes a
+legacy "downgrade anchor" at the old path, a regular file holding the pulled manifest plus a layer naming it
+(server/images.go writePullDowngradeAnchor; manifest.go WriteLegacyAnchor), so 3358d660's reader read the anchor:
+the same licenses, bound to the anchor's digest instead of the manifest Ollama serves. A store without an anchor
+(after ``ollama cp``, server/images.go CopyModel, or a failed best-effort write) was unassessed, and a model
+re-pulled with other terms kept the earlier anchor's verdict until the anchor was rewritten.
 
 ``licensing.admit_model_selection`` is the selection gate the body and the console can call before a route is built:
 a held, missing or unreadable model leaves the founder's order with the reason; a cleared one carries its evidence.
@@ -60,6 +64,25 @@ def legacy(root: Path, raw: bytes, *where: str) -> None:
     path.write_bytes(raw)
 
 
+def anchor(root: Path, raw: bytes, *where: str) -> Path:
+    """The legacy manifest a v0.40.0 or main pull writes beside the v2 link: the pulled manifest with one more layer
+    naming it (manifest.go WriteLegacyAnchor, at the logical name's registry.ollama.ai path)."""
+    document = json.loads(raw)
+    document["layers"].append({"mediaType": DOCKER_V2, "digest": "sha256:" + hashlib.sha256(raw).hexdigest(),
+                               "size": len(raw)})
+    path = root / "manifests" / Path(*(where or ("registry.ollama.ai", "library", "qwen3.5", "4b")))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(json.dumps(document).encode())
+    return path
+
+
+def pull(root: Path, raw: bytes) -> str:
+    """What ``ollama pull qwen3.5:4b`` leaves in the store: the v2 link and the downgrade anchor."""
+    digest = link(root, raw)
+    anchor(root, raw)
+    return digest
+
+
 def listing(root: Path, *children: str) -> bytes:
     return json.dumps({"schemaVersion": 2, "mediaType": MANIFEST_LIST,
                        "manifests": [{"mediaType": DOCKER_V2, "digest": d, "runner": r}
@@ -84,10 +107,10 @@ def test_g9_a_model_pulled_by_ollama_0_40_is_read_where_ollama_writes_it(tmp_pat
 
 
 def test_an_apache_licensed_model_in_the_v2_layout_is_cleared_and_bound_to_its_manifest_digest(tmp_path):
+    """The manifest Ollama serves is the v2 one; the anchor beside it carries another digest."""
     root = tmp_path / "models"
     raw = manifest(root, (APACHE,))
-    digest = link(root, raw)
-    assert not (root / "manifests").exists()          # Ollama removes the legacy name after writing the v2 one
+    digest = pull(root, raw)
     a = licensing.ollama_model("qwen3.5:4b", root)
     assert a is not None and a["verdict"] == "CLEARED" and not a["held"], a and a["reason"]
     assert a["subject"] == {"model": "registry.ollama.ai/library/qwen3.5:4b",
@@ -105,8 +128,33 @@ def test_a_registry_host_with_a_port_is_filed_as_ollama_escapes_it(tmp_path):
     assert a is not None and a["verdict"] == "CLEARED", a
 
 
+def test_a_re_pull_with_other_terms_is_read_from_v2_not_from_the_earlier_anchor(tmp_path):
+    """An anchor left by an earlier pull (Apache) and the manifest a later pull linked (Llama): Ollama serves v2."""
+    root = tmp_path / "models"
+    anchor(root, manifest(root, (APACHE,), weights=b"earlier weights"))
+    digest = link(root, manifest(root, (LLAMA,), weights=b"later weights"))
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a is not None and a["held"] and "llama-3.1" in a["reason"], a and a["reason"]
+    assert a["subject"]["manifest_sha256"] == digest.split(":")[1]
+
+
+def test_a_v2_copy_is_read_as_the_manifest(tmp_path):
+    """Where it cannot link, Ollama copies the manifest blob to the v2 path (manifest.go linkManifest,
+    copyManifestFile) and opens the copy as it is (openManifestFileLocked)."""
+    root = tmp_path / "models"
+    raw = manifest(root, (APACHE,))
+    named = root / "manifests-v2" / "ollama.com" / "library" / "qwen3.5" / "4b"
+    named.parent.mkdir(parents=True)
+    named.write_bytes(raw)
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a is not None and a["verdict"] == "CLEARED", a and a["reason"]
+    assert a["subject"]["manifest_sha256"] == hashlib.sha256(raw).hexdigest()
+
+
 def test_the_legacy_tree_is_read_under_either_spelling_of_the_default_registry(tmp_path):
-    """manifest/paths.go legacyNameCandidates; a dangling v2 link falls back to it, as resolveManifestPath does."""
+    """manifest/paths.go legacyNameCandidates. A dangling v2 link holds the model: main reads the v2 entry and fails
+    to load (manifest.go FindNamedManifestForRunner), v0.40.0 falls back to the legacy manifest (resolveManifestPath),
+    and GREG cannot tell which of them is running."""
     root = tmp_path / "a"
     legacy(root, manifest(root, (APACHE,)), "ollama.com", "library", "qwen3.5", "4b")
     assert licensing.ollama_model("qwen3.5:4b", root)["verdict"] == "CLEARED"
@@ -116,7 +164,8 @@ def test_the_legacy_tree_is_read_under_either_spelling_of_the_default_registry(t
     dangling = root / "manifests-v2" / "ollama.com" / "library" / "qwen3.5" / "4b"
     dangling.parent.mkdir(parents=True)
     dangling.symlink_to("../../../../blobs/sha256-" + "1" * 64)
-    assert licensing.ollama_model("qwen3.5:4b", root)["verdict"] == "CLEARED"
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a["held"] and "manifests-v2 link" in a["reason"], a["reason"]
 
 
 def test_g10_a_v2_link_out_of_the_store_or_to_a_blob_of_another_name_is_not_read(tmp_path):
@@ -143,6 +192,140 @@ def test_g10_a_v2_link_out_of_the_store_or_to_a_blob_of_another_name_is_not_read
     assert a is not None and a["held"] and "manifests-v2 link" in a["reason"], a and a["reason"]
 
 
+def test_a_name_is_matched_to_the_stored_one_ignoring_case_as_ollama_does(tmp_path):
+    """Ollama maps a requested name to the stored spelling ignoring case, a v2 entry before a legacy one (manifest.go
+    FindName, FindNamedManifestForRunner; routes.go getExistingName). On 4f5ce7e5 "Qwen3.5:4b" missed the v2 link
+    and read the lower-cased legacy anchor of an earlier pull."""
+    root = tmp_path / "models"
+    link(root, manifest(root, (LLAMA,), weights=b"new weights"))
+    anchor(root, manifest(root, (APACHE,), weights=b"old weights"))
+    a = licensing.ollama_model("Qwen3.5:4b", root)
+    assert a is not None and a["held"] and "llama-3.1" in a["reason"], a and a["reason"]
+    root = tmp_path / "v2only"
+    digest = link(root, manifest(root, (APACHE,)))
+    (root / "manifests-v2" / "ollama.com" / "library" / "QWEN3.5" / "4b").mkdir(parents=True)   # not a manifest
+    for name in ("Qwen3.5:4B", "Registry.Ollama.AI/library/qwen3.5:4b", "OLLAMA.COM/Library/QWEN3.5:4b"):
+        a = licensing.ollama_model(name, root)
+        assert a is not None and a["verdict"] == "CLEARED", (name, a and a["reason"])
+        assert a["subject"]["manifest_sha256"] == digest.split(":")[1]
+
+
+def test_two_stored_names_that_differ_only_in_case_hold_the_model(tmp_path):
+    """Ollama serves whichever its name index, a Go map, yields first."""
+    root = tmp_path / "models"
+    legacy(root, manifest(root, (APACHE,)))
+    legacy(root, manifest(root, (LLAMA,), weights=b"other"), "registry.ollama.ai", "library", "Qwen3.5", "4b")
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a is not None and a["held"] and "ignoring case" in a["reason"], a and a["reason"]
+
+
+def test_a_legacy_link_is_opened_as_ollama_opens_it_and_two_legacy_spellings_hold(tmp_path):
+    """Ollama opens a legacy entry that is a link as it opens a v2 one (manifest.go openManifestFileLocked). With both
+    spellings of the default registry in the legacy tree, main serves the first of its sorted index (ollama.com) and
+    v0.40.0 the registry.ollama.ai one (paths.go resolveManifestPath), so neither is read."""
+    root = tmp_path / "models"
+    digest = blob(root, manifest(root, (LLAMA,), weights=b"restricted"))
+    first = root / "manifests" / "registry.ollama.ai" / "library" / "qwen3.5" / "4b"
+    first.parent.mkdir(parents=True)
+    first.symlink_to(os.path.relpath(root / "blobs" / digest.replace(":", "-"), first.parent))
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a is not None and a["held"] and "llama-3.1" in a["reason"], a and a["reason"]
+    assert a["subject"]["manifest_sha256"] == digest.split(":")[1]
+    legacy(root, manifest(root, (APACHE,), weights=b"open"), "ollama.com", "library", "qwen3.5", "4b")
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a["held"] and "2 manifests entries" in a["reason"], a["reason"]
+    root = tmp_path / "outside"
+    (tmp_path / "elsewhere").write_bytes(manifest(root, (APACHE,)))
+    first = root / "manifests" / "registry.ollama.ai" / "library" / "qwen3.5" / "4b"
+    first.parent.mkdir(parents=True)
+    first.symlink_to(tmp_path / "elsewhere")
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a["held"] and "manifests link" in a["reason"], a["reason"]
+    root = tmp_path / "through"                     # a regular file reached out of the tree (pathWithin)
+    legacy(tmp_path / "outside-tree", manifest(root, (APACHE,)), "library", "qwen3.5", "4b")
+    (root / "manifests" / "registry.ollama.ai").mkdir(parents=True)
+    (root / "manifests" / "registry.ollama.ai" / "library").symlink_to(tmp_path / "outside-tree/manifests/library")
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a["held"] and "lies outside that tree" in a["reason"], a["reason"]
+
+
+def test_a_v2_entry_where_ollama_0_40_does_not_look_holds_the_model(tmp_path):
+    """v0.40.0 looks for a default-registry model under manifests-v2/ollama.com only (canonicalV2Name); main serves
+    any entry its index holds. An entry elsewhere, or one under each spelling, could run on one and not the other."""
+    root = tmp_path / "models"
+    link(root, manifest(root, (APACHE,)), "registry.ollama.ai", "library", "qwen3.5", "4b")
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a is not None and a["held"] and "not where Ollama 0.40 looks" in a["reason"], a and a["reason"]
+    link(root, manifest(root, (APACHE,)))
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a["held"] and "2 manifests-v2 entries" in a["reason"], a["reason"]
+    root = tmp_path / "legacy"
+    legacy(root, manifest(root, (APACHE,)), "Registry.Ollama.AI", "library", "qwen3.5", "4b")
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a["held"] and "manifests entry is not where Ollama 0.40 looks" in a["reason"], a["reason"]
+    root = tmp_path / "port"
+    link(root, manifest(root, (APACHE,)), "localhost%3a5000", "team", "coder", "7b")
+    a = licensing.ollama_model("localhost:5000/team/coder:7b", root)
+    assert a["held"] and "not where Ollama 0.40 looks" in a["reason"], a["reason"]
+
+
+def test_a_name_ollama_reads_as_a_blob_digest_is_held(tmp_path):
+    """A name of 12 to 64 hex digits, or sha256-<hex>, is the local manifest blob it names before any model of that
+    name (manifest/paths.go resolveManifestPath, ResolveDigestReferenceName), which GREG does not read."""
+    root = tmp_path / "models"
+    digest = blob(root, manifest(root, (LLAMA,), weights=b"blob weights"))
+    prefix = digest[7:19]
+    link(root, manifest(root, (APACHE,)), "ollama.com", "library", prefix, "latest")
+    for name in (prefix, prefix.upper(), f"{prefix}:latest", "sha256-" + digest[7:], "library/" + prefix):
+        a = licensing.ollama_model(name, root)
+        assert a is not None and a["held"] and "digest of a local manifest blob" in a["reason"], (name, a)
+    link(root, manifest(root, (APACHE,)), "ollama.com", "library", prefix, "4b")
+    assert licensing.ollama_model(f"{prefix}:4b", root)["verdict"] == "CLEARED"    # a tag: a model name
+    assert not licensing._digest_reference(licensing._ollama_parts(prefix[:11]))
+    assert not licensing._digest_reference(licensing._ollama_parts("team/" + prefix))
+
+
+def test_tensor_and_draft_layers_are_weights_and_a_manifest_without_weights_is_held(tmp_path):
+    """manifest/layer.go: a safetensors model is tensor layers, a draft model a draft layer. A manifest with no
+    weight layer runs nothing GREG read; on 4f5ce7e5 it was CLEARED with weights=[]."""
+    root = tmp_path / "models"
+    layers = [{"mediaType": media, "digest": blob(root, data), "size": len(data)} for media, data in (
+        ("application/vnd.ollama.image.tensor", b"tensor 1"), ("application/vnd.ollama.image.tensor", b"tensor 2"),
+        ("application/vnd.ollama.image.draft", b"draft"),
+        (licensing.OLLAMA_LICENSE, APACHE.encode()))]
+    link(root, json.dumps({"schemaVersion": 2, "mediaType": DOCKER_V2, "layers": layers}).encode())
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a["verdict"] == "CLEARED" and a["subject"]["weights"] == sorted(l["digest"] for l in layers[:3]), a
+    root = tmp_path / "bare"
+    link(root, json.dumps({"schemaVersion": 2, "mediaType": DOCKER_V2, "layers": layers[3:]}).encode())
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a["held"] and "no weights layer" in a["reason"] and a["subject"]["weights"] == [], a["reason"]
+
+
+def test_a_relay_to_a_remote_host_is_held(tmp_path):
+    """A model whose config names a remote host and model runs there, not here (server/routes.go
+    Config.RemoteHost, RemoteModel); its weights and their license are not in this store."""
+    root = tmp_path / "models"
+    config = json.dumps({"remote_host": "https://ollama.com:443", "remote_model": "gpt-oss:120b"}).encode()
+    raw = json.loads(manifest(root, (APACHE,)))
+    raw["config"] = {"mediaType": "application/vnd.docker.container.image.v1+json", "digest": blob(root, config),
+                     "size": len(config)}
+    link(root, json.dumps(raw).encode())
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a["held"] and "a relay Ollama forwards to https://ollama.com:443" in a["reason"], a["reason"]
+    root = tmp_path / "missing"
+    raw["layers"] = json.loads(manifest(root, (APACHE,)))["layers"]
+    link(root, json.dumps(raw).encode())
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a["held"] and "config blob is not in this store" in a["reason"], a["reason"]
+    local = json.dumps({"model_format": "gguf"}).encode()
+    root = tmp_path / "local"
+    raw["layers"] = json.loads(manifest(root, (APACHE,)))["layers"]
+    raw["config"]["digest"] = blob(root, local)
+    link(root, json.dumps(raw).encode())
+    assert licensing.ollama_model("qwen3.5:4b", root)["verdict"] == "CLEARED"
+
+
 # -- manifest lists ---------------------------------------------------------------------------------------------
 
 def test_g11_every_manifest_of_a_manifest_list_is_read_and_one_held_runner_holds_the_model(tmp_path):
@@ -153,6 +336,73 @@ def test_g11_every_manifest_of_a_manifest_list_is_read_and_one_held_runner_holds
     assert a is not None and a["held"] and "llama-3.1" in a["reason"], a and a["reason"]
     assert a["subject"]["manifest_sha256"] == digest.split(":")[1]
     assert a["subject"]["weights"] == sorted(weights_of(clean) + weights_of(held))
+
+
+def test_b1_an_unlicensed_child_is_not_hidden_by_a_licensed_sibling(tmp_path):
+    """The review of 4f5ce7e5 (blocking): the layers of every child were pooled and assessed once, so the Apache
+    license of the mlx child cleared the unlicensed llamacpp child Ollama runs first on Linux (manifest.go
+    runnerPreferences). Each child is assessed on its own and any held child holds the model."""
+    root = tmp_path / "models"
+    licensed, bare = manifest(root, (APACHE,), weights=b"mlx weights"), manifest(root, (), weights=b"llamacpp weights")
+    link(root, json.dumps({"schemaVersion": 2, "mediaType": MANIFEST_LIST, "manifests": [
+        {"mediaType": DOCKER_V2, "digest": blob(root, bare), "runner": "llamacpp"},
+        {"mediaType": DOCKER_V2, "digest": blob(root, licensed), "runner": "mlx"}]}).encode())
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a is not None and a["held"] and "declares no license" in a["reason"], a and a["reason"]
+    assert [(c["manifest_sha256"], c["runners"], c["verdict"]) for c in a["subject"]["children"]] == [
+        (hashlib.sha256(bare).hexdigest(), ["llamacpp"], "FOUNDER_REVIEW"),
+        (hashlib.sha256(licensed).hexdigest(), ["mlx"], "CLEARED")]
+    held = licensing.admit_model_selection({"order": ["ollama"], "ollama_model": "qwen3.5:4b"}, root)
+    assert held["order"] == [] and "declares no license" in held["model_license_hold"]["reason"], held
+
+
+def test_s1_a_cleared_list_carries_each_childs_digest_and_the_one_api_tags_reports(tmp_path):
+    """For a manifest list /api/tags reports the digest of the child Ollama selects, not the list's (server/
+    model_list.go describeModelRows), and that is the digest greg.models.OllamaRoute reads."""
+    root = tmp_path / "models"
+    gguf, mlx = manifest(root, (APACHE,), weights=b"gguf"), manifest(root, (APACHE,), weights=b"mlx")
+    gguf_d, mlx_d = blob(root, gguf), blob(root, mlx)
+    list_digest = link(root, listing(root, gguf_d, mlx_d))
+    cleared = licensing.admit_model_selection({"order": ["ollama"], "ollama_model": "qwen3.5:4b"}, root)
+    evidence = cleared["license_evidence"]
+    assert evidence["manifest_sha256"] == list_digest[7:] and evidence["verdict"] == "CLEARED", evidence
+    assert [(c["manifest_sha256"], c["runners"], c["verdict"], c["weights"]) for c in evidence["children"]] == [
+        (gguf_d[7:], ["llamacpp"], "CLEARED", weights_of(gguf)), (mlx_d[7:], ["mlx"], "CLEARED", weights_of(mlx))]
+    assert evidence["api_tags_digest"] == {"llamacpp>ggml>mlx": gguf_d[7:], "mlx>llamacpp>ggml": mlx_d[7:]}
+    root = tmp_path / "mlx-only"                     # the llamacpp child was never pulled: every order runs mlx
+    mlx_d = blob(root, manifest(root, (APACHE,), weights=b"mlx"))
+    link(root, listing(root, "sha256:" + "3" * 64, mlx_d))
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a["subject"]["api_tags_digest"] == {"llamacpp>ggml>mlx": mlx_d[7:], "mlx>llamacpp>ggml": mlx_d[7:]}
+
+
+def test_s5_a_hostile_list_is_read_once_per_manifest_and_bounded(tmp_path):
+    """The review of 4f5ce7e5: 5,923 entries naming one 1 MiB child were each re-read (93 s), and 5,000 absent
+    children made 365,000 characters of uncertainty. Entries are read once per digest; a list of more than
+    MAX_LIST_MANIFESTS manifests is held; at most MAX_NAMED_ABSENT absent digests are named."""
+    root = tmp_path / "models"
+    child = blob(root, manifest(root, (APACHE,)))
+    entries = [{"mediaType": DOCKER_V2, "digest": child, "runner": "llamacpp"}] * 2000
+    link(root, json.dumps({"schemaVersion": 2, "mediaType": MANIFEST_LIST, "manifests": entries}).encode())
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a["verdict"] == "CLEARED" and len(a["subject"]["children"]) == 1 and len(a["subject"]["weights"]) == 1
+    root = tmp_path / "absent"
+    child = blob(root, manifest(root, (APACHE,)))
+    absent = ["sha256:" + f"{i:064x}" for i in range(licensing.MAX_LIST_MANIFESTS - 1)]
+    link(root, listing(root, child) [:-2] + b"," + b",".join(json.dumps(
+        {"mediaType": DOCKER_V2, "digest": d, "runner": "mlx"}).encode() for d in absent) + b"]}")
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a["verdict"] == "CLEARED", a["reason"]
+    note = next(u for u in a["uncertainty"] if "does not hold" in u)
+    assert note.count("sha256:") == licensing.MAX_NAMED_ABSENT and note.endswith(
+        f"and {len(absent) - licensing.MAX_NAMED_ABSENT} more"), note
+    root = tmp_path / "long"
+    child = blob(root, manifest(root, (APACHE,)))
+    link(root, listing(root, child)[:-2] + b"," + b",".join(json.dumps(
+        {"mediaType": DOCKER_V2, "digest": "sha256:" + f"{i:064x}", "runner": "mlx"}).encode()
+        for i in range(licensing.MAX_LIST_MANIFESTS)) + b"]}")
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a["held"] and f"reads at most {licensing.MAX_LIST_MANIFESTS}" in a["reason"], a["reason"]
 
 
 def test_a_runner_manifest_ollama_never_pulled_here_is_named_not_read(tmp_path):
@@ -263,3 +513,20 @@ def test_evidence_from_an_earlier_admission_never_rides_on_a_hold(tmp_path):
     link(root, manifest(root, (LLAMA,), weights=b"re-pulled weights"))
     held = licensing.admit_model_selection(cleared, root)
     assert set(held) == {"order", "model_license_hold"} and held["order"] == [], held
+
+
+def test_stale_evidence_and_holds_never_ride_on_any_result_and_an_order_must_be_a_list(tmp_path):
+    root = two_models(tmp_path / "models")
+    stale = {"license_evidence": {"model": "x", "verdict": "CLEARED"}, "model_license_hold": {"model": "y"}}
+    cleared = licensing.admit_model_selection({"order": ["ollama"], "ollama_model": "qwen3.5:4b", **stale}, root)
+    assert "model_license_hold" not in cleared and cleared["license_evidence"]["model"] != "x", cleared
+    assert licensing.admit_model_selection({"order": ["anthropic"], **stale}, root) == {"order": ["anthropic"]}
+    assert licensing.admit_model_selection({"ollama_model": "qwen3.5:4b", **stale}, root) == {
+        "ollama_model": "qwen3.5:4b"}
+    for order in ({"ollama": 1}, "ollama", 7):
+        held = licensing.admit_model_selection({"order": order, "ollama_model": "qwen3.5:4b", **stale}, root)
+        assert held == {"order": [], "model_license_hold": {
+            "model": "qwen3.5:4b", "verdict": "UNASSESSED",
+            "reason": "the selection's order is not a list of routes, so no route is admitted",
+            "manifest_sha256": None, "assessment_digest": None}}, held
+    assert licensing.admit_model_selection(["ollama"], root) == ["ollama"]

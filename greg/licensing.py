@@ -716,14 +716,26 @@ def system_binary(binary: str) -> dict | None:
 # unclassified. Weights are never cleared by default; nothing here attaches or runs a model.
 
 OLLAMA_LICENSE = "application/vnd.ollama.image.license"
+# Every layer Ollama runs as weights: GGUF models, projectors and adapters, safetensors tensors and draft models
+# (manifest/layer.go, v0.40.0 and main 4d22e65).
 OLLAMA_WEIGHTS = ("application/vnd.ollama.image.model", "application/vnd.ollama.image.projector",
-                  "application/vnd.ollama.image.adapter")
+                  "application/vnd.ollama.image.adapter", "application/vnd.ollama.image.tensor",
+                  "application/vnd.ollama.image.draft")
 OLLAMA_HOST, OLLAMA_NAMESPACE, OLLAMA_TAG = "registry.ollama.ai", "library", "latest"
 # Ollama's two spellings of its default registry; manifests-v2 files every model of it under the second
 # (manifest/paths.go defaultPublicHost, v2CanonicalHost; v0.40.0 and main 4d22e65).
 OLLAMA_PUBLIC_HOSTS = (OLLAMA_HOST, "ollama.com")
+OLLAMA_MANIFEST = "application/vnd.docker.distribution.manifest.v2+json"
 OLLAMA_MANIFEST_LIST = "application/vnd.ollama.manifest.list.v2+json"
+# The order in which Ollama picks a manifest-list child when the request names no runner: Apple-silicon macOS, and
+# every other platform (manifest/manifest.go runnerPreferences, v0.40.0 and main).
+OLLAMA_RUNNER_ORDERS = {"mlx>llamacpp>ggml": ("mlx", "llamacpp", "ggml"),
+                        "llamacpp>ggml>mlx": ("llamacpp", "ggml", "mlx")}
+MAX_LIST_MANIFESTS = 64             # Ollama writes one child per runner; a longer list is held, not read
+MAX_NAMED_ABSENT = 8                # absent children named in the uncertainty, the rest counted
 _SHA256_DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
+_BLOB_NAME = re.compile(r"sha256-[0-9a-f]{64}")
+_DIGEST_PREFIX = re.compile(r"[0-9a-f]{12,64}")      # manifest/paths.go digestPrefixPattern, lower-cased
 MAX_MANIFEST_BYTES = MAX_MODEL_LICENSE_BYTES = 1 << 20
 MODEL_LIMITS = ("read from the model's own license layers in the local Ollama store, not a legal review: Apache-2.0 "
                 "and MIT are recognised only when their terms match the standard text; any other text, and any text "
@@ -901,6 +913,10 @@ def model_assessment(model: str, licenses: list, subject: dict, problem: str | N
     """The assessment of a model from its license texts (None: a license layer that could not be read, or did not
     match its digest). Weights are cleared only when every license is known and cleared; no license at all, an
     unreadable one, an unclassified one, or a ``problem`` reading the manifest, is held."""
+    return _model_result(_model_parts(model, licenses, problem), subject)
+
+
+def _model_parts(model: str, licenses: list, problem: str | None = None) -> list:
     unread = {"atom": "UNREAD", "class": UNKNOWN, "category": UNCLASSIFIED}
     parts = []
     if problem:
@@ -917,6 +933,10 @@ def model_assessment(model: str, licenses: list, subject: dict, problem: str | N
         else:
             first = next((line.strip() for line in text.splitlines() if line.strip()), "(empty)")
             parts.append(_part(label, "Ollama license layer (full text)", first[:120], model_license_tree(text)))
+    return parts
+
+
+def _model_result(parts: list, subject: dict) -> dict:
     worst = _worst([p["class"] for p in parts])
     blocking = [p for p in parts if ORDER.index(p["class"]) > ORDER.index(CLEARED_UP_TO)]
     cleared = not blocking
@@ -945,120 +965,258 @@ def _ollama_blob(store: Path, digest, limit: int) -> bytes | None:
     return data if data is not None and "sha256:" + hashlib.sha256(data).hexdigest() == digest else None
 
 
-def _ollama_manifest(store: Path, parts) -> tuple[bytes | None, str | None] | None:
-    """The manifest one store holds for a name, found as Ollama resolves it (manifest/paths.go resolveManifestPath,
-    v0.40.0 and main 4d22e65): (its bytes, None); (None, why) when the store names the model but not as Ollama would
-    serve it; None when the store does not hold the name.
+class _Unservable(ValueError):
+    """A store or manifest GREG holds because it cannot be sure what Ollama would run for it; the message says why."""
 
-    First manifests-v2/<host>/<namespace>/<model>/<tag>, the default registry spelled ollama.com and a host's ":"
-    written "%3A" (canonicalV2Name, encodeV2ManifestHost). Ollama writes it as a relative link to the manifest's own
-    blob (manifest.go linkManifest; a copy on Windows) and serves a link only when it resolves to the blob of this
-    store that its file name names, with bytes hashing to that name (openManifestFileLocked); so it is read here. A
-    missing or dangling v2 name falls back, as in Ollama, to the manifests/ tree of 0.35 and earlier under either
-    spelling of the default registry (legacyNameCandidates), each also in lower case as GREG read it before."""
+
+def _ollama_named(store: Path, parts) -> list:
+    """[(tree, stored name, path)] of every entry of this store that Ollama's name index matches to the name.
+
+    Ollama indexes every non-directory four levels down manifests-v2 and then manifests, a v2 entry taking the
+    place of a legacy one of the same stored name, and matches a requested name to the stored ones ignoring case
+    (manifest/manifest.go namedManifestRefs, collectManifestRefs, FindName and FindNamedManifestForRunner; Name.
+    EqualFold). A stored host is decoded ("%3A" or "%3a" is ":") and either spelling of the default registry is one
+    host. A stored name that is not ASCII is not a valid Ollama name and is skipped, as Ollama skips it."""
     import os
-    host, namespace, model, tag = parts
+    import stat
+    public = parts[0].lower() in OLLAMA_PUBLIC_HOSTS
+    found = []
+    for tree in ("manifests-v2", "manifests"):
+        level = [((), store / tree)]
+        for depth, want in enumerate(parts):
+            deeper = []
+            for got, directory in level:
+                try:
+                    with os.scandir(directory) as entries:
+                        names = sorted(entry.name for entry in entries)
+                except (FileNotFoundError, NotADirectoryError):
+                    continue
+                for name in names:
+                    stored = name.replace("%3A", ":").replace("%3a", ":") if depth == 0 else name
+                    if not stored.isascii():
+                        continue
+                    if (stored.lower() in OLLAMA_PUBLIC_HOSTS) if depth == 0 and public else \
+                            stored.lower() == want.lower():
+                        deeper.append((got + (stored,), directory / name))
+            level = deeper
+        for got, path in level:
+            if not stat.S_ISDIR(os.lstat(path).st_mode):
+                found.append((tree, (OLLAMA_HOST if public else got[0], *got[1:]), path))
+    return found
+
+
+def _ollama_named_bytes(store: Path, tree: str, path: Path) -> bytes:
+    """The bytes of a named manifest as Ollama opens it (manifest/manifest.go openManifestFileLocked, in either
+    tree): a link only when it resolves to the blob of this store its file name names, with bytes hashing to that
+    name (the relative link Ollama 0.40 writes); a regular file only when it lies inside its tree (the copy Ollama
+    writes where it cannot link, manifest.go linkManifest; a legacy manifest)."""
+    import os
+    if os.path.islink(path):
+        target = Path(os.path.realpath(path))
+        raw = _ollama_blob(store, "sha256:" + target.name[len("sha256-"):], MAX_MANIFEST_BYTES) \
+            if target.parent == Path(os.path.realpath(store / "blobs")) and _BLOB_NAME.fullmatch(target.name) else None
+        if raw is None:
+            raise _Unservable(f"the model's {tree} link does not lead to a blob of this store whose bytes match its "
+                              "name")
+        return raw
+    inside = Path(os.path.realpath(path)).is_relative_to(Path(os.path.realpath(store / tree)))
+    raw = _read_regular(path, MAX_MANIFEST_BYTES) if inside else None
+    if raw is None:
+        raise _Unservable(f"the model's {tree} file could not be read, or lies outside that tree")
+    return raw
+
+
+def _ollama_manifest(store: Path, parts) -> tuple[bytes | None, str | None] | None:
+    """The manifest this store holds for a name, read only where Ollama v0.40.0 and main 4d22e65 both serve it:
+    (its bytes, None); (None, why) when the store names the model but GREG cannot be sure what Ollama would serve;
+    None when the store does not hold the name.
+
+    The entries of the name (``_ollama_named``) must all be one stored name: two names that differ only in case are
+    served in the order of a Go map, so neither is read. A manifests-v2 entry is served before the legacy one,
+    which a pull also writes (the downgrade anchor: server/images.go writePullDowngradeAnchor, manifest.go
+    WriteLegacyAnchor); it must be the only v2 entry and where v0.40.0 looks for it (resolveManifestPath:
+    manifests-v2/<host>/<namespace>/<model>/<tag>, the default registry spelled ollama.com and a host's ":" written
+    "%3A"), and it must open (``_ollama_named_bytes``); when it does not, the model is held: main reads that entry
+    and fails to load the model, v0.40.0 falls back to the legacy one when the link dangles. A legacy manifest is
+    read only when it is the one legacy entry and where v0.40.0 looks (legacyNameCandidates): main serves the first
+    entry of its sorted index, v0.40.0 the registry.ollama.ai spelling first."""
+    host = parts[0]
     public = host.lower() in OLLAMA_PUBLIC_HOSTS
-    named = store / "manifests-v2" / (OLLAMA_PUBLIC_HOSTS[1] if public else host.replace(":", "%3A")) / namespace
-    named = named / model / tag
-    try:
-        os.stat(named)
-    except OSError:
-        pass
-    else:
-        if os.path.islink(named):
-            target = Path(os.path.realpath(named))
-            in_store = target.parent == Path(os.path.realpath(store / "blobs")) and target.name.startswith("sha256-")
-            digest = "sha256:" + target.name[len("sha256-"):]
-            raw = _ollama_blob(store, digest, MAX_MANIFEST_BYTES) if in_store else None
-            why = "the model's manifests-v2 link does not lead to a blob of this store whose bytes match its name"
-        else:                           # a copy (Ollama on Windows) or a hard link: the file is the manifest
-            raw, why = _read_regular(named, MAX_MANIFEST_BYTES), "the model's manifests-v2 file could not be read"
-        return (raw, None) if raw is not None else (None, why)
-    for candidate in (host, *(h for h in OLLAMA_PUBLIC_HOSTS if public and h != host.lower())):
-        pieces = (candidate, namespace, model, tag)
-        for path in (Path(*pieces), Path(*(p.lower() for p in pieces))):
-            raw = _read_regular(store / "manifests" / path, MAX_MANIFEST_BYTES)
-            if raw is not None:
-                return raw, None
+    found = _ollama_named(store, parts)
+    if not found:
+        return None
+    names = {stored for _, stored, _ in found}
+    if len(names) > 1:
+        return None, (f"this store holds {len(names)} names that match the model's ignoring case; Ollama serves "
+                      "whichever its name index yields first, so which one runs is not fixed")
+    stored = names.pop()
+    for tree, places in (("manifests-v2", (OLLAMA_PUBLIC_HOSTS[1],) if public else (stored[0].replace(":", "%3A"),)),
+                         ("manifests", OLLAMA_PUBLIC_HOSTS if public else (stored[0],))):
+        entries = [path for t, _, path in found if t == tree]
+        if not entries:
+            continue
+        if len(entries) > 1:
+            return None, (f"this store holds the model under {len(entries)} {tree} entries (spellings of its "
+                          "registry); Ollama 0.40 and main serve different ones")
+        if entries[0].parts[-4] not in places:
+            return None, f"the model's {tree} entry is not where Ollama 0.40 looks for it"
+        try:
+            return _ollama_named_bytes(store, tree, entries[0]), None
+        except _Unservable as exc:
+            return None, str(exc)
     return None
 
 
-def _ollama_list(store: Path, listing: dict) -> tuple[list, list]:
-    """(the child manifests of an Ollama manifest list that this store holds, the digests of those it does not).
+def _ollama_list(store: Path, listing: dict) -> tuple[list, list, dict]:
+    """(the child manifests of an Ollama manifest list that this store holds, as (digest, runners, manifest), the
+    digests of those it does not, and the child /api/tags reports in each order of runners).
 
     Ollama writes each child as a bare reference to a manifest blob of its own (server/create.go; server/images.go
-    pullSelectedManifest) and pulls only the child its runner selects. A child whose blob is not in the store is never
-    selected (manifest/manifest.go selectManifestWithPreferences), so none of its weights can run here. Every child
-    that is in the store is read, its bytes checked against its digest. A child that is not a bare reference (one
-    carrying layers or a config of its own, which Ollama would serve in place of the blob), or whose blob is there but
-    does not match its digest, raises ValueError, so the model is held."""
+    pullSelectedManifest) and pulls the child its runner selects. It runs one child: for each runner in turn, the
+    first entry naming that runner, when its blob is in the store (manifest.go selectManifestWithPreferences), and
+    /api/tags reports that child's digest (server/model_list.go describeModelRows). A child whose blob is not in the
+    store is never selected, so none of its weights can run here. Every child that is in the store is read once,
+    its bytes checked against its digest. An entry that is not a bare reference (one carrying layers or a config of
+    its own, which Ollama would serve in place of the blob), a child whose blob is there but does not match, or more
+    than MAX_LIST_MANIFESTS distinct children, is held."""
     import os
-    read, absent = [], []
-    for child in listing["manifests"]:
+    entries = listing["manifests"]
+    runners = {}
+    for child in entries:
         digest = child.get("digest")
         if "layers" in child or "config" in child or not _SHA256_DIGEST.fullmatch(str(digest)):
-            raise ValueError("a manifest-list entry that is not a reference to a manifest blob")
+            raise _Unservable("the model's manifest is not a readable Ollama manifest: a manifest-list entry carries "
+                              "a manifest of its own, which Ollama would run in place of the blob it names")
+        runner = child.get("runner")
+        runner = runner.strip().lower() if isinstance(runner, str) else ""
+        runners.setdefault(digest, [])
+        if runner and runner not in runners[digest]:
+            runners[digest].append(runner)
+    if len(runners) > MAX_LIST_MANIFESTS:
+        raise _Unservable(f"the model's manifest list names {len(runners)} manifests; Ollama writes one per runner, "
+                          f"and GREG reads at most {MAX_LIST_MANIFESTS}")
+    read, absent = [], []
+    for digest in runners:
         data = _ollama_blob(store, digest, MAX_MANIFEST_BYTES)
         if data is None and not os.path.lexists(store / "blobs" / digest.replace(":", "-")):
             absent.append(digest)
             continue
         if data is None:
-            raise ValueError("a manifest of the list is not readable or does not match its digest")
-        read.append(json.loads(data))
-    return read, absent
+            raise _Unservable("the model's manifest is not a readable Ollama manifest: a manifest of the list is in "
+                              "the store but does not match its digest")
+        read.append((digest, runners[digest], json.loads(data)))
+    local = {digest for digest, _, _ in read}
+    reported = {}
+    for order, preference in OLLAMA_RUNNER_ORDERS.items():
+        reported[order] = None
+        for runner in preference:
+            first = next((c for c in entries if c.get("mediaType") in (None, "", OLLAMA_MANIFEST)
+                          and isinstance(c.get("runner"), str) and c["runner"].strip().lower() == runner), None)
+            if first is not None and first["digest"] in local:
+                reported[order] = first["digest"].split(":")[1]
+                break
+    return read, absent, reported
+
+
+def _ollama_runs(store: Path, label: str, manifest: dict) -> tuple[list, list]:
+    """(the license parts, the weight digests) of one manifest Ollama would run. Its weights are its weight layers;
+    a manifest whose config names a remote host and model is a relay Ollama forwards to that host (server/routes.go,
+    Config.RemoteHost and RemoteModel), whose weights are not in this store; a manifest with no weight layer runs
+    nothing GREG can read. Either, or a config blob that is not in the store or does not match, is held."""
+    layers = [layer for layer in manifest["layers"] if isinstance(layer, dict)]
+    weights = sorted(str(layer.get("digest")) for layer in layers if layer.get("mediaType") in OLLAMA_WEIGHTS)
+    problem, config = None, manifest.get("config")
+    if config is not None and config.get("digest"):
+        data = _ollama_blob(store, config["digest"], MAX_MANIFEST_BYTES)
+        settings = json.loads(data) if data is not None else None
+        if settings is None:
+            problem = "the model's config blob is not in this store or does not match its digest"
+        elif settings.get("remote_host") and settings.get("remote_model"):
+            problem = (f"a relay Ollama forwards to {str(settings['remote_host'])[:80]}: its weights are not in this "
+                       "store, so their license is not read")
+    if problem is None and not weights:
+        problem = "the manifest has no weights layer, so what Ollama runs for it is not read"
+    texts = []
+    for layer in [] if problem else layers:
+        if layer.get("mediaType") != OLLAMA_LICENSE:
+            continue
+        data = _ollama_blob(store, layer.get("digest"), MAX_MODEL_LICENSE_BYTES)
+        try:
+            texts.append(None if data is None else data.decode("utf-8"))
+        except UnicodeDecodeError:
+            texts.append(None)
+    return _model_parts(label, texts, problem), weights
+
+
+def _digest_reference(parts) -> bool:
+    """Whether Ollama reads the name as a local manifest blob (sha256-<hex>, or 12 to 64 hex digits) before any model
+    of that name (manifest/paths.go resolveManifestPath, ResolveDigestReferenceName, ResolveDigestReference)."""
+    host, namespace, model, tag = parts
+    ref = model.strip().lower().replace("-", ":", 1)
+    ref = ref[len("sha256:"):] if ref.startswith("sha256:") else ref
+    return host.lower() in OLLAMA_PUBLIC_HOSTS and namespace.lower() == OLLAMA_NAMESPACE and \
+        tag.lower() == OLLAMA_TAG and bool(_DIGEST_PREFIX.fullmatch(ref))
 
 
 def ollama_model(model: str, models_dir=None) -> dict | None:
     """The license assessment of an Ollama model installed on this body, read from its manifest and license blobs,
-    bound to the manifest and weight digests. None when the name is malformed or no store holds the model.
+    bound to the manifest and weight digests. None when the name is malformed or no store holds the model; a store
+    that cannot be listed raises OSError, or ValueError for a path the OS cannot take (``admit_model_selection``
+    holds the model then).
 
-    The manifest is the one Ollama serves for the name (``_ollama_manifest``). For a manifest list every child the
-    store holds is read and every license layer of every one applies (AND); ``manifest_sha256`` is the list's own
-    digest, which is the digest Ollama's /api/tags reports for the name (server/model_list.go; parseManifestData)."""
+    The manifest is the one Ollama serves for the name (``_ollama_manifest``); a name Ollama reads as a digest of a
+    local blob is held. ``manifest_sha256`` is the digest of the manifest the name holds, which is the digest
+    Ollama's /api/tags reports for a plain manifest. For a manifest list every child the store holds is assessed on
+    its own and any held child holds the model, since Ollama may run any of them; ``subject["children"]`` gives each
+    child's digest, runners, weights and verdict, and ``subject["api_tags_digest"]`` the child /api/tags reports
+    (and Ollama runs) in each order of runners: "mlx>llamacpp>ggml" on Apple-silicon macOS, "llamacpp>ggml>mlx"
+    elsewhere (server/model_list.go describeModelRows; manifest.go runnerPreferences)."""
     parts = _ollama_parts(model)
     if parts is None:
         return None
+    name = "/".join(parts[:3]) + ":" + parts[3]
+    if _digest_reference(parts):
+        return model_assessment(name, [], {"model": name, "manifest_sha256": None, "weights": []},
+                                "Ollama reads this name as the digest of a local manifest blob before any model of "
+                                "that name, and GREG does not read it")
     for store in _ollama_stores(models_dir):
         found = _ollama_manifest(store, parts)
         if found is None:
             continue
         raw, problem = found
-        name = "/".join(parts[:3]) + ":" + parts[3]
         if raw is None:
             return model_assessment(name, [], {"model": name, "manifest_sha256": None, "weights": []}, problem)
-        manifests, absent = [], []
+        subject = {"model": name, "manifest_sha256": hashlib.sha256(raw).hexdigest(), "weights": []}
         try:
             document = json.loads(raw)
             if isinstance(document, dict) and document.get("mediaType") == OLLAMA_MANIFEST_LIST:
-                manifests, absent = _ollama_list(store, document)
+                children, absent, reported = _ollama_list(store, document)
+                if not children:
+                    return model_assessment(name, [], subject, "no manifest the model's manifest list names is in "
+                                                               "this store, so nothing of it can run here")
+                parts_of, rows = [], []
+                for digest, runners, child in children:
+                    label = f"{name} (manifest {digest[7:19]} for {', '.join(runners) or 'no runner'})"
+                    child_parts, weights = _ollama_runs(store, label, child)
+                    parts_of += child_parts
+                    rows.append({"manifest_sha256": digest.split(":")[1], "runners": runners, "weights": weights,
+                                 "verdict": _model_result(child_parts, {})["verdict"]})
+                subject.update(weights=sorted(w for row in rows for w in row["weights"]), children=rows,
+                               api_tags_digest=reported)
             else:
-                manifests = [document]
-            layers = [layer for manifest in manifests for layer in manifest["layers"] if isinstance(layer, dict)]
+                absent = []
+                parts_of, subject["weights"] = _ollama_runs(store, name, document)
+        except _Unservable as exc:
+            return model_assessment(name, [], subject, str(exc))
         except (ValueError, KeyError, TypeError, AttributeError, RecursionError):
-            layers = None
-        subject = {"model": name, "manifest_sha256": hashlib.sha256(raw).hexdigest(),
-                   "weights": sorted(str(layer.get("digest")) for layer in layers or []
-                                     if layer.get("mediaType") in OLLAMA_WEIGHTS)}
-        if layers is None:
             return model_assessment(name, [], subject, "the model's manifest is not a readable Ollama manifest")
-        if not manifests:
-            return model_assessment(name, [], subject, "no manifest the model's manifest list names is in this "
-                                                       "store, so nothing of it can run here")
-        texts = []
-        for layer in layers:
-            if layer.get("mediaType") != OLLAMA_LICENSE:
-                continue
-            data = _ollama_blob(store, layer.get("digest"), MAX_MODEL_LICENSE_BYTES)
-            try:
-                texts.append(None if data is None else data.decode("utf-8"))
-            except UnicodeDecodeError:
-                texts.append(None)
-        assessment = model_assessment(name, texts, subject)
+        assessment = _model_result(parts_of, subject)
         if absent:
-            assessment["uncertainty"].append(f"the manifest list names {len(absent)} runner manifest(s) this store "
-                                             f"does not hold, so none of their weights can run here; not read: "
-                                             + ", ".join(absent))
+            more = len(absent) - MAX_NAMED_ABSENT
+            assessment["uncertainty"].append(
+                f"the manifest list names {len(absent)} runner manifest(s) this store does not hold, so none of "
+                f"their weights can run here; not read: {', '.join(absent[:MAX_NAMED_ABSENT])}"
+                + (f" and {more} more" if more > 0 else ""))
         return assessment
     return None
 
@@ -1068,17 +1226,28 @@ def admit_model_selection(config: dict | None, models_dir=None) -> dict | None:
 
     ``config`` is a selection as ``greg.models.effective_route_config`` returns it. When its order names "ollama",
     the selected model's weights are read from the local store (``ollama_model``). Cleared: the selection comes back
-    with ``license_evidence``: the model, its manifest and weight digests, the verdict, and ``qualify_use``'s
-    assessment and use digests. Held, in no store this process can read, or unreadable: "ollama" leaves the order,
-    ``ollama_model`` leaves the selection, the founder's other routes keep their order, and ``model_license_hold``
-    says why. Any other selection, and None, comes back unchanged.
+    with ``license_evidence``: the model, its manifest and weight digests (for a manifest list, each child's digest
+    and verdict and the child /api/tags reports in each order of runners, the digest ``greg.models.OllamaRoute``
+    reads), the verdict, and ``qualify_use``'s assessment and use digests. Held, in no store this process can read,
+    or unreadable: "ollama" leaves the order, ``ollama_model`` leaves the selection, the founder's other routes keep
+    their order, and ``model_license_hold`` says why. An order that is not a list holds every route. Evidence or a
+    hold from an earlier call never rides on the result; None, and anything that is not a dict, comes back unchanged.
 
     It reads the store and nothing else, writes nothing, grants nothing, and never raises on what a store holds or
     how it is laid out. The signed selection on the ledger is not changed. It is not called here where a route is
     built: that wiring is in greg/body.py and greg/planner.py, outside this module."""
-    order = config.get("order") if isinstance(config, dict) else None
-    if not isinstance(order, (list, tuple)) or "ollama" not in order:
+    if not isinstance(config, dict):
         return config
+    rest = {k: v for k, v in config.items() if k not in ("license_evidence", "model_license_hold")}
+    order = config.get("order")
+    if order is not None and not isinstance(order, (list, tuple)):
+        rest.pop("ollama_model", None)
+        return {**rest, "order": [], "model_license_hold": {
+            "model": config.get("ollama_model"), "verdict": "UNASSESSED",
+            "reason": "the selection's order is not a list of routes, so no route is admitted",
+            "manifest_sha256": None, "assessment_digest": None}}
+    if not order or "ollama" not in order:
+        return rest
     model = config.get("ollama_model")
     failure = None
     try:
@@ -1086,11 +1255,11 @@ def admit_model_selection(config: dict | None, models_dir=None) -> dict | None:
         use = qualify_use([assessment], GREG_USE, assessment["subject"]) if assessment else None
     except Exception as exc:        # a store this reader cannot read holds the model; the body never goes down on it
         assessment, use, failure = None, None, f"the Ollama store could not be read ({type(exc).__name__})"
-    rest = {k: v for k, v in config.items() if k not in ("license_evidence", "model_license_hold")}
     if assessment and not assessment["held"]:
         subject = assessment["subject"]
         return {**rest, "license_evidence": {
             "model": subject["model"], "manifest_sha256": subject["manifest_sha256"], "weights": subject["weights"],
+            **{k: subject[k] for k in ("children", "api_tags_digest") if k in subject},
             "verdict": assessment["verdict"], "assessment_digest": use["assessment_digest"],
             "use_digest": use["use_digest"]}}
     rest.pop("ollama_model", None)

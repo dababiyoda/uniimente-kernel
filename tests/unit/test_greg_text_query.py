@@ -300,3 +300,24 @@ def test_the_founders_words_become_a_read_only_search_mission(tmp_path):
     assert found["spec"]["success_checks"][0]["predicate"]["value"] is True
     unrelated = template_route(f'Note "buy milk" in {data / "todo.txt"}', ctx)
     assert unrelated["origin"] == "template:workspace-note"                       # other routes keep their words
+
+
+def test_a_utf8_mark_before_utf16_bytes_is_refused_like_unmarked_utf8(tmp_path):
+    """The review of #228 (finding 4), applied to the query's own decoder: its NUL guard tested the codec name
+    "utf-8", and a UTF-8 byte-order mark reads as "utf-8-sig"."""
+    ctx = _ctx(tmp_path)
+    (tmp_path / "data" / "odd.log").write_bytes(codecs.BOM_UTF8 + ("status=ok\n" + FATAL).encode("utf-16-le"))
+    out = _search({"path": str(tmp_path / "data" / "odd.log"), "phrases": [FATAL, "status"]}, ctx)
+    assert "NUL bytes" in out["unreadable"] and [q["found"] for q in out["queries"]] == [None, None]
+
+
+def test_a_link_swapped_in_after_the_path_was_checked_is_not_followed(tmp_path, monkeypatch):
+    from pathlib import Path
+    import greg.textquery
+    ctx = _ctx(tmp_path)
+    secret = tmp_path / "outside.log"
+    secret.write_text(FATAL)
+    (tmp_path / "data" / "app.log").symlink_to(secret)
+    monkeypatch.setattr(greg.textquery, "_inside", lambda path, roots: Path(path))   # checked before the swap
+    with pytest.raises(CapabilityError, match="became a link"):
+        _search({"path": str(tmp_path / "data" / "app.log"), "phrases": [FATAL]}, ctx)

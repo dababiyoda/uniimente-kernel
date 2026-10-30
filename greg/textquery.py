@@ -13,6 +13,7 @@ undecided, with the reason, through the incomplete-observation contract the judg
 from __future__ import annotations
 
 import codecs
+import errno
 import hashlib
 import os
 from pathlib import Path
@@ -76,8 +77,8 @@ class Query:
             at = self.read - len(data) + exc.start
             self.unreadable = f"not valid {self.codec.removesuffix('-sig')} near byte {at}"
             return
-        if self.codec == "utf-8" and "\x00" in text:
-            self.unreadable = "holds NUL bytes: UTF-16 or UTF-32 without a byte-order mark, or not text"
+        if self.codec in ("utf-8", "utf-8-sig") and "\x00" in text:     # a UTF-8 mark before UTF-16 bytes too
+            self.unreadable = "holds NUL bytes: UTF-16 or UTF-32 read as UTF-8, or not text"
             return
         self._open += text
         ready = self._open if final else stable(self._open)
@@ -150,7 +151,12 @@ def fs_search(params, ctx: InvocationContext) -> dict:
     if not path.exists():    # absence is a measurement of the world; a directory or FIFO there is a failed read
         return {"path": str(path), "exists": False}
     deadline, stopped = time.monotonic() + seconds, None
-    fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)                             # a FIFO swapped in never blocks
+    try:   # a FIFO swapped in never blocks; a link swapped in after the roots were checked is not followed
+        fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
+    except OSError as exc:
+        if exc.errno == errno.ELOOP:
+            raise CapabilityError(f"{path.name} became a link after its path was checked") from None
+        raise
     info = os.fstat(fd)
     if not stat.S_ISREG(info.st_mode):                  # checked on the descriptor, before Python wraps it
         os.close(fd)

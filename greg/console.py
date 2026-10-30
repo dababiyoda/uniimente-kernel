@@ -331,7 +331,8 @@ def _ask_details(r: dict) -> str:
         q = mech.get("qualification") or {}
         source = (mech.get("upstream") or {}).get("source") or "upstream not declared"
         parts.append(f"<br><b>Verified candidate {_e(c['capability_id'])}</b>"
-                     + (f": {_e(mech.get('distribution'))} {_e(mech.get('version'))}, license {_e(mech.get('license'))}, "
+                     + (f": {_e(mech.get('distribution'))} {_e(mech.get('version'))}, license {_e(mech.get('license'))} "
+                        f"({_e((mech.get('license_assessment') or {}).get('verdict') or 'not assessed')}), "
                         f"{_e(source)}; qualified on {_e(q.get('cases'))} frozen cases with {_e(q.get('failures'))} "
                         f"failures; {_e(mech.get('competence'))}" if mech else ""))
     reach = {k: v for k, v in (r.get("authority_requested") or {}).items()

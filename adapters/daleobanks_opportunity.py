@@ -41,7 +41,7 @@ FIELD_MAPPING = {
     "payer": "buyer_type if non-empty (same observation as budget_owner)",
     "existing_workaround": "not carried on the wire -> omitted (optional)",
     "missing_proof": "derived: 'willingness to pay' when evidence list is empty -> else omitted",
-    "governing_bottleneck": "not carried on the wire -> UNRESOLVED",
+    "governing_bottleneck": "governing_bottleneck when a non-empty string is stated; otherwise UNRESOLVED. Never copied from smallest_validation_action, observed_pain, or a score",
     "smallest_intervention": "smallest_validation_action",
     "cheapest_decisive_test": "smallest_validation_action if non-empty, else UNRESOLVED",
     "possible_business_form": "possible_offer",
@@ -56,6 +56,35 @@ INFORMATION_ADDED = (
     "created_by (from verified transport identity)",
     "evidence_refs hashes (content-addressed form of wire evidence strings)",
 )
+
+
+# Stronger verdicts sort later. An unrecognized label is not a member: it cannot outrank the evidence.
+VERDICT_RANK = {"kill": 0, "needs_more_evidence": 1, "defer": 2, "go": 3}
+
+
+def justified_verdict(engine_verdict: str, unresolved: list[str] | None = None,
+                      evidence: list | None = None) -> tuple[str, str]:
+    """The business verdict the evidence can support.
+
+    A raw engine label or an opportunity score is not this verdict. Unresolved
+    canonical fields, including ``governing_bottleneck``, cap ``go`` and ``defer``
+    at ``needs_more_evidence``. A lower engine verdict is never raised. An empty
+    evidence list is itself a gap. An unrecognized label is not a stronger verdict.
+    """
+    gaps = [str(item) for item in (unresolved or [])]
+    if evidence is not None and len(list(evidence)) == 0:
+        gaps.append("evidence")
+    if engine_verdict not in VERDICT_RANK:
+        return ("needs_more_evidence",
+                f"engine verdict {engine_verdict!r} is not a recognized business verdict; "
+                "it cannot outrun the evidence")
+    if not gaps:
+        return engine_verdict, "every canonical packet field is evidenced; the venture engine verdict stands"
+    capped = min(engine_verdict, "needs_more_evidence", key=VERDICT_RANK.__getitem__)
+    if capped != engine_verdict:
+        return capped, (f"unevidenced canonical fields ({', '.join(gaps)}), "
+                        f"which caps the engine's '{engine_verdict}'")
+    return capped, f"unevidenced canonical fields ({', '.join(gaps)}); engine verdict already no higher"
 
 
 class AdapterError(ValueError):
@@ -90,6 +119,7 @@ class AdaptationResult:
     assumptions: tuple = (
         "pain_owner == wire audience",
         "budget_owner/payer == wire buyer_type when stated",
+        "governing_bottleneck == the wire's stated governing_bottleneck; never inferred",
     )
     wire_evidence: list[str] = field(default_factory=list)  # raw strings behind evidence_refs
 
@@ -143,6 +173,9 @@ def adapt(wire: dict, *, transport_identity: str) -> AdaptationResult:
     if wire.get("smallest_validation_action"):
         partial["smallest_intervention"] = wire["smallest_validation_action"]
         partial["cheapest_decisive_test"] = wire["smallest_validation_action"]
+    stated_bottleneck = wire.get("governing_bottleneck")
+    if isinstance(stated_bottleneck, str) and stated_bottleneck.strip():
+        partial["governing_bottleneck"] = stated_bottleneck.strip()
     if wire.get("possible_offer"):
         partial["possible_business_form"] = wire["possible_offer"]
     if not wire.get("evidence"):
@@ -203,5 +236,8 @@ def to_wire(packet):
         'audience': packet.get('pain_owner', ''), 'risk_flags': packet['key_risks'],
         'evidence': packet.get('evidence_refs', []),
         'smallest_validation_action': packet['cheapest_decisive_test']}
+    stated = packet.get('governing_bottleneck')
+    if isinstance(stated, str) and stated.strip():
+        result['governing_bottleneck'] = stated.strip()
     _validate_wire(result)
     return result

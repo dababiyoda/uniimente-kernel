@@ -96,6 +96,23 @@ def test_assessment_and_packet_identity_must_match():
         opportunity_from_canonical(packet(), bad, supplement())
 
 
+def test_a_raw_score_cannot_carry_a_go_past_a_blank_bottleneck():
+    bare = packet()
+    bare["governing_bottleneck"] = "   "
+    scored = assessment()
+    scored["opportunity_score"] = 0.99
+    scored["verdict"] = "go"
+    with pytest.raises(AdvantageRefused, match="only a GO"):
+        opportunity_from_canonical(bare, scored, supplement())
+
+
+def test_a_supported_go_does_not_depend_on_the_opportunity_score():
+    unscored = assessment()
+    del unscored["opportunity_score"]
+    result = opportunity_from_canonical(packet(), unscored, supplement())
+    assert result.buyer == "test_buyer"
+
+
 @pytest.mark.parametrize("verdict", ["defer", "kill", "needs_more_evidence"])
 def test_only_go_enters_foundry(verdict):
     bad = assessment()

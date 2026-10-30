@@ -42,7 +42,7 @@ import sys
 import tempfile
 
 from greg.capabilities import CapabilityError, InvocationContext, _inside
-from greg.ventures import VERDICT_RANK, _git_head
+from greg.ventures import _git_head
 
 KERNEL_ROOT = Path(__file__).resolve().parents[1]
 RENDERER = "greg.organ_exchange/one-greg-1"
@@ -278,14 +278,9 @@ def _anchor(mission_id: str) -> str:
 
 
 def binding_verdict(engine_verdict: str, unresolved: list[str], evidence: list[str]) -> tuple[str, str]:
-    """A score may not outrun missing evidence (the rule greg.ventures applies to RailScout evidence)."""
-    gaps = list(unresolved) + ([] if evidence else ["evidence"])
-    if not gaps:
-        return engine_verdict, "every canonical packet field is evidenced; the venture engine verdict stands"
-    capped = min(engine_verdict, "needs_more_evidence", key=lambda v: VERDICT_RANK.get(v, 1))
-    if capped != engine_verdict:
-        return capped, f"unevidenced canonical fields ({', '.join(gaps)}) cap the engine's '{engine_verdict}'"
-    return capped, f"unevidenced canonical fields ({', '.join(gaps)}); engine verdict already no higher"
+    """A score may not outrun missing evidence (the same rule the venture memo applies)."""
+    from adapters.daleobanks_opportunity import justified_verdict
+    return justified_verdict(engine_verdict, unresolved, evidence)
 
 
 def _canonical(packet: dict, assessment: dict) -> dict:

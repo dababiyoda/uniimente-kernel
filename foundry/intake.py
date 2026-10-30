@@ -15,6 +15,8 @@ from typing import Any, Mapping
 
 import jsonschema
 
+from adapters.daleobanks_opportunity import justified_verdict
+
 from .advantage import AdvantageRefused, OpportunitySpec
 
 KERNEL_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -93,8 +95,12 @@ def opportunity_from_canonical(
 
     if assessment["packet_id"] != packet["packet_id"]:
         raise AdvantageRefused("assessment does not belong to the Opportunity Packet")
-    if assessment["verdict"] != "go":
-        raise AdvantageRefused("only a GO assessment may enter the Advantage Foundry")
+    gaps = [] if str(packet.get("governing_bottleneck") or "").strip() else ["governing_bottleneck"]
+    bound, why = justified_verdict(str(assessment.get("verdict") or ""), gaps)
+    if bound != "go":
+        raise AdvantageRefused(
+            "only a GO the evidence supports may enter the Advantage Foundry "
+            f"({why}); an opportunity score is not that verdict")
     if assessment.get("requires_human_approval") is not True:
         raise AdvantageRefused("human approval boundary is mandatory")
     if assessment.get("execution_authority") is not False:

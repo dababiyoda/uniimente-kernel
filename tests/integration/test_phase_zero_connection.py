@@ -160,6 +160,33 @@ def test_packet_adapter_declares_the_honest_gap():
     assert all(r.startswith("sha256:") for r in result.partial["evidence_refs"])
 
 
+def test_governing_bottleneck_maps_only_when_the_wire_states_it():
+    """The cheapest test is a different fact. Stating the bottleneck is what closes the mapping."""
+    absent = pkt_adapter.adapt(wire_packet(), transport_identity="daleobanks")
+    assert absent.unresolved == ["governing_bottleneck"]
+    assert "governing_bottleneck" not in absent.partial
+
+    sneaky = wire_packet()
+    sneaky["smallest_validation_action"] = "the parser input format is the bottleneck"
+    sneaky["observed_pain"] = "the parser input format is the bottleneck"
+    still = pkt_adapter.adapt(sneaky, transport_identity="daleobanks")
+    assert still.unresolved == ["governing_bottleneck"]
+
+    stated = wire_packet()
+    stated["governing_bottleneck"] = "the parser needs an explicitly specified input format"
+    mapped = pkt_adapter.adapt(stated, transport_identity="daleobanks")
+    assert mapped.resolved and mapped.canonical["governing_bottleneck"] == stated["governing_bottleneck"]
+
+    packet = pkt_adapter.resolve(
+        absent, {"governing_bottleneck": stated["governing_bottleneck"]},
+        resolved_by=KERNEL + "/human/alfonso")
+    wire = pkt_adapter.to_wire(packet)
+    assert wire["governing_bottleneck"] == stated["governing_bottleneck"]
+    again = pkt_adapter.adapt(wire, transport_identity="daleobanks")
+    assert "governing_bottleneck" not in again.unresolved
+    assert again.partial["governing_bottleneck"] == stated["governing_bottleneck"]
+
+
 def test_packet_adapter_resolution_is_attributed_and_bounded():
     result = pkt_adapter.adapt(wire_packet(), transport_identity="daleobanks")
     answer = {"governing_bottleneck":

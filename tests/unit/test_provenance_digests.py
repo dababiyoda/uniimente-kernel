@@ -104,12 +104,6 @@ def test_file_and_time_helpers(tmp_path):
     assert abs(datetime.fromisoformat(stamp.replace("Z", "+00:00")) - digests.utc_now()).total_seconds() < 5
 
 
-@pytest.mark.parametrize("module", ["evolution.capsule", "evolution.migration.engines",
-                                    "evolution.repair.detector", "evolution.repair.disable"])
-def test_timestamp_helpers_are_the_shared_one(module):
-    assert importlib.import_module(module)._now is digests.utc_now_z
-
-
 def test_foundry_systems_grow_no_new_private_digest_rules():
     """A new system imports provenance.digests instead of defining its own look-alike rule."""
     forked = []

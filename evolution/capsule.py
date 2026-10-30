@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field, asdict
-from provenance.digests import utc_now_z as _now
+from datetime import datetime, timezone
 
 VERIFIER_LEVELS = (
     "formal_proof", "external_outcome", "cryptographic_receipt",
@@ -29,6 +29,10 @@ VERIFIER_LEVELS = (
     "same_model_critique", "intrinsic_confidence",
 )
 HYPOTHESIS_ONLY = ("same_model_critique", "intrinsic_confidence")
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 @dataclass

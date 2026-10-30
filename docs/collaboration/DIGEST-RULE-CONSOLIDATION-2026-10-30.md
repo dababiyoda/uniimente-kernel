@@ -1,6 +1,6 @@
 # Digest-rule consolidation — 2026-10-30
 
-Session `session_01KucyfmCJx5if8GZ8bFqy1R`. Base: #196 head `f65638b3`. Scope: maintenance on
+Session `session_01KucyfmCJx5if8GZ8bFqy1R`. Base: #196 head `f65638b3`, merged forward to `4dc0d581`. Scope: maintenance on
 the integration line; no authority, evidence or mission semantics change.
 
 ## What was measured
@@ -31,9 +31,9 @@ persisted records already carry. So the consolidation keeps every rule and makes
   default, separators)`, `sha256_tagged`, `sha256_file`, `sha256_json(value, **rule)`, `utc_now`,
   `utc_now_z`. Defaults reproduce the most common rule; a call site that differs says so in keyword
   arguments.
-- 21 modules import it instead of carrying a copy: 15 under `foundry/systems/`, `foundry/completion.py`,
-  `greg/institution.py`, and the four `_now` copies in `evolution/`. One dead helper
-  (`company_loop._canon`, never called) is gone. Net: 24 lines added, 110 removed in those modules.
+- 17 modules import it instead of carrying a copy: 15 under `foundry/systems/`, `foundry/completion.py`
+  and `greg/institution.py`. One dead helper (`company_loop._canon`, never called) is gone. Net: 20 lines
+  added, 90 removed in those modules.
 - `tests/unit/test_provenance_digests.py`: every migrated helper is checked against the exact
   expression it carried before, on ASCII, non-ASCII, nested and empty values; the rules are shown to
   differ (so none may be swapped for another); the strict rule equals `egregore.contracts.canonical_json`;
@@ -52,6 +52,7 @@ text, it is not a protected surface, and no open PR edits it (checked against 24
 | `greg/workers.py`, `greg/missions.py` | Protected surfaces: changes need founder or authorized review (`acceptance/missions.json`). |
 | `greg/licensing.py` | 30 mutant gates patch its text; open PR #230 rewrites it. |
 | `capabilities/router.py` | Labelled non-canonical; low value. |
+| `evolution/capsule.py`, `evolution/migration/engines.py`, `evolution/repair/{detector,disable}.py` (four `_now` copies) | The evolution packages run sealed: `test_repair_inertness` and `test_migration_inertness` fail on any import of another kernel package. A first version of this change migrated them and `test_repair_inertness` caught it; reverted. Their stdlib-only copies are the price of that seal. |
 
 ## Next candidates
 

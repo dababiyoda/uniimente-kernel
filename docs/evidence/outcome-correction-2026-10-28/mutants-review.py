@@ -1,5 +1,6 @@
 """Each mutant removes one safeguard added by the review fixes (S1-S10, F1-F8 of the second review of #219, then the
-fixes for the review of #221 and for its round 3); the resolution unit tests must catch it.
+fixes for the review of #221 and for its rounds 3 and 4, and #196's TXT-R4-1); the resolution unit tests must catch
+it.
 
 Usage: python -B mutants-review.py REPO_ROOT > mutants-review.txt
 
@@ -19,7 +20,9 @@ retargeted to the rewritten fact key and Laplace check, N15-N24 cover F1-F8, and
 After the fixes for the review of #221, N11, N17, N18 and N20 were retargeted, N25-N36 cover those fixes, a mutant may
 name a target file other than settlement.py, and the review-3 test file was added. After round 3's fixes, N11, N17,
 N18, N25, N28-N31 and N33 were retargeted to the rewritten walk, reconcile and receipt links, N37-N51 cover those fixes,
-and the review-4 test file was added.)
+and the review-4 test file was added. After round 4's fixes and #196's afcd75f3, N27-N30 and N38 were retargeted, N42
+was retired with the memo it mutated, N52-N64 cover those fixes, and the review-5 and achievement-after-unmet test
+files were added.)
 """
 import hashlib, os, platform, shutil, signal, subprocess, sys, tempfile
 from pathlib import Path
@@ -60,14 +63,13 @@ MUTANTS = {
  "N25 F2-a a walk limit read as a hold": ('            row["priority"] = "investigate" if weighed["could_change"] or weighed["walk_limits"] else "hold"',
                                           '            row["priority"] = "investigate" if weighed["could_change"] else "hold"'),
  "N26 F2-b the two extremes only": ('    return [(n, k)] + [(n + d, k + j) for j in range(d + 1)]', '    return [(n + d, k), (n + d, k + d)]'),
- "N27 F2-c other disputed methods held (preference)": ('    others = sorted(m for m in joint if m != method and m in tested)', '    others = []'),
- "N28 F2-c other disputed methods held (Laplace)": ('        others += [(other, laplace(reachable[other])) for other in sorted(states) if other != method]',
-                                                   '        others += [(other, [Fraction(counts.get(other, (0, 0))[1] + 1, counts.get(other, (0, 0))[0] + 2)])'
-                                                   ' for other in sorted(states) if other != method]'),
- "N29 F2-d a demoted fit tested as first": ('            eligible.sort(key=lambda r: 1 if r["demoted"] else 0)    # _rank\'s leading key; stable otherwise',
-                                           '            pass'),
- "N30 F2-f the raw preferred value": ('            memo[key] = ((_settled_preference(eligible, world) or {}).get("preferred") or top, top)',
-                                      '            memo[key] = ((_settled_preference(eligible, world) or {}).get("preferred"), top)'),
+ "N27 F2-c other disputed methods held (preference)": ('    others = [m for m in tested if m in joint]', '    others = []'),
+ "N28 F2-c other disputed methods held (Laplace)": ('        others += [(other, laplace([s for s in reachable[other] if (inhibit(*s) is not None) in classes]))',
+                                                   '        others += [(other, [Fraction(counts.get(other, (0, 0))[1] + 1, counts.get(other, (0, 0))[0] + 2)])'),
+ "N29 F2-d a demoted fit tested as first": ('        eligible.sort(key=lambda r: 1 if r["demoted"] else 0)        # _rank\'s leading key; stable otherwise',
+                                           '        pass'),
+ "N30 F2-f the raw preferred value": ('        return (_settled_preference(eligible, world) or {}).get("preferred") or top, top',
+                                      '        return (_settled_preference(eligible, world) or {}).get("preferred"), top'),
  "N31 F1-a shadowed chain heads left live": ('        for shadow in chain_heads:', '        for shadow in []:'),
  "N32 F1-a merge closures not counted as superseding": ('    superseded = {e.payload.get("supersedes") for e in every}',
                                                         '    superseded = {e.payload.get("supersedes") for e in every if not e.payload.get("merged_into")}'),
@@ -80,15 +82,13 @@ MUTANTS = {
  # removing it changes only the time taken, which no test here measures.
  "N37 F2R-1 other disputed methods at three states": ('        joint = {m: reachable[m] for m in reachable if m != method}',
                                                       '        joint = {m: [states[m][0], states[m][1], states[m][-1]] for m in states if m != method}'),
- "N38 F2R-1 the joint state limit ignored": ('    if len(others) > JOINT_DISPUTE_LIMIT or joint_states > JOINT_STATE_LIMIT:',
-                                             '    if len(others) > JOINT_DISPUTE_LIMIT:'),
+ "N38 F2R-1 the joint state limit ignored": ('        if size > JOINT_STATE_LIMIT:                # per family: only this family\'s other methods are held (W4-7)',
+                                             '        if False:'),
  "N39 F2R-2 the Laplace hull": ('            inside = [v for v in values if lo <= v <= hi]',
                                 '            inside = values if values[0] <= hi and lo <= values[-1] else []'),
  "N40 F2R-3 a walk limit read as a change found": ('        reasons += preference\n', '        reasons += preference + limits\n'),
  "N41 F2R-3 a walk limit's own text": ('"the walk could not be completed, so a change is not ruled out: " + "; ".join(weighed["walk_limits"])',
                                         '"resolving it can change a selection the compiler makes from settled outcomes"'),
- "N42 F2R-4 the preference memo keyed without the counts": ('        key = (first, members, tuple(world.get(m, (0, 0)) for m in members))',
-                                                            '        key = (first, members)'),
  "N43 F2R-5 the named first fit, not the ranked one": ('        tops = sorted({top for _, top in picks.values()})', '        tops = [first]'),
  "N44 F1-r3-1 only the older heads closed": ('        for shadow in chain_heads:', '        for shadow in chain_heads[:-1]:'),
  "N45 F1-r3-2 merged into a row this pass supersedes": ('                    "merged_into": final.get(identity, keep),',
@@ -102,12 +102,37 @@ MUTANTS = {
                                            '+ (f" (rejected by a resolution: {state[\'rejected\']})" if state.get("rejected") else "")'),
  "N51 G4F7-4 the old scored_as text": ('"scored_as": (f"nothing: {unsettled_why or _unsettled_why(None, False)}" if not settles else',
                                        '"scored_as": ("nothing: the mission\'s latest appraisal settles nothing, so this answer is not scored" if not settles else'),
+ # Round 4 of the review of #221 (comment 6510355399), fixed on #221's branch, and #196's afcd75f3 (TXT-R4-1). N42 is
+ # retired: round 4 removed the selected() memo it mutated (W4-2).
+ "N52 W4-4 an unsettled disputed method left out of the walk": ('    reach = {m: joint[m] if m in joint else [counts[m]] for m in set(counts) | set(joint) if m != method}',
+                                                                '    reach = {m: joint[m] if m in joint else [counts[m]] for m in set(counts) if m != method}'),
+ "N53 W4-1 a fit demoted at every count kept in the walk": ('                    if max(n for n, _ in at) >= SETTLED_MIN_N and any(inhibit(*s) is None for s in at))',
+                                                           '                    if max(n for n, _ in at) >= SETTLED_MIN_N)'),
+ "N54 W4-7 the state limit over every other method": ('        for m in in_family:\n            size *= len(joint[m])',
+                                                      '        for m in others:\n            size *= len(joint[m])'),
+ "N55 W4-7 a cut family not stated": ('    if cut:\n', '    if False:\n'),
+ "N56 W4-3 the demotion texts compared": ('        if len({inhibit(*state) is not None for state in states[method]}) > 1:      # the flag, not its text (W4-3)',
+                                          '        if len({inhibit(*state) for state in states[method]}) > 1:'),
+ "N57 W4-5 a settled fit of the other demotion class compared": ('                  if other != method and other not in states and (inhibit(n_o, k_o) is not None) in classes]',
+                                                                 '                  if other != method and other not in states]'),
+ "N58 W4-5 another disputed method's other-class values compared": ('laplace([s for s in reachable[other] if (inhibit(*s) is not None) in classes])',
+                                                                    'laplace(reachable[other])'),
+ "N59 W4-5 the unsettled fit compared with a demoted method": ('        if False in classes:\n            others.append(', '        if True:\n            others.append('),
+ "N60 W4-9 a demoted first fit walked": ('                if first != method and inhibit(*base.get(first, (0, 0))):', '                if False:'),
+ "N61 TXT-R4-3 the old ended-without-appraisal text": ('"final: the mission ended (abandoned or superseded) without an appraisal, so nothing is credited "',
+                                                       '"final: the mission closed without an appraisal, so nothing is credited "'),
+ "N62 TXT-R4-1 a failure's appraisal stands in for the achievement's": ("greg/body.py", '                     if not e.payload.get("closure_event")}', '                     }'),
+ "N63 TXT-R4-1 VERIFIED_UNMET still settles an achieved mission": ('    for mid in [m for m, e in latest.items() if e.payload.get("verdict") == "VERIFIED_UNMET" and m in achieved]:',
+                                                                   '    for mid in []:'),
+ "N64 TXT-R4-1 an achievement read as appraised by a failure's appraisal": ('    own = {e.payload["mission_id"] for e in journal.replay("mission.appraised") if not e.payload.get("closure_event")}',
+                                                                            '    own = {e.payload["mission_id"] for e in journal.replay("mission.appraised")}'),
 }
 MUTANTS = {name: (spec if len(spec) == 3 else (SETTLEMENT, *spec)) for name, spec in MUTANTS.items()}
 TARGETS = sorted({path for path, _, _ in MUTANTS.values()})
 TESTS = ["tests/unit/test_greg_outcome_resolution.py", "tests/unit/test_greg_pending_construction_realization.py",
          "tests/unit/test_greg_outcome_resolution_signed.py", "tests/unit/test_greg_outcome_resolution_review2.py",
-         "tests/unit/test_greg_outcome_resolution_review3.py", "tests/unit/test_greg_outcome_resolution_review4.py"]
+         "tests/unit/test_greg_outcome_resolution_review3.py", "tests/unit/test_greg_outcome_resolution_review4.py",
+         "tests/unit/test_greg_outcome_resolution_review5.py", "tests/unit/test_greg_achievement_after_unmet.py"]
 COMMAND = [sys.executable, "-B", "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", *TESTS]
 ENV = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
 TIME_LIMIT = 1800  # seconds per run; the unmutated set takes about six minutes

@@ -35,11 +35,12 @@ competence, Goal Gravity and the compiler's selection from settled outcomes. It 
      on a body that `8e91315c` reconciled; later passes write nothing. Re-derivation runs only for rows whose stored
      identity is not measured (F1-b). `receipt_links` follows a merge closure through `merged_into` to the claim's
      latest row (R3-N33).
-   - *Open (round 4 of #221):*
-     - A duplicate chain invalidated while its claim was unmeasured keeps its receipt on that invalidation after
-       the claim settles again; the merged path follows the claim (R4-REC-1, split between its two checks).
-     - No test reaches the unmeasured branch, nor a merge followed by a withdrawal (mutants N46 and N32).
-     - Counts are unaffected throughout, because competence is recomputed from `measured_outcomes`.
+   - A duplicate chain invalidated while its claim was unmeasured keeps its receipt on that invalidation after
+     the claim settles again, while the merged path follows the claim (round 4, R4-REC-1). #221's author keeps this
+     as designed: the invalidation is the truthful end of that chain. Since round 4, a test covers the unmeasured
+     branch (mutant N46, caught). The test of a merge followed by a withdrawal checks the inserted shadow, not the
+     merged head the mutant closes twice, so mutant N32 is still missed (round 5).
+   - Counts are unaffected throughout, because competence is recomputed from `measured_outcomes`.
 2. **Explicit knowledge states for every answer's world outcome** (`settlement.WORLD_STATES`). Every fact stays on
    the record in every state.
 
@@ -91,26 +92,31 @@ competence, Goal Gravity and the compiler's selection from settled outcomes. It 
      member ranked first in turn and demoted fits last, as `_rank` orders them, so Holm adjusts over the family
      the compiler would form (F2, F2-d).
    - Other disputed methods are walked with it at every count they can reach, with any number of their disputes
-     resolved (F2-c; round 3, F2R-1).
-   - Above 8 such fits, 3 other disputed methods or 256 joint states of them, the walk is cut short. The row then
+     resolved, including a method with no settled outcome yet (F2-c; round 3, F2R-1; round 4, W4-4). A fit demoted
+     at every count it can reach is left out, since it is never first and never a challenger (round 4, W4-1); a
+     demoted fit is not walked as first (W4-9).
+   - Above 8 such fits or 3 other disputed methods, the walk is cut short; a family whose own other disputed
+     methods reach more than 256 joint states holds them at their current counts (round 4, W4-7). The row then
      reads `investigate` with the limit in `decision_impact.walk_limits`, apart from the changes found, and says the
      walk could not be completed (F2-a; round 3, F2R-3).
+   - The demotion rule is compared by its flag, not its text (round 4, W4-3).
    - The Laplace rank is compared with every settled method, with each value another disputed method can reach,
-     with an unsettled fit (which the compiler reads at 1/2) and with a tie at either bound (S8, F3, F2-c; round
-     3, F2R-2).
+     with an unsettled fit (which the compiler reads at 1/2) and with a tie at either bound, each only within the
+     method's demotion class, as `_rank` orders them (S8, F3, F2-c; round 3, F2R-2; round 4, W4-5).
    - Only disputes whose mission holds a settling appraisal and whose signed check passed are weighed (S6, S7).
      The others are `hold`, and the row says why.
    - If one rule differs, the row is `priority: investigate`; otherwise `hold`, kept on record and weighed again as
      evidence accrues.
    - Fixed in #221: the gaps F2 and F3 above, and F5: a signed report is no longer absorbed by an unsigned fact
      with the same source and value.
-   - The review of #221's gaps F2-a to F2-d and round 3's F2R-1 to F2R-3 and F2R-5 are fixed. Open (round 4 of #221):
-     - a disputed method with no settled outcome is never in the preference walk, so another row can read a false
-       `hold` (W4-4; needs 10 or more open disputes on that method);
-     - the inhibition check compares the demotion texts, which carry the counts, so a method demoted at every
-       reachable count reads `investigate` (W4-3, since `8e91315c`);
-     - the full walk is 4 to 10 times slower than at `5b4e293f` on maps inside the limits, and the 256-state limit
-       cuts the whole walk on about 30% of random rows, naming both limits (W4-1, W4-2, W4-7).
+   - The review of #221's gaps F2-a to F2-d, round 3's F2R-1 to F2R-3 and F2R-5, and round 4's W4-3 to W4-5,
+     W4-7 and W4-9 are fixed. Against a ground truth that replays the compiler's ranking at every reachable joint
+     state, on 2,085 random rows: no false `hold` at `399c6c08` or at `7f99b96b`, every change found at both, and
+     false `investigate`s down from 81 to 23, all of them rows cut short by a stated limit (round 5 of #221).
+   - Open (round 5): the walk is still slow when the other fits are not demoted, so pruning removes nothing.
+     Three disputed methods with three or four disputes each, beside eight such fits, take 9 and 20 s, against
+     2.1 to 2.7 s at `5b4e293f`, measured back to back; with demoted fits, 0.25 to 0.5 s (W4-1, partly fixed).
+     Nearly all of it is `_settled_preference` calls: 675,825 for the three-dispute case.
    - Most disputes now read `investigate`, by design: the rule errs toward it, since a false `investigate` costs
      one outside record and a false `hold` hides a decision change.
    - Goal Gravity reports `disputes_to_investigate` and `decisions_to_recheck`.
@@ -200,12 +206,18 @@ see [REVIEW-FIXES.md](REVIEW-FIXES.md)):
     the combined test with real organs (117 passed, 1 skipped).
   - [mutants-review.txt](mutants-review.txt): the review fixes' mutants, run with
     [mutants-review.py](mutants-review.py) on a clean tree and bound to its commit. Re-recorded after the fixes for
-    round 3 of the review of #221, at #221's `399c6c08` (N37-N51 added): 45 of 51 caught, 0 invalid.
-    - N6 (S3's fact key) is harmless on the production path since F5.
-    - Five are MISSED, each changing what is written or said with no test for it: N32 (a merged shadow closed again
-      after a withdrawal), N38 (the 256-state limit), N43 (the fit ranked first), N46 (an unmeasured claim's
-      duplicate) and N49 (an appraised held closure's text).
+    round 4 of the review of #221 and #196's TXT-R4-1, at #221's `7f99b96b` (N52-N64 added, N42 retired):
+    55 of 63 caught, 0 invalid.
+    - N6 (S3's fact key) is harmless on the production path since F5. N59 (the unsettled fit compared with a
+      method demoted at every count) is equivalent: a demoted count's Laplace value is always below 1/2.
+    - Six are MISSED, each changing what is written or said with no test for it: N29 (a method demoted at every
+      count left first), N32 (a merged chain head closed twice after a withdrawal), N43 (the fits ranked first),
+      N54 (the state limit over every other disputed method), N58 (another disputed method's values of the other
+      demotion class) and N60 (a demoted first, which repeats a reason). N29 and N58 can read `investigate` where
+      the ground truth finds no change; the others keep the priority. One case for each is in the note of
+      mutants-review.txt.
     - Earlier records are in git history:
+      - `9c1f1c44`: at #221's `399c6c08`, 45 of 51 caught;
       - `934a5125`: at #221's `5b4e293f`, 32 of 36 caught;
       - `f0094388`: at #221's `5983deeb`, 22 of 24 caught;
       - `be8fbd09`: at #196's `8e91315c`, 13 of 14 caught, N2 missed.
@@ -269,12 +281,18 @@ recheck. With the repair disabled, the same history leaves the worse decision in
 - The decision value is an estimate. Since #221 the preference is checked with Holm over every family of
   co-eligible fits with at least 10 settled outcomes, as the compiler forms it (F2); above 8 such fits, over the
   pairs and the whole family only. It is weighed against every method with settled outcomes and an unsettled fit,
-  since co-eligibility depends on the request. The fixes for the review of #221 and its round 3 close F2-a to F2-d
-  and F2R-1 to F2R-3; round 4 found the gaps in item 6 (W4-1 to W4-4, W4-7).
-- A bounded mission's achievement after an appraised unmet closure is never appraised, and its passing observation
-  is then credited under the unmet closure's `VERIFIED_UNMET` (round 4 of #221, TXT-R4-1). `Body._close_out` and
-  `_awaiting_appraisal` both treat any appraisal of the mission as judging the achievement. Reproduced at the head
-  and at `8e91315c` on a real body; the credit was shown with the check's world change simulated in-process.
+  since co-eligibility depends on the request. The fixes for the review of #221 and its rounds 3 and 4 close F2-a
+  to F2-d, F2R-1 to F2R-3 and W4-3 to W4-9 except the walk's cost on fits that are not demoted (item 6).
+- Until #196's `afcd75f3`, a bounded mission's achievement after an appraised unmet closure was never appraised,
+  and its passing observation was credited under the unmet closure's `VERIFIED_UNMET` (round 4 of #221,
+  TXT-R4-1; unchanged since `8e91315c`). Since `afcd75f3`, merged into #221 at `59d72e33`, an achievement counts as
+  appraised only by an appraisal that names no closure, and a `VERIFIED_UNMET` no longer settles a mission whose
+  achievement is recorded. On a real body the achievement is now appraised, also on a body that reached that state
+  under `8e91315c` and is then reopened on `7f99b96b`.
+- Since `afcd75f3`, a refuted achievement also withdraws the mission's earlier verified failure, so a false
+  success report removes a failure the appraiser verified (round 5 of #221, TXT-R5-1; reproduced at `7f99b96b`
+  and `afcd75f3`). Keeping the failure without crediting the later pass needs observations scoped to their
+  closure.
 - The recheck projection compares retained UTC stamps across the ledger and the journal.
 - No capability declares an observation of a world objective, so GREG cannot acquire the evidence itself. It asks.
 - The #213 transfer experiment, the compiler's selection rules, Genesis, authority and the mission engine are

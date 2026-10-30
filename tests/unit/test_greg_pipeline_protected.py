@@ -40,7 +40,9 @@ def ref(field: str, kind: str) -> dict:
 
 JOURNAL = Journal({"text": "widgets", "step": {"op": "click", "selector": "#delete-account"},
                    "steps": [{"op": "click", "selector": "#delete-account"}], "flag": False,
-                   "methods": ["DELETE https://shop.example/account"]})
+                   "methods": ["DELETE https://shop.example/account"], "count": 12,
+                   "params": {"url": "https://shop.example/", "steps": [{"op": "click", "selector": "#delete-account"}],
+                              "read_methods": ["DELETE https://shop.example/account"]}})
 
 
 def session(steps) -> dict:
@@ -83,3 +85,21 @@ def test_the_step_program_rule_is_additive():
     assert {"op", "selector", "secret", "consequential", "read_methods"} <= PROTECTED
     assert {"url", "also_hosts", "secrets", "secret_files"} <= PROTECTED
     assert getattr(pipeline, "PROGRAMS", None) == {"steps"}
+    assert getattr(pipeline, "PROGRAM_TYPES", None) == {"array", "object"}
+
+
+def test_a_capabilitys_whole_params_are_never_an_earlier_actions_output():
+    """One level above the step program: params that are themselves a binding would hand the producer the url, the
+    steps and the method gate's exceptions at once. Before, resolve returned the producer's dict unchecked."""
+    with pytest.raises(BindingError, match="whole params"):
+        resolve(ref("params", "object"), JOURNAL, MISSION)
+
+
+@pytest.mark.parametrize("params", [{"problem": "pid", "data": {"steps": ref("count", "integer")}},
+                                    {"steps": ["warm-up", ref("text", "string")]}], ids=["integer-steps", "string-item"])
+def test_a_scalar_under_a_steps_key_stays_bindable_data(params):
+    """The step-program rule is about a bound list or step; a solver's integer step count is data (it resolved
+    before this unit, and the first version of the rule refused it)."""
+    resolved, links = resolve(params, JOURNAL, MISSION)
+    assert resolved in ({"problem": "pid", "data": {"steps": 12}}, {"steps": ["warm-up", "widgets"]})
+    assert len(links) == 1

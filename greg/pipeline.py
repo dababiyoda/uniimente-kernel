@@ -24,8 +24,10 @@ PROTECTED = frozenset({"allowed_paths", "tools", "provider", "max_budget_usd", "
 # browser.session's step program: which operation runs on which element, with which credential, whether it is
 # consequential, and which writes its method gate lets through are founder-signed literals (a fill's value is data)
 PROTECTED = PROTECTED | {"op", "selector", "secret", "consequential", "read_methods"}
-# Keys holding a step program: neither the list itself nor a whole step may be an earlier action's output.
+# Keys holding a step program: neither the list itself nor a whole step (a bound list or object) may be an earlier
+# action's output; a scalar under such a key (a solver's integer step count) stays data.
 PROGRAMS = frozenset({"steps"})
+PROGRAM_TYPES = frozenset({"array", "object"})
 TYPES = {"string": str, "object": dict, "array": list, "boolean": bool, "integer": int, "number": (int, float)}
 
 def resolve(params, journal, mission_id, *, before_seq=None):
@@ -34,7 +36,10 @@ def resolve(params, journal, mission_id, *, before_seq=None):
         if depth > 20:
             raise BindingError("pipeline input nesting exceeds 20")
         if isinstance(value, dict) and "$from_action" in value:
-            if program:
+            if depth == 0:
+                raise BindingError("artifact cannot replace a capability's whole params")
+            kind = value["$from_action"].get("type") if isinstance(value["$from_action"], dict) else None
+            if program and kind in PROGRAM_TYPES:
                 raise BindingError("artifact cannot replace a step program or a whole step")
             if protected or set(value) != {"$from_action"}:
                 raise BindingError("artifact cannot modify an authority or execution scope")
@@ -103,7 +108,9 @@ def inspect(params, ctx):
     if ctx.journal is None or not ctx.mission_id or ctx.target != "pipeline:" + str(params.get("action_id", "")):
         raise CapabilityError("pipeline inspection requires its signed mission and producer target")
     try:
-        value, links = resolve({"$from_action": params}, ctx.journal, ctx.mission_id)
+        # under a key: resolve refuses a binding that would be a capability's whole params
+        wrapped, links = resolve({"value": {"$from_action": params}}, ctx.journal, ctx.mission_id)
+        value = wrapped["value"]
     except PendingInput:
         return {"available": False, "value": None, "bindings": []}
     except BindingError as exc:

@@ -1,10 +1,18 @@
 """Capability readiness ladder (directive section 32): KNOWN, INSTALLED, CREDENTIALLED, GRANTED, EXERCISED, VERIFIED.
 
 Every fixture is a real body: a real Ed25519 test key (not Alfonso's), founder-signed missions, receipts produced by
-the real Kernel Gate, and appraisals recorded by the body's separate appraiser process. Two kinds of fact are recorded
-directly, in the shape their one writer gives them, because producing them for real is not what is under test: an
-ineffective ``routing.outcome`` (greg/missions.py ``_record_routing_outcomes``) and a capability Genesis registered
-(greg/genesis.py). The planted secret value is a test string; no real credential is used.
+the real Kernel Gate, and every VERIFIED and REFUTED verdict recorded by the body's separate appraiser process. Seven
+kinds of fact are also recorded directly, in the fields their one writer gives them, where producing them for real is
+not what is under test:
+
+- ``mission.action`` DONE records, written by ``_act_through_gate`` after a real AuthorityOffice and Gate act (the engine
+  writes them in greg/missions.py; the attribution of receipts to closures depends on them);
+- ``mission.achieved`` and ``mission.unmet`` closure claims the engine did not make, for the real appraiser to judge;
+- ``mission.appraised`` VERIFIED_UNMET and UNAVAILABLE rows (greg/appraisal.py ``_verdict``, greg/body.py);
+- ``routing.outcome`` rows (greg/missions.py ``_record_routing_outcomes``), one of them with a verdict no writer gives;
+- ``capability.registered`` and ``capability.state`` (greg/genesis.py).
+
+Elsewhere the engine's own tick writes them. The planted secret value is a test string; no real credential is used.
 """
 from __future__ import annotations
 
@@ -12,9 +20,12 @@ import contextlib
 from datetime import datetime, timedelta, timezone
 import io
 import json
+import os
 from pathlib import Path
 
-from greg import cli
+import pytest
+
+from greg import cli, routing
 from greg.body import Body, Layout, status
 from greg.capabilities import BUILTINS, CapabilityManifest, SecretBroker
 from greg.mission_control import classify_capability
@@ -70,8 +81,9 @@ def _verdicts(home: Path, mid: str) -> list:
         return [e.payload["verdict"] for e in journal.replay("mission.appraised") if e.payload["mission_id"] == mid]
 
 
-def _act_through_gate(body: Body, mid: str, capability: str, params: dict, target: str) -> str:
-    """One action through the real AuthorityOffice and Gate for an open mission, recorded as the engine does."""
+def _act_through_gate(body: Body, mid: str, capability: str, params: dict, target: str, *, action_id: str = "w") -> str:
+    """One action through the real AuthorityOffice and Gate for an open mission. Its ``mission.action`` DONE record is
+    written here, in the fields the engine writes (greg/missions.py), because the tick is not what is under test."""
     state = body.engine.book.missions[mid]
     manifest, adapter, _ = body.engine._resolve({"capability": capability})
     outcome = body.office.act(
@@ -80,8 +92,8 @@ def _act_through_gate(body: Body, mid: str, capability: str, params: dict, targe
         expected_outcome="strategy executed", evidence_refs=[], attempt=0, spent_usd=0.0, approved_scopes=set())
     assert outcome.status == "DONE", outcome.reasons
     body.journal.record("mission.action", {
-        "mission_id": mid, "action_id": "w", "attempt": 0, "status": "DONE", "capability": capability,
-        "receipt": outcome.receipt_hash, "scope_digest": outcome.scope_digest}, key=[mid, "w", 0])
+        "mission_id": mid, "action_id": action_id, "attempt": 0, "status": "DONE", "capability": capability,
+        "receipt": outcome.receipt_hash, "scope_digest": outcome.scope_digest}, key=[mid, action_id, 0])
     return outcome.receipt_hash
 
 
@@ -162,6 +174,21 @@ def test_a_secret_value_never_appears_in_the_output(tmp_path):
     assert PLANTED not in json.dumps(readiness.report(home))
 
 
+@pytest.mark.parametrize("content,mode", [(json.dumps({"github_token": PLANTED}), 0o644), ("null", 0o600),
+                                          ("[1, 2]", 0o600)])
+def test_an_unreadable_secret_store_is_reported_not_guessed(tmp_path, content, mode):
+    """Review finding F4: a store the broker refuses (not 0600), or one that is not a mapping of names, reads
+    CREDENTIALLED missing with the reason; it is never read as empty, never crashes the command, never prints."""
+    home, _key, _body_id, _ = make_body(tmp_path)
+    path = Layout(home).secrets
+    path.write_text(content)
+    os.chmod(path, mode)
+    code, out, err = _cli(home, "--capability", "github.pulls")
+    assert code == 0 and PLANTED not in out and PLANTED not in err
+    credentialled = json.loads(out)["capabilities"][0]["rungs"]["CREDENTIALLED"]
+    assert credentialled["status"] == "missing" and "the secret store could not be read" in credentialled["why"]
+
+
 # -- GRANTED and EXERCISED: a live founder grant and a Gate receipt ----------------------------------------------------
 
 def test_a_live_grant_and_a_receipt_read_exercised(tmp_path):
@@ -219,6 +246,50 @@ def test_a_cone_whose_targets_cannot_reach_the_capability_grants_nothing(tmp_pat
     assert _row(report, "fs.read")["rungs"]["GRANTED"]["status"] == "reached"
 
 
+@pytest.mark.parametrize("pattern", ["workspace:n.txt", "work*"])
+def test_a_cone_target_that_can_name_a_target_under_the_prefix_grants(tmp_path, pattern):
+    """An exact target under the prefix, and a pattern whose literal head is shorter than the prefix, both can."""
+    home, key, body_id, _ = make_body(tmp_path)
+    with Body(home) as body:
+        body.apply(signed(key, body_id, "MISSION", _note_mission(home, "m:targets", targets=("fs:*", pattern))),
+                   channel="inbox")
+    assert _row(readiness.report(home), "fs.write")["rungs"]["GRANTED"]["status"] == "reached"
+
+
+@pytest.mark.parametrize("signed_class", ["internal_write", "read_only"])
+def test_a_pre_approved_step_grants_only_what_the_engine_runs_as_pre_approved(tmp_path, signed_class):
+    """A signed pre-approval admits one step past the cone exactly when greg.missions.pre_approved does: that step's
+    action, capability and target, the manifest's own consequence class, no cost. A step signed with another class is
+    not run as pre-approved (the engine asks), so it grants nothing here either."""
+    from greg.missions import pre_approved
+    home, key, body_id, _ = make_body(tmp_path)
+    mid = "m:pre"
+    strategy = write_strategy("w", "n.txt", "hello", ["n"])
+    spec = mission(mid, checks=[note_check("n", workspace(home, mid) / "n.txt", "hello")], strategies=[strategy],
+                   capabilities=["fs.read"], ceiling="read_only")          # the cone itself does not admit fs.write
+    spec["pre_approved_steps"] = [{"action_id": "w", "capability": "fs.write", "target": strategy["target"],
+                                   "consequence_class": signed_class, "cost_usd": 0}]
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        body.apply(signed(key, body_id, "MISSION", spec, now=clock.now), channel="inbox")
+        granted = _row(readiness.report(home), "fs.write")["rungs"]["GRANTED"]
+        for _ in range(6):
+            body.tick()
+            clock.advance(1)
+        ran = [e.payload["action_id"] for e in body.journal.replay("mission.action") if e.payload["status"] == "DONE"]
+        asked = [e.payload["kind"] for e in body.journal.replay("decision.requested")]
+    engine_runs_it = pre_approved(spec, strategy, BUILTINS["fs.write"][0])
+    assert engine_runs_it == (signed_class == "internal_write")
+    if engine_runs_it:
+        assert ran == ["w"] and "APPROVAL" not in asked
+        assert granted["status"] == "reached"
+        assert [(e["kind"], e["steps"]) for e in granted["evidence"]] == [("signed_pre_approval", ["w"])]
+    else:
+        assert ran == [] and "APPROVAL" in asked
+        assert granted["status"] == "missing" and "pre-approval of w is not one the engine runs" in granted["why"]
+
+
 def test_a_refused_invocation_is_not_exercise(tmp_path):
     home, key, body_id, _ = make_body(tmp_path)
     mid = "m:refused"
@@ -261,6 +332,9 @@ def test_an_independent_verified_appraisal_reads_verified(tmp_path):
         assert row["first_missing"] == "GRANTED" and "spent by its one act" in row["why"]
     assert _row(report, "git.inspect")["rungs"]["VERIFIED"]["status"] == "missing"
     assert report["summary"]["reached"]["VERIFIED"] == 2
+    # fs.read is verified only as the closure's sensor, which routing's track record does not read: reported
+    assert any(d["capability_id"] == "fs.read" and "counts no verified action" in d["detail"]
+               for d in report["disagreements"])
     with Body(home) as body:                            # a new open mission over the same cone: every rung reached
         body.apply(signed(key, body_id, "MISSION", _note_mission(home, "m:next")), channel="inbox")
     write = _row(readiness.report(home), "fs.write")
@@ -272,10 +346,14 @@ def test_a_later_refuted_appraisal_drops_verified_and_a_later_verified_restores_
     home, key, body_id, _ = make_body(tmp_path)
     _run_to_closure(home, key, body_id, "m:first")
     mid = "m:claimed"
+    from greg.body import observe
+    with observe(home) as journal:          # an observation receipt of another mission, cited by the claim
+        foreign = [e.payload["receipt"] for e in journal.replay("mission.observed")
+                   if e.payload["mission_id"] == "m:first" and e.payload.get("receipt")][-1]
     with Body(home) as body:
         body.apply(signed(key, body_id, "MISSION", _note_mission(home, mid)), channel="inbox")
         _write_through_gate(body, mid)
-        body.journal.record("mission.achieved", {"mission_id": mid, "evidence": [], "actions_done": 1,
+        body.journal.record("mission.achieved", {"mission_id": mid, "evidence": [foreign], "actions_done": 1,
                                                  "note": "untrusted closure claim"}, key=[mid, "claim"])
         body.tick()                                     # the body's separate appraiser judges the claim
     assert _verdicts(home, mid) == ["REFUTED"]
@@ -291,12 +369,162 @@ def test_a_later_refuted_appraisal_drops_verified_and_a_later_verified_restores_
 def test_an_ineffective_routing_verdict_drops_verified(tmp_path):
     home, key, body_id, _ = make_body(tmp_path)
     _run_to_closure(home, key, body_id, "m:first")
+    with Body(home) as body:     # a verdict other than ineffective (none is written today) is read by neither reader
+        body.journal.record("routing.outcome", {"mission_id": "m:other", "action_id": "w", "capability": "fs.write",
+                                                "verdict": "effective", "receipt": None}, key=["m:other", "w", 0])
+    assert _row(readiness.report(home), "fs.write")["rungs"]["VERIFIED"]["status"] == "reached"
+    from greg.body import observe
+    with observe(home) as journal:
+        assert not routing.track_record(journal)["fs.write"]["ineffective"]
     with Body(home) as body:
         body.journal.record("routing.outcome", {"mission_id": "m:later", "action_id": "w", "capability": "fs.write",
                                                 "verdict": "ineffective", "receipt": None,
                                                 "reason": "executed but n still failing"}, key=["m:later", "w", 0])
     write = _row(readiness.report(home), "fs.write")["rungs"]["VERIFIED"]
     assert write["status"] == "missing" and "latest verdict is INEFFECTIVE" in write["why"]
+
+
+def test_a_strategy_routing_ruled_ineffective_is_not_verified_by_a_sibling_s_success(tmp_path):
+    """Review finding F1. A mission with two strategies: fs.list runs first and changes nothing (routing records it
+    ineffective), fs.write then achieves the goal and the separate appraiser verifies the closure. That closure's
+    exactly-once check covers the fs.list receipt, but nothing about the closure vouches for its effect."""
+    home, key, body_id, data = make_body(tmp_path)
+    mid = "m:mixed"
+    spec = mission(mid, checks=[note_check("n", workspace(home, mid) / "n.txt", "hello")],
+                   strategies=[{"action_id": "a_list", "capability": "fs.list", "params": {"path": str(data)},
+                                "target": "fs:data", "advances": ["n"], "rationale": "a read that changes nothing"},
+                               write_strategy("b_write", "n.txt", "hello", ["n"])],
+                   capabilities=["fs.read", "fs.list", "fs.write"])
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        drop(home, signed(key, body_id, "MISSION", spec, now=clock.now))
+        for _ in range(12):
+            body.tick()
+            clock.advance(1)
+        done = {e.payload["action_id"]: e.payload["receipt"] for e in body.journal.replay("mission.action")
+                if e.payload["status"] == "DONE"}
+        outcomes = [(e.payload["capability"], e.payload["verdict"], e.payload["receipt"])
+                    for e in body.journal.replay("routing.outcome")]
+        track = routing.track_record(body.journal)["fs.list"]
+    assert outcomes == [("fs.list", "ineffective", done["a_list"])]
+    assert _verdicts(home, mid) == ["VERIFIED"]
+    assert track["verified"] == 1 and track["ineffective"] == 1          # routing credits it with the closure
+    report = readiness.report(home)
+    listing = _row(report, "fs.list")
+    assert listing["rungs"]["EXERCISED"]["status"] == "reached"
+    assert listing["rungs"]["VERIFIED"]["status"] == "missing"
+    assert "routing recorded it ineffective" in listing["rungs"]["VERIFIED"]["why"]
+    write = _row(report, "fs.write")["rungs"]["VERIFIED"]
+    assert write["status"] == "reached" and write["evidence"][0]["receipts"] == [done["b_write"]]
+    assert any(d["capability_id"] == "fs.list" and "greg.routing.track_record" in d["readers"]
+               and "ineffective" in d["detail"] for d in report["disagreements"])
+
+
+def test_a_strategy_blamed_for_breaking_a_passing_check_is_not_credited_by_the_closure(tmp_path):
+    """The same class: the engine blames `boost` and `restore` for each breaking a check that passed (section 13);
+    `balanced` then achieves both and the appraiser verifies. Only `balanced`'s receipt is credited."""
+    home, key, body_id, _ = make_body(tmp_path)
+    mid = "m:plant"
+    ws = workspace(home, mid)
+    ws.mkdir(parents=True)
+    (ws / "plant.txt").write_text("safe")
+    spec = mission(mid, checks=[note_check("throughput", ws / "plant.txt", "fast"),
+                                note_check("safety", ws / "plant.txt", "safe")],
+                   strategies=[write_strategy("boost", "plant.txt", "fast", ["throughput"]),
+                               write_strategy("restore", "plant.txt", "safe", ["safety"]),
+                               write_strategy("balanced", "plant.txt", "safe and fast", ["throughput", "safety"])],
+                   capabilities=["fs.read", "fs.write"])
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        for _ in range(14):
+            clock.advance(60)
+            body.tick()
+        done = {e.payload["action_id"]: e.payload["receipt"] for e in body.journal.replay("mission.action")
+                if e.payload["status"] == "DONE"}
+        failed = body.engine.book.missions[mid].failed
+    assert list(done) == ["boost", "restore", "balanced"]
+    assert failed["boost"].startswith("regressed safety") and failed["restore"].startswith("regressed throughput")
+    assert _verdicts(home, mid) == ["VERIFIED"]
+    write = _row(readiness.report(home), "fs.write")["rungs"]["VERIFIED"]
+    assert write["status"] == "reached"
+    assert write["evidence"][0]["receipts"] == [done["balanced"]]
+    uncredited = write["evidence"][0]["not_credited"]
+    assert sorted(u["receipt"] for u in uncredited) == sorted([done["boost"], done["restore"]])
+    assert all(u["why"].startswith("regressed ") for u in uncredited)
+
+
+def test_a_capability_first_exercised_after_a_verified_hold_is_not_verified_by_it(tmp_path):
+    """A standing mission's hold judges the actions before it; one completed after it waits for the next hold."""
+    home, key, body_id, data = make_body(tmp_path)
+    mid = "m:standing"
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        drop(home, signed(key, body_id, "MISSION", _note_mission(
+            home, mid, capabilities=("fs.read", "fs.write", "fs.list"), closure={"kind": "infinite"}), now=clock.now))
+        for _ in range(6):
+            body.tick()
+            clock.advance(1)
+    assert _verdicts(home, mid) == ["VERIFIED"]
+    with Body(home, clock=clock) as body:
+        _act_through_gate(body, mid, "fs.list", {"path": str(data)}, "fs:data", action_id="later")
+    report = readiness.report(home)
+    assert _row(report, "fs.write")["rungs"]["VERIFIED"]["status"] == "reached"
+    listing = _row(report, "fs.list")["rungs"]
+    assert listing["EXERCISED"]["status"] == "reached" and listing["VERIFIED"]["status"] == "missing"
+
+
+def test_a_refutation_whose_effect_checks_held_drops_verified_and_is_reported(tmp_path):
+    """An act no signed strategy names is slipped into a mission the engine then closes honestly: the world checks
+    re-derive, the appraiser refutes the closure on its approval boundary. Routing does not count that refutation
+    (its effect checks held); the ladder drops VERIFIED and reports the difference."""
+    home, key, body_id, _ = make_body(tmp_path)
+    _run_to_closure(home, key, body_id, "m:first")
+    mid = "m:forged"
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        body.apply(signed(key, body_id, "MISSION", _note_mission(home, mid), now=clock.now), channel="inbox")
+        _act_through_gate(body, mid, "fs.write", {"relative_path": "other.txt", "content": "x"},
+                          "workspace:other.txt", action_id="x")
+        for _ in range(6):
+            body.tick()
+            clock.advance(1)
+        appraisals = [e.payload for e in body.journal.replay("mission.appraised") if e.payload["mission_id"] == mid]
+        track = routing.track_record(body.journal)["fs.write"]
+    assert [a["verdict"] for a in appraisals] == ["REFUTED"]
+    assert all(appraisals[0]["checks"][c] for c in routing.EFFECT_CHECKS)
+    assert track["verified"] >= 1 and not track["refuted"] and not track["ineffective"]
+    report = readiness.report(home)
+    write = _row(report, "fs.write")["rungs"]["VERIFIED"]
+    assert write["status"] == "missing" and "(its effect checks held)" in write["why"]
+    assert any(d["capability_id"] == "fs.write" and "does not count a refutation whose effect checks held"
+               in d["detail"] for d in report["disagreements"])
+
+
+def test_a_refuted_failure_closure_drops_verified_and_is_named_a_failure_closure(tmp_path):
+    """Review finding F3. A REFUTED appraisal of any closure that judged the capability's receipts drops VERIFIED, a
+    failure closure's included (the scope: a REFUTED latest outcome never reads VERIFIED; routing's track record
+    counts it refuted too). The reason says which kind of closure was refuted, so a reader can weigh it."""
+    home, key, body_id, _ = make_body(tmp_path)
+    _run_to_closure(home, key, body_id, "m:first")
+    mid = "m:unmet"
+    with Body(home) as body:
+        body.apply(signed(key, body_id, "MISSION", _note_mission(home, mid)), channel="inbox")
+        _write_through_gate(body, mid)
+        body.journal.record("mission.unmet", {"mission_id": mid, "failing_checks": ["n"], "actions_done": 1,
+                                              "closure_rule": "an unobserved failure claim",
+                                              "at": "2026-10-30T00:00:00Z"}, key=[mid, "unmet", 1])
+        body.apply(signed(key, body_id, "LIFECYCLE", {"mission_id": mid, "state": "PAUSED",
+                                                      "reason": "keep it out of the ticks"}), channel="inbox")
+        body.tick()                                     # the body's separate appraiser judges the failure claim
+        appraisals = [e.payload for e in body.journal.replay("mission.appraised") if e.payload["mission_id"] == mid]
+    assert [(a["verdict"], a.get("closure")) for a in appraisals] == [("REFUTED", "unmet")]
+    write = _row(readiness.report(home), "fs.write")["rungs"]["VERIFIED"]
+    assert write["status"] == "missing" and "REFUTED a failure closure of m:unmet" in write["why"]
 
 
 def test_a_verified_failure_closure_verifies_nothing(tmp_path):
@@ -331,7 +559,8 @@ def test_capabilities_genesis_registered_are_on_the_ladder(tmp_path):
     formed = [_formed("acquired.hash.sha256.missing", "installed:/nonexistent/greg-readiness-probe", route="cli",
                       binaries=("/nonexistent/greg-readiness-probe",)),
               _formed("acquired.hash.sha256.pytest", f"installed:python:pytest=={pytest_version}"),
-              _formed("acquired.hash.sha256.stale", "installed:python:pytest==0.0.1")]
+              _formed("acquired.hash.sha256.stale", "installed:python:pytest==0.0.1"),
+              _formed("acquired.hash.sha256.unformed", "vendor:acme")]          # not a provider Genesis forms
     with Body(home) as body:
         for manifest in formed:
             body.journal.record("capability.registered", {"manifest": manifest.to_dict(), "state": "VERIFIED"},
@@ -349,6 +578,7 @@ def test_capabilities_genesis_registered_are_on_the_ladder(tmp_path):
     stale = _row(report, "acquired.hash.sha256.stale")
     assert stale["first_missing"] == "INSTALLED" and "pins 0.0.1" in stale["why"]
     assert report["summary"]["capabilities"] == len(BUILTINS) + 3
+    assert "acquired.hash.sha256.unformed" not in {r["capability_id"] for r in report["capabilities"]}
     # body.status (Mission Control's list) omits them; the running body re-registers them: reported, not hidden
     omitted = [d for d in report["disagreements"] if d["capability_id"] is None]
     assert len(omitted) == 1 and "acquired.hash.sha256.missing" in omitted[0]["detail"]

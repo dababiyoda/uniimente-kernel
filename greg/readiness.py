@@ -13,15 +13,19 @@ A read-only fold. Every rung is read from a fact GREG already keeps, through the
                  (``SecretBroker.names()``); not applicable when it declares none. No value is resolved or returned
   GRANTED        a live founder grant: an ACTIVE, unpaused mission (``MissionBook``) whose founder-signed light cone
                  admits the capability (its pattern, the consequence ceiling, a horizon not yet passed) or which
-                 pre-approves a step naming it; and the capability is ATTACHED, attaching being the founder's own
-                 activation decision. The Kernel's single-action grants are spent by the one act they authorize, so
-                 they are shown as lineage, never as a live grant
+                 pre-approves a step the engine itself runs as pre-approved (``greg.missions.pre_approved``: that
+                 step's action, capability and target, the manifest's consequence class, no cost); and the capability
+                 is ATTACHED, attaching being the founder's own activation decision. The Kernel's single-action grants
+                 are spent by the one act they authorize, so they are shown as lineage, never as a live grant
   EXERCISED      a positive Gate receipt of its invocation (receipt -> witness -> capability). Refused invocations are
                  counted and shown, never as exercise
   VERIFIED       an independent appraisal (``mission.appraised``, the separate appraiser process) VERIFIED a closure
-                 that judged one of its receipts, and no REFUTED appraisal of a closure judging its receipts and no
-                 ``routing.outcome`` ineffective verdict for it came later. A REFUTED latest outcome never reads
-                 VERIFIED. VERIFIED_UNMET (a verified failure) and UNAVAILABLE judge no success either way
+                 that judged one of its receipts, and no REFUTED appraisal of a closure judging its receipts (a
+                 failure closure's included) and no ``routing.outcome`` ineffective verdict for it came later. A
+                 REFUTED latest outcome never reads VERIFIED. A receipt the body itself blamed (routing recorded it
+                 ineffective, or the mission blamed its action for breaking a check that passed) is never credited by
+                 a VERIFIED closure: that closure vouches for the goal and for every receipt's binding, not for that
+                 action's effect. VERIFIED_UNMET (a verified failure) and UNAVAILABLE judge no success either way
 
 Rungs are judged each on their own evidence, so a capability can be EXERCISED and VERIFIED while GRANTED is missing
 (its mission closed): the first missing rung then names what its next use needs. Counting tools is not success (S32):
@@ -46,7 +50,7 @@ from greg.lightcone import ScopeError, _instant, _rank
 
 RUNGS = ("KNOWN", "INSTALLED", "CREDENTIALLED", "GRANTED", "EXERCISED", "VERIFIED")
 REACHED, MISSING, NOT_APPLICABLE = "reached", "missing", "not_applicable"
-JUDGING = ("VERIFIED", "REFUTED")          # the appraiser verdicts that speak to a success closure
+JUDGING = ("VERIFIED", "REFUTED")   # VERIFIED (of a success closure) credits; REFUTED (of any closure) demotes
 
 
 def _rung(status: str, evidence=(), why: str | None = None) -> dict:
@@ -121,13 +125,12 @@ def _credentialled(manifest: CapabilityManifest, handles) -> dict:
 
 # -- GRANTED: live founder grants -------------------------------------------------------------------------------------
 
-def _live_missions(journal, now: datetime) -> list:
+def _live_missions(book, now: datetime) -> list:
     """Open founder-signed missions whose mandate still runs: ACTIVE, not paused by the founder, horizon ahead."""
-    if journal is None:
+    if book is None:
         return []
-    from greg.missions import MissionBook
     live = []
-    for _mid, m in sorted(MissionBook(journal).missions.items()):
+    for _mid, m in sorted(book.missions.items()):
         try:
             open_ = m.status == "ACTIVE" and not m.paused and now < _instant(m.cone.horizon)
         except (ScopeError, ValueError):
@@ -145,10 +148,31 @@ def _may_target(pattern: str, prefix: str) -> bool:
     return head.startswith(prefix) or prefix.startswith(head)
 
 
+def _pre_approved(cid: str, manifest: CapabilityManifest, m) -> tuple[list, list]:
+    """The steps naming ``cid`` that this signed mission pre-approves as the engine reads a pre-approval
+    (``greg.missions.pre_approved``, which admits one step past the cone), and notes on those it would not run so."""
+    from greg.missions import pre_approved
+    strategies = {s.get("action_id"): s for s in m.spec.get("strategies") or ()}
+    steps, notes = [], []
+    for p in m.spec.get("pre_approved_steps") or ():
+        if p.get("capability") != cid:
+            continue
+        s = strategies.get(p.get("action_id"))
+        if s is not None and s.get("capability") == cid and pre_approved(m.spec, s, manifest) \
+                and str(s.get("target", "")).startswith(manifest.target_prefix):
+            steps.append(p["action_id"])
+        else:
+            notes.append(f"{m.mission_id}'s signed pre-approval of {p.get('action_id')} is not one the engine runs as "
+                         f"pre-approved (it needs that strategy's own capability, target under "
+                         f"{manifest.target_prefix!r} and cost 0, and the manifest's class {manifest.consequence_class})")
+    return steps, notes
+
+
 def _granted(cid: str, manifest: CapabilityManifest, state: str, live: list, issued: list) -> dict:
     grants, notes = [], []
     for m in live:
-        steps = [s["action_id"] for s in m.spec.get("pre_approved_steps") or () if s.get("capability") == cid]
+        steps, refused = _pre_approved(cid, manifest, m)
+        notes += refused
         if steps:
             grants.append({"kind": "signed_pre_approval", "ref": m.mission_id, "command": m.command_digest,
                            "steps": steps, "until": m.cone.horizon})
@@ -205,14 +229,35 @@ def _receipts(journal) -> tuple[dict, dict]:
     return receipts, issued
 
 
-def verdict_timeline(journal, receipts: dict) -> dict:
+def blamed_receipts(journal, book) -> dict:
+    """receipt -> why, for each receipted action the body itself blamed: routing recorded it ineffective (executed,
+    re-observed, the world unchanged), or its mission blamed the action for breaking a check that passed before it ran
+    (``MissionBook``, a blame drift never washes out)."""
+    if journal is None:
+        return {}
+    blamed = {e.payload["receipt"]: "routing recorded it ineffective: " + str(e.payload.get("reason", ""))[:200]
+              for e in journal.replay("routing.outcome")
+              if e.payload.get("verdict") == "ineffective" and e.payload.get("receipt")}
+    regressed = {(mid, aid): why for mid, m in (book.missions.items() if book is not None else ())
+                 for aid, why in m.failed.items() if why.startswith("regressed ")}
+    for e in journal.replay("mission.action"):
+        why = regressed.get((e.payload.get("mission_id"), e.payload.get("action_id")))
+        if why and e.payload.get("status") == "DONE" and e.payload.get("receipt"):
+            blamed.setdefault(e.payload["receipt"], why[:200])
+    return blamed
+
+
+def verdict_timeline(journal, receipts: dict, blamed: dict | None = None) -> dict:
     """capability -> [(order, verdict, event_id, detail)] for every appraisal that judged one of its receipts, and
     every ineffective routing outcome naming it, in ledger order.
 
     A closure judges the receipts of every completed action of its mission before it (the appraiser's exactly-once
-    and approval checks) and the observation receipts it cites as evidence (its re-derived checks)."""
+    and approval checks) and the observation receipts it cites as evidence (its re-derived checks). A VERIFIED
+    closure credits none of the ``blamed`` receipts (``blamed_receipts``); a capability whose every receipt there was
+    blamed gets an UNCREDITED row, which verifies nothing. A REFUTED closure demotes every receipt it judged."""
     if journal is None:
         return {}
+    blamed = blamed or {}
     order = journal.positions("")
     done = defaultdict(list)                      # mission -> [(order, receipt)] of completed actions
     for e in journal.replay("mission.action"):
@@ -242,10 +287,17 @@ def verdict_timeline(journal, receipts: dict) -> dict:
         judged |= {r for r in ((closure.payload.get("evidence") or []) if closure is not None else ())
                    if observed.get(r) == mid}
         effect_held = all(a.payload.get("checks", {}).get(c, False) for c in routing.EFFECT_CHECKS)
+        failure = a.payload.get("closure") == "unmet" or (closure is not None and closure.type.endswith(".unmet"))
         for cid in sorted({receipts[r][0] for r in judged if r in receipts}):
-            timeline[cid].append((at, verdict, a.event_id, {"mission_id": mid, "effect_checks_held": effect_held,
-                                                             "receipts": sorted(r for r in judged
-                                                                                if receipts.get(r, ("",))[0] == cid)}))
+            mine = sorted(r for r in judged if receipts.get(r, ("",))[0] == cid)
+            detail = {"mission_id": mid, "effect_checks_held": effect_held, **({"closure": "unmet"} if failure else {})}
+            if verdict == "VERIFIED" and any(r in blamed for r in mine):
+                detail["not_credited"] = [{"receipt": r, "why": blamed[r]} for r in mine if r in blamed]
+                mine = [r for r in mine if r not in blamed]
+                if not mine:
+                    timeline[cid].append((at, "UNCREDITED", a.event_id, detail))
+                    continue
+            timeline[cid].append((at, verdict, a.event_id, {**detail, "receipts": mine}))
     for e in journal.replay("routing.outcome"):
         if e.payload.get("verdict") == "ineffective" and e.payload.get("capability"):
             timeline[e.payload["capability"]].append((order.get(e.event_id, -1), "INEFFECTIVE", e.event_id,
@@ -268,12 +320,20 @@ def _exercised(mine: list) -> dict:
 def _verified(rows: list) -> dict:
     verified = [r for r in rows if r[1] == "VERIFIED"]
     if not verified:
-        return _rung(MISSING, why="no independent appraisal has verified a closure that judged its receipts")
+        uncredited = [r for r in rows if r[1] == "UNCREDITED"]
+        why = "no independent appraisal has verified a closure that judged its receipts"
+        if uncredited:
+            why += ("; " + ", ".join(sorted({r[3]["mission_id"] for r in uncredited})) + "'s closure was verified, "
+                    "but its receipts there were ones the body blamed (" + uncredited[-1][3]["not_credited"][0]["why"]
+                    + ")")
+        return _rung(MISSING, [{"kind": "appraisal", "ref": r[2], "verdict": "VERIFIED", **r[3]} for r in uncredited],
+                     why)
     last = verified[-1]
     later = [r for r in rows if r[1] in ("REFUTED", "INEFFECTIVE") and r[0] > last[0]]
     if later:
         latest = later[-1]
-        what = ("appraisal REFUTED a closure of " + latest[3]["mission_id"]
+        what = ("appraisal REFUTED " + ("a failure closure" if latest[3].get("closure") == "unmet" else "a closure")
+                + " of " + latest[3]["mission_id"]
                 + (" (its effect checks held)" if latest[3].get("effect_checks_held") else "")
                 if latest[1] == "REFUTED" else "routing recorded it ineffective in " + str(latest[3]["mission_id"]))
         return _rung(MISSING, [{"kind": "appraisal", "ref": last[2], "verdict": "VERIFIED", **last[3]},
@@ -291,19 +351,24 @@ def ladder(journal, *, secrets, now: datetime | None = None, providers: dict | N
     SecretBroker, of which only ``names()`` is called. ``capabilities`` narrows the rows (the summary still covers
     every capability)."""
     from greg.mission_control import _providers, classify_capability
+    from greg.missions import MissionBook
     now = now or datetime.now(timezone.utc)
     providers = _providers() if providers is None else providers
     registry, sources, problems = body_registry(journal)
     try:
-        handles = set(secrets.names())
-    except (CapabilityError, OSError, ValueError) as exc:
+        names = secrets.names()
+        if not all(isinstance(n, str) for n in names):
+            raise TypeError("not a mapping of names")
+        handles = set(names)
+    except (CapabilityError, OSError, ValueError, TypeError) as exc:   # never a value: only the error's type
         handles = f"the secret store could not be read ({type(exc).__name__})"
-    live = _live_missions(journal, now)
+    book = MissionBook(journal) if journal is not None else None
+    live = _live_missions(book, now)
     receipts, issued = _receipts(journal)
     by_capability = defaultdict(list)
     for receipt, (cid, positive) in receipts.items():
         by_capability[cid].append((receipt, positive))
-    timeline = verdict_timeline(journal, receipts)
+    timeline = verdict_timeline(journal, receipts, blamed_receipts(journal, book))
     record = routing.track_record(journal) if journal is not None else {}
     inventory = {row["capability_id"]: row for row in registry.inventory()}
     rows, disagreements = [], []
@@ -326,7 +391,7 @@ def ladder(journal, *, secrets, now: datetime | None = None, providers: dict | N
                      "why": rungs[first]["why"] if first else None, "rungs": rungs,
                      **({"track_record": {**track, "reliability": round(routing.reliability(track), 3)}}
                         if track else {})})
-        disagreements += _disagreements(cid, rungs, klass, track)
+        disagreements += _disagreements(cid, rungs, klass, track, timeline.get(cid, []))
     if any(s["source"] == "registered" for s in sources.values()):
         formed = sorted(cid for cid, s in sources.items() if s["source"] == "registered")
         disagreements.append({"capability_id": None, "readers": ["greg.body.status (Mission Control's capability "
@@ -355,10 +420,14 @@ def ladder(journal, *, secrets, now: datetime | None = None, providers: dict | N
                        "added is found only when a capability resolves it, so it reads missing here",
                        "INSTALLED checks declared platforms, binaries and pinned Python distributions; it does not run "
                        "the capability, and a formed capability's built source is checked by Genesis at restore",
-                       "GRANTED does not read the body-wide PAUSE or STOP, which halt every grant while they stand"]}
+                       "GRANTED does not read the body-wide PAUSE or STOP, which halt every grant while they stand, nor "
+                       "the constitution's policy: a step the cone or a signed pre-approval admits still waits for an "
+                       "exact-scope founder DECISION where policy requires a human",
+                       "CREDENTIALLED takes the handle names the broker reads; a store that is not a mapping of names "
+                       "is reported unreadable, but a list of strings is read as names, as the broker reads it"]}
 
 
-def _disagreements(cid: str, rungs: dict, klass: dict, track: dict | None) -> list:
+def _disagreements(cid: str, rungs: dict, klass: dict, track: dict | None, rows: list) -> list:
     out = []
     if klass["class"] == "BLOCKED" and klass["why"].startswith("needs credentials") \
             and rungs["CREDENTIALLED"]["status"] == REACHED:
@@ -376,6 +445,13 @@ def _disagreements(cid: str, rungs: dict, klass: dict, track: dict | None) -> li
                     "detail": "routing counts its verified actions and no refutation, but " + rungs["VERIFIED"]["why"]
                               + " (track_record reads completed actions only, and does not count a refutation "
                                 "whose effect checks held)"})
+    elif not verified and (track or {}).get("verified") and any(r[1] == "UNCREDITED" for r in rows):
+        missions = sorted({r[3]["mission_id"] for r in rows if r[1] == "UNCREDITED"})
+        out.append({"capability_id": cid, "readers": ["greg.routing.track_record", "readiness VERIFIED"],
+                    "detail": f"routing counts {track['verified']} verified action(s), crediting it with the verified "
+                              f"closure of {', '.join(missions)}, although the body blamed its receipt(s) there (routing "
+                              "recorded them ineffective, or the mission blamed them for breaking a passing check); "
+                              "readiness credits no verified closure to it"})
     elif verified and not (track or {}).get("verified"):
         out.append({"capability_id": cid, "readers": ["greg.routing.track_record", "readiness VERIFIED"],
                     "detail": "an independent appraisal verified a closure that judged its receipts, but routing "

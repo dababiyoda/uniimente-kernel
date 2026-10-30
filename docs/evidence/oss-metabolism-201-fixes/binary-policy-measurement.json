@@ -1,0 +1,266 @@
+{
+ "body": {
+  "os": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"",
+  "dpkg": true
+ },
+ "binaries": 708,
+ "components": {
+  "local": 9,
+  "Ubuntu/universe": 48,
+  "Ubuntu/main": 641,
+  "Docker/stable": 7,
+  "no package": 3
+ },
+ "verdicts": {
+  "UNCLASSIFIED_PRIOR_BEHAVIOUR": 440,
+  "CLEARED_WITH_OBLIGATIONS": 244,
+  "CLEARED": 21,
+  "UNDETERMINABLE": 3
+ },
+ "held": {
+  "held_P0": 0,
+  "held_O1": 443,
+  "held_O2": 443,
+  "held_O3": 443,
+  "held_O4": 15
+ },
+ "catalog": {
+  "functions": {
+   "sha256sum": "hash.sha256",
+   "shasum": "hash.sha256",
+   "openssl": "hash.sha256",
+   "wc": "text.wordcount",
+   "pdftotext": "document.text",
+   "pdfimages": "document.text (companion)"
+  },
+  "on_this_body": {
+   "openssl": {
+    "package": "openssl",
+    "component": "Ubuntu/main",
+    "verdict": "CLEARED_WITH_OBLIGATIONS",
+    "held_P0": false,
+    "held_O1": false,
+    "held_O2": false,
+    "held_O3": false,
+    "held_O4": false,
+    "unclassified": []
+   },
+   "pdfimages": {
+    "package": "poppler-utils",
+    "component": "Ubuntu/main",
+    "verdict": "CLEARED_WITH_OBLIGATIONS",
+    "held_P0": false,
+    "held_O1": false,
+    "held_O2": false,
+    "held_O3": false,
+    "held_O4": false,
+    "unclassified": []
+   },
+   "pdftotext": {
+    "package": "poppler-utils",
+    "component": "Ubuntu/main",
+    "verdict": "CLEARED_WITH_OBLIGATIONS",
+    "held_P0": false,
+    "held_O1": false,
+    "held_O2": false,
+    "held_O3": false,
+    "held_O4": false,
+    "unclassified": []
+   },
+   "sha256sum": {
+    "package": "coreutils",
+    "component": "Ubuntu/main",
+    "verdict": "CLEARED_WITH_OBLIGATIONS",
+    "held_P0": false,
+    "held_O1": false,
+    "held_O2": false,
+    "held_O3": false,
+    "held_O4": false,
+    "unclassified": []
+   },
+   "shasum": {
+    "package": "perl",
+    "component": "Ubuntu/main",
+    "verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "held_P0": false,
+    "held_O1": true,
+    "held_O2": true,
+    "held_O3": true,
+    "held_O4": false,
+    "unclassified": [
+     "not classified by GREG: Artistic-dist, BSD-3-clause-GENERIC, BSD-3-clause-with-weird-numbering, BSD-4-clause-POWERDOG, BZIP, DONT-CHANGE-THE-GPL, GPL-3+-WITH-BISON-EXCEPTION, REGCOMP, SDBM-PUBLIC-DOMAIN, TEXT-TABS, Unicode"
+    ]
+   },
+   "wc": {
+    "package": "coreutils",
+    "component": "Ubuntu/main",
+    "verdict": "CLEARED_WITH_OBLIGATIONS",
+    "held_P0": false,
+    "held_O1": false,
+    "held_O2": false,
+    "held_O3": false,
+    "held_O4": false,
+    "unclassified": []
+   }
+  },
+  "missing": []
+ },
+ "catalog_without_dpkg": {
+  "sha256sum": {
+   "held_O1": true,
+   "held_O2": true,
+   "held_O3": true,
+   "held_O4": true,
+   "held_P0": false
+  },
+  "shasum": {
+   "held_O1": true,
+   "held_O2": true,
+   "held_O3": true,
+   "held_O4": true,
+   "held_P0": false
+  },
+  "openssl": {
+   "held_O1": true,
+   "held_O2": true,
+   "held_O3": true,
+   "held_O4": true,
+   "held_P0": false
+  },
+  "wc": {
+   "held_O1": true,
+   "held_O2": true,
+   "held_O3": true,
+   "held_O4": true,
+   "held_P0": false
+  },
+  "pdftotext": {
+   "held_O1": true,
+   "held_O2": true,
+   "held_O3": true,
+   "held_O4": true,
+   "held_P0": false
+  },
+  "pdfimages": {
+   "held_O1": true,
+   "held_O2": true,
+   "held_O3": true,
+   "held_O4": true,
+   "held_P0": false
+  }
+ },
+ "allowlist": [
+  [
+   "coreutils",
+   "sha256sum"
+  ],
+  [
+   "coreutils",
+   "wc"
+  ],
+  [
+   "openssl",
+   "openssl"
+  ],
+  [
+   "poppler-utils",
+   "pdfimages"
+  ],
+  [
+   "poppler-utils",
+   "pdftotext"
+  ]
+ ],
+ "held_O4_binaries": [
+  [
+   "2to3-3.11",
+   "python3.11-lib2to3",
+   "local",
+   "UNCLASSIFIED_PRIOR_BEHAVIOUR"
+  ],
+  [
+   "docker",
+   "docker-ce-cli",
+   "Docker/stable",
+   "UNCLASSIFIED_PRIOR_BEHAVIOUR"
+  ],
+  [
+   "docker-proxy",
+   "docker-ce",
+   "Docker/stable",
+   "UNCLASSIFIED_PRIOR_BEHAVIOUR"
+  ],
+  [
+   "dockerd",
+   "docker-ce",
+   "Docker/stable",
+   "UNCLASSIFIED_PRIOR_BEHAVIOUR"
+  ],
+  [
+   "man",
+   null,
+   "no package",
+   "UNDETERMINABLE"
+  ],
+  [
+   "nc.openbsd",
+   null,
+   "no package",
+   "UNDETERMINABLE"
+  ],
+  [
+   "pg_config",
+   null,
+   "no package",
+   "UNDETERMINABLE"
+  ],
+  [
+   "pydoc3.11",
+   "python3.11",
+   "local",
+   "UNCLASSIFIED_PRIOR_BEHAVIOUR"
+  ],
+  [
+   "pydoc3.13",
+   "python3.13",
+   "local",
+   "UNCLASSIFIED_PRIOR_BEHAVIOUR"
+  ],
+  [
+   "pygettext3.11",
+   "python3.11",
+   "local",
+   "UNCLASSIFIED_PRIOR_BEHAVIOUR"
+  ],
+  [
+   "pygettext3.13",
+   "python3.13",
+   "local",
+   "UNCLASSIFIED_PRIOR_BEHAVIOUR"
+  ],
+  [
+   "python3.11",
+   "python3.11-minimal",
+   "local",
+   "UNCLASSIFIED_PRIOR_BEHAVIOUR"
+  ],
+  [
+   "python3.13",
+   "python3.13",
+   "local",
+   "UNCLASSIFIED_PRIOR_BEHAVIOUR"
+  ],
+  [
+   "x86_64-linux-gnu-python3.11-config",
+   "libpython3.11-dev",
+   "local",
+   "UNCLASSIFIED_PRIOR_BEHAVIOUR"
+  ],
+  [
+   "x86_64-linux-gnu-python3.13-config",
+   "libpython3.13-dev",
+   "local",
+   "UNCLASSIFIED_PRIOR_BEHAVIOUR"
+  ]
+ ]
+}

@@ -135,7 +135,7 @@ OSS_TESTS = ["tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_gre
 # catch it first instead of the slower genesis suites before them (job 6 hit its 40-minute limit with them merged)
 METABOLISM_TESTS = ["tests/unit/test_greg_license_expressions.py", "tests/unit/test_greg_document_text.py",
                     "tests/unit/test_greg_license_qualification.py", "tests/unit/test_greg_open_source_genesis.py",
-                    "tests/unit/test_greg_license_use_context.py"]
+                    "tests/unit/test_greg_license_use_context.py", "tests/unit/test_greg_model_license.py"]
 OSS_MUTANTS = [
     ("certificate skips edge feasibility", "greg/cognition/network.py",
      "if exact[b] > exact[a] + w + tolerance(exact[a] + w):", "if False:"),
@@ -688,6 +688,34 @@ METABOLISM_MUTANTS = [
      'return False, "no use qualification recorded; requalification required"', 'return True, ""'),
     ("an acquired binary runs without requalification", "greg/genesis.py",
      "requalified, why = licensing.requalify_binary(ctx.manifest, binary)", 'requalified, why = True, ""'),
+    # model-weight licenses (directive 2026-10-22 section VII): the license an installed Ollama model carries
+    ("an edited Apache-2.0 text is cleared by its shape", "greg/licensing.py",
+     "if hashlib.sha256(flat[start:stop].encode()).hexdigest() == APACHE_2_TERMS_SHA256:", "if True:"),
+    ("an edited MIT text is cleared by its opening", "greg/licensing.py",
+     "if rest.startswith(_MIT_TERMS):", "if rest.startswith(_MIT_TERMS[:60]):"),
+    ("terms added beside a standard text are ignored", "greg/licensing.py",
+     "        if extra:\n            atoms.append(", "        if False:\n            atoms.append("),
+    ("restrictive wording inside a model license text is not read", "greg/licensing.py",
+     "    for pattern, cls in RIDERS:\n        if cls != NOT_OPEN:", "    for pattern, cls in ():\n        if cls != NOT_OPEN:"),
+    ("a Llama community license is not recognised", "greg/licensing.py",
+     '(r"(?<![a-z0-9])llama-?[2-9](?:\.[0-9]+)?(?![0-9])", NOT_OPEN), ', ""),
+    ("an OpenRAIL license is not recognised", "greg/licensing.py",
+     '          (r"(?<![a-z])(?:open-?)?rail(?:-m|-license|-[0-9.]+|\+\+)?(?![a-z])", NOT_OPEN),\n', ""),
+    ("a part of a word reads as a rider in a full text", "greg/licensing.py",
+     "if m.end() == len(norm) or not norm[m.end()].isalpha():", "if True:"),
+    ("the GPL-2 distribution clause reads as a use restriction", "greg/licensing.py",
+     'norm = re.sub(r"only-for-non-?commercial-distribution", " ", re.sub(INCLUSIVE, " ", _norm(text)))',
+     'norm = re.sub(INCLUSIVE, " ", _norm(text))'),
+    ("a model's weights are cleared whatever their license", "greg/licensing.py",
+     '"held": not cleared, "auto_attach": cleared,', '"held": False, "auto_attach": True,'),
+    ("a model without a license is not named as such", "greg/licensing.py",
+     "    elif not licenses:\n        parts.append(", "    elif False:\n        parts.append("),
+    ("a license blob that does not match its digest is read", "greg/licensing.py",
+     'if data is None or "sha256:" + hashlib.sha256(data).hexdigest() != digest:', "if data is None:"),
+    ("a model assessment is not bound to its weights", "greg/licensing.py",
+     '"weights": sorted(str(layer.get("digest"))', '"weights": sorted(str(None)'),
+    ("a linked license blob is followed", "greg/licensing.py",
+     'os.O_RDONLY | os.O_NONBLOCK | getattr(os, "O_NOFOLLOW", 0))', "os.O_RDONLY | os.O_NONBLOCK)"),
 ]
 
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),

@@ -126,11 +126,20 @@ _SOURCE_AVAILABLE = re.compile(r"busl|bsl-?1\.1|business-source|sspl|server-side
 # not list (every AGPL and CC NC/ND version, SSPL, BUSL, PolyForm). It only ever makes an unknown stricter; nothing
 # here clears, and bare "BSL" (Boost in Debian) is not Business Source. "All rights reserved" and "proprietary" are
 # not riders: ordinary BSD and MIT notices contain them. An inclusive phrase ("commercial and non-commercial use")
-# is masked first, so it does not read as a non-commercial restriction.
+# is masked first, so it does not read as a non-commercial restriction. Model-weight licenses are named by family,
+# any version: Llama 2 and later, Gemma, every OpenRAIL/RAIL variant, the Qwen research and Tongyi Qianwen license
+# agreements, the DeepSeek and DeepFloyd licenses, Mistral's non-production and research licenses, and research-only
+# terms. Each attaches conditions to the model and what is made with it (an acceptable-use policy, use restrictions
+# passed to every downstream user, a user-count threshold, research-only use).
 RIDERS = ((r"commons-?clause", NOT_OPEN), (r"server-side-public-license|(?<![a-z0-9])sspl(?![a-z])", NOT_OPEN),
           (r"business-source-license|(?<![a-z0-9])busl(?![a-z])|(?<![a-z0-9])bsl-?1\.1(?![0-9])", NOT_OPEN),
           (r"elastic-license|(?<![a-z0-9])elv2(?![a-z0-9])", NOT_OPEN), (r"polyform", NOT_OPEN),
           (r"non-?commercial|not-for-commercial|evaluation-only|(?<![a-z])by-n[cd](?![a-z])", NOT_OPEN),
+          (r"(?<![a-z0-9])llama-?[2-9](?:\.[0-9]+)?(?![0-9])", NOT_OPEN), (r"(?<![a-z0-9])gemma(?![a-z0-9])", NOT_OPEN),
+          (r"(?<![a-z])(?:open-?)?rail(?:-m|-license|-[0-9.]+|\+\+)?(?![a-z])", NOT_OPEN),
+          (r"tongyi-qianwen|(?<![a-z])qwen-(?:research(?:-license)?|license)", NOT_OPEN),
+          (r"(?<![a-z])(?:deepseek|deepfloyd(?:-if)?)-license", NOT_OPEN),
+          (r"non-?production-license|mistral-ai-research-license|research-(?:use-|purposes?-)?only", NOT_OPEN),
           (r"(?<![a-z])agpl|affero", NETWORK_COPYLEFT))
 INCLUSIVE = (r"(?<![a-z])(?<!non-)commercial-?(?:and/or|and|or|&|/)-?non-?commercial"
              r"|non-?commercial-?(?:and/or|and|or|&|/)-?commercial")
@@ -630,6 +639,248 @@ def system_binary(binary: str) -> dict | None:
     except OSError:
         text = None
     return binary_assessment(package, text)
+
+
+# -- model weights (the license an installed Ollama model carries) ----------------------------------------------
+# GREG's local models run through Ollama (greg/models.py OllamaRoute; docs/OPEN_SOURCE_STACK.md). A pulled model
+# stores its license as layers of mediaType application/vnd.ollama.image.license in its manifest
+# (<models>/manifests/<host>/<namespace>/<model>/<tag>), each a full license text in a content-addressed blob
+# (<models>/blobs/sha256-<hex>). The software licenses above say nothing about the weights: Ollama is MIT whatever
+# the model is. A license text is classified by what it is, not by its title: Apache-2.0 and MIT only when the
+# terms match the standard text exactly, restrictive wording anywhere in it is held, and any other text is
+# unclassified. Weights are never cleared by default; nothing here attaches or runs a model.
+
+OLLAMA_LICENSE = "application/vnd.ollama.image.license"
+OLLAMA_WEIGHTS = ("application/vnd.ollama.image.model", "application/vnd.ollama.image.projector",
+                  "application/vnd.ollama.image.adapter")
+OLLAMA_HOST, OLLAMA_NAMESPACE, OLLAMA_TAG = "registry.ollama.ai", "library", "latest"
+MAX_MANIFEST_BYTES = MAX_MODEL_LICENSE_BYTES = 1 << 20
+MODEL_LIMITS = ("read from the model's own license layers in the local Ollama store, not a legal review: Apache-2.0 "
+                "and MIT are recognised only when their terms match the standard text; any other text, and any text "
+                "beside those terms, is unclassified; the weights' embedded metadata (GGUF general.license) and the "
+                "base model a derivative was made from are not read")
+# The terms of Apache-2.0, sections 1-9, from "TERMS AND CONDITIONS FOR USE" through "END OF TERMS AND CONDITIONS",
+# lowercased with whitespace and quotation marks normalized (``_flat``). Measured on Debian's
+# /usr/share/common-licenses/Apache-2.0 and on 15 copies shipped by installed Python packages.
+APACHE_2_TERMS_SHA256 = "bd01d1cbace1131cd60e3341a451ccd492ef00582e93b8a2b5a4caa1c919fe7a"
+_APACHE_HEADER = r"(?:apache license,? version 2\.0,? january 2004 https?://www\.apache\.org/licenses/? ?)?"
+_APACHE_NOTICE = (r"copyright .{0,300}? licensed under the apache license, version 2\.0 \(the \"license\"\); you may not "
+                  r"use this file except in compliance with the license\. you may obtain a copy of the license at "
+                  r"https?://www\.apache\.org/licenses/license-2\.0 unless required by applicable law or agreed to in "
+                  r"writing, software distributed under the license is distributed on an \"as is\" basis, without "
+                  r"warranties or conditions of any kind, either express or implied\. see the license for the "
+                  r"specific language governing permissions and limitations under the license\.")
+_APACHE_APPENDIX = (r"appendix: how to apply the apache license to your work\. to apply the apache license to your work, "
+                    r"attach the following boilerplate notice, with the fields enclosed by brackets \"\[\]\" replaced "
+                    r"with your own identifying information\. \(don't include the brackets!\) the text should be "
+                    r"enclosed in the appropriate comment syntax for the file format\. we also recommend that a file or "
+                    r"class name and description of purpose be included on the same \"printed page\" as the copyright "
+                    r"notice for easier identification within third-party archives\. " + _APACHE_NOTICE)
+_MIT_TERMS = ("permission is hereby granted, free of charge, to any person obtaining a copy of this software and "
+              "associated documentation files (the \"software\"), to deal in the software without restriction, "
+              "including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, "
+              "and/or sell copies of the software, and to permit persons to whom the software is furnished to do so, "
+              "subject to the following conditions: the above copyright notice and this permission notice shall be "
+              "included in all copies or substantial portions of the software. the software is provided \"as is\", "
+              "without warranty of any kind, express or implied, including but not limited to the warranties of "
+              "merchantability, fitness for a particular purpose and noninfringement. in no event shall the authors "
+              "or copyright holders be liable for any claim, damages or other liability, whether in an action of "
+              "contract, tort or otherwise, arising from, out of or in connection with the software or the use or "
+              "other dealings in the software.")
+_MIT_HEADER = re.compile(r"(?:the )?mit license(?: \(mit\))?|(?:copyright|\(c\)|\u00a9)\b.*|all rights reserved\.?",
+                         re.I)
+
+
+def _flat(text: str) -> str:
+    quotes = str.maketrans({"“": '"', "”": '"', "‘": "'", "’": "'"})
+    return re.sub(r"\s+", " ", text.translate(quotes)).strip().lower()
+
+
+def _text_riders(text: str) -> list:
+    """(wording, class) of each not-open rider anywhere in a full license text. Only whole words count, so a GPL's
+    "noncommercially" is not a non-commercial restriction; network copyleft is read from a declaration, not
+    searched for in a text (the GPL-3.0 names the Affero GPL in section 13). GPL-1 and GPL-2 section 3c ("allowed
+    only for noncommercial distribution") limits one way of offering source, not use, and is masked."""
+    norm = re.sub(r"only-for-non-?commercial-distribution", " ", re.sub(INCLUSIVE, " ", _norm(text)))
+    found = []
+    for pattern, cls in RIDERS:
+        if cls != NOT_OPEN:
+            continue
+        for m in re.finditer(pattern, norm):
+            if m.end() == len(norm) or not norm[m.end()].isalpha():
+                found.append((m.group(0), cls))
+                break
+    return found
+
+
+def _standard_text(text: str) -> tuple[str | None, str]:
+    """(SPDX id, other text) when ``text`` holds the standard Apache-2.0 or MIT terms, else (None, its flat form).
+    Apache-2.0: the terms hash to the standard, and only its title header, its appendix or its boilerplate notice
+    may stand beside them. MIT: the terms are the standard ones word for word, after only a title and copyright
+    lines. Anything else beside the terms is returned, for the caller to leave unclassified."""
+    flat = _flat(text)
+    start = flat.find("terms and conditions for use, reproduction, and distribution")
+    end = flat.find("end of terms and conditions")
+    if 0 <= start < end:
+        stop = end + len("end of terms and conditions")
+        if hashlib.sha256(flat[start:stop].encode()).hexdigest() == APACHE_2_TERMS_SHA256:
+            before = re.sub("^" + _APACHE_HEADER, "", flat[:start]).strip()
+            after = flat[stop:].strip()
+            if after and re.fullmatch(f"(?:{_APACHE_APPENDIX}|{_APACHE_NOTICE})", after):
+                after = ""
+            return "Apache-2.0", " ".join(x for x in (before, after) if x)
+    lines = text.splitlines()
+    first = next((i for i, line in enumerate(lines) if _flat(line).startswith("permission is hereby granted")), None)
+    if first is not None:
+        rest = _flat("\n".join(lines[first:]))
+        if rest.startswith(_MIT_TERMS):
+            before = [line.strip() for line in lines[:first] if line.strip() and not _MIT_HEADER.fullmatch(line.strip())]
+            return "MIT", " ".join(before + [rest[len(_MIT_TERMS):].strip()]).strip()
+    return None, flat
+
+
+def model_license_tree(text: str) -> dict:
+    """The expression tree of one full model-license text: the standard license it is, with anything else in it
+    unclassified, and every restrictive rider in it applying (AND)."""
+    known, extra = _standard_text(text)
+    atoms = [{"atom": f"license text mentions '{p}'", "class": c, "category": _category(c, p)}
+             for p, c in _text_riders(text)]
+    if known:
+        atoms.insert(0, {"atom": known, "class": SPDX_CLASS[known.lower()], "category": OPEN_SOURCE})
+        if extra:
+            atoms.append({"atom": f"{known} text with other terms beside it ('{extra[:60]}')", "class": UNKNOWN,
+                          "category": UNCLASSIFIED})
+    elif not atoms:
+        first = next((line.strip() for line in text.splitlines() if line.strip()), "(empty)")
+        atoms.append({"atom": f"license text '{first[:80]}'", "class": UNKNOWN, "category": UNCLASSIFIED})
+    return atoms[0] if len(atoms) == 1 else {"and": atoms}
+
+
+def _read_regular(path: Path, limit: int) -> bytes | None:
+    """At most ``limit`` bytes of a regular file, checked on its descriptor; None when unreadable or larger."""
+    import os
+    import stat
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK | getattr(os, "O_NOFOLLOW", 0))
+    except OSError:
+        return None
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or info.st_size > limit:
+            return None
+        with open(fd, "rb", closefd=False) as stream:
+            data = stream.read(limit + 1)
+        return data if len(data) <= limit else None
+    finally:
+        os.close(fd)
+
+
+def _ollama_parts(name: str) -> tuple[str, str, str, str] | None:
+    """(host, namespace, model, tag) of an Ollama model name, completed as Ollama completes it; None when malformed."""
+    path, tag = name.rsplit(":", 1) if ":" in name.rsplit("/", 1)[-1] else (name, OLLAMA_TAG)
+    pieces = path.split("/")
+    if len(pieces) == 1:
+        host, namespace, model = OLLAMA_HOST, OLLAMA_NAMESPACE, pieces[0]
+    elif len(pieces) == 2:
+        host, namespace, model = OLLAMA_HOST, pieces[0], pieces[1]
+    elif len(pieces) == 3:
+        host, namespace, model = pieces
+    else:
+        return None
+    word = r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}"
+    if not all(re.fullmatch(word, p) for p in (host, namespace, model)) or \
+            not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9._-]{0,127}", tag):    # no piece can be "." or ".."
+        return None
+    return host, namespace, model, tag
+
+
+def _ollama_stores(models_dir) -> list:
+    import os
+    if models_dir is not None:
+        return [Path(models_dir)]
+    stores = [Path(os.environ["OLLAMA_MODELS"])] if os.environ.get("OLLAMA_MODELS") else []
+    return stores + [Path.home() / ".ollama" / "models", Path("/usr/share/ollama/.ollama/models")]
+
+
+def model_assessment(model: str, licenses: list, subject: dict, problem: str | None = None) -> dict:
+    """The assessment of a model from its license texts (None: a license layer that could not be read, or did not
+    match its digest). Weights are cleared only when every license is known and cleared; no license at all, an
+    unreadable one, an unclassified one, or a ``problem`` reading the manifest, is held."""
+    unread = {"atom": "UNREAD", "class": UNKNOWN, "category": UNCLASSIFIED}
+    parts = []
+    if problem:
+        parts.append(_part(model, problem, "UNREAD", unread, [problem]))
+    elif not licenses:
+        parts.append(_part(model, "the model carries no license layer", "UNDECLARED",
+                           {"atom": "UNDECLARED", "class": UNKNOWN, "category": UNCLASSIFIED},
+                           ["the model declares no license"]))
+    for index, text in enumerate([] if problem else licenses):
+        label = f"{model} (license layer {index + 1})"
+        if text is None:
+            parts.append(_part(label, "license layer unreadable or not matching its digest", "UNREAD", unread,
+                               ["a license layer could not be read, or its bytes do not match its digest"]))
+        else:
+            first = next((line.strip() for line in text.splitlines() if line.strip()), "(empty)")
+            parts.append(_part(label, "Ollama license layer (full text)", first[:120], model_license_tree(text)))
+    worst = _worst([p["class"] for p in parts])
+    blocking = [p for p in parts if ORDER.index(p["class"]) > ORDER.index(CLEARED_UP_TO)]
+    cleared = not blocking
+    verdict = ("CLEARED" if worst == PERMISSIVE else "CLEARED_WITH_OBLIGATIONS") if cleared else "FOUNDER_REVIEW"
+    elected = [a for p in parts for a in _elected(p)]
+    return {"verdict": verdict, "class": worst, "held": not cleared, "auto_attach": cleared,
+            "reason": ("; ".join(f"{p['distribution']}: {p['class'].replace('_', ' ')}"
+                                 + (f"; restrictive: {', '.join(p['restrictive'])}" if p.get("restrictive") else "")
+                                 + "".join(f"; {u}" for u in p.get("uncertainty") or []) for p in blocking)
+                       if blocking else "every license the model carries is cleared for GREG's use")[:400],
+            "obligations": sorted({OBLIGATIONS[a["class"]] for a in elected}),
+            "categories": sorted({a["category"] for a in elected}),
+            "restrictive": [r for p in parts for r in p.get("restrictive") or []],
+            "uncertainty": [f"{p['distribution']}: {u}" for p in parts for u in p.get("uncertainty") or []],
+            "parts": parts, "subject": subject,
+            "policy": "model weights: held unless every license layer is a recognised cleared license",
+            "parser": "Ollama manifest + license text (GREG reader)", "limits": MODEL_LIMITS}
+
+
+def ollama_model(model: str, models_dir=None) -> dict | None:
+    """The license assessment of an Ollama model installed on this body, read from its manifest and license blobs,
+    bound to the manifest and weight digests. None when the name is malformed or no store holds the model."""
+    parts = _ollama_parts(model)
+    if parts is None:
+        return None
+    for store in _ollama_stores(models_dir):
+        manifest_path = store / "manifests" / Path(*parts)
+        raw = _read_regular(manifest_path, MAX_MANIFEST_BYTES)
+        if raw is None:
+            raw = _read_regular(store / "manifests" / Path(*(p.lower() for p in parts)), MAX_MANIFEST_BYTES)
+        if raw is None:
+            continue
+        try:
+            layers = json.loads(raw)["layers"]
+            layers = [layer for layer in layers if isinstance(layer, dict)]
+        except (ValueError, KeyError, TypeError):
+            layers = None
+        name = "/".join(parts[:3]) + ":" + parts[3]
+        subject = {"model": name, "manifest_sha256": hashlib.sha256(raw).hexdigest(),
+                   "weights": sorted(str(layer.get("digest")) for layer in layers or []
+                                     if layer.get("mediaType") in OLLAMA_WEIGHTS)}
+        if layers is None:
+            return model_assessment(name, [], subject, "the model's manifest is not a readable Ollama manifest")
+        texts = []
+        for layer in layers:
+            if layer.get("mediaType") != OLLAMA_LICENSE:
+                continue
+            digest = str(layer.get("digest") or "")
+            data = (_read_regular(store / "blobs" / digest.replace(":", "-"), MAX_MODEL_LICENSE_BYTES)
+                    if re.fullmatch(r"sha256:[0-9a-f]{64}", digest) else None)
+            if data is None or "sha256:" + hashlib.sha256(data).hexdigest() != digest:
+                texts.append(None)
+                continue
+            try:
+                texts.append(data.decode("utf-8"))
+            except UnicodeDecodeError:
+                texts.append(None)
+        return model_assessment(name, texts, subject)
+    return None
 
 
 # -- use-context qualification: drafts D-LIC-1 and P4c ------------------------------------------------------------

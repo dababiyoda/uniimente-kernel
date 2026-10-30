@@ -227,7 +227,8 @@ def test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_
         build = json.loads(greg("path", "--build"))
         assert build["build_frontier"]["id"] == "N3" and build["built"] == ["N0", "N1", "N2"]
         assert build["acceptance_frontier"] == {"id": "N1", "title": build["acceptance_frontier"]["title"],
-                                                "operationally_primary": True, "status": devpath.ACCEPTANCE_PENDING,
+                                                "operationally_primary": True, "build": devpath.STRUCTURALLY_BUILT,
+                                                "status": devpath.ACCEPTANCE_PENDING,
                                                 "evidence_level": metrics.STRUCTURAL_CANDIDATE}
         assert build["achieved"] == json.loads(greg("path"))["achieved"] == ["N0"]
         assert build["structural_depth"] == 2 and json.loads(greg("vepmc"))["founder_tier_count"] == 0

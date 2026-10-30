@@ -560,27 +560,89 @@ BUILD_RULE = ("the build frontier is the first node, in path order, that is not 
               "ledger predicate stops it, and a node built past it is reported, never counted. Structural evidence (a "
               "test key, a fixture, a rehearsal) moves only this frontier; the founder's path moves only at the "
               "founder tier")
+# What the acceptance frontier waits for depends on its own build state: a node that is not built, or that has no
+# ledger predicate, is not one founder step from accepted, and saying so would be the inflated completion the
+# correction forbids (review WU01-F2).
 ACCEPTANCE_PENDING = "founder acceptance pending (final step)"
+ACCEPTANCE_AFTER_BUILD = "build open; acceptance follows the build"
+ACCEPTANCE_UNMEASURABLE = "no ledger predicate yet; cannot be accepted"
+ACCEPTANCE_STATUS = {STRUCTURALLY_BUILT: ACCEPTANCE_PENDING, BUILD_OPEN: ACCEPTANCE_AFTER_BUILD,
+                     NO_PREDICATE: ACCEPTANCE_UNMEASURABLE}
 MUTANT_GATE = Path(__file__).resolve().parents[1] / "scripts" / "ci" / "check_path_predicate_mutants.py"
+MUTATION_GUARD_RULE = ("mutation_guarded: the path-predicate mutation gate (scripts/ci/check_path_predicate_mutants.py) "
+                       "lists a live weakening of the node's predicate: its text occurs exactly once in the source, the "
+                       "replacement changes it, and the test it names is defined. Whether that test catches it is "
+                       "evidenced only by a run of the gate, never by this read")
 
 
-def mutation_guarded(gate: Path = MUTANT_GATE) -> set:
-    """Node ids whose predicate has a weakening mutant in the path-predicate mutation gate.
-
-    Read from the gate's own ``MUTANTS`` list, parsed and never imported or run. The gate fails when any mutant
-    survives its test. An install without the gate, or a list that is not plain literals, guards nothing."""
+def _gate_mutants(gate: Path) -> list:
+    """The gate's ``MUTANTS``, parsed and never imported or run; [] when the gate is absent or the list is not a list
+    of plain literals. A literal that is not a list (``None``, a number, a set) reads as nothing, never a crash."""
     try:
         tree = ast.parse(Path(gate).read_text())
-    except (OSError, SyntaxError, ValueError):
-        return set()
+    except (OSError, SyntaxError, ValueError, MemoryError, RecursionError):
+        return []
     for stmt in tree.body:
         if isinstance(stmt, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "MUTANTS" for t in stmt.targets):
             try:
                 mutants = ast.literal_eval(stmt.value)
-            except ValueError:
-                return set()
-            return {m[1] for m in mutants if isinstance(m, tuple) and len(m) > 1 and isinstance(m[1], str)}
-    return set()
+            except (ValueError, TypeError, MemoryError, RecursionError):   # e.g. {[1]: 2}: unhashable while evaluated
+                return []
+            return list(mutants) if isinstance(mutants, (list, tuple)) else []
+    return []
+
+
+def _mutant_liveness(gate: Path) -> list:
+    """(mutant, [why it cannot be run as written]) for every listed mutant; an empty list means live.
+
+    Live: a (name, node or None, file, old, new, test) literal whose ``old`` text occurs exactly once in ``file``,
+    whose ``new`` text differs from it, and whose test (``path::name``) is defined. Files are read relative to the
+    repository that holds the gate (``<root>/scripts/ci/<gate>``). A stale or no-op mutant weakens nothing, and a
+    mutant naming no test can be caught by nothing; a run of the gate fails on each, and this read says so without
+    running it."""
+    root = Path(gate).resolve().parent.parent.parent
+    out = []
+    for mutant in _gate_mutants(gate):
+        if not (isinstance(mutant, tuple) and len(mutant) == 6 and (mutant[1] is None or isinstance(mutant[1], str))
+                and all(isinstance(mutant[i], str) for i in (0, 2, 3, 4, 5))):
+            out.append((mutant, ["not a (name, node, file, old, new, test) literal"]))
+            continue
+        _name, _node, relative, old, new, test = mutant
+        why = []
+        try:
+            found = (root / relative).read_text().count(old)
+        except (OSError, ValueError):
+            found = None
+            why.append(f"no file {relative}")
+        if found is not None and found != 1:
+            why.append(f"stale: its text occurs {found} times in {relative}")
+        if new == old:
+            why.append("no-op: its replacement equals its text")
+        file, _, test_name = test.partition("::")
+        try:
+            defined = bool(test_name) and re.search(rf"^\s*def {re.escape(test_name.split('::')[-1].split('[')[0])}\(",
+                                                    (root / file).read_text(), re.M)
+        except (OSError, ValueError):
+            defined = False
+        if not defined:
+            why.append(f"no test {test}")
+        out.append((mutant, why))
+    return out
+
+
+def mutant_problems(gate: Path | None = None) -> list:
+    """(mutant name, why) for every listed mutant that is not live (``_mutant_liveness``)."""
+    return [(m[0] if isinstance(m, tuple) and m and isinstance(m[0], str) else repr(m)[:80], reason)
+            for m, why in _mutant_liveness(Path(gate or MUTANT_GATE)) for reason in why]
+
+
+def mutation_guarded(gate: Path | None = None) -> set:
+    """Node ids whose predicate the path-predicate mutation gate lists a live weakening for (``_mutant_liveness``).
+
+    Listed, not caught: the gate fails when any mutant survives its test, but only a run of the gate shows that.
+    An install without the gate, a list that is not plain literals, or a node whose every mutant is stale, a no-op
+    or names no test, guards nothing."""
+    return {m[1] for m, why in _mutant_liveness(Path(gate or MUTANT_GATE)) if not why and m[1] is not None}
 
 
 def build_status(journal: Journal | None, data: dict | None = None) -> dict:
@@ -589,8 +651,9 @@ def build_status(journal: Journal | None, data: dict | None = None) -> dict:
     Per node: STRUCTURALLY_BUILT when its ledger predicate is structurally met on this ledger (a repository node
     when its attestation says ACHIEVED), BUILD_OPEN when it is not, NO_PREDICATE when the node has no ledger
     predicate yet (never built, however much code exists for it). ``mutation_guarded`` says whether the mutation
-    gate holds a weakening of the node's predicate that a test catches. Nothing here is founder use, external
-    verification or authority, and nothing here moves ``achieved``."""
+    gate lists a live weakening of the node's predicate (``MUTATION_GUARD_RULE``); that a test catches it is shown
+    only by running the gate. The acceptance frontier's status follows its own build state (``ACCEPTANCE_STATUS``).
+    Nothing here is founder use, external verification or authority, and nothing here moves ``achieved``."""
     data = data or load()
     achieved, active, measurements = _walk(journal, data)
     guarded = mutation_guarded()
@@ -614,7 +677,8 @@ def build_status(journal: Journal | None, data: dict | None = None) -> dict:
                      **({"why": measured["not_yet_measurable"]} if "not_yet_measurable" in measured else {}),
                      **({"rehearsed_by": node["rehearsal"]} if node.get("rehearsal") else {})})
     by_id = {r["id"]: r for r in rows}
-    # The build-phase depth: consecutive predicate nodes, from the first, built on THIS ledger and mutation-guarded.
+    # The build-phase depth: consecutive predicate nodes, from the first, built on THIS ledger and mutation-guarded
+    # (a live weakening listed in the gate; caught only where the gate is run).
     # It is the path's build depth only on one body driven through the product CLI; separate bodies do not add up.
     depth = 0
     for node in data["nodes"]:
@@ -631,7 +695,8 @@ def build_status(journal: Journal | None, data: dict | None = None) -> dict:
             "gate": frontier["gate"], "measurement": measurements[frontier["id"]]},
         "acceptance_frontier": None if active is None else {
             "id": active["id"], "title": active["title"], "operationally_primary": True,
-            "status": ACCEPTANCE_PENDING, "evidence_level": by_id[active["id"]]["evidence_level"]},
+            "build": by_id[active["id"]]["build"], "status": ACCEPTANCE_STATUS[by_id[active["id"]]["build"]],
+            "evidence_level": by_id[active["id"]]["evidence_level"]},
         "achieved": achieved,
         "built": built,
         "built_ahead": [{"id": r["id"], "title": r["title"]} for r in rows
@@ -639,6 +704,7 @@ def build_status(journal: Journal | None, data: dict | None = None) -> dict:
         "structural_depth": depth,
         "nodes": rows,
         "rule": BUILD_RULE,
+        "mutation_guard": MUTATION_GUARD_RULE,
         "sequencing": "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN: the founder-device run is the final acceptance, "
                       "after the build; it is not redefined, and a test key never moves it",
     }

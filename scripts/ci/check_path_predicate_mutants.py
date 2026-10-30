@@ -3,8 +3,11 @@
 The build frontier (`greg path --build`, greg/path.py build_status) counts a node from its predicate's
 ``structurally_met``. A predicate that could be weakened with no failing test would let the build look further
 along than it is, so each predicate in greg/path.py PREDICATES has at least one weakening mutant here, and
-greg.path.mutation_guarded reads this list (parsed, never imported). The rest guard the build frontier itself:
-structural evidence must never set ``met`` or join ``achieved``.
+greg.path.mutation_guarded reads this list (parsed, never imported), counting a mutant only while it is live: its
+text occurs once in its file, its replacement differs, and its named test is defined. That read shows a mutant is
+listed and live; only a run of this gate shows it is caught. The rest guard the build frontier itself: structural
+evidence must never set ``met`` or join ``achieved``, the acceptance frontier says "final step" only when its node
+is built, and the liveness read itself.
 
 Each mutant runs in a scratch copy of the repository, never the checkout, under ``python -B`` with
 PYTHONDONTWRITEBYTECODE=1 and every ``__pycache__`` purged first, so no bytecode left by the checkout or by an
@@ -77,10 +80,42 @@ MUTANTS = [
      '        if not (node.get("predicate") and row["counted"] and row["mutation_guarded"]):\n',
      '        if not (node.get("predicate") and row["counted"]):\n',
      "tests/unit/test_path_build_frontier.py::test_the_build_depth_counts_only_mutation_guarded_nodes"),
-    ("a missing gate guards every node", None, "greg/path.py",
-     '        return set()\n    for stmt in tree.body:\n',
-     '        return {"N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8"}\n    for stmt in tree.body:\n',
+    ("every node reads as guarded whatever the gate lists", None, "greg/path.py",
+     '    return {m[1] for m, why in _mutant_liveness(Path(gate or MUTANT_GATE)) if not why and m[1] is not None}\n',
+     '    return {"N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8"}\n',
      "tests/unit/test_path_build_frontier.py::test_mutation_guarded_reads_the_gate_and_covers_every_node_predicate"),
+    # Review of 2026-10-30 (WU01-F1, F1): a listed mutant guards its node only while it can still run as written.
+    ("a stale mutant still guards its node", None, "greg/path.py",
+     '        if found is not None and found != 1:\n',
+     '        if False:\n',
+     "tests/unit/test_path_build_frontier.py::test_a_stale_no_op_or_untested_mutant_guards_nothing"),
+    ("a no-op mutant still guards its node", None, "greg/path.py",
+     '        if new == old:\n            why.append("no-op',
+     '        if False:\n            why.append("no-op',
+     "tests/unit/test_path_build_frontier.py::test_a_stale_no_op_or_untested_mutant_guards_nothing"),
+    ("a mutant naming no test still guards its node", None, "greg/path.py",
+     '        if not defined:\n',
+     '        if False:\n',
+     "tests/unit/test_path_build_frontier.py::test_a_stale_no_op_or_untested_mutant_guards_nothing"),
+    # WU01-F3: a gate whose MUTANTS is a literal but not a list reads as nothing; it never crashes greg path --build.
+    ("an unhashable literal crashes the gate read", None, "greg/path.py",
+     '            except (ValueError, TypeError, MemoryError, RecursionError):',
+     '            except ValueError:',
+     "tests/unit/test_path_build_frontier.py::test_a_malformed_gate_guards_nothing_and_never_crashes_the_cli"),
+    ("a literal that is not a list is read as the list", None, "greg/path.py",
+     '            return list(mutants) if isinstance(mutants, (list, tuple)) else []\n',
+     '            return list(mutants)\n',
+     "tests/unit/test_path_build_frontier.py::test_a_malformed_gate_guards_nothing_and_never_crashes_the_cli"),
+    # WU01-F2: the acceptance frontier says "final step" only when its node is built.
+    ("the acceptance status ignores the build", None, "greg/path.py",
+     '"status": ACCEPTANCE_STATUS[by_id[active["id"]]["build"]],',
+     '"status": ACCEPTANCE_PENDING,',
+     "tests/unit/test_path_build_frontier.py::test_the_acceptance_status_follows_the_acceptance_nodes_build"),
+    # WU01-F4, F3: a repository node is built only when its attestation says ACHIEVED.
+    ("a repository node counts as built whatever its attestation", None, "greg/path.py",
+     '            status = STRUCTURALLY_BUILT if node["attested"].startswith("ACHIEVED") else BUILD_OPEN\n',
+     '            status = STRUCTURALLY_BUILT\n',
+     "tests/unit/test_path_build_frontier.py::test_a_repository_node_not_attested_achieved_stops_the_build"),
 ]
 
 
@@ -123,6 +158,10 @@ def main() -> int:
             original = path.read_text()
             if original.count(old) != 1:
                 print("STALE", name)
+                invalid += 1
+                continue
+            if new == old:                                  # a no-op weakens nothing; it can never be caught
+                print("NO_OP", name)
                 invalid += 1
                 continue
             path.write_text(original.replace(old, new))

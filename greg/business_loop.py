@@ -27,7 +27,8 @@ import hashlib
 import io
 from pathlib import Path
 
-from greg.capabilities import MAX_READ_BYTES, CapabilityError, InvocationContext, _inside
+from greg.capabilities import CapabilityError, InvocationContext, _inside, bounded_read, faithful_text
+from greg.textform import canon
 
 DEFAULT_COLUMNS = {"amount": "amount", "currency": "currency", "reference": "description"}
 _STRIP = str.maketrans("", "", " ,$€£¥ ")
@@ -62,10 +63,15 @@ def reconcile(params: dict, ctx: InvocationContext) -> dict:
     if not path.is_file():   # no statement yet is a measurement of the world, not a sensor failure
         return {"path": str(path), "exists": False, "matched": False, "matches": 0, "rows_read": 0,
                 "detail": "no statement exported yet"}
-    data = path.read_bytes()
-    if len(data) > MAX_READ_BYTES:
-        raise CapabilityError("statement exceeds read ceiling")
-    rows = list(csv.DictReader(io.StringIO(data.decode("utf-8-sig", errors="replace"))))
+    data = bounded_read(path, "statement exceeds read ceiling")
+    text, how = faithful_text(data)
+    if text is None:
+        # a statement read with replacement characters could hide the reference and report no match (§VI-8): it is
+        # not read at all, and the check stays undecided with the reason
+        return {"path": str(path), "exists": True, "sha256": hashlib.sha256(data).hexdigest(), "text_unreadable": how,
+                "detail": f"statement is not readable text ({how})", "complete": False,
+                "decided": ["exists", "path", "sha256", "text_unreadable"]}
+    rows = list(csv.DictReader(io.StringIO(text)))
     missing = [c for c in columns.values() if rows and c not in rows[0]]
     if missing:
         return {"path": str(path), "exists": True, "matched": False, "matches": 0, "rows_read": len(rows),
@@ -73,8 +79,9 @@ def reconcile(params: dict, ctx: InvocationContext) -> dict:
                 "detail": f"statement lacks the signed columns {missing}; header is {sorted(rows[0])}"}
     minor = bool(params.get("minor_units"))
     hits, near = [], []
+    wanted = canon(reference)          # one text, whichever normalization form either side is in
     for index, row in enumerate(rows):
-        if reference not in (row.get(columns["reference"]) or ""):
+        if wanted not in canon(row.get(columns["reference"]) or ""):
             continue
         amount = parse_amount(row.get(columns["amount"]), minor_units=minor)
         same_currency = (row.get(columns["currency"]) or "").strip().upper() == currency

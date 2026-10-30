@@ -958,7 +958,8 @@ class Body:
         self.ingest_intake()
         # Goal Gravity first, so an awake goal's pulled observation is stepped in this same tick. Without a
         # founder-signed goal on the ledger it does no work and writes nothing (None).
-        from greg import goal_gravity
+        from greg import autonomy, goal_gravity
+        autonomy.regress(self.journal, self.engine.book, now)   # failure evidence withdraws a standing approval first
         gravity = goal_gravity.tick(self, now)
         self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
         recovered = self.genesis.recover(now)     # quarantined capabilities may earn back eligibility (sandbox)

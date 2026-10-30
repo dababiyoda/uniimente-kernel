@@ -489,6 +489,8 @@ def main(argv=None) -> int:
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
+    sub.add_parser("autonomy", help="read-only: the level each (capability, action class, target pattern, budget band) "
+                                    "has earned from the ledger; it grants nothing")
     pp = sub.add_parser("path", help="where GREG stands on its developmental path: active node, gate, exit evidence, horizons")
     pp.add_argument("--node", help="read one node's own measurement (e.g. N6), even past where the path stops")
     tr = sub.add_parser("treasury", help="venture books: verified revenue through your waterfall (node N7); moves no money")
@@ -805,6 +807,10 @@ def main(argv=None) -> int:
             with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
                 data = metrics.vepmc(journal) if args.cmd == "vepmc" else routing.routing_knowledge(journal)
             print(json.dumps(data, indent=1))
+        elif args.cmd == "autonomy":
+            from greg import autonomy
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                print(json.dumps(autonomy.report(journal), indent=1))
         elif args.cmd == "path":
             from greg import path as devpath
 

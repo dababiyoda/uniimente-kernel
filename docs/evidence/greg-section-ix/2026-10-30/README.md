@@ -59,7 +59,7 @@ Command: `python -m pytest -p no:cacheprovider -rA <the tests below>`.
 | 8 | A mission whose evidence is technically valid but insufficient for the requested claim | `tests/integration/test_greg_section_ix_text_scenarios.py::test_evidence_that_is_valid_but_too_narrow_never_proves_an_absence` | #229 | passed: an authentic 64 KiB reading of a 2.4 MiB log never proves an absence |
 | 9 | A mission involving a scanned PDF that is explicitly classified as unsupported or incomplete | `tests/unit/test_greg_document_text.py::test_a_scanned_page_never_proves_a_phrase_absent`, `::test_a_stamped_scan_never_proves_a_phrase_absent` | #201 | passed: a scanned or stamped page leaves absence undecided |
 
-**Integration sweep on the same tree.** These test files were run together on `edfa37f7`:
+**Integration sweep.** These test files were run together on each tree:
 
 - every mission-engine file;
 - whole-output judgment, incomplete evidence and unmeasured-not-failed;
@@ -73,13 +73,15 @@ Command: `python -m pytest -p no:cacheprovider -rA <the tests below>`.
 - the organ suites (#232): organs, the verdict tests, staffing figures, and the fifteen-step mission;
 - packaging.
 
-Result: **2696 passed, 3 skipped, 1 xfailed** in 13 min 45 s. The skips: no runnable browser here (1), Playwright not
-installed (2). The xfail is the binary-policy test that records a P0 hold the founder has not ruled on.
+Result on the final tree `0a3e410d`: **2721 passed, 3 skipped, 1 xfailed** in 13 min 52 s. On the first tree `edfa37f7`:
+2696 passed, 3 skipped, 1 xfailed in 13 min 45 s. On both, the skips are no runnable browser here (1) and Playwright not
+installed (2), and the xfail is the binary-policy test that records a P0 hold the founder has not ruled on.
 `tests/unit/test_greg_organ_exchange.py` (the memo path) needs `python-dotenv`, which this interpreter lacks, so it ran
-with the kernel venv: 13 passed.
+with the kernel venv: 13 passed on each tree.
 
-**Mutation gates on the same tree:** `scripts/ci/check_whole_output_mutants.py`, 110 mutants, 0 survived or stale;
-`scripts/ci/check_acceptance_mutants.py`, 7 mutants, 0 survived, stale or invalid.
+**Mutation gates.** On the final tree `0a3e410d`: `scripts/ci/check_whole_output_mutants.py`, 117 mutants, 0 survived
+or stale; `scripts/ci/check_acceptance_mutants.py`, 8 mutants, 0 survived, stale or invalid. On the first tree
+`edfa37f7`: 110 of 110 and 7 of 7.
 
 **Defects the scenarios found.** Two were found and fixed before this run, both on #229, with three tests that fail
 on the old engine:

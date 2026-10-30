@@ -27,6 +27,7 @@ import time
 
 from .contracts import CognitionError, canonical, digest, strict_data
 from . import condition_competence
+from .replay import current as replay_pin
 
 SCHEMA = "greg-competency-compilation/0.2"   # 0.2: selected_receipt (the executed method's own receipt)
 # The confidence label of an answer from a construction whose problem-level certificate GREG checked.
@@ -1474,6 +1475,53 @@ def _operation_usable(registry, operation: str) -> bool:
     return False
 
 
+def _pinned_row(rows: list[dict], registry, pin: dict, data: dict) -> dict | None:
+    """The one catalog row the receipt named, or None when that method cannot be replayed.
+
+    Version, route and attachment are the receipt's. A different fit that routing would
+    choose today is not a substitute, including when this row is rejected, detached or
+    no longer the version the receipt ran.
+    """
+    route = pin.get("route")
+    if not isinstance(route, dict) or route.get("kind") not in ("compiler", "cortex"):
+        return None
+    if not isinstance(route.get("selection"), str) or not route["selection"]:
+        return None
+    method, version = pin.get("method"), pin.get("version")
+    matches = [r for r in rows if r.get("method") == method and not r.get("rejected")]
+    if len(matches) != 1 or not isinstance(version, str):
+        return None
+    row = dict(matches[0])
+    try:
+        manifest = registry.manifests.get(method)
+    except Exception:
+        return None
+    if manifest is None or str(manifest.version) != version:
+        return None
+    try:
+        usable, _why = _usable(registry, row)
+    except Exception:
+        return None
+    if not usable:
+        return None
+    if route["selection"] == "preferred_by_condition_evidence":
+        # that selection ran the admitted alternative through its declared adapter; the
+        # adapter is part of the route the receipt pinned
+        if method != condition_competence.ALTERNATIVE:
+            return None
+        try:
+            row["adapted_data"] = condition_competence.adapter(data)
+        except (KeyError, TypeError, ValueError):
+            return None
+        row["condition_preferred"] = {"pinned": True}
+    return row
+
+
+_REPLAY_UNAVAILABLE = (
+    "receipt method unavailable: the method, route and version pinned on the receipt "
+    "cannot be replayed; current routing is not a fallback")
+
+
 def _usable(registry, row: dict) -> tuple[bool, str]:
     """Whether the row can run now: an operation's capability must be attached; a composition needs an
     attached capability for every operation stage it declares (problem-path stages are routed on the canonical
@@ -2009,6 +2057,15 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
                    and not r["superseded_by"].get("promoted_as")
                    and not (g.geometry and g.geometry not in r["epistemic_classes"])]
     high = g.consequence_class in HIGH_CONSEQUENCE or vector.high
+    # A receipt replay names the method that already ran. Learned routing below must not
+    # replace it, and a method that can no longer run is unavailable: no other fit, and no
+    # formed mechanism, stands in for it.
+    pin = replay_pin()
+    if pin is not None:
+        pinned = _pinned_row(rows, registry, pin, data)
+        if pinned is None:
+            raise CognitionError(_REPLAY_UNAVAILABLE)
+        eligible[:] = [pinned]
     if not eligible:
         formed = _formed(registry, data, g, body, high, receipt, budget, pid=pid, vector=vector, journal=journal)
         if formed is not None:
@@ -2099,7 +2156,9 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
         r["usable"], r["usable_why"] = _usable(registry, r)
     best = eligible[0]
     runnable = [r for r in eligible if r["usable"]]
-    runnable = condition_competence.compile_hook(g.geometry, data, runnable, registry, journal, receipt, pid)
+    # replay keeps the receipt's method: no cell preference and no shadow trial
+    if pin is None:
+        runnable = condition_competence.compile_hook(g.geometry, data, runnable, registry, journal, receipt, pid)
     if not best["usable"]:
         # the best fit by evidence is registered but withheld: say so, route to the best usable fit, and
         # prepare (never record or act on) one founder ask to attach it, with its admission evidence
@@ -2124,6 +2183,8 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
             except Exception as exc:      # the optional ask never aborts routing; its failure is recorded
                 receipt["founder_attach_ask"] = {"state": "NOT_PREPARED", "why": f"{type(exc).__name__}: {exc}"[:300]}
     if not runnable:
+        if pin is not None:
+            raise CognitionError(_REPLAY_UNAVAILABLE)
         formed = _formed(registry, data, g, body, high, receipt, budget, pid=pid, vector=vector, journal=journal)
         if formed is not None:
             return finish(*formed)
@@ -2156,6 +2217,15 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
     if chosen.get("stale_measurements"):
         # held-out evidence of another version of this method's code, labelled with that version (never ranked)
         receipt["stale_measurements"] = chosen["stale_measurements"]
+    if pin is not None:
+        if receipt.get("condition_shadow"):
+            raise CognitionError(
+                "receipt method unavailable: replay ran a shadow; current routing is not a fallback")
+        # the route label is the one the original receipt recorded, not a label recomputed from
+        # today's settled outcomes
+        receipt["selection_level"] = pin["route"]["selection"]
+        receipt["replay"] = {"method": pin["method"], "version": pin["version"], "route": pin["route"],
+                             "learned_routing": False, "shadows": False}
     region = chosen.get("subregion")
     if region:
         receipt["subregion_evidence"] = region

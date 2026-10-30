@@ -1,9 +1,10 @@
 # The 2026-10-28 directive's completion contract (acceptance/directive-sections.json).
 #
 # The full suite already runs tests/unit/test_directive_sections.py (the static check). This workflow adds what the
-# suite does not: pytest's collection over every node the map cites (a cited node that collects nothing fails), and
-# the mutant gate that removes each safeguard of acceptance/directive.py and requires a failing test. It grants,
-# deploys and publishes nothing.
+# suite does not: pytest's collection over every node the map cites (a cited node that collects nothing fails), the
+# pin ratchet against a pull request's base (a pinned ask that disappears, or whose blocker leaves BUILDABLE_NOT_BUILT,
+# fails), and the mutant gate that removes each safeguard of acceptance/directive.py and requires a failing test. It
+# grants, deploys and publishes nothing.
 name: directive-completion
 
 on:
@@ -12,18 +13,30 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   directive-completion:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install dev dependencies
-        run: pip install -r requirements-dev.txt
-      - name: Directive map, with every cited node collected
-        run: python -m acceptance directive --collect
+      # The map cites tests that import networkx and scipy (requirements-cognition.txt) or Playwright at module level;
+      # without them those files collect nothing and the next step fails. Checked in a clean venv with exactly this
+      # install: every cited node collects.
+      - name: Install dev, cognition and Playwright dependencies
+        run: pip install -r requirements-dev.txt -r requirements-cognition.txt playwright==1.63.0
+      - name: Directive map, every cited node collected, pinned asks held against the base
+        run: |
+          if [ -n "$GITHUB_BASE_REF" ]; then
+            git fetch --no-tags --depth=1 origin "$GITHUB_BASE_REF"
+            python -m acceptance directive --collect --against FETCH_HEAD
+          else
+            python -m acceptance directive --collect
+          fi
       - name: Every directive-completion safeguard fails its tests when removed
         run: python scripts/ci/check_directive_sections_mutants.py

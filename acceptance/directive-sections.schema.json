@@ -43,6 +43,10 @@
         "title": {"type": "string", "minLength": 1},
         "source": {"type": "string", "minLength": 1},
         "depends_on": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "closed_by": {
+          "description": "What closed the unit (a commit, PR or test). No open ask names a closed unit; an open unit is named by an open ask or is a prerequisite of one.",
+          "type": "string", "minLength": 1
+        },
         "note": {"type": "string"}
       }
     },
@@ -54,7 +58,17 @@
         "n": {"type": "integer", "minimum": 1},
         "heading": {"type": "string", "minLength": 1},
         "status": {"enum": ["DONE", "PARTIAL", "OPEN"]},
-        "asks": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/ask"}}
+        "asks": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/ask"}},
+        "not_asks": {
+          "description": "Listed lines of the section (bullets, and lines that start 'Do not' or 'Never') that are not testable asks, each with its reason. A DONE section answers or sets aside every listed line.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["line", "reason"],
+            "properties": {"line": {"type": "string", "minLength": 1}, "reason": {"type": "string", "minLength": 1}}
+          }
+        }
       }
     },
     "ask": {
@@ -74,6 +88,21 @@
         "required_tier": {"$ref": "#/$defs/required"},
         "tier": {"$ref": "#/$defs/status"},
         "coverage": {"enum": ["covered", "partial", "gap"]},
+        "lines": {
+          "description": "Further listed lines of the section this ask answers, verbatim (the excerpt answers each line it quotes whole).",
+          "type": "array", "items": {"type": "string", "minLength": 1}
+        },
+        "retired": {
+          "description": "A retired ask stays in the map: superseded by a live ask that requires at least as much (met when its successor is), or withdrawn by a founder intent record under docs/intent/, quoted verbatim.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["reason"],
+          "properties": {
+            "reason": {"type": "string", "minLength": 1},
+            "superseded_by": {"type": "string", "pattern": "^S[0-9]{1,2}\\.A[0-9]+$"},
+            "record": {"type": "string", "pattern": "^docs/intent/[^#]+#.+$"}
+          }
+        },
         "blocker": {"$ref": "#/$defs/blocker"},
         "note": {"type": "string"}
       }
@@ -86,6 +115,10 @@
         "class": {"enum": ["FOUNDER_ONLY", "EXTERNAL", "BUILDABLE_NOT_BUILT", "PRINCIPLE"]},
         "reason": {"type": "string", "minLength": 1},
         "unit": {"type": "string", "minLength": 1},
+        "record": {
+          "description": "What holds a FOUNDER_ONLY or EXTERNAL blocker: gap:<mission>.<gap> (an open missions.json gap building cannot close, whose dependency fits the class) or <path>#<verbatim text in that file>. Required when a test can reach the ask's required tier.",
+          "type": "string", "pattern": "^(gap:[A-L]\\.G[0-9]+|[^#\\s][^#]*#.+)$"
+        },
         "guarded_by": {
           "oneOf": [
             {"const": "UNGUARDED"},

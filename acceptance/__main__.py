@@ -7,7 +7,8 @@
   directive  the 2026-10-28 directive section by section: each section's status computed from its asks, the
              BUILDABLE_NOT_BUILT asks in dependency order, and whether the prompt is completely built
              (--collect also runs pytest's collection over every node the map cites; --outcomes recomputes
-             the tiers from a recorded run)
+             the tiers from a recorded run; --against <git ref> refuses a pinned ask that disappeared or whose
+             pinned blocker class left BUILDABLE_NOT_BUILT since that ref)
 
 ``run`` exits 0 only when every tested requirement and every Mission L trace link attained its declared
 tier and no cited test failed, errored or collected nothing (a requirement of coverage 'gap' declares no tier,
@@ -108,6 +109,7 @@ def main(argv=None) -> int:
     dire = sub.add_parser("directive")
     dire.add_argument("--collect", action="store_true", help="also check that every cited node collects a test")
     dire.add_argument("--outcomes", help="recompute tiers from a recorded outcomes file")
+    dire.add_argument("--against", metavar="REF", help="compare the pinned asks with the pin at a git ref (a PR's base)")
     dire.add_argument("--out")
     args = parser.parse_args(argv)
 
@@ -119,8 +121,21 @@ def main(argv=None) -> int:
     if args.cmd in ("check", "directive"):
         sections = directive.load_map()
         found = directive.directive_problems(sections, manifest, contract)
+        if args.cmd == "directive" and args.against and not found:
+            base, why = directive.pin_at(args.against)
+            if why:
+                found = [why]
+            elif base is None:
+                print(f"no pin at {args.against}: nothing to ratchet against")
+            else:
+                found = directive.pin_ratchet_problems(base, directive.load_map(directive.PIN))
+                if not found:
+                    print(f"the pinned asks hold against {args.against}")
         if args.cmd == "directive" and args.collect and not found:
-            found = directive.collect_problems(directive.cited_nodes(sections))
+            nodes = directive.cited_nodes(sections)
+            found = directive.collect_problems(nodes)
+            if not found:
+                print(f"all {len(nodes)} distinct cited nodes collect at least one test")
         if found:
             print("directive map is unsound:", *found, sep="\n  ")
             return 2

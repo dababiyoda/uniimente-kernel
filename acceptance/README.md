@@ -8,6 +8,7 @@ Directive 2026-10-13, section 33 (Missions A–L) and section 35 (the full-machi
 | `completion-contract.json` | One record per required function of the Body, Mind, Organs and the operating loop, holding the section-35 fields, plus the fifteen current-machine conditions with their assessments. A function's evidence tier is **computed** from the mission requirements it cites. It is never declared. |
 | `missions.schema.json`, `contract.schema.json` | JSON Schema 2020-12 for both files. |
 | `directive-sections.json` | The 2026-10-28 directive (`docs/intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md`) section by section: one record per section 1-77 with the source's exact heading and its testable asks. Each ask has a paraphrase, a verbatim excerpt, owner paths, the evidence it rests on (contract functions, mission requirements, pytest nodes), the tier it requires and the tier that evidence computes, and, while open, its blocker. A gap-map units table orders the buildable residual. Checked by `directive.py`; schema `directive-sections.schema.json`. |
+| `directive-asks.pin.json` | Every ask id ever issued in the directive map, with the blocker class it may claim while open besides BUILDABLE_NOT_BUILT. An ask is retired, never deleted; `directive --against <base>` refuses a pin change that drops an id or moves a class out of the build residual. Schema `directive-asks.pin.schema.json`. |
 
 ```
 python -m acceptance check                      # static: schemas, nodes, symbols, trace, contract refs, real-process rule
@@ -17,6 +18,7 @@ python -m acceptance report --outcomes o.json   # report from recorded outcomes
 python -m acceptance directive                  # the directive's 77 sections: statuses, blockers, buildable residual
 python -m acceptance directive --collect        # ... and pytest collects every node the map cites
 python -m acceptance directive --outcomes o.json  # ... with tiers recomputed from a recorded run
+python -m acceptance directive --against origin/main  # ... and no pinned ask dropped or moved out of the residual
 ```
 
 ## Rules
@@ -94,33 +96,51 @@ python -m acceptance directive --outcomes o.json  # ... with tiers recomputed fr
 
 ## The directive's sections (founder, 2026-10-30: "That is done when we completely build the prompt")
 
-`check` also validates `directive-sections.json`; `directive` prints it. The rules carry the ones above over to
-the 77 sections and their asks:
+`check` also validates `directive-sections.json` and its pin, `directive-asks.pin.json`; `directive` prints the map.
+The rules carry the ones above over to the 77 sections and their asks:
 
-- An ask's tier is computed, never declared: the least-verified of the mission requirements, contract functions and
-  pytest nodes it cites. Its own nodes establish the tier the ask declares for them (`tests_tier`, UNIT_VERIFIED by
-  default, BODY_VERIFIED only with a cited node that starts a real Body process, by the same static rule). An ask that
-  cites nothing is INTENDED. Without a run the computed tier is the ceiling the cited evidence could establish if every
-  cited test passed; `directive --outcomes` recomputes it from a run, where a failure, an error, a skip or a node that
-  collects nothing leaves the ask unmet.
-- An ask's coverage is never above that of a requirement or function it cites.
+- An ask's tier is computed, never declared: the least-verified of the mission requirements (with the trace links of a
+  mission that carries a trace, as for contract functions), contract functions and pytest nodes it cites. Its own nodes
+  establish the tier the ask declares for them (`tests_tier`, UNIT_VERIFIED by default, BODY_VERIFIED only with a
+  cited node that starts a real Body process, by the same static rule). A cited node must name a test pytest
+  collects, not a helper. An ask that cites nothing is INTENDED. Without a run the computed tier is the ceiling the
+  cited evidence could establish if every cited test passed; `directive --outcomes` recomputes it from a run, where a
+  failure, an error, a skip or a node that collects nothing leaves the ask unmet.
+- An ask's coverage is never above that of a requirement, trace or function it cites.
 - An ask is met only at or above its required tier and covered. Tests reach at most BODY_VERIFIED, so an ask that
   requires FOUNDER_ACCEPTED or above is never met by tests, and its blocker must be FOUNDER_ONLY or EXTERNAL.
 - An open ask names its blocker: FOUNDER_ONLY, EXTERNAL, BUILDABLE_NOT_BUILT (with its gap-map unit when one exists)
-  or PRINCIPLE (guarded by named tests, or UNGUARDED). A met ask names none.
-- A section is DONE only when every ask is met, OPEN when none is, PARTIAL otherwise. Its recorded status must equal
-  the computed one.
-- "The prompt is completely built" holds only when no ask is BUILDABLE_NOT_BUILT or an UNGUARDED PRINCIPLE (and all 77
-  sections are present). "Every section DONE" also needs every founder and external record.
-- `check` fails on a missing or duplicated section, a heading or excerpt that is not the source's, a changed source
-  digest, a cited node that does not resolve, an unknown contract function, mission requirement or unit, a dependency
-  cycle, a tier or coverage claimed above the evidence (or a stale tier), an open ask without a blocker, and a DONE
-  section with an open ask. `directive --collect` also runs pytest's collection and fails on a node that collects
-  nothing.
+  or PRINCIPLE (guarded by named tests among its own evidence, or UNGUARDED). A met ask names none. A FOUNDER_ONLY or
+  EXTERNAL blocker on a tier a test can reach cites the record that holds it: `gap:<mission>.<gap>` (an open
+  missions.json gap building cannot close, dependency founder or credential for FOUNDER_ONLY; external, technical,
+  legal or physical for EXTERNAL) or `<path>#<verbatim words in that file>`.
+- A section's listed lines are its bullets and the lines that start "Do not" or "Never". A section is DONE only when
+  every ask is met and every listed line is answered (an ask's excerpt quotes it whole, or the ask names it in
+  `lines`) or set aside in `not_asks` with a reason; OPEN when no ask is met, PARTIAL otherwise. Its recorded status
+  must equal the computed one.
+- "The prompt is completely built" holds only when no ask is BUILDABLE_NOT_BUILT, an UNGUARDED PRINCIPLE, a PRINCIPLE
+  whose guard fell short in the run, or open with no blocker named, every listed line of every section is accounted
+  for, and all 77 sections are present. "Every section DONE" also needs every founder and external record.
+- The asks are pinned (`directive-asks.pin.json`): every ask id ever issued, with the class it may claim while open
+  besides BUILDABLE_NOT_BUILT. `check` refuses a pinned ask missing from the map, an ask not pinned, and an open ask
+  whose blocker left its pinned class for anything but BUILDABLE_NOT_BUILT. An ask leaves only by retirement, kept in
+  the map: superseded by a live ask that requires at least as much (it is met when its successor is), or withdrawn by
+  a founder intent record under `docs/intent/` quoted verbatim. `directive --against <ref>` compares the pin with the
+  pin committed at `<ref>` (a pull request's base in CI): an id that disappeared or a class that left
+  BUILDABLE_NOT_BUILT fails, so editing the pin in the same change does not get past it.
+- Every gap-map unit is named by an open ask, is a prerequisite of a unit that is, or records `closed_by`; the buildable
+  list prints each unit after its prerequisites, prerequisites without asks of their own included.
+- `check` fails on each of the above, and on a missing, duplicated or out-of-order section, a source other than the
+  directive, a heading or excerpt that is not the source's, a changed source digest, a cited node or guard that does
+  not resolve, an unknown contract function, mission requirement, gap or unit, a dependency cycle, a tier or coverage
+  claimed above the evidence (or a stale tier), and a DONE section with an open ask or an unanswered line.
+  `directive --collect` also runs pytest's collection over every distinct cited node and guard and fails on one that
+  collects nothing (CI installs `requirements-cognition.txt` and Playwright so that every cited file can collect).
 
 Not checked mechanically: whether an ask is a faithful reading of its section, whether its required tier is what the
 section's words ask, SANDBOX_VERIFIED against UNIT_VERIFIED for an ask's own nodes, whether `covered` is honest within
-what its citations allow, and whether a blocker class is the true reason. These are review questions, like the
-coverage questions above.
+what its citations allow, whether a blocker class is the true reason (a record shows the blocker exists, not that it is
+the only one), and whether a set-aside line is truly not an ask. These are review questions, like the coverage
+questions above. The pin and its ratchet make each such judgement a visible, separate change instead of a silent one.
 
 Recorded runs are kept under `docs/evidence/acceptance/`.

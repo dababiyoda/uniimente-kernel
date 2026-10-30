@@ -13,10 +13,11 @@
   "One record per numbered section of the directive's first copy (sections 1-77), with the source's exact heading.",
   "An ask is a testable obligation the section states, with a faithful paraphrase and a short verbatim excerpt. Exhortations no test can observe (for example 'Think deeply') are not asks.",
   "required_tier is what the section's own words ask for: UNIT_VERIFIED for a record, rule or validator; SANDBOX_VERIFIED for behaviour of canonical code with a real ledger and Gate; BODY_VERIFIED for behaviour of the persistent running Body; FOUNDER_ACCEPTED for the founder's own use, key or acceptance; AUTHORIZED_LIVE for a live effect under his grant; EXTERNALLY_VERIFIED and COMMERCIAL_OUTCOME_VERIFIED for what outside parties or markets must confirm.",
-  "tier is computed, never declared: the least-verified of the ask's mission requirements, contract functions and own test nodes (acceptance/directive.py). Without a run it is the ceiling that evidence could establish if every cited test passed.",
-  "An ask is met only at or above its required tier and covered. A section is DONE only when every ask is met.",
+  "tier is computed, never declared: the least-verified of the ask's mission requirements (with the trace links of a mission that carries a trace, Mission L), contract functions and own test nodes (acceptance/directive.py). Without a run it is the ceiling that evidence could establish if every cited test passed.",
+  "An ask is met only at or above its required tier and covered. A section is DONE only when every ask is met and every listed line of the section (each bullet, and each line that starts 'Do not' or 'Never') is answered by an ask's excerpt or lines, or set aside in not_asks with a reason.",
   "Blockers: FOUNDER_ONLY needs Alfonso (his key, device, decision or use); EXTERNAL needs the outside world (people, money, hardware, providers, access); BUILDABLE_NOT_BUILT can be built in this repository now (unit names the gap-map unit when one exists); PRINCIPLE is a standing rule no build completes, guarded by named tests or UNGUARDED.",
-  "The prompt is completely built (INTENT-20261030-BUILD-BEFORE-DEVICE-RUN) only when no ask is BUILDABLE_NOT_BUILT or an UNGUARDED PRINCIPLE. Every section DONE additionally needs the founder and external records no test produces.",
+  "The prompt is completely built (INTENT-20261030-BUILD-BEFORE-DEVICE-RUN) only when no ask is BUILDABLE_NOT_BUILT or an unguarded PRINCIPLE and every listed line of every section is accounted for. Every section DONE additionally needs the founder and external records no test produces.",
+  "A FOUNDER_ONLY or EXTERNAL blocker on a tier a test can reach cites its record (a missions.json gap or quoted words in a file). The set of asks is pinned in acceptance/directive-asks.pin.json: an ask is retired, never deleted, and an open ask's blocker moves only to BUILDABLE_NOT_BUILT.",
   "This map grants, attaches and activates nothing."
  ],
  "units": [
@@ -60,8 +61,10 @@
    "title": "`worker.team`: one signed action fields a role-scoped temporary worker organization in parallel under one grant",
    "source": "gap map of the 77 sections against #196 head 4ec00605 (session 2026-10-30), program rank 3",
    "depends_on": [
-    "MW-C"
-   ]
+    "MW-C",
+    "S38-A"
+   ],
+   "note": "Depends on S38-A (this map, 2026-10-30): a team of parallel workers needs dispatch that does not freeze other missions"
   },
   {
    "id": "WU-04",
@@ -487,6 +490,20 @@
     "WU-01",
     "WU-13"
    ]
+  },
+  {
+   "id": "S15-A",
+   "title": "Admit off-node work only for one of section 15's five reasons, checked on every placement",
+   "source": "this map's review (2026-10-30), section 15 (not in the gap map)",
+   "depends_on": [
+    "WU-01"
+   ]
+  },
+  {
+   "id": "S69-A",
+   "title": "Every mutant gate in scripts/ci runs in a workflow, and every safeguard names the test that fails without it",
+   "source": "this map's review (2026-10-30), section 69 (not in the gap map)",
+   "depends_on": []
   }
  ],
  "sections": [
@@ -589,7 +606,7 @@
       "mission:L.L3"
      ],
      "required_tier": "BODY_VERIFIED",
-     "tier": "BODY_VERIFIED",
+     "tier": "UNIT_VERIFIED",
      "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
@@ -646,7 +663,7 @@
       "mission:L.L3"
      ],
      "required_tier": "FOUNDER_ACCEPTED",
-     "tier": "BODY_VERIFIED",
+     "tier": "UNIT_VERIFIED",
      "coverage": "partial",
      "blocker": {
       "class": "FOUNDER_ONLY",
@@ -887,7 +904,8 @@
      "coverage": "gap",
      "blocker": {
       "class": "EXTERNAL",
-      "reason": "Earlier conversations, project files and organ history beyond their pinned heads are not mounted in this container"
+      "reason": "Earlier conversations, project files and organ history beyond their pinned heads are not mounted in this container",
+      "record": "docs/PROJECT_SOURCE_CENSUS_2026-09-26.md#This census does **not** claim that GitHub can programmatically enumerate every raw ChatGPT conversation ever held."
      }
     }
    ]
@@ -1137,7 +1155,8 @@
      ],
      "evidence": [
       "tests/unit/test_directive_sections.py::test_done_is_refused_while_an_ask_is_open",
-      "tests/unit/test_directive_sections.py::test_a_tier_above_what_the_evidence_can_establish_is_refused"
+      "tests/unit/test_directive_sections.py::test_a_tier_above_what_the_evidence_can_establish_is_refused",
+      "tests/unit/test_directive_sections.py::test_a_deleted_or_relabelled_ask_is_refused"
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
@@ -1147,7 +1166,8 @@
       "reason": "A standing rule; guarded for the acceptance harness and this map, not for prose reports",
       "guarded_by": [
        "tests/unit/test_directive_sections.py::test_done_is_refused_while_an_ask_is_open",
-       "tests/unit/test_directive_sections.py::test_a_tier_above_what_the_evidence_can_establish_is_refused"
+       "tests/unit/test_directive_sections.py::test_a_tier_above_what_the_evidence_can_establish_is_refused",
+       "tests/unit/test_directive_sections.py::test_a_deleted_or_relabelled_ask_is_refused"
       ]
      }
     }
@@ -1273,7 +1293,10 @@
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
-     "coverage": "covered"
+     "coverage": "covered",
+     "lines": [
+      "Do not terminate analysis with:"
+     ]
     },
     {
      "id": "S13.A2",
@@ -1286,6 +1309,54 @@
      "evidence": [
       "tests/unit/test_developmental_inheritance.py::test_each_rule_rejects_a_bad_placement",
       "tests/unit/test_developmental_inheritance.py::test_the_path_and_the_placements_obey_the_rules"
+     ],
+     "required_tier": "UNIT_VERIFIED",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "covered"
+    },
+    {
+     "id": "S13.A3",
+     "ask": "Every placement determines what changed, what survives, what adapts, which node it belongs to, and whether it is ported, restacked, retained, historical or incompatible",
+     "excerpt": "Then determine:",
+     "owner_paths": [
+      "greg/path.py",
+      "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+      "docs/collaboration/ORGAN-PR-PLACEMENTS-2026-09-30.json"
+     ],
+     "evidence": [
+      "tests/unit/test_developmental_inheritance.py::test_each_rule_rejects_a_bad_placement",
+      "tests/unit/test_developmental_inheritance.py::test_the_path_and_the_placements_obey_the_rules",
+      "tests/unit/test_organ_pr_placements.py"
+     ],
+     "required_tier": "UNIT_VERIFIED",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "covered",
+     "lines": [
+      "* what assumption changed;",
+      "* what intended effect remains valid;",
+      "* what mechanisms survive;",
+      "* what requires adaptation;",
+      "* what belongs to the current node;",
+      "* what belongs to a future node;",
+      "* what is historical evidence;",
+      "* what is genuinely incompatible;",
+      "* what should be ported;",
+      "* what should be restacked;",
+      "* what should be retained."
+     ]
+    },
+    {
+     "id": "S13.A4",
+     "ask": "A deferral, a wrong implementation, a present impossibility or an archive never ends an intention: only the founder's own decision changes the destination or abandons an effect",
+     "excerpt": "Do not confuse: NOT NOW with NOT EVER.",
+     "owner_paths": [
+      "greg/path.py",
+      "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json"
+     ],
+     "evidence": [
+      "tests/unit/test_developmental_inheritance.py::test_each_rule_rejects_a_bad_placement",
+      "tests/unit/test_developmental_inheritance.py::test_genuine_obsolescence_needs_a_founder_given_basis",
+      "tests/unit/test_developmental_inheritance.py::test_an_archived_implementation_left_the_tree_and_its_behaviours_are_still_tested"
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
@@ -1352,7 +1423,7 @@
   {
    "n": 15,
    "heading": "BACKCAST FROM WHAT EXISTS",
-   "status": "DONE",
+   "status": "PARTIAL",
    "asks": [
     {
      "id": "S15.A1",
@@ -1364,7 +1435,9 @@
       "greg/cli.py"
      ],
      "evidence": [
-      "tests/unit/test_developmental_inheritance.py::test_exactly_one_primary_node_and_it_moves_only_on_ledger_evidence"
+      "tests/unit/test_developmental_inheritance.py::test_exactly_one_primary_node_and_it_moves_only_on_ledger_evidence",
+      "tests/unit/test_greg_path_cli.py::test_greg_path_reports_position_gate_metric_exit_evidence_and_next_build",
+      "tests/unit/test_greg_path_cli.py::test_greg_path_without_a_body_still_names_the_gate_and_says_it_cannot_measure"
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
@@ -1385,6 +1458,34 @@
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
      "coverage": "covered"
+    },
+    {
+     "id": "S15.A3",
+     "ask": "Work off the active node is admitted only when it clears the active gate, preserves a needed future seam, removes a blocker, protects validated capability or produces decisive evidence",
+     "excerpt": "Parallel work is allowed only when it directly:",
+     "owner_paths": [
+      "greg/path.py",
+      "greg/path.json"
+     ],
+     "evidence": [
+      "tests/unit/test_developmental_inheritance.py::test_an_availability_decision_opens_a_pull_forward_seam_without_changing_the_primary_node"
+     ],
+     "required_tier": "UNIT_VERIFIED",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
+     "lines": [
+      "Do not attempt Node 8 because the destination contains Node 8.",
+      "* clears the active gate;",
+      "* preserves a necessary future seam;",
+      "* removes a blocker;",
+      "* protects validated capability;",
+      "* produces decisive evidence."
+     ],
+     "blocker": {
+      "class": "BUILDABLE_NOT_BUILT",
+      "reason": "Only a pull-forward seam is admitted by rule; nothing checks other off-node work against the five reasons",
+      "unit": "S15-A"
+     }
     }
    ]
   },
@@ -1984,7 +2085,8 @@
      "coverage": "partial",
      "blocker": {
       "class": "EXTERNAL",
-      "reason": "I.I5 is partial: provider workers need the network, and OS confinement needs kernel support (bubblewrap) absent in this container"
+      "reason": "I.I5 is partial: provider workers need the network, and OS confinement needs kernel support (bubblewrap) absent in this container",
+      "record": "acceptance/missions.json#Partial: their network is not confined (the provider needs it), and OS confinement needs kernel support; where it is absent those tests skip, and a skip is not a pass."
      }
     },
     {
@@ -2080,7 +2182,8 @@
      "coverage": "partial",
      "blocker": {
       "class": "EXTERNAL",
-      "reason": "Needs a Mac; Alfonso owns none"
+      "reason": "Needs a Mac; Alfonso owns none",
+      "record": "docs/opus-maximus/INTENT_CONFLICT_MATRIX.md#No Mac owned; Chromebook first; Mac-only qualification rejected (FIRST-BODY-HARDWARE 2026-09-26)"
      }
     }
    ]
@@ -2191,7 +2294,7 @@
       "mission:L.L3"
      ],
      "required_tier": "BODY_VERIFIED",
-     "tier": "BODY_VERIFIED",
+     "tier": "UNIT_VERIFIED",
      "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
@@ -2276,7 +2379,8 @@
      "tests_tier": "BODY_VERIFIED",
      "required_tier": "BODY_VERIFIED",
      "tier": "BODY_VERIFIED",
-     "coverage": "covered"
+     "coverage": "covered",
+     "note": "Met only at the static ceiling: its tests need Playwright and a Chromium binary and skipped on every host this map was checked on (local run 2026-10-30; CI installs Playwright for collection only)."
     },
     {
      "id": "S28.A3",
@@ -2324,7 +2428,8 @@
      "coverage": "gap",
      "blocker": {
       "class": "FOUNDER_ONLY",
-      "reason": "Device keys cannot sign goals today; a standing mandate for phone goals is a new delegation path the founder must decide"
+      "reason": "Device keys cannot sign goals today; a standing mandate for phone goals is a new delegation path the founder must decide",
+      "record": "docs/opus-maximus/MISSION_CONTROL_OPERATIONS.md#Device key that can only decide, critique, pause, resume, stop, and narrow goals"
      }
     },
     {
@@ -2559,7 +2664,8 @@
      "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "SANDBOX_VERIFIED",
      "tier": "SANDBOX_VERIFIED",
-     "coverage": "covered"
+     "coverage": "covered",
+     "note": "Met only at the static ceiling: its tests need bubblewrap namespaces and skipped in the local run of 2026-10-30."
     },
     {
      "id": "S31.A2",
@@ -2588,7 +2694,7 @@
      "coverage": "gap",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "browser.session's tests skip at module level without Playwright (collect nothing here or in CI), and it has no method-level gate",
+      "reason": "browser.session's tests skip at module level, here because no Chromium is installed and in CI because Playwright is not, and it has no method-level gate",
       "unit": "WU-10"
      }
     },
@@ -2952,7 +3058,8 @@
      "coverage": "partial",
      "blocker": {
       "class": "FOUNDER_ONLY",
-      "reason": "The gate hardening for a consequence class escalated inside the commit window waits on the founder's INTEGRITY_AUTHORIZE (I.G1, draft #182)"
+      "reason": "The gate hardening for a consequence class escalated inside the commit window waits on the founder's INTEGRITY_AUTHORIZE (I.G1, draft #182)",
+      "record": "gap:I.G1"
      }
     },
     {
@@ -3024,7 +3131,7 @@
       "mission:L.L1"
      ],
      "required_tier": "BODY_VERIFIED",
-     "tier": "BODY_VERIFIED",
+     "tier": "UNIT_VERIFIED",
      "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
@@ -3052,7 +3159,7 @@
      ],
      "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "BODY_VERIFIED",
-     "tier": "SANDBOX_VERIFIED",
+     "tier": "UNIT_VERIFIED",
      "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
@@ -3213,7 +3320,8 @@
      "coverage": "gap",
      "blocker": {
       "class": "FOUNDER_ONLY",
-      "reason": "Script workers cannot show a lift; model-backed workers need provider keys and a signed spend budget"
+      "reason": "Script workers cannot show a lift; model-backed workers need provider keys and a signed spend budget",
+      "record": "gap:D.G9"
      }
     }
    ]
@@ -3653,7 +3761,8 @@
      "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "SANDBOX_VERIFIED",
      "tier": "SANDBOX_VERIFIED",
-     "coverage": "covered"
+     "coverage": "covered",
+     "note": "Met only at the static ceiling: its tests need a DALEOBANKS checkout and bubblewrap and skipped in the local run of 2026-10-30."
     },
     {
      "id": "S45.A2",
@@ -4082,7 +4191,8 @@
      "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "SANDBOX_VERIFIED",
      "tier": "SANDBOX_VERIFIED",
-     "coverage": "covered"
+     "coverage": "covered",
+     "note": "Met only at the static ceiling: its tests need bubblewrap namespaces and skipped in the local run of 2026-10-30."
     },
     {
      "id": "S50.A3",
@@ -4258,7 +4368,8 @@
      "coverage": "gap",
      "blocker": {
       "class": "FOUNDER_ONLY",
-      "reason": "Choices such as the Landlock or bubblewrap worker posture change what the founder experiences"
+      "reason": "Choices such as the Landlock or bubblewrap worker posture change what the founder experiences",
+      "record": "docs/opus-maximus/REPOSITORY_CONVERGENCE_MAP.md#| Worker posture | #169 envelope, fail closed | supervision, stated as unconfined | Both, as the founder's body setting |"
      }
     }
    ]
@@ -4474,7 +4585,8 @@
      "coverage": "gap",
      "blocker": {
       "class": "FOUNDER_ONLY",
-      "reason": "An open founder decision: metrics.vepmc counts completed missions only"
+      "reason": "An open founder decision: metrics.vepmc counts completed missions only",
+      "record": "docs/intent/INTENT-20261030-BUILD-BEFORE-DEVICE-RUN.json#VEPMC (directive section 57) is not redefined"
      }
     },
     {
@@ -4494,6 +4606,26 @@
      "blocker": {
       "class": "FOUNDER_ONLY",
       "reason": "Alfonso's own enrolled, passphrase-protected key on his designated device; every proof here signs with a per-test key; his run of the runbook with an interruption and his signed acceptance"
+     }
+    },
+    {
+     "id": "S57.A4",
+     "ask": "One founder-mode acceptance driver runs each predicated node's acceptance and refuses rehearsal and test keys",
+     "excerpt": "* founder acceptance/rejection through legitimate authority.",
+     "owner_paths": [
+      "greg/metrics.py",
+      "greg/path.py"
+     ],
+     "evidence": [
+      "tests/unit/test_greg_founder_tier.py::test_fixture_closures_never_move_the_path_in_any_predicate"
+     ],
+     "required_tier": "SANDBOX_VERIFIED",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
+     "blocker": {
+      "class": "BUILDABLE_NOT_BUILT",
+      "reason": "The founder tier refuses test-key closures on every predicate; no one driver runs each predicated node's acceptance in founder mode, rehearsal and device alike",
+      "unit": "MU-G"
      }
     }
    ]
@@ -4682,7 +4814,8 @@
      "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "SANDBOX_VERIFIED",
      "tier": "SANDBOX_VERIFIED",
-     "coverage": "covered"
+     "coverage": "covered",
+     "note": "Met only at the static ceiling: its tests need Playwright and a Chromium binary and skipped on every host this map was checked on (local run 2026-10-30; CI installs Playwright for collection only)."
     },
     {
      "id": "S60.A2",
@@ -5173,7 +5306,7 @@
   {
    "n": 69,
    "heading": "IMPLEMENT",
-   "status": "DONE",
+   "status": "PARTIAL",
    "asks": [
     {
      "id": "S69.A1",
@@ -5189,6 +5322,211 @@
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
      "coverage": "covered"
+    },
+    {
+     "id": "S69.A2",
+     "ask": "Canonical doctrine is corrected in its canonical files, and every agent entry surfaces the correction",
+     "excerpt": "* correct canonical doctrine;",
+     "owner_paths": [
+      "docs/FOUNDER_EFFECT_COMPILER.md",
+      "docs/intent"
+     ],
+     "evidence": [
+      "tests/unit/test_founder_effect_doctrine.py",
+      "tests/unit/test_founder_correction_20261030.py"
+     ],
+     "required_tier": "UNIT_VERIFIED",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "covered"
+    },
+    {
+     "id": "S69.A3",
+     "ask": "Architectural ownership is reconciled: one canonical owner per function, competing active owners removed",
+     "excerpt": "* reconcile architectural ownership;",
+     "owner_paths": [
+      "docs/opus-maximus/REPOSITORY_CONVERGENCE_MAP.md"
+     ],
+     "evidence": [],
+     "required_tier": "UNIT_VERIFIED",
+     "tier": "INTENDED",
+     "coverage": "gap",
+     "lines": [
+      "* remove competing active ownership;"
+     ],
+     "blocker": {
+      "class": "BUILDABLE_NOT_BUILT",
+      "reason": "As S52.A1 and S52.A2: ownership is reconciled in prose; no registry or guard keeps one canonical owner per function",
+      "unit": "MW-C"
+     }
+    },
+    {
+     "id": "S69.A4",
+     "ask": "Current PRs and branches are classified, and validated mechanisms ported, from live state",
+     "excerpt": "* classify current PRs and branches;",
+     "owner_paths": [
+      "scripts/lineage_map.py",
+      "docs/collaboration/ORGAN-PR-PLACEMENTS-2026-09-30.json"
+     ],
+     "evidence": [
+      "tests/unit/test_organ_pr_placements.py",
+      "tests/unit/test_developmental_inheritance.py::test_every_open_kernel_pr_is_placed_on_the_path",
+      "tests/unit/test_lineage_map.py"
+     ],
+     "required_tier": "UNIT_VERIFIED",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
+     "lines": [
+      "* port validated mechanisms;"
+     ],
+     "blocker": {
+      "class": "BUILDABLE_NOT_BUILT",
+      "reason": "As S53.A1: placements, ports included, are dated snapshots, not read from live PR and branch state",
+      "unit": "S53-A"
+     }
+    },
+    {
+     "id": "S69.A5",
+     "ask": "The active bottleneck to build is computed, not chosen by hand",
+     "excerpt": "* build the active bottleneck;",
+     "owner_paths": [
+      "greg/path.py",
+      "greg/path.json"
+     ],
+     "evidence": [
+      "tests/unit/test_developmental_inheritance.py::test_exactly_one_primary_node_and_it_moves_only_on_ledger_evidence"
+     ],
+     "required_tier": "UNIT_VERIFIED",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
+     "blocker": {
+      "class": "BUILDABLE_NOT_BUILT",
+      "reason": "greg path names the acceptance node; with no build frontier the bottleneck to build is not computed (the 2026-10-30 correction)",
+      "unit": "WU-01"
+     }
+    },
+    {
+     "id": "S69.A6",
+     "ask": "Every build lands with tests, an attack and CI: each safeguard's test fails without it, and each mutant gate runs in a workflow",
+     "excerpt": "* add tests; * attack the implementation; * run CI;",
+     "owner_paths": [
+      ".github/workflows",
+      "scripts/ci"
+     ],
+     "evidence": [],
+     "required_tier": "UNIT_VERIFIED",
+     "tier": "INTENDED",
+     "coverage": "gap",
+     "blocker": {
+      "class": "BUILDABLE_NOT_BUILT",
+      "reason": "No check ties a mutant gate in scripts/ci to a workflow that runs it, or a safeguard to the test that fails without it",
+      "unit": "S69-A"
+     }
+    },
+    {
+     "id": "S69.A7",
+     "ask": "Negative evidence is preserved",
+     "excerpt": "* preserve negative evidence;",
+     "owner_paths": [
+      "greg/appraisal.py",
+      "provenance/ledger.py"
+     ],
+     "evidence": [
+      "tests/unit/test_greg_failure_closure.py",
+      "tests/unit/test_append_only_witness.py"
+     ],
+     "required_tier": "UNIT_VERIFIED",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
+     "blocker": {
+      "class": "PRINCIPLE",
+      "reason": "As S74.A1: a standing rule for conduct; the ledger guards what reaches it",
+      "guarded_by": [
+       "tests/unit/test_greg_failure_closure.py",
+       "tests/unit/test_append_only_witness.py"
+      ]
+     }
+    },
+    {
+     "id": "S69.A8",
+     "ask": "Every PR is reviewable: it carries a collaboration receipt with its deliberation and the checks run and not run",
+     "excerpt": "* create reviewable PRs.",
+     "owner_paths": [
+      ".github/workflows/collaboration-receipt.yml"
+     ],
+     "evidence": [
+      "tests/unit/test_collaboration_receipt.py"
+     ],
+     "required_tier": "UNIT_VERIFIED",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "covered"
+    },
+    {
+     "id": "S69.A9",
+     "ask": "No giant architectural document stands in for code that can be built",
+     "excerpt": "Do not respond with another giant architectural document when the required decision is already clear and code can be built.",
+     "owner_paths": [
+      "constitution/constitution.ucl",
+      "compiler/ucl_compiler.py"
+     ],
+     "evidence": [],
+     "required_tier": "UNIT_VERIFIED",
+     "tier": "INTENDED",
+     "coverage": "gap",
+     "blocker": {
+      "class": "BUILDABLE_NOT_BUILT",
+      "reason": "As S55.A1: the cathedral kill condition is compiled but never evaluated",
+      "unit": "WU-13"
+     }
+    },
+    {
+     "id": "S69.A10",
+     "ask": "Nothing merges or changes a protected or default branch on its own: GREG's workers never commit, push or change a protected surface",
+     "excerpt": "Do not merge automatically without explicit authority.",
+     "owner_paths": [
+      "greg/workers.py"
+     ],
+     "evidence": [
+      "tests/unit/test_greg_workers.py::test_claude_worker_argv_is_bounded",
+      "tests/unit/test_greg_workers.py::test_a_change_to_a_protected_surface_is_never_accepted"
+     ],
+     "required_tier": "UNIT_VERIFIED",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
+     "lines": [
+      "Do not directly modify protected/default branches unless explicitly authorized."
+     ],
+     "blocker": {
+      "class": "PRINCIPLE",
+      "reason": "A standing rule; guarded for GREG's workers, not for every agent's git conduct",
+      "guarded_by": [
+       "tests/unit/test_greg_workers.py::test_claude_worker_argv_is_bounded",
+       "tests/unit/test_greg_workers.py::test_a_change_to_a_protected_surface_is_never_accepted"
+      ]
+     }
+    },
+    {
+     "id": "S69.A11",
+     "ask": "No deploy, spend, publication, outside contact, purchase, legal entity or irreversible external change without applicable authority",
+     "excerpt": "Do not deploy, spend, publish, contact outsiders, purchase infrastructure, create legal entities or make irreversible external changes without applicable authority.",
+     "owner_paths": [
+      "policy/consequence_gate.py",
+      "greg/authority.py"
+     ],
+     "evidence": [
+      "tests/unit/test_greg_platform.py::test_guardrail_autonomy_is_not_authority",
+      "tests/unit/test_consequence_gate.py"
+     ],
+     "required_tier": "UNIT_VERIFIED",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
+     "blocker": {
+      "class": "PRINCIPLE",
+      "reason": "A standing rule; the Consequence Gate guards what reaches it",
+      "guarded_by": [
+       "tests/unit/test_greg_platform.py::test_guardrail_autonomy_is_not_authority",
+       "tests/unit/test_consequence_gate.py"
+      ]
+     }
     }
    ]
   },
@@ -5233,7 +5571,7 @@
       "mission:L.L3"
      ],
      "required_tier": "BODY_VERIFIED",
-     "tier": "BODY_VERIFIED",
+     "tier": "UNIT_VERIFIED",
      "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
@@ -5311,7 +5649,8 @@
      "tests_tier": "BODY_VERIFIED",
      "required_tier": "BODY_VERIFIED",
      "tier": "BODY_VERIFIED",
-     "coverage": "covered"
+     "coverage": "covered",
+     "note": "Met only at the static ceiling: its tests need Playwright and a Chromium binary and skipped on every host this map was checked on (local run 2026-10-30; CI installs Playwright for collection only)."
     },
     {
      "id": "S72.A2",
@@ -5413,7 +5752,8 @@
      ],
      "evidence": [
       "tests/unit/test_directive_sections.py::test_done_is_refused_while_an_ask_is_open",
-      "tests/unit/test_acceptance_harness.py::test_without_a_run_nothing_is_verified"
+      "tests/unit/test_acceptance_harness.py::test_without_a_run_nothing_is_verified",
+      "tests/unit/test_directive_sections.py::test_a_deleted_or_relabelled_ask_is_refused"
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
@@ -5423,7 +5763,8 @@
       "reason": "A standing rule; guarded for the harness and this map, not for prose reports",
       "guarded_by": [
        "tests/unit/test_directive_sections.py::test_done_is_refused_while_an_ask_is_open",
-       "tests/unit/test_acceptance_harness.py::test_without_a_run_nothing_is_verified"
+       "tests/unit/test_acceptance_harness.py::test_without_a_run_nothing_is_verified",
+       "tests/unit/test_directive_sections.py::test_a_deleted_or_relabelled_ask_is_refused"
       ]
      }
     }

@@ -350,10 +350,12 @@ def test_a_forbidden_clause_in_a_utf16_contract_keeps_the_mission_open(tmp_path)
     check["predicate"]["op"] = "not_contains"
     submit(home, key, body_id, "MISSION", mission("m:clean", checks=[check], strategies=[],
                                                   capabilities=["fs.read"], ceiling="read_only"))
-    missions, _ = run(home, Clock(), ticks=4, step=600.0)
+    missions, requests = run(home, Clock(), ticks=4, step=600.0)
     assert missions["m:clean"].status != "ACHIEVED"                                # before: ACHIEVED
     observed = [e for e in events(home, "mission.observed") if e["mission_id"] == "m:clean"]
-    assert observed and not any(e["passed"] for e in observed)
+    # the clause was read and found, a measured failure: not an unreadable file, not a question about the sensor
+    assert observed and all(not e["passed"] and "insufficient evidence" not in e["detail"] for e in observed)
+    assert [r.get("kind") for r in requests if r.get("mission_id") == "m:clean"] == ["NO_STRATEGY"]
 
 
 def test_an_unreadable_contract_is_asked_about_not_certified(tmp_path):

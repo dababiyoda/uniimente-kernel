@@ -74,3 +74,22 @@ export async function verifyCommand(publicKey, envelope) { // used by tests for 
   const { signature, ...unsigned } = envelope;
   return crypto.subtle.verify("Ed25519", publicKey, unhex(signature), enc.encode(COMMAND_PREFIX + canonical(unsigned)));
 }
+
+// What the founder reads before answering one ask: the exact scope an answer binds, every key, and what silence does.
+// The same terms as the console (greg/console.py _ask_details); pure, so node tests it without a browser.
+export function askTerms(r) {
+  const shown = (v) => Array.isArray(v) ? v.join(", ") : (v !== null && typeof v === "object" ? JSON.stringify(v) : String(v));
+  const scope = Object.entries({ ...(r.action_id ? { action: r.action_id } : {}), ...(r.authority_requested || {}) });
+  const lines = [];
+  if (scope.length) lines.push("Exact scope of this ask: " + scope.map(([k, v]) => `${k}: ${shown(v)}`).join("; "));
+  if (r.consequence_of_no_response) lines.push("If you do not answer: " + r.consequence_of_no_response);
+  return lines;
+}
+
+// The answers the body accepts for this ask, as [label, answer] (greg/missions.py MissionEngine.answer refuses
+// approve/reject on a RECONCILIATION, and every answer on an ask no DECISION closes).
+export function askAnswers(r) {
+  if (r.answerable === false) return [];
+  if (r.kind === "RECONCILIATION") return [["It happened", "reconcile_executed"], ["It did not happen", "reconcile_not_executed"]];
+  return [["Approve", "approve"], ["Reject", "reject"]];
+}

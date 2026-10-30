@@ -348,9 +348,15 @@ def _ask_details(r: dict) -> str:
                      + (f"<li>reach: {_e(shown(reach['may_reach']))}</li>" if "may_reach" in reach else "")
                      + (f"<li>credentials: {_e(shown(reach['credentials']))}</li>" if "credentials" in reach else "")
                      + "</ul>")
-    if r.get("resource"):
-        parts.append("<br><span class=muted>Authority needed: "
-                     + _e("; ".join(f"{k}: {v}" for k, v in r["authority_requested"].items())) + "</span>")
+    # The exact scope an answer binds, every key: a withheld recommendation was the only other place most of it
+    # showed, and a key outside the reach list (a malformed mcp scope) was dropped. The reach list is not repeated.
+    scope = {**({"action": r["action_id"]} if r.get("action_id") else {}),
+             **{k: v for k, v in (r.get("authority_requested") or {}).items() if k not in reach}}
+    if scope:
+        parts.append("<br><b>Exact scope of this ask:</b> " + _e("; ".join(
+            f"{k}: {', '.join(map(str, v)) if isinstance(v, list) else v}" for k, v in scope.items())))
+    if r.get("consequence_of_no_response"):
+        parts.append("<br><b>If you do not answer:</b> " + _e(r["consequence_of_no_response"]))
     return "".join(parts)
 
 

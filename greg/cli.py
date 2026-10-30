@@ -6,6 +6,7 @@
     greg founder public --key K               print the public half of your key (writes no body state)
     greg mission submit mission.json --key K  signed goal -> inbox; the body runs it
     greg status | greg decisions | greg morning
+    greg intake --source feed://ops --channel ops < note.txt   untrusted data for the running body (never a command)
     greg decide REQUEST_ID approve|reject --key K
     greg critique EVENT_ID --verdict reject --evidence-type founder_judgment --text ... --key K
     greg pause|resume|stop --key K            (or: greg stop --local, touching STOP)
@@ -94,14 +95,19 @@ def _secret_file(path: str) -> str:
         raise BodyError("a credential file must be text (UTF-8); nothing stored") from None
 
 
+# Where greg/chromebook/install.sh writes the founder key. Named in every refusal; never used silently:
+# a signing command signs only with the key file it names (--key), kept from the candidate over #168 1dfef4e1.
+DEFAULT_FOUNDER_KEY = "~/.greg-founder.pem"
+
+
 def _key_file(args, kind: str | None) -> str:
     """The founder key file a signing command names, or a plain refusal (never a traceback)."""
     what = f"signing {kind}" if kind else "this command"
     if not getattr(args, "key", None):
-        raise BodyError(f"{what} needs your founder key: add --key ~/.greg-founder.pem"
+        raise BodyError(f"{what} needs your founder key: add --key {DEFAULT_FOUNDER_KEY}"
                         + (" (or --print-only to review it unsigned)" if hasattr(args, "print_only") else ""))
     if not Path(args.key).expanduser().is_file():
-        raise BodyError(f"no founder key file at {args.key}; the installer creates ~/.greg-founder.pem")
+        raise BodyError(f"no founder key file at {args.key}; the installer creates {DEFAULT_FOUNDER_KEY}")
     return str(Path(args.key).expanduser())
 
 
@@ -344,7 +350,7 @@ def main(argv=None) -> int:
     vp = css.add_parser("verify-package", help="recipient side: check a presentation without any GREG state")
     vp.add_argument("presentation")
     css.add_parser("calibration", help="read-only: forecast calibration from realized values bound to receipts, "
-                                       "and the forecast receipts still awaiting a realization")
+                                       "and forecasts/construction objectives still awaiting a realization")
     cm = css.add_parser("mission")
     cm.add_argument("--request", required=True, help="bounded cognition request JSON")
     cm.add_argument("--id", required=True, help="durable mission identity")
@@ -425,9 +431,18 @@ def main(argv=None) -> int:
         if name == "lifecycle":
             q.add_argument("mission_id"); q.add_argument("state"); q.add_argument("--reason", default="")
         if name == "realize":
-            q.add_argument("receipt", help="ledger hash of the forecast receipt (greg cognition calibration lists them)")
-            q.add_argument("--value", type=float, action="append", required=True,
-                           help="one observed value per forecast horizon step, in order")
+            q.add_argument("receipt", help="ledger hash of the forecast or construction receipt (greg cognition calibration lists them)")
+            values = q.add_mutually_exclusive_group(required=True)
+            values.add_argument("--value", type=float, action="append",
+                                help="forecast: one observed value per horizon step, in order")
+            values.add_argument("--objective-value", type=float,
+                                help="construction: one observed scalar value of the named objective")
+            values.add_argument("--resolves", action="append", metavar="EVENT",
+                                help="resolve a disputed construction outcome: a realization event it rules on "
+                                     "(repeat; greg cognition calibration lists a prepared resolution)")
+            q.add_argument("--accept", metavar="EVENT",
+                           help="with --resolves: the report to accept, one whose reporter declared an independent source "
+                                "(external_record, sensor_observation; declared, not verified); omit to invalidate them")
             q.add_argument("--source", default="founder_reported",
                            choices=["founder_reported", "external_record", "sensor_observation"])
             q.add_argument("--note", default="")
@@ -467,11 +482,19 @@ def main(argv=None) -> int:
                                           "kubeconfig); a mission hands it to a server as a file (secret_files)")
     ses.add_parser("remove").add_argument("name")
     ses.add_parser("list", help="handle names only; values are never printed")
+    it = sub.add_parser("intake", help="hand the body one untrusted observation (stdin or --file); it reads it on "
+                                       "its next tick as data, never as a command")
+    it.add_argument("--source", required=True); it.add_argument("--channel", required=True)
+    it.add_argument("--file", help="read the content from this file instead of stdin")
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
     pp = sub.add_parser("path", help="where GREG stands on its developmental path: active node, gate, exit evidence, horizons")
-    pp.add_argument("--node", help="read one node's own measurement (e.g. N6), even past where the path stops")
+    pq = pp.add_mutually_exclusive_group()
+    pq.add_argument("--node", help="read one node's own measurement (e.g. N6), even past where the path stops")
+    pq.add_argument("--build", action="store_true",
+                    help="the build frontier beside the acceptance frontier: per node STRUCTURALLY_BUILT, BUILD_OPEN "
+                         "or NO_PREDICATE; structural evidence moves only the build frontier, never the founder's path")
     tr = sub.add_parser("treasury", help="venture books: verified revenue through your waterfall (node N7); moves no money")
     trs = tr.add_subparsers(dest="treasury_cmd", required=True)
     trs.add_parser("books", help="per venture: verified revenue, obligations and reserves, reinvestable surplus, transfers")
@@ -550,6 +573,10 @@ def main(argv=None) -> int:
     fdc.add_argument("metric"); fdc.add_argument("--split", required=True, help="ISO time dividing before/after")
     fdb = fds.add_parser("seed", help="Institutional Seed: content-addressed backup of this body (private keys excluded)")
     fdb.add_argument("--out", required=True, help="seed store directory, outside the body home")
+    fdr2 = fds.add_parser("restore", help="restore --home (empty) from an Institutional Seed; the body comes back "
+                                          "held until a founder-key BODY_RESUME issued after the restore")
+    fdr2.add_argument("--store", required=True, help="the seed store directory")
+    fdr2.add_argument("--seed", required=True, help="the seed's sha256: address, as `greg foundry seed` printed it")
     sub.add_parser("learning", help="brief corrections per labelled brief, and every learned change kept, rejected or reverted")
     sub.add_parser("acceptance", help="read-only founder-device acceptance report from this body's own ledger")
     rh = sub.add_parser("rehearse", help="credential-free rehearsal: a throwaway body and REHEARSAL key run the "
@@ -786,6 +813,8 @@ def main(argv=None) -> int:
             from greg import path as devpath
 
             def where(journal):
+                if getattr(args, "build", False):
+                    return devpath.build_status(journal)
                 if not getattr(args, "node", None):
                     return devpath.position(journal)
                 try:
@@ -859,6 +888,10 @@ def main(argv=None) -> int:
                 print(json.dumps(completion.status(), indent=1))
             elif args.foundry_cmd == "run":
                 print(json.dumps(completion.run(args.system), indent=1, default=str))
+            elif args.foundry_cmd == "restore":
+                from greg.recovery import restore_body
+                print(json.dumps(restore_body(Path(args.store).expanduser().resolve(), args.seed, Path(home)),
+                                 indent=1))
             elif args.foundry_cmd == "seed":
                 from foundry.systems import seed
                 out = Path(args.out).expanduser().resolve()
@@ -914,8 +947,21 @@ def main(argv=None) -> int:
                 print(_drop(home, "BODY_STOP", {}, args))
         elif args.cmd in ("attach", "detach"):
             print(_drop(home, "CAPABILITY_" + args.cmd.upper(), {"capability_id": args.capability_id}, args))
+        elif args.cmd == "realize" and args.resolves:
+            if not args.note.strip():
+                raise BodyError("--note states the basis of the resolution: the record that decides it")
+            print(_drop(home, "REALIZATION", {"receipt": args.receipt, "resolves": args.resolves,
+                                              "accept": args.accept, "note": args.note}, args))
         elif args.cmd == "realize":
-            print(_drop(home, "REALIZATION", {"receipt": args.receipt, "realized": args.value, "source": args.source,
+            if args.accept:
+                raise BodyError("--accept is used with --resolves")
+            realized = args.value
+            if args.objective_value is not None:
+                import math
+                if not math.isfinite(args.objective_value):
+                    raise BodyError("--objective-value requires one finite number")
+                realized = args.objective_value
+            print(_drop(home, "REALIZATION", {"receipt": args.receipt, "realized": realized, "source": args.source,
                                               "note": args.note}, args))
         elif args.cmd == "lifecycle":
             print(_drop(home, "LIFECYCLE", {"mission_id": args.mission_id, "state": args.state,
@@ -1028,6 +1074,12 @@ def main(argv=None) -> int:
                                   "never the ledger", "read_by": "only capabilities that declare this handle"}, indent=1))
             else:
                 print(json.dumps({"removed": args.name if broker.remove(args.name) else None}, indent=1))
+        elif args.cmd == "intake":
+            from greg.body import drop_intake
+            content = Path(args.file).read_text() if args.file else sys.stdin.read()
+            dropped = drop_intake(home, source=args.source, channel=args.channel, content=content)
+            print(json.dumps({"dropped": str(dropped), "authority": "none: data only, read on the body's next tick"},
+                             indent=1))
         elif args.cmd == "start":
             stop = Layout(home).stop_file
             prior = stop.read_text() if stop.exists() else None

@@ -1,0 +1,129 @@
+{
+  "frozen_at": "2026-10-21T15:07:25Z",
+  "inputs": {
+    "arms": {
+      "baseline_system_prompt_sha256": "sha256:e5ffbe9451a88600a36e2133ce48f2660f8483b9332fcad5e76017b73694b4d2",
+      "committee_roles": [
+        "a meticulous engineer",
+        "a skeptical auditor",
+        "a pragmatic operator"
+      ],
+      "declared_baselines": [
+        "always_llm",
+        "llm_committee"
+      ],
+      "references": [
+        "always_abstain"
+      ],
+      "routed": "routed_seed"
+    },
+    "bootstrap": [
+      2000,
+      20260930
+    ],
+    "code": {
+      "adapters/__init__.py": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "adapters/contract_validation.py": "sha256:aaabcc56381e205db45641b342ae17f740af04b47e58f57dae227be4382688f0",
+      "capabilities/__init__.py": "sha256:ed6f9bb2fc436b356c28ce7bbca69a95fbf4e885c61302af4b40956eb494c01e",
+      "capabilities/genome.py": "sha256:a019cc7d8d34ec5c1f3f940c7666031d2ca33d416fe33ff00f250138bb19516c",
+      "compiler/__init__.py": "sha256:ead857ac9fcfe22b6dfedcf89f3a48ead745e2082240cb43f4f4362917b2bdc5",
+      "compiler/ucl_compiler.py": "sha256:ac5b2ead10b6573bd266dd0ef5c5580a7cc31e682ce0406b23672d845437f1b5",
+      "compiler/ucl_parser.py": "sha256:0df1188a2448c96b0a4d766a4b7cc44f3300173cf5a2a45c3bd614516dd7773e",
+      "cortex/__init__.py": "sha256:ebe9b6518faec1417b2344fc1c0e31931f04bc3bf1c2ab9aa96bbf0281ebb362",
+      "cortex/contracts.py": "sha256:29b020c398b2f4b26614e804dfa34f73cb44a11bdcc7892688a75ca45c586f98",
+      "cortex/evaluation/__init__.py": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "cortex/evaluation/arms.py": "sha256:3142bff2aa8d5f316ea419e42afe5077e365a5c6939885454b3c080d2fbe614f",
+      "cortex/evaluation/generators.py": "sha256:2b302d0d01b8051eae604dec7214726c53fe6bce7deb90d4e55b5cdcc544c362",
+      "cortex/evaluation/run.py": "sha256:42460d4f95ab8c86f3be6081ba2fc8555c8a319ceebfa2d02b34bd3e88a82cdc",
+      "cortex/evaluation/scoring.py": "sha256:8cbb90aade8d73da67d3c14d673408edaf45cbc65ddf6ebe7a27bea7ed6610d7",
+      "cortex/gates.py": "sha256:f89d4124925d311aaf0fe0f3437dbaa18edd095141aabb591db2cb3047293279",
+      "cortex/genome.py": "sha256:e6aa73cd9e20bb3e8d7d8fef2ce15ba5e26a7ea902d0dc0f8dbda815a4d701c0",
+      "cortex/memory.py": "sha256:97d371d5e4e6cb156f83aefbeb904324867d0a31301f4860d0650092727ee7fc",
+      "cortex/organs/__init__.py": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "cortex/organs/adversarial.py": "sha256:2f24abb4e155f640adea05bfb3be0a88d9cd64af2b6447d923de05fa54d1450f",
+      "cortex/organs/cpsat.py": "sha256:192d2508f1e464cbfb4c5192df8207f17c6cb543e7282ef34a1059ab2b735162",
+      "cortex/organs/deterrence.py": "sha256:e7b93a7200ece7b0ec8187b018b3aba84d6121fddd6b413db6eb32fa17c076bb",
+      "cortex/organs/estimation.py": "sha256:a7eb0c2709c54aedc0f9df23428a12b5274110ee6564ebcd061ced8eba6a9d8e",
+      "cortex/organs/evidence_causal.py": "sha256:7569d74b10ffafed3b51aacbb854ff41d76d398cdd6f0b48e465e9cf9b66456e",
+      "cortex/organs/formal.py": "sha256:b0a1f64e6fa9c24c4cef7594d042ae4038e58421b6e078e79bca6fadc0fb92cd",
+      "cortex/organs/formal_eval.py": "sha256:cc6efca87090aa0d6e7af1460b789b8b483ee9f63e77c6d5e6c3e0cf04bc9131",
+      "cortex/organs/schedule_extraction.py": "sha256:bb440433915e003344ed2c82f8c0c87d40ee11cdeb8f766f254e74ac6718b047",
+      "cortex/organs/semantic.py": "sha256:20f1eaec8108f0ec650cf64069d6ba4e25819f1fe546afdb8907b5d4cb4db0d3",
+      "cortex/outcomes.py": "sha256:9d2c6120d22d97cc2198c5e480e2d5e03ed95c87f284016f24ecb0c037263d72",
+      "cortex/routing.py": "sha256:c7df74f21654768d5b24f3791aa4c80290eb971ece7669083885edfb60182d1f",
+      "egregore/__init__.py": "sha256:57b4bb29c14f51522661372a85387f083693df153288ca59e3f9d309b0651040",
+      "egregore/attention.py": "sha256:1bbef5f9aaa3e62e5c6aba024dc1d56e558cc0a2cbb496e6062e9cd659333b17",
+      "egregore/cognition_seam.py": "sha256:be5928f1f74b3af825f8186af3d12d98f276bb990db0d8238cab8bad76c463d3",
+      "egregore/contract_check.py": "sha256:ca68cd695bf22501709ebba6497166e58e63b330c956f7895fe20d7353c2c11f",
+      "egregore/contracts.py": "sha256:132b5605ee90557e0b93408fb463ac1a6679cf24deb21b00763cb8852a8a7f61",
+      "egregore/experience.py": "sha256:1cf3be7002245d5aa91c33bb50bb3f31fa97031b7e65a1a4921da6d583b0db85",
+      "egregore/goals.py": "sha256:6110f61dec24eac9ac198b84fc3b437c5e24de3c51803e9be520c1bb2f1a9df5",
+      "egregore/gps.py": "sha256:ce678f78bd21574bcd83b9e0f38d39b8631959440844a7501338d380ccd784a8",
+      "egregore/gravity.py": "sha256:f87e64a82be1b13c3edbc46252619c80fbcc07e07ab58118a35908ad588ab1c0",
+      "egregore/intersections.py": "sha256:80624a2faebd4946b86417e5d33016e7a9f449c0d8462b303ca03d3417ba408a",
+      "egregore/interventions.py": "sha256:047ac2611ce35c3c42829632cc11561cf91fddef12cb673cfe8a718c3e267ff4",
+      "egregore/leverage.py": "sha256:7e4116bd5b2ba3e34c7d241e709c0512e6dbfd6c20354291383d2472f0a7d8a2",
+      "egregore/local_model.py": "sha256:ab7e852df7354d6ace719a54f49e12edbda5f8f73dbdfbb217e921f1b72e7d5f",
+      "egregore/relevance.py": "sha256:ba1da1a1f707e546e37169532c2adfd39eeddaf8b8d310781a98b1ee0b350ea6",
+      "egregore/resources.py": "sha256:608b8efd1d15f889735a9b7060193c756d6f535193516b7576ff069f89672e3b",
+      "egregore/retention.py": "sha256:a2ef761918a186b3a59b00f0a464b7e9b039b8d4717ef224521a7348f4497946",
+      "egregore/runtime.py": "sha256:abbc985219dc6c24407dea538858676d0ba41607ad4aaf1c05a0902dfade45e9",
+      "memory/__init__.py": "sha256:2015107c634c57c1686574665bf1a6bd9ceb6ea8452f39d954d97781841f3949",
+      "memory/causal.py": "sha256:2ee79d67bc0466e45f42e140ebe59e64f57d10721938a8fb07a478826189e84a",
+      "morphogenesis/__init__.py": "sha256:1b00f1696a30c932bc858db06460f12a6c68141916269ff0fd9bba0200688211",
+      "morphogenesis/contracts.py": "sha256:d31945599df8ee5e4c06f828befa933fd4bb360b0502e21b95ebea9d7b855014",
+      "morphogenesis/engine.py": "sha256:c33d2ae6e6fdd225f7b58459a1ed06dcb0e50884cf4ec4695154e8e9379c0794",
+      "policy/__init__.py": "sha256:b1e29b8f9965c81eba311318ed3e2c9d3cc6262f2a5399938492f57360c7bb38",
+      "policy/engine.py": "sha256:06e594c537d3ff127a2074ed210b3868d3d5b384ce1bd6e879f9ea32aebf3052"
+    },
+    "cortex_version": "0.2.2",
+    "default_budget": {
+      "max_cost_usd": 0.05,
+      "max_latency_s": 30.0,
+      "max_model_calls": 4,
+      "max_solver_calls": 64
+    },
+    "overcautious_credit": 0.25,
+    "partitions": {
+      "development": [
+        "smoke",
+        "dev"
+      ],
+      "reported": [
+        "heldout"
+      ]
+    },
+    "route_policy": "cortex-route-policy/0.2.2",
+    "scoring_version": "cortex-scoring/0.2",
+    "suites": {
+      "dev": {
+        "path": "cortex/evaluation/suites/dev-v0.1.json",
+        "sha256": "sha256:5e2f13bc251e6a3630b9c15009f070aa8105be35bb1cc87f42c5c3f08302dcf4"
+      },
+      "heldout": {
+        "path": "cortex/evaluation/suites/heldout-v0.1.json",
+        "sha256": "sha256:6481c3f66f6439028a6d1581ab4e16d9dba7246aee22f30841bae0a23cc3ce59"
+      },
+      "smoke": {
+        "path": "cortex/evaluation/suites/smoke-v0.1.json",
+        "sha256": "sha256:36409ccffca1cd5245782d09bd1ea1b9d1e9251f3c42ce655b802ea341632ee5"
+      }
+    },
+    "thresholds": {
+      "cost_slack_usd": 0.001,
+      "declared_baselines": [
+        "always_llm",
+        "llm_committee"
+      ],
+      "latency_slack_s": 0.5,
+      "max_cost_ratio": 1.25,
+      "max_critical_error_increase": 0,
+      "max_gate_violations": 0,
+      "max_latency_p95_ratio": 1.25,
+      "min_geometries_with_gain": 2,
+      "min_items_per_geometry": 3,
+      "min_quality_gain_lower_bound": 0.05
+    }
+  },
+  "schema": "cortex-freeze/0.1"
+}

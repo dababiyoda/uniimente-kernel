@@ -37,7 +37,7 @@ checks to diagnose the local runtime. The diagnostic creates no key or body.
 sudo apt install -y python3 python3-venv git          # once; skip if already installed
 sudo apt install -y bubblewrap   # optional: only coding workers need it; without it worker.commission refuses
 mkdir -p ~/src && cd ~/src
-git clone -b claude/uniimente-greg-reconciliation-39syff https://github.com/dababiyoda/uniimente-kernel
+git clone -b claude/greg-full-machine-completion-whgiee https://github.com/dababiyoda/uniimente-kernel
 cd uniimente-kernel && bash greg/chromebook/install.sh
 ```
 
@@ -68,7 +68,7 @@ missing; add `--no-engines` to skip the step. N1 needs none of them.
 ```bash
 mkdir -p ~/src && cd ~/src
 git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
-git checkout claude/uniimente-greg-reconciliation-39syff   # the one converged GREG branch; use main once merged
+git checkout claude/greg-full-machine-completion-whgiee   # the review candidate named in greg/chromebook/REVIEW_BRANCH; use main once merged
 python3 -m venv ~/.uniimente/venv
 ~/.uniimente/venv/bin/pip install -r requirements-dev.txt
 ~/.uniimente/venv/bin/pip install --only-binary=:all: -r requirements-cognition.txt   # optional engines
@@ -152,7 +152,11 @@ then choose **Accept result** or reject it truthfully. Run:
 greg vepmc
 greg morning
 greg presence --hours 2
+greg acceptance > ~/GREG/acceptance.json
 ```
+
+`greg acceptance` reads only this body's ledger. It names the exact code commit it ran, and its
+`code_identified` property passes only on a clean checkout of one named commit. Keep the file with the brief.
 
 If GitHub refused some reads (rate limit, or a private repository), the brief lists
 those gaps and GREG asks **once** for access, with the evidence and a no-cost option.
@@ -204,11 +208,12 @@ greg mission new business-case --case "lease review 01" --buyer "Acme Property L
   --acceptance "summary delivered within 5 business days" --key ~/.greg-founder.pem
 ```
 
-- GREG drafts `offer.md` in the case folder (`greg status` shows the path). It carries a case
+- GREG drafts `offer.md` in the case folder. It carries a case
   reference, for example `CASE-LEASE-REVIEW-01`, which the buyer puts on the payment.
 - **You** send the offer, collect payment, deliver, and ask the buyer to confirm. Each step is
-  one costed ask in the console and on your phone. GREG contacts, charges and pays no one; an
-  answer to these asks is only a record.
+  one costed ask in the console and on your phone, naming the file to save and the folder to
+  save it in. GREG contacts, charges and pays no one. An answer to these asks is only a record,
+  and the ask stays until GREG sees the file, usually within a minute or two.
 - You save the evidence into the case folder:
   - `acceptance.txt`: the buyer's written acceptance;
   - `statement.csv`: an export from your payment account. Its columns default to
@@ -291,8 +296,13 @@ run it for a second venture:
 ```bash
 greg sop ratify <procedure-id> --pre-approve draft-offer --pre-approve record-settlement --key ~/.greg-founder.pem
 greg sop run <procedure-id> --venture audits --set reference=CASE-AUDIT-01 --set buyer="..." \
-  --set offer="..." --set price=300.00 --set acceptance="..." --key ~/.greg-founder.pem
+  --key ~/.greg-founder.pem
 ```
+
+`greg sop list` shows each procedure's inputs. Only what differed between the cases that taught it
+becomes an input. If those three cases shared one price, offer and acceptance, the procedure keeps
+them fixed, and `--set price=...` is refused. Vary them across the teaching cases if the second
+venture needs its own.
 
 Sign what each venture owes before any surplus counts. Tier names come from
 `capital/allocation-policy.yaml`:

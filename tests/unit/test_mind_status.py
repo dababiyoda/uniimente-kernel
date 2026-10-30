@@ -182,9 +182,10 @@ def _family_limits(index: dict) -> dict:
     out = {}
     for row in index["recipes"].values():
         for verdict in [row, *row.get("history", [])]:
-            source = json.loads((ROOT / verdict["evidence"].partition("#")[0]).read_text())
-            named = [lim for lim in source["limits"] if verdict["family"] in re.findall(r"\bF\d+R?\b", lim)]
-            general = [lim for lim in source["limits"] if not re.findall(r"\bF\d+R?\b", lim)]
+            from scripts.build_mind_evidence_index import run_limits
+            limits = run_limits(verdict["evidence"].partition("#")[0])
+            named = [lim for lim in limits if verdict["family"] in re.findall(r"\bF\d+R?\b", lim)]
+            general = [lim for lim in limits if not re.findall(r"\bF\d+R?\b", lim)]
             out[verdict["family"]] = named or general
     return out
 
@@ -201,10 +202,18 @@ def test_composition_families_are_declared_as_the_frozen_runs_describe_them_and_
     rows = _rows(M.status())
 
     def expected(recipe, label):
-        # a lift measured on recipe code that has since changed is BUILT until re-measured (review of #179, H5)
-        return "BUILT" if recipe_stale(recipe, index["recipes"][recipe]) else label
+        # a lift measured on recipe code that has since changed is BUILT until re-measured (review of #179, H5); a
+        # deciding NO_LIFT verdict that no significant loss explains is UNRESOLVED (P6 converged v1: F1 35-0 with one
+        # false answer, F3 tied by the exact single genome)
+        record = index["recipes"][recipe]
+        if not record.get("lift"):
+            return "UNRESOLVED"
+        return "BUILT" if recipe_stale(recipe, record) else label
     for recipe in ("estimate_then_optimize", "identify_then_optimize", "bayes_then_voi"):    # F1, F2R, F4
         assert rows[f"recipe.{recipe}"]["label"] == expected(recipe, "SIMULATED"), recipe
+    # P6 joined v1 decides F1 on the joined code: 35-0 with no false answer (converged v1 had one and read UNRESOLVED)
+    assert rows["recipe.estimate_then_optimize"]["label"] == "SIMULATED"
+    assert rows["recipe.graph_then_allocate"]["label"] == "UNRESOLVED"
     for recipe in ("forecast_then_staff", "graph_then_allocate", "track_then_staff"):        # F6, F7, F8: real data
         assert rows[f"recipe.{recipe}"]["label"] == expected(recipe, "HELDOUT_SUPPORTED"), recipe
     # the complete closure (review of #179, B2) shows the code F8 measured has changed on the converged tree
@@ -215,6 +224,7 @@ def test_a_version_bump_makes_positive_evidence_stale_while_negative_evidence_pe
     def bump(index):
         for family in ("basal_kalman", "flow_maxflow", "grid_dijkstra", "flow_reinforce_greedy"):
             index["genomes"][family]["version"] = "0.0.0-old"
+        index["genomes"]["grid_dijkstra"]["status"] = "EXPERIMENTAL"   # as v3 left it; v4 re-admitted 1.1.0
     fixture = _fixture(tmp_path, bump)
     rows = _rows(M.status(index_path=fixture))
     for family in ("basal_kalman", "flow_maxflow"):        # positive -> stale -> BUILT, version kept on the row
@@ -400,7 +410,7 @@ def test_every_executor_the_reserved_record_names_is_labelled_and_p8_carries_its
     cycles = sorted(ROOT.glob("docs/evidence/greg-protected-evolution/*/cycle-*.json"))
     decisions = [json.loads(p.read_text())["decision"] for p in cycles]
     p8 = rows["greg.cognition.evolution:cycle"]
-    assert len(p8["evidence_outside_index"]) == len(cycles) == 4
+    assert len(p8["evidence_outside_index"]) == len(cycles) == 6
     assert sorted(c["decision"] for c in p8["evidence_outside_index"]) == sorted(decisions)
     assert ("never kept an improvement" in p8["basis"]) == all(d == "REJECT" for d in decisions)
 
@@ -423,6 +433,66 @@ def test_a_verdict_for_a_genome_no_longer_in_the_library_is_unresolved_not_dropp
         index["genomes"]["retired_probe"] = {"status": "DEFAULT_FOR_GEOMETRY", "version": "1.0.0", "history": []}
     row = _rows(M.status(index_path=_fixture(tmp_path, change)))["cognition.retired_probe"]
     assert row["label"] == "UNRESOLVED" and row["heldout"]["status"] == "DEFAULT_FOR_GEOMETRY"
+
+
+def test_a_declared_regime_change_is_not_reported_as_a_rule_boundary_sample(monkeypatch):
+    """Found by the 2026-10-15 independent review: collective_quorum and collective_immune changed status between
+    v1 and v3 at the same version because v3's pre-registration declared new evaluation regimes for the four Layer 2
+    genomes (new instance generators; for immune also a new competitor), not because they sit near a rule boundary.
+    A flip within one regime stays flagged, and a declaration whose pre-registration changed declares nothing."""
+    run = "2026-10-15-v3"
+    rows = _rows(M.status())
+    for family in ("collective_quorum", "collective_immune"):
+        held = rows[f"cognition.{family}"]["heldout"]
+        assert [(h["run"], h["version"]) for h in held["history"]] == [
+            ("2026-10-13-v1", held["version_measured"]), (run, held["version_measured"])], family
+        assert held["history"][0]["status"] != held["status"], family
+        assert held["status_changed_at_same_version"] is False, family
+        assert held["status_changed_with_declared_regime_change"] is True, family
+        assert [h["regime"] for h in held["history"]] == ["2026-10-13-v1", run], family
+        assert [c["declared_in"] for c in held["regime_changes"]] == [M.DECLARED_REGIMES[run]["declared_in"]]
+    # the declaration is the pre-registration's own: it names every declared genome, and the run measured each
+    declared = M.DECLARED_REGIMES[run]
+    text = (ROOT / declared["declared_in"]).read_text()
+    frozen = json.loads((ROOT / declared["declared_in"]).with_name("freeze.json").read_text())["inputs"]["families"]
+    for family in declared["families"]:
+        assert f"`{family}`" in text and family in frozen, family
+    # collective_market's v1 -> v2 flip at 1.1.0 crossed no declared regime change (the rule was amended): flagged
+    market = rows["cognition.collective_market"]["heldout"]
+    assert market["status_changed_at_same_version"] is True
+    assert market["status_changed_with_declared_regime_change"] is False
+    # a declaration whose pre-registration no longer matches its bound digest declares nothing
+    monkeypatch.setitem(M.DECLARED_REGIMES, run, {**declared, "sha256": "sha256:" + "0" * 64})
+    held = _rows(M.status())["cognition.collective_quorum"]["heldout"]
+    assert held["status_changed_at_same_version"] is True
+    assert held["status_changed_with_declared_regime_change"] is False
+    assert "regime_changes" not in held and held["regime_declarations_unresolved"]
+
+
+@pytest.mark.parametrize("statuses, within, across", [
+    # flipped inside regime v1 (v1 -> v2), then held across v3's declared change: a rule-boundary flip only
+    (("EXPERIMENTAL", "NICHE_CAPABILITY", "NICHE_CAPABILITY"), True, False),
+    # held inside v1, then changed across the declared change: a regime change only
+    (("EXPERIMENTAL", "EXPERIMENTAL", "NICHE_CAPABILITY"), False, True),
+    # both
+    (("EXPERIMENTAL", "NICHE_CAPABILITY", "EXPERIMENTAL"), True, True),
+    (("NICHE_CAPABILITY",) * 3, False, False)])
+def test_a_flip_inside_an_older_regime_is_not_hidden_by_a_later_declared_regime_change(tmp_path, statuses, within,
+                                                                                         across):
+    """Found by the fix verifier (2026-10-15): the regime split compared each run only with the latest status, so a
+    flip between two runs of an older regime, followed by a declared regime change across which the status held,
+    was reported as a regime change and not as a flip at the same version."""
+    runs = ("2026-10-13-v1", "2026-10-14-v2", "2026-10-15-v3")
+
+    def change(index):
+        record = index["genomes"]["collective_quorum"]
+        record["history"] = [{"run": r, "status": s, "version": record["version"]} for r, s in zip(runs, statuses)]
+        record["status"] = statuses[-1]
+
+    held = _rows(M.status(index_path=_fixture(tmp_path, change)))["cognition.collective_quorum"]["heldout"]
+    assert [h["regime"] for h in held["history"]] == [runs[0], runs[0], runs[2]]
+    assert held["status_changed_at_same_version"] is within
+    assert held["status_changed_with_declared_regime_change"] is across
 
 
 def test_a_catalog_family_without_an_executor_is_unresolved(monkeypatch):
@@ -452,3 +522,114 @@ def test_the_cli_prints_the_same_json_and_writes_nothing():
     assert json.loads(out.stdout) == json.loads(json.dumps(M.status()))
     assert [hashlib.sha256(p.read_bytes()).hexdigest() for p in watched] == before
     assert M.status() == copy.deepcopy(M.status())                      # deterministic: no clock, no randomness
+
+
+# ---------------------------------------------------------------- EXERCISED projection and #179 lineage rows
+
+REHEARSAL = "tests/evidence/greg-cortex-rehearsal/rehearsal-ledger.jsonl"
+
+
+def test_exercised_reports_the_rehearsal_organs_with_the_ledger_and_a_non_founder_key():
+    ex = M.status()["exercised"]
+    mechs = ex["mechanisms"]
+    for organ in ("cognition.cortex", "cognition.cortex.extraction.schedule", "cognition.cortex.optimization.cpsat"):
+        assert f"{REHEARSAL}#m:cortex-rehearsal" in mechs[organ]["missions"], organ
+        assert mechs[organ]["key_classes"] == ["test_key"] and mechs[organ]["founder_use"] is False
+        assert mechs[organ]["row"] == organ
+    # the scan also finds the second rehearsal mission, which the coverage record did not name
+    assert f"{REHEARSAL}#m:after-detach" in mechs["cognition.cortex.formal.z3"]["missions"]
+    sources = {s["path"]: s for s in ex["sources"]}
+    assert sources[REHEARSAL]["ledger_retained"] and sources[REHEARSAL]["sandbox"]
+    assert sources[REHEARSAL]["enrolled_key_ids"] and not set(sources[REHEARSAL]["enrolled_key_ids"]) & set(
+        M.FOUNDER_KEY_IDS)
+    assert ex["founder_use"] == [] and M.FOUNDER_KEY_IDS == ()
+    rows = _rows(M.status())
+    assert rows["cognition.cortex.optimization.cpsat"]["exercised"]["key_classes"] == ["test_key"]
+
+
+def test_the_exercised_scan_misses_no_retained_settlement():
+    """Falsifier for the projection: every committed file that records a settlement is a source."""
+    tracked = subprocess.run(["git", "ls-files", *M.EXERCISED_ROOTS], cwd=ROOT, capture_output=True, text=True,
+                             check=True).stdout.split()
+    holding = sorted(p for p in tracked if p.endswith((".json", ".jsonl"))
+                     and M.SETTLED in (ROOT / p).read_text(errors="replace"))
+    ex = M.status()["exercised"]
+    assert holding and sorted(s["path"] for s in ex["sources"]) == holding
+    in_files = sum((ROOT / p).read_text().count(f'"type": "{M.SETTLED}"') for p in holding if p.endswith(".jsonl"))
+    assert sum(1 for s in ex["settlements"] if s["source"].endswith(".jsonl")) == in_files
+
+
+def test_trace_settlements_without_a_ledger_position_are_flagged_not_dropped():
+    ex = M.status()["exercised"]
+    trace = [s for s in ex["settlements"] if s["source"].endswith("trace.json")]
+    assert {s["method"] for s in trace} == {"cognition.optimization",
+                                            "acquired.cognition.mechanism:linear_assignment.scipy"}
+    assert any(s.get("flag") for s in trace) and any(s.get("ledger_seq") is not None for s in trace)
+    src = next(s for s in ex["sources"] if s["path"].endswith("trace.json"))
+    assert src["ledger_retained"] is False and src["key_class"] == "test_key"
+    assert "acquired.cognition.mechanism:linear_assignment.scipy" in ex["without_row"]
+
+
+def test_the_exercised_projection_changes_no_label(monkeypatch):
+    with_projection = M.status()
+    monkeypatch.setattr(M, "_exercised", lambda rows: {"mechanisms": {}})
+    without = M.status()
+    assert with_projection["counts"] == without["counts"]
+    assert {r["id"]: r["label"] for r in with_projection["mechanisms"]} == {
+        r["id"]: r["label"] for r in without["mechanisms"]}
+
+
+def test_founder_use_is_claimed_only_for_a_key_in_the_founder_registry(monkeypatch, tmp_path):
+    ledger = tmp_path / "evidence" / "m" / "ledger.jsonl"
+    ledger.parent.mkdir(parents=True)
+    events = [{"seq": 0, "record_type": "event", "payload": {"type": "greg.founder.enrolled",
+                                                              "payload": {"key_id": "ed25519:feedface"}}},
+              {"seq": 1, "hash": "sha256:" + "0" * 64, "record_type": "event",
+               "payload": {"type": M.SETTLED, "payload": {"mission_id": "m:x", "method": "cognition.exact",
+                                                          "method_version": "0.2.0", "causal_credit": []}}}]
+    ledger.write_text("".join(json.dumps(e) + "\n" for e in events))
+    monkeypatch.setattr(M, "EXERCISED_ROOTS", (str(tmp_path / "evidence"),))
+    unlabelled = M.status()["exercised"]
+    assert unlabelled["mechanisms"]["cognition.exact"]["key_classes"] == [
+        "unverified_key (not shown to be the founder's)"]
+    assert unlabelled["founder_use"] == []
+    monkeypatch.setattr(M, "FOUNDER_KEY_IDS", ("ed25519:feedface",))
+    assert M.status()["exercised"]["founder_use"] == ["cognition.exact"]
+
+
+LINEAGE_AVAILABLE = subprocess.run(["git", "cat-file", "-e", f"{M.LINEAGE_179['commit']}^{{commit}}"], cwd=ROOT,
+                                   capture_output=True, check=False).returncode == 0
+
+
+@pytest.mark.skipif(not LINEAGE_AVAILABLE, reason="PR #179's pinned commit is not in this clone")
+def test_179_operation_admissions_appear_as_lineage_rows_that_raise_no_label(monkeypatch):
+    status = M.status()
+    lin = status["lineage_179"]
+    assert lin["available"] and lin["commit"].startswith("0067be6")
+    assert lin["source_commit"] == "dfdcfe92f00449039686c922623a925910aeb8a2" and lin["seeds"] == [5001, 5040]
+    if lin.get("in_this_index"):
+        # the converged #179 tree routes on this run itself: no duplicate lineage rows, no false "no label here"
+        sources = {s["path"] for s in json.loads(M.INDEX.read_text())["sources"]}
+        assert lin["results"] in sources and lin["rows"] == [] and lin["families_only_on_179"] == []
+        return
+    rows = {r["family"]: r for r in lin["rows"]}
+    assert rows["control"]["status"] == "DEFAULT_FOR_GEOMETRY" and rows["control"]["counts_here"] is False
+    assert {"robust_pattern", "crowd", "swarm", "blackbox", "crowd_sparse"} <= set(lin["families_only_on_179"])
+    mechs = _rows(status)
+    for family in rows:
+        here = mechs.get(f"cognition.{family}")
+        if here is not None and here["kind"] == "catalog_family":
+            assert here["label"] == "BUILT" and "#179" in here["basis"], family
+            assert here["lineage_179"]["pinned_commit"] == M.LINEAGE_179["commit"]
+    monkeypatch.setattr(M, "_lineage_179", lambda rows: {"available": False, "rows": []})
+    assert M.status()["counts"] == status["counts"]
+    assert not _agreement(compiler.evidence_index(), mechs)
+
+
+def test_an_unreachable_179_commit_is_reported_and_changes_nothing(monkeypatch):
+    before = M.status()
+    monkeypatch.setattr(M, "LINEAGE_179", {**M.LINEAGE_179, "commit": "0" * 40})
+    after = M.status()
+    assert after["lineage_179"]["available"] is False and after["lineage_179"]["rows"] == []
+    assert after["counts"] == before["counts"]
+    assert not any("lineage_179" in r for r in after["mechanisms"])

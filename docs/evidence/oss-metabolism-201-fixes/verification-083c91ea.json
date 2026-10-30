@@ -1,0 +1,83 @@
+{
+ "lane": "Verification of the licensing lane fixes: SPDX-1 to SPDX-7, section VII expression semantics, and the binary-license policy comparison. Commits 4f995317, 76401ba7 and 083c91ea on claude/oss-201-fix-licensing, compared with a1d2abfb.",
+ "defects": [
+  {
+   "claim": "The SPDX-7 fix causes a regression. The INCLUSIVE mask removes the whole 'commercial and non-commercial' span before the rider scan, so a restrictive sentence that contains the span is now CLEARED. At a1d2abf the same sentence was held.",
+   "severity": "medium",
+   "reproduced": true,
+   "evidence": "`L.assess(dist(Classifier='License :: OSI Approved :: MIT License', License='Commercial and non-commercial use require a separate license'))` gives FOUNDER_REVIEW/not_open_source at a1d2abf and CLEARED, auto_attach True at 083c91ea. 'Commercial or non-commercial use prohibited without permission' behaves the same way. I ran a differential fuzz of 20,000 random short declarations through 3 metadata shapes each. Exactly 4 cases were held at a1d2abf and cleared at the head, and all 4 are this mask (e.g. 'prohibited noncommercial OR commercial'). No test covers a restriction that contains the inclusive span. The builder's own restrictive cases have no such span."
+  },
+  {
+   "claim": "The SPDX-6 fix causes a regression. `_dep5_stanzas` starts a new stanza at every non-indented Files line. In a Files paragraph whose License line comes before its Files line, the License is cut off into a stand-alone 'definition' stanza and never applies. The Files stanza is left with 'no License field' (unclassified), so P0 attaches a binary that a1d2abf held.",
+   "severity": "medium",
+   "reproduced": true,
+   "evidence": "`dep5('Format: x\\n\\nCopyright: a\\nLicense: AGPL-3+\\nFiles: *\\n')` gives network_copyleft with AGPL-3+ held at a1d2abf. At 083c91ea it gives unclassified, held []. The terms are [('no License field', ['*'])], `attach_check(..., 'P0')` returns True, and `attach_check(..., 'P4c')` returns False. The input is latent: no host DEP-5 file has License before Files (22 host paragraphs start with a non-Files line, all a stray 'https:' line), and a 605-file corpus diff shows no hold change. deb822 parsing does not make field order significant. I did not find a DEP-5 rule that Files must come first."
+  },
+  {
+   "claim": "The SPDX-1 and SPDX-2 fixes are partial. The claim 'an unparseable expression still shows its restrictive names' fails for multi-word names. The `_tree` fallback classifies each whitespace word on its own, so 'Commons Clause', 'Business Source License', 'Server Side Public License' and 'Elastic License' are lost whenever the field fails to parse (for example, a trailing parenthetical). The P0 hold disappears.",
+   "severity": "medium",
+   "reproduced": true,
+   "evidence": "DEP-5 License fields 'Apache-2.0 with Commons Clause (see LICENSE)', 'Business Source License 1.1 (see below)', 'Server Side Public License (MongoDB)' and 'Elastic License 2.0 (see LICENSE)' all give unclassified, held [], with `attach_check` P0 = True at 083c91ea. The same names without the parenthetical are held, and 'SSPL-1.0 (see LICENSE)' is held. This is not a regression: a1d2abf also attached all four. Fix: run `_riders` on the whole unparseable text, as `declared()` already does for an unparseable License-Expression."
+  },
+  {
+   "claim": "The SPDX-4 fix is partial. Other spellings of not-open licenses that the module lists still clear beside a classifier. RIDERS has no pattern for the SPDX id 'Elastic-2.0' inside free text, and the sspl and busl patterns refuse a following letter, so 'SSPLv1' and 'BUSLv1.1' do not match.",
+   "severity": "medium",
+   "reproduced": true,
+   "evidence": "With an MIT classifier, License fields 'Elastic-2.0 (see LICENSE.txt)', 'Elastic-2.0, see LICENSE', 'SSPLv1' and 'BUSLv1.1' all give CLEARED, auto_attach True at 083c91ea (also at a1d2abf). 'Elastic-2.0' is in `_NOT_OPEN` and in the source-available regex, but not in RIDERS. The review's suggested fix ('or token-match every held SPDX id') would have closed this."
+  },
+  {
+   "claim": "The SPDX-3 claim that `declared()` now always reads classifiers is false for an unparseable License-Expression. That branch returns before classifiers and the License field are read. A Proprietary classifier or a Commons Clause License field then appears in neither `restrictive` nor `categories`. Under draft D-LIC-1 the founder can clear the package without permission evidence. The same package with a valid expression needs it.",
+   "severity": "low",
+   "reproduced": true,
+   "evidence": "`assess(dist(License_Expression='MIT AND', Classifier='License :: Other/Proprietary License'))` gives verdict FOUNDER_REVIEW, class unclassified, restrictive [], categories ['unclassified']. The use verdict is 'uncertain', and `founder_attach_check(..., 'D-LIC-1', 'P0')` with a basis and no permission returns True. With License_Expression='MIT', the result is restrictive ['Other/Proprietary License'], use 'incompatible', and the same clearance is refused ('needs permission evidence'). A Commons Clause License field gives the same pair of results. Nothing auto-attaches, because the verdict is FOUNDER_REVIEW either way. a1d2abf behaved the same, so this is not a regression."
+  },
+  {
+   "claim": "Beside a License-Expression, a classifier that GREG does not recognise, or one whose class matches any term of the expression, is skipped and leaves no record in `uncertainty`. Restrictive trove classifiers missing from TROVE therefore clear silently beside an expression, although the classifiers-only path holds them. The class-level 'agreement' rule also absorbs a non-commercial classifier beside 'MIT OR BUSL-1.1'.",
+   "severity": "low",
+   "reproduced": true,
+   "evidence": "License-Expression 'MIT' plus 'License :: Shareware', 'License :: Free To Use But Restricted' or 'License :: Aladdin Free Public License (AFPL)' gives CLEARED, uncertainty [] (also at a1d2abf). With classifiers [MIT, Shareware] and no expression, the result is FOUNDER_REVIEW with 'not classified by GREG: Shareware'. 'MIT OR BUSL-1.1' plus 'License :: Free for non-commercial use' (or Other/Proprietary) gives CLEARED, uncertainty []. Section VII asks for inconsistent declarations to be assessed, and the builder's report says disagreements are recorded."
+  },
+  {
+   "claim": "The rider and family rule loosens the P4c draft, which contradicts 'a family only ever makes an unknown name stricter' and 'an unknown never clears'. An unlisted license name containing 'agpl' or 'affero' becomes network_copyleft, which P4c rates compatible for local use. In `_atom`, an unknown non-exception addition is also dropped when the base is network copyleft, because the restrictive list wins.",
+   "severity": "low",
+   "reproduced": true,
+   "evidence": "DEP-5 'AGPL-3+-with-customer-terms' and 'Affero-Custom-Terms' are unclassified at a1d2abf, and P4c holds them. At 083c91ea they are network_copyleft, `attach_check(..., 'P4c')` returns True, and the unclassified-name uncertainty is []. 'AGPL-3+ with Additional-Use-Restriction' is compatible under P4c with no uncertainty, while 'GPL-2+ with Additional-Use-Restriction' is unclassified and held under P4c. Only the draft P4c is affected: P0 holds all of these, and O4 as proposed would hold them too."
+  },
+  {
+   "claim": "OR election is inconsistent. (a) The P0 hold is not monotone. 'non-free or Sundry' is held, because OR elects not-open over unknown. 'Sundry' alone is not held, yet '(non-free and Sundry) or Sundry', a strictly more restrictive first alternative, is not held either: the tie rule elects the unknown alternative. (b) `_use_eval` breaks ties by operand order, so OR is not commutative in the use verdict. Which terms are elected, and the obligations a D-LIC-1 clearance must accept, depend on how the expression is written, and they can disagree with `assess`'s election. Its class-rank tie-break is also untested.",
+   "severity": "low",
+   "reproduced": true,
+   "evidence": "`attach_check(P0)` returns False for 'non-free or Sundry' and True for '(non-free and Sundry) or Sundry'. The builder pins the second as intended (test_on_a_tie_or_elects_the_alternative_without_a_known_restriction). `qualify_use` on '(AGPL-3.0-only AND LicenseRef-A) OR LicenseRef-B' elects ['AGPL-3.0-only','LicenseRef-A'] with 2 obligations. The reversed operand order elects ['LicenseRef-B'] with 1 obligation. `assess` reports restrictive [] for both orders, so it relies on LicenseRef-B. A mutant that removes the class rank from `_use_eval`'s tie key ('min(parts, key=lambda p: VERDICT_ORDER.index(p[0]))') survives test_greg_license_expressions, test_greg_license_use_context and test_greg_license_qualification (1905 passed)."
+  },
+  {
+   "claim": "The new recursive-descent parser fails open on deep nesting. `_tree` catches only ValueError, so about 200 nested parentheses in a DEP-5 License line or a one-line License field raise RecursionError. At a1d2abf the same input returned 'unclassified'. Neither `system_binary` -> `_binary_license` in Genesis binary formation nor `mechanisms.card` in the package search catches it.",
+   "severity": "low",
+   "reproduced": true,
+   "evidence": "`dep5(deb('('*200+'SSPL-1.0'+')'*200))` and `assess(dist(Classifier=MIT, License=same))` raise RecursionError at 083c91ea. At a1d2abf both return normally (unclassified / FOUNDER_REVIEW). The input is adversarial only. Fix: catch RecursionError in `_tree` (or bound the depth) and fail closed."
+  },
+  {
+   "claim": "Evidence-record inaccuracies. LICENSE_EXPRESSIONS.md reports '834 DEP-5 copyright files'. The host has 834 copyright files, of which 606 carry a Format header and 605 parse as DEP-5. The 'P0 attach test fails on a1d2abf' entries for SPDX-1 and SPDX-2 fail only with AttributeError: `binary_assessment` does not exist at a1d2abf. Their behavioural fail-before rests on the parametrized `deb()` cases and on the review's `system_binary` reproduction, not on those two tests.",
+   "severity": "low",
+   "reproduced": true,
+   "evidence": "`ls /usr/share/doc/*/copyright | wc -l` gives 834. `grep -il '^format:'` gives 606. My corpus run parsed 605 as DEP-5. With a1d2abf's licensing.py under the head tests, the failure types are: 3 AttributeError ('no attribute binary_assessment'), 8 KeyError 'categories', 3 KeyError 'uncertainty', 1 each KeyError 'stanza' and 'restrictive', and behavioural AssertionErrors for the rest."
+  }
+ ],
+ "confirmed_fixes": [
+  "Test fail-before and pass-after confirmed on my own extracts of both commits. tests/unit/test_greg_license_expressions.py fails 1811 and passes 25 against a1d2abf's greg/licensing.py, and passes in full on 083c91ea: 1836 passed, plus test_greg_binary_policy_options 1 passed and 1 xfailed. Most failures at a1d2abf are behavioural AssertionErrors. The exceptions are listed in the last defect.",
+  "SPDX-1 is confirmed for the review's inputs: 'Apache-2.0 with Commons-Clause' and 'MIT with SSPL-1.0' are now not_open_source and held, and real exceptions keep their base class. It is partial for unparseable multi-word names (defect 3).",
+  "SPDX-2 is confirmed for the review's inputs: 'non-free and custom', 'AGPL-3+ and Sundry' and '(MIT OR AGPL-3.0-only) AND SSPL-1.0' are held, and parentheses now parse. The tie-election residual is defect 8.",
+  "SPDX-3 is confirmed for a valid expression: MIT plus a Proprietary or non-commercial classifier, and Apache-2.0 plus an AGPL classifier, now go to FOUNDER_REVIEW, and a less strict classifier is recorded as a disagreement. It is refuted for an unparseable expression (defect 5).",
+  "SPDX-4 is confirmed for the 11 tested spellings, and Boost BSL-1.0 is not mistaken for BUSL. It is partial for 'Elastic-2.0 <text>', 'SSPLv1' and 'BUSLv1.1' (defect 4).",
+  "SPDX-5 is confirmed: CC NC/ND at other versions are not_open_source and AGPL-1.0 variants are network_copyleft. Under the P4c draft, however, the same rule loosens unlisted AGPL-named licenses (defect 7).",
+  "SPDX-6 is confirmed for the review's input: a second License line in one paragraph and a repeated License are kept. The split rule introduces the License-before-Files regression (defect 2).",
+  "SPDX-7 is confirmed for its 3 inclusive cases, and the 2 restrictive cases stay held. The mask introduces a regression (defect 1).",
+  "Section VII: AND obligations are conjunctive; OR elects whole alternatives with no mixing (the DNF oracle passes, 1,750 cases); WITH binds to its license, and linking exceptions lower GPL to weak copyleft; -only, -or-later and + variants work; precedence holds; categories are distinguished. The OR commutativity and recursion issues are defects 8 and 9.",
+  "No regression on real metadata, which matches the builder's corpus claim. I re-ran base against head over 605 host DEP-5 files and 90 Python distributions (the venv plus /usr/lib/python3/dist-packages). The only change: libetonyek 'MPL 2.0' moves from unclassified to weak_copyleft. No hold changes and no Python verdict changes.",
+  "Wider suites show no regression. Over 19 genesis, mission, licensing, document and integration files, the head gives 2247 passed, 1 skipped, 1 xfailed: the same 410 pre-existing tests as base plus the 1837 new ones. Base gives 410 passed, 1 skipped.",
+  "The binary policy measurement reproduces exactly. A fresh run of measure_binary_policy_options.py on this host matches binary-policy-measurement.json: 708 binaries; the same components and verdicts; held P0 0, O1/O2/O3 443, O4 15; the same 15 O4 binaries; among catalog binaries only shasum is held, under O1 and O3.",
+  "P4C-FALLTHROUGH is confirmed. Run with --runxfail, the strict xfail fails for the stated reason: status ACTIVE, nothing attached, with the hold reason 'its license needs your decision ... REGCOMP: license not classified' on shasum, so openssl is never tried.",
+  "ACTIVE_BINARY_POLICY and ACTIVE_FOUNDER_ATTACH_POLICY are still 'P0'. auto_attach_allowed, _reassess, attach_check and requalify are byte-identical to a1d2abf. founder_attach_check changed only as disclosed: it adds elected_terms, and the qualify_use change means a not-open alternative GREG does not elect no longer needs permission evidence.",
+  "Spot-checked mutants: the inclusive mask, the Files split and the unparseable-fallback hold are each caught by the new tests. The builder's mutant entries were re-pointed to equivalent code and none was weakened. One tie-break rule has no mutant and is untested (defect 8)."
+ ],
+ "verdict": "The licensing lane fixes the review's exact inputs for SPDX-1 to SPDX-7. Its tests genuinely fail on a1d2abf and pass on 083c91ea, the existing suites show no regression, nothing changes on this host's real metadata, and the binary-policy measurement reproduces exactly. The active policies are still P0.\n\nIt is not merge-ready as claimed, for two reasons.\n\n**Two regressions against a1d2abf, both in the cleared-should-be-held direction:**\n- The SPDX-7 mask clears 'Commercial and non-commercial use require a separate license' beside an MIT classifier.\n- The SPDX-6 stanza split drops a License line that precedes Files, so P0 attaches an AGPL binary that a1d2abf held.\n\n**Gaps that leave the claimed invariant ('a restrictive term is never hidden') false:**\n- Parenthetical or unparseable DEP-5 fields with multi-word restrictive names are not held.\n- 'Elastic-2.0 <text>', 'SSPLv1' and 'BUSLv1.1' in a License field clear.\n- An unparseable License-Expression hides a Proprietary classifier from `restrictive` and from D-LIC-1's permission requirement.\n- Unrecognised restrictive classifiers beside an expression clear with no uncertainty recorded.\n- The family rule makes unlisted AGPL-named licenses compatible under the P4c draft.\n- OR election is non-monotone under P0 and order-dependent in the use verdict.\n- About 200 nested parentheses raise RecursionError instead of failing closed.\n\nAll of these are latent on this host. Each comes with a reproduction comparing base and head, and they were run as 15 probe tests: the two regressions pass on a1d2abf and fail on the head.\n\nI never edited /home/user/wt/f201-lic. When I finished, its HEAD had moved to 22371155, so the builder has committed past 083c91ea. My scratch directory has been deleted."
+}

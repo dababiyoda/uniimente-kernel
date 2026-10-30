@@ -1,0 +1,2582 @@
+{
+ "schema": "greg-genome-admission/1",
+ "freeze_sha256": "sha256:c7c6dfa7c3d6a10d4b799a2ca52e922b6db6f3ac61e754c8252edb85ddb811de",
+ "source_commit": "f33cb2a921689570ae4401da7b9884be252ba476",
+ "source_dirty": [],
+ "platform": "Linux-6.18.44-fc-v140-x86_64-with-glibc2.39",
+ "python": "3.13.16",
+ "rule": "COMPOSITION_ONLY if no standalone decision; REJECTED if more wrong than baseline or significantly worse than baseline; EXPERIMENTAL if no significant edge over baseline (nor equal quality at >=1.25x lower median latency); SUPERSEDED if competitor significantly better and candidate wins none, or all ties and competitor >=1.25x cheaper; NICHE_CAPABILITY if beats baseline but significantly worse than competitor with some wins, or more wrong than competitor, or ties competitor at >=1.25x cost; DEFAULT_FOR_GEOMETRY if beats baseline, not significantly worse than competitor, no more wrong, and significantly better or <=1.25x competitor median latency. A competitor declared non-deployable (an oracle upper bound) is a reported reference: it neither supersedes nor demotes, so a candidate that beats its baseline without more wrong answers is DEFAULT_FOR_GEOMETRY. One-sided exact sign tests, alpha 0.05, 30 held-out seeds recorded in the freeze.",
+ "diagnostics": "reported diagnostics, never inputs to the admission decision: the rule decides on wall-clock medians only. cpu_seconds is the calling thread's CPU time per call (time.thread_time; work on other threads or processes is not in it); diagnostics.median_cpu_seconds is its median per arm; host_load is the host's load at the start and end of the run",
+ "host_load": {
+  "start": {
+   "at": "2026-10-21T20:21:59.857242+00:00",
+   "loadavg": {
+    "1m": 0.91,
+    "5m": 0.93,
+    "15m": 0.97,
+    "runnable": 1,
+    "entities": 108
+   },
+   "cpu_affinity": [
+    1
+   ],
+   "cpu_count": 4,
+   "other_python_processes": {
+    "count": 0,
+    "by_state": {},
+    "running_last_on_our_cpus": 0
+   }
+  },
+  "end": {
+   "at": "2026-10-21T20:22:07.614762+00:00",
+   "loadavg": {
+    "1m": 0.92,
+    "5m": 0.93,
+    "15m": 0.97,
+    "runnable": 1,
+    "entities": 105
+   },
+   "cpu_affinity": [
+    1
+   ],
+   "cpu_count": 4,
+   "other_python_processes": {
+    "count": 0,
+    "by_state": {},
+    "running_last_on_our_cpus": 0
+   }
+  }
+ },
+ "genomes": {
+  "develop_repair": {
+   "intelligence_id": "developmental.repair.sequenced_local_gradient",
+   "layer": 4,
+   "version": "1.1.2",
+   "baseline": "no repair: keep the pre-damage forwarding field, act never, claim nothing",
+   "competitor": "adaptive centralized replanner: global BFS shortest-path rebuild on its view at every change, reliable pushes; reliable or predeclared-unreliable (crash / stale view)",
+   "status": "NICHE_CAPABILITY",
+   "arms": {
+    "candidate": {
+     "correct": 30,
+     "wrong": 0,
+     "abstain": 0,
+     "mean_quality": 0.954019,
+     "median_seconds": 0.027451
+    },
+    "baseline": {
+     "correct": 30,
+     "wrong": 0,
+     "abstain": 0,
+     "mean_quality": 0.090489,
+     "median_seconds": 0.000327
+    },
+    "competitor": {
+     "correct": 27,
+     "wrong": 3,
+     "abstain": 0,
+     "mean_quality": 0.679694,
+     "median_seconds": 0.000826
+    }
+   },
+   "vs_baseline": {
+    "wins": 30,
+    "losses": 0,
+    "ties": 0,
+    "p_better": 0.0,
+    "p_worse": 1.0
+   },
+   "vs_competitor": {
+    "wins": 7,
+    "losses": 23,
+    "ties": 0,
+    "p_better": 0.999285,
+    "p_worse": 0.002611
+   },
+   "subregions": {
+    "reliable_controller": {
+     "n": 15,
+     "vs_baseline": {
+      "wins": 15,
+      "losses": 0,
+      "ties": 0,
+      "p_better": 3.1e-05,
+      "p_worse": 1.0
+     },
+     "vs_competitor": {
+      "wins": 0,
+      "losses": 15,
+      "ties": 0,
+      "p_better": 1.0,
+      "p_worse": 3.1e-05
+     }
+    },
+    "unreliable_controller": {
+     "n": 15,
+     "vs_baseline": {
+      "wins": 15,
+      "losses": 0,
+      "ties": 0,
+      "p_better": 3.1e-05,
+      "p_worse": 1.0
+     },
+     "vs_competitor": {
+      "wins": 7,
+      "losses": 8,
+      "ties": 0,
+      "p_better": 0.696381,
+      "p_worse": 0.5
+     }
+    }
+   },
+   "diagnostics": {
+    "median_cpu_seconds": {
+     "candidate": 0.026789,
+     "baseline": 0.000329,
+     "competitor": 0.000828
+    },
+    "note": "reported diagnostics, never inputs to the admission decision: the rule decides on wall-clock medians only. cpu_seconds is the calling thread's CPU time per call (time.thread_time; work on other threads or processes is not in it); diagnostics.median_cpu_seconds is its median per arm; host_load is the host's load at the start and end of the run"
+   },
+   "canonical_path": {
+    "capability": "cognition.develop_repair",
+    "abstention_state": "NONE",
+    "method": "cognition.develop_repair",
+    "verifier": "STRUCTURALLY_VERIFIED",
+    "proof_type": "genome_certificate",
+    "latency_s": 0.2545,
+    "authority_created": false,
+    "receipt_id": "sha256:e20d3a33f6ff7cb0ab0cad19ae72d66ff5128f7a314464426ca47dfd120cb01a"
+   },
+   "heldout": [
+    {
+     "seed": 1500,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9595081018518519,
+       "category": "correct",
+       "seconds": 0.025094,
+       "cpu_seconds": 0.025102,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.08333333333333333,
+       "category": "correct",
+       "seconds": 0.000413,
+       "cpu_seconds": 0.000415
+      },
+      "competitor": {
+       "quality": 0.9996209490740741,
+       "category": "correct",
+       "seconds": 0.001085,
+       "cpu_seconds": 0.001087
+      }
+     }
+    },
+    {
+     "seed": 1501,
+     "subregion": "unreliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9688095238095238,
+       "category": "correct",
+       "seconds": 0.023147,
+       "cpu_seconds": 0.023151,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.0,
+       "category": "correct",
+       "seconds": 0.000322,
+       "cpu_seconds": 0.000324
+      },
+      "competitor": {
+       "quality": -0.000248015873015873,
+       "category": "correct",
+       "seconds": 0.00052,
+       "cpu_seconds": 0.000521
+      }
+     }
+    },
+    {
+     "seed": 1502,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9535720486111111,
+       "category": "correct",
+       "seconds": 0.033257,
+       "cpu_seconds": 0.03326,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.0,
+       "category": "correct",
+       "seconds": 0.000368,
+       "cpu_seconds": 0.000369
+      },
+      "competitor": {
+       "quality": 0.9995724826388889,
+       "category": "correct",
+       "seconds": 0.001227,
+       "cpu_seconds": 0.001227
+      }
+     }
+    },
+    {
+     "seed": 1503,
+     "subregion": "unreliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.962047619047619,
+       "category": "correct",
+       "seconds": 0.021234,
+       "cpu_seconds": 0.021034,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.2222222222222222,
+       "category": "correct",
+       "seconds": 0.000261,
+       "cpu_seconds": 0.000262
+      },
+      "competitor": {
+       "quality": 0.9996577380952381,
+       "category": "correct",
+       "seconds": 0.000575,
+       "cpu_seconds": 0.000576
+      }
+     }
+    },
+    {
+     "seed": 1504,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9447307946682948,
+       "category": "correct",
+       "seconds": 0.028266,
+       "cpu_seconds": 0.026317,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.3333333333333333,
+       "category": "correct",
+       "seconds": 0.000282,
+       "cpu_seconds": 0.000283
+      },
+      "competitor": {
+       "quality": 0.9997678571428571,
+       "category": "correct",
+       "seconds": 0.000703,
+       "cpu_seconds": 0.000704
+      }
+     }
+    },
+    {
+     "seed": 1505,
+     "subregion": "unreliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9575130208333333,
+       "category": "correct",
+       "seconds": 0.029442,
+       "cpu_seconds": 0.029445,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.0,
+       "category": "correct",
+       "seconds": 0.000318,
+       "cpu_seconds": 0.000319
+      },
+      "competitor": {
+       "quality": 0.9996484375,
+       "category": "correct",
+       "seconds": 0.000761,
+       "cpu_seconds": 0.000762
+      }
+     }
+    },
+    {
+     "seed": 1506,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.96784375,
+       "category": "correct",
+       "seconds": 0.016712,
+       "cpu_seconds": 0.016052,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.0,
+       "category": "correct",
+       "seconds": 0.000281,
+       "cpu_seconds": 0.000283
+      },
+      "competitor": {
+       "quality": 0.9995763888888889,
+       "category": "correct",
+       "seconds": 0.000833,
+       "cpu_seconds": 0.000834
+      }
+     }
+    },
+    {
+     "seed": 1507,
+     "subregion": "unreliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9444800673171937,
+       "category": "correct",
+       "seconds": 0.040874,
+       "cpu_seconds": 0.038357,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.0,
+       "category": "correct",
+       "seconds": 0.000537,
+       "cpu_seconds": 0.000488
+      },
+      "competitor": {
+       "quality": 0.9996506076388889,
+       "category": "correct",
+       "seconds": 0.001655,
+       "cpu_seconds": 0.001368
+      }
+     }
+    },
+    {
+     "seed": 1508,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9358074044011544,
+       "category": "correct",
+       "seconds": 0.0323,
+       "cpu_seconds": 0.031565,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.0,
+       "category": "correct",
+       "seconds": 0.000413,
+       "cpu_seconds": 0.000416
+      },
+      "competitor": {
+       "quality": 0.9996056547619048,
+       "category": "correct",
+       "seconds": 0.001025,
+       "cpu_seconds": 0.001006
+      }
+     }
+    },
+    {
+     "seed": 1509,
+     "subregion": "unreliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.8929047503869968,
+       "category": "correct",
+       "seconds": 0.037874,
+       "cpu_seconds": 0.037427,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.0,
+       "category": "correct",
+       "seconds": 0.000384,
+       "cpu_seconds": 0.00034
+      },
+      "competitor": {
+       "quality": 0.9995625,
+       "category": "correct",
+       "seconds": 0.000913,
+       "cpu_seconds": 0.000914
+      }
+     }
+    },
+    {
+     "seed": 1510,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9654535590277777,
+       "category": "correct",
+       "seconds": 0.028068,
+       "cpu_seconds": 0.028073,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.25,
+       "category": "correct",
+       "seconds": 0.000717,
+       "cpu_seconds": 0.000723
+      },
+      "competitor": {
+       "quality": 0.9997526041666667,
+       "category": "correct",
+       "seconds": 0.001018,
+       "cpu_seconds": 0.00102
+      }
+     }
+    },
+    {
+     "seed": 1511,
+     "subregion": "unreliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9643511284722223,
+       "category": "correct",
+       "seconds": 0.040836,
+       "cpu_seconds": 0.040463,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.0,
+       "category": "correct",
+       "seconds": 0.000655,
+       "cpu_seconds": 0.000659
+      },
+      "competitor": {
+       "quality": 0.9996549479166666,
+       "category": "correct",
+       "seconds": 0.001682,
+       "cpu_seconds": 0.001685
+      }
+     }
+    },
+    {
+     "seed": 1512,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9404582550125313,
+       "category": "correct",
+       "seconds": 0.034551,
+       "cpu_seconds": 0.034532,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.21052631578947367,
+       "category": "correct",
+       "seconds": 0.000345,
+       "cpu_seconds": 0.000346
+      },
+      "competitor": {
+       "quality": 0.9997109375,
+       "category": "correct",
+       "seconds": 0.00082,
+       "cpu_seconds": 0.000821
+      }
+     }
+    },
+    {
+     "seed": 1513,
+     "subregion": "unreliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9686747685185185,
+       "category": "correct",
+       "seconds": 0.020926,
+       "cpu_seconds": 0.02093,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.0,
+       "category": "correct",
+       "seconds": 0.00048,
+       "cpu_seconds": 0.000484
+      },
+      "competitor": {
+       "quality": 0.7269631207912458,
+       "category": "correct",
+       "seconds": 0.000988,
+       "cpu_seconds": 0.000992
+      }
+     }
+    },
+    {
+     "seed": 1514,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9522760416666667,
+       "category": "correct",
+       "seconds": 0.037826,
+       "cpu_seconds": 0.032611,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.0,
+       "category": "correct",
+       "seconds": 0.000398,
+       "cpu_seconds": 0.000347
+      },
+      "competitor": {
+       "quality": 0.9995520833333333,
+       "category": "correct",
+       "seconds": 0.000985,
+       "cpu_seconds": 0.000986
+      }
+     }
+    },
+    {
+     "seed": 1515,
+     "subregion": "unreliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9237855204033368,
+       "category": "correct",
+       "seconds": 0.044132,
+       "cpu_seconds": 0.044137,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.0,
+       "category": "correct",
+       "seconds": 0.000536,
+       "cpu_seconds": 0.000537
+      },
+      "competitor": {
+       "quality": -0.00026041666666666666,
+       "category": "correct",
+       "seconds": 0.000817,
+       "cpu_seconds": 0.000819
+      }
+     }
+    },
+    {
+     "seed": 1516,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9638566468253968,
+       "category": "correct",
+       "seconds": 0.036076,
+       "cpu_seconds": 0.036007,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.0,
+       "category": "correct",
+       "seconds": 0.000333,
+       "cpu_seconds": 0.000335
+      },
+      "competitor": {
+       "quality": 0.9995510912698413,
+       "category": "correct",
+       "seconds": 0.000958,
+       "cpu_seconds": 0.000959
+      }
+     }
+    },
+    {
+     "seed": 1517,
+     "subregion": "unreliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9641964285714286,
+       "category": "correct",
+       "seconds": 0.023801,
+       "cpu_seconds": 0.023805,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.2608695652173913,
+       "category": "correct",
+       "seconds": 0.000284,
+       "cpu_seconds": 0.000285
+      },
+      "competitor": {
+       "quality": 0.9997247023809523,
+       "category": "correct",
+       "seconds": 0.000701,
+       "cpu_seconds": 0.000702
+      }
+     }
+    },
+    {
+     "seed": 1518,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9433664349650478,
+       "category": "correct",
+       "seconds": 0.016452,
+       "cpu_seconds": 0.016456,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.0,
+       "category": "correct",
+       "seconds": 0.000241,
+       "cpu_seconds": 0.000242
+      },
+      "competitor": {
+       "quality": 0.9996354166666667,
+       "category": "correct",
+       "seconds": 0.000819,
+       "cpu_seconds": 0.000819
+      }
+     }
+    },
+    {
+     "seed": 1519,
+     "subregion": "unreliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9663988095238095,
+       "category": "correct",
+       "seconds": 0.018677,
+       "cpu_seconds": 0.018679,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.1,
+       "category": "correct",
+       "seconds": 0.000286,
+       "cpu_seconds": 0.000289
+      },
+      "competitor": {
+       "quality": 0.9995654761904762,
+       "category": "correct",
+       "seconds": 0.00066,
+       "cpu_seconds": 0.000661
+      }
+     }
+    },
+    {
+     "seed": 1520,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9645681423611111,
+       "category": "correct",
+       "seconds": 0.027533,
+       "cpu_seconds": 0.027536,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.3333333333333333,
+       "category": "correct",
+       "seconds": 0.000333,
+       "cpu_seconds": 0.000334
+      },
+      "competitor": {
+       "quality": 0.9998177083333334,
+       "category": "correct",
+       "seconds": 0.000881,
+       "cpu_seconds": 0.000882
+      }
+     }
+    },
+    {
+     "seed": 1521,
+     "subregion": "unreliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9643303571428572,
+       "category": "correct",
+       "seconds": 0.02737,
+       "cpu_seconds": 0.027261,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.0,
+       "category": "correct",
+       "seconds": 0.00029,
+       "cpu_seconds": 0.000291
+      },
+      "competitor": {
+       "quality": -0.00036210317460317465,
+       "category": "correct",
+       "seconds": 0.001479,
+       "cpu_seconds": 0.00113
+      }
+     }
+    },
+    {
+     "seed": 1522,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9553090277777778,
+       "category": "correct",
+       "seconds": 0.021497,
+       "cpu_seconds": 0.021261,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.0,
+       "category": "correct",
+       "seconds": 0.000285,
+       "cpu_seconds": 0.000286
+      },
+      "competitor": {
+       "quality": 0.9995694444444444,
+       "category": "correct",
+       "seconds": 0.000665,
+       "cpu_seconds": 0.000666
+      }
+     }
+    },
+    {
+     "seed": 1523,
+     "subregion": "unreliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9666171875,
+       "category": "correct",
+       "seconds": 0.022652,
+       "cpu_seconds": 0.022478,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.10526315789473684,
+       "category": "correct",
+       "seconds": 0.000387,
+       "cpu_seconds": 0.00039
+      },
+      "competitor": {
+       "quality": -1.0265970394736843,
+       "category": "wrong",
+       "seconds": 0.000914,
+       "cpu_seconds": 0.00089
+      }
+     }
+    },
+    {
+     "seed": 1524,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9585677083333334,
+       "category": "correct",
+       "seconds": 0.023333,
+       "cpu_seconds": 0.02329,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.3333333333333333,
+       "category": "correct",
+       "seconds": 0.000277,
+       "cpu_seconds": 0.000278
+      },
+      "competitor": {
+       "quality": 0.9997222222222222,
+       "category": "correct",
+       "seconds": 0.00069,
+       "cpu_seconds": 0.00069
+      }
+     }
+    },
+    {
+     "seed": 1525,
+     "subregion": "unreliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9452437193627451,
+       "category": "correct",
+       "seconds": 0.030791,
+       "cpu_seconds": 0.030526,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.0,
+       "category": "correct",
+       "seconds": 0.000302,
+       "cpu_seconds": 0.000307
+      },
+      "competitor": {
+       "quality": -0.8002604166666667,
+       "category": "wrong",
+       "seconds": 0.000542,
+       "cpu_seconds": 0.000543
+      }
+     }
+    },
+    {
+     "seed": 1526,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9655029761904762,
+       "category": "correct",
+       "seconds": 0.021913,
+       "cpu_seconds": 0.020816,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.0,
+       "category": "correct",
+       "seconds": 0.000266,
+       "cpu_seconds": 0.000267
+      },
+      "competitor": {
+       "quality": 0.9995922619047619,
+       "category": "correct",
+       "seconds": 0.000687,
+       "cpu_seconds": 0.000688
+      }
+     }
+    },
+    {
+     "seed": 1527,
+     "subregion": "unreliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9468757642211589,
+       "category": "correct",
+       "seconds": 0.0192,
+       "cpu_seconds": 0.019202,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.3157894736842105,
+       "category": "correct",
+       "seconds": 0.000224,
+       "cpu_seconds": 0.000225
+      },
+      "competitor": {
+       "quality": 0.9996840277777778,
+       "category": "correct",
+       "seconds": 0.000648,
+       "cpu_seconds": 0.000649
+      }
+     }
+    },
+    {
+     "seed": 1528,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9658420138888889,
+       "category": "correct",
+       "seconds": 0.032646,
+       "cpu_seconds": 0.029052,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.16666666666666666,
+       "category": "correct",
+       "seconds": 0.000341,
+       "cpu_seconds": 0.000342
+      },
+      "competitor": {
+       "quality": 0.9997309027777778,
+       "category": "correct",
+       "seconds": 0.000871,
+       "cpu_seconds": 0.000872
+      }
+     }
+    },
+    {
+     "seed": 1529,
+     "subregion": "unreliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9476896989856549,
+       "category": "correct",
+       "seconds": 0.025629,
+       "cpu_seconds": 0.025632,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_trace": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.0,
+       "category": "correct",
+       "seconds": 0.000302,
+       "cpu_seconds": 0.000303
+      },
+      "competitor": {
+       "quality": -1.5003373015873016,
+       "category": "wrong",
+       "seconds": 0.000674,
+       "cpu_seconds": 0.000675
+      }
+     }
+    }
+   ]
+  },
+  "develop_repair_hybrid": {
+   "intelligence_id": "developmental.repair.plan_audit_fallback",
+   "layer": 4,
+   "version": "1.0.0",
+   "baseline": "develop_repair 1.1.2: the local rules alone (default protocol)",
+   "competitor": "adaptive centralized replanner alone (repair_central_replanner)",
+   "status": "NICHE_CAPABILITY",
+   "arms": {
+    "candidate": {
+     "correct": 30,
+     "wrong": 0,
+     "abstain": 0,
+     "mean_quality": 0.981472,
+     "median_seconds": 0.084921
+    },
+    "baseline": {
+     "correct": 30,
+     "wrong": 0,
+     "abstain": 0,
+     "mean_quality": 0.954019,
+     "median_seconds": 0.027727
+    },
+    "competitor": {
+     "correct": 27,
+     "wrong": 3,
+     "abstain": 0,
+     "mean_quality": 0.679694,
+     "median_seconds": 0.000919
+    }
+   },
+   "vs_baseline": {
+    "wins": 23,
+    "losses": 7,
+    "ties": 0,
+    "p_better": 0.002611,
+    "p_worse": 0.999285
+   },
+   "vs_competitor": {
+    "wins": 7,
+    "losses": 7,
+    "ties": 16,
+    "p_better": 0.604736,
+    "p_worse": 0.604736
+   },
+   "subregions": {
+    "crashed_controller": {
+     "n": 5,
+     "vs_baseline": {
+      "wins": 5,
+      "losses": 0,
+      "ties": 0,
+      "p_better": 0.03125,
+      "p_worse": 1.0
+     },
+     "vs_competitor": {
+      "wins": 4,
+      "losses": 0,
+      "ties": 1,
+      "p_better": 0.0625,
+      "p_worse": 1.0
+     }
+    },
+    "reliable_controller": {
+     "n": 15,
+     "vs_baseline": {
+      "wins": 15,
+      "losses": 0,
+      "ties": 0,
+      "p_better": 3.1e-05,
+      "p_worse": 1.0
+     },
+     "vs_competitor": {
+      "wins": 0,
+      "losses": 0,
+      "ties": 15,
+      "p_better": 1.0,
+      "p_worse": 1.0
+     }
+    },
+    "stale_controller": {
+     "n": 10,
+     "vs_baseline": {
+      "wins": 3,
+      "losses": 7,
+      "ties": 0,
+      "p_better": 0.945312,
+      "p_worse": 0.171875
+     },
+     "vs_competitor": {
+      "wins": 3,
+      "losses": 7,
+      "ties": 0,
+      "p_better": 0.945312,
+      "p_worse": 0.171875
+     }
+    }
+   },
+   "diagnostics": {
+    "median_cpu_seconds": {
+     "candidate": 0.084899,
+     "baseline": 0.026914,
+     "competitor": 0.000922
+    },
+    "note": "reported diagnostics, never inputs to the admission decision: the rule decides on wall-clock medians only. cpu_seconds is the calling thread's CPU time per call (time.thread_time; work on other threads or processes is not in it); diagnostics.median_cpu_seconds is its median per arm; host_load is the host's load at the start and end of the run"
+   },
+   "canonical_path": {
+    "capability": "cognition.develop_repair_hybrid",
+    "abstention_state": "NONE",
+    "method": "cognition.develop_repair_hybrid",
+    "verifier": "STRUCTURALLY_VERIFIED",
+    "proof_type": "genome_certificate",
+    "latency_s": 0.4256,
+    "authority_created": false,
+    "receipt_id": "sha256:9fe150528d9483741f8e79238499d3d53659081ff58e2a5f915b65156743f9c9"
+   },
+   "heldout": [
+    {
+     "seed": 1500,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9996209490740741,
+       "category": "correct",
+       "seconds": 0.107552,
+       "cpu_seconds": 0.107067,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9595081018518519,
+       "category": "correct",
+       "seconds": 0.024191,
+       "cpu_seconds": 0.024195
+      },
+      "competitor": {
+       "quality": 0.9996209490740741,
+       "category": "correct",
+       "seconds": 0.000782,
+       "cpu_seconds": 0.000783
+      }
+     }
+    },
+    {
+     "seed": 1501,
+     "subregion": "crashed_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9763070436507937,
+       "category": "correct",
+       "seconds": 0.044745,
+       "cpu_seconds": 0.044748,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9688095238095238,
+       "category": "correct",
+       "seconds": 0.021569,
+       "cpu_seconds": 0.021341
+      },
+      "competitor": {
+       "quality": -0.000248015873015873,
+       "category": "correct",
+       "seconds": 0.000472,
+       "cpu_seconds": 0.000473
+      }
+     }
+    },
+    {
+     "seed": 1502,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9995724826388889,
+       "category": "correct",
+       "seconds": 0.144929,
+       "cpu_seconds": 0.144654,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9535720486111111,
+       "category": "correct",
+       "seconds": 0.031336,
+       "cpu_seconds": 0.03133
+      },
+      "competitor": {
+       "quality": 0.9995724826388889,
+       "category": "correct",
+       "seconds": 0.001212,
+       "cpu_seconds": 0.001213
+      }
+     }
+    },
+    {
+     "seed": 1503,
+     "subregion": "crashed_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9996577380952381,
+       "category": "correct",
+       "seconds": 0.083585,
+       "cpu_seconds": 0.083589,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.962047619047619,
+       "category": "correct",
+       "seconds": 0.021702,
+       "cpu_seconds": 0.021677
+      },
+      "competitor": {
+       "quality": 0.9996577380952381,
+       "category": "correct",
+       "seconds": 0.000624,
+       "cpu_seconds": 0.000616
+      }
+     }
+    },
+    {
+     "seed": 1504,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9997678571428571,
+       "category": "correct",
+       "seconds": 0.088266,
+       "cpu_seconds": 0.088074,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9447307946682948,
+       "category": "correct",
+       "seconds": 0.0243,
+       "cpu_seconds": 0.024305
+      },
+      "competitor": {
+       "quality": 0.9997678571428571,
+       "category": "correct",
+       "seconds": 0.000655,
+       "cpu_seconds": 0.000656
+      }
+     }
+    },
+    {
+     "seed": 1505,
+     "subregion": "stale_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.95603125,
+       "category": "correct",
+       "seconds": 0.037137,
+       "cpu_seconds": 0.03656,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9575130208333333,
+       "category": "correct",
+       "seconds": 0.025659,
+       "cpu_seconds": 0.025663
+      },
+      "competitor": {
+       "quality": 0.9996484375,
+       "category": "correct",
+       "seconds": 0.000731,
+       "cpu_seconds": 0.000732
+      }
+     }
+    },
+    {
+     "seed": 1506,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9995763888888889,
+       "category": "correct",
+       "seconds": 0.086257,
+       "cpu_seconds": 0.086209,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.96784375,
+       "category": "correct",
+       "seconds": 0.013313,
+       "cpu_seconds": 0.013316
+      },
+      "competitor": {
+       "quality": 0.9995763888888889,
+       "category": "correct",
+       "seconds": 0.000744,
+       "cpu_seconds": 0.000744
+      }
+     }
+    },
+    {
+     "seed": 1507,
+     "subregion": "stale_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9540581597222222,
+       "category": "correct",
+       "seconds": 0.033104,
+       "cpu_seconds": 0.033107,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9444800673171937,
+       "category": "correct",
+       "seconds": 0.029592,
+       "cpu_seconds": 0.029595
+      },
+      "competitor": {
+       "quality": 0.9996506076388889,
+       "category": "correct",
+       "seconds": 0.001048,
+       "cpu_seconds": 0.00105
+      }
+     }
+    },
+    {
+     "seed": 1508,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9996056547619048,
+       "category": "correct",
+       "seconds": 0.108999,
+       "cpu_seconds": 0.108228,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9358074044011544,
+       "category": "correct",
+       "seconds": 0.028005,
+       "cpu_seconds": 0.027978
+      },
+      "competitor": {
+       "quality": 0.9996056547619048,
+       "category": "correct",
+       "seconds": 0.000899,
+       "cpu_seconds": 0.000902
+      }
+     }
+    },
+    {
+     "seed": 1509,
+     "subregion": "stale_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9472864583333334,
+       "category": "correct",
+       "seconds": 0.032597,
+       "cpu_seconds": 0.0324,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.8929047503869968,
+       "category": "correct",
+       "seconds": 0.030164,
+       "cpu_seconds": 0.030136
+      },
+      "competitor": {
+       "quality": 0.9995625,
+       "category": "correct",
+       "seconds": 0.00094,
+       "cpu_seconds": 0.000941
+      }
+     }
+    },
+    {
+     "seed": 1510,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9997526041666667,
+       "category": "correct",
+       "seconds": 0.121097,
+       "cpu_seconds": 0.120646,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9654535590277777,
+       "category": "correct",
+       "seconds": 0.028592,
+       "cpu_seconds": 0.028415
+      },
+      "competitor": {
+       "quality": 0.9997526041666667,
+       "category": "correct",
+       "seconds": 0.001015,
+       "cpu_seconds": 0.000987
+      }
+     }
+    },
+    {
+     "seed": 1511,
+     "subregion": "stale_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9627083333333333,
+       "category": "correct",
+       "seconds": 0.030995,
+       "cpu_seconds": 0.030798,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9643511284722223,
+       "category": "correct",
+       "seconds": 0.029932,
+       "cpu_seconds": 0.0298
+      },
+      "competitor": {
+       "quality": 0.9996549479166666,
+       "category": "correct",
+       "seconds": 0.00108,
+       "cpu_seconds": 0.001083
+      }
+     }
+    },
+    {
+     "seed": 1512,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9997109375,
+       "category": "correct",
+       "seconds": 0.102541,
+       "cpu_seconds": 0.102371,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9404582550125313,
+       "category": "correct",
+       "seconds": 0.025995,
+       "cpu_seconds": 0.02541
+      },
+      "competitor": {
+       "quality": 0.9997109375,
+       "category": "correct",
+       "seconds": 0.000789,
+       "cpu_seconds": 0.00079
+      }
+     }
+    },
+    {
+     "seed": 1513,
+     "subregion": "crashed_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9793576388888889,
+       "category": "correct",
+       "seconds": 0.05936,
+       "cpu_seconds": 0.059209,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9686747685185185,
+       "category": "correct",
+       "seconds": 0.018377,
+       "cpu_seconds": 0.018381
+      },
+      "competitor": {
+       "quality": 0.7269631207912458,
+       "category": "correct",
+       "seconds": 0.000593,
+       "cpu_seconds": 0.000594
+      }
+     }
+    },
+    {
+     "seed": 1514,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9995520833333333,
+       "category": "correct",
+       "seconds": 0.116156,
+       "cpu_seconds": 0.115875,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9522760416666667,
+       "category": "correct",
+       "seconds": 0.031191,
+       "cpu_seconds": 0.031152
+      },
+      "competitor": {
+       "quality": 0.9995520833333333,
+       "category": "correct",
+       "seconds": 0.001253,
+       "cpu_seconds": 0.001256
+      }
+     }
+    },
+    {
+     "seed": 1515,
+     "subregion": "crashed_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9619921552502579,
+       "category": "correct",
+       "seconds": 0.058571,
+       "cpu_seconds": 0.056822,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9237855204033368,
+       "category": "correct",
+       "seconds": 0.035434,
+       "cpu_seconds": 0.03315
+      },
+      "competitor": {
+       "quality": -0.00026041666666666666,
+       "category": "correct",
+       "seconds": 0.000553,
+       "cpu_seconds": 0.000554
+      }
+     }
+    },
+    {
+     "seed": 1516,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9995510912698413,
+       "category": "correct",
+       "seconds": 0.17673,
+       "cpu_seconds": 0.170552,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9638566468253968,
+       "category": "correct",
+       "seconds": 0.024192,
+       "cpu_seconds": 0.023694
+      },
+      "competitor": {
+       "quality": 0.9995510912698413,
+       "category": "correct",
+       "seconds": 0.000998,
+       "cpu_seconds": 0.000999
+      }
+     }
+    },
+    {
+     "seed": 1517,
+     "subregion": "stale_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9626959325396826,
+       "category": "correct",
+       "seconds": 0.033339,
+       "cpu_seconds": 0.032832,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9641964285714286,
+       "category": "correct",
+       "seconds": 0.030439,
+       "cpu_seconds": 0.029944
+      },
+      "competitor": {
+       "quality": 0.9997247023809523,
+       "category": "correct",
+       "seconds": 0.001169,
+       "cpu_seconds": 0.001172
+      }
+     }
+    },
+    {
+     "seed": 1518,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9996354166666667,
+       "category": "correct",
+       "seconds": 0.099657,
+       "cpu_seconds": 0.098643,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9433664349650478,
+       "category": "correct",
+       "seconds": 0.017157,
+       "cpu_seconds": 0.017128
+      },
+      "competitor": {
+       "quality": 0.9996354166666667,
+       "category": "correct",
+       "seconds": 0.000857,
+       "cpu_seconds": 0.000844
+      }
+     }
+    },
+    {
+     "seed": 1519,
+     "subregion": "stale_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9648988095238096,
+       "category": "correct",
+       "seconds": 0.023831,
+       "cpu_seconds": 0.023782,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9663988095238095,
+       "category": "correct",
+       "seconds": 0.024286,
+       "cpu_seconds": 0.02266
+      },
+      "competitor": {
+       "quality": 0.9995654761904762,
+       "category": "correct",
+       "seconds": 0.000822,
+       "cpu_seconds": 0.000824
+      }
+     }
+    },
+    {
+     "seed": 1520,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9998177083333334,
+       "category": "correct",
+       "seconds": 0.155247,
+       "cpu_seconds": 0.151392,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9645681423611111,
+       "category": "correct",
+       "seconds": 0.029685,
+       "cpu_seconds": 0.029632
+      },
+      "competitor": {
+       "quality": 0.9998177083333334,
+       "category": "correct",
+       "seconds": 0.001011,
+       "cpu_seconds": 0.001014
+      }
+     }
+    },
+    {
+     "seed": 1521,
+     "subregion": "crashed_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9799503968253969,
+       "category": "correct",
+       "seconds": 0.075011,
+       "cpu_seconds": 0.074138,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9643303571428572,
+       "category": "correct",
+       "seconds": 0.027449,
+       "cpu_seconds": 0.027426
+      },
+      "competitor": {
+       "quality": -0.00036210317460317465,
+       "category": "correct",
+       "seconds": 0.00217,
+       "cpu_seconds": 0.002177
+      }
+     }
+    },
+    {
+     "seed": 1522,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9995694444444444,
+       "category": "correct",
+       "seconds": 0.114094,
+       "cpu_seconds": 0.105459,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9553090277777778,
+       "category": "correct",
+       "seconds": 0.021625,
+       "cpu_seconds": 0.020961
+      },
+      "competitor": {
+       "quality": 0.9995694444444444,
+       "category": "correct",
+       "seconds": 0.000623,
+       "cpu_seconds": 0.000625
+      }
+     }
+    },
+    {
+     "seed": 1523,
+     "subregion": "stale_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9636067708333333,
+       "category": "correct",
+       "seconds": 0.027025,
+       "cpu_seconds": 0.026899,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9666171875,
+       "category": "correct",
+       "seconds": 0.034649,
+       "cpu_seconds": 0.031107
+      },
+      "competitor": {
+       "quality": -1.0265970394736843,
+       "category": "wrong",
+       "seconds": 0.001003,
+       "cpu_seconds": 0.001007
+      }
+     }
+    },
+    {
+     "seed": 1524,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9997222222222222,
+       "category": "correct",
+       "seconds": 0.135003,
+       "cpu_seconds": 0.134888,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9585677083333334,
+       "category": "correct",
+       "seconds": 0.028586,
+       "cpu_seconds": 0.026402
+      },
+      "competitor": {
+       "quality": 0.9997222222222222,
+       "category": "correct",
+       "seconds": 0.001132,
+       "cpu_seconds": 0.001139
+      }
+     }
+    },
+    {
+     "seed": 1525,
+     "subregion": "stale_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9414312193627451,
+       "category": "correct",
+       "seconds": 0.032242,
+       "cpu_seconds": 0.032223,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9452437193627451,
+       "category": "correct",
+       "seconds": 0.030289,
+       "cpu_seconds": 0.030198
+      },
+      "competitor": {
+       "quality": -0.8002604166666667,
+       "category": "wrong",
+       "seconds": 0.000592,
+       "cpu_seconds": 0.000593
+      }
+     }
+    },
+    {
+     "seed": 1526,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9995922619047619,
+       "category": "correct",
+       "seconds": 0.097118,
+       "cpu_seconds": 0.096725,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9655029761904762,
+       "category": "correct",
+       "seconds": 0.023488,
+       "cpu_seconds": 0.023477
+      },
+      "competitor": {
+       "quality": 0.9995922619047619,
+       "category": "correct",
+       "seconds": 0.001185,
+       "cpu_seconds": 0.001104
+      }
+     }
+    },
+    {
+     "seed": 1527,
+     "subregion": "stale_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9554201388888889,
+       "category": "correct",
+       "seconds": 0.031764,
+       "cpu_seconds": 0.030901,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9468757642211589,
+       "category": "correct",
+       "seconds": 0.02281,
+       "cpu_seconds": 0.022574
+      },
+      "competitor": {
+       "quality": 0.9996840277777778,
+       "category": "correct",
+       "seconds": 0.000791,
+       "cpu_seconds": 0.000757
+      }
+     }
+    },
+    {
+     "seed": 1528,
+     "subregion": "reliable_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.9997309027777778,
+       "category": "correct",
+       "seconds": 0.144908,
+       "cpu_seconds": 0.14432,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9658420138888889,
+       "category": "correct",
+       "seconds": 0.039142,
+       "cpu_seconds": 0.039127
+      },
+      "competitor": {
+       "quality": 0.9997309027777778,
+       "category": "correct",
+       "seconds": 0.000984,
+       "cpu_seconds": 0.000985
+      }
+     }
+    },
+    {
+     "seed": 1529,
+     "subregion": "stale_controller",
+     "arms": {
+      "candidate": {
+       "quality": 0.943986822001528,
+       "category": "correct",
+       "seconds": 0.029599,
+       "cpu_seconds": 0.029373,
+       "info": {
+        "refuted": false,
+        "checks": {
+         "pointers_are_lattice_edges": true,
+         "steps_match_input": true,
+         "claims_match_certificate_count": true,
+         "no_pointer_into_removed_unit_or_blocked_link": true,
+         "claims_are_distinct_sources": true,
+         "every_claimed_source_delivers_on_realized_topology": true,
+         "actions_match_replayed_accounting": true,
+         "owner_declared": true,
+         "seed_bound": true,
+         "no_external_effect": true
+        }
+       }
+      },
+      "baseline": {
+       "quality": 0.9476896989856549,
+       "category": "correct",
+       "seconds": 0.030809,
+       "cpu_seconds": 0.030775
+      },
+      "competitor": {
+       "quality": -1.5003373015873016,
+       "category": "wrong",
+       "seconds": 0.001164,
+       "cpu_seconds": 0.001169
+      }
+     }
+    }
+   ]
+  }
+ },
+ "finished_at": "2026-10-21T20:22:07.614734+00:00"
+}

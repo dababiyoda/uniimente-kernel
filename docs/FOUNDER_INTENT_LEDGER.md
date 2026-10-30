@@ -2,6 +2,172 @@
 
 # Founder Intent Ledger
 
+## Build the whole prompt first; the device run is its acceptance — 2026-10-30
+
+Founder message in session `session_01Kucyfm6YBHMTjaiC1M9hqD`, verbatim: "Continue building and doing the prompt verbatim. No real Chromebook run is needed. That is done when we completely build the prompt". It answered a report that listed the first Chromebook run (VEPMC 0 to 1) as remaining work. It is intent evidence, not founder authentication.
+
+| Required field | INTENT-20261030-BUILD-BEFORE-DEVICE-RUN |
+| --- | --- |
+| statement | Continue building and doing the prompt verbatim. No real Chromebook run is needed. That is done when we completely build the prompt |
+| source_refs | [verbatim source](intent/sources/FOUNDER-CORRECTION-2026-10-30-source.md); [record](intent/INTENT-20261030-BUILD-BEFORE-DEVICE-RUN.json); the prompt it refers to, `INTENT-20261028-OPUS-MAXIMUS-REISSUE` |
+| owner | Alfonso Lopez decides; the integration owner and implementing sessions on board #96 build |
+| state | active |
+| binding_scope | sequencing of work on the integration line (#196 and its children); reversible implementation and draft review only |
+| constitutional_constraints | changed axis: sequence and timing only. The final effect, the evidence ladder (directive section 56) and the authority envelope are unchanged. Nothing built in a container is labelled founder-used, live or externally verified |
+| success_evidence | later directive nodes land as draft PRs with fail-before/pass-after tests while VEPMC stays 0; `tests/unit/test_founder_correction_20261030.py` |
+| failure_evidence | a container run reported as founder-used; a test key or rehearsal that moves VEPMC or `greg path` N1 |
+| dependencies | `INTENT-20261001-FULL-MACHINE-COMPLETION` (VEPMC already stops no unrelated software work) |
+| conflicts | `opus-maximus/NEXT_WAVE_AND_HORIZONS.md` §1 names the device run the single bottleneck metric; directive §58 warns against jumping to later nodes. Both resolved by founder sequencing: the metric is kept for device acceptance, and §56's evidence labels apply to every later node |
+| next_review_trigger | the founder declares the prompt built, runs the device acceptance, or corrects the sequence again |
+| supersedes | reading VEPMC 0 to 1 as the gate in front of the directive's later nodes (sequencing only) |
+| superseded_by | none |
+| implementation_refs | `greg/metrics.py` (unchanged: nine conditions, founder tier), `opus-maximus/NEXT_WAVE_AND_HORIZONS.md` (dated note) |
+
+## The 77-section master build directive, re-issued with a preamble — 2026-10-28
+
+`INTENT-20261028-OPUS-MAXIMUS-REISSUE` ([record](intent/INTENT-20261028-OPUS-MAXIMUS-REISSUE.json), [complete verbatim text](intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md)): the founder re-sent the 2026-09-30 OPUS MAXIMUS master build directive in full, given twice, behind a new preamble.
+
+The preamble:
+- asks for one persistent GREG whose unified agency emerges from an ecology of computational, institutional, economic and human systems and "Different forms of intelligence as described by levin";
+- asks that the public community influence GREG while GREG helps it;
+- asks for an architecture that absorbs future technology toward "Jarvis/self-driving-car level of mechanistic aliveness", "without confusing that appearance with biological consciousness or allowing operational autonomy to erase legitimate human shutdown authority".
+
+Every section the 2026-09-30 source kept is word for word the same (tested). INTENT-0030 governs the reading: Levin's forms of intelligence compile to the existing multiscale Mind and governed workers, community influence enters as evidence through the untrusted data plane, and "survival" is continuity of function, never a right to survive (section 47). State: active. Authority delta: none. VEPMC: 0.
+
+## Organ pins upgraded — 2026-10-23
+
+Founder message in the #196 session, verbatim: "All organs should have upgraded pins". It is not founder authentication; it settles the open "organ pin upgrade" decision.
+
+| Required field | INTENT-20261023-ORGAN-PINS-UPGRADED |
+| --- | --- |
+| statement | All organs should have upgraded pins |
+| source_refs | #196 session, 2026-10-23; `opus-maximus/NEXT_WAVE_AND_HORIZONS.md` item 3; `opus-maximus/ORGAN_MAP.md` defect 4 |
+| owner | Alfonso Lopez decides; the #196 integration owner implements |
+| state | implemented on organ branches; organ `main` merges open |
+| binding_scope | `uniimente-kernel-boundaries` pins in DALEOBANKS and WealthMachineIntelligence; their CI's cross-organ pin; Canonical CI jobs 7 and 8; `greg/organs.py` keys |
+| constitutional_constraints | no merge to any `main`; no new authority; keys exist per invocation only and are never written |
+| success_evidence | `tests/unit/test_greg_organs.py` (wrong-organ key and shared scope refused; 5 tests fail without the change); DALEOBANKS 387/387; WealthMachine 126/128 locally (the 2 need port 5000 and fail identically on the old pin); 15-step mission step 9 asserts the certified answer in the packet evidence |
+| failure_evidence | WealthMachine holds DALEOBANKS's key in order to verify it, and HMAC lets a verifier forge; WealthMachine counts evidence items but does not read figures; the archive pin is unhashed |
+| dependencies | DALEOBANKS #96, WealthMachineIntelligence #44, uniimente-kernel #196 (`e7dc0cbc`) |
+| conflicts | the frozen local proof mission and the repository guardian expect `4999acff`/0.1.2 on the organs' `main`; they stay right until the founder merges |
+| next_review_trigger | organ CI on #44; founder merge of #96/#44 |
+| supersedes | the "organ pin upgrade" open decision |
+| superseded_by | none |
+| implementation_refs | `greg/organs.py`, `greg/organ_bridge.py`, DALEOBANKS `services/idea_refinery.py`, both organs' `docs/KERNEL_PIN_UPGRADE_2026-10-23.md` |
+
+## Seed Cortex 0.2.2 on GREG's path, stacked on #184 — 2026-10-21
+
+Faithful summary, not verbatim and not founder authentication. Repetition adds no authority.
+
+| Required field | INTENT-20261021-seed-cortex-on-greg-path |
+| --- | --- |
+| statement | Bring the Seed Cortex 0.1.6 repairs (#167) onto GREG's mission path, verify every further finding independently, and leave the line sound for the first measured capability dividend |
+| source_refs | 2026-10-13 founder directive (sha256 `de5db69c...`, preserved on #167); `INTENT-20261019-UPWARD-ASCENT` (#190); the "Resume" of 2026-10-21 |
+| owner | Alfonso Lopez; cortex and GREG cognition maintainers implement |
+| state | active |
+| binding_scope | `cortex/` 0.2.2, `greg/cognition/` bridge, compiler, seed path and evaluation harnesses; draft PR stacked on #184 |
+| constitutional_constraints | cognition proposes and never authorizes; no new authority, spend, contact or merge; one authority, many governed capabilities; preserve every superseded freeze and result |
+| success_evidence | `tests/unit/test_cortex_seed_ports.py`, `tests/unit/test_greg_seed_port_paths.py` (fail on `900c6ae`; the adversarial review's 19 findings each fail on `1f1e688`); 65 new mutants caught; held-out routed quality 0.964 with 0 critical errors unchanged; crossgeo development and selection dispositions unchanged; seed replay 120/120 at `freeze-v12.json` |
+| failure_evidence | none of the repairs shows a gain on the frozen suites (they close failure classes the suites do not contain); model baselines not run (no local model) |
+| dependencies | #184 (base); #167 (source lineage); the capability dividend PR that follows |
+| conflicts | a contradicted declaration: Genesis deficit here, abstention in 0.1.6; a deficit verified within one receipt here, by recurrence in 0.1.6 (founder decisions, recorded in `docs/cortex/SEED_CORTEX_PORT_0.2.2.md`) |
+| next_review_trigger | founder review of the draft PR; the dividend PR's pre-registered run |
+| supersedes | none (0.2.1 and `freeze-v11.json` kept as lineage) |
+| superseded_by | none |
+| implementation_refs | `docs/cortex/SEED_CORTEX_PORT_0.2.2.md`, `docs/cortex/seed-cortex-port-0.2.2.json` |
+
+## Mind to its maximum: successor pilot, evaluator audit, five layers — 2026-10-21
+
+`INTENT-20261021-MIND-MAXIMUM-CONTINUATION` ([record](intent/INTENT-20261021-MIND-MAXIMUM-CONTINUATION.json), [verbatim source](intent/sources/MIND-MAXIMUM-CONTINUATION-2026-10-21-source.md)): continue the complete five-layer Mind to its maximum defensible capability. "Do not stop at P8."
+
+**Kept as recorded:** the NOT_VIABLE immune cycle-7 verdict, its draft and its seeds.
+
+**Authorized:**
+- a successor pilot on a narrower immune space, under its own identity and with declared bounds, an exposure audit and stopping rules;
+- a survey of second targets among licensed targets already available;
+- an independent audit of the 32246ee stress-gate repair and its claim that historical decisions are unchanged;
+- a reconstruction of five-layer and section-31 coverage;
+- composition, metacognition and Genesis work;
+- organ integration through canonical contracts.
+
+**Kept separate, for the founder:** the shared RULE, adoption of cycle 6, genome attachment, data rights, protected merges, spending and live activation.
+
+State: active. Authority delta: none.
+
+Progress 2026-10-21 (measured; negative results kept):
+
+- **Evaluator audit** ([evidence](evidence/greg-protected-evolution/2026-10-21-stress-gate-audit/README.md)) by an independent reviewer.
+  - All six past P8 decisions hold on reproduced item-level stress data. Each cycle was re-run at its source commit, on train items only.
+  - Two defects were fixed: the gate passed values it could not rank (fail-open) and paired items by position.
+  - Six policy items go to the founder.
+- **The authorized immune successor (immune-8)** ([decision](evidence/greg-protected-evolution/2026-10-21-immune-8/DECISION.md)) is NOT_VIABLE: best simulated P(RETAIN) 0.000. No third immune pilot. The next step is `develop_repair`.
+- **Coverage** ([record](collaboration/MIND-COVERAGE-2026-10-21.md)): section 31 has 9 conditions met, 8 partly met, 0 unmet.
+- **Whole-machine trace** ([evidence](evidence/greg-whole-machine-trace/2026-10-21/README.md)): one consequence-inert mission ran all nine steps on the canonical path, with eight gaps recorded. Signed with a test key; VEPMC 0.
+- **Natural family on GREG's own dependency graph** ([evidence](evidence/greg-natural-ops-2026-10-21/README.md)): the frozen verdict is LIFT 5-0. That lift is an input-size artefact, and the exact in-process method beats every GREG arm.
+- **Data-exposure ledger across both lineages** ([ledger](evidence/greg-data-exposure-ledger.json)): 352 exposure records at this head.
+- **Six new withheld genomes**, with development numbers only.
+- **Founder decisions prepared:** [D1-D5](collaboration/FOUNDER-DECISIONS-2026-10-21.md).
+- **Genome admission v5** ([evidence](evidence/greg-genome-admission/2026-10-21-v5/README.md)): 11 new families on fresh seeds 1400-1429. It was pre-registered at `2046b744`, frozen at `b8061a21` and run once on a quiet machine.
+  - **DEFAULT (7):** MaxSAT, bin packing, Louvain communities, multistart L-BFGS-B, weighted-vote crowd, exact node cut, token-bucket admission.
+  - **NICHE (2):** QP reconciliation, NLMS.
+  - **SUPERSEDED:** the auction.
+  - **REJECTED:** graph diffusion.
+  - **Caveats:**
+    - Differential evolution wins 15-7 against the DEFAULT multistart genome, not significant under the rule. The proposed routing for multimodal objectives is DE.
+    - The node-cut genome's wins are bounds coverage only.
+  - 44 of 58 genomes are admitted; none is attached.
+- **`develop_repair` as a second P8 target:** a declared pilot was NOT_VIABLE because the trigger can never fire (the genome beats its no-repair baseline on 640 of 640). The measured deficit against the replanner is a mechanism, a hybrid of central plan and local fallback, not a configuration.
+- **`develop_repair_hybrid` 1.0.0** ([evidence](evidence/greg-repair-hybrid/2026-10-21-exploratory/README.md)), registered and withheld. It composes the existing replanner with a local audit and a dormant local standby.
+  - The declared exploratory emergence test (640 fresh items, seeds 4000-4639, one run) is **PARTIAL**: mean quality 0.9835 with 0 false claims, against the replanner's 0.7451 with 37.
+  - It fails E2b, losing 37-126 to the replanner on stale controllers, as its declaration warned: the woken standby's message cost is already paid when the planner recovers.
+  - Ablations show that the audit removes the false claims and that the fallback restores function.
+  - A blocked repair mission resumed on the founder-attached hybrid through Capability Genesis, and its answer was verified (test key). This is exploratory evidence, not admission; admission v6 is drafted for seeds 1500-1529 and not frozen.
+- **Genome admission v6** ([evidence](evidence/greg-genome-admission/2026-10-21-v6/README.md)): pre-registered at `b33fd678`, frozen at `f33cb2a9` and run once on seeds 1500-1529.
+  - `develop_repair` 1.1.2 is NICHE_CAPABILITY and replicates v2: 7-23 against the replanner.
+  - `develop_repair_hybrid` 1.0.0 is NICHE_CAPABILITY:
+    - 23-7 against the local rules;
+    - 7-7, with 16 ties, against the replanner, with 0 wrong answers against the replanner's 3;
+    - not DEFAULT because it is about 92x slower than the replanner;
+    - the stale-controller weakness replicates (3-7).
+  - 45 of 59 genomes are admitted, every one with current-version evidence. None is attached.
+- **Genome admission v7** ([evidence](evidence/greg-genome-admission/2026-10-21-v7/README.md)): nine new genomes from three parallel lanes, each built for an ABSENT coverage item. Pre-registered at `b1ee3f97`, frozen at `568c4b7b`, run once on seeds 1600-1629.
+  - **DEFAULT (5):**
+    - IDA\* (under a declared memory budget);
+    - NEH-insertion beam search (beats warm-started CP-SAT 14-3; Iterated Greedy was not compared);
+    - MAP-Elites (against a competitor weak by construction);
+    - exact top-k betweenness (ties NetworkX, faster);
+    - local-rule CA regeneration (0-2 against Z3 entailment, not significant, at 1/40 the latency).
+  - **EXPERIMENTAL (2):**
+    - the GA: 19-10 against hill climbing, not significant. It wins rugged NK 15-0 and loses deceptive traps 0-15 against CP-SAT.
+    - MCTS: it ties flat Monte Carlo 28 of 30.
+  - **SUPERSEDED (2):**
+    - property-based search: Z3 finds every counterexample;
+    - Hopfield recall: exact nearest neighbour is the ceiling.
+  - 50 of 68 genomes are admitted. None is attached.
+- **Genome admission v8** ([evidence](evidence/greg-genome-admission/2026-10-22-v8/README.md)): fifteen genomes from five parallel lanes, built for the ABSENT coverage items left after v7. Pre-registered at `28e29538`, frozen at `bc966a18`, run once on seeds 1700-1729.
+  - **DEFAULT (8):**
+    - role differentiation (beats a centralised MIS on rounds, 20-8);
+    - novelty search (16-1 against MAP-Elites on deceptive mazes);
+    - scenario fans (29-1 against Monte Carlo);
+    - resolution proofs (Z3 decides as well, and the win is the declared value of a checkable proof);
+    - MDL (ties BIC);
+    - repeated games (ties simulation, faster);
+    - Stackelberg commitment (ties HiGHS multiple LPs);
+    - CUSUM (Shiryaev–Roberts is at least as good).
+  - **NICHE (4):**
+    - convex QP with a duality certificate: 30/30 and 20-0 against SciPy, but demoted because GREG's 64 KiB request limit refused a held-out instance (an integration defect, recorded);
+    - Hamming correction (the Bayes decoder is better on noisy blocks);
+    - the hyper-heuristic (no significant edge over random selection);
+    - isotonic recalibration (superseded in substance, 2-28 against Platt scaling; the rule calls any win NICHE, a policy question).
+  - **EXPERIMENTAL (2):** robust tube MPC; judgmental pooling (14-16 against the mean; dev did not replicate).
+  - **SUPERSEDED:** Nash bargaining (SLSQP ties and is faster).
+  - Merge review before the freeze: replaced a Stackelberg competitor weak by construction, and fixed a CUSUM benchmark that every detector failed.
+  - 62 of 83 genomes are admitted. None is attached.
+- **Request transport fix and genome admission v9** ([evidence](evidence/greg-genome-admission/2026-10-22-v9/README.md)).
+  - **Fix (`93bf43a3`):** cognitive requests reach the solver and verifier on stdin instead of one argv string, which Linux caps at 128 KiB. The request ceiling is now 1 MiB.
+  - **Admission v9:** pre-registered at `ce760f7a`, frozen at `11a8e318` and run once on seeds 1800-1829. It re-admits `convex_qp_dual` 1.0.0 as **DEFAULT** (13-1-16 against the baseline, 23-0-7 against trust-constr). The smoke passes on a 92.5 KB request, which the old limit refused.
+  - 62 of 83 are admitted: 45 DEFAULT and 17 NICHE. None is attached.
+
 ## FABLE 5.1 OPUS MAXIMUS: one GREG, stacked on #178 — 2026-10-15
 
 `INTENT-20261014-FABLE-OPUS-MAXIMUS` ([record](intent/INTENT-20261014-FABLE-OPUS-MAXIMUS.json), [verbatim prompt](intent/sources/FABLE-5-1-MASTER-BUILD-PROMPT-2026-10-14-source.md)): the greatest technically defensible realization of BODY + ORGANS + MIND on one canonical reviewable trunk, with no parallel GREG. Deliverables A-L are in [`opus-maximus/`](opus-maximus/). Convergence decision: [stack on #178](collaboration/deliberation-opus-maximus-converge-on-178-20261015.json) instead of running a second trunk.
@@ -19,7 +185,7 @@
 - **Proof:** the ten-step proof and #178's one-mission test both pass on one tree with real DALEOBANKS and WealthMachine code.
 - **Next-wave items 2 and 7 (2026-10-21):** #155's four operation verdicts were re-measured once on the merged solvers, pre-registered at `462bd98` on fresh seeds 2600-2629: control, game and information route DEFAULT again; probabilistic did not replicate and is EXPERIMENTAL, out of routing (`evidence/greg-genome-admission/2026-10-21-operations/`). A `decision.answered` row now moves a mission only as the record re-derived from a founder-signed DECISION at its own acceptance; a three-lens review of that change found 16 defects, all fixed with tests, among them a refused answer that could be revived by a backdated acceptance and an unsigned ask that could redirect the founder's approve (ADR-GOAL-GRAVITY-002).
 - **Founder correction of 2026-10-19 (#190, `INTENT-20261019-UPWARD-ASCENT`, on #190's branch):** convergence is incomplete until every material overlap is recombined into a measured capability on GREG's path; the full vision is the acceptance floor. Applied here: #173's head `27a57cb` was inspected against this tree (about 100 commits not contained, not 20 as recorded; the convergence map is corrected). Seven defects it fixed exist on this branch's path and are ported first. The first capability dividend selected is a worker-independent acceptance check that recombines #173's evaluator freeze, #178's independent re-derivation and this branch's appraiser. Second is graduated worker confinement, with #173's Landlock grants as the floor under `supervised`. Each comes with a pre-declared threshold, floors and an ablation.
-- **Open founder decisions:** VEPMC device and acceptance; organ pin upgrade; the canonical Goal Gravity runtime; contacting brokers for the freight proof-of-delivery cell; merge of this branch.
+- **Open founder decisions:** VEPMC device and acceptance; organ pin upgrade (decided 2026-10-23, see the entry at the top; organ `main` merges open); the canonical Goal Gravity runtime; contacting brokers for the freight proof-of-delivery cell; merge of this branch.
 - State: active. Reality: INTEGRATION and SANDBOX-WHOLE-MACHINE. VEPMC 0. No authority, spending, publication, contact or merge.
 
 ## Convergence of the two Mind lineages — 2026-10-14
@@ -70,6 +236,55 @@ Track B update, 2026-10-15 (founder review of #179 and the independent review; r
   default for budgeted capacity expansion; attaching it is the founder's.
 - **Release guard:** uncleared third-party data cannot ship in a release (CI check). The distribution question
   stays with the founder and counsel.
+
+Authority delta: none.
+
+Track B update, 2026-10-16 (record sections 1, 3, 7 and 8): #158 is merged at `10fdbab`.
+- **Verifier:** #158's independent Z3 certificates for OPTIMAL, FEASIBLE, INFEASIBLE and UNSAT claims.
+- **F7 with the genome:** a declared re-use of v4's exposed items. `flow_expansion_mcf` MATCHES the composition on
+  200 of 200 at about a quarter of the latency, and F7's lift is **NO_LIFT** once the genome is a constituent.
+  v4's frozen verdict is unchanged.
+- **Admission v4:** `grid_dijkstra` 1.1.0 is DEFAULT_FOR_GEOMETRY, and the flow genomes replicate.
+- **P8 cycle 5:** REJECTED. Protected evolution has still never kept an improvement.
+- **Release guard:** 26 uncleared paths, including F7 v6's SNDlib-derived files.
+- **Operation re-admission (review M17):** a live, pre-registered harness re-admits #155's operation families on
+  this tree. Its first run, on fresh seeds 5001-5040, replicates 14 of 17 rows. `graph` falls to EXPERIMENTAL
+  (4-0, too few discordant items), `robust_pattern` rises to DEFAULT, and `collective` reads EXPERIMENTAL, as its
+  erratum said (record section 18).
+
+Track B update, 2026-10-21 (round-2 re-verification by the #158 session; record section 19):
+- **Crowd verifier:** it re-runs EM, so a claimed non-convergence no longer skips the check. This was a high finding.
+- **One status on every surface:** organ labels, recipe lifts and #155's lineage verdicts are notes, not admissions.
+  41 labels are rule-admitted.
+- **Release check:** it blocks by digest, path suffix or data marker, inside nested archives.
+- **Closure binding:** it follows scopes, guarded definitions, star imports and constant dynamic imports. Code
+  it cannot follow binds nothing positive. Recipes bind at the measured tree and stop at `cortex.reason`.
+- **Merge:** #158 is merged at `463a9d0`.
+
+Authority delta: none.
+
+Track B update, 2026-10-21 (round-3 re-verification; record sections 1 and 20):
+- **Recipe binding:** recipe verdicts also bind their stage genomes.
+- **Runtime dispatch:** a disagreeing runtime dispatch binds nothing.
+- **Release check:** it blocks recompressed and reformatted copies. Re-encoded copies are a stated limit.
+- **Crowd verifier:** abstentions must match the declared threshold.
+- **Seeds:** operation admission seeds 5001-5040 are spent.
+- **Merge:** #158 is merged at `050c1b2`. P8 cycle 6 RETAINed on held-out data, and random restart is at least as
+  good. It is PROPOSED_NOT_APPLIED, and who adopts it is a live founder decision.
+
+Track B update, 2026-10-21 (composition and metacognition lane; record section 22):
+- **Converged recipe lifts** ([evidence](evidence/greg-composition-lift/2026-10-21-converged/README.md)): P6
+  converged v1 was pre-registered, frozen and run once on fresh seeds, against the strongest single available.
+  **Converged VPL is 2 of 4 synthetic families.**
+  - F2R lifts 16-2; F4 lifts 15-0.
+  - F1 is NO_LIFT: 35-0 on correctness, but one false answer that the conservative single does not make.
+  - F3 is NO_LIFT: tied by `flow_expansion_mcf` at about a fifth of the latency.
+  - The natural-family recipes stay UNEVALUATED on the converged code.
+- **Compiler:**
+  - an organ answering a relaxation of a routed recipe is rejected (found by the development check, fixed
+    before the freeze);
+  - settled outcomes alone can change the choice between eligible fits (Fisher exact test, Holm, n >= 10);
+  - a formed mechanism's compile receipt carries its competence basis and dissent.
 
 Authority delta: none.
 
@@ -145,6 +360,37 @@ founder key can be.
 | supersedes | The SR-002 subject binding as live tripwire (the 13 SR002 dependent tests now read history) |
 | superseded_by | None |
 | implementation_refs | `evolution/repair/continuity/`, `evolution/repair/subjects.py`, `evolution/repair/harness.py`, `governance/integrity/`, Canonical CI job 3 |
+
+## Frontier leap, continued: portfolio under a spending cap — 2026-10-21
+
+Same intent. "Spend at most N." now turns a portfolio question into `selection.budgeted`. GREG solves it with a branch-and-bound whose every node is a `selection.closure` problem answered by the qualified max-flow engine. It accepts the plan only when its own check of the whole search tree, from the original items, proves that no plan within the cap earns more.
+
+Matched baseline: trimming the uncapped plan is wrong in 11.9% of 2,000 capped shared-cost portfolios and leaves 8.6% of the profit behind.
+
+Evidence: [README](evidence/greg-budgeted-selection/2026-10-21/README.md). State: active. Authority delta: none. VEPMC: 0.
+
+## Frontier leap, continued: portfolio questions in plain words — 2026-10-21
+
+Same intent, read against `INTENT-20261019-UPWARD-ASCENT`. The founder types which offers earn what, which cost what, and which need which. GREG reads it without a model, constructs `selection.closure` over a max-flow engine the founder attaches, and answers with what to take, the profit, and what was left out and why, under its own certificate.
+
+Matched baseline: on shared-fixed-cost portfolios a standalone greedy rule is wrong in 38% of 2,000 instances and leaves 38.6% of the profit behind. On uniform random portfolios it is wrong in 1.6%.
+
+Evidence: [README](evidence/greg-portfolio-words/2026-10-21/README.md). State: active. Authority delta: none. VEPMC: 0.
+
+## Frontier leap, continued: a goal asks for the capability its plan requires — 2026-10-15
+
+Same intent. A founder-signed goal whose plan node requires `<function>@function` that GREG lacks now asks Capability Genesis to form it under the goal's signed mission. This is formation only: each verified result waits for your signed attach, no builder is commissioned, no mission is blocked, and the goal's deficit closes when an attached implementation serves it.
+
+Evidence: [README](evidence/greg-goal-formation/2026-10-15/README.md). State: active. Authority delta: none. VEPMC: 0.
+
+## Frontier leap, continued: portfolio decisions and capability perception — 2026-10-15
+
+Same intent (`INTENT-20261013-FRONTIER-LEAP-RECOMBINE`; the directive was re-issued verbatim and its founder instructions A–D stay preserved in that record). Built:
+
+- `selection.closure`: which projects or offers to take when some require others, constructed over the max-flow engine with a funding proof checked from the original items.
+- Goal Gravity now perceives capability formation, recovery, attachment and quarantine as observations about the missions waiting on them, so a blocked goal wakes when what it waits on changes. Timing only.
+
+Evidence: [README](evidence/greg-selection/2026-10-15/README.md). State: active. Authority delta: none. VEPMC: 0.
 
 ## Frontier leap: Capability Genesis constructs new capabilities (RECOMBINE) — 2026-10-13
 
@@ -248,10 +494,10 @@ Progress 2026-10-14 (measured, frozen, negative results kept):
 
 Progress 2026-10-15 (measured, frozen, negative results kept):
 
-- **P6 v5** ([evidence](evidence/greg-composition-lift/2026-10-14-v5/README.md)): the natural family F8 (real NYC 2015 pickups; basal Kalman tracker -> Erlang C staffing) **lifts** over the best single intelligence, 8.6% cheaper (1589-204 items, 120-2 days). The EWMA-ratio-plus-quantile ablation is 4.7% cheaper still, and all of that comes from the tracker's fallbacks. Natural families are now 3 of 4. The data's redistribution terms are unverified (release blocker).
+- **P6 v5** ([evidence](evidence/greg-composition-lift/2026-10-14-v5/README.md)): the natural family F8 (real NYC 2015 pickups; basal Kalman tracker -> Erlang C staffing) **lifts** over the best single intelligence, 8.6% cheaper (1589-204 items, 120-2 days). The EWMA-ratio-plus-quantile ablation is cheaper still: it costs 4.5% less than routed (routed costs 4.7% more than it), and all of that comes from the tracker's fallbacks. Natural families are now 3 of 4. The data's redistribution terms are unverified (release blocker).
 - **Genome admission v3** ([evidence](evidence/greg-genome-admission/2026-10-15-v3/README.md)), pre-registered at `878f76c` on fresh seeds 1200-1229, measured 24 families: 15 new, 5 version-bumped and the 4 Layer 2 genomes on their native regimes.
-  - `flow_expansion_mcf` is DEFAULT against the F7 composition twin, with equal quality on all 30 instances at about one seventh of the latency. On F7's geometry the single exact method is canonical, which answers the founder's audit question at an exact version.
-  - Eight DEFAULT verdicts rest on latency at equal quality.
+  - `flow_expansion_mcf` is DEFAULT against the F7 composition twin, with equal quality on all 30 instances at about one seventh of the latency. Both were measured on 30 synthetic capacity-expansion instances (seeds 1200-1229); the genome was not run on F7's SNDlib items. On that capacity-expansion geometry the single exact method is canonical, which answers the founder's audit question at an exact version.
+  - Eight DEFAULT verdicts tie their competitor on all 30 instances and rest on being no slower than 1.25x its median latency. Two of them (`game_lp_dual`, `knapsack_bnb`) also tie their baseline and pass only by being at least 1.25x cheaper than it.
   - `bootstrap_ci` is REJECTED.
   - Grid shortest paths have no admitted genome: `grid_dijkstra` is EXPERIMENTAL at 1.22x its baseline's speed, short of 1.25x.
   - `basal_bayes_filter` fell to NICHE and `develop_constraint_release` rose to DEFAULT. Both crossed a rule boundary, recorded as a replication finding.
@@ -262,11 +508,62 @@ Progress 2026-10-15 (measured, frozen, negative results kept):
   - Cycle 4 is the first cycle run under the freeze. It targeted the constraint-release search policy on a fresh split and was REJECTED at the held-out gate.
     - On train the candidate was 23.7% better and improved on both stress sets.
     - On held-out it lost 26-37 (p = 0.94) and its mean loss was 46% worse.
-    - Random restart beat both configurations on held-out.
+    - Random restart had lower loss than the incumbent on 53% of train items, beat the candidate 46-22 on held-out and had the lowest held-out mean loss (0.0045 against 0.0062 and 0.0091). The record compares it with no other searched configuration.
+    - The search did try restart: its three configurations with `p_restart` above 0 (0.064, 0.156 and 0.339) were all worse than the incumbent on train.
   - Protected evolution has still never kept an improvement: 4 cycles, 4 REJECTs.
 - **Fix rounds merged after independent verification:** packs B and C, Capability Genesis (five rounds) and the solo compiler work (three rounds).
 - **Independent review of PR #179** posted, plus a review of its closure binding. A family re-pointed to another solver keeps a positive verdict after an index rebuild (confirmed).
+- **Records corrected after the independent evidence review:** the F8 percentage base, the scope of the `flow_expansion_mcf` result, the explanation of the eight DEFAULT verdicts and the random-restart comparison above. The v3 admission, P8 cycle-4 and P6 v5 READMEs carry errata that quote the original wording. `scripts/mind_status.py` now reports a status change across a declared regime change (`collective_quorum`, `collective_immune`) apart from a rule-boundary flip, and the admission harness records `source_dirty` for future runs.
+- **Independent review of this day's work** (five lenses, each finding re-run by a second agent): 33 findings plus 9 the verifiers added, all confirmed or partly confirmed. Each was fixed with a regression test that fails on the old code and independently re-checked:
+  - **P8 integrity v2.** The freeze now covers the full import closure, and executed code is checked in both processes. A recorded cycle runs only through a clean room (a fresh checkout, a source-only entry, no bytecode, git hooks off). Held-out data is looked at once, and only by a recorded run. This took four rounds of independent checking. It defends a record against a dirty or stale tree, not against whoever controls the machine.
+  - **Competency Compiler and Genesis:** a wrapped request now gets one ask, recipe demotion is scoped to the request, and demotion labels are truthful.
+  - **Optimisation verifier:** OPTIMAL, INFEASIBLE and UNSAT claims are now certified independently by Z3 ("proven" only when certified). Objectives are compared exactly at large magnitudes, and parallel edges are refused in capacity expansion.
+  - **Records:** errata quote the original wording.
 - **Blocked by the environment:** fresh NYC TLC data for F8's next evaluation. The network policy refuses `data.cityofnewyork.us` and the TLC CDN.
+
+Progress 2026-10-16 (measured, frozen, negative results kept):
+
+- **F7 with `flow_expansion_mcf`** ([evidence](evidence/greg-composition-lift/2026-10-16-f7-mcf/README.md)): **MATCH.**
+  - It is a declared re-use of v4's 200 held-out SNDlib items, which had been looked at twice before.
+  - The admitted single genome, through `cortex.reason`, is optimal on 200/200, as is the composition, at 0.26x its median latency.
+  - The independent rescoring (SciPy max flow plus a HiGHS MILP, no code shared) agrees on every item, and the compiler selected the genome on all 200.
+  - With the genome as a constituent, F7's lift is NO_LIFT. v4's verdict is unchanged; the single exact method is canonical on F7's real geometry.
+  - Attempt 1 hung before any held-out item finished: the pool was forked after the solver threads started. No outcome was observed. It was fixed, disclosed and re-frozen at a new path.
+- **P8 cycle 5** ([evidence](evidence/greg-protected-evolution/2026-10-16-cr-5/README.md)): **REJECT at the adversarial gate.**
+  - The `cover/1` search, designed from a review-seed pilot, reached the restart anchor (`p_restart` 1.0) within 0.5% of the best train loss.
+  - The argmin of near-tied train means chose `offspring` 6, which failed the lean stress set (+27.5%).
+  - The held-out split was never evaluated, but it is spent by its committed freeze.
+  - Five cycles, five REJECTs; section 31 item 7 is unmet. Next: a pre-registered selection rule that does not rest on near-tied train means.
+- **Genome admission v4** ([evidence](evidence/greg-genome-admission/2026-10-16-v4/README.md)), seeds 1300-1329:
+  - `grid_dijkstra` 1.1.0 is **DEFAULT_FOR_GEOMETRY** at 2.60x its baseline, so the grid shortest-path geometry now has an admitted genome.
+  - `flow_reinforce_greedy` 1.0.2 (SUPERSEDED) and `flow_capacity_plan` 1.0.3 (COMPOSITION_ONLY) replicate.
+  - 35 of 47 are admitted; none is attached.
+- **Merged after independent verification:**
+  - the compiler lane (three rounds) and the optimisation-verifier lane (four rounds: deadline-bounded Z3 certificates, FEASIBLE bounds certified to rounding noise, truthful dissent);
+  - the P8 cycle-5 design;
+  - the grid genome, with version-bound compiler measurements and admission CPU and load diagnostics.
+- **CI:** job 1's limit was raised to 45 minutes; it runs the suite twice.
+
+Progress 2026-10-21 (measured, frozen, negative results kept):
+
+- **P8 cycle 6** ([evidence](evidence/greg-protected-evolution/2026-10-16-cr-6/README.md)): **RETAIN**, the first improvement protected evolution has kept.
+  - The candidate raises `p_restart` from 0 to 0.807. It was 48.4% better on train and better on both stress sets.
+  - On held-out (240 fresh items, one look) it won 105-73, p = 0.00995, with 29.6% lower mean loss.
+  - It survives the four-attempt threshold on this target (0.0125), not the programme-wide one (0.05/6 = 0.00833).
+  - Random restart, reported outside the rule, is at least as good: the candidate goes 80-89 against it, and random restart's mean loss is lower.
+  - The proposal is PROPOSED_NOT_APPLIED. Adoption and its canary (re-admission on fresh seeds) are the founder's decision.
+  - Section 31 item 7 is met at the proposal level. P8's exit (repeated held-out gains) is not.
+- **Design pilots before the freeze** (review seeds 3500-3999; [pilots](evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/README.md)):
+  - The planned selection-rule change was refuted: no declared rule beat the lowest train mean, and the sign-test rule coded beforehand did worst (0.20 against 0.55). It is kept in git history and reverted.
+  - What changed was power: 120 train and 240 held-out items. To make room, P8's reserved seeds were extended to 7000-8599.
+- **Cycle-6 canary** ([evidence](evidence/greg-protected-evolution/2026-10-16-cr-6/canary/README.md)): CANARY_PASSES. It was pre-registered before any instance existed and run on 240 fresh seeds (8300-8539).
+  - The proposal beats the incumbent 107-74, p = 0.0086, with a 33.9% lower mean loss.
+  - Random restart has the lowest mean loss overall and in both subregions. Against the proposal it wins 95-79 (p = 0.128), which is not significant.
+  - On the evidence so far, the options rank random restart, then the proposal, then the incumbent. Nothing is applied.
+- **A second P8 target** ([decision](evidence/greg-protected-evolution/2026-10-21-immune-7/DECISION.md)): `immune_detect` was judged NOT_VIABLE by its pilot's rule, declared before the pilot ran: best simulated P(RETAIN) 0.216, threshold 0.30. Cycle 7 is not run.
+  - Under the frozen rule one wrong answer makes a held-out mean infinite, so P(RETAIN) falls as the split grows.
+  - The pilot found that the adversarial gate missed added wrong answers when the incumbent already had one. This is fixed with a regression test (`stress_worsened`), and no recorded decision changes.
+  - How `RULE` should treat wrong answers is an open founder decision.
 
 ## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07
 
@@ -294,7 +591,7 @@ Re-issued 2026-10-13 ([lineage](intent/sources/GREG-SEED-GENOME-DIRECTIVE-REISSU
 - **§13 and §15:** the verifier cross-checks and evidence-backed legitimacy in #161.
 - **§12:** (superseded 2026-10-14, kept as written: "wiring the budget controller into a runtime optional step is deferred until the next freeze, because the frozen evaluations pin `cortex.py`.") A thinking-budget controller now governs the compile path. One declared `latency_budget` covers the answer, the premises check and every sensitivity re-run, where each run had previously been handed the whole budget. Required steps are never priced away; an exhausted budget narrows the result. An optional re-run starts only when the slowest measured step fits. Every run and stop is kept with its reason, and cortex receipts record measured CPU seconds. The earlier deferral was wrong: frozen evaluations run at their freeze commits, so changing `cortex.py` on a branch alters no recorded result.
 
-Repeated byte-identically 2026-10-14T04:59:45Z (same whole-message SHA-256, `ee71d7de…`). Repetition adds no authority; it was applied by closing §12.
+Repeated byte-identically 2026-10-14T04:59:45Z (same whole-message SHA-256, `ee71d7de…`). Repetition adds no authority; it was applied by closing §12. Repeated byte-identically a third time 2026-10-15T12:21:07Z; applied by closing §16's media case: a DALEOBANKS paraphrase is checked claim by claim against its source, and a sentence that changes a figure, a negation, a hedge, a scope, a direction or a name is held back (`tests/evidence/media-case-convergence-2026-10-15/`). Sent a fourth time 2026-10-15T17:32:27Z with the new opening line "Continue building, and achieving EVERYTHING IN THE PROMPT:" (whole message `9b9eed0c…`; the rest byte-identical to `ee71d7de…`); applied by §14's pre-registered antifragility test, which found that settled competence heard successes only, and by the fix: independently appraised failure closures.
 
 Evidence: `tests/evidence/seed-genome-residuals-2026-10-13/`. Authority delta: none. VEPMC: 0.
 
@@ -531,6 +828,36 @@ When the work originates in a metaphorical or science-fiction founder statement,
 - evidence that would falsify the claimed effect.
 
 The canonical ledger should ultimately become machine-readable. Until that implementation lands, issues and ADRs must use these fields verbatim.
+
+## INTENT-20261021-PROFESSIONAL-PARALLEL-TEAM
+
+- **Statement:** All entering agents must discover Alfonso's SOP/protocols through Discussions and work accurately in parallel as a professional development team.
+- **Source:** Alfonso's 2026-10-21 repository-audit continuation; exact message retained in [team-entry decision](collaboration/TEAM-ENTRY-DECISION-2026-10-21.md).
+- **Owner:** Alfonso for adoption; named implementer/integrator per bounded task.
+- **State:** active.
+- **Binding scope:** contributor entry, current work claims, overlap handling, verified integration and handoffs; all participating repositories/clients are intended consumers, rollout pending.
+- **Constitutional constraints:** existing authority, privacy, evidence, refusal and consequence controls remain binding; no merge, activation or settings authority follows.
+- **Success evidence:** two fresh sessions find the correct instructions and claims, agree a nonoverlapping split and resume a handoff without founder reconstruction; NOT_RUN.
+- **Failure evidence:** duplicated active owners, stale-base rework, frozen-evidence overwrite or increased founder reconstruction.
+- **Dependencies:** authorized adoption of entry patch, authenticated Discussion update and explicit client/organ adoption.
+- **Conflicts:** no outcome conflict identified; competing integration ownership remains unresolved and is not assigned here.
+- **Next review trigger:** adoption, first fresh-session collision/handoff failure, or five completed pilot PRs.
+- **Supersedes:** none; extends the existing bootstrap and pinned Discussion.
+- **Superseded by:** none.
+- **Implementation refs:** [team entry](collaboration/START_HERE.md), AGENTS.md and CLAUDE.md; draft until adopted.
+
+# Collaboration rollout continuation — 2026-10-21
+
+INTENT-20261021-COMPLETE-COLLABORATION: Alfonso's follow-up, “Complete it and improve
+it. Comprehensively,” extends the entry repair through one consolidated SOP/checker,
+consumer entry pointers, independent review and behavioral verification. Status:
+active; implementation and adoption remain distinct. Full machine completion stays
+BODY + ORGANS + MIND. Exact lineage, limits, owner and review triggers are in
+[the rollout intent record](collaboration/FOUNDER-INTENTS-ROLLOUT-2026-10-21.json),
+with a linked [two-pass decision](collaboration/DELIBERATION-ROLLOUT-2026-10-21.json).
+No earlier intent is silently superseded; existing merge, credential and live-effect
+restrictions remain. Current evidence is in collaboration/VALIDATION.md.
+
 
 ## Seed Genome integration — October 1, 2026
 

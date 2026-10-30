@@ -1,0 +1,3 @@
+# reproduce.py at the base 6a878655 (#185's head), before any change on this branch
+{"original_after_seed": {"first_writes": 1, "phone_delegated": false}}
+{"restored": {"boots_as_restored": "no: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/greg-restore-sudsnxdj/body/witness.key'", "first_writes_on_restored": 1, "head_is_the_backup": true, "needs_from_founder": ["device_ed25519.pem", "ledger.jsonl.lock", "witness.key"], "replayed_second_mission": "APPLIED", "revoked_phone_decision": "APPLIED", "revoked_phone_still_delegated": true}}

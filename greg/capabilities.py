@@ -17,6 +17,8 @@ Computer-use route preference (structured before visual):
 from __future__ import annotations
 
 from dataclasses import dataclass, field, asdict
+import codecs
+import errno
 import glob
 import hashlib
 from html.parser import HTMLParser
@@ -24,6 +26,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -289,15 +292,68 @@ def _inside(path: Path, roots) -> Path:
     raise CapabilityError(f"path {path} outside permitted roots")
 
 
+# A byte-order mark names its encoding; UTF-32's is looked for before UTF-16's, which it begins with.
+BYTE_ORDER_MARKS = ((codecs.BOM_UTF32_LE, "utf-32"), (codecs.BOM_UTF32_BE, "utf-32"), (codecs.BOM_UTF8, "utf-8-sig"),
+                    (codecs.BOM_UTF16_LE, "utf-16"), (codecs.BOM_UTF16_BE, "utf-16"))
+
+
+def faithful_text(data: bytes, *, cut: bool = False) -> tuple[str | None, str]:
+    """The text ``data`` holds and the encoding it was read in, or None and why no faithful reading exists.
+
+    Text a predicate judges must be the text the bytes hold. A decode that replaces what it cannot read, or reads
+    UTF-16 as UTF-8, turns a phrase that is there into one that looks absent, and ``not_contains`` passes on it
+    (§VI-8). The encoding is the one a byte-order mark names, else UTF-8, read strictly; UTF-8 holding NUL is refused
+    as well, since UTF-16 or UTF-32 without a mark, or a file that is not text, reads that way. ``cut``: ``data`` is
+    the start of a longer stream, so a character the cut split is left out instead of refused."""
+    codec = next((name for mark, name in BYTE_ORDER_MARKS if data.startswith(mark)), "utf-8")
+    try:
+        text = codecs.getincrementaldecoder(codec)().decode(data, final=not cut)
+    except UnicodeDecodeError as exc:
+        return None, f"not valid {codec.removesuffix('-sig')} at byte {exc.start}"
+    if codec in ("utf-8", "utf-8-sig") and "\x00" in text:     # a UTF-8 mark before UTF-16 bytes too (review of #228)
+        return None, "holds NUL bytes: UTF-16 or UTF-32 read as UTF-8, or not text"
+    return text, codec
+
+
+def with_text(out: dict, data: bytes, *, cut: bool = False) -> dict:
+    """``out`` with the text ``data`` holds and its encoding, or, when it has no faithful reading, with the reason
+    instead (``text_unreadable``). Such an output declares itself incomplete and vouches only for the fields it read
+    whole (``complete: false``, ``decided``), so no check on its text decides either way (greg.missions.judge)."""
+    text, how = faithful_text(data, cut=cut)
+    if text is not None:
+        return {**out, "text": text, "encoding": how}
+    return {**out, "text_unreadable": how, "complete": False, "decided": sorted([*out, "text_unreadable"])}
+
+
+def bounded_read(path: Path, refusal: str) -> bytes:
+    """The bytes of the regular file at ``path``, refused (``refusal``) before more than MAX_READ_BYTES + 1 of them
+    are read: by its size when the file states one, by the read itself when it does not (a /proc file states 0)."""
+    try:   # a FIFO swapped in never blocks; a link swapped in after the roots were checked is not followed
+        fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
+    except OSError as exc:
+        if exc.errno == errno.ELOOP:
+            raise CapabilityError(f"{path.name} became a link after its path was checked") from None
+        raise
+    info = os.fstat(fd)
+    if not stat.S_ISREG(info.st_mode):                  # checked on the descriptor, before Python wraps it
+        os.close(fd)
+        raise CapabilityError(f"{path.name} is not a regular file")
+    with open(fd, "rb") as stream:
+        if info.st_size > MAX_READ_BYTES:
+            raise CapabilityError(refusal)
+        data = stream.read(MAX_READ_BYTES + 1)
+    if len(data) > MAX_READ_BYTES:
+        raise CapabilityError(refusal)
+    return data
+
+
 def fs_read(params, ctx: InvocationContext) -> dict:
     path = _inside(Path(params["path"]), ctx.read_roots + (ctx.workspace,))
-    if not path.is_file():  # absence is a measurement of the world, not a sensor failure
+    if not path.exists():   # absence is a measurement of the world; a directory or FIFO there is a failed read
         return {"path": str(path), "exists": False}
-    data = path.read_bytes()
-    if len(data) > MAX_READ_BYTES:
-        raise CapabilityError("file exceeds read ceiling")
-    return {"path": str(path), "exists": True, "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest(),
-            "text": data.decode("utf-8", errors="replace")}
+    data = bounded_read(path, "file exceeds read ceiling")
+    return with_text({"path": str(path), "exists": True, "bytes": len(data),
+                      "sha256": hashlib.sha256(data).hexdigest()}, data)
 
 
 def fs_list(params, ctx: InvocationContext) -> dict:
@@ -509,9 +565,22 @@ def run_cli(params, ctx: InvocationContext, *, isolate_network: bool = True, tim
         proc = run_isolated(argv, cwd=ctx.workspace, isolate_network=isolate_network, timeout=timeout)
     except subprocess.TimeoutExpired:      # a refusal with a cause, never an "uncertain external effect"
         raise CapabilityError(f"{argv[0]} did not finish within {timeout}s", failure_class="transient") from None
-    return {"argv": argv, "returncode": proc.returncode,
-            "stdout": proc.stdout[:MAX_READ_BYTES].decode("utf-8", errors="replace"),
-            "stderr": proc.stderr[-4000:].decode("utf-8", errors="replace")}
+    # stdout keeps its first MAX_READ_BYTES and stderr its last 4000 bytes; a field cut or not faithfully readable is
+    # left out of ``decided``, so a check on it decides only what more output could not undo, and a cut field names
+    # the side it was cut at (``cut_at``), so its text is searched only where the rest cannot change it
+    # (greg.missions.judge)
+    out, held, cut_at = {"argv": argv, "returncode": proc.returncode}, [], {}
+    for name, data, cut in (("stdout", proc.stdout[:MAX_READ_BYTES], len(proc.stdout) > MAX_READ_BYTES),
+                            ("stderr", proc.stderr[-4000:], len(proc.stderr) > 4000)):
+        if cut and name == "stderr":     # a tail begins mid-character at worst: drop those continuation bytes
+            data = data[next((i for i in range(min(4, len(data))) if not 0x80 <= data[i] < 0xC0), 0):]
+        text, how = faithful_text(data, cut=cut and name == "stdout")
+        out |= {name: text} if text is not None else {f"{name}_unreadable": how}
+        held += [name] if cut or text is None else []
+        cut_at |= {name: "end" if name == "stdout" else "start"} if cut and text is not None else {}
+    if held:
+        out |= {"complete": False, "decided": sorted(set(out) - set(held))} | ({"cut_at": cut_at} if cut_at else {})
+    return out
 
 
 READ_ONLY_GIT_ENV = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "GIT_CONFIG_NOSYSTEM": "1",
@@ -538,7 +607,10 @@ def git_inspect(params, ctx: InvocationContext) -> dict:
     repo = _inside(Path(params["path"]), ctx.read_roots)
     def git(*args):
         return read_only_git(repo, *args, home=ctx.workspace)
-    head, status, log = git("rev-parse", "HEAD"), git("status", "--porcelain"), git("log", "--oneline", "-10")
+    try:
+        head, status, log = git("rev-parse", "HEAD"), git("status", "--porcelain"), git("log", "--oneline", "-10")
+    except UnicodeDecodeError as exc:   # a commit subject or file name that is not UTF-8: a failed read, not a crash
+        raise CapabilityError(f"git output is not valid UTF-8 at byte {exc.start}") from None
     if head.returncode:
         raise CapabilityError("not a git repository")
     return {"path": str(repo), "head": head.stdout.strip(), "dirty": bool(status.stdout.strip()),
@@ -575,8 +647,8 @@ def http_get(params, ctx: InvocationContext) -> dict:
         route = "body-process"
     if len(body) > MAX_READ_BYTES:
         raise CapabilityError("response exceeds read ceiling")
-    return {"url": url, "final_url": final_url, "status": status, "sha256": hashlib.sha256(body).hexdigest(),
-            "text": body.decode("utf-8", errors="replace"), "trust": "untrusted-external-data", "egress": route}
+    return with_text({"url": url, "final_url": final_url, "status": status, "sha256": hashlib.sha256(body).hexdigest(),
+                      "trust": "untrusted-external-data", "egress": route}, body)
 
 
 CHROME_CANDIDATES = (
@@ -664,15 +736,24 @@ def browser_render(params, ctx: InvocationContext) -> dict:
                 route = f"relay: only {authority}, every request journaled"
         except subprocess.TimeoutExpired as exc:
             raise CapabilityError("browser did not finish rendering within 45 seconds") from exc
-    dom = proc.stdout[:MAX_READ_BYTES * 4]
-    if proc.returncode or not dom.strip():
+    if proc.returncode or not proc.stdout.strip():
         raise CapabilityError("browser could not render the page: " + proc.stderr.decode("utf-8", "replace")[-300:])
+    dom_cut = len(proc.stdout) > MAX_READ_BYTES * 4
+    out = {"url": url, "dom_sha256": hashlib.sha256(proc.stdout).hexdigest(), "dom_bytes": len(proc.stdout),
+           "browser": Path(binary).name, "os_sandboxed": sandboxed, "egress": route, "trust": "untrusted-external-data"}
+    dom, how = faithful_text(proc.stdout[:MAX_READ_BYTES * 4], cut=dom_cut)
+    if dom is None:
+        return {**out, "text_unreadable": how, "complete": False, "decided": sorted([*out, "text_unreadable"])}
     parser = _VisibleText()
-    parser.feed(dom.decode("utf-8", errors="replace"))
-    text = "\n".join(parser.parts)[:MAX_READ_BYTES]
-    return {"url": url, "title": parser.title.strip()[:300], "text": text, "dom_sha256": hashlib.sha256(dom).hexdigest(),
-            "dom_bytes": len(dom), "browser": Path(binary).name, "os_sandboxed": sandboxed,
-            "egress": route, "trust": "untrusted-external-data"}
+    parser.feed(dom)
+    text, title = "\n".join(parser.parts), parser.title.strip()
+    out |= {"title": title[:300], "text": text[:MAX_READ_BYTES]}
+    # a page cut by the DOM limit, or text or title cut by their own, is kept as its start: a check on what was cut
+    # decides only what more of the page could not undo (greg.missions.judge)
+    held = [name for name, whole in (("text", len(text) <= MAX_READ_BYTES), ("title", len(title) <= 300))
+            if dom_cut or not whole]
+    return out | ({"complete": False, "decided": sorted(set(out) - set(held)), "cut_at": dict.fromkeys(held, "end")}
+                  if held else {})
 
 
 def _render_behind_relay(argv, relay, host: str, port: int, loopback: bool, profile: Path, env: dict):
@@ -765,7 +846,7 @@ def repo_integration_audit(params, ctx: InvocationContext) -> dict:
 STRENGTHENS = {
     "foundry.query": ("proof", "routing", "compounding"),
     "foundry.apply": ("proof", "settlement", "compounding", "capability_formation"),
-    "fs.read": ("proof",), "fs.list": ("proof",), "fs.write": ("settlement",),
+    "fs.read": ("proof",), "fs.list": ("proof",), "fs.search": ("proof",), "fs.write": ("settlement",),
     "git.inspect": ("proof",), "http.get": ("proof", "capability_formation"),
     "mac.notify": ("settlement", "eligibility"), "mac.screenshot": ("proof",),
     "mac.frontmost_app": ("proof", "routing"), "repo.pin_audit": ("proof", "eligibility", "reliability"),
@@ -854,8 +935,19 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                            _lazy("greg.precedents", "precedents")),
     "fs.read": (_builtin("fs.read", "filesystem.read", "Read one file inside permitted roots", "api",
                          "read_only", "fs:", {"path": "str"},
-                         {"path": "str", "exists": "bool", "bytes": "int", "sha256": "str", "text": "str"},
+                         {"path": "str", "exists": "bool", "bytes": "int", "sha256": "str", "text": "str",
+                          "encoding": "str"},
                          filesystem="read-scoped", retry_safe=True), fs_read),
+    "fs.search": (_builtin("fs.search", "filesystem.search",
+                           "Answer phrases over one whole file of any size, streamed in bounded memory", "api",
+                           "read_only", "fs:", {"path": "str", "phrases": "list", "whitespace": "str?",
+                                                "max_bytes": "int?", "max_seconds": "float?"},
+                           {"path": "str", "exists": "bool", "size": "int", "bytes_read": "int", "read_sha256": "str",
+                            "complete": "bool", "queries": "list"},
+                           filesystem="read-scoped", retry_safe=True, tests=("tests/unit/test_greg_text_query.py",),
+                           provenance={"source": "uniimente-kernel/greg/textquery.py",
+                                       "mechanism_from": "#201 document.text phrase, generalized and streamed"}),
+                  _lazy("greg.textquery", "fs_search")),
     "fs.list": (_builtin("fs.list", "filesystem.list", "List one directory inside permitted roots", "api",
                          "read_only", "fs:", {"path": "str"}, {"path": "str", "exists": "bool", "entries": "list"},
                          filesystem="read-scoped", retry_safe=True), fs_list),
@@ -870,8 +962,8 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                              retry_safe=True), git_inspect),
     "http.get": (_builtin("http.get", "web.fetch", "HTTPS GET from an explicit egress allowlist", "api",
                           "read_only", "https:", {"url": "str"},
-                          {"url": "str", "final_url": "str", "status": "int", "sha256": "str", "text": "str", "egress": "str",
-                           "trust": "str"},
+                          {"url": "str", "final_url": "str", "status": "int", "sha256": "str", "text": "str",
+                           "encoding": "str", "egress": "str", "trust": "str"},
                           network="egress-allowlist", egress_allowlist=("example.com",),
                           data_classes=("public_web",), retry_safe=True), http_get),
     "browser.render": (_builtin("browser.render", "web.render",
@@ -1106,9 +1198,12 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                 _lazy("greg.mcp_tools", "act")),
     "daleobanks.verify": (_builtin("daleobanks.verify", "media.verify_draft",
                                    "DALEOBANKS EthicsGuard/Critic/PromptFirewall on a draft plus figure-to-source "
-                                   "binding (DALEOBANKS code, DALEOBANKS interpreter)", "cli", "read_only",
+                                   "binding (DALEOBANKS code, DALEOBANKS interpreter); with ``cognition``, every "
+                                   "sentence must be a claim GREG's evidence family answered as written",
+                                   "cli", "read_only",
                                    "daleobanks:", {"daleobanks_root": "path", "draft": "path", "source": "path",
-                                                   "python": "path?", "max_chars": "int?"},
+                                                   "python": "path?", "max_chars": "int?", "cognition": "dict?",
+                                                   "content_type": "str?"},
                                    {"verdict": "str", "findings": "list", "draft_sha256": "str"},
                                    filesystem="read-scoped", binaries=(sys.executable,), retry_safe=True,
                                    data_classes=("project_sources",), tests=("tests/unit/test_greg_daleobanks_bridge.py",),
@@ -1208,7 +1303,7 @@ BUILTINS.update({
                                  "wealthmachine_python": "path", "seed": "str", "timeout_seconds": "int?"},
                                 {"trace_id": "str", "packet_id": "str", "assessment": "dict",
                                  "appraisal_verdict": "REPRODUCED|REFUTED", "transport_verified": "bool",
-                                 "sender_identity_isolated": "bool", "organ_heads": "dict"},
+                                 "sender_identity_isolated": "bool", "key_holders": "dict", "organ_heads": "dict"},
                                 filesystem="workspace-write", binaries=_GIT, data_classes=("project_sources",),
                                 tests=("tests/unit/test_greg_organs.py", "tests/integration/test_one_machine.py"),
                                 provenance=_ORGAN_SOURCE),
@@ -1226,6 +1321,7 @@ BUILTINS.update({
 # No second intelligence registry, event store, runtime, policy or model router.
 from greg.cognition.catalog import builtin_entries as _cognitive_entries  # noqa: E402
 BUILTINS.update(_cognitive_entries(CapabilityManifest, _lazy))
+from greg.backup import builtin_entries as _bk; BUILTINS.update(_bk(CapabilityManifest, _lazy))  # noqa: E402,E702
 
 
 class CapabilityRegistry:

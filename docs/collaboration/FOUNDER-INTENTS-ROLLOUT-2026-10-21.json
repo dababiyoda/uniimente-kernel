@@ -1,0 +1,44 @@
+{
+  "intents": [
+    {
+      "intent_id": "INTENT-20261021-COMPLETE-COLLABORATION",
+      "title": "Complete and improve cross-repository professional collaboration",
+      "statement": "Complete it and improve it. Comprehensively",
+      "source": "Alfonso Lopez, current task conversation, 2026-10-21",
+      "source_location": "User follow-up after explicit partial-installation report; prior directive quoted in TEAM-ENTRY-DECISION-2026-10-21.md",
+      "source_date_or_version": "2026-10-21",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "Every participating worker discovers founder Discussion/SOP, avoids undeclared duplicate implementation, preserves intent and evidence, and hands off exact revisions to an acknowledged integration destination.",
+      "affected_systems": [
+        "uniimente-kernel",
+        "12 connected consumer repositories",
+        "repository-aware AI clients"
+      ],
+      "rationale": "User explicitly requests completion and comprehensive improvement; passing declarations alone cannot satisfy actual collaboration.",
+      "conflicts": [
+        "Local client configuration and existing private Claude sessions are not accessible from this workspace.",
+        "Merge and authenticated Discussion update remain separately gated by the invoked protocol and access controls."
+      ],
+      "evidence_refs": [
+        "VALIDATION.md",
+        "TEAM-ENTRY-DECISION-2026-10-21.md"
+      ],
+      "implementation_refs": [
+        "START_HERE.md",
+        "RECEIPT.md",
+        "ROLLOUT.md",
+        "../../.github/workflows/collaboration-receipt.yml"
+      ],
+      "owner": "Alfonso Lopez; implementing maintainer for rollout",
+      "next_review_trigger": "Package adoption, first fresh client boot, and five completed coordinated PRs",
+      "unresolved_questions": [
+        "Who acknowledges the product integration destination across #178/#184/#192?",
+        "Have existing external Claude sessions refreshed the adopted source?"
+      ],
+      "created_at": "2026-10-21T00:00:00Z",
+      "updated_at": "2026-10-21T00:00:00Z"
+    }
+  ]
+}

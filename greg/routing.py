@@ -126,13 +126,20 @@ def cognitive_knowledge(journal: Journal) -> list[dict]:
     Latest corrections supersede, not erase. Missing outcomes stay unscored.
     Benchmark, synthetic and observed tiers cannot lend each other credibility.
     """
+    from greg.cognition.seed_path import claim_ran
     latest = {}
     for event in journal.replay('cognition.outcome'):
         latest[event.payload['receipt_id']] = event.payload
+    receipts = {e.payload['receipt_id']: e.payload for e in journal.replay('cognition.receipt')}
     groups = {}
     import json
     for outcome in latest.values():
-        for method in outcome['methods']:
+        methods = outcome['methods']
+        if 'unexecuted_methods' not in outcome:
+            # An outcome retained before 0.2.2 listed every claim: count only the claims that ran (verified 2026-10-21).
+            claims = (receipts.get(outcome['receipt_id']) or {}).get('claims') or []
+            methods = [m for m, c in zip(methods, claims) if claim_ran(c)]
+        for method in methods:
             key = json.dumps([method, outcome['tier'], outcome['conditions']], sort_keys=True)
             row = groups.setdefault(key, {'method': method, 'tier': outcome['tier'],
                 'conditions': outcome['conditions'], 'observations': 0, 'missing': 0, 'scores': [],

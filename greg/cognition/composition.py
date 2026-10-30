@@ -235,14 +235,31 @@ def _operation(reason, pid: str, operation: str, data: dict, *, registry, journa
 
 
 def _op_summary(name: str, receipt: dict) -> dict:
+    output = receipt.get("output")
+    status = output.get("solver_status") if isinstance(output, dict) else None
     return {"stage": name, "receipt_id": receipt["receipt_id"], "method": receipt["method"],
-            "abstention_state": receipt["abstention_state"],
+            "abstention_state": receipt["abstention_state"], **({"solver_status": status} if status else {}),
             "verifier": (receipt.get("evaluator_result") or {}).get("verdict"),
             "latency_s": round(receipt["latency"], 4), "counterargument": receipt.get("strongest_counterargument")}
 
 
 def _answered(receipt: dict) -> bool:
     return receipt["abstention_state"] == "NONE" and isinstance(receipt.get("output"), dict)
+
+
+# What an optimize stage's answer proves, weakest first, in the words of what was checked (review V2): "proven" only
+# when the independent verifier's certificate held (Z3, a different engine, finds no strictly better assignment).
+OPTIMALITY = ("unproven (feasible plan; the optimiser stopped before proving it optimal)",
+              "solver-reported (CP-SAT OPTIMAL; bound equals objective); not independently certified", "proven")
+
+
+def _certified(solved: dict) -> bool:
+    return ((solved.get("evaluator_result") or {}).get("certificate") or {}).get("status") == "CERTIFIED"
+
+
+def _optimality(solved: dict) -> str:
+    status = (solved.get("output") or {}).get("solver_status")
+    return OPTIMALITY[0] if status != "OPTIMAL" else OPTIMALITY[2] if _certified(solved) else OPTIMALITY[1]
 
 
 def _graph_then_allocate(payload, pid, kw, receipt, finish):
@@ -271,12 +288,18 @@ def _graph_then_allocate(payload, pid, kw, receipt, finish):
         receipt["translation_failures"].append(f"optimiser claimed flow {claimed}; max-flow organ found "
                                                f"{check['output']['value']}")
         return finish("TRANSLATION_FAILED", "cross-intelligence flow check disagreed")
-    # the optimiser's own status travels with the answer: FEASIBLE is feasible with optimality unproven
+    # the composition's certificate is the optimiser's, as strong as its verifier made it: OPTIMAL is proven only
+    # when the independent certificate held; FEASIBLE is a feasible plan whose flow the cross-check confirms. The
+    # gap is measured from the claimed flow (the solution's exact objective, which the verifier recomputed) to the
+    # bound the certificate held for (Z3 finds no assignment beyond it; an OPTIMAL claim's bound is its objective),
+    # never copied from the proof artifact (fix review r3: a bound and a gap each checked to 1/2 stacked, so a plan 1
+    # short answered with gap 0.02). Without the certificate the gap is only the solver's word, so it is omitted
+    # (None), never reported as if verified (review r2: a FEASIBLE plan 5 short with a forged bound answered 0.0).
+    gap = float(abs(claimed - solved["evaluator_result"]["certificate"]["bound"])) if _certified(solved) else None
     return finish("ANSWERED", None, {"increments": increments, "flow_value": claimed,
                                      "control_points": check["output"]["cut_edges"],
-                                     "solver_status": out["solver_status"],
-                                     "optimality": ("proven by the solver's bound" if out["solver_status"] == "OPTIMAL"
-                                                    else "feasible; optimality unproven")})
+                                     "solver_status": out["solver_status"], "optimality_gap": gap,
+                                     "optimality": _optimality(solved)})
 
 
 def _bayes_then_voi(payload, pid, kw, receipt, finish):
@@ -324,7 +347,7 @@ def _forecast_then_allocate(payload, pid, kw, receipt, finish):
         if not _answered(f):
             return finish("STAGE_ABSTAINED", f"forecast {p['name']}: {f['abstention_state']}")
         paths.append(f["output"]["quantiles"])
-    allocation = []
+    allocation, weekly = [], []
     for t in range(weeks):
         data = {"capacity": plan["capacity"],
                 "products": [{"name": p["name"], "over_cost": p["over_cost"], "under_cost": p["under_cost"],
@@ -341,7 +364,13 @@ def _forecast_then_allocate(payload, pid, kw, receipt, finish):
         if not _answered(solved) or out.get("solver_status") not in ("OPTIMAL", "FEASIBLE"):
             return finish("STAGE_ABSTAINED", f"optimize week {t + 1}: {out.get('solver_status')}")
         allocation.append([out["solution"][f"q{i}"] for i in range(len(products))])
-    return finish("ANSWERED", None, {"plan": allocation, "products": [p["name"] for p in products]})
+        weekly.append(solved)
+    # each week's solver status and the weakest week's certificate strength, as graph_then_allocate reports its one
+    # (review V3): the plan is proven only when every week's is
+    return finish("ANSWERED", None, {"plan": allocation, "products": [p["name"] for p in products],
+                                     "solver_status": [solved["output"]["solver_status"] for solved in weekly],
+                                     "optimality": min((_optimality(solved) for solved in weekly),
+                                                       key=OPTIMALITY.index)})
 
 
 def _real(x, name) -> float:

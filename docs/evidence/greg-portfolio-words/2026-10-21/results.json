@@ -1,0 +1,22 @@
+[
+  {
+    "family": "uniform random (the selection oracle's generator)",
+    "seed": 20261021,
+    "instances": 2000,
+    "greedy_suboptimal": 32,
+    "share": 0.016,
+    "profit_left_by_greedy": 78,
+    "optimal_profit_total": 8737,
+    "share_of_profit_lost": 0.0089
+  },
+  {
+    "family": "shared fixed costs: 1-3 costs of 2-10, 2-5 offers of 1-8 each needing 1-3 of them",
+    "seed": 1021,
+    "instances": 2000,
+    "greedy_suboptimal": 759,
+    "share": 0.3795,
+    "profit_left_by_greedy": 4587,
+    "optimal_profit_total": 11884,
+    "share_of_profit_lost": 0.386
+  }
+]

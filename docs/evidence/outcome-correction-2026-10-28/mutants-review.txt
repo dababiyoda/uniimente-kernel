@@ -1,0 +1,17 @@
+Mutants of the review fixes (mutants-review.py); tests: test_greg_outcome_resolution, test_greg_pending_construction_realization, test_greg_outcome_resolution_signed (py3.11, -x).
+N2 is equivalent: a second resolution under one signed digest must carry the identical signed body (S1 body binding), so it can only repeat the same ruling; the one-per-digest guard is kept as defence in depth.
+CAUGHT  N1 S1 signed body not compared: ['test_s1_a_resolution_carrying_another_signed_commands_digest_resolves_nothing']
+MISSED  N2 S1 one signed command reused: []
+CAUGHT  N3 S2 any resolution adjudicates: ['test_s2_an_invalidation_must_name_every_live_report_and_never_adjudicates_the_founders_own']
+CAUGHT  N4 S2 partial invalidation accepted: ['test_s2_an_invalidation_must_name_every_live_report_and_never_adjudicates_the_founders_own']
+CAUGHT  N5 S3 dedupe against rejected facts: ['test_s3_a_re_report_after_an_invalidation_is_a_new_fact_not_a_duplicate_of_a_rejected_one']
+CAUGHT  N6 S3 one fact per receipt and value: ['test_s3_on_a_body_an_independent_report_matching_a_conflicting_value_is_recorded']
+CAUGHT  N7 S4 journal order wins: ['test_s4_an_older_signed_resolution_delivered_later_never_overrides_a_newer_one']
+CAUGHT  N8 S5 succeeded only when prior is None: ['test_s5_reconcile_supersedes_a_legacy_settlement_once_and_never_invalidates_it_later']
+CAUGHT  N9 S6 failed check hidden by dispute: []
+CAUGHT  N10 S7 unsettleable dispute weighed: ['test_s7_a_dispute_whose_mission_cannot_settle_is_held_and_names_the_appraisal']
+CAUGHT  N11 S8 Laplace flips ignored: ['test_s8_a_laplace_rank_flip_between_the_two_resolutions_is_investigated']
+CAUGHT  N12 S9 unsigned fact eligible (replay): ['test_s9_settlement_itself_refuses_a_signed_resolution_accepting_an_unsigned_report']
+CAUGHT  N13 S9 unsigned fact eligible (row): ['test_s9_an_unsigned_report_is_never_eligible_to_be_accepted']
+CAUGHT  N14 S10 engine label hashed: ['test_s10_the_answer_version_ignores_the_engine_label']
+13 of 14 caught

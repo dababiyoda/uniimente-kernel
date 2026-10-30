@@ -63,44 +63,111 @@ def _base(expr: ast.AST) -> str | None:
     return expr.id if isinstance(expr, ast.Name) else None
 
 
+SCOPES = (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda, ast.ClassDef, ast.ListComp, ast.SetComp, ast.DictComp,
+          ast.GeneratorExp)
+FUNCTIONS = (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)
+
+
+def _bindings(node: ast.AST) -> set[str]:
+    """Names one top-level statement binds or mutates anywhere inside it, never inside a function or class body:
+    assignment, deletion and loop targets and their roots (``T['k'] = v``, ``del T['k']``, ``for T[k] in ...``),
+    roots of method-call statements (``T.update(...)``), and defs, classes and imports nested in ``if``/``try``/
+    ``with``/``for`` blocks (round-2 review of #179, N4)."""
+    names: set[str] = set()
+    pending = [node]
+    while pending:
+        sub = pending.pop()
+        if isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            names.add(sub.name)
+            continue
+        if isinstance(sub, (ast.Lambda, ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
+            continue
+        if isinstance(sub, (ast.Import, ast.ImportFrom)) and sub is not node:
+            names |= {a.asname or a.name.split(".")[0] for a in sub.names if a.name != "*"}
+        elif isinstance(sub, ast.Name) and isinstance(sub.ctx, (ast.Store, ast.Del)):
+            names.add(sub.id)
+        elif isinstance(sub, (ast.Subscript, ast.Attribute)) and isinstance(sub.ctx, (ast.Store, ast.Del)):
+            if (root := _base(sub)) is not None:
+                names.add(root)
+        elif isinstance(sub, ast.Expr) and isinstance(sub.value, ast.Call) and isinstance(sub.value.func, ast.Attribute):
+            if (root := _base(sub.value.func)) is not None:      # T.update(...), T.append(...), T.setdefault(...)
+                names.add(root)
+        elif isinstance(sub, ast.ExceptHandler) and sub.name:
+            names.add(sub.name)
+        pending.extend(ast.iter_child_nodes(sub))
+    return names
+
+
 def _definitions(tree: ast.Module) -> dict[str, list[ast.AST]]:
-    """Every top-level statement that binds or mutates each module-level name, in source order."""
+    """Every top-level statement that binds or mutates each module-level name, in source order. A plain top-level
+    import is resolved by ``_imports`` instead; an import inside a compound statement (a guarded fallback) is a
+    definition, so the guard and its fallback are hashed."""
     out: dict[str, list[ast.AST]] = {}
     for node in tree.body:
-        names: set[str] = set()
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            names = {node.name}
-        elif isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
-            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
-            for t in targets:
-                names |= {n.id for n in ast.walk(t) if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store)}
-                if (root := _base(t)) is not None:
-                    names.add(root)
-        elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute):
-            if (root := _base(node.value.func)) is not None:     # T.update(...), T.append(...), T.setdefault(...)
-                names.add(root)
-        for name in names:
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            continue
+        for name in _bindings(node):
             out.setdefault(name, []).append(node)
     return out
 
 
-def _locals(node: ast.AST) -> set[str]:
-    """Names bound inside one function (arguments, assignments, loop and comprehension targets, nested defs and
-    imports): a reference to one is local, never a module-level dependency. A name declared ``global`` is not
-    local."""
+def _direct(node: ast.AST):
+    """Nodes evaluated in ``node``'s own scope: never a nested scope's body, but the decorators, defaults, bases and
+    first iterable that the enclosing scope evaluates; nested scope nodes themselves are yielded for recursion."""
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        roots = node.body
+    elif isinstance(node, ast.Lambda):
+        roots = [node.body]
+    elif isinstance(node, ast.ClassDef):
+        roots = node.body
+    elif isinstance(node, (ast.ListComp, ast.SetComp, ast.GeneratorExp)):
+        roots = [node.elt, *[g.target for g in node.generators], *[x for g in node.generators[1:] for x in (g.iter,)],
+                 *[c for g in node.generators for c in g.ifs]]
+    elif isinstance(node, ast.DictComp):
+        roots = [node.key, node.value, *[g.target for g in node.generators],
+                 *[g.iter for g in node.generators[1:]], *[c for g in node.generators for c in g.ifs]]
+    else:
+        roots = [node]
+    pending = list(roots)
+    while pending:
+        sub = pending.pop()
+        yield sub
+        if isinstance(sub, SCOPES):
+            outer = []                               # evaluated where the nested scope is defined
+            if isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                outer += sub.decorator_list
+            if isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+                outer += [d for d in [*sub.args.defaults, *sub.args.kw_defaults] if d is not None]
+            if isinstance(sub, ast.ClassDef):
+                outer += [*sub.bases, *[k.value for k in sub.keywords]]
+            if isinstance(sub, (ast.ListComp, ast.SetComp, ast.GeneratorExp, ast.DictComp)):
+                outer.append(sub.generators[0].iter)
+            pending.extend(outer)
+            continue
+        pending.extend(ast.iter_child_nodes(sub))
+
+
+def _own_locals(node: ast.AST) -> set[str]:
+    """Names bound in ``node``'s own scope (parameters, assignments, loop and comprehension targets, nested def
+    names, imports, exception names), minus names it declares ``global``. Nested scopes are excluded, so a nested
+    function's parameter never hides a module function the outer body calls."""
     out: set[str] = set()
-    declared_global = {n for sub in ast.walk(node) if isinstance(sub, ast.Global) for n in sub.names}
-    for sub in ast.walk(node):
-        if isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
-            a = sub.args
-            out |= {x.arg for x in [*a.posonlyargs, *a.args, *a.kwonlyargs, *([a.vararg] if a.vararg else []),
-                                    *([a.kwarg] if a.kwarg else [])]}
-            if sub is not node and not isinstance(sub, ast.Lambda):
-                out.add(sub.name)
+    if isinstance(node, FUNCTIONS):
+        a = node.args
+        out |= {x.arg for x in [*a.posonlyargs, *a.args, *a.kwonlyargs, *([a.vararg] if a.vararg else []),
+                                *([a.kwarg] if a.kwarg else [])]}
+    declared_global = set()
+    for sub in _direct(node):
+        if sub is node:
+            continue
+        if isinstance(sub, ast.Global):
+            declared_global |= set(sub.names)
+        elif isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            out.add(sub.name)
         elif isinstance(sub, ast.Name) and isinstance(sub.ctx, (ast.Store, ast.Del)):
             out.add(sub.id)
-        elif isinstance(sub, (ast.Import, ast.ImportFrom)) and sub is not node:
-            out |= {al.asname or al.name.split(".")[0] for al in sub.names}
+        elif isinstance(sub, (ast.Import, ast.ImportFrom)):
+            out |= {al.asname or al.name.split(".")[0] for al in sub.names if al.name != "*"}
         elif isinstance(sub, ast.ExceptHandler) and sub.name:
             out.add(sub.name)
     return out - declared_global
@@ -125,6 +192,10 @@ def _imports(tree: ast.AST, path: str, read: Reader) -> tuple[dict, dict]:
             module = ".".join([*base, *(node.module.split(".") if node.module else [])])
             target = _module_path(module, read) if module else None
             for alias in node.names:
+                if alias.name == "*":
+                    if target is not None:                       # resolved name by name in closure()
+                        modules.setdefault("*", []).append(target)
+                    continue
                 sub = _module_path(f"{module}.{alias.name}" if module else alias.name, read)
                 if sub is not None:
                     modules[alias.asname or alias.name] = sub
@@ -153,45 +224,94 @@ def _chain(expr: ast.AST) -> list[str] | None:
     return [expr.id, *reversed(parts)] if isinstance(expr, ast.Name) else None
 
 
-def _scopes(node: ast.AST) -> list[tuple[ast.AST, set[str]]]:
-    """(subtree, its locals): one scope per function. A class's methods each get their own locals, so a parameter
-    of one method never hides a module function another method calls; class-level statements have none."""
-    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-        return [(node, _locals(node))]
-    if isinstance(node, ast.ClassDef):
-        out = []
-        for stmt in [*node.decorator_list, *node.bases, *node.body]:
-            out += _scopes(stmt) if isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) \
-                else [(stmt, set())]
-        return out
-    return [(node, set())]
+def _dynamic_module(call: ast.AST, read: Reader) -> tuple[str | None, bool]:
+    """(module path, is_dynamic_import) for ``importlib.import_module("x")``, ``import_module("x")`` or
+    ``__import__("x")``; a non-constant argument is a dynamic import the closure cannot follow."""
+    if not isinstance(call, ast.Call):
+        return None, False
+    f = call.func
+    name = f.attr if isinstance(f, ast.Attribute) else f.id if isinstance(f, ast.Name) else None
+    if name not in ("import_module", "__import__"):
+        return None, False
+    if call.args and isinstance(call.args[0], ast.Constant) and isinstance(call.args[0].value, str):
+        return _module_path(call.args[0].value, read), True
+    return None, True
 
 
-def _references(node, own: str, p: str, defs: dict, names: dict, modules: dict, read: Reader) -> list[tuple]:
-    out = []
-    for scope, local in _scopes(node):
-        # repository names imported inside the function body are dependencies, not locals
-        inner_names, inner_modules = _imports(scope, p, read) if scope is not node or not isinstance(
-            node, ast.Module) else ({}, {})
+def _references(node, own: str, p: str, defs: dict, names: dict, modules: dict, read: Reader,
+                star_defs: dict | None = None, unresolved: list | None = None) -> list[tuple]:
+    """Repository definitions ``node`` references, scope by scope (round-2 review of #179, N4): each function,
+    lambda, comprehension and class has its own locals; a function's locals are visible to the scopes nested in it,
+    a class body's are not; a nested scope's names never hide a module name the outer body uses."""
+    out: list[tuple] = []
+    star_defs = star_defs or {}
+
+    def visit(scope, enclosing: set, scope_names: dict, scope_modules: dict):
+        top = not isinstance(scope, SCOPES)
+        local = set() if top else _own_locals(scope)
+        inner_names, inner_modules = ({}, {}) if top else _imports_direct(scope, p, read)
+        # a dynamic import bound to a name in this scope (m = import_module("x")) is a module alias
+        for sub in ([] if top else _direct(scope)):
+            if isinstance(sub, ast.Assign) and len(sub.targets) == 1 and isinstance(sub.targets[0], ast.Name):
+                target, dynamic = _dynamic_module(sub.value, read)
+                if target is not None:
+                    inner_modules[sub.targets[0].id] = target
+                elif dynamic and unresolved is not None:
+                    unresolved.append(f"{p}::{own}: dynamic import with a non-constant module name")
         local = local - set(inner_names) - set(inner_modules)
-        scope_names, scope_modules = {**names, **inner_names}, {**modules, **inner_modules}
-        for sub in ast.walk(scope):
-            if isinstance(sub, ast.Name) and sub.id != own and sub.id not in local:
+        names_here, modules_here = {**scope_names, **inner_names}, {**scope_modules, **inner_modules}
+        hidden = local | enclosing
+        for sub in _direct(scope):
+            if sub is not scope and isinstance(sub, SCOPES):
+                visit(sub, hidden if isinstance(scope, FUNCTIONS) or top else enclosing, names_here, modules_here)
+                continue
+            if isinstance(sub, ast.Name) and isinstance(sub.ctx, ast.Load) and sub.id != own and sub.id not in hidden:
                 if sub.id in defs:
                     out.append((p, sub.id))
-                elif sub.id in scope_names:
-                    out.append(scope_names[sub.id])
+                elif sub.id in names_here:
+                    out.append(names_here[sub.id])
+                elif sub.id in star_defs:
+                    out.append(star_defs[sub.id])
             elif isinstance(sub, ast.Attribute):
                 chain = _chain(sub)
-                if not chain or chain[0] in local:
+                if chain is None:
+                    target, dynamic = _dynamic_module(sub.value, read)
+                    if target is not None:
+                        out.append((target, sub.attr))
+                    elif dynamic and unresolved is not None:
+                        unresolved.append(f"{p}::{own}: dynamic import with a non-constant module name")
                     continue
-                # the longest dotted prefix that names a repository module, then the attribute after it
-                for cut in range(len(chain) - 1, 0, -1):
+                if chain[0] in hidden and chain[0] not in inner_modules:
+                    continue
+                for cut in range(len(chain) - 1, 0, -1):      # the longest dotted prefix naming a repository module
                     dotted = ".".join(chain[:cut])
-                    if dotted in scope_modules:
-                        out.append((scope_modules[dotted], chain[cut]))
+                    if dotted in modules_here and isinstance(modules_here[dotted], str):
+                        out.append((modules_here[dotted], chain[cut]))
                         break
+            elif isinstance(sub, ast.Call) and unresolved is not None:
+                target, dynamic = _dynamic_module(sub, read)
+                if dynamic and target is None:
+                    unresolved.append(f"{p}::{own}: dynamic import with a non-constant module name")
+
+    if isinstance(node, SCOPES):            # a member def or class: its decorators, defaults and bases first
+        outer = list(getattr(node, "decorator_list", []))
+        if isinstance(node, FUNCTIONS):
+            outer += [d for d in [*node.args.defaults, *node.args.kw_defaults] if d is not None]
+        if isinstance(node, ast.ClassDef):
+            outer += [*node.bases, *[k.value for k in node.keywords]]
+        for expr in outer:
+            visit(expr, set(), names, modules)
+    visit(node, set(), names, modules)
     return out
+
+
+def _imports_direct(scope: ast.AST, path: str, read: Reader) -> tuple[dict, dict]:
+    """``_imports`` restricted to the imports in ``scope``'s own body (never a nested scope's)."""
+    holder = ast.Module(body=[n for n in _direct(scope) if isinstance(n, (ast.Import, ast.ImportFrom))],
+                        type_ignores=[])
+    names, modules = _imports(holder, path, read)
+    modules.pop("*", None)
+    return names, modules
 
 
 def dispatch(path: str, table: str, key: str, read: Reader = working_tree) -> dict | None:
@@ -228,6 +348,40 @@ def dispatch(path: str, table: str, key: str, read: Reader = working_tree) -> di
         return None
 
     defs = _definitions(tree)
+
+    readonly = {"get", "items", "keys", "values", "copy", "__getitem__", "__contains__", "__len__", "__iter__"}
+
+    def names_table(node) -> bool:
+        """Whether ``node`` names the table in any way that could rebind a key. A plain read is benign:
+        ``T[k]`` in load context, ``T.get(...)`` and the other read-only methods called directly, ``k in T``, and
+        iteration over ``T``. Any other use (passed as an argument, aliased, ``dict.update(T, ...)``, a string
+        ``'T'`` reaching ``globals()``) is not."""
+        parents = {child: parent for parent in ast.walk(node) for child in ast.iter_child_nodes(parent)}
+        for sub in ast.walk(node):
+            if isinstance(sub, ast.Constant) and sub.value == table:
+                return True
+            # ``globals().update(T=...)`` and ``sys.modules[__name__].T`` name the table without a Name node
+            # (round-5 review of #179, N5)
+            if isinstance(sub, ast.keyword) and sub.arg == table:
+                return True
+            if isinstance(sub, ast.Attribute) and sub.attr == table:
+                return True
+            if not (isinstance(sub, ast.Name) and sub.id == table):
+                continue
+            up = parents.get(sub)
+            if isinstance(up, ast.Subscript) and up.value is sub and isinstance(up.ctx, ast.Load):
+                continue
+            if isinstance(up, ast.Attribute) and up.value is sub and up.attr in readonly \
+                    and isinstance(parents.get(up), ast.Call) and parents[up].func is up:
+                continue
+            if isinstance(up, ast.Compare) and sub in up.comparators and all(
+                    isinstance(op, (ast.In, ast.NotIn)) for op in up.ops):
+                continue
+            if isinstance(up, (ast.For, ast.comprehension)) and up.iter is sub:
+                continue
+            return True
+        return False
+
     for node in tree.body:
         found = None
         if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == table for t in node.targets):
@@ -240,6 +394,9 @@ def dispatch(path: str, table: str, key: str, read: Reader = working_tree) -> di
         elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute) \
                 and _base(node.value.func) == table and node.value.func.attr == "update" and node.value.args:
             arg = node.value.args[0]
+            if node.value.keywords or len(node.value.args) > 1:
+                # ``T.update({}, k=g)`` and ``T.update({...}, **{...})`` bind keys outside the literal (N5)
+                unresolved += 1
             if isinstance(arg, ast.Dict):
                 found = from_literal(arg, path, names, defs)
             elif isinstance(arg, ast.Name) and arg.id in names:
@@ -256,6 +413,21 @@ def dispatch(path: str, table: str, key: str, read: Reader = working_tree) -> di
                     unresolved += 1
             else:
                 unresolved += 1
+        elif isinstance(node, ast.Assign) and all(isinstance(t, ast.Subscript) and _base(t) == table
+                                                  and isinstance(t.slice, ast.Constant) for t in node.targets):
+            # a literal ``T[k] = f`` for another key: benign unless its value or its targets do more than name a
+            # function - ``T['j'] = T.pop('k') and g``, ``T['j'] = h(T)`` (round-5 review of #179, N5) - or a target
+            # reaches into an entry (``T['k'].__code__ = ...`` is not this form: its target is an attribute)
+            if names_table(node.value) or any(not isinstance(t.value, ast.Name) for t in node.targets):
+                unresolved += 1
+        elif names_table(node) or (isinstance(node, (ast.Assign, ast.AugAssign, ast.AnnAssign, ast.Delete)) and any(
+                _base(t) == table for t in (node.targets if isinstance(node, (ast.Assign, ast.Delete))
+                                           else [node.target]))):
+            # fail closed (round-4 review of #179, finding B): any other module-level statement that names the
+            # table, as a name or as a string (``globals()['T']``), may rebind a key - a loop, an if-block, ``|=``,
+            # ``pop``, an alias, a helper taking the table, ``dict.update(T, ...)``, a class body, a lambda. A
+            # positive binding then needs the run's recorded runtime dispatch to agree.
+            unresolved += 1
         if found is not None:
             bound = found
     if bound is None:
@@ -263,9 +435,30 @@ def dispatch(path: str, table: str, key: str, read: Reader = working_tree) -> di
     return {**bound, "unresolved_updates": unresolved}
 
 
-def closure(path: str, name: str, read: Reader = working_tree) -> dict | None:
+def table_statements(path: str, table: str, read: Reader = working_tree) -> str | None:
+    """sha256 of every module-level statement in ``path`` that names ``table`` in any way (as a name, a string, a
+    keyword or an attribute), in order. A binding that includes it changes whenever any statement that could
+    rebind a key of the table changes, including the forms ``dispatch`` cannot resolve (round-5 review of #179,
+    N4: an appended ``T.update({k: v for ...})`` rerouted a stage without changing any bound closure)."""
+    text = read(path)
+    if text is None:
+        return None
+    tree = ast.parse(text)
+    hits = []
+    for node in tree.body:
+        for sub in ast.walk(node):
+            if (isinstance(sub, ast.Name) and sub.id == table) or (isinstance(sub, ast.Constant) and sub.value == table) \
+                    or (isinstance(sub, ast.keyword) and sub.arg == table) \
+                    or (isinstance(sub, ast.Attribute) and sub.attr == table):
+                hits.append(_segment(text, node))
+                break
+    return "sha256:" + hashlib.sha256("\n".join(hits).encode()).hexdigest()
+
+
+def closure(path: str, name: str, read: Reader = working_tree, stop: frozenset = frozenset()) -> dict | None:
     """Members (``path::name`` -> sha256) of the static dependency closure of ``name`` in ``path``, and their joint
-    digest; None when the entry definition does not exist in that tree."""
+    digest; None when the entry definition does not exist in that tree. A member named in ``stop`` is hashed but
+    not followed: a boundary whose callees carry their own bindings (round-2 review of #179, N5)."""
     parsed: dict[str, tuple] = {}
 
     def module(p):
@@ -275,13 +468,21 @@ def closure(path: str, name: str, read: Reader = working_tree) -> dict | None:
                 parsed[p] = None
             else:
                 tree = ast.parse(text)
-                parsed[p] = (text, tree, _definitions(tree), *_imports(tree, p, read))
+                names, modules = _imports(tree, p, read)
+                stars = modules.pop("*", [])
+                star_defs = {}
+                for star in stars:                       # from x import *: x's own definitions, name by name
+                    star_text = read(star)
+                    if star_text is not None:
+                        for n in _definitions(ast.parse(star_text)):
+                            star_defs.setdefault(n, (star, n))
+                parsed[p] = (text, tree, _definitions(tree), names, modules, star_defs)
         return parsed[p]
 
     entry = module(path)
     if entry is None or name not in entry[2]:
         return None
-    members, todo = {}, [(path, name)]
+    members, todo, unresolved = {}, [(path, name)], []
     while todo:
         p, n = todo.pop()
         key = f"{p}::{n}"
@@ -290,11 +491,15 @@ def closure(path: str, name: str, read: Reader = working_tree) -> dict | None:
         m = module(p)
         if m is None or n not in m[2]:
             continue
-        text, _tree, defs, names, modules = m
+        text, _tree, defs, names, modules, star_defs = m
         nodes = defs[n]
         members[key] = "sha256:" + hashlib.sha256("\n".join(_segment(text, x) for x in nodes).encode()).hexdigest()
+        if key in stop:
+            continue
         for node in nodes:
-            todo += _references(node, n, p, defs, names, modules, read)
+            todo += _references(node, n, p, defs, names, modules, read, star_defs, unresolved)
     joint = "\n".join(f"{k}={v}" for k, v in sorted(members.items()))
     return {"entry": f"{path}::{name}", "members": dict(sorted(members.items())),
-            "sha256": "sha256:" + hashlib.sha256(joint.encode()).hexdigest()}
+            "sha256": "sha256:" + hashlib.sha256(joint.encode()).hexdigest(),
+            # code the static closure cannot follow: a positive verdict must not bind it (N4)
+            "unresolved": sorted(set(unresolved))}

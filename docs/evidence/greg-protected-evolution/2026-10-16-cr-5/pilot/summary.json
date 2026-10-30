@@ -1,0 +1,1744 @@
+{
+ "grid": {
+  "summary": {
+   "pilot_train": {
+    "incumbent_mean_loss": 0.010796,
+    "random_restart_mean_loss": 0.006399,
+    "random_restart_vs_incumbent": {
+     "wins": 29,
+     "losses": 14,
+     "ties": 17,
+     "sign_test_p_one_sided": 0.01577
+    },
+    "incumbent_failure_rate_vs_random_restart": 0.4833
+   },
+   "pilot_test": {
+    "incumbent_mean_loss": 0.007752,
+    "random_restart_mean_loss": 0.006276,
+    "random_restart_vs_incumbent": {
+     "wins": 34,
+     "losses": 12,
+     "ties": 14,
+     "sign_test_p_one_sided": 0.000821
+    },
+    "incumbent_failure_rate_vs_random_restart": 0.5667
+   }
+  },
+  "configurations": 140,
+  "by_p_restart": [
+   {
+    "p_restart": 0.0,
+    "n": 19,
+    "pilot_train_mean_loss": 0.00953,
+    "pilot_test_mean_loss": 0.00727,
+    "pilot_train_wins_losses": [
+     22.6,
+     16.4
+    ],
+    "pilot_test_wins_losses": [
+     20.5,
+     18.9
+    ],
+    "sign_both": 0,
+    "lower_mean_both": 11,
+    "stress_gate": 6
+   },
+   {
+    "p_restart": 0.25,
+    "n": 15,
+    "pilot_train_mean_loss": 0.00704,
+    "pilot_test_mean_loss": 0.00634,
+    "pilot_train_wins_losses": [
+     27.2,
+     14.7
+    ],
+    "pilot_test_wins_losses": [
+     25.1,
+     18.4
+    ],
+    "sign_both": 2,
+    "lower_mean_both": 14,
+    "stress_gate": 8
+   },
+   {
+    "p_restart": 0.5,
+    "n": 19,
+    "pilot_train_mean_loss": 0.00707,
+    "pilot_test_mean_loss": 0.00649,
+    "pilot_train_wins_losses": [
+     27.6,
+     15.0
+    ],
+    "pilot_test_wins_losses": [
+     25.9,
+     18.9
+    ],
+    "sign_both": 2,
+    "lower_mean_both": 16,
+    "stress_gate": 12
+   },
+   {
+    "p_restart": 0.75,
+    "n": 15,
+    "pilot_train_mean_loss": 0.00815,
+    "pilot_test_mean_loss": 0.00698,
+    "pilot_train_wins_losses": [
+     29.0,
+     15.1
+    ],
+    "pilot_test_wins_losses": [
+     28.7,
+     17.1
+    ],
+    "sign_both": 6,
+    "lower_mean_both": 10,
+    "stress_gate": 9
+   },
+   {
+    "p_restart": 0.9,
+    "n": 19,
+    "pilot_train_mean_loss": 0.00609,
+    "pilot_test_mean_loss": 0.00898,
+    "pilot_train_wins_losses": [
+     29.6,
+     14.4
+    ],
+    "pilot_test_wins_losses": [
+     30.2,
+     15.8
+    ],
+    "sign_both": 12,
+    "lower_mean_both": 1,
+    "stress_gate": 17
+   },
+   {
+    "p_restart": 1.0,
+    "n": 15,
+    "pilot_train_mean_loss": 0.00569,
+    "pilot_test_mean_loss": 0.00976,
+    "pilot_train_wins_losses": [
+     30.0,
+     15.0
+    ],
+    "pilot_test_wins_losses": [
+     27.0,
+     16.0
+    ],
+    "sign_both": 0,
+    "lower_mean_both": 0,
+    "stress_gate": 15
+   }
+  ],
+  "pass_both_halves": [
+   {
+    "id": "cfg-4ae65a6154dd",
+    "p_restart": 0.25,
+    "stress_gate": false
+   },
+   {
+    "id": "cfg-70b29530c4dc",
+    "p_restart": 0.25,
+    "stress_gate": false
+   },
+   {
+    "id": "cfg-9f3db1cea102",
+    "p_restart": 0.5,
+    "stress_gate": false
+   },
+   {
+    "id": "cfg-92c32a05fc13",
+    "p_restart": 0.75,
+    "stress_gate": false
+   },
+   {
+    "id": "cfg-ef21c4300207",
+    "p_restart": 0.75,
+    "stress_gate": true
+   },
+   {
+    "id": "cfg-35cc024eae94",
+    "p_restart": 0.75,
+    "stress_gate": true
+   },
+   {
+    "id": "cfg-96834805138e",
+    "p_restart": 0.75,
+    "stress_gate": true
+   },
+   {
+    "id": "cfg-6ee51053ae5e",
+    "p_restart": 0.75,
+    "stress_gate": true
+   },
+   {
+    "id": "cfg-52ecbd7e9906",
+    "p_restart": 0.5,
+    "stress_gate": true
+   }
+  ],
+  "spearman_train_test_mean_loss": -0.179,
+  "cycle_4_candidate": {
+   "pilot_train": {
+    "mean_loss": 0.010337,
+    "vs_incumbent": {
+     "wins": 22,
+     "losses": 15,
+     "ties": 23,
+     "sign_test_p_one_sided": 0.162004
+    },
+    "vs_random_restart": {
+     "wins": 17,
+     "losses": 27,
+     "ties": 16,
+     "sign_test_p_one_sided": 0.951929
+    }
+   },
+   "pilot_test": {
+    "mean_loss": 0.010677,
+    "vs_incumbent": {
+     "wins": 17,
+     "losses": 25,
+     "ties": 18,
+     "sign_test_p_one_sided": 0.917925
+    },
+    "vs_random_restart": {
+     "wins": 14,
+     "losses": 37,
+     "ties": 9,
+     "sign_test_p_one_sided": 0.999689
+    }
+   },
+   "stress": {
+    "lean": {
+     "mean_loss": 0.015019,
+     "incumbent": 0.007944
+    },
+    "fewval": {
+     "mean_loss": 0.013155,
+     "incumbent": 0.014502
+    },
+    "passes_gate": false
+   }
+  }
+ },
+ "region": {
+  "seeds": {
+   "pool": [
+    3200,
+    3499
+   ]
+  },
+  "rows": [
+   {
+    "id": "random_restart",
+    "why": null,
+    "passed_both_halves": false,
+    "mean_loss": 0.006548,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 143,
+     "losses": 84,
+     "ties": 73,
+     "sign_test_p_one_sided": 5.5e-05
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.638,
+      "retain_rate_at_alpha_over_3": 0.452
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.904,
+      "retain_rate_at_alpha_over_3": 0.7955
+     }
+    ]
+   },
+   {
+    "id": "cfg-eb5049e9f76f",
+    "why": "sweep: incumbent with p_restart 0.25",
+    "passed_both_halves": false,
+    "mean_loss": 0.008096,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 114,
+     "losses": 99,
+     "ties": 87,
+     "sign_test_p_one_sided": 0.168721
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.11,
+      "retain_rate_at_alpha_over_3": 0.0435
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.1685,
+      "retain_rate_at_alpha_over_3": 0.0705
+     }
+    ]
+   },
+   {
+    "id": "cfg-95d924d478f3",
+    "why": "sweep: incumbent with p_restart 0.5",
+    "passed_both_halves": false,
+    "mean_loss": 0.00706,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 118,
+     "losses": 92,
+     "ties": 90,
+     "sign_test_p_one_sided": 0.042127
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.2085,
+      "retain_rate_at_alpha_over_3": 0.1
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.365,
+      "retain_rate_at_alpha_over_3": 0.194
+     }
+    ]
+   },
+   {
+    "id": "cfg-ef21c4300207",
+    "why": "sweep: incumbent with p_restart 0.75",
+    "passed_both_halves": true,
+    "mean_loss": 0.006895,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 133,
+     "losses": 89,
+     "ties": 78,
+     "sign_test_p_one_sided": 0.001902
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.4285,
+      "retain_rate_at_alpha_over_3": 0.248
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.712,
+      "retain_rate_at_alpha_over_3": 0.5245
+     }
+    ]
+   },
+   {
+    "id": "cfg-05619108a768",
+    "why": "sweep: incumbent with p_restart 0.9",
+    "passed_both_halves": false,
+    "mean_loss": 0.007239,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 132,
+     "losses": 102,
+     "ties": 66,
+     "sign_test_p_one_sided": 0.028878
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.241,
+      "retain_rate_at_alpha_over_3": 0.13
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.3985,
+      "retain_rate_at_alpha_over_3": 0.2295
+     }
+    ]
+   },
+   {
+    "id": "cfg-12b387892289",
+    "why": "sweep: incumbent with p_restart 1.0",
+    "passed_both_halves": false,
+    "mean_loss": 0.005626,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 137,
+     "losses": 90,
+     "ties": 73,
+     "sign_test_p_one_sided": 0.001097
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.475,
+      "retain_rate_at_alpha_over_3": 0.289
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.756,
+      "retain_rate_at_alpha_over_3": 0.5755
+     }
+    ]
+   },
+   {
+    "id": "cfg-4ae65a6154dd",
+    "why": "passed sign p<0.05 and lower mean on both pilot halves",
+    "passed_both_halves": true,
+    "mean_loss": 0.008066,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 126,
+     "losses": 89,
+     "ties": 85,
+     "sign_test_p_one_sided": 0.006947
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.324,
+      "retain_rate_at_alpha_over_3": 0.184
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.518,
+      "retain_rate_at_alpha_over_3": 0.374
+     }
+    ]
+   },
+   {
+    "id": "cfg-70b29530c4dc",
+    "why": "passed sign p<0.05 and lower mean on both pilot halves",
+    "passed_both_halves": true,
+    "mean_loss": 0.007562,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 133,
+     "losses": 92,
+     "ties": 75,
+     "sign_test_p_one_sided": 0.003761
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.361,
+      "retain_rate_at_alpha_over_3": 0.2165
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.6315,
+      "retain_rate_at_alpha_over_3": 0.453
+     }
+    ]
+   },
+   {
+    "id": "cfg-9f3db1cea102",
+    "why": "passed sign p<0.05 and lower mean on both pilot halves",
+    "passed_both_halves": true,
+    "mean_loss": 0.00716,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 127,
+     "losses": 91,
+     "ties": 82,
+     "sign_test_p_one_sided": 0.008781
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.324,
+      "retain_rate_at_alpha_over_3": 0.1755
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.565,
+      "retain_rate_at_alpha_over_3": 0.3745
+     }
+    ]
+   },
+   {
+    "id": "cfg-92c32a05fc13",
+    "why": "passed sign p<0.05 and lower mean on both pilot halves",
+    "passed_both_halves": true,
+    "mean_loss": 0.006496,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 135,
+     "losses": 86,
+     "ties": 79,
+     "sign_test_p_one_sided": 0.000597
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.5045,
+      "retain_rate_at_alpha_over_3": 0.328
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.785,
+      "retain_rate_at_alpha_over_3": 0.6355
+     }
+    ]
+   },
+   {
+    "id": "cfg-35cc024eae94",
+    "why": "passed sign p<0.05 and lower mean on both pilot halves",
+    "passed_both_halves": true,
+    "mean_loss": 0.006484,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 146,
+     "losses": 86,
+     "ties": 68,
+     "sign_test_p_one_sided": 4.9e-05
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.642,
+      "retain_rate_at_alpha_over_3": 0.4535
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.912,
+      "retain_rate_at_alpha_over_3": 0.8055
+     }
+    ]
+   },
+   {
+    "id": "cfg-96834805138e",
+    "why": "passed sign p<0.05 and lower mean on both pilot halves",
+    "passed_both_halves": true,
+    "mean_loss": 0.007171,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 136,
+     "losses": 93,
+     "ties": 71,
+     "sign_test_p_one_sided": 0.002699
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.4105,
+      "retain_rate_at_alpha_over_3": 0.2415
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.668,
+      "retain_rate_at_alpha_over_3": 0.4925
+     }
+    ]
+   },
+   {
+    "id": "cfg-6ee51053ae5e",
+    "why": "passed sign p<0.05 and lower mean on both pilot halves",
+    "passed_both_halves": true,
+    "mean_loss": 0.006655,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 137,
+     "losses": 88,
+     "ties": 75,
+     "sign_test_p_one_sided": 0.000661
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.505,
+      "retain_rate_at_alpha_over_3": 0.3265
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.791,
+      "retain_rate_at_alpha_over_3": 0.6355
+     }
+    ]
+   },
+   {
+    "id": "cfg-52ecbd7e9906",
+    "why": "passed sign p<0.05 and lower mean on both pilot halves",
+    "passed_both_halves": true,
+    "mean_loss": 0.006863,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 128,
+     "losses": 87,
+     "ties": 85,
+     "sign_test_p_one_sided": 0.00312
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.4055,
+      "retain_rate_at_alpha_over_3": 0.2425
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.654,
+      "retain_rate_at_alpha_over_3": 0.4755
+     }
+    ]
+   },
+   {
+    "id": "cfg-815612f6c52b",
+    "why": "top 5 by pilot-train mean loss",
+    "passed_both_halves": false,
+    "mean_loss": 0.008047,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 124,
+     "losses": 96,
+     "ties": 80,
+     "sign_test_p_one_sided": 0.034232
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.219,
+      "retain_rate_at_alpha_over_3": 0.111
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.3905,
+      "retain_rate_at_alpha_over_3": 0.2315
+     }
+    ]
+   },
+   {
+    "id": "cfg-0cf37d01b63d",
+    "why": "top 5 by pilot-train mean loss",
+    "passed_both_halves": false,
+    "mean_loss": 0.006605,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 138,
+     "losses": 84,
+     "ties": 78,
+     "sign_test_p_one_sided": 0.000176
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.5695,
+      "retain_rate_at_alpha_over_3": 0.3955
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.857,
+      "retain_rate_at_alpha_over_3": 0.7285
+     }
+    ]
+   },
+   {
+    "id": "cfg-cfa40876093a",
+    "why": "top 5 by pilot-train mean loss",
+    "passed_both_halves": false,
+    "mean_loss": 0.007575,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 121,
+     "losses": 102,
+     "ties": 77,
+     "sign_test_p_one_sided": 0.113991
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.143,
+      "retain_rate_at_alpha_over_3": 0.0655
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.2175,
+      "retain_rate_at_alpha_over_3": 0.11
+     }
+    ]
+   },
+   {
+    "id": "cfg-89756b2547e3",
+    "why": "top 5 by pilot-train mean loss",
+    "passed_both_halves": false,
+    "mean_loss": 0.005792,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 139,
+     "losses": 89,
+     "ties": 72,
+     "sign_test_p_one_sided": 0.000564
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.513,
+      "retain_rate_at_alpha_over_3": 0.321
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.804,
+      "retain_rate_at_alpha_over_3": 0.641
+     }
+    ]
+   },
+   {
+    "id": "cfg-afdb92cb42e7",
+    "why": "cycle 4 candidate",
+    "passed_both_halves": false,
+    "mean_loss": 0.009892,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 99,
+     "losses": 103,
+     "ties": 98,
+     "sign_test_p_one_sided": 0.637457
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.0215,
+      "retain_rate_at_alpha_over_3": 0.007
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.02,
+      "retain_rate_at_alpha_over_3": 0.005
+     }
+    ]
+   },
+   {
+    "id": "cfg-61aa9cb28852",
+    "why": "batch-1 simulated candidate (mutate-incumbent/1, lhs None, seed 20261008)",
+    "passed_both_halves": false,
+    "mean_loss": 0.007895,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 126,
+     "losses": 92,
+     "ties": 82,
+     "sign_test_p_one_sided": 0.012595
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.2945,
+      "retain_rate_at_alpha_over_3": 0.163
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.5005,
+      "retain_rate_at_alpha_over_3": 0.3225
+     }
+    ]
+   },
+   {
+    "id": "cfg-f4bcad14ebeb",
+    "why": "batch-1 simulated candidate (mutate-incumbent/1, lhs None, seed 20261016)",
+    "passed_both_halves": false,
+    "mean_loss": 0.010153,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 113,
+     "losses": 98,
+     "ties": 89,
+     "sign_test_p_one_sided": 0.167581
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.0805,
+      "retain_rate_at_alpha_over_3": 0.0415
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.088,
+      "retain_rate_at_alpha_over_3": 0.0455
+     }
+    ]
+   },
+   {
+    "id": "cfg-68db7b75e8ab",
+    "why": "batch-1 simulated candidate (cover/1, lhs 16, seed 20261016)",
+    "passed_both_halves": false,
+    "mean_loss": 0.00772,
+    "incumbent_mean_loss": 0.009236,
+    "vs_incumbent": {
+     "wins": 122,
+     "losses": 99,
+     "ties": 79,
+     "sign_test_p_one_sided": 0.069364
+    },
+    "resampled": [
+     {
+      "n": 90,
+      "draws": 2000,
+      "retain_rate": 0.1605,
+      "retain_rate_at_alpha_over_3": 0.074
+     },
+     {
+      "n": 180,
+      "draws": 2000,
+      "retain_rate": 0.284,
+      "retain_rate_at_alpha_over_3": 0.141
+     }
+    ]
+   }
+  ]
+ },
+ "simulated": {
+  "runs": [
+   {
+    "file": "simulate-2-T1.json",
+    "train": [
+     3000,
+     3059
+    ],
+    "search": "mutate-incumbent/1",
+    "lhs": null,
+    "generations": 5,
+    "seed": 20261008,
+    "evaluated": 39,
+    "failure_rate": 0.4833,
+    "candidate": "cfg-61aa9cb28852",
+    "p_restart": 0.339,
+    "stages": {
+     "triggered": true,
+     "advances": true,
+     "adversarial_passes": true,
+     "heldout_passes": false,
+     "heldout_passes_bonferroni_3": false
+    },
+    "pool": {
+     "mean_loss": 0.007895,
+     "incumbent_mean_loss": 0.009236,
+     "vs_incumbent": {
+      "wins": 126,
+      "losses": 92,
+      "ties": 82,
+      "sign_test_p_one_sided": 0.012595
+     },
+     "resampled": [
+      {
+       "n": 90,
+       "draws": 2000,
+       "retain_rate": 0.2945,
+       "retain_rate_at_alpha_over_3": 0.163
+      },
+      {
+       "n": 180,
+       "draws": 2000,
+       "retain_rate": 0.5005,
+       "retain_rate_at_alpha_over_3": 0.3225
+      }
+     ]
+    }
+   },
+   {
+    "file": "simulate-2-T1.json",
+    "train": [
+     3000,
+     3059
+    ],
+    "search": "cover/1",
+    "lhs": 16,
+    "generations": 5,
+    "seed": 20261016,
+    "evaluated": 69,
+    "failure_rate": 0.4833,
+    "candidate": "cfg-68db7b75e8ab",
+    "p_restart": 0.335,
+    "stages": {
+     "triggered": true,
+     "advances": true,
+     "adversarial_passes": true,
+     "heldout_passes": false,
+     "heldout_passes_bonferroni_3": false
+    },
+    "pool": {
+     "mean_loss": 0.00772,
+     "incumbent_mean_loss": 0.009236,
+     "vs_incumbent": {
+      "wins": 122,
+      "losses": 99,
+      "ties": 79,
+      "sign_test_p_one_sided": 0.069364
+     },
+     "resampled": [
+      {
+       "n": 90,
+       "draws": 2000,
+       "retain_rate": 0.1605,
+       "retain_rate_at_alpha_over_3": 0.074
+      },
+      {
+       "n": 180,
+       "draws": 2000,
+       "retain_rate": 0.284,
+       "retain_rate_at_alpha_over_3": 0.141
+      }
+     ]
+    }
+   },
+   {
+    "file": "simulate-2-T1.json",
+    "train": [
+     3000,
+     3059
+    ],
+    "search": "cover/1",
+    "lhs": 0,
+    "generations": 5,
+    "seed": 20261016,
+    "evaluated": 49,
+    "failure_rate": 0.4833,
+    "candidate": "cfg-12b387892289",
+    "p_restart": 1.0,
+    "stages": {
+     "triggered": true,
+     "advances": true,
+     "adversarial_passes": true,
+     "heldout_passes": false,
+     "heldout_passes_bonferroni_3": false
+    },
+    "pool": {
+     "mean_loss": 0.005626,
+     "incumbent_mean_loss": 0.009236,
+     "vs_incumbent": {
+      "wins": 137,
+      "losses": 90,
+      "ties": 73,
+      "sign_test_p_one_sided": 0.001097
+     },
+     "resampled": [
+      {
+       "n": 90,
+       "draws": 2000,
+       "retain_rate": 0.475,
+       "retain_rate_at_alpha_over_3": 0.289
+      },
+      {
+       "n": 180,
+       "draws": 2000,
+       "retain_rate": 0.756,
+       "retain_rate_at_alpha_over_3": 0.5755
+      }
+     ]
+    }
+   },
+   {
+    "file": "simulate-2-T1.json",
+    "train": [
+     3000,
+     3059
+    ],
+    "search": "cover/1",
+    "lhs": 16,
+    "generations": 1,
+    "seed": 20261016,
+    "evaluated": 37,
+    "failure_rate": 0.4833,
+    "candidate": "cfg-12b387892289",
+    "p_restart": 1.0,
+    "stages": {
+     "triggered": true,
+     "advances": true,
+     "adversarial_passes": true,
+     "heldout_passes": false,
+     "heldout_passes_bonferroni_3": false
+    },
+    "pool": {
+     "mean_loss": 0.005626,
+     "incumbent_mean_loss": 0.009236,
+     "vs_incumbent": {
+      "wins": 137,
+      "losses": 90,
+      "ties": 73,
+      "sign_test_p_one_sided": 0.001097
+     },
+     "resampled": [
+      {
+       "n": 90,
+       "draws": 2000,
+       "retain_rate": 0.475,
+       "retain_rate_at_alpha_over_3": 0.289
+      },
+      {
+       "n": 180,
+       "draws": 2000,
+       "retain_rate": 0.756,
+       "retain_rate_at_alpha_over_3": 0.5755
+      }
+     ]
+    }
+   },
+   {
+    "file": "simulate-2-T2.json",
+    "train": [
+     3060,
+     3119
+    ],
+    "search": "mutate-incumbent/1",
+    "lhs": null,
+    "generations": 5,
+    "seed": 20261008,
+    "evaluated": 38,
+    "failure_rate": 0.5667,
+    "candidate": "cfg-c7f525827e52",
+    "p_restart": 0.156,
+    "stages": {
+     "triggered": true,
+     "advances": true,
+     "adversarial_passes": true,
+     "heldout_passes": false,
+     "heldout_passes_bonferroni_3": false
+    },
+    "pool": {
+     "mean_loss": 0.009589,
+     "incumbent_mean_loss": 0.009236,
+     "vs_incumbent": {
+      "wins": 112,
+      "losses": 101,
+      "ties": 87,
+      "sign_test_p_one_sided": 0.246658
+     },
+     "resampled": [
+      {
+       "n": 90,
+       "draws": 2000,
+       "retain_rate": 0.0665,
+       "retain_rate_at_alpha_over_3": 0.0295
+      },
+      {
+       "n": 180,
+       "draws": 2000,
+       "retain_rate": 0.091,
+       "retain_rate_at_alpha_over_3": 0.0425
+      }
+     ]
+    }
+   },
+   {
+    "file": "simulate-2-T2.json",
+    "train": [
+     3060,
+     3119
+    ],
+    "search": "cover/1",
+    "lhs": 16,
+    "generations": 5,
+    "seed": 20261016,
+    "evaluated": 66,
+    "failure_rate": 0.5667,
+    "candidate": "cfg-f66d8c9eaa7a",
+    "p_restart": 0.374,
+    "stages": {
+     "triggered": true,
+     "advances": true,
+     "adversarial_passes": true,
+     "heldout_passes": false,
+     "heldout_passes_bonferroni_3": false
+    },
+    "pool": {
+     "mean_loss": 0.008274,
+     "incumbent_mean_loss": 0.009236,
+     "vs_incumbent": {
+      "wins": 130,
+      "losses": 88,
+      "ties": 82,
+      "sign_test_p_one_sided": 0.002684
+     },
+     "resampled": [
+      {
+       "n": 90,
+       "draws": 2000,
+       "retain_rate": 0.3715,
+       "retain_rate_at_alpha_over_3": 0.2285
+      },
+      {
+       "n": 180,
+       "draws": 2000,
+       "retain_rate": 0.5855,
+       "retain_rate_at_alpha_over_3": 0.4435
+      }
+     ]
+    }
+   },
+   {
+    "file": "simulate-2-T2.json",
+    "train": [
+     3060,
+     3119
+    ],
+    "search": "cover/1",
+    "lhs": 0,
+    "generations": 5,
+    "seed": 20261016,
+    "evaluated": 50,
+    "failure_rate": 0.5667,
+    "candidate": "cfg-f66d8c9eaa7a",
+    "p_restart": 0.374,
+    "stages": {
+     "triggered": true,
+     "advances": true,
+     "adversarial_passes": true,
+     "heldout_passes": false,
+     "heldout_passes_bonferroni_3": false
+    },
+    "pool": {
+     "mean_loss": 0.008274,
+     "incumbent_mean_loss": 0.009236,
+     "vs_incumbent": {
+      "wins": 130,
+      "losses": 88,
+      "ties": 82,
+      "sign_test_p_one_sided": 0.002684
+     },
+     "resampled": [
+      {
+       "n": 90,
+       "draws": 2000,
+       "retain_rate": 0.3715,
+       "retain_rate_at_alpha_over_3": 0.2285
+      },
+      {
+       "n": 180,
+       "draws": 2000,
+       "retain_rate": 0.5855,
+       "retain_rate_at_alpha_over_3": 0.4435
+      }
+     ]
+    }
+   },
+   {
+    "file": "simulate-2-T2.json",
+    "train": [
+     3060,
+     3119
+    ],
+    "search": "cover/1",
+    "lhs": 16,
+    "generations": 1,
+    "seed": 20261016,
+    "evaluated": 37,
+    "failure_rate": 0.5667,
+    "candidate": "cfg-7f97cd51a64d",
+    "p_restart": 0.0,
+    "stages": {
+     "triggered": true,
+     "advances": true,
+     "adversarial_passes": true,
+     "heldout_passes": false,
+     "heldout_passes_bonferroni_3": false
+    },
+    "pool": {
+     "mean_loss": 0.010212,
+     "incumbent_mean_loss": 0.009236,
+     "vs_incumbent": {
+      "wins": 98,
+      "losses": 108,
+      "ties": 94,
+      "sign_test_p_one_sided": 0.778244
+     },
+     "resampled": [
+      {
+       "n": 90,
+       "draws": 2000,
+       "retain_rate": 0.011,
+       "retain_rate_at_alpha_over_3": 0.004
+      },
+      {
+       "n": 180,
+       "draws": 2000,
+       "retain_rate": 0.0085,
+       "retain_rate_at_alpha_over_3": 0.003
+      }
+     ]
+    }
+   },
+   {
+    "file": "simulate-2-T3.json",
+    "train": [
+     3120,
+     3179
+    ],
+    "search": "mutate-incumbent/1",
+    "lhs": null,
+    "generations": 5,
+    "seed": 20261008,
+    "evaluated": 37,
+    "failure_rate": 0.3667,
+    "candidate": "cfg-8be250a1cac3",
+    "p_restart": 0.0,
+    "stages": {
+     "triggered": true,
+     "advances": true,
+     "adversarial_passes": true,
+     "heldout_passes": false,
+     "heldout_passes_bonferroni_3": false
+    },
+    "pool": {
+     "mean_loss": 0.009009,
+     "incumbent_mean_loss": 0.009236,
+     "vs_incumbent": {
+      "wins": 103,
+      "losses": 102,
+      "ties": 95,
+      "sign_test_p_one_sided": 0.5
+     },
+     "resampled": [
+      {
+       "n": 90,
+       "draws": 2000,
+       "retain_rate": 0.038,
+       "retain_rate_at_alpha_over_3": 0.016
+      },
+      {
+       "n": 180,
+       "draws": 2000,
+       "retain_rate": 0.039,
+       "retain_rate_at_alpha_over_3": 0.012
+      }
+     ]
+    }
+   },
+   {
+    "file": "simulate-2-T3.json",
+    "train": [
+     3120,
+     3179
+    ],
+    "search": "cover/1",
+    "lhs": 16,
+    "generations": 5,
+    "seed": 20261016,
+    "evaluated": 69,
+    "failure_rate": 0.3667,
+    "candidate": "cfg-2d68a84fda0a",
+    "p_restart": 0.88,
+    "stages": {
+     "triggered": true,
+     "advances": true,
+     "adversarial_passes": true,
+     "heldout_passes": false,
+     "heldout_passes_bonferroni_3": false
+    },
+    "pool": {
+     "mean_loss": 0.006598,
+     "incumbent_mean_loss": 0.009236,
+     "vs_incumbent": {
+      "wins": 137,
+      "losses": 89,
+      "ties": 74,
+      "sign_test_p_one_sided": 0.000854
+     },
+     "resampled": [
+      {
+       "n": 90,
+       "draws": 2000,
+       "retain_rate": 0.4735,
+       "retain_rate_at_alpha_over_3": 0.3065
+      },
+      {
+       "n": 180,
+       "draws": 2000,
+       "retain_rate": 0.78,
+       "retain_rate_at_alpha_over_3": 0.6085
+      }
+     ]
+    }
+   },
+   {
+    "file": "simulate-2-T3.json",
+    "train": [
+     3120,
+     3179
+    ],
+    "search": "cover/1",
+    "lhs": 0,
+    "generations": 5,
+    "seed": 20261016,
+    "evaluated": 49,
+    "failure_rate": 0.3667,
+    "candidate": "cfg-092972412a93",
+    "p_restart": 1.0,
+    "stages": {
+     "triggered": true,
+     "advances": true,
+     "adversarial_passes": true,
+     "heldout_passes": false,
+     "heldout_passes_bonferroni_3": false
+    },
+    "pool": {
+     "mean_loss": 0.005626,
+     "incumbent_mean_loss": 0.009236,
+     "vs_incumbent": {
+      "wins": 137,
+      "losses": 90,
+      "ties": 73,
+      "sign_test_p_one_sided": 0.001097
+     },
+     "resampled": [
+      {
+       "n": 90,
+       "draws": 2000,
+       "retain_rate": 0.475,
+       "retain_rate_at_alpha_over_3": 0.289
+      },
+      {
+       "n": 180,
+       "draws": 2000,
+       "retain_rate": 0.756,
+       "retain_rate_at_alpha_over_3": 0.5755
+      }
+     ]
+    }
+   },
+   {
+    "file": "simulate-2-T3.json",
+    "train": [
+     3120,
+     3179
+    ],
+    "search": "cover/1",
+    "lhs": 16,
+    "generations": 1,
+    "seed": 20261016,
+    "evaluated": 37,
+    "failure_rate": 0.3667,
+    "candidate": "cfg-0a1a0320b621",
+    "p_restart": 0.88,
+    "stages": {
+     "triggered": true,
+     "advances": true,
+     "adversarial_passes": true,
+     "heldout_passes": false,
+     "heldout_passes_bonferroni_3": false
+    },
+    "pool": {
+     "mean_loss": 0.00677,
+     "incumbent_mean_loss": 0.009236,
+     "vs_incumbent": {
+      "wins": 138,
+      "losses": 83,
+      "ties": 79,
+      "sign_test_p_one_sided": 0.000131
+     },
+     "resampled": [
+      {
+       "n": 90,
+       "draws": 2000,
+       "retain_rate": 0.582,
+       "retain_rate_at_alpha_over_3": 0.4075
+      },
+      {
+       "n": 180,
+       "draws": 2000,
+       "retain_rate": 0.8685,
+       "retain_rate_at_alpha_over_3": 0.7425
+      }
+     ]
+    }
+   },
+   {
+    "file": "simulate-3-T12.json",
+    "train": [
+     3000,
+     3119
+    ],
+    "search": "cover/1",
+    "lhs": 16,
+    "generations": 5,
+    "seed": 20261016,
+    "evaluated": 69,
+    "failure_rate": 0.525,
+    "candidate": "cfg-19bcb70fb72e",
+    "p_restart": 0.758,
+    "stages": {
+     "triggered": true,
+     "advances": true,
+     "adversarial_passes": true,
+     "heldout_passes": false,
+     "heldout_passes_bonferroni_3": false
+    },
+    "pool": {
+     "mean_loss": 0.007811,
+     "incumbent_mean_loss": 0.009236,
+     "vs_incumbent": {
+      "wins": 135,
+      "losses": 87,
+      "ties": 78,
+      "sign_test_p_one_sided": 0.000775
+     },
+     "resampled": [
+      {
+       "n": 90,
+       "draws": 2000,
+       "retain_rate": 0.447,
+       "retain_rate_at_alpha_over_3": 0.286
+      },
+      {
+       "n": 180,
+       "draws": 2000,
+       "retain_rate": 0.6905,
+       "retain_rate_at_alpha_over_3": 0.5595
+      }
+     ]
+    }
+   },
+   {
+    "file": "simulate-3-T12.json",
+    "train": [
+     3000,
+     3119
+    ],
+    "search": "mutate-incumbent/1",
+    "lhs": null,
+    "generations": 5,
+    "seed": 20261008,
+    "evaluated": 40,
+    "failure_rate": 0.525,
+    "candidate": "cfg-ecde7e598d3c",
+    "p_restart": 0.156,
+    "stages": {
+     "triggered": true,
+     "advances": true,
+     "adversarial_passes": true,
+     "heldout_passes": false,
+     "heldout_passes_bonferroni_3": false
+    },
+    "pool": {
+     "mean_loss": 0.007907,
+     "incumbent_mean_loss": 0.009236,
+     "vs_incumbent": {
+      "wins": 120,
+      "losses": 95,
+      "ties": 85,
+      "sign_test_p_one_sided": 0.050726
+     },
+     "resampled": [
+      {
+       "n": 90,
+       "draws": 2000,
+       "retain_rate": 0.181,
+       "retain_rate_at_alpha_over_3": 0.087
+      },
+      {
+       "n": 180,
+       "draws": 2000,
+       "retain_rate": 0.314,
+       "retain_rate_at_alpha_over_3": 0.18
+      }
+     ]
+    }
+   },
+   {
+    "file": "simulate-4-T12.json",
+    "train": [
+     3000,
+     3119
+    ],
+    "search": "cover/1",
+    "lhs": 0,
+    "generations": 5,
+    "seed": 20261016,
+    "evaluated": 50,
+    "failure_rate": 0.525,
+    "candidate": "cfg-0e266809306c",
+    "p_restart": 0.0,
+    "stages": {
+     "triggered": true,
+     "advances": true,
+     "adversarial_passes": true,
+     "heldout_passes": false,
+     "heldout_passes_bonferroni_3": false
+    },
+    "pool": {
+     "mean_loss": 0.008564,
+     "incumbent_mean_loss": 0.009236,
+     "vs_incumbent": {
+      "wins": 110,
+      "losses": 92,
+      "ties": 98,
+      "sign_test_p_one_sided": 0.115785
+     },
+     "resampled": [
+      {
+       "n": 90,
+       "draws": 2000,
+       "retain_rate": 0.1355,
+       "retain_rate_at_alpha_over_3": 0.057
+      },
+      {
+       "n": 180,
+       "draws": 2000,
+       "retain_rate": 0.211,
+       "retain_rate_at_alpha_over_3": 0.099
+      }
+     ]
+    }
+   },
+   {
+    "file": "simulate-4-T5.json",
+    "train": [
+     3500,
+     3619
+    ],
+    "search": "cover/1",
+    "lhs": 0,
+    "generations": 5,
+    "seed": 20261016,
+    "evaluated": 53,
+    "failure_rate": 0.5167,
+    "candidate": "cfg-8be0239ac06b",
+    "p_restart": 0.954,
+    "stages": {
+     "triggered": true,
+     "advances": true,
+     "adversarial_passes": true,
+     "heldout_passes": false,
+     "heldout_passes_bonferroni_3": false
+    },
+    "pool": {
+     "mean_loss": 0.006757,
+     "incumbent_mean_loss": 0.009236,
+     "vs_incumbent": {
+      "wins": 138,
+      "losses": 88,
+      "ties": 74,
+      "sign_test_p_one_sided": 0.000535
+     },
+     "resampled": [
+      {
+       "n": 90,
+       "draws": 2000,
+       "retain_rate": 0.5115,
+       "retain_rate_at_alpha_over_3": 0.3375
+      },
+      {
+       "n": 180,
+       "draws": 2000,
+       "retain_rate": 0.809,
+       "retain_rate_at_alpha_over_3": 0.635
+      }
+     ]
+    }
+   },
+   {
+    "file": "simulate-4-T5.json",
+    "train": [
+     3500,
+     3619
+    ],
+    "search": "mutate-incumbent/1",
+    "lhs": null,
+    "generations": 5,
+    "seed": 20261008,
+    "evaluated": 38,
+    "failure_rate": 0.5167,
+    "candidate": "cfg-1d72dd8a4fd4",
+    "p_restart": 0.064,
+    "stages": {
+     "triggered": true,
+     "advances": true,
+     "adversarial_passes": true,
+     "heldout_passes": false,
+     "heldout_passes_bonferroni_3": false
+    },
+    "pool": {
+     "mean_loss": 0.009123,
+     "incumbent_mean_loss": 0.009236,
+     "vs_incumbent": {
+      "wins": 97,
+      "losses": 111,
+      "ties": 92,
+      "sign_test_p_one_sided": 0.850852
+     },
+     "resampled": [
+      {
+       "n": 90,
+       "draws": 2000,
+       "retain_rate": 0.01,
+       "retain_rate_at_alpha_over_3": 0.0015
+      },
+      {
+       "n": 180,
+       "draws": 2000,
+       "retain_rate": 0.006,
+       "retain_rate_at_alpha_over_3": 0.002
+      }
+     ]
+    }
+   },
+   {
+    "file": "simulate-4-T6.json",
+    "train": [
+     3620,
+     3739
+    ],
+    "search": "cover/1",
+    "lhs": 0,
+    "generations": 5,
+    "seed": 20261016,
+    "evaluated": 51,
+    "failure_rate": 0.4667,
+    "candidate": "cfg-223d842fdb8d",
+    "p_restart": 0.885,
+    "stages": {
+     "triggered": true,
+     "advances": true,
+     "adversarial_passes": true,
+     "heldout_passes": false,
+     "heldout_passes_bonferroni_3": false
+    },
+    "pool": {
+     "mean_loss": 0.00717,
+     "incumbent_mean_loss": 0.009236,
+     "vs_incumbent": {
+      "wins": 137,
+      "losses": 88,
+      "ties": 75,
+      "sign_test_p_one_sided": 0.000661
+     },
+     "resampled": [
+      {
+       "n": 90,
+       "draws": 2000,
+       "retain_rate": 0.474,
+       "retain_rate_at_alpha_over_3": 0.3045
+      },
+      {
+       "n": 180,
+       "draws": 2000,
+       "retain_rate": 0.755,
+       "retain_rate_at_alpha_over_3": 0.5985
+      }
+     ]
+    }
+   },
+   {
+    "file": "simulate-4-T6.json",
+    "train": [
+     3620,
+     3739
+    ],
+    "search": "mutate-incumbent/1",
+    "lhs": null,
+    "generations": 5,
+    "seed": 20261008,
+    "evaluated": 37,
+    "failure_rate": 0.4667,
+    "candidate": "cfg-c9bfc44a4ec5",
+    "p_restart": 0.0,
+    "stages": {
+     "triggered": true,
+     "advances": true,
+     "adversarial_passes": false,
+     "heldout_passes": false,
+     "heldout_passes_bonferroni_3": false
+    },
+    "pool": {
+     "mean_loss": 0.0093,
+     "incumbent_mean_loss": 0.009236,
+     "vs_incumbent": {
+      "wins": 102,
+      "losses": 99,
+      "ties": 99,
+      "sign_test_p_one_sided": 0.44393
+     },
+     "resampled": [
+      {
+       "n": 90,
+       "draws": 2000,
+       "retain_rate": 0.046,
+       "retain_rate_at_alpha_over_3": 0.0185
+      },
+      {
+       "n": 180,
+       "draws": 2000,
+       "retain_rate": 0.0525,
+       "retain_rate_at_alpha_over_3": 0.0175
+      }
+     ]
+    }
+   }
+  ],
+  "by_policy": {
+   "mutate-incumbent/1 lhs=None generations=5 seed=20261008": {
+    "runs": 6,
+    "mean_retain_rate_n90": 0.106,
+    "mean_retain_rate_n180": 0.167,
+    "mean_retain_rate_n90_at_alpha_over_3": 0.053,
+    "mean_retain_rate_n180_at_alpha_over_3": 0.096
+   },
+   "cover/1 lhs=16 generations=5 seed=20261016": {
+    "runs": 4,
+    "mean_retain_rate_n90": 0.363,
+    "mean_retain_rate_n180": 0.585,
+    "mean_retain_rate_n90_at_alpha_over_3": 0.224,
+    "mean_retain_rate_n180_at_alpha_over_3": 0.438
+   },
+   "cover/1 lhs=0 generations=5 seed=20261016": {
+    "runs": 6,
+    "mean_retain_rate_n90": 0.407,
+    "mean_retain_rate_n180": 0.645,
+    "mean_retain_rate_n90_at_alpha_over_3": 0.251,
+    "mean_retain_rate_n180_at_alpha_over_3": 0.488
+   },
+   "cover/1 lhs=16 generations=1 seed=20261016": {
+    "runs": 3,
+    "mean_retain_rate_n90": 0.356,
+    "mean_retain_rate_n180": 0.544,
+    "mean_retain_rate_n90_at_alpha_over_3": 0.233,
+    "mean_retain_rate_n180_at_alpha_over_3": 0.44
+   }
+  },
+  "failure_rates": [
+   0.3667,
+   0.4667,
+   0.4833,
+   0.5167,
+   0.525,
+   0.5667
+  ]
+ }
+}

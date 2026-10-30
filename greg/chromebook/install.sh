@@ -2,7 +2,7 @@
 # One command from a fresh clone to a designated, supervised GREG Body 1 inside
 # ChromeOS's Linux environment (Crostini).
 #
-#   git clone -b claude/uniimente-greg-reconciliation-39syff https://github.com/dababiyoda/uniimente-kernel
+#   git clone -b claude/greg-full-machine-completion-whgiee https://github.com/dababiyoda/uniimente-kernel
 #   cd uniimente-kernel && bash greg/chromebook/install.sh
 #
 # It only composes existing greg commands (doctor, init, founder keygen/enroll,
@@ -102,6 +102,13 @@ done
 [ -n "$PY" ] || fail "No Python 3.11+ found. In the Linux terminal: sudo apt install -y python3 python3-venv git" 11
 command -v git >/dev/null 2>&1 || fail "git is missing. In the Linux terminal: sudo apt install -y git" 11
 echo "Using $PY ($("$PY" -c 'import sys; print(sys.version.split()[0])'))"
+# The acceptance report binds to this commit (greg acceptance: code.commit); the review candidate is named in
+# greg/chromebook/REVIEW_BRANCH.
+CODE_COMMIT="$(git -C "$REPO" -c core.fsmonitor=false rev-parse HEAD 2>/dev/null || echo unknown)"
+CODE_BRANCH="$(git -C "$REPO" -c core.fsmonitor=false rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+REVIEW_BRANCH="$(cat "$REPO/greg/chromebook/REVIEW_BRANCH" 2>/dev/null || echo unknown)"
+echo "Installing code $CODE_COMMIT (branch $CODE_BRANCH)."
+[ "$CODE_BRANCH" = "$REVIEW_BRANCH" ] || echo "NOTE: the review candidate is $REVIEW_BRANCH; this checkout is $CODE_BRANCH."
 
 step "3/8 Environment"
 if [ "$SKIP_DEPS" = 1 ]; then

@@ -42,6 +42,7 @@ class ActionOutcome:
     grant_id: str | None = None
     cost_usd: float = 0.0
     failure_class: str | None = None     # typed where a capability failure was raised (CapabilityError)
+    output_artifact: dict | None = None  # the receipt's record of the whole output kept beside a cut one (keep_output)
 
 
 class AuthorityOffice:
@@ -94,11 +95,10 @@ class AuthorityOffice:
 
     def _prior(self, proposal_id: str):
         """Retained dispatch/receipt for this exact proposal, if any (crash recovery)."""
-        claims = [r for r in self.ledger.by_type("grant_dispatch") if r.payload.get("proposal_id") == proposal_id]
+        claims = self.ledger.select("grant_dispatch", proposal_id=proposal_id)
         if not claims:
             return None, None
-        receipts = [r for r in self.ledger.by_type("receipt")
-                    if r.payload.get("grant_id") == claims[-1].payload.get("grant_id")]
+        receipts = self.ledger.select("receipt", grant_id=claims[-1].payload.get("grant_id"))
         return claims[-1], (receipts[-1] if receipts else None)
 
     def act(self, *, mission_id: str, cone: LightCone, command_digest: str, manifest: CapabilityManifest,
@@ -134,7 +134,8 @@ class AuthorityOffice:
                 return ActionOutcome("DONE" if positive else "REFUSED", ["retained legacy receipt; no redispatch"],
                                      output=result.get("output"), receipt_hash=old_receipt.hash,
                                      grant_id=old_receipt.payload.get("grant_id"),
-                                     cost_usd=cost_usd if positive else 0.0, **old_base)
+                                     cost_usd=cost_usd if positive else 0.0,
+                                     output_artifact=result.get("output_artifact") if positive else None, **old_base)
             if old_claim is not None:
                 return ActionOutcome("UNCERTAIN", ["retained legacy dispatch; no receipt or blind retry"], **old_base)
         outside = cone.admits(capability=manifest.capability_id, target=target, consequence_class=consequence,
@@ -144,9 +145,11 @@ class AuthorityOffice:
 
         claim, receipt = self._prior(proposal_id)
         if receipt is not None:  # already done before an interruption: reuse, never redo
+            # with the whole output it kept, so a reused reading is judged as the fresh one was (review of #209)
             return ActionOutcome("DONE", ["retained receipt reused after restart"], output=receipt.payload["result"].get("output"),
                                  receipt_hash=receipt.hash, grant_id=receipt.payload.get("grant_id"),
-                                 cost_usd=cost_usd, **base)
+                                 cost_usd=cost_usd, output_artifact=receipt.payload["result"].get("output_artifact"),
+                                 **base)
         if claim is not None:  # the dispatch the claim names, so its reconciliation settles exactly that one
             return ActionOutcome("UNCERTAIN", ["dispatch claimed without receipt; outcome unknown"],
                                  grant_id=claim.payload.get("grant_id"), **base)
@@ -207,8 +210,9 @@ class AuthorityOffice:
             except CapabilityError as exc:
                 return {"observed_outcome": "capability refused: " + str(exc)[:300], "result_class": "negative",
                         "failure_class": exc.failure_class, "output": None, "validation_status": "self_reported"}
+            kept, whole = keep_output(output, ctx.artifact_root)
             return {"observed_outcome": expected_outcome, "result_class": "positive",
-                    "output": bounded(output), "validation_status": "self_reported"}
+                    "output": kept, "validation_status": "self_reported", **({"output_artifact": whole} if whole else {})}
 
         def approver(p, reasons):
             return (scope in approved_scopes, "founder-signed decision for exact scope"
@@ -223,26 +227,82 @@ class AuthorityOffice:
                                      receipt_hash=record.receipt_hash, grant_id=grant["grant_id"],
                                      failure_class=result.get("failure_class"), **base)
             return ActionOutcome("DONE", [], output=result.get("output"), receipt_hash=record.receipt_hash,
-                                 grant_id=grant["grant_id"], cost_usd=cost_usd, **base)
+                                 grant_id=grant["grant_id"], cost_usd=cost_usd,
+                                 output_artifact=result.get("output_artifact"), **base)
         if record.state == "reconciliation_required":
             return ActionOutcome("UNCERTAIN", record.refusal_reasons, grant_id=grant["grant_id"], **base)
         return ActionOutcome("REFUSED", record.refusal_reasons or [record.state], grant_id=grant["grant_id"], **base)
 
 
 RECEIPT_TEXT_LIMIT = 16 * 1024
+RECEIPT_LIST_LIMIT = 1000      # items a receipt keeps of a list; greg/missions.py reads this one constant
+
+
+def text_bytes(value: str) -> bytes:
+    """The bytes a receipt digests a string by: UTF-8, with a lone surrogate (which JSON from an untrusted tool or
+    server can carry) kept as its own code unit instead of failing the action. Identical to UTF-8 for any other
+    string."""
+    return value.encode("utf-8", "surrogatepass")
+
+
+NON_FINITE = {"NaN", "Infinity", "-Infinity"}
 
 
 def bounded(value):
-    """Receipts keep evidence, not bulk: long strings keep a prefix plus their digest."""
+    """Receipts keep evidence, not bulk: long strings keep a prefix plus their digest. A number that is not finite
+    (NaN or an infinity, which JSON cannot carry) is kept as ``{"non_finite": ...}``: before, it passed through and
+    made the ledger's strict JSON raise after the action had run, out of every tick (review of #196, J6)."""
     import hashlib
+    import math
+    if isinstance(value, float) and not math.isfinite(value):
+        return {"non_finite": "NaN" if value != value else "Infinity" if value > 0 else "-Infinity"}
     if isinstance(value, str) and len(value) > RECEIPT_TEXT_LIMIT:
         return {"prefix": value[:RECEIPT_TEXT_LIMIT], "truncated": True,
-                "sha256": hashlib.sha256(value.encode()).hexdigest(), "length": len(value)}
+                "sha256": hashlib.sha256(text_bytes(value)).hexdigest(), "length": len(value)}
     if isinstance(value, dict):
         return {k: bounded(v) for k, v in value.items()}
     if isinstance(value, list):
-        return [bounded(v) for v in value[:1000]]
+        return [bounded(v) for v in value[:RECEIPT_LIST_LIMIT]]
     return value
+
+
+OUTPUT_ARTIFACT_BYTES = 1024 * 1024   # the whole output kept beside a cut receipt (the cognition request ceiling)
+OUTPUT_ARTIFACT_DIR = "outputs"        # their own root, so kept outputs never spend the quota artifact.store imports use
+
+
+def output_store(artifact_root):
+    """The store kept outputs live in: a separate root under the body's artifact store, with its own quota. When it
+    is full, outputs are no longer kept (the receipt says so); imports through artifact.store are never refused for
+    it."""
+    from pathlib import Path
+    from greg.artifacts import ArtifactStore
+    return ArtifactStore(Path(artifact_root) / OUTPUT_ARTIFACT_DIR, max_object_bytes=OUTPUT_ARTIFACT_BYTES)
+
+
+def keep_output(output, artifact_root):
+    """What a receipt keeps of an action's output, and where the whole output went when the bound cut it.
+
+    The one place an output is cut for a receipt. When ``bounded`` would cut it (a string past RECEIPT_TEXT_LIMIT, a
+    list past its item limit), the whole output is kept, as canonical JSON, in the body's content-addressed artifact
+    store, and the receipt records that address beside the cut wrappers, which stay exactly as before. The store holds
+    bytes, not authority: a bind reads them back only by the address the ledger recorded, re-hashed on read
+    (greg/missions.py ``artifact_output``). When the body has no store, or the output cannot be kept there, the
+    receipt says so, and only the cut form exists: nothing downstream may stand a prefix in for it."""
+    import json
+    kept = bounded(output)
+    if kept == output:
+        return kept, None
+    if artifact_root is None:
+        return kept, {"address": None, "unavailable": "this body has no artifact store"}
+    try:
+        try:
+            data = json.dumps(output, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()
+        except UnicodeEncodeError:   # a lone surrogate: the same JSON value, written with escapes
+            data = json.dumps(output, sort_keys=True, separators=(",", ":")).encode()
+        address, _ = output_store(artifact_root).put(data)
+    except (TypeError, ValueError, CapabilityError, OSError) as exc:
+        return kept, {"address": None, "unavailable": "whole output not kept: " + str(exc)[:200]}
+    return kept, {"address": address, "bytes": len(data), "encoding": "canonical-json"}
 
 
 def now() -> datetime:

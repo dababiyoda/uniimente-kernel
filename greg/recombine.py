@@ -58,6 +58,7 @@ from greg.capabilities import CapabilityError, InvocationContext
 from greg.cognition import network
 
 MAX_DEPTH = 3
+MAX_ROUNDS = 64          # rounds a head reduction may ask for (its own search must close sooner)
 ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,39}$")
 MAX_WORKERS = MAX_ORDERS = 1000
 MAX_PAIRS = 15000
@@ -596,6 +597,419 @@ def judge_crash(answer: dict, expected: dict) -> bool:
     return not expected["feasible"] or answer["cost"] == expected["cost"]
 
 
+# == project selection (maximum-weight closure) -> maximum flow ==================================
+# Which projects to take when some need others first: each item has a value (a profit, or a cost
+# when negative) and "a requires b" means a may be taken only with b. Picard's reduction: the best
+# closed set is the source side of a minimum cut. The mutation is the certificate GREG keeps: the
+# engine's flow, read back as *funding* (which profitable item's value would have to pay for which
+# costs), proves that no closed set earns more; it is checked against the original items alone.
+
+MAX_ITEMS = 400
+MAX_REQUIRES = 4000
+
+
+def normalize_selection(params: dict) -> dict:
+    if not isinstance(params, dict):
+        raise _invalid("parameters must be an object")
+    items, requires = params.get("items"), params.get("requires", [])
+    if not isinstance(items, list) or not 1 <= len(items) <= MAX_ITEMS:
+        raise _invalid(f"1-{MAX_ITEMS} items required")
+    value = {}
+    for it in items:
+        if not isinstance(it, dict):
+            raise _invalid("each item must be an object")
+        iid = _ident(it.get("id"), "item id")
+        if iid in value:
+            raise _invalid(f"item {iid} repeats")
+        v = it.get("value")
+        if isinstance(v, bool) or not isinstance(v, int) or abs(v) > network.MAX_TOTAL_CAPACITY:
+            raise _invalid(f"value of {iid} must be an integer within 2^31-1 (negative for a cost)")
+        value[iid] = v
+    if not isinstance(requires, list) or len(requires) > MAX_REQUIRES:
+        raise _invalid(f"requires must be a list of at most {MAX_REQUIRES} [item, prerequisite] pairs")
+    pairs = set()
+    for r in requires:
+        if not isinstance(r, list) or len(r) != 2 or not all(x in value for x in r):
+            raise _invalid(f"requirement {r!r} must be [item, prerequisite] naming known items")
+        if r[0] != r[1]:
+            pairs.add(tuple(r))
+    return {"items": sorted([i, v] for i, v in value.items()), "requires": sorted(list(x) for x in pairs)}
+
+
+def _gain(p: dict) -> int:
+    return sum(v for _, v in p["items"] if v > 0)
+
+
+def direct_selection(p: dict):
+    """Nothing profitable: the empty set is optimal and the bound is zero; no engine is needed."""
+    if _gain(p) == 0:
+        return {"chosen": [], "funding": []}
+    return None
+
+
+def encode_selection(p: dict) -> dict:
+    gain, cost = _gain(p), sum(-v for _, v in p["items"] if v < 0)
+    big = gain + 1     # a requirement arc can never be in a minimum cut: cutting every profit costs only `gain`
+    edges = [["source", f"i:{i}", v] for i, v in p["items"] if v > 0]
+    edges += [[f"i:{i}", "sink", -v] for i, v in p["items"] if v < 0]
+    edges += [[f"i:{a}", f"i:{b}", big] for a, b in p["requires"]]
+    if gain + cost + big * len(p["requires"]) > network.MAX_TOTAL_CAPACITY:
+        raise _invalid("the encoded network exceeds the engine's 2^31-1 total capacity")
+    nodes = ["source", "sink"] + [f"i:{i}" for i, _ in p["items"]]
+    return {"edges": edges, "nodes": nodes, "source": "source", "sink": "sink", "directed": True}
+
+
+def decode_selection(p: dict, flow: dict) -> dict:
+    if flow.get("certified") is not True or "min_cut" not in flow:
+        raise ReductionError("the engine answer carries no certified minimum cut")
+    side = set(flow["min_cut"]["source_side"])
+    chosen = sorted(i for i, _ in p["items"] if f"i:{i}" in side)
+    funding = sorted([u[2:] if u != "source" else "source", v[2:] if v != "sink" else "sink", x]
+                     for u, v, x in flow["flows"])
+    return {"chosen": chosen, "funding": funding}
+
+
+def certify_selection(p: dict, answer: dict) -> dict:
+    """GREG-owned and exact. (1) The chosen set is closed under its requirements. (2) The funding is a
+    feasible flow: profit items send at most their value, cost items receive at most their cost, funding
+    moves only along requirements, and every item passes on exactly what it receives. (3) Weak duality:
+    for any closed set S the cut (S + source) has no requirement arc leaving it, so it carries at most
+    gain - funded; hence profit(S) <= gain - funded for every closed S. A chosen set earning exactly
+    gain - funded is therefore the best possible."""
+    value = dict(map(tuple, p["items"]))
+    requires = {tuple(r) for r in p["requires"]}
+    chosen = answer.get("chosen", [])
+    if not isinstance(chosen, list) or not set(chosen) <= set(value) or len(set(chosen)) != len(chosen):
+        raise ReductionError("the chosen set names unknown or repeated items")
+    S = set(chosen)
+    missing = sorted([a, b] for a, b in requires if a in S and b not in S)
+    if missing:
+        raise ReductionError(f"the chosen set is not closed: {missing[0][0]} requires {missing[0][1]}")
+    balance, sent, received = defaultdict(int), defaultdict(int), defaultdict(int)
+    for item in answer.get("funding", []):
+        if not isinstance(item, list) or len(item) != 3:
+            raise ReductionError(f"funding entry {item!r} must be [from, to, amount]")
+        u, v, x = item
+        if isinstance(x, bool) or not isinstance(x, int) or x <= 0:
+            raise ReductionError("funding amounts must be positive integers")
+        if u == "source":
+            if value.get(v, 0) <= 0:
+                raise ReductionError(f"{v} is not a profitable item and cannot be funded from the source")
+            sent[v] += x
+        elif v == "sink":
+            if value.get(u, 0) >= 0:
+                raise ReductionError(f"{u} is not a cost and cannot pay the sink")
+            received[u] += x
+        elif (u, v) not in requires:
+            raise ReductionError(f"funding moves from {u} to {v}, which is not a requirement")
+        balance[u] -= x
+        balance[v] += x
+    for i, x in sent.items():
+        if x > value[i]:
+            raise ReductionError(f"{i} funds {x}, above its value {value[i]}")
+    for i, x in received.items():
+        if x > -value[i]:
+            raise ReductionError(f"{i} is paid {x}, above its cost {-value[i]}")
+    for i in value:
+        if balance[i]:
+            raise ReductionError(f"{i} does not pass on exactly what it receives")
+    funded = sum(sent.values())
+    gain = _gain(p)
+    profit = sum(value[i] for i in S)
+    if profit != gain - funded:
+        raise ReductionError(f"profit {profit} does not meet the bound {gain - funded}: optimality is not shown")
+    left_out = sorted(i for i, v in value.items() if v > 0 and i not in S)
+    return {"certified": True, "chosen": sorted(S), "profit": profit,
+            "cost_taken": sorted(i for i in S if value[i] < 0),
+            "left_out_profitable": left_out,
+            "why_left_out": {i: [[to, x] for u, to, x in answer["funding"] if u == i] for i in left_out},
+            "funding": answer["funding"],
+            "certificate": {"kind": "closure plus a feasible funding flow: profit equals total profit minus "
+                                    "funded value, which bounds every closed set (weak duality, Picard 1976)",
+                            "arithmetic": "exact integers",
+                            "checked_by": "GREG, from the original items; shares no code with the engine"}}
+
+
+def selection_brute_force(p: dict) -> int:
+    """Best profit over every closed subset (exponential; oracle only)."""
+    items = [i for i, _ in p["items"]]
+    value = dict(map(tuple, p["items"]))
+    requires = [tuple(r) for r in p["requires"]]
+    best = 0
+    for mask in range(1 << len(items)):
+        S = {items[k] for k in range(len(items)) if mask >> k & 1}
+        if all(b in S for a, b in requires if a in S):
+            best = max(best, sum(value[i] for i in S))
+    return best
+
+
+FIXED_SELECTION = [
+    ("shared-prerequisite", {"items": [{"id": "Offer1", "value": 5}, {"id": "Offer2", "value": 6},
+                                       {"id": "Platform", "value": -6}, {"id": "Audit", "value": -3}],
+                             "requires": [["Offer1", "Platform"], ["Offer2", "Platform"], ["Offer2", "Audit"]]}),
+    ("not-worth-it", {"items": [{"id": "A", "value": 3}, {"id": "B", "value": -5}], "requires": [["A", "B"]]}),
+    ("chain", {"items": [{"id": "A", "value": 10}, {"id": "B", "value": -3}, {"id": "C", "value": -4}],
+               "requires": [["A", "B"], ["B", "C"]]}),
+    ("nothing-profitable", {"items": [{"id": "A", "value": 0}, {"id": "B", "value": -2}], "requires": []}),
+    ("cycle", {"items": [{"id": "A", "value": 4}, {"id": "B", "value": -3}], "requires": [["A", "B"], ["B", "A"]]}),
+]
+
+
+def _random_selection(rng: random.Random) -> dict:
+    n = rng.randint(1, 7)
+    items = [{"id": f"I{k}", "value": rng.randint(-6, 6)} for k in range(n)]
+    requires = [[f"I{a}", f"I{b}"] for a in range(n) for b in range(n) if a != b and rng.random() < 0.25]
+    return {"items": items, "requires": requires}
+
+
+def oracle_selection(seed: int) -> list[dict]:
+    rng = random.Random(seed)
+    cases = [{"name": n, "input": params} for n, params in FIXED_SELECTION]
+    cases += [{"name": f"random{i}", "input": _random_selection(rng)} for i in range(7)]
+    for case in cases:
+        case["expected"] = {"profit": selection_brute_force(normalize_selection(case["input"]))}
+    return cases
+
+
+def judge_selection(answer: dict, expected: dict) -> bool:
+    return answer.get("certified") is True and answer["profit"] == expected["profit"]
+
+
+# == budgeted selection (closure under a spending cap) -> selection.closure, in rounds ===========
+# Which items to take when some need others first AND the money spent on costs may not exceed a
+# budget. Maximum-weight closure stops being a single cut (the cap makes it NP-hard), so GREG runs a
+# branch-and-bound whose every node is a selection.closure problem answered by the constructed
+# capability below it: the node's best closure (fixing some costs in or out) bounds every plan in
+# that branch. The mutation is the proof GREG keeps: the whole search tree, each node with its own
+# funding certificate, re-checked at the end from the original items alone.
+
+MAX_BUDGET_ITEMS = 60
+MAX_BUDGET_VALUE = 1 << 20
+MAX_PROOF_NODES = 2048
+
+
+def normalize_budgeted(params: dict) -> dict:
+    if not isinstance(params, dict):
+        raise _invalid("parameters must be an object")
+    budget = params.get("budget")
+    if isinstance(budget, bool) or not isinstance(budget, int) or not 0 <= budget <= MAX_BUDGET_VALUE:
+        raise _invalid(f"budget must be an integer from 0 to {MAX_BUDGET_VALUE}")
+    p = normalize_selection({"items": params.get("items"), "requires": params.get("requires", [])})
+    if len(p["items"]) > MAX_BUDGET_ITEMS:
+        raise _invalid(f"at most {MAX_BUDGET_ITEMS} items under a budget")
+    if sum(abs(v) for _, v in p["items"]) > MAX_BUDGET_VALUE:
+        raise _invalid(f"the absolute values may total at most {MAX_BUDGET_VALUE}")
+    return {**p, "budget": budget}
+
+
+def _needs(p: dict) -> dict:
+    out = defaultdict(set)
+    for a, b in p["requires"]:
+        out[a].add(b)
+    return out
+
+
+def _down(items, needs) -> set:
+    """Everything ``items`` require, transitively, including themselves."""
+    seen, stack = set(items), list(items)
+    while stack:
+        for b in needs.get(stack.pop(), ()):
+            if b not in seen:
+                seen.add(b)
+                stack.append(b)
+    return seen
+
+
+def _spend(value: dict, S) -> int:
+    return sum(-value[i] for i in S if value[i] < 0)
+
+
+def _node_problem(p: dict, fix_in, fix_out):
+    """The selection.closure problem of one branch, or the reason it holds no plan.
+
+    Items that need an excluded cost (transitively) are dropped; items fixed in get a premium above
+    every other value combined, so the best closure always takes them and their prerequisites."""
+    value, needs = dict(map(tuple, p["items"])), _needs(p)
+    forced = _down(fix_in, needs)
+    if forced & set(fix_out):
+        return None, "an item fixed in needs an item fixed out"
+    if _spend(value, forced) > p["budget"]:
+        return None, "the items fixed in already spend more than the budget"
+    gone = {i for i in value if _down([i], needs) & set(fix_out)}
+    keep = [i for i in value if i not in gone]
+    if not keep:
+        return None, "no item remains"
+    premium = sum(abs(v) for v in value.values()) + 1
+    items = [{"id": i, "value": value[i] + (premium if i in fix_in else 0)} for i in keep]
+    requires = [[a, b] for a, b in p["requires"] if a in keep and b in keep]
+    return {"items": items, "requires": requires}, None
+
+
+def _search(p: dict, history: list):
+    """Replay the breadth-first branch-and-bound over the answers so far.
+
+    Returns ("ask", requests) for the next round, or ("done", tree, best) once every branch is closed."""
+    value = dict(map(tuple, p["items"]))
+    best = {"chosen": [], "profit": 0}                      # taking nothing is always within budget
+    root = {"in": [], "out": []}
+    frontier, used = [root], 0
+    while frontier:
+        asks = []
+        for node in frontier:
+            sub, why = _node_problem(p, node["in"], node["out"])
+            if sub is None:
+                node.update(kind="infeasible" if "fixed" in why else "empty", why=why)
+            else:
+                asks.append((node, sub))
+        if not asks:
+            break
+        if used + len(asks) > len(history):
+            return "ask", [sub for _, sub in asks]
+        nxt = []
+        for (node, sub), (_, answer) in zip(asks, history[used:used + len(asks)]):
+            S = set(answer["chosen"])
+            bound = sum(value[i] for i in S)
+            node.update(chosen=sorted(S), bound=bound, funding=answer["funding"])
+            if _spend(value, S) <= p["budget"]:
+                node["kind"] = "within budget"
+                if bound > best["profit"]:
+                    best = {"chosen": sorted(S), "profit": bound}
+            elif bound <= best["profit"]:
+                node["kind"] = "bounded"
+            else:
+                fixed = set(node["in"]) | set(node["out"])
+                on = max((i for i in S if value[i] < 0 and i not in fixed), key=lambda i: (-value[i], i))
+                node.update(kind="branch", on=on, children=[{"in": sorted(node["in"] + [on]), "out": node["out"]},
+                                                            {"in": node["in"], "out": sorted(node["out"] + [on])}])
+                nxt += node["children"]
+        used += len(asks)
+        if used > MAX_PROOF_NODES:
+            raise _invalid(f"the proof needs more than {MAX_PROOF_NODES} closure problems; split the portfolio")
+        frontier = nxt
+    return "done", root, best
+
+
+def encode_budgeted(p: dict, history: list) -> list:
+    state = _search(p, history)
+    return state[1] if state[0] == "ask" else []
+
+
+def decode_budgeted(p: dict, history: list) -> dict:
+    _, tree, best = _search(p, history)
+    return {**best, "tree": tree}
+
+
+def certify_budgeted(p: dict, answer: dict) -> dict:
+    """GREG-owned and exact, from the original items. (1) The plan is closed and within budget, and
+    earns what it says. (2) The search tree partitions every plan: each branch on a cost has exactly the
+    two children "taken" and "not taken". (3) Every leaf is closed by a fact re-checked here: no plan
+    (its fixes contradict or overspend), or a node whose best closure (re-proved by its own funding
+    certificate) either fits the budget or earns no more than the plan. Hence no plan within budget
+    earns more."""
+    value, needs = dict(map(tuple, p["items"])), _needs(p)
+    chosen = answer.get("chosen", [])
+    if not isinstance(chosen, list) or not set(chosen) <= set(value) or len(set(chosen)) != len(chosen):
+        raise ReductionError("the plan names unknown or repeated items")
+    S = set(chosen)
+    if _down(S, needs) != S:
+        raise ReductionError("the plan takes an item without what it requires")
+    if _spend(value, S) > p["budget"]:
+        raise ReductionError(f"the plan spends {_spend(value, S)}, above the budget {p['budget']}")
+    profit = sum(value[i] for i in S)
+    if profit != answer.get("profit"):
+        raise ReductionError("the plan does not earn what it claims")
+    count = 0
+
+    def check(node, fix_in, fix_out):
+        nonlocal count
+        count += 1
+        if count > MAX_PROOF_NODES * 2 + 1:
+            raise ReductionError("the proof tree is larger than any search GREG runs")
+        if sorted(node.get("in", [])) != sorted(fix_in) or sorted(node.get("out", [])) != sorted(fix_out):
+            raise ReductionError("a branch does not split its parent")
+        sub, why = _node_problem(p, fix_in, fix_out)
+        kind = node.get("kind")
+        if sub is None:
+            if kind not in ("infeasible", "empty"):
+                raise ReductionError("a branch with no plan is not closed as such")
+            return
+        node_answer = certify_selection(normalize_selection(sub), {"chosen": node.get("chosen", []),
+                                                                  "funding": node.get("funding", [])})
+        T = set(node_answer["chosen"])
+        bound = sum(value[i] for i in T)
+        if kind == "within budget":
+            if _spend(value, T) > p["budget"] or bound > profit:
+                raise ReductionError("a branch's best plan fits the budget and earns more than the answer")
+        elif kind == "bounded":
+            if bound > profit:
+                raise ReductionError("a branch closed by its bound can earn more than the answer")
+        elif kind == "branch":
+            on = node.get("on")
+            if on not in value or value[on] >= 0 or on in fix_in or on in fix_out:
+                raise ReductionError("a branch splits on something that is not an open cost")
+            a, b = node.get("children", [None, None])
+            check(a, sorted(fix_in + [on]), fix_out)
+            check(b, fix_in, sorted(fix_out + [on]))
+        else:
+            raise ReductionError(f"a branch is closed by {kind!r}, which proves nothing")
+
+    check(answer.get("tree") or {}, [], [])
+    left_out = sorted(i for i, v in value.items() if v > 0 and i not in S)
+    return {"certified": True, "chosen": sorted(S), "profit": profit, "spend": _spend(value, S),
+            "budget": p["budget"], "unspent": p["budget"] - _spend(value, S),
+            "cost_taken": sorted(i for i in S if value[i] < 0), "left_out_profitable": left_out,
+            "why_left_out": {i: sorted(j for j in _down([i], needs) if value[j] < 0 and j not in S)
+                             for i in left_out},
+            "proof_nodes": count, "tree": answer["tree"],
+            "certificate": {"kind": "branch-and-bound over the costs, each branch bounded by a best closure "
+                                    "re-proved by its own funding flow (Picard 1976); the tree partitions every "
+                                    "plan within budget",
+                            "arithmetic": "exact integers",
+                            "checked_by": "GREG, from the original items; shares no code with the engine"}}
+
+
+def budgeted_brute_force(p: dict) -> int:
+    """Best profit over every closed subset within budget (exponential; oracle only)."""
+    items, value, needs = [i for i, _ in p["items"]], dict(map(tuple, p["items"])), _needs(p)
+    best = 0
+    for mask in range(1 << len(items)):
+        S = {items[k] for k in range(len(items)) if mask >> k & 1}
+        if _down(S, needs) == S and _spend(value, S) <= p["budget"]:
+            best = max(best, sum(value[i] for i in S))
+    return best
+
+
+FIXED_BUDGETED = [
+    ("shared-platform-fits", {**dict(FIXED_SELECTION)["shared-prerequisite"], "budget": 9}),
+    ("shared-platform-short", {**dict(FIXED_SELECTION)["shared-prerequisite"], "budget": 8}),
+    ("cap-flips-the-choice", {"items": [{"id": "Big", "value": 9}, {"id": "Plant", "value": -7},
+                                        {"id": "Small1", "value": 3}, {"id": "Small2", "value": 3},
+                                        {"id": "Kit", "value": -2}],
+                              "requires": [["Big", "Plant"], ["Small1", "Kit"], ["Small2", "Kit"]], "budget": 5}),
+    ("zero-budget", {"items": [{"id": "Free", "value": 2}, {"id": "Paid", "value": 5}, {"id": "Fee", "value": -1}],
+                     "requires": [["Paid", "Fee"]], "budget": 0}),
+    ("budget-not-binding", {**dict(FIXED_SELECTION)["chain"], "budget": 100}),
+]
+
+
+def _random_budgeted(rng: random.Random) -> dict:
+    p = _random_selection(rng)
+    return {**p, "budget": rng.randint(0, 12)}
+
+
+def oracle_budgeted(seed: int) -> list[dict]:
+    rng = random.Random(seed)
+    cases = [{"name": n, "input": inp} for n, inp in FIXED_BUDGETED]
+    cases += [{"name": f"random{i}", "input": _random_budgeted(rng)} for i in range(7)]
+    for case in cases:
+        case["expected"] = {"profit": budgeted_brute_force(normalize_budgeted(case["input"]))}
+    return cases
+
+
+def judge_budgeted(answer: dict, expected: dict) -> bool:
+    return answer.get("certified") is True and answer["profit"] == expected["profit"]
+
+
 # == the reduction library ===================================================================
 
 @dataclass(frozen=True)
@@ -615,6 +1029,9 @@ class Reduction:
     card: dict                 # Mechanism Card (directive section 6 fields)
     direct: object = None      # answers that need no engine (proved from the problem alone)
     epistemic_classes: tuple = ("optimization",)   # the Competency Compiler's geometry vocabulary
+    # rounds: encode(problem, history) asks the level below for a list of requests, round after round,
+    # until it returns []; decode(problem, history) then answers. Allowed only at the head of a chain.
+    rounds: bool = False
 
 
 CARD_FIELDS = ("source", "source_version_and_license", "observed_behavior", "underlying_function",
@@ -742,7 +1159,86 @@ REDUCTIONS: dict[str, Reduction] = {r.function: r for r in (
               interface="Genesis 'constructed' route; mission function project.crash",
               rollback="CAPABILITY_DETACH; the LP engine and the history stay"),
         direct=direct_crash),
+    Reduction(
+        "selection-via-maxflow", "selection.closure", "graph.max_flow",
+        "Which projects, offers or investments to take when some require others first: the most profitable "
+        "set that includes every prerequisite, with a funding proof that nothing earns more and why each "
+        "profitable item left out does not pay for what it needs",
+        {"items": "list", "requires": "list"}, normalize_selection, encode_selection, decode_selection,
+        certify_selection, oracle_selection, judge_selection,
+        "rank items by value and add prerequisites greedily (misses shared prerequisites; proves nothing)",
+        _card(source=["J.-C. Picard, Maximal closure of a graph and applications to combinatorial problems, "
+                      "Management Science 22(11):1268-1272 (1976)",
+                      "J.M.W. Rhys, A selection problem of shared fixed costs and network flows, Management "
+                      "Science 17(3):200-207 (1970)",
+                      "M.L. Balinski, On a selection problem, Management Science 17(3):230-231 (1970)",
+                      "Ford & Fulkerson, Canadian J. Math. 8:399-404 (1956)"],
+              observed="with profits on source arcs, costs on sink arcs and uncuttable requirement arcs, the "
+                       "source side of a minimum cut is a best closed set; its profit is total profit minus the "
+                       "cut",
+              function="maximum-weight closure via max-flow/min-cut duality",
+              io={"in": "items[{id, value (negative = cost)}], requires[[item, prerequisite]]",
+                  "out": "chosen, profit, cost_taken, left_out_profitable, why_left_out{item: [[to, amount]]}, "
+                         "funding[[from, to, amount]]"},
+              resources="one engine call over items + 2 nodes and one arc per requirement (none when nothing is "
+                        "profitable); certificate linear in arcs",
+              failure="engine lies (refused by the max-flow certificate, then by GREG's closure, funding and "
+                      "duality checks); request beyond int32 total capacity refused before the engine",
+              recovery="as staffing: engine quarantined and re-acquired, construction re-formed over it",
+              evidence="frozen brute force over every closed subset; shared-prerequisite, cycle and chain cases",
+              primitive="profit source arcs, cost sink arcs, uncuttable requirement arcs (Picard network)",
+              mutation="certificate transport: the engine's flow becomes funding a person can read (Offer2's value "
+                       "would all go to the Audit it needs, so it is left out) and is re-proved as a weak-duality "
+                       "bound over every closed set",
+              risk="integer values only; probabilistic or time-dependent value needs a different model; the "
+                   "answer is a decision aid, not a commitment to spend",
+              capability="selection.closure: certified best project/offer portfolio under prerequisites",
+              verifier="GREG closure + funding-flow + duality check in exact integers; frozen brute force",
+              interface="Genesis 'constructed' route; mission function selection.closure; template "
+                        "constructed-question",
+              rollback="CAPABILITY_DETACH of the composed id; the engine and the history stay"),
+        direct=direct_selection),
 )}
+
+REDUCTIONS["selection.budgeted"] = Reduction(
+    "budgeted-selection-via-closure", "selection.budgeted", "selection.closure",
+    "Which projects or offers to take when some require others first and the money spent on costs may not "
+    "exceed a budget: the most profitable plan within the cap, with a proof tree that no plan within it earns "
+    "more",
+    {"items": "list", "requires": "list", "budget": "int"}, normalize_budgeted, encode_budgeted, decode_budgeted,
+    certify_budgeted, oracle_budgeted, judge_budgeted,
+    "the uncapped best portfolio, then drop costs until it fits (misses cheaper combinations; proves nothing)",
+    _card(source=["J.-C. Picard, Maximal closure of a graph and applications to combinatorial problems, "
+                  "Management Science 22(11):1268-1272 (1976)",
+                  "A.H. Land & A.G. Doig, An automatic method of solving discrete programming problems, "
+                  "Econometrica 28(3):497-520 (1960)",
+                  "D.S. Johnson & K.A. Niemi, On knapsacks, partitions, and a new dynamic programming technique "
+                  "for trees, Mathematics of Operations Research 8(1):1-14 (1983)"],
+          observed="a spending cap turns maximum-weight closure into a precedence-constrained knapsack (NP-hard); "
+                   "the uncapped best closure of any branch still bounds every capped plan in it",
+          function="branch-and-bound on the costs with maximum-weight-closure relaxations",
+          io={"in": "items[{id, value (negative = cost)}], requires[[item, prerequisite]], budget",
+              "out": "chosen, profit, spend, unspent, left_out_profitable, why_left_out{item: [costs it needs]}, "
+                     "proof_nodes, tree"},
+          resources="one closure problem per search node, asked in breadth-first rounds (each round one isolated "
+                    f"engine batch); at most {MAX_PROOF_NODES} nodes, else the request is refused",
+          failure="a node answer that fails its funding certificate refuses the whole answer; a portfolio whose "
+                  "proof would exceed the node cap is refused before any claim",
+          recovery="as selection.closure: the engine is quarantined and re-acquired, the constructions re-formed",
+          evidence="frozen brute force over every closed subset within budget; shared-platform, cap-flips-choice, "
+                   "zero-budget and non-binding cases",
+          primitive="Picard closure as a relaxation; branching on a cost taken or not taken",
+          mutation="the search tree becomes the certificate: every leaf carries its own re-provable funding flow, "
+                   "and GREG re-checks the partition and every bound from the original items",
+          risk="worst-case exponential in the number of costs (capped and refused, never truncated silently); "
+               "integer values only",
+          capability="selection.budgeted: certified best portfolio under prerequisites and a spending cap",
+          verifier="GREG partition + per-node funding certificates + budget and closure checks in exact integers; "
+                   "frozen brute force",
+          interface="Genesis 'constructed' route (chain: budgeted -> selection.closure -> graph.max_flow); template "
+                    "portfolio-in-words with 'Spend at most N.'",
+          rollback="CAPABILITY_DETACH of the composed id; selection.closure and the engine stay"),
+    rounds=True)
 
 
 def source_digest(reduction: Reduction) -> str:
@@ -769,6 +1265,8 @@ def chain(function: str, catalog: dict, reductions: dict | None = None):
         path.append(reductions[current])
         current = reductions[current].target
     if not path or catalog.get(current, {}).get("kind") != "package":
+        return None
+    if any(r.rounds for r in path[1:]):          # only a chain's head may search in rounds
         return None
     return path, current
 
@@ -823,6 +1321,66 @@ def composed_adapter(path, registry):
         if chain_digest(path) != prov["chain_digest"]:
             raise CapabilityError("capability refused: composed capability's reduction code changed since "
                                   "qualification; quarantine required")
+        if path[0].rounds:
+            return in_rounds(params_list, ctx, prov)
+        return run(path, params_list, ctx, prov)
+
+    def in_rounds(params_list, ctx, prov) -> list:
+        """A head that asks the chain below for several rounds of answers (each round one isolated
+        engine batch for every request still searching); its own certificate closes the result."""
+        head, below = path[0], path[1:]
+        states = []
+        for params in params_list:
+            try:
+                problem = head.normalize(params)
+                shortcut = head.direct(problem) if head.direct else None
+                states.append([problem, [], shortcut, None])
+            except CapabilityError as exc:
+                states.append(exc)
+        for _ in range(MAX_ROUNDS):
+            asks = []
+            for k, st in enumerate(states):
+                if isinstance(st, Exception) or st[2] is not None or st[3] == "done":
+                    continue
+                try:
+                    requests = head.encode(st[0], st[1])
+                except CapabilityError as exc:
+                    states[k] = exc
+                    continue
+                if not requests:
+                    st[3] = "done"
+                asks += [(k, r) for r in requests]
+            if not asks:
+                break
+            answers = run(below, [r for _, r in asks], ctx, prov)
+            for (k, request), answer in zip(asks, answers):
+                if isinstance(states[k], Exception):
+                    continue
+                if isinstance(answer, Exception):
+                    states[k] = answer
+                    continue
+                states[k][1].append((request, answer))
+        out = []
+        for st in states:
+            if isinstance(st, Exception):
+                out.append(st)
+                continue
+            problem, history, shortcut, done = st
+            try:
+                if shortcut is None and done != "done":
+                    raise ReductionError(f"the search did not finish within {MAX_ROUNDS} rounds")
+                answer = head.certify(problem, shortcut if shortcut is not None else head.decode(problem, history))
+            except ReductionError as exc:
+                out.append(CapabilityError(f"capability refused: composed capability failed its certificate: "
+                                           f"{exc}"))
+                continue
+            engines = sorted({a.get("engine") for _, a in history} - {None, "none needed"})
+            out.append({**answer, "composed_of": [r.reduction_id for r in path],
+                        "engine": ", ".join(engines) or "none needed", "subproblems_answered": len(history),
+                        "authority_created": False})
+        return out
+
+    def run(path, params_list, ctx, prov) -> list:
         descended = []
         for params in params_list:                      # descend: request errors stay per request
             levels, current, shortcut = [], params, None

@@ -10,10 +10,13 @@ Exit status 1 if any mutant survives or no longer applies.
 """
 from __future__ import annotations
 
+import os
+import queue
 import shutil
 import subprocess
 import sys
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -128,6 +131,13 @@ GREG_MUTANTS = [
 # Founder correction 2026-10-01 (#144): open-source engines are supply, GREG's certificate is the control.
 OSS_TESTS = ["tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_greg_linear_genesis.py",
              "tests/unit/test_greg_cognition.py"]
+# license qualification, document.text and the binary ceilings: their own group, so each mutant runs the tests that
+# catch it first instead of the slower genesis suites before them (job 6 hit its 40-minute limit with them merged)
+METABOLISM_TESTS = ["tests/unit/test_greg_license_expressions.py", "tests/unit/test_greg_model_license.py",
+                    "tests/unit/test_greg_document_text.py", "tests/unit/test_greg_license_qualification.py",
+                    "tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_greg_license_use_context.py",
+                    "tests/unit/test_greg_genesis_restore.py", "tests/unit/test_greg_binary_failure_types.py",
+                    "tests/unit/test_greg_document_phrase.py"]
 OSS_MUTANTS = [
     ("certificate skips edge feasibility", "greg/cognition/network.py",
      "if exact[b] > exact[a] + w + tolerance(exact[a] + w):", "if False:"),
@@ -174,6 +184,12 @@ OSS_MUTANTS = [
 # Frontier leap 2026-10-13 (RECOMBINE, #164): a construction is controlled by its own certificate and lifecycle.
 RECOMBINE_TESTS = ["tests/unit/test_greg_recombine.py"]
 RECOMBINE_MUTANTS = [
+    ("a portfolio that skips a prerequisite is certified", "greg/recombine.py",
+     "    if missing:\n        raise ReductionError(f\"the chosen set is not closed", "    if False:\n        raise ReductionError(f\"the chosen set is not closed"),
+    ("a portfolio below the funding bound is certified", "greg/recombine.py",
+     "    if profit != gain - funded:", "    if False:"),
+    ("funding along a made-up edge is accepted", "greg/recombine.py",
+     "        elif (u, v) not in requires:", "        elif False:"),
     ("repair re-admits the construction that failed in service", "greg/genesis.py",
      'if repair and repair.get("capability_id") == manifest.capability_id:\n            self._route(deficit_id, "constructed"',
      'if False:\n            self._route(deficit_id, "constructed"'),
@@ -330,40 +346,517 @@ CLOSURE_INTEGRITY_MUTANTS = [
      '    if False:\n        raise BodyError(f"{what} needs your founder key'),
 ]
 
+# 2026-10-15: capability formation is perception for Goal Gravity (a blocked goal wakes when what it waits on changes).
+CAPABILITY_PERCEPTION_TESTS = ["tests/integration/test_greg_capability_wakes_goal.py"]
+CAPABILITY_PERCEPTION_MUTANTS = [
+    ("a capability change is invisible to Goal Gravity", "greg/goal_gravity.py",
+     'elif t in ("greg.capability.registered", "greg.capability.state"):', "elif False:"),
+    ("a blocked construction does not perceive its engine", "greg/goal_gravity.py",
+     "        if function in (waiting, engine):", "        if function == waiting:"),
+    ("a capability state is flattened to available or not", "greg/goal_gravity.py",
+     'rec.hash, p["state"], "attributed")', 'rec.hash, p["state"] != "QUARANTINED", "attributed")'),
+]
+
+GOAL_FORMATION_TESTS = ["tests/integration/test_greg_goal_requests_formation.py"]
+GOAL_FORMATION_MUTANTS = [
+    ("a goal's formation request rides the mission's auto_attach", "greg/genesis.py",
+     "request.\n        if self._form_only:", "request.\n        if False:"),
+    ("a goal's formation request commissions the builder", "greg/genesis.py",
+     "        if self._form_only:\n            self._route(deficit_id, \"builder\"",
+     "        if False:\n            self._route(deficit_id, \"builder\""),
+    ("a goal does not perceive the formation it asked for", "greg/goal_gravity.py",
+     "            out.add((p[\"mission_id\"], p[\"function\"]))\n    return sorted(out)",
+     "            out.add((p[\"mission_id\"], p[\"function\"]))\n    return []"),
+    ("an attached implementation never closes the goal's deficit", "greg/goal_gravity.py",
+     "        serving = genesis.find_attached(p[\"function\"])\n        if serving is None:",
+     "        serving = genesis.find_attached(p[\"function\"])\n        if True:"),
+    ("a function requirement never reads present", "greg/goal_gravity.py",
+     "        if version == FUNCTION_VERSION:", "        if False:"),
+    ("a stopped goal still asks for formation", "greg/goal_gravity.py",
+     "        if gid not in facts.admitted or facts.stopped(gid) is not None:\n            continue\n        state",
+     "        if gid not in facts.admitted:\n            continue\n        state"),
+]
+
+PORTFOLIO_WORDS_TESTS = ["tests/unit/test_greg_portfolio_words.py"]
+PORTFOLIO_WORDS_MUTANTS = [
+    ("a cost is read as earnings", "greg/templates.py",
+     'value[m["name"]] = -amount if m["verb"].lower() == "costs" else amount', 'value[m["name"]] = amount'),
+    ("an unread portfolio sentence is silently dropped", "greg/templates.py",
+     "    if unread:\n        raise ValueError(\"GREG could not read: \" + \"; \".join(repr(u[:80]) for u in unread[:5])"
+     "\n                         + \". Write 'Offer1",
+     "    if False:\n        raise ValueError(\"GREG could not read: \" + \"; \".join(repr(u[:80]) for u in unread[:5])"
+     "\n                         + \". Write 'Offer1"),
+    ("a prerequisite with no value is accepted", "greg/templates.py",
+     "    if unknown:\n        raise ValueError(f\"{', '.join(unknown)}", "    if False:\n        raise ValueError(f\"{', '.join(unknown)}"),
+    ("the planner never reads a portfolio", "greg/planner.py",
+     "if PORTFOLIO.search(text) and PORTFOLIO_NEEDS.search(text):", "if False:"),
+]
+
+BUDGETED_TESTS = ["tests/unit/test_greg_budgeted_selection.py"]
+BUDGETED_MUTANTS = [
+    ("a head that searches in rounds is run as a single call", "greg/recombine.py",
+     "        if path[0].rounds:\n            return in_rounds(", "        if False:\n            return in_rounds("),
+    ("the proof tree need not partition the plans", "greg/recombine.py",
+     'if sorted(node.get("in", [])) != sorted(fix_in) or sorted(node.get("out", [])) != sorted(fix_out):',
+     'if False:'),
+    ("a branch closed by its bound is not checked against the answer", "greg/recombine.py",
+     "            if bound > profit:\n                raise ReductionError(\"a branch closed by its bound",
+     "            if False:\n                raise ReductionError(\"a branch closed by its bound"),
+    ("a node's funding certificate is not re-proved", "greg/recombine.py",
+     "node_answer = certify_selection(normalize_selection(sub), {",
+     "node_answer = (lambda q, a: a)(normalize_selection(sub), {"),
+    ("a rounds reduction may sit inside a chain", "greg/recombine.py",
+     "    if any(r.rounds for r in path[1:]):", "    if False:"),
+    ("a stated budget is ignored", "greg/templates.py",
+     'function = "selection.budgeted" if "budget" in params else "selection.closure"', 'function = "selection.closure"'),
+]
+
+# Cortex 0.2.2: the Seed Cortex 0.1.6 repairs ported onto this line (PR #167 -> #184). Each guard must be load-bearing.
+PORT_TESTS = ["tests/unit/test_cortex_seed_ports.py", "tests/unit/test_greg_seed_port_paths.py"]
+PORT_MUTANTS = [
+    ("settlement matches the method name only", "cortex/memory.py",
+     "        if key not in selected and key not in ran:\n",
+     "        if method not in [k.split(\"@\")[0] for k in [*selected, *ran]]:\n"),
+    ("a route that never ran settles", "cortex/memory.py",
+     "if outcome_status in SETTLING and key not in ran:", "if False:"),
+    ("a superseded lead is not counted as run", "cortex/memory.py",
+     ' + list(receipt["route"].get("attempts") or [])', ""),
+    ("a tampered receipt settles", "cortex/memory.py",
+     'if unsigned.pop("receipt_id", None) != digest(unsigned):', "if False:"),
+    ("one receipt settles a method many times", "cortex/memory.py",
+     "        if outcome_status in SETTLING and any(\n", "        if False and any(\n"),
+    ("a composed part settles under the whole-problem class", "cortex/memory.py",
+     '        geometry = (receipt["route"].get("part_geometries") or {}).get(key) or geometry\n', ""),
+    ("reorder reads the whole-problem cell", "cortex/memory.py",
+     'cell = (part_geometries or {}).get(key) or geometry.epistemic_class or "unresolved"',
+     'cell = geometry.epistemic_class or "unresolved"'),
+    ("a cap-dropped route is called not required", "cortex/routing.py",
+     "dropped_by_cap = eligible_parts[MAX_COMPOSITION:]", "dropped_by_cap = []"),
+    ("an unanswered part is recommended around", "cortex/routing.py",
+     'if unanswered and disposition in ("recommend", "bounded_test"):', "if False:"),
+    ("missing input is called a capability gap", "cortex/routing.py",
+     "            if eligible and not unanswered:", "            if False:"),
+    ("a withheld reader is called missing input", "cortex/routing.py",
+     "            if eligible and not unanswered:", "            if eligible:"),
+    ("options are parsed after the organs spend", "cortex/routing.py",
+     '        options, recs = [], []\n        if problem.payload.get("options"):',
+     '        options, recs = [], []\n        if False:'),
+    ("a late rejection reports no spend", "cortex/routing.py",
+     "expenditure = (spent or Expenditure()).plus(", "expenditure = (Expenditure()).plus("),
+    ("an expiring mandate passes without an instant", "cortex/gates.py",
+     "        if not as_of:\n            # 0.2.2", "        if False:\n            # 0.2.2"),
+    ("a single receipt verifies a deficit", "cortex/routing.py",
+     '"why": reason,\n               "verified": False,', '"why": reason,\n               "verified": True,'),
+    ("a worker may report more model calls than allowed", "greg/cognition/bridge.py",
+     "if max_model_calls is not None and (type(calls) is not int or calls > max_model_calls):", "if False:"),
+    ("the caller's instant decides a mandate's expiry", "greg/cognition/bridge.py",
+     "    return str(declared) if parsed > now else stamp", "    return str(declared)"),
+    ("an empty compile request becomes a Genesis deficit", "greg/cognition/compiler.py",
+     "        if native and not data:", "        if False:"),
+    ("every unread input is called missing", "greg/cognition/compiler.py",
+     "        if native and not data:", "        if native:"),
+    ("a cap-dropped part is recommended around", "cortex/routing.py",
+     'elif dropped_by_cap and disposition in ("recommend", "bounded_test"):', "elif False:"),
+    ("a malformed record raises instead of being rejected", "cortex/gates.py",
+     "        if not isinstance(value, Mapping):\n            raise CortexError(f\"authority record must",
+     "        if False:\n            raise CortexError(f\"authority record must"),
+    ("any first-listed mandate's weights rank", "cortex/routing.py",
+     "and r.body.get(\"weights\") and r.record_id in accepted)}", "and r.body.get(\"weights\"))}"),
+    ("list order resolves conflicting founder weights", "cortex/routing.py",
+     "return next(iter(found.values())) if len(found) == 1 else None", "return next(iter(found.values()), None)"),
+    ("an option's own harm cannot raise its class", "cortex/gates.py",
+     '            declared, cc = cc, "financial"', "            declared = None"),
+    ("a cortex non-answer is labelled answered", "greg/cognition/bridge.py",
+     'outcome=receipt["outcome"], outcome_state=outcome_state_for(state), routing=routing)',
+     'outcome=receipt["outcome"], routing=routing)'),
+    ("a high-consequence composition is answered", "greg/cognition/compiler.py",
+     "        if high:\n            # as on the problem, operation", "        if False:\n            # as on the problem, operation"),
+    ("the compiler's control flag reaches the cortex", "greg/cognition/compiler.py",
+     "if k not in PART_FLAGS and k not in foreign}", "if k not in foreign}"),
+    # retired 2026-10-21 as equivalent: the route-policy loop that follows ("a masked part routes another organ...")
+    # withholds every part routing an unselected organ by itself, so dropping the first strip changes nothing
+    ("a claim that never ran is credited", "greg/cognition/seed_path.py",
+     "for c in receipt.payload['claims'] if claim_ran(c)],", "for c in receipt.payload['claims']],"),
+    ("a schedule-optimize lead is keyed to the whole problem", "cortex/routing.py",
+     "for k in executed if plan})", "for k in () if plan})"),
+    ("a resolved class is called an unknown geometry", "cortex/routing.py",
+     '            state = "NO_ELIGIBLE_METHOD"\n            withheld',
+     '            state = "NO_ELIGIBLE_METHOD" if any(e.eligible for e in eligibility) else "UNSUPPORTED_GEOMETRY"'
+     '\n            withheld'),
+    ("an unreached model is a run baseline", "cortex/evaluation/crossgeo.py",
+     'if name in ("always_llm", "tool_llm") and isinstance(exc, (Unreached, OSError)):', "if False:"),
+    ("an unserved baseline books a model call", "greg/cognition/seed_evaluation.py",
+     "compute_cost={'model_calls':int(provenance is not None)", "compute_cost={'model_calls':1"),
+    ("an errored baseline counts as run", "cortex/evaluation/scoring.py",
+     "        if errored:\n", "        if False:\n"),
+    ("the freeze hashes only the hand list", "cortex/evaluation/run.py",
+     "FROZEN_CODE = FROZEN_CODE + [p for p in FROZEN_SUPPORT if p not in FROZEN_CODE]", "FROZEN_CODE = FROZEN_CODE"),
+    ("a signed mission decides at the caller's instant", "greg/cognition/cortex.py",
+     "        with signed_path():\n            return reason(", "        if True:\n            return reason("),
+    ("the wall clock reaches a frozen evaluation", "greg/cognition/bridge.py",
+     "            if trusted_clock or _SIGNED_PATH.get() else None", "            if True else None"),
+    ("the compile's consequence never reaches the organ", "greg/cognition/compiler.py",
+     "        payload, forwarded = _forward_consequence(payload, g, vector)\n", "        forwarded = None\n"),
+    ("a protection matter becomes a capability gap", "greg/cognition/compiler.py",
+     "g.geometry in HUMAN_CLASSES or protection:", "g.geometry in HUMAN_CLASSES:"),
+    ("nothing reads an affected party", "greg/cognition/compiler.py",
+     '    "protection_review": ("affected_party",),\n', ""),
+    ("a reported run that loaded unfrozen code reports a verdict", "cortex/evaluation/run.py",
+     "    if manifest is not None and unfrozen:", "    if False:"),
+    ("a repeated arm runs twice", "cortex/evaluation/run.py",
+     "    if len(set(arm_names)) != len(arm_names):", "    if False:"),
+    # adversarial review of the port (2026-10-21)
+    ("a mandate's malformed weights reach the ranking", "cortex/gates.py",
+     '        if "weights" in body and not (', '        if False and not ('),
+    ("a record's malformed scope reaches the gates", "cortex/gates.py",
+     '        if "scope" in body and not isinstance(body["scope"], Mapping):', "        if False:"),
+    ("an unhashable record id reaches the ranking", "cortex/gates.py",
+     '        if value.get("record_id") is not None and not (', "        if False and not ("),
+    ("a dominated option under another authority drops the founder's weights", "cortex/routing.py",
+     "_founder_weights(recs, gate_reports, pareto_front(options, gate_reports))",
+     "_founder_weights(recs, gate_reports, [o.option_id for o in options])"),
+    ("a schedule with no eligible formal engine is recommended", "cortex/routing.py",
+     "                    if plan is not None and not executed:", "                    if False:"),
+    ("a deficit names only the first part's families", "cortex/routing.py",
+     "    classes = {epistemic_class, *dict(unanswered or {}).values()}", "    classes = {epistemic_class}"),
+    ("the extractor's model call is not planned", "cortex/routing.py",
+     "        if EXTRACT in selected and self._extraction_needs_model(problem.payload):", "        if False:"),
+    ("the payload's as_of judges authority on a signed path", "cortex/routing.py",
+     'as_of=authority_as_of or problem.payload.get("as_of"))', 'as_of=problem.payload.get("as_of"))'),
+    ("the body clock overwrites the question's as_of", "greg/cognition/bridge.py",
+     '        serving = {**problem, "payload": {**pinned_payload, "resources": resources}}',
+     '        serving = {**problem, "payload": {**pinned_payload, "resources": resources,\n'
+     '                                          **({"as_of": instant} if instant else {})}}'),
+    ("a composition on a signed mission decides at the caller's instant", "greg/cognition/cortex.py",
+     "            with signed_path():   # a signed mission decides now", "            if True:   # a signed mission decides now"),
+    ("a masked part routes another organ once its mask is withheld", "greg/cognition/compiler.py",
+     '        while extra := [key for key, _ in _route_parts(payload) if key != chosen.get("organ")]:',
+     "        while extra := []:"),
+    ("a lead with no answer settles a success", "cortex/memory.py",
+     '        if outcome_status == "verified_success" and key not in _ran(receipt, answered=True):', "        if False:"),
+    ("the engine that answered cannot settle", "cortex/memory.py",
+     "        if key not in selected and key not in ran:\n", "        if key not in selected:\n"),
+    ("a fallback engine is keyed to no part", "cortex/routing.py",
+     "                part_geometries.setdefault(k, slot_class)", "                pass"),
+    ("an engine that ran is called not required", "cortex/routing.py",
+     '"why_not": (ran_as[e.key] if e.key in ran_as', '"why_not": (ran_as[e.key] if False'),
+    ("an installed dependency in the checkout is called unfrozen code", "cortex/evaluation/run.py",
+     '        if rel[:1] == ("tests",) or {"site-packages", "dist-packages"} & set(rel) \\',
+     '        if rel[:1] == ("tests",) \\'),
+    ("the unfrozen guard drops the real reasons", "cortex/evaluation/run.py",
+     '                                       *before.get("reasons", [])],', "                                       ],"),
+    ("a malformed reply is an unrun baseline", "cortex/evaluation/arms.py",
+     "    out = _parse_or_malformed(reply)", "    out = _parse(reply)"),
+    ("a model that dies inside the call is a scored failure", "cortex/evaluation/arms.py",
+     '        raise Unreached(f"{type(exc).__name__}: {exc}"[:300]) from exc', "        raise"),
+    ("the reported file drops the incomplete rows", "cortex/evaluation/crossgeo.py",
+     '"incomplete_rows": heldout.get("incomplete_rows", {})}', '"incomplete_rows": {}}'),
+    ("checks sharing one receipt settle it twice", "greg/cognition/learned_routing.py",
+     '        key = (claim["receipt"]["receipt_id"], claim["lead"])', '        key = (claim["claim"],)'),
+    ("a refused claim stops every later request", "greg/cognition/learned_routing.py",
+     "        except CortexError:\n            # A claim the ledger refuses", "        except ImportError:\n            # A claim the ledger refuses"),
+    ("a pinned organ's mission reports the other parts as a gap", "greg/cognition/bridge.py",
+     '        pinned_payload, outside_pin = _pinned_payload(problem["payload"], forced)',
+     '        pinned_payload, outside_pin = problem["payload"], []'),
+    ("the compile's harm never reaches the organ", "greg/cognition/compiler.py",
+     "    if raised:\n        declared[\"harm\"]", "    if False:\n        declared[\"harm\"]"),
+]
+
+METABOLISM_MUTANTS = [
+    # license qualification (directive 2026-10-22, 5.3 and 6): legally qualified is a separate state
+    ("an uncleared license still auto-attaches", "greg/genesis.py",
+     "allowed = (not cognition and licensed", "allowed = (not cognition and True"),
+    ("an engine dependency attaches whatever its license", "greg/genesis.py",
+     "allowed = (licensed and mission.spec", "allowed = (True and mission.spec"),
+    ("an unclassified or restricted license is cleared", "greg/licensing.py",
+     "    cleared = ORDER.index(worst) <= ORDER.index(CLEARED_UP_TO)\n    verdict = (\"CLEARED\" if",
+     "    cleared = True\n    verdict = (\"CLEARED\" if"),
+    ("AND takes the most permissive term", "greg/licensing.py",
+     "return _worst([p[0] for p in parts]), any(", "return _best([p[0] for p in parts]), any("),
+    ("a card without an assessment is cleared", "greg/licensing.py",
+     'return False, "no license assessment on its Mechanism Card"', 'return True, ""'),
+    ("a stricter License field beside a classifier is ignored", "greg/licensing.py",
+     "(ORDER.index(text_class) > ORDER.index(cls) or text_class in HELD)", "False"),
+    # document.text (directive 2026-10-22): an acquired PDF reader qualified on GREG's own PDFs; binary licenses
+    ("the frozen oracle accepts any extraction", "greg/genesis.py",
+     'if got != case["expected"]:', "if False:"),
+    ("a binary under a not-open license attaches itself", "greg/licensing.py",
+     'assessment.get("class") in (NETWORK_COPYLEFT, NOT_OPEN)', "False"),
+    ("a restrictive DEP-5 'with' addition is read as an exception", "greg/licensing.py",
+     'if dialect == "spdx" or ("exception" in addition.lower() and extra not in HELD):', "if True:"),
+    ("a DEP-5 license definition paragraph is read as applying", "greg/licensing.py",
+     'applies = index == 0 or "files" in fields', "applies = True"),
+    ("a phrase is judged on the receipt's bounded prefix", "greg/genesis.py",
+     '"derive": documents.find_phrase,', ""),
+    ("a binary killed at the output ceiling is read as an answer", "greg/genesis.py",
+     "        if proc.returncode == -signal.SIGXFSZ:", "        if False:"),
+    ("a binary's output is unbounded", "greg/genesis.py",
+     "        if len(stdout) > mechanisms.MAX_OUTPUT:", "        if False:"),
+    ("a binary writes past the output ceiling", "greg/genesis.py",
+     '"resource.setrlimit(resource.RLIMIT_FSIZE, (cap, cap))\\n"', '"pass\\n"'),
+    ("a binary runs without a memory ceiling", "greg/genesis.py",
+     '"    resource.setrlimit(resource.RLIMIT_AS, (mem, mem))\\n"', '"    pass\\n"'),
+    ("a phrase missing from a scanned page is reported absent", "greg/documents.py",
+     '(False if seen["complete"] else None)', "False"),
+    ("qualification ignores whether a reader says it read everything", "greg/genesis.py",
+     'elif case.get("complete") is False and', "elif False and"),
+    # independent review of f929246 (separate session): stamped scans, spool tampering, the kill path, companions
+    ("a page with an image counts as read", "greg/documents.py",
+     "not empty and imaged is not None and not imaged", "not empty"),
+    ("a found phrase is not declared decided", "greg/documents.py",
+     '            out["decided"] = ["found"]', "            pass"),
+    ("a spool file is read through a planted link", "greg/genesis.py",
+     "os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK", "os.O_RDONLY | os.O_NONBLOCK"),
+    ("a spool file that is no longer a regular file is read", "greg/genesis.py",
+     "        if not stat_module.S_ISREG(os.fstat(fd).st_mode):", "        if False:"),
+    ("a binary that honours SIGXFSZ is not killed at the ceiling", "greg/genesis.py",
+     '    "signal.signal(signal.SIGXFSZ, signal.SIG_DFL)\\n"', '    "pass\\n"'),
+    ("a companion binary's license is not read before attach", "greg/licensing.py",
+     "for assessment in _binary_assessments(provenance):", "for assessment in _binary_assessments(provenance)[:1]:"),
+    ("a network-copyleft term beside an unclassified one is not held", "greg/licensing.py",
+     'return [t for t in terms if t.get("held") or t["class"] in HELD]', "return []"),
+    # license expression semantics (review of #201 at a1d2abf, SPDX-1 to SPDX-7; directive 2026-10-22 section VII)
+    ("an unknown name masks a restrictive one in the same field", "greg/licensing.py",
+     "parts]), any(p[1] for p in parts), [a for p", "parts]), False, [a for p"),
+    ("OR elects an alternative with a known restriction on a tie", "greg/licensing.py",
+     "cls, _, elected = min(parts, key=lambda p: (ORDER.index(p[0]), p[1]))",
+     "cls, _, elected = min(parts, key=lambda p: ORDER.index(p[0]))"),
+    ("an unknown DEP-5 base hides a restrictive addition", "greg/licensing.py",
+     "cls = _worst(restrictive or [cls, extra])", "cls = _worst([cls, extra])"),
+    ("an unparseable expression hides its restrictive names", "greg/licensing.py",
+     'held = [a for a in (_atom(w, dialect) for w in words[:MAX_WORDS]) if a["class"] in HELD]', "held = []"),
+    ("a stricter classifier beside an expression is ignored", "greg/licensing.py",
+     'if ORDER.index(atom["class"]) > ORDER.index(cls) or atom["class"] in HELD:', "if False:"),
+    ("a classifier naming an alternative of the expression raises its class", "greg/licensing.py",
+     'if atom["class"] in present and (atom["class"] not in HELD or atom["atom"].startswith("OSI Approved")):',
+     "if False:"),
+    ("an unclassified SPDX License field beside a classifier is informational", "greg/licensing.py",
+     '(text_class == UNKNOWN and text_decl["spdx"])', "False"),
+    ("restrictive wording in a short License field is not read", "greg/licensing.py",
+     "return [(m.group(0), cls) for pattern, cls in RIDERS", "return [(m.group(0), cls) for pattern, cls in ()"),
+    ("restrictive license families are unclassified at other versions", "greg/licensing.py",
+     "    held = [cls for _, cls in _riders(name)]\n    return _worst(held) if held else UNKNOWN",
+     "    held = []\n    return _worst(held) if held else UNKNOWN"),
+    ("a second License line in one DEP-5 paragraph overwrites the first", "greg/licensing.py",
+     "fields.setdefault(key, []).append(value.strip())", "fields[key] = [value.strip()]"),
+    ("a Files line inside a DEP-5 paragraph does not start a stanza", "greg/licensing.py",
+     'if key == "files" and ("files" in fields or "format" in fields):', "if False:"),
+    ("a DEP-5 Files stanza without a License is skipped", "greg/licensing.py",
+     'for synopsis in fields.get("license") or [""]:', 'for synopsis in fields.get("license") or []:'),
+    ("an inclusive commercial phrase reads as a restriction", "greg/licensing.py",
+     'out.append(norm if re.search(RESTRICTING, norm) else re.sub(INCLUSIVE, " ", norm))', "out.append(norm)"),
+    ("AND obligations are not conjunctive", "greg/licensing.py",
+     '"obligations": sorted({OBLIGATIONS[a["class"]] for a in elected}), "parts": parts,',
+     '"obligations": sorted({OBLIGATIONS[p["class"]] for p in parts}), "parts": parts,'),
+    ("the use verdict mixes terms across alternatives", "greg/licensing.py",
+     "    return min(parts, key=lambda p: (VERDICT_ORDER.index(p[0]), p[1], sum(e[0][\"class\"] in HELD for e in p[2]),",
+     "    return (max((p[0] for p in parts), key=VERDICT_ORDER.index), 0, [e for p in parts for e in p[2]])"),
+    ("a DEP-5 header that disagrees with its Files stanzas is not reported", "greg/licensing.py",
+     'disagree = bool(header and stanzas and header[0] != _worst(stanzas))', "disagree = False"),
+    ("source-available and restricted-use terms are not distinguished", "greg/licensing.py",
+     "return SOURCE_AVAILABLE if _SOURCE_AVAILABLE.search(_norm(ident)) else RESTRICTED_USE",
+     "return RESTRICTED_USE"),
+    # use-context qualification, drafts D-LIC-1 and P4c (directive 2026-10-23); exercised with the policy passed
+    ("an unclassified license is compatible because the use is local", "greg/licensing.py",
+     'return UNCERTAIN, "license not classified', 'return COMPATIBLE, "license not classified'),
+    ("copyleft is compatible even when redistributed or linked", "greg/licensing.py",
+     'local = use.get("interaction") == "separate_process" and not use.get("redistributed")', "local = True"),
+    ("network copyleft ignores network exposure and modification", "greg/licensing.py",
+     'if local and use.get("network") == "none" and not use.get("modified")', "if local"),
+    ("a not-open term is merely uncertain", "greg/licensing.py",
+     'return INCOMPATIBLE, "not an open-source license', 'return UNCERTAIN, "not an open-source license'),
+    ("an unreadable assessment is compatible", "greg/licensing.py",
+     '"verdict": UNCERTAIN,\n                          "why": "no license assessment',
+     '"verdict": COMPATIBLE,\n                          "why": "no license assessment'),
+    ("the capability takes its most permissive term", "greg/licensing.py",
+     "worst = max((t[\"verdict\"] for t in terms)", "worst = min((t[\"verdict\"] for t in terms)"),
+    ("the qualification digest ignores the binary's content", "greg/licensing.py",
+     '{"binary_sha256": provenance.get("binary_sha256"), "version"', '{"binary_sha256": None, "version"'),
+    ("P4c attaches whatever the use verdict", "greg/licensing.py",
+     'if q["verdict"] != COMPATIBLE:\n            return False', 'if False:\n            return False'),
+    ("a bare founder attach clears an unresolved hold", "greg/licensing.py",
+     "    if not isinstance(clearance, dict):\n        return False, (f\"license hold unresolved",
+     "    if not isinstance(clearance, dict):\n        return True, \"\", None\n        return False, (f\"license hold unresolved"),
+    ("a clearance for an earlier assessment is accepted", "greg/licensing.py",
+     'if clearance.get("assessment_digest") != q["assessment_digest"]:', "if False:"),
+    ("a clearance for another use is accepted", "greg/licensing.py", 'if clearance.get("use") != q["use"]:', "if False:"),
+    ("a clearance without a basis is accepted", "greg/licensing.py", 'if not str(clearance.get("basis") or "").strip():', "if False:"),
+    ("a clearance that skips an obligation is accepted", "greg/licensing.py", "    if missing:\n", "    if False:\n"),
+    ("a founder signature overrides third-party rights", "greg/licensing.py",
+     'if any(t["verdict"] == INCOMPATIBLE for t in q["terms"]) and not', "if False and not"),
+    ("a run proceeds after the use context changed", "greg/licensing.py",
+     'if now["use_digest"] != recorded.get("use_digest"):', "if False:"),
+    ("a run proceeds after the license facts changed", "greg/licensing.py",
+     'if now["assessment_digest"] != recorded.get("assessment_digest"):', "if False:"),
+    ("a never-qualified capability runs under P4c", "greg/licensing.py",
+     'return False, "no use qualification recorded; requalification required"', 'return True, ""'),
+    # restart (review of #201 at a1d2abf, GATE-1 and GATE-2/DOC-8)
+    ("a founder's detach is quarantined over at restart", "greg/genesis.py",
+     'if why is None or state == "DETACHED":', "if why is None:"),
+    ("a restarted reader loses its companions", "greg/genesis.py",
+     'if isinstance(c, Candidate) and c.binary_name == origin["binary_name"]', "if False"),
+    ("a changed companion is trusted at restart", "greg/genesis.py",
+     'pinned = [(binary, manifest.provenance.get("binary_sha256"))] + [',
+     'pinned = [(binary, manifest.provenance.get("binary_sha256"))] + 0 * ['),
+    # failure types and limits (review of #201 at a1d2abf, DOC-3, GATE-5, GATE-6, DOC-10)
+    ("an unreadable input counts against the reader", "greg/genesis.py",
+     'f"{name} could not read this input (exit status {returncode}): {tail}"', 'f"{name} exited {returncode}: {tail}"'),
+    ("a kill at a ceiling is not typed as a budget", "greg/genesis.py",
+     'failure_class="budget_exceeded")\n    return CapabilityError(f"{name} could not read',
+     'failure_class=None)\n    return CapabilityError(f"{name} could not read'),
+    ("a changed companion is untyped", "greg/genesis.py",
+     'quarantine required",\n                                  failure_class="executor_error")',
+     'quarantine required")'),
+    ("a binary's timeout escapes untyped", "greg/genesis.py",
+     'except subprocess.TimeoutExpired:\n            raise CapabilityError(f"{name} did not finish',
+     'except ZeroDivisionError:\n            raise CapabilityError(f"{name} did not finish'),
+    ("a binary's version line is stored whole", "greg/genesis.py", "[line[:VERSION_LINE] for line in", "[line for line in"),
+    # phrase matching (review of #201 at a1d2abf, DOC-4, DOC-5, DOC-6)
+    ("ligatures and compatibility forms are compared raw", "greg/documents.py", 'unicodedata.normalize("NFKC", text)', "text"),
+    ("typographic quotes and dashes are compared raw", "greg/documents.py", ".translate(_FOLD).split()", ".split()"),
+    ("a phrase is matched inside a longer word", "greg/documents.py", "_BEFORE + re.escape(form) + _AFTER", "re.escape(form)"),
+    ("a line-end-dehyphenated phrase is not looked for joined", "greg/documents.py",
+     "return [needle] + ([joined] if", "return [needle] + 0 * ([joined] if"),
+    ("a reader's companions read a different copy of the input", "greg/genesis.py",
+     "_snapshot(path, ctx.workspace) if candidate.companions else (path, None)", "(path, None)"),
+    ("a snapshot is taken through a link or of a FIFO", "greg/genesis.py",
+     "        if not stat.S_ISREG(info.st_mode):\n            raise CapabilityError(f\"{path.name} is not a regular file\")",
+     "        if False:\n            raise CapabilityError(f\"{path.name} is not a regular file\")"),
+    ("an acquired binary runs without requalification", "greg/genesis.py",
+     "requalified, why = licensing.requalify_binary(ctx.manifest, binary)", 'requalified, why = True, ""'),
+    # model-weight licenses (directive 2026-10-22 section VII): the license an installed Ollama model carries
+    ("an edited Apache-2.0 text is cleared by its shape", "greg/licensing.py",
+     "if hashlib.sha256(flat[start:stop].encode()).hexdigest() == APACHE_2_TERMS_SHA256:", "if True:"),
+    ("an edited MIT text is cleared by its opening", "greg/licensing.py",
+     "if rest.startswith(_MIT_TERMS):", "if rest.startswith(_MIT_TERMS[:60]):"),
+    ("terms added beside a standard text are ignored", "greg/licensing.py",
+     "        if extra:\n            atoms.append(", "        if False:\n            atoms.append("),
+    ("restrictive wording inside a model license text is not read", "greg/licensing.py",
+     "    for pattern, cls in RIDERS:\n        if cls != NOT_OPEN:", "    for pattern, cls in ():\n        if cls != NOT_OPEN:"),
+    ("a Llama community license is not recognised", "greg/licensing.py",
+     '(r"(?<![a-z0-9])llama-?[2-9](?:\.[0-9]+)?(?![0-9])", NOT_OPEN), ', ""),
+    ("an OpenRAIL license is not recognised", "greg/licensing.py",
+     '          (r"(?<![a-z])(?:open-?)?rail(?:-m|-license|-[0-9.]+|\+\+)?(?![a-z])", NOT_OPEN),\n', ""),
+    ("a part of a word reads as a rider in a full text", "greg/licensing.py",
+     "if m.end() == len(norm) or not norm[m.end()].isalpha():", "if True:"),
+    ("the GPL-2 distribution clause reads as a use restriction", "greg/licensing.py",
+     'norm = re.sub(r"only-for-non-?commercial-distribution", " ", _masked(text))', "norm = _masked(text)"),
+    ("a model's weights are cleared whatever their license", "greg/licensing.py",
+     '"held": not cleared, "auto_attach": cleared,', '"held": False, "auto_attach": True,'),
+    ("a model without a license is not named as such", "greg/licensing.py",
+     "    elif not licenses:\n        parts.append(", "    elif False:\n        parts.append("),
+    ("a license blob that does not match its digest is read", "greg/licensing.py",
+     'if data is None or "sha256:" + hashlib.sha256(data).hexdigest() != digest:', "if data is None:"),
+    ("a model assessment is not bound to its weights", "greg/licensing.py",
+     '"weights": sorted(str(layer.get("digest"))', '"weights": sorted(str(None)'),
+    ("a linked license blob is followed", "greg/licensing.py",
+     'os.O_RDONLY | os.O_NONBLOCK | getattr(os, "O_NOFOLLOW", 0))', "os.O_RDONLY | os.O_NONBLOCK)"),
+    # independent verification of 083c91ea (V1-V9)
+    ("a restricting sentence's inclusive phrase is masked", "greg/licensing.py",
+     'out.append(norm if re.search(RESTRICTING, norm) else re.sub(INCLUSIVE, " ", norm))',
+     'out.append(re.sub(INCLUSIVE, " ", norm))'),
+    ("a License line before its Files line starts a definition", "greg/licensing.py",
+     'if key == "files" and ("files" in fields or "format" in fields):', 'if key == "files" and fields:'),
+    ("an unparseable field loses its multi-word restrictive names", "greg/licensing.py",
+     "        held += [{\"atom\": f\"mentions '{p}'\"", "        held += 0 * [{\"atom\": f\"mentions '{p}'\""),
+    ("Elastic-2.0 in free text is not read", "greg/licensing.py", "|(?<![a-z0-9])elastic-2\\.0(?![0-9])", ""),
+    ("an unparseable expression hides the classifiers beside it", "greg/licensing.py",
+     "            basis, shown, note = \"License-Expression (PEP 639), unparseable\", expression, str(exc)[:160]\n",
+     "            basis, shown, note = \"License-Expression (PEP 639), unparseable\", expression, str(exc)[:160]\n"
+     "            return _part(name, basis, shown, tree, notes)\n"),
+    ("a non-OSI classifier GREG does not list is ignored beside an expression", "greg/licensing.py",
+     '                    tree = {"and": [tree, atom]}\n                    basis += "; a classifier GREG cannot classify"',
+     '                    pass'),
+    ("a name only like a known family is read as that family", "greg/licensing.py",
+     'unlisted = cls != UNKNOWN and _table_class(base, dialect) == UNKNOWN', "unlisted = False"),
+    ("an unlisted family name is compatible under P4c", "greg/licensing.py",
+     'if node.get("unlisted") and verdict == COMPATIBLE:', "if False:"),
+    ("an OR with a held alternative and no cleared one is released", "greg/licensing.py",
+     "return cls, not cleared and any(p[1] for p in parts), elected", "return cls, _, elected"),
+    ("the use election ignores the class on equal verdicts", "greg/licensing.py",
+     "    return min(parts, key=lambda p: (VERDICT_ORDER.index(p[0]), p[1], sum(",
+     "    return min(parts, key=lambda p: (VERDICT_ORDER.index(p[0]), 0, sum("),
+    ("the use election depends on operand order", "greg/licensing.py",
+     "                                     sorted(str(e[0][\"atom\"]) for e in p[2])))", "                                     0))"),
+    ("deep nesting is parsed without a bound", "greg/licensing.py",
+     "            if depth > MAX_NESTING:\n                raise ValueError", "            if False:\n                raise ValueError"),
+    ("an unparseable License-Expression loses the restrictive names no wording catches", "greg/licensing.py",
+     'for p, c in _riders(expression)] + _named_restrictions(expression, "License-Expression")',
+     "for p, c in _riders(expression)]"),
+    ("a one-line License field packaging rejects loses the restrictive names in it", "greg/licensing.py",
+     '            atoms += _named_restrictions(one, "License field")\n', "            pass\n"),
+    ("a word of an unparseable field is read as restrictive wording", "greg/licensing.py",
+     'for c in [_table_class(w, "spdx")] if c in HELD]', 'for c in [_lookup(w, "spdx")] if c in HELD]'),
+    # review of #230 (blocking): terms written into a copyright notice cleared the weights
+    ("any line that starts as a copyright notice is dropped beside the terms", "greg/licensing.py",
+     '    return not re.search(r"[.;:!?]", holder) and not _NORMATIVE.search(holder)\n', "    return True\n"),
+    ("a sentence after the holder's name is part of the notice", "greg/licensing.py",
+     '    return not re.search(r"[.;:!?]", holder) and not _NORMATIVE.search(holder)\n',
+     "    return not _NORMATIVE.search(holder)\n"),
+    ("a normative word in the holder's name is part of the notice", "greg/licensing.py",
+     '    return not re.search(r"[.;:!?]", holder) and not _NORMATIVE.search(holder)\n',
+     '    return not re.search(r"[.;:!?]", holder)\n'),
+    ("the Apache notice's copyright field takes any text", "greg/licensing.py",
+     "            if notice and _copyright_only(next(g for g in notice.groups() if g)):", "            if notice:"),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
-          ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS),
+          ("open-source genesis", OSS_TESTS, OSS_MUTANTS),
+          ("open-source metabolism", METABOLISM_TESTS, METABOLISM_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS),
           ("mind construction", MIND_CONSTRUCTION_TESTS, MIND_CONSTRUCTION_MUTANTS),
           ("recovery", RECOVERY_TESTS, RECOVERY_MUTANTS),
           ("evidence chain at commit", COMMIT_CHAIN_TESTS, COMMIT_CHAIN_MUTANTS),
           ("founder tier", FOUNDER_TIER_TESTS, FOUNDER_TIER_MUTANTS),
           ("founder tier (body)", FOUNDER_TIER_BODY_TESTS, FOUNDER_TIER_BODY_MUTANTS),
-          ("closure integrity", CLOSURE_INTEGRITY_TESTS, CLOSURE_INTEGRITY_MUTANTS)]
+          ("closure integrity", CLOSURE_INTEGRITY_TESTS, CLOSURE_INTEGRITY_MUTANTS),
+          ("capability perception", CAPABILITY_PERCEPTION_TESTS, CAPABILITY_PERCEPTION_MUTANTS),
+          ("goal-requested formation", GOAL_FORMATION_TESTS, GOAL_FORMATION_MUTANTS),
+          ("portfolio words", PORTFOLIO_WORDS_TESTS, PORTFOLIO_WORDS_MUTANTS),
+          ("budgeted selection", BUDGETED_TESTS, BUDGETED_MUTANTS),
+          ("seed ports", PORT_TESTS, PORT_MUTANTS)]
+
+
+def _run_one(work: Path, group: str, tests: list, name: str, rel: str, old: str, new: str) -> tuple[bool, str]:
+    """Apply one mutant in this worker's scratch copy, run its tests, restore the file."""
+    path = work / rel
+    source = path.read_text(encoding="utf-8")
+    if source.count(old) != 1:
+        return False, f"STALE    [{group}] {name}: pattern not found exactly once in {rel}"
+    path.write_text(source.replace(old, new), encoding="utf-8")
+    try:
+        run = subprocess.run([sys.executable, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", *tests],
+                             cwd=work, capture_output=True, text=True)
+    finally:
+        path.write_text(source, encoding="utf-8")
+    caught = run.returncode != 0
+    tail = (run.stdout.strip().splitlines() or ["(no output)"])[-1]
+    return caught, f"{'CAUGHT ' if caught else 'SURVIVED'} [{group}] {name}: {tail}"
 
 
 def main() -> int:
-    bad = total = 0
+    # Mutants run in parallel, one scratch copy of the repository per worker (a mutant never meets another's
+    # edit); the report keeps the declared order. CORTEX_MUTANT_WORKERS overrides the worker count.
+    mutants = [(g, t, *m) for g, t, ms in GROUPS for m in ms]
+    workers = max(1, int(os.environ.get("CORTEX_MUTANT_WORKERS") or os.cpu_count() or 1))
     with tempfile.TemporaryDirectory(prefix="cortex-mutants-") as tmp:
-        work = Path(tmp) / "repo"
-        shutil.copytree(ROOT, work, ignore=shutil.ignore_patterns(".git", "__pycache__", ".pytest_cache"))
-        for group, tests, name, rel, old, new in [(g, t, *m) for g, t, ms in GROUPS for m in ms]:
-            total += 1
-            path = work / rel
-            source = path.read_text(encoding="utf-8")
-            if source.count(old) != 1:
-                print(f"STALE    [{group}] {name}: pattern not found exactly once in {rel}")
-                bad += 1
-                continue
-            path.write_text(source.replace(old, new), encoding="utf-8")
+        copies: queue.Queue = queue.Queue()
+        for i in range(min(workers, len(mutants))):
+            work = Path(tmp) / f"repo{i}"
+            shutil.copytree(ROOT, work, ignore=shutil.ignore_patterns(".git", "__pycache__", ".pytest_cache"))
+            copies.put(work)
+
+        def one(mutant):
+            work = copies.get()
             try:
-                run = subprocess.run([sys.executable, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", *tests],
-                                     cwd=work, capture_output=True, text=True)
+                return _run_one(work, *mutant)
             finally:
-                path.write_text(source, encoding="utf-8")
-            caught = run.returncode != 0
-            tail = (run.stdout.strip().splitlines() or ["(no output)"])[-1]
-            print(f"{'CAUGHT ' if caught else 'SURVIVED'} [{group}] {name}: {tail}")
-            bad += not caught
-    print(f"{total} mutants, {bad} survived or stale")
+                copies.put(work)
+        with ThreadPoolExecutor(max_workers=copies.qsize()) as pool:
+            results = list(pool.map(one, mutants))
+    for _, line in results:
+        print(line)
+    bad = sum(not caught for caught, _ in results)
+    print(f"{len(results)} mutants, {bad} survived or stale")
     return 1 if bad else 0
 
 

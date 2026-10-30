@@ -168,13 +168,13 @@ def isolation_ready(timeout: int = RUN_TIMEOUT) -> None:
         raise CapabilityError(f"the isolated build verifier exited {proc.returncode}", failure_class="transient")
 
 
-def verify(source_path: Path, vectors: list[dict]) -> tuple[bool, dict]:
+def verify(source_path: Path, vectors: list[dict], *, timeout: int = RUN_TIMEOUT) -> tuple[bool, dict]:
     """Judge a candidate against frozen vectors it never saw. Returns (passed, report).
 
     A host outage (isolation unavailable, the whole run timing out) is no verdict on the candidate: it is
     raised as a transient CapabilityError. The candidate's own CPU is bounded by the harness."""
     try:
-        results = execute(source_path, [v["input_text"] for v in vectors])
+        results = execute(source_path, [v["input_text"] for v in vectors], timeout=timeout)
     except subprocess.TimeoutExpired as exc:
         # The candidate's CPU is bounded by the harness, but it can block without using any (a lock taken
         # twice). If the host still runs an isolated no-op, the hang is the candidate's; else the host's.

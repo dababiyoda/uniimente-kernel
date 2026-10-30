@@ -76,6 +76,13 @@ def copy_json(value):
     return value
 
 
+def _index_value(table: dict, value, position: int) -> None:
+    try:
+        table.setdefault(value, []).append(position)
+    except TypeError:   # unhashable (an object or a list): equal to no hashable query value
+        pass
+
+
 def _copy_record(rec: "LedgerRecord") -> "LedgerRecord":
     return LedgerRecord(rec.seq, rec.ts_utc, rec.record_type, copy_json(rec.payload), rec.prev_hash, rec.hash,
                         rec.corrects, rec.hash_version)
@@ -174,6 +181,7 @@ class EvidenceLedger:
         self._verified = 0           # records[:_verified] passed verification
         self._full_at: float | None = None   # monotonic time of the last full reconstruction
         self._verified_tail: LedgerRecord | None = None   # the object records[_verified - 1] was
+        self._reset_index()
         genesis_payload = {"kind": "genesis", "constitution_hash": constitution_hash}
         gh = sha256_json({"seq": 0, "payload": genesis_payload, "prev_hash": GENESIS_PREV})
         self._records.append(LedgerRecord(0, _now(), "genesis", genesis_payload, GENESIS_PREV, gh))
@@ -360,14 +368,71 @@ class EvidenceLedger:
             return False, f"payload hash mismatch at seq {i}"
         return True, ''
 
+    # -- lookups ------------------------------------------------------------------------------------
+    # Answered from indexes of positions in the retained list, kept like the event spine's views: each
+    # lookup indexes only the records added since the last one, and a different record where the last
+    # indexed one was (history assigned or reloaded) rebuilds them from the beginning. Every answer is
+    # re-checked against the record itself and handed out as the caller's own copy.
+
+    def _reset_index(self) -> None:
+        self._indexed, self._indexed_tail = 0, None
+        self._by_hash: dict[str, int] = {}               # hash -> position of its first record
+        self._by_type: dict[str, list[int]] = {}         # record type -> positions
+        self._by_field: dict[str, dict[str, dict]] = {}  # record type -> payload field -> value -> positions
+
+    def _index_new(self) -> None:
+        records, done = self._records, self._indexed
+        if done and (done > len(records) or records[done - 1] is not self._indexed_tail):
+            self._reset_index()
+            done = 0
+        for i in range(done, len(records)):
+            rec = records[i]
+            self._by_hash.setdefault(rec.hash, i)
+            self._by_type.setdefault(rec.record_type, []).append(i)
+            for field, table in self._by_field.get(rec.record_type, {}).items():
+                _index_value(table, rec.payload.get(field), i)
+        if len(records) > done:
+            self._indexed, self._indexed_tail = len(records), records[-1]
+
     def find(self, record_hash: str) -> LedgerRecord | None:
-        for r in self._records:
-            if r.hash == record_hash:
-                return _copy_record(r)
-        return None
+        with self._lock:
+            self._index_new()
+            i = self._by_hash.get(record_hash)
+            if i is None:
+                return None
+            if self._records[i].hash == record_hash:
+                return _copy_record(self._records[i])
+            # The private list was altered in place: answer as a scan of it would.
+            return next((_copy_record(r) for r in self._records if r.hash == record_hash), None)
 
     def by_type(self, record_type: str) -> list[LedgerRecord]:
-        return [_copy_record(r) for r in self._records if r.record_type == record_type]
+        return self.select(record_type)
+
+    def select(self, record_type: str, **where) -> list[LedgerRecord]:
+        """Records of this type whose payload has every ``field=value`` given, in ledger order.
+
+        Exactly ``[r for r in records if r.record_type == record_type and all(r.payload.get(f) == v ...)]``
+        without reading the rest of history: the first field is looked up in an index of that type's
+        payload values, built on first use and kept up to date like the others. (A record altered in
+        place in the private list, which verification detects, is never returned for a value it no
+        longer holds, and is not found by the value written into it.)"""
+        with self._lock:
+            self._index_new()
+            records = self._records
+            positions = self._by_type.get(record_type, ())
+            if where:
+                field, value = next(iter(where.items()))
+                fields = self._by_field.setdefault(record_type, {})
+                if field not in fields:
+                    table = fields[field] = {}
+                    for i in positions:
+                        _index_value(table, records[i].payload.get(field), i)
+                try:
+                    positions = fields[field].get(value, ())
+                except TypeError:     # an unhashable value is never indexed: compare record by record
+                    pass
+            return [_copy_record(records[i]) for i in positions if records[i].record_type == record_type
+                    and all(records[i].payload.get(f) == v for f, v in where.items())]
 
     def _load(self, path: str) -> None:
         # Durable history supplies transition truth only after full verification.

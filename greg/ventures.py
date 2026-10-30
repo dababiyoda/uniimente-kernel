@@ -165,7 +165,7 @@ def cognition_receipts(ctx: InvocationContext, ids: dict) -> dict:
     """The latest valid CognitiveReceipt on the canonical ledger for each named problem; never fabricated."""
     from greg.cognition.settlement import _valid_receipt
     if ctx.journal is None:
-        raise CapabilityError("venture.assess needs the canonical ledger to read its cognition receipts")
+        raise CapabilityError(f"{ctx.manifest.capability_id} needs the canonical ledger to read its cognition receipts")
     found = {}
     for record in ctx.journal.ledger.by_type("receipt"):
         output = (record.payload.get("result") or {}).get("output")

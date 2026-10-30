@@ -368,6 +368,36 @@ def word_limit(*, file: Path, max_words: int, workspace_root: Path, horizon_days
     }
 
 
+def file_search(*, file: Path, phrases: list, absent: bool, horizon_days: float = 2) -> dict:
+    """Whether a file of any size mentions some phrases, or never mentions them: one read-only mission over
+    ``fs.search``, which reads the whole file streamed and answers in a few hundred bytes (greg/textquery.py).
+
+    Whitespace runs count as one space, in the file and in the phrases, so a phrase broken across lines is found.
+    Absence is claimed only when every byte was read and decoded; a file cut short by a limit, or not readable as
+    text, leaves the check undecided and GREG asks, with the reason."""
+    if not isinstance(phrases, list) or not phrases or not all(isinstance(p, str) and p.strip() for p in phrases):
+        raise ValueError("phrases must be a nonempty list of nonblank strings")
+    file = Path(file).expanduser().resolve()
+    slug = re.sub(r"[^a-z0-9]+", "-", file.name.lower()).strip("-")[:40] or "file"
+    digest = hashlib.sha256(json.dumps([str(file), phrases, absent]).encode()).hexdigest()[:8]
+    verb = "never mentions" if absent else "mentions"
+    sensor = {"capability": "fs.search", "params": {"path": str(file), "phrases": list(phrases),
+                                                    "whitespace": "collapse"}, "target": f"fs:{file.name}"}
+    return {
+        "mission_id": f"m:{'absent' if absent else 'mentions'}-{slug}-{digest}",
+        "founder_expression": f"Confirm {file} {verb} " + ", ".join(repr(p) for p in phrases) + ".",
+        "intended_effect": f"the whole of {file.name} is read and proven to be one that {verb} the phrases",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": f"phrase_{i}", "description": f"{file.name} {verb} {phrase!r}",
+                            "sensor": sensor,
+                            "predicate": {"op": "equals", "field": f"queries.{i}.found", "value": not absent}}
+                           for i, phrase in enumerate(phrases)],
+        "strategies": [],
+        "light_cone": {"capabilities": ["fs.search"], "targets": ["fs:*"], "max_consequence_class": "read_only",
+                       "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+
+
 def human_work(*, function: str, purpose: str, workspace_root: Path, deliverable: str = "deliverable.pdf",
                horizon_days: float = 30) -> dict:
     """A step only a person may do (directive section 60: "I need a licensed professional for this decision").
@@ -658,7 +688,9 @@ def code_change(*, repo: str, objective: str, order: str | None = None, allowed_
     1. ``worker.commission`` (internal_write, spends at most ``budget_usd``): a real worker edits a private
        clone; GREG collects the diff, runs acceptance with no network and commits on ``greg/<order>``.
     2. ``worker.appraise`` (read-only sensor): fresh clone, patch re-applied, scope and protected-surface
-       checks, acceptance re-run. Only ``ACCEPTED`` closes the check; a protected surface yields a
+       checks, acceptance re-run. Founder-named ``tests`` are a sealed oracle judged at the base; the
+       worker's own tests count only if they fail on the base and kill mutants of the change
+       (``greg/evidence_strength.py``). Only ``ACCEPTED`` closes the check; a protected surface yields a
        founder decision, never acceptance.
     ``script`` (with ``provider="script"``): the founder-signed program that does the work instead of a
     model-backed worker; it runs in the same confined envelope with no network (``greg.workers.ScriptWorker``).
@@ -741,51 +773,133 @@ def browser_task(*, url: str, steps: list[dict], session: str, expect: dict, hor
 
 
 def daleobanks_post(*, daleobanks_root: str, source: str, brief: str, order: str, budget_usd: float = 2.0,
-                    max_chars: int = 280, horizon_days: float = 2, founder_expression: str | None = None) -> dict:
+                    max_chars: int = 280, horizon_days: float = 2, founder_expression: str | None = None,
+                    bound_claims: bool = True, quality: str = "unverified", python: str | None = None) -> dict:
     """GREG -> research/content worker -> DALEOBANKS verification -> publish request through both gates.
 
     The draft is written by a temporary worker from a read-only source; DALEOBANKS's own checks plus
     figure-to-source binding must pass before the publish request may run (``requires``). Publishing is
     external_contact: outside this cone, so it stops for a founder decision; even when approved,
     DALEOBANKS's LIVE kill switch and credentials decide, and a dry-run is reported as a block.
+
+    With ``bound_claims`` (the default), the worker also lists each sentence with the source spans that support
+    it, and the Task Fabric's evaluator (``worker.appraise``) asks the Mind about every sentence against GREG's
+    own copy of the source: the publish request also requires that appraisal. ``quality`` is the signer's
+    declaration about the source. ``bound_claims=False`` keeps the figure-only floor.
     """
     source = str(Path(source).expanduser().resolve())
     root = str(Path(daleobanks_root).expanduser().resolve())
-    draft_name = "post.txt"
+    draft_name, claims_name = "post.txt", "post.claims.json"
+    contract = {"claims": claims_name, "quality": quality, "expires_at": _horizon(horizon_days)}
+    acceptance = {"output": draft_name,
+                  "criteria": f"<= {max_chars} characters; no figures absent from the source; no "
+                              "hype, no calls to buy; not a proposal (no pilot/KPI language)"}
+    objective = (f"{brief} Write the post as plain text, at most {max_chars} characters, "
+                 "stating only facts present in the input; every number must appear in the input.")
+    checks = [{"check_id": "draft_verified", "description": "DALEOBANKS checks and source binding pass",
+               "sensor": {"capability": "daleobanks.verify",
+                          "params": {"daleobanks_root": root, "source": source, "max_chars": max_chars,
+                                     "draft": f"work-orders/{order}/work/{draft_name}",
+                                     **({"python": python} if python else {})},
+                          "target": "daleobanks:verify"},
+               "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}}]
+    if bound_claims:
+        acceptance["bound_claims"] = contract
+        objective += (" Keep the source's hedges, negations, scope, direction and names; list each sentence's "
+                      f"supporting spans in {claims_name}.")
+        checks.append({"check_id": "draft_appraised",
+                       "description": "the Task Fabric's evaluator: every sentence is a claim the Mind answered "
+                                      "as written against GREG's copy of the source",
+                       "sensor": {"capability": "worker.appraise",
+                                  "params": {"order": order, "bound_claims": contract}, "target": f"work:{order}"},
+                       "predicate": {"op": "equals", "field": "verdict", "value": "ACCEPTED"}})
+    gates = [c["check_id"] for c in checks]
+    publish = {"daleobanks_root": root, "draft": f"work-orders/{order}/work/{draft_name}",
+               **({"python": python} if python else {})}
     return {
         "mission_id": f"m:media-{_slug(order)}",
         "founder_expression": founder_expression or f"DALEOBANKS: {brief}",
         "intended_effect": "a source-bound post is drafted, verified by DALEOBANKS and submitted to its publishing "
                            "gate; the truthful outcome (posted or blocked) returns to GREG",
         "priority": 50, "closure": {"kind": "bounded"},
-        "success_checks": [
-            {"check_id": "draft_verified", "description": "DALEOBANKS checks and source binding pass",
-             "sensor": {"capability": "daleobanks.verify",
-                        "params": {"daleobanks_root": root, "source": source, "max_chars": max_chars,
-                                   "draft": f"work-orders/{order}/work/{draft_name}"},
-                        "target": "daleobanks:verify"},
-             "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}},
+        "success_checks": checks + [
             {"check_id": "publish_outcome_known", "description": "DALEOBANKS's ledger holds the request's outcome",
              "sensor": {"capability": "daleobanks.outcome", "params": {}, "target": "daleobanks:outcome"},
              "predicate": {"op": "equals", "field": "requested", "value": True}}],
         "strategies": [
             {"action_id": "draft-post", "capability": "worker.commission", "target": f"work:{order}",
-             "params": {"order": order, "mode": "document", "inputs": [source],
-                        "objective": f"{brief} Write the post as plain text, at most {max_chars} characters, "
-                                     "stating only facts present in the input; every number must appear in the input.",
-                        "acceptance": {"output": draft_name,
-                                       "criteria": f"<= {max_chars} characters; no figures absent from the source; no "
-                                                   "hype, no calls to buy; not a proposal (no pilot/KPI language)"},
-                        "allowed_paths": [draft_name], "max_budget_usd": budget_usd, "timeout_seconds": 600},
-             "cost_usd": budget_usd, "advances": ["draft_verified"],
-             "rationale": "research/content work by a temporary worker; DALEOBANKS verifies it"},
+             "params": {"order": order, "mode": "document", "inputs": [source], "objective": objective,
+                        "acceptance": acceptance,
+                        "allowed_paths": [draft_name] + ([claims_name] if bound_claims else []),
+                        "max_budget_usd": budget_usd, "timeout_seconds": 600},
+             "cost_usd": budget_usd, "advances": gates,
+             "rationale": "research/content work by a temporary worker; DALEOBANKS verifies it"
+                          + ("; the Mind appraises every sentence" if bound_claims else "")},
             {"action_id": "request-publish", "capability": "daleobanks.publish", "target": "daleobanks:publish",
-             "params": {"daleobanks_root": root, "draft": f"work-orders/{order}/work/{draft_name}"},
-             "advances": ["publish_outcome_known"], "requires": ["draft_verified"],
+             "params": publish, "advances": ["publish_outcome_known"], "requires": gates,
              "rationale": "publishing is external contact: founder decision, then DALEOBANKS's own LIVE gate"}],
-        "light_cone": {"capabilities": ["worker.commission", "daleobanks.verify", "daleobanks.outcome"],
+        "light_cone": {"capabilities": ["worker.commission", "daleobanks.verify", "daleobanks.outcome"]
+                                       + (["worker.appraise"] if bound_claims else []),
                        "targets": [f"work:{order}", "daleobanks:*"], "max_consequence_class": "internal_write",
                        "budget_usd": budget_usd, "horizon": _horizon(horizon_days)},
+    }
+
+
+def daleobanks_paraphrase(*, daleobanks_root: str, source: str, draft: str, claims: list,
+                          quality: str = "unverified", python: str | None = None, content_type: str = "reply",
+                          max_chars: int = 600, horizon_days: float = 2, founder_expression: str | None = None) -> dict:
+    """Media case (directive section 16): a DALEOBANKS draft that restates a source, checked claim by claim.
+
+    ``claims`` lists each sentence of the draft with the exact source spans that support it:
+    ``[{"text": sentence, "quotes": [span, ...]}]``. GREG's evidence family answers each claim first
+    (``cognition.solve``, read-only): bound to its spans and showing none of the six detected kinds of change
+    (figures, negation, certainty, scope, direction, named terms). DALEOBANKS's verify then runs its own content
+    checks and requires every sentence of the draft to be a claim the Mind answered as written. Consequence-inert:
+    the light cone holds no publish capability, so nothing can be posted from this mission.
+    """
+    import hashlib
+    from greg.cognition.contracts import digest
+    source_path = Path(source).expanduser().resolve()
+    root = str(Path(daleobanks_root).expanduser().resolve())
+    text = source_path.read_text(encoding="utf-8")
+    thread = hashlib.sha256(Path(draft).expanduser().resolve().read_bytes()).hexdigest()[:12]
+    src = {"id": "source", "text": text, "digest": digest(text), "quality": quality, "expires_at": _horizon(horizon_days),
+           "provenance": f"{source_path} sha256:{hashlib.sha256(text.encode()).hexdigest()}"}
+    ids, checks, strategies = {}, [], []
+    for i, claim in enumerate(claims, 1):
+        if not claim.get("quotes"):
+            raise ValueError(f"claim {i} has no supporting span; every sentence must cite the source")
+        ids[f"c{i}"] = f"media-claim-{thread}-{i}"
+        step = {"capability": "cognition.solve", "target": f"cognition:{ids[f'c{i}']}",
+                "params": {"problem_id": ids[f"c{i}"], "operation": "bind_evidence",
+                           "data": {"claim": claim["text"], "sources": [src],
+                                    "bindings": [{"source_id": "source", "quote": q, "relationship": "supports"}
+                                                 for q in claim["quotes"]]}}}
+        checks.append({"check_id": f"claim_{i}_checked", "description": f"GREG's evidence receipt for claim {i}",
+                       "sensor": step, "predicate": {"op": "equals", "field": "authority_created", "value": False}})
+        strategies.append({"action_id": f"claim-{i}-receipt", **step, "advances": [f"claim_{i}_checked"],
+                           "rationale": "bind the claim to its spans and check what it changes; an abstention is a "
+                                        "truthful answer, not a failure"})
+    verify = {"capability": "daleobanks.verify", "target": "daleobanks:verify",
+              "params": {"daleobanks_root": root, "draft": str(Path(draft).expanduser().resolve()),
+                         "source": str(source_path), "max_chars": max_chars, "content_type": content_type,
+                         "cognition": ids, **({"python": python} if python else {})}}
+    checks.append({"check_id": "paraphrase_verified",
+                   "description": "DALEOBANKS's checks pass and every sentence is a claim answered as written",
+                   "sensor": verify, "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}})
+    strategies.append({"action_id": "verify-paraphrase", **verify, "advances": ["paraphrase_verified"],
+                       "requires": [c["check_id"] for c in checks[:-1]],
+                       "rationale": "DALEOBANKS's own content checks over a draft whose claims GREG has answered"})
+    return {
+        "mission_id": f"m:paraphrase-{thread}",
+        "founder_expression": founder_expression or "DALEOBANKS restates a source without changing what it says",
+        "intended_effect": "a draft that restates its source is checked claim by claim against it; a sentence that "
+                           "changes a figure, a negation, a hedge, a scope, a direction or a name is held back",
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": checks, "strategies": strategies,
+        "light_cone": {"capabilities": ["cognition.solve", "daleobanks.verify", "fs.read"],
+                       "targets": ["cognition:*", "daleobanks:verify"], "max_consequence_class": "read_only",
+                       "budget_usd": 0, "horizon": _horizon(horizon_days)},
     }
 
 
@@ -1239,6 +1353,92 @@ def constructed_question(*, function: str, params: dict, horizon_days: float = 2
 
 
 TEMPLATES["constructed-question"] = constructed_question
+
+
+PORTFOLIO_NAME = r"[A-Za-z0-9][A-Za-z0-9_.-]{0,39}"
+PORTFOLIO_AMOUNT = r"\$?(?P<n>\d{1,3}(?:,\d{3})+|\d+)(?P<fraction>\.\d+)?"
+PORTFOLIO_VALUE = re.compile(rf"^(?P<name>{PORTFOLIO_NAME})\s+(?P<verb>earns|pays|returns|makes|brings in|is worth|"
+                             rf"costs)\s+{PORTFOLIO_AMOUNT}(?:\s+[A-Za-z$€£/ ]{{1,24}})?$", re.I)
+PORTFOLIO_NEEDS = re.compile(rf"^(?P<name>{PORTFOLIO_NAME})\s+(?:needs|requires|depends on)\s+(?P<rest>.+)$", re.I)
+PORTFOLIO_BUDGET = re.compile(rf"^(?:spend at most|(?:the |my )?budget(?: is|:)?|i can spend(?: at most)?)\s+"
+                              rf"{PORTFOLIO_AMOUNT}(?:\s+[A-Za-z$€£/ ]{{1,24}})?$", re.I)
+PORTFOLIO_QUESTION = re.compile(r"^(?:which|what|should|choose|pick|decide)\b", re.I)
+
+
+def read_portfolio_words(text: str) -> dict:
+    """The controlled portfolio language, read without a model. Unread sentences stop the plan.
+
+    ``Offer1 earns 5.`` or ``Platform costs 6.`` (whole amounts, an optional $, thousands commas and a
+    trailing unit word); ``Offer1 needs Platform and Audit.`` (also "requires", "depends on"); at most
+    one question such as ``Which should I build?``; optionally one cap on what the costs may total:
+    ``Spend at most 10.`` (also "Budget: 10.", "I can spend 10."). Amounts are taken in one unit you choose."""
+    sentences = [s.strip() for s in re.split(r"\.(?=\s|$)|[!?;\n]+", text) if s.strip()]
+    value, needs, unread, questions, budget = {}, [], [], 0, None
+    for sentence in sentences:
+        if PORTFOLIO_QUESTION.match(sentence):
+            questions += 1
+        elif m := PORTFOLIO_BUDGET.match(sentence):
+            if m["fraction"]:
+                raise ValueError(f"{sentence!r}: the budget must be a whole number in the same unit as the values")
+            if budget is not None:
+                raise ValueError("state the budget once")
+            budget = int(m["n"].replace(",", ""))
+        elif m := PORTFOLIO_VALUE.match(sentence):
+            if m["fraction"]:
+                raise ValueError(f"{sentence!r}: amounts must be whole numbers in one unit (say 1250, not 1.25k)")
+            if m["name"] in value:
+                raise ValueError(f"{m['name']} is given a value twice; state each item's value once")
+            amount = int(m["n"].replace(",", ""))
+            value[m["name"]] = -amount if m["verb"].lower() == "costs" else amount
+        elif m := PORTFOLIO_NEEDS.match(sentence):
+            names = [n.strip() for n in re.split(r",\s*(?:and\s+)?|\s+and\s+", m["rest"]) if n.strip()]
+            bad = [n for n in names if not re.fullmatch(PORTFOLIO_NAME, n)]
+            if bad or not names:
+                unread.append(sentence)
+                continue
+            needs += [[m["name"], n] for n in names]
+        else:
+            unread.append(sentence)
+    if unread:
+        raise ValueError("GREG could not read: " + "; ".join(repr(u[:80]) for u in unread[:5])
+                         + ". Write 'Offer1 earns 5.', 'Platform costs 6.' and 'Offer1 needs Platform.'")
+    if questions > 1:
+        raise ValueError("ask one portfolio question at a time")
+    if not any(v > 0 for v in value.values()):
+        raise ValueError("state at least one item that earns something ('Offer1 earns 5.')")
+    unknown = sorted({n for pair in needs for n in pair if n not in value})
+    if unknown:
+        raise ValueError(f"{', '.join(unknown)} {'is' if len(unknown) == 1 else 'are'} needed but never given a "
+                         f"value: add '{unknown[0]} costs N.' (or 'earns N.', or 'costs 0.')")
+    params = {"items": [{"id": n, "value": v} for n, v in value.items()], "requires": needs}
+    return params if budget is None else {**params, "budget": budget}
+
+
+def portfolio_in_words(*, text: str, horizon_days: float = 2, auto_attach: bool = False) -> dict:
+    """Which offers, projects or investments to take when some need others first, in plain controlled words.
+
+    GREG has no portfolio engine: Genesis constructs ``selection.closure`` by Picard's reduction onto a
+    maximum-flow engine it qualifies (acquiring that engine first if needed, which you attach). The
+    answer names what to take, the profit, what was left out and why, and counts only on GREG's own
+    funding certificate, checked against your items alone. Read-only: nothing is bought or started.
+    """
+    if not text.strip() or len(text) > 4000:
+        raise ValueError("a portfolio question of 1-4000 characters is required")
+    from greg.recombine import REDUCTIONS
+    params = read_portfolio_words(text)
+    function = "selection.budgeted" if "budget" in params else "selection.closure"
+    REDUCTIONS[function].normalize(params)                     # refuse a malformed question before it is signed
+    spec = constructed_question(function=function, params=params, horizon_days=horizon_days,
+                                auto_attach=auto_attach)
+    digest = hashlib.sha256(json.dumps(params, sort_keys=True).encode()).hexdigest()[:10]
+    return {**spec, "mission_id": f"m:portfolio-{digest}", "founder_expression": text,
+            "intended_effect": "which items to take when some need others first"
+                               + (f", spending at most {params['budget']} on costs" if "budget" in params else "")
+                               + ": the most profitable set that includes every prerequisite, with what was left "
+                                 "out and why, proved by GREG's own certificate"}
+
+
+TEMPLATES["portfolio-in-words"] = portfolio_in_words
 
 
 FIRST_MISSION_WORDS = re.compile(r"\b(first mission|where (?:am i|i am) (?:trying to go|going)|highest[- ]value "

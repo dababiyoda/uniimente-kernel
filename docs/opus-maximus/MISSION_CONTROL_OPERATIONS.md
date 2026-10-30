@@ -5,8 +5,8 @@ Deliverable H. This is the operator card for the founder. The full install path 
 ## 1. Install on the first body
 
 ```bash
-git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
-git checkout claude/opus-maximus-one-greg-20261014      # this review branch; not main
+git clone -b claude/greg-full-machine-completion-whgiee https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
+git checkout claude/greg-full-machine-completion-whgiee   # the review candidate named in greg/chromebook/REVIEW_BRANCH; use main once merged
 bash greg/chromebook/install.sh                         # doctor, init, keygen, enroll, service, designate
 greg doctor --chromebook                                # must say ready_for_linux_service: true
 ```
@@ -85,5 +85,5 @@ No paid route is used unless you sign one with `greg model set`, and a substitut
 | Phone | Device key that can only decide, critique, pause, resume, stop, and narrow goals | Expires in at most 90 days; revoke with `greg device revoke` |
 | Console | Signs only for its owner session on loopback | Anyone with your local user account can reach loopback |
 | Workers | Bubblewrap envelope by default; protected surfaces never accepted; GREG commits, never the worker; no push | `supervised` removes filesystem and network confinement for workers the envelope cannot host; such a worker can read the body's home and a founder key stored there |
-| Organs | Own interpreters under Landlock with network denial; signed messages verified at the kernel | One shared HMAC key until the organ pin is upgraded |
+| Organs | Own interpreters under Landlock with network denial; signed messages verified at the kernel | Per-organ HMAC keys on the upgraded pins (organ branches, not yet `main`); WealthMachine holds DALEOBANKS's key to verify it, so a verifier can still forge |
 | Ledger | Hash-linked, torn tails quarantined; optional RFC 3161 anchoring | Anchoring is off until you sign `ANCHOR_CONFIGURE` |

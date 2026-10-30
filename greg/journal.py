@@ -73,6 +73,10 @@ class Journal:
     def replay(self, kind_prefix: str = "") -> list[Event]:
         return self.spine.replay("greg." + kind_prefix)
 
+    def since(self, cursor=None, kind_prefix: str = ""):
+        """greg.* events retained after ``cursor``: (events, next cursor, restarted). See EventSpine.since."""
+        return self.spine.since("greg." + kind_prefix, cursor)
+
     def positions(self, kind_prefix: str = ""):
         """event_id -> position in replay(kind_prefix), without replaying history (read-only)."""
         return self.spine.positions("greg." + kind_prefix)

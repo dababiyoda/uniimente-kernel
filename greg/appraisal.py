@@ -40,7 +40,10 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from events.spine import EventSpine
 from greg.authority import AuthorityOffice
-from greg.capabilities import BUILTINS, CapabilityManifest, InvocationContext
+from greg.capabilities import BUILTINS, CapabilityError, CapabilityManifest, InvocationContext
+from greg.cognition.replay import bind as bind_cognition_replay, matches as cognition_replay_matches
+from greg.cognition.replay import pin_from_output as cognition_pin_from_output
+from greg.cognition.replay import reset as reset_cognition_replay
 from greg.founder import _signing_bytes
 from greg.journal import Journal
 from greg.lightcone import LightCone
@@ -465,10 +468,28 @@ def appraise(request: dict) -> dict:
                                         capability_registry=_formed_registry(journal, request["workspace"])
                                         if cap.startswith("cognition.") else None,
                                         worker_confinement=request.get("worker_confinement", "required"))
+                replay_token = None
                 try:
                     from greg.pipeline import resolve
                     bound_params, _ = resolve(check["sensor"].get("params", {}), journal, mid)
+                    # A compiled cognition receipt is re-read by the method, route and version it
+                    # pinned. Today's learned routing is not a fallback when that method is gone.
+                    pinned = None
+                    if cap.startswith("cognition."):
+                        original = receipt.payload["result"].get("output")
+                        if isinstance(original, dict) and str(original.get("schema", "")).startswith(
+                                "greg-competency-compilation/"):
+                            pinned = cognition_pin_from_output(original)
+                            if pinned is None:
+                                raise CapabilityError(
+                                    "receipt method unavailable: the cognition receipt does not pin a method, "
+                                    "route and version")
+                            replay_token = bind_cognition_replay(pinned)
                     output = adapter(bound_params, ctx)
+                    if pinned is not None and not cognition_replay_matches(output, pinned):
+                        raise CapabilityError(
+                            "receipt method unavailable: re-observation did not replay the pinned method, "
+                            "route and version")
                     now_ok, now_detail = evaluate_predicate(check["predicate"], output)
                     reasons = output.get("findings") if isinstance(output, dict) else None
                     if not now_ok and isinstance(reasons, list) and reasons:
@@ -476,7 +497,11 @@ def appraise(request: dict) -> dict:
                         # re-run the acceptance envelope must not read the same on the Proof view.
                         now_detail += "; because: " + "; ".join(str(r)[:200] for r in reasons[:3])
                 except Exception as exc:  # the world could not be re-read: not verified, either way
-                    now_ok, now_detail = None, type(exc).__name__
+                    now_ok, now_detail = None, (
+                        str(exc) if "receipt method unavailable" in str(exc) else type(exc).__name__)
+                finally:
+                    if replay_token is not None:
+                        reset_cognition_replay(replay_token)
                 if now_ok is None or now_ok == unmet:
                     reobserved = False
                     findings.append(f"{check['check_id']}: world no longer matches ({now_detail})")

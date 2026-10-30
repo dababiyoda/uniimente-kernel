@@ -401,7 +401,10 @@ def test_v3_an_unparseable_field_keeps_its_multi_word_restrictive_names(field):
     assert p0_attaches(field) is False
 
 
-@pytest.mark.parametrize("field", ["Elastic-2.0 (see LICENSE.txt)", "Elastic-2.0, see LICENSE", "SSPLv1", "BUSLv1.1"])
+@pytest.mark.parametrize("field", ["Elastic-2.0 (see LICENSE.txt)", "Elastic-2.0, see LICENSE", "SSPLv1", "BUSLv1.1",
+                                   # only the free-text rider reads these: the table lookup sees a one-line field
+                                   # word by word, so neither a second line nor a word with a trailing stop
+                                   "Elastic-2.0\nSee LICENSE.txt", "Licensed under Elastic-2.0."])
 def test_v4_other_spellings_of_listed_not_open_licenses_count_beside_a_classifier(field):
     a = assess(classifiers=[MITC], text=field)
     assert a["verdict"] == "FOUNDER_REVIEW" and a["class"] == X, field

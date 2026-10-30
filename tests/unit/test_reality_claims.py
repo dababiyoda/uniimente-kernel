@@ -106,6 +106,7 @@ INFLATED = [
      "container, rehearsal run labelled FOUNDER-USED"),
     ("docs/evidence/n15/run.json", {"reality": "FOUNDER-USED, blocked list cleared"}, "no declared evidence kind"),
     ("docs/evidence/n16/run.json", {"reality": "FOUNDER-USED — deferred work is done"}, "no declared"),
+    ("docs/evidence/n17/run.json", {"reality": "FOUNDER-USED (blocked list cleared)"}, "no declared evidence kind"),
     # F2/WU13-F2/WU13-F3/WU13-F5: a declared kind is checked against the whole record and needs a checkable ref
     ("docs/evidence/o1/run.json", {"reality": "FOUNDER-USED", **DEVICE, "environment": "Linux container"},
      "describes a container run"),
@@ -264,8 +265,15 @@ def test_an_evidence_ref_must_name_something_checkable(tmp_path):
     for ref in (None, "", "  ", "none", "N/A", "tbd", "TODO", "pending", "?", "-", "sha256:" + "0" * 64,
                 "sha256:ab", "docs/evidence/run/README.md", "../outside.txt", "/etc/passwd"):
         assert rc.ref_problem(ref) is not None, ref                       # no root: only a digest resolves
-    assert rc.ref_problem("../wu13/README.md", tmp_path, "docs/x.json") is not None
     assert rc.ref_problem("docs/x.json", tmp_path, "docs/x.json") is not None    # a record cannot rest on itself
+    outside = tmp_path.parent / f"{tmp_path.name}-outside.txt"                   # a file that exists, outside the tree
+    outside.write_text("not this repository's")
+    try:
+        assert rc.ref_problem(f"../{outside.name}", tmp_path, "docs/x.json") is not None
+        assert rc.ref_problem(str(outside), tmp_path, "docs/x.json") is not None
+        assert rc.ref_problem(str(tmp_path / "docs/evidence/run/README.md"), tmp_path, "docs/x.json") is not None
+    finally:
+        outside.unlink()
 
 
 def test_a_violation_another_change_owns_is_allowlisted_with_reason_and_owner_never_silently(tmp_path):

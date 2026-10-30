@@ -108,6 +108,10 @@ jobs:
         run: python scripts/ci/check_worker_appraisal_mutants.py
       - name: Founder-device acceptance tier and live-runtime mutations
         run: python scripts/ci/check_acceptance_mutants.py
+      - name: Path predicates and build frontier mutations
+        run: python scripts/ci/check_path_predicate_mutants.py
+      - name: Consistent backup mutations
+        run: python scripts/ci/check_consistent_backup_mutants.py
 
   verifier:
     # Its V2 re-runs tests/unit, so inside job 1 it pushed that job past its 30 minutes once the

@@ -1,0 +1,580 @@
+{
+  "version": "1.0",
+  "scope": "explicit typed operations and bounded supplied data; not natural-language inference or external outcome proof",
+  "baseline_required_for_superiority": [
+    "always raw local LLM",
+    "strongest eligible licensed local LLM",
+    "LLM router",
+    "best eligible specialized solver",
+    "strongest simple baseline"
+  ],
+  "baseline_availability": "UNAVAILABLE here; record no superiority/regret estimate until all required predeclared comparisons are measured",
+  "cases": [
+    {
+      "id": "bounded:calculate",
+      "request": {
+        "problem_id": "test:calculate",
+        "operation": "calculate",
+        "data": {
+          "expression": "0.1 + 0.2"
+        }
+      },
+      "expected": {
+        "method": "cognition.exact",
+        "state": "NONE",
+        "output": {
+          "exact": "3/10"
+        }
+      }
+    },
+    {
+      "id": "bounded:polynomial",
+      "request": {
+        "problem_id": "test:polynomial",
+        "operation": "polynomial",
+        "data": {
+          "polynomial": [
+            -4,
+            0,
+            1
+          ]
+        }
+      },
+      "expected": {
+        "method": "cognition.exact",
+        "state": "NONE",
+        "output": {
+          "real_roots": [
+            "-2",
+            "2"
+          ]
+        }
+      }
+    },
+    {
+      "id": "bounded:estimate",
+      "request": {
+        "problem_id": "test:estimate",
+        "operation": "estimate",
+        "data": {
+          "factors": [
+            {
+              "name": "n",
+              "low": 2,
+              "central": 3,
+              "high": 4
+            },
+            {
+              "name": "p",
+              "low": 5,
+              "central": 6,
+              "high": 7
+            }
+          ]
+        }
+      },
+      "expected": {
+        "method": "cognition.estimation",
+        "state": "NONE",
+        "output": {
+          "central": 18
+        }
+      }
+    },
+    {
+      "id": "bounded:constraints",
+      "request": {
+        "problem_id": "test:constraints",
+        "operation": "constraints",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              10
+            ],
+            "y": [
+              0,
+              10
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 1
+              },
+              "op": ">=",
+              "rhs": 5
+            }
+          ]
+        }
+      },
+      "expected": {
+        "method": "cognition.formal",
+        "state": "NONE",
+        "output": {
+          "solver_status": "SAT"
+        }
+      }
+    },
+    {
+      "id": "bounded:optimize",
+      "request": {
+        "problem_id": "test:optimize",
+        "operation": "optimize",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              10
+            ],
+            "y": [
+              0,
+              10
+            ]
+          },
+          "constraints": [
+            {
+              "coefficients": {
+                "x": 1,
+                "y": 1
+              },
+              "op": ">=",
+              "rhs": 5
+            }
+          ],
+          "objective": {
+            "coefficients": {
+              "x": 1,
+              "y": 2
+            },
+            "sense": "min"
+          }
+        }
+      },
+      "expected": {
+        "method": "cognition.optimization",
+        "state": "NONE",
+        "output": {
+          "objective_value": 5
+        }
+      }
+    },
+    {
+      "id": "bounded:shortest_path",
+      "request": {
+        "problem_id": "test:shortest_path",
+        "operation": "shortest_path",
+        "data": {
+          "edges": [
+            [
+              "a",
+              "b",
+              2
+            ],
+            [
+              "b",
+              "c",
+              3
+            ],
+            [
+              "a",
+              "c",
+              9
+            ]
+          ],
+          "start": "a",
+          "goal": "c"
+        }
+      },
+      "expected": {
+        "method": "cognition.graph",
+        "state": "NONE",
+        "output": {
+          "cost": 5
+        }
+      }
+    },
+    {
+      "id": "bounded:state_search",
+      "request": {
+        "problem_id": "test:state_search",
+        "operation": "state_search",
+        "data": {
+          "edges": [
+            [
+              "a",
+              "b",
+              2
+            ],
+            [
+              "b",
+              "c",
+              3
+            ]
+          ],
+          "start": "a",
+          "goal": "c"
+        }
+      },
+      "expected": {
+        "method": "cognition.search",
+        "state": "NONE",
+        "output": {
+          "path": [
+            "a",
+            "b",
+            "c"
+          ]
+        }
+      }
+    },
+    {
+      "id": "bounded:beta_update",
+      "request": {
+        "problem_id": "test:beta_update",
+        "operation": "beta_update",
+        "data": {
+          "alpha": 1,
+          "beta": 1,
+          "successes": 3,
+          "failures": 1
+        }
+      },
+      "expected": {
+        "method": "cognition.probabilistic",
+        "state": "NONE",
+        "output": {
+          "alpha": 4
+        }
+      }
+    },
+    {
+      "id": "bounded:treatment_effect",
+      "request": {
+        "problem_id": "test:treatment_effect",
+        "operation": "treatment_effect",
+        "data": {
+          "design": "randomized",
+          "treated": [
+            4,
+            6
+          ],
+          "control": [
+            1,
+            3
+          ],
+          "dag": [
+            [
+              "X",
+              "Y"
+            ]
+          ]
+        }
+      },
+      "expected": {
+        "method": "cognition.causal",
+        "state": "NONE",
+        "output": {
+          "effect": 3
+        }
+      }
+    },
+    {
+      "id": "bounded:pid",
+      "request": {
+        "problem_id": "test:pid",
+        "operation": "pid",
+        "data": {
+          "observed": 2,
+          "target": 10,
+          "kp": 2,
+          "correction_limit": 3
+        }
+      },
+      "expected": {
+        "method": "cognition.control",
+        "state": "NONE",
+        "output": {
+          "correction": 3
+        }
+      }
+    },
+    {
+      "id": "bounded:value_of_information",
+      "request": {
+        "problem_id": "test:value_of_information",
+        "operation": "value_of_information",
+        "data": {
+          "prior_best_value": 10,
+          "cost": 2,
+          "posterior_scenarios": [
+            {
+              "probability": 0.5,
+              "best_value": 16
+            },
+            {
+              "probability": 0.5,
+              "best_value": 12
+            }
+          ]
+        }
+      },
+      "expected": {
+        "method": "cognition.information",
+        "state": "NONE",
+        "output": {
+          "net_value": 2
+        }
+      }
+    },
+    {
+      "id": "bounded:simulate",
+      "request": {
+        "problem_id": "test:simulate",
+        "operation": "simulate",
+        "data": {
+          "seed": 3,
+          "samples": 10,
+          "steps": 2,
+          "step_probability": 1
+        }
+      },
+      "expected": {
+        "method": "cognition.simulation",
+        "state": "NONE",
+        "output": {
+          "mean": 2
+        }
+      }
+    },
+    {
+      "id": "bounded:minimax",
+      "request": {
+        "problem_id": "test:minimax",
+        "operation": "minimax",
+        "data": {
+          "payoffs": [
+            [
+              1,
+              -1
+            ],
+            [
+              -1,
+              1
+            ]
+          ]
+        }
+      },
+      "expected": {
+        "method": "cognition.game",
+        "state": "NONE",
+        "output": {
+          "value": 0
+        }
+      }
+    },
+    {
+      "id": "bounded:anomalies",
+      "request": {
+        "problem_id": "test:anomalies",
+        "operation": "anomalies",
+        "data": {
+          "observations": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            10
+          ],
+          "threshold": 2
+        }
+      },
+      "expected": {
+        "method": "cognition.pattern",
+        "state": "NONE",
+        "output": {
+          "anomalies": [
+            5
+          ]
+        }
+      }
+    },
+    {
+      "id": "bounded:setpoint",
+      "request": {
+        "problem_id": "test:setpoint",
+        "operation": "setpoint",
+        "data": {
+          "observed": 2,
+          "low": 3,
+          "high": 7
+        }
+      },
+      "expected": {
+        "method": "cognition.micro",
+        "state": "NONE",
+        "output": {
+          "state": "stimulate"
+        }
+      }
+    },
+    {
+      "id": "bounded:mdp",
+      "request": {
+        "problem_id": "test:mdp",
+        "operation": "mdp",
+        "data": {
+          "transitions": {
+            "s": {
+              "stay": {
+                "s": 1
+              }
+            }
+          },
+          "rewards": {
+            "s": {
+              "stay": 2
+            }
+          },
+          "horizon": 3
+        }
+      },
+      "expected": {
+        "method": "cognition.sequential",
+        "state": "NONE",
+        "output": {
+          "values": {
+            "s": 6
+          }
+        }
+      }
+    },
+    {
+      "id": "bounded:quorum",
+      "request": {
+        "problem_id": "test:quorum",
+        "operation": "quorum",
+        "data": {
+          "observations": [
+            {
+              "observer_id": "0",
+              "independence_group": "0",
+              "choice": "a",
+              "weight": 1
+            },
+            {
+              "observer_id": "1",
+              "independence_group": "1",
+              "choice": "a",
+              "weight": 1
+            },
+            {
+              "observer_id": "2",
+              "independence_group": "2",
+              "choice": "a",
+              "weight": 1
+            }
+          ]
+        }
+      },
+      "expected": {
+        "method": "cognition.collective",
+        "state": "NONE",
+        "output": {
+          "choice": "a"
+        }
+      }
+    },
+    {
+      "id": "epistemic:unidentified",
+      "request": {
+        "problem_id": "test:treatment_effect",
+        "operation": "treatment_effect",
+        "data": {
+          "design": "observational",
+          "treated": [
+            5
+          ],
+          "control": [
+            2
+          ]
+        }
+      },
+      "expected": {
+        "method": "cognition.causal",
+        "state": "UNIDENTIFIED",
+        "output": {
+          "effect": null
+        }
+      }
+    },
+    {
+      "id": "rights:hard-constraint",
+      "request": {
+        "problem_id": "test:calculate",
+        "operation": "calculate",
+        "data": {
+          "expression": "1+1"
+        },
+        "consequences": {
+          "rights": 0.01
+        }
+      },
+      "expected": {
+        "method": "cognition.exact",
+        "state": "PROHIBITED"
+      }
+    },
+    {
+      "id": "formal:incomplete-high-risk",
+      "request": {
+        "problem_id": "test:constraints",
+        "operation": "constraints",
+        "data": {
+          "variables": {
+            "x": [
+              0,
+              1
+            ]
+          },
+          "constraints": []
+        },
+        "consequences": {
+          "financial": 0.9
+        }
+      },
+      "expected": {
+        "method": "cognition.formal",
+        "state": "FORMALIZATION_INCOMPLETE"
+      }
+    },
+    {
+      "id": "unknown:capability-deficit",
+      "request": {
+        "problem_id": "test:unknown_geometry",
+        "operation": "unknown_geometry",
+        "data": {}
+      },
+      "expected": {
+        "method": "none",
+        "state": "CAPABILITY_DEFICIT"
+      }
+    },
+    {
+      "id": "semantic:live-model-unavailable",
+      "request": {
+        "problem_id": "test:interpret",
+        "operation": "interpret",
+        "data": {
+          "text": "Propose a creative strategy from supplied sources."
+        }
+      },
+      "expected": {
+        "method": "cognition.semantic",
+        "state": "ABSTAIN"
+      }
+    }
+  ]
+}

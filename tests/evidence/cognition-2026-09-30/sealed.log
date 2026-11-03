@@ -1,0 +1,7 @@
+  ok   external_effects = 0 (required 0)
+  ok   authorization_state = 'SIMULATED_NOT_AUTHORIZED' (required 'SIMULATED_NOT_AUTHORIZED')
+  ok   exact_restoration_attempts = 0 (required 0)
+  ok   false_activations = 0 (required 0)
+  ok   verdict = MECHANICS_VALIDATED_NOT_PRODUCTION_AUTHORIZED
+
+sealed developmental state declared and intact (declaration check only — see module docstring)

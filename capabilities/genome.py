@@ -54,6 +54,7 @@ class CapabilityGenome:
     failure_modes: list[str]
     recovery_path: str
     legal_operator: str = "alfonso_lopez"
+    cognitive_profile: dict = field(default_factory=dict)
 
     def validate(self) -> list[str]:
         problems = []
@@ -72,6 +73,12 @@ class CapabilityGenome:
         if not self.failure_modes:
             problems.append("genome must declare its failure modes")
         problems.extend(self.authority.validate())
+        if self.cognitive_profile:
+            try:
+                from greg.cognition.contracts import CognitiveCapabilityProfile
+                CognitiveCapabilityProfile.from_dict(self.cognitive_profile)
+            except (TypeError, ValueError) as exc:
+                problems.append(f"invalid cognitive profile: {exc}")
         return problems
 
 

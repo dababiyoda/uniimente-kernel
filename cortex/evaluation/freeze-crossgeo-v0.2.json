@@ -1,0 +1,94 @@
+{
+  "frozen_at": "2026-10-01T14:29:19Z",
+  "inputs": {
+    "code": {
+      "cortex/contracts.py": "sha256:9d37d833fb3ac3110df0a2c9f2fa2d503c5ed3cf9c7e27b30fa6bcaba5bfc959",
+      "cortex/evaluation/arms.py": "sha256:b19b37d0d8d4a25235386d23fb333ca305aca81751a09feb23457548f3d8edab",
+      "cortex/evaluation/build_suites.py": "sha256:8115c7feae736c8878e56d4c1879fe7974b06f9a87768973cb57ff6f805b9187",
+      "cortex/evaluation/crossgeo.py": "sha256:2122c0966ed158a06d9242380946ecd3a1865e9bfe83bb5a510019c92854eee4",
+      "cortex/evaluation/crossgeo_arms.py": "sha256:d06cbf804594c5788ae4c5d154d720c1aa3e219eb293457485e24fdd314e38c8",
+      "cortex/evaluation/crossgeo_loss.py": "sha256:c36be46479a16d29a9cc929d2d07a687e9d43db93ff8c8625026e1e94c9d0457",
+      "cortex/evaluation/crossgeo_suite.py": "sha256:6aa672f350a86587e008aa1a288f4de69491349d9e852fd373d87b5f31ce7e74",
+      "cortex/evaluation/generators.py": "sha256:2b302d0d01b8051eae604dec7214726c53fe6bce7deb90d4e55b5cdcc544c362",
+      "cortex/gates.py": "sha256:8c83fd591b71109153845cda3bfb55f3cbda36986891ff5cae124362a60dc164",
+      "cortex/genome.py": "sha256:e6aa73cd9e20bb3e8d7d8fef2ce15ba5e26a7ea902d0dc0f8dbda815a4d701c0",
+      "cortex/organs/adversarial.py": "sha256:2f24abb4e155f640adea05bfb3be0a88d9cd64af2b6447d923de05fa54d1450f",
+      "cortex/organs/cpsat.py": "sha256:192d2508f1e464cbfb4c5192df8207f17c6cb543e7282ef34a1059ab2b735162",
+      "cortex/organs/deterrence.py": "sha256:e7b93a7200ece7b0ec8187b018b3aba84d6121fddd6b413db6eb32fa17c076bb",
+      "cortex/organs/estimation.py": "sha256:a7eb0c2709c54aedc0f9df23428a12b5274110ee6564ebcd061ced8eba6a9d8e",
+      "cortex/organs/evidence_causal.py": "sha256:7569d74b10ffafed3b51aacbb854ff41d76d398cdd6f0b48e465e9cf9b66456e",
+      "cortex/organs/formal.py": "sha256:b0a1f64e6fa9c24c4cef7594d042ae4038e58421b6e078e79bca6fadc0fb92cd",
+      "cortex/organs/formal_eval.py": "sha256:cc6efca87090aa0d6e7af1460b789b8b483ee9f63e77c6d5e6c3e0cf04bc9131",
+      "cortex/organs/schedule_extraction.py": "sha256:bb440433915e003344ed2c82f8c0c87d40ee11cdeb8f766f254e74ac6718b047",
+      "cortex/organs/semantic.py": "sha256:20f1eaec8108f0ec650cf64069d6ba4e25819f1fe546afdb8907b5d4cb4db0d3",
+      "cortex/outcomes.py": "sha256:9d2c6120d22d97cc2198c5e480e2d5e03ed95c87f284016f24ecb0c037263d72",
+      "cortex/routing.py": "sha256:9c7e0ffef9817932a1b467f84882ee6e560474362bb4e5e6d83c4daff4cc2b05",
+      "greg/cognition/bridge.py": "sha256:bcc916450945a3d0db5a9220e2131d0b043f864cd4da45db93259325615fcc33",
+      "greg/cognition/catalog.py": "sha256:d18f2cf899e90b86f4985276238c01626b9d350272d58fc6509314fbc51a8cbd",
+      "greg/cognition/contracts.py": "sha256:4955842e1586a234c8a955d7ce96ff8be236457feedd1fa283a68d4a6e043d81",
+      "greg/cognition/cortex.py": "sha256:01590a5775d0ea5304a16037350fe1e336cd81a2db59410cf22dce619013fb1d",
+      "greg/cognition/settlement.py": "sha256:c7ec84c8470f4a223b9362ec8671b74d71a0aa295b6680d8957ec0e7af9b4fc6",
+      "greg/cognition/solvers.py": "sha256:150014e23af5780496f4bf2710300ce430d071a1642b271d79ef1ef0640527a6",
+      "greg/cognition/verification.py": "sha256:3c05f187d61d5aa08b79c9b659b0df61b9a1d3f787c66e8c460da5f0269b392d",
+      "greg/cognition/worker.py": "sha256:34617536de8dd75289295965dd5ec7727e37d4a448f0a908ffd35159becaba3f"
+    },
+    "cortex_version": "0.2.0",
+    "decision": {
+      "alpha": 0.05,
+      "bootstrap_b": 4000,
+      "bootstrap_seed": 20261001,
+      "ci_lower_bound_above": 0.0,
+      "max_hard_failures": 0,
+      "max_stratum_regression": 0.05,
+      "min_relative_reduction": 0.1,
+      "power": 0.8
+    },
+    "declared_baselines": [
+      "existing_greg",
+      "always_llm",
+      "tool_llm",
+      "static_router"
+    ],
+    "loss_version": "greg-crossgeo-loss/0.1",
+    "partitions": {
+      "development": [
+        "dev"
+      ],
+      "reported": [
+        "heldout",
+        "adversarial"
+      ],
+      "selection": [
+        "selection"
+      ]
+    },
+    "permitted_exclusions": "none: every item in a reported partition is scored",
+    "routed": "routed_greg",
+    "stopping": "one pass over every item; no early stopping",
+    "suites": {
+      "adversarial": "sha256:6fac91ff1124b29ebf5ccd975389f1bb609da61182d55504eacb002a3739e542",
+      "dev": "sha256:f8bbefe23abf2d1ed314191baedb82992f89109d4bfc27a731286edce39b2b40",
+      "heldout": "sha256:be8f9b0772d425481864992e921c2d6b0c117f3a5ec14dcc9f9d38bbabc0113c",
+      "selection": "sha256:1f7f2577d3526c43911cad0970e0e359e03bc38ecf6932af27295f8f2640c51c"
+    },
+    "weights": {
+      "cost": 0.1,
+      "false_claim": 1.0,
+      "interval_width": 0.1,
+      "latency": 0.05,
+      "outcome_error": 1.0,
+      "task_failure": 1.0,
+      "unjustified_abstention": 0.6,
+      "wrong_withholding": 0.2
+    }
+  },
+  "planning": {
+    "baseline_mean_loss": 0.028069011141683625,
+    "planned_heldout_n": 1200,
+    "required_heldout_n_for_10pct_at_power_0.8": 1109,
+    "sd_paired_difference": 0.03335530414200258,
+    "source": "selection partition (never held-out)",
+    "strongest_baseline": "static_router"
+  },
+  "schema": "greg-crossgeo-freeze/0.1"
+}

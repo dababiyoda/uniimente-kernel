@@ -1,0 +1,317 @@
+{
+  "audit": {
+    "method": "token scan of the original text (independent of the extractor)",
+    "problems": []
+  },
+  "compiled_model": {
+    "constraints": [
+      {
+        "covers": [
+          "R_end_A"
+        ],
+        "expr": [
+          "<=",
+          [
+            "+",
+            "s_A",
+            3
+          ],
+          10
+        ],
+        "id": "C_end_A"
+      },
+      {
+        "covers": [
+          "R_end_B"
+        ],
+        "expr": [
+          "<=",
+          [
+            "+",
+            "s_B",
+            4
+          ],
+          10
+        ],
+        "id": "C_end_B"
+      },
+      {
+        "covers": [
+          "R_dl_B"
+        ],
+        "expr": [
+          "<=",
+          [
+            "+",
+            "s_B",
+            4
+          ],
+          9
+        ],
+        "id": "C_dl_B"
+      },
+      {
+        "covers": [
+          "R_end_C"
+        ],
+        "expr": [
+          "<=",
+          [
+            "+",
+            "s_C",
+            2
+          ],
+          10
+        ],
+        "id": "C_end_C"
+      },
+      {
+        "covers": [
+          "R_one"
+        ],
+        "expr": [
+          "or",
+          [
+            "<=",
+            [
+              "+",
+              "s_A",
+              3
+            ],
+            "s_B"
+          ],
+          [
+            "<=",
+            [
+              "+",
+              "s_B",
+              4
+            ],
+            "s_A"
+          ]
+        ],
+        "id": "C_one_A_B"
+      },
+      {
+        "covers": [
+          "R_one"
+        ],
+        "expr": [
+          "or",
+          [
+            "<=",
+            [
+              "+",
+              "s_A",
+              3
+            ],
+            "s_C"
+          ],
+          [
+            "<=",
+            [
+              "+",
+              "s_C",
+              2
+            ],
+            "s_A"
+          ]
+        ],
+        "id": "C_one_A_C"
+      },
+      {
+        "covers": [
+          "R_one"
+        ],
+        "expr": [
+          "or",
+          [
+            "<=",
+            [
+              "+",
+              "s_B",
+              4
+            ],
+            "s_C"
+          ],
+          [
+            "<=",
+            [
+              "+",
+              "s_C",
+              2
+            ],
+            "s_B"
+          ]
+        ],
+        "id": "C_one_B_C"
+      },
+      {
+        "covers": [
+          "R_prec_A_C"
+        ],
+        "expr": [
+          ">=",
+          "s_C",
+          [
+            "+",
+            "s_A",
+            3
+          ]
+        ],
+        "id": "C_prec_A_C"
+      }
+    ],
+    "obligations": [
+      {
+        "id": "R_end_A",
+        "text": "job A (3h) ends within the 10h shift"
+      },
+      {
+        "id": "R_end_B",
+        "text": "job B (4h) ends within the 10h shift"
+      },
+      {
+        "id": "R_dl_B",
+        "text": "job B must finish by hour 9"
+      },
+      {
+        "id": "R_end_C",
+        "text": "job C (2h) ends within the 10h shift"
+      },
+      {
+        "id": "R_one",
+        "text": "the machine runs one job at a time"
+      },
+      {
+        "id": "R_prec_A_C",
+        "text": "job C starts after job A ends"
+      }
+    ],
+    "premises": [
+      {
+        "evidence_ref": "example: shift roster for the day",
+        "id": "P_avail",
+        "text": "the machine is available for the whole 10h shift",
+        "verified": true
+      }
+    ],
+    "query": {
+      "kind": "optimize",
+      "objective": [
+        "+",
+        [
+          "+",
+          "s_A",
+          3
+        ],
+        [
+          "+",
+          "s_B",
+          4
+        ],
+        [
+          "+",
+          "s_C",
+          2
+        ]
+      ],
+      "sense": "minimize"
+    },
+    "requirement": "Shift: 10 hours. Job A takes 3 hours. Job B takes 4 hours. Job C takes 2 hours. A before C. B must finish by hour 9. One machine; one job at a time. Minimize total completion time.",
+    "variables": [
+      {
+        "hi": 10,
+        "lo": 0,
+        "name": "s_A",
+        "sort": "int"
+      },
+      {
+        "hi": 10,
+        "lo": 0,
+        "name": "s_B",
+        "sort": "int"
+      },
+      {
+        "hi": 10,
+        "lo": 0,
+        "name": "s_C",
+        "sort": "int"
+      }
+    ],
+    "witnesses": {
+      "satisfying": [],
+      "violating": []
+    }
+  },
+  "extractor": "controlled",
+  "grammar": "greg-schedule-cl/0.1",
+  "grammar_error": null,
+  "limits": "the audit catches dropped, invented and altered quantities; it cannot prove the reading is what the founder meant, and a job named once at the start of a sentence whose duration another job shares can be dropped unnoticed",
+  "original": "Shift: 10 hours. Job A takes 3 hours. Job B takes 4 hours. Job C takes 2 hours. A before C. B must finish by hour 9. One machine; one job at a time. Minimize total completion time.",
+  "proof_class": "extraction",
+  "proposal": "the cortex executes nothing: to apply this schedule, sign a mission whose strategy records or acts on it through the Gate (e.g. fs.write to workspace:schedule.json, internal_write) after comparing the reverse translation with your request",
+  "provenance": [
+    {
+      "fact": "shift",
+      "sentence": "Shift: 10 hours"
+    },
+    {
+      "fact": "job",
+      "sentence": "Job A takes 3 hours"
+    },
+    {
+      "fact": "job",
+      "sentence": "Job B takes 4 hours"
+    },
+    {
+      "fact": "job",
+      "sentence": "Job C takes 2 hours"
+    },
+    {
+      "fact": "before",
+      "sentence": "A before C"
+    },
+    {
+      "fact": "deadline",
+      "sentence": "B must finish by hour 9"
+    },
+    {
+      "fact": "single",
+      "sentence": "One machine; one job at a time"
+    },
+    {
+      "fact": "objective",
+      "sentence": "Minimize total completion time"
+    }
+  ],
+  "reverse_translation": "Shift: 10 hours. Job A takes 3 hours. Job B takes 4 hours. B must finish by hour 9. Job C takes 2 hours. A before C. Minimize total completion time.",
+  "structured": {
+    "jobs": {
+      "A": {
+        "deadline": null,
+        "hours": 3,
+        "release": null
+      },
+      "B": {
+        "deadline": 9,
+        "hours": 4,
+        "release": null
+      },
+      "C": {
+        "deadline": null,
+        "hours": 2,
+        "release": null
+      }
+    },
+    "objective": "total_completion_time",
+    "precedence": [
+      [
+        "A",
+        "C"
+      ]
+    ],
+    "shift": 10,
+    "single_machine": true
+  }
+}

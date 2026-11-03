@@ -1,0 +1,49 @@
+{
+ "intent_id": "INTENT-20261001-greg-seed-genome",
+ "statement": "Build and verify the Competency Compiler on the real GREG path: four competency classes and an independent verifier behind deterministic eligibility, typed receipts with no authority, durable idempotent settlement, a frozen five-arm cross-geometry comparison with a predeclared 10% loss reduction, an interruption rehearsal through the actual runtime, and one reconciled P0-P13 backcast subordinate to VEPMC; preserve the founder's words and every review item.",
+ "source_refs": [
+  "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md",
+  "docs/collaboration/intents-greg-seed-genome-20261001.json (SG-001 to SG-012)",
+  "docs/collaboration/requirements-greg-seed-genome-20261001.json",
+  "Chat text is intent evidence; it does not authenticate a runtime principal"
+ ],
+ "owner": "Alfonso Lopez (root authority); cortex and GREG maintainers implement",
+ "state": "active",
+ "binding_scope": "Development and evaluation on a draft branch; consequence-inert. Merge, deployment, publication, paid services and live-authority changes are not authorized by this record.",
+ "constitutional_constraints": [
+  "Cognition creates no authority (schema-enforced and mutation-tested)",
+  "One registry, one entry, one learning plane",
+  "No paid fallback, unapproved download, model-server launch or provisioning",
+  "Founder stop and detach win across restart",
+  "Building != installation != activation != consequence authority"
+ ],
+ "success_evidence": [
+  "tests/evidence/greg-cortex-rehearsal/rehearsal-summary.json",
+  "tests/evidence/cortex-mutants-2026-10-01/run3-v0.2.1.log",
+  "tests/evidence/greg-crossgeo-v0.3/results.json",
+  "cortex/evaluation/freeze-crossgeo-v0.3.json"
+ ],
+ "failure_evidence": [
+  "tests/evidence/cortex-mutants-2026-10-01/run1-two-survivors.log",
+  "tests/evidence/greg-crossgeo-v0.2/results.json (v0.2 GAIN_ABSENT: one hard failure, fixed in 0.2.1)",
+  "tests/evidence/greg-crossgeo-v0.3/results.json (v0.3 GAIN_VERIFIED_AGAINST_RUN_BASELINES; gain concentrated in one family; model arms NOT_RUN)"
+ ],
+ "dependencies": [
+  "INTENT-20260930-polyintelligence-cortex",
+  "INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE",
+  "INTENT-20260930-open-source-first"
+ ],
+ "conflicts": [
+  "SG-012: high privacy harm is rankable under the declared harm policy"
+ ],
+ "next_review_trigger": "a founder-selected local model on Body 1 (runs the model arms), the founder's N1 run, or a P4 learned-routing comparison",
+ "supersedes": [],
+ "superseded_by": [],
+ "implementation_refs": [
+  "cortex/routing.py",
+  "greg/cognition/bridge.py",
+  "cortex/evaluation/crossgeo.py",
+  "tests/integration/test_greg_cortex_rehearsal.py",
+  "greg/path.json"
+ ]
+}

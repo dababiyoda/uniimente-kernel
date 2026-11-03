@@ -177,9 +177,11 @@ Reject decorative complexity.
 
 ## 8. Product-first implementation rule
 
-Current bottleneck until verified otherwise:
-
-**VEPMC 0 -> 1.**
+**Superseded 2026-10-02** (`INTENT-20261002-FULL-MACHINE-CONTINUATION`). This section read: "Current bottleneck
+until verified otherwise: **VEPMC 0 -> 1.**" VEPMC remains the required founder-device proof and the one
+operationally primary node on `greg/path.json`. It is an item-specific gate, not a project bottleneck: it never
+pauses unrelated buildable Body + Organs + Mind work. The completion boundary is the whole machine; select
+the highest-priority unfinished dependency of that machine, build it, prove it, integrate it, and continue.
 
 A substantial coding session is not complete merely because it created:
 
@@ -377,7 +379,9 @@ A strong session leaves:
 4. preserved negative evidence;
 5. a clean handoff;
 6. no unauthorized consequence;
-7. a clearer next bottleneck.
+7. a clearer next bottleneck;
+8. the next unblocked requirement already under way, or every remaining requirement tied to a founder-only
+   action, a genuine external dependency or a demonstrated technology limit (2026-10-02).
 
 A weak session leaves another impressive document, another isolated experiment, another unintegrated framework, or another interpretation future agents must rediscover.
 
@@ -400,3 +404,8 @@ Before an agent stops, it must be able to answer:
 **What did I make more real?**
 
 If the answer is unclear, the work is not yet adequately connected to the Opus Maximus.
+
+Since 2026-10-02 this is the handoff test, not the stopping condition. An agent stops only when the currently
+achievable Body + Organs + Mind is integrated and executable, or when each remaining requirement waits on a
+named founder-only action, a genuine external dependency or a demonstrated technology limit. One product delta
+is a reason to continue, not a reason to stop.

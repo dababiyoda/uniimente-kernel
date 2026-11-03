@@ -1,0 +1,37 @@
+{
+  "as_of": "2026-09-30",
+  "available": [],
+  "claim": {
+    "id": "C",
+    "statement": "t raises y",
+    "type": "intervention"
+  },
+  "contradiction_weight": 0,
+  "contradictions": [],
+  "excluded": [],
+  "identification": "failed",
+  "identification_problems": [
+    "declared unmeasured confounders ['prior engagement']"
+  ],
+  "missing_observations": [
+    {
+      "description": "an explicit estimand",
+      "tag": "estimand"
+    },
+    {
+      "description": "identification assumptions",
+      "tag": "identification_assumptions"
+    },
+    {
+      "description": "treatment, outcome and confounder data (or an experiment)",
+      "tag": "treatment_outcome_confounder_data"
+    }
+  ],
+  "note": "association evidence does not identify an intervention effect",
+  "proof_class": "evidence_assessment",
+  "proposal": "bounded_experiment",
+  "provenance": [],
+  "stale": [],
+  "support_weight": 0,
+  "unresolved_question": "The causal effect is not identified from what is available."
+}

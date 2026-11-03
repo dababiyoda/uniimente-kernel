@@ -1,5 +1,20 @@
 # CANONICAL EXECUTION ORDER
 
+## Controlling founder completion correction — 2026-10-02
+
+**BODY + ORGANS + MIND = GREG / UNIIMENTE is the fixed completion boundary.**
+The complete currently achievable autonomous machine must be implemented and integrated before Alfonso's sustained use, critique and refinement phase.
+
+Reconstruct that whole boundary; identify the highest-priority unfinished dependency; build the smallest rigorous increment needed to advance it; prove it; integrate it; automatically resume the parent objective and the next unblocked requirement. Repeat until all currently achievable requirements are executable and integrated. A seed, experiment, sandbox, benchmark, registry, PR, smallest falsifiable build or VEPMC milestone is a sequencing or evidence unit, never the project stopping condition. A narrow PR does not narrow the machine.
+
+Never convert not implemented into not intended, future family into permanent omission, sandboxed into complete, registered into implemented, seed into final architecture, a tested component into a complete system, or any milestone into the total product definition. Do not replace feasible executable machinery with placeholders or architecture prose.
+
+An item may wait only for an inherently founder-only action, genuine external dependency, or demonstrated technology limit. Preserve the destination and build the strongest defensible approximation/backcast for a technology limit. Finish every unrelated buildable item while that item waits. Founder-use evidence may remain pending without stopping software completion. Stage gates apply to the affected integration, activation or claim; they do not globally prohibit reversible implementation.
+
+Preserve failures, dissent and useful historical mechanisms. Keep one canonical runtime and authority path. Implementation creates no merge, deployment, activation, expenditure, publishing or contact authority; existing signed gates, consent, budgets, pause, revocation and shutdown remain effective.
+
+Controlling source: `docs/intent/sources/FULL-MACHINE-COMPLETION-CORRECTION-20261002.md`; trace and source-access limits: `docs/intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json`. Apply `docs/RECURSIVE_COLLABORATION_PROTOCOL.md`. A successful experiment must automatically return to the parent founder objective.
+
 Repository-grounded execution and reconciliation order. Read together with:
 
 - `FOUNDER_EFFECT_COMPILER.md` — governs interpretation of founder language;

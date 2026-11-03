@@ -1,0 +1,1024 @@
+{
+ "schema": "greg-shadow-vs-static/0.1",
+ "freeze_digest": "sha256:6009b474b0d66279420287064b82f5d5deac6a032225e06780977642ed549f87",
+ "suite_digest": "sha256:d1d8084cf3782edd4bae9ca20847dc2d9c65561ad54cb3125109bb3d549c339a",
+ "verdict": "NO_GAIN",
+ "gain": 0.0,
+ "ci95": [
+  0.0,
+  0.0
+ ],
+ "relative_gain": 0.0,
+ "n": 60,
+ "policies_differ_on": 0,
+ "static_mean_loss": 0.09591905067666656,
+ "learned_mean_loss": 0.09591905067666656,
+ "hindsight_best_engine_mean_loss": 0.05109203742000023,
+ "hard_failures": 0,
+ "accuracy": {
+  "formal.z3": 1.0,
+  "optimization.cpsat": 1.0
+ },
+ "ledger_cells": [
+  {
+   "method": "cortex.formal.z3",
+   "version": "0.2.0",
+   "geometry": "optimization",
+   "conditions": [],
+   "estimate": 0.9909,
+   "weighted_outcomes": 9.0,
+   "basis": "cell"
+  },
+  {
+   "method": "cortex.formal.z3",
+   "version": "0.2.0",
+   "geometry": "constraint_feasibility",
+   "conditions": [],
+   "estimate": 0.9909,
+   "weighted_outcomes": 9.0,
+   "basis": "cell"
+  },
+  {
+   "method": "cortex.optimization.cpsat",
+   "version": "0.2.0",
+   "geometry": "optimization",
+   "conditions": [],
+   "estimate": 0.9909,
+   "weighted_outcomes": 9.0,
+   "basis": "cell"
+  },
+  {
+   "method": "cortex.optimization.cpsat",
+   "version": "0.2.0",
+   "geometry": "constraint_feasibility",
+   "conditions": [],
+   "estimate": 0.9909,
+   "weighted_outcomes": 9.0,
+   "basis": "cell"
+  }
+ ],
+ "rows": [
+  {
+   "id": "item-030",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.11697224220000066,
+   "learned_loss": 0.11697224220000066,
+   "engine_loss": {
+    "formal.z3": 0.05173938280000243,
+    "optimization.cpsat": 0.11697224220000066
+   },
+   "engine_latency": {
+    "formal.z3": 0.2587,
+    "optimization.cpsat": 0.5849
+   }
+  },
+  {
+   "id": "item-031",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.047408944800002926,
+   "learned_loss": 0.047408944800002926,
+   "engine_loss": {
+    "formal.z3": 0.047408944800002926,
+    "optimization.cpsat": 0.12158237959999951
+   },
+   "engine_latency": {
+    "formal.z3": 0.237,
+    "optimization.cpsat": 0.6079
+   }
+  },
+  {
+   "id": "item-032",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.13407103320000147,
+   "learned_loss": 0.13407103320000147,
+   "engine_loss": {
+    "formal.z3": 0.047263883200002965,
+    "optimization.cpsat": 0.13407103320000147
+   },
+   "engine_latency": {
+    "formal.z3": 0.2363,
+    "optimization.cpsat": 0.6704
+   }
+  },
+  {
+   "id": "item-033",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.05353809640000122,
+   "learned_loss": 0.05353809640000122,
+   "engine_loss": {
+    "formal.z3": 0.05353809640000122,
+    "optimization.cpsat": 0.1170810270000004
+   },
+   "engine_latency": {
+    "formal.z3": 0.2677,
+    "optimization.cpsat": 0.5854
+   }
+  },
+  {
+   "id": "item-034",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.06651051900000197,
+   "learned_loss": 0.06651051900000197,
+   "engine_loss": {
+    "formal.z3": 0.06651051900000197,
+    "optimization.cpsat": 0.15302906100000085
+   },
+   "engine_latency": {
+    "formal.z3": 0.3326,
+    "optimization.cpsat": 0.7651
+   }
+  },
+  {
+   "id": "item-035",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.1505002795999985,
+   "learned_loss": 0.1505002795999985,
+   "engine_loss": {
+    "formal.z3": 0.09896178779999901,
+    "optimization.cpsat": 0.1505002795999985
+   },
+   "engine_latency": {
+    "formal.z3": 0.4948,
+    "optimization.cpsat": 0.7525
+   }
+  },
+  {
+   "id": "item-036",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.12816724699999896,
+   "learned_loss": 0.12816724699999896,
+   "engine_loss": {
+    "formal.z3": 0.05767442460000325,
+    "optimization.cpsat": 0.12816724699999896
+   },
+   "engine_latency": {
+    "formal.z3": 0.2884,
+    "optimization.cpsat": 0.6408
+   }
+  },
+  {
+   "id": "item-037",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.1423246247999998,
+   "learned_loss": 0.1423246247999998,
+   "engine_loss": {
+    "formal.z3": 0.04193681460000107,
+    "optimization.cpsat": 0.1423246247999998
+   },
+   "engine_latency": {
+    "formal.z3": 0.2097,
+    "optimization.cpsat": 0.7116
+   }
+  },
+  {
+   "id": "item-038",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.14858662820000176,
+   "learned_loss": 0.14858662820000176,
+   "engine_loss": {
+    "formal.z3": 0.05577588219999825,
+    "optimization.cpsat": 0.14858662820000176
+   },
+   "engine_latency": {
+    "formal.z3": 0.2789,
+    "optimization.cpsat": 0.7429
+   }
+  },
+  {
+   "id": "item-039",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.045851928199999746,
+   "learned_loss": 0.045851928199999746,
+   "engine_loss": {
+    "formal.z3": 0.045851928199999746,
+    "optimization.cpsat": 0.1273645197999997
+   },
+   "engine_latency": {
+    "formal.z3": 0.2293,
+    "optimization.cpsat": 0.6368
+   }
+  },
+  {
+   "id": "item-040",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.13150982599999567,
+   "learned_loss": 0.13150982599999567,
+   "engine_loss": {
+    "formal.z3": 0.05700395640000124,
+    "optimization.cpsat": 0.13150982599999567
+   },
+   "engine_latency": {
+    "formal.z3": 0.285,
+    "optimization.cpsat": 0.6575
+   }
+  },
+  {
+   "id": "item-041",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.05438903319999895,
+   "learned_loss": 0.05438903319999895,
+   "engine_loss": {
+    "formal.z3": 0.05438903319999895,
+    "optimization.cpsat": 0.1217447935999985
+   },
+   "engine_latency": {
+    "formal.z3": 0.2719,
+    "optimization.cpsat": 0.6087
+   }
+  },
+  {
+   "id": "item-042",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.14826496339999834,
+   "learned_loss": 0.14826496339999834,
+   "engine_loss": {
+    "formal.z3": 0.05204597540000009,
+    "optimization.cpsat": 0.14826496339999834
+   },
+   "engine_latency": {
+    "formal.z3": 0.2602,
+    "optimization.cpsat": 0.7413
+   }
+  },
+  {
+   "id": "item-043",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.04252084539999714,
+   "learned_loss": 0.04252084539999714,
+   "engine_loss": {
+    "formal.z3": 0.04252084539999714,
+    "optimization.cpsat": 0.10540551579999828
+   },
+   "engine_latency": {
+    "formal.z3": 0.2126,
+    "optimization.cpsat": 0.527
+   }
+  },
+  {
+   "id": "item-044",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.10794489440000347,
+   "learned_loss": 0.10794489440000347,
+   "engine_loss": {
+    "formal.z3": 0.04807095880000247,
+    "optimization.cpsat": 0.10794489440000347
+   },
+   "engine_latency": {
+    "formal.z3": 0.2404,
+    "optimization.cpsat": 0.5397
+   }
+  },
+  {
+   "id": "item-045",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.04918827440000086,
+   "learned_loss": 0.04918827440000086,
+   "engine_loss": {
+    "formal.z3": 0.04918827440000086,
+    "optimization.cpsat": 0.12850162059999662
+   },
+   "engine_latency": {
+    "formal.z3": 0.2459,
+    "optimization.cpsat": 0.6425
+   }
+  },
+  {
+   "id": "item-046",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.14679286960000013,
+   "learned_loss": 0.14679286960000013,
+   "engine_loss": {
+    "formal.z3": 0.04648576040000307,
+    "optimization.cpsat": 0.14679286960000013
+   },
+   "engine_latency": {
+    "formal.z3": 0.2324,
+    "optimization.cpsat": 0.734
+   }
+  },
+  {
+   "id": "item-047",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.10658791060000113,
+   "learned_loss": 0.10658791060000113,
+   "engine_loss": {
+    "formal.z3": 0.04714947079999661,
+    "optimization.cpsat": 0.10658791060000113
+   },
+   "engine_latency": {
+    "formal.z3": 0.2357,
+    "optimization.cpsat": 0.5329
+   }
+  },
+  {
+   "id": "item-048",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.13638260839999816,
+   "learned_loss": 0.13638260839999816,
+   "engine_loss": {
+    "formal.z3": 0.046405637000003705,
+    "optimization.cpsat": 0.13638260839999816
+   },
+   "engine_latency": {
+    "formal.z3": 0.232,
+    "optimization.cpsat": 0.6819
+   }
+  },
+  {
+   "id": "item-049",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.061488852600001566,
+   "learned_loss": 0.061488852600001566,
+   "engine_loss": {
+    "formal.z3": 0.061488852600001566,
+    "optimization.cpsat": 0.1545131282
+   },
+   "engine_latency": {
+    "formal.z3": 0.3074,
+    "optimization.cpsat": 0.7726
+   }
+  },
+  {
+   "id": "item-050",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.05733849320000104,
+   "learned_loss": 0.05733849320000104,
+   "engine_loss": {
+    "formal.z3": 0.05733849320000104,
+    "optimization.cpsat": 0.1501922881999974
+   },
+   "engine_latency": {
+    "formal.z3": 0.2867,
+    "optimization.cpsat": 0.751
+   }
+  },
+  {
+   "id": "item-051",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.12268952100000093,
+   "learned_loss": 0.12268952100000093,
+   "engine_loss": {
+    "formal.z3": 0.05062249260000158,
+    "optimization.cpsat": 0.12268952100000093
+   },
+   "engine_latency": {
+    "formal.z3": 0.2531,
+    "optimization.cpsat": 0.6134
+   }
+  },
+  {
+   "id": "item-052",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.03946462459999793,
+   "learned_loss": 0.03946462459999793,
+   "engine_loss": {
+    "formal.z3": 0.03946462459999793,
+    "optimization.cpsat": 0.1119662166000012
+   },
+   "engine_latency": {
+    "formal.z3": 0.1973,
+    "optimization.cpsat": 0.5598
+   }
+  },
+  {
+   "id": "item-053",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.11403984840000021,
+   "learned_loss": 0.11403984840000021,
+   "engine_loss": {
+    "formal.z3": 0.052989900599999376,
+    "optimization.cpsat": 0.11403984840000021
+   },
+   "engine_latency": {
+    "formal.z3": 0.2649,
+    "optimization.cpsat": 0.5702
+   }
+  },
+  {
+   "id": "item-054",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.1130493145999992,
+   "learned_loss": 0.1130493145999992,
+   "engine_loss": {
+    "formal.z3": 0.04627752740000233,
+    "optimization.cpsat": 0.1130493145999992
+   },
+   "engine_latency": {
+    "formal.z3": 0.2314,
+    "optimization.cpsat": 0.5652
+   }
+  },
+  {
+   "id": "item-055",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.046041483799996286,
+   "learned_loss": 0.046041483799996286,
+   "engine_loss": {
+    "formal.z3": 0.046041483799996286,
+    "optimization.cpsat": 0.1448131692000004
+   },
+   "engine_latency": {
+    "formal.z3": 0.2302,
+    "optimization.cpsat": 0.7241
+   }
+  },
+  {
+   "id": "item-056",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.1173813492000022,
+   "learned_loss": 0.1173813492000022,
+   "engine_loss": {
+    "formal.z3": 0.05060594839999908,
+    "optimization.cpsat": 0.1173813492000022
+   },
+   "engine_latency": {
+    "formal.z3": 0.253,
+    "optimization.cpsat": 0.5869
+   }
+  },
+  {
+   "id": "item-057",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.05166341319999788,
+   "learned_loss": 0.05166341319999788,
+   "engine_loss": {
+    "formal.z3": 0.05166341319999788,
+    "optimization.cpsat": 0.13291210660000274
+   },
+   "engine_latency": {
+    "formal.z3": 0.2583,
+    "optimization.cpsat": 0.6646
+   }
+  },
+  {
+   "id": "item-058",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.12543946039999695,
+   "learned_loss": 0.12543946039999695,
+   "engine_loss": {
+    "formal.z3": 0.0431399832000011,
+    "optimization.cpsat": 0.12543946039999695
+   },
+   "engine_latency": {
+    "formal.z3": 0.2157,
+    "optimization.cpsat": 0.6272
+   }
+  },
+  {
+   "id": "item-059",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.04167586500000198,
+   "learned_loss": 0.04167586500000198,
+   "engine_loss": {
+    "formal.z3": 0.04167586500000198,
+    "optimization.cpsat": 0.1371766923999985
+   },
+   "engine_latency": {
+    "formal.z3": 0.2084,
+    "optimization.cpsat": 0.6859
+   }
+  },
+  {
+   "id": "item-060",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.12071103380000067,
+   "learned_loss": 0.12071103380000067,
+   "engine_loss": {
+    "formal.z3": 0.043749371800004155,
+    "optimization.cpsat": 0.12071103380000067
+   },
+   "engine_latency": {
+    "formal.z3": 0.2187,
+    "optimization.cpsat": 0.6036
+   }
+  },
+  {
+   "id": "item-061",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.1512914453999997,
+   "learned_loss": 0.1512914453999997,
+   "engine_loss": {
+    "formal.z3": 0.058117186200001926,
+    "optimization.cpsat": 0.1512914453999997
+   },
+   "engine_latency": {
+    "formal.z3": 0.2906,
+    "optimization.cpsat": 0.7565
+   }
+  },
+  {
+   "id": "item-062",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.13183429019999834,
+   "learned_loss": 0.13183429019999834,
+   "engine_loss": {
+    "formal.z3": 0.048332548000001904,
+    "optimization.cpsat": 0.13183429019999834
+   },
+   "engine_latency": {
+    "formal.z3": 0.2417,
+    "optimization.cpsat": 0.6592
+   }
+  },
+  {
+   "id": "item-063",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.1353642165999986,
+   "learned_loss": 0.1353642165999986,
+   "engine_loss": {
+    "formal.z3": 0.06458701979999545,
+    "optimization.cpsat": 0.1353642165999986
+   },
+   "engine_latency": {
+    "formal.z3": 0.3229,
+    "optimization.cpsat": 0.6768
+   }
+  },
+  {
+   "id": "item-064",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.14273921600000108,
+   "learned_loss": 0.14273921600000108,
+   "engine_loss": {
+    "formal.z3": 0.07398726819999979,
+    "optimization.cpsat": 0.14273921600000108
+   },
+   "engine_latency": {
+    "formal.z3": 0.3699,
+    "optimization.cpsat": 0.7137
+   }
+  },
+  {
+   "id": "item-065",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.05402362919999746,
+   "learned_loss": 0.05402362919999746,
+   "engine_loss": {
+    "formal.z3": 0.05402362919999746,
+    "optimization.cpsat": 0.12050856280000062
+   },
+   "engine_latency": {
+    "formal.z3": 0.2701,
+    "optimization.cpsat": 0.6025
+   }
+  },
+  {
+   "id": "item-066",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.04051311599999963,
+   "learned_loss": 0.04051311599999963,
+   "engine_loss": {
+    "formal.z3": 0.04051311599999963,
+    "optimization.cpsat": 0.13244167640000343
+   },
+   "engine_latency": {
+    "formal.z3": 0.2026,
+    "optimization.cpsat": 0.6622
+   }
+  },
+  {
+   "id": "item-067",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.1165120619999982,
+   "learned_loss": 0.1165120619999982,
+   "engine_loss": {
+    "formal.z3": 0.052220160799998895,
+    "optimization.cpsat": 0.1165120619999982
+   },
+   "engine_latency": {
+    "formal.z3": 0.2611,
+    "optimization.cpsat": 0.5826
+   }
+  },
+  {
+   "id": "item-068",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.12599033680000388,
+   "learned_loss": 0.12599033680000388,
+   "engine_loss": {
+    "formal.z3": 0.045252785000002405,
+    "optimization.cpsat": 0.12599033680000388
+   },
+   "engine_latency": {
+    "formal.z3": 0.2263,
+    "optimization.cpsat": 0.63
+   }
+  },
+  {
+   "id": "item-069",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.15607039239999948,
+   "learned_loss": 0.15607039239999948,
+   "engine_loss": {
+    "formal.z3": 0.060819004000001085,
+    "optimization.cpsat": 0.15607039239999948
+   },
+   "engine_latency": {
+    "formal.z3": 0.3041,
+    "optimization.cpsat": 0.7804
+   }
+  },
+  {
+   "id": "item-070",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.053619175199997926,
+   "learned_loss": 0.053619175199997926,
+   "engine_loss": {
+    "formal.z3": 0.053619175199997926,
+    "optimization.cpsat": 0.11897810039999968
+   },
+   "engine_latency": {
+    "formal.z3": 0.2681,
+    "optimization.cpsat": 0.5949
+   }
+  },
+  {
+   "id": "item-071",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.051913165600001324,
+   "learned_loss": 0.051913165600001324,
+   "engine_loss": {
+    "formal.z3": 0.051913165600001324,
+    "optimization.cpsat": 0.15584044240000025
+   },
+   "engine_latency": {
+    "formal.z3": 0.2596,
+    "optimization.cpsat": 0.7792
+   }
+  },
+  {
+   "id": "item-072",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.0496348084000033,
+   "learned_loss": 0.0496348084000033,
+   "engine_loss": {
+    "formal.z3": 0.0496348084000033,
+    "optimization.cpsat": 0.14925976579999656
+   },
+   "engine_latency": {
+    "formal.z3": 0.2482,
+    "optimization.cpsat": 0.7463
+   }
+  },
+  {
+   "id": "item-073",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.12134790780000344,
+   "learned_loss": 0.12134790780000344,
+   "engine_loss": {
+    "formal.z3": 0.04971176099999752,
+    "optimization.cpsat": 0.12134790780000344
+   },
+   "engine_latency": {
+    "formal.z3": 0.2486,
+    "optimization.cpsat": 0.6067
+   }
+  },
+  {
+   "id": "item-074",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.050591383400001175,
+   "learned_loss": 0.050591383400001175,
+   "engine_loss": {
+    "formal.z3": 0.050591383400001175,
+    "optimization.cpsat": 0.15966492319999476
+   },
+   "engine_latency": {
+    "formal.z3": 0.253,
+    "optimization.cpsat": 0.7983
+   }
+  },
+  {
+   "id": "item-075",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.048693914400001856,
+   "learned_loss": 0.048693914400001856,
+   "engine_loss": {
+    "formal.z3": 0.048693914400001856,
+    "optimization.cpsat": 0.12222132720000331
+   },
+   "engine_latency": {
+    "formal.z3": 0.2435,
+    "optimization.cpsat": 0.6111
+   }
+  },
+  {
+   "id": "item-076",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.12999730819999514,
+   "learned_loss": 0.12999730819999514,
+   "engine_loss": {
+    "formal.z3": 0.04752225600000202,
+    "optimization.cpsat": 0.12999730819999514
+   },
+   "engine_latency": {
+    "formal.z3": 0.2376,
+    "optimization.cpsat": 0.65
+   }
+  },
+  {
+   "id": "item-077",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.049818546399995965,
+   "learned_loss": 0.049818546399995965,
+   "engine_loss": {
+    "formal.z3": 0.049818546399995965,
+    "optimization.cpsat": 0.1494673356000021
+   },
+   "engine_latency": {
+    "formal.z3": 0.2491,
+    "optimization.cpsat": 0.7473
+   }
+  },
+  {
+   "id": "item-078",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.13243745919999697,
+   "learned_loss": 0.13243745919999697,
+   "engine_loss": {
+    "formal.z3": 0.05691707459999975,
+    "optimization.cpsat": 0.13243745919999697
+   },
+   "engine_latency": {
+    "formal.z3": 0.2846,
+    "optimization.cpsat": 0.6622
+   }
+  },
+  {
+   "id": "item-079",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.04431534299999953,
+   "learned_loss": 0.04431534299999953,
+   "engine_loss": {
+    "formal.z3": 0.04431534299999953,
+    "optimization.cpsat": 0.11195136759999968
+   },
+   "engine_latency": {
+    "formal.z3": 0.2216,
+    "optimization.cpsat": 0.5598
+   }
+  },
+  {
+   "id": "item-080",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.04789616059999844,
+   "learned_loss": 0.04789616059999844,
+   "engine_loss": {
+    "formal.z3": 0.04789616059999844,
+    "optimization.cpsat": 0.13914757100000089
+   },
+   "engine_latency": {
+    "formal.z3": 0.2395,
+    "optimization.cpsat": 0.6957
+   }
+  },
+  {
+   "id": "item-081",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.05355095639999945,
+   "learned_loss": 0.05355095639999945,
+   "engine_loss": {
+    "formal.z3": 0.05355095639999945,
+    "optimization.cpsat": 0.14387892600000213
+   },
+   "engine_latency": {
+    "formal.z3": 0.2678,
+    "optimization.cpsat": 0.7194
+   }
+  },
+  {
+   "id": "item-082",
+   "kind": "feasibility",
+   "static_first": "cortex.formal.z3@0.2.0",
+   "learned_first": "cortex.formal.z3@0.2.0",
+   "static_loss": 0.04139213099999779,
+   "learned_loss": 0.04139213099999779,
+   "engine_loss": {
+    "formal.z3": 0.04139213099999779,
+    "optimization.cpsat": 0.12182024979999824
+   },
+   "engine_latency": {
+    "formal.z3": 0.207,
+    "optimization.cpsat": 0.6091
+   }
+  },
+  {
+   "id": "item-083",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.10949632800000017,
+   "learned_loss": 0.10949632800000017,
+   "engine_loss": {
+    "formal.z3": 0.04590309440000055,
+    "optimization.cpsat": 0.10949632800000017
+   },
+   "engine_latency": {
+    "formal.z3": 0.2295,
+    "optimization.cpsat": 0.5475
+   }
+  },
+  {
+   "id": "item-084",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.12142451380000238,
+   "learned_loss": 0.12142451380000238,
+   "engine_loss": {
+    "formal.z3": 0.058418696800004,
+    "optimization.cpsat": 0.12142451380000238
+   },
+   "engine_latency": {
+    "formal.z3": 0.2921,
+    "optimization.cpsat": 0.6071
+   }
+  },
+  {
+   "id": "item-085",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.12805757480000465,
+   "learned_loss": 0.12805757480000465,
+   "engine_loss": {
+    "formal.z3": 0.055037502999999786,
+    "optimization.cpsat": 0.12805757480000465
+   },
+   "engine_latency": {
+    "formal.z3": 0.2752,
+    "optimization.cpsat": 0.6403
+   }
+  },
+  {
+   "id": "item-086",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.11946401179999952,
+   "learned_loss": 0.11946401179999952,
+   "engine_loss": {
+    "formal.z3": 0.039076495599999816,
+    "optimization.cpsat": 0.11946401179999952
+   },
+   "engine_latency": {
+    "formal.z3": 0.1954,
+    "optimization.cpsat": 0.5973
+   }
+  },
+  {
+   "id": "item-087",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.14423623359999738,
+   "learned_loss": 0.14423623359999738,
+   "engine_loss": {
+    "formal.z3": 0.0446722761999979,
+    "optimization.cpsat": 0.14423623359999738
+   },
+   "engine_latency": {
+    "formal.z3": 0.2234,
+    "optimization.cpsat": 0.7212
+   }
+  },
+  {
+   "id": "item-088",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.11190536160000306,
+   "learned_loss": 0.11190536160000306,
+   "engine_loss": {
+    "formal.z3": 0.04322017419999611,
+    "optimization.cpsat": 0.11190536160000306
+   },
+   "engine_latency": {
+    "formal.z3": 0.2161,
+    "optimization.cpsat": 0.5595
+   }
+  },
+  {
+   "id": "item-089",
+   "kind": "optimize",
+   "static_first": "cortex.optimization.cpsat@0.2.0",
+   "learned_first": "cortex.optimization.cpsat@0.2.0",
+   "static_loss": 0.12251602420000154,
+   "learned_loss": 0.12251602420000154,
+   "engine_loss": {
+    "formal.z3": 0.04078508000000056,
+    "optimization.cpsat": 0.12251602420000154
+   },
+   "engine_latency": {
+    "formal.z3": 0.2039,
+    "optimization.cpsat": 0.6126
+   }
+  }
+ ],
+ "run_at": "2026-10-14T11:06:58Z",
+ "claim_limit": "container CPU, one run; latency varies with load; synthetic schedules only"
+}

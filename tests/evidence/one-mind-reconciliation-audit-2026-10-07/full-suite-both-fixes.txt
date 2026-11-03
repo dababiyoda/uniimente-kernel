@@ -1,0 +1,13 @@
+FAILED tests/unit/test_greg_cognition.py::test_cli_builds_an_existing_signed_mission_and_inventory
+FAILED tests/unit/test_greg_cognition_selector.py::test_signed_mission_survives_restart_with_one_receipt
+FAILED tests/unit/test_greg_cognition_selector.py::test_outcome_corrections_are_idempotent_and_cannot_edit_policy
+FAILED tests/unit/test_greg_cognition_selector.py::test_policy_refusal_blocks_later_composed_methods
+FAILED tests/unit/test_greg_cognition_selector.py::test_signed_settlement_uses_gate_approval_and_survives_restart
+FAILED tests/unit/test_greg_schedule_words.py::test_console_words_become_one_read_only_cognition_mission
+FAILED tests/unit/test_greg_schedule_words.py::test_without_an_availability_statement_the_plan_says_it_stays_conditional
+FAILED tests/unit/test_greg_schedule_words.py::test_signed_words_close_on_reobserved_evidence
+FAILED tests/unit/test_greg_schedule_words.py::test_an_impossible_schedule_never_closes
+FAILED tests/unit/test_greg_schedule_words.py::test_cognition_mission_command_accepts_the_cortex_contract
+ERROR tests/unit/test_greg_linear_genesis.py
+ERROR tests/unit/test_greg_open_source_genesis.py
+10 failed, 1883 passed, 10 skipped, 2 errors in 385.41s (0:06:25)

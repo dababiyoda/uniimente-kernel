@@ -78,6 +78,7 @@ class CapabilityManifest:
     attach: str = "founder command or pre-authorized mission light cone"
     detach: str = "founder CAPABILITY_DETACH; in-flight work reconciles first"
     rollback: str = "detach; retained history is never rewritten"
+    cognitive_profile: dict = field(default_factory=dict)
 
     def validate(self) -> list[str]:
         problems = []
@@ -116,7 +117,7 @@ class CapabilityManifest:
                                         requires_human=self.consequence_class in ("financial", "irreversible")),
             acceptance_tests=list(self.tests) or ["declared-by-builder"],
             failure_modes=["unavailable", "refused", "timeout", "outcome_unknown"],
-            recovery_path=self.rollback)
+            recovery_path=self.rollback, cognitive_profile=self.cognitive_profile)
 
     def digest(self) -> str:
         return "sha256:" + hashlib.sha256(json.dumps(self.to_dict(), sort_keys=True).encode()).hexdigest()
@@ -128,6 +129,8 @@ class CapabilityManifest:
                 value[key] = list(item)
         if not value["target_from"]:
             value.pop("target_from")  # absent when unused: every earlier manifest digest is unchanged
+        if not value["cognitive_profile"]:
+            value.pop("cognitive_profile")  # additive profile: legacy manifest digests are preserved
         return value
 
     @classmethod
@@ -221,6 +224,8 @@ class InvocationContext:
     journal: object | None = None     # canonical ledger for memory and receipt-bound artifacts
     target: str = ""                   # exact signed target set by the authority office
     artifact_root: Path | None = None  # body-local immutable bytes; receipts remain on the canonical ledger
+    capability_registry: object | None = None  # read-only view for consequence-inert solver eligibility
+    cognition_model: dict | None = None       # effective founder-selected local model; never a paid fallback
 
     def secret(self, name: str) -> str:
         return self.secrets.resolve(name, declared=self.manifest.credentials)
@@ -663,7 +668,7 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                 "signal manifest; deliver one decision memo whose verdict may not outrun the "
                                 "evidence", "cli", "internal_write", "deliver:",
                                 {"railscout_root": "path", "wmi_root": "path", "manifest": "path",
-                                 "source_root": "path"},
+                                 "source_root": "path", "cognition": "dict?"},
                                 {"path": "str", "sha256": "str", "verdict": "str", "railscout_status": "str",
                                  "engine_verdict": "str", "inputs": "dict", "inputs_digest": "str"},
                                 filesystem="deliver-write", binaries=(sys.executable,),
@@ -712,6 +717,11 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                            "mechanism_from": "Foundry arsenal (55-system mandate)"}),
                       _lazy("greg.foundry_bridge", "apply")),
 }
+
+# Cognitive families are the SAME capability manifests/genomes, lazily executed.
+# No second intelligence registry, event store, runtime, policy or model router.
+from greg.cognition.catalog import builtin_entries as _cognitive_entries  # noqa: E402
+BUILTINS.update(_cognitive_entries(CapabilityManifest, _lazy))
 
 
 class CapabilityRegistry:

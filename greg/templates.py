@@ -6,6 +6,8 @@ light cone explicitly (capabilities, targets, ceiling, budget, horizon).
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 
 from datetime import datetime, timedelta, timezone
@@ -145,9 +147,31 @@ def engineering_brief(*, local: dict[str, str], github: list[str], daily: bool =
     }
 
 
+def read_economics(manifest: str, economics=None) -> dict | None:
+    """The signal's stated economics: an explicit dict or file, else ``economics.json`` beside the manifest.
+
+    ``revenue`` is a bounded estimate request (named factors with low/central/high and units, optional
+    expected_units, assumptions, next_measurement); ``causal_support`` is a causal request (design,
+    treated, control, dag). Absent economics means the memo states no revenue figure."""
+    if economics is None:
+        sibling = Path(manifest).expanduser().resolve().with_name("economics.json")
+        if not sibling.is_file():
+            return None
+        economics = str(sibling)
+    if isinstance(economics, (str, Path)):
+        economics = json.loads(Path(economics).expanduser().read_text(encoding="utf-8"))
+    if not isinstance(economics, dict) or not isinstance(economics.get("revenue"), dict) \
+            or not isinstance(economics["revenue"].get("factors"), list):
+        raise ValueError("economics needs a revenue block with named factors (low, central, high, units)")
+    causal = economics.get("causal_support") or {"design": "unstated"}
+    if not isinstance(causal, dict):
+        raise ValueError("causal_support must be an object (design, treated, control, dag)")
+    return {"revenue": economics["revenue"], "causal_support": causal}
+
+
 def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, source_root: str,
                        preauthorize_delivery: bool = False, standing: bool = False, cadence_seconds: int = 3600,
-                       horizon_days: float = 2) -> dict:
+                       horizon_days: float = 2, economics=None) -> dict:
     """Signal -> venture decision memo through the real organs (Bridge A).
 
     RailScout appraises the signal's real source bytes; WealthMachine's venture engine
@@ -155,6 +179,11 @@ def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, sou
     engine's verdict capped by the evidence status. Delivery is one founder-visible
     file and, like every internal_write, stops at a founder approval unless signed
     into the cone. Nothing is sent, published, bought or contacted.
+
+    When the signal carries economics (``economics.json`` beside the manifest, or passed here),
+    the mission first asks GREG's own cognition, read-only, for a certified revenue range and for
+    causal support. The memo's revenue section is rendered from those receipts only: a revenue
+    figure may not outrun its causal support (directive section 16, the venture case).
 
     ``standing``: an infinite mission on this signal. Whenever the evidence file changes
     (Alfonso adds a buyer interview, a quote, a counterexample), the check fails, both
@@ -167,11 +196,31 @@ def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, sou
                  "source_root": source_root}.items()}
     digest = hashlib.sha256(Path(resolved["manifest"]).read_bytes()).hexdigest()
     thread = hashlib.sha256(resolved["manifest"].encode()).hexdigest()[:12]
+    stated = read_economics(resolved["manifest"], economics)
+    cognition, checks = [], []
+    if stated:
+        ids = {"revenue": f"venture-revenue-{thread}", "causal": f"venture-causal-{thread}"}
+        asks = {"revenue": ("estimate", stated["revenue"], "revenue_estimated",
+                            {"op": "equals", "field": "abstention_state", "value": "NONE"},
+                            "GREG's own revenue range from the stated factors, with units and the dominant uncertainty"),
+                "causal": ("treatment_effect", stated["causal_support"], "causal_checked",
+                           {"op": "equals", "field": "authority_created", "value": False},
+                           "whether any identified causal support exists for the offer producing that revenue; "
+                           "an unidentified design is a truthful abstention, not a failure")}
+        for role, (operation, data, check_id, predicate, rationale) in asks.items():
+            step = {"capability": "cognition.solve", "target": f"cognition:{ids[role]}",
+                    "params": {"problem_id": ids[role], "operation": operation, "data": data}}
+            checks.append({"check_id": check_id, "description": f"a cognition receipt for the {role} question",
+                           "sensor": step, "predicate": predicate})
+            cognition.append({"action_id": f"{role}-receipt", **step, "advances": [check_id], "rationale": rationale})
+        resolved = {**resolved, "cognition": ids}
     delivery = {"action_id": "assess-venture", "capability": "venture.assess", "params": resolved,
                 "target": "deliver:ventures", "advances": ["assessed"],
+                **({"requires": [c["check_id"] for c in checks]} if checks else {}),
                 "expected_outcome": "one decision memo in the delivery root; no external act",
                 "rationale": "run both organs read-only on source bytes; deliver one memo for Alfonso"}
-    capabilities = ["venture.status", "fs.read"] + (["venture.assess"] if preauthorize_delivery else [])
+    capabilities = ["venture.status", "fs.read"] + (["venture.assess"] if preauthorize_delivery else []) \
+        + (["cognition.solve"] if cognition else [])
     return {
         "mission_id": f"m:venture-watch-{thread}" if standing else f"m:venture-{digest[:12]}",
         "founder_expression": "Take this signal, find out whether it is a real business, and tell me what to do "
@@ -183,12 +232,13 @@ def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, sou
                                   "a go verdict on NEEDS_EVIDENCE"],
         "priority": 65,
         "closure": {"kind": "infinite", "cadence_seconds": cadence_seconds} if standing else {"kind": "bounded"},
-        "success_checks": [{"check_id": "assessed", "description": "a memo exists for the current evidence",
-                            "sensor": {"capability": "venture.status", "params": {"manifest": resolved["manifest"]},
-                                       "target": "deliver:ventures"},
-                            "predicate": {"op": "equals", "field": "assessed", "value": True}}],
-        "strategies": [delivery],
-        "light_cone": {"capabilities": capabilities, "targets": ["deliver:*", "fs:*"],
+        "success_checks": checks + [{"check_id": "assessed", "description": "a memo exists for the current evidence",
+                                     "sensor": {"capability": "venture.status",
+                                                "params": {"manifest": resolved["manifest"]},
+                                                "target": "deliver:ventures"},
+                                     "predicate": {"op": "equals", "field": "assessed", "value": True}}],
+        "strategies": cognition + [delivery],
+        "light_cone": {"capabilities": capabilities, "targets": ["deliver:*", "fs:*"] + (["cognition:*"] if cognition else []),
                        "max_consequence_class": "internal_write" if preauthorize_delivery else "read_only",
                        "budget_usd": 0, "horizon": _horizon(30 if standing else horizon_days)},
     }
@@ -520,3 +570,407 @@ TEMPLATES = {"repo-guardian": repo_guardian, "integration-watch": integration_wa
              "engineering-brief": engineering_brief, "venture-assessment": venture_assessment,
              "verify-download": verify_download, "word-limit": word_limit, "human-work": human_work,
              "business-case": business_case, "shared-work": shared_work}
+
+
+AVAILABILITY = re.compile(r"(?:^|(?<=[.!?\n]))\s*((?:the\s+)?machine\s+is\s+(?:free|available)\s+(?:all|the\s+whole)\s+"
+                          r"shift[^.!?\n]*[.!?]?)", re.I)
+
+
+def schedule_in_words(*, text: str, horizon_days: float = 2) -> dict:
+    """A schedule written in the controlled language, solved by the cortex seed composition.
+
+    The words go to cognition.solve unchanged: extraction, a token audit independent of the
+    extractor, CP-SAT with a Z3 optimality certificate, the verifier, and a receipt with a
+    reverse translation. If the founder states that the machine is free all shift, that
+    sentence becomes the availability evidence; otherwise the result stays conditional on it.
+    The check needs a feasible schedule, so an impossible request never closes: GREG asks.
+    Read-only: nothing is scheduled or written; acting on the plan is a separate mission.
+    """
+    stated = AVAILABILITY.search(text)
+    request = AVAILABILITY.sub("", text).strip() if stated else text.strip()
+    if not request or len(request) > 4000:
+        raise ValueError("a schedule request of 1-4000 characters is required")
+    digest = __import__("hashlib").sha256(request.encode()).hexdigest()[:10]
+    payload = {"schedule_request": {"text": request},
+               "declared": {"consequence_class": "read_only", "reversibility": "reversible"}}
+    if stated:
+        payload["schedule_request"]["availability_evidence"] = f"founder statement in the signed mission: " \
+                                                               f"{stated.group(1).strip()!r}"
+    step = {"capability": "cognition.solve", "target": f"cognition:schedule-{digest}",
+            "params": {"problem_id": f"schedule:{digest}",
+                       "problem": {"question": "Best schedule for the stated jobs", "payload": payload}}}
+    return {
+        "mission_id": f"m:schedule-{digest}",
+        "founder_expression": text,
+        "intended_effect": "a certified schedule for the stated jobs, with the reading shown back for comparison",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "feasible-schedule", "description": "a feasible schedule, checked "
+                            "independently of the extractor and the solver",
+                            "sensor": step, "predicate": {"op": "equals", "field": "output.answer.1.feasible",
+                                                          "value": True}}],
+        "strategies": [{"action_id": "solve", **step, "advances": ["feasible-schedule"],
+                        "rationale": "compute through the cortex (read-only)"}],
+        "light_cone": {"capabilities": ["cognition.solve"], "targets": ["cognition:*"],
+                       "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+
+
+TEMPLATES["schedule-in-words"] = schedule_in_words
+
+
+NETWORK_NAME = r"[A-Za-z][A-Za-z0-9_-]{0,31}"
+NETWORK_NUMBER = r"\d+(?:\.\d+)?"
+NETWORK_LINK = re.compile(rf"^(?P<a>{NETWORK_NAME})\s+(?P<how>to|and)\s+(?P<b>{NETWORK_NAME})\s*[:,]?\s*"
+                          rf"(?P<n>{NETWORK_NUMBER})(?:\s+[A-Za-z]+)?$", re.I)
+NETWORK_SHORTEST = re.compile(rf"^(?:shortest|cheapest|fastest|quickest)\s+(?:route|path|way)\s+from\s+"
+                              rf"(?P<s>{NETWORK_NAME})\s+to\s+(?P<t>{NETWORK_NAME})$", re.I)
+NETWORK_FLOW = re.compile(rf"^(?:maximum|max|most)\s+(?:flow|units|throughput|capacity)\s+from\s+"
+                          rf"(?P<s>{NETWORK_NAME})\s+to\s+(?P<t>{NETWORK_NAME})$", re.I)
+
+
+NETWORK_TREE = re.compile(r"^(?:cheapest|lowest[- ]cost|minimum|shortest)\s+(?:network|links|wiring|cabling|"
+                          r"roads|pipes)\s+(?:connecting|joining|to\s+connect|that\s+connects)\s+(?:all|every|"
+                          r"everything|all\s+(?:the\s+)?(?:sites|places|nodes|stops|towns|buildings))$", re.I)
+
+
+def read_network_words(text: str) -> tuple[str, dict]:
+    """The controlled network language, read without a model. Unread sentences stop the plan.
+
+    ``A to B: 4.`` is one direction, ``A and B: 4.`` both; a trailing unit word is allowed.
+    One question: ``Shortest route from A to C.`` or ``Maximum flow from A to C.``"""
+    sentences = [s.strip() for s in re.split(r"\.(?=\s|$)|[!?;\n]+", text) if s.strip()]
+    edges, questions, unread = [], [], []
+    for sentence in sentences:
+        if link := NETWORK_LINK.match(sentence):
+            number = float(link["n"]) if "." in link["n"] else int(link["n"])
+            edges.append([link["a"], link["b"], number])
+            if link["how"].lower() == "and":
+                edges.append([link["b"], link["a"], number])
+        elif ask := NETWORK_SHORTEST.match(sentence):
+            questions.append(("graph.shortest_path", ask["s"], ask["t"]))
+        elif ask := NETWORK_FLOW.match(sentence):
+            questions.append(("graph.max_flow", ask["s"], ask["t"]))
+        elif NETWORK_TREE.match(sentence):
+            questions.append(("graph.spanning_tree", None, None))
+        else:
+            unread.append(sentence)
+    if unread:
+        raise ValueError("GREG could not read: " + "; ".join(repr(u[:80]) for u in unread[:5])
+                         + ". Write links as 'A to B: 4.' or 'A and B: 4.'")
+    if len(questions) != 1 or not edges:
+        raise ValueError("state at least one link and exactly one question ('Shortest route from A to C.', "
+                         "'Maximum flow from A to C.' or 'Cheapest network connecting all sites.')")
+    function, source, target = questions[0]
+    if function == "graph.spanning_tree":                 # links have no direction in a network to build
+        return function, {"edges": [e for i, e in enumerate(edges)
+                                    if not (i and edges[i - 1] == [e[1], e[0], e[2]])]}
+    if function == "graph.max_flow":
+        if any(isinstance(e[2], float) for e in edges):
+            raise ValueError("capacities for a maximum flow must be whole numbers")
+        return function, {"edges": edges, "source": source, "sink": target}
+    return function, {"edges": edges, "source": source, "target": target}
+
+
+def network_in_words(*, text: str, horizon_days: float = 2, auto_attach: bool = False) -> dict:
+    """A route or flow question in plain controlled words, answered by an open-source engine.
+
+    GREG has no built-in engine for these functions, so the first such mission opens a
+    CapabilityDeficit. Genesis looks for an installed open-source package (NetworkX, SciPy),
+    pins it on a Mechanism Card (version, license, upstream, file digest), qualifies it
+    against GREG's own oracle, and asks you to attach it unless this signed mission
+    pre-authorizes a read-only attach. Every answer is accepted only on GREG's certificate
+    (shortest distances: feasible potentials; maximum flow: an equal-capacity cut).
+    Read-only: nothing is routed, shipped or written.
+    """
+    if not text.strip() or len(text) > 4000:
+        raise ValueError("a network question of 1-4000 characters is required")
+    function, params = read_network_words(text)
+    digest = hashlib.sha256(json.dumps(params, sort_keys=True).encode()).hexdigest()[:10]
+    step = {"function": function, "params": params, "target": f"cognition:network-{digest}"}
+    what = {"graph.shortest_path": "shortest route", "graph.max_flow": "maximum flow",
+            "graph.spanning_tree": "cheapest connecting network"}[function]
+    spec = {
+        "mission_id": f"m:network-{digest}",
+        "founder_expression": text,
+        "intended_effect": f"the {what} for the stated network, with a certificate GREG checks itself",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "certified-answer", "description": f"a {what} whose optimality GREG's own "
+                            "certificate proves, independent of the engine that computed it",
+                            "sensor": step, "predicate": {"op": "equals", "field": "certified", "value": True}}],
+        "strategies": [{"action_id": "solve", **step, "advances": ["certified-answer"],
+                        "rationale": "compute with a qualified open-source engine (read-only)"}],
+        "light_cone": {"capabilities": [f"acquired.{function}.*"], "targets": ["cognition:*"],
+                       "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+    if auto_attach:
+        spec["auto_attach"] = {"max_consequence_class": "read_only"}
+    return spec
+
+
+TEMPLATES["network-in-words"] = network_in_words
+
+
+PLAN_NAME = r"[A-Za-z][A-Za-z0-9_]{0,31}"
+PLAN_NUMBER = r"-?\d+(?:\.\d+)?"
+PLAN_TERM = re.compile(rf"\s*(?P<sign>[+-])?\s*(?P<coef>\d+(?:\.\d+)?)?\s*\*?\s*(?P<name>{PLAN_NAME})\s*")
+PLAN_OBJECTIVE = re.compile(r"^(?P<sense>maximi[sz]e|minimi[sz]e)\s+(?P<expr>.+)$", re.I)
+PLAN_CONSTRAINT = re.compile(rf"^(?P<expr>.+?)\s*(?P<op><=|>=|=|≤|≥|\bat most\b|\bat least\b|\bequals\b)\s*"
+                             rf"(?P<rhs>{PLAN_NUMBER})$", re.I)
+PLAN_BETWEEN = re.compile(rf"^(?P<name>{PLAN_NAME})\s+between\s+(?P<lo>{PLAN_NUMBER})\s+and\s+(?P<hi>{PLAN_NUMBER})$",
+                          re.I)
+PLAN_KEYWORDS = {"maximize", "maximise", "minimize", "minimise", "between", "and", "at", "most", "least", "equals"}
+
+
+def _plan_number(text: str):
+    return float(text) if "." in text else int(text)
+
+
+def _plan_expr(text: str) -> dict:
+    coefficients, position = {}, 0
+    for term in PLAN_TERM.finditer(text):
+        if term.start() != position or (position and not term["sign"]) or term["name"].lower() in PLAN_KEYWORDS:
+            raise ValueError(f"GREG could not read the expression {text.strip()!r}")
+        value = _plan_number(term["coef"]) if term["coef"] else 1
+        coefficients[term["name"]] = coefficients.get(term["name"], 0) + (-value if term["sign"] == "-" else value)
+        position = term.end()
+    if position != len(text) or not coefficients:
+        raise ValueError(f"GREG could not read the expression {text.strip()!r}")
+    return coefficients
+
+
+def read_plan_words(text: str) -> dict:
+    """The controlled planning language, read without a model. Unread sentences stop the plan.
+
+    ``Maximize 40 chairs + 30 tables.`` one objective; ``2 chairs + 3 tables <= 120.`` (also >=, =,
+    at most, at least); ``chairs between 0 and 50.`` A quantity is taken as nonnegative unless a
+    sentence gives it a lower bound."""
+    sentences = [s.strip() for s in re.split(r"\.(?=\s|$)|[!?;\n]+", text) if s.strip()]
+    objectives, constraints, bounds, unread = [], [], {}, []
+    for sentence in sentences:
+        try:
+            if goal := PLAN_OBJECTIVE.match(sentence):
+                objectives.append({"sense": "max" if goal["sense"].lower().startswith("max") else "min",
+                                   "coefficients": _plan_expr(goal["expr"])})
+            elif bound := PLAN_BETWEEN.match(sentence):
+                bounds[bound["name"]] = (_plan_number(bound["lo"]), _plan_number(bound["hi"]))
+            elif con := PLAN_CONSTRAINT.match(sentence):
+                op = {"<=": "<=", "≤": "<=", "at most": "<=", ">=": ">=", "≥": ">=", "at least": ">=", "=": "==",
+                      "equals": "=="}[con["op"].lower()]
+                constraints.append({"name": sentence[:40], "coefficients": _plan_expr(con["expr"]), "op": op,
+                                    "rhs": _plan_number(con["rhs"])})
+            else:
+                unread.append(sentence)
+        except ValueError:
+            unread.append(sentence)
+    if unread:
+        raise ValueError("GREG could not read: " + "; ".join(repr(u[:80]) for u in unread[:5])
+                         + ". Write 'Maximize 3 x + 2 y.', 'x + y <= 4.', 'x between 0 and 3.'")
+    if len(objectives) != 1 or not constraints:
+        raise ValueError("state exactly one objective ('Maximize ...' or 'Minimize ...') and at least one constraint")
+    names = sorted({n for part in objectives + constraints for n in part["coefficients"]} | set(bounds))
+    variables = [{"name": n, "lower": bounds.get(n, (0, None))[0], "upper": bounds.get(n, (0, None))[1]}
+                 for n in names]
+    return {"variables": variables, "objective": objectives[0], "constraints": constraints}
+
+
+def plan_in_words(*, text: str, horizon_days: float = 2, auto_attach: bool = False) -> dict:
+    """A linear plan in plain controlled words, solved by an open-source engine and certified by GREG.
+
+    The first such mission opens a CapabilityDeficit: genesis looks for an installed open-source
+    LP engine (SciPy's HiGHS, OR-Tools GLOP), pins it on a Mechanism Card, qualifies it against
+    GREG's exact oracle and asks you to attach it. An answer counts only if GREG's duality
+    certificate holds: the plan is feasible and a set of prices proves no plan does better. If no
+    plan meets every limit, GREG proves that too (a certified elastic program) and names the
+    limits in conflict and the least total violation; if the objective has no limit, GREG shows a
+    plan and a direction that improves it forever. Read-only: nothing is bought, made or moved.
+    """
+    if not text.strip() or len(text) > 4000:
+        raise ValueError("a plan of 1-4000 characters is required")
+    params = read_plan_words(text)
+    digest = hashlib.sha256(json.dumps(params, sort_keys=True).encode()).hexdigest()[:10]
+    step = {"function": "lp.optimize", "params": params, "target": f"cognition:plan-{digest}"}
+    spec = {
+        "mission_id": f"m:plan-{digest}",
+        "founder_expression": text,
+        "intended_effect": "the best plan under the stated limits with prices that prove no plan does better, or a "
+                           "proof that no plan meets them (naming the limits in conflict) or that the objective has "
+                           "no limit",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "certified-plan", "description": "an optimal plan, or the impossibility of "
+                            "any plan, proved by GREG's own duality certificate, independent of the engine",
+                            "sensor": step, "predicate": {"op": "equals", "field": "certified", "value": True}}],
+        "strategies": [{"action_id": "solve", **step, "advances": ["certified-plan"],
+                        "rationale": "compute with a qualified open-source engine (read-only)"}],
+        "light_cone": {"capabilities": ["acquired.lp.optimize.*"], "targets": ["cognition:*"],
+                       "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+    if auto_attach:
+        spec["auto_attach"] = {"max_consequence_class": "read_only"}
+    return spec
+
+
+TEMPLATES["plan-in-words"] = plan_in_words
+
+
+ASSIGN_NAME = r"[A-Za-z][A-Za-z0-9_-]{0,31}"
+ASSIGN_PAIR = re.compile(rf"^(?P<row>{ASSIGN_NAME})\s+(?:on|for|to)\s+(?P<col>{ASSIGN_NAME})\s*[:,]\s*"
+                         rf"(?P<n>-?\d+(?:\.\d+)?)(?:\s+[A-Za-z$€£%]+)?$", re.I)
+ASSIGN_CANNOT = re.compile(rf"^(?P<row>{ASSIGN_NAME})\s+cannot\s+(?:do\s+|take\s+)?(?P<col>{ASSIGN_NAME})$", re.I)
+ASSIGN_MIN = re.compile(r"^(?:(?:cheapest|lowest[- ]cost|least[- ]cost|minimum[- ]cost|fastest|quickest)\s+"
+                        r"assignment|minimi[sz]e\s+(?:the\s+)?total(?:\s+\w+)?)$", re.I)
+ASSIGN_MAX = re.compile(r"^(?:(?:most\s+valuable|highest[- ]value|maximum[- ]value|best[- ]scoring)\s+assignment|"
+                        r"maximi[sz]e\s+(?:the\s+)?total(?:\s+\w+)?)$", re.I)
+
+
+def read_assignment_words(text: str) -> dict:
+    """The controlled assignment language, read without a model. Unread sentences stop the plan.
+
+    ``Ana on Painting: 4.`` is the cost (or value) of that pair; a pair never stated is not allowed,
+    and ``Ana cannot do Wiring.`` says so explicitly. One goal: ``Cheapest assignment.`` (also
+    ``Minimize total cost.``) or ``Most valuable assignment.`` (also ``Maximize total value.``)."""
+    sentences = [s.strip() for s in re.split(r"\.(?=\s|$)|[!?;\n]+", text) if s.strip()]
+    rows, cols, cost, forbidden, goals, unread = [], [], {}, set(), [], []
+    for sentence in sentences:
+        if pair := ASSIGN_PAIR.match(sentence):
+            r, c = pair["row"], pair["col"]
+            if (r, c) in cost:
+                raise ValueError(f"{r} on {c} is stated twice")
+            cost[r, c] = float(pair["n"]) if "." in pair["n"] else int(pair["n"])
+        elif no := ASSIGN_CANNOT.match(sentence):
+            r, c = no["row"], no["col"]
+            forbidden.add((r, c))
+        elif ASSIGN_MIN.match(sentence):
+            goals.append(False)
+            continue
+        elif ASSIGN_MAX.match(sentence):
+            goals.append(True)
+            continue
+        else:
+            unread.append(sentence)
+            continue
+        rows += [r] if r not in rows else []
+        cols += [c] if c not in cols else []
+    if unread:
+        raise ValueError("GREG could not read: " + "; ".join(repr(u[:80]) for u in unread[:5])
+                         + ". Write pairs as 'Ana on Painting: 4.'")
+    if len(goals) != 1 or not cost:
+        raise ValueError("state at least one pair and exactly one goal ('Cheapest assignment.' or "
+                         "'Most valuable assignment.')")
+    if clash := sorted(forbidden & set(cost)):
+        raise ValueError(f"{clash[0][0]} on {clash[0][1]} has a cost and is also said to be impossible")
+    if len(rows) > len(cols):
+        raise ValueError(f"{len(rows)} people (or machines) but only {len(cols)} jobs: everyone needs their own job")
+    return {"rows": rows, "columns": cols, "maximize": goals[0],
+            "costs": [[cost.get((r, c)) for c in cols] for r in rows]}
+
+
+def assignment_in_words(*, text: str, horizon_days: float = 2, auto_attach: bool = False) -> dict:
+    """Who should do which job, in plain controlled words, solved by an open-source engine.
+
+    The first such mission opens a CapabilityDeficit: genesis looks for an installed open-source
+    assignment engine (SciPy, OR-Tools), pins it on a Mechanism Card, qualifies it against GREG's
+    brute-force oracle and asks you to attach it. An answer counts only if GREG's own certificate
+    holds: no exchange of jobs lowers (or raises) the total. If no full assignment exists, GREG
+    proves it and names the people whose allowed jobs are too few. Read-only: nobody is assigned.
+    """
+    if not text.strip() or len(text) > 8000:
+        raise ValueError("an assignment of 1-8000 characters is required")
+    params = read_assignment_words(text)
+    digest = hashlib.sha256(json.dumps(params, sort_keys=True).encode()).hexdigest()[:10]
+    step = {"function": "assignment.optimize", "params": params, "target": f"cognition:assign-{digest}"}
+    spec = {
+        "mission_id": f"m:assign-{digest}",
+        "founder_expression": text,
+        "intended_effect": "the best assignment of the stated people or machines to jobs, with a certificate that no "
+                           "exchange does better, or a proof that no full assignment exists",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "certified-assignment", "description": "an optimal assignment, or the "
+                            "impossibility of any, proved by GREG's own certificate, independent of the engine",
+                            "sensor": step, "predicate": {"op": "equals", "field": "certified", "value": True}}],
+        "strategies": [{"action_id": "solve", **step, "advances": ["certified-assignment"],
+                        "rationale": "compute with a qualified open-source engine (read-only)"}],
+        "light_cone": {"capabilities": ["acquired.assignment.optimize.*"], "targets": ["cognition:*"],
+                       "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+    if auto_attach:
+        spec["auto_attach"] = {"max_consequence_class": "read_only"}
+    return spec
+
+
+TEMPLATES["assignment-in-words"] = assignment_in_words
+
+
+DELIVER_NAME = r"[A-Za-z][A-Za-z0-9_-]{0,31}"
+DELIVER_SUPPLY = re.compile(rf"^(?P<n>{DELIVER_NAME})\s+(?:sends|supplies|has|ships|makes)\s+(?P<q>\d+)(?:\s+[A-Za-z]+)?$",
+                            re.I)
+DELIVER_DEMAND = re.compile(rf"^(?P<n>{DELIVER_NAME})\s+(?:needs|wants|requires|takes)\s+(?P<q>\d+)(?:\s+[A-Za-z]+)?$",
+                            re.I)
+DELIVER_ARC = re.compile(rf"^(?P<a>{DELIVER_NAME})\s+to\s+(?P<b>{DELIVER_NAME})\s*[:,]?\s*(?:(?P<cap>\d+)"
+                         rf"(?:\s+[A-Za-z]+)?\s+)?at\s+\$?(?P<cost>-?\d+(?:\.\d+)?)(?:\s+(?:each|per\s+\w+))?$", re.I)
+DELIVER_GOAL = re.compile(r"^(?:(?:cheapest|lowest[- ]cost|least[- ]cost)\s+(?:delivery|shipping|plan|way\s+to\s+"
+                          r"(?:deliver|ship))|minimi[sz]e\s+(?:the\s+)?(?:shipping|delivery|transport)\s+cost)$", re.I)
+
+
+def read_delivery_words(text: str) -> dict:
+    """The controlled delivery language, read without a model. Unread sentences stop the plan.
+
+    ``Plant sends 30.`` and ``Store needs 20.`` state supplies and demands (they must balance);
+    ``Plant to Store: 40 at 4.`` is a route carrying at most 40 at 4 per unit (``Plant to Store at 4.``
+    has no limit); one goal: ``Cheapest delivery.``"""
+    sentences = [s.strip() for s in re.split(r"\.(?=\s|$)|[!?;\n]+", text) if s.strip()]
+    supplies, arcs, goals, unread, unlimited = {}, [], 0, [], []
+    for sentence in sentences:
+        if m := DELIVER_SUPPLY.match(sentence):
+            supplies[m["n"]] = supplies.get(m["n"], 0) + int(m["q"])
+        elif m := DELIVER_DEMAND.match(sentence):
+            supplies[m["n"]] = supplies.get(m["n"], 0) - int(m["q"])
+        elif m := DELIVER_ARC.match(sentence):
+            cost = float(m["cost"]) if "." in m["cost"] else int(m["cost"])
+            arcs.append([m["a"], m["b"], int(m["cap"]) if m["cap"] else None, cost])
+        elif DELIVER_GOAL.match(sentence):
+            goals += 1
+        else:
+            unread.append(sentence)
+    if unread:
+        raise ValueError("GREG could not read: " + "; ".join(repr(u[:80]) for u in unread[:5])
+                         + ". Write 'Plant sends 30.', 'Store needs 20.', 'Plant to Store: 40 at 4.'")
+    if goals != 1 or not arcs or not supplies:
+        raise ValueError("state supplies, demands, at least one route and exactly one goal ('Cheapest delivery.')")
+    enough = sum(q for q in supplies.values() if q > 0)
+    return {"arcs": [[a, b, enough if cap is None else cap, cost] for a, b, cap, cost in arcs], "supplies": supplies}
+
+
+def delivery_in_words(*, text: str, horizon_days: float = 2, auto_attach: bool = False) -> dict:
+    """Least-cost delivery from supplies to demands, in plain controlled words, from an open-source engine.
+
+    The first such mission opens a CapabilityDeficit: genesis looks for an installed open-source
+    min-cost-flow engine (NetworkX, OR-Tools), pins it on a Mechanism Card, qualifies it against GREG's
+    brute-force oracle and asks you to attach it. A plan counts only if GREG's own certificate holds: no
+    rerouting is cheaper. If no plan can meet every demand, GREG proves it and names the sites whose
+    supply the routes cannot carry out. Read-only: nothing is shipped.
+    """
+    if not text.strip() or len(text) > 8000:
+        raise ValueError("a delivery plan of 1-8000 characters is required")
+    params = read_delivery_words(text)
+    digest = hashlib.sha256(json.dumps(params, sort_keys=True).encode()).hexdigest()[:10]
+    step = {"function": "flow.min_cost", "params": params, "target": f"cognition:deliver-{digest}"}
+    spec = {
+        "mission_id": f"m:deliver-{digest}",
+        "founder_expression": text,
+        "intended_effect": "the least-cost way to meet every stated demand from the stated supplies, with a "
+                           "certificate that no rerouting is cheaper, or a proof that no plan meets them",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "certified-delivery", "description": "a least-cost delivery plan, or the "
+                            "impossibility of any, proved by GREG's own certificate, independent of the engine",
+                            "sensor": step, "predicate": {"op": "equals", "field": "certified", "value": True}}],
+        "strategies": [{"action_id": "solve", **step, "advances": ["certified-delivery"],
+                        "rationale": "compute with a qualified open-source engine (read-only)"}],
+        "light_cone": {"capabilities": ["acquired.flow.min_cost.*"], "targets": ["cognition:*"],
+                       "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+    if auto_attach:
+        spec["auto_attach"] = {"max_consequence_class": "read_only"}
+    return spec
+
+
+TEMPLATES["delivery-in-words"] = delivery_in_words

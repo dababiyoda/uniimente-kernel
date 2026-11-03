@@ -1,0 +1,337 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.example/contracts/cortex-problem-geometry.schema.json",
+  "title": "Cortex ProblemGeometry v0.1",
+  "description": "The shape of a problem with explicit unknowns. Semantic proposals are kept with confidence and only accepted when the structured payload supports them. Carries no authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "problem_id",
+    "epistemic_class",
+    "claim_type",
+    "objective",
+    "ambiguity",
+    "exactness",
+    "uncertainty",
+    "causal_structure",
+    "constraints",
+    "temporal_character",
+    "evidence_quality",
+    "resource_limits",
+    "consequence_vector",
+    "consequence_class",
+    "reversibility",
+    "unresolved_fields",
+    "provenance",
+    "rejected_proposals"
+  ],
+  "properties": {
+    "problem_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "epistemic_class": {
+      "enum": [
+        "deductive_logical",
+        "arithmetic",
+        "constraint_feasibility",
+        "optimization",
+        "estimate",
+        "prediction",
+        "causal",
+        "semantic",
+        "strategic",
+        "normative_value",
+        "legal",
+        "physical_perceptual",
+        "institutional_acceptance",
+        null
+      ]
+    },
+    "claim_type": {
+      "enum": [
+        "factual_support",
+        "association",
+        "prediction",
+        "intervention",
+        null
+      ]
+    },
+    "objective": {
+      "enum": [
+        "decide_feasibility",
+        "decide_entailment",
+        "optimize_objective",
+        "estimate_quantity",
+        "assess_claim",
+        "estimate_effect",
+        "synthesize",
+        "choose_option",
+        "adjudicate",
+        "unknown"
+      ]
+    },
+    "ambiguity": {
+      "enum": [
+        "none",
+        "low",
+        "medium",
+        "high",
+        "unknown"
+      ]
+    },
+    "exactness": {
+      "enum": [
+        "exact_required",
+        "approximate_ok",
+        "unknown"
+      ]
+    },
+    "uncertainty": {
+      "enum": [
+        "none",
+        "low",
+        "medium",
+        "high",
+        "unknown"
+      ]
+    },
+    "causal_structure": {
+      "enum": [
+        "none",
+        "declared_adjustment",
+        "declared_experiment",
+        "unidentified",
+        "model_generated",
+        "unknown"
+      ]
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "temporal_character": {
+      "enum": [
+        "static",
+        "sequential",
+        "unknown"
+      ]
+    },
+    "evidence_quality": {
+      "enum": [
+        "none",
+        "low",
+        "medium",
+        "high",
+        "unknown"
+      ]
+    },
+    "resource_limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_cost_usd",
+        "max_latency_s",
+        "max_model_calls",
+        "max_solver_calls"
+      ],
+      "properties": {
+        "max_cost_usd": {
+          "type": "number",
+          "minimum": 0
+        },
+        "max_latency_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "max_model_calls": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_solver_calls": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "consequence_vector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "physical",
+        "financial",
+        "rights",
+        "privacy",
+        "reputational",
+        "discrimination",
+        "third_party",
+        "irreversible_disclosure",
+        "systemic",
+        "tail_risk"
+      ],
+      "properties": {
+        "physical": {
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "critical",
+            "unknown"
+          ]
+        },
+        "financial": {
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "critical",
+            "unknown"
+          ]
+        },
+        "rights": {
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "critical",
+            "unknown"
+          ]
+        },
+        "privacy": {
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "critical",
+            "unknown"
+          ]
+        },
+        "reputational": {
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "critical",
+            "unknown"
+          ]
+        },
+        "discrimination": {
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "critical",
+            "unknown"
+          ]
+        },
+        "third_party": {
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "critical",
+            "unknown"
+          ]
+        },
+        "irreversible_disclosure": {
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "critical",
+            "unknown"
+          ]
+        },
+        "systemic": {
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "critical",
+            "unknown"
+          ]
+        },
+        "tail_risk": {
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "critical",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "consequence_class": {
+      "enum": [
+        "read_only",
+        "internal_write",
+        "external_contact",
+        "financial",
+        "irreversible"
+      ]
+    },
+    "reversibility": {
+      "enum": [
+        "reversible",
+        "costly_to_reverse",
+        "irreversible",
+        "unknown"
+      ]
+    },
+    "unresolved_fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "source"
+        ],
+        "properties": {
+          "source": {
+            "enum": [
+              "payload_structure",
+              "requester_declared",
+              "semantic_proposal_validated",
+              "raised_by_declared_harm",
+              "default_unknown"
+            ]
+          },
+          "confidence": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "rejected_proposals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "field",
+          "why"
+        ]
+      }
+    }
+  }
+}

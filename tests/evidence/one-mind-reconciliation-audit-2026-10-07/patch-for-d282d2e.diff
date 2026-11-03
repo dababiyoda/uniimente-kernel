@@ -1,0 +1,43 @@
+diff --git a/greg/cognition/selector.py b/greg/cognition/selector.py
+index e49f741..ff130af 100644
+--- a/greg/cognition/selector.py
++++ b/greg/cognition/selector.py
+@@ -22,7 +22,7 @@ from cortex.seed.contracts import (CognitiveCapabilityProfile, EXPOSURES, METHOD
+ from cortex.seed.methods import artifact
+ from provenance.ledger import sha256_json
+ 
+-ROOT = Path(__file__).resolve().parents[1]
++ROOT = Path(__file__).resolve().parents[2]   # relocated from greg/cognition.py into the package
+ POLICY = 'static-smallest-sufficient/1'
+ 
+ 
+diff --git a/greg/isolation.py b/greg/isolation.py
+index 07476c6..b23a8d0 100644
+--- a/greg/isolation.py
++++ b/greg/isolation.py
+@@ -77,6 +77,25 @@ def confine(root, public_files):
+             path = Path(parts[5]).resolve()
+             if path.is_file() and path.suffix != ".pem" and ("/lib" in str(path) or path == Path(sys.executable).resolve()):
+                 grants[path] = grants.get(path, 0) | READ_FILE
++    # The interpreter's system site-packages hold the published modules a worker imports after
++    # confinement; on Debian-style Pythons they sit outside sys.prefix/lib (/usr/local/lib/.../
++    # dist-packages). User site and arbitrary sys.path roots stay excluded.
++    import site
++    for directory in site.getsitepackages():
++        directory = Path(directory)
++        if directory.is_dir():
++            grants[directory.resolve()] = READ_FILE | READ_DIR
++    # glibc's companion libraries live beside the loaded libc; an extension module imported after
++    # confinement may link one (librt.so.1 on a CI runner whose Python lives outside /usr/lib).
++    for directory in {path.parent for path in list(grants) if path.name.startswith("libc.so")}:
++        for pattern in ("librt.so*", "libpthread.so*", "libdl.so*", "libm.so*", "libutil.so*"):
++            for path in directory.glob(pattern):
++                grants[path.resolve()] = READ_FILE | EXECUTE
++    # A venv's interpreter reads pyvenv.cfg at startup (site.venv); without it every confined child
++    # of a venv-installed body (the Chromebook installer makes one) dies before its first line.
++    venv_config = Path(sys.prefix) / "pyvenv.cfg"
++    if venv_config.is_file():
++        grants[venv_config.resolve()] = READ_FILE
+     interpreter = Path(sys.executable).resolve(strict=True)
+     grants[interpreter] = READ_FILE | EXECUTE
+     for name in ("/etc/ld.so.cache", "/dev/null", "/etc/ssl/certs/ca-certificates.crt"):

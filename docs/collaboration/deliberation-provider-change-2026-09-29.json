@@ -1,0 +1,356 @@
+{
+  "decision_id": "DELIB-PROVIDER-CHANGE-2026-09-29",
+  "title": "Bind provider-owned reasoning, fallback, billing, and transcript loss to canonical UNIIMENTE attempts",
+  "problem": "Official provider changes from 2026-09-23 through 2026-09-29 introduce a new Claude Sonnet contract, account-bound reasoning artifacts that may be silently dropped, billed no-output refusals and multi-attempt fallback accounting, reduced Compliance API metadata, an incident that may have left Claude messages unsaved, an OpenAI image-encoder correction, and a Kimi file-service incident. UNIIMENTE must preserve one authority, event, attempt, evidence, cost, and runtime plane while its current Kernel history now proves direct Claude-assisted collaboration.",
+  "founder_intent_refs": [
+    "INTENT-20260901-provider-change weekly provider-change intake on draft PR 105",
+    "INTENT-0030 preserve the effect; do not literalize the metaphor",
+    "Founder automation directive observed 2026-09-29",
+    "docs/RECURSIVE_COLLABORATION_PROTOCOL.md"
+  ],
+  "baseline": "Draft PR 105 already treats provider sessions, compaction, permissions, search, dynamic tools, diagnostics, billing corrections, and compliance transcripts as subordinate leased evidence. Current main is 25ab9b4b; its latest merged hotfix records Claude Opus 5.5 as a coding contributor and links a Claude session, but the four default branches contain no Anthropic or Kimi runtime adapter. DALEOBANKS alone has a direct provider API path, using OpenAI gpt-4o-mini Chat Completions and optional text-embedding-3-small.",
+  "alternatives": [
+    {
+      "name": "Narrow draft update",
+      "description": "Add a dated evidence packet and only the new invariants for provider-artifact account binding, per-attempt refusal/fallback accounting, and provider-transcript loss; keep PR 105 draft.",
+      "advantages": ["Durable review evidence", "Closes silent semantic-loss and cost-ledger gaps", "No runtime or authority change"],
+      "disadvantages": ["Adds more policy text to an undecided draft", "Requires future adapter fixtures to prove behavior"],
+      "revival_evidence": "Selected because current main contains direct Claude-assisted collaboration and official changes create genuinely new replay, cost, and persistence invariants."
+    },
+    {
+      "name": "Brief only",
+      "description": "Report the changes without repository mutation.",
+      "advantages": ["No draft churn", "Lowest review burden"],
+      "disadvantages": ["Leaves account-bound artifact drops and billed no-output attempts implicit", "Does not durably bind today's transcript-loss evidence to the protocol"],
+      "revival_evidence": "Use for the next cycle with no new invariant, deadline, or direct exposure, or if the founder chooses brief-only reporting."
+    },
+    {
+      "name": "Immediate provider migration",
+      "description": "Adopt Claude Sonnet 5.5, provider fallback, or another new provider feature now.",
+      "advantages": ["Potentially lower Claude cost", "Access to newer model behavior"],
+      "disadvantages": ["No approved adapter or independent eval", "Can duplicate retries, costs, sessions, and authority", "Would require credentials and routing authority"],
+      "revival_evidence": "Founder approval plus deterministic fixtures, independent evaluation, data and residency review, cost ceiling, receipt mapping, and a sandbox canary."
+    },
+    {
+      "name": "Provider-native orchestration",
+      "description": "Let provider sessions, fallback, transcripts, and usage records become the workflow and cost source of truth.",
+      "advantages": ["Fastest access to vendor-managed behavior", "Less local adapter code"],
+      "disadvantages": ["Creates a second runtime", "Provider artifacts can be silently dropped or unsaved", "Provider usage summaries can hide individual attempts"],
+      "revival_evidence": "Do not revive unless it can be proven to remain a replaceable adapter inside the existing canonical runtime with complete attempt and effect receipts."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "The current runtime continues unchanged and no immediate production failure is expected because no affected model or endpoint is configured on the four default branches.",
+    "advantages": ["No operational risk", "No implementation cost"],
+    "disadvantages": ["Direct Claude-assisted work can lose provider-only reasoning or transcript state without a durable warning", "Future fallback integrations may undercount billed attempts or treat silent artifact drops as equivalent replay"]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Preserve broad multi-model collaboration, including Claude-assisted coding, while keeping model sessions and reasoning artifacts subordinate to founder intent and canonical repository evidence.",
+      "material_concerns": ["Model migration becoming de facto authority", "Provider transcript treated as institutional memory"],
+      "evidence_refs": ["INTENT-20260901-provider-change", "INTENT-0030", "Kernel commit 25ab9b4b"],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Bind every provider artifact and fallback iteration to one canonical attempt graph; a successful response after a dropped block is not replay-equivalent.",
+      "material_concerns": ["Silent reasoning-block drops", "Mutable serving model", "Duplicate runtime and state"],
+      "evidence_refs": ["Anthropic Sonnet 5.5 release and preserved-thinking docs", "Current provider protocol draft"],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Assume HTTP 200, empty output, provider recovery, and a visible session can all mislead: billing, execution, or data loss may still have occurred.",
+      "material_concerns": ["Billed refusals with no output", "Fallback hides earlier attempts", "Unsaved provider messages", "Recurring policy accumulation"],
+      "evidence_refs": ["Anthropic refusal billing", "Anthropic September 29 incident", "Open PR 105 dissent"],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Require model-account-conversation fingerprints, input-transformation logs, usage.iterations, serving-model receipts, and recovery canaries before any provider feature is promoted.",
+      "material_concerns": ["400 migration failures", "Silent progress-output changes", "Retry storms", "Cost reconciliation"],
+      "evidence_refs": ["Anthropic migration guide", "OpenAI and Kimi status pages", "DALEOBANKS adapter search"],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Treat organization-bound reasoning, Compliance IDs, and provider transcripts as sensitive scoped artifacts; never widen access merely to make incomplete activity records convenient.",
+      "material_concerns": ["Cross-account data leakage", "Privileged Compliance scope", "Same-provider self-evaluation", "Unverified residency and contract terms"],
+      "evidence_refs": ["Anthropic Compliance API release note", "Anthropic account-binding docs", "Default-branch negative searches"],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Claude Sonnet 5.5 launched on 2026-09-28 with five breaking contract changes and $2/$10 per MTok pricing.",
+      "tier": "primary_source",
+      "reference": "https://platform.claude.com/docs/en/release-notes/overview and https://platform.claude.com/docs/en/models/sonnet-5-5/overview",
+      "finding": "Thinking settings, forced tool choice, preserved thinking, computer-use types, advisor pairings, and progress-output shape differ from Sonnet 5."
+    },
+    {
+      "claim": "Sonnet 5.5 thinking blocks are model-, conversation-, and account-bound and may be silently dropped while a request still succeeds.",
+      "tier": "primary_source",
+      "reference": "https://platform.claude.com/docs/en/build-with-claude/preserved-thinking",
+      "finding": "The beta header exposes model_binding_mismatch, prefix_binding_mismatch, and organization_binding_mismatch in input_transformations; without it some drops are silent."
+    },
+    {
+      "claim": "From 2026-09-24, some Claude refusals before output are billed and fallback can create multiple separately billed attempts.",
+      "tier": "primary_source",
+      "reference": "https://platform.claude.com/docs/en/build-with-claude/refusals-and-fallback",
+      "finding": "bio, frontier_llm, and reasoning_extraction pre-output refusals are billed; usage.iterations is the per-attempt accounting record and top-level usage covers only the serving attempt."
+    },
+    {
+      "claim": "Anthropic's 2026-09-29 incident affected Claude API, Claude Code, and Claude Cowork, and some messages between 14:00 and 14:59 UTC may not have been saved.",
+      "tier": "primary_source",
+      "reference": "https://status.claude.com/",
+      "finding": "Provider recovery does not prove provider-side conversation completeness or task non-execution."
+    },
+    {
+      "claim": "Current Kernel main directly records Claude-assisted collaboration but no Anthropic runtime adapter exists on any inspected default branch.",
+      "tier": "other",
+      "reference": "GitHub connector inspection at Kernel 25ab9b4b, DALEOBANKS e2f1ebed, WMI ec82b802, and PumpStation db6758df",
+      "finding": "Kernel commit 25ab9b4b names Claude Opus 5.5 and a Claude session; code search found only agent-entry and historical collaboration records, not an Anthropic client or runtime route."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "The releases require an immediate production model migration.",
+      "tier": "other",
+      "reference": "Default-branch code search and exact adapter paths observed 2026-09-29",
+      "finding": "DALEOBANKS remains on gpt-4o-mini and text-embedding-3-small; no gpt-6, Sora, Anthropic API, or Kimi API runtime token was found."
+    },
+    {
+      "claim": "Every weekly incident requires another protocol rule.",
+      "tier": "historical_artifact",
+      "reference": "PR 105 dissent and existing section 7.4",
+      "finding": "OpenAI's corrected image encoder and Kimi's resolved file-service incident are adequately covered by current canary, retry, and receipt rules absent direct exposure."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Keep Claude, OpenAI, Kimi, and future provider capabilities replaceable and useful while one canonical attempt, evidence, cost, authority, and runtime plane remains replay-safe through provider artifact loss, silent transformation, fallback, and outage.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Account- and model-bound artifact fingerprints make semantic replay loss observable.",
+        "amplified_value": "Cross-provider and cross-account handoffs become explicit migrations instead of silent degradation."
+      },
+      {
+        "id": "A2",
+        "statement": "Per-attempt billing and fallback records make cost and retry behavior auditable.",
+        "amplified_value": "The same ledger can prevent duplicate effects, expose provider cost drift, and support independent optimization."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Capturing organization identity for reasoning artifacts can expose sensitive account topology.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Store an opaque provider-account binding identifier or policy-permitted hash, never credentials or secret material, with least-privilege access."
+      },
+      {
+        "id": "D2",
+        "statement": "A successful response after a dropped artifact can be misclassified as successful replay.",
+        "severity": "critical",
+        "response_type": "protective",
+        "redesigned_response": "Treat input_transformations or missing bound artifacts as a new semantic attempt requiring explicit migration status and independent evaluation."
+      },
+      {
+        "id": "D3",
+        "statement": "Fallback can issue multiple attempts, incur multiple charges, and obscure the model that actually answered.",
+        "severity": "critical",
+        "response_type": "evidence",
+        "redesigned_response": "Preserve usage.iterations, model IDs, stop categories, fallback boundaries, and credits under one canonical idempotency identity; never infer cost from top-level usage alone."
+      },
+      {
+        "id": "D4",
+        "statement": "Provider transcript loss can erase collaboration evidence or invite duplicate work.",
+        "severity": "critical",
+        "response_type": "protective",
+        "redesigned_response": "Make repository commits, canonical events, and receipts the durable record; a missing provider transcript is ambiguous, never proof that work or an effect did not occur."
+      },
+      {
+        "id": "D5",
+        "statement": "New model migration fixtures could become a second provider-specific harness or scheduler.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Run fixtures only in the existing test substrate with no daemon, queue, credentials, live route, or independent retry loop."
+      },
+      {
+        "id": "D6",
+        "statement": "Another model-authored protocol update can normalize policy accumulation while PR 105 remains undecided.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Limit this update to three new invariants supported by direct Claude collaboration evidence; keep the PR draft and regress to brief-only on the next immaterial cycle."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Existing draft covers provider sessions, raw artifacts, dynamic tools, incidents, and append-only billing adjustments, but not account-bound artifact drops, per-attempt refusal billing, or provider transcript non-persistence.",
+      "do_nothing": "No runtime regression is expected today, but collaboration provenance and future cost accounting remain vulnerable to silent provider behavior.",
+      "simplest_viable_alternative": "A brief-only warning reduces process but does not produce a durable testable contract for newly direct Claude-assisted collaboration.",
+      "strongest_competing_architecture": "Provider-native sessions and fallback own replay and cost, reducing adapter work but violating canonical ownership and no-duplicate-runtime constraints.",
+      "reversible_experiment": "Deterministic offline fixtures can represent dropped blocks, usage iterations, refusal categories, unsaved transcript state, and serving-model changes without a live account."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Switch collaboration to Sonnet 5.5 immediately",
+        "rejection_reason": "No independent evaluation, account-binding fixture, or founder routing decision exists.",
+        "revival_evidence": "Founder-approved sandbox comparison with complete replay, provenance, cost, and rollback evidence."
+      },
+      {
+        "name": "Inspect provider accounts and billing",
+        "rejection_reason": "The scheduled reviewer has no authority to inspect credentials, contracts, balances, invoices, or account linkages.",
+        "revival_evidence": "Separate authorized-human least-privilege inspection plan."
+      },
+      {
+        "name": "Build a provider failover daemon",
+        "rejection_reason": "It would create a second scheduler/runtime and could duplicate effects.",
+        "revival_evidence": "None unless implemented inside the canonical runtime under founder approval and proven receipt-safe."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "The Pass-1 safeguards can still leak account structure, overfit to Anthropic field names, turn missing transcripts into automatic retries, let cost evidence authorize routing, or let weekly documentation become de facto policy.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "dependency",
+        "statement": "Hard-coding input_transformations or usage.iterations would overfit the canonical contract to one provider.",
+        "strengthening_response": "Map provider fields into generic subordinate artifact-transformation and attempt-accounting events while preserving raw provider payloads."
+      },
+      {
+        "id": "N2",
+        "category": "fragility",
+        "statement": "A missing transcript flag could trigger duplicate replay instead of escalation.",
+        "strengthening_response": "Classify missing provider history as ambiguous and require canonical receipt checks; never auto-retry consequence-bearing work."
+      },
+      {
+        "id": "N3",
+        "category": "centralization",
+        "statement": "Opaque account hashes can become an unauthorized identity authority.",
+        "strengthening_response": "Use them only as compatibility metadata; canonical passports, grants, and legal principals remain authoritative."
+      },
+      {
+        "id": "N4",
+        "category": "gaming",
+        "statement": "A reviewer can label every vendor detail a new invariant to keep editing the protocol.",
+        "strengthening_response": "Require direct exposure or a previously uncovered authority, replay, cost, privacy, or runtime failure mode; otherwise publish no repository change."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "resolved",
+        "rationale": "Only opaque compatibility metadata is retained; secrets and raw credential material remain prohibited.",
+        "owner": "future provider-adapter owner",
+        "review_trigger": "Any account-bound provider artifact implementation"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "resolved",
+        "rationale": "Dropped artifacts create an explicit semantic-migration state, not replay equivalence.",
+        "owner": "canonical replay owner",
+        "review_trigger": "Any provider input transformation or artifact rejection"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "resolved",
+        "rationale": "Each provider iteration is a subordinate attempt with distinct model, cost, refusal, and credit data under one canonical identity.",
+        "owner": "cost-ledger owner",
+        "review_trigger": "Any provider fallback or refusal integration"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "resolved",
+        "rationale": "Provider transcript presence or absence is non-authoritative; canonical commits, events, and receipts govern recovery.",
+        "owner": "workflow operator",
+        "review_trigger": "Any provider incident reporting unsaved or missing messages"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "prohibited",
+        "rationale": "No standalone migration harness, daemon, queue, session owner, or retry loop may be created.",
+        "owner": "kernel architecture owner",
+        "review_trigger": "Any provider compatibility implementation proposal"
+      },
+      {
+        "disadvantage_id": "D6",
+        "outcome": "accepted",
+        "rationale": "This cycle has direct Claude collaboration exposure and three new contract gaps; the PR remains draft with explicit founder decision and next-immaterial-cycle regression criteria.",
+        "owner": "alfonso_lopez",
+        "review_trigger": "Founder review of PR 105 or the next weekly cycle"
+      }
+    ],
+    "final_design": "Update draft PR 105 only: add the 2026-09-29 evidence and validated deliberation; extend section 7 with generic rules for account/model/conversation-bound artifacts, per-attempt refusal and fallback accounting, and provider transcript loss. Make no runtime, route, model, credential, account, billing, authority, or production change.",
+    "residual_risks": [
+      {
+        "risk": "Live provider account linking, contracts, residency, invoices, and deployment configuration remain unknown.",
+        "mitigation": "Require separate authorized-human inventory before any adoption or billing conclusion.",
+        "owner": "founder or delegated operator",
+        "review_trigger": "Before any live provider migration"
+      },
+      {
+        "risk": "The same agent produced all five perspectives.",
+        "mitigation": "Keep PR 105 draft and require founder or independent human review before merge or adoption.",
+        "owner": "alfonso_lopez",
+        "review_trigger": "Draft PR review"
+      },
+      {
+        "risk": "Official documentation and billed refusal categories can change in place.",
+        "mitigation": "Preserve observation date, official URLs, exact model and field names, and future deterministic fixtures.",
+        "owner": "weekly provider reviewer",
+        "review_trigger": "Next material provider update"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserve the objection in the review and PR. The docs-only update may proceed because the current default branch proves direct Claude-assisted collaboration and official changes add unhandled replay, cost, and persistence failure modes. Merge and adoption remain founder decisions.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Stop recurring model-authored protocol accumulation while PR 105 remains undecided.",
+        "rationale": "Accurate weekly additions still create review debt and can become de facto policy without founder ratification.",
+        "evidence_threshold": "After this update, make no repository change unless a new direct exposure, hard deadline, or previously uncovered canonicality, authority, retry, cost, privacy, or no-duplicate-runtime invariant appears.",
+        "owner": "alfonso_lopez",
+        "review_trigger": "Founder review of PR 105 or the next weekly cycle"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "alfonso_lopez"
+  },
+  "migration_plan": "No runtime migration. If Sonnet 5.5, provider fallback, or another affected feature is proposed, first add generic adapter events and deterministic fixtures for account/model/conversation binding, input transformations, refusal categories, usage iterations, serving-model changes, transcript loss, and receipt-gated recovery. Only a separately authorized sandbox canary with independent evaluation, data/residency review, cost ceiling, and rollback may precede production consideration.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Leave draft PR 105 unmerged or revert the 2026-09-29 documentation-only commits",
+      "Preserve the dated evidence and dissent as historical records",
+      "Regress recurring repository updates to brief-only reporting if the materiality gate is not met"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Any write to a default branch or merge without founder approval",
+    "Any model, production, credential, account, invoice, contract, or routing change",
+    "Any provider-owned canonical workflow, event, identity, authority, memory, evidence, receipt, evaluator, or cost ledger",
+    "Any retry of consequence-bearing work based only on missing provider transcript state",
+    "Any silent acceptance of a dropped account-, model-, prefix-, or conversation-bound provider artifact as equivalent replay",
+    "Any collapse of provider fallback iterations into one cost or attempt record",
+    "Any second scheduler, durable provider session owner, retry daemon, or agent runtime",
+    "Any credential or raw account-binding secret stored in compatibility evidence",
+    "Any same-provider sole evaluation of promotion or evidence quality",
+    "Any unauthorized Compliance API or transcript lookup",
+    "Any ineligible retention or residency path",
+    "One immaterial recurring repository update"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "alfonso_lopez",
+  "review_trigger": "Founder review of draft PR 105; any Sonnet 5.5, provider fallback, cross-account replay, Compliance API, gpt-6 image/computer-use, Kimi file/search, or provider-transcript recovery proposal; any future incident with missing provider messages or ambiguous completion"
+}

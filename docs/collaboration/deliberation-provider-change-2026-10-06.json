@@ -1,0 +1,421 @@
+{
+  "decision_id": "DELIB-PROVIDER-CHANGE-2026-10-06",
+  "title": "Reconcile the weekly provider review without duplicating protocol or runtime",
+  "problem": "OpenAI added provider-hosted computer use and beta multi-agent orchestration, OpenAI and Anthropic announced model retirement deadlines, and provider incidents affected collaboration surfaces. Decide whether UNIIMENTE needs new protocol law, a runtime migration, an evidence-only update, or no repository change.",
+  "founder_intent_refs": [
+    "INTENT-20260901-provider-change",
+    "INTENT-0028",
+    "INTENT-0030",
+    "INTENT-20260930-open-source-first"
+  ],
+  "baseline": "Current default branches prefer local OpenAI-compatible inference and contain no Anthropic or Kimi runtime adapter. Draft PR 105 already proposes generic rules for provider sessions, tools, permissions, artifacts, retries, per-attempt cost, evaluator independence, data scope, and no duplicate runtime, but its branch is six commits behind main and contains a branch-only intent ID collision.",
+  "alternatives": [
+    {
+      "name": "Evidence-only reconciliation on draft PR 105",
+      "description": "Merge current main into the existing review branch, preserve prior provider records, correct the intent ID collision, add the dated evidence and deliberation, and add no new protocol invariant.",
+      "advantages": [
+        "Preserves one review lineage and current founder doctrine",
+        "Records hard deadlines and direct-exposure negatives without policy duplication",
+        "Keeps every action reversible and consequence-inert"
+      ],
+      "disadvantages": [
+        "Adds review volume to an already large draft",
+        "Still depends on founder or independent human review before merge"
+      ],
+      "revival_evidence": "Selected now; regress to brief-only when no hard deadline, direct exposure, new invariant, or branch-integrity defect exists."
+    },
+    {
+      "name": "Add provider-specific browser and multi-agent protocol rules",
+      "description": "Extend the protocol with OpenAI-specific computer-use and subagent clauses.",
+      "advantages": [
+        "Makes the newest provider terminology explicit"
+      ],
+      "disadvantages": [
+        "Duplicates existing generic leased-session, permission, cost, recovery, and no-second-runtime rules",
+        "Couples constitutional language to beta field names"
+      ],
+      "revival_evidence": "A deterministic fixture exposes a browser or subagent authority/replay failure not covered by current generic rules."
+    },
+    {
+      "name": "Immediate provider migration",
+      "description": "Switch collaboration or runtime routes to GPT-6.1 Sol or Claude Sonnet 5.5 now.",
+      "advantages": [
+        "Could improve capability or retire future compatibility risk early"
+      ],
+      "disadvantages": [
+        "No direct affected route, benchmark, account contract, residency decision, or founder authorization exists",
+        "Could increase cost and create a second orchestration plane"
+      ],
+      "revival_evidence": "Founder-approved sandbox evaluation with pinned contracts, independent acceptance, cost and residency evidence, and rollback."
+    },
+    {
+      "name": "Provider-native orchestration owns collaboration",
+      "description": "Let hosted browser sessions and provider subagent trees own task state, retries, tools, and synthesis.",
+      "advantages": [
+        "Reduces application-side orchestration work"
+      ],
+      "disadvantages": [
+        "Violates canonical ownership and the no-duplicate-runtime constraint",
+        "Lets the provider route under test control evidence and evaluation"
+      ],
+      "revival_evidence": "None while UNIIMENTE requires one canonical runtime, identity, authority, receipt, evidence, and cost plane."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Publish only the user brief and leave PR 105 unchanged.",
+    "advantages": [
+      "Creates no additional review debt",
+      "Avoids touching a branch that diverged from main"
+    ],
+    "disadvantages": [
+      "Leaves hard retirement deadlines and new exposure evidence outside the durable record",
+      "Leaves the branch-only INTENT-0029 collision and six-commit drift unresolved"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Preserve the open-source-first and one-machine directions while keeping official provider options replaceable and reviewable.",
+      "material_concerns": [
+        "A hosted provider feature must not silently become the project objective or stopping condition",
+        "The provider-review intent must not collide with the reserved Infinite Goal Chase identifier"
+      ],
+      "evidence_refs": [
+        "AGENTS.md@19fa33c2",
+        "docs/OPEN_SOURCE_STACK.md@19fa33c2",
+        "PR 105 branch comparison"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Use provider browsers, sessions, and subagents only behind the existing canonical runtime and contracts; add no duplicate provider-specific law.",
+      "material_concerns": [
+        "Provider orchestration can create a second task and retry plane",
+        "Beta schemas and mutable provider models can break deterministic replay"
+      ],
+      "evidence_refs": [
+        "OpenAI computer-use documentation observed 2026-10-06",
+        "OpenAI multi-agent documentation observed 2026-10-06",
+        "Draft protocol section 7"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Prefer no repository change because all direct runtime searches are negative and PR 105 already covers the failure modes.",
+      "material_concerns": [
+        "Weekly evidence accumulation can become bureaucracy and de facto policy",
+        "A model-authored review can overstate the materiality of prospective vendor features"
+      ],
+      "evidence_refs": [
+        "Negative default-branch provider searches",
+        "PR 105 existing provider rules",
+        "No direct Anthropic or Kimi runtime adapter"
+      ],
+      "recommendation": "DEFER"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Reconcile the existing draft with main once, record deadlines, and avoid any runtime or account action.",
+      "material_concerns": [
+        "PR 105 is six commits behind main",
+        "Status surfaces can disagree in freshness and aggregate state",
+        "Future migrations need explicit owners and lead time"
+      ],
+      "evidence_refs": [
+        "GitHub compare main...codex/provider-change-intake-2026-09-15",
+        "OpenAI and Claude official status pages",
+        "OpenAI and Anthropic deprecation notices"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Keep credentials, browser sign-in, health-data eligibility, account balances, and residency outside this unattended review; require independent evidence before adoption.",
+      "material_concerns": [
+        "Hosted browsers can expose sensitive data and account state",
+        "Provider credit and status messages do not prove a specific attempt or invoice state",
+        "The same provider cannot be the sole evaluator of its own orchestration"
+      ],
+      "evidence_refs": [
+        "OpenAI hosted-browser documentation",
+        "OpenAI GPT-6.1 Sol pricing page",
+        "Anthropic delayed-credit incident"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "OpenAI's hosted browser requires the application to handle approvals and sign-in and to recover the same session before retrying after a disconnect.",
+      "tier": "primary_source",
+      "reference": "https://developers.openai.com/api/docs/guides/agents-api/tools/computer-use observed 2026-10-06",
+      "finding": "The provider session is stateful and consequence-adjacent; blind restart can lose state or duplicate work."
+    },
+    {
+      "claim": "OpenAI Responses multi-agent is beta, lets a root model spawn a subagent tree sharing model and tools, may change item schemas, and can increase token use.",
+      "tier": "primary_source",
+      "reference": "https://developers.openai.com/api/docs/guides/responses-multi-agent observed 2026-10-06",
+      "finding": "It is an optional provider orchestration capability, not a replacement for canonical agent identity, authority, evaluation, or durable task state."
+    },
+    {
+      "claim": "OpenAI announced October 1 model and TTS deprecations with January 6 and April 1 shutdown dates.",
+      "tier": "primary_source",
+      "reference": "https://developers.openai.com/api/docs/deprecations observed 2026-10-06",
+      "finding": "No affected identifier occurs on the four inspected default branches, but the deadlines require future authorized inventory before expiry."
+    },
+    {
+      "claim": "Anthropic will retire Claude Sonnet 4.5 from the Claude API on November 30, 2026.",
+      "tier": "primary_source",
+      "reference": "https://platform.claude.com/docs/en/about-claude/model-deprecations observed 2026-10-06",
+      "finding": "No Anthropic runtime or Sonnet 4.5 pin occurs on the inspected default branches."
+    },
+    {
+      "claim": "Current default branches use local OpenAI-compatible inference by default and expose no Anthropic or Kimi runtime.",
+      "tier": "other",
+      "reference": "GitHub connector inspection: Kernel 19fa33c2, DALEOBANKS a8341ba8, WMI ec82b802, PumpStation db6758df",
+      "finding": "Kernel is loopback-only; DALEOBANKS' paid OpenAI path is explicit and still uses gpt-4o-mini with optional text-embedding-3-small; WMI and PumpStation have no provider route."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "The weekly findings require another protocol rule.",
+      "tier": "historical_artifact",
+      "reference": "Draft PR 105 protocol section 7",
+      "finding": "Existing generic rules already cover leased provider sessions/tools, dynamic capabilities, provider permissions, credential/data scope, per-attempt cost, independent evaluation, ambiguous recovery, and no duplicate runtime."
+    },
+    {
+      "claim": "A current runtime migration is necessary.",
+      "tier": "other",
+      "reference": "Exact code searches on the four default branches observed 2026-10-06",
+      "finding": "No newly deprecated model, Anthropic route, Kimi route, Agents API, Responses API, computer-use route, or multi-agent beta header was found."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Keep provider capabilities and collaboration surfaces replaceable, cost-auditable, retry-safe, and useful without allowing any provider to become a second canonical runtime, authority, evidence source, evaluator, or credential plane.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "An evidence-only update records hard deadlines and provider contracts without adding duplicate law.",
+        "amplified_value": "Reviewers can act before retirement while the protocol remains provider-neutral and comprehensible."
+      },
+      {
+        "id": "A2",
+        "statement": "Reconciling PR 105 with current main preserves a single provider-review lineage.",
+        "amplified_value": "Founder doctrine, open-source-first routing, and provider evidence remain reviewable in one non-production branch."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Another weekly repository record creates review debt and may normalize policy accumulation.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Add no protocol text; record only hard deadlines, new provider orchestration contracts, direct exposure, and negative results. Return to brief-only when those conditions are absent."
+      },
+      {
+        "id": "D2",
+        "statement": "The deprecations are prospective and have no direct default-branch exposure.",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Mark each as prospective, preserve exact shutdown dates, and prohibit migration until an authorized explicit pin is found."
+      },
+      {
+        "id": "D3",
+        "statement": "Hosted browser sign-in and saved activity can expose credentials, personal data, or regulated data.",
+        "severity": "critical",
+        "response_type": "protective",
+        "redesigned_response": "Perform no browser/account action; require separate authorization, least privilege, retention/residency review, credential isolation, and deletion evidence before any canary."
+      },
+      {
+        "id": "D4",
+        "statement": "Provider multi-agent can become a second scheduler, task graph, and evaluator.",
+        "severity": "critical",
+        "response_type": "governance",
+        "redesigned_response": "Treat every provider subagent as a subordinate leased attempt under canonical identities, grants, tools, cost, and independent evaluation; prohibit provider-owned durable orchestration."
+      },
+      {
+        "id": "D5",
+        "statement": "Aggregate and incident-specific provider status can differ in freshness and invite unsafe recovery conclusions.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Record observation time and source state, but recover only from canonical attempt receipts and a bounded canary."
+      },
+      {
+        "id": "D6",
+        "statement": "Reconciling a diverged branch can overwrite newer founder doctrine or preserve an intent-ID collision.",
+        "severity": "critical",
+        "response_type": "governance",
+        "redesigned_response": "Use current main as the tree baseline, overlay only the reviewed provider artifacts, preserve both parent SHAs, and rename the provider intent to a collision-resistant date-based ID."
+      }
+    ],
+    "comparisons": {
+      "baseline": "PR 105 contains four dated reviews and robust generic provider rules but trails current main and uses the reserved INTENT-0029 identifier.",
+      "do_nothing": "Avoids new review debt but leaves hard deadlines and branch integrity defects unresolved in the durable review line.",
+      "simplest_viable_alternative": "Publish a brief only; this is preferable on immaterial weeks but does not correct the current branch drift and identifier collision.",
+      "strongest_competing_architecture": "Let provider-hosted browsers and multi-agent sessions own state, retries, and evaluation; this reduces integration work but violates one-source-of-truth and no-duplicate-runtime constraints.",
+      "reversible_experiment": "Future offline fixtures can model session recovery, subagent usage, beta-schema drift, and model replacement without credentials, provider calls, or external effects."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Add OpenAI-specific protocol clauses",
+        "rejection_reason": "Existing provider-neutral rules already cover the material authority, replay, cost, and runtime risks.",
+        "revival_evidence": "A deterministic failing case demonstrates a new uncovered invariant."
+      },
+      {
+        "name": "Migrate models now",
+        "rejection_reason": "No direct affected route, account inventory, evaluation, or founder approval exists.",
+        "revival_evidence": "Authorized exposure plus pinned fixtures, independent acceptance, residency and cost review, and rollback."
+      },
+      {
+        "name": "Inspect provider accounts and credentials",
+        "rejection_reason": "The scheduled review is not authorized to access accounts, keys, balances, contracts, browser sessions, or invoices.",
+        "revival_evidence": "Separate authorized-human least-privilege task."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "The evidence-only design can still overclaim publication timing, overwrite main during reconciliation, treat one agent's five perspectives as independent review, or freeze a stale provider-status snapshot into apparent truth.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "overfit",
+        "statement": "A calendar-date review boundary can miss changes published after the prior run or double-count late updates.",
+        "strengthening_response": "Record exact observation time, source publication/effective dates, and prior-review baseline; classify uncertain timing explicitly."
+      },
+      {
+        "id": "N2",
+        "category": "reversibility",
+        "statement": "A branch reconciliation can silently regress current main content.",
+        "strengthening_response": "Construct the reconciled tree from current main, overlay only named provider artifacts, keep both commit parents, and verify the resulting comparison and CI."
+      },
+      {
+        "id": "N3",
+        "category": "dependency",
+        "statement": "All five roles were performed by one model and are not independent approval.",
+        "strengthening_response": "Keep the PR draft, label the review non-independent, and require founder or delegated human review for merge or adoption."
+      },
+      {
+        "id": "N4",
+        "category": "fragility",
+        "statement": "Status pages can update after evidence capture.",
+        "strengthening_response": "Preserve observation timestamps, distinguish incident-feed from aggregate state, and never use provider status as canonical attempt evidence."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Hard retirement deadlines, new provider orchestration contracts, and branch-integrity defects justify one evidence-only update; no protocol text is added.",
+        "owner": "weekly provider reviewer",
+        "review_trigger": "Next weekly cycle; use brief-only unless the materiality gate is met"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "deferred",
+        "rationale": "No migration occurs until an authorized direct model pin or route is identified.",
+        "owner": "future provider-adapter owner",
+        "review_trigger": "Authorized exposure inventory or 60 days before the applicable shutdown"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "prohibited",
+        "rationale": "This review does not access or alter credentials, accounts, browser sessions, regulated data, or provider retention settings.",
+        "owner": "founder or delegated security operator",
+        "review_trigger": "Any proposed hosted-browser canary"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "prohibited",
+        "rationale": "Provider subagents cannot own canonical task state, grants, tools, evaluation, or retries and cannot create a second runtime.",
+        "owner": "kernel architecture owner",
+        "review_trigger": "Any provider multi-agent proposal"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "resolved",
+        "rationale": "Provider status is stored only as time-bounded telemetry; canonical receipts govern recovery.",
+        "owner": "workflow operator",
+        "review_trigger": "Any provider incident or ambiguous completion"
+      },
+      {
+        "disadvantage_id": "D6",
+        "outcome": "resolved",
+        "rationale": "The branch is reconciled from the current main tree with an explicit two-parent commit, named overlays, collision-resistant intent ID, comparison verification, and CI.",
+        "owner": "PR 105 maintainer",
+        "review_trigger": "Any future main divergence or merge conflict"
+      }
+    ],
+    "final_design": "Update draft PR 105 only. Reconcile it with current main, preserve all earlier provider evidence, rename the branch-only provider intent to INTENT-20260901-provider-change, add the 2026-10-06 review and validated deliberation, and add no new protocol text. Make no runtime, provider, model, account, credential, route, production, authority, or merge change.",
+    "residual_risks": [
+      {
+        "risk": "Live provider routes, account-selected models, balances, contracts, and residency settings remain unknown.",
+        "mitigation": "Require a separate authorized-human inventory before migration or billing conclusions.",
+        "owner": "founder or delegated operator",
+        "review_trigger": "Before any live provider adoption or 60 days before an exposed shutdown"
+      },
+      {
+        "risk": "The five-role review is one model's structured analysis, not independent approval.",
+        "mitigation": "Keep the pull request draft and require founder or delegated human review.",
+        "owner": "alfonso_lopez",
+        "review_trigger": "Draft PR review"
+      },
+      {
+        "risk": "Official status and beta documentation can change after observation.",
+        "mitigation": "Preserve dates and URLs, use pinned fixtures for adoption, and recheck status before a canary.",
+        "owner": "weekly provider reviewer",
+        "review_trigger": "Next material provider update or canary proposal"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserve the Adversarial Reviewer's brief-only objection. The branch-integrity repair and hard retirement deadlines justify a dated evidence record, but the objection wins on policy scope: no new protocol rule, runtime fixture, provider call, or migration is added.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Make no repository change because direct runtime exposure is negative and existing generic rules are sufficient.",
+        "rationale": "Recurring documentation can create review debt and falsely elevate prospective provider announcements into institutional policy.",
+        "evidence_threshold": "Future repository updates require a direct exposure, hard deadline, branch-integrity defect, or previously uncovered authority, replay, cost, privacy, or no-duplicate-runtime invariant.",
+        "owner": "alfonso_lopez",
+        "review_trigger": "Founder review of PR 105 or the next weekly cycle"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "alfonso_lopez"
+  },
+  "migration_plan": "No runtime migration. If an affected model, hosted browser, Responses multi-agent feature, or Anthropic route is later proposed, first inventory the authorized direct exposure, pin the model/header/tool contract, add deterministic fixtures under canonical identities and receipts, perform independent evaluation, review retention/residency and credentials, set a cost ceiling, and run a founder-approved reversible canary.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Leave draft PR 105 unmerged or revert the 2026-10-06 documentation-only merge commit",
+      "Preserve the dated evidence and dissent as historical records",
+      "Restore the prior PR head if branch reconciliation is found to have overwritten current main doctrine",
+      "Use brief-only reporting on a future cycle that does not meet the materiality gate"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Any default-branch write or merge without founder approval",
+    "Any live provider, model, route, credential, account, browser session, invoice, contract, or production change",
+    "Any provider-owned canonical workflow, identity, authority, memory, evidence, evaluator, receipt, or cost ledger",
+    "Any provider subagent or hosted browser expanding authority or bypassing consequence gates",
+    "Any second scheduler, durable provider session owner, retry daemon, or agent runtime",
+    "Any retry or failover without canonical receipt and idempotency reconciliation",
+    "Any model migration treated as replay-equivalent without fixtures and independent evaluation",
+    "Any unbounded or unapproved website access or sign-in",
+    "Any missing root/subagent/tool attempt cost or ineligible residency path",
+    "Any overwrite of newer main doctrine or unresolved intent-ID collision",
+    "One immaterial recurring repository update"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "alfonso_lopez",
+  "review_trigger": "Founder review of draft PR 105; any direct use of a deprecated model, OpenAI hosted computer use, Responses multi-agent, Anthropic Sonnet 4.5, Kimi route, or any provider incident with ambiguous completion"
+}

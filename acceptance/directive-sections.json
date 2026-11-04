@@ -244,7 +244,8 @@
    "id": "S20-A",
    "title": "Executable emergence gate: a recombination must beat its own stated baseline on frozen cases or is refused as integration",
    "source": "gap map of the 77 sections against #196 head 4ec00605 (session 2026-10-30), section 20 (unnamed there)",
-   "depends_on": []
+   "depends_on": [],
+   "closed_by": "claude/emergence-gate-20261104 on #196 d35d92a5: every reduction's stated baseline runs (greg/recombine.py Emergence); qualify refuses a construction that does not beat it on its frozen oracle cases and traps, and Genesis records 'refused as integration'"
   },
   {
    "id": "S21-A",
@@ -1824,17 +1825,16 @@
      "ask": "Each recombination states what it does that no source does alone and beats its baseline, or is refused as integration",
      "excerpt": "If there is no precise answer, it may merely be integration.",
      "owner_paths": [
-      "greg/recombine.py"
+      "greg/recombine.py",
+      "greg/genesis.py"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_greg_emergence_gate.py"
+     ],
+     "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "SANDBOX_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No executable emergence gate",
-      "unit": "S20-A"
-     }
+     "tier": "SANDBOX_VERIFIED",
+     "coverage": "covered"
     }
    ]
   },

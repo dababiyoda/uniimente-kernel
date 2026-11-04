@@ -1707,7 +1707,10 @@ class Genesis:
                                                              "the engine"},
                             key=[deficit_id, manifest.capability_id, manifest.provenance["chain_digest"]])
         if not passed:
-            self._route(deficit_id, "constructed", "failed qualification", manifest.capability_id)
+            gate = report.get("emergence") or {}
+            self._route(deficit_id, "constructed", "refused as integration: " + gate["why"]
+                        if not report["failures"] and gate.get("verdict") == "INTEGRATION" else "failed qualification",
+                        manifest.capability_id)
             return False
         manifest = self._composed_manifest(function, path, engine, deficit_id, report)
         self.registry.register(manifest, adapter, state="VERIFIED")

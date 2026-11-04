@@ -120,6 +120,8 @@ jobs:
         run: python scripts/ci/check_typed_blockers_mutants.py
       - name: Compute closure mutations (a lasting bottleneck is asked again; memory and IO measured; changes verified)
         run: python scripts/ci/check_compute_closure_mutants.py
+      - name: Emergence gate mutations (a construction that does not beat its runnable baseline is refused as integration)
+        run: python scripts/ci/check_emergence_gate_mutants.py
 
   verifier:
     # Its V2 re-runs tests/unit, so inside job 1 it pushed that job past its 30 minutes once the

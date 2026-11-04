@@ -291,6 +291,10 @@ def _measured_trust(journal) -> dict:
             # founder-signed resolution later rejected: work the founder can act on, never acted on here
             "disputes_to_investigate": sum(1 for row in waiting if row.get("kind") == "objective_conflict"
                                            and row.get("priority") == "investigate"),
+            # of those disputes, the ones an attached read-only observer can decide: a bounded verification mission
+            # is prepared for the founder to sign; it runs nothing here
+            "verifications_prepared": sum(1 for row in waiting if row.get("kind") == "objective_conflict"
+                                          and "prepared_verification" in row),
             "decisions_to_recheck": len(decisions_to_recheck(journal)),
             "settled_outcomes": sum(r["count"] for r in rows.values()),
             "settled_correct": sum(r["correct"] for r in rows.values()),

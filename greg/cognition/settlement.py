@@ -1071,7 +1071,7 @@ def _unsettled_why(verdict, terminal, awaiting=False) -> str:
 
 
 def _investigation(identity, seen, state, mission_id, receipts, signed_facts=frozenset(), settles=True,
-                   unsettled_why=None) -> dict:
+                   unsettled_why=None, observers=None) -> dict:
     """A disputed world outcome as actionable work: what is disputed, what evidence would decide it, and whether a
     resolution can be prepared now from evidence already on the record. It prepares; it never signs or applies."""
     live = state["live"]
@@ -1125,10 +1125,54 @@ def _investigation(identity, seen, state, mission_id, receipts, signed_facts=fro
                     f"the reports declared as independent sources disagree too: {independent}"),
             "how": (f"greg realize {seen[-1][0]} --objective-value <observed> --source external_record "
                     f"--note <reference> --key <founder key>"),
-            "acquirable_by_body": [],
-            "acquisition_limit": "no capability on this body declares an observation of this world quantity, so "
-                                 "GREG asks for the record rather than guessing it"}
+            "acquirable_by_body": [o["capability_id"] for o in observers or ()]}
+        if observers:
+            from greg.templates import dispute_verification
+            row["evidence_request"]["acquisition_limit"] = None
+            row["prepared_verification"] = {
+                "observer": observers[0],
+                "mission": dispute_verification(claim=identity, receipt=seen[-1][0], mission_id=mission_id,
+                                                objective=objective, sense=sense, threshold=threshold,
+                                                answer_version=row["answer_version"], observer=observers[0]),
+                "signing": "founder key only: nothing runs until the founder signs this MISSION",
+                "after": "the observation is a capability receipt, not a resolution: the founder reads it and signs a "
+                         "REALIZATION (--source external_record, its note naming the receipt), then the prepared "
+                         "resolution; a signature attributes the report, it does not make the reading true"}
+        else:
+            row["evidence_request"]["acquisition_limit"] = (
+                f"no capability attached on this body declares a read-only observation of {objective} "
+                f"({OBSERVE_FUNCTION}{objective}), so GREG asks for the record rather than guessing it")
     return row
+
+
+OBSERVE_FUNCTION = "world.observe."      # a capability's function tag: it observes this realized world quantity
+
+
+def _observers(journal, objective) -> list[dict]:
+    """The capabilities this body could use to obtain the deciding observation of ``objective``: ATTACHED now (the
+    founder's attach, never a registration alone), read-only, and declaring ``world.observe.<objective>``. Built-ins
+    start in their initial state; the journal's registrations and later state changes (attach, detach, quarantine)
+    are replayed over them. Read-only: it records nothing, and a listed capability is a route, not a permission."""
+    from greg.capabilities import BUILTINS
+    from .catalog import initial_state
+    manifests = {cid: (manifest.to_dict(), initial_state(cid)) for cid, (manifest, _) in BUILTINS.items()}
+    for event in journal.replay("capability.registered"):
+        manifest = event.payload.get("manifest") or {}
+        if manifest.get("capability_id"):
+            manifests[manifest["capability_id"]] = (manifest, event.payload.get("state"))
+    states = {cid: state for cid, (_, state) in manifests.items()}
+    for event in journal.replay("capability.state"):
+        if event.payload.get("capability_id") in states:
+            states[event.payload["capability_id"]] = event.payload.get("state")
+    out = []
+    for cid, (manifest, _) in sorted(manifests.items()):
+        if (manifest.get("function") == OBSERVE_FUNCTION + str(objective) and states[cid] == "ATTACHED"
+                and manifest.get("consequence_class") == "read_only"):
+            out.append({"capability_id": cid, "version": manifest.get("version"),
+                        "target_prefix": manifest.get("target_prefix", ""),
+                        "budget_ceiling_usd": float(manifest.get("budget_ceiling_usd") or 0.0),
+                        "network": manifest.get("network", "none"), "data_classes": list(manifest.get("data_classes") or ())})
+    return out
 
 
 # Above this many co-eligible challengers the preference check reads the pairs and the whole family instead of every
@@ -1379,7 +1423,8 @@ def awaiting_realization(journal) -> list[dict]:
             row = _investigation(identity, seen, state, mission_id, len(receipts), signed_facts,
                                  settles=claim_settles(seen),
                                  unsettled_why=_unsettled_why(latest_verdict.get(mission_id),
-                                                              mission_id in terminal, mission_id in awaiting))
+                                                              mission_id in terminal, mission_id in awaiting),
+                                 observers=_observers(journal, _promised(state["live"][0].payload)[0]))
             row["mission_appraisal"] = latest_verdict.get(mission_id)
             row["claim_settles"] = claim_settles(seen)
             conflicts.append(row)

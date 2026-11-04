@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.local/contracts/venture-cell-registration-proposal.schema.json",
+  "title": "UNIIMENTE Venture Cell Registration Proposal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proposal_id",
+    "status",
+    "activation_status",
+    "service_identity",
+    "legal_principal",
+    "mission",
+    "allowed_capabilities",
+    "prohibited_capabilities",
+    "capital_authorization_usd",
+    "max_autonomy_level",
+    "external_targets",
+    "required_approvals",
+    "approval_status",
+    "created_by",
+    "created_at",
+    "expires_at",
+    "source_repository",
+    "source_branch",
+    "source_manifest_path",
+    "source_manifest_hash_status"
+  ],
+  "properties": {
+    "proposal_id": { "type": "string", "format": "uuid" },
+    "status": { "const": "PROPOSED" },
+    "activation_status": { "const": "INACTIVE" },
+    "service_identity": {
+      "type": "string",
+      "pattern": "^spiffe://uniimente\\.internal/venture/"
+    },
+    "legal_principal": {
+      "enum": ["alfonso_lopez", "IVIO_NEMT_LLC", "DALEOBANKS_MEDIA"]
+    },
+    "mission": { "type": "string", "minLength": 1 },
+    "allowed_capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "prohibited_capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "capital_authorization_usd": { "const": 0 },
+    "max_autonomy_level": { "const": 0 },
+    "external_targets": { "type": "array", "maxItems": 0 },
+    "required_approvals": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "founder_manifest_approval",
+          "service_identity_registration",
+          "legal_principal_confirmation",
+          "kernel_contract_lock_approval",
+          "security_review",
+          "capability_grant_issuance"
+        ]
+      }
+    },
+    "approval_status": { "const": "NOT_REQUESTED" },
+    "created_by": {
+      "type": "string",
+      "pattern": "^spiffe://uniimente\\.internal/human/"
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "source_repository": { "const": "dababiyoda/PumpStation" },
+    "source_branch": { "const": "agent/phase3-kernel-contract-adapter" },
+    "source_manifest_path": {
+      "const": "kernel/pumpstation-organ-manifest.json"
+    },
+    "source_manifest_hash_status": {
+      "const": "TO_BE_BOUND_AT_APPROVAL"
+    }
+  }
+}

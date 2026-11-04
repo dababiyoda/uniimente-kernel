@@ -1,0 +1,91 @@
+name: PumpStation registration proposal proof
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  prove:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'agent/register-pumpstation-venture-cell'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/register-pumpstation-venture-cell
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check .
+      - run: black --check .
+      - run: pytest -q
+      - name: Run declared Makefile verification targets when present
+        shell: bash
+        run: |
+          set -euo pipefail
+          targets=$(make -qp 2>/dev/null | awk -F: '/^[A-Za-z0-9_.-]+:([^=]|$)/ {print $1}' | sort -u)
+          for target in check verify lint test docs-index-check docs-check; do
+            if grep -qx "$target" <<<"$targets"; then
+              echo "Running make $target"
+              make "$target"
+            fi
+          done
+      - name: Run known documentation validators when present
+        shell: bash
+        run: |
+          set -euo pipefail
+          for script in scripts/check_docs_index.py scripts/verify_docs_index.py scripts/check_documentation.py; do
+            if [ -f "$script" ]; then
+              echo "Running $script"
+              python "$script"
+            fi
+          done
+      - name: Write inactive-proposal proof capsule
+        run: |
+          mkdir -p proof
+          cat > proof/pumpstation-registration-proposal-verification.json <<'JSON'
+          {
+            "proof_id": "uniimente-pumpstation-registration-proposal-v1",
+            "reality_status": "VERIFIED_SANDBOX_PROPOSAL",
+            "registration_active": false,
+            "grant_issued": false,
+            "capital_authorization_usd": 0,
+            "autonomy_level": 0,
+            "external_targets": [],
+            "canonical_service_registry_modified": false,
+            "checks": {
+              "ruff": "passed",
+              "black": "passed",
+              "full_pytest": "passed",
+              "declared_makefile_verification": "passed_or_not_present",
+              "documentation_validators": "passed_or_not_present"
+            },
+            "does_not_prove": [
+              "founder approval",
+              "manifest hash approval",
+              "active service identity registration",
+              "Kernel-issued capability grant",
+              "live PumpStation transport",
+              "legal clearance",
+              "external execution authority"
+            ]
+          }
+          JSON
+      - name: Commit proof capsule only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add proof/pumpstation-registration-proposal-verification.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'Verified proof capsule already current.'
+          else
+            git commit -m 'Record verified inactive PumpStation registration proposal'
+            git push origin HEAD:agent/register-pumpstation-venture-cell
+          fi

@@ -30,6 +30,7 @@ ledger or become a record. Additions are always allowed.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import copy
 import io
 import json
@@ -171,17 +172,24 @@ def repin(snapshot: dict | None, sha: str, root: Path) -> dict:
     return out
 
 
-def write_snapshot(commit: str, target: Path = SNAPSHOT) -> dict:
-    """Re-pin ``target`` at ``commit``, read from ``git archive`` of the files this check reads (``repin``)."""
+@contextlib.contextmanager
+def tree_at(commit: str):
+    """(sha, root): ``commit`` resolved, and its files this check reads, extracted from ``git archive``."""
     sha = subprocess.run(["git", "rev-parse", f"{commit}^{{commit}}"], cwd=ROOT, check=True, capture_output=True,
                          text=True).stdout.strip()
     archive = subprocess.run(["git", "archive", "--format=tar", sha, *READ], cwd=ROOT, check=True,
                              capture_output=True).stdout
-    old = json.loads(target.read_text(encoding="utf-8")) if target.exists() else None
     with tempfile.TemporaryDirectory(prefix="intent-continuity-") as temp:
         with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
             tar.extractall(temp, filter="data")
-        snapshot = repin(old, sha, Path(temp))
+        yield sha, Path(temp)
+
+
+def write_snapshot(commit: str, target: Path = SNAPSHOT) -> dict:
+    """Re-pin ``target`` at ``commit`` (``repin``); a refused re-pin leaves ``target`` as it was."""
+    old = json.loads(target.read_text(encoding="utf-8")) if target.exists() else None
+    with tree_at(commit) as (sha, root):
+        snapshot = repin(old, sha, root)
     target.write_text(json.dumps(snapshot, indent=1) + "\n", encoding="utf-8")
     return snapshot
 

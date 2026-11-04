@@ -10,6 +10,7 @@ clone.
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 from pathlib import Path
@@ -19,6 +20,7 @@ import subprocess
 
 import pytest
 
+from scripts.ci import check_intent_continuity as check
 from scripts.ci.check_intent_continuity import (KINDS, SNAPSHOT, SnapshotError, current_ids, main, missing, pinned,
                                                 repin, successors)
 
@@ -109,6 +111,26 @@ def test_a_lawfully_superseded_id_stays_pinned_after_a_repin(tree):
     assert "INTENT-20260930-open-source-first" in pinned(after)["intent_records"]
     successor.write_text(json.dumps(record), encoding="utf-8")
     assert missing(after, tree) == [("intent_records", "INTENT-20260930-open-source-first")]
+
+
+def test_write_snapshot_keeps_the_pinned_ids_and_refuses_a_deletion(tree, tmp_path, monkeypatch):
+    """The CLI's re-pin, with the commit's tree supplied directly (no git needed)."""
+    @contextlib.contextmanager
+    def at(commit):
+        yield "c" * 40, tree
+
+    monkeypatch.setattr(check, "tree_at", at)
+    target = tmp_path / "snapshot.json"
+    target.write_text(SNAPSHOT.read_text(encoding="utf-8"), encoding="utf-8")
+    _intent_file(tree, "INTENT-20261104-LATER").write_text(json.dumps({"intent_id": "INTENT-20261104-LATER"}))
+    assert main(["--write-snapshot", "LATER", "--snapshot", str(target)]) == 0
+    new = json.loads(target.read_text(encoding="utf-8"))
+    assert (new["pinned_commit"], new["ids"]) == (BASE_COMMIT, snapshot()["ids"])
+    assert new["added"][-1] == {"commit": "c" * 40, "ids": {"intent_records": ["INTENT-20261104-LATER"]}}
+    _scrub(tree, "INTENT-20261021-PROFESSIONAL-PARALLEL-TEAM", "the parallel-team intent")
+    before = target.read_text(encoding="utf-8")
+    assert main(["--write-snapshot", "CLEANUP", "--snapshot", str(target)]) == 1
+    assert target.read_text(encoding="utf-8") == before
 
 
 def test_write_snapshot_at_head_keeps_the_pinned_ids(tmp_path):

@@ -1,0 +1,272 @@
+{
+  "decision_id": "DELIB-20261022-DOCUMENT-TEXT",
+  "title": "document.text from installed pdftotext, and DEP-5 licenses for acquired system binaries",
+  "problem": "GREG cannot check a fact inside a PDF; acquired system binaries carry no license assessment.",
+  "founder_intent_refs": [
+    "INTENT-20261022-OSS-METABOLISM",
+    "INTENT-20260930-open-source-first"
+  ],
+  "baseline": "#201 head 1d9d873: no document function; binary card says 'license not inspected by GREG'.",
+  "alternatives": [
+    {
+      "name": "Proposed: pdftotext through the existing binary route + GREG PDF oracle + DEP-5",
+      "description": "Commodity binary, frozen oracle, read-root checks and binary hash pin inherited from the existing route.",
+      "advantages": [
+        "No new dependency",
+        "Reuses the route sha256sum and wc already use"
+      ],
+      "disadvantages": [
+        "Bodies without poppler escalate",
+        "Binary-only route"
+      ],
+      "revival_evidence": "n/a (selected)"
+    },
+    {
+      "name": "pypdf package route",
+      "description": "Pure-Python BSD-3 package through the DEPEND route.",
+      "advantages": [
+        "Portable to bodies without poppler"
+      ],
+      "disadvantages": [
+        "Needs a file-reading package contract in Genesis (read roots inside normalize)"
+      ],
+      "revival_evidence": "First body without poppler where the founder declines apt install"
+    },
+    {
+      "name": "Build a PDF parser",
+      "description": "GREG-owned extractor.",
+      "advantages": [
+        "No dependency"
+      ],
+      "disadvantages": [
+        "Rebuilds commodity; PDF is a large format"
+      ],
+      "revival_evidence": "none expected"
+    },
+    {
+      "name": "licensecheck/ScanCode for binaries",
+      "description": "Heavier license scanners.",
+      "advantages": [
+        "Broader"
+      ],
+      "disadvantages": [
+        "New dependency"
+      ],
+      "revival_evidence": "DEP-5 coverage proves insufficient"
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Missions cannot read PDFs; binaries remain license-blind.",
+    "advantages": [
+      "No change"
+    ],
+    "disadvantages": [
+      "A common founder need unmet",
+      "Residual 1 of #201 open"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Real everyday function (contracts, invoices) from commodity software, not rebuilt.",
+      "material_concerns": [
+        "Must not claim OCR or layout understanding"
+      ],
+      "evidence_refs": [
+        "DOCUMENT-TEXT-2026-10-22.md limits"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "One catalog entry and one parser on the existing binary route; no new registry.",
+      "material_concerns": [
+        "genesis.py is the integrator's seam"
+      ],
+      "evidence_refs": [
+        "#96 claim 6333350310"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Oracle cross-checked on two unrelated engines; negative cases assert their causes.",
+      "material_concerns": [
+        "Oracle could be tuned to poppler"
+      ],
+      "evidence_refs": [
+        "0 mismatches poppler and PDFium over 120 PDFs"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "No dependency added; the founder installs poppler on a body that lacks it.",
+      "material_concerns": [
+        "Chromebook body lacks poppler by default"
+      ],
+      "evidence_refs": [
+        "deficit escalates with install option"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Licenses read from declarations; binaries with known not-open licenses never auto-attach.",
+      "material_concerns": [
+        "Asymmetry for unknown binary licenses"
+      ],
+      "evidence_refs": [
+        "attach_check docstring"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Mission closes on a PDF's words",
+      "tier": "sandbox_execution",
+      "reference": "tests/unit/test_greg_document_text.py",
+      "finding": "ACHIEVED with real pdftotext; fails on 1d9d873"
+    },
+    {
+      "claim": "Oracle independent of the candidate",
+      "tier": "sandbox_execution",
+      "reference": "poppler and PDFium cross-check",
+      "finding": "0 mismatches each"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Fail-closed binary licenses are safe",
+      "tier": "sandbox_execution",
+      "reference": "coreutils DEP-5",
+      "finding": "false: GFDL documentation licenses would have stopped sha256sum on every Debian body"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Missions can verify facts in PDFs; acquired binaries carry their declared license.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Any mission family can now check documents",
+        "amplified_value": "Contracts, invoices and reports become verifiable evidence for missions and organs"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Poppler absent on some bodies",
+        "severity": "medium",
+        "response_type": "modularity",
+        "redesigned_response": "Escalation names the install; pypdf route recorded"
+      },
+      {
+        "id": "D2",
+        "statement": "Oracle might be tuned to one engine",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Cross-check with an unrelated engine (PDFium)"
+      },
+      {
+        "id": "D3",
+        "statement": "Unknown binary licenses",
+        "severity": "medium",
+        "response_type": "governance",
+        "redesigned_response": "Hold only known not-cleared; label unknown"
+      }
+    ],
+    "comparisons": {
+      "baseline": "no PDF reading",
+      "do_nothing": "need unmet",
+      "simplest_viable_alternative": "pdftotext on the existing binary route (selected)",
+      "strongest_competing_architecture": "pypdf package route with a file contract",
+      "reversible_experiment": "catalog entry removable; card field inert"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Build a PDF parser",
+        "rejection_reason": "rebuilds commodity",
+        "revival_evidence": "none expected"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack the oracle's independence, the baseline's honesty, the binary license asymmetry and the read-root boundary.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "gaming",
+        "statement": "Uncompressed oracle PDFs let fs.read find words, inflating the dividend",
+        "strengthening_response": "Oracle and tests use Flate-compressed PDFs; baseline asserted on a compressed PDF"
+      },
+      {
+        "id": "W2",
+        "category": "fragility",
+        "statement": "Fail-closed DEP-5 would regress coreutils",
+        "strengthening_response": "Classify GFDL variants; hold binaries only on known not-cleared classes"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "founder installs; GREG installs nothing",
+        "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+        "review_trigger": "first Chromebook run"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "resolved",
+        "rationale": "two unrelated engines agree with the oracle",
+        "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+        "review_trigger": "poppler major upgrade"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "stated asymmetry avoids a regression with no legal basis",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "a binary with an unclassified license is acquired"
+      }
+    ],
+    "final_design": "document.text on the binary route with the compressed-PDF oracle; DEP-5 reader; attach_check at both attach points.",
+    "residual_risks": [
+      {
+        "risk": "Scanned PDFs return no words",
+        "mitigation": "stated limit; OCR route recorded",
+        "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+        "review_trigger": "first mission over a scanned PDF"
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": false,
+    "handling": "No dissent recorded; the binary asymmetry is an accepted, stated risk.",
+    "entries": []
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Additive catalog entry and card fields; no data migration.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Remove the document.text CATALOG entry",
+      "Restore the binary license string"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "A PDF check closes a mission when the document lacks the phrase",
+    "The reader returns content from outside the read roots"
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Alfonso Lopez (merge); integrator session_01FBS4KNJR59nSbdGbxo8Mbx (intake)",
+  "review_trigger": "Integrator intake or review findings"
+}

@@ -493,8 +493,14 @@ def main(argv=None) -> int:
     rd = sub.add_parser("readiness", help="read-only: each capability's rungs KNOWN, INSTALLED, CREDENTIALLED, GRANTED, "
                                           "EXERCISED, VERIFIED, with evidence and the first missing rung (no secret value)")
     rd.add_argument("--capability", action="append", default=[], help="show only this capability (repeatable)")
+    sub.add_parser("autonomy", help="read-only: the level each (capability, action class, target pattern, budget band) "
+                                    "has earned from the ledger; it grants nothing")
     pp = sub.add_parser("path", help="where GREG stands on its developmental path: active node, gate, exit evidence, horizons")
-    pp.add_argument("--node", help="read one node's own measurement (e.g. N6), even past where the path stops")
+    pq = pp.add_mutually_exclusive_group()
+    pq.add_argument("--node", help="read one node's own measurement (e.g. N6), even past where the path stops")
+    pq.add_argument("--build", action="store_true",
+                    help="the build frontier beside the acceptance frontier: per node STRUCTURALLY_BUILT, BUILD_OPEN "
+                         "or NO_PREDICATE; structural evidence moves only the build frontier, never the founder's path")
     tr = sub.add_parser("treasury", help="venture books: verified revenue through your waterfall (node N7); moves no money")
     trs = tr.add_subparsers(dest="treasury_cmd", required=True)
     trs.add_parser("books", help="per venture: verified revenue, obligations and reserves, reinvestable surplus, transfers")
@@ -812,10 +818,16 @@ def main(argv=None) -> int:
         elif args.cmd == "readiness":
             from greg import readiness
             print(json.dumps(readiness.report(home, capabilities=args.capability or None), indent=1))
+        elif args.cmd == "autonomy":
+            from greg import autonomy
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                print(json.dumps(autonomy.report(journal), indent=1))
         elif args.cmd == "path":
             from greg import path as devpath
 
             def where(journal):
+                if getattr(args, "build", False):
+                    return devpath.build_status(journal)
                 if not getattr(args, "node", None):
                     return devpath.position(journal)
                 try:

@@ -150,6 +150,10 @@ def test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_
         assert path["active"]["measurement"]["structurally_met"]
         assert not path["active"]["measurement"]["met"]    # a rehearsal key cannot clear the founder's gate
         assert path["active"]["measurement"]["not_founder_tier"] == {row["mission_id"]: metrics.NOT_FOUNDER_TIER}
+        # The build is read beside it (INTENT-20261030-BUILD-BEFORE-DEVICE-RUN): N1 built, the founder's path unmoved.
+        build = json.loads(greg("path", "--build"))
+        assert build["build_frontier"]["id"] == "N2" and build["acceptance_frontier"]["id"] == "N1"
+        assert build["built"] == ["N0", "N1"] and build["achieved"] == ["N0"]
 
         # N2 on the same body, still without a model: a mission that needs a capability GREG lacks.
         download = src / "downloads" / "tool.tar.gz"
@@ -218,6 +222,16 @@ def test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_
         assert genesis["structural_value"] == 2 and genesis["structural_distinct_capabilities"] == 2, genesis
         assert genesis["structurally_met"] and not genesis["met"] and genesis["value"] == 0
         assert genesis["evidence_level"] == metrics.STRUCTURAL_CANDIDATE and len(genesis["not_founder_tier"]) == 2
+        # One body, driven only through the product, with a --no-passphrase key: the build reaches N3, and neither
+        # the founder's path nor VEPMC's founder tier moves.
+        build = json.loads(greg("path", "--build"))
+        assert build["build_frontier"]["id"] == "N3" and build["built"] == ["N0", "N1", "N2"]
+        assert build["acceptance_frontier"] == {"id": "N1", "title": build["acceptance_frontier"]["title"],
+                                                "operationally_primary": True, "build": devpath.STRUCTURALLY_BUILT,
+                                                "status": devpath.ACCEPTANCE_PENDING,
+                                                "evidence_level": metrics.STRUCTURAL_CANDIDATE}
+        assert build["achieved"] == json.loads(greg("path"))["achieved"] == ["N0"]
+        assert build["structural_depth"] == 2 and json.loads(greg("vepmc"))["founder_tier_count"] == 0
 
         # To stop: greg stop --local (a deliberate stop stays stopped).
         greg("stop", "--local")

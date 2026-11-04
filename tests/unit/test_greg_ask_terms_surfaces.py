@@ -14,13 +14,15 @@ import subprocess
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
-from greg import asks
-from greg.body import Body, hold_ask, status
+from greg import asks, blockers
+from greg.body import Body, hold_ask, morning_projection, observe, status
 from greg import console as console_page
 from greg.console import Console, _ask_details, render_home, render_mission_control
+from greg.missions import MissionBook
 from provenance.ledger import sha256_json
 from tests.greg_fixtures import Clock, drop, make_body, mission, note_check, signed, workspace, write_strategy
 
@@ -455,3 +457,51 @@ def test_the_phone_names_the_compensation_too(compensation_body, tmp_path):
         card = cards[r["request_id"]]
         assert _in_order(card["text"], [_covers_compensation(mid), "If you do not answer: " + SILENT_A]), card["text"]
         assert "Asked for action" not in card["text"]
+
+
+# ---- the typed blockers (greg/blockers.py, from #251): the morning report, Mission Control's Goals page, greg blockers
+
+def _blocked_goals(page: str) -> dict:
+    """Mission Control's Blocked goals rows, keyed by mission, as visible text."""
+    section = page.split("<h2>Blocked goals</h2>", 1)[1].split("</section>", 1)[0]
+    return {(t := _text(row).strip()).split()[0]: t for row in re.findall(r"<tr>(.*?)</tr>", section, re.S)[1:]}
+
+
+def test_a_typed_blocker_says_what_approving_covers_and_what_silence_does(engine_body):
+    home = engine_body[0]
+    real = _real_asks(home)
+    shown = morning_projection(home)["blockers"]
+    assert isinstance(shown, list), shown              # computed, not "unavailable"
+    records = {b["mission_id"]: b for b in shown}
+    page = render_mission_control(Console(home), "goals").decode()
+    goals = _blocked_goals(page)
+    assert "<b>ok</b>" not in page                    # a bound param is shown, never interpreted
+    for mid, content in (("m:real", CONTENT), ("m:long", LONG)):
+        b, rid = records[mid], real[mid]["request_id"]
+        assert b["kind"] == "decision" and b["blocker"] == f"founder decision: APPROVAL ask {rid} on action w"
+        # "answering exactly" names every part the digest binds, as the console and phone do before their buttons
+        assert b["required_authority"].endswith('"target": "workspace:c.txt"}. ' + _covers_real(mid, content)), b
+        assert b["next_move"].endswith("; if you do not answer: " + SILENT_B), b
+        assert _in_order(goals[mid], [b["blocker"], _covers_real(mid, content), "if you do not answer: " + SILENT_B])
+
+
+def test_a_compensation_approval_is_never_typed_as_the_action_it_undoes(compensation_body):
+    home = compensation_body[0]
+    found = _compensation_asks(home)
+    # Today neither compensation ask blocks a pursued mission: both are asked once the mission is SUPERSEDED or
+    # ABANDONED, and no surface lists those missions' blockers.
+    shown = morning_projection(home)["blockers"]
+    assert isinstance(shown, list) and not {b["mission_id"] for b in shown} & set(found), shown
+    assert not set(_blocked_goals(render_mission_control(Console(home), "goals").decode())) & set(found)
+    # Were one typed, it would name the compensation, as the console and phone do.
+    with observe(home, actor="spiffe://uniimente.internal/greg/morning-reader") as journal:
+        book = MissionBook(journal)
+        book.rebuild()
+        for mid, r in found.items():
+            rid = r["request_id"]
+            held = SimpleNamespace(mission_id=mid, blocker={"type": "decision", "request_id": rid, "action_id": "w"})
+            b = blockers.typed(held, book, "awaiting founder", None)
+            assert b["blocker"] == f"founder decision: APPROVAL ask {rid} to compensate action w", b
+            assert b["required_authority"].endswith(". " + _covers_compensation(mid)), b
+            assert b["next_move"].endswith("; if you do not answer: " + SILENT_A), b
+            assert "on action" not in b["blocker"] and "Asked for action" not in b["required_authority"]

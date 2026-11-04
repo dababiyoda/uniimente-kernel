@@ -61,8 +61,10 @@ def _decision(m, b: dict, request: dict, state: str, held: bool) -> dict:
     if b.get("failing_checks"):             # greg/missions.py _step: such a blocker is watched, not only waited on
         reconsider += (f"; meanwhile GREG re-observes {', '.join(b['failing_checks'])} at the mission's cadence and "
                        "withdraws the ask if they pass without any GREG action")
+    # A compensation APPROVAL's approve runs the compensation signed with the action, never the action again.
+    on = "to compensate action" if kind == "APPROVAL" and request.get("compensation") is True else "on action"
     out = {"blocker": f"founder decision: {kind} ask {rid}"
-                      + (f" on action {b['action_id']}" if b.get("action_id") else "")
+                      + (f" {on} {b['action_id']}" if b.get("action_id") else "")
                       + (f" ({spend})" if request.get("resource") == "spend"
                          and (spend := (request.get("authority_requested") or {}).get("spend")) else ""),
            "why": _join(b.get("why"), request.get("why_now")), "reconsider_when": reconsider}
@@ -75,10 +77,22 @@ def _decision(m, b: dict, request: dict, state: str, held: bool) -> dict:
             "required_evidence": f"your signed DECISION on {rid}, accepted on this body's ledger; the mission book "
                                  "counts no other row as your answer (now: " + state + ")",
             "required_authority": f"a founder-signed DECISION ({_signer('DECISION')}) answering exactly: "
-                                  + _scope(request),
+                                  + _scope(request) + _covers(request),
             "next_move": f"answer it: greg decide {rid} approve|reject, or the console or phone"
                          + (f"; recommended: {request['recommendation']}" if request.get("recommendation") else "")
-                         + "; GREG lifts the blocker at the next tick after your answer"}
+                         + "; GREG lifts the blocker at the next tick after your answer"
+                         + (f"; if you do not answer: {request['consequence_of_no_response']}"
+                            if request.get("consequence_of_no_response") else "")}
+
+
+def _covers(request: dict) -> str:
+    """What approving an APPROVAL covers, in the sentence the console and the phone show before their buttons
+    (greg/console.py ``approval_covers``): the mission, the params the scope digest binds, and the action it was
+    asked for, or the action it compensates. Display only, like there."""
+    if request.get("kind") != "APPROVAL":
+        return ""
+    from greg.console import approval_covers
+    return ". " + approval_covers(request)
 
 
 def _reconciliation(m, b: dict, request: dict, state: str, held: bool) -> dict:

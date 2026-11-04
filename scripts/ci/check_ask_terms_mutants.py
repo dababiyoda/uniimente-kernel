@@ -17,8 +17,10 @@ PHONE = FILE + "::test_the_phone_shows_the_same_terms_and_sends_only_answers_the
 PHONE_REAL = FILE + "::test_the_phone_shows_what_a_real_approval_covers"
 COMP = FILE + "::test_a_compensation_approval_names_the_compensation_not_the_action_it_undoes"
 PHONE_COMP = FILE + "::test_the_phone_names_the_compensation_too"
+TYPED = FILE + "::test_a_typed_blocker_says_what_approving_covers_and_what_silence_does"
+TYPED_COMP = FILE + "::test_a_compensation_approval_is_never_typed_as_the_action_it_undoes"
 
-CONSOLE, CORE, APP = "greg/console.py", "greg/phone/core.js", "greg/phone/app.js"
+CONSOLE, CORE, APP, BLOCKERS = "greg/console.py", "greg/phone/core.js", "greg/phone/app.js", "greg/blockers.py"
 TERMS = '    for (const line of askTerms(r)) card.append(el("p", line));'
 SKIP = "    if (r.answerable === false) { box.append(card); continue; }"
 MALFORMED_JS = ('if ("malformed" in requested) lines.push("This scope is malformed: " '
@@ -87,6 +89,17 @@ MUTANTS = [
        'compensation=False)\n            return "WAITING"\n        self.journal.record("mission.compensated"')], COMP),
     ("the projection drops the compensation marker", "greg/asks.py",
      [('"compensation", "evidence",', '"evidence",')], COMP),
+    # the typed blockers (greg/blockers.py): the morning report, Mission Control's Goals page, greg blockers
+    ("a typed decision blocker drops what approving covers", BLOCKERS,
+     [("+ _scope(request) + _covers(request),", "+ _scope(request),")], TYPED),
+    ("a typed decision blocker drops what silence does", BLOCKERS,
+     [('if request.get("consequence_of_no_response") else "")}', 'if False else "")}')], TYPED),
+    ("a typed blocker names a compensation as the action it undoes", BLOCKERS,
+     [('if kind == "APPROVAL" and request.get("compensation") is True else', "if False else")], TYPED_COMP),
+    ("a typed blocker names every approval a compensation", BLOCKERS,
+     [('if kind == "APPROVAL" and request.get("compensation") is True else', "if True else")], TYPED),
+    ("the typed blockers list a closed mission's blocker", BLOCKERS,
+     [("if m.blocker is None or m.status in TERMINAL or", "if m.blocker is None or")], TYPED_COMP),
     # the phone
     ("phone drops what silence does", CORE,
      [("if (r.consequence_of_no_response) lines.push", "if (false) lines.push")], PHONE),

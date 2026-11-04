@@ -38,6 +38,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from business.commercial_loop import ACCEPTED_VERIFICATIONS, observation_problems
 from foundry.systems import accounting, mechanism, reputation
+from provenance.digests import compact_json_bytes as _canon
 
 DEFAULT_RULES = {"newcomer_ceiling_cents": 25000, "take_bps": 500}
 VERDICTS = ("VERIFIED", "REFUTED")
@@ -45,10 +46,6 @@ VERDICTS = ("VERIFIED", "REFUTED")
 
 class MarketError(ValueError):
     pass
-
-
-def _canon(value) -> bytes:
-    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
 
 
 def _t(s: str) -> datetime:

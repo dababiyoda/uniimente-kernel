@@ -28,16 +28,13 @@ import sys
 from pathlib import Path
 
 from foundry.systems import dsl, versions
+from provenance.digests import compact_json_bytes as _canon
 
 STAGES = ("spec", "tests", "replay", "adversarial", "simulation", "canary", "verification", "ratification")
 
 
 class PromotionError(ValueError):
     pass
-
-
-def _canon(v) -> bytes:
-    return json.dumps(v, sort_keys=True, separators=(",", ":")).encode()
 
 
 def _h(v) -> str:

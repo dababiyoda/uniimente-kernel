@@ -402,6 +402,13 @@ def run_formed(manifest, adapter, data: dict) -> dict:
         return adapter(params, InvocationContext(workspace=Path(tmp), read_roots=(), secrets=None, manifest=manifest))
 
 
+def _refusing_adapter(why: str):
+    """The adapter of a restored capability that has nothing left to run: a founder attach may reach it, it never serves."""
+    def adapter(params, ctx):
+        raise CapabilityError(f"cannot run: {why}")
+    return adapter
+
+
 def package_adapter(function: str, candidate: PackageCandidate):
     """Adapter bound to one qualified package; re-pinned and certificate-checked on every call.
 
@@ -804,11 +811,30 @@ class Genesis:
 
     # -- queries used by the mission engine --------------------------------------
     def find_attached(self, function: str):
-        for manifest in self.registry.by_function(function):
-            ok, _ = self.registry.usable(manifest.capability_id)
-            if ok:
-                return manifest
-        return None
+        """A usable attached implementation of ``function``.
+
+        Selection consults observation competence (greg.routing.observation_competence): an attached
+        sensor or acquired reader whose latest in-window observation failed to measure the world ranks
+        after the others. With no such failure, registry order is unchanged. The signed check is not an
+        argument here and is not rewritten.
+        """
+        from greg.routing import observation_competence, rank_observation_methods
+        usable = [manifest for manifest in self.registry.by_function(function)
+                  if self.registry.usable(manifest.capability_id)[0]]
+        if not usable:
+            return None
+        return rank_observation_methods(usable, observation_competence(self.journal),
+                                        lambda manifest: manifest.capability_id)[0]
+
+    def acquired_reader_order(self, function: str, candidates):
+        """Installed acquired readers of ``function``, a failed observation method last.
+
+        The identity is ``acquired.<function>.<binary>``, the id ``_manifest_for`` gives that binary.
+        Catalog order otherwise. Same candidates, none dropped, none rewritten.
+        """
+        from greg.routing import observation_competence, rank_observation_methods
+        return rank_observation_methods(list(candidates), observation_competence(self.journal),
+                                        lambda candidate: f"acquired.{function}.{candidate.binary_name}")
 
     def construction_engine(self, function: str):
         """The catalogued engine function a constructible function reduces to, else None."""
@@ -930,7 +956,7 @@ class Genesis:
                     why = "a shared dependency changed since qualification"
             except CapabilityError as exc:
                 why = str(exc)
-        adapter = package_adapter(origin["function"], candidate) if candidate else (lambda params, ctx: None)
+        adapter = package_adapter(origin["function"], candidate) if candidate else _refusing_adapter(why)
         self.registry.register(manifest, adapter, state=self._restored_state(
             cid, state, why, [cid, "quarantine", manifest.provenance.get("package_digest"), why]))
 
@@ -1315,8 +1341,8 @@ class Genesis:
                 return found
             return self._builder_route(mission, function, deficit_id, now, contract, repair)
 
-        # 3. installed commodity software
-        for candidate in spec["candidates"]:
+        # 3. installed commodity software. A reader that already failed to measure is tried after the others.
+        for candidate in self.acquired_reader_order(function, spec["candidates"]):
             binary = installed_binary(candidate.binary_name)
             if binary is None:
                 self._route(deficit_id, "installed_software", f"{candidate.binary_name} not installed", None)

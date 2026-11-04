@@ -111,11 +111,6 @@ def validate(data: dict) -> None:
         if horizon["feasibility"] != "CURRENTLY_BUILDABLE" and not horizon.get("prerequisite") \
                 and horizon["feasibility"] not in ("FRONTIER",):
             raise PathError(f"horizon {horizon['id']}: a later capability names its prerequisite")
-        for field in SECTION_8_FIELDS:
-            if field in horizon or horizon["feasibility"] != "CURRENTLY_BUILDABLE":
-                problem = section_8_problem(data, horizon, field)
-                if problem:
-                    raise PathError(f"horizon {horizon['id']}: {field} {problem}")
     horizon_ids = {h["id"] for h in data.get("horizons") or []}
     for item in data.get("frontier_backcasts") or []:
         missing = [f for f in BACKCAST_FIELDS if not item.get(f)]
@@ -125,6 +120,13 @@ def validate(data: dict) -> None:
             raise PathError(f"frontier {item['id']}: unknown buildability {item['buildability_status']}")
         if item.get("node") not in ids or item.get("horizon") not in horizon_ids:
             raise PathError(f"frontier {item['id']}: unknown node or horizon")
+    # Section 8 last: an entry may point into a frontier backcast, whose owner horizon is checked above.
+    for horizon in data.get("horizons") or []:
+        for field in SECTION_8_FIELDS:
+            if field in horizon or horizon["feasibility"] != "CURRENTLY_BUILDABLE":
+                problem = section_8_problem(data, horizon, field)
+                if problem:
+                    raise PathError(f"horizon {horizon['id']}: {field} {problem}")
 
 
 def _texts(value) -> list[str] | None:

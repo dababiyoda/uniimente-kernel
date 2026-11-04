@@ -75,6 +75,7 @@
     "contracts/goal-state.schema.json",
     "contracts/greg-mission.schema.json",
     "contracts/institutional-leverage.schema.json",
+    "contracts/intent-record.schema.json",
     "contracts/lawful-leverage.schema.json",
     "contracts/opportunity-packet.schema.json",
     "contracts/organ-manifest.schema.json",

@@ -1,0 +1,547 @@
+{
+  "decision_id": "INTENT-RECORD-SCHEMA-20261030",
+  "title": "Make founder intent records one contract, require section 8 on every distant horizon, and guard intent and horizon ids against deletion through cleanup",
+  "problem": "Directive 2026-10-28 section 11 asks that every material founder intention be recorded with fourteen named elements and that old statements be preserved even when superseded; section 8 asks that every capability not yet buildable keep its enabling interfaces, the conditions that would make it feasible and the conditions that would falsify it; section 54 says 'CLOSE PR does not mean DELETE THE INTENT' and 'Do not accidentally kill founder intent.' On the unit's base 44b3df96 (#236's head): 0 of the 26 docs/intent JSON records conformed to one contract (151 required-field errors against the new contract), and they used different names for the same field (state, status, lifecycle_state; intended_outcome, intended_observable_effect). None of the 31 horizons on greg/path.json that are not CURRENTLY_BUILDABLE carried enabling_interfaces, feasible_when or falsified_by, and greg.path.validate() did not ask for them. Deleting INTENT-20261014-competency-compiler.json and horizon selective_web3_settlement went unnoticed by all 52 base test files that read docs/intent or the path (2626 passed, 1 failed, a Stackelberg timing failure only).",
+  "founder_intent_refs": [
+    "INTENT-20261028-OPUS-MAXIMUS-REISSUE (directive sections 8, 11 and 54)",
+    "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-20261019-UPWARD-ASCENT",
+    "Founder Intent Ledger, 'Required Intent Record' (15 fields) and 'The canonical ledger should ultimately become machine-readable'"
+  ],
+  "baseline": "44b3df96 (#236's head, since adopted into #196 as 2161dbe2): 26 JSON intent records in docs/intent with mixed field names and no shared contract; 7 markdown intent records; a ledger that names 36 intent ids as whole tokens; greg/path.json with 40 horizons (31 not buildable) and 13 frontier backcasts; greg.path.validate() checks node, horizon and backcast fields but no section 8 element; no committed record of which intent and horizon ids exist, and no check that any of them is still present.",
+  "alternatives": [
+    {
+      "name": "Proposed: one contract with additive normalization, section 8 checked at load, and a typed continuity guard",
+      "description": "contracts/intent-record.schema.json (JSON Schema 2020-12) requires the ledger's 15 fields plus the 5 section 11 adds; a field a record's source does not supply carries {\"unrecorded\": reason}, and identity fields never can. All 26 records are normalized additively (22 fields copied from the name the same record already uses, 7 GOAL-GRAVITY fields copied from its own Intent Record document, 122 unrecorded markers, ratcheted by MAX_UNRECORDED). greg.path.validate() requires the three section 8 fields on every non-buildable horizon, each a pointer to the horizon's own text, a verbatim value with its source, or a named gap; greg path reports the gaps. scripts/ci/check_intent_continuity.py checks HEAD against a committed snapshot of 122 ids pinned at 44b3df96; an id may leave only when a successor of its kind lists exactly that id in supersedes; a re-pin only adds. A 59-mutant gate holds all of it.",
+      "advantages": [
+        "Every JSON intent record validates against one contract: 26 of 26 at the head, 0 of 26 at the base",
+        "Gaps are counted and named instead of absent: 122 record fields, 15 falsifiers and 17 enabling-interface sets",
+        "A cleanup that deletes a pinned intent or horizon fails the continuity test; it reads no git history, so shallow CI clones work",
+        "Both evidence scripts rebuild all 26 records and greg/path.json byte for byte from a git archive of the base",
+        "#236's build-frontier semantics are unchanged: build_status, achieved and the primary node are the base's"
+      ],
+      "disadvantages": [
+        "Edits 26 founder records and greg/path.json, which other units also read",
+        "The phrase rule cannot prove that a path-sourced phrase names an interface",
+        "The continuity check and the mutation gate are not CI steps; the check runs only through its unit test",
+        "JSON Schema cannot compare two texts, so intended_effect's agreement with its older names is test-enforced, not contract-enforced"
+      ],
+      "revival_evidence": "Retained; revisit when the S11-A ledger unit validates the ledger's markdown records against the same contract."
+    },
+    {
+      "name": "Simplest viable: contract and one validation test, records untouched, a fixed id list in a test",
+      "description": "Add the schema and a test that validates docs/intent against it; leave the records as they are; freeze the current intent and horizon ids as a list inside a test; add no section 8 check.",
+      "advantages": [
+        "No edit to any founder record or to greg/path.json",
+        "Fewer lines and no evidence scripts"
+      ],
+      "disadvantages": [
+        "0 of 26 base records conform, so the validation test fails on day one or must skip every record",
+        "Gaps stay invisible: a missing field and an unrecorded field look the same",
+        "A fixed list has no lawful exit for a superseded id and no re-pin rule, so it is edited away at the first legitimate change",
+        "Section 8 stays unenforced on all 31 distant horizons"
+      ],
+      "revival_evidence": "If editing founder records is ruled out by the founder, the contract could ship with every record listed as non-conforming instead."
+    },
+    {
+      "name": "Strongest competing: a machine-readable ledger with git-history deletion checks and CI wiring",
+      "description": "Convert docs/FOUNDER_INTENT_LEDGER.md and the markdown records into JSON records validated by the contract, enumerate authority_level and consequence_class, detect deletions from git history (git log --diff-filter=D), and wire every check into .github/workflows/canonical-ci.yml.",
+      "advantages": [
+        "Covers the ledger's own table records and the markdown records, which this unit only guards for continuity",
+        "Enumerated authority and consequence values could be checked mechanically",
+        "Every check would run in CI"
+      ],
+      "disadvantages": [
+        "Edits docs/FOUNDER_INTENT_LEDGER.md, which the unit's scope forbids because of open PR #220",
+        "Edits canonical-ci.yml, which is on the unit's avoid list and is edited by open PR #214",
+        "Git history is not available on CI's shallow clones",
+        "Enumerating authority_level and consequence_class is a founder and ledger-owner decision (the S11-A unit)"
+      ],
+      "revival_evidence": "When #220 and the canonical-ci.yml PRs land and the founder rules on authority and consequence values, the S11-A unit builds it on this contract."
+    },
+    {
+      "name": "Staged / reversible experiment: report-only first, enforce later",
+      "description": "Land the contract, the section 8 report and the continuity check as warnings that never fail a test, observe for a period, then turn them into failures.",
+      "advantages": [
+        "Cannot block another session's work while the rules settle",
+        "Shows how often the rules would fire"
+      ],
+      "disadvantages": [
+        "A warning nobody reads lets a deletion through; section 54 asks not to kill intent by accident, not to notice it later",
+        "The review round showed the first rules were bypassable; a report-only mode would have hidden that"
+      ],
+      "revival_evidence": "If the guard blocks lawful work in practice (a documented lawful path refused), a warn-only mode for that path is the fallback."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Records keep three names for their state and two for their intended effect; distant horizons keep no falsifier or enabling interface; a cleanup can delete an intent record or a horizon and, as measured on the base, 52 test files still pass.",
+    "advantages": [
+      "No edit to founder records or the path",
+      "No new check that another session must satisfy"
+    ],
+    "disadvantages": [
+      "Directive sections 8, 11 and 54 stay unmet on the tree",
+      "Intent deletion through cleanup stays undetected",
+      "No machine-checkable record shape for the ledger to grow into"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "The unit serves sections 8, 11 and 54 without inventing intent: every copied value is the record's own words or a verbatim source, every missing field is a named gap, and the one inferred pointer (developmental_research to P10) was removed. Two choices touch founder intent itself and belong to the founder: the succession rule lets a superseded record's file leave the tree when a successor names its id, and two section 44 sentences are counted as falsifiers.",
+      "material_concerns": [
+        "Section 11 says 'Preserve old founder statements even when superseded'; the guard lets a superseded JSON record leave when a successor of its kind lists its id in supersedes (review finding MUF-R7, plausible, not changed)",
+        "122 record fields and 32 section 8 entries can be supplied only by the founder or a record's owner",
+        "docs/FOUNDER_INTENT_LEDGER.md was not edited; its own table records are guarded for continuity but not schema-validated"
+      ],
+      "evidence_refs": [
+        "docs/intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md (sections 8, 11, 54)",
+        "docs/evidence/intent-record-schema-2026-10-30/README.md",
+        "scripts/ci/check_intent_continuity.py"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Commodity and existing parts only: JSON Schema 2020-12 through the installed jsonschema, the existing greg.path.validate() entry point, a committed JSON snapshot read from git archive, and one CLI. No new store, service or authority plane. The contract is the one owner of the record shape; greg.path stays the one owner of path validation.",
+      "material_concerns": [
+        "Two older tests keep their own required-field lists (tests/unit/test_founder_correction_20261030.py REQUIRED, tests/unit/test_greg_seed_genome_records.py) and do not read the contract (review finding MUF-R8, plausible, not changed)",
+        "validate() reads no repository file, so a file-sourced section 8 value is checked by the unit test, not at load",
+        "Section 8 must run after frontier backcasts are validated; the first ordering changed a test_frontier_backcasts.py message (fixed in 7dc95349)"
+      ],
+      "evidence_refs": [
+        "contracts/intent-record.schema.json",
+        "greg/path.py",
+        "tests/unit/test_horizon_section_8.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Two reviews of a8e40155 by separate agents of this same session broke the first version in ten confirmed ways: empty pointer lists, borrowed and cut text, prose succession across kinds, re-pin laundering, snapshot thinning, an unenforced contract, seven false gap markers and an overclaim. Each was reproduced before any change and is now refused, with regression tests that fail on a8e40155 and 20 new mutants. The residuals are stated limits, not hidden passes.",
+      "material_concerns": [
+        "The phrase rule proves only that a value is the horizon's own uncut words; a fragment such as 'a running Body' still passes",
+        "Thinning the pinned ids takes a visible edit of the snapshot and the test's frozen counts and digest; a hand edit of an 'added' entry is caught only by review",
+        "Two section 44 sentences ('Revenue generated through deception is failure.', 'Engagement that destroys trust is failure.') are conduct failures, not feasibility falsifiers (review finding MUF-R6, plausible, not changed)"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_intent_continuity.py",
+        "tests/unit/test_horizon_section_8.py",
+        "scripts/ci/check_intent_record_schema_mutants.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Cheap to run and to undo: the three unit files take about 4 s, the continuity check reads three paths and no git history, and the evidence scripts rebuild every changed record and greg/path.json from the base. The branch merges cleanly with #196's head d35d92a5 and with 21 open or recent sibling PR heads.",
+      "material_concerns": [
+        "The continuity CLI and the mutation gate are not wired into canonical-ci.yml (avoid list); the #196 integrator must add them",
+        "After #196 absorbs new intent records or horizons, someone must run --write-snapshot <commit> to protect them",
+        "Five falsifiers are copied from greg/cognition/advantage.py; a session that edits that file fails test_every_copied_value_is_verbatim_in_its_source until the copy is updated",
+        "Under container load, three unrelated timing tests failed in the 67-file run and passed alone"
+      ],
+      "evidence_refs": [
+        "scripts/ci/check_intent_continuity.py",
+        "docs/collaboration/INTENT-CONTINUITY-SNAPSHOT-2026-10-30.json",
+        "docs/evidence/intent-record-schema-2026-10-30/README.md"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Nothing is claimed beyond UNIT-TESTED and INTEGRATION-TESTED in a container. No recorded statement, state or meaning was changed; every original field keeps its value and order. Gaps are named, not filled. Negative results are kept: the base deletion went unnoticed, the first version was bypassable, and three timing tests flake under load. No person's data is touched and no authority moves.",
+      "material_concerns": [
+        "The fail-before mixes kinds: some base failures are collection errors because the new modules are absent",
+        "No full-suite run: 67 related files plus repository-wide checks on the merged head",
+        "The 7 markdown intent records and intent JSON outside docs/intent (SG-001 to SG-012) are not schema-validated"
+      ],
+      "evidence_refs": [
+        "docs/evidence/intent-record-schema-2026-10-30/README.md",
+        "docs/evidence/intent-record-schema-2026-10-30/normalize_records.py",
+        "docs/evidence/intent-record-schema-2026-10-30/fill_section_8.py"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "0 of 26 base records conform to the contract; all 26 normalized records validate at the head",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_intent_record_schema.py; fail-before on a detached worktree of 44b3df96",
+      "finding": "Base: 0 of 26 conform (151 required-field errors); the test file gives 37 failed, 3 passed. Head e661d9c0: 49 passed"
+    },
+    {
+      "claim": "The normalization is additive and reproducible",
+      "tier": "deterministic_fixture",
+      "reference": "docs/evidence/intent-record-schema-2026-10-30/normalize_records.py and fill_section_8.py",
+      "finding": "Run on a git archive of 44b3df96, both scripts rebuild all 26 records and greg/path.json byte-identical to the merged head e661d9c0 (cmp). A reviewer's independent script found every base key with its value and order kept (0 problems)"
+    },
+    {
+      "claim": "A deletion the base did not notice now fails",
+      "tier": "sandbox_execution",
+      "reference": "base deletion experiment on 44b3df96; scripts/ci/check_intent_continuity.py --root on copies",
+      "finding": "Base, deleting INTENT-20261014-competency-compiler.json and horizon selective_web3_settlement: 52 test files, 2626 passed, 1 failed (Stackelberg timing only). Head: both ids reported MISSING, exit 1"
+    },
+    {
+      "claim": "Every review attack on a8e40155 is refused at the head",
+      "tier": "sandbox_execution",
+      "reference": "reviewer scripts p02, p07, p08, p09, p10, p11 and the R3 and R4 copies, re-run on copies of the fixed tree",
+      "finding": "p11: all 6 refused. p02 A, B, E-H raise PathError; C and D (file sources) fail test_every_copied_value_is_verbatim_in_its_source. p07 and R3: ids MISSING, exit 1. p08 and R4: test_the_snapshot_is_pinned_and_covers_every_kind fails. p09: lifecycle and zero-width cases refused"
+    },
+    {
+      "claim": "Review-round regression tests fail before the fixes",
+      "tier": "unit_test",
+      "reference": "detached worktree of a8e40155 with the final three test files copied in",
+      "finding": "Schema 10 failed, 39 passed; section 8 25 failed, 23 passed; continuity a collection error as written, and with SnapshotError, pinned and repin stubbed 9 failed, 15 passed"
+    },
+    {
+      "claim": "The mutation gate catches every mutant",
+      "tier": "unit_test",
+      "reference": "scripts/ci/check_intent_record_schema_mutants.py",
+      "finding": "59/59 caught on the final tree and again on the merged head e661d9c0; baseline 120 passed, 1 skipped (the git-archive test, in a copy without .git)"
+    },
+    {
+      "claim": "Related suites and repository checks pass on the merged head",
+      "tier": "unit_test",
+      "reference": "67 related test files with -n 3 at e661d9c0; check_schema_refs.py, check_authority_singleton.py, check_release_exclusions.py, check_sealed_developmental.py, governance.integrity --check",
+      "finding": "3240 passed, 4 skipped, 3 failed on timing (each passed alone). test_path_build_frontier and test_developmental_inheritance pass. 28 schemas, 166 refs resolve; the other checks pass; continuity: 122 ids (97 distinct) pinned at 44b3df9698a1, 0 missing"
+    },
+    {
+      "claim": "The directive asks for exactly these elements",
+      "tier": "primary_source",
+      "reference": "docs/intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md sections 8, 11 and 54; docs/FOUNDER_INTENT_LEDGER.md 'Required Intent Record'",
+      "finding": "Section 8 lists enabling interfaces and the conditions that would make a distant capability feasible or falsify it; section 11 lists the record elements; section 54: 'Do not accidentally kill founder intent.'"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "The first version (a8e40155) was bypassable in ten confirmed ways",
+      "tier": "sandbox_execution",
+      "reference": "two reviews of a8e40155 by separate agents of this session (MUF-A1, A2, C1, C2, N1, S1; MUF-R1 to R5)",
+      "finding": "An empty pointer list passed validate(); another horizon's falsifier and a one-letter value passed; prose released INTENT-0030, model_plurality, continuity, voice and robotics (CLI exit 0); a re-pin dropped a ledger intent (78 passed); a thinned snapshot passed (55 passed); the contract accepted disagreeing state names; 7 GOAL-GRAVITY gap markers were false. All fixed"
+    },
+    {
+      "claim": "Gaps are named, not closed",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_intent_record_schema.py MAX_UNRECORDED = 122; greg path horizons.section_8_unrecorded",
+      "finding": "122 record fields, 15 horizons' falsified_by and 17 horizons' enabling_interfaces carry unrecorded markers"
+    },
+    {
+      "claim": "One base deletion was partly noticed by an existing test",
+      "tier": "sandbox_execution",
+      "reference": "base deletion experiment: INTENT-20260930-open-source-first.json plus horizon voice on 44b3df96",
+      "finding": "2624 passed, 3 failed: 2 in test_developmental_inheritance through its fixed phrase list, plus Stackelberg timing. The base was not blind to every deletion, only to most"
+    },
+    {
+      "claim": "File-sourced section 8 values are not checked at load",
+      "tier": "unit_test",
+      "reference": "reviewer script p02 cases C and D on the fixed tree",
+      "finding": "They pass greg.path.validate() and fail only test_every_copied_value_is_verbatim_in_its_source"
+    },
+    {
+      "claim": "The phrase rule cannot judge meaning",
+      "tier": "other",
+      "reference": "greg/path.py _phrase; stated limit in the evidence README",
+      "finding": "A word-bounded fragment of the horizon's own text, such as 'a running Body', still passes as an enabling interface; review judges it"
+    },
+    {
+      "claim": "Two recorded falsifiers may be the wrong kind of condition",
+      "tier": "model_output",
+      "reference": "review finding MUF-R6 (plausible); greg/path.json business_operation and daleobanks_media_engine",
+      "finding": "Their falsified_by cites section 44's objective-function sentences, conduct failures rather than feasibility falsifiers; counting them makes the falsifier gap 15 rather than 17"
+    },
+    {
+      "claim": "Timing tests flake under load on the merged head",
+      "tier": "sandbox_execution",
+      "reference": "67-file run at e661d9c0, load 8 to 11 on 4 CPUs",
+      "finding": "Whole-machine trace interruption recovery, binpack_cpsat[4] and Stackelberg[9] (sc_nash_commitment's hard 5 s deadline, measured 5.47 s) failed; each passed alone, Stackelberg on the second try. None of their files is changed by this branch"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "A cleanup cannot delete a founder intent or capability horizon without a typed successor that names it; every founder intent record is checkable against one contract, with its missing fields named; and every distant capability carries section 8's enabling interfaces, feasibility conditions and falsifiers, or a named gap that greg path reports.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "One contract for every JSON intent record, with the older state names held to state",
+        "amplified_value": "The S11-A ledger unit and any new record validate against the same shape; the ledger's own aim of becoming machine-readable gets a contract to grow into"
+      },
+      {
+        "id": "A2",
+        "statement": "Gaps are counted and ratcheted",
+        "amplified_value": "The founder sees exactly which 122 fields and 32 section 8 entries only he or an owner can supply; a later record can close a gap but cannot add one without a visible edit"
+      },
+      {
+        "id": "A3",
+        "statement": "Continuity is checked from the tree and a committed snapshot, not git history",
+        "amplified_value": "Works on CI's shallow clones and in any copy of the tree; section 54 becomes a test"
+      },
+      {
+        "id": "A4",
+        "statement": "Section 8 is a load-time invariant of the path",
+        "amplified_value": "No later edit to greg/path.json can drop a distant horizon's falsifier or interfaces silently; greg path names the 15 and 17 still unrecorded"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "The normalization edits 26 founder records and greg/path.json, files other units read",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Additive only and reproducible: every original field keeps its value and order, both evidence scripts rebuild the files byte for byte from the base, the Mind reconciliation map's three dispositions are corrected from kept to extended, and merge-tree is clean against the PR base and 21 sibling heads"
+      },
+      {
+        "id": "D2",
+        "statement": "An unrecorded marker could hide a field the source does supply, or be read as content",
+        "severity": "medium",
+        "response_type": "governance",
+        "redesigned_response": "Identity fields can never be unrecorded; markers carry a reason and are counted; the ratchet blocks new ones; a test refuses a marker on a field the record's own document states (GOAL-GRAVITY's seven were found and copied)"
+      },
+      {
+        "id": "D3",
+        "statement": "A section 8 pointer or value could be satisfied with text that belongs to something else, or with a fragment",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "A pointer must name a field that records that element and resolve to the horizon's own text (its fields, its own frontier backcasts, a P-node it names); a path-sourced value must be an uncut phrase or name; an empty list, mixed sources and invisible text are refused"
+      },
+      {
+        "id": "D4",
+        "statement": "The lawful exit (succession) and the re-pin could release ids without a real successor",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Succession is typed and whole-entry: a supersedes entry names an id only when it is that id, and only a successor of the same kind counts; a re-pin only adds and refuses while any pinned id is missing; the test freezes the pinned commit, per-kind counts and a sha256 of the pinned ids"
+      },
+      {
+        "id": "D5",
+        "statement": "The continuity CLI and the mutation gate are not CI steps",
+        "severity": "medium",
+        "response_type": "governance",
+        "redesigned_response": "The continuity unit test runs in Canonical CI's pytest job today; adding the CLI and the gate to canonical-ci.yml is handed to the #196 integrator, since that file is on the avoid list and edited by open PRs"
+      },
+      {
+        "id": "D6",
+        "statement": "The contract cannot compare texts, and markdown records and the ledger's table records are not schema-validated",
+        "severity": "low",
+        "response_type": "modularity",
+        "redesigned_response": "The repository test enforces intended_effect's agreement with its older names for docs/intent; the contract says so; the markdown and ledger records are guarded for continuity and left to the S11-A unit"
+      }
+    ],
+    "comparisons": {
+      "baseline": "No contract, no section 8 fields, no continuity record: 0 of 26 records conform and a measured deletion goes unnoticed by 52 test files",
+      "do_nothing": "Sections 8, 11 and 54 stay unmet on the tree; deletion through cleanup stays undetected",
+      "simplest_viable_alternative": "Contract plus a fixed id list with records untouched: fails or skips every base record, hides gaps, and has no lawful exit for a superseded id",
+      "strongest_competing_architecture": "A machine-readable ledger with git-history checks and CI wiring: edits FOUNDER_INTENT_LEDGER.md (#220) and canonical-ci.yml (avoid list, #214), and git history is absent on shallow clones",
+      "reversible_experiment": "This change: additive, reproducible from the base by two scripts, revertible by commit, with the guard's checks removable without touching any record"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Detect deletions from git history",
+        "rejection_reason": "CI clones are shallow, so the history the check would read is not there",
+        "revival_evidence": "CI switches to full clones for this job"
+      },
+      {
+        "name": "Exempt an id whose deleted record carried superseded_by (the scope's wording)",
+        "rejection_reason": "A deleted record's superseded_by cannot be read at HEAD; the successor's supersedes is the only link that survives, so the rule was inverted",
+        "revival_evidence": "An archive path the check also reads, so the deleted record's own fields stay readable"
+      },
+      {
+        "name": "Fill unrecorded fields and section 8 entries with inferred text",
+        "rejection_reason": "Inventing intent is what section 11 and the founder-effect doctrine forbid; the one inferred pointer (developmental_research to P10) was removed",
+        "revival_evidence": "The founder or a record's owner supplies the text"
+      },
+      {
+        "name": "Check file-sourced section 8 values inside greg.path.validate()",
+        "rejection_reason": "An install may ship without docs/, so validate() reads no repository file; the unit test checks file sources against their anchored section instead",
+        "revival_evidence": "A packaged copy of the cited sources ships with every install"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Two reviews of a8e40155 by separate agents of this same session attacked the strengthened design as deployed: pointer and value forms, ownership of cited text, succession wording, re-pin and snapshot edits, the contract's own enforcement, the truth of each gap marker, and the evidence claims. Each finding was reproduced on a git-archive copy of a8e40155 before any change. A final verification then merged the PR base d35d92a5, re-ran the gates and the related suites on the merged head e661d9c0, and checked merge-tree against the sibling PRs.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "fragility",
+        "statement": "An empty recorded_as list, alone or in a list, recorded nothing yet passed validate() and left the gap report (MUF-A1)",
+        "strengthening_response": "Refused for all three fields in both forms (c86909fe); 7 regression cases fail on a8e40155; mutant added"
+      },
+      {
+        "id": "W2",
+        "category": "gaming",
+        "statement": "A pointer to another horizon's backcast falsifier, any P-node or horizons/<other>/prerequisite, and a one-letter path-sourced value all passed (MUF-A2, MUF-R1)",
+        "strengthening_response": "Ownership and uncut-phrase rules (c86909fe, fba8ad1e); the inferred developmental_research to P10 pointer removed; section 8 moved after backcast validation to keep test_frontier_backcasts.py's message (7dc95349)"
+      },
+      {
+        "id": "W3",
+        "category": "gaming",
+        "statement": "Any whole-word mention of an id in any supersedes prose, across kinds, released it: 'extends INTENT-0030' and 'continuity, voice or robotics' let those ids be deleted with the CLI at exit 0 (MUF-C2, MUF-R3)",
+        "strengthening_response": "Typed whole-entry succession with kinds not pooled (a1374073); test_head_ids_are_read_from_the_tree_alone now applies the CLI's rule, and a lawful-paths test runs missing() and the CLI together"
+      },
+      {
+        "id": "W4",
+        "category": "reversibility",
+        "statement": "Re-pinning after a deletion laundered it, and the snapshot and ledger could be thinned together with every test passing (MUF-C1, MUF-R4)",
+        "strengthening_response": "repin and --write-snapshot only add and refuse while a pinned id is missing; the test freezes the pinned commit, exact per-kind counts and a sha256 of the pinned ids (a1374073)"
+      },
+      {
+        "id": "W5",
+        "category": "comprehensibility",
+        "statement": "The contract said the older state names must agree but accepted disagreement, and accepted a zero-width space as text (MUF-S1, MUF-R5)",
+        "strengthening_response": "$defs/agreeing_lifecycle ties status and lifecycle_state to state; text needs a visible character (3fde90f6); the text-agreement limit of JSON Schema is stated in the contract"
+      },
+      {
+        "id": "W6",
+        "category": "other",
+        "statement": "Seven GOAL-GRAVITY unrecorded markers were false: its own Intent Record document states those fields (MUF-N1)",
+        "strengthening_response": "Copied verbatim with copied_from_document provenance; MAX_UNRECORDED 129 to 122; a test refuses a marker on any field the record's own document states (cc695e24)"
+      },
+      {
+        "id": "W7",
+        "category": "comprehensibility",
+        "statement": "The README and product delta claimed load refuses any value its source lacks; only path sources were checked (MUF-R2)",
+        "strengthening_response": "Claims narrowed to path-sourced values; mixed path and file sources refused at load; path.py's comment states that file sources are test-checked"
+      },
+      {
+        "id": "W8",
+        "category": "dependency",
+        "statement": "Five falsifiers are copied from greg/cognition/advantage.py, repository code rather than the path, a record or the directive",
+        "strengthening_response": "Accepted and stated; test_every_copied_value_is_verbatim_in_its_source fails if that file changes the copied text"
+      },
+      {
+        "id": "W9",
+        "category": "other",
+        "statement": "Two section 44 sentences counted as falsifiers are conduct failures (MUF-R6, plausible); the succession exit lets a superseded record's file leave the tree (MUF-R7, plausible); two older tests keep their own field lists (MUF-R8, plausible)",
+        "strengthening_response": "Not changed in this unit. R6 and R7 are founder questions and are recorded as dissent; R8 has no effect today (seed-genome's ledger fields are all recorded) and is left for the S11-A unit"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Additive, byte-for-byte reproducible from the base, and merge-clean against the PR base and 21 sibling heads; #243 and #244 conflict with #196's head alone, in files this branch does not change except foundry/owned-source.json, which #244 also conflicts on with the base alone",
+        "owner": "#196 integrator",
+        "review_trigger": "A merge conflict on docs/intent or greg/path.json with a sibling, or either evidence script no longer reproducing the files"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "resolved",
+        "rationale": "Identity fields cannot be unrecorded, markers are counted and ratcheted, and the record-document check found and closed the seven false markers",
+        "owner": "Kernel intent-record maintainers",
+        "review_trigger": "Any marker found on a field a cited source states"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "resolved",
+        "rationale": "Ownership, uncut-phrase, non-empty and single-source-kind rules hold; the remaining limit (a phrase cannot be proved to name an interface) is stated and left to review",
+        "owner": "greg.path maintainer",
+        "review_trigger": "A borrowed or fragment value passing validate()"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "resolved",
+        "rationale": "Typed whole-entry succession and an add-only re-pin close the prose and laundering paths; same-change thinning stays visible in the diff of the snapshot and the test",
+        "owner": "Kernel intent-record maintainers",
+        "review_trigger": "A pinned id missing at HEAD while the continuity check exits 0"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "deferred",
+        "rationale": "canonical-ci.yml is on the unit's avoid list and edited by open PRs; the continuity test already runs in the pytest job",
+        "owner": "#196 integrator",
+        "review_trigger": "canonical-ci.yml free of open edits, or intake of this PR"
+      },
+      {
+        "disadvantage_id": "D6",
+        "outcome": "deferred",
+        "rationale": "Text agreement is test-enforced; validating markdown and ledger records against the contract belongs to the S11-A ledger unit",
+        "owner": "S11-A ledger unit owner",
+        "review_trigger": "The S11-A unit opens, or a new markdown intent record lands"
+      }
+    ],
+    "final_design": "contracts/intent-record.schema.json with 20 required fields, unrecorded markers, agreeing lifecycle names and visible text; 26 records normalized additively (22 copied fields, 7 from GOAL-GRAVITY's own document, 122 markers under a ratchet); greg.path.validate() requiring section 8's three fields on all 31 non-buildable horizons, as own-text pointers, uncut path-sourced phrases, test-checked file sources or named gaps, after backcast validation; greg path reporting the gaps; a committed snapshot of 122 ids at 44b3df96 checked by scripts/ci/check_intent_continuity.py with typed whole-entry succession and an add-only re-pin; a 59-mutant gate. No authority, activation or VEPMC change.",
+    "residual_risks": [
+      {
+        "risk": "Pinned ids can still be thinned in one change that edits both the snapshot and the test's frozen counts and digest; an 'added' entry can be hand-edited",
+        "mitigation": "Both edits are visible in review; ids added by a re-pin are protected by repin's refusal",
+        "owner": "#196 integrator and reviewers",
+        "review_trigger": "Any diff touching INTENT-CONTINUITY-SNAPSHOT-2026-10-30.json or the frozen digest"
+      },
+      {
+        "risk": "A path-sourced phrase may be the horizon's own words without naming an interface",
+        "mitigation": "Stated limit; review judges meaning",
+        "owner": "greg.path maintainer",
+        "review_trigger": "A reviewer finding a recorded interface that names nothing"
+      },
+      {
+        "risk": "The succession exit and the section 44 falsifiers may not match the founder's intent",
+        "mitigation": "Recorded as dissent and as founder decisions; nothing deletes a record today",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "Founder ruling on MUF-R6 or MUF-R7"
+      },
+      {
+        "risk": "The CLI and the mutation gate do not run in CI",
+        "mitigation": "The continuity unit test runs in the pytest job; the integrator is asked to add both steps",
+        "owner": "#196 integrator",
+        "review_trigger": "canonical-ci.yml free of open edits"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded with an owner and threshold; does not block a draft, blocks adoption of the named rule if the threshold is met.",
+    "entries": [
+      {
+        "role": "Founder-Intent Steward",
+        "position": "A superseded JSON record should not leave the tree merely because a successor lists its id; it should move to an archive path the check also reads, or its statement should be preserved in the successor (review finding MUF-R7).",
+        "rationale": "Section 11: 'Preserve old founder statements even when superseded.' The guard keeps the id's lineage but not the old statement's text.",
+        "evidence_threshold": "A founder ruling, or a superseded record deleted under the rule whose statement then exists nowhere on the tree",
+        "owner": "Alfonso Lopez (ruling); Kernel intent-record maintainers (implementation)",
+        "review_trigger": "The first deletion of a JSON intent record under the succession rule"
+      },
+      {
+        "role": "Adversarial Reviewer",
+        "position": "business_operation and daleobanks_media_engine should not count section 44's 'Revenue generated through deception is failure.' and 'Engagement that destroys trust is failure.' as falsifiers; they are conduct failures (review finding MUF-R6).",
+        "rationale": "Section 8 asks for the conditions that would falsify the capability's feasibility; counting conduct failures makes the falsifier gap 15 instead of 17.",
+        "evidence_threshold": "A founder ruling that these sentences are not falsifiers, or a reviewer showing they cannot falsify the capability",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "Founder review of greg path's section 8 report"
+      },
+      {
+        "role": "Operator and Maintainer",
+        "position": "The continuity CLI and the mutation gate should be Canonical CI steps, not only a unit test and a hand-run script.",
+        "rationale": "A gate that runs only by hand decays; CI runs the unit test but not the 59 mutants.",
+        "evidence_threshold": "canonical-ci.yml free of open edits, or a regression a mutant would have caught landing unnoticed",
+        "owner": "#196 integrator",
+        "review_trigger": "Intake of this PR into #196"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "Alfonso Lopez (adoption into #196 and any merge; rulings on MUF-R6 and MUF-R7); #196 integrator for intake"
+  },
+  "migration_plan": "No runtime migration. The 26 records keep every original field, value and order, and each lists what it copied and from where in its normalization_2026_10_30 block; a consumer that reads only the older field names sees the same values. A new docs/intent record must carry the 20 fields or unrecorded markers, and a new non-buildable horizon its three section 8 fields. After #196 absorbs new intent records or horizons, run python scripts/ci/check_intent_continuity.py --write-snapshot <commit>; it appends them under 'added' and refuses if any pinned id is gone.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert this branch's commits, or decline intake into #196",
+      "Reverting restores every record and greg/path.json to the base exactly; the evidence scripts document each inserted field",
+      "To disable only the guard, remove scripts/ci/check_intent_continuity.py, its snapshot and tests/unit/test_intent_continuity.py; no record changes"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Any original field of a docs/intent record changes value or order, or an added field holds text no cited source supplies",
+    "A pinned intent or horizon id is missing at HEAD while the continuity check exits 0",
+    "greg.path.load accepts a non-buildable horizon without section 8's three fields, or with an empty, borrowed or cut entry",
+    "#236's build-frontier semantics change: build_status, achieved or the primary node differ from the base on the same tree",
+    "The guard refuses a lawful path it documents (markdown record to JSON, ledger id to record, a typed successor) with no way through"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez decides adoption into #196, the succession rule (MUF-R7), the section 44 falsifier mapping (MUF-R6) and the 122 record fields and 32 section 8 entries still unrecorded; the #196 integrator decides intake and the two CI steps; session_01Kucyfm6YBHMTjaiC1M9hqD owns the reversible draft. The Systems Architect, Adversarial Reviewer, Operator and Maintainer, and Evidence and Welfare Guardian recommend RETAIN; the Founder-Intent Steward asks for the founder's decision.",
+  "review_trigger": "A founder ruling on MUF-R6 or MUF-R7; any founder or owner supplying unrecorded fields (the ratchet then lowers MAX_UNRECORDED); #196 absorbing new intent records or horizons (re-pin); canonical-ci.yml becoming free for the two CI steps; Canonical CI's first run on this PR"
+}

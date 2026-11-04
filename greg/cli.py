@@ -51,6 +51,32 @@ from greg.founder import generate_founder_key, load_founder_key, public_bytes
 from greg.tribunal import mark_reviewed, morning_report
 from provenance.ledger import WriterConflict
 
+
+def _replace_with(target: Path, text: str, mode: int = 0o644) -> None:
+    """Replace ``target`` with ``text`` through a temporary file in its directory that nobody else could have
+    planted: mkstemp gives a fresh name with O_EXCL, so no symlink or existing file there is followed or clobbered,
+    and the file has ``mode`` (never wider than its owner while written) before it is renamed over ``target``. A
+    failure removes the temporary file and leaves ``target`` as it was (review of #238)."""
+    import tempfile
+    target = Path(target)
+    fd, name = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.", suffix=".tmp")
+    try:
+        data = text.encode()
+        while data:
+            data = data[os.write(fd, data):]
+        os.fchmod(fd, mode)
+        os.close(fd)
+        fd = -1
+        os.replace(name, target)
+    except BaseException:
+        if fd >= 0:
+            os.close(fd)
+        try:
+            os.unlink(name)
+        except FileNotFoundError:
+            pass
+        raise
+
 DEFAULT_HOME = os.environ.get("GREG_HOME", str(Path.home() / ".uniimente" / "greg"))
 
 
@@ -507,8 +533,14 @@ def main(argv=None) -> int:
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
+    sub.add_parser("autonomy", help="read-only: the level each (capability, action class, target pattern, budget band) "
+                                    "has earned from the ledger; it grants nothing")
     pp = sub.add_parser("path", help="where GREG stands on its developmental path: active node, gate, exit evidence, horizons")
-    pp.add_argument("--node", help="read one node's own measurement (e.g. N6), even past where the path stops")
+    pq = pp.add_mutually_exclusive_group()
+    pq.add_argument("--node", help="read one node's own measurement (e.g. N6), even past where the path stops")
+    pq.add_argument("--build", action="store_true",
+                    help="the build frontier beside the acceptance frontier: per node STRUCTURALLY_BUILT, BUILD_OPEN "
+                         "or NO_PREDICATE; structural evidence moves only the build frontier, never the founder's path")
     tr = sub.add_parser("treasury", help="venture books: verified revenue through your waterfall (node N7); moves no money")
     trs = tr.add_subparsers(dest="treasury_cmd", required=True)
     trs.add_parser("books", help="per venture: verified revenue, obligations and reserves, reinvestable surplus, transfers")
@@ -606,6 +638,9 @@ def main(argv=None) -> int:
     fdr2.add_argument("--seed", required=True, help="the seed's sha256: address, as `greg foundry seed` printed it")
     sub.add_parser("learning", help="brief corrections per labelled brief, and every learned change kept, rejected or reverted")
     sub.add_parser("acceptance", help="read-only founder-device acceptance report from this body's own ledger")
+    bl = sub.add_parser("blockers", help="read-only: each open mission blocker, typed: why, when it is reconsidered, "
+                                         "the evidence and authority it needs, and the next move")
+    bl.add_argument("--mission", default=None, help="only this mission's blocker")
     rh = sub.add_parser("rehearse", help="credential-free rehearsal: a throwaway body and REHEARSAL key run the "
                                           "Founder's First Mission end to end")
     rh.add_argument("--dir"); rh.add_argument("--kernel-root"); rh.add_argument("--effort", type=int, default=8)
@@ -781,10 +816,7 @@ def main(argv=None) -> int:
                 out.mkdir(parents=True, exist_ok=True)
                 presentation = disclosure.present(holder)
                 for name, content, mode in (("holder.json", holder, 0o600), ("presentation.json", presentation, 0o644)):
-                    tmp = out / (name + ".tmp")
-                    tmp.write_text(json.dumps(content, indent=1) + "\n")
-                    tmp.chmod(mode)
-                    tmp.replace(out / name)
+                    _replace_with(out / name, json.dumps(content, indent=1) + "\n", mode)
                 checked = disclosure.verify_presentation(presentation)
                 data = {"package_digest": holder["package_digest"], "items": len(holder["package"]["items"]),
                         "contradictions": holder["package"]["contradictions"], "revealed": holder["default_reveal"],
@@ -836,10 +868,16 @@ def main(argv=None) -> int:
             with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
                 data = metrics.vepmc(journal) if args.cmd == "vepmc" else routing.routing_knowledge(journal)
             print(json.dumps(data, indent=1))
+        elif args.cmd == "autonomy":
+            from greg import autonomy
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                print(json.dumps(autonomy.report(journal), indent=1))
         elif args.cmd == "path":
             from greg import path as devpath
 
             def where(journal):
+                if getattr(args, "build", False):
+                    return devpath.build_status(journal)
                 if not getattr(args, "node", None):
                     return devpath.position(journal)
                 try:
@@ -924,10 +962,8 @@ def main(argv=None) -> int:
                 if runs < 1:
                     raise BodyError("--runs must be at least 1")
                 result = compute.benchmark(runs)
-                tmp = out.with_name(out.name + ".tmp")
                 try:
-                    tmp.write_text(json.dumps(result, indent=1))
-                    tmp.replace(out)
+                    _replace_with(out, json.dumps(result, indent=1))
                 except OSError as exc:
                     raise BodyError(f"cannot write {out}: {exc.strerror}") from None
                 shown = {k: result[k] for k in ("runs", "median_seconds", "iqr_seconds", "deterministic")}
@@ -1033,6 +1069,10 @@ def main(argv=None) -> int:
         elif args.cmd == "lifecycle":
             print(_drop(home, "LIFECYCLE", {"mission_id": args.mission_id, "state": args.state,
                                             "reason": args.reason}, args))
+        elif args.cmd == "blockers":
+            from greg import blockers
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                print(json.dumps(blockers.open_blockers(journal, home=home, mission_id=args.mission), indent=1))
         elif args.cmd == "acceptance":
             from greg import acceptance
             return acceptance.main(home)
@@ -1127,9 +1167,7 @@ def main(argv=None) -> int:
                     result = anchor.export_witness(journal, Path(args.roots).read_text(), existing)
                 except anchor.AnchorError as exc:
                     raise BodyError(str(exc)) from None
-            tmp = out.with_suffix(out.suffix + ".tmp")
-            tmp.write_text(json.dumps(result["bundle"], indent=1) + "\n")
-            tmp.replace(out)
+            _replace_with(out, json.dumps(result["bundle"], indent=1) + "\n")
             print(json.dumps({"witness": str(out), "admitted": result["admitted"], "rejected": result["rejected"],
                               "witnessed_heads": len(result["bundle"]["witnesses"])}, indent=1))
         elif args.cmd == "serve":

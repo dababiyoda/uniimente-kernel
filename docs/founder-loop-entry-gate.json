@@ -1,6 +1,6 @@
 {
   "gate_id": "SR001-FOUNDER-LOOP-ENTRY",
-  "status": "PREPARED_NOT_RUN",
+  "status": "LOCAL_FIXED_MISSION_PROOF_EXECUTED_HARDWARE_LOOP_BLOCKED",
   "decision": "HOLD_ACTIVATION",
   "founder_intent": "Continuously retain and pursue Alfonso's authorized goals, including while he is offline; wait economically; preserve unfinished obligations and recover without mistaking process completion for goal completion.",
   "sources": {
@@ -8,14 +8,16 @@
     "effect_doctrine": "INTENT-0030 / Kernel main 18df515f94fbf859d0d48c09dab3a687a4d18f29",
     "goal_candidate": "Kernel #93 at 21fb21ed803f43e47acb8e6420f6cdc4f74925cd",
     "appraisal_candidate": "Kernel #94 at 5e2f221b1911309db10de26246065553c1bdcbfc",
-    "boundary_package": "3e059c20331d96e05a44daac1b097896aaabde93"
+    "boundary_package": "4999acff1a69502c05af455fbccfca380cad18ee",
+    "greg_fixed_mission_decision": "docs/collaboration/GREG-ONE-MISSION-PROOF.md"
   },
   "entry_requirements": [
     {
       "id": "G1",
       "requirement": "Exact shared-package adoption, current default composition, required socket/container checks and independent review are accepted under a separate adoption ruling.",
-      "state": "BLOCKED",
-      "owner": "Founder/adoption reviewer"
+      "state": "SHARED_DRAFTS_ADOPTED_REVIEW_AND_CONTAINER_LIMITATIONS_RETAINED",
+      "owner": "Founder/adoption reviewer",
+      "evidence": "docs/SR001_MERGE_STATUS.md; Kernel b2f101a, DALE e2f1ebe, WMI ec82b80"
     },
     {
       "id": "G2",
@@ -38,8 +40,9 @@
     {
       "id": "G5",
       "requirement": "Select and link a bounded trigger/supervision implementation before building a new component; existing scheduler/workflow/direct capability are first candidates.",
-      "state": "DECISION_REQUIRED_BEFORE_NEW_ARCHITECTURE",
-      "owner": "Kernel mission-resolution owner"
+      "state": "FIXED_LOCAL_COMPOSITION_EXERCISED_HARDWARE_HOST_GAP",
+      "owner": "Kernel mission-resolution owner",
+      "evidence": "GREG-001: canonical DurableWorkflow plus finite supervisor; no general Goal Chase activation"
     },
     {
       "id": "G6",
@@ -131,5 +134,30 @@
     "authority_created": false,
     "merge_authorized": false,
     "deployment_authorized": false
+  },
+  "local_development_proof": {
+    "decision": "GREG-001 EXPERIMENT; not adoption or activation of a founder runtime",
+    "evidence": "tests/evidence/greg-proof/adopted-repositories/report.json",
+    "executed": [
+      "submitting process exits before due time",
+      "actual Git reads of exact cached adopted sources",
+      "automatic worker restart after durable result before workflow checkpoint",
+      "one canonical grant dispatch, receipt and outcome",
+      "separate-process source reread and semantic appraisal",
+      "durable local closure report",
+      "missing grant and absent approval prevent dispatch",
+      "retained blocked condition suppresses repeated hosting"
+    ],
+    "authority": "explicit synthetic test provisioning before submit; no runtime grant issue; not authenticated Alfonso",
+    "unproven": [
+      "host or hardware reboot recovery with persistent existing authority provider",
+      "real founder authentication, custody and revocation",
+      "P4 synthetic scoped founder update of original mission",
+      "P7 capability deficit attachment and original mission resumption",
+      "OS containment of arbitrary hostile native evaluators",
+      "24/7 service and real founder communication",
+      "CMC or VDM closure"
+    ],
+    "main_loop_candidates": "#93/#97 and #94 remain unmerged experimental candidates with their existing migration gates; their frozen simulation contracts are not altered"
   }
 }

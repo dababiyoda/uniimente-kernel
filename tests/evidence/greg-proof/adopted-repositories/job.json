@@ -1,0 +1,24 @@
+{
+  "mission_id": "greg-proof:1d284372-c950-4dae-8e1a-5a27cf3a19b0",
+  "repositories": [
+    {
+      "role": "kernel",
+      "path": "/workspace/scratch/fa1437d21e0f/repos/kernel",
+      "commit": "b2f101a98d01d31e594018bc71b9d8d16e64d797"
+    },
+    {
+      "role": "dale",
+      "path": "/workspace/scratch/fa1437d21e0f/repos/dale",
+      "commit": "e2f1ebed37407b06ea70cbffb404fd39858e13b5"
+    },
+    {
+      "role": "wmi",
+      "path": "/workspace/scratch/fa1437d21e0f/repos/wmi",
+      "commit": "ec82b8027d987c865dc123215afb53d20916908f"
+    }
+  ],
+  "expected_pin": "4999acff1a69502c05af455fbccfca380cad18ee",
+  "expected_version": "0.1.2",
+  "due": 1789084267.3114524,
+  "deadline": 1789084305.3114524
+}

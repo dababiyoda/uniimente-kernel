@@ -1,5 +1,30 @@
 # Founder Intent Ledger
 
+## GREG bounded real mission — 2026-09-10
+
+The current chat directs one bounded real mission that continues after the
+interface closes, uses a real capability, respects approval, recovers from
+interruption and reports evidence. This advances INTENT-0030 and SR-INTENT-2;
+the hardware operating layer, capability growth, human teams/business operation
+and compounding horizon remain intended. A fixed audit is a proof dependency,
+not a redefinition of that destination. It confers no machine sovereignty.
+
+- intent_id: GREG-INTENT-1
+- statement: prove one persistent bounded mission before expanding architecture
+- source_refs: current chat, 2026-09-10 GREG core-loop direction; no cryptographic founder authentication claim
+- owner: Alfonso; existing Kernel mission, workflow, policy and appraisal owners
+- state: active; local development proof exercised, hardware mission unproven
+- binding_scope: reversible implementation, verification and draft review
+- constitutional_constraints: existing five powers, pre-existing grants, no activation or authority expansion
+- success_evidence: tests/evidence/greg-proof/ and linked GREG-001 decision
+- failure_evidence: focused-first.log; retained host/authentication/evaluator limitations
+- dependencies: adopted SR-001 package, existing DurableWorkflow/Gate/Ledger, independent hardware/authentication gate
+- conflicts: generalizing frozen synthetic Goal Chase merely for one audit adds avoidable scope
+- next_review_trigger: review executable local proof, then supply an approved hardware and authority integration route
+- supersedes: no implementation or historical alternative; prioritizes an executable proof over additional architecture
+
+Decision and two-pass dissent: [GREG-001](collaboration/GREG-ONE-MISSION-PROOF.md).
+
 ## SR-001 bounded recovery — 2026-09-08
 
 These are faithful summaries of the current founder directive, not verbatim

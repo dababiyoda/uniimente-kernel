@@ -5,7 +5,8 @@ SHIMS, EXPERIMENTS, BENCHMARKS, HISTORICAL IMPLEMENTATIONS, MIGRATION PATH, RETI
 architectural generations to remain equally canonical forever." Section 3 forbids "a competing persistent goal
 system"; section 76 says "Do not keep obsolete implementations merely to preserve history." Claim:
 https://github.com/dababiyoda/uniimente-kernel/issues/96#issuecomment-6526234097. Base `b1950be2` (#196 head).
-Round 1 ended at `77deac50`; round 2 fixes 15 review findings on it (below).
+Round 1 ended at `77deac50`; round 2 fixes 15 review findings on it (below). Finalized on 2026-10-30; merged with
+#196 at `df90590e` on 2026-11-04 (section "Merged with #196").
 
 ## What changed
 
@@ -48,7 +49,7 @@ the record is `NEEDS_FOUNDER_DECISION`, with the evidence on each side.
 | OWN-FN-COMMERCE-CLOSURE | CANONICAL | `greg/business_loop.py`, `greg/templates.py` `business_case`, `greg/path.py` `business_loop_closed` (N3's measure) | `greg/venture_rehearsal.py` (ALTERNATE: fixture, never moves N3); `business/commercial_loop.py` `CommercialLoop`, `STAGES` (ALTERNATE: the phase-7 runner; its observation vocabulary is recorded as distinct, because the Foundry imports it) |
 | OWN-FN-GOAL-RUNTIME | NEEDS_FOUNDER_DECISION | A: `greg/goal_gravity.py` `tick` over `egregore/gravity.py` `GoalGravityLoop` and `egregore/goals.py` `GoalRegistry`; B: `greg/gravity.py` `select`, `step` | `egregore/goal_chase.py` `GoalChase` (RESEARCH: "sealed experiment/benchmark", GREG-BODY-DECISION-2026-09-25). Both A and B run on every `Body.tick`; the ledger and INTENT_CONFLICT_MATRIX row 19 list it as an open founder decision |
 | OWN-FN-STATUS-EVIDENCE-LADDER | NEEDS_FOUNDER_DECISION | A: `foundry/completion.py` `EVIDENCE_TIERS`; B: `acceptance` `STATUSES`, `TEST_TIERS`; C: `greg/path.py` `EVIDENCE_STATUS` (every path node) | `greg/mission_control.py` `REALITY` (HISTORICAL: nothing reads it). A and B use the same twelve names; none is section 56's seventeen. Verifier strength and mechanism-lifecycle ladders are recorded as distinct |
-| OWN-FN-AUTONOMY-LEVELS | NEEDS_FOUNDER_DECISION | A: `autonomy/levels.py` (A0-A9; imported by no greg module) | Open proposal: #235's `greg/autonomy.py` (section 59's five levels, called from `Body.tick`) |
+| OWN-FN-AUTONOMY-LEVELS | NEEDS_FOUNDER_DECISION | A: `autonomy/levels.py` (A0-A9; imported by no greg module); B: #235's `greg/autonomy.py` (section 59's five levels, called from `Body.tick`), added when #196 was merged in (below) | none |
 | OWN-FN-REGRESSION-CLOSING | CANONICAL | `greg/improvement.py`: `learn` closes and reopens; `founder_revert`, called from `tribunal.critique`, reopens | none; `greg/tribunal.py` opens regressions, `greg/goal_gravity.py` `_reopen` reopens goals (both distinct) |
 | OWN-FN-ORGAN-EXCHANGE | CANONICAL | `greg/organs.py` (`organ.exchange`, the one-machine template's) | `greg/organ_exchange.py` `exchange`, `status`, `verify_delivery` (ALTERNATE; appraisal re-renders its deliveries, so it stays importable while retained closures need that) |
 | OWN-FN-INBOX-TRANSPORT | CANONICAL | `greg/body.py` `send_signed`, `greg/remote.py` `handle` | none |
@@ -154,6 +155,49 @@ and running every guard:
   - WU-06 `nodes.py` (OWN-FN-INBOX-TRANSPORT);
   - WU-12 `greg/regressions.py` (OWN-FN-REGRESSION-CLOSING);
   - WU-13 `governance/reality_ladder.py` (OWN-FN-STATUS-EVIDENCE-LADDER).
+
+## Merged with #196 (df90590e), 2026-11-04
+
+The unit was finalized on 2026-10-30 against `b1950be2`; the receipt then named #196's head as `a986fc74`. #196 has
+since moved to `df90590e`, 140 commits past `b1950be2` and 20 past `a986fc74`. It was merged into this branch as
+`481fe630` with no textual conflict. The range adopts #231, #227, #230 (on #201), #236 (`2161dbe2`), #234, #209,
+#228, #229 (`a986fc74`), #232 and #235 (`6fc4b22b`).
+
+**What the guard found on the merged tree:** 1 failed, 14 passed, as the finalization predicted. The failure was
+guard 3 on #235's `greg/autonomy.py`: `:50 LEVELS`, `:51 EARNED_CEILING` and `:250 earned_level`. Every other guard
+passed. The other new modules (`greg/backup.py`, `documents.py`, `licensing.py`, `textform.py`, `textquery.py`)
+define no flagged name. Appraisal's `DELIVERING` read of the organ-exchange alternate moved from line 558 to 589.
+
+**What changed (`c10ba343`):**
+- OWN-FN-AUTONOMY-LEVELS: `greg.autonomy` is candidate side B (`LEVELS`, `EARNED_CEILING`, `earned_level`,
+  `report`, `regress`). Its `open_proposals` entry, `decision_needed`, `review_trigger` and `migration_path` follow.
+  The owner stays NEEDS_FOUNDER_DECISION. `report` is exempted as a common name (nine other guarded modules define
+  one); the structural copy check still applies to it.
+- `PINNED` now holds side B. Without it, a founder ruling could not make #235's ladder canonical, because a ruling
+  may promote only a pinned candidate. Side B can also no longer leave the record silently.
+- Two distinct entries, also pinned:
+  - `greg.autonomy` `regress` under OWN-FN-REGRESSION-CLOSING. It withdraws an approval and writes no regression
+    event.
+  - #236's `greg.path` build-state names (`STRUCTURALLY_BUILT`, `BUILD_OPEN`, `NO_PREDICATE`, `ACCEPTANCE_STATUS`,
+    `build_status`) under OWN-FN-STATUS-EVIDENCE-LADDER. They are a node's build state, not a claim's evidence
+    level.
+- A 16th test checks two things: side B is what clears the three names, and only a founder ruling can promote it.
+- Six MERGE-196 mutants replay these entries. The MUH-F5 mutant follows the record's new `review_trigger`.
+
+| Command | Result |
+|---|---|
+| Guard file on `481fe630` (merged, registry unchanged) | **1 failed, 14 passed** (the three #235 names) |
+| Fail-before: the final test file in a detached worktree of `481fe630` | **3 failed, 13 passed**: pins (side B pinned, absent), definitions (the three names), the new test |
+| Pass-after on `c10ba343` | **16 passed** (21 s) |
+| `python -B -u scripts/ci/check_canonical_owner_guard_mutants.py` on `c10ba343` | **59/59 caught**, exit 0, 523 s, after the baseline (16 passed). This is the 53 earlier mutants plus 6 MERGE-196. By target test: 18 definitions, 15 pins, 9 imports, 7 shape, 3 existence, 3 markers, 2 dynamic imports, 1 vacuous guard, 1 side-B test. F2 (appraisal's `DELIVERING` at line 589) is still caught |
+| `pytest tests/unit/test_greg_packaging.py tests/unit/test_greg_platform.py tests/unit/test_developmental_inheritance.py` | **45 passed** |
+| `check_authority_singleton.py`; `check_schema_refs.py` | both exit 0; 27 schemas, 130 local refs |
+| `PYTHONPATH=. python -B scripts/refresh_owned_source.py` | no change to `foundry/owned-source.json` |
+| `git merge-tree --write-tree HEAD origin/<branch>` for 22 open PR branches, on `c10ba343` | 19 clean. 3 conflict, each on files that conflict the same way against `df90590e` and that this unit does not touch: #244 (`foundry/owned-source.json`, `greg/appraisal.py`, `greg/missions.py`), #237 at `91f9aeff` (`greg/cli.py`), #243 (`greg/appraisal.py`) |
+| The same, re-run on this README's commit after #237's session pushed `4b5774af` (13:32 UTC) | 20 clean. #244 and #243 still conflict, as above (inherited from `df90590e`) |
+
+Not run: the full suite, the guard on the 19 merged trees (the merge checks are textual), and Canonical CI on
+this head.
 
 ## Limitations and negatives
 

@@ -156,18 +156,16 @@ All runs used `/home/user/venv311/bin/python -B` with `PYTHONDONTWRITEBYTECODE=1
 - `check_release_exclusions.py`, `check_authority_singleton.py`, `python -m governance.integrity --check` and
   `check_sealed_developmental.py`: all pass. `refresh_owned_source.py` changes nothing (no new file under
   `greg/` or `foundry/` in this round).
-- `python scripts/ci/check_intent_record_schema_mutants.py`: **59/59 mutants caught** on the final tree (baseline
-  120 passed, 1 skipped: the `git archive` test, in a copy without `.git`). Two mutants survived the first run of this round and were corrected, not hidden: a widened
-  lifecycle enum is now also refused by the agreement clause, so its catcher is the contract test; and a
-  "succession from any field" mutant that could never equal a whole id was replaced by one that reads every
-  field's entries.
+- `python scripts/ci/check_intent_record_schema_mutants.py`: **59/59 mutants caught** on the final tree
+  (baseline 120 passed, 1 skipped: the `git archive` test, in a copy without `.git`). Two mutants survived the
+  first run of this round and were corrected, not hidden: a widened lifecycle enum is now also refused by the
+  agreement clause, so its catcher is the contract test; and a "succession from any field" mutant that could
+  never equal a whole id was replaced by one that reads every field's entries.
 - Every test file that reads `docs/intent`, the ledger, `greg/path.json` or `greg.path`, plus the packaging,
   contract-iterating, Mind-convergence, data-exposure and frontier-backcast tests (65 files, among them
   `test_path_build_frontier.py` and `test_developmental_inheritance.py`), `-n 3`, at `c2bf31b8`: **1584 passed,
   53 skipped, 0 failed**. The phrase boundary was tightened during that run, so the 17 of those files that load
   `greg.path` were re-run on the final tree: 404 passed.
-- An earlier subset run of this round found one regression of the fix (the `test_frontier_backcasts.py` message
-  order, fixed in `7dc95349`).
 
 ## Limitations and negatives
 

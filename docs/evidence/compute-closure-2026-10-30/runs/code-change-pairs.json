@@ -1,0 +1,96 @@
+{
+ "delay_removed_seconds": 0.15,
+ "attempts": [
+  {
+   "verdict": "VERIFIED",
+   "reason": "faster beyond the before run's noise, unlikely by chance, on a host no quieter than before",
+   "p_value": 0.000291,
+   "relative_effect": 0.255371,
+   "noise_floor": 0.205401,
+   "median_before": 0.579088,
+   "median_after": 0.431206,
+   "contention": {
+    "before": {
+     "cpu_wait_share": 0.0928,
+     "psi_cpu_share": 0.4025,
+     "psi_io_share": 0.0362,
+     "psi_memory_share": 0.0
+    },
+    "after": {
+     "cpu_wait_share": 0.1202,
+     "psi_cpu_share": 0.4313,
+     "psi_io_share": 0.036,
+     "psi_memory_share": 0.0
+    },
+    "tolerance": 0.05,
+    "shift": {
+     "cpu_wait_share": 0.0274,
+     "psi_cpu_share": 0.0288,
+     "psi_io_share": -0.0002,
+     "psi_memory_share": 0.0
+    }
+   }
+  },
+  {
+   "verdict": "VERIFIED",
+   "reason": "faster beyond the before run's noise, unlikely by chance, on a host no quieter than before",
+   "p_value": 0.005536,
+   "relative_effect": 0.275369,
+   "noise_floor": 0.077598,
+   "median_before": 0.537907,
+   "median_after": 0.389784,
+   "contention": {
+    "before": {
+     "cpu_wait_share": 0.0739,
+     "psi_cpu_share": 0.3683,
+     "psi_io_share": 0.0356,
+     "psi_memory_share": 0.0
+    },
+    "after": {
+     "cpu_wait_share": 0.0776,
+     "psi_cpu_share": 0.3738,
+     "psi_io_share": 0.0481,
+     "psi_memory_share": 0.0
+    },
+    "tolerance": 0.05,
+    "shift": {
+     "cpu_wait_share": 0.0037,
+     "psi_cpu_share": 0.0055,
+     "psi_io_share": 0.0125,
+     "psi_memory_share": 0.0
+    }
+   }
+  },
+  {
+   "verdict": "VERIFIED",
+   "reason": "faster beyond the before run's noise, unlikely by chance, on a host no quieter than before",
+   "p_value": 0.000291,
+   "relative_effect": 0.238612,
+   "noise_floor": 0.108232,
+   "median_before": 0.566605,
+   "median_after": 0.431406,
+   "contention": {
+    "before": {
+     "cpu_wait_share": 0.1721,
+     "psi_cpu_share": 0.3619,
+     "psi_io_share": 0.0495,
+     "psi_memory_share": 0.0
+    },
+    "after": {
+     "cpu_wait_share": 0.1868,
+     "psi_cpu_share": 0.4171,
+     "psi_io_share": 0.0421,
+     "psi_memory_share": 0.0
+    },
+    "tolerance": 0.05,
+    "shift": {
+     "cpu_wait_share": 0.0147,
+     "psi_cpu_share": 0.0552,
+     "psi_io_share": -0.0074,
+     "psi_memory_share": 0.0
+    }
+   }
+  }
+ ],
+ "verified": 3
+}

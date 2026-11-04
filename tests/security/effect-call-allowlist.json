@@ -814,6 +814,17 @@
    "pin": "7ad21d9be5ad5fbe2f39610465a4bbdb63a8217e14a7bba0b17d4a083fc4bb62"
   },
   {
+   "module": "greg/compute.py",
+   "qualname": "benchmark",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg compute benchmark --out B.json (greg/cli.py is its only caller)"
+   ],
+   "justification": "times one interpreter spawn per run: `sys.executable -I -c pass`, a fixed argv with nothing from the caller, check=True, capture_output and a 60 s timeout; the person running the command chooses only --runs and --out",
+   "pin": "cc7d8b781201045ebd44e1844e09a5ed30243e67a83f16c3ca16adaeda8c8a46"
+  },
+  {
    "module": "greg/computer.py",
    "qualname": "_trust_profile",
    "callee": "subprocess.run",

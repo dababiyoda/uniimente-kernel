@@ -108,6 +108,18 @@ REPRODUCIBLE = ("go_no_go", "opportunity_score", "market_alignment", "risk_level
 SUMMARY = ("go_no_go", "opportunity_score", "risk_level", "legal_readiness", "requires_human_approval")
 
 
+def _binding(packet: dict, assessment: dict) -> tuple[str, str]:
+    """The verdict an exchange may state: WealthMachine's, capped by the rule the founder-facing memo applies
+    (greg.organ_exchange.binding_verdict). A score may not outrun canonical fields the packet leaves unevidenced; a
+    packet the Kernel's adapter cannot read leaves every field unevidenced."""
+    from greg.organ_exchange import _canonical, binding_verdict
+    try:
+        unresolved = _canonical(packet, assessment)["packet_unresolved"]
+    except CapabilityError as exc:
+        unresolved = [f"every field: the Kernel could not read the wire messages ({str(exc)[:160]})"]
+    return binding_verdict(assessment.get("go_no_go"), unresolved, packet.get("evidence", []))
+
+
 def trace_for(mission_id: str, seed: str) -> str:
     """One trace per mission and seed, stable across retries, so a retry binds to the same trace."""
     return "trace-" + hashlib.sha256(json.dumps([mission_id, seed]).encode()).hexdigest()[:16]
@@ -396,6 +408,7 @@ def _exchange(ctx, roots, code, env, keys, seed, trace, deadline) -> dict:
                   "redo_answers_this_packet": again.get("opportunity_packet_id") == packet.get("id"),
                   "finance_flag_forces_review": "finance_education_only" not in packet.get("risk_flags", [])
                                                 or original.get("legal_readiness") == "review_required"}
+    verdict, why = _binding(packet, original)
     judged = {"trace_id": trace, "packet_sha256": hashlib.sha256(request_body).hexdigest(),
               "assessment_sha256": hashlib.sha256(answer_body).hexdigest(),
               "redo_sha256": hashlib.sha256(redo["body"].encode()).hexdigest()}
@@ -411,6 +424,8 @@ def _exchange(ctx, roots, code, env, keys, seed, trace, deadline) -> dict:
             "packet_sha256": judged["packet_sha256"], "assessment_sha256": judged["assessment_sha256"],
             "redo_sha256": judged["redo_sha256"],
             "assessment": {k: original.get(k) for k in SUMMARY},
+            # assessment.go_no_go is the engine's own answer; verdict is the one this exchange may state
+            "verdict": verdict, "verdict_why": why, "engine_verdict": original.get("go_no_go"),
             "appraisal_verdict": appraisal["verdict"], "transport_verified": True,
             "sender_identity_isolated": all(bool(s.get("identity_isolated") in (True, "true")) or
                                             bool(s.get("sender_identity_isolated")) for s in seen),

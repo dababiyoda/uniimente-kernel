@@ -1,0 +1,12 @@
+# tests/unit/test_greg_text_query.py with the fix's tests, on ca5dd7e5 (before the fix)
+FAILED tests/unit/test_greg_text_query.py::test_only_words_outside_the_quotes_say_whether_a_phrase_must_appear[Check that {f} mentions "connection not established"-phrases0-present0]
+FAILED tests/unit/test_greg_text_query.py::test_only_words_outside_the_quotes_say_whether_a_phrase_must_appear[Check that {f} doesn't mention "FATAL"-phrases1-present1]
+FAILED tests/unit/test_greg_text_query.py::test_only_words_outside_the_quotes_say_whether_a_phrase_must_appear[Check that {f} doesn\u2019t mention \u2018FATAL\u2019-phrases2-present2]
+FAILED tests/unit/test_greg_text_query.py::test_only_words_outside_the_quotes_say_whether_a_phrase_must_appear[Check that {f} mentions 'don't panic'-phrases3-present3]
+FAILED tests/unit/test_greg_text_query.py::test_only_words_outside_the_quotes_say_whether_a_phrase_must_appear[Check that the server's log {f} mentions "OK"-phrases4-present4]
+FAILED tests/unit/test_greg_text_query.py::test_only_words_outside_the_quotes_say_whether_a_phrase_must_appear[Check that {f} contains none of "FATAL", "panic"-phrases5-present5]
+FAILED tests/unit/test_greg_text_query.py::test_words_that_leave_the_polarity_open_are_asked_not_guessed[Check that {f} mentions "OK", not just "WARN"-'not', 'just']
+FAILED tests/unit/test_greg_text_query.py::test_words_that_leave_the_polarity_open_are_asked_not_guessed[Check that {f} mentions "OK" but never mentions "FATAL"-the request says both]
+FAILED tests/unit/test_greg_text_query.py::test_an_apostrophe_inside_a_note_keeps_the_whole_note
+FAILED tests/unit/test_greg_text_query.py::test_a_phrase_with_not_in_it_closes_only_on_a_file_that_mentions_it
+10 failed, 31 passed in 4.15s

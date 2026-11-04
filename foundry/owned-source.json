@@ -445,6 +445,7 @@
     "greg/authority.py",
     "greg/autonomy.py",
     "greg/backup.py",
+    "greg/blockers.py",
     "greg/body.py",
     "greg/briefs.py",
     "greg/builders.py",

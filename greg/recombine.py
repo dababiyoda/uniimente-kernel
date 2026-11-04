@@ -1071,7 +1071,8 @@ def baseline_selection(p: dict) -> dict:
 
 
 def baseline_budgeted(p: dict) -> dict:
-    """The uncapped best portfolio, then drop the costliest cost, and all that needs it, until the cap holds."""
+    """The uncapped best portfolio, then, while over the cap, drop the costliest cost and all that needs it, and any
+    cost no kept offer still needs; never worse than taking nothing (the empty plan is always within the cap)."""
     value, needs, items = dict(map(tuple, p["items"])), _needs(p), [i for i, _ in p["items"]]
     best = set()
     for mask in range(1 << len(items)):
@@ -1081,7 +1082,9 @@ def baseline_budgeted(p: dict) -> dict:
     while _spend(value, best) > p["budget"]:
         cost = max((i for i in best if value[i] < 0), key=lambda i: (-value[i], i))
         best = {i for i in best if cost not in _down({i}, needs)}
-    return {"profit": sum(value[i] for i in best)}
+        needed = _down({i for i in best if value[i] > 0}, needs)
+        best = {i for i in best if value[i] > 0 or i in needed}
+    return {"profit": max(0, sum(value[i] for i in best))}
 
 
 def agrees_crash(answer: dict, expected: dict) -> bool:
@@ -1096,6 +1099,10 @@ def expect_crash(p: dict) -> dict:
 TRAP_STAFFING = (("first-come-takes-the-flexible-worker", {
     "workers": [{"id": "Ana", "capacity": 1, "skills": ["dock", "line"]}, {"id": "Ben", "capacity": 1, "skills": ["dock"]}],
     "orders": [{"id": "Dock", "demand": 1, "skill": "dock"}, {"id": "Line", "demand": 1, "skill": "line"}]}),)
+TRAP_BUDGETED = (("costliest-cost-pays-most", {
+    "items": [{"id": "Anchor", "value": 20}, {"id": "Plant", "value": -6}, {"id": "Small", "value": 3},
+              {"id": "Kit", "value": -2}],
+    "requires": [["Anchor", "Plant"], ["Small", "Kit"]], "budget": 6}),)
 TRAP_CRASH = (("shared-predecessor", {
     "tasks": [{"id": "Site", "duration": 2, "min_duration": 1, "cost_per_unit": 3},
               {"id": "East", "duration": 2, "min_duration": 1, "cost_per_unit": 2},
@@ -1125,7 +1132,11 @@ def emergence(reduction, cases: list, answers: list) -> dict:
         return {**report, "verdict": "INTEGRATION",
                 "why": "no runnable baseline: what the construction adds over the simplest alternative is unmeasured"}
     report.update(claim=spec.claim, baseline_digest=hashlib.sha256("\n".join(
-        [_source(spec.baseline), _source(spec.agrees), repr(spec.traps)]).encode()).hexdigest())
+        [_source(spec.baseline), _source(spec.agrees), repr(spec.traps)]).encode()).hexdigest(),
+        spec_digest=emergence_digest(reduction))
+    if not str(spec.claim).strip():
+        return {**report, "verdict": "INTEGRATION",
+                "why": "the construction does not state what it does that no source does alone"}
     certified, matched, beaten, worse = 0, [], [], []
     for case, answer in zip(cases, answers):
         right = not isinstance(answer, Exception) and reduction.judge(answer, case["expected"])
@@ -1151,6 +1162,33 @@ def emergence(reduction, cases: list, answers: list) -> dict:
         return {**report, "verdict": "INTEGRATION",
                 "why": "the baseline reaches the exact answer on every frozen case: nothing is shown to emerge"}
     return {**report, "verdict": "EMERGENT"}
+
+
+def emergence_digest(reduction) -> str | None:
+    """Identity of the gate a construction must pass: its claim, baseline, agreement rule, oracle and traps. It is
+    kept out of the capability id (a stricter gate must not rename a qualified construction), so a restore compares
+    it with the qualification on record instead and re-gates on any difference."""
+    spec = reduction.emergence
+    if spec is None:
+        return None
+    return hashlib.sha256("\n".join([spec.claim, _source(spec.baseline), _source(spec.agrees), _source(spec.expect),
+                                     repr(spec.traps)]).encode()).hexdigest()
+
+
+def integration_refusal(report: dict | None, *, earlier: bool = False) -> str | None:
+    """The record of a construction refused only by the gate: every case answered right, nothing shown to emerge.
+    None when it failed its oracle (that is a failed qualification, whatever the gate says) or passed."""
+    gate = (report or {}).get("emergence") or {}
+    if report is not None and not report.get("failures") and gate.get("verdict") == "INTEGRATION":
+        return ("failed the emergence gate" + (" earlier on this deficit (recorded; not re-run)" if earlier else "")
+                + ", refused as integration: " + str(gate.get("why"))[:300])
+    return None
+
+
+def gate_current(qualification: dict | None, reduction) -> bool:
+    """Was this construction qualified EMERGENT under the gate its reduction states now?"""
+    gate = (qualification or {}).get("emergence") or {}
+    return gate.get("verdict") == "EMERGENT" and gate.get("spec_digest") == emergence_digest(reduction) is not None
 
 
 # == the reduction library ===================================================================
@@ -1434,8 +1472,9 @@ EMERGENCE = {
         baseline_selection, agrees_profit, expect_selection),
     "selection.budgeted": Emergence(
         "the most profitable plan within the cap with a search tree whose every bound is re-proved; dropping "
-        "costs from the uncapped best misses cheaper combinations, and proves nothing",
-        baseline_budgeted, agrees_profit, expect_budgeted),
+        "the costliest cost from the uncapped best throws away the offer that pays most when a cheaper "
+        "combination elsewhere is what must go, and proves nothing",
+        baseline_budgeted, agrees_profit, expect_budgeted, TRAP_BUDGETED),
 }
 REDUCTIONS["assignment.matching"] = replace(
     REDUCTIONS["assignment.matching"],

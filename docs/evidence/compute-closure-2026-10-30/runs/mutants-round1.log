@@ -1,0 +1,24 @@
+CAUGHT re-ask carries its epoch
+CAUGHT no new ask while one is pending
+CAUGHT re-ask only on a window after the answer
+CAUGHT only a signed answer closes an ask
+CAUGHT a withdrawal closes an ask at its position
+CAUGHT unparseable /proc text is None, never 0
+CAUGHT unreadable PSI is None, never 0
+CAUGHT a missing field never counts as pressure
+CAUGHT memory rule
+CAUGHT declared precedence
+CAUGHT MemAvailable floor
+CAUGHT io rule
+CAUGHT steps timed inside the window only
+CAUGHT a recovered step is not timing
+CAUGHT the delay is labelled an estimate
+CAUGHT verify: above the noise floor
+CAUGHT verify: significance
+CAUGHT verify: one-sided, after faster
+CAUGHT verify: minimum replicates
+CAUGHT verify: same workload
+CAUGHT benchmark scratch is removed
+CAUGHT cli writes nothing in the body home
+UNMUTATED PASS
+22/22 mutants caught

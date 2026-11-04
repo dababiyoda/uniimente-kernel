@@ -1,0 +1,17 @@
+# Review finding F3 (scratch-directory race): a background loop of compute.benchmark(1) shares TMPDIR with the test.
+== old-416a2e54 run 1
+E       AssertionError: assert [PosixPath('/...rk-9di1_jnp')] == [PosixPath('/...rk-hbdr6mqj')]
+tests/unit/test_greg_compute_closure.py:336: AssertionError
+1 failed, 28 deselected in 2.78s
+== old-416a2e54 run 2
+E       AssertionError: assert [] == [PosixPath('/...rk-43fou07v')]
+tests/unit/test_greg_compute_closure.py:336: AssertionError
+1 failed, 28 deselected in 2.67s
+== old-416a2e54 run 3
+1 passed, 28 deselected in 2.98s
+== new run 1
+1 passed, 42 deselected in 3.32s
+== new run 2
+1 passed, 42 deselected in 3.49s
+== new run 3
+1 passed, 42 deselected in 3.33s

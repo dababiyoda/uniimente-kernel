@@ -116,6 +116,10 @@ jobs:
         run: python scripts/ci/check_path_predicate_mutants.py
       - name: Consistent backup mutations
         run: python scripts/ci/check_consistent_backup_mutants.py
+      - name: Typed blocker mutations (each open blocker names why, what lifts it and who must act)
+        run: python scripts/ci/check_typed_blockers_mutants.py
+      - name: Compute closure mutations (a lasting bottleneck is asked again; memory and IO measured; changes verified)
+        run: python scripts/ci/check_compute_closure_mutants.py
 
   verifier:
     # Its V2 re-runs tests/unit, so inside job 1 it pushed that job past its 30 minutes once the

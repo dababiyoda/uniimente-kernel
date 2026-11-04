@@ -125,15 +125,19 @@ def test_a_community_challenge_to_a_founder_report_is_settled_by_an_independent_
 
 def test_a_community_claim_an_independent_record_refutes_is_kept_and_counted_against_its_sources():
     journal, receipt = answered()
-    report(journal, receipt, 2, "external_record", note="bank statement, October")
     say(journal, "forum:ana", f"{receipt}: profit was 0")
     say(journal, "forum:ben", f"{receipt}: profit was 0!")
+    say(journal, "forum:Both ", f"{receipt}: profit was 0")                        # one source, both verdicts,
+    say(journal, "forum:both", f"{receipt}: profit was 2")                         # its label spelled two ways
+    report(journal, receipt, 2, "external_record", note="bank statement, October")
+    say(journal, "forum:late", f"{receipt}: profit was 0, as everyone says")       # after the evaluation
     out = claims(journal)
-    [row] = out["claims"]
+    [row] = [r for r in out["claims"] if r["claimed_met"] is False]
     assert row["status"] == "contradicts an outcome evaluated by an independent report or a resolution"
     assert "challenge" not in row                              # an evaluated outcome is not reopened by volume
     assert out["track_record"] == {"forum:ana": {"agreed": 0, "contradicted": 1},
                                    "forum:ben": {"agreed": 0, "contradicted": 1}}
+    assert row["graded_sources"] == ["forum:ana", "forum:ben"]   # a copy of the settled outcome is not graded
     assert competence(journal) == [(1, 1)]
 
 
@@ -185,3 +189,99 @@ def test_on_a_body_community_intake_challenges_and_only_a_signed_settlement_teac
         assert row["status"].startswith("agrees with an outcome evaluated")
         assert out["track_record"]["forum:ana"] == {"agreed": 1, "contradicted": 0}
         assert run.outcome(record)["correct"] is False                     # corrected by the signed settlement
+
+
+# --- skeptic pass on 4ce294ce (session 01Kucyfoabgsg6W8H8xj4qea, posted on #221) ---------------------------------
+
+
+def test_defect_1_support_counts_each_source_once_and_never_goes_negative():
+    """Six sources each posting two different identical-text campaigns: the old count subtracted each cluster's
+    excess from one global count (6 - 4 - 4 = -2) and hid a real challenge."""
+    journal, receipt = answered()
+    for n in range(6):
+        say(journal, f"forum:sock{n}", f"{receipt} profit was 0")
+        say(journal, f"forum:sock{n}", f"Again: {receipt} profit was 0!!")
+    [row] = claims(journal)["claims"]
+    assert row["support_sources"] == settlement.COMMUNITY_CAMPAIGN_SOURCES - 1 and "challenge" in row
+    say(journal, "forum:ana", f"Independently, {receipt}: profit is 0")
+    [row] = claims(journal)["claims"]
+    assert row["support_sources"] == settlement.COMMUNITY_CAMPAIGN_SOURCES      # an agreeing post never lowers it
+
+
+def test_a_percentage_is_not_a_value_of_the_objective():
+    journal, receipt = answered()
+    say(journal, "forum:ana", f"{receipt}: profit was 50% below plan")
+    say(journal, "forum:ben", f"{receipt}: profit was 50 % of what was promised")
+    assert claims(journal)["claims"] == [] and claims(journal)["unbound_items"] == 2
+
+
+def test_defect_2_a_re_observed_answer_keeps_claims_citing_its_earlier_receipt(tmp_path, monkeypatch):
+    """On an infinite-closure mission every re-observation carries a new ledger receipt for the same answer; a claim
+    citing the receipt the founder reported on stayed bound to it only until the next observation."""
+    import pytest
+    pytest.importorskip("networkx")
+    pytest.importorskip("scipy")
+    from greg.body import drop_intake
+    from greg.templates import compiled_question
+    from tests.greg_fixtures import drop, signed
+    from tests.unit.test_greg_construction_realization import PORTFOLIO, PROMISED, Run
+    from tests.unit.test_greg_dispute_evidence_acquisition import REAL_SIGNED_REALIZATIONS
+    monkeypatch.setattr(settlement, "_signed_realizations", REAL_SIGNED_REALIZATIONS)
+
+    with Run(tmp_path) as run:
+        journal = run.body.journal
+        spec = compiled_question(problem_id="community-persistent", data=PORTFOLIO, allow_construction=True,
+                                 objective="which to take")
+        spec["closure"] = {"kind": "infinite", "cadence_seconds": 60}
+        drop(run.home, signed(run.key, run.body_id, "MISSION", spec))
+
+        def answered_receipts():
+            return [o.payload["receipt"] for o in journal.replay("mission.observed")
+                    if o.payload["passed"] and o.payload["mission_id"] == spec["mission_id"]]
+        for _ in range(4):
+            run.body.tick()
+            run.clock.advance(61)
+        first = answered_receipts()[-1]
+        run.command("REALIZATION", {"receipt": first, "realized": PROMISED, "source": "founder_reported"})
+        drop_intake(run.home, source="forum:ana", channel="community", content=f"{first}: profit was 0")
+        drop_intake(run.home, source="forum:ben", channel="community", content=f"On {first}, profit = 0")
+        for _ in range(4):
+            run.body.tick()
+            run.clock.advance(61)
+        assert answered_receipts()[-1] != first                             # re-observed under a new receipt
+        out = settlement.community_outcome_claims(journal)
+        assert out["unbound_items"] == 0
+        [row] = out["claims"]
+        assert row["receipts_cited"] == [first] and row["support_sources"] == 2
+        assert "contradicts the settled outcome, reported as founder_reported" in row["status"] and "challenge" in row
+
+
+def test_lookalike_and_invisible_variants_are_one_campaign_and_organ_messages_are_not_community():
+    journal, receipt = answered()
+    variants = [f"{receipt} profit was 0", f"{receipt} pr​ofit was 0", f"{receipt} prоfit was 0",
+                f"{receipt} PROFIT was 0"]
+    for n, text in enumerate(variants):
+        say(journal, f"forum:sock{n}", text)
+    say(journal, "organ:wealthmachine", f"{receipt} profit was 0", channel="organ")
+    [row] = claims(journal)["claims"]
+    assert row["raw_items"] == 4 and row["support_sources"] == settlement.COMMUNITY_CAMPAIGN_SOURCES - 1
+
+
+def test_agreeing_that_an_unreported_promise_was_kept_is_no_challenge():
+    journal, receipt = answered()
+    say(journal, "forum:ana", f"{receipt}: profit was 2")
+    say(journal, "forum:ben", f"{receipt}: profit came to 2")
+    [row] = claims(journal)["claims"]
+    assert row["claimed_met"] is True and "challenge" not in row
+
+
+def test_a_community_verification_and_a_dispute_verification_never_share_a_mission_id():
+    journal, receipt = answered()
+    register(journal, observer(), "ATTACHED")
+    say(journal, "forum:ana", f"{receipt}: profit was 0")
+    say(journal, "forum:ben", f"{receipt}: profit was 0.")
+    community = claims(journal)["claims"][0]["challenge"]["prepared_verification"]["mission_id"]
+    report(journal, receipt, 0, "founder_reported")
+    report(journal, receipt, 2, "founder_reported")
+    [conflict] = [r for r in settlement.awaiting_realization(journal) if r.get("kind") == "objective_conflict"]
+    assert conflict["prepared_verification"]["mission"]["mission_id"] != community

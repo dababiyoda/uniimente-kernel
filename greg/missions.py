@@ -633,19 +633,21 @@ def _text_contains(haystack, needle, rules) -> bool:
     return needle in haystack
 
 
-def _cut_phrase(op, probe, expected, kept) -> tuple[str, str] | None:
+def _cut_phrase(op, probe, expected, kept, *, start_cut: bool = False, end_cut: bool = True
+                ) -> tuple[str, str] | None:
     """A phrase on text that was cut, under the contract.
 
     Absence is monotone: a loose hit in the kept part is in the whole, so ``not_contains`` is false. Presence is
-    not: a whole word that ends at the cut may be the start of a longer word, so ``contains`` is true only when the
-    hit ends before the cut. None when ``expected`` is not text and the caller decides the type."""
+    not: a whole word that meets a cut may be part of a longer word, so ``contains`` is true only when the kept text
+    closes the hit on every side it was cut at (``text_interpretation.interior``). None when ``expected`` is not
+    text and the caller decides the type."""
     if not isinstance(expected, str):
         return None
     if not text_interpretation.loose(probe, expected):
         return INSUFFICIENT, f"{op} {expected!r:.60}: not in the {kept}; the rest was not retained"
     if op == "not_contains":
         return FALSE, f"{expected!r:.60} found in the kept prefix"
-    if text_interpretation.interior(probe, expected):
+    if text_interpretation.interior(probe, expected, start_cut=start_cut, end_cut=end_cut):
         return TRUE, f"{expected!r:.60} found in the kept prefix"
     return INSUFFICIENT, (f"{op} {expected!r:.60}: a whole-word reading meets the cut in the {kept}, "
                           "so it does not decide the whole")
@@ -723,7 +725,8 @@ def judge(predicate: dict, output, *, whole: bool = False, recorded_cut: bool = 
                 probe = _stable_tail(probe)
             if rules:
                 # a whole word created by the cut is not in the whole ("renewal" kept out of "renewals")
-                return _cut_phrase(op, probe, expected, kept)
+                return _cut_phrase(op, probe, expected, kept, start_cut="start" in cut_sides and not vouched,
+                                   end_cut=True)
             if _canon(expected) in _canon(probe):
                 return (TRUE if op == "contains" else FALSE), f"{expected!r:.60} found in the kept prefix"
             return INSUFFICIENT, f"{op} {expected!r:.60}: not in the {kept}; the rest was not retained"
@@ -778,7 +781,8 @@ def judge(predicate: dict, output, *, whole: bool = False, recorded_cut: bool = 
             value = _stable_tail(value) if "start" in cut_sides else value
             bounded_text = True
         if rules and bounded_text:
-            decided_cut = _cut_phrase(op, value, expected, "part no continuation can change")
+            decided_cut = _cut_phrase(op, value, expected, "part no continuation can change",
+                                      start_cut="start" in cut_sides, end_cut="end" in cut_sides)
             if decided_cut is None:
                 verdict, detail = FALSE, f"{op} {expected!r:.60}: not a string, so no part of a text"
             else:

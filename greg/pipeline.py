@@ -82,8 +82,15 @@ def resolve(params, journal, mission_id, *, before_seq=None, observe=None):
             if observe is not None:
                 top = result.get("output")
                 declared = isinstance(top, dict) and top.get("complete") is False and ref["field"] != "complete"
+                # the text declaration (interpretation record, text_form) nearest the field on the way to it, as
+                # greg.missions._text_rules reads it: each part was found above, in an object
+                node, reading = top, {}
+                for part in ref["field"].split("."):
+                    if "interpretation" in node or "text_form" in node:
+                        reading = {k: node[k] for k in ("interpretation", "text_form") if k in node}
+                    node = node[part]
                 observe.append((declared, declared and isinstance(top.get("decided"), list)
-                                and ref["field"] in top["decided"]))
+                                and ref["field"] in top["decided"], reading))
             try:
                 encoded = json.dumps(output, allow_nan=False)
             except (TypeError, ValueError) as exc:
@@ -119,7 +126,12 @@ def inspect(params, ctx):
     except BindingError as exc:
         raise CapabilityError(str(exc)) from exc
     out = {"available": True, "value": value, "bindings": links, "authority_created": False}
-    declared, vouched = observed[0] if observed else (False, False)
+    declared, vouched, reading = observed[0] if observed else (False, False, {})
+    # the producer's text interpretation, handed on as its incompleteness is: the inspected text is judged under the
+    # contract its reader applied, or not at all under one GREG does not hold. Before, inspection dropped it, and
+    # not_contains on a curly-apostrophe phrase read a folded lease absent (TRUE) (review of #250; A1's b7c5e089 carried
+    # text_form alone). It covers the whole inspected output; the bindings beside the value are GREG's own digests.
+    out.update(reading)
     if declared:
         # the producer declared its observation incomplete (a PDF page with no text layer): the inspected value says
         # so too, so a check on it keeps only what more data could not undo. Before, inspection dropped the

@@ -1809,7 +1809,7 @@ class MissionEngine:
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,
                  resource: dict | None = None, evidence: dict | None = None, quoted: tuple = (),
                  instance: dict | None = None, consequence: str = "the mission waits; no action is taken",
-                 move_digest: str | None = None, params: dict | None = None) -> str:
+                 move_digest: str | None = None, params: dict | None = None, compensation: bool = False) -> str:
         """One escalation per exact scope, recorded through the founder-ask contract (greg/asks.py).
 
         ``resource`` makes it a section-60 resource ask: evidence, costed options with their
@@ -1820,7 +1820,9 @@ class MissionEngine:
         the answer to it, after the mission spends. ``instance`` binds the
         request to one occurrence inside its scope (a RECONCILIATION names the one dispatch it
         settles), so an answer about one occurrence is never reused for another (#178). ``params`` are the params
-        an APPROVAL's scope digest binds; the ask keeps a bounded view of them for the founder (``params_view``)."""
+        an APPROVAL's scope digest binds; the ask keeps a bounded view of them for the founder (``params_view``).
+        ``compensation`` marks an APPROVAL whose approve runs the compensation signed with ``action_id``, never
+        that action again, so the surfaces name it that way. Display only, like the params view."""
         epoch = 0
         while True:
             rid = "req-" + sha256_json({"mission": m.mission_id, "kind": kind, "scope": scope_digest,
@@ -1843,6 +1845,8 @@ class MissionEngine:
             message["move_digest"] = move_digest or scope_digest
             if params is not None:
                 message["bound_params"] = params_view(params)
+            if compensation:
+                message["compensation"] = True
         if evidence is not None:
             message["evidence"] = evidence
         if resource is not None:
@@ -3179,7 +3183,8 @@ class MissionEngine:
                           requested={"capability": manifest.capability_id, "target": target,
                                      "consequence_class": manifest.consequence_class, "cost_usd": 0.0}, now=now,
                           evidence={"original_receipt": original, "lifecycle": m.status},
-                          consequence="the executed effect stands; nothing is run for it", params=params)
+                          consequence="the executed effect stands; nothing is run for it", params=params,
+                          compensation=True)
             return "WAITING"
         outcome = self.office.act(
             mission_id=mid, cone=m.cone, command_digest=m.command_digest, manifest=manifest, adapter=adapter,
@@ -3198,7 +3203,8 @@ class MissionEngine:
                           requested={"capability": manifest.capability_id, "target": target,
                                      "consequence_class": manifest.consequence_class, "cost_usd": 0.0}, now=now,
                           evidence={"original_receipt": original, "lifecycle": m.status},
-                          consequence="the executed effect stands; nothing is run for it", params=params)
+                          consequence="the executed effect stands; nothing is run for it", params=params,
+                          compensation=True)
             return "WAITING"
         self.journal.record("mission.compensated", {**record, "status": outcome.status, "receipt": outcome.receipt_hash,
                                                     "reasons": [str(r)[:300] for r in outcome.reasons], "at": iso(now)},

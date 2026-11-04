@@ -15,6 +15,8 @@ REAL = FILE + "::test_a_real_approval_shows_the_exact_scope_approving_covers"
 FORMAT = FILE + "::test_both_surfaces_print_values_alike"
 PHONE = FILE + "::test_the_phone_shows_the_same_terms_and_sends_only_answers_the_body_applies"
 PHONE_REAL = FILE + "::test_the_phone_shows_what_a_real_approval_covers"
+COMP = FILE + "::test_a_compensation_approval_names_the_compensation_not_the_action_it_undoes"
+PHONE_COMP = FILE + "::test_the_phone_names_the_compensation_too"
 
 CONSOLE, CORE, APP = "greg/console.py", "greg/phone/core.js", "greg/phone/app.js"
 TERMS = '    for (const line of askTerms(r)) card.append(el("p", line));'
@@ -38,7 +40,11 @@ MUTANTS = [
     ("console drops the paid clause of what approving covers", CONSOLE,
      [("if isinstance(cost, (int, float)) and not isinstance(cost, bool) and cost > 0:", "if False:")], PAGES),
     ("console drops the action an approval was asked for", CONSOLE,
-     [("""(f" Asked for action {r['action_id']}." if r.get("action_id") else "")""", '""')], REAL),
+     [('return COVERS + "; ".join(parts) + "." + asked_for(r)', 'return COVERS + "; ".join(parts) + "."')], REAL),
+    ("console asks for action w on a compensation", CONSOLE,
+     [('if r.get("compensation") is True\n', 'if False\n')], COMP),
+    ("console names every approval a compensation", CONSOLE,
+     [('if r.get("compensation") is True\n', 'if True\n')], REAL),
     ("console drops the params an approval covers", CONSOLE,
      [('if isinstance(p, dict) and isinstance(p.get("json"), str):', "if False:")], REAL),
     ("console drops the mission an approval covers", CONSOLE,
@@ -71,6 +77,16 @@ MUTANTS = [
      [('"mission_id", "action_id", "resource"', '"mission_id", "resource"')], REAL),
     ("the projection drops the bound params", "greg/asks.py",
      [('"authority_requested", "bound_params",', '"authority_requested",')], REAL),
+    ("an ask records no compensation marker", "greg/missions.py",
+     [('                message["compensation"] = True', "                pass")], COMP),
+    ("the superseded mission's compensation ask is not marked", "greg/missions.py",
+     [('compensation=True)\n            return "WAITING"\n        outcome = self.office.act(',
+       'compensation=False)\n            return "WAITING"\n        outcome = self.office.act(')], COMP),
+    ("the Gate-refused compensation ask is not marked", "greg/missions.py",
+     [('compensation=True)\n            return "WAITING"\n        self.journal.record("mission.compensated"',
+       'compensation=False)\n            return "WAITING"\n        self.journal.record("mission.compensated"')], COMP),
+    ("the projection drops the compensation marker", "greg/asks.py",
+     [('"compensation", "evidence",', '"evidence",')], COMP),
     # the phone
     ("phone drops what silence does", CORE,
      [("if (r.consequence_of_no_response) lines.push", "if (false) lines.push")], PHONE),
@@ -97,6 +113,12 @@ MUTANTS = [
      [('if (r.kind === "APPROVAL") lines.push(approvalCovers(r));', "")], PHONE_REAL),
     ("phone drops the params an approval covers", CORE,
      [('if (p !== null && typeof p === "object" && typeof p.json === "string") {', "if (false) {")], PHONE_REAL),
+    ("phone drops the action an approval was asked for", CORE,
+     [('parts.join("; ") + "." + asked;', 'parts.join("; ") + ".";')], PHONE_REAL),
+    ("phone asks for action w on a compensation", CORE,
+     [("r.compensation === true ?", "false ?")], PHONE_COMP),
+    ("phone names every approval a compensation", CORE,
+     [("r.compensation === true ?", "true ?")], PHONE_REAL),
     ("phone shows cut params as whole", CORE, [("whole = p.length === shownLength", "whole = true")], PHONE_REAL),
     ("phone prints dicts as JSON", CORE,
      [('if (typeof v === "object") return "{" + Object.keys(v).sort(byCodePoint)',

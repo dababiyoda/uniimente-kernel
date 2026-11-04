@@ -105,7 +105,10 @@ function approvalCovers(r) {
   } else {
     parts.push("params: not recorded with this ask");
   }
-  return "Approving covers this exact scope: " + parts.join("; ") + "." + (r.action_id ? ` Asked for action ${r.action_id}.` : "");
+  // A compensation ask's approve runs the compensation signed with the action, never the action again.
+  const asked = !r.action_id ? "" : r.compensation === true ? ` Asked to compensate action ${r.action_id}.`
+    : ` Asked for action ${r.action_id}.`;
+  return "Approving covers this exact scope: " + parts.join("; ") + "." + asked;
 }
 
 // What the founder reads before answering one ask, in the console's order (greg/console.py _ask_details): a

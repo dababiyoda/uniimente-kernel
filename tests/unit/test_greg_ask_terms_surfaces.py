@@ -11,6 +11,7 @@ import json
 import re
 import shutil
 import subprocess
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -376,3 +377,81 @@ def test_the_phone_shows_what_a_real_approval_covers(engine_body, tmp_path):
                                         "consequence_class: internal_write; cost_usd: 0", _covers_real(mid, content),
                                         "If you do not answer: the mission waits; no action is taken"]), card["text"]
         assert [p[:2] for p in card["pressed"]] == [["Approve", "approve"], ["Reject", "reject"]]
+
+
+# ---- compensation approvals: approving runs the action that undoes w, never w again ------------------------------
+
+RESTORE = {"capability": "fs.write", "params": {"relative_path": "note.txt", "content": "original"},
+           "target": "workspace:note.txt"}
+
+
+@pytest.fixture(scope="module")
+def compensation_body(tmp_path_factory):
+    """Both compensation APPROVAL sites of greg/missions.py, set up as tests/integration/test_greg_compensation.py
+    does. Action w wrote "draft"; each mission signed a compensation that writes "original" back. m:comp is
+    superseded, so a successor may rely on the write. m:late is abandoned after its signed horizon, so the Gate puts
+    the compensation outside the scope."""
+    home, key, body_id, _ = make_body(tmp_path_factory.mktemp("compensation"))
+    horizon = datetime.now(timezone.utc) + timedelta(seconds=6)    # the Gate judges the horizon on the wall clock
+    for mid in ("m:comp", "m:late"):
+        note = workspace(home, mid) / "note.txt"
+        note.parent.mkdir(parents=True, exist_ok=True)
+        note.write_text("original")
+        spec = mission(mid, checks=[note_check("c", note, "final")], capabilities=["fs.read", "fs.write"],
+                       strategies=[write_strategy("w", "note.txt", "draft", ["c"], compensate=RESTORE)])
+        if mid == "m:late":
+            spec["light_cone"]["horizon"] = horizon.isoformat().replace("+00:00", "Z")
+        drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as b:
+        for _ in range(3):
+            b.tick()
+            clock.advance(1)
+        assert [(workspace(home, mid) / "note.txt").read_text() for mid in ("m:comp", "m:late")] == ["draft"] * 2
+        while datetime.now(timezone.utc) <= horizon:
+            time.sleep(0.1)
+        for mid, state in (("m:comp", "SUPERSEDED"), ("m:late", "ABANDONED")):
+            drop(home, signed(key, body_id, "LIFECYCLE", {"mission_id": mid, "state": state, "reason": "not wanted"}))
+        for _ in range(3):
+            b.tick()
+            clock.advance(1)
+    return home, key, body_id
+
+
+def _compensation_asks(home):
+    found = {r["mission_id"]: r for r in status(home)["decisions_required"]
+             if r["kind"] == "APPROVAL" and r["mission_id"] in ("m:comp", "m:late")}
+    assert set(found) == {"m:comp", "m:late"}, status(home)["decisions_required"]
+    # one ask from each site: the superseded mission's, and the Gate's refusal after the horizon
+    assert "superseded" in found["m:comp"]["why_now"] and "horizon" in found["m:late"]["why_now"]
+    assert {r["action_id"] for r in found.values()} == {"w"}
+    return found
+
+
+def _covers_compensation(mid):
+    params = RESTORE["params"]
+    canonical = json.dumps(params, sort_keys=True, separators=(",", ":"))
+    return (f"{COVERS}mission {mid}; {ABOVE}; params {canonical} ({len(canonical)} characters of canonical JSON, "
+            f"{sha256_json(params)}). Asked to compensate action w.")
+
+
+def test_a_compensation_approval_names_the_compensation_not_the_action_it_undoes(compensation_body):
+    home = compensation_body[0]
+    found = _compensation_asks(home)
+    for page in (render_home(Console(home)), render_mission_control(Console(home), "overview")):
+        rows = _rows(page.decode())
+        for mid, r in found.items():
+            row = rows[r["request_id"]]
+            assert _in_order(row, [_covers_compensation(mid), "If you do not answer: " + SILENT_A]), row
+            assert "Asked for action" not in row        # w wrote "draft": approving never runs w again
+
+
+@NEEDS_NODE
+def test_the_phone_names_the_compensation_too(compensation_body, tmp_path):
+    home = compensation_body[0]
+    found = _compensation_asks(home)
+    cards = _phone(home, tmp_path)["cards"]
+    for mid, r in found.items():
+        card = cards[r["request_id"]]
+        assert _in_order(card["text"], [_covers_compensation(mid), "If you do not answer: " + SILENT_A]), card["text"]
+        assert "Asked for action" not in card["text"]

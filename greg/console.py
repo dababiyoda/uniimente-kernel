@@ -348,7 +348,16 @@ def approval_covers(r: dict) -> str:
                      f"{_shown(p.get('sha256'))})")
     else:
         parts.append("params: not recorded with this ask")
-    return COVERS + "; ".join(parts) + "." + (f" Asked for action {r['action_id']}." if r.get("action_id") else "")
+    return COVERS + "; ".join(parts) + "." + asked_for(r)
+
+
+def asked_for(r: dict) -> str:
+    """The action an APPROVAL was asked for. A compensation ask's approve runs the compensation signed with that
+    action, never the action again (greg/missions.py ``compensation``), so it says so."""
+    if not r.get("action_id"):
+        return ""
+    return (f" Asked to compensate action {r['action_id']}." if r.get("compensation") is True
+            else f" Asked for action {r['action_id']}.")
 
 
 def _ask_details(r: dict) -> str:

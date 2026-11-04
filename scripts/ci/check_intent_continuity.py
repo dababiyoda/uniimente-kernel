@@ -3,10 +3,18 @@
 
 "CLOSE PR does not mean DELETE THE INTENT." "Preserve old founder statements even when superseded." The snapshot
 (docs/collaboration/INTENT-CONTINUITY-SNAPSHOT-2026-10-30.json) lists every intent id and horizon id at a pinned
-commit. At HEAD each must still be present, or a record present at HEAD must name it in its ``supersedes``: once
-an old record is gone its own ``superseded_by`` cannot be read, so the successor's ``supersedes`` is the link that
-keeps its lineage. The check reads the working tree and the snapshot only, never git history (CI clones are
-shallow). ``--write-snapshot COMMIT`` regenerates the snapshot from that commit's tree with ``git archive``.
+commit, and under ``added`` every id a later re-pin found new. At HEAD each must still be present, or a successor
+present at HEAD must name it in its ``supersedes``: once an old record is gone its own ``superseded_by`` cannot be
+read, so the successor's ``supersedes`` is the link that keeps its lineage. Succession is typed. An entry names an id
+only when the whole entry is that id: prose that mentions an id, or uses a horizon id such as ``voice`` as a word,
+names nothing. An intent id is succeeded by an intent record, a horizon by a horizon, a frontier backcast by a
+frontier backcast. The check reads the working tree and the snapshot only, never git history (CI clones are
+shallow).
+
+``--write-snapshot COMMIT`` re-pins from that commit's tree (``git archive``) and only ever adds. It refuses while
+any pinned id is missing at COMMIT, and appends only the ids new at COMMIT. The pinned commit's ids are never
+rewritten; tests/unit/test_intent_continuity.py holds their exact counts and digest, so thinning them takes a visible
+edit of that test.
 
 Ids by kind:
   intent_records      ``intent_id`` of every record in docs/intent/*.json (a file may hold a list under ``intents``)
@@ -22,6 +30,7 @@ ledger or become a record. Additions are always allowed.
 from __future__ import annotations
 
 import argparse
+import copy
 import io
 import json
 from pathlib import Path
@@ -36,6 +45,15 @@ SNAPSHOT = ROOT / "docs" / "collaboration" / "INTENT-CONTINUITY-SNAPSHOT-2026-10
 KINDS = ("intent_records", "intent_documents", "ledger_records", "horizons", "frontier_backcasts")
 READ = ("docs/intent", "docs/FOUNDER_INTENT_LEDGER.md", "greg/path.json")
 ID = r"(?:[A-Z]+-)?INTENT-[0-9A-Za-z](?:[0-9A-Za-z-]*[0-9A-Za-z])?"
+# The kind of record whose supersedes may name an id of each kind.
+SUCCESSOR = {"intent_records": "intent", "intent_documents": "intent", "ledger_records": "intent",
+             "horizons": "horizons", "frontier_backcasts": "frontier_backcasts"}
+RULE = ("every id here stays present at HEAD, or a successor of its kind present at HEAD names it as a whole "
+        "supersedes entry; a re-pin only adds")
+
+
+class SnapshotError(ValueError):
+    """A re-pin that would drop a pinned id."""
 
 
 def _token(identifier: str) -> re.Pattern:
@@ -82,20 +100,37 @@ def current_ids(root: Path = ROOT) -> dict:
             "frontier_backcasts": sorted({b["id"] for b in data.get("frontier_backcasts") or []})}
 
 
-def successors(root: Path = ROOT) -> list[str]:
-    """Every ``supersedes`` entry of a record present at HEAD: intent records, horizons and frontier backcasts."""
-    data = _path(root)
-    rows = _json_records(root) + list(data.get("horizons") or []) + list(data.get("frontier_backcasts") or [])
-    out = []
+def _named(rows: list) -> set[str]:
+    """The whole ``supersedes`` entries of ``rows``. An entry names an id only when it is that id; prose that mentions
+    an id is a formulation of what changed, not a successor link."""
+    out = set()
     for row in rows:
         named = row.get("supersedes")             # an {"unrecorded": ...} marker names nothing
-        out += [named] if isinstance(named, str) else [s for s in named if isinstance(s, str)] \
-            if isinstance(named, list) else []
+        entries = [named] if isinstance(named, str) else named if isinstance(named, list) else []
+        out |= {entry.strip() for entry in entries if isinstance(entry, str)}
     return out
 
 
+def successors(root: Path = ROOT) -> dict[str, set[str]]:
+    """Successor kind -> the ids named by the records of that kind present at HEAD: intent records name intent ids,
+    horizons name horizons, frontier backcasts name frontier backcasts."""
+    data = _path(root)
+    return {"intent": _named(_json_records(root)),
+            "horizons": _named(list(data.get("horizons") or [])),
+            "frontier_backcasts": _named(list(data.get("frontier_backcasts") or []))}
+
+
+def pinned(snapshot: dict) -> dict[str, list[str]]:
+    """Every id the snapshot pins, by kind: the pinned commit's ids and the ids each later re-pin added."""
+    out = {kind: set(snapshot["ids"].get(kind, [])) for kind in KINDS}
+    for pin in snapshot.get("added", []):
+        for kind in KINDS:
+            out[kind] |= set(pin["ids"].get(kind, []))
+    return {kind: sorted(ids) for kind, ids in out.items()}
+
+
 def missing(snapshot: dict, root: Path = ROOT) -> list[tuple[str, str]]:
-    """(kind, id) for every snapshot id that is gone at HEAD and named by no successor's ``supersedes``."""
+    """(kind, id) for every pinned id that is gone at HEAD and named by no successor of its kind."""
     now = current_ids(root)
     declared = set(now["intent_records"]) | set(now["intent_documents"])
     ledger_path = root / "docs/FOUNDER_INTENT_LEDGER.md"
@@ -107,29 +142,46 @@ def missing(snapshot: dict, root: Path = ROOT) -> list[tuple[str, str]]:
                "horizons": lambda i: i in now["horizons"],
                "frontier_backcasts": lambda i: i in now["frontier_backcasts"]}
     out = []
-    for kind in KINDS:
-        for identifier in snapshot["ids"].get(kind, []):
-            if present[kind](identifier):
-                continue
-            if any(_token(identifier).search(entry) for entry in named):
+    for kind, ids in pinned(snapshot).items():
+        for identifier in ids:
+            if present[kind](identifier) or identifier in named[SUCCESSOR[kind]]:
                 continue
             out.append((kind, identifier))
     return out
 
 
+def repin(snapshot: dict | None, sha: str, root: Path) -> dict:
+    """The snapshot after pinning commit ``sha``, whose tree is at ``root``. It only adds: the first pin records every
+    id; a later one refuses while any pinned id is missing at ``sha`` and appends only the ids new there."""
+    ids = current_ids(root)
+    if snapshot is None:
+        return {"pinned_commit": sha,
+                "generated_by": f"python scripts/ci/check_intent_continuity.py --write-snapshot {sha}",
+                "rule": RULE, "ids": ids, "added": []}
+    gone = missing(snapshot, root)
+    if gone:
+        raise SnapshotError(f"{sha[:12]} drops pinned ids {gone}: restore them, or name each in a successor's "
+                            "supersedes, before re-pinning")
+    held = pinned(snapshot)
+    new = {kind: sorted(set(ids[kind]) - set(held[kind])) for kind in KINDS}
+    out = copy.deepcopy(snapshot)
+    out.setdefault("added", [])
+    if any(new.values()):
+        out["added"].append({"commit": sha, "ids": {kind: found for kind, found in new.items() if found}})
+    return out
+
+
 def write_snapshot(commit: str, target: Path = SNAPSHOT) -> dict:
-    """The ids at ``commit``, read from ``git archive`` of the files this check reads."""
+    """Re-pin ``target`` at ``commit``, read from ``git archive`` of the files this check reads (``repin``)."""
     sha = subprocess.run(["git", "rev-parse", f"{commit}^{{commit}}"], cwd=ROOT, check=True, capture_output=True,
                          text=True).stdout.strip()
     archive = subprocess.run(["git", "archive", "--format=tar", sha, *READ], cwd=ROOT, check=True,
                              capture_output=True).stdout
+    old = json.loads(target.read_text(encoding="utf-8")) if target.exists() else None
     with tempfile.TemporaryDirectory(prefix="intent-continuity-") as temp:
         with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
             tar.extractall(temp, filter="data")
-        ids = current_ids(Path(temp))
-    snapshot = {"pinned_commit": sha, "generated_by": f"python scripts/ci/check_intent_continuity.py --write-snapshot {sha}",
-                "rule": "every id here stays present at HEAD, or a record present at HEAD names it in its supersedes",
-                "ids": ids}
+        snapshot = repin(old, sha, Path(temp))
     target.write_text(json.dumps(snapshot, indent=1) + "\n", encoding="utf-8")
     return snapshot
 
@@ -141,14 +193,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--write-snapshot", metavar="COMMIT")
     args = parser.parse_args(argv)
     if args.write_snapshot:
-        snapshot = write_snapshot(args.write_snapshot, Path(args.snapshot))
-        print({kind: len(ids) for kind, ids in snapshot["ids"].items()})
+        try:
+            snapshot = write_snapshot(args.write_snapshot, Path(args.snapshot))
+        except SnapshotError as refusal:
+            print(f"REFUSED {refusal}")
+            return 1
+        print({kind: len(ids) for kind, ids in pinned(snapshot).items()})
         return 0
     snapshot = json.loads(Path(args.snapshot).read_text(encoding="utf-8"))
     gone = missing(snapshot, Path(args.root))
-    distinct = len(set().union(*map(set, snapshot["ids"].values())))     # a record id the ledger names counts twice
-    total = sum(len(ids) for ids in snapshot["ids"].values())
-    print(f"{total} ids ({distinct} distinct) pinned at {snapshot['pinned_commit'][:12]}; {len(gone)} missing at HEAD")
+    ids = pinned(snapshot)
+    distinct = len(set().union(*map(set, ids.values())))     # a record id the ledger names counts twice
+    total = sum(len(found) for found in ids.values())
+    later = f" and {len(snapshot['added'])} later pins" if snapshot.get("added") else ""
+    print(f"{total} ids ({distinct} distinct) pinned at {snapshot['pinned_commit'][:12]}{later}; "
+          f"{len(gone)} missing at HEAD")
     for kind, identifier in gone:
         print(f"MISSING {kind} {identifier}: restore it, or name it in a successor's supersedes")
     return int(bool(gone))

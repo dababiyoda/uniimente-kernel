@@ -1,7 +1,7 @@
 {
  "pinned_commit": "44b3df9698a10d054b4ade4bb2ef77b244c3e0d9",
  "generated_by": "python scripts/ci/check_intent_continuity.py --write-snapshot 44b3df9698a10d054b4ade4bb2ef77b244c3e0d9",
- "rule": "every id here stays present at HEAD, or a record present at HEAD names it in its supersedes",
+ "rule": "every id here stays present at HEAD, or a successor of its kind present at HEAD names it as a whole supersedes entry; a re-pin only adds",
  "ids": {
   "intent_records": [
    "INTENT-2026-09-22-FIRST-BODY",
@@ -135,5 +135,6 @@
    "substrate_adaptive_cognition",
    "substrate_independent_developmental_intelligence"
   ]
- }
+ },
+ "added": []
 }

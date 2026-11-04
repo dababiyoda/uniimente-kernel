@@ -180,7 +180,7 @@ def _phrase(item: str, text: str) -> bool:
     """``item`` stands in ``text`` uncut at word boundaries, and names something: two or more words, or one token of
     two or more characters with a capital, a digit or a joiner (Keychain, NODE_ENROLL, greg.asks), never a bare
     common word or a letter. Whether the phrase names an interface is review's to judge."""
-    if not re.search(rf"(?<![\w.-]){re.escape(item)}(?![\w-])", text):
+    if not re.search(rf"(?<![\w./-]){re.escape(item)}(?![\w/-]|\.\w)", text):
         return False
     return len(item.split()) > 1 or (len(item) > 1 and re.search(r"[A-Z0-9_./-]", item) is not None)
 

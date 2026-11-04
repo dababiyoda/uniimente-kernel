@@ -172,7 +172,7 @@ MUTANTS = [
        '    return "is not this horizon\'s field, one of its frontier backcasts or a node it names"', "    return None")],
      H_BORROWED),
     ("a path-sourced value matched as a bare substring (review MUF-A2, MUF-R1)",
-     [("replace", PATH_PY, '    if not re.search(rf"(?<![\\w.-]){re.escape(item)}(?![\\w-])", text):',
+     [("replace", PATH_PY, '    if not re.search(rf"(?<![\\w./-]){re.escape(item)}(?![\\w/-]|\\.\\w)", text):',
        "    if item not in text:")], H_BORROWED),
     ("a lone common word or letter accepted as a name (review MUF-R1)",
      [("replace", PATH_PY, '    return len(item.split()) > 1 or (len(item) > 1 and re.search(r"[A-Z0-9_./-]", item) is '

@@ -1,0 +1,338 @@
+{
+ "record": "Kernel open-PR placements the facts cannot decide (directive 2026-10-28 section 53)",
+ "method": "python scripts/lineage_map.py --base <canonical head> --prs <live open PRs> --place --canonical-ref claude/greg-full-machine-completion-whgiee --record docs/collaboration/KERNEL-PR-PLACEMENTS.json --inheritance docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+ "decided_against": "#196 d35d92a58008a458fad65954e99db00c3ea4b137, open PRs read 2026-11-04",
+ "decided_by": "session_01PwqafNDa4MExng4LG5kye6 (a judgment for the integrator and founder to revise, not an authority)",
+ "rule": "A placement here is used only when its PR is open, its head is the head_sha below, and no fact decides otherwise; a moved head is re-decided. 'closing': true requires all nine section-53 fields.",
+ "placements": [
+  {
+   "number": 143,
+   "head_sha": "6fa9b89a9d73f29e46f83ea89c7c1a7cd3f6f35b",
+   "disposition": "PORT MECHANISM",
+   "basis": "15 commits unported, 76 of 77 added tests absent from #196 per intake at #196 d35d92a5 (docs/evidence/intake-audit/2026-11-04/d35d92a5); \u00a713 AdvantageCase and learned-routing shadow appear in no .py on #196",
+   "intended_effect": "Competency Compiler on the mission path with typed evidence and settled competence"
+  },
+  {
+   "number": 144,
+   "head_sha": "f83b31da0f3b382ced34c59297f4655b408aed95",
+   "disposition": "EVIDENCE ONLY",
+   "basis": "12 unported commits are intent records and a two-pass review (no tests); open-source harvesting itself runs on #196 through Capability Genesis and greg/licensing.py",
+   "intended_effect": "Harvest open-source mechanisms before inventing"
+  },
+  {
+   "number": 145,
+   "head_sha": "680a0d438e94a004ab596ab3287e28878bfb747d",
+   "disposition": "PORT MECHANISM",
+   "basis": "1 large commit; 35 of 204 added tests present on #196 per intake at #196 d35d92a5 (docs/evidence/intake-audit/2026-11-04/d35d92a5)",
+   "intended_effect": "Native cognition, governed recovery and continuing integration"
+  },
+  {
+   "number": 149,
+   "head_sha": "1c52ebe129561e15bbe10f23611d702e4203f6af",
+   "disposition": "PORT MECHANISM",
+   "basis": "its one added test is absent from #196 per intake at #196 d35d92a5 (docs/evidence/intake-audit/2026-11-04/d35d92a5)",
+   "intended_effect": "greg doctor reports the installed frontier workers"
+  },
+  {
+   "number": 150,
+   "head_sha": "00b9fe7917116b126d87190de564565405d6d79b",
+   "disposition": "PORT MECHANISM",
+   "basis": "computer_use_ready() appears in no .py on #196; 0 of 3 added tests present",
+   "intended_effect": "A read-only readiness probe for computer use"
+  },
+  {
+   "number": 151,
+   "head_sha": "c5801136ff80becbc206465b4a20575c22116c2a",
+   "disposition": "RESTACK",
+   "basis": "cortex 0.3.0 formed-function organs, stacked on #143 not on #196; #196 carries cortex 0.2.2 (#194)",
+   "intended_effect": "Route graph/LP payloads to formed-function organs with GREG-only certification"
+  },
+  {
+   "number": 152,
+   "head_sha": "5ce2f37417534045b399496ce62d6b33e0102f29",
+   "disposition": "EVIDENCE ONLY",
+   "basis": "3 unported commits are entry-document wording (no tests); #196's AGENTS.md and CLAUDE.md carry the full-machine completion binding",
+   "intended_effect": "Keep the Body + Organs + Mind completion binding at agent entry"
+  },
+  {
+   "number": 153,
+   "head_sha": "91703729a64e27ac6045360e36539ca8839f45b4",
+   "disposition": "RESTACK",
+   "basis": "cortex 0.4.0 n-part composition, stacked on #151; no n-part composition on #196",
+   "intended_effect": "Bounded n-part composition with cap honesty"
+  },
+  {
+   "number": 154,
+   "head_sha": "d282d2e337c9301a081435f28446b70a05198d4b",
+   "disposition": "PORT MECHANISM",
+   "basis": "164 of 193 added tests present on #196, 29 absent, per intake at #196 d35d92a5 (docs/evidence/intake-audit/2026-11-04/d35d92a5)",
+   "intended_effect": "One Mind surface reconciling cortex 0.4.0 with the execution fabric"
+  },
+  {
+   "number": 157,
+   "head_sha": "f66f860a1932f5047d2c35bf765376efea8fcc17",
+   "disposition": "PORT MECHANISM",
+   "basis": "64 of 100 added tests present on #196, 36 absent, per intake at #196 d35d92a5 (docs/evidence/intake-audit/2026-11-04/d35d92a5)",
+   "intended_effect": "Signed browser evidence, Cortex acquisition and confined cancellable workers"
+  },
+  {
+   "number": 160,
+   "head_sha": "637b976fe6b5da368f7de5bb6a65a465f7e7c3d1",
+   "disposition": "PORT MECHANISM",
+   "basis": "4 later Goal Gravity increments unported, 0 of 99 added tests present; the founder return report and wake schedule appear in no .py on #196",
+   "intended_effect": "Persistent goals as attractors on the canonical standing runtime"
+  },
+  {
+   "number": 161,
+   "head_sha": "35480b0bbb2ee0b8c7126c0633b2b0e153a5879e",
+   "disposition": "EVIDENCE ONLY",
+   "basis": "2 unported commits: a regenerated exposure ledger and a CI timeout; its verifier cross-checks are on #196 (tests present)",
+   "intended_effect": "Z3 cross-checks on CP-SAT optimality, infeasibility and unsat cores"
+  },
+  {
+   "number": 162,
+   "head_sha": "0de6d77b88afc8120863d73da34890599045cba9",
+   "disposition": "EVIDENCE ONLY",
+   "basis": "its own title: 'Evidence only, do not merge'; mechanisms ported",
+   "intended_effect": "Preserve the 2026-10-01 cortex convergence as evidence"
+  },
+  {
+   "number": 163,
+   "head_sha": "aa39996b22dd24da0c27281069d6ae6ed8e8c5d7",
+   "disposition": "EVIDENCE ONLY",
+   "basis": "3 unported commits are evidence, ledger and CI records (no tests); its residual mechanisms are on #196",
+   "intended_effect": "Seed Genome residuals: selective disclosure, characterization, verifier"
+  },
+  {
+   "number": 167,
+   "head_sha": "dba14ac8b49036788dde05efe0325fbe1cc3e69e",
+   "disposition": "SUPERSEDED IMPLEMENTATION",
+   "basis": "Seed Cortex 0.1.6 is carried onto GREG's path as 0.2.2 by #194 (Founder Intent Ledger, INTENT-20261021-seed-cortex-on-greg-path); its declared-baseline run (GAIN_ABSENT) stays as evidence",
+   "intended_effect": "Polyintelligence Seed Genome with declared baselines"
+  },
+  {
+   "number": 182,
+   "head_sha": "2f6a5b527978035998d7c01c782736a7d5e888ce",
+   "disposition": "NEEDS FOUNDER DECISION",
+   "basis": "policy/consequence_gate.py is a founder-ratified artifact; only Alfonso's enrolled key can authorize the hardened bytes (CONTRADICTION-0002 Option A)",
+   "intended_effect": "No effect executes with authority it was not granted at admission",
+   "decision": "sign INTEGRITY_AUTHORIZE for sha256 732607ba... or close"
+  },
+  {
+   "number": 184,
+   "head_sha": "55e6d74af4c0e4e24c410dec3f443675e60e5571",
+   "disposition": "PORT MECHANISM",
+   "basis": "15 review-fix commits after #192's port, 49 of 52 added tests absent from #196 per intake at #196 d35d92a5 (docs/evidence/intake-audit/2026-11-04/d35d92a5)",
+   "intended_effect": "The one-machine trunk's review fixes"
+  },
+  {
+   "number": 200,
+   "head_sha": "3d783b5b7b7854266cd4fb752d3f4bbe7e8de2eb",
+   "disposition": "NEEDS FOUNDER DECISION",
+   "basis": "two pre-registered floors failed (honest tests-only closures; +130% appraisal wall time); the PR asks the founder to choose default-on, opt-in or wait",
+   "intended_effect": "A worker cannot close a mission with a vacuous test or a coherent lie",
+   "decision": "discrimination layer default-on, opt-in, or wait for the cost remedy"
+  },
+  {
+   "number": 204,
+   "head_sha": "f435937f84fdd9d254dd42d9831bd405a396ff48",
+   "disposition": "RESTACK",
+   "basis": "stacked on #184, not on #196; 18 commits unported including #184's",
+   "intended_effect": "Worker confinement tier on every receipt, checked by the appraiser"
+  },
+  {
+   "number": 207,
+   "head_sha": "8bb1457d4fe534597dca9926b541978c76d5b5a8",
+   "disposition": "RESTACK",
+   "basis": "stacked on #153 (cortex 0.4.0 line); 0 of 35 added tests present on #196",
+   "intended_effect": "Account for the full polyintelligence mind in cortex"
+  },
+  {
+   "number": 241,
+   "head_sha": "c7bd36bc1aad116a11fc2913374d9b020ff95876",
+   "disposition": "DEFERRED",
+   "basis": "harness for #206's shared registry; installing that gate is founder-only (#196 intake 2026-11-04), and remote mode cannot admit claims from cloud containers (403 on Contents PUT, board #96 comment 6526090126)",
+   "intended_effect": "Two processes claim through the shared enrollment registry"
+  },
+  {
+   "number": 245,
+   "head_sha": "0ecd091fafd1ce87f75f658b29cc528332c4ae3b",
+   "disposition": "RESTACK",
+   "basis": "stacked on #230's licensing branch, not on #196; 4 of 9 added tests present",
+   "intended_effect": "Select an Ollama model only when its license permits use"
+  },
+  {
+   "number": "branch:agent/cathedral-dual-proof-gates-v1",
+   "head_sha": "261243425e4f561a0c0560c25c343ac48c08f364",
+   "disposition": "HISTORICAL",
+   "basis": "lineage from 2026-08-29 with no open PR and no review on record; 92 commits not on #196. Kept, not close-ready: the nine section-53 fields must be extracted before the branch is deleted",
+   "intended_effect": "preserved as lineage; effect not assessed"
+  },
+  {
+   "number": "branch:agent/developmental-substrate-v1",
+   "head_sha": "e96388b26b4f36b4b1539654f98301970e45b396",
+   "disposition": "HISTORICAL",
+   "basis": "lineage from 2026-07-20 with no open PR and no review on record; 2 commits not on #196. Kept, not close-ready: the nine section-53 fields must be extracted before the branch is deleted",
+   "intended_effect": "preserved as lineage; effect not assessed"
+  },
+  {
+   "number": "branch:agent/egregore-founder-intent-2026-09-07",
+   "head_sha": "0e6d696c8eb4d58ccb46935dbf1659c385481fde",
+   "disposition": "HISTORICAL",
+   "basis": "lineage from 2026-09-07 with no open PR and no review on record; 1 commits not on #196. Kept, not close-ready: the nine section-53 fields must be extracted before the branch is deleted",
+   "intended_effect": "preserved as lineage; effect not assessed"
+  },
+  {
+   "number": "branch:agent/egregore-foundry-omnimorph-integration",
+   "head_sha": "5b39e2d8797380b1c2b4f1410e36e8a5c2c3bb89",
+   "disposition": "HISTORICAL",
+   "basis": "lineage from 2026-07-20 with no open PR and no review on record; 29 commits not on #196. Kept, not close-ready: the nine section-53 fields must be extracted before the branch is deleted",
+   "intended_effect": "preserved as lineage; effect not assessed"
+  },
+  {
+   "number": "branch:agent/first-goal-chase-runtime",
+   "head_sha": "95744790d915645d0976393c0ef49d343106af82",
+   "disposition": "HISTORICAL",
+   "basis": "lineage from 2026-08-10 with no open PR and no review on record; 7 commits not on #196. Kept, not close-ready: the nine section-53 fields must be extracted before the branch is deleted",
+   "intended_effect": "preserved as lineage; effect not assessed"
+  },
+  {
+   "number": "branch:agent/foundry-composer-v0",
+   "head_sha": "5aa59ef6c0a84a03022c15042d98c0cefd2c1a2a",
+   "disposition": "HISTORICAL",
+   "basis": "lineage from 2026-07-20 with no open PR and no review on record; 7 commits not on #196. Kept, not close-ready: the nine section-53 fields must be extracted before the branch is deleted",
+   "intended_effect": "preserved as lineage; effect not assessed"
+  },
+  {
+   "number": "branch:agent/phase6-mechanical-egregore",
+   "head_sha": "ba92fde19d3ed4da13ddb0b2a8ed8fb29ace431e",
+   "disposition": "HISTORICAL",
+   "basis": "lineage from 2026-07-20 with no open PR and no review on record; 1 commits not on #196. Kept, not close-ready: the nine section-53 fields must be extracted before the branch is deleted",
+   "intended_effect": "preserved as lineage; effect not assessed"
+  },
+  {
+   "number": "branch:agent/recursive-collaboration-protocol",
+   "head_sha": "100b817066b3f1bd9dd395cc789b7e36291ad089",
+   "disposition": "HISTORICAL",
+   "basis": "lineage from 2026-07-22 with no open PR and no review on record; 4 commits not on #196. Kept, not close-ready: the nine section-53 fields must be extracted before the branch is deleted",
+   "intended_effect": "preserved as lineage; effect not assessed"
+  },
+  {
+   "number": "branch:agent/uniimente-opus-intelligence",
+   "head_sha": "2a97f14239180b2e5bf31a060c25811f937a8979",
+   "disposition": "HISTORICAL",
+   "basis": "lineage from 2026-08-10 with no open PR and no review on record; 5 commits not on #196. Kept, not close-ready: the nine section-53 fields must be extracted before the branch is deleted",
+   "intended_effect": "preserved as lineage; effect not assessed"
+  },
+  {
+   "number": "branch:agent/venture-scout-control-layer-v1",
+   "head_sha": "33eb20b23a9c2cca11c0ec5742311d6250af1f58",
+   "disposition": "HISTORICAL",
+   "basis": "lineage from 2026-07-22 with no open PR and no review on record; 1 commits not on #196. Kept, not close-ready: the nine section-53 fields must be extracted before the branch is deleted",
+   "intended_effect": "preserved as lineage; effect not assessed"
+  },
+  {
+   "number": "branch:claude/uniimente-kernel-build-4uglfq",
+   "head_sha": "6a696aa458ed0a02495c5afe50eb57dadd0dd8d9",
+   "disposition": "HISTORICAL",
+   "basis": "lineage from 2026-07-20 with no open PR and no review on record; 5 commits not on #196. Kept, not close-ready: the nine section-53 fields must be extracted before the branch is deleted",
+   "intended_effect": "preserved as lineage; effect not assessed"
+  },
+  {
+   "number": "branch:cleanup/remove-retired-domain-references",
+   "head_sha": "eb3a1401dbe67e609e713a846c328211449a1c6f",
+   "disposition": "HISTORICAL",
+   "basis": "lineage from 2026-09-15 with no open PR and no review on record; 1 commits not on #196. Kept, not close-ready: the nine section-53 fields must be extracted before the branch is deleted",
+   "intended_effect": "preserved as lineage; effect not assessed"
+  },
+  {
+   "number": "branch:docs/add-github-platform-reference",
+   "head_sha": "c5a581dfb4dea18ee0cceacaddc180d84ac26316",
+   "disposition": "HISTORICAL",
+   "basis": "lineage from 2026-09-08 with no open PR and no review on record; 1 commits not on #196. Kept, not close-ready: the nine section-53 fields must be extracted before the branch is deleted",
+   "intended_effect": "preserved as lineage; effect not assessed"
+  },
+  {
+   "number": "branch:feature/todo-app",
+   "head_sha": "4a10b704baef70b357fde2f4219a542663a8570d",
+   "disposition": "HISTORICAL",
+   "basis": "lineage from 2026-07-26 with no open PR and no review on record; 1 commits not on #196. Kept, not close-ready: the nine section-53 fields must be extracted before the branch is deleted",
+   "intended_effect": "preserved as lineage; effect not assessed"
+  },
+  {
+   "number": "branch:package4/plan",
+   "head_sha": "961f6fc5798588f0aaeda039b5feee4365a7ce85",
+   "disposition": "HISTORICAL",
+   "basis": "lineage from 2026-07-26 with no open PR and no review on record; 1 commits not on #196. Kept, not close-ready: the nine section-53 fields must be extracted before the branch is deleted",
+   "intended_effect": "preserved as lineage; effect not assessed"
+  },
+  {
+   "number": "branch:release/canonical-v1-manifest",
+   "head_sha": "a58daec61d9140de3705dd8e2dba7e6760787d3e",
+   "disposition": "HISTORICAL",
+   "basis": "lineage from 2026-07-27 with no open PR and no review on record; 5 commits not on #196. Kept, not close-ready: the nine section-53 fields must be extracted before the branch is deleted",
+   "intended_effect": "preserved as lineage; effect not assessed"
+  },
+  {
+   "number": "branch:agent/shared-integrity-recovery",
+   "head_sha": "df22ad52eb30f58ceefee23358d1b049fc491d57",
+   "disposition": "SUPERSEDED IMPLEMENTATION",
+   "basis": "SR-001 shared integrity and recovery adopted on main (b2f101a, 'SR-001: adopt shared transport, integrity and durable recovery'); 2 commits not on #196. Not close-ready",
+   "intended_effect": "Shared admission, history, replay and consumer compatibility (SR-INTENT-1)"
+  },
+  {
+   "number": "branch:codex/provider-change-intake-2026-09-01",
+   "head_sha": "c779892751b43a1c4bfa03e2eda80d61e5a527f7",
+   "disposition": "SUPERSEDED IMPLEMENTATION",
+   "basis": "open #105 'Govern weekly model-provider change intake' carries this lineage forward; 6 commits not on #196. Not close-ready",
+   "intended_effect": "Governed model-provider change intake"
+  },
+  {
+   "number": "branch:founder/effect-not-metaphor-2026-09-09",
+   "head_sha": "b45ec20d8c105531e8098047b012d07b9fa07e7b",
+   "disposition": "EVIDENCE ONLY",
+   "basis": "INTENT-0030 and docs/FOUNDER_EFFECT_COMPILER.md are on #196; 2 commits not on #196. Not close-ready",
+   "intended_effect": "Preserve the effect; do not literalize the metaphor"
+  },
+  {
+   "number": "branch:claude/oss-201-fix-documents",
+   "head_sha": "4fa3ea8593aaf9a2085d51379021eb3bcc87e221",
+   "disposition": "PORT MECHANISM",
+   "basis": "#201-lineage document fix; 1 commit on no open PR and not on #196",
+   "intended_effect": "Faithful document text on the mission path"
+  },
+  {
+   "number": "branch:claude/text-cut-inspect-review-250",
+   "head_sha": "79a282502800a107015c29a3bc4b402206cfff69",
+   "disposition": "PORT MECHANISM",
+   "basis": "review branch for #250, committed 2026-11-04; 3 commits on no open PR and not on #196 (the owner's in-flight work)",
+   "intended_effect": "Text interpretation without false closures"
+  },
+  {
+   "number": "branch:claude/wmi-staffing-figures-step9-20261028",
+   "head_sha": "034e41c57d0e9cf8e1549c516637908f77eb8eab",
+   "disposition": "PORT MECHANISM",
+   "basis": "2 commits (2026-10-28) on no open PR and not on #196",
+   "intended_effect": "The 15-step mission's step 9 asserts WealthMachine staffing figures"
+  },
+  {
+   "number": "branch:claude/bounded-predicates",
+   "head_sha": "b1d2ae255cadd9e0adc99afeb70737de6422760f",
+   "disposition": "SUPERSEDED IMPLEMENTATION",
+   "basis": "duplicate of #196 3d2f9cc4, which decides more (INSUFFICIENT, bound_value refusal); withdrawn on board #96 comment 6336007588",
+   "intended_effect": "A mission never closes on a check judged from truncated evidence",
+   "nine": {
+    "founder_intention": "'never confuse an attempt with a completed result' (founder directive 2026-10-22, Workstream C: 16 KiB prefix predicate unsoundness)",
+    "intended_effect": "A success check on bounded evidence decides only what the kept prefix, digest and length prove",
+    "useful_mechanisms": "equals decided exactly by sha256 + length of the truncated string; count_gte by length (both also in 3d2f9cc4)",
+    "evidence": "tests/unit/test_greg_bounded_predicates.py: 6 of 8 fail on abc7a55a, the end-to-end mission read ACHIEVED; all 8 pass on 3b7f4436 as an independent oracle (board #96 comment 6336007588)",
+    "negative_evidence": "claimed without re-fetching #196; 3d2f9cc4 had landed 21 minutes earlier",
+    "remaining_capability_gap": "authority.bounded slices lists at a literal 1000 while missions.RECEIPT_LIST_LIMIT is a second copy",
+    "canonical_owner": "greg/missions.py judge() on #196 (session_01FBS4KNJR59nSbdGbxo8Mbx)",
+    "developmental_node": "the canonical mission path (#196)",
+    "prerequisites": "none"
+   }
+  }
+ ],
+ "branches": "Branches with no open PR are placed under 'branch:<name>'. The default branch (main) is not a lineage and is not placed."
+}

@@ -216,18 +216,186 @@ def intake(dest: str, source: str) -> dict:
                        "integrator, not a disposition"}
 
 
+# --- Placement: every open PR gets one of section 53's twelve dispositions, from live state ----------------
+# Directive 2026-10-28 section 53: "Do not rely on hard-coded PR numbers without verifying current state." The
+# open-PR list comes from the caller (live `gh api`), never from a constant. A disposition is derived when the
+# facts decide it, inherited from the reviewed developmental-inheritance placement, or recorded with the head it
+# was decided at. Recorded judgments are revalidated against the live facts every run.
+
+DISPOSITIONS = ("CANONICAL ACTIVE", "STACKED NEXT", "PORT MECHANISM", "REBASE", "RESTACK", "MERGE CANDIDATE",
+                "FUTURE NODE", "EVIDENCE ONLY", "SUPERSEDED IMPLEMENTATION", "DEFERRED", "HISTORICAL",
+                "NEEDS FOUNDER DECISION")
+# "Before closing or superseding a PR, extract:" the nine items of section 53, in its order.
+NINE = ("founder_intention", "intended_effect", "useful_mechanisms", "evidence", "negative_evidence",
+        "remaining_capability_gap", "canonical_owner", "developmental_node", "prerequisites")
+CLOSING = {"SUPERSEDED IMPLEMENTATION", "HISTORICAL", "EVIDENCE ONLY"}
+# The reviewed inheritance record's ten classes, read as section-53 dispositions.
+FROM_CLASS = {"ALREADY_ACHIEVED_NODE": "HISTORICAL", "CURRENT_NODE_IMPLEMENTATION": "PORT MECHANISM",
+              "NEXT_NODE_INPUT": "FUTURE NODE", "FUTURE_NODE_CAPABILITY": "FUTURE NODE",
+              "PORTABLE_MECHANISM": "PORT MECHANISM", "REQUIRES_ADAPTATION": "RESTACK",
+              "TEMPORARILY_DEFERRED": "DEFERRED", "SUPERSEDED_IMPLEMENTATION_ASSUMPTION": "SUPERSEDED IMPLEMENTATION",
+              "GENUINELY_OBSOLETE": "HISTORICAL", "HISTORICAL_EVIDENCE": "EVIDENCE ONLY"}
+# A PR holding several lineages takes its most active one: closing it must not drop work still owed.
+ACTIVITY = ("NEEDS FOUNDER DECISION", "PORT MECHANISM", "RESTACK", "REBASE", "MERGE CANDIDATE", "STACKED NEXT",
+            "FUTURE NODE", "DEFERRED", "SUPERSEDED IMPLEMENTATION", "EVIDENCE ONLY", "HISTORICAL")
+CONTAINED = ("CONTAINED_BY_ANCESTRY", "BEHAVIOUR_CONTAINED")
+
+
+def _id(value):
+    """A PR number, or 'branch:<name>' for a branch that has no open PR."""
+    return int(value) if str(value).isdigit() else str(value)
+
+
+def _order(value):
+    return (isinstance(value, str), str(value).zfill(8) if isinstance(value, int) else value)
+
+
+def _stacked_on(pr: dict, canonical_ref: str, by_ref: dict) -> bool:
+    seen, current = set(), pr
+    while current["base"] != canonical_ref:
+        if current["number"] in seen or current["base"] not in by_ref:
+            return False
+        seen.add(current["number"])
+        current = by_ref[current["base"]]
+    return True
+
+
+def _inherited(inheritance: dict) -> dict[int, dict]:
+    found: dict[int, list] = {}
+    for placement in inheritance.get("placements", []):
+        for item in placement.get("lineage", []):
+            match = re.match(r"^#(\d+)", item)
+            if match:
+                found.setdefault(int(match.group(1)), []).append(placement)
+    result = {}
+    for number, placements in found.items():
+        ranked = sorted(placements, key=lambda p: ACTIVITY.index(FROM_CLASS[p["classification"]]))
+        top = ranked[0]
+        answers = top.get("inheritance_test") or {}
+        result[number] = {"disposition": FROM_CLASS[top["classification"]], "basis": f"inherited: {top['id']} "
+                          f"({top['classification']}) in the reviewed developmental-inheritance record",
+                          "intended_effect": top.get("intended_effect", ""),
+                          "nine_extracted": sum(1 for v in answers.values() if str(v).strip()) >= len(NINE),
+                          "lineages": sorted(p["id"] for p in placements)}
+    return result
+
+
+def place(live: list[dict], canonical_ref: str, verdicts: dict, inheritance: dict, record: dict,
+          covered_by: dict | None = None) -> dict:
+    """Place every live open PR, and report what keeps the placement from being true or a close from being lawful.
+
+    `live` is the open-PR list as read now ({number, sha, ref, base, title}); `verdicts` maps a PR to its
+    `intake` verdict against the canonical head; `record` holds judgments the facts cannot make. A branch
+    with no open PR (``number`` 'branch:<name>', no ``base``) whose head an open PR contains takes that PR's
+    placement: ``covered_by`` maps it to those PRs."""
+    by_ref = {p["ref"]: p for p in live}
+    open_numbers = {p["number"] for p in live}
+    inherited = _inherited(inheritance)
+    recorded = {_id(r["number"]): r for r in record.get("placements", [])}
+    placements, violations = [], []
+    for number in sorted(recorded, key=_order):
+        if number not in open_numbers:
+            violations.append({"pr": number, "kind": "stale_record", "detail": "recorded PR is not open"})
+    covered_by = covered_by or {}
+    for pr in sorted(live, key=lambda p: _order(p["number"])):
+        n, verdict = pr["number"], verdicts.get(pr["number"], "NOT_AUDITED")
+        derived = None
+        if pr["ref"] == canonical_ref:
+            derived = ("CANONICAL ACTIVE", "head of the canonical integration branch")
+        elif verdict in CONTAINED:
+            derived = ("EVIDENCE ONLY", f"every commit is carried by the canonical head ({verdict})")
+        elif pr.get("base") and _stacked_on(pr, canonical_ref, by_ref):
+            derived = ("STACKED NEXT", f"based, directly or through open PRs, on {canonical_ref}")
+        elif covered_by.get(n):
+            derived = ("FOLLOWS", f"its head is contained in open #{min(covered_by[n])}; placed with that PR")
+        row = {"pr": n, "head": pr["sha"][:12], "title": pr.get("title", "")[:100], "intake": verdict}
+        entry = recorded.get(n)
+        if derived:
+            row.update(disposition=derived[0], source="derived", basis=derived[1])
+            if entry and entry["disposition"] != derived[0]:
+                violations.append({"pr": n, "kind": "contradicted", "detail":
+                                   f"recorded {entry['disposition']}, live facts say {derived[0]}: {derived[1]}"})
+        elif entry:
+            row.update(disposition=entry["disposition"], source="recorded", basis=entry["basis"])
+            if entry.get("head_sha", "")[:12] != pr["sha"][:12]:
+                violations.append({"pr": n, "kind": "moved", "detail":
+                                   f"decided at {entry.get('head_sha', '')[:12]}, head is now {pr['sha'][:12]}"})
+            if entry["disposition"] not in DISPOSITIONS:
+                violations.append({"pr": n, "kind": "unknown_disposition", "detail": entry["disposition"]})
+            if entry["disposition"] in ("CANONICAL ACTIVE", "STACKED NEXT"):
+                violations.append({"pr": n, "kind": "contradicted", "detail":
+                                   f"recorded {entry['disposition']}, but it is neither the canonical head nor on it"})
+            if entry["disposition"] in ("PORT MECHANISM", "REBASE", "RESTACK") and verdict == "BEHAVIOUR_CONTAINED":
+                violations.append({"pr": n, "kind": "contradicted", "detail": "nothing left to port: contained"})
+            if entry["disposition"] == "FUTURE NODE" and not str(entry.get("node", "")).strip():
+                violations.append({"pr": n, "kind": "incomplete", "detail": "FUTURE NODE names no node"})
+            if entry["disposition"] == "NEEDS FOUNDER DECISION" and not str(entry.get("decision", "")).strip():
+                violations.append({"pr": n, "kind": "incomplete", "detail": "names no founder decision"})
+        elif n in inherited:
+            row.update(disposition=inherited[n]["disposition"], source="inherited", basis=inherited[n]["basis"])
+        else:
+            row.update(disposition=None, source="unplaced", basis="")
+            violations.append({"pr": n, "kind": "unplaced", "detail": "no fact, inherited or recorded placement"})
+        nine = (entry or {}).get("nine") or {}
+        filled = [k for k in NINE if str(nine.get(k, "")).strip()]
+        row["close_ready"] = len(filled) == len(NINE) or (row["source"] == "inherited"
+                                                           and inherited[n]["nine_extracted"])
+        if entry and entry.get("closing") and not row["close_ready"]:
+            violations.append({"pr": n, "kind": "close_without_extraction",
+                               "detail": "missing: " + ", ".join(k for k in NINE if k not in filled)})
+        placements.append(row)
+    by_number = {p["pr"]: p for p in placements}
+    for row in placements:                       # a covered branch takes its PR's placement, now that it is known
+        if row["disposition"] == "FOLLOWS":
+            owner = by_number[min(covered_by[row["pr"]])]
+            row.update(disposition=owner["disposition"], basis=row["basis"] + f" ({owner['source']}: {owner['basis']})",
+                       close_ready=False)
+    counts = {d: sum(1 for p in placements if p["disposition"] == d) for d in DISPOSITIONS}
+    return {"canonical": canonical_ref, "open": len(live), "placements": placements, "counts": counts,
+            "closing_not_extracted": sorted((p["pr"] for p in placements
+                                            if p["disposition"] in CLOSING and not p["close_ready"]), key=_order),
+            "violations": violations,
+            "reality": "placement from the open-PR list given and git facts at the canonical head; recorded and "
+                       "inherited dispositions are human judgments, revalidated but not re-made here"}
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--base", required=True)
     parser.add_argument("--prs", required=True, help="JSON file: [{number, sha}, ...]")
     parser.add_argument("--intake", action="store_true",
                         help="judge each PR head's commits for behaviour missing from --base (the destination)")
+    parser.add_argument("--place", action="store_true",
+                        help="place every PR in --prs (read live: number, sha, ref, base, title) by section 53")
+    parser.add_argument("--canonical-ref", help="--place: the canonical integration branch")
+    parser.add_argument("--record", type=argparse.FileType(), help="--place: recorded placements")
+    parser.add_argument("--inheritance", type=argparse.FileType(), help="--place: developmental inheritance record")
+    parser.add_argument("--intake-json", type=argparse.FileType(),
+                        help="--place: a saved --intake run against --base, instead of recomputing it")
     args = parser.parse_args(argv)
     with open(args.prs) as handle:
         prs = json.load(handle)
     base = git("rev-parse", args.base)
+    if args.place:
+        if args.intake_json:
+            saved = json.load(args.intake_json)
+            if git("rev-parse", saved["dest"]) != base:
+                raise SystemExit("--intake-json was computed against another head")
+            verdicts = {_id(p["number"]): p["verdict"] for p in saved["prs"]}
+        else:
+            verdicts = {_id(p["number"]): intake(base, p["sha"])["verdict"] for p in prs}
+        # A branch entry ('branch:<name>') with no open PR is placed with any open PR that contains its head.
+        heads = [(p["number"], p["sha"]) for p in prs if not str(p["number"]).startswith("branch:")]
+        covered = {p["number"]: [n for n, sha in heads if is_ancestor(p["sha"], sha)]
+                   for p in prs if str(p["number"]).startswith("branch:")
+                   and verdicts.get(_id(p["number"])) not in CONTAINED}          # contained branches are derived
+        result = place(prs, args.canonical_ref, verdicts, json.load(args.inheritance) if args.inheritance else {},
+                       json.load(args.record) if args.record else {}, covered)
+        json.dump({"base": base[:12], **result}, sys.stdout, indent=1)
+        print()
+        return 1 if result["violations"] else 0
     if args.intake:
-        result = {"dest": base[:12], "prs": [{"number": int(p["number"]), **intake(base, p["sha"])} for p in prs]}
+        result = {"dest": base[:12], "prs": [{"number": _id(p["number"]), **intake(base, p["sha"])} for p in prs]}
     else:
         result = measure(base, prs)
     json.dump(result, sys.stdout, indent=1)

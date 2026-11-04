@@ -1,6 +1,7 @@
 """scripts/lineage_map.py measures competing futures from git objects alone."""
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -137,3 +138,97 @@ def test_intake_credits_a_rewritten_port_whose_tests_survive_but_not_one_that_dr
     rows = {c["sha"]: c for c in lineage_map.intake("main", "feature")["commits"]}
     assert rows[kept[:12]]["verdict"] == "TESTS_PRESENT" and rows[kept[:12]]["tests"] == {"added": 1, "present": 1}
     assert rows[dropped[:12]]["verdict"] == "MISSING" and rows[dropped[:12]]["tests"] == {"added": 1, "present": 0}
+
+
+# --- place: section 53's twelve dispositions, from the live open-PR list -----------------------------------
+
+CANON = "claude/canonical"
+
+
+def _live(*rows):
+    return [{"number": n, "sha": sha, "ref": ref, "base": base, "title": f"PR {n}"} for n, sha, ref, base in rows]
+
+
+NINE_FILLED = {k: f"answer {k}" for k in lineage_map.NINE}
+
+
+def test_place_derives_from_facts_inherits_reviewed_placements_and_reports_the_rest():
+    live = _live((1, "a" * 40, CANON, "main"), (2, "b" * 40, "child", CANON), (3, "c" * 40, "grandchild", "child"),
+                 (4, "d" * 40, "absorbed", "main"), (5, "e" * 40, "old", "main"), (6, "f" * 40, "orphan", "main"),
+                 (7, "1" * 40, "judged", "main"))
+    verdicts = {1: "CONTAINED_BY_ANCESTRY", 2: "UNPORTED_DELTA", 3: "UNPORTED_DELTA", 4: "BEHAVIOUR_CONTAINED",
+                5: "UNPORTED_DELTA", 6: "UNPORTED_DELTA", 7: "UNPORTED_DELTA"}
+    inheritance = {"placements": [
+        {"id": "x.mechanism", "lineage": ["#5", "greg/x.py"], "classification": "HISTORICAL_EVIDENCE"},
+        {"id": "x.active", "lineage": ["#5"], "classification": "PORTABLE_MECHANISM"}]}
+    record = {"placements": [{"number": 7, "head_sha": "1" * 40, "disposition": "NEEDS FOUNDER DECISION",
+                              "decision": "sign or close", "basis": "awaiting the founder's signature"}]}
+    out = lineage_map.place(live, CANON, verdicts, inheritance, record)
+    got = {p["pr"]: (p["disposition"], p["source"]) for p in out["placements"]}
+    assert got[1] == ("CANONICAL ACTIVE", "derived")            # the canonical head, whatever intake says
+    assert got[2] == ("STACKED NEXT", "derived") and got[3] == ("STACKED NEXT", "derived")
+    assert got[4] == ("EVIDENCE ONLY", "derived")
+    assert got[5] == ("PORT MECHANISM", "inherited")             # the most active of its two lineages
+    assert got[7] == ("NEEDS FOUNDER DECISION", "recorded")
+    assert got[6] == (None, "unplaced")
+    assert [(v["pr"], v["kind"]) for v in out["violations"]] == [(6, "unplaced")]
+    assert out["open"] == 7 and out["counts"]["STACKED NEXT"] == 2
+
+
+def test_place_refuses_stale_moved_contradicted_and_incomplete_records():
+    live = _live((1, "a" * 40, CANON, "main"), (2, "b" * 40, "moved", "main"), (3, "c" * 40, "on", CANON),
+                 (4, "d" * 40, "fut", "main"), (5, "e" * 40, "fake", "main"), (6, "f" * 40, "ask", "main"))
+    record = {"placements": [
+        {"number": 9, "head_sha": "9" * 40, "disposition": "HISTORICAL", "basis": "closed long ago"},
+        {"number": 2, "head_sha": "0" * 40, "disposition": "PORT MECHANISM", "basis": "decided on an older head"},
+        {"number": 3, "head_sha": "c" * 40, "disposition": "PORT MECHANISM", "basis": "but it is stacked"},
+        {"number": 4, "head_sha": "d" * 40, "disposition": "FUTURE NODE", "basis": "no node named"},
+        {"number": 5, "head_sha": "e" * 40, "disposition": "STACKED NEXT", "basis": "claims a stack it is not on"},
+        {"number": 6, "head_sha": "f" * 40, "disposition": "NEEDS FOUNDER DECISION", "basis": "asks nothing"}]}
+    out = lineage_map.place(live, CANON, {}, {}, record)
+    kinds = sorted((v["pr"], v["kind"]) for v in out["violations"])
+    assert kinds == [(2, "moved"), (3, "contradicted"), (4, "incomplete"), (5, "contradicted"),
+                     (6, "incomplete"), (9, "stale_record")]
+
+
+def test_place_lets_a_pr_close_only_after_section_53s_nine_extractions():
+    live = _live((1, "a" * 40, CANON, "main"), (2, "b" * 40, "done", "main"), (3, "c" * 40, "half", "main"))
+    partial = dict(NINE_FILLED, negative_evidence=" ")
+    record = {"placements": [
+        {"number": 2, "head_sha": "b" * 40, "disposition": "SUPERSEDED IMPLEMENTATION", "basis": "replaced",
+         "closing": True, "nine": NINE_FILLED},
+        {"number": 3, "head_sha": "c" * 40, "disposition": "HISTORICAL", "basis": "kept for history",
+         "closing": True, "nine": partial}]}
+    out = lineage_map.place(live, CANON, {}, {}, record)
+    rows = {p["pr"]: p for p in out["placements"]}
+    assert rows[2]["close_ready"] and not rows[3]["close_ready"]
+    [violation] = out["violations"]
+    assert violation["pr"] == 3 and violation["kind"] == "close_without_extraction"
+    assert violation["detail"] == "missing: negative_evidence"
+    assert out["closing_not_extracted"] == [3]
+
+
+def test_every_inheritance_class_maps_to_a_section_53_disposition():
+    assert set(lineage_map.FROM_CLASS.values()) <= set(lineage_map.DISPOSITIONS)
+    assert len(lineage_map.DISPOSITIONS) == 12 and len(lineage_map.NINE) == 9
+    assert set(lineage_map.ACTIVITY) | {"CANONICAL ACTIVE"} == set(lineage_map.DISPOSITIONS)
+
+
+def test_the_reviewed_inheritance_records_classes_all_map():
+    from pathlib import Path
+    record = json.loads((Path(__file__).resolve().parents[2]
+                         / "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json").read_text())
+    assert set(record["classes"]) == set(lineage_map.FROM_CLASS)
+
+
+def test_place_puts_a_branch_without_a_pr_with_the_open_pr_that_contains_it():
+    live = _live((1, "a" * 40, CANON, "main"), (2, "b" * 40, "work", CANON))
+    live += [{"number": "branch:review-of-2", "sha": "2" * 40, "ref": "review-of-2", "base": None},
+             {"number": "branch:lost", "sha": "3" * 40, "ref": "lost", "base": None}]
+    out = lineage_map.place(live, CANON, {}, {}, {}, {"branch:review-of-2": [2], "branch:lost": []})
+    rows = {p["pr"]: p for p in out["placements"]}
+    assert rows["branch:review-of-2"]["disposition"] == "STACKED NEXT"
+    assert "contained in open #2" in rows["branch:review-of-2"]["basis"]
+    assert not rows["branch:review-of-2"]["close_ready"]      # deleting a branch is a close: extract first
+    assert [(v["pr"], v["kind"]) for v in out["violations"]] == [("branch:lost", "unplaced")]
+    assert [p["pr"] for p in out["placements"]][:2] == [1, 2]   # PRs first, then branches

@@ -1,0 +1,85 @@
+{
+ "kind": "compute.benchmark",
+ "workload": {
+  "version": 1,
+  "seed": "greg-compute-benchmark/1",
+  "sha256_rounds": 200000,
+  "ledger_records": 50,
+  "spawn": "python -I -c pass"
+ },
+ "workload_digest": "sha256:0ded9793e95c102bf0e33216b63e3ddcb5ea1bb91d7b66b6510c250b03beb408",
+ "runs": 7,
+ "samples_seconds": [
+  0.551633,
+  0.622931,
+  0.886344,
+  0.794855,
+  0.513011,
+  0.734642,
+  0.626331
+ ],
+ "components_seconds": {
+  "sha256_chain": [
+   0.387739,
+   0.430894,
+   0.456909,
+   0.514654,
+   0.343222,
+   0.4608,
+   0.405749
+  ],
+  "ledger_append_verify": [
+   0.095576,
+   0.101124,
+   0.385,
+   0.192853,
+   0.121438,
+   0.210158,
+   0.194803
+  ],
+  "process_spawn": [
+   0.068318,
+   0.090914,
+   0.044435,
+   0.087348,
+   0.048351,
+   0.063684,
+   0.025779
+  ]
+ },
+ "component_medians": {
+  "sha256_chain": 0.430894,
+  "ledger_append_verify": 0.192853,
+  "process_spawn": 0.063684
+ },
+ "median_seconds": 0.626331,
+ "iqr_seconds": 0.177466,
+ "relative_iqr": 0.283343,
+ "deterministic": true,
+ "output_digest": "0e2d2476c228d9d42a475066a96c9dbc38c215c8e0f25036bd095b6001d086e4",
+ "host": {
+  "machine": "x86_64",
+  "system": "Linux",
+  "release": "6.18.44-fc-v185",
+  "python": "3.11.17",
+  "implementation": "CPython",
+  "cores": 4,
+  "memory_bytes": 16872808448,
+  "conditions": {
+   "load1": 5.648,
+   "psi_cpu_some_avg10": 36.08,
+   "psi_cpu_some_avg60": 32.27,
+   "psi_memory_some_avg10": 0.0,
+   "psi_memory_some_avg60": 0.0,
+   "psi_io_some_avg10": 0.86,
+   "psi_io_some_avg60": 2.42,
+   "mem_total_bytes": 16872808448,
+   "mem_available_bytes": 15265107968,
+   "mem_available_ratio": 0.9047
+  }
+ },
+ "started_at": "2026-10-30T12:13:42.774072Z",
+ "finished_at": "2026-10-30T12:13:47.504119Z",
+ "network": "none",
+ "reality_status": "MEASURED_ON_THIS_HOST"
+}

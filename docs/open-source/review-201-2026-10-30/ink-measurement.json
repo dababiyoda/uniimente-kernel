@@ -1,0 +1,141 @@
+{
+ "method": "pdftoppm -gray -r 50; pdftotext -bbox; dark < 200; box padding 2 px",
+ "body": "cloud container, poppler 24.02, 2026-10-30",
+ "attack": [
+  {
+   "pdf": "clean_text.pdf",
+   "pages": [
+    {
+     "words": 11,
+     "hidden_words": 0,
+     "unexplained": 0.0
+    }
+   ],
+   "seconds": 0.076
+  },
+  {
+   "pdf": "invisible_3Tr.pdf",
+   "pages": [
+    {
+     "words": 12,
+     "hidden_words": 6,
+     "unexplained": 0.0
+    }
+   ],
+   "seconds": 0.052
+  },
+  {
+   "pdf": "pattern_text.pdf",
+   "pages": [
+    {
+     "words": 6,
+     "hidden_words": 0,
+     "unexplained": 0.00086
+    }
+   ],
+   "seconds": 0.053
+  },
+  {
+   "pdf": "stamped_scan.pdf",
+   "pages": [
+    {
+     "words": 1,
+     "hidden_words": 0,
+     "unexplained": 0.49115
+    }
+   ],
+   "seconds": 0.066
+  },
+  {
+   "pdf": "vector_rule.pdf",
+   "pages": [
+    {
+     "words": 6,
+     "hidden_words": 0,
+     "unexplained": 0.00139
+    }
+   ],
+   "seconds": 0.06
+  },
+  {
+   "pdf": "white_text.pdf",
+   "pages": [
+    {
+     "words": 12,
+     "hidden_words": 6,
+     "unexplained": 0.0
+    }
+   ],
+   "seconds": 0.053
+  }
+ ],
+ "real": [
+  {
+   "pdf": "/mnt/skills/examples/theme-factory/theme-showcase.pdf",
+   "pages": [
+    {
+     "words": 63,
+     "hidden_words": 0,
+     "unexplained": 0.03065
+    },
+    {
+     "words": 64,
+     "hidden_words": 0,
+     "unexplained": 0.84672
+    },
+    {
+     "words": 62,
+     "hidden_words": 0,
+     "unexplained": 0.04312
+    },
+    {
+     "words": 62,
+     "hidden_words": 0,
+     "unexplained": 0.03065
+    },
+    {
+     "words": 64,
+     "hidden_words": 0,
+     "unexplained": 0.87302
+    },
+    {
+     "words": 64,
+     "hidden_words": 16,
+     "unexplained": 0.02495
+    },
+    {
+     "words": 63,
+     "hidden_words": 0,
+     "unexplained": 0.86463
+    },
+    {
+     "words": 64,
+     "hidden_words": 2,
+     "unexplained": 0.04312
+    },
+    {
+     "words": 62,
+     "hidden_words": 1,
+     "unexplained": 0.04312
+    },
+    {
+     "words": 63,
+     "hidden_words": 0,
+     "unexplained": 0.04312
+    }
+   ],
+   "seconds": 0.27
+  },
+  {
+   "pdf": "/usr/lib/libreoffice/share/xpdfimport/xpdfimport_err.pdf",
+   "pages": [
+    {
+     "words": 9,
+     "hidden_words": 0,
+     "unexplained": 0.0
+    }
+   ],
+   "seconds": 0.039
+  }
+ ]
+}

@@ -17,6 +17,8 @@ Deliverable K. The next wave is ordered by dependency: each item names what it n
 
 Items 2, 4 (dry run), 5 and 6 need no founder decision and can start immediately; item 7 needed none and is implemented, awaiting integration. Item 1 is the single bottleneck metric.
 
+**Founder correction, 2026-10-30** (`INTENT-20261030-BUILD-BEFORE-DEVICE-RUN`). Verbatim: "No real Chromebook run is needed. That is done when we completely build the prompt". Item 1 stays the device-acceptance metric, and it still moves only with the founder's key on the designated device. It no longer gates building the directive's later nodes; the run comes after the build, as its acceptance. The table above is kept as written.
+
 ## 2. 2026/27 horizon
 
 | Capability | Label | Evidence gate |

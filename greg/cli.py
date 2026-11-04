@@ -24,6 +24,9 @@
     greg gravity authorize --from-mission M --print-only > g.json; greg gravity authorize g.json --key K
     greg gravity authorize g.json --supersedes GOAL --key K   replace an admitted goal (the old one is kept)
     greg gravity goals | greg gravity evidence GOAL   read-only; greg gravity control GOAL --kind stop_pushing --value true --key K
+    greg compute status                       read-only: pressure, the sustained bottleneck, COMPUTE asks, step time
+    greg compute benchmark --out B.json       a fixed workload in a scratch directory; writes B.json only
+    greg compute verify --before A.json --after B.json   did the change measurably help
 
 The CLI never opens the ledger as a writer while the body runs: commands are
 signed files dropped into the body inbox, so any interface can close at any time.
@@ -45,6 +48,32 @@ from greg.body import (Body, BodyError, Layout, init_body, morning_projection, o
 from greg.founder import generate_founder_key, load_founder_key, public_bytes
 from greg.tribunal import mark_reviewed, morning_report
 from provenance.ledger import WriterConflict
+
+
+def _replace_with(target: Path, text: str, mode: int = 0o644) -> None:
+    """Replace ``target`` with ``text`` through a temporary file in its directory that nobody else could have
+    planted: mkstemp gives a fresh name with O_EXCL, so no symlink or existing file there is followed or clobbered,
+    and the file has ``mode`` (never wider than its owner while written) before it is renamed over ``target``. A
+    failure removes the temporary file and leaves ``target`` as it was (review of #238)."""
+    import tempfile
+    target = Path(target)
+    fd, name = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.", suffix=".tmp")
+    try:
+        data = text.encode()
+        while data:
+            data = data[os.write(fd, data):]
+        os.fchmod(fd, mode)
+        os.close(fd)
+        fd = -1
+        os.replace(name, target)
+    except BaseException:
+        if fd >= 0:
+            os.close(fd)
+        try:
+            os.unlink(name)
+        except FileNotFoundError:
+            pass
+        raise
 
 DEFAULT_HOME = os.environ.get("GREG_HOME", str(Path.home() / ".uniimente" / "greg"))
 
@@ -489,8 +518,14 @@ def main(argv=None) -> int:
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
+    sub.add_parser("autonomy", help="read-only: the level each (capability, action class, target pattern, budget band) "
+                                    "has earned from the ledger; it grants nothing")
     pp = sub.add_parser("path", help="where GREG stands on its developmental path: active node, gate, exit evidence, horizons")
-    pp.add_argument("--node", help="read one node's own measurement (e.g. N6), even past where the path stops")
+    pq = pp.add_mutually_exclusive_group()
+    pq.add_argument("--node", help="read one node's own measurement (e.g. N6), even past where the path stops")
+    pq.add_argument("--build", action="store_true",
+                    help="the build frontier beside the acceptance frontier: per node STRUCTURALLY_BUILT, BUILD_OPEN "
+                         "or NO_PREDICATE; structural evidence moves only the build frontier, never the founder's path")
     tr = sub.add_parser("treasury", help="venture books: verified revenue through your waterfall (node N7); moves no money")
     trs = tr.add_subparsers(dest="treasury_cmd", required=True)
     trs.add_parser("books", help="per venture: verified revenue, obligations and reserves, reinvestable surplus, transfers")
@@ -540,6 +575,19 @@ def main(argv=None) -> int:
     gv.add_argument("--print-only", action="store_true", help="authorize: print the GOAL body without signing")
     gv.add_argument("--supersedes", help="authorize: replace this admitted goal (id or prefix); it stays on the "
                                          "ledger as superseded")
+    cp = sub.add_parser("compute", help="the body's compute: measured pressure, a fixed benchmark and before/after "
+                                        "verification; it buys, rents and installs nothing")
+    cps = cp.add_subparsers(dest="compute_cmd", required=True)
+    cps.add_parser("status", help="read-only: a live sample, the sustained bottleneck, the COMPUTE asks per "
+                                  "resource and measured mission step time")
+    cb = cps.add_parser("benchmark", help="run the fixed workload in a scratch directory; writes --out only, "
+                                          "never the body's ledger and never over a file that is not a benchmark")
+    cb.add_argument("--out", required=True)
+    cb.add_argument("--runs", type=int, default=None, help="replicates (default 7; verify needs at least 5)")
+    cv = cps.add_parser("verify", help="did --after measurably beat --before (one-sided permutation test above "
+                                       "the before run's noise, on a host no quieter than before)")
+    cv.add_argument("--before", required=True)
+    cv.add_argument("--after", required=True)
     pr = sub.add_parser("presence", help="was the body actually running: measured availability, absences, late work")
     pr.add_argument("--hours", type=float, default=72.0)
     mcp = sub.add_parser("mcp", help="MCP tool servers you installed under GREG's read roots (read-only)")
@@ -575,6 +623,9 @@ def main(argv=None) -> int:
     fdr2.add_argument("--seed", required=True, help="the seed's sha256: address, as `greg foundry seed` printed it")
     sub.add_parser("learning", help="brief corrections per labelled brief, and every learned change kept, rejected or reverted")
     sub.add_parser("acceptance", help="read-only founder-device acceptance report from this body's own ledger")
+    bl = sub.add_parser("blockers", help="read-only: each open mission blocker, typed: why, when it is reconsidered, "
+                                         "the evidence and authority it needs, and the next move")
+    bl.add_argument("--mission", default=None, help="only this mission's blocker")
     rh = sub.add_parser("rehearse", help="credential-free rehearsal: a throwaway body and REHEARSAL key run the "
                                           "Founder's First Mission end to end")
     rh.add_argument("--dir"); rh.add_argument("--kernel-root"); rh.add_argument("--effort", type=int, default=8)
@@ -750,10 +801,7 @@ def main(argv=None) -> int:
                 out.mkdir(parents=True, exist_ok=True)
                 presentation = disclosure.present(holder)
                 for name, content, mode in (("holder.json", holder, 0o600), ("presentation.json", presentation, 0o644)):
-                    tmp = out / (name + ".tmp")
-                    tmp.write_text(json.dumps(content, indent=1) + "\n")
-                    tmp.chmod(mode)
-                    tmp.replace(out / name)
+                    _replace_with(out / name, json.dumps(content, indent=1) + "\n", mode)
                 checked = disclosure.verify_presentation(presentation)
                 data = {"package_digest": holder["package_digest"], "items": len(holder["package"]["items"]),
                         "contradictions": holder["package"]["contradictions"], "revealed": holder["default_reveal"],
@@ -805,10 +853,16 @@ def main(argv=None) -> int:
             with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
                 data = metrics.vepmc(journal) if args.cmd == "vepmc" else routing.routing_knowledge(journal)
             print(json.dumps(data, indent=1))
+        elif args.cmd == "autonomy":
+            from greg import autonomy
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                print(json.dumps(autonomy.report(journal), indent=1))
         elif args.cmd == "path":
             from greg import path as devpath
 
             def where(journal):
+                if getattr(args, "build", False):
+                    return devpath.build_status(journal)
                 if not getattr(args, "node", None):
                     return devpath.position(journal)
                 try:
@@ -865,6 +919,46 @@ def main(argv=None) -> int:
             except (gravity.GravityError, LeverageRefused) as exc:     # a refusal, reported like any other
                 raise BodyError(f"gravity refused the situation: {exc}") from exc
             print(json.dumps(data, indent=1))
+        elif args.cmd == "compute":
+            from greg import compute
+            # The body is the ledger's one writer: these read it through a read-only view, or touch files only.
+            if args.compute_cmd == "status":
+                where = Path(home) if Path(home).exists() else Path.home()
+                if Layout(home).ledger.exists():
+                    with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                        data = {"sample": compute.sample(where), **compute.status(journal)}
+                else:
+                    data = {"sample": compute.sample(where), "reality_status": "NO_BODY_LEDGER"}
+                print(json.dumps(data, indent=1))
+            elif args.compute_cmd == "benchmark":
+                out = Path(args.out).expanduser().resolve()
+                body_home = Layout(home).home              # the home the body itself uses: '~' expanded, resolved
+                if any(p == body_home or (p.exists() and body_home.exists() and p.samefile(body_home))
+                       for p in (out, *out.parents)):
+                    raise BodyError("benchmark results live outside the body; the CLI writes nothing in its home")
+                if out.exists():                           # it replaces only its own earlier result, never a file
+                    try:
+                        kept = json.loads(out.read_text())
+                    except (OSError, ValueError, UnicodeDecodeError):
+                        kept = None
+                    if not isinstance(kept, dict) or kept.get("kind") != "compute.benchmark":
+                        raise BodyError(f"{out} exists and is not a benchmark result; the CLI will not overwrite it")
+                runs = compute.BENCHMARK_RUNS if args.runs is None else args.runs
+                if runs < 1:
+                    raise BodyError("--runs must be at least 1")
+                result = compute.benchmark(runs)
+                try:
+                    _replace_with(out, json.dumps(result, indent=1))
+                except OSError as exc:
+                    raise BodyError(f"cannot write {out}: {exc.strerror}") from None
+                shown = {k: result[k] for k in ("runs", "median_seconds", "iqr_seconds", "deterministic")}
+                print(json.dumps({"written": str(out), **shown}, indent=1))
+            else:
+                try:
+                    runs = [json.loads(Path(p).expanduser().read_text()) for p in (args.before, args.after)]
+                    print(json.dumps(compute.verify_improvement(*runs), indent=1))
+                except (OSError, ValueError) as exc:
+                    raise BodyError(f"cannot compare these benchmark files: {exc}") from None
         elif args.cmd == "presence":
             from greg import presence
             now = datetime.now(timezone.utc)
@@ -960,6 +1054,10 @@ def main(argv=None) -> int:
         elif args.cmd == "lifecycle":
             print(_drop(home, "LIFECYCLE", {"mission_id": args.mission_id, "state": args.state,
                                             "reason": args.reason}, args))
+        elif args.cmd == "blockers":
+            from greg import blockers
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                print(json.dumps(blockers.open_blockers(journal, home=home, mission_id=args.mission), indent=1))
         elif args.cmd == "acceptance":
             from greg import acceptance
             return acceptance.main(home)
@@ -1036,9 +1134,7 @@ def main(argv=None) -> int:
                     result = anchor.export_witness(journal, Path(args.roots).read_text(), existing)
                 except anchor.AnchorError as exc:
                     raise BodyError(str(exc)) from None
-            tmp = out.with_suffix(out.suffix + ".tmp")
-            tmp.write_text(json.dumps(result["bundle"], indent=1) + "\n")
-            tmp.replace(out)
+            _replace_with(out, json.dumps(result["bundle"], indent=1) + "\n")
             print(json.dumps({"witness": str(out), "admitted": result["admitted"], "rejected": result["rejected"],
                               "witnessed_heads": len(result["bundle"]["witnesses"])}, indent=1))
         elif args.cmd == "serve":

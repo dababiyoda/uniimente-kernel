@@ -186,12 +186,33 @@ def test_a_record_missing_a_required_field_fails(field):
                  id="superseded with an unrecorded successor"),
     pytest.param(lambda r: r.update(intent_id="GOAL-1"), id="id outside the INTENT- namespace"),
     pytest.param(lambda r: r.update(status="outdated"), id="an alias state outside the six"),
+    pytest.param(lambda r: r.update(status="superseded"), id="status disagrees with state"),
+    pytest.param(lambda r: r.update(lifecycle_state="prohibited"), id="lifecycle_state disagrees with state"),
+    pytest.param(lambda r: r.update(status="superseded", superseded_by=[]),
+                 id="superseded under the older name only, with no successor"),
+    pytest.param(lambda r: r.update(statement="\u200b"), id="a zero-width statement"),
+    pytest.param(lambda r: r.update(owner="\ufeff"), id="a zero-width owner"),
+    pytest.param(lambda r: r.update(binding_scope={"unrecorded": "\u200b\u200d"}), id="a zero-width unrecorded reason"),
 ])
 def test_the_contract_refuses_a_thinned_or_relabelled_record(change):
     check = validator()
     record = _record()
     change(record)
     assert not check.is_valid(record)
+
+
+def test_the_contract_holds_the_older_lifecycle_names_to_state():
+    """status and lifecycle_state are older names for state: the contract itself, not only this repository's test,
+    refuses a record whose names disagree. The text aliases of intended_effect cannot be compared by JSON Schema and
+    are held equal by test_names_for_the_same_field_agree_wherever_both_are_present."""
+    check = validator()
+    for state in LIFECYCLE:
+        record = _record()
+        record.update(state=state, status=state, lifecycle_state=state, superseded_by=["INTENT-20261014-ONE-MACHINE"])
+        assert check.is_valid(record), state
+        for other in set(LIFECYCLE) - {state}:
+            assert not check.is_valid(dict(record, status=other)), (state, other)
+            assert not check.is_valid(dict(record, lifecycle_state=other)), (state, other)
 
 
 def test_a_superseded_record_names_its_successor():

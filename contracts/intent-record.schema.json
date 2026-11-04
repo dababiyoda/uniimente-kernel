@@ -69,7 +69,7 @@
     },
     "supersedes": {
       "$ref": "#/$defs/texts_or_none_or_unrecorded",
-      "description": "Intent ids or formulations this record replaces; scripts/ci/check_intent_continuity.py lets an id leave the tree only when a record present at HEAD names it here"
+      "description": "Intent ids or formulations this record replaces. scripts/ci/check_intent_continuity.py lets an id leave the tree only when a record present at HEAD has an entry that is exactly that id; prose that mentions an id is a formulation, not a successor link"
     },
     "superseded_by": {
       "$ref": "#/$defs/texts_or_none_or_unrecorded"
@@ -95,11 +95,17 @@
     },
     "status": {
       "$ref": "#/$defs/lifecycle",
-      "description": "Older name for state; must agree with it"
+      "description": "Older name for state; where present it must equal state (allOf)"
     },
     "lifecycle_state": {
       "$ref": "#/$defs/lifecycle",
-      "description": "Older name for state; must agree with it"
+      "description": "Older name for state; where present it must equal state (allOf)"
+    },
+    "intended_outcome": {
+      "description": "Older name for intended_effect. JSON Schema cannot compare two texts, so tests/unit/test_intent_record_schema.py, not this contract, requires them equal wherever both are present"
+    },
+    "intended_observable_effect": {
+      "description": "Older name for intended_effect. JSON Schema cannot compare two texts, so tests/unit/test_intent_record_schema.py, not this contract, requires them equal wherever both are present"
     },
     "normalization_2026_10_30": {
       "type": "object",
@@ -145,6 +151,9 @@
           }
         }
       }
+    },
+    {
+      "$ref": "#/$defs/agreeing_lifecycle"
     }
   ],
   "$defs": {
@@ -158,10 +167,94 @@
         "exploratory"
       ]
     },
+    "agreeing_lifecycle": {
+      "description": "status and lifecycle_state, where present, name the same state as state",
+      "anyOf": [
+        {
+          "properties": {
+            "state": {
+              "const": "active"
+            },
+            "status": {
+              "const": "active"
+            },
+            "lifecycle_state": {
+              "const": "active"
+            }
+          }
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "implemented"
+            },
+            "status": {
+              "const": "implemented"
+            },
+            "lifecycle_state": {
+              "const": "implemented"
+            }
+          }
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "deferred"
+            },
+            "status": {
+              "const": "deferred"
+            },
+            "lifecycle_state": {
+              "const": "deferred"
+            }
+          }
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "superseded"
+            },
+            "status": {
+              "const": "superseded"
+            },
+            "lifecycle_state": {
+              "const": "superseded"
+            }
+          }
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "prohibited"
+            },
+            "status": {
+              "const": "prohibited"
+            },
+            "lifecycle_state": {
+              "const": "prohibited"
+            }
+          }
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "exploratory"
+            },
+            "status": {
+              "const": "exploratory"
+            },
+            "lifecycle_state": {
+              "const": "exploratory"
+            }
+          }
+        }
+      ]
+    },
     "text": {
       "type": "string",
       "minLength": 1,
-      "pattern": "\\S"
+      "pattern": "[^\\s\\u00ad\\u200b-\\u200f\\u2060-\\u2064\\ufeff]",
+      "description": "Text with a visible character; whitespace and zero-width characters alone record nothing"
     },
     "text_list": {
       "type": "array",

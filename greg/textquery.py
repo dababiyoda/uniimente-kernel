@@ -56,8 +56,8 @@ class PdfEvidence:
     ("%PDF-") within the first PDF_HEAD bytes, or PDF structure anywhere.
 
     The structure is what poppler needs, measured on pdftotext 24.02 with no header: it reads a PDF through
-    "startxref" (wherever it stands: 2000 bytes from the end it still does), through a linearized first object ended
-    by "endobj", or, with neither, by finding objects as "N G obj" with only whitespace between the three. Comments
+    "startxref" (still 2000 bytes from the end, not 100 KiB from it), through a linearized first object ended by
+    "endobj", or, with neither, by finding objects as "N G obj" with only whitespace between the three. Comments
     between them it allows only on the first two routes. A PDF it reads therefore holds "startxref", "endobj" or such
     an object header. Each is looked for anywhere, which never refuses less than poppler reads, and refuses a text
     that quotes one (a program that writes PDFs). Another reader may read files poppler does not."""

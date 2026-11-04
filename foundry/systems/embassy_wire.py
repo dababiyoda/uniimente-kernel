@@ -49,6 +49,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey,
 from embassy.gate import GUEST_CEILING, AgentEmbassy, EmbassyRefused
 from foundry.systems import accounting, reputation
 from foundry.systems.webserver import Site
+from provenance.digests import compact_json_bytes as _canon, sha256_json as _sha
 
 CARD_PATH = "/.well-known/agent.json"
 NONCE_TTL = timedelta(seconds=120)
@@ -63,14 +64,6 @@ class RpcError(Exception):
     def __init__(self, code: int, message: str):
         super().__init__(message)
         self.code, self.message = code, message
-
-
-def _canon(value) -> bytes:
-    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
-
-
-def _sha(value) -> str:
-    return "sha256:" + hashlib.sha256(_canon(value)).hexdigest()
 
 
 def _t(s: str) -> datetime:

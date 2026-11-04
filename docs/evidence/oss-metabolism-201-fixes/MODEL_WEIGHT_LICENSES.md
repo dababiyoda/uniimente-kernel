@@ -209,6 +209,50 @@ on `2b4b0954`:
 | The reviewer's `repro.py`, R1 to R10, on `2b4b0954` | as in the table above |
 | Mutants: the block for this store and gate rewritten for the new code (51 mutants), and two existing mutants re-pointed at the shared code (`_ollama_blob`; the weights of `_ollama_runs`) | the whole group on `2b4b0954`, 156 mutants: 156 caught, 0 survived or stale, in 52 minutes. The script cannot run one group alone, so the group ran in the worktree through the script's own `_run_one`, one mutant at a time, each mutated file checked byte-identical after. Of the 104 mutants that also ran on `40520bcb`, 61 passed or skipped as many tests before their first failure as they did there, and 43 passed exactly 27 more: the 27 tests of the new file, which runs before the file that catches them. The failing test was compared by that count, not by name. The 52 that did not run on `40520bcb` are the 51 of the rewritten block and the re-pointed digest-check mutant. Those 52, and the re-pointed weights mutant, also ran against the two model-license test files alone, from a scratch copy of `greg/licensing.py`: 53 of 53 caught. |
 
+### The review of `52f5703b`: what Ollama's request parser and JSON decoder read
+
+An independent review compiled Ollama's own `manifest/`, `types/model/` and `internal/modelref/` packages into two
+oracles, one on the `v0.40.0` (`0d0720e`) run path and one on `main` (`e9fde36d`), and compared GREG with them over
+54 stores: 15 false clears. A false clear is a store GREG clears while some Ollama run path serves a manifest whose
+license layers are not the Apache text GREG read, whose weights GREG did not list, or whose config is a relay.
+
+| Finding | `52f5703b` | Now |
+| --- | --- | --- |
+| F1 (high): Go's `encoding/json` matches a key to a field ignoring case, folds `ſ` (U+017F) to `s` and `K` (U+212A) to `k`, and a repeated key overwrites or merges into the first; GREG read exact keys. 12 stores (`Layers`, `MediaType`, `Digest`, `Manifests`, `Config`, `Remote_Host`, `layerſ`) | CLEARED | held, the key named. Every object the gate reads (manifest, list entry, list child, layer, config, config blob) is held when it carries a key that is not ASCII, two keys equal ignoring case (a repeated key included), or a key equal to one of Ollama's fields ignoring case but spelled otherwise (`_go_fields`) |
+| F1, added here: a second `config` without a digest after a relay `config` | CLEARED (Python keeps the last) | held. The oracle shows Go merging the two: both versions serve the relay |
+| F2: `<runner>:<digest>` and `sha256:<hex>` request names (`server/model_resolver.go` `digestModelName`). 3 stores | CLEARED (the model `llamacpp`, `sha256` or `mlx`, tagged with the digest) | held for every runner Ollama names (`mlx`, `mlxrunner`, `ggml`, `llamacpp`, `llama.cpp`, `llama-cpp`, `llama_cpp`), in any case (`_ollama_request_form`). A prefix that no blob begins with, which Ollama reads as a model name, is held too |
+| F3: a source suffix (`internal/modelref` `ParseRef`): `:cloud`, `:local`, or a tag ending in `-cloud`, any case | `qwen3.5:4b-CLOUD`, `:CLOUD` and `:LOCAL` CLEARED from a local manifest under that tag | held. `qwen-cloud` with no tag is a local model in Ollama and is read |
+| F4: 7 of the reviewer's own mutants survived | the safeguards held, untested | 6 have a test and a mutant in the group: a non-ASCII stored name, a digest name tagged `Latest` or under `Library`, `/api/tags` runner case and untyped children, a list entry with a config of its own |
+
+The seventh, "a relay needs a host only", is not added: both versions relay only when `remote_host` and
+`remote_model` are both set (`server/routes.go`), so a host-only config runs the local weights GREG reads. Holding it
+would be stricter and still safe, so no test forbids it.
+
+**The harness is now a test that needs no Go.** `tests/unit/test_greg_ollama_oracle.py` replays
+`tests/fixtures/ollama_oracle/answers.json`: for each of 76 stores (the reviewer's 54, written with the same bytes,
+and 22 more for F1 to F4), what both versions serve with no runner and with each runner. Each store is rebuilt by
+`scenarios.py` and checked against the fingerprint frozen with it. When GREG clears, every manifest served must be one
+GREG assessed, with Apache license layers only, no unlisted weights, no relay config, no cloud proxy, and the
+`/api/tags` child GREG reports must be the one Ollama selects. 15 stores must clear. To refreeze:
+`sh tests/fixtures/ollama_oracle/build_oracle.sh <dir>` (git, github.com, Go 1.24; it fetches only `manifest/`,
+`types/model/` and `internal/modelref/` at the two commits and stubs `envconfig`), then
+`python -B -I tests/fixtures/ollama_oracle/freeze.py <dir>`. The oracle program is the reviewer's, with only its
+header comment and the two variant fill-ins changed.
+
+| Run | Result |
+| --- | --- |
+| The Ollama files the reviewer compiled, against a fresh fetch of `0d0720e` and `e9fde36d` | byte-identical (`manifest/`, `types/model/`, `internal/modelref/`, `server/`) |
+| `answers.json` frozen with the rebuilt oracles, with the reviewer's binaries, and frozen twice | identical answers; the two freezes byte-identical |
+| `test_greg_model_license_gate.py` (34 tests: the 27 and 7 new) on `3358d660`'s `greg/licensing.py` | 33 failed; the non-ASCII stored-name test passes (3358d660 reads no v2 store) |
+| The same on `52f5703b`'s | 3 failed: F1, F2, F3. The 4 F4 tests pass, as tests of safeguards that were there |
+| The same on `edb9dd3b` | 34 passed |
+| `test_greg_ollama_oracle.py` (77 tests) on `3358d660`'s | 14 failed: 14 of the 15 stores that must clear (it reads no v2 store; `legacy_only` clears) |
+| The same on `52f5703b`'s | 27 failed: the reviewer's 15, the 2 cloud names it did not count, and 10 of the 22 new stores |
+| The same on `edb9dd3b` | 77 passed |
+| The reviewer's `diff_harness.py` on `edb9dd3b`, default and legacy layouts | 54 of 54 match each, 0 false clears |
+| The licensing suites on `edb9dd3b` | 45, 1866, 40, 30 (after a throwaway `git init`; 29 + 1 skipped without), 1 (+1 xfailed), 39 and 4 passed |
+| Mutants | the whole metabolism group on `edb9dd3b`, 179 mutants (the 156 and 23 for the new guards; the oracle test added to the group's test list), each in its own copy of the repository, docs/evidence included, through the script's own `main()` and `_run_one`, default `TMPDIR`: 179 reported caught, 0 survived or stale. Two were caught only because the mutated file did not parse. One is new here, "a layer's JSON keys are not checked": it removed the loop's only statement. It now leaves `pass`, and re-run alone it is caught by a failing test (1,933 passed before it). The other, "the use verdict mixes terms across alternatives" (`4f995317`, not this round's), replaces the first line of a three-line `return`; it is reported, not changed. The group's 11 test files pass unmutated: 2,205 passed, 1 skipped (no git checkout) |
+
 ## Limits
 
 - **Not a legal review.** A text is recognised, not interpreted. A model whose text is a well-known permissive license
@@ -226,8 +270,8 @@ on `2b4b0954`:
 - **No real Ollama store was read.** None exists on this body, and Ollama could not be installed. The legacy layout
   (`manifests/<host>/<namespace>/<model>/<tag>`, `blobs/sha256-<hex>`, license media type) follows Ollama's
   `server/modelpath.go` and manifest format as recorded in its source. The 0.40 layout follows Ollama's source at
-  `v0.40.0` and `main` `4d22e65` ([below](#ollama-040s-store-and-the-selection-gate)). Neither is tested against a
-  live store.
+  `v0.40.0` and `main` `4d22e65` ([below](#ollama-040s-store-and-the-selection-gate)), and the frozen oracle runs
+  Ollama's own code at `v0.40.0` and `main` `e9fde36d` over written stores. Neither is tested against a live store.
 - **Terms incorporated by reference.** A URL in a copyright notice is set aside as the holder's address, so a
   notice that points to further terms at a URL is still cleared. GREG does not fetch the URL.
 - **Not wired into `OllamaRoute`.** `greg/models.py` is pinned by seed `freeze-v12` and owned by the models lane.
@@ -241,6 +285,12 @@ on `2b4b0954`:
     belongs to `greg/cognition/cortex.py` or `greg/models.py`.
   - **Time of check against time of use.** The gate reads the store when it is called, not at the inference call. A
     re-pull between the two runs once.
+  - **A loaded runner.** A model already loaded is served from memory. `main` reuses a loaded runner only while the
+    stored v2 link still points to its digest; GREG does not read what is loaded.
+  - **Cloud spellings in `OllamaRoute`.** `greg/models.py` refuses only `:cloud` and `-cloud`; `-CLOUD`, `:CLOUD`
+    and `:LOCAL` reach Ollama there. `admit_model_selection` holds them, so a caller that runs it is covered.
+  - **A hold has no bytes bound to it** when the name or the store is held before a manifest is read
+    (`manifest_sha256` is `None`). A future founder clearance must refuse such a hold.
   - **The Ollama version is not read.** GREG reads a manifest only where `v0.40.0` and `main` agree, and holds the
     model where they differ. Other versions are not modelled.
   - **A request that names a runner** (`runner` in Ollama's API) can select a child that the default order does not.

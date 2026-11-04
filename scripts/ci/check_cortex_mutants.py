@@ -906,7 +906,7 @@ METABOLISM_MUTANTS = [
     ("a list child manifest's JSON keys are not checked", "greg/licensing.py",
      '        _go_fields(document, _GO_MANIFEST_FIELDS, f"the list\'s manifest {digest[7:19]}")\n', ""),
     ("a layer's JSON keys are not checked", "greg/licensing.py",
-     '        _go_fields(layer, _GO_LAYER_FIELDS, f"{where}a layer of the manifest")\n', ""),
+     '        _go_fields(layer, _GO_LAYER_FIELDS, f"{where}a layer of the manifest")\n', "        pass\n"),
     ("the config descriptor's JSON keys are not checked", "greg/licensing.py",
      '    _go_fields(config, _GO_LAYER_FIELDS, f"{where}the manifest\'s config")\n', ""),
     ("the config blob's JSON keys are not checked", "greg/licensing.py",

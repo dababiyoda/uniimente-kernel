@@ -3,10 +3,9 @@
 Directive 2026-10-28, sections 10, 55, 56, 67, 70 and 73. Founder correction of 2026-10-30
 (`INTENT-20261030-BUILD-BEFORE-DEVICE-RUN`). Branch `claude/cathedral-detector-20261030`, based on `44b3df96`
 (#236 head, WU-01 build frontier). Review round 1 (two reviewers, 16 findings) was fixed on top of `65f91d2f`; review
-round 2 (20 findings) on top of `71342170`. The PR base was then merged in twice (`c5ee7f8a` at `849c7973`, `954c6846`
-at `fbce94e5`); the figures below are from `954c6846`, except the two test files' counts, the mutant gate and the claim
-guard's run, which are from the commit that pins the gate's five survivors on top of `938f6523` (see the mutant
-history).
+round 2 (20 findings) on top of `71342170`. The PR base was then merged in three times: `c5ee7f8a` at `849c7973`,
+`954c6846` at `fbce94e5`, and `1cc6645d` at `d35d92a5`. The last merge came after `631b40ec`, which pins the mutant
+gate's five survivors on top of `938f6523` (see the mutant history). The pass-after figures below are from `1cc6645d`.
 
 **Reality level: UNIT-TESTED.** Synthetic git repositories and real test-key and passphrase-protected test bodies,
 all in this Linux container. Nothing here is founder-used, live or externally verified, and the detector has never
@@ -178,13 +177,13 @@ Python 3.11 venv (`/home/user/venv311`). Every pytest run used
 | Command | Result |
 | --- | --- |
 | `pytest tests/unit/test_cathedral_detector.py tests/unit/test_reality_claims.py` | 202 passed (45 + 157) |
-| merging the PR base into `ac78206b` (`849c7973`, then `fbce94e5`) | one conflict in `greg/cli.py` each time, both kept: the `cathedral` and `blockers` parsers after `acceptance`, then the `greg cathedral` and `greg compute` usage lines. `foundry/owned-source.json` merged clean and `scripts/refresh_owned_source.py` left it unchanged |
+| merging the PR base into `ac78206b` (`849c7973`, then `fbce94e5`), then into `631b40ec` (`d35d92a5`, #249) | the first two merges had one conflict each in `greg/cli.py`, and both sides were kept: the `cathedral` and `blockers` parsers after `acceptance`, then the `greg cathedral` and `greg compute` usage lines. The third merge was clean. `foundry/owned-source.json` merged clean each time, and `scripts/refresh_owned_source.py` left it unchanged |
 | `test_ucl_compiler`, `test_governance_integrity`, `test_path_build_frontier`, `test_greg_founder_tier`, `test_greg_closure_integrity`, `test_founder_correction_20261030`, `test_greg_packaging`, `test_acceptance_harness`, `test_greg_mission_control_costs`, `test_vpl_metrics` | 210 passed |
 | `python -m acceptance check` | sound (12 missions, 85 requirements) |
 | `scripts/ci/check_authority_singleton.py` | exactly one source of authority |
-| `python scripts/ci/check_cathedral_detector_mutants.py` (scratch copy, `python -B`, bytecode purged before each mutant) | **160/160 caught, exit 0**; unmutated PASS, 0 stale, 0 invalid (24 minutes). The run on `954c6846` caught 155/160 and exited 1 (mutant history) |
-| `python -m acceptance.claims` on this tree | PASS: 5440 claims in 573 files, 0 crosswalk problems, 0 violations, 1 allowlisted (the cortex example), 0 stale, 0 unreadable |
-| `python -m greg --home <no body> cathedral` on this tree | INSUFFICIENT_HISTORY: shallow clone, first-parent depth 355, 1672 commits reachable, no counts |
+| `python scripts/ci/check_cathedral_detector_mutants.py` (scratch copy, `python -B`, bytecode purged before each mutant) | **160/160 caught, exit 0**; unmutated PASS, 0 stale, 0 invalid (39 minutes on a loaded machine). It also caught 160/160 on `631b40ec`'s code and tests before the merge (24 minutes). The run on `954c6846` caught 155/160 and exited 1 (mutant history) |
+| `python -m acceptance.claims` on this tree | PASS: 5805 claims in 580 files, 0 crosswalk problems, 0 violations, 1 allowlisted (the cortex example), 0 stale, 0 unreadable |
+| `python -m greg --home <no body> cathedral` on this tree | INSUFFICIENT_HISTORY: shallow clone, first-parent depth 358, 1688 commits reachable, no counts |
 
 **Mutant history.**
 
@@ -249,7 +248,7 @@ Python 3.11 venv (`/home/user/venv311`). Every pytest run used
   comment on that line of `acceptance/claims.py` now says the rule covers both labels: for "live" the mutant is
   equivalent (the opening-`live` rule reads a whole "live" the same way), for "founder-device" it is not. Its old and
   new text are unchanged. The full gate then caught 160 of 160 and exited 0, with the five former survivors among
-  the caught.
+  the caught. After the third base merge it caught 160 of 160 again on `1cc6645d` and exited 0.
 
 ## Limitations (negatives kept)
 

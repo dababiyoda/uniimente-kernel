@@ -746,10 +746,11 @@ def test_the_planner_looks_for_a_header_as_far_as_the_sensor_does(tmp_path, at, 
 
 @pytest.mark.parametrize("pad, route", [(0, "template:document-phrase"), (1, "template:file-search")])
 def test_the_planner_reads_its_whole_window_and_the_sensor_reads_the_rest(tmp_path, pad, route):
-    """The planner reads the first PLAN_BYTES of the file to choose a route. Structure ending on the last of them is
-    seen; one byte later it is not, and fs.search, which reads every byte, still refuses the file."""
-    from greg.planner import PLAN_BYTES
-    data = b"x" * (PLAN_BYTES - 6 + pad) + b"endobj" + b"y" * 100
+    """The planner reads the first MiB of the file to choose a route (PLAN_BYTES, written out here so that a change
+    to it is caught, not followed). Structure ending on the last byte of it is seen; one byte later it is not, and
+    fs.search, which reads every byte, still refuses the file."""
+    window = 1024 ** 2
+    data = b"x" * (window - 6 + pad) + b"endobj" + b"y" * 100
     proposal = _plan(tmp_path, "scan.pdf", data)
     assert proposal["origin"] == route, proposal
     out = _search({"path": str(tmp_path / "data" / "scan.pdf"), "phrases": ["xy"]}, _ctx(tmp_path))

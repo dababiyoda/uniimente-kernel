@@ -1844,14 +1844,15 @@ class Genesis:
         qualified on examples and held-out vectors through the same adapter it will serve with, then registered and
         attached under the usual rules. Returns the attached manifest, None when a match waits for the founder, and
         False when nothing installed behaves as the contract says (the builder is next)."""
-        spec = {"description": contract["description"], "output_field": contract["output_field"]}
-        public = [v for v in contract["examples"] if isinstance(v.get("input_text"), str)]
-        held = [v for v in contract["held_out"] if isinstance(v.get("input_text"), str)]
+        public = [v for v in contract.get("examples", []) if isinstance(v.get("input_text"), str)]
+        held = [v for v in contract.get("held_out", []) if isinstance(v.get("input_text"), str)]
         tried, unusable = [], {cid for cid, st in self.registry.state.items() if st in ("DETACHED", "QUARANTINED")}
-        if not public or len(public) != len(contract["examples"]) or len(held) != len(contract["held_out"]):
-            self._route(deficit_id, "installed_software", "the contract's vectors are not text inputs; no installed "
-                        "tool can be tried on them", None)
+        if not public or len(public) != len(contract.get("examples", [])) or not held \
+                or len(held) != len(contract.get("held_out", [])) or not contract.get("output_field"):
+            self._route(deficit_id, "installed_software", "the contract's vectors are not text inputs with a named "
+                        "output field; no installed tool can be tried on them", None)
             return False
+        spec = {"description": contract["description"], "output_field": contract["output_field"]}
         # what is installed, by content: a search that found nothing is not run again until this changes
         present = {}
         for name in dict.fromkeys(c.binary_name for c in DISCOVERY_TEMPLATES):

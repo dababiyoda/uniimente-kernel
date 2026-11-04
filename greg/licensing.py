@@ -736,6 +736,21 @@ MAX_NAMED_ABSENT = 8                # absent children named in the uncertainty, 
 _SHA256_DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
 _BLOB_NAME = re.compile(r"sha256-[0-9a-f]{64}")
 _DIGEST_PREFIX = re.compile(r"[0-9a-f]{12,64}")      # manifest/paths.go digestPrefixPattern, lower-cased
+# The runner names Ollama's request parser takes before ":<digest>", any case (server/model_resolver.go
+# normalizeRunner, v0.40.0 0d0720e and main e9fde36d), and the characters Go's strings.TrimSpace removes.
+OLLAMA_RUNNER_NAMES = ("mlx", "mlxrunner", "ggml", "llamacpp", "llama.cpp", "llama-cpp", "llama_cpp")
+_GO_SPACE = " \t\n\v\f\r\x85\xa0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a" \
+            "\u2028\u2029\u202f\u205f\u3000"
+# The JSON fields Ollama decodes from each object the gate reads (manifest/manifest.go Manifest.UnmarshalJSON,
+# manifest/layer.go Layer, types/model/config.go ConfigV2; v0.40.0 and main, "voices" in main only). Go's
+# encoding/json matches a key to a field ignoring case, folding beyond ASCII (U+017F is s, U+212A is k), and a
+# repeated key overwrites or merges into the first; GREG reads exact keys, so ``_go_fields`` holds any object whose
+# keys Go could read otherwise.
+_GO_MANIFEST_FIELDS = ("schemaVersion", "mediaType", "config", "layers", "runner", "format", "manifests", "digest")
+_GO_LAYER_FIELDS = ("mediaType", "digest", "size", "from", "name")
+_GO_CONFIG_FIELDS = ("model_format", "model_family", "model_families", "model_type", "file_type",
+                     "generation_defaults", "renderer", "parser", "requires", "remote_host", "remote_model",
+                     "capabilities", "context_length", "embedding_length", "voices", "base_name", "draft")
 MAX_MANIFEST_BYTES = MAX_MODEL_LICENSE_BYTES = 1 << 20
 MODEL_LIMITS = ("read from the model's own license layers in the local Ollama store, not a legal review: Apache-2.0 "
                 "and MIT are recognised only when their terms match the standard text; any other text, and any text "
@@ -969,6 +984,48 @@ class _Unservable(ValueError):
     """A store or manifest GREG holds because it cannot be sure what Ollama would run for it; the message says why."""
 
 
+class _GoObject(dict):
+    """A JSON object as ``_go_json`` decodes it; ``keys_read`` keeps every key in order, a repeated one included."""
+    __slots__ = ("keys_read",)
+
+
+def _go_object(pairs) -> _GoObject:
+    obj = _GoObject(pairs)
+    obj.keys_read = tuple(key for key, _ in pairs)
+    return obj
+
+
+def _go_json(data: bytes):
+    """``data`` decoded with every object a ``_GoObject``, so ``_go_fields`` can see the keys json.loads merges."""
+    return json.loads(data, object_pairs_hook=_go_object)
+
+
+def _go_key(key: str) -> str:
+    return repr(key[:40] + ("..." if len(key) > 40 else ""))
+
+
+def _go_fields(obj, fields, what: str) -> None:
+    """Raise ``_Unservable`` unless Ollama's Go decoder reads ``fields`` from this object exactly as GREG reads them:
+    no key that is not ASCII, no two keys equal ignoring case (a repeated key included), and no key equal to one of
+    ``fields`` ignoring case but spelled otherwise. Go matches the remaining ASCII keys to fields by ASCII case
+    folding, which these rules make the identity. Anything that is not a JSON object is left to the caller."""
+    if not isinstance(obj, dict):
+        return
+    known, seen = {field.lower(): field for field in fields}, {}
+    for key in obj.keys_read:
+        if not key.isascii():
+            raise _Unservable(f"{what} carries the key {_go_key(key)}, which is not ASCII: Ollama's JSON decoder folds "
+                              "case beyond ASCII, so it may read the key as one of its fields")
+        folded = key.lower()
+        if folded in seen:
+            raise _Unservable(f"{what} carries the keys {_go_key(seen[folded])} and {_go_key(key)}, which Ollama's "
+                              "JSON decoder reads as one field, the later one overwriting or merging into the earlier")
+        seen[folded] = key
+        if folded in known and key != known[folded]:
+            raise _Unservable(f"{what} carries the key {_go_key(key)}, which Ollama's JSON decoder reads as "
+                              f"{known[folded]!r} (Go matches keys ignoring case) and GREG does not")
+
+
 def _ollama_named(store: Path, parts) -> list:
     """[(tree, stored name, path)] of every entry of this store that Ollama's name index matches to the name.
 
@@ -1083,12 +1140,13 @@ def _ollama_list(store: Path, listing: dict) -> tuple[list, list, dict]:
     entries = listing["manifests"]
     runners = {}
     for child in entries:
+        _go_fields(child, _GO_MANIFEST_FIELDS, "a manifest-list entry")
         digest = child.get("digest")
         if "layers" in child or "config" in child or not _SHA256_DIGEST.fullmatch(str(digest)):
             raise _Unservable("the model's manifest is not a readable Ollama manifest: a manifest-list entry carries "
                               "a manifest of its own, which Ollama would run in place of the blob it names")
         runner = child.get("runner")
-        runner = runner.strip().lower() if isinstance(runner, str) else ""
+        runner = runner.strip(_GO_SPACE).lower() if isinstance(runner, str) else ""
         runners.setdefault(digest, [])
         if runner and runner not in runners[digest]:
             runners[digest].append(runner)
@@ -1104,31 +1162,39 @@ def _ollama_list(store: Path, listing: dict) -> tuple[list, list, dict]:
         if data is None:
             raise _Unservable("the model's manifest is not a readable Ollama manifest: a manifest of the list is in "
                               "the store but does not match its digest")
-        read.append((digest, runners[digest], json.loads(data)))
+        document = _go_json(data)
+        _go_fields(document, _GO_MANIFEST_FIELDS, f"the list's manifest {digest[7:19]}")
+        read.append((digest, runners[digest], document))
     local = {digest for digest, _, _ in read}
     reported = {}
     for order, preference in OLLAMA_RUNNER_ORDERS.items():
         reported[order] = None
         for runner in preference:
             first = next((c for c in entries if c.get("mediaType") in (None, "", OLLAMA_MANIFEST)
-                          and isinstance(c.get("runner"), str) and c["runner"].strip().lower() == runner), None)
+                          and isinstance(c.get("runner"), str) and c["runner"].strip(_GO_SPACE).lower() == runner),
+                         None)
             if first is not None and first["digest"] in local:
                 reported[order] = first["digest"].split(":")[1]
                 break
     return read, absent, reported
 
 
-def _ollama_runs(store: Path, label: str, manifest: dict) -> tuple[list, list]:
+def _ollama_runs(store: Path, label: str, manifest: dict, where: str = "") -> tuple[list, list]:
     """(the license parts, the weight digests) of one manifest Ollama would run. Its weights are its weight layers;
     a manifest whose config names a remote host and model is a relay Ollama forwards to that host (server/routes.go,
     Config.RemoteHost and RemoteModel), whose weights are not in this store; a manifest with no weight layer runs
-    nothing GREG can read. Either, or a config blob that is not in the store or does not match, is held."""
+    nothing GREG can read. Either, or a config blob that is not in the store or does not match, is held. A layer, the
+    config or the config blob whose keys Ollama could read otherwise raises ``_Unservable`` (``_go_fields``)."""
     layers = [layer for layer in manifest["layers"] if isinstance(layer, dict)]
-    weights = sorted(str(layer.get("digest")) for layer in layers if layer.get("mediaType") in OLLAMA_WEIGHTS)
+    for layer in layers:
+        _go_fields(layer, _GO_LAYER_FIELDS, f"{where}a layer of the manifest")
     problem, config = None, manifest.get("config")
+    _go_fields(config, _GO_LAYER_FIELDS, f"{where}the manifest's config")
+    weights = sorted(str(layer.get("digest")) for layer in layers if layer.get("mediaType") in OLLAMA_WEIGHTS)
     if config is not None and config.get("digest"):
         data = _ollama_blob(store, config["digest"], MAX_MANIFEST_BYTES)
-        settings = json.loads(data) if data is not None else None
+        settings = _go_json(data) if data is not None else None
+        _go_fields(settings, _GO_CONFIG_FIELDS, f"{where}the model's config blob")
         if settings is None:
             problem = "the model's config blob is not in this store or does not match its digest"
         elif settings.get("remote_host") and settings.get("remote_model"):
@@ -1148,14 +1214,42 @@ def _ollama_runs(store: Path, label: str, manifest: dict) -> tuple[list, list]:
     return _model_parts(label, texts, problem), weights
 
 
-def _digest_reference(parts) -> bool:
-    """Whether Ollama reads the name as a local manifest blob (sha256-<hex>, or 12 to 64 hex digits) before any model
-    of that name (manifest/paths.go resolveManifestPath, ResolveDigestReferenceName, ResolveDigestReference)."""
-    host, namespace, model, tag = parts
-    ref = model.strip().lower().replace("-", ":", 1)
+def _digest_like(ref: str) -> bool:
+    """Whether Ollama takes ``ref`` for a blob digest: sha256:<hex>, sha256-<hex>, or 12 to 64 hex digits, any case
+    (manifest/paths.go ResolveDigestReference). A prefix shorter than 64 digits is a digest there only when one blob
+    of the store begins with it; GREG holds it either way."""
+    ref = ref.strip(_GO_SPACE).lower().replace("-", ":", 1)
     ref = ref[len("sha256:"):] if ref.startswith("sha256:") else ref
+    return bool(_DIGEST_PREFIX.fullmatch(ref))
+
+
+def _digest_reference(parts) -> bool:
+    """Whether Ollama reads the completed name as a local manifest blob before any model of that name: a digest under
+    the default registry, namespace and tag, any case (manifest/paths.go resolveManifestPath,
+    ResolveDigestReferenceName; server/routes.go getExistingName)."""
+    host, namespace, model, tag = parts
     return host.lower() in OLLAMA_PUBLIC_HOSTS and namespace.lower() == OLLAMA_NAMESPACE and \
-        tag.lower() == OLLAMA_TAG and bool(_DIGEST_PREFIX.fullmatch(ref))
+        tag.lower() == OLLAMA_TAG and _digest_like(model)
+
+
+def _ollama_request_form(model: str) -> str | None:
+    """Why Ollama does not read the request name as the local model of that name, or None. Its handlers parse the
+    name before any lookup (internal/modelref ParseRef; server/model_resolver.go digestModelName; v0.40.0 and main):
+    a last ":" part "cloud" or "local", or one ending in "-cloud" (any case), is a source suffix: a cloud name runs on
+    ollama.com, and ":local" names the model before it. "<runner>:<digest>" (a runner Ollama names, any case) and a
+    bare digest are a local manifest blob. Each is held, not read as a tag of a model."""
+    raw = model.strip(_GO_SPACE)
+    cut = raw.rfind(":")
+    suffix = raw[cut + 1:].strip(_GO_SPACE) if cut >= 0 else ""
+    if suffix.lower() in ("cloud", "local") or (cut >= 0 and "/" not in suffix and suffix.lower().endswith("-cloud")):
+        return ("Ollama reads the name's last part as a source suffix (':cloud', ':local' or a tag ending in "
+                "'-cloud', any case): a cloud name runs on ollama.com, not on weights in this store, and ':local' "
+                "names the model before it, so GREG reads neither as a tag")
+    runner, _, ref = raw.partition(":")
+    if (ref and runner.strip(_GO_SPACE).lower() in OLLAMA_RUNNER_NAMES and _digest_like(ref)) or _digest_like(raw):
+        return ("Ollama reads this name as the digest of a local manifest blob (with a runner, '<runner>:<digest>') "
+                "before any model of that name, and GREG does not read it")
+    return None
 
 
 def ollama_model(model: str, models_dir=None) -> dict | None:
@@ -1164,14 +1258,20 @@ def ollama_model(model: str, models_dir=None) -> dict | None:
     that cannot be listed raises OSError, or ValueError for a path the OS cannot take (``admit_model_selection``
     holds the model then).
 
-    The manifest is the one Ollama serves for the name (``_ollama_manifest``); a name Ollama reads as a digest of a
-    local blob is held. ``manifest_sha256`` is the digest of the manifest the name holds, which is the digest
+    The manifest is the one Ollama serves for the name (``_ollama_manifest``); a name Ollama reads as a cloud or
+    ':local' name or as a digest of a local blob (``_ollama_request_form``, ``_digest_reference``) is held, and so is
+    a manifest, list entry, layer, config or config blob whose JSON keys Ollama's decoder could read otherwise
+    (``_go_fields``). ``manifest_sha256`` is the digest of the manifest the name holds, which is the digest
     Ollama's /api/tags reports for a plain manifest. For a manifest list every child the store holds is assessed on
     its own and any held child holds the model, since Ollama may run any of them; ``subject["children"]`` gives each
     child's digest, runners, weights and verdict, and ``subject["api_tags_digest"]`` the child /api/tags reports
     (and Ollama runs) in each order of runners: "mlx>llamacpp>ggml" on Apple-silicon macOS, "llamacpp>ggml>mlx"
     elsewhere (server/model_list.go describeModelRows; manifest.go runnerPreferences)."""
     parts = _ollama_parts(model)
+    form = _ollama_request_form(model)
+    if form is not None:
+        name = "/".join(parts[:3]) + ":" + parts[3] if parts else model[:200]
+        return model_assessment(name, [], {"model": name, "manifest_sha256": None, "weights": []}, form)
     if parts is None:
         return None
     name = "/".join(parts[:3]) + ":" + parts[3]
@@ -1188,7 +1288,8 @@ def ollama_model(model: str, models_dir=None) -> dict | None:
             return model_assessment(name, [], {"model": name, "manifest_sha256": None, "weights": []}, problem)
         subject = {"model": name, "manifest_sha256": hashlib.sha256(raw).hexdigest(), "weights": []}
         try:
-            document = json.loads(raw)
+            document = _go_json(raw)
+            _go_fields(document, _GO_MANIFEST_FIELDS, "the model's manifest")
             if isinstance(document, dict) and document.get("mediaType") == OLLAMA_MANIFEST_LIST:
                 children, absent, reported = _ollama_list(store, document)
                 if not children:
@@ -1197,7 +1298,7 @@ def ollama_model(model: str, models_dir=None) -> dict | None:
                 parts_of, rows = [], []
                 for digest, runners, child in children:
                     label = f"{name} (manifest {digest[7:19]} for {', '.join(runners) or 'no runner'})"
-                    child_parts, weights = _ollama_runs(store, label, child)
+                    child_parts, weights = _ollama_runs(store, label, child, f"the list's manifest {digest[7:19]}: ")
                     parts_of += child_parts
                     rows.append({"manifest_sha256": digest.split(":")[1], "runners": runners, "weights": weights,
                                  "verdict": _model_result(child_parts, {})["verdict"]})

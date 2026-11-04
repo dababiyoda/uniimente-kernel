@@ -455,6 +455,144 @@ def test_a_deeply_nested_manifest_is_held_not_raised(tmp_path):
     assert a["held"] and "not a readable Ollama manifest" in a["reason"], a["reason"]
 
 
+# -- what Ollama's request parser and JSON decoder read (the review of 52f5703b, F1 to F4) -------------------------
+# tests/unit/test_greg_ollama_oracle.py checks the same against Ollama's own code, frozen; these name each guard.
+
+def with_config(root: Path, raw: bytes, settings: bytes, **keys) -> bytes:
+    document = json.loads(raw)
+    document["config"] = {"mediaType": "application/vnd.docker.container.image.v1+json",
+                          "digest": blob(root, settings), "size": len(settings), **keys}
+    return json.dumps(document).encode()
+
+
+def test_f1_a_json_key_ollamas_decoder_reads_otherwise_holds_the_model_and_is_named(tmp_path):
+    """Go's encoding/json matches a key to a field ignoring case, folds U+017F to s and U+212A to k, and a repeated
+    key overwrites or merges into the first; GREG reads exact keys. On 52f5703b each of these was CLEARED while both
+    Ollama versions serve the other reading (tests/fixtures/ollama_oracle/answers.json)."""
+    relay = json.dumps({"remote_host": "https://relay.example", "remote_model": "x"}).encode()
+    cases = []
+
+    def case(label, build, key):
+        root = tmp_path / label
+        name = build(root)
+        cases.append((label, licensing.ollama_model(name or "qwen3.5:4b", root), key))
+
+    def layers(root, *pairs):
+        return [{"mediaType": media, "digest": blob(root, data), "size": len(data)} for media, data in pairs]
+
+    case("manifest", lambda r: link(r, json.dumps({
+        "schemaVersion": 2, "mediaType": DOCKER_V2, "layers": json.loads(manifest(r, (APACHE,)))["layers"],
+        "Layers": json.loads(manifest(r, (LLAMA,), weights=b"other"))["layers"]}).encode()) and None, "'Layers'")
+    case("repeated", lambda r: link(r, with_config(r, manifest(r, (APACHE,)), relay)[:-1]
+                                    + b',"config":{"mediaType":"x"}}') and None, "'config' and 'config'")
+    case("not-ascii", lambda r: link(r, manifest(r, (APACHE,))[:-1] + ',"layer\u017f":[]}'.encode()) and None,
+         "'layer\u017f'")
+    case("layer", lambda r: link(r, json.dumps({"schemaVersion": 2, "mediaType": DOCKER_V2, "layers": layers(
+        r, ("application/vnd.ollama.image.model", b"w"), (licensing.OLLAMA_LICENSE, APACHE.encode())) + [
+        {"MediaType": "application/vnd.ollama.image.adapter", "digest": blob(r, b"adapter")}]}).encode()) and None,
+        "'MediaType'")
+    case("config", lambda r: link(r, with_config(r, manifest(r, (APACHE,)), b'{"model_format":"gguf"}',
+                                                 Digest=blob(r, relay))) and None, "'Digest'")
+    case("config-blob", lambda r: link(r, with_config(r, manifest(r, (APACHE,)), json.dumps(
+        {"Remote_Host": "https://relay.example", "Remote_Model": "x"}).encode())) and None, "'Remote_Host'")
+    case("config-blob-long-s", lambda r: link(r, with_config(r, manifest(r, (APACHE,)), json.dumps(
+        {"remote_ho\u017ft": "https://relay.example", "remote_model": "x"}, ensure_ascii=False).encode())) and None,
+        "'remote_ho\u017ft'")
+    case("list-entry", lambda r: link(r, json.dumps({"schemaVersion": 2, "mediaType": MANIFEST_LIST, "manifests": [
+        {"mediaType": DOCKER_V2, "digest": blob(r, manifest(r, (APACHE,))), "runner": "llamacpp",
+         "Digest": blob(r, manifest(r, (LLAMA,), weights=b"other"))}]}).encode()) and None, "'Digest'")
+    case("list-child", lambda r: link(r, listing(r, blob(r, manifest(r, (APACHE,))[:-1] + b',"Layers":' + json.dumps(
+        json.loads(manifest(r, (LLAMA,), weights=b"other"))["layers"]).encode() + b"}"))) and None, "'Layers'")
+    for label, a, key in cases:
+        assert a is not None and a["held"] and a["verdict"] == "FOUNDER_REVIEW", (label, a and a["reason"])
+        assert key in a["reason"] and "Ollama's JSON decoder" in a["reason"], (label, a["reason"])
+    root = tmp_path / "unknown-keys"                 # a key Ollama has no field for, in any case, is not a hold
+    link(root, manifest(root, (APACHE,))[:-1] + b',"annotations":{"Org":"x","org":"y"},"Extra":1}')
+    assert licensing.ollama_model("qwen3.5:4b", root)["verdict"] == "CLEARED"
+
+
+def test_f2_a_runner_and_digest_request_name_is_held_whatever_the_alias_or_case(tmp_path):
+    """server/model_resolver.go digestModelName: "<runner>:<digest>" (mlx, mlxrunner, ggml, llamacpp, llama.cpp,
+    llama-cpp, llama_cpp, any case) and a bare "sha256:<hex>" name a local manifest blob before any model. On
+    52f5703b GREG read the model "llamacpp" (or "sha256") tagged with the digest, and cleared it."""
+    root = tmp_path / "models"
+    digest = blob(root, manifest(root, (LLAMA,), weights=b"blob weights"))[7:]
+    names = [f"llamacpp:{digest[:12]}", f"LLAMA.CPP:{digest}", f"Llama-Cpp:sha256:{digest}", f"llama_cpp:{digest}",
+             f"mlxrunner:{digest}", f"MLX:sha256-{digest}", f"ggml:{digest[:20].upper()}", f"sha256:{digest}",
+             f"SHA256:{digest.upper()}"]
+    for name in names:
+        runner, tag = name.split(":", 1)
+        if licensing._ollama_parts(name):
+            link(root, manifest(root, (APACHE,)), "ollama.com", "library", runner.lower(), tag)
+        a = licensing.ollama_model(name, root)
+        assert a is not None and a["held"] and "digest of a local manifest blob" in a["reason"], (name, a)
+    for name in ("llamacpp:4b", f"notarunner:{digest[:12]}", f"{digest[:12]}:4b"):
+        link(root, manifest(root, (APACHE,)), "ollama.com", "library", *name.split(":"))
+        assert licensing.ollama_model(name, root)["verdict"] == "CLEARED", name
+
+
+def test_f4_a_digest_name_is_read_as_ollama_reads_it_in_any_case_of_namespace_and_tag(tmp_path):
+    """manifest/paths.go ResolveDigestReferenceName compares the namespace and tag with strings.EqualFold."""
+    root = tmp_path / "models"
+    digest = blob(root, manifest(root, (LLAMA,), weights=b"blob weights"))[7:]
+    for namespace, tag in (("library", "Latest"), ("Library", "latest"), ("LIBRARY", "LATEST")):
+        link(root, manifest(root, (APACHE,)), "ollama.com", namespace, digest, tag)
+        a = licensing.ollama_model(f"registry.ollama.ai/{namespace}/{digest}:{tag}", root)
+        assert a["held"] and "digest of a local manifest blob" in a["reason"], (namespace, tag, a["reason"])
+        for entry in (root / "manifests-v2").rglob(tag):
+            entry.unlink()
+
+
+def test_f3_a_cloud_or_local_source_suffix_is_held_in_any_case(tmp_path):
+    """internal/modelref ParseRef: a last ":" part "cloud" or "local", or one ending in "-cloud", ignoring case, is a
+    source suffix: a cloud name is proxied to ollama.com, and ":local" names the model before it. On 52f5703b GREG
+    cleared a local manifest stored under those tags (greg.models.OllamaRoute refuses only ':cloud' and '-cloud')."""
+    root = tmp_path / "models"
+    for tag in ("4b-CLOUD", "4b-Cloud", "4b-cloud", "CLOUD", "cloud", "LOCAL", "Local"):
+        link(root, manifest(root, (APACHE,)), "ollama.com", "library", "qwen3.5", tag)
+        a = licensing.ollama_model(f"qwen3.5:{tag}", root)
+        assert a["held"] and "source suffix" in a["reason"] and a["subject"]["manifest_sha256"] is None, (tag, a)
+    held = licensing.admit_model_selection({"order": ["ollama", "anthropic"], "ollama_model": "qwen3.5:4b-Cloud"},
+                                           root)
+    assert held["order"] == ["anthropic"] and held["model_license_hold"]["verdict"] == "FOUNDER_REVIEW", held
+    for name in ("qwen-cloud", "qwen3.5:4b-cloudy"):       # Ollama reads both as local models
+        model, tag = (name.split(":") + ["latest"])[:2]
+        link(root, manifest(root, (APACHE,)), "ollama.com", "library", model, tag)
+        assert licensing.ollama_model(name, root)["verdict"] == "CLEARED", name
+
+
+def test_f4_a_stored_name_that_is_not_ascii_is_never_matched(tmp_path):
+    """Ollama's name index skips a stored name that is not a valid name (types/model/name.go isValidPart takes
+    ASCII only), so a "kimi" spelled with U+212A (Kelvin sign), which Python lower-cases to "k", is not "kimi"."""
+    root = tmp_path / "models"
+    link(root, manifest(root, (APACHE,)), "ollama.com", "library", "\u212aimi", "4b")
+    assert licensing.ollama_model("kimi:4b", root) is None
+
+
+def test_f4_api_tags_reads_runners_as_ollama_trims_and_folds_them_and_takes_untyped_children(tmp_path):
+    """manifest.go selectManifestReferenceWithPreferences: an entry's runner is compared trimmed and lower-cased,
+    and an entry without a mediaType is a manifest."""
+    root = tmp_path / "models"
+    gguf, mlx = blob(root, manifest(root, (APACHE,), weights=b"gguf")), blob(root, manifest(root, (APACHE,), b"mlx"))
+    link(root, json.dumps({"schemaVersion": 2, "mediaType": MANIFEST_LIST, "manifests": [
+        {"digest": gguf, "runner": "LlamaCPP"}, {"mediaType": DOCKER_V2, "digest": mlx, "runner": " MLX\t"}]}).encode())
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a["verdict"] == "CLEARED" and a["subject"]["api_tags_digest"] == {
+        "llamacpp>ggml>mlx": gguf[7:], "mlx>llamacpp>ggml": mlx[7:]}, a["subject"]
+    assert [c["runners"] for c in a["subject"]["children"]] == [["llamacpp"], ["mlx"]]
+
+
+def test_f4_a_list_entry_with_a_config_of_its_own_is_not_read_as_a_reference(tmp_path):
+    """manifest.go isReference: an entry whose config names a digest is run as written, with no layers here."""
+    root = tmp_path / "models"
+    config = {"mediaType": "application/vnd.docker.container.image.v1+json", "digest": blob(root, b"{}")}
+    link(root, json.dumps({"schemaVersion": 2, "mediaType": MANIFEST_LIST, "manifests": [
+        {"mediaType": DOCKER_V2, "digest": blob(root, manifest(root, (APACHE,))), "runner": "llamacpp",
+         "config": config}]}).encode())
+    a = licensing.ollama_model("qwen3.5:4b", root)
+    assert a["held"] and "carries a manifest of its own" in a["reason"], a["reason"]
+
+
 # -- the selection gate -----------------------------------------------------------------------------------------
 
 def two_models(root: Path) -> Path:

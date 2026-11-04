@@ -1,0 +1,419 @@
+416a2e54 Record the compute-closure evidence: fail-before, mutants, related suites and real runs on this host
+...............F...FFFFFF.FFF.F.........FFFF..F.                         [100%]
+=================================== FAILURES ===================================
+___________ test_unreadable_or_malformed_pressure_is_none_never_zero ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2286/test_unreadable_or_malformed_p0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff611933d50>
+
+    def test_unreadable_or_malformed_pressure_is_none_never_zero(tmp_path, monkeypatch):
+        monkeypatch.setattr(compute, "PROC", tmp_path / "no-proc")
+        data = compute.sample(tmp_path)
+        fields = [k for k in data if k.startswith("psi_") or k.startswith("mem_")]
+        assert len(fields) == 9 and all(data[k] is None for k in fields)
+        proc = tmp_path / "proc"
+        (proc / "pressure").mkdir(parents=True)
+        (proc / "pressure" / "cpu").write_text("some avg10=abc avg60=nan avg300=0.00 total=1\n")
+        (proc / "pressure" / "memory").write_text("full avg10=5.00 avg60=5.00 avg300=0.00 total=1\n")
+        (proc / "pressure" / "io").write_text("some avg10=0.00 avg60=7.50 avg300=0.00 total=1\n")
+        (proc / "meminfo").write_text("MemTotal:       4000000 kB\nMemFree:        100 kB\n")
+        monkeypatch.setattr(compute, "PROC", proc)
+        data = compute.sample(tmp_path)
+        assert data["psi_cpu_some_avg10"] is None and data["psi_cpu_some_avg60"] is None
+        assert data["psi_memory_some_avg10"] is None and data["psi_memory_some_avg60"] is None   # only a "full" line
+        assert data["psi_io_some_avg10"] == 0.0 and data["psi_io_some_avg60"] == 7.5           # a real zero stays zero
+        assert data["mem_total_bytes"] == 4000000 * 1024 and data["mem_available_bytes"] is None
+        assert data["mem_available_ratio"] is None
+        (proc / "pressure" / "cpu").write_text("some avg10=-1.00 avg60=-0.50 avg300=0.00 total=-5\n")
+>       assert compute._pressure("cpu") == (None, None) and compute._stall_totals()["cpu"] is None   # not a reading
+                                                            ^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute '_stall_totals'
+
+tests/unit/test_greg_compute_closure.py:261: AttributeError
+____ test_a_step_that_waited_for_the_founder_or_for_a_restart_is_not_timed _____
+
+    def test_a_step_that_waited_for_the_founder_or_for_a_restart_is_not_timed():
+        """Review finding WU05-F1: a re-dispatch reuses its deduplicated first intent, so the founder's approval wait and
+        the body's downtime were booked as capability time and could name the wrong heaviest workload."""
+        journal = fixture_journal()
+        # APPROVAL: the intent, the ask and the block, the founder's answer an hour later, then the same intent runs
+        intent = {"mission_id": "m:a", "action_id": "pay", "attempt": 0, "capability": "fs.write"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T10:00:00Z", ["m:a", "pay", 0, "s"])
+        emit(journal, "decision.requested", {"request_id": "req-a", "mission_id": "m:a", "kind": "APPROVAL"},
+             "2026-10-30T10:00:01Z", "req-a")
+        emit(journal, "mission.blocked", {"mission_id": "m:a", "blocker": {"request_id": "req-a"}},
+             "2026-10-30T10:00:01Z", ["m:a", "blocked"])
+        emit(journal, "decision.answered", {"request_id": "req-a", "mission_id": "m:a", "answer": "approve"},
+             "2026-10-30T11:00:00Z", ["req-a", "answered"])
+        emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T11:00:02Z", ["m:a", "pay", "a"])
+        # RESTART: the intent, then the body stops before the Gate claims the dispatch and boots ten minutes later
+        intent = {"mission_id": "m:b", "action_id": "w", "attempt": 0, "capability": "fs.write"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T12:00:00Z", ["m:b", "w", 0, "s"])
+        emit(journal, "body.booted", {"boot_id": "boot-2"}, "2026-10-30T12:10:00Z", "boot-2")
+        emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T12:10:02Z", ["m:b", "w", "a"])
+        # a later intent for the same slot (its scope changed) that ran straight through: timed from that intent
+        intent = {"mission_id": "m:c", "action_id": "w", "attempt": 0, "capability": "fs.write"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T13:00:00Z", ["m:c", "w", 0, "s1"])
+        emit(journal, "mission.observed", {"mission_id": "m:c", "check_id": "n"}, "2026-10-30T13:30:00Z", ["m:c", "o"])
+        emit(journal, "mission.dispatching", intent, "2026-10-30T13:30:01Z", ["m:c", "w", 0, "s2"])
+        emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T13:30:04Z", ["m:c", "w", "a"])
+        # a capability's own record inside its dispatch is not an interruption
+        intent = {"mission_id": "m:d", "action_id": "f", "attempt": 0, "capability": "foundry.repair"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T14:00:00Z", ["m:d", "f", 0, "s"])
+        emit(journal, "foundry.committing", {"mission_id": "m:d"}, "2026-10-30T14:00:01Z", ["m:d", "commit"])
+        emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T14:00:02Z", ["m:d", "f", "a"])
+>       assert [(s["mission_id"], s["seconds"]) for s in compute.step_times(journal)] == [("m:c", 3.0), ("m:d", 2.0)]
+E       AssertionError: assert [('m:a', 3602... ('m:d', 2.0)] == [('m:c', 3.0), ('m:d', 2.0)]
+E         
+E         At index 0 diff: ('m:a', 3602.0) != ('m:c', 3.0)
+E         Left contains 2 more items, first extra item: ('m:c', 1804.0)
+E         Use -v to get more diff
+
+tests/unit/test_greg_compute_closure.py:376: AssertionError
+_ test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[mission.observed] _
+
+between = 'mission.observed'
+
+    @pytest.mark.parametrize("between", ["mission.observed", "decision.answered", "body.booted", "command.accepted",
+                                         "compute.telemetry"])
+    def test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing(between):
+        """The body is single-threaded: only its loop writes these, never a dispatch in progress (compute.LOOP_RECORDS)."""
+        journal = fixture_journal()
+        intent = {"mission_id": "m:a", "action_id": "w", "attempt": 0, "capability": "fs.write"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T10:00:00Z", ["m:a", "w", 0, "s"])
+        emit(journal, between, {"mission_id": "m:a"}, "2026-10-30T10:30:00Z", ["between", between])
+        emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T10:30:02Z", ["m:a", "w", "a"])
+>       assert compute.step_times(journal) == []
+E       AssertionError: assert [{'mission_id...position': 2}] == []
+E         
+E         Left contains one more item: {'mission_id': 'm:a', 'capability': 'fs.write', 'seconds': 1802.0, 'position': 2}
+E         Use -v to get more diff
+
+tests/unit/test_greg_compute_closure.py:389: AssertionError
+_ test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[decision.answered] _
+
+between = 'decision.answered'
+
+    @pytest.mark.parametrize("between", ["mission.observed", "decision.answered", "body.booted", "command.accepted",
+                                         "compute.telemetry"])
+    def test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing(between):
+        """The body is single-threaded: only its loop writes these, never a dispatch in progress (compute.LOOP_RECORDS)."""
+        journal = fixture_journal()
+        intent = {"mission_id": "m:a", "action_id": "w", "attempt": 0, "capability": "fs.write"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T10:00:00Z", ["m:a", "w", 0, "s"])
+        emit(journal, between, {"mission_id": "m:a"}, "2026-10-30T10:30:00Z", ["between", between])
+        emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T10:30:02Z", ["m:a", "w", "a"])
+>       assert compute.step_times(journal) == []
+E       AssertionError: assert [{'mission_id...position': 2}] == []
+E         
+E         Left contains one more item: {'mission_id': 'm:a', 'capability': 'fs.write', 'seconds': 1802.0, 'position': 2}
+E         Use -v to get more diff
+
+tests/unit/test_greg_compute_closure.py:389: AssertionError
+_ test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[body.booted] _
+
+between = 'body.booted'
+
+    @pytest.mark.parametrize("between", ["mission.observed", "decision.answered", "body.booted", "command.accepted",
+                                         "compute.telemetry"])
+    def test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing(between):
+        """The body is single-threaded: only its loop writes these, never a dispatch in progress (compute.LOOP_RECORDS)."""
+        journal = fixture_journal()
+        intent = {"mission_id": "m:a", "action_id": "w", "attempt": 0, "capability": "fs.write"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T10:00:00Z", ["m:a", "w", 0, "s"])
+        emit(journal, between, {"mission_id": "m:a"}, "2026-10-30T10:30:00Z", ["between", between])
+        emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T10:30:02Z", ["m:a", "w", "a"])
+>       assert compute.step_times(journal) == []
+E       AssertionError: assert [{'mission_id...position': 2}] == []
+E         
+E         Left contains one more item: {'mission_id': 'm:a', 'capability': 'fs.write', 'seconds': 1802.0, 'position': 2}
+E         Use -v to get more diff
+
+tests/unit/test_greg_compute_closure.py:389: AssertionError
+_ test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[command.accepted] _
+
+between = 'command.accepted'
+
+    @pytest.mark.parametrize("between", ["mission.observed", "decision.answered", "body.booted", "command.accepted",
+                                         "compute.telemetry"])
+    def test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing(between):
+        """The body is single-threaded: only its loop writes these, never a dispatch in progress (compute.LOOP_RECORDS)."""
+        journal = fixture_journal()
+        intent = {"mission_id": "m:a", "action_id": "w", "attempt": 0, "capability": "fs.write"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T10:00:00Z", ["m:a", "w", 0, "s"])
+        emit(journal, between, {"mission_id": "m:a"}, "2026-10-30T10:30:00Z", ["between", between])
+        emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T10:30:02Z", ["m:a", "w", "a"])
+>       assert compute.step_times(journal) == []
+E       AssertionError: assert [{'mission_id...position': 2}] == []
+E         
+E         Left contains one more item: {'mission_id': 'm:a', 'capability': 'fs.write', 'seconds': 1802.0, 'position': 2}
+E         Use -v to get more diff
+
+tests/unit/test_greg_compute_closure.py:389: AssertionError
+_ test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[compute.telemetry] _
+
+between = 'compute.telemetry'
+
+    @pytest.mark.parametrize("between", ["mission.observed", "decision.answered", "body.booted", "command.accepted",
+                                         "compute.telemetry"])
+    def test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing(between):
+        """The body is single-threaded: only its loop writes these, never a dispatch in progress (compute.LOOP_RECORDS)."""
+        journal = fixture_journal()
+        intent = {"mission_id": "m:a", "action_id": "w", "attempt": 0, "capability": "fs.write"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T10:00:00Z", ["m:a", "w", 0, "s"])
+        emit(journal, between, {"mission_id": "m:a"}, "2026-10-30T10:30:00Z", ["between", between])
+        emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T10:30:02Z", ["m:a", "w", "a"])
+>       assert compute.step_times(journal) == []
+E       AssertionError: assert [{'mission_id...position': 2}] == []
+E         
+E         Left contains one more item: {'mission_id': 'm:a', 'capability': 'fs.write', 'seconds': 1802.0, 'position': 2}
+E         Use -v to get more diff
+
+tests/unit/test_greg_compute_closure.py:389: AssertionError
+_ test_a_step_without_a_capability_or_a_window_of_zero_second_steps_never_breaks_the_ask _
+
+    def test_a_step_without_a_capability_or_a_window_of_zero_second_steps_never_breaks_the_ask():
+        """Review finding WU05-F4: a capability-less outcome beside a named one, or a 0 s total, raised in recommend()."""
+        def unnamed(journal):
+            step(journal, "m:a", "x", "fs.write", "2026-10-30T00:11:00Z", "2026-10-30T00:11:06Z")
+            emit(journal, "mission.dispatching", {"mission_id": "m:a", "action_id": "y", "attempt": 0,
+                                                  "capability": "fs.write"}, "2026-10-30T00:12:00Z", ["m:a", "y", "d"])
+            emit(journal, "mission.action", {"mission_id": "m:a", "action_id": "y", "attempt": 0, "status": "REFUSED",
+                                             "reasons": ["pipeline input unavailable"]},     # no capability: its input
+                 "2026-10-30T00:12:06Z", ["m:a", "y", "a"])
+>       message = compute.recommend(journal_with_window(unnamed))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/unit/test_greg_compute_closure.py:428: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+greg/compute.py:322: in recommend
+    measured = quantify(journal, window)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+journal = <greg.journal.Journal object at 0x7ff611a8b590>
+window = [Event(type='greg.compute.telemetry', source='spiffe://uniimente.internal/greg/body', actor='spiffe://uniimente.intern...d='1d9f78fb-5632-5c1f-b1bc-94f8d3e4a82b', occurred_at='2026-10-30T00:40:00Z', causal_parent=None, policy_version=None)]
+
+    def quantify(journal: Journal, window: list) -> dict:
+        """Measured step time inside the bottleneck window (``window``: its telemetry events), the heaviest workload by
+        share of that time, and an estimate, labelled as one, of the mission time the window's slowdown cost."""
+        positions = journal.positions("")
+        first, last = positions.get(window[0].event_id), positions.get(window[-1].event_id)
+        steps = step_times(journal)
+        inside = [s for s in steps if s["position"] is not None and first is not None and last is not None
+                  and first <= s["position"] <= last]
+        before = [s for s in steps if s["position"] is not None and first is not None and s["position"] < first]
+        span = (_when(window[-1].occurred_at) - _when(window[0].occurred_at)).total_seconds()
+        work = {"recorded": bool(steps), "steps_in_window": len(inside), "heaviest": None, "by_capability": []}
+        delay = {"basis": DELAY_METHOD, "excess_step_seconds": None, "window_seconds": round(span, 3),
+                 "mission_hours_delayed_per_week": None, "latency_inflation": {}, "unbaselined_capabilities": []}
+        if not inside:
+            work["note"] = ("no GREG mission step ran in the bottleneck window: the load may come from outside "
+                            "GREG's missions" if steps else "the journal records no mission step timing yet")
+            return {"workload": work, "delay": delay}
+        by_capability = {}
+        for s in inside:
+            by_capability.setdefault(s["capability"], []).append(s["seconds"])
+        total = sum(sum(v) for v in by_capability.values())
+        rows = sorted(({"capability": c, "steps": len(v), "seconds": round(sum(v), 3),
+                        "share": round(sum(v) / total, 4) if total > 0 else None} for c, v in by_capability.items()),
+                      key=lambda r: (-r["seconds"], str(r["capability"])))
+        work.update(heaviest=rows[0], by_capability=rows)
+        baseline = {}
+        for s in before:
+            baseline.setdefault(s["capability"], []).append(s["seconds"])
+        usual = {c: statistics.median(v) for c, v in baseline.items()}
+        excess = sum(max(0.0, s["seconds"] - usual[s["capability"]]) for s in inside if s["capability"] in usual)
+        delay.update(
+>           latency_inflation={c: round(statistics.median(v) / usual[c], 3) for c, v in sorted(by_capability.items())
+                                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                               if usual.get(c, 0) > 0},
+            unbaselined_capabilities=sorted(c for c in by_capability if c not in usual),
+            excess_step_seconds=round(excess, 3) if any(c in usual for c in by_capability) else None)
+E       TypeError: '<' not supported between instances of 'NoneType' and 'str'
+
+greg/compute.py:278: TypeError
+__ test_on_a_real_body_the_founders_approval_wait_is_not_booked_as_step_time ___
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2286/test_on_a_real_body_the_founde0')
+
+    def test_on_a_real_body_the_founders_approval_wait_is_not_booked_as_step_time(tmp_path):
+        home, key, body_id, _ = make_body(tmp_path)
+        paid_write(home, key, body_id, "m:urgent-taxes")
+        clock = Clock()
+        with Body(home, clock=clock) as body:
+            for _ in range(4):
+                body.tick()
+                clock.advance(1)
+            rid = next(e.payload["request_id"] for e in body.journal.replay("decision.requested")
+                       if e.payload["kind"] == "APPROVAL")
+        time.sleep(WAIT)
+        drop(home, signed(key, body_id, "DECISION", {"request_id": rid, "answer": "approve"}))
+        with Body(home, clock=clock) as body:
+            for _ in range(6):
+                body.tick()
+                clock.advance(1)
+            assert len(body.journal.replay("mission.dispatching")) == 1        # the approved run reused the intent
+            assert [e.payload["status"] for e in body.journal.replay("mission.action")] == ["DONE"]
+>           assert compute.step_times(body.journal) == []
+E           AssertionError: assert [{'mission_id...osition': 12}] == []
+E             
+E             Left contains one more item: {'mission_id': 'm:urgent-taxes', 'capability': 'fs.write', 'seconds': 1.284996, 'position': 12}
+E             Use -v to get more diff
+
+tests/unit/test_greg_compute_closure.py:473: AssertionError
+_ test_on_a_real_body_downtime_before_the_gate_claimed_a_dispatch_is_not_step_time _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2286/test_on_a_real_body_downtime_b0')
+
+    def test_on_a_real_body_downtime_before_the_gate_claimed_a_dispatch_is_not_step_time(tmp_path):
+        home, key, body_id, _ = make_body(tmp_path)
+        plain_write(home, key, body_id, "m:write-once")
+        clock = Clock()
+        with pytest.raises(Killed):
+            with Body(home, clock=clock) as body:
+                act = body.engine.office.act
+    
+                def die(*args, **kwargs):           # the process dies inside the dispatch, before the Gate claims it
+                    if kwargs.get("manifest") is not None and kwargs["manifest"].capability_id == "fs.write":
+                        raise Killed()
+                    return act(*args, **kwargs)
+                body.engine.office.act = die
+                for _ in range(8):
+                    body.tick()
+                    clock.advance(1)
+        time.sleep(WAIT)
+        with Body(home, clock=clock) as body:
+            for _ in range(12):
+                body.tick()
+                clock.advance(40)
+            actions = [e.payload for e in body.journal.replay("mission.action")]
+            assert [a["status"] for a in actions] == ["DONE"] and not actions[0]["routing"].get("recovered")
+>           assert compute.step_times(body.journal) == []
+E           AssertionError: assert [{'mission_id...position': 7}] == []
+E             
+E             Left contains one more item: {'mission_id': 'm:write-once', 'capability': 'fs.write', 'seconds': 1.110611, 'position': 7}
+E             Use -v to get more diff
+
+tests/unit/test_greg_compute_closure.py:503: AssertionError
+_ test_the_benchmark_is_deterministic_scratch_only_and_reports_median_iqr_and_host _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2286/test_the_benchmark_is_determin0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff6119544d0>
+
+    def test_the_benchmark_is_deterministic_scratch_only_and_reports_median_iqr_and_host(tmp_path, monkeypatch):
+        home, *_ = make_body(tmp_path)
+        ledger = home / "ledger.jsonl"
+        # A private temporary directory: any other benchmark on this host shares the default one (review finding F3).
+        scratch = tmp_path / "tmp"
+        scratch.mkdir()
+        monkeypatch.setattr(tempfile, "tempdir", str(scratch))
+        held = ledger.read_bytes() if ledger.exists() else None
+        one = compute.benchmark(3, workload=SMALL)
+        two = compute.benchmark(3, workload=SMALL)
+        assert (ledger.read_bytes() if ledger.exists() else None) == held          # never the body's ledger
+        assert list(scratch.iterdir()) == []                                       # scratch removed
+        for result in (one, two):
+            assert result["runs"] == 3 and len(result["samples_seconds"]) == 3 and result["deterministic"] is True
+            assert result["median_seconds"] > 0 and result["iqr_seconds"] >= 0
+            assert set(result["component_medians"]) == {"sha256_chain", "ledger_append_verify", "process_spawn"}
+            assert result["host"]["cores"] >= 1 and result["host"]["python"]
+>           assert set(result["host"]["conditions_at_end"]) == set(result["host"]["conditions"])
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'conditions_at_end'
+
+tests/unit/test_greg_compute_closure.py:541: KeyError
+____________ test_the_same_code_on_a_quieter_host_is_never_verified ____________
+
+    def test_the_same_code_on_a_quieter_host_is_never_verified():
+        """Review findings WU05-F2 and F1-verify: only ambient load changed between the runs, and verify said VERIFIED."""
+        result = compute.verify_improvement(bench(BEFORE, contention=BUSY), bench(FASTER, contention=QUIET))
+>       assert result["verdict"] == "INCONCLUSIVE" and "quieter" in result["reason"]
+E       AssertionError: assert ('VERIFIED' == 'INCONCLUSIVE'
+E         
+E         - INCONCLUSIVE
+E         + VERIFIED)
+
+tests/unit/test_greg_compute_closure.py:620: AssertionError
+_ test_no_change_on_a_busier_host_is_inconclusive_and_a_speed_up_despite_it_is_verified _
+
+    def test_no_change_on_a_busier_host_is_inconclusive_and_a_speed_up_despite_it_is_verified():
+        masked = compute.verify_improvement(bench(BEFORE), bench(BEFORE, contention=BUSY))
+>       assert masked["verdict"] == "INCONCLUSIVE" and "busier" in masked["reason"]
+E       AssertionError: assert ('NOT_IMPROVED' == 'INCONCLUSIVE'
+E         
+E         - INCONCLUSIVE
+E         + NOT_IMPROVED)
+
+tests/unit/test_greg_compute_closure.py:633: AssertionError
+__________ test_a_verdict_needs_contention_measured_during_both_runs ___________
+
+    def test_a_verdict_needs_contention_measured_during_both_runs():
+        for before, after in ((bench(BEFORE, contention=None), bench(FASTER)), (bench(BEFORE), FASTER),
+                              (bench(BEFORE, contention=dict.fromkeys(QUIET)), bench(FASTER))):
+            result = compute.verify_improvement(before, after)
+>           assert result["verdict"] == "INCONCLUSIVE" and "no contention was measured" in result["reason"]
+E           AssertionError: assert ('VERIFIED' == 'INCONCLUSIVE'
+E             
+E             - INCONCLUSIVE
+E             + VERIFIED)
+
+tests/unit/test_greg_compute_closure.py:641: AssertionError
+___________ test_verify_reports_whether_both_runs_used_the_same_host ___________
+
+    def test_verify_reports_whether_both_runs_used_the_same_host():
+        one = {"machine": "x86_64", "cores": 4, "conditions": {"load1": 1.0}}
+        later = {**one, "conditions": {"load1": 3.0}, "conditions_at_end": {"load1": 2.0}}
+>       assert compute.verify_improvement(bench(BEFORE, host=one), bench(BEFORE, host=later))["same_host"] is True
+E       assert False is True
+
+tests/unit/test_greg_compute_closure.py:647: AssertionError
+_ test_cli_benchmark_guard_expands_the_home_and_never_overwrites_a_file_it_did_not_write _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2286/test_cli_benchmark_guard_expan0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff6118f80d0>
+capsys = <_pytest.capture.CaptureFixture object at 0x7ff6118f9d90>
+
+    def test_cli_benchmark_guard_expands_the_home_and_never_overwrites_a_file_it_did_not_write(tmp_path, monkeypatch,
+                                                                                              capsys):
+        """Review finding WU05-F3: a home given as '~/body' slipped past the guard and --out replaced the ledger."""
+        from greg import cli
+        home, *_ = make_body(tmp_path)                                         # tmp_path/body
+        monkeypatch.setenv("HOME", str(tmp_path))
+        ledger = home / "ledger.jsonl"
+        held = ledger.read_bytes()
+        assert cli.main(["--home", "~/body", "compute", "status"]) == 0        # '~/body' is the real body
+        capsys.readouterr()
+        for out in ("~/body/ledger.jsonl", "~/body/results.json", str(home / "inbox" / ".." / "x.json")):
+>           assert cli.main(["--home", "~/body", "compute", "benchmark", "--runs", "1", "--out", out]) == 2
+E           AssertionError: assert 0 == 2
+E            +  where 0 = <function main at 0x7ff611b8ce00>(['--home', '~/body', 'compute', 'benchmark', '--runs', '1', ...])
+E            +    where <function main at 0x7ff611b8ce00> = <module 'greg.cli' from '/tmp/claude-0/-home-user/bd844dc6-7f27-56cd-96d7-839d33aad4cc/scratchpad/fb-compute-closure/greg/cli.py'>.main
+
+tests/unit/test_greg_compute_closure.py:708: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{
+ "written": "/tmp/pytest-of-root/pytest-2286/test_cli_benchmark_guard_expan0/body/ledger.jsonl",
+ "runs": 1,
+ "median_seconds": 0.401654,
+ "iqr_seconds": 0.0,
+ "deterministic": true
+}
+=========================== short test summary info ============================
+FAILED tests/unit/test_greg_compute_closure.py::test_unreadable_or_malformed_pressure_is_none_never_zero
+FAILED tests/unit/test_greg_compute_closure.py::test_a_step_that_waited_for_the_founder_or_for_a_restart_is_not_timed
+FAILED tests/unit/test_greg_compute_closure.py::test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[mission.observed]
+FAILED tests/unit/test_greg_compute_closure.py::test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[decision.answered]
+FAILED tests/unit/test_greg_compute_closure.py::test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[body.booted]
+FAILED tests/unit/test_greg_compute_closure.py::test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[command.accepted]
+FAILED tests/unit/test_greg_compute_closure.py::test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[compute.telemetry]
+FAILED tests/unit/test_greg_compute_closure.py::test_a_step_without_a_capability_or_a_window_of_zero_second_steps_never_breaks_the_ask
+FAILED tests/unit/test_greg_compute_closure.py::test_on_a_real_body_the_founders_approval_wait_is_not_booked_as_step_time
+FAILED tests/unit/test_greg_compute_closure.py::test_on_a_real_body_downtime_before_the_gate_claimed_a_dispatch_is_not_step_time
+FAILED tests/unit/test_greg_compute_closure.py::test_the_benchmark_is_deterministic_scratch_only_and_reports_median_iqr_and_host
+FAILED tests/unit/test_greg_compute_closure.py::test_the_same_code_on_a_quieter_host_is_never_verified
+FAILED tests/unit/test_greg_compute_closure.py::test_no_change_on_a_busier_host_is_inconclusive_and_a_speed_up_despite_it_is_verified
+FAILED tests/unit/test_greg_compute_closure.py::test_a_verdict_needs_contention_measured_during_both_runs
+FAILED tests/unit/test_greg_compute_closure.py::test_verify_reports_whether_both_runs_used_the_same_host
+FAILED tests/unit/test_greg_compute_closure.py::test_cli_benchmark_guard_expands_the_home_and_never_overwrites_a_file_it_did_not_write
+16 failed, 32 passed in 17.57s

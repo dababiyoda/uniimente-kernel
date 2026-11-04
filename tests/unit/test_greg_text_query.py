@@ -580,8 +580,8 @@ def test_a_file_swapped_after_the_planner_checked_it_is_not_opened_through(tmp_p
 def test_the_founders_words_about_a_pdf_are_decided_by_what_its_reader_shows(tmp_path):
     """End to end on #196, with #201's reader and the real pinned poppler: the planner's document route, genesis
     acquiring pdftotext, the engine, the judge and the appraiser. The reader shows the phrase over two lines, and a
-    font name only the page syntax holds is absent: "mentions" the shown phrase and "never mentions" the font name
-    close, verified; "never mentions" the shown phrase and "mentions" the font name stay open on the reader's answer,
+    font name only the page syntax holds is absent: "mentions" the shown phrase and "does not contain" the font name
+    close, verified; "never mentions" the shown phrase and "mention" the font name stay open on the reader's answer,
     not on a sensor failure."""
     pytest.importorskip("greg.documents")
     from greg import genesis
@@ -593,7 +593,7 @@ def test_the_founders_words_about_a_pdf_are_decided_by_what_its_reader_shows(tmp
     ctx = PlannerContext(read_roots=(str(data),), capabilities=[], workspace=home / "ws")
     cases = {"never-shown": (f'Confirm {pdf} never mentions "{SHOWN}"', True, False),       # (words, found, closes)
              "mentions-shown": (f'Confirm {pdf} mentions "{SHOWN}"', True, True),
-             "never-syntax": (f'Confirm {pdf} never mentions "{SYNTAX}"', False, True),
+             "never-syntax": (f'Confirm {pdf} does not contain "{SYNTAX}"', False, True),
              "mentions-syntax": (f'Does {pdf} mention "{SYNTAX}"?', False, False)}
     specs = {}
     for name, (words, _, _) in cases.items():

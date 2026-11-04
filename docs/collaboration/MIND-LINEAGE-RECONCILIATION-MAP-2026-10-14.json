@@ -1801,22 +1801,22 @@
    "path": "docs/intent/INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION.json",
    "lineage": "pr158",
    "classification": "historical evidence",
-   "disposition": "kept",
-   "note": "founder source or intent record"
+   "disposition": "extended",
+   "note": "founder source or intent record; normalized additively on 2026-10-30 against contracts/intent-record.schema.json (MU-F: canonical fields copied from this record's own fields or marked unrecorded); deleting the inserted text gives back #158's bytes"
   },
   {
    "path": "docs/intent/INTENT-20261014-MIND-LINEAGE-CONVERGENCE.json",
    "lineage": "pr158",
    "classification": "historical evidence",
-   "disposition": "kept",
-   "note": "founder source or intent record"
+   "disposition": "extended",
+   "note": "founder source or intent record; normalized additively on 2026-10-30 against contracts/intent-record.schema.json (MU-F: canonical fields copied from this record's own fields or marked unrecorded); deleting the inserted text gives back #158's bytes"
   },
   {
    "path": "docs/intent/INTENT-20261021-MIND-MAXIMUM-CONTINUATION.json",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot)"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); merged at 09555108 (stress-gate audit, Mind coverage record, immune-7 pilot); normalized additively on 2026-10-30 against contracts/intent-record.schema.json (MU-F: canonical fields copied from this record's own fields or marked unrecorded); deleting the inserted text gives back #158's bytes"
   },
   {
    "path": "docs/intent/sources/FULL-POLYINTELLIGENCE-MIND-CONTINUATION-2026-10-07-source.md",

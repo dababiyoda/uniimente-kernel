@@ -30,6 +30,12 @@ def test_one_existing_ladder_and_one_table_of_evidence_kinds():
     assert rc.CEILINGS["founder_device_run"]["metrics"] == metrics.FOUNDER_TIER
     assert rc.CEILINGS["external_verification"]["ladder"] == "EXTERNALLY_VERIFIED"
     assert all(c["basis"] for c in rc.CEILINGS.values()) and rc.TEST_CEILING == "BODY_VERIFIED"
+    # review round 2, WU13-R2-5: section 56's levels are not collapsed into the coarse rungs
+    assert {kind: c["directive"] for kind, c in rc.CEILINGS.items()} == {
+        "unit_test": "UNIT-TESTED", "integration_container": "PERSISTENT", "rehearsal_key": "PERSISTENT",
+        "founder_device_run": "FOUNDER-USED", "external_verification": "EXTERNALLY-VERIFIED"}
+    levels = rc.directive_levels()
+    assert all(c["directive"] in levels for c in rc.CEILINGS.values())
 
 
 def test_the_crosswalk_is_total_and_monotone_and_removing_a_mapping_fails():
@@ -52,6 +58,45 @@ def test_the_crosswalk_is_total_and_monotone_and_removing_a_mapping_fails():
         assert any("not monotone" in p for p in rc.crosswalk_problems(crosswalks={name: (order, inverted)}))
         assert rc.crosswalk_problems(crosswalks={name: (order, {**crosswalk, order[0]: "LIVE"})})
     assert rc.crosswalk_problems(levels=levels[:-1])                       # a level the directive lists is unknown
+
+
+def template_labels(text: str) -> list[str]:
+    lines = text.splitlines()
+    start = lines.index("### Current reality")
+    return [line[6:].strip() for line in lines[start:] if line.startswith("- [ ] ")][:13]
+
+
+def test_every_reality_label_the_sop_and_its_templates_offer_is_read():
+    """Review round 2, WU13-A2: MAC-VERIFIED, a reality label of the cognition SOP and of the PR and Discussion
+    templates, was in no crosswalk, so a container run labelled with it passed."""
+    import yaml
+    root = Path(rc.ROOT)
+    sop = rc.sop_levels()
+    pr = template_labels((root / ".github/PULL_REQUEST_TEMPLATE.md").read_text())
+    form = yaml.safe_load((root / ".github/DISCUSSION_TEMPLATE/general.yml").read_text())
+    [field] = [b for b in form["body"] if b.get("id") == "reality"]
+    offered = set(sop) | set(pr) | set(field["attributes"]["options"])
+    assert "MAC-VERIFIED" in sop and set(pr) == set(sop) == set(field["attributes"]["options"])
+    assert all(label in rc.NOT_RUNGS or label in rc.LABELS for label in offered), offered - set(rc.LABELS)
+    assert rc.LABELS["MAC-VERIFIED"] == rc.LABELS["CHROMEBOOK-VERIFIED"] == "FOUNDER_ACCEPTED"
+    assert rc.crosswalk_problems() == []                    # the SOP's list is no order: checked total, not monotone
+    for label in sop:
+        if label in rc.NOT_RUNGS:
+            continue
+        partial = {k: v for k, v in rc.SOP_CROSSWALK.items() if k != label}
+        [problem] = rc.crosswalk_problems(crosswalks={"sop": (sop, partial, False)})
+        assert f"'{label}'" in problem and "unmapped" in problem
+
+
+def test_one_label_maps_to_one_rung_in_every_vocabulary_and_every_ceiling_is_a_level(monkeypatch):
+    monkeypatch.setitem(rc.SOP_CROSSWALK, "SANDBOXED", "BODY_VERIFIED")
+    assert any("SANDBOXED: one label maps to several rungs" in p for p in rc.crosswalk_problems())
+    monkeypatch.setitem(rc.SOP_CROSSWALK, "SANDBOXED", "SANDBOX_VERIFIED")
+    monkeypatch.setitem(rc.CEILINGS["unit_test"], "directive", "LOCAL-REAL")
+    assert rc.crosswalk_problems() == ["ceiling unit_test: section-56 level LOCAL-REAL is above its rung "
+                                       "SANDBOX_VERIFIED"]
+    monkeypatch.setitem(rc.CEILINGS["unit_test"], "directive", "UNIT-VERIFIED")
+    assert rc.crosswalk_problems() == ["ceiling unit_test: 'UNIT-VERIFIED' is not a section-56 level"]
 
 
 def write(root: Path, relative: str, data) -> None:
@@ -116,7 +161,7 @@ INFLATED = [
                                    "evidence_ref": "TBD"}, "is a placeholder"),
     ("docs/evidence/o4/run.json", {"reality": "EXTERNALLY-VERIFIED", "evidence_kind": "external_verification",
                                    "evidence_ref": "GitHub Actions ubuntu-latest: pytest tests/integration/test_x.py"},
-     ("neither a ledger digest", "describes a GitHub Actions, pytest, ubuntu-latest run")),
+     ("neither a ledger digest", "describes a GitHub Actions, pytest, tests/integration/, ubuntu-latest run")),
     ("docs/evidence/o5/run.json", {"reality": "EXTERNALLY-VERIFIED", "evidence_kind": "external_verification"},
      "missing or empty"),
     ("docs/evidence/o6/run.json", {"reality": "FOUNDER-USED", "evidence_kind": "founder_device_run",
@@ -164,6 +209,59 @@ INFLATED = [
     ("evidence/run.json", {"reality": "FOUNDER-USED (container)"}, "container"),
     ("tests/evidence/s/run.yaml", "reality: FOUNDER-USED\n", "no declared evidence kind"),
     ("acceptance/runs/x.json", {"tier": "EXTERNALLY_VERIFIED"}, "no declared evidence kind"),
+    # review round 2, WU13-A1 and WU13-R2-2: a negator reaches a label only across function words, and across another
+    # label only with "or" or "nor"; a comma ends it; "above" and "beyond" claim more
+    ("docs/evidence/s1/run.json", {"reality": "Not UNIT-TESTED, FOUNDER-USED", "run": "Linux container rehearsal"},
+     "container, rehearsal run labelled FOUNDER-USED"),
+    ("docs/evidence/s2/run.json", {"reality": "never ran on the founder's device, FOUNDER-USED"}, "no declared"),
+    ("docs/evidence/s3/run.json", {"evidence_kind": "integration_container", "host": "docker",
+                                   "reality": "not run on the founder's device, FOUNDER-USED"},
+     "integration_container establishes at most BODY_VERIFIED"),
+    ("docs/evidence/s4/run.json", {"reality": "not UNIT-TESTED FOUNDER-USED"}, "no declared evidence kind"),
+    ("docs/evidence/s5/run.json", {"reality": "at or above FOUNDER-USED (container rehearsal, test key)"},
+     "container, rehearsal, test key run labelled FOUNDER-USED"),
+    ("docs/evidence/s6/run.json", {"reality": "beyond LOCAL-REAL, FOUNDER-USED (container rehearsal)"},
+     "container, rehearsal run labelled FOUNDER-USED"),
+    ("docs/evidence/s7/run.json", {"validation_status": "beyond EXTERNALLY-VERIFIED", "note": "pytest"},
+     "pytest run labelled EXTERNALLY-VERIFIED"),
+    ("docs/evidence/s8/run.json", {"reality": "above FOUNDER-USED"}, "no declared evidence kind"),
+    ("docs/evidence/s9/run.json", {"reality": "not built in a container, FOUNDER-USED"}, "no declared evidence kind"),
+    ("docs/evidence/s10/run.json", {"reality": "never ran FOUNDER-USED"}, "no declared evidence kind"),
+    ("docs/evidence/s11/run.json", {"reality": "not the founder's own device FOUNDER-USED"}, "no declared"),
+    # WU13-A2: a device-verified label, a suffixed label
+    ("docs/evidence/t1/run.json", {"reality": "MAC-VERIFIED", "run": "docker container"},
+     "container, docker run labelled MAC-VERIFIED"),
+    ("docs/evidence/t2/run.json", {"reality": "CHROMEBOOK-VERIFIED"}, "CHROMEBOOK-VERIFIED (FOUNDER_ACCEPTED)"),
+    ("docs/evidence/t3/run.json", {"reality": "EXTERNALLY_VERIFIED_OUTCOME", "run": "docker"},
+     "docker run labelled EXTERNALLY-VERIFIED"),
+    ("docs/evidence/t4/run.json", {"reality": "FOUNDER-USED-ON-DEVICE", "run": "docker"},
+     "docker run labelled FOUNDER-USED"),
+    ("docs/evidence/t5/run.json", {"reality": "Mac/Chromebook-verified"}, "DEVICE-VERIFIED (FOUNDER_ACCEPTED)"),
+    # WU13-R2-3 and WU13-A2: "live" opening a value or after a colon
+    ("docs/evidence/t6/run.json", {"reality": "Live (Linux container rehearsal, test key)"},
+     "container, rehearsal, test key run labelled LIVE"),
+    ("docs/evidence/t7/run.json", {"status": "Live on the Chromebook container"}, "container run labelled LIVE"),
+    ("docs/evidence/t8/run.json", {"reality": "live in production", "host": "docker container"},
+     "container, docker run labelled LIVE"),
+    ("docs/evidence/t9/run.json", {"reality": "status: live"}, "LIVE (AUTHORIZED_LIVE)"),
+    # WU13-A7: an item under a claim field keeps its own declared kind
+    ("docs/evidence/u1/run.json", {"evidence_kind": "external_verification", "evidence_ref": D2,
+                                   "status": [{"reality": "EXTERNALLY-VERIFIED", "evidence_kind": "integration_container"}]},
+     "integration_container establishes at most BODY_VERIFIED"),
+    # WU13-A11: a record that declares no kind is held to the kind its own evidence names
+    ("docs/evidence/v1/run.json", {"reality": "LOCAL-REAL", "evidence": "unit tests in a sandbox"}, "held to unit_test"),
+    ("docs/evidence/v2/run.json", {"reality": "INTEGRATION-TESTED (in-process unit tests)"}, "at most UNIT-TESTED"),
+    ("docs/evidence/v3/run.json", {"reality": "REBOOT-VERIFIED in a Linux container"},
+     "held to integration_container"),
+    ("docs/evidence/v4/run.json", {"reality": "REBOOT-VERIFIED", "how": "greg rehearse with a test key"},
+     "held to rehearsal_key"),
+    # WU13-R2-5: a declared kind's section-56 ceiling
+    ("docs/evidence/w1/run.json", {"evidence_kind": "unit_test", "reality": "INTEGRATION-TESTED"}, "at most UNIT-TESTED"),
+    ("docs/evidence/w2/run.json", {"evidence_kind": "unit_test", "reality": "SANDBOXED"}, "at most UNIT-TESTED"),
+    ("docs/evidence/w3/run.json", {"evidence_kind": "rehearsal_key", "reality": "INSTALLED, PERSISTENT, REBOOT-VERIFIED"},
+     "rehearsal_key establishes at most PERSISTENT"),
+    ("docs/evidence/w4/run.json", {"evidence_kind": "integration_container",
+                                   "reality": "SANDBOX_VERIFIED, REBOOT-VERIFIED"}, "at most PERSISTENT"),
 ]
 
 CORRECT = [
@@ -179,7 +277,7 @@ CORRECT = [
     {"reality": "FOUNDER-USED", "evidence_kind": "founder_device_run", "evidence_ref": f"ledger {D1}, closure m:1"},
     {"reality": "EXTERNALLY-VERIFIED", "evidence_kind": "external_verification",
      "evidence_ref": "docs/evidence/receipts/buyer-41.txt"},
-    {"reality": "SANDBOXED", "evidence_kind": "unit_test"},
+    {"reality": "SANDBOX_VERIFIED", "evidence_kind": "unit_test"},     # the acceptance rung; SANDBOXED is above UNIT-TESTED
     {"evidence_level": "STRUCTURAL_CANDIDATE", "evidence_kind": "rehearsal_key"},
     {"note": "FOUNDER-USED", "tier": "BODY_VERIFIED"},
     {"status": "a live page was rendered"},
@@ -191,6 +289,24 @@ CORRECT = [
     {"validation_status": "self_reported"},
     {"reality": ["UNIT-TESTED", "not FOUNDER-USED"]},
     {"status": {"tier": "FOUNDER-USED", "evidence_kind": "founder_device_run", "evidence_ref": D4}},
+    # review round 2: honest negations, kinds and lists that must still pass
+    {"reality": "not FOUNDER-USED or LIVE-BOUNDED"},
+    {"reality": "neither FOUNDER-USED nor LIVE-BOUNDED"},
+    {"reality": "INTEGRATION-TESTED; never ran on the founder's device"},
+    {"reality_status": "IMPLEMENTED, TESTED; not founder-used, not MAC/Chromebook-verified"},
+    {"reality": "below FOUNDER-USED"},
+    {"reality": "UNIT-TESTED (unit tests, in-process)", "evidence_kind": "unit_test"},
+    {"reality": "PERSISTENT", "evidence_kind": "integration_container"},
+    {"reality": "INTEGRATION-TESTED", "evidence": "unit and integration tests in a container"},
+    {"reality": "LOCAL-REAL", "evidence": "integration tests in a container"},
+    # a directory names no kind: tests/unit/ holds real-process tests here (acceptance/missions.json)
+    {"reality": "LOCAL-REAL", "evidence": "pytest tests/unit/test_x.py in a sandbox"},
+    {"status": "liveness probe passed"},
+    # only the claim and its statement of evidence name the kind, never notes about other tests
+    {"tier": "BODY_VERIFIED", "notes": "in-process unit tests cover the parsing; the cited process test runs greg run"},
+    # each item of a list under a claim field is its own record: the second item's docker run is not the first's
+    {"evidence_kind": "founder_device_run", "evidence_ref": D1,
+     "status": [{"reality": "FOUNDER-USED"}, {"reality": "UNIT-TESTED", "evidence_kind": "unit_test", "how": "docker"}]},
 ]
 
 
@@ -206,14 +322,49 @@ def test_an_inflated_claim_fails_the_guard(tmp_path, relative, data, why):
     assert report["failing"] == report["violations"] and rc.main(["--root", str(tmp_path)]) == 1
 
 
+SCHEMA = {"$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object",
+          "properties": {"status": {"enum": ["FOUNDER-USED", "LIVE"], "default": "FOUNDER-USED"},
+                         "reality": {"const": "EXTERNALLY-VERIFIED", "examples": ["FOUNDER-USED (container)"]}},
+          "$defs": {"tier": {"type": "string", "enum": ["FOUNDER_ACCEPTED"]}}}
+
+
 def test_correct_claims_pass_and_schemas_are_not_claims(tmp_path):
     for i, data in enumerate(CORRECT):
         write(tmp_path, f"docs/evidence/ok{i}/run.json", data)
     write(tmp_path, "docs/evidence/receipts/buyer-41.txt", "the buyer's own receipt")
-    write(tmp_path, "docs/contract.schema.json", {"status": "FOUNDER-USED"})
+    write(tmp_path, "docs/contract.schema.json", SCHEMA)
+    write(tmp_path, "docs/evidence/shape.json", SCHEMA)                      # a schema by content, whatever its name
     report = rc.scan(tmp_path)
     assert report["failing"] == [] and report["claims"] >= len(CORRECT) and rc.main(["--root", str(tmp_path)]) == 0
     assert report["allowlisted"] == [] and report["stale_allowlist"] == []      # this repository's allowlist stays here
+
+
+@pytest.mark.parametrize("relative, text, pointer", [
+    ("docs/evidence/zz/run.schema.json", json.dumps({"reality": "FOUNDER-USED (container)"}), "/reality"),
+    ("docs/evidence/zz/run.JSON", json.dumps({"reality": "FOUNDER-USED (container)"}), "/reality"),
+    ("docs/evidence/zz/run.jsonl", '{"reality": "UNIT-TESTED"}\n\n{"reality": "FOUNDER-USED (container)"}\n', "/2/reality"),
+    ("acceptance/zz.yaml", "reality: FOUNDER-USED (container)\n", "/reality"),
+    ("docs/evidence/zz/instance.json", json.dumps({"$schema": SCHEMA["$schema"], "reality": "FOUNDER-USED (container)"}),
+     "/reality"),
+])
+def test_no_file_shape_or_schema_reference_hides_a_claim(tmp_path, relative, text, pointer):
+    """Review round 2, WU13-A10: a name ending .schema.json, an upper-case extension, JSON Lines, YAML under acceptance/
+    and a record that only names a schema were never read."""
+    (tmp_path / relative).parent.mkdir(parents=True, exist_ok=True)
+    (tmp_path / relative).write_text(text)
+    [violation] = rc.scan(tmp_path)["violations"]
+    assert (violation["file"], violation["pointer"]) == (relative, pointer)
+
+
+def test_a_file_nested_past_the_recursion_limit_is_unreadable_not_a_traceback(tmp_path, capsys):
+    """Review round 2, WU13-A8."""
+    (tmp_path / "docs/evidence/zz").mkdir(parents=True)
+    (tmp_path / "docs/evidence/zz/deep.json").write_text("[" * 5000 + "]" * 5000)
+    (tmp_path / "docs/evidence/zz/deep.yaml").write_text("reality: " + "[" * 5000 + "]" * 5000 + "\n")
+    report = rc.scan(tmp_path)
+    assert sorted(u["file"] for u in report["unreadable"]) == ["docs/evidence/zz/deep.json", "docs/evidence/zz/deep.yaml"]
+    assert all("RecursionError" in u["why"] for u in report["unreadable"]) and report["failing"] == report["unreadable"]
+    assert rc.main(["--root", str(tmp_path)]) == 1 and "2 unreadable" in capsys.readouterr().err
 
 
 FIELDS = ("reality", "reality_level", "reality_status", "reality_tier", "current_reality", "acceptance_reality",
@@ -228,18 +379,30 @@ def test_every_claim_field_is_read(tmp_path, field):
     assert violation["field"] == field and violation["pointer"] == f"/{field}"
 
 
-SCANNED = {"docs/**/*.json": "docs/a/b.json", "docs/**/*.yaml": "docs/a/b.yaml", "docs/**/*.yml": "docs/b.yml",
-           "**/evidence/**/*.json": "organs/x/evidence/run.json", "**/evidence/**/*.yaml": "evidence/x/run.yaml",
-           "**/evidence/**/*.yml": "tests/evidence/x/run.yml", "acceptance/**/*.json": "acceptance/a/b.json",
-           "greg/path.json": "greg/path.json", "foundry/completion.yaml": "foundry/completion.yaml"}
+SCANNED = ["docs/a/b.json", "docs/a/b.yaml", "docs/b.yml", "docs/c.jsonl", "docs/D.JSON", "organs/x/evidence/run.json",
+           "evidence/x/run.yaml", "tests/evidence/x/run.yml", "tests/evidence/x/run.jsonl", "foundry/evidence/s.Json",
+           "acceptance/a/b.json", "acceptance/c.yaml", "acceptance/d.YML", "greg/path.json", "foundry/completion.yaml"]
+NOT_SCANNED = ["contracts/x.json", "greg/other.json", "foundry/other.yaml", "docs/a.txt", "docs/evidence/a.md",
+               "evidenced/x.json", "src/acceptance/x.json"]
 
 
-@pytest.mark.parametrize("pattern", sorted(SCANNED))
-def test_every_scanned_location_is_read(tmp_path, pattern):
-    assert set(SCANNED) == set(rc.SCAN)
-    relative = SCANNED[pattern]
-    write(tmp_path, relative, {"reality": "FOUNDER-USED"} if relative.endswith(".json") else "reality: FOUNDER-USED\n")
-    assert [v["file"] for v in rc.scan(tmp_path)["violations"]] == [relative]
+@pytest.mark.parametrize("relative", SCANNED)
+def test_every_scanned_location_is_read(tmp_path, relative):
+    assert (rc.SCAN_DIRS, rc.SCAN_SUFFIXES, rc.SCAN_FILES) == (
+        ("docs", "acceptance"), (".json", ".jsonl", ".yaml", ".yml"), ("greg/path.json", "foundry/completion.yaml"))
+    suffix = relative.rsplit(".", 1)[1].lower()
+    (tmp_path / relative).parent.mkdir(parents=True, exist_ok=True)
+    (tmp_path / relative).write_text('{"reality": "FOUNDER-USED"}' if suffix.startswith("json") else "reality: FOUNDER-USED\n")
+    assert rc.scanned(relative) and [v["file"] for v in rc.scan(tmp_path)["violations"]] == [relative]
+
+
+def test_nothing_else_is_read(tmp_path):
+    for relative in NOT_SCANNED:
+        write(tmp_path, relative, {"reality": "FOUNDER-USED"} if relative.endswith(".json") else "reality: FOUNDER-USED\n")
+        assert not rc.scanned(relative), relative
+    (tmp_path / ".git" / "evidence").mkdir(parents=True)
+    (tmp_path / ".git" / "evidence" / "x.json").write_text(json.dumps({"reality": "FOUNDER-USED"}))
+    assert rc.scan(tmp_path)["files"] == 0
 
 
 def test_an_unreadable_file_fails_and_a_bom_or_several_yaml_documents_are_read(tmp_path):
@@ -289,7 +452,7 @@ def test_a_violation_another_change_owns_is_allowlisted_with_reason_and_owner_ne
 
 
 @pytest.mark.parametrize("crosswalk, label", [("DIRECTIVE_CROSSWALK", "PACKAGED"),
-                                              ("OUTCOME_CROSSWALK", "self_reported")])
+                                              ("OUTCOME_CROSSWALK", "self_reported"), ("SOP_CROSSWALK", "TESTED")])
 def test_a_broken_crosswalk_fails_the_scan(tmp_path, monkeypatch, crosswalk, label):
     monkeypatch.delitem(getattr(rc, crosswalk), label)
     report = rc.scan(tmp_path)

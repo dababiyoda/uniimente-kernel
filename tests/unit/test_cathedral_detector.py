@@ -14,6 +14,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 
 import pytest
 
@@ -181,6 +182,31 @@ def test_a_founder_tier_closure_on_a_body_never_designated_is_not_the_founders(t
     assert report["vertical_progress"]["closures_not_counted_in_window"] == ["m:founder"]
     assert report["outcomes"]["coverage"]["founder_body"] is None
     assert "not the founder's designated body" in report["insufficient"][0]
+    assert report["conditional"]["verdict"] == cathedral.CATHEDRAL                # kept visible, not folded away
+
+
+def test_the_build_phase_keeps_the_kill_condition_visible_beside_insufficient_history(tmp_path):
+    """Review round 2, WU13-R2-1: no founder-designated body exists yet (every body read so far), activity rose and
+    nothing moved. The verdict stays INSUFFICIENT_HISTORY, since another ledger could hold the founder's body, but
+    the report says CATHEDRAL holds unless such a body exists."""
+    home, *_ = founders_body(tmp_path, designate=False)
+    span = opening()
+    repo = busy_repo(tmp_path, span["until"])
+    report = detect(repo, home, **span)
+    assert report["verdict"] == cathedral.INSUFFICIENT_HISTORY and "finding" not in report
+    assert report["outcomes"]["coverage"]["gap"] == "undesignated"
+    assert report["conditional"] == {"verdict": cathedral.CATHEDRAL, "holds_if": "no founder-designated body exists "
+                                     "outside the ledger read", "floors_reached": report["activity"]["floors_reached"],
+                                     "rule": cathedral.CONDITIONAL_RULE}
+    (tmp_path / "quiet").mkdir()
+    quiet = new_repo(tmp_path / "quiet")
+    commit(quiet, span["until"] - 3 * DAY, {"a.md": "x"})
+    assert "conditional" not in detect(quiet, home, **span)                      # activity under every floor
+    assert "conditional" not in detect(repo, None, **span)                       # no ledger: nothing measured
+    shallow = tmp_path / "shallow"
+    subprocess.run(["git", "clone", "-q", "--depth", "2", f"file://{repo}", str(shallow)], check=True,
+                   capture_output=True)
+    assert "conditional" not in detect(shallow, home, **span)                    # git cannot show the window
 
 
 def test_a_closure_registered_before_the_designation_does_not_count(tmp_path, monkeypatch):
@@ -231,12 +257,57 @@ def test_a_body_designated_inside_the_window_cannot_show_unchanged_but_a_moved_o
     flat = detect(repo, home, since=until - 30 * DAY, until=until)      # the window opened before the body existed
     assert flat["activity"]["rose"] is True and flat["outcomes"]["moved"] is False
     assert flat["verdict"] == cathedral.INSUFFICIENT_HISTORY and "after the window starts" in flat["insufficient"][0]
+    assert flat["conditional"]["verdict"] == cathedral.CATHEDRAL
     (tmp_path / "moved").mkdir()
     home, key, body_id, clock = founders_body(tmp_path / "moved", monkeypatch, attest=True)
     close_mission(home, key, body_id, "m:founder", clock)
     moved = detect(repo, home, since=until - 30 * DAY, until=until)
     assert moved["outcomes"]["coverage"]["covers_window"] is False and moved["outcomes"]["decides"] is True
     assert moved["verdict"] == cathedral.NOT_CATHEDRAL and moved["outcomes"]["moved_by"] == ["founder_tier_closures"]
+    assert "conditional" not in moved
+
+
+def test_a_ledger_clock_that_ran_ahead_cannot_hide_a_founder_tier_closure(tmp_path, monkeypatch):
+    """Review round 2, WU13-A3: one record stamped after the window's end (a clock that was ahead, then stepped back)
+    precedes a founder-tier closure inside the window. Cutting the ledger at the first late record would hide the
+    closure and read CATHEDRAL; the detector refuses to cut a ledger whose times run backwards there."""
+    import provenance.ledger as ledger_module
+    home, key, body_id, clock = founders_body(tmp_path, monkeypatch, attest=True)
+    span = opening()
+    repo = busy_repo(tmp_path, span["until"])
+    real, future = ledger_module._now, (span["until"] + 5 * DAY).isoformat().replace("+00:00", "Z")
+    stamps = [future]                                      # the next record appended only, then real time
+
+    def ahead_once():
+        appending = sys._getframe(1).f_code.co_name == "_append"
+        return stamps.pop() if appending and stamps else real()
+    monkeypatch.setattr(ledger_module, "_now", ahead_once)
+    close_mission(home, key, body_id, "m:founder", clock)
+    monkeypatch.setattr(ledger_module, "_now", real)
+    report = detect(repo, home, **span)
+    assert report["verdict"] == cathedral.INSUFFICIENT_HISTORY and "finding" not in report
+    assert report["outcomes"]["coverage"]["gap"] == "time_not_monotonic" and report["outcomes"]["decides"] is False
+    assert "record times run backwards" in report["insufficient"][0] and "conditional" not in report
+    with observe(home) as journal:
+        assert "m:founder" in {e.payload["mission_id"] for e in journal.replay("mission.achieved")}
+        assert cathedral.inversion(journal, span["until"])["late_at"] == future
+
+
+def test_ledger_time_that_runs_backwards_is_found_only_across_the_moment(tmp_path, monkeypatch):
+    import provenance.ledger as ledger_module
+    t0 = datetime(2026, 10, 1, tzinfo=timezone.utc)
+    stamps = [t0 - DAY, t0 + 10 * DAY, t0, t0 + DAY]                   # genesis, then a record ten days ahead
+    monkeypatch.setattr(ledger_module, "_now", lambda: stamps.pop(0).isoformat().replace("+00:00", "Z"))
+    journal = synthetic(tmp_path)
+    for i in range(3):
+        journal.record("mission.registered", {"mission_id": f"m:{i}"}, key=[f"m:{i}"])
+    late, early = journal.ledger.records[1], journal.ledger.records[2]
+    assert cathedral._at(late.ts_utc) == t0 + 10 * DAY and cathedral._at(early.ts_utc) == t0
+    found = cathedral.inversion(journal, t0 + 5 * DAY)
+    assert (found["late_seq"], found["seq"]) == (late.seq, early.seq)
+    assert cathedral.inversion(journal, t0 - 2 * DAY) is None             # every record is at or after it
+    assert cathedral.inversion(journal, t0 + 20 * DAY) is None             # every record is before it
+    assert cathedral.inversion(journal, t0 + 10 * DAY + timedelta(seconds=1)) is None
 
 
 def synthetic(tmp_path: Path) -> Journal:
@@ -262,6 +333,53 @@ def test_only_a_founder_signed_first_body_designation_names_the_founders_body(tm
     assert found == {"body_id": "b1", "seq": record.seq, "at": record.ts_utc}
 
 
+def founder_closure(tmp_path: Path, *, platform: str = "Linux", verdict: str = "VERIFIED",
+                    mode: str = "live") -> Journal:
+    """One founder-tier closure on a ledger whose body b1 (Linux) a founder-signed BODY_DESIGNATE named the first
+    founder body, recorded as greg.metrics reads them: closed on ``platform``, appraised ``verdict``, observed through
+    a receipt whose output has ``mode``."""
+    journal = synthetic(tmp_path)
+    journal.record("command.accepted", {"kind": "BODY_DESIGNATE", "signer": "founder", "digest": "dd"}, key="a")
+    journal.record("body.designated", {"command_digest": "dd", "body_id": "b1", "platform": "Linux",
+                                       "purpose": "first_founder_body"}, key="b")
+    journal.record("command.accepted", {"kind": "FOUNDER_TIER", "signer": "founder", "founder_key_id": "k",
+                                        "digest": "ft", "body": {"key_custody": "passphrase"}}, key="c")
+    journal.record("command.accepted", {"kind": "MISSION", "signer": "founder", "founder_key_id": "k", "digest": "mm"},
+                   key="d")
+    journal.record("mission.registered", {"mission_id": "m:1", "command_digest": "mm", "spec": {"mission_id": "m:1"}},
+                   key="e")
+    receipt = journal.ledger.append("receipt", {"result": {"output": {"mode": mode, "text": "ok"}}})
+    journal.record("mission.observed", {"mission_id": "m:1", "receipt": receipt.hash}, key="f")
+    journal.record("mission.achieved", {"mission_id": "m:1"}, key="g")
+    journal.record("mission.closure_context", {"mission_id": "m:1", "body_id": "b1", "platform": platform,
+                                               "hosted": True}, key="h")
+    journal.record("mission.appraised", {"mission_id": "m:1", "verdict": verdict, "checks": {}}, key="i")
+    return journal
+
+
+@pytest.mark.parametrize("closure, counted", [
+    ({}, True),
+    ({"platform": "Darwin"}, False),           # WU13-R2-4: VEPMC's founder_body matches the closure's platform
+    ({"verdict": "REFUTED"}, False),           # WU13-A13: a refuted closure is no verified closure
+    ({"verdict": "UNVERIFIED"}, False),
+    ({"mode": "fixture"}, False),              # WU13-A13: fixture evidence never counts
+])
+def test_a_closure_counts_only_as_vepmc_reads_the_founders_body_and_only_verified(tmp_path, monkeypatch, closure,
+                                                                                  counted):
+    monkeypatch.setattr(cathedral.devpath, "position", lambda journal: {"achieved": ["N0"]})
+    monkeypatch.setattr(cathedral.devpath, "build_status",
+                        lambda journal: {"build_frontier": None, "built": [], "structural_depth": 0})
+    journal = founder_closure(tmp_path, **closure)
+    from greg import metrics
+    [row] = metrics.vepmc(journal)["missions"]
+    assert metrics.founder_tier(journal)["m:1"]["tier"] == metrics.FOUNDER_TIER
+    assert row["founder_body"] is (closure.get("platform", "Linux") == "Linux")
+    measured = cathedral.measure(journal)
+    assert measured["outcomes"]["founder_tier_closures"] == (["m:1"] if counted else [])
+    assert measured["vertical"]["closures_not_counted"] == ([] if counted else ["m:1"])
+    assert measured["founder_body"]["body_id"] == "b1"
+
+
 def test_the_ledger_at_a_moment_holds_only_what_came_before_it(tmp_path):
     journal = synthetic(tmp_path)
     for i in range(3):
@@ -277,6 +395,7 @@ def _fake_ends(monkeypatch, start: dict, end: dict) -> None:
     """``outcomes`` measured on two stand-in ledger states (start and end) without a body."""
     monkeypatch.setattr(cathedral, "as_of", lambda journal, moment: "start" if moment == journal["since"] else "end")
     monkeypatch.setattr(cathedral, "measure", lambda state: {"start": start, "end": end}[state])
+    monkeypatch.setattr(cathedral, "inversion", lambda journal, moment: None)
 
 
 LONG_AGO = "2026-01-01T00:00:00Z"
@@ -302,6 +421,20 @@ def test_each_founder_tier_measure_alone_moves_the_outcome(monkeypatch, end, mov
     _fake_ends(monkeypatch, state(), end)
     outcome, _ = cathedral.outcomes({"since": since}, since, since + DAY)
     assert outcome["moved"] is True and outcome["moved_by"] == moved_by
+
+
+def test_a_move_on_a_ledger_whose_time_runs_backwards_does_not_decide(monkeypatch):
+    """Review round 2, WU13-A3: when record times run backwards across the window's edge the cut is not the ledger as
+    it stood, so a move seen there decides nothing either."""
+    since = datetime(2026, 10, 1, tzinfo=timezone.utc)
+    _fake_ends(monkeypatch, state(), state(closures=["m:f"]))
+    skew = {"moment": since.isoformat(), "late_seq": 4, "late_at": "2026-12-01T00:00:00Z", "seq": 5,
+            "at": "2026-10-01T12:00:00Z"}
+    monkeypatch.setattr(cathedral, "inversion", lambda journal, moment: skew if moment == since else None)
+    outcome, _ = cathedral.outcomes({"since": since}, since, since + DAY)
+    assert outcome["moved"] is True and outcome["decides"] is False
+    assert outcome["coverage"]["gap"] == "time_not_monotonic" and outcome["coverage"]["time_inversion"] == skew
+    assert "seq 4 at 2026-12-01T00:00:00Z precedes seq 5" in outcome["why"]
 
 
 def test_vertical_progress_and_a_shrinking_count_never_move_the_outcome(monkeypatch):
@@ -415,6 +548,114 @@ def test_a_graft_cannot_cut_the_history_counted(tmp_path):
     assert report["verdict"] == cathedral.INSUFFICIENT_HISTORY and "grafts file" in report["insufficient"][0]
 
 
+def test_the_callers_git_environment_cannot_point_the_read_elsewhere(tmp_path, monkeypatch):
+    """Review round 2, WU13-A4: GIT_DIR and GIT_WORK_TREE (which git exports to every hook) would make ``git -C
+    quiet`` read another repository; GIT_CONFIG_PARAMETERS would hide a root commit's files."""
+    until = datetime(2026, 10, 30, tzinfo=timezone.utc)
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+    busy = busy_repo(tmp_path / "a", until)
+    quiet = new_repo(tmp_path / "b")
+    commit(quiet, until - 3 * DAY, {f"q{i}.md": "x" for i in range(12)}, "a root commit inside the window")
+    monkeypatch.setenv("GIT_DIR", str(busy / ".git"))
+    monkeypatch.setenv("GIT_WORK_TREE", str(busy))
+    monkeypatch.setenv("GIT_CONFIG_PARAMETERS", "'log.showroot'='false'")
+    report = cathedral.activity(quiet, until - 30 * DAY, until)
+    monkeypatch.delenv("GIT_DIR")
+    monkeypatch.delenv("GIT_WORK_TREE")
+    assert report["head"] == git(quiet, "rev-parse", "HEAD").strip()
+    assert report["counts"] == {"commits": 1, "pr_like_merges": 0, "new_md": 12, "new_py": 0,
+                                "new_evidence_readmes": 0}
+    (tmp_path / "home").mkdir()                                       # a user's own config cannot hide them either
+    (tmp_path / "home" / ".gitconfig").write_text("[log]\n\tshowRoot = false\n")
+    monkeypatch.delenv("GIT_CONFIG_PARAMETERS")
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    assert cathedral.activity(quiet, until - 30 * DAY, until)["counts"]["new_md"] == 12
+
+
+def test_a_directory_inside_a_repository_is_not_that_repository(tmp_path):
+    """Review round 2, WU13-A5: git discovery would walk up from a plain directory to the repository around it."""
+    until = datetime(2026, 10, 30, tzinfo=timezone.utc)
+    repo = busy_repo(tmp_path, until)
+    plain = repo / "docs" / "not-a-repo"
+    plain.mkdir(parents=True)
+    for inside in (plain, repo / "docs"):
+        report = cathedral.activity(inside, until - 30 * DAY, until)
+        assert report["complete"] is False and report["counts"] is None
+        assert "not the top of a git work tree" in report["why"] and str(repo) in report["why"]
+    assert cathedral.detect(plain, since=until - 30 * DAY, until=until)["verdict"] == cathedral.INSUFFICIENT_HISTORY
+    assert cathedral.activity(repo / "docs" / "..", until - 30 * DAY, until)["complete"] is True   # the top itself
+
+
+def test_a_partial_clone_is_refused_and_nothing_is_fetched(tmp_path):
+    """Review round 2, WU13-A6: rename detection on a blobless clone would fetch missing blobs from its promisor
+    remote and write new packs; the read refuses instead."""
+    until = datetime.now(timezone.utc)
+    origin = new_repo(tmp_path)
+    commit(origin, until - 3 * DAY, {"a.md": "one\n" * 50, "b.py": "x = 1\n"})
+    git(origin, "mv", "a.md", "c.md")
+    (origin / "c.md").write_text("one\n" * 49 + "two\n")
+    commit(origin, until - 2 * DAY, {}, "rename and edit")
+    git(origin, "config", "uploadpack.allowFilter", "true")
+    clone = tmp_path / "clone"
+    subprocess.run(["git", "clone", "-q", "--filter=blob:none", "--no-checkout", f"file://{origin}", str(clone)],
+                   check=True, capture_output=True)
+    objects = sorted(p.name for p in (clone / ".git" / "objects").rglob("*"))
+    report = cathedral.activity(clone, until - 30 * DAY, until)
+    assert report["complete"] is False and report["counts"] is None and report["partial_clone"] is True
+    assert "partial clone" in report["why"]
+    assert sorted(p.name for p in (clone / ".git" / "objects").rglob("*")) == objects     # nothing fetched
+    assert cathedral.detect(clone, since=until - 30 * DAY, until=until)["verdict"] == cathedral.INSUFFICIENT_HISTORY
+
+
+def test_a_path_holding_a_separator_byte_does_not_hide_its_commits_other_files(tmp_path):
+    """Review round 2, WU13-A9: a path may hold any byte but NUL, U+001E and newlines included."""
+    until = datetime(2026, 10, 30, tzinfo=timezone.utc)
+    repo = new_repo(tmp_path)
+    commit(repo, until - 40 * DAY, {"old.md": "x"}, "before the window")
+    commit(repo, until - 3 * DAY, {**{f"docs/d{j}.md": "x" for j in range(12)}, "a\x1eb.txt": "x", "A": "x",
+                                   "line\nbreak.md": "x", "e\x1e.py": "x"})
+    report = cathedral.activity(repo, until - 30 * DAY, until)
+    assert report["counts"] == {"commits": 1, "pr_like_merges": 0, "new_md": 13, "new_py": 1,
+                                "new_evidence_readmes": 0}
+    assert cathedral._added("\0\nA\0x.md\0", {"s": 1}) == {}              # no commit hash yet: nothing is assigned
+
+
+def merged_repo(tmp: Path, until: datetime) -> Path:
+    """Root and an old branch before the window; inside it a branch commit, a main commit and a --no-ff merge of each
+    branch, the second merge adding twelve documents of its own (an evil merge)."""
+    repo = new_repo(tmp)
+    commit(repo, until - 40 * DAY, {"README.md": "old"}, "root")
+    git(repo, "checkout", "-q", "-b", "old")
+    commit(repo, until - 35 * DAY, {f"old/o{j}.md": "x" for j in range(12)}, "an old branch")
+    git(repo, "checkout", "-q", "main")
+    git(repo, "merge", "-q", "--no-ff", "-m", "merge the old branch", "old", when=until - 4 * DAY)
+    git(repo, "checkout", "-q", "-b", "topic")
+    commit(repo, until - 3 * DAY, {"topic/t.md": "x"}, "topic")
+    git(repo, "checkout", "-q", "main")
+    commit(repo, until - 2 * DAY, {"main/m.md": "x"}, "main")
+    git(repo, "merge", "-q", "--no-ff", "--no-commit", "topic", when=until - DAY)
+    for j in range(12):
+        (repo / "evil").mkdir(exist_ok=True)
+        (repo / "evil" / f"e{j}.md").write_text("x")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-q", "-m", "Merge pull request #7 from topic", when=until - DAY)
+    return repo
+
+
+def test_a_merge_counts_the_files_it_added_itself_and_a_merged_branch_counts_at_its_own_commits(tmp_path):
+    """Review round 2, WU13-A12: ``git log`` lists no files for a merge without -m, so files a merge added itself (an
+    evil merge, a conflict resolution) were never counted. A merged branch's files count at their own commits, so a
+    branch committed before the window and merged inside it adds nothing new."""
+    until = datetime(2026, 10, 30, tzinfo=timezone.utc)
+    repo = merged_repo(tmp_path, until)
+    report = cathedral.activity(repo, until - 30 * DAY, until)
+    assert report["counts"] == {"commits": 4, "pr_like_merges": 2, "new_md": 14, "new_py": 0,
+                                "new_evidence_readmes": 0}
+    early = cathedral.activity(repo, until - 30 * DAY, until - 3 * DAY)       # the old merge only: nothing new
+    assert early["counts"]["commits"] == 1 and early["counts"]["new_md"] == 0
+
+
 def test_a_shallow_clone_is_insufficient_history_with_its_depth_and_no_counts(tmp_path):
     home, *_ = founders_body(tmp_path)
     span = opening()
@@ -425,9 +666,24 @@ def test_a_shallow_clone_is_insufficient_history_with_its_depth_and_no_counts(tm
     report = detect(shallow, home, **span)
     assert report["verdict"] == cathedral.INSUFFICIENT_HISTORY
     assert report["activity"]["shallow"] is True and report["activity"]["depth"] == 2
+    assert report["activity"]["reachable_commits"] == 2
     assert report["activity"]["counts"] is None and "rose" not in report["activity"]
-    assert "shallow clone: only 2 commits" in report["insufficient"][0]
+    assert "cut at 2 commits and only 2 commits are reachable" in report["insufficient"][0]
     assert detect(repo, home, **span)["verdict"] == cathedral.CATHEDRAL                # the full clone decides
+
+
+def test_a_shallow_clone_reports_its_depth_apart_from_the_commits_it_reaches(tmp_path):
+    """Review round 2, WU13-R2-7: with merges a --depth 2 clone reaches more than two commits; ``depth`` is the
+    first-parent line the clone kept and ``reachable_commits`` what HEAD reaches."""
+    until = datetime(2026, 10, 30, tzinfo=timezone.utc)
+    repo = merged_repo(tmp_path, until)
+    shallow = tmp_path / "shallow"
+    subprocess.run(["git", "clone", "-q", "--depth", "2", f"file://{repo}", str(shallow)], check=True,
+                   capture_output=True)
+    report = cathedral.activity(shallow, until - 30 * DAY, until)
+    assert report["complete"] is False and report["counts"] is None
+    assert (report["depth"], report["reachable_commits"]) == (2, 3)
+    assert "cut at 2 commits and only 3 commits are reachable" in report["why"]
 
 
 def test_without_a_body_ledger_outcomes_are_unmeasured_not_flat(tmp_path):

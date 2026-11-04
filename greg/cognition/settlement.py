@@ -1,6 +1,7 @@
 """Outcome competence is a replayed projection of canonical receipts and appraisals."""
 from __future__ import annotations
 
+import re
 import weakref
 from fractions import Fraction
 from collections import defaultdict
@@ -1468,6 +1469,152 @@ def awaiting_realization(journal) -> list[dict]:
                     **({"compile_receipt": compiled["receipt_id"]} if compiled else {}),
                     "report_with": f"greg realize {record.hash} --value <v1> ... --value <vH> --key <founder key>"})
     return out + conflicts
+
+
+# Directive section 42: community feedback becomes institutional learning only when provenance is preserved,
+# manipulation is controlled, evidence strength is known and the change survives outcome evaluation. A community
+# item that cites one answer's receipt and states the realized objective is an outcome claim: it is never a
+# realization, never credits or debits competence, and changes nothing until a founder-signed settlement does.
+COMMUNITY_RECEIPT = re.compile(r"sha256:[0-9a-f]{64}")
+COMMUNITY_CAMPAIGN_SOURCES = 3       # identical text from this many sources counts as one fewer (dataplane rule)
+COMMUNITY_CHALLENGE_SOURCES = 2      # independent sources needed before a claim asks for a recheck
+
+
+def _community_value(text: str, objective: str):
+    """The one realized value a community item states for ``objective``, or None when it states none or several."""
+    rx = re.compile(rf"\b{re.escape(objective)}(?:\s+(?:was|is|came in at|came to|ended at|realized)|\s*[=:])\s*\$?"
+                    r"(-?\d{1,3}(?:,\d{3})+(?:\.\d+)?|-?\d+(?:\.\d+)?)\b", re.IGNORECASE)
+    values = {float(m.group(1).replace(",", "")) for m in rx.finditer(text)}
+    return values.pop() if len(values) == 1 else None
+
+
+def _community_support(items) -> int:
+    """One unit per independent source; a cluster of identical text from COMMUNITY_CAMPAIGN_SOURCES or more
+    sources counts COMMUNITY_CAMPAIGN_SOURCES - 1 (the dataplane's campaign rule), so volume buys nothing."""
+    from greg.dataplane import _normal
+    clusters = defaultdict(set)
+    for item in items:
+        clusters[_normal(item["content"])].add(item["source"])
+    sources = {item["source"] for item in items}
+    excess = sum(len(s) - (COMMUNITY_CAMPAIGN_SOURCES - 1) for s in clusters.values()
+                 if len(s) >= COMMUNITY_CAMPAIGN_SOURCES)
+    return len(sources) - excess
+
+
+def community_outcome_claims(journal) -> dict:
+    """Community outcome claims about GREG's answers, with provenance, manipulation control and strength, and what
+    settlement made of them (directive section 42). Read-only; it records nothing and grants nothing.
+
+    Per cited answer and verdict: the ingested items (event, source, content digest, time), the support (one unit
+    per independent source, campaigns capped) and a status against the answer's world outcome. A claim that
+    contradicts an unreported or settled outcome with enough independent support is a challenge: the deciding
+    observation is named and, when an attached read-only observer exists, a verification mission is prepared,
+    exactly as for a dispute. Only claims weighed against an outcome a founder-signed report declared independent,
+    or a resolution adjudicated, enter a source's track record."""
+    empty = {"claims": [], "track_record": {}, "unbound_items": 0}
+    if getattr(journal, "replay", None) is None:      # no journal to read community intake from
+        return empty
+    cited = [e for e in journal.replay("external.ingested") if not e.payload.get("quarantined")
+             and len(set(COMMUNITY_RECEIPT.findall(e.payload.get("content", "")))) == 1]
+    if not cited:                         # nothing cites one answer: settlement is not read at all
+        return empty
+    answers = {}                          # ledger receipt -> what the community claim is weighed against
+    for row in awaiting_realization(journal):
+        if "objective" not in row:
+            continue
+        if row.get("kind") == "objective":
+            answers[row["receipt"]] = {"objective": row["objective"], "sense": row["sense"],
+                                       "promised": row["promised"], "state": "unreported",
+                                       "mission_id": row.get("mission_id"), "claim": row.get("claim")}
+        elif row.get("kind") == "objective_conflict":
+            for receipt in {r["receipt"] for r in row["reports"]}:
+                answers[receipt] = {"objective": row["objective"], "sense": row["sense"],
+                                    "promised": row["promised"], "state": "disputed",
+                                    "mission_id": row.get("mission_id"), "claim": row.get("claim"),
+                                    "priority": row.get("priority")}
+    signed = _signed_facts(journal)
+    sources = {e.event_id: e.payload.get("source") for e in journal.replay("cognition.realization")}
+    for outcome in measured_outcomes(journal):
+        world = outcome.get("world") or {}
+        if "met" in world:
+            independent = [f for f in world["realization_events"]
+                           if f in signed and sources.get(f) in DECLARED_INDEPENDENT_SOURCES]
+            answers[outcome["receipt"]] = {
+                "objective": world["objective"], "sense": world["sense"], "promised": world["promised"],
+                "state": "settled", "met": world["met"], "world_state": world["state"],
+                # weighed against an outcome evaluation: a resolution adjudicated it, or a signed report declared
+                # as an independent source stands behind it (a founder's own report alone is not one)
+                "evaluated": world["state"] == "adjudicated" or bool(independent),
+                "source": world.get("source"), "mission_id": outcome.get("mission_id")}
+    groups = defaultdict(list)            # (receipt, community verdict) -> items
+    unbound = 0
+    for event in cited:
+        item = event.payload
+        receipt = COMMUNITY_RECEIPT.search(item["content"]).group(0)
+        answer = answers.get(receipt)
+        value = _community_value(item["content"], answer["objective"]) if answer else None
+        if value is None:
+            unbound += 1
+            continue
+        met = world_met(answer["promised"], value, answer["sense"])
+        groups[(receipt, met)].append({"event": event.event_id, "source": item["source"], "content": item["content"],
+                                       "content_sha256": item["content_sha256"], "at": item["at"],
+                                       "channel": item["channel"], "value": value})
+    claims, track = [], defaultdict(lambda: {"agreed": 0, "contradicted": 0})
+    for (receipt, met), items in sorted(groups.items(), key=lambda kv: (kv[0][0], kv[0][1])):
+        answer = answers[receipt]
+        support = _community_support(items)
+        row = {"receipt": receipt, "mission_id": answer["mission_id"], "objective": answer["objective"],
+               "promised": answer["promised"], "claimed_met": met, "values": sorted({i["value"] for i in items}),
+               "support_sources": support, "raw_items": len(items),
+               "provenance": [{k: i[k] for k in ("event", "source", "content_sha256", "at", "channel")}
+                              for i in items],
+               "strength": f"{support} independent source(s), untrusted community text, never verified by GREG",
+               "independence": "distinct source identities as the channel names them; accounts one person controls "
+                               "are counted as one only when their text is identical",
+               "authority": "none: a community claim is never a realization and changes no competence by itself"}
+        if answer["state"] == "settled":
+            agrees = answer["met"] == met
+            row["status"] = ("agrees with" if agrees else "contradicts") + (
+                " an outcome evaluated by an independent report or a resolution" if answer["evaluated"]
+                else f" the settled outcome, reported as {answer['source']} (not an independent evaluation)")
+            if answer["evaluated"]:
+                for source in {i["source"] for i in items}:
+                    track[source]["agreed" if agrees else "contradicted"] += 1
+            challenge = not agrees and not answer["evaluated"]
+        elif answer["state"] == "disputed":
+            row["status"] = "pending: the open dispute on this answer decides it"
+            challenge = False
+        else:
+            row["status"] = "unverified: no realization has been reported for this answer"
+            challenge = True
+        if challenge and support >= COMMUNITY_CHALLENGE_SOURCES:
+            objective, sense, promised = answer["objective"], answer["sense"], answer["promised"]
+            tolerance = realization_tolerance(promised)
+            threshold = promised - tolerance if sense == "max" else promised + tolerance
+            side = "at or above" if sense == "max" else "at or below"
+            row["challenge"] = {
+                "why": f"{support} independent community sources claim the promise was "
+                       f"{'kept' if met else 'not kept'}, against what the record holds",
+                "distinguishing_observation": f"an observation of the realized {objective} for this answer from "
+                                              f"outside the community claims: {side} {threshold:g} it kept its "
+                                              "promise, otherwise it did not",
+                "how": f"greg realize {receipt} --objective-value <observed> --source external_record "
+                       "--note <reference> --key <founder key>",
+                "competence_claim": "unchanged until a founder-signed report and, if they conflict, a resolution"}
+            observers = _observers(journal, objective)
+            row["challenge"]["acquirable_by_body"] = [o["capability_id"] for o in observers]
+            if observers:
+                from greg.templates import dispute_verification
+                row["challenge"]["prepared_verification"] = dispute_verification(
+                    claim=answer.get("claim") or receipt, receipt=receipt, mission_id=answer["mission_id"],
+                    objective=objective, sense=sense, threshold=threshold, answer_version="community-challenge",
+                    observer=observers[0])
+        claims.append(row)
+    return {"claims": claims, "track_record": {s: dict(v) for s, v in sorted(track.items())},
+            "unbound_items": unbound,
+            "rule": "learning only when provenance is kept, manipulation is controlled, strength is known and an "
+                    "outcome evaluation decided it; engagement is not truth"}
 
 
 def _wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:

@@ -204,6 +204,7 @@ def test_real_construction_is_listed_reported_by_signed_cli_and_no_longer_pendin
         row = next(r for r in view["awaiting_realization"] if r["receipt"] == record.hash)
         assert row["promised"] == 2 and row["objective"] == "profit"
         assert view["authority_created"] is False
+        assert view["community_outcome_claims"]["claims"] == []
         assert len(run.body.journal.replay()) == before
         assert cli.main(["--home", str(run.home), "realize", record.hash, "--objective-value", "1",
                          "--key", str(tmp_path / "founder.pem"), "--no-passphrase"]) == 0

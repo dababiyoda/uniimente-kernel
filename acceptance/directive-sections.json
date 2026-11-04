@@ -380,7 +380,8 @@
    "id": "S42-A",
    "title": "Community claims become institutional learning only through a tested settlement",
    "source": "gap map of the 77 sections against #196 head 4ec00605 (session 2026-10-30), section 42 (unnamed there)",
-   "depends_on": []
+   "depends_on": [],
+   "closed_by": "#221 (pending intake into #196): community outcome claims in settlement (greg/cognition/settlement.py community_outcome_claims) keep provenance, count one unit per independent source with campaigns capped, never become realizations or move competence, challenge the record with the deciding observation, and enter a source's track record only after an outcome evaluation; tests/unit/test_greg_community_outcome_claims.py (a body run through intake/ included)"
   },
   {
    "id": "S42-B",
@@ -3503,7 +3504,7 @@
   {
    "n": 42,
    "heading": "PUBLIC COMMUNITY FEEDBACK",
-   "status": "OPEN",
+   "status": "PARTIAL",
    "asks": [
     {
      "id": "S42.A1",
@@ -3531,17 +3532,16 @@
      "ask": "Community feedback becomes learning only with provenance, controlled manipulation, known strength and a change that survives testing",
      "excerpt": "Community feedback becomes institutional learning only when:",
      "owner_paths": [
-      "greg/dataplane.py"
+      "greg/dataplane.py",
+      "greg/cognition/settlement.py"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_greg_community_outcome_claims.py"
+     ],
      "required_tier": "SANDBOX_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No settlement turns community claims into learning",
-      "unit": "S42-A"
-     }
+     "tier": "SANDBOX_VERIFIED",
+     "coverage": "covered",
+     "tests_tier": "SANDBOX_VERIFIED"
     },
     {
      "id": "S42.A3",

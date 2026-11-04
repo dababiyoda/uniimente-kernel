@@ -809,10 +809,12 @@ def main(argv=None) -> int:
                         "presentation_verifies": checked["valid"], "sent": False,
                         "note": "nothing was sent; share presentation.json yourself, keep holder.json private"}
             elif args.cognition_cmd == "calibration":
-                from greg.cognition.settlement import awaiting_realization, outcome_calibration
+                from greg.cognition.settlement import awaiting_realization, community_outcome_claims, \
+                    outcome_calibration
                 with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
                     data = {"calibration": outcome_calibration(journal),
-                            "awaiting_realization": awaiting_realization(journal), "authority_created": False}
+                            "awaiting_realization": awaiting_realization(journal),
+                            "community_outcome_claims": community_outcome_claims(journal), "authority_created": False}
             elif args.cognition_cmd == "knowledge":
                 from greg.cognition.settlement import competence
                 from greg.cognition.cells import cells

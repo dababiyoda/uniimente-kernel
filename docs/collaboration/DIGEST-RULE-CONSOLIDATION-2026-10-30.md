@@ -56,13 +56,48 @@ text, it is not a protected surface, and no open PR edits it (checked against 24
 
 ## Next candidates
 
-1. `greg/licensing.py._digest` (`default=str` rule) once #230 lands.
+1. ~~`greg/licensing.py._digest` (`default=str` rule) once #230 lands.~~ Done in round 2.
 2. Pinned modules at their next deliberate version bump: adopt `provenance.digests` in the same
    commit that re-freezes them, so no extra freeze is spent.
 3. One `stats.sign_test` for new evaluation code; the eight frozen copies stay as written.
 
+## Round 2 — 2026-11-04
+
+Base: #196 head `d35d92a5` (123 commits after round 1 merged as #246).
+
+**Drift measured.** The round-1 guard covered `foundry/systems/` only. In those 123 commits one new
+private copy appeared outside it: `greg/backup.py::_now`, adopted from #234. Nothing pinned it.
+
+**Migrated** (byte rules unchanged, each tested against the expression it replaced):
+
+- `greg/licensing.py::_digest` and `capabilities/router.py::_digest` → `sha256_json(value, default=str)`.
+- `provenance/ledger.py::sha256_json` (public; imported at 44 sites) now delegates to
+  `provenance.digests.sha256_json(obj, default=str)`. Its name and bytes are unchanged.
+- `greg/backup.py::_now` → `utc_now`; `provenance/ledger.py::_now` → `utc_now_z`. Tests that
+  monkeypatch `backup._now` keep working, because the alias is still a module attribute.
+
+**The guard became a ratchet over the whole tree.** `test_no_new_private_digest_or_timestamp_rules`
+scans every tracked module outside `tests/`, `cortex/evaluation/` and the lineage archive. `KEPT`
+lists the 28 copies that remain, each with its reason: pinned, sealed, protected, a different
+format, or a standalone script. A new copy fails the test, and so does a `KEPT` entry whose copy is gone, so the list
+can only shrink. Both directions were mutation-checked: a planted `greg/zz_probe.py::_sha` failed
+the first test, and renaming `twins/tribunal.py::_now` failed the second.
+
+**Also kept, newly found sealed:** `memory/affect.py` (the `evolution/repair` harness imports it) and
+`twins/tribunal.py` (loaded by the repair adapters). Both stay stdlib-only for the same reason as the
+four `evolution/` copies.
+
+**Mutant gates checked:** the 76 `check_cortex_mutants.py` patterns on `greg/licensing.py` and
+`provenance/ledger.py`, and the 55 `check_consistent_backup_mutants.py` patterns, all still apply
+to the edited files exactly once.
+
+**Not done here:** #253 records owners for eight duplicated mission-path functions; this round does
+not touch that registry or its guard.
+
 ## Product delta
 
 None. This is maintenance: no digest changes, so no existing disagreement is resolved. What it
-buys is that each rule difference is now stated at its call site and tested, and the Foundry systems
-cannot grow another private copy. GREG can do nothing new because of it.
+buys is that each rule difference is now stated at its call site and tested. Since round 2, a module
+anywhere in the runtime tree that adds another private helper under the usual names (`_canon`,
+`_sha`, `_digest`, `_hash`, `_now`, …) fails a unit test. This is a heuristic: a copy under a new
+name or inside a class is not caught. GREG can do nothing new because of it.

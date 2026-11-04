@@ -6,8 +6,9 @@ whose feasibility is not CURRENTLY_BUILDABLE it appends ``enabling_interfaces``,
 
 * ``feasible_when`` is the horizon's own ``prerequisite`` (``recorded_as``), for every horizon;
 * ``falsified_by`` is recorded only where text already states a failure or falsification condition for that
-  capability: the nearest falsifiable experiment of its frontier backcasts and the ``falsification`` of the
-  cognition P-node it names (``recorded_as``, never copied), PR #155's destination falsifiers in
+  capability: the nearest falsifiable experiment of its own frontier backcasts and the ``falsification`` of a
+  cognition P-node its prerequisite or activation evidence names (``recorded_as``, never copied; greg.path refuses a
+  pointer to another horizon's text), PR #155's destination falsifiers in
   greg/cognition/advantage.py, and directive 2026-10-28 sentences phrased as failure (sections 39 and 44);
 * ``enabling_interfaces`` is recorded only where the path or the directive names a protocol, API, contract,
   record type, decision kind or channel for that capability, copied verbatim;
@@ -91,7 +92,7 @@ FALSIFIERS = {
                               {"value": "a public, available warning relevant to the founder's consented location is "
                                         "not surfaced", "source": ADVANTAGE}],
     "developmental_research": [nfe("generalized_morphogenetic_repair"), nfe("cross_substrate_developmental_compilation"),
-                               nfe("substrate_independent_developmental_intelligence"), p_node("P10")],
+                               nfe("substrate_independent_developmental_intelligence")],
     "jarvis_integration": [nfe("jarvis_environmental_awareness")],
     "learned_cognitive_routing": [p_node("P4")],
     "cognitive_ecology": [nfe("automatic_invention_of_intelligence_families"), nfe("substrate_adaptive_cognition"),

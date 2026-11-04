@@ -147,15 +147,111 @@ def test_a_distant_horizon_missing_a_section_8_field_fails_validate(field):
     pytest.param({"value": "", "source": "docs/x.md"}, "value", id="empty value"),
     pytest.param({"value": "x", "source": ""}, "source", id="no source"),
     pytest.param({"value": "a condition nobody wrote", "source": "greg/path.json#prerequisite"},
-                 "not in its source", id="a value its path source does not contain"),
+                 "not an uncut phrase or name of its source", id="a value its path source does not contain"),
     pytest.param([{"unrecorded": "x"}, {"recorded_as": "prerequisite"}], "unrecorded stands alone",
                  id="unrecorded inside a list"),
+    pytest.param({"unrecorded": "\u200b"}, "unrecorded needs a reason", id="a zero-width reason"),
+    pytest.param({"recorded_as": []}, "records nothing", id="an empty pointer list"),
+    pytest.param([{"recorded_as": []}], "records nothing", id="an empty pointer list in a list"),
 ])
 def test_validate_refuses_an_invented_or_empty_section_8_entry(value, needle):
     data = raw()
     _first_distant(data)["falsified_by"] = value
     with pytest.raises(path.PathError, match=needle):
         path.validate(data)
+
+
+ROBOTICS_FALSIFIER = "frontier_backcasts/advanced_robotic_embodiment/nearest_falsifiable_experiment"
+
+
+@pytest.mark.parametrize("field, value", [
+    *[pytest.param(field, value, id=f"{field} {form}") for field in path.SECTION_8_FIELDS
+      for form, value in (("object", {"recorded_as": []}), ("list", [{"recorded_as": []}]))],
+    pytest.param("falsified_by", [{"recorded_as": ROBOTICS_FALSIFIER}, {"recorded_as": []}],
+                 id="falsified_by beside a real pointer"),
+])
+def test_an_empty_pointer_list_records_nothing(field, value):
+    """``{"recorded_as": []}`` names no text; accepting it would also drop the horizon from the gap report."""
+    data = raw()
+    next(h for h in data["horizons"] if h["id"] == "robotics")[field] = value
+    with pytest.raises(path.PathError, match="records nothing"):
+        path.validate(data)
+
+
+@pytest.mark.parametrize("horizon_id, field, value, needle", [
+    pytest.param("remote_interface_iphone", "falsified_by", {"recorded_as": ROBOTICS_FALSIFIER},
+                 "belongs to horizon 'robotics'", id="another horizon's backcast falsifier"),
+    pytest.param("voice", "falsified_by", [{"recorded_as": ROBOTICS_FALSIFIER}], "belongs to horizon 'robotics'",
+                 id="another horizon's backcast falsifier in a list"),
+    pytest.param("selective_web3_settlement", "falsified_by",
+                 {"recorded_as": "workstreams/cognition_cortex/nodes/P3/falsification"}, "do not name",
+                 id="a P-node the horizon never names"),
+    pytest.param("voice", "feasible_when", {"recorded_as": "horizons/robotics/prerequisite"},
+                 "not this horizon's field", id="another horizon's prerequisite"),
+    pytest.param("remote_interface_iphone", "feasible_when",
+                 {"recorded_as": "frontier_backcasts/advanced_robotic_embodiment/activation_condition"},
+                 "belongs to horizon 'robotics'", id="another horizon's activation condition"),
+    pytest.param("voice", "enabling_interfaces",
+                 {"value": "a simulated actuator contract", "source": path.PATH_SOURCE + ROBOTICS_FALSIFIER},
+                 "belongs to horizon 'robotics'", id="a value copied from another horizon's backcast"),
+    pytest.param("remote_interface_iphone", "enabling_interfaces",
+                 {"value": "a", "source": "greg/path.json#prerequisite"}, "uncut phrase or name",
+                 id="a lone article of the field"),
+    pytest.param("remote_interface_iphone", "enabling_interfaces",
+                 {"value": "running", "source": "greg/path.json#prerequisite"}, "uncut phrase or name",
+                 id="a lone common word of the field"),
+    pytest.param("remote_interface_iphone", "enabling_interfaces",
+                 {"value": "e", "source": "greg/path.json#prerequisite"}, "uncut phrase or name",
+                 id="a letter cut from a word"),
+    pytest.param("remote_interface_iphone", "enabling_interfaces",
+                 {"value": "erified HTTPS pat", "source": "greg/path.json#prerequisite"}, "uncut phrase or name",
+                 id="a phrase cut mid-word"),
+    pytest.param("voice", "enabling_interfaces",
+                 {"value": "an invented interface", "source": ["greg/path.json#prerequisite", "docs/nowhere.md"]},
+                 "at once", id="path and file sources mixed"),
+])
+def test_validate_refuses_text_that_belongs_elsewhere_or_is_cut(horizon_id, field, value, needle):
+    """A section 8 entry is the horizon's own recorded text: its fields, its own frontier backcasts, a P-node its
+    prerequisite or activation evidence names. Another horizon's text, or a fragment of a word, fills no gap."""
+    data = raw()
+    next(h for h in data["horizons"] if h["id"] == horizon_id)[field] = value
+    with pytest.raises(path.PathError, match=needle):
+        path.validate(data)
+
+
+def test_every_pointer_and_path_value_on_the_path_is_the_horizons_own():
+    """Every recorded pointer names the horizon's own text, so the present data passes the rule the refusals test."""
+    data = path.load()
+    nodes = 0
+    for horizon in distant(data):
+        for field in path.SECTION_8_FIELDS:
+            for entry in entries(horizon[field]):
+                refs = entries(entry.get("recorded_as", []))
+                sources = entries(entry.get("source", []))
+                refs += [s[len(path.PATH_SOURCE):] for s in sources if s.startswith(path.PATH_SOURCE)]
+                for ref in refs:
+                    parts = ref.split("/")
+                    if parts[0] == "frontier_backcasts":
+                        assert next(b for b in data["frontier_backcasts"] if b["id"] == parts[1])["horizon"] \
+                            == horizon["id"], (horizon["id"], ref)
+                    elif parts[0] == "workstreams":
+                        named = f"{horizon.get('prerequisite', '')} {horizon['activation_evidence']}"
+                        assert re.search(rf"\b{parts[3]}\b", named), (horizon["id"], ref)
+                        nodes += 1
+                    else:
+                        assert len(parts) == 1, (horizon["id"], ref)
+    assert nodes > 0
+
+
+def test_a_file_sourced_value_is_checked_here_not_at_load():
+    """greg.path reads no repository document at load (an install may ship without docs/), so a value cited from a
+    file is checked by this module: the file must exist and the value must stand whole in the section it cites."""
+    with pytest.raises(AssertionError):
+        cited("docs/nowhere.md")
+    section = cited("docs/intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md"
+                    "#44-business-objective-function")
+    assert whole("Engagement that destroys trust is failure.", section)
+    assert not whole("GREG never earns a dollar", section)
 
 
 def test_a_currently_buildable_horizon_needs_none_but_a_present_field_is_checked():

@@ -40,12 +40,20 @@ BACKCAST_FIELDS = ("destination", "current_precursor", "missing_capabilities", "
                    "risk", "authority_implications", "activation_condition")
 # Directive 2026-10-28 section 8: a capability not yet buildable keeps its "enabling interfaces", the "conditions
 # that would make it feasible" and the "conditions that would falsify it". Each entry is one of
-#   {"recorded_as": ref}             the text already on the path (a field of the horizon, or a/b/c/field);
-#   {"value": v, "source": s}        v copied verbatim from s (a repository file, or PATH_SOURCE + ref, checked here);
+#   {"recorded_as": ref}             text already on the path that records it, and the horizon's own: a field of the
+#                                    horizon, a field of one of its own frontier backcasts, or the falsification of a
+#                                    cognition P-node its prerequisite or activation evidence names (a/b/c/field);
+#   {"value": v, "source": s}        v copied verbatim from s: PATH_SOURCE + a ref the horizon owns, or a repository
+#                                    file. validate() checks a path-sourced value (an uncut phrase or name of that
+#                                    text). It reads no repository file, so a file-sourced value is checked against its
+#                                    file by tests/unit/test_horizon_section_8.py, not at load; one value never mixes
+#                                    the two kinds of source;
 #   {"unrecorded": reason}           no source says it yet; the gap is named, never filled with invented text.
 # A field holds one entry, or a list of recorded entries. Recording one grants and activates nothing.
 SECTION_8_FIELDS = ("enabling_interfaces", "feasible_when", "falsified_by")
 PATH_SOURCE = "greg/path.json#"
+# A recorded text has a visible character: whitespace and zero-width characters alone record nothing.
+VISIBLE = re.compile(r"[^\s\u00ad\u200b-\u200f\u2060-\u2064\ufeff]")
 # The path fields a recorded_as may name for each element, so a pointer cannot satisfy one with unrelated text.
 SECTION_8_POINTERS = {"enabling_interfaces": (),
                       "feasible_when": ("prerequisite", "activation_condition", "gate_crossing_evidence"),
@@ -120,10 +128,10 @@ def validate(data: dict) -> None:
 
 
 def _texts(value) -> list[str] | None:
-    """A non-empty text, or a non-empty list of non-empty texts, as a list; anything else is not recorded text."""
-    if isinstance(value, str) and value.strip():
+    """A visible text, or a non-empty list of visible texts, as a list; anything else is not recorded text."""
+    if isinstance(value, str) and VISIBLE.search(value):
         return [value]
-    if isinstance(value, list) and value and all(isinstance(v, str) and v.strip() for v in value):
+    if isinstance(value, list) and value and all(isinstance(v, str) and VISIBLE.search(v) for v in value):
         return value
     return None
 
@@ -146,6 +154,44 @@ def resolve_text(data: dict, horizon: dict, ref: str) -> str | None:
     return "\n".join(texts) if texts else None
 
 
+def _borrowed(data: dict, horizon: dict, ref: str) -> str | None:
+    """Why the text at ``ref`` belongs to something other than ``horizon``, or None when it is the horizon's own: one
+    of its fields, a field of one of its own frontier backcasts, or a field of a cognition P-node that its
+    prerequisite or activation evidence names."""
+    parts = ref.split("/")
+    if len(parts) == 1:
+        return None
+    if len(parts) == 3 and parts[0] == "frontier_backcasts":
+        owner = next(b.get("horizon") for b in data.get("frontier_backcasts") or []
+                     if isinstance(b, dict) and b.get("id") == parts[1])
+        return None if owner == horizon["id"] else f"belongs to horizon {owner!r}"
+    if len(parts) == 5 and parts[0] == "workstreams" and parts[2] == "nodes":
+        named = " ".join(text for text in (horizon.get("prerequisite"), horizon.get("activation_evidence"))
+                         if isinstance(text, str))
+        if re.search(rf"(?<![\w-]){re.escape(parts[3])}(?![\w-])", named):
+            return None
+        return f"is node {parts[3]}, which this horizon's prerequisite and activation evidence do not name"
+    return "is not this horizon's field, one of its frontier backcasts or a node it names"
+
+
+def _phrase(item: str, text: str) -> bool:
+    """``item`` stands in ``text`` uncut at word boundaries, and names something: two or more words, or one token of
+    two or more characters with a capital, a digit or a joiner (Keychain, NODE_ENROLL, greg.asks), never a bare
+    common word or a letter. Whether the phrase names an interface is review's to judge."""
+    if not re.search(rf"(?<![\w.-]){re.escape(item)}(?![\w-])", text):
+        return False
+    return len(item.split()) > 1 or (len(item) > 1 and re.search(r"[A-Z0-9_./-]", item) is not None)
+
+
+def _own_text(data: dict, horizon: dict, ref: str) -> tuple[str | None, str | None]:
+    """(text, None) for a ref that resolves to the horizon's own recorded text, else (None, why not)."""
+    text = resolve_text(data, horizon, ref)
+    if text is None:
+        return None, f"{ref!r} does not resolve to recorded text"
+    borrowed = _borrowed(data, horizon, ref)
+    return (None, f"{ref!r} {borrowed}") if borrowed else (text, None)
+
+
 def section_8_problem(data: dict, horizon: dict, field: str) -> str | None:
     """Why ``horizon[field]`` does not record a section 8 element, or None when it does."""
     if field not in horizon:
@@ -161,11 +207,14 @@ def section_8_problem(data: dict, horizon: dict, field: str) -> str | None:
             return "unrecorded stands alone, not in a list"
         if "recorded_as" in entry:
             refs = entry["recorded_as"] if isinstance(entry["recorded_as"], list) else [entry["recorded_as"]]
+            if not refs:
+                return "recorded_as names no field (an empty list records nothing)"
             for ref in refs:
                 if not isinstance(ref, str) or ref.rsplit("/", 1)[-1] not in SECTION_8_POINTERS[field]:
                     return f"recorded_as {ref!r} names no field that records {field}"
-                if resolve_text(data, horizon, ref) is None:
-                    return f"recorded_as {ref!r} does not resolve to recorded text"
+                _, problem = _own_text(data, horizon, ref)
+                if problem:
+                    return f"recorded_as {problem}"
             continue
         values, sources = _texts(entry["value"]), _texts(entry["source"])
         if values is None:
@@ -173,11 +222,17 @@ def section_8_problem(data: dict, horizon: dict, field: str) -> str | None:
         if sources is None:
             return "value needs its source"
         inside = [s[len(PATH_SOURCE):] for s in sources if s.startswith(PATH_SOURCE)]
-        if inside and len(inside) == len(sources):
-            texts = [resolve_text(data, horizon, ref) or "" for ref in inside]
-            for item in values:
-                if not any(item in text for text in texts):
-                    return f"value {item!r} is not in its source {sources}"
+        if inside and len(inside) != len(sources):
+            return f"value cites path fields and files at once {sources}; record each kind separately"
+        texts = []
+        for ref in inside:              # a file source is read by the unit test, not here
+            text, problem = _own_text(data, horizon, ref)
+            if problem:
+                return f"value source {problem}"
+            texts.append(text)
+        for item in values if inside else []:
+            if not any(_phrase(item, text) for text in texts):
+                return f"value {item!r} is not an uncut phrase or name of its source {sources}"
     return None
 
 

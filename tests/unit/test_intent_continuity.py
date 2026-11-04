@@ -93,7 +93,8 @@ def test_a_repin_refuses_a_deletion_and_only_adds(tree):
     record.write_text(json.dumps({"intent_id": "INTENT-20261104-LATER"}), encoding="utf-8")
     after = repin(snap, "e" * 40, tree)
     assert (after["pinned_commit"], after["ids"]) == (snap["pinned_commit"], snap["ids"])
-    assert after["added"] == snap["added"] + [{"commit": "e" * 40, "ids": {"intent_records": ["INTENT-20261104-LATER"]}}]
+    later = {"commit": "e" * 40, "ids": {"intent_records": ["INTENT-20261104-LATER"]}}
+    assert after["added"] == snap["added"] + [later]
     record.unlink()
     assert missing(after, tree) == [("intent_records", "INTENT-20261104-LATER")]
 
@@ -102,8 +103,8 @@ def test_a_lawfully_superseded_id_stays_pinned_after_a_repin(tree):
     _intent_file(tree, "INTENT-20260930-open-source-first").unlink()
     successor = _intent_file(tree, "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN")
     record = json.loads(successor.read_text(encoding="utf-8"))
-    successor.write_text(json.dumps(dict(record, supersedes=record["supersedes"] + ["INTENT-20260930-open-source-first"])),
-                         encoding="utf-8")
+    named = dict(record, supersedes=record["supersedes"] + ["INTENT-20260930-open-source-first"])
+    successor.write_text(json.dumps(named), encoding="utf-8")
     after = repin(snapshot(), "d" * 40, tree)
     assert "INTENT-20260930-open-source-first" in pinned(after)["intent_records"]
     successor.write_text(json.dumps(record), encoding="utf-8")

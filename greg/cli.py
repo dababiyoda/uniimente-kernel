@@ -490,6 +490,8 @@ def main(argv=None) -> int:
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
+    sub.add_parser("autonomy", help="read-only: the level each (capability, action class, target pattern, budget band) "
+                                    "has earned from the ledger; it grants nothing")
     pp = sub.add_parser("path", help="where GREG stands on its developmental path: active node, gate, exit evidence, horizons")
     pq = pp.add_mutually_exclusive_group()
     pq.add_argument("--node", help="read one node's own measurement (e.g. N6), even past where the path stops")
@@ -589,6 +591,9 @@ def main(argv=None) -> int:
     cd.add_argument("--until", help="window end, ISO 8601 (default: now)")
     cd.add_argument("--body", nargs="?", const="", default=None, metavar="HOME",
                     help="read outcomes from a body's ledger, read-only: the body at --home, or HOME")
+    bl = sub.add_parser("blockers", help="read-only: each open mission blocker, typed: why, when it is reconsidered, "
+                                         "the evidence and authority it needs, and the next move")
+    bl.add_argument("--mission", default=None, help="only this mission's blocker")
     rh = sub.add_parser("rehearse", help="credential-free rehearsal: a throwaway body and REHEARSAL key run the "
                                           "Founder's First Mission end to end")
     rh.add_argument("--dir"); rh.add_argument("--kernel-root"); rh.add_argument("--effort", type=int, default=8)
@@ -819,6 +824,10 @@ def main(argv=None) -> int:
             with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
                 data = metrics.vepmc(journal) if args.cmd == "vepmc" else routing.routing_knowledge(journal)
             print(json.dumps(data, indent=1))
+        elif args.cmd == "autonomy":
+            from greg import autonomy
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                print(json.dumps(autonomy.report(journal), indent=1))
         elif args.cmd == "path":
             from greg import path as devpath
 
@@ -976,6 +985,10 @@ def main(argv=None) -> int:
         elif args.cmd == "lifecycle":
             print(_drop(home, "LIFECYCLE", {"mission_id": args.mission_id, "state": args.state,
                                             "reason": args.reason}, args))
+        elif args.cmd == "blockers":
+            from greg import blockers
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                print(json.dumps(blockers.open_blockers(journal, home=home, mission_id=args.mission), indent=1))
         elif args.cmd == "acceptance":
             from greg import acceptance
             return acceptance.main(home)

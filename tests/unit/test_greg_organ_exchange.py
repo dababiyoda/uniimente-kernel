@@ -190,9 +190,13 @@ def _ctx(tmp_path, read_roots, deliver=True, mission_id="m:organs-test"):
 
 def test_binding_verdict_never_outruns_unevidenced_canonical_fields():
     assert ox.binding_verdict("go", ["pain_owner"], ["a claim"])[0] == "needs_more_evidence"
+    assert ox.binding_verdict("go", ["governing_bottleneck"], ["a claim"])[0] == "needs_more_evidence"
     assert ox.binding_verdict("go", [], [])[0] == "needs_more_evidence", "no evidence at all caps a go"
     assert ox.binding_verdict("kill", ["pain_owner"], [])[0] == "kill", "a lower verdict is never raised"
+    assert ox.binding_verdict("kill", ["governing_bottleneck"], [])[0] == "kill"
     assert ox.binding_verdict("go", [], ["a claim"])[0] == "go"
+    assert ox.binding_verdict("GO", [], ["a claim"])[0] == "needs_more_evidence", \
+        "an unrecognized label is not a stronger verdict than the evidence"
 
 
 def test_exchange_verifies_both_legs_caps_the_engine_and_the_appraiser_reproduces_it(tmp_path, organs, monkeypatch):

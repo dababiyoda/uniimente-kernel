@@ -1,0 +1,1057 @@
+{
+ "body": "this cloud container (Ubuntu 24.04 userland, dpkg), 2026-10-22",
+ "catalog_binaries": {
+  "openssl": {
+   "class": "weak_copyleft",
+   "held_current": false,
+   "held_fail_closed": false,
+   "verdict": "CLEARED_WITH_OBLIGATIONS"
+  },
+  "pdftotext": {
+   "class": "strong_copyleft",
+   "held_current": false,
+   "held_fail_closed": false,
+   "verdict": "CLEARED_WITH_OBLIGATIONS"
+  },
+  "sha256sum": {
+   "class": "strong_copyleft",
+   "held_current": false,
+   "held_fail_closed": false,
+   "verdict": "CLEARED_WITH_OBLIGATIONS"
+  },
+  "shasum": {
+   "class": "unclassified",
+   "held_current": false,
+   "held_fail_closed": true,
+   "verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR"
+  },
+  "wc": {
+   "class": "strong_copyleft",
+   "held_current": false,
+   "held_fail_closed": false,
+   "verdict": "CLEARED_WITH_OBLIGATIONS"
+  }
+ },
+ "greg_verdicts": {
+  "CLEARED": 21,
+  "CLEARED_WITH_OBLIGATIONS": 244,
+  "UNCLASSIFIED_PRIOR_BEHAVIOUR": 439,
+  "UNDETERMINABLE": 3
+ },
+ "head": "fe820055 + increment 3 working tree",
+ "policy_holds": {
+  "P0_current_hold_known_uncleared": 0,
+  "P1_fail_closed": 442,
+  "P2_catalog_allowlist_then_fail_closed": 441
+ },
+ "scancode": {
+  "by_package": {
+   "age": {
+    "binaries": 2,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "bsd-new AND mit AND (isc AND gpl-3.0-plus AND bsd-new AND mit)"
+   },
+   "apt": {
+    "binaries": 7,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "public-domain AND (gpl-1.0-plus AND gpl-2.0-plus AND gpl-2.0) AND (gpl-2.0 AND gpl-1.0-plus) AND (gpl-2.0-plus AND gpl-2.0 AND gpl-1.0-plus) AND bsd-new AND (mit AND gpl-2.0 AND (gpl-2.0 OR gpl-3.0) AND gpl-2.0-plus)"
+   },
+   "autoconf": {
+    "binaries": 7,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "gpl-3.0-plus AND (gpl-3.0-plus AND autoconf-exception-3.0 AND gpl-3.0 WITH autoconf-exception-3.0 AND gpl-3.0) AND autoconf-exception-3.0 AND (other-permissive AND fsf-ap AND fsf-unlimited-no-warranty) AND (other-permissive AND fsf-free) AND (gpl-2.0-plus WITH autoconf-simple-exception-2.0 AND gpl-3"
+   },
+   "automake": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-2.0-plus AND (gpl-3.0-plus AND gpl-3.0 AND gfdl-1.3-plus AND gfdl-1.1-plus AND gfdl-1.3 AND other-permissive)"
+   },
+   "autotools-dev": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-3.0-plus WITH autoconf-simple-exception AND gpl-1.0-plus AND gpl-3.0"
+   },
+   "base-files": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-2.0-plus"
+   },
+   "bash": {
+    "binaries": 3,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-3.0-plus AND (gpl-3.0-plus AND gpl-3.0-plus WITH bison-exception-2.2 AND gpl-3.0) AND gpl-2.0-plus AND (gpl-2.0-plus AND gpl-2.0) AND (gfdl-1.3 AND gfdl-1.3-plus AND gfdl-1.1-plus) AND (latex2e AND other-permissive) AND (bsd-original-uc AND bsd-new AND mit AND historical AND other-permissive)"
+   },
+   "bc": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-2.0-plus AND (other-permissive AND latex2e-translated-notice) AND (other-permissive AND latex2e) AND (gpl-2.0-plus AND gpl-2.0-plus WITH tex-exception) AND x11-xconsortium AND (x11-xconsortium AND public-domain)"
+   },
+   "binutils-x86-64-linux-gnu": {
+    "binaries": 23,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-3.0-plus AND lgpl-2.0-plus) AND (gfdl-1.1-plus AND gfdl-1.3-no-invariants-only)"
+   },
+   "bison": {
+    "binaries": 2,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-3.0-plus AND gpl-3.0 AND gpl-2.0-plus"
+   },
+   "bsdutils": {
+    "binaries": 6,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-2.0-plus AND gpl-2.0) AND gpl-2.0 AND (gpl-3.0-plus AND gpl-2.0) AND public-domain AND (bsd-original AND mit AND bsd-new) AND bsd-new AND lgpl-2.0-plus AND (lgpl-2.0-plus AND lgpl-2.1-plus) AND lgpl-2.1-plus AND (lgpl-2.1-plus AND lgpl-3.0-plus) AND gpl-2.0-plus AND (gpl-2.0-plus AND public-dom"
+   },
+   "bzip2": {
+    "binaries": 8,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(bsd-new AND bzip2-libbzip-2010) AND (gpl-1.0-plus AND gpl-2.0)"
+   },
+   "clang-18": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "permissive",
+    "scancode_expression": "(apache-2.0 AND llvm-exception) AND mit AND bsd-new AND (openwall-md5-permissive AND python AND mit AND bsd-new)"
+   },
+   "clang-format-18": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "permissive",
+    "scancode_expression": "(apache-2.0 AND llvm-exception) AND mit AND bsd-new AND (openwall-md5-permissive AND python AND mit AND bsd-new)"
+   },
+   "cmake": {
+    "binaries": 3,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "bsd-new AND (apache-2.0 AND mit) AND (gpl-3.0-plus AND zlib) AND (gpl-2.0-plus AND apache-2.0) AND isc AND (bsd-simplified AND mit) AND mit AND (bsd-new AND zlib) AND bsd-original AND bsd-simplified AND (bsd-new AND bsd-simplified AND fsf-ap AND apache-2.0 AND bsd-zero) AND (clear-bsd AND bsd-origin"
+   },
+   "containerd.io": {
+    "binaries": 4,
+    "greg_class": "permissive",
+    "greg_verdict": "CLEARED",
+    "scancode_class": "permissive",
+    "scancode_expression": "apache-2.0"
+   },
+   "coreutils": {
+    "binaries": 104,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-3.0-plus AND (gpl-3.0-plus AND bsd-original-uc AND bsd-new) AND (gpl-3.0-plus AND isc AND fsf-unlimited) AND (gpl-3.0-plus AND gfdl-1.3 AND gfdl-1.3-plus AND gfdl-1.1-plus)"
+   },
+   "cpp-13-x86-64-linux-gnu": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-3.0-plus WITH gcc-exception-3.1 AND bsd-new AND (uoi-ncsa AND mit) AND (mit AND gfdl-1.2 AND gcc-exception-3.1) AND lgpl-2.0-plus AND lgpl-2.1-plus AND sunpro AND (lgpl-2.0-plus AND lgpl-2.1-plus) AND gpl-2.0-plus AND (artistic-perl-1.0 OR gpl-1.0) AND zlib AND d-zlib AND gpl-3.0-plus AND gfdl-1"
+   },
+   "curl": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "curl AND openldap-2.8 AND isc AND gpl-2.0-plus AND gpl-3.0-plus AND (gpl-2.0-plus AND libtool-exception-2.0) AND bsd-new AND bsd-original-uc AND (fsf-unlimited AND x11-xconsortium AND curl) AND (curl AND bsd-new AND bsd-original-uc) AND bsd-source-code AND (isc AND gpl-2.0-plus AND gpl-2.0-plus WITH"
+   },
+   "dash": {
+    "binaries": 1,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(bsd-new AND public-domain) AND gpl-2.0-plus AND (bsd-new AND gpl-2.0-plus)"
+   },
+   "dbus-bin": {
+    "binaries": 5,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-2.0-plus AND afl-2.1) AND (gpl-2.0-plus AND afl-2.1 AND gpl-1.0-plus) AND gpl-2.0-plus AND bsd-new AND (lgpl-2.1-plus AND g10-permissive AND gpl-2.0-plus AND gpl-1.0-plus AND gpl-2.0 AND lgpl-2.1 AND mit AND fsf-ap AND fsf-unlimited AND tcl AND bsd-new AND afl-2.1)"
+   },
+   "dbus-daemon": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-2.0-plus AND afl-2.1) AND (gpl-2.0-plus AND afl-2.1 AND gpl-1.0-plus) AND gpl-2.0-plus AND bsd-new AND (lgpl-2.1-plus AND g10-permissive AND gpl-2.0-plus AND gpl-1.0-plus AND gpl-2.0 AND lgpl-2.1 AND mit AND fsf-ap AND fsf-unlimited AND tcl AND bsd-new AND afl-2.1)"
+   },
+   "debconf": {
+    "binaries": 7,
+    "greg_class": "permissive",
+    "greg_verdict": "CLEARED",
+    "scancode_class": "permissive",
+    "scancode_expression": "bsd-simplified"
+   },
+   "debianutils": {
+    "binaries": 5,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-2.0-plus AND (gpl-2.0-plus AND (gpl-2.0-plus AND public-domain) AND public-domain AND smail-gpl AND gpl-1.0-plus)"
+   },
+   "diffutils": {
+    "binaries": 4,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "unclassified",
+    "scancode_expression": "gpl-3.0-plus AND (fsf-unlimited AND gpl-3.0-plus) AND lgpl-2.0-plus AND lgpl-2.1-plus AND (gpl-3.0-plus AND autoconf-exception-3.0 AND gpl-3.0-plus WITH autoconf-simple-exception AND gpl-3.0-plus WITH tex-exception AND (gpl-2.0-plus AND gpl-3.0)) AND gpl-2.0-plus AND (gpl-1.0-plus AND gpl-2.0-plus A"
+   },
+   "dirmngr": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-3.0-plus AND other-permissive AND (other-permissive AND lgpl-2.1-plus) AND lgpl-2.1-plus AND (lgpl-3.0-plus AND gpl-2.0-plus) AND mit AND (gpl-3.0-plus AND bsd-new) AND (lgpl-3.0-plus AND gpl-3.0-plus) AND (gpl-3.0-plus AND other-permissive AND cc0-1.0 AND bsd-new AND fsf-unlimited-no-warranty) "
+   },
+   "dpkg": {
+    "binaries": 10,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-2.0-plus AND public-domain AND (other-permissive AND public-domain AND gpl-2.0-plus AND gpl-2.0)"
+   },
+   "dpkg-dev": {
+    "binaries": 19,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-2.0-plus AND public-domain AND (other-permissive AND public-domain AND gpl-2.0-plus AND gpl-2.0)"
+   },
+   "e2fsprogs": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-2.0 AND gpl-2.0-plus) AND gpl-2.0 AND (lgpl-2.0 AND gpl-1.0-plus AND lgpl-2.0-plus) AND lgpl-2.0 AND (gpl-2.0 AND bsd-new) AND apache-2.0 AND (lgpl-2.0 AND gpl-2.0) AND (gpl-2.0 AND lgpl-2.0) AND (gpl-2.0 AND apache-2.0 AND isc AND (isc OR gpl-2.0-plus)) AND (gpl-1.0-plus AND mit-with-modificat"
+   },
+   "ffmpeg": {
+    "binaries": 4,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "(lgpl-2.1-plus AND gpl-2.0-plus AND gpl-1.0-plus AND apache-2.0 AND gpl-3.0-plus) AND lgpl-2.1-plus AND (gpl-2.0-plus AND gpl-2.0 AND gpl-1.0-plus) AND (gpl-3.0-plus AND lgpl-2.1-plus AND gpl-3.0) AND mit AND (lgpl-2.1-plus AND bsd-new) AND public-domain AND isc AND (ijg AND warranty-disclaimer) AND"
+   },
+   "file": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "permissive",
+    "scancode_expression": "bsd-simplified AND public-domain AND mit AND (bsd-simplified AND bsd-simplified-darwin AND public-domain AND bsd-new AND mit AND isc)"
+   },
+   "findutils": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "gfdl-1.3-plus AND (gpl-3.0-plus AND unknown-license-reference AND fsf-ap AND gfdl-1.3-plus) AND (gpl-3.0-plus AND gpl-3.0-plus WITH autoconf-simple-exception AND fsf-unlimited) AND (gpl-2.0-plus AND gpl-2.0-plus WITH autoconf-simple-exception-2.0 AND x11-xconsortium AND public-domain) AND (gpl-2.0-p"
+   },
+   "fontconfig": {
+    "binaries": 9,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "permissive",
+    "scancode_expression": "x11-keith-packard"
+   },
+   "g++-13-x86-64-linux-gnu": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-3.0-plus WITH gcc-exception-3.1 AND bsd-new AND (uoi-ncsa AND mit) AND (mit AND gfdl-1.2 AND gcc-exception-3.1) AND lgpl-2.0-plus AND lgpl-2.1-plus AND sunpro AND (lgpl-2.0-plus AND lgpl-2.1-plus) AND gpl-2.0-plus AND (artistic-perl-1.0 OR gpl-1.0) AND zlib AND d-zlib AND gpl-3.0-plus AND gfdl-1"
+   },
+   "gcc": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-2.0-plus AND gpl-2.0) AND bsd-original"
+   },
+   "gcc-13-x86-64-linux-gnu": {
+    "binaries": 8,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-3.0-plus WITH gcc-exception-3.1 AND bsd-new AND (uoi-ncsa AND mit) AND (mit AND gfdl-1.2 AND gcc-exception-3.1) AND lgpl-2.0-plus AND lgpl-2.1-plus AND sunpro AND (lgpl-2.0-plus AND lgpl-2.1-plus) AND gpl-2.0-plus AND (artistic-perl-1.0 OR gpl-1.0) AND zlib AND d-zlib AND gpl-3.0-plus AND gfdl-1"
+   },
+   "gdb": {
+    "binaries": 4,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-3.0-plus AND lgpl-2.1-plus AND (lgpl-2.1 WITH qt-lgpl-exception-1.1 AND lgpl-2.0-plus) AND gpl-2.0-plus AND bsd-new AND (lgpl-2.1-plus AND bsd-new AND gpl-2.0-plus AND gpl-3.0-plus AND lgpl-2.0-plus AND gpl-1.0-plus AND lgpl-2.0 AND lgpl-3.0-plus AND gpl-3.0-plus WITH gcc-exception-3.1 AND gpl-3"
+   },
+   "git": {
+    "binaries": 3,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "(gpl-2.0 AND bsd-new AND zlib AND lgpl-2.1-plus) AND bsd-new AND gpl-2.0-plus AND (mit AND gpl-2.0-plus AND gpl-2.0) AND free-unknown AND gpl-2.0 AND (mit AND gpl-2.0-plus) AND (gpl-2.0-plus AND (gpl-1.0-plus OR artistic-perl-1.0) AND (artistic-perl-1.0 OR gpl-1.0-plus) AND mit) AND (gpl-2.0-plus AN"
+   },
+   "git-lfs": {
+    "binaries": 1,
+    "greg_class": "permissive",
+    "greg_verdict": "CLEARED",
+    "scancode_class": "permissive",
+    "scancode_expression": "mit"
+   },
+   "gnupg-utils": {
+    "binaries": 7,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-3.0-plus AND other-permissive AND (other-permissive AND lgpl-2.1-plus) AND lgpl-2.1-plus AND (lgpl-3.0-plus AND gpl-2.0-plus) AND mit AND (gpl-3.0-plus AND bsd-new) AND (lgpl-3.0-plus AND gpl-3.0-plus) AND (gpl-3.0-plus AND other-permissive AND cc0-1.0 AND bsd-new AND fsf-unlimited-no-warranty) "
+   },
+   "gpg": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-3.0-plus AND other-permissive AND (other-permissive AND lgpl-2.1-plus) AND lgpl-2.1-plus AND (lgpl-3.0-plus AND gpl-2.0-plus) AND mit AND (gpl-3.0-plus AND bsd-new) AND (lgpl-3.0-plus AND gpl-3.0-plus) AND (gpl-3.0-plus AND other-permissive AND cc0-1.0 AND bsd-new AND fsf-unlimited-no-warranty) "
+   },
+   "gpg-agent": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-3.0-plus AND other-permissive AND (other-permissive AND lgpl-2.1-plus) AND lgpl-2.1-plus AND (lgpl-3.0-plus AND gpl-2.0-plus) AND mit AND (gpl-3.0-plus AND bsd-new) AND (lgpl-3.0-plus AND gpl-3.0-plus) AND (gpl-3.0-plus AND other-permissive AND cc0-1.0 AND bsd-new AND fsf-unlimited-no-warranty) "
+   },
+   "gpgconf": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-3.0-plus AND other-permissive AND (other-permissive AND lgpl-2.1-plus) AND lgpl-2.1-plus AND (lgpl-3.0-plus AND gpl-2.0-plus) AND mit AND (gpl-3.0-plus AND bsd-new) AND (lgpl-3.0-plus AND gpl-3.0-plus) AND (gpl-3.0-plus AND other-permissive AND cc0-1.0 AND bsd-new AND fsf-unlimited-no-warranty) "
+   },
+   "gpgsm": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-3.0-plus AND other-permissive AND (other-permissive AND lgpl-2.1-plus) AND lgpl-2.1-plus AND (lgpl-3.0-plus AND gpl-2.0-plus) AND mit AND (gpl-3.0-plus AND bsd-new) AND (lgpl-3.0-plus AND gpl-3.0-plus) AND (gpl-3.0-plus AND other-permissive AND cc0-1.0 AND bsd-new AND fsf-unlimited-no-warranty) "
+   },
+   "gpgv": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-3.0-plus AND other-permissive AND (other-permissive AND lgpl-2.1-plus) AND lgpl-2.1-plus AND (lgpl-3.0-plus AND gpl-2.0-plus) AND mit AND (gpl-3.0-plus AND bsd-new) AND (lgpl-3.0-plus AND gpl-3.0-plus) AND (gpl-3.0-plus AND other-permissive AND cc0-1.0 AND bsd-new AND fsf-unlimited-no-warranty) "
+   },
+   "grep": {
+    "binaries": 4,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-1.0-plus AND gpl-3.0-plus) AND gpl-3.0-plus"
+   },
+   "gtk-update-icon-cache": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "((gpl-2.0-plus OR lgpl-2.0-plus) AND lgpl-2.1-plus AND gpl-3.0-plus) AND (lgpl-2.0-plus AND cc-by-sa-4.0) AND (unknown-license-reference AND lcs-telegraphics) AND swl AND lgpl-2.0-plus AND mit AND apache-2.0 AND (lgpl-2.0-plus AND zpl-2.1) AND (other-permissive AND cc-by-sa-4.0 AND mit AND gpl-3.0-p"
+   },
+   "gzip": {
+    "binaries": 14,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-3.0-plus AND gfdl-1.3-plus AND (gpl-3.0-plus AND gfdl-1.3-plus AND latex2e)"
+   },
+   "hostname": {
+    "binaries": 1,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-2.0"
+   },
+   "imagemagick-6.q16": {
+    "binaries": 11,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "(imagemagick AND apache-2.0) AND imagemagick AND fsf-unlimited-no-warranty AND (imagemagick AND gpl-2.0-plus) AND (imagemagick AND agpl-3.0-plus AND bsd-simplified AND bsd-new) AND (imagemagick AND gpl-1.0-plus AND gpl-2.0-plus) AND bsd-simplified AND (imagemagick AND bsd-new) AND (imagemagick AND l"
+   },
+   "init-system-helpers": {
+    "binaries": 2,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "bsd-new AND gpl-2.0-plus AND (gpl-2.0-plus AND bsd-new)"
+   },
+   "jq": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(mit AND cc-by-3.0 AND x11-lucent) AND gpl-2.0-plus"
+   },
+   "less": {
+    "binaries": 4,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-3.0-plus AND (gpl-3.0-plus OR bsd-simplified) AND gpl-2.0-plus AND gpl-3.0 AND bsd-simplified AND x11-xconsortium) AND (regexp AND public-domain)"
+   },
+   "libc-bin": {
+    "binaries": 9,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "lgpl-2.1-plus AND (gpl-2.0-plus AND bsd-new) AND bsd-new AND historical AND isc AND (bsd-new AND carnegie-mellon-contributors) AND (bsd-new AND inner-net-2.0) AND (lgpl-2.1-plus AND lgpl-2.0-plus) AND (punycode AND ietf) AND other-permissive AND hs-regexp AND pcre AND sunpro AND (lgpl-2.1-plus AND g"
+   },
+   "libc-dev-bin": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "lgpl-2.1-plus AND (gpl-2.0-plus AND bsd-new) AND bsd-new AND historical AND isc AND (bsd-new AND carnegie-mellon-contributors) AND (bsd-new AND inner-net-2.0) AND (lgpl-2.1-plus AND lgpl-2.0-plus) AND (punycode AND ietf) AND other-permissive AND hs-regexp AND pcre AND sunpro AND (lgpl-2.1-plus AND g"
+   },
+   "libglib2.0-bin": {
+    "binaries": 5,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "(lgpl-2.1-plus AND (lgpl-2.1 AND gpl-2.0) AND lgpl-2.0-plus) AND lgpl-2.1-plus AND (afl-2.0 AND lgpl-2.1-plus) AND lgpl-2.0-plus AND fsf-unlimited AND cc0-1.0 AND unicode-dfs-2016 AND mit AND gpl-2.0-plus AND lgpl-3.0-plus AND (apache-2.0 AND llvm-exception) AND (bzip2-libbzip-2010 AND cc-by-sa-3.0)"
+   },
+   "libglib2.0-dev": {
+    "binaries": 3,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "(lgpl-2.1-plus AND (lgpl-2.1 AND gpl-2.0) AND lgpl-2.0-plus) AND lgpl-2.1-plus AND (afl-2.0 AND lgpl-2.1-plus) AND lgpl-2.0-plus AND fsf-unlimited AND cc0-1.0 AND unicode-dfs-2016 AND mit AND gpl-2.0-plus AND lgpl-3.0-plus AND (apache-2.0 AND llvm-exception) AND (bzip2-libbzip-2010 AND cc-by-sa-3.0)"
+   },
+   "libglib2.0-dev-bin": {
+    "binaries": 8,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "(lgpl-2.1-plus AND (lgpl-2.1 AND gpl-2.0) AND lgpl-2.0-plus) AND lgpl-2.1-plus AND (afl-2.0 AND lgpl-2.1-plus) AND lgpl-2.0-plus AND fsf-unlimited AND cc0-1.0 AND unicode-dfs-2016 AND mit AND gpl-2.0-plus AND lgpl-3.0-plus AND (apache-2.0 AND llvm-exception) AND (bzip2-libbzip-2010 AND cc-by-sa-3.0)"
+   },
+   "libncurses-dev": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "permissive",
+    "scancode_expression": "mit AND x11-xconsortium AND bsd-new AND x11-fsf"
+   },
+   "libnss3-tools": {
+    "binaries": 29,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "weak_copyleft",
+    "scancode_expression": "(mpl-2.0 AND zlib) AND (bsd-new AND bsd-simplified AND bsd-original-uc) AND (public-domain AND blessing)"
+   },
+   "libpcre2-dev": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "bsd-new AND pcre2-exception AND x11-xconsortium AND public-domain AND bsd-simplified"
+   },
+   "libperl5.38t64": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-1.0-plus OR artistic-perl-1.0) AND ((gpl-1.0-plus OR artistic-perl-1.0) AND (artistic-perl-1.0 OR gpl-1.0-plus)) AND mit AND (artistic-perl-1.0 OR gpl-1.0-plus) AND gpl-3.0-plus AND unicode AND (gpl-1.0-plus AND (gpl-1.0-plus OR artistic-perl-1.0)) AND (gpl-1.0-plus AND (gpl-1.0-plus OR artisti"
+   },
+   "libpng-dev": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "libpng AND (libpng AND mit) AND (gpl-2.0-plus AND other-permissive AND unknown) AND (libpng AND apache-2.0 AND bsd-new) AND (gpl-2.0-plus AND mit AND bsd-new AND unknown) AND (warranty-disclaimer AND libpng) AND (pngsuite AND apache-2.0 AND bsd-new)"
+   },
+   "libpython3.11-dev": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "python AND gpl-1.0-plus AND (python-2.0.1 AND python-cwi) AND bsd-new AND llnl AND historical AND other-permissive AND (warranty-disclaimer AND standard-ml-nj) AND secret-labs-2011 AND (gpl-2.0-plus AND gpl-1.0-plus AND gpl-2.0) AND (unknown-license-reference AND openssl-ssleay) AND bsd-source-code "
+   },
+   "libpython3.12-dev": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "python AND gpl-1.0-plus AND (python-2.0.1 AND python-cwi) AND bsd-new AND llnl AND historical AND other-permissive AND (warranty-disclaimer AND standard-ml-nj) AND secret-labs-2011 AND (gpl-2.0-plus AND gpl-1.0-plus AND gpl-2.0) AND (unknown-license-reference AND openssl-ssleay) AND bsd-source-code "
+   },
+   "libpython3.13-dev": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "python AND gpl-1.0-plus AND (python-2.0.1 AND python-cwi) AND bsd-new AND llnl AND historical AND other-permissive AND (warranty-disclaimer AND standard-ml-nj) AND secret-labs-2011 AND (gpl-2.0-plus AND gpl-1.0-plus AND gpl-2.0) AND (unknown-license-reference AND openssl-ssleay) AND bsd-source-code "
+   },
+   "libreoffice-calc": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "(mpl-2.0 AND apache-2.0) AND apache-2.0 AND (mpl-2.0 AND cc0-1.0 AND apache-2.0) AND gpl-2.0-plus AND (cc-by-sa-3.0 AND gpl-3.0-plus AND cc0-1.0) AND (lgpl-3.0-plus AND mpl-2.0 AND mit AND gpl-2.0 AND gpl-2.0-plus) AND ofl-1.1 AND mit AND bsd-new AND (mpl-1.1 AND gpl-2.0 AND lgpl-2.0 AND unknown-lic"
+   },
+   "libreoffice-common": {
+    "binaries": 3,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "(mpl-2.0 AND apache-2.0) AND apache-2.0 AND (mpl-2.0 AND cc0-1.0 AND apache-2.0) AND gpl-2.0-plus AND (cc-by-sa-3.0 AND gpl-3.0-plus AND cc0-1.0) AND (lgpl-3.0-plus AND mpl-2.0 AND mit AND gpl-2.0 AND gpl-2.0-plus) AND ofl-1.1 AND mit AND bsd-new AND (mpl-1.1 AND gpl-2.0 AND lgpl-2.0 AND unknown-lic"
+   },
+   "libreoffice-draw": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "(mpl-2.0 AND apache-2.0) AND apache-2.0 AND (mpl-2.0 AND cc0-1.0 AND apache-2.0) AND gpl-2.0-plus AND (cc-by-sa-3.0 AND gpl-3.0-plus AND cc0-1.0) AND (lgpl-3.0-plus AND mpl-2.0 AND mit AND gpl-2.0 AND gpl-2.0-plus) AND ofl-1.1 AND mit AND bsd-new AND (mpl-1.1 AND gpl-2.0 AND lgpl-2.0 AND unknown-lic"
+   },
+   "libreoffice-impress": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "(mpl-2.0 AND apache-2.0) AND apache-2.0 AND (mpl-2.0 AND cc0-1.0 AND apache-2.0) AND gpl-2.0-plus AND (cc-by-sa-3.0 AND gpl-3.0-plus AND cc0-1.0) AND (lgpl-3.0-plus AND mpl-2.0 AND mit AND gpl-2.0 AND gpl-2.0-plus) AND ofl-1.1 AND mit AND bsd-new AND (mpl-1.1 AND gpl-2.0 AND lgpl-2.0 AND unknown-lic"
+   },
+   "libreoffice-writer": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "(mpl-2.0 AND apache-2.0) AND apache-2.0 AND (mpl-2.0 AND cc0-1.0 AND apache-2.0) AND gpl-2.0-plus AND (cc-by-sa-3.0 AND gpl-3.0-plus AND cc0-1.0) AND (lgpl-3.0-plus AND mpl-2.0 AND mit AND gpl-2.0 AND gpl-2.0-plus) AND ofl-1.1 AND mit AND bsd-new AND (mpl-1.1 AND gpl-2.0 AND lgpl-2.0 AND unknown-lic"
+   },
+   "libtool": {
+    "binaries": 1,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-2.0-plus AND gfdl-1.3-plus) AND (gpl-2.0-plus AND autoconf-simple-exception-2.0 AND gpl-2.0 AND gfdl-1.3-plus AND gfdl-1.2-plus)"
+   },
+   "libxml2-utils": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "permissive",
+    "scancode_expression": "mit AND isc AND (mit AND x11-xconsortium-veillard AND isc AND mit-veillard-variant)"
+   },
+   "login": {
+    "binaries": 4,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "bsd-original AND bsd-new AND gpl-1.0 AND gpl-2.0-plus AND (gpl-2.0-plus AND bsd-new) AND (gpl-2.0-plus AND public-domain) AND (public-domain AND gpl-2.0-plus) AND (gpl-2.0-plus AND bsd-new AND gpl-1.0-plus AND gpl-1.0)"
+   },
+   "lp-solve": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "other-permissive AND (warranty-disclaimer AND other-permissive) AND (gpl-2.0-plus WITH bison-exception-2.2 AND lgpl-2.0-plus AND lgpl-2.1-plus)"
+   },
+   "lsb-release": {
+    "binaries": 1,
+    "greg_class": "permissive",
+    "greg_verdict": "CLEARED",
+    "scancode_class": "permissive",
+    "scancode_expression": "isc AND sudo"
+   },
+   "lsof": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "bsd-original AND (bsd-original AND gpl-2.0-plus AND lgpl-2.0-plus) AND (sendmail AND bsd-original AND bsd-original-uc AND purdue-bsd AND lgpl-2.0-plus AND lgpl-3.0 AND (gpl-2.0 AND lgpl-2.0) AND gpl-2.0-plus)"
+   },
+   "m4": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-1.0-plus AND gfdl-1.3-plus) AND gfdl-1.1-plus"
+   },
+   "make": {
+    "binaries": 2,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-3.0-plus"
+   },
+   "mawk": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-2.0 AND (gpl-2.0 AND x11-xconsortium AND public-domain AND cc-by-3.0) AND (gpl-2.0 AND cc-by-3.0 AND x11-xconsortium)"
+   },
+   "mount": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-2.0-plus AND gpl-2.0) AND gpl-2.0 AND (gpl-3.0-plus AND gpl-2.0) AND public-domain AND (bsd-original AND mit AND bsd-new) AND bsd-new AND lgpl-2.0-plus AND (lgpl-2.0-plus AND lgpl-2.1-plus) AND lgpl-2.1-plus AND (lgpl-2.1-plus AND lgpl-3.0-plus) AND gpl-2.0-plus AND (gpl-2.0-plus AND public-dom"
+   },
+   "nano": {
+    "binaries": 1,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-3.0-plus AND gfdl-1.1-plus AND gpl-2.0-plus AND gfdl-1.2-plus AND gfdl-1.2"
+   },
+   "nasm": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "bsd-simplified AND gpl-2.0 AND gpl-2.0-plus"
+   },
+   "ncurses-bin": {
+    "binaries": 7,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "permissive",
+    "scancode_expression": "mit AND x11-xconsortium AND bsd-new AND x11-fsf"
+   },
+   "ninja-build": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "(apache-2.0 AND unknown-license-reference AND gregory-pietsch) AND apache-2.0"
+   },
+   "openssl": {
+    "binaries": 2,
+    "greg_class": "weak_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "apache-2.0 AND openssl-ssleay AND (artistic-perl-1.0 OR gpl-1.0-plus) AND gpl-1.0-plus AND artistic-perl-1.0"
+   },
+   "pandoc": {
+    "binaries": 1,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-2.0-plus AND gpl-3.0-plus AND (gpl-2.0-plus AND gpl-2.0 AND gpl-3.0-plus AND gpl-3.0)"
+   },
+   "passwd": {
+    "binaries": 6,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "bsd-original AND bsd-new AND gpl-1.0 AND gpl-2.0-plus AND (gpl-2.0-plus AND bsd-new) AND (gpl-2.0-plus AND public-domain) AND (public-domain AND gpl-2.0-plus) AND (gpl-2.0-plus AND bsd-new AND gpl-1.0-plus AND gpl-1.0)"
+   },
+   "patch": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-3.0-plus"
+   },
+   "perl": {
+    "binaries": 29,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-1.0-plus OR artistic-perl-1.0) AND ((gpl-1.0-plus OR artistic-perl-1.0) AND (artistic-perl-1.0 OR gpl-1.0-plus)) AND mit AND (artistic-perl-1.0 OR gpl-1.0-plus) AND gpl-3.0-plus AND unicode AND (gpl-1.0-plus AND (gpl-1.0-plus OR artistic-perl-1.0)) AND (gpl-1.0-plus AND (gpl-1.0-plus OR artisti"
+   },
+   "perl-base": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-1.0-plus OR artistic-perl-1.0) AND ((gpl-1.0-plus OR artistic-perl-1.0) AND (artistic-perl-1.0 OR gpl-1.0-plus)) AND mit AND (artistic-perl-1.0 OR gpl-1.0-plus) AND gpl-3.0-plus AND unicode AND (gpl-1.0-plus AND (gpl-1.0-plus OR artistic-perl-1.0)) AND (gpl-1.0-plus AND (gpl-1.0-plus OR artisti"
+   },
+   "php8.3-cli": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "not_open",
+    "scancode_expression": "(php-3.01 AND bsd-new) AND (bsd-simplified AND lgpl-2.0-plus AND lgpl-3.0-plus) AND bsd-simplified AND lgpl-2.0-plus AND (mit AND lgpl-2.1 AND php-3.01) AND (bsd-new AND php-3.0 AND apache-2.0) AND (libgd-2018 AND cc0-1.0 AND bsd-new AND public-domain AND bsd-simplified) AND (bsd-new AND php-3.01 AN"
+   },
+   "php8.3-dev": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "not_open",
+    "scancode_expression": "(php-3.01 AND bsd-new) AND (bsd-simplified AND lgpl-2.0-plus AND lgpl-3.0-plus) AND bsd-simplified AND lgpl-2.0-plus AND (mit AND lgpl-2.1 AND php-3.01) AND (bsd-new AND php-3.0 AND apache-2.0) AND (libgd-2018 AND cc0-1.0 AND bsd-new AND public-domain AND bsd-simplified) AND (bsd-new AND php-3.01 AN"
+   },
+   "pinentry-curses": {
+    "binaries": 1,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-2.0-plus AND (gpl-2.0-plus AND gpl-2.0) AND (gpl-2.0 AND gpl-2.0-plus AND x11-xconsortium) AND (lgpl-3.0-plus AND gpl-2.0-plus) AND (gpl-2.0-plus AND x11-xconsortium AND gpl-1.0-plus AND gpl-2.0) AND (gpl-2.0 AND lgpl-3.0-plus)"
+   },
+   "pkgconf-bin": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "isc AND (bsd-original AND bsd-simplified) AND (public-domain AND x11-xconsortium AND gpl-2.0-plus AND gpl-2.0-plus WITH autoconf-simple-exception-2.0 AND isc)"
+   },
+   "polkitd": {
+    "binaries": 3,
+    "greg_class": "weak_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "weak_copyleft",
+    "scancode_expression": "(lgpl-2.0-plus AND mit) AND (apache-2.0 AND lgpl-2.0-plus AND mit)"
+   },
+   "poppler-utils": {
+    "binaries": 13,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-2.0 OR gpl-3.0) AND gpl-2.0 AND gpl-3.0 AND gpl-2.0-plus AND apache-2.0"
+   },
+   "postgresql-common": {
+    "binaries": 11,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-2.0-plus AND gpl-2.0"
+   },
+   "procps": {
+    "binaries": 15,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(lgpl-2.1-plus AND lgpl-2.0-plus) AND gpl-2.0-plus AND (gpl-2.0-plus AND lgpl-2.0-plus AND lgpl-2.1-plus)"
+   },
+   "psmisc": {
+    "binaries": 6,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-2.0-plus"
+   },
+   "python3-argcomplete": {
+    "binaries": 3,
+    "greg_class": "permissive",
+    "greg_verdict": "CLEARED",
+    "scancode_class": "permissive",
+    "scancode_expression": "apache-2.0"
+   },
+   "python3-minimal": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "permissive",
+    "scancode_expression": "python AND mit"
+   },
+   "python3-pip": {
+    "binaries": 3,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "weak_copyleft",
+    "scancode_expression": "mit AND apache-2.0 AND lgpl-2.1-plus AND bsd-new AND python AND (mit AND apache-2.0 AND bsd-simplified AND isc) AND bsd-simplified AND (mit AND apache-2.0 AND bsd-simplified AND bsd-new) AND (bsd-new AND mit AND isc AND lgpl-2.1-plus AND lgpl-2.1 AND mpl-2.0 AND python AND python-2.0.1 AND python-cw"
+   },
+   "python3.11": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "python AND gpl-1.0-plus AND (python-2.0.1 AND python-cwi) AND bsd-new AND llnl AND historical AND other-permissive AND (warranty-disclaimer AND standard-ml-nj) AND secret-labs-2011 AND (gpl-2.0-plus AND gpl-1.0-plus AND gpl-2.0) AND (unknown-license-reference AND openssl-ssleay) AND bsd-source-code "
+   },
+   "python3.11-lib2to3": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "python AND gpl-1.0-plus AND (python-2.0.1 AND python-cwi) AND bsd-new AND llnl AND historical AND other-permissive AND (warranty-disclaimer AND standard-ml-nj) AND secret-labs-2011 AND (gpl-2.0-plus AND gpl-1.0-plus AND gpl-2.0) AND (unknown-license-reference AND openssl-ssleay) AND bsd-source-code "
+   },
+   "python3.11-minimal": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "python AND gpl-1.0-plus AND (python-2.0.1 AND python-cwi) AND bsd-new AND llnl AND historical AND other-permissive AND (warranty-disclaimer AND standard-ml-nj) AND secret-labs-2011 AND (gpl-2.0-plus AND gpl-1.0-plus AND gpl-2.0) AND (unknown-license-reference AND openssl-ssleay) AND bsd-source-code "
+   },
+   "python3.12": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "python AND gpl-1.0-plus AND (python-2.0.1 AND python-cwi) AND bsd-new AND llnl AND historical AND other-permissive AND (warranty-disclaimer AND standard-ml-nj) AND secret-labs-2011 AND (gpl-2.0-plus AND gpl-1.0-plus AND gpl-2.0) AND (unknown-license-reference AND openssl-ssleay) AND bsd-source-code "
+   },
+   "python3.12-minimal": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "python AND gpl-1.0-plus AND (python-2.0.1 AND python-cwi) AND bsd-new AND llnl AND historical AND other-permissive AND (warranty-disclaimer AND standard-ml-nj) AND secret-labs-2011 AND (gpl-2.0-plus AND gpl-1.0-plus AND gpl-2.0) AND (unknown-license-reference AND openssl-ssleay) AND bsd-source-code "
+   },
+   "python3.13": {
+    "binaries": 3,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "python AND gpl-1.0-plus AND (python-2.0.1 AND python-cwi) AND bsd-new AND llnl AND historical AND other-permissive AND (warranty-disclaimer AND standard-ml-nj) AND secret-labs-2011 AND (gpl-2.0-plus AND gpl-1.0-plus AND gpl-2.0) AND (unknown-license-reference AND openssl-ssleay) AND bsd-source-code "
+   },
+   "redis-tools": {
+    "binaries": 4,
+    "greg_class": "permissive",
+    "greg_verdict": "CLEARED",
+    "scancode_class": "permissive",
+    "scancode_expression": "bsd-new AND bsd-simplified AND (bsd-new AND mit AND bsd-simplified)"
+   },
+   "ripgrep": {
+    "binaries": 1,
+    "greg_class": "permissive",
+    "greg_verdict": "CLEARED",
+    "scancode_class": "permissive",
+    "scancode_expression": "(unlicense AND bsd-new) AND (unlicense AND mit AND bsd-new)"
+   },
+   "rpcsvc-proto": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "bsd-new AND (bsd-new AND other-permissive) AND (other-permissive AND warranty-disclaimer) AND (gpl-3.0-plus AND autoconf-exception-3.0 AND other-permissive) AND (gpl-2.0-plus AND autoconf-exception-3.0 AND x11-xconsortium AND mit) AND other-permissive AND (other-permissive AND bsd-new AND gpl-2.0-pl"
+   },
+   "sed": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-3.0-plus AND x11-xconsortium AND public-domain AND gfdl-1.3-plus AND gfdl-1.3) AND (gpl-3.0-plus AND isc) AND (bsd-original-uc AND bsd-simplified) AND (bsd-new AND boost-1.0) AND pcre"
+   },
+   "sensible-utils": {
+    "binaries": 5,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-2.0-plus AND (fsf-free AND gpl-2.0-plus AND x11-xconsortium AND public-domain AND bsd-simplified AND (bsd-simplified OR gpl-2.0) AND gpl-2.0 AND fsf-unlimited-no-warranty)"
+   },
+   "shared-mime-info": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-2.0-plus"
+   },
+   "shtool": {
+    "binaries": 2,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-2.0-plus"
+   },
+   "software-properties-common": {
+    "binaries": 1,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "unclassified",
+    "scancode_expression": "gpl-2.0-plus AND (gpl-2.0 AND gpl-1.0-plus AND gpl-2.0-plus) AND (gpl-2.0-plus AND gpl-1.0-plus) AND (lgpl-3.0 AND lgpl-3.0-plus AND (gpl-2.0 AND lgpl-2.0)) AND gpl-3.0 AND free-unknown"
+   },
+   "strace": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "lgpl-2.1-plus AND (lgpl-2.1 AND gpl-2.0-plus)"
+   },
+   "sudo": {
+    "binaries": 3,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "isc AND (isc AND unknown-license-reference AND bsd-source-code) AND public-domain AND (bsd-new AND bsd-simplified AND isc) AND (isc AND bsd-simplified AND unknown-license-reference AND fsf-ap AND zlib) AND (gpl-2.0-plus AND isc AND bsd-new) AND (bsd-new AND bsd-simplified) AND (gpl-2.0-plus AND publ"
+   },
+   "systemd": {
+    "binaries": 37,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "lgpl-2.1-plus AND cc0-1.0 AND (gpl-2.0 AND linux-syscall-exception-gpl AND mit) AND (public-domain AND public-domain-disclaimer) AND gpl-2.0-plus AND (lgpl-2.1-plus AND mit AND gpl-2.0 AND linux-syscall-exception-gpl AND gpl-2.0 WITH linux-syscall-exception-gpl AND gpl-2.0-plus AND cc0-1.0)"
+   },
+   "tar": {
+    "binaries": 1,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-3.0-plus AND gpl-3.0) AND (gpl-3.0-plus AND gpl-3.0-plus WITH bison-exception-2.2 AND (gpl-2.0-plus AND gpl-3.0)) AND lgpl-2.1-plus AND lgpl-3.0-plus AND (gpl-2.0-plus AND gpl-2.0)"
+   },
+   "tigervnc-common": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-2.0-plus AND fsf-ap AND gpl-3.0-plus AND bsd-new AND lgpl-2.1-plus AND other-copyleft) AND (mit AND x11-xconsortium) AND public-domain AND (bsd-new AND x11-opengroup AND historical) AND bsd-new AND (widget-workshop AND bsd-simplified) AND (public-domain AND public-domain-disclaimer)"
+   },
+   "tigervnc-scraping-server": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-2.0-plus AND fsf-ap AND gpl-3.0-plus AND bsd-new AND lgpl-2.1-plus AND other-copyleft) AND (mit AND x11-xconsortium) AND public-domain AND (bsd-new AND x11-opengroup AND historical) AND bsd-new AND (widget-workshop AND bsd-simplified) AND (public-domain AND public-domain-disclaimer)"
+   },
+   "tmux": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "permissive",
+    "scancode_expression": "isc AND bsd-new AND (bsd-simplified AND x11-xconsortium AND mit AND fsf-free AND fsf-unlimited) AND (bsd-simplified AND bsd-new AND mit AND x11-xconsortium AND fsf-free AND fsf-unlimited AND fsf-unlimited-no-warranty AND isc)"
+   },
+   "ucf": {
+    "binaries": 4,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-2.0 AND (gpl-2.0 AND gpl-1.0-plus AND other-copyleft)"
+   },
+   "unminimize": {
+    "binaries": 1,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-2.0-plus"
+   },
+   "unzip": {
+    "binaries": 5,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "permissive",
+    "scancode_expression": "info-zip-2009-01"
+   },
+   "util-linux": {
+    "binaries": 44,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(gpl-2.0-plus AND gpl-2.0) AND gpl-2.0 AND (gpl-3.0-plus AND gpl-2.0) AND public-domain AND (bsd-original AND mit AND bsd-new) AND bsd-new AND lgpl-2.0-plus AND (lgpl-2.0-plus AND lgpl-2.1-plus) AND lgpl-2.1-plus AND (lgpl-2.1-plus AND lgpl-3.0-plus) AND gpl-2.0-plus AND (gpl-2.0-plus AND public-dom"
+   },
+   "valgrind": {
+    "binaries": 11,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "gpl-2.0-plus AND (gpl-2.0-plus AND bsd-new) AND (gpl-2.0-plus AND lgpl-2.1-plus) AND (gpl-2.0-plus AND unknown-license-reference) AND (gpl-2.0-plus AND lgpl-2.0-plus AND bsd-new) AND (gpl-2.0-plus AND lgpl-2.1-plus AND lgpl-2.0-plus) AND (gpl-2.0-plus AND bsd-new AND (gpl-2.0-plus AND gpl-3.0) AND l"
+   },
+   "vim": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "vim AND bsd-new AND (mit AND bsd-simplified) AND (apache-2.0 AND (gpl-1.0-plus OR artistic-perl-1.0) AND mit AND vim) AND (public-domain AND mit AND gpl-2.0 AND x11-xconsortium) AND (gpl-2.0-plus AND mit) AND (lgpl-2.1-plus AND bsd-new) AND (apache-2.0 AND gpl-3.0-plus AND vim) AND (gpl-1.0-plus AND"
+   },
+   "vim-common": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "vim AND bsd-new AND (mit AND bsd-simplified) AND (apache-2.0 AND (gpl-1.0-plus OR artistic-perl-1.0) AND mit AND vim) AND (public-domain AND mit AND gpl-2.0 AND x11-xconsortium) AND (gpl-2.0-plus AND mit) AND (lgpl-2.1-plus AND bsd-new) AND (apache-2.0 AND gpl-3.0-plus AND vim) AND (gpl-1.0-plus AND"
+   },
+   "vim-runtime": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "vim AND bsd-new AND (mit AND bsd-simplified) AND (apache-2.0 AND (gpl-1.0-plus OR artistic-perl-1.0) AND mit AND vim) AND (public-domain AND mit AND gpl-2.0 AND x11-xconsortium) AND (gpl-2.0-plus AND mit) AND (lgpl-2.1-plus AND bsd-new) AND (apache-2.0 AND gpl-3.0-plus AND vim) AND (gpl-1.0-plus AND"
+   },
+   "wget": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "(openssl-exception-gpl-2.0 AND gpl-1.0-plus AND gpl-3.0) AND (gfdl-1.1-plus AND gfdl-1.2)"
+   },
+   "x11-xkb-utils": {
+    "binaries": 7,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "permissive",
+    "scancode_expression": "historical AND (historical AND x11-opengroup) AND x11-dec2 AND mit"
+   },
+   "xauth": {
+    "binaries": 1,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "permissive",
+    "scancode_expression": "x11-opengroup"
+   },
+   "xfonts-utils": {
+    "binaries": 6,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "permissive",
+    "scancode_expression": "x11-opengroup AND mit AND bsd-simplified AND bsd-source-code AND unicode-mappings AND x11-keith-packard"
+   },
+   "xml-core": {
+    "binaries": 1,
+    "greg_class": "strong_copyleft",
+    "greg_verdict": "CLEARED_WITH_OBLIGATIONS",
+    "scancode_class": "strong_copyleft",
+    "scancode_expression": "gpl-2.0-plus"
+   },
+   "xterm": {
+    "binaries": 5,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "permissive",
+    "scancode_expression": "x11-xconsortium AND historical AND (mit AND x11-xconsortium) AND x11-opengroup AND mit AND markus-kuhn-license"
+   },
+   "xvfb": {
+    "binaries": 2,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "mit AND ((x11-xconsortium AND x11-keith-packard AND historical AND other-permissive) AND bsd-new AND sgi-freeb-2.0) AND (mit-old-style AND other-permissive AND warranty-disclaimer AND (x11 AND other-permissive)) AND (x11-opengroup AND x11-xconsortium) AND (mit-old-style AND other-permissive AND warr"
+   },
+   "xz-utils": {
+    "binaries": 6,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "unclassified",
+    "scancode_expression": "public-domain AND (public-domain AND lgpl-2.1-plus AND gpl-2.0-plus AND (public-domain AND gpl-2.0-plus AND gpl-3.0-plus)) AND ((other-permissive AND other-copyleft) AND public-domain-disclaimer AND (lgpl-2.1 AND gpl-2.0 AND gpl-3.0) AND public-domain) AND gpl-2.0-plus AND lgpl-2.1-plus AND other-pe"
+   },
+   "yq": {
+    "binaries": 3,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "weak_copyleft",
+    "scancode_expression": "apache-2.0 AND (apache-2.0 AND lgpl-2.1)"
+   },
+   "zip": {
+    "binaries": 4,
+    "greg_class": "unclassified",
+    "greg_verdict": "UNCLASSIFIED_PRIOR_BEHAVIOUR",
+    "scancode_class": "permissive",
+    "scancode_expression": "info-zip-2007-03 AND info-zip-2009-01"
+   }
+  },
+  "categories_seen": {
+   "Commercial": 3,
+   "Copyleft": 793,
+   "Copyleft Limited": 628,
+   "Permissive": 1231,
+   "Proprietary Free": 2,
+   "Public Domain": 149,
+   "Unstated License": 83
+  },
+  "packages_with_copyright_file": 142,
+  "tool": "scancode-toolkit-mini 32.5.0 (Apache-2.0) in a scratch venv; needs pluggy<1.5 (1.7.0 breaks plugin loading)"
+ },
+ "usr_bin_binaries": 707
+}

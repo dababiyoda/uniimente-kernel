@@ -51,7 +51,7 @@ from greg.authority import PRINCIPAL, AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityManifest
 from greg.founder import CLOCK_SKEW, MAX_TTL, instant, key_id, signing_bytes, spent_nonce
 from greg.journal import SOURCE, iso
-from greg.missions import RESTORED_REFUSAL, TERMINAL, MissionBook, MissionError, evaluate_predicate, first_choice, \
+from greg.missions import RESTORED_REFUSAL, TERMINAL, MissionBook, MissionError, evaluate_receipt, first_choice, \
     measured, pursued_checks, signed_answer, strategy_scope
 from provenance.ledger import sha256_json
 
@@ -1167,7 +1167,9 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
             receipt = None if check is None else _sensor_receipt(body.ledger, gate, m, check, p["receipt"])
             if receipt is None:               # missing, or not this check's own sensor read: never evidence
                 continue
-            value, _ = evaluate_predicate(check["predicate"], receipt.payload.get("result", {}).get("output"))
+            # the receipt's kept output, or the whole output the body kept beside it (re-hashed on read)
+            artifacts = getattr(getattr(body, "layout", None), "artifacts", None)
+            value, _ = evaluate_receipt(check["predicate"], receipt.payload.get("result", {}), artifacts)
             trust = "attributed" if value == p["passed"] else "untrusted"
             latest[(p["mission_id"], p["check_id"])] = (rec.payload["event_id"], p["at"], rec.hash, value, trust)
         elif t == "greg.mission.appraised" and p.get("verdict") in ("VERIFIED", "REFUTED"):

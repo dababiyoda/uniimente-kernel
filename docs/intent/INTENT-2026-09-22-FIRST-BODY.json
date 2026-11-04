@@ -1,0 +1,22 @@
+{
+  "intent_id": "INTENT-2026-09-22-FIRST-BODY",
+  "title": "GREG as a persistent, founder-sovereign operating layer on owned compute",
+  "statement": "The first computer is UNIIMENTE's first body. Alfonso should eventually be able to download GREG, install it on a computer he owns, connect chosen accounts, models, APIs and permissions, give it durable goals, leave it working within bounded authority, inspect receipts and critique its work from the computer or phone, and expand practical capability without expanding constitutional authority. Morphogenesis means finding, acquiring, composing, adapting or building a missing functional capability and then resuming the original goal. A complete business operator with AI and human workers, and economically justified additional compute, remains the long-range destination.",
+  "source": "Direct founder instruction in the active ARTIFICIAL EGGREGOR UNIIMENTE project conversation",
+  "source_location": "2026-09-22 message headed UNIIMENTE / GREG — OPUS MAXIMUS RECONCILIATION DIRECTIVE, especially sections 3–14, 19–33, 39–49, 61–73, 77–81. Exact selected wording retained in docs/collaboration/FIRST_BODY_DECISION_2026-09-22.md; complete source is the founder's message, not this normalization.",
+  "source_date_or_version": "2026-09-22",
+  "status": "active",
+  "authority_level": "active_requirement",
+  "consequence_class": "constitutional",
+  "intended_outcome": "One coherent GREG interface to a durable institution that can continue and recover founder-authorized missions on owned compute, mediate capabilities through the existing Kernel, present truthful evidence and decisions to Alfonso, and progressively operate real business functions when earned and authorized.",
+  "affected_systems": ["uniimente-kernel", "GREG shell", "future macOS body runtime", "phone client", "GoalChase", "capability broker", "computer-use bridge", "DALEOBANKS", "WealthMachineIntelligence", "RailScout", "PumpStation"],
+  "rationale": "The founder explicitly corrected narrower dashboard, chatbot, metaphor-literal and organization-compiler readings. This record preserves the full product effect without claiming that a Mac app, live founder authentication, autonomous business or installed service exists today.",
+  "conflicts": ["INTENT-0030 confirms effects outrank metaphor form", "Historical build-your-own-database/OS and mandatory swarm documents conflict as implementation mandates", "Draft #70 versus #87 runtime ownership unresolved", "Draft #93/#97 GoalChase is sandbox-only and predates the merged #98 shared-integrity baseline", "INTENT-0029 is reused in open #86 and #105; no sequential ID is assumed"],
+  "evidence_refs": ["docs/collaboration/FIRST_BODY_DECISION_2026-09-22.md", "docs/SR001_ADOPTION_DECISION.md", "docs/intent/INTENT-GREG-EMBODIED-2026-09-11.md in open #102 (prior embodied intent lineage)", "Kernel #98 (merged); #93, #97, #101 and #102 (draft)", "No Mac install, real founder authentication or real embodied mission closure verified"],
+  "implementation_refs": ["docs/collaboration/FIRST_BODY_DECISION_2026-09-22.md", "egregore/local_mission.py and egregore/morning_review.py in draft #101/#102", "egregore/goal_chase.py in draft #93/#97; experimental supervisor stacked separately on #97"],
+  "owner": "Alfonso Lopez (founder authority); Kernel maintainers (implementation)",
+  "next_review_trigger": "Independent review of first-body ownership and first safe persistent mission closure against merged Kernel; founder adoption decision before merge/activation",
+  "unresolved_questions": ["Which runtime composition from draft #70/#87, if either, should be canonical after independent comparison?", "What authenticated founder enrollment and remote-channel design will be authorized for a live body?", "Which first real bounded mission and approval envelope does Alfonso choose for live graduation?"],
+  "created_at": "2026-09-22T19:46:22Z",
+  "updated_at": "2026-09-22T19:46:22Z"
+}

@@ -453,7 +453,7 @@ def asserted(value: str, *, after_holds: bool = True) -> list[tuple[str, str]]:
     where it opens the value or follows a colon (``OPENING_LIVE``)."""
     value = normalise(value)
     whole = value.strip().upper()
-    if whole in LABEL_CROSSWALK:                    # a value that is only "live" or "Live" is the LIVE label
+    if whole in LABEL_CROSSWALK:                    # a whole "live" or "founder-device", any case, is that label
         return [(whole, LABEL_CROSSWALK[whole])]
     found = []
     spans = [(label, rung, match.start(), match.end(), pattern is FOUNDER_DEVICE_PHRASE)

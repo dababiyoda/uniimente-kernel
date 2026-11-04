@@ -4,7 +4,9 @@ Directive 2026-10-28, sections 10, 55, 56, 67, 70 and 73. Founder correction of 
 (`INTENT-20261030-BUILD-BEFORE-DEVICE-RUN`). Branch `claude/cathedral-detector-20261030`, based on `44b3df96`
 (#236 head, WU-01 build frontier). Review round 1 (two reviewers, 16 findings) was fixed on top of `65f91d2f`; review
 round 2 (20 findings) on top of `71342170`. The PR base was then merged in twice (`c5ee7f8a` at `849c7973`, `954c6846`
-at `fbce94e5`); the figures below are from `954c6846`.
+at `fbce94e5`); the figures below are from `954c6846`, except the two test files' counts, the mutant gate and the claim
+guard's run, which are from the commit that pins the gate's five survivors on top of `938f6523` (see the mutant
+history).
 
 **Reality level: UNIT-TESTED.** Synthetic git repositories and real test-key and passphrase-protected test bodies,
 all in this Linux container. Nothing here is founder-used, live or externally verified, and the detector has never
@@ -165,7 +167,7 @@ Python 3.11 venv (`/home/user/venv311`). Every pytest run used
     messages that did not exist yet (`founder_body`, `ref_problem`, the outcome crosswalk), not only from the
     defects.
 
-- Review round 2, in a detached worktree of `71342170` with this head's two test files: **78 failed, 117 passed**
+- Review round 2, in a detached worktree of `71342170` with `938f6523`'s two test files: **78 failed, 117 passed**
   (195). Each finding's test fails on behaviour there, for example a false `CATHEDRAL` under clock skew (A3), the
   other repository's HEAD read under `GIT_DIR` (A4), `complete: True` for a plain directory and for a partial clone
   (A5, A6), `new_py` 0 for the separator path (A9) and `new_md` 2 instead of 14 for the merges (A12). Some failures
@@ -175,12 +177,12 @@ Python 3.11 venv (`/home/user/venv311`). Every pytest run used
 
 | Command | Result |
 | --- | --- |
-| `pytest tests/unit/test_cathedral_detector.py tests/unit/test_reality_claims.py` | 195 passed (45 + 150) |
+| `pytest tests/unit/test_cathedral_detector.py tests/unit/test_reality_claims.py` | 202 passed (45 + 157) |
 | merging the PR base into `ac78206b` (`849c7973`, then `fbce94e5`) | one conflict in `greg/cli.py` each time, both kept: the `cathedral` and `blockers` parsers after `acceptance`, then the `greg cathedral` and `greg compute` usage lines. `foundry/owned-source.json` merged clean and `scripts/refresh_owned_source.py` left it unchanged |
 | `test_ucl_compiler`, `test_governance_integrity`, `test_path_build_frontier`, `test_greg_founder_tier`, `test_greg_closure_integrity`, `test_founder_correction_20261030`, `test_greg_packaging`, `test_acceptance_harness`, `test_greg_mission_control_costs`, `test_vpl_metrics` | 210 passed |
 | `python -m acceptance check` | sound (12 missions, 85 requirements) |
 | `scripts/ci/check_authority_singleton.py` | exactly one source of authority |
-| `python scripts/ci/check_cathedral_detector_mutants.py` (scratch copy, `python -B`, bytecode purged before each mutant) | **155/160 caught, exit 1**; unmutated PASS, 0 stale, 0 invalid. Five survive (listed under the mutant history) |
+| `python scripts/ci/check_cathedral_detector_mutants.py` (scratch copy, `python -B`, bytecode purged before each mutant) | **160/160 caught, exit 0**; unmutated PASS, 0 stale, 0 invalid (24 minutes). The run on `954c6846` caught 155/160 and exited 1 (mutant history) |
 | `python -m acceptance.claims` on this tree | PASS: 5440 claims in 573 files, 0 crosswalk problems, 0 violations, 1 allowlisted (the cortex example), 0 stale, 0 unreadable |
 | `python -m greg --home <no body> cathedral` on this tree | INSUFFICIENT_HISTORY: shallow clone, first-parent depth 355, 1672 commits reachable, no counts |
 
@@ -217,13 +219,43 @@ Python 3.11 venv (`/home/user/venv311`). Every pytest run used
   - "a schema's enum and default values are claims": a schema whose `examples` or `default` hold records with
     claim fields gives 2 claims instead of 0.
 
+  Pinning the five (on top of `938f6523`). Reproduced first: on a copy of `938f6523`, each of the five applied alone
+  left all 150 tests of `test_reality_claims.py` passing. No safeguard, gate rule or existing assertion was removed or
+  weakened. Added to `tests/unit/test_reality_claims.py`:
+  - six inflated fixtures (`x1`-`x6`): "No, FOUNDER-USED" beside a container rehearsal and "not yet, FOUNDER-USED"
+    (a comma ends a negation even when only filler sits before it); "not UNIT-TESTED FOUNDER-USED or
+    EXTERNALLY-VERIFIED", which must be reported at EXTERNALLY-VERIFIED (a second label ends a negation unless "or"
+    or "nor" joins them); a whole value "founder-device" and "Founder-Device" beside docker; "REBOOT-VERIFIED" whose
+    evidence names unit and integration tests in a container, which must be held to `integration_container`;
+  - one correct record, "LOCAL-REAL" from unit and integration tests in a container, which must pass;
+  - `test_each_reading_rule_holds_on_its_own`, which checks `asserted` and `implied_kind` directly on those inputs;
+  - in `test_correct_claims_pass_and_schemas_are_not_claims`, a schema whose `enum`, `const`, `default` and
+    `examples` hold records with claim fields: it must give no claim, and the same records outside a schema must give
+    violations at five named pointers.
+
+  Each mutant was then applied alone to a scratch copy, with the gate's own old and new text, and
+  `pytest -q -rf tests/unit/test_reality_claims.py` run there. It fails these tests and no others (157 run each
+  time):
+
+  | Mutant | Failing tests |
+  | --- | --- |
+  | unit test beside integration test | `x6`, `test_each_reading_rule_holds_on_its_own`, `test_correct_claims_pass_and_schemas_are_not_claims` (its correct record) |
+  | negator across a comma | `x1`, `x2`, `test_each_reading_rule_holds_on_its_own` |
+  | negator across another label | `x3`, `test_each_reading_rule_holds_on_its_own` |
+  | whole value | `x4`, `x5`, `test_each_reading_rule_holds_on_its_own` |
+  | schema values | `test_correct_claims_pass_and_schemas_are_not_claims` |
+
+  The whole-value mutant was renamed "a whole value 'founder-device' in any case is not FOUNDER-DEVICE", and the
+  comment on that line of `acceptance/claims.py` now says the rule covers both labels: for "live" the mutant is
+  equivalent (the opening-`live` rule reads a whole "live" the same way), for "founder-device" it is not. Its old and
+  new text are unchanged. The full gate then caught 160 of 160 and exited 0, with the five former survivors among
+  the caught.
+
 ## Limitations (negatives kept)
 
 - **Untested at the founder tier.** The outcome side has been measured only on test-key and passphrase-protected
   test bodies in a container. A real founder-tier body has never been read. The founder tier is the key holder's
   claim of custody (`greg.metrics.CUSTODY_CLAIM`), and the detector inherits that residual.
-- **The mutant gate does not pass.** Five claim-guard safeguards are not pinned by any test (155 of 160 mutants
-  caught; the survivors are listed under the mutant history). The gate exits 1 until tests pin them.
 - **This checkout cannot be judged.** It is a shallow clone, so the detector gives no verdict on this repository.
 - **The build phase gets no verdict.** Every body that exists is undesignated, so a real run with `--body` is
   `INSUFFICIENT_HISTORY` with a `conditional` CATHEDRAL beside it; nothing here pauses expansion.
@@ -252,7 +284,8 @@ Python 3.11 venv (`/home/user/venv311`). Every pytest run used
     - a comma list after a prohibited labelling verb ("never labelled UNIT-TESTED, FOUNDER-USED");
     - other key names (`level`, `claimed_level`);
     - boolean label keys (`"founder_used": true`);
-    - lowercase `founder-device`, and lowercase `live` mid-sentence ("the page went live in a container");
+    - lowercase `founder-device` inside a longer value (a whole value is read in any case), and lowercase `live`
+      mid-sentence ("the page went live in a container");
     - word orders such as "verified externally";
     - a record whose evidence names no kind, or names it outside the six evidence fields, is held only to
       BODY_VERIFIED ("LOCAL-REAL", evidence "pytest tests/unit/test_x.py in a sandbox", passes);

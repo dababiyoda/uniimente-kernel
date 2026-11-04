@@ -262,6 +262,19 @@ INFLATED = [
      "rehearsal_key establishes at most PERSISTENT"),
     ("docs/evidence/w4/run.json", {"evidence_kind": "integration_container",
                                    "reality": "SANDBOX_VERIFIED, REBOOT-VERIFIED"}, "at most PERSISTENT"),
+    # the mutant gate's five survivors (acceptance/claims.py): a comma ends a negation even when only filler sits
+    # between; a label ends it unless "or" or "nor" joins the two; a whole value is its label in any case; a unit
+    # test beside an integration test holds the record to the integration test
+    ("docs/evidence/x1/run.json", {"reality": "No, FOUNDER-USED", "run": "Linux container rehearsal"},
+     "container, rehearsal run labelled FOUNDER-USED"),
+    ("docs/evidence/x2/run.json", {"reality": "not yet, FOUNDER-USED"}, "no declared evidence kind"),
+    ("docs/evidence/x3/run.json", {"reality": "not UNIT-TESTED FOUNDER-USED or EXTERNALLY-VERIFIED"},
+     "EXTERNALLY-VERIFIED (EXTERNALLY_VERIFIED)"),
+    ("docs/evidence/x4/run.json", {"reality": "founder-device"}, "FOUNDER-DEVICE (FOUNDER_ACCEPTED)"),
+    ("docs/evidence/x5/run.json", {"tier": "Founder-Device", "note": "docker"}, "docker run labelled FOUNDER-DEVICE"),
+    ("docs/evidence/x6/run.json", {"reality": "REBOOT-VERIFIED",
+                                   "evidence": "unit tests and integration tests in a container"},
+     "held to integration_container"),
 ]
 
 CORRECT = [
@@ -299,6 +312,8 @@ CORRECT = [
     {"reality": "PERSISTENT", "evidence_kind": "integration_container"},
     {"reality": "INTEGRATION-TESTED", "evidence": "unit and integration tests in a container"},
     {"reality": "LOCAL-REAL", "evidence": "integration tests in a container"},
+    # a unit test named beside an integration test: the record is held to the integration test, not the unit test
+    {"reality": "LOCAL-REAL", "evidence": "unit tests and integration tests in a container"},
     # a directory names no kind: tests/unit/ holds real-process tests here (acceptance/missions.json)
     {"reality": "LOCAL-REAL", "evidence": "pytest tests/unit/test_x.py in a sandbox"},
     {"status": "liveness probe passed"},
@@ -322,13 +337,41 @@ def test_an_inflated_claim_fails_the_guard(tmp_path, relative, data, why):
     assert report["failing"] == report["violations"] and rc.main(["--root", str(tmp_path)]) == 1
 
 
+def test_each_reading_rule_holds_on_its_own():
+    """The four reading rules the mutant gate's five survivors removed (acceptance/claims.py), each on the input that
+    only it decides: a comma ends a negation with nothing but filler before it, a second label ends it unless "or"
+    or "nor" joins them, a whole value is its label in any case, and a unit test named beside an integration test
+    holds the record to the integration test."""
+    founder_used, external = ("FOUNDER-USED", "FOUNDER_ACCEPTED"), ("EXTERNALLY-VERIFIED", "EXTERNALLY_VERIFIED")
+    assert rc.asserted("not yet, FOUNDER-USED") == rc.asserted("No, FOUNDER-USED") == [founder_used]
+    assert rc.asserted("not UNIT-TESTED FOUNDER-USED or EXTERNALLY-VERIFIED") == [founder_used, external]
+    assert rc.asserted("not FOUNDER-USED or EXTERNALLY-VERIFIED") == []         # "or" joins them under the negation
+    for value in ("founder-device", "Founder-Device", " FOUNDER-DEVICE "):
+        assert rc.asserted(value) == [("FOUNDER-DEVICE", "FOUNDER_ACCEPTED")], value
+    assert rc.asserted("founder-device proof") == []                    # inside text only the capitals are read
+    both = rc._markers("unit tests and integration tests in a container")
+    assert set(both) == {"unit test", "integration test", "container"}
+    assert rc.implied_kind(both) == "integration_container"
+    assert rc.implied_kind(rc._markers("unit tests in a container")) == "unit_test"
+
+
 SCHEMA = {"$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object",
           "properties": {"status": {"enum": ["FOUNDER-USED", "LIVE"], "default": "FOUNDER-USED"},
-                         "reality": {"const": "EXTERNALLY-VERIFIED", "examples": ["FOUNDER-USED (container)"]}},
-          "$defs": {"tier": {"type": "string", "enum": ["FOUNDER_ACCEPTED"]}}}
+                         "reality": {"const": "EXTERNALLY-VERIFIED", "examples": ["FOUNDER-USED (container)"]},
+                         # an enum, const, default or example value may itself be a record of claim fields
+                         "run": {"type": "object", "enum": [{"reality": "FOUNDER-USED"}], "const": {"tier": "LIVE"},
+                                 "default": {"status": "EXTERNALLY-VERIFIED (container)"}}},
+          "$defs": {"tier": {"type": "string", "enum": ["FOUNDER_ACCEPTED"]}},
+          "examples": [{"reality": "FOUNDER-USED (container rehearsal)"}], "default": {"status": "LIVE-BOUNDED"}}
+# The same records outside a schema are claims: the schema's reading is what keeps them out.
+SCHEMA_RECORDS = {"/properties/run/enum/0/reality", "/properties/run/const/tier", "/properties/run/default/status",
+                  "/examples/0/reality", "/default/status"}
 
 
 def test_correct_claims_pass_and_schemas_are_not_claims(tmp_path):
+    assert rc.claims_in(SCHEMA) == []
+    plain = rc.claims_in({key: value for key, value in SCHEMA.items() if key != "$schema"})
+    assert SCHEMA_RECORDS <= {c["pointer"] for c in plain if c["violations"]}
     for i, data in enumerate(CORRECT):
         write(tmp_path, f"docs/evidence/ok{i}/run.json", data)
     write(tmp_path, "docs/evidence/receipts/buyer-41.txt", "the buyer's own receipt")

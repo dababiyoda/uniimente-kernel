@@ -11,6 +11,10 @@ fetched. Output is JSON on stdout. Read-only: it never checks out, merges or pus
 --intake answers the integrator's question instead: which of each head's commits outside the destination's
 history still carry text the destination lacks (equivalent patch, hunk presence, test identity, superseded in
 source).
+
+--close judges one closed PR against section 53 (run by .github/workflows/pr-close-extraction.yml):
+
+    python scripts/lineage_map.py --base <canonical head> --close closed.json --record <placements> --inheritance <record>
 """
 from __future__ import annotations
 
@@ -359,10 +363,45 @@ def place(live: list[dict], canonical_ref: str, verdicts: dict, inheritance: dic
                        "inherited dispositions are human judgments, revalidated but not re-made here"}
 
 
+def close_check(pr: dict, canonical_head: str, record: dict, inheritance: dict) -> dict:
+    """Judge one closed PR: was it closed lawfully under section 53 ("Before closing or superseding a PR, extract")?
+
+    `pr` is the closed PR as GitHub reports it ({number, sha, merged}). A merge is intake into its base, not a close.
+    An unmerged close is lawful when nothing is lost (its head is in the canonical head) or when the nine items were
+    extracted at the head that was closed. GitHub cannot refuse a close, so a failing verdict is detection on the
+    closed PR, never prevention."""
+    n, sha = _id(pr["number"]), pr["sha"]
+    if pr.get("merged"):
+        return {"pr": n, "verdict": "MERGED", "lawful": True, "detail": "merged into its base: intake, not a close"}
+    if is_ancestor(sha, canonical_head):
+        return {"pr": n, "verdict": "CONTAINED", "lawful": True,
+                "detail": f"head {sha[:12]} is in the canonical head {canonical_head[:12]}: nothing is lost"}
+    entry = {_id(r["number"]): r for r in record.get("placements", [])}.get(n)
+    if entry:
+        nine = entry.get("nine") or {}
+        missing = [k for k in NINE if not str(nine.get(k, "")).strip()]
+        if entry.get("head_sha", "")[:12] != sha[:12]:
+            return {"pr": n, "verdict": "MOVED_SINCE_EXTRACTION", "lawful": False,
+                    "detail": f"extracted at {entry.get('head_sha', '')[:12]}, closed at {sha[:12]}; "
+                              "the commits after the extraction are unaccounted for"}
+        if not missing:
+            return {"pr": n, "verdict": "EXTRACTED", "lawful": True,
+                    "detail": f"recorded {entry['disposition']} with all nine items at {sha[:12]}"}
+    else:
+        missing = list(NINE)
+    inherited = _inherited(inheritance).get(n)
+    if inherited and inherited["nine_extracted"]:
+        return {"pr": n, "verdict": "EXTRACTED_INHERITED", "lawful": True,
+                "detail": f"the developmental-inheritance record answers all nine for #{n}"}
+    return {"pr": n, "verdict": "CLOSED_WITHOUT_EXTRACTION", "lawful": False,
+            "detail": "missing: " + ", ".join(missing) + ". Reopen the PR, or record its nine items in "
+                      "docs/collaboration/KERNEL-PR-PLACEMENTS.json at this head"}
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--base", required=True)
-    parser.add_argument("--prs", required=True, help="JSON file: [{number, sha}, ...]")
+    parser.add_argument("--prs", help="JSON file: [{number, sha}, ...]")
     parser.add_argument("--intake", action="store_true",
                         help="judge each PR head's commits for behaviour missing from --base (the destination)")
     parser.add_argument("--place", action="store_true",
@@ -372,7 +411,19 @@ def main(argv=None) -> int:
     parser.add_argument("--inheritance", type=argparse.FileType(), help="--place: developmental inheritance record")
     parser.add_argument("--intake-json", type=argparse.FileType(),
                         help="--place: a saved --intake run against --base, instead of recomputing it")
+    parser.add_argument("--close", help="judge one closed PR: JSON file {number, sha, merged}; --base is the "
+                                        "canonical head; uses --record and --inheritance")
     args = parser.parse_args(argv)
+    if args.close:
+        with open(args.close) as handle:
+            closed = json.load(handle)
+        result = close_check(closed, git("rev-parse", args.base), json.load(args.record) if args.record else {},
+                             json.load(args.inheritance) if args.inheritance else {})
+        json.dump(result, sys.stdout, indent=1)
+        print()
+        return 0 if result["lawful"] else 1
+    if not args.prs:
+        parser.error("--prs is required unless --close is given")
     with open(args.prs) as handle:
         prs = json.load(handle)
     base = git("rev-parse", args.base)

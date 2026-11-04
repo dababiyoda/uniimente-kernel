@@ -1,0 +1,84 @@
+{
+  "order": {
+    "acceptance": {
+      "criteria": "<= 280 characters; no figures absent from the source; no hype, no calls to buy; not a proposal (no pilot/KPI language)",
+      "output": "post.txt"
+    },
+    "allowed_paths": [
+      "post.txt"
+    ],
+    "authority_ref": "sha256:102a892789874566161e4ef12af38928e9c3da657365929ba5b7137fe33a826e",
+    "base": "HEAD",
+    "context": "",
+    "grant_id": "7a0dcbcc-2067-4b34-8658-e210f40ad6c7",
+    "inputs": [
+      "/tmp/greg-meter/body/workspace/m_research-ortools-metered-note/facts.json"
+    ],
+    "max_budget_usd": 2.0,
+    "mission_id": "m:research-ortools-metered-note",
+    "mode": "document",
+    "objective": "Write a short factual DALEOBANKS post noting the latest OR-Tools release on PyPI. Write the post as plain text, at most 280 characters, stating only facts present in the input; every number must appear in the input.",
+    "order": "ortools-metered-note",
+    "provider": "claude-code",
+    "repo": null,
+    "timeout_seconds": 600,
+    "tools": []
+  },
+  "order_digest": "sha256:662b799fd4488600084300fdc94abd6969d7ee9b569257f13b0c20429cec40f1",
+  "status": "COMPLETED",
+  "summary": {
+    "acceptance_owner": "worker.appraise (independent)",
+    "authority_created": false,
+    "base_commit": "30f5e710960f74759f838b59f338ab2a8fa0bf0e",
+    "branch": "greg/ortools-metered-note",
+    "changed_files": [
+      "post.txt"
+    ],
+    "commit": "6f682e7e2f3b9b9ab0885781d5f044dda6f6186e",
+    "evidence_path": "/tmp/greg-meter/body/workspace/m_research-ortools-metered-note/work-orders/ortools-metered-note/evidence.json",
+    "grant_id": "7a0dcbcc-2067-4b34-8658-e210f40ad6c7",
+    "greg_tests": [],
+    "greg_tests_passed": false,
+    "mission_id": "m:research-ortools-metered-note",
+    "mode": "document",
+    "order_digest": "sha256:662b799fd4488600084300fdc94abd6969d7ee9b569257f13b0c20429cec40f1",
+    "output": {
+      "bytes": 125,
+      "path": "/tmp/greg-meter/body/workspace/m_research-ortools-metered-note/work-orders/ortools-metered-note/work/post.txt",
+      "sha256": "sha256:7931dca6d22f7013de860b298fe51cb6038b41128e996eb3fd89b91b4193fa89"
+    },
+    "patch_path": "/tmp/greg-meter/body/workspace/m_research-ortools-metered-note/work-orders/ortools-metered-note/change.patch",
+    "patch_sha256": "sha256:007782110b745ee1ac31766f9610a2f05441ebe9fb549c32709b3c62b3853742",
+    "repo": null,
+    "scope": {
+      "outside_allowed": [],
+      "protected_touched": [],
+      "too_many_files": false
+    },
+    "status": "COMPLETED",
+    "work_order": "ortools-metered-note",
+    "worker": {
+      "cost_usd": 0.0248602,
+      "duration_s": 8.4,
+      "error": null,
+      "exit_code": 0,
+      "identity": "claude-code",
+      "permission_denials": [],
+      "provider": "claude-code",
+      "served_models": [
+        "claude-haiku-4-5-20251001",
+        "claude-sonnet-5-5"
+      ],
+      "turns": 4
+    },
+    "worker_claim": {
+      "changed": [
+        "post.txt"
+      ],
+      "confidence": 0.95,
+      "tests_run": [],
+      "unresolved": []
+    },
+    "worker_summary_tail": "I wrote `post.txt`. It's about 125 characters, well under the 280 limit. It reads: \"The latest OR-Tools release on PyPI is ortools 9.15.6755. Recent prior versions: 9.14.6206, 9.13.4784, 9.12.4544, 9.11.4210.\"\n\nEvery number comes from `inputs/facts.json`. I ran no tests and nothing network-related.\n\nWORK_REPORT: {\"changed\": [\"post.txt\"], \"tests_run\": [], \"unresolved\": [], \"confidence\": 0.95}"
+  }
+}

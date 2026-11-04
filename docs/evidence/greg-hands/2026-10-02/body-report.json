@@ -1,0 +1,1510 @@
+{
+  "home": "/tmp/greg-hands/body",
+  "ledger_chain_intact": true,
+  "events": [
+    {
+      "type": "greg.mission.registered",
+      "payload": {
+        "mission_id": "m:work-greg-doctor-should-also-report",
+        "spec": {
+          "mission_id": "m:work-greg-doctor-should-also-report",
+          "founder_expression": "Improve GREG: greg doctor should also report which temporary frontier workers (claude, codex, aider) are installed on this body, as a read-only probe that never runs them; add a unit test for it",
+          "intended_effect": "a tested, independently appraised proposed change exists on a reviewable branch; promotion remains with the authorized repository path",
+          "priority": 55,
+          "closure": {
+            "kind": "bounded"
+          },
+          "constraints": [
+            "the worker never pushes, merges or commits; GREG commits on a greg/ branch in a private clone",
+            "protected constitutional surfaces cannot be accepted without a founder decision"
+          ],
+          "success_checks": [
+            {
+              "check_id": "work_accepted",
+              "description": "independent appraisal ACCEPTED the work order",
+              "sensor": {
+                "capability": "worker.appraise",
+                "params": {
+                  "order": "greg-doctor-should-also-report"
+                },
+                "target": "work:greg-doctor-should-also-report"
+              },
+              "predicate": {
+                "op": "equals",
+                "field": "verdict",
+                "value": "ACCEPTED"
+              }
+            },
+            {
+              "check_id": "handoff_written",
+              "description": "the review handoff exists for the founder",
+              "sensor": {
+                "capability": "fs.read",
+                "params": {
+                  "path": "/tmp/greg-hands/body/workspace/m_work-greg-doctor-should-also-report/handoff-greg-doctor-should-also-report.md"
+                },
+                "target": "fs:handoff-greg-doctor-should-also-report.md"
+              },
+              "predicate": {
+                "op": "contains",
+                "field": "text",
+                "value": "greg/greg-doctor-should-also-report"
+              }
+            }
+          ],
+          "strategies": [
+            {
+              "action_id": "commission-worker",
+              "capability": "worker.commission",
+              "target": "work:greg-doctor-should-also-report",
+              "params": {
+                "order": "greg-doctor-should-also-report",
+                "mode": "repository",
+                "repo": "/home/user/uniimente-kernel",
+                "objective": "greg doctor should also report which temporary frontier workers (claude, codex, aider) are installed on this body, as a read-only probe that never runs them; add a unit test for it",
+                "acceptance": {
+                  "run_changed_tests": true,
+                  "max_changed_files": 8
+                },
+                "allowed_paths": [
+                  "greg/*",
+                  "tests/unit/*"
+                ],
+                "provider": "claude-code",
+                "max_budget_usd": 3.0,
+                "timeout_seconds": 1200
+              },
+              "cost_usd": 3.0,
+              "advances": [
+                "work_accepted"
+              ],
+              "rationale": "software-development work: commission a temporary coding worker under a bounded lease",
+              "expected_outcome": "a committed change on a greg/ branch in a private clone, with evidence"
+            },
+            {
+              "action_id": "write-handoff",
+              "capability": "fs.write",
+              "target": "workspace:handoff-greg-doctor-should-also-report.md",
+              "params": {
+                "relative_path": "handoff-greg-doctor-should-also-report.md",
+                "content": "# Proposed change ready for review: greg/greg-doctor-should-also-report\n\nIndependently appraised ACCEPTED by worker.appraise. Evidence: work-orders/greg-doctor-should-also-report/evidence.json and change.patch in this mission workspace. Promotion (push, PR, merge) requires the existing authorized path; GREG holds no push or merge authority.\n"
+              },
+              "advances": [
+                "handoff_written"
+              ],
+              "requires": [
+                "work_accepted"
+              ],
+              "rationale": "continue the parent mission only on an independently accepted result"
+            }
+          ],
+          "light_cone": {
+            "capabilities": [
+              "worker.commission",
+              "worker.appraise",
+              "fs.read",
+              "fs.write"
+            ],
+            "targets": [
+              "work:greg-doctor-should-also-report",
+              "fs:handoff-greg-doctor-should-also-report.md",
+              "workspace:handoff-greg-doctor-should-also-report.md"
+            ],
+            "max_consequence_class": "internal_write",
+            "budget_usd": 3.0,
+            "horizon": "2026-10-04T00:09:54.723144Z"
+          },
+          "provenance": {
+            "origin": "template:code-change",
+            "planner": "greg.planner/1"
+          }
+        },
+        "command_digest": "sha256:83d28112b43ce60ff69f9a98bdc66b1c4e50d9cbf884971aca135eb5b5fa5bf1"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:work-greg-doctor-should-also-report",
+        "check_id": "work_accepted",
+        "passed": false,
+        "detail": "'ABSENT' == 'ACCEPTED'",
+        "receipt": "sha256:97a30a8b66265c1e804004955f6e7b48fde1af30d77c136c268626a1d09b0141",
+        "rung": 0,
+        "at": "2026-10-02T00:09:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:work-greg-doctor-should-also-report",
+        "check_id": "handoff_written",
+        "passed": false,
+        "detail": "field 'text' absent",
+        "receipt": "sha256:044f85433181fa0ca61db14e807e493636845483f88bb21df2f9885d5cd173dd",
+        "rung": 0,
+        "at": "2026-10-02T00:09:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.action",
+      "payload": {
+        "mission_id": "m:work-greg-doctor-should-also-report",
+        "action_id": "commission-worker",
+        "attempt": 0,
+        "status": "DONE",
+        "reasons": [],
+        "receipt": "sha256:63c6e71946446384fc31ff58f22c8a0fa25565427900a8244e56219f9362bfe9",
+        "capability": "worker.commission",
+        "route": "cli",
+        "cost_usd": 3.0,
+        "scope_digest": "sha256:a7bd725e44a22a7d287414c6885a5eb23552b8758222b3f27e791898b62a5f7e",
+        "routing": {
+          "chosen": "commission-worker",
+          "expected_value": -2.5,
+          "reliability": 0.5,
+          "alternatives": []
+        },
+        "at": "2026-10-02T00:09:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:work-greg-doctor-should-also-report",
+        "check_id": "work_accepted",
+        "passed": true,
+        "detail": "'ACCEPTED' == 'ACCEPTED'",
+        "receipt": "sha256:d9576c1e4ccd862a24437a25ed4aa698e9252793967533c9354f3858bf75d593",
+        "rung": 0,
+        "at": "2026-10-02T00:10:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:work-greg-doctor-should-also-report",
+        "check_id": "handoff_written",
+        "passed": false,
+        "detail": "field 'text' absent",
+        "receipt": "sha256:c48490b257914ffb34a28cc4e4837d3cb7768d462cb4a0f15fbffeaa1010aa55",
+        "rung": 0,
+        "at": "2026-10-02T00:10:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.action",
+      "payload": {
+        "mission_id": "m:work-greg-doctor-should-also-report",
+        "action_id": "write-handoff",
+        "attempt": 0,
+        "status": "DONE",
+        "reasons": [],
+        "receipt": "sha256:4151625308bf50d0664c79162e72821ebd306db908124723ba192abdbc7500c1",
+        "capability": "fs.write",
+        "route": "api",
+        "cost_usd": 0.0,
+        "scope_digest": "sha256:bbd7a015708e47aecb6b23428b542116ee9b9ed6a9ce1b758c352d0178516b03",
+        "routing": {
+          "chosen": "write-handoff",
+          "expected_value": 0.5,
+          "reliability": 0.5,
+          "alternatives": []
+        },
+        "at": "2026-10-02T00:10:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:work-greg-doctor-should-also-report",
+        "check_id": "work_accepted",
+        "passed": true,
+        "detail": "'ACCEPTED' == 'ACCEPTED'",
+        "receipt": "sha256:e677c383d1cf7035ecad31b46459231bd12f9d0d3c913a61d041691390dbc36b",
+        "rung": 0,
+        "at": "2026-10-02T00:11:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:work-greg-doctor-should-also-report",
+        "check_id": "handoff_written",
+        "passed": true,
+        "detail": "contains 'greg/greg-doctor-should-also-report'",
+        "receipt": "sha256:200499e90adfe1703bbdbe94a23a774e49498441c0b296a6b263d92b2b5d2905",
+        "rung": 0,
+        "at": "2026-10-02T00:11:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.achieved",
+      "payload": {
+        "mission_id": "m:work-greg-doctor-should-also-report",
+        "evidence": [
+          "sha256:e677c383d1cf7035ecad31b46459231bd12f9d0d3c913a61d041691390dbc36b",
+          "sha256:200499e90adfe1703bbdbe94a23a774e49498441c0b296a6b263d92b2b5d2905"
+        ],
+        "actions_done": 2,
+        "closure_rule": "every success check re-observed passing through the Gate",
+        "founder_authenticated_mission": true,
+        "at": "2026-10-02T00:11:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.closure_context",
+      "payload": {
+        "mission_id": "m:work-greg-doctor-should-also-report",
+        "boot_id": null,
+        "pid": 3030,
+        "platform": "Linux",
+        "body_id": "body-cf79040d3316bac8",
+        "hosted": false,
+        "at": "2026-10-02T00:11:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.appraised",
+      "payload": {
+        "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+        "checks": {
+          "achieved_claimed": true,
+          "approval_boundaries_honored": true,
+          "approval_boundary_encountered": false,
+          "arrived_via_inbox": true,
+          "chain_intact": true,
+          "checks_rederived_from_receipts": true,
+          "deliveries_bound_to_evidence": true,
+          "exactly_once": true,
+          "founder_signature_verified": true,
+          "preconditions_honored": true,
+          "registered_once": true,
+          "world_reobserved": true
+        },
+        "findings": [],
+        "head": "sha256:93413e84a5790a8b96ff14587f73c224cdac81adb9b2e90b53b02de7c6d92d71",
+        "limits": "shares reviewed Kernel code; not an independent implementation",
+        "mission_id": "m:work-greg-doctor-should-also-report",
+        "verdict": "VERIFIED"
+      }
+    },
+    {
+      "type": "greg.mission.registered",
+      "payload": {
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "spec": {
+          "mission_id": "m:work-add-a-read-only-function-compu",
+          "founder_expression": "Improve GREG: add a read-only function computer_use_ready() to greg/computer.py that reports whether Playwright, a Chromium binary and certutil are installed, without launching a browser; add a unit test for it",
+          "intended_effect": "a tested, independently appraised proposed change exists on a reviewable branch; promotion remains with the authorized repository path",
+          "priority": 55,
+          "closure": {
+            "kind": "bounded"
+          },
+          "constraints": [
+            "the worker never pushes, merges or commits; GREG commits on a greg/ branch in a private clone",
+            "protected constitutional surfaces cannot be accepted without a founder decision"
+          ],
+          "success_checks": [
+            {
+              "check_id": "work_accepted",
+              "description": "independent appraisal ACCEPTED the work order",
+              "sensor": {
+                "capability": "worker.appraise",
+                "params": {
+                  "order": "add-a-read-only-function-compu"
+                },
+                "target": "work:add-a-read-only-function-compu"
+              },
+              "predicate": {
+                "op": "equals",
+                "field": "verdict",
+                "value": "ACCEPTED"
+              }
+            },
+            {
+              "check_id": "handoff_written",
+              "description": "the review handoff exists for the founder",
+              "sensor": {
+                "capability": "fs.read",
+                "params": {
+                  "path": "/tmp/greg-hands/body/workspace/m_work-add-a-read-only-function-compu/handoff-add-a-read-only-function-compu.md"
+                },
+                "target": "fs:handoff-add-a-read-only-function-compu.md"
+              },
+              "predicate": {
+                "op": "contains",
+                "field": "text",
+                "value": "greg/add-a-read-only-function-compu"
+              }
+            }
+          ],
+          "strategies": [
+            {
+              "action_id": "commission-worker",
+              "capability": "worker.commission",
+              "target": "work:add-a-read-only-function-compu",
+              "params": {
+                "order": "add-a-read-only-function-compu",
+                "mode": "repository",
+                "repo": "/home/user/uniimente-kernel",
+                "objective": "add a read-only function computer_use_ready() to greg/computer.py that reports whether Playwright, a Chromium binary and certutil are installed, without launching a browser; add a unit test for it",
+                "acceptance": {
+                  "run_changed_tests": true,
+                  "max_changed_files": 8
+                },
+                "allowed_paths": [
+                  "greg/*",
+                  "tests/unit/*"
+                ],
+                "provider": "claude-code",
+                "max_budget_usd": 3.0,
+                "timeout_seconds": 1200
+              },
+              "cost_usd": 3.0,
+              "advances": [
+                "work_accepted"
+              ],
+              "rationale": "software-development work: commission a temporary coding worker under a bounded lease",
+              "expected_outcome": "a committed change on a greg/ branch in a private clone, with evidence"
+            },
+            {
+              "action_id": "write-handoff",
+              "capability": "fs.write",
+              "target": "workspace:handoff-add-a-read-only-function-compu.md",
+              "params": {
+                "relative_path": "handoff-add-a-read-only-function-compu.md",
+                "content": "# Proposed change ready for review: greg/add-a-read-only-function-compu\n\nIndependently appraised ACCEPTED by worker.appraise. Evidence: work-orders/add-a-read-only-function-compu/evidence.json and change.patch in this mission workspace. Promotion (push, PR, merge) requires the existing authorized path; GREG holds no push or merge authority.\n"
+              },
+              "advances": [
+                "handoff_written"
+              ],
+              "requires": [
+                "work_accepted"
+              ],
+              "rationale": "continue the parent mission only on an independently accepted result"
+            }
+          ],
+          "light_cone": {
+            "capabilities": [
+              "worker.commission",
+              "worker.appraise",
+              "fs.read",
+              "fs.write"
+            ],
+            "targets": [
+              "work:add-a-read-only-function-compu",
+              "fs:handoff-add-a-read-only-function-compu.md",
+              "workspace:handoff-add-a-read-only-function-compu.md"
+            ],
+            "max_consequence_class": "internal_write",
+            "budget_usd": 3.0,
+            "horizon": "2026-10-04T00:10:49.141612Z"
+          },
+          "provenance": {
+            "origin": "template:code-change",
+            "planner": "greg.planner/1"
+          }
+        },
+        "command_digest": "sha256:91747b70db60a175df3ef3d95796cb945ea14eb505d7244a1b026f5195024248"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "check_id": "work_accepted",
+        "passed": false,
+        "detail": "'ABSENT' == 'ACCEPTED'",
+        "receipt": "sha256:c17266480fbccaaea53cfc2b1c725135a3de7cb045d5457c95b532b4dabc1880",
+        "rung": 0,
+        "at": "2026-10-02T00:13:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "check_id": "handoff_written",
+        "passed": false,
+        "detail": "field 'text' absent",
+        "receipt": "sha256:dae84581314bd6d870e7619583d0c36bc6068c013afcec5202eafc14f0036804",
+        "rung": 0,
+        "at": "2026-10-02T00:13:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "check_id": "work_accepted",
+        "passed": false,
+        "detail": "'ABSENT' == 'ACCEPTED'",
+        "receipt": "sha256:713bcb69e1c7c84b5b42e4051a705575a1e9c67bf189bea5cbdb501869b8b14c",
+        "rung": 0,
+        "at": "2026-10-02T00:13:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "check_id": "handoff_written",
+        "passed": false,
+        "detail": "field 'text' absent",
+        "receipt": "sha256:f41b6acf196d56034c6b9dfd7f71ee38e4ef3e4abdecf10201b6d325be2ca5db",
+        "rung": 0,
+        "at": "2026-10-02T00:13:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.action",
+      "payload": {
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "action_id": "commission-worker",
+        "attempt": 0,
+        "status": "UNCERTAIN",
+        "reasons": [
+          "dispatch claimed without receipt; outcome unknown"
+        ],
+        "receipt": null,
+        "capability": "worker.commission",
+        "route": "cli",
+        "cost_usd": 0.0,
+        "scope_digest": "sha256:88b824462526d3db5df3add8d4245b80fdd466e06f79667fd18dfdea9e43a90f",
+        "routing": {
+          "chosen": "commission-worker",
+          "expected_value": -2.3333,
+          "reliability": 0.6667,
+          "alternatives": []
+        },
+        "at": "2026-10-02T00:13:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.decision.requested",
+      "payload": {
+        "request_id": "req-32288a9a461ecea01ac84235",
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "kind": "RECONCILIATION",
+        "action_id": "commission-worker",
+        "scope_digest": "sha256:88b824462526d3db5df3add8d4245b80fdd466e06f79667fd18dfdea9e43a90f",
+        "why_now": "an action may or may not have executed before an interruption",
+        "recommendation": "inspect the retained evidence, then state whether it executed",
+        "alternatives": [
+          "reconcile_executed",
+          "reconcile_not_executed"
+        ],
+        "authority_requested": {
+          "action_id": "commission-worker"
+        },
+        "consequence_of_no_response": "the mission waits; no action is taken",
+        "created_at": "2026-10-02T00:13:59.556686Z",
+        "reality_status": "RECORDED_LOCAL_MESSAGE"
+      }
+    },
+    {
+      "type": "greg.mission.blocked",
+      "payload": {
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "blocker": {
+          "type": "reconciliation",
+          "request_id": "req-32288a9a461ecea01ac84235",
+          "action_id": "commission-worker",
+          "why": "uncertain completion; no blind retry",
+          "reconsider": "founder reconciliation decision"
+        }
+      }
+    },
+    {
+      "type": "greg.decision.answered",
+      "payload": {
+        "request_id": "req-32288a9a461ecea01ac84235",
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "answer": "reconcile_not_executed",
+        "reason": "body SIGKILLed mid-worker; no evidence.json or GREG commit exists; partial clone edits are uncollected",
+        "command_digest": "sha256:6c9003066a3313e0bb8c5dcc45ada921f33f3014eefe54793fbbce26589cccdf"
+      }
+    },
+    {
+      "type": "greg.mission.action",
+      "payload": {
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "action_id": "commission-worker",
+        "attempt": 0,
+        "status": "RECONCILED_NOT_EXECUTED",
+        "reasons": [
+          "founder reconciliation: reconcile_not_executed"
+        ],
+        "cost_usd": 0.0
+      }
+    },
+    {
+      "type": "greg.mission.unblocked",
+      "payload": {
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "resolved": {
+          "type": "reconciliation",
+          "request_id": "req-32288a9a461ecea01ac84235",
+          "action_id": "commission-worker",
+          "why": "uncertain completion; no blind retry",
+          "reconsider": "founder reconciliation decision"
+        },
+        "why": "founder answered reconcile_not_executed"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "check_id": "work_accepted",
+        "passed": false,
+        "detail": "'ABSENT' == 'ACCEPTED'",
+        "receipt": "sha256:25e03da399d8e037952bd65571700123ebf498d18291e757e5f85986d4868e17",
+        "rung": 0,
+        "at": "2026-10-02T00:14:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "check_id": "handoff_written",
+        "passed": false,
+        "detail": "field 'text' absent",
+        "receipt": "sha256:4bae77b48386be32ed4441b0e9b06e15a73335d0b7d53bf872145d196d7f5c81",
+        "rung": 0,
+        "at": "2026-10-02T00:14:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.action",
+      "payload": {
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "action_id": "commission-worker",
+        "attempt": 1,
+        "status": "DONE",
+        "reasons": [],
+        "receipt": "sha256:44f2a94338c0c145348a873e833e1e657b6855209d4cf07b6599af79d527bc8c",
+        "capability": "worker.commission",
+        "route": "cli",
+        "cost_usd": 3.0,
+        "scope_digest": "sha256:88b824462526d3db5df3add8d4245b80fdd466e06f79667fd18dfdea9e43a90f",
+        "routing": {
+          "chosen": "commission-worker",
+          "expected_value": -2.5,
+          "reliability": 0.5,
+          "alternatives": []
+        },
+        "at": "2026-10-02T00:14:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "check_id": "work_accepted",
+        "passed": true,
+        "detail": "'ACCEPTED' == 'ACCEPTED'",
+        "receipt": "sha256:236f707d23d17bc7ed3c9fb5e781bc8a66f59fc4be0d6e96d37b6286d052a32f",
+        "rung": 0,
+        "at": "2026-10-02T00:15:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "check_id": "handoff_written",
+        "passed": false,
+        "detail": "field 'text' absent",
+        "receipt": "sha256:5a522a8748a40cef116e041f5a6a7c4d64638f430c2bc7d7d20970402da8e6e9",
+        "rung": 0,
+        "at": "2026-10-02T00:15:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.action",
+      "payload": {
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "action_id": "write-handoff",
+        "attempt": 0,
+        "status": "DONE",
+        "reasons": [],
+        "receipt": "sha256:a43bf0b05d47dd92c21b70bc68178fa680c9733175aae215db0e25afcf3a78bb",
+        "capability": "fs.write",
+        "route": "api",
+        "cost_usd": 0.0,
+        "scope_digest": "sha256:6ac178d3a069a76fd8999f8e650f37766570f9fd39b77a2b2d4a38f984c29c7f",
+        "routing": {
+          "chosen": "write-handoff",
+          "expected_value": 0.6667,
+          "reliability": 0.6667,
+          "alternatives": []
+        },
+        "at": "2026-10-02T00:15:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "check_id": "work_accepted",
+        "passed": true,
+        "detail": "'ACCEPTED' == 'ACCEPTED'",
+        "receipt": "sha256:8bea7172503f640776212808c2afda788262f6197bae614f283a0222ae674b70",
+        "rung": 0,
+        "at": "2026-10-02T00:16:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "check_id": "handoff_written",
+        "passed": true,
+        "detail": "contains 'greg/add-a-read-only-function-compu'",
+        "receipt": "sha256:6cfd78fac64941918cdd8d75c36a63c7fb93f2990e1775d8efc39f698239910d",
+        "rung": 0,
+        "at": "2026-10-02T00:16:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.achieved",
+      "payload": {
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "evidence": [
+          "sha256:8bea7172503f640776212808c2afda788262f6197bae614f283a0222ae674b70",
+          "sha256:6cfd78fac64941918cdd8d75c36a63c7fb93f2990e1775d8efc39f698239910d"
+        ],
+        "actions_done": 2,
+        "closure_rule": "every success check re-observed passing through the Gate",
+        "founder_authenticated_mission": true,
+        "at": "2026-10-02T00:16:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.closure_context",
+      "payload": {
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "boot_id": null,
+        "pid": 3709,
+        "platform": "Linux",
+        "body_id": "body-cf79040d3316bac8",
+        "hosted": false,
+        "at": "2026-10-02T00:16:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.appraised",
+      "payload": {
+        "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+        "checks": {
+          "achieved_claimed": true,
+          "approval_boundaries_honored": true,
+          "approval_boundary_encountered": false,
+          "arrived_via_inbox": true,
+          "chain_intact": true,
+          "checks_rederived_from_receipts": true,
+          "deliveries_bound_to_evidence": true,
+          "exactly_once": true,
+          "founder_signature_verified": true,
+          "preconditions_honored": true,
+          "registered_once": true,
+          "world_reobserved": true
+        },
+        "findings": [],
+        "head": "sha256:7745916969cf5d502015ced093a39da1493c0080f5ca50b3f9bc8e6fc73655ce",
+        "limits": "shares reviewed Kernel code; not an independent implementation",
+        "mission_id": "m:work-add-a-read-only-function-compu",
+        "verdict": "VERIFIED"
+      }
+    },
+    {
+      "type": "greg.mission.registered",
+      "payload": {
+        "mission_id": "m:browse-pypi-z3-release",
+        "spec": {
+          "mission_id": "m:browse-pypi-z3-release",
+          "founder_expression": "Find the latest released versions of z3-solver on PyPI by operating the website; do not log in.",
+          "intended_effect": "the requested information is retrieved by operating the site, with per-step evidence; consequential steps stop at the authority boundary",
+          "priority": 50,
+          "closure": {
+            "kind": "bounded"
+          },
+          "success_checks": [
+            {
+              "check_id": "retrieved",
+              "description": "the session's retained trace holds the requested result",
+              "sensor": {
+                "capability": "browser.trace",
+                "params": {
+                  "session": "pypi-z3-release"
+                },
+                "target": "web:pypi.org"
+              },
+              "predicate": {
+                "op": "count_gte",
+                "field": "extracted.recent_versions",
+                "value": 1
+              }
+            }
+          ],
+          "strategies": [
+            {
+              "action_id": "operate-browser",
+              "capability": "browser.session",
+              "target": "web:pypi.org",
+              "params": {
+                "url": "https://pypi.org/",
+                "steps": [
+                  {
+                    "op": "fill",
+                    "selector": "input[name=q] >> nth=0",
+                    "value": "z3-solver"
+                  },
+                  {
+                    "op": "press",
+                    "selector": "input[name=q] >> nth=0",
+                    "key": "Enter"
+                  },
+                  {
+                    "op": "goto",
+                    "url": "/project/z3-solver/"
+                  },
+                  {
+                    "op": "extract",
+                    "selector": "h1",
+                    "as": "package_header"
+                  },
+                  {
+                    "op": "click",
+                    "selector": "a[href='#history']"
+                  },
+                  {
+                    "op": "extract_all",
+                    "selector": ".release__version",
+                    "as": "recent_versions",
+                    "limit": 5
+                  },
+                  {
+                    "op": "click",
+                    "selector": "a[href='#files']"
+                  },
+                  {
+                    "op": "scroll",
+                    "dy": 600
+                  },
+                  {
+                    "op": "click",
+                    "selector": "a[href^='/account/login/'] >> nth=0"
+                  },
+                  {
+                    "op": "expect_text",
+                    "value": "Log in"
+                  },
+                  {
+                    "op": "fill",
+                    "selector": "#username",
+                    "secret": "pypi_username"
+                  },
+                  {
+                    "op": "click",
+                    "selector": "input[type=submit]",
+                    "consequential": true,
+                    "why": "logging in to an account"
+                  }
+                ],
+                "session": "pypi-z3-release",
+                "on_challenge": "skip"
+              },
+              "advances": [
+                "retrieved"
+              ],
+              "rationale": "structured DOM control in a disposable real browser"
+            }
+          ],
+          "light_cone": {
+            "capabilities": [
+              "browser.session",
+              "browser.trace"
+            ],
+            "targets": [
+              "web:pypi.org"
+            ],
+            "max_consequence_class": "internal_write",
+            "budget_usd": 0,
+            "horizon": "2026-10-03T00:12:13.049330Z"
+          }
+        },
+        "command_digest": "sha256:135ca35f43d9652110842db4ad331746ba9fcf6cce36a69265037308e1149b59"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:browse-pypi-z3-release",
+        "check_id": "retrieved",
+        "passed": false,
+        "detail": "field 'extracted.recent_versions' absent",
+        "receipt": "sha256:a0f25edc17f35705a527263d8d22db17ef630e58ac50bc3a99fb0e1c2c7ab9a6",
+        "rung": 0,
+        "at": "2026-10-02T00:18:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.action",
+      "payload": {
+        "mission_id": "m:browse-pypi-z3-release",
+        "action_id": "operate-browser",
+        "attempt": 0,
+        "status": "DONE",
+        "reasons": [],
+        "receipt": "sha256:dcf45828752abbcd6efe0610220028c5666d2102909a7f518a410391c4934bb6",
+        "capability": "browser.session",
+        "route": "browser",
+        "cost_usd": 0.0,
+        "scope_digest": "sha256:a1d268c9daa648b12b2bd28698aa68e7f6b4188c145bac94b0fe867cc310f3ff",
+        "routing": {
+          "chosen": "operate-browser",
+          "expected_value": 0.5,
+          "reliability": 0.5,
+          "alternatives": []
+        },
+        "at": "2026-10-02T00:18:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:browse-pypi-z3-release",
+        "check_id": "retrieved",
+        "passed": true,
+        "detail": "len count_gte 1",
+        "receipt": "sha256:17c96a967c6bf6173d4d65ebf103e5285c819f1d7604867b9f1af2a6e42c23fd",
+        "rung": 0,
+        "at": "2026-10-02T00:19:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.achieved",
+      "payload": {
+        "mission_id": "m:browse-pypi-z3-release",
+        "evidence": [
+          "sha256:17c96a967c6bf6173d4d65ebf103e5285c819f1d7604867b9f1af2a6e42c23fd"
+        ],
+        "actions_done": 1,
+        "closure_rule": "every success check re-observed passing through the Gate",
+        "founder_authenticated_mission": true,
+        "at": "2026-10-02T00:19:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.closure_context",
+      "payload": {
+        "mission_id": "m:browse-pypi-z3-release",
+        "boot_id": null,
+        "pid": 4055,
+        "platform": "Linux",
+        "body_id": "body-cf79040d3316bac8",
+        "hosted": false,
+        "at": "2026-10-02T00:19:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.appraised",
+      "payload": {
+        "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+        "checks": {
+          "achieved_claimed": true,
+          "approval_boundaries_honored": true,
+          "approval_boundary_encountered": false,
+          "arrived_via_inbox": true,
+          "chain_intact": true,
+          "checks_rederived_from_receipts": true,
+          "deliveries_bound_to_evidence": true,
+          "exactly_once": true,
+          "founder_signature_verified": true,
+          "preconditions_honored": true,
+          "registered_once": true,
+          "world_reobserved": true
+        },
+        "findings": [],
+        "head": "sha256:20d4fd0d46da62b000fb3541b3d225e9208aab7310a6a28e2dde151a71d44241",
+        "limits": "shares reviewed Kernel code; not an independent implementation",
+        "mission_id": "m:browse-pypi-z3-release",
+        "verdict": "VERIFIED"
+      }
+    },
+    {
+      "type": "greg.mission.registered",
+      "payload": {
+        "mission_id": "m:media-z3-release-post",
+        "spec": {
+          "mission_id": "m:media-z3-release-post",
+          "founder_expression": "DALEOBANKS: tell builders about the new z3-solver release, only what we verified.",
+          "intended_effect": "a source-bound post is drafted, verified by DALEOBANKS and submitted to its publishing gate; the truthful outcome (posted or blocked) returns to GREG",
+          "priority": 50,
+          "closure": {
+            "kind": "bounded"
+          },
+          "success_checks": [
+            {
+              "check_id": "draft_verified",
+              "description": "DALEOBANKS checks and source binding pass",
+              "sensor": {
+                "capability": "daleobanks.verify",
+                "params": {
+                  "daleobanks_root": "/home/user/DALEOBANKS",
+                  "source": "/tmp/greg-hands/sources/z3-release.json",
+                  "max_chars": 280,
+                  "draft": "work-orders/z3-release-post/work/post.txt"
+                },
+                "target": "daleobanks:verify"
+              },
+              "predicate": {
+                "op": "equals",
+                "field": "verdict",
+                "value": "VERIFIED"
+              }
+            },
+            {
+              "check_id": "publish_outcome_known",
+              "description": "DALEOBANKS's ledger holds the request's outcome",
+              "sensor": {
+                "capability": "daleobanks.outcome",
+                "params": {},
+                "target": "daleobanks:outcome"
+              },
+              "predicate": {
+                "op": "equals",
+                "field": "requested",
+                "value": true
+              }
+            }
+          ],
+          "strategies": [
+            {
+              "action_id": "draft-post",
+              "capability": "worker.commission",
+              "target": "work:z3-release-post",
+              "params": {
+                "order": "z3-release-post",
+                "mode": "document",
+                "inputs": [
+                  "/tmp/greg-hands/sources/z3-release.json"
+                ],
+                "objective": "Draft one short, factual DALEOBANKS post telling builders that a new z3-solver release is on PyPI, using only the version numbers in the input. Write the post as plain text, at most 280 characters, stating only facts present in the input; every number must appear in the input.",
+                "acceptance": {
+                  "output": "post.txt",
+                  "criteria": "<= 280 characters; no figures absent from the source; no hype, no calls to buy; not a proposal (no pilot/KPI language)"
+                },
+                "allowed_paths": [
+                  "post.txt"
+                ],
+                "max_budget_usd": 2.0,
+                "timeout_seconds": 600
+              },
+              "cost_usd": 2.0,
+              "advances": [
+                "draft_verified"
+              ],
+              "rationale": "research/content work by a temporary worker; DALEOBANKS verifies it"
+            },
+            {
+              "action_id": "request-publish",
+              "capability": "daleobanks.publish",
+              "target": "daleobanks:publish",
+              "params": {
+                "daleobanks_root": "/home/user/DALEOBANKS",
+                "draft": "work-orders/z3-release-post/work/post.txt"
+              },
+              "advances": [
+                "publish_outcome_known"
+              ],
+              "requires": [
+                "draft_verified"
+              ],
+              "rationale": "publishing is external contact: founder decision, then DALEOBANKS's own LIVE gate"
+            }
+          ],
+          "light_cone": {
+            "capabilities": [
+              "worker.commission",
+              "daleobanks.verify",
+              "daleobanks.outcome"
+            ],
+            "targets": [
+              "work:z3-release-post",
+              "daleobanks:*"
+            ],
+            "max_consequence_class": "internal_write",
+            "budget_usd": 2.0,
+            "horizon": "2026-10-04T00:12:43.066497Z"
+          }
+        },
+        "command_digest": "sha256:309af683df4e94f57cdb36d4b55e7c732f3dd0f28dba9c7d436372b7e3a0db85"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:media-z3-release-post",
+        "check_id": "draft_verified",
+        "passed": false,
+        "detail": "'ABSENT' == 'VERIFIED'",
+        "receipt": "sha256:7702774d9828513a074674f9174c8681d396e29d28fd25a40f2d621cf4051431",
+        "rung": 0,
+        "at": "2026-10-02T00:21:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:media-z3-release-post",
+        "check_id": "publish_outcome_known",
+        "passed": false,
+        "detail": "False == True",
+        "receipt": "sha256:7e8841a1ce6dff018327826b56c807fd96e128aa9acd069388f8bdd1d4e66711",
+        "rung": 0,
+        "at": "2026-10-02T00:21:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.action",
+      "payload": {
+        "mission_id": "m:media-z3-release-post",
+        "action_id": "draft-post",
+        "attempt": 0,
+        "status": "DONE",
+        "reasons": [],
+        "receipt": "sha256:a992d7bf39116f5cbdee021a1e14ea98d78e6e1b1b78b2f2a30716510defda15",
+        "capability": "worker.commission",
+        "route": "cli",
+        "cost_usd": 2.0,
+        "scope_digest": "sha256:7433fa122fa3c63370489782972edc1197570b773de1ccdcebf5d8f9d52fbdac",
+        "routing": {
+          "chosen": "draft-post",
+          "expected_value": -1.4,
+          "reliability": 0.6,
+          "alternatives": []
+        },
+        "at": "2026-10-02T00:21:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:media-z3-release-post",
+        "check_id": "draft_verified",
+        "passed": true,
+        "detail": "'VERIFIED' == 'VERIFIED'",
+        "receipt": "sha256:13bb9667875e779146a13da38871d6efcf9987669db2d0607fc2af0197f43ac4",
+        "rung": 0,
+        "at": "2026-10-02T00:22:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:media-z3-release-post",
+        "check_id": "publish_outcome_known",
+        "passed": false,
+        "detail": "False == True",
+        "receipt": "sha256:902166b254aa4fa72d5e2843888a09fd0ef33e7559badfe5c319cc901d82e553",
+        "rung": 0,
+        "at": "2026-10-02T00:22:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.decision.requested",
+      "payload": {
+        "request_id": "req-665a2b11912c15cc3e3211c3",
+        "mission_id": "m:media-z3-release-post",
+        "kind": "APPROVAL",
+        "action_id": "request-publish",
+        "scope_digest": "sha256:e3ca5bd697e1cf44ed6692321e225db7248d9dc5bd75a6ebcc4c47b977feb85a",
+        "why_now": "capability 'daleobanks.publish' outside scope; external_contact exceeds scope ceiling internal_write",
+        "recommendation": "approve request-publish (daleobanks.publish on daleobanks:publish) at $0.0: publishing is external contact: founder decision, then DALEOBANKS's own LIVE gate",
+        "alternatives": [
+          "draft-post",
+          "reject: the mission will try alternatives or ask again"
+        ],
+        "authority_requested": {
+          "capability": "daleobanks.publish",
+          "target": "daleobanks:publish",
+          "consequence_class": "external_contact",
+          "cost_usd": 0.0
+        },
+        "consequence_of_no_response": "the mission waits; no action is taken",
+        "created_at": "2026-10-02T00:22:59.556686Z",
+        "reality_status": "RECORDED_LOCAL_MESSAGE"
+      }
+    },
+    {
+      "type": "greg.mission.blocked",
+      "payload": {
+        "mission_id": "m:media-z3-release-post",
+        "blocker": {
+          "type": "decision",
+          "request_id": "req-665a2b11912c15cc3e3211c3",
+          "action_id": "request-publish",
+          "why": [
+            "capability 'daleobanks.publish' outside scope",
+            "external_contact exceeds scope ceiling internal_write"
+          ],
+          "reconsider": "founder approves or rejects this exact scope"
+        }
+      }
+    },
+    {
+      "type": "greg.decision.answered",
+      "payload": {
+        "request_id": "req-665a2b11912c15cc3e3211c3",
+        "mission_id": "m:media-z3-release-post",
+        "answer": "approve",
+        "reason": "operator test approval of one publish request; DALEOBANKS LIVE arming remains DALEOBANKS's",
+        "command_digest": "sha256:14cadca12e848017b8554c551f22c744cb86b96ee8b52c3e6aa2dd80c16d2727"
+      }
+    },
+    {
+      "type": "greg.mission.unblocked",
+      "payload": {
+        "mission_id": "m:media-z3-release-post",
+        "resolved": {
+          "type": "decision",
+          "request_id": "req-665a2b11912c15cc3e3211c3",
+          "action_id": "request-publish",
+          "why": [
+            "capability 'daleobanks.publish' outside scope",
+            "external_contact exceeds scope ceiling internal_write"
+          ],
+          "reconsider": "founder approves or rejects this exact scope"
+        },
+        "why": "founder answered approve"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:media-z3-release-post",
+        "check_id": "draft_verified",
+        "passed": true,
+        "detail": "'VERIFIED' == 'VERIFIED'",
+        "receipt": "sha256:a5b59f18339a1e878d0e7768bb868053051ac36626a1f88fa81e1b03284f98cb",
+        "rung": 0,
+        "at": "2026-10-02T00:23:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:media-z3-release-post",
+        "check_id": "publish_outcome_known",
+        "passed": false,
+        "detail": "False == True",
+        "receipt": "sha256:27ed54a9142fa7447aa1f5ad67510527357a50ebf5d7d0afd4485f98b97652f8",
+        "rung": 0,
+        "at": "2026-10-02T00:23:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.action",
+      "payload": {
+        "mission_id": "m:media-z3-release-post",
+        "action_id": "request-publish",
+        "attempt": 0,
+        "status": "DONE",
+        "reasons": [],
+        "receipt": "sha256:5357588a482b86a7aba5a663e802774d40543ad16348231c70614ebd1a14790a",
+        "capability": "daleobanks.publish",
+        "route": "cli",
+        "cost_usd": 0.0,
+        "scope_digest": "sha256:e3ca5bd697e1cf44ed6692321e225db7248d9dc5bd75a6ebcc4c47b977feb85a",
+        "routing": {
+          "chosen": "request-publish",
+          "expected_value": 0.5,
+          "reliability": 0.5,
+          "alternatives": []
+        },
+        "at": "2026-10-02T00:23:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:media-z3-release-post",
+        "check_id": "draft_verified",
+        "passed": true,
+        "detail": "'VERIFIED' == 'VERIFIED'",
+        "receipt": "sha256:807ad1574d2473c1a1d828a6f2ec8bf1ae062f3e286dbe44afd5422914cfe856",
+        "rung": 0,
+        "at": "2026-10-02T00:24:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.observed",
+      "payload": {
+        "mission_id": "m:media-z3-release-post",
+        "check_id": "publish_outcome_known",
+        "passed": true,
+        "detail": "True == True",
+        "receipt": "sha256:23526421b4d665e01728b9a1b6a83d8fc97f452224ca4372d8b91368fc66923b",
+        "rung": 0,
+        "at": "2026-10-02T00:24:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.achieved",
+      "payload": {
+        "mission_id": "m:media-z3-release-post",
+        "evidence": [
+          "sha256:807ad1574d2473c1a1d828a6f2ec8bf1ae062f3e286dbe44afd5422914cfe856",
+          "sha256:23526421b4d665e01728b9a1b6a83d8fc97f452224ca4372d8b91368fc66923b"
+        ],
+        "actions_done": 2,
+        "closure_rule": "every success check re-observed passing through the Gate",
+        "founder_authenticated_mission": true,
+        "at": "2026-10-02T00:24:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.closure_context",
+      "payload": {
+        "mission_id": "m:media-z3-release-post",
+        "boot_id": null,
+        "pid": 4370,
+        "platform": "Linux",
+        "body_id": "body-cf79040d3316bac8",
+        "hosted": false,
+        "at": "2026-10-02T00:24:59.556686Z"
+      }
+    },
+    {
+      "type": "greg.mission.appraised",
+      "payload": {
+        "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+        "checks": {
+          "achieved_claimed": true,
+          "approval_boundaries_honored": true,
+          "approval_boundary_encountered": true,
+          "arrived_via_inbox": true,
+          "chain_intact": true,
+          "checks_rederived_from_receipts": true,
+          "deliveries_bound_to_evidence": true,
+          "exactly_once": true,
+          "founder_signature_verified": true,
+          "preconditions_honored": true,
+          "registered_once": true,
+          "world_reobserved": true
+        },
+        "findings": [],
+        "head": "sha256:3318fc52dc8f9d5d9a04dad98d0d9cbff8333688149c67936c7ad908afc70973",
+        "limits": "shares reviewed Kernel code; not an independent implementation",
+        "mission_id": "m:media-z3-release-post",
+        "verdict": "VERIFIED"
+      }
+    }
+  ],
+  "receipts": [
+    {
+      "seq": 12,
+      "hash": "sha256:97a30a8b66265c1e804004955f6e7b48fde1af30d77c136c268626a1d09b0141",
+      "grant_id": "5f6a1daf-9ab5-4db9-954c-373cc2aecd03",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 24,
+      "hash": "sha256:044f85433181fa0ca61db14e807e493636845483f88bb21df2f9885d5cd173dd",
+      "grant_id": "142eb527-b844-451b-bff2-b4f8830a7783",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 36,
+      "hash": "sha256:63c6e71946446384fc31ff58f22c8a0fa25565427900a8244e56219f9362bfe9",
+      "grant_id": "d2a85b4e-0914-4279-b68d-063d0bcff66b",
+      "observed": "a committed change on a greg/ branch in a private clone, with evidence"
+    },
+    {
+      "seq": 48,
+      "hash": "sha256:d9576c1e4ccd862a24437a25ed4aa698e9252793967533c9354f3858bf75d593",
+      "grant_id": "4931e809-2439-4fcb-99f9-0156eff0e588",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 60,
+      "hash": "sha256:c48490b257914ffb34a28cc4e4837d3cb7768d462cb4a0f15fbffeaa1010aa55",
+      "grant_id": "a3f84248-eb73-4dff-b7a5-07014779e456",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 72,
+      "hash": "sha256:4151625308bf50d0664c79162e72821ebd306db908124723ba192abdbc7500c1",
+      "grant_id": "e50cb084-2c69-48a5-b5d6-cfdde70658f5",
+      "observed": "strategy executed"
+    },
+    {
+      "seq": 84,
+      "hash": "sha256:e677c383d1cf7035ecad31b46459231bd12f9d0d3c913a61d041691390dbc36b",
+      "grant_id": "796ef588-04f4-4fdb-930d-7eabc91fc818",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 96,
+      "hash": "sha256:200499e90adfe1703bbdbe94a23a774e49498441c0b296a6b263d92b2b5d2905",
+      "grant_id": "b25b2b60-491e-4d68-9f3e-ca314d32e88d",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 113,
+      "hash": "sha256:c17266480fbccaaea53cfc2b1c725135a3de7cb045d5457c95b532b4dabc1880",
+      "grant_id": "55ee532c-4af2-4875-a4bf-64675b08d78f",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 125,
+      "hash": "sha256:dae84581314bd6d870e7619583d0c36bc6068c013afcec5202eafc14f0036804",
+      "grant_id": "775fea74-c8e0-4479-a614-e11d5c5c5beb",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 144,
+      "hash": "sha256:713bcb69e1c7c84b5b42e4051a705575a1e9c67bf189bea5cbdb501869b8b14c",
+      "grant_id": "d1678450-70dc-49b1-b146-342ef988d54c",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 156,
+      "hash": "sha256:f41b6acf196d56034c6b9dfd7f71ee38e4ef3e4abdecf10201b6d325be2ca5db",
+      "grant_id": "0003e9d6-eb79-4b1c-b662-e6bc51029f84",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 175,
+      "hash": "sha256:25e03da399d8e037952bd65571700123ebf498d18291e757e5f85986d4868e17",
+      "grant_id": "70b44d1b-8931-43ae-8f7d-53e26033ce47",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 187,
+      "hash": "sha256:4bae77b48386be32ed4441b0e9b06e15a73335d0b7d53bf872145d196d7f5c81",
+      "grant_id": "713cad97-40b6-4d5a-9ce4-6404e51376b4",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 199,
+      "hash": "sha256:44f2a94338c0c145348a873e833e1e657b6855209d4cf07b6599af79d527bc8c",
+      "grant_id": "35e9d8a7-3dbe-4b41-be85-1eb8ced06b47",
+      "observed": "a committed change on a greg/ branch in a private clone, with evidence"
+    },
+    {
+      "seq": 211,
+      "hash": "sha256:236f707d23d17bc7ed3c9fb5e781bc8a66f59fc4be0d6e96d37b6286d052a32f",
+      "grant_id": "f7100a93-b250-486b-810e-dca5040a2ebf",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 223,
+      "hash": "sha256:5a522a8748a40cef116e041f5a6a7c4d64638f430c2bc7d7d20970402da8e6e9",
+      "grant_id": "266eed0f-5ca9-4d37-a3dc-994c0c12b502",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 235,
+      "hash": "sha256:a43bf0b05d47dd92c21b70bc68178fa680c9733175aae215db0e25afcf3a78bb",
+      "grant_id": "af5cd28b-27d3-42bb-9982-01bd1799d502",
+      "observed": "strategy executed"
+    },
+    {
+      "seq": 247,
+      "hash": "sha256:8bea7172503f640776212808c2afda788262f6197bae614f283a0222ae674b70",
+      "grant_id": "827da532-33d1-468f-a68b-427bee75bbfc",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 259,
+      "hash": "sha256:6cfd78fac64941918cdd8d75c36a63c7fb93f2990e1775d8efc39f698239910d",
+      "grant_id": "35243456-2fab-45ff-a94b-818c8f387ee2",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 276,
+      "hash": "sha256:a0f25edc17f35705a527263d8d22db17ef630e58ac50bc3a99fb0e1c2c7ab9a6",
+      "grant_id": "72ec02b7-5145-4a91-a049-4db40996becb",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 288,
+      "hash": "sha256:dcf45828752abbcd6efe0610220028c5666d2102909a7f518a410391c4934bb6",
+      "grant_id": "d073c871-f432-4c76-8fea-0e6dde39ee7b",
+      "observed": "strategy executed"
+    },
+    {
+      "seq": 300,
+      "hash": "sha256:17c96a967c6bf6173d4d65ebf103e5285c819f1d7604867b9f1af2a6e42c23fd",
+      "grant_id": "1edbf26d-7b35-45ac-bf8e-728d83ff6728",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 317,
+      "hash": "sha256:7702774d9828513a074674f9174c8681d396e29d28fd25a40f2d621cf4051431",
+      "grant_id": "459e8fe6-4334-44c5-8b1b-be046a8aa6a7",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 329,
+      "hash": "sha256:7e8841a1ce6dff018327826b56c807fd96e128aa9acd069388f8bdd1d4e66711",
+      "grant_id": "7d920cde-3fc2-4743-bae4-c4376c43c28d",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 341,
+      "hash": "sha256:a992d7bf39116f5cbdee021a1e14ea98d78e6e1b1b78b2f2a30716510defda15",
+      "grant_id": "309f0b4f-101b-4b8e-8320-98c563eb993b",
+      "observed": "strategy executed"
+    },
+    {
+      "seq": 353,
+      "hash": "sha256:13bb9667875e779146a13da38871d6efcf9987669db2d0607fc2af0197f43ac4",
+      "grant_id": "af957792-4164-480e-91a0-47ad1e8e737f",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 365,
+      "hash": "sha256:902166b254aa4fa72d5e2843888a09fd0ef33e7559badfe5c319cc901d82e553",
+      "grant_id": "3368ae91-55c7-481c-a9c3-95cd115df743",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 382,
+      "hash": "sha256:a5b59f18339a1e878d0e7768bb868053051ac36626a1f88fa81e1b03284f98cb",
+      "grant_id": "dcab3262-bb56-479b-a21f-6ca1ea88f322",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 394,
+      "hash": "sha256:27ed54a9142fa7447aa1f5ad67510527357a50ebf5d7d0afd4485f98b97652f8",
+      "grant_id": "47c6283c-8fc9-4ba3-aa40-f629b0e20491",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 406,
+      "hash": "sha256:5357588a482b86a7aba5a663e802774d40543ad16348231c70614ebd1a14790a",
+      "grant_id": "37463722-d1d1-4920-8dd1-02d9e9cfc155",
+      "observed": "strategy executed"
+    },
+    {
+      "seq": 418,
+      "hash": "sha256:807ad1574d2473c1a1d828a6f2ec8bf1ae062f3e286dbe44afd5422914cfe856",
+      "grant_id": "c46f314a-4269-4678-b123-7ece919b5f2b",
+      "observed": "observation captured"
+    },
+    {
+      "seq": 430,
+      "hash": "sha256:23526421b4d665e01728b9a1b6a83d8fc97f452224ca4372d8b91368fc66923b",
+      "grant_id": "ef2811f7-90c3-43b3-abd3-a1b52881c955",
+      "observed": "observation captured"
+    }
+  ],
+  "founder_key": "operator test key generated by scripts/greg_hands_proof.py; not Alfonso's key"
+}

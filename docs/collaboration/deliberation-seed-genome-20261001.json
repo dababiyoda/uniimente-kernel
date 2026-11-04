@@ -1,0 +1,354 @@
+{
+  "decision_id": "SEED-GENOME-20261001",
+  "title": "Converge bounded cognition with canonical GREG execution",
+  "problem": "A sandbox cortex does not produce durable governed GREG behavior. Competing seed branches risk another runtime.",
+  "founder_intent_refs": [
+    "INTENT-2026-10-01-POLYINTELLIGENCE-SEED",
+    "INTENT-20260930-polyintelligence-cortex",
+    "INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE"
+  ],
+  "baseline": "PR137 persistent missions, no cognition/1; PR141 sandbox-only structured cortex.",
+  "alternatives": [
+    {
+      "name": "simplest_viable_alternative",
+      "description": "Static specialist dispatch with original-input independent checks; SELECTED.",
+      "advantages": [
+        "inspectable scoped alternative"
+      ],
+      "disadvantages": [
+        "no independent live acceptance established"
+      ],
+      "revival_evidence": "Applicable evidence of lower loss/cost and zero authority regression."
+    },
+    {
+      "name": "strongest_competing_architecture",
+      "description": "Strong local model with equivalent tools/data/budget; blocked on approved configured model.",
+      "advantages": [
+        "inspectable scoped alternative"
+      ],
+      "disadvantages": [
+        "no independent live acceptance established"
+      ],
+      "revival_evidence": "Applicable evidence of lower loss/cost and zero authority regression."
+    },
+    {
+      "name": "reversible_experiment",
+      "description": "Signed, read-only development mission on an isolated test body, without live effects.",
+      "advantages": [
+        "inspectable scoped alternative"
+      ],
+      "disadvantages": [
+        "no independent live acceptance established"
+      ],
+      "revival_evidence": "Applicable evidence of lower loss/cost and zero authority regression."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Keep draft branches separate, no integration or new evidence.",
+    "advantages": [
+      "zero main changes"
+    ],
+    "disadvantages": [
+      "no integrated cognitive mission"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Preserve the entire directive, not just its currently executable slice. This is one agent applying distinct perspectives, not five independent reviewers.",
+      "material_concerns": [
+        "Declared geometry does not establish safe classification of real language."
+      ],
+      "evidence_refs": [
+        "docs/cortex/GREG_SEED_GENOME.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "One GREG runtime and one Cortex owner; reuse PR137/141 and the canonical registry. This is one agent applying distinct perspectives, not five independent reviewers.",
+      "material_concerns": [
+        "Rich receipts can overwhelm operators and leak data."
+      ],
+      "evidence_refs": [
+        "docs/cortex/GREG_SEED_GENOME.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Static routing is sufficient; the new experiment has not demonstrated gain. This is one agent applying distinct perspectives, not five independent reviewers.",
+      "material_concerns": [
+        "Self-authored holdout is related to development fixtures."
+      ],
+      "evidence_refs": [
+        "docs/cortex/GREG_SEED_GENOME.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Bound workers and recover durable results after real process death. This is one agent applying distinct perspectives, not five independent reviewers.",
+      "material_concerns": [
+        "Separate algorithms still share premises, author and runtime."
+      ],
+      "evidence_refs": [
+        "docs/cortex/GREG_SEED_GENOME.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "A proof can verify computation while the premises, harm and empirical truth remain unresolved. This is one agent applying distinct perspectives, not five independent reviewers.",
+      "material_concerns": [
+        "Sparse outcome scores could create a feedback loop or single failure point."
+      ],
+      "evidence_refs": [
+        "docs/cortex/GREG_SEED_GENOME.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Two different methods run under signed scope and survive process replacement",
+      "tier": "sandbox_execution",
+      "reference": "tests/integration/test_greg_cognition_process.py",
+      "finding": "Both receipt-before-action and post-action SIGKILL tests pass."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Router is superior to the simplest deployable router",
+      "tier": "sandbox_execution",
+      "reference": "docs/cortex/evidence/seed-genome/results.json",
+      "finding": "Timing-independent gain is zero; model baselines unavailable. Reject superiority."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Bounded, durable, governable computation with honest proof limits.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "heterogeneous methods \u2014 Different computational jurisdiction",
+        "amplified_value": "Use native solvers rather than ask a model to invent exact answers."
+      },
+      {
+        "id": "A2",
+        "statement": "typed evidence \u2014 Different proof classes",
+        "amplified_value": "Prevent a quotation, causal assumption or satisfiable model from claiming world validity."
+      },
+      {
+        "id": "A3",
+        "statement": "reused capabilities \u2014 One authority path",
+        "amplified_value": "Canonical grants and manifest compatibility reduce integration duplication."
+      },
+      {
+        "id": "A4",
+        "statement": "durable memory \u2014 Append observations and corrections",
+        "amplified_value": "Retain failures and missing scores without policy promotion."
+      },
+      {
+        "id": "A5",
+        "statement": "founder control \u2014 Signed scope and stop",
+        "amplified_value": "Keep execution governable through process replacement."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Limited hardware",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Bound work and separate verification; avoid weights/server acquisition. Metric: bounded time, integrity, overlap or operator burden; test references in the delivery report. New vulnerability: scope remains narrow."
+      },
+      {
+        "id": "D2",
+        "statement": "Incomplete world evidence",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Carry WORLD_UNVERIFIED and refuse independent-world settlement without an adapter. Metric: bounded time, integrity, overlap or operator burden; test references in the delivery report. New vulnerability: scope remains narrow."
+      },
+      {
+        "id": "D3",
+        "statement": "Integration overlap",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Move pure variants into existing cortex/seed; retain PR141 old freeze as a baseline. Metric: bounded time, integrity, overlap or operator burden; test references in the delivery report. New vulnerability: scope remains narrow."
+      },
+      {
+        "id": "D4",
+        "statement": "Translation/source errors",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Pass the original signed data to a stdlib checker in another process. Metric: bounded time, integrity, overlap or operator burden; test references in the delivery report. New vulnerability: scope remains narrow."
+      },
+      {
+        "id": "D5",
+        "statement": "Limited founder attention",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Add readable result projections; do not ask to ratify technical test results. Metric: bounded time, integrity, overlap or operator burden; test references in the delivery report. New vulnerability: scope remains narrow."
+      }
+    ],
+    "comparisons": {
+      "baseline": "PR137 persistent missions, no cognition/1; PR141 sandbox-only structured cortex.",
+      "do_nothing": "Keep draft branches separate, no integration or new evidence.",
+      "simplest_viable_alternative": "Static specialist dispatch with original-input independent checks; SELECTED.",
+      "strongest_competing_architecture": "Strong local model with equivalent tools/data/budget; blocked on approved configured model.",
+      "reversible_experiment": "Signed, read-only development mission on an isolated test body, without live effects."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Adaptive learned router",
+        "rejection_reason": "No verified training outcomes or advantage; needless complexity now.",
+        "revival_evidence": "Held-out improvement over static rules without authority/evaluator changes."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack unsafe classification, receipt burden, benchmark contamination, correlated checks and learning feedback.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "overfit",
+        "statement": "Declared geometry does not establish safe classification of real language.",
+        "strengthening_response": "Limit scope to structured bounded inputs; Gate still controls any later effect."
+      },
+      {
+        "id": "N2",
+        "category": "bureaucracy",
+        "statement": "Rich receipts can overwhelm operators and leak data.",
+        "strengthening_response": "Compact surface summary with escaped details; confidentiality remains body-local, not a new privacy guarantee."
+      },
+      {
+        "id": "N3",
+        "category": "gaming",
+        "statement": "Self-authored holdout is related to development fixtures.",
+        "strengthening_response": "Disclose that limitation; freeze before measuring, preserve negative results, require independent quality families before superiority."
+      },
+      {
+        "id": "N4",
+        "category": "dependency",
+        "statement": "Separate algorithms still share premises, author and runtime.",
+        "strengthening_response": "Disclose dependencies; do not label computation as empirical verification."
+      },
+      {
+        "id": "N5",
+        "category": "centralization",
+        "statement": "Sparse outcome scores could create a feedback loop or single failure point.",
+        "strengthening_response": "No automatic policy updates; append reported scores only; canonical STOP wins."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Bound work and separate verification; avoid weights/server acquisition. Residual limits are explicit; no gain or completeness claimed.",
+        "owner": "Kernel/GREG maintainers",
+        "review_trigger": "Changed scope, source evidence, hardware or held-out results."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Carry WORLD_UNVERIFIED and refuse independent-world settlement without an adapter. Residual limits are explicit; no gain or completeness claimed.",
+        "owner": "Kernel/GREG maintainers",
+        "review_trigger": "Changed scope, source evidence, hardware or held-out results."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "resolved",
+        "rationale": "Move pure variants into existing cortex/seed; retain PR141 old freeze as a baseline. Residual limits are explicit; no gain or completeness claimed.",
+        "owner": "Kernel/GREG maintainers",
+        "review_trigger": "Changed scope, source evidence, hardware or held-out results."
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "accepted",
+        "rationale": "Pass the original signed data to a stdlib checker in another process. Residual limits are explicit; no gain or completeness claimed.",
+        "owner": "Kernel/GREG maintainers",
+        "review_trigger": "Changed scope, source evidence, hardware or held-out results."
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "Add readable result projections; do not ask to ratify technical test results. Residual limits are explicit; no gain or completeness claimed.",
+        "owner": "Kernel/GREG maintainers",
+        "review_trigger": "Changed scope, source evidence, hardware or held-out results."
+      }
+    ],
+    "final_design": "Retain the simplest static policy as the implementation; no learned market/ecology. Extend existing owners with typed pure methods, canonical Gate/journal, separate checks, durable corrections and a review branch.",
+    "residual_risks": [
+      {
+        "risk": "Declared geometry does not establish safe classification of real language.",
+        "mitigation": "Limit scope to structured bounded inputs; Gate still controls any later effect.",
+        "owner": "Kernel/GREG maintainers",
+        "review_trigger": "Scope expansion or changed evidence."
+      },
+      {
+        "risk": "Rich receipts can overwhelm operators and leak data.",
+        "mitigation": "Compact surface summary with escaped details; confidentiality remains body-local, not a new privacy guarantee.",
+        "owner": "Kernel/GREG maintainers",
+        "review_trigger": "Scope expansion or changed evidence."
+      },
+      {
+        "risk": "Self-authored holdout is related to development fixtures.",
+        "mitigation": "Disclose that limitation; freeze before measuring, preserve negative results, require independent quality families before superiority.",
+        "owner": "Kernel/GREG maintainers",
+        "review_trigger": "Scope expansion or changed evidence."
+      },
+      {
+        "risk": "Separate algorithms still share premises, author and runtime.",
+        "mitigation": "Disclose dependencies; do not label computation as empirical verification.",
+        "owner": "Kernel/GREG maintainers",
+        "review_trigger": "Scope expansion or changed evidence."
+      },
+      {
+        "risk": "Sparse outcome scores could create a feedback loop or single failure point.",
+        "mitigation": "No automatic policy updates; append reported scores only; canonical STOP wins.",
+        "owner": "Kernel/GREG maintainers",
+        "review_trigger": "Scope expansion or changed evidence."
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserved in the decision and report, not averaged into consensus.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not claim the complete seed or routing superiority.",
+        "rationale": "Structured self-authored engineering cases and unavailable model/world evidence leave important requirements open.",
+        "evidence_threshold": "Complete scope map and required independent/model/device tests under the stated budget.",
+        "owner": "Kernel/GREG maintainers",
+        "review_trigger": "Any completion/promotion claim."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Stack on PR137; preserve the 25 PR141 commits and freeze, move newly written pure methods into cortex/seed, register cognition capabilities only through existing GenomeRegistry. Keep main unchanged.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Keep the draft unmerged or revert the additive integration commits.",
+      "Retain source, receipts, negative evidence and PR141 baseline; do not delete runtime history.",
+      "Use existing signed detach/lifecycle/STOP mechanisms on any explicitly configured development body."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Any authority expansion, unauthorized external effect or refusal reroute.",
+    "Freeze/evaluator contamination used to claim advantage.",
+    "Repeated failure to beat simpler architecture before proposed learned routing activation."
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Kernel/GREG maintainers within authorized development; Alfonso owns consequential decisions",
+  "review_trigger": "Residual requirement closure, licensed local model evidence, or any proposed live activation."
+}

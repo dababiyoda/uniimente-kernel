@@ -1,0 +1,5986 @@
+{
+ "schema": "greg-learned-routing-results/2",
+ "manifest_sha256": "sha256:f1ec064be104a17b1210a040a18470df5e58c045f40d5541f2a271dc8968889e",
+ "finished_at": "2026-10-07T17:46:32.606319+00:00",
+ "source_commit": "557fd77479d06f68742ccfc668a2ab488e52b1c8",
+ "platform": "Linux-6.18.44-fc-v77-x86_64-with-glibc2.39",
+ "python": "3.11.15",
+ "training": {
+  "runs": [
+   {
+    "item_id": "pigeonhole-6-1",
+    "family": "pigeonhole",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.366,
+    "conditions": [
+     "kind=feasibility",
+     "ops=!=",
+     "domain=small",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "pigeonhole-6-1",
+    "family": "pigeonhole",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.462,
+    "conditions": [
+     "kind=feasibility",
+     "ops=!=",
+     "domain=small",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "pigeonhole-6-2",
+    "family": "pigeonhole",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.236,
+    "conditions": [
+     "kind=feasibility",
+     "ops=!=",
+     "domain=small",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "pigeonhole-6-2",
+    "family": "pigeonhole",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.095,
+    "conditions": [
+     "kind=feasibility",
+     "ops=!=",
+     "domain=small",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "pigeonhole-6-3",
+    "family": "pigeonhole",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.226,
+    "conditions": [
+     "kind=feasibility",
+     "ops=!=",
+     "domain=small",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "pigeonhole-6-3",
+    "family": "pigeonhole",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.128,
+    "conditions": [
+     "kind=feasibility",
+     "ops=!=",
+     "domain=small",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "pigeonhole-7-1",
+    "family": "pigeonhole",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 2.619,
+    "conditions": [
+     "kind=feasibility",
+     "ops=!=",
+     "domain=small",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "pigeonhole-7-1",
+    "family": "pigeonhole",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.698,
+    "conditions": [
+     "kind=feasibility",
+     "ops=!=",
+     "domain=small",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "pigeonhole-7-2",
+    "family": "pigeonhole",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 2.128,
+    "conditions": [
+     "kind=feasibility",
+     "ops=!=",
+     "domain=small",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "pigeonhole-7-2",
+    "family": "pigeonhole",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.697,
+    "conditions": [
+     "kind=feasibility",
+     "ops=!=",
+     "domain=small",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "pigeonhole-7-3",
+    "family": "pigeonhole",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 2.372,
+    "conditions": [
+     "kind=feasibility",
+     "ops=!=",
+     "domain=small",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "pigeonhole-7-3",
+    "family": "pigeonhole",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.89,
+    "conditions": [
+     "kind=feasibility",
+     "ops=!=",
+     "domain=small",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "pigeonhole-8-1",
+    "family": "pigeonhole",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.011,
+    "conditions": [
+     "kind=feasibility",
+     "ops=!=",
+     "domain=small",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "pigeonhole-8-1",
+    "family": "pigeonhole",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.047,
+    "conditions": [
+     "kind=feasibility",
+     "ops=!=",
+     "domain=small",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "pigeonhole-8-2",
+    "family": "pigeonhole",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.009,
+    "conditions": [
+     "kind=feasibility",
+     "ops=!=",
+     "domain=small",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "pigeonhole-8-2",
+    "family": "pigeonhole",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.033,
+    "conditions": [
+     "kind=feasibility",
+     "ops=!=",
+     "domain=small",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "pigeonhole-8-3",
+    "family": "pigeonhole",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.011,
+    "conditions": [
+     "kind=feasibility",
+     "ops=!=",
+     "domain=small",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "pigeonhole-8-3",
+    "family": "pigeonhole",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.006,
+    "conditions": [
+     "kind=feasibility",
+     "ops=!=",
+     "domain=small",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "schedule-8-1",
+    "family": "schedule",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.243,
+    "conditions": [
+     "kind=feasibility",
+     "ops=or",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "schedule-8-1",
+    "family": "schedule",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.332,
+    "conditions": [
+     "kind=feasibility",
+     "ops=or",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "schedule-8-2",
+    "family": "schedule",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.213,
+    "conditions": [
+     "kind=feasibility",
+     "ops=or",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "schedule-8-2",
+    "family": "schedule",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.348,
+    "conditions": [
+     "kind=feasibility",
+     "ops=or",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "schedule-8-3",
+    "family": "schedule",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.225,
+    "conditions": [
+     "kind=feasibility",
+     "ops=or",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "schedule-8-3",
+    "family": "schedule",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.391,
+    "conditions": [
+     "kind=feasibility",
+     "ops=or",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "schedule-12-1",
+    "family": "schedule",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.909,
+    "conditions": [
+     "kind=feasibility",
+     "ops=or",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=30",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "schedule-12-1",
+    "family": "schedule",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 1.256,
+    "conditions": [
+     "kind=feasibility",
+     "ops=or",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=30",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "schedule-12-2",
+    "family": "schedule",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.604,
+    "conditions": [
+     "kind=feasibility",
+     "ops=or",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=30",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "schedule-12-2",
+    "family": "schedule",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 1.541,
+    "conditions": [
+     "kind=feasibility",
+     "ops=or",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=30",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "schedule-12-3",
+    "family": "schedule",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.668,
+    "conditions": [
+     "kind=feasibility",
+     "ops=or",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=30",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "schedule-12-3",
+    "family": "schedule",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 1.526,
+    "conditions": [
+     "kind=feasibility",
+     "ops=or",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=30",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "schedule-16-1",
+    "family": "schedule",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.883,
+    "conditions": [
+     "kind=feasibility",
+     "ops=or",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=30",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "schedule-16-1",
+    "family": "schedule",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 1.547,
+    "conditions": [
+     "kind=feasibility",
+     "ops=or",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=30",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "schedule-16-2",
+    "family": "schedule",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.752,
+    "conditions": [
+     "kind=feasibility",
+     "ops=or",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=30",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "schedule-16-2",
+    "family": "schedule",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 1.551,
+    "conditions": [
+     "kind=feasibility",
+     "ops=or",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=30",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "schedule-16-3",
+    "family": "schedule",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.941,
+    "conditions": [
+     "kind=feasibility",
+     "ops=or",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=30",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "schedule-16-3",
+    "family": "schedule",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 1.554,
+    "conditions": [
+     "kind=feasibility",
+     "ops=or",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=30",
+     "density=>2"
+    ]
+   },
+   {
+    "item_id": "equalities-4-1",
+    "family": "equalities",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.023,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "equalities-4-1",
+    "family": "equalities",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.039,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "equalities-4-2",
+    "family": "equalities",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.015,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "equalities-4-2",
+    "family": "equalities",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.033,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "equalities-4-3",
+    "family": "equalities",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.016,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "equalities-4-3",
+    "family": "equalities",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.033,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "equalities-6-1",
+    "family": "equalities",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.202,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "equalities-6-1",
+    "family": "equalities",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.574,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "equalities-6-2",
+    "family": "equalities",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.417,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "equalities-6-2",
+    "family": "equalities",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.002,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "equalities-6-3",
+    "family": "equalities",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 2.398,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "equalities-6-3",
+    "family": "equalities",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.005,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "equalities-8-1",
+    "family": "equalities",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.005,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "equalities-8-1",
+    "family": "equalities",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.004,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "equalities-8-2",
+    "family": "equalities",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.006,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "equalities-8-2",
+    "family": "equalities",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.007,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "equalities-8-3",
+    "family": "equalities",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.009,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "equalities-8-3",
+    "family": "equalities",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.007,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=wide",
+     "budget=<=3s",
+     "size=<=10",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility-20-1",
+    "family": "knapsack_feasibility",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.027,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility-20-1",
+    "family": "knapsack_feasibility",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.035,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility_1s-20-1",
+    "family": "knapsack_feasibility_1s",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.032,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility_1s-20-1",
+    "family": "knapsack_feasibility_1s",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.04,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility-20-2",
+    "family": "knapsack_feasibility",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.026,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility-20-2",
+    "family": "knapsack_feasibility",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.064,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility_1s-20-2",
+    "family": "knapsack_feasibility_1s",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.03,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility_1s-20-2",
+    "family": "knapsack_feasibility_1s",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.061,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility-20-3",
+    "family": "knapsack_feasibility",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.037,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility-20-3",
+    "family": "knapsack_feasibility",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.051,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility_1s-20-3",
+    "family": "knapsack_feasibility_1s",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.035,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility_1s-20-3",
+    "family": "knapsack_feasibility_1s",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.051,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility-30-1",
+    "family": "knapsack_feasibility",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.041,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility-30-1",
+    "family": "knapsack_feasibility",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.005,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility_1s-30-1",
+    "family": "knapsack_feasibility_1s",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.03,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility_1s-30-1",
+    "family": "knapsack_feasibility_1s",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 1.004,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility-30-2",
+    "family": "knapsack_feasibility",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.027,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility-30-2",
+    "family": "knapsack_feasibility",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.005,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility_1s-30-2",
+    "family": "knapsack_feasibility_1s",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.025,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility_1s-30-2",
+    "family": "knapsack_feasibility_1s",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 1.004,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility-30-3",
+    "family": "knapsack_feasibility",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.033,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility-30-3",
+    "family": "knapsack_feasibility",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.005,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility_1s-30-3",
+    "family": "knapsack_feasibility_1s",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.03,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility_1s-30-3",
+    "family": "knapsack_feasibility_1s",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 1.004,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility-40-1",
+    "family": "knapsack_feasibility",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.071,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=100",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility-40-1",
+    "family": "knapsack_feasibility",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.005,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=100",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility_1s-40-1",
+    "family": "knapsack_feasibility_1s",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.176,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=100",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility_1s-40-1",
+    "family": "knapsack_feasibility_1s",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 1.004,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=100",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility-40-2",
+    "family": "knapsack_feasibility",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.056,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=100",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility-40-2",
+    "family": "knapsack_feasibility",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.008,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=100",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility_1s-40-2",
+    "family": "knapsack_feasibility_1s",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.058,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=100",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility_1s-40-2",
+    "family": "knapsack_feasibility_1s",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 1.005,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=100",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility-40-3",
+    "family": "knapsack_feasibility",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.042,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=100",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility-40-3",
+    "family": "knapsack_feasibility",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.005,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=100",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility_1s-40-3",
+    "family": "knapsack_feasibility_1s",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.046,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=100",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_feasibility_1s-40-3",
+    "family": "knapsack_feasibility_1s",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 1.005,
+    "conditions": [
+     "kind=feasibility",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=100",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_optimization-15-1",
+    "family": "knapsack_optimization",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.073,
+    "conditions": [
+     "kind=optimize",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_optimization-15-1",
+    "family": "knapsack_optimization",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.009,
+    "conditions": [
+     "kind=optimize",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_optimization-15-2",
+    "family": "knapsack_optimization",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.187,
+    "conditions": [
+     "kind=optimize",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_optimization-15-2",
+    "family": "knapsack_optimization",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.007,
+    "conditions": [
+     "kind=optimize",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_optimization-15-3",
+    "family": "knapsack_optimization",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.112,
+    "conditions": [
+     "kind=optimize",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_optimization-15-3",
+    "family": "knapsack_optimization",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.009,
+    "conditions": [
+     "kind=optimize",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_optimization-30-1",
+    "family": "knapsack_optimization",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.012,
+    "conditions": [
+     "kind=optimize",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_optimization-30-1",
+    "family": "knapsack_optimization",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.012,
+    "conditions": [
+     "kind=optimize",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_optimization-30-2",
+    "family": "knapsack_optimization",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.01,
+    "conditions": [
+     "kind=optimize",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_optimization-30-2",
+    "family": "knapsack_optimization",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.011,
+    "conditions": [
+     "kind=optimize",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_optimization-30-3",
+    "family": "knapsack_optimization",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.009,
+    "conditions": [
+     "kind=optimize",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_optimization-30-3",
+    "family": "knapsack_optimization",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.01,
+    "conditions": [
+     "kind=optimize",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=30",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_optimization-50-1",
+    "family": "knapsack_optimization",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.011,
+    "conditions": [
+     "kind=optimize",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=100",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_optimization-50-1",
+    "family": "knapsack_optimization",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.013,
+    "conditions": [
+     "kind=optimize",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=100",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_optimization-50-2",
+    "family": "knapsack_optimization",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.012,
+    "conditions": [
+     "kind=optimize",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=100",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_optimization-50-2",
+    "family": "knapsack_optimization",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.012,
+    "conditions": [
+     "kind=optimize",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=100",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_optimization-50-3",
+    "family": "knapsack_optimization",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "seconds": 3.01,
+    "conditions": [
+     "kind=optimize",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=100",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "knapsack_optimization-50-3",
+    "family": "knapsack_optimization",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.013,
+    "conditions": [
+     "kind=optimize",
+     "ops=<=",
+     "domain=bool",
+     "budget=<=3s",
+     "size=<=100",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-24x6-1",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.946,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=300",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-24x6-1",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.559,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=300",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-24x6-2",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "seconds": 1.016,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=300",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-24x6-2",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.429,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=300",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-24x6-3",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "seconds": 1.014,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=300",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-24x6-3",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.44,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=300",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-36x6-1",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.627,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=300",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-36x6-1",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.579,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=300",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-36x6-2",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.686,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=300",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-36x6-2",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.544,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=300",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-36x6-3",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 1.002,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=300",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-36x6-3",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.55,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=300",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-48x8-1",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.874,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=1000",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-48x8-1",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.62,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=1000",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-48x8-2",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.787,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=1000",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-48x8-2",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.772,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=1000",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-48x8-3",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "seconds": 0.707,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=1000",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-48x8-3",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "seconds": 0.549,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=1000",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-60x10-2",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "seconds": 1.052,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=1000",
+     "density=<=0.5"
+    ]
+   },
+   {
+    "item_id": "binpack_tight_1s-60x10-2",
+    "family": "binpack_tight_1s",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "seconds": 1.031,
+    "conditions": [
+     "kind=feasibility",
+     "ops==",
+     "domain=bool",
+     "budget=<=1s",
+     "size=<=1000",
+     "density=<=0.5"
+    ]
+   }
+  ],
+  "records": 128
+ },
+ "excluded_unlabelled": [
+  {
+   "item_id": "binpack_tight_1s-60x10-1",
+   "reference": {
+    "cortex.formal.z3@0.2.0": {
+     "feasible": null,
+     "state": "TIMEOUT",
+     "seconds": 15.12
+    },
+    "cortex.optimization.cpsat@0.2.0": {
+     "feasible": null,
+     "state": "TIMEOUT",
+     "seconds": 12.37
+    }
+   }
+  },
+  {
+   "item_id": "binpack_tight_1s-60x10-3",
+   "reference": {
+    "cortex.formal.z3@0.2.0": {
+     "feasible": null,
+     "state": "TIMEOUT",
+     "seconds": 15.14
+    },
+    "cortex.optimization.cpsat@0.2.0": {
+     "feasible": null,
+     "state": "TIMEOUT",
+     "seconds": 12.32
+    }
+   }
+  }
+ ],
+ "heldout": [
+  {
+   "item_id": "pigeonhole-6-4",
+   "family": "pigeonhole",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.365
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.37
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.407
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.358
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.413
+    }
+   }
+  },
+  {
+   "item_id": "pigeonhole-6-5",
+   "family": "pigeonhole",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.408
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.344
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.418
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.441
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.358
+    }
+   }
+  },
+  {
+   "item_id": "pigeonhole-6-6",
+   "family": "pigeonhole",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.393
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.326
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.344
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.36
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.454
+    }
+   }
+  },
+  {
+   "item_id": "pigeonhole-7-4",
+   "family": "pigeonhole",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.234
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.66
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.784
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.162
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.007
+    }
+   }
+  },
+  {
+   "item_id": "pigeonhole-7-5",
+   "family": "pigeonhole",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.931
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.583
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.535
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.557
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.009
+    }
+   }
+  },
+  {
+   "item_id": "pigeonhole-7-6",
+   "family": "pigeonhole",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.542
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.534
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.411
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.364
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.016
+    }
+   }
+  },
+  {
+   "item_id": "pigeonhole-8-4",
+   "family": "pigeonhole",
+   "arms": {
+    "static": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.008
+    },
+    "class_learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.009
+    },
+    "conditional_learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.011
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.008
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.006
+    }
+   }
+  },
+  {
+   "item_id": "pigeonhole-8-5",
+   "family": "pigeonhole",
+   "arms": {
+    "static": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.009
+    },
+    "class_learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.015
+    },
+    "conditional_learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.01
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.009
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.006
+    }
+   }
+  },
+  {
+   "item_id": "pigeonhole-8-6",
+   "family": "pigeonhole",
+   "arms": {
+    "static": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.01
+    },
+    "class_learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.008
+    },
+    "conditional_learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.018
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.013
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.006
+    }
+   }
+  },
+  {
+   "item_id": "schedule-8-4",
+   "family": "schedule",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.23
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.239
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.226
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.212
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.337
+    }
+   }
+  },
+  {
+   "item_id": "schedule-8-5",
+   "family": "schedule",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.203
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.2
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.199
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.213
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.321
+    }
+   }
+  },
+  {
+   "item_id": "schedule-8-6",
+   "family": "schedule",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.24
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.21
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.201
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.2
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.295
+    }
+   }
+  },
+  {
+   "item_id": "schedule-12-4",
+   "family": "schedule",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.59
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.564
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.644
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.643
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 1.247
+    }
+   }
+  },
+  {
+   "item_id": "schedule-12-5",
+   "family": "schedule",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.557
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.579
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.561
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.548
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 1.186
+    }
+   }
+  },
+  {
+   "item_id": "schedule-12-6",
+   "family": "schedule",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.543
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.604
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.661
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.641
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 1.187
+    }
+   }
+  },
+  {
+   "item_id": "schedule-16-4",
+   "family": "schedule",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.938
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.902
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.96
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.907
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 1.561
+    }
+   }
+  },
+  {
+   "item_id": "schedule-16-5",
+   "family": "schedule",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.934
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.963
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.04
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.99
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 1.553
+    }
+   }
+  },
+  {
+   "item_id": "schedule-16-6",
+   "family": "schedule",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.87
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.864
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.839
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.858
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 1.549
+    }
+   }
+  },
+  {
+   "item_id": "equalities-4-4",
+   "family": "equalities",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.015
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.025
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.022
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.02
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.026
+    }
+   }
+  },
+  {
+   "item_id": "equalities-4-5",
+   "family": "equalities",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.023
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.012
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.024
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.011
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.024
+    }
+   }
+  },
+  {
+   "item_id": "equalities-4-6",
+   "family": "equalities",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.012
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.013
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.016
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.011
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.018
+    }
+   }
+  },
+  {
+   "item_id": "equalities-6-4",
+   "family": "equalities",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.546
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.933
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.365
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.396
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 1.208
+    }
+   }
+  },
+  {
+   "item_id": "equalities-6-5",
+   "family": "equalities",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.118
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.159
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.136
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.175
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.05
+    }
+   }
+  },
+  {
+   "item_id": "equalities-6-6",
+   "family": "equalities",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.249
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.299
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.528
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.338
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.005
+    }
+   }
+  },
+  {
+   "item_id": "equalities-8-4",
+   "family": "equalities",
+   "arms": {
+    "static": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.004
+    },
+    "class_learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.005
+    },
+    "conditional_learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.008
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.005
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.005
+    }
+   }
+  },
+  {
+   "item_id": "equalities-8-5",
+   "family": "equalities",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.793
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.286
+    },
+    "conditional_learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.007
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.551
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.004
+    }
+   }
+  },
+  {
+   "item_id": "equalities-8-6",
+   "family": "equalities",
+   "arms": {
+    "static": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.005
+    },
+    "class_learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.006
+    },
+    "conditional_learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.013
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.005
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.006
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility-20-4",
+   "family": "knapsack_feasibility",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.027
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.028
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.029
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.026
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.024
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "<=",
+     "domain": "bool",
+     "budget": "<=3s",
+     "size": "<=30",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget+size+density",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.9999,
+     "cortex.optimization.cpsat@0.2.0": 0.479
+    },
+    "depth": 7
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility_1s-20-4",
+   "family": "knapsack_feasibility_1s",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.025
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.027
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.025
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.028
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.03
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "<=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=30",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget+size+density",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.9999,
+     "cortex.optimization.cpsat@0.2.0": 0.479
+    },
+    "depth": 7
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility-20-5",
+   "family": "knapsack_feasibility",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.074
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.085
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.097
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.083
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.082
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "<=",
+     "domain": "bool",
+     "budget": "<=3s",
+     "size": "<=30",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget+size+density",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.9999,
+     "cortex.optimization.cpsat@0.2.0": 0.479
+    },
+    "depth": 7
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility_1s-20-5",
+   "family": "knapsack_feasibility_1s",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.097
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.083
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.115
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.154
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.083
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "<=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=30",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget+size+density",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.9999,
+     "cortex.optimization.cpsat@0.2.0": 0.479
+    },
+    "depth": 7
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility-20-6",
+   "family": "knapsack_feasibility",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.024
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.023
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.023
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.025
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.048
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "<=",
+     "domain": "bool",
+     "budget": "<=3s",
+     "size": "<=30",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget+size+density",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.9999,
+     "cortex.optimization.cpsat@0.2.0": 0.479
+    },
+    "depth": 7
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility_1s-20-6",
+   "family": "knapsack_feasibility_1s",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.022
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.019
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.023
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.018
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.046
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "<=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=30",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget+size+density",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.9999,
+     "cortex.optimization.cpsat@0.2.0": 0.479
+    },
+    "depth": 7
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility-30-4",
+   "family": "knapsack_feasibility",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.024
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.023
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.025
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.024
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.004
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "<=",
+     "domain": "bool",
+     "budget": "<=3s",
+     "size": "<=30",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget+size+density",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.9999,
+     "cortex.optimization.cpsat@0.2.0": 0.479
+    },
+    "depth": 7
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility_1s-30-4",
+   "family": "knapsack_feasibility_1s",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.025
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.027
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.025
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.021
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 1.004
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "<=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=30",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget+size+density",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.9999,
+     "cortex.optimization.cpsat@0.2.0": 0.479
+    },
+    "depth": 7
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility-30-5",
+   "family": "knapsack_feasibility",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.003
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.003
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.003
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.004
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.007
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "<=",
+     "domain": "bool",
+     "budget": "<=3s",
+     "size": "<=30",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget+size+density",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.9999,
+     "cortex.optimization.cpsat@0.2.0": 0.479
+    },
+    "depth": 7
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility_1s-30-5",
+   "family": "knapsack_feasibility_1s",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.003
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.005
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.004
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.003
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 1.005
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "<=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=30",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget+size+density",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.9999,
+     "cortex.optimization.cpsat@0.2.0": 0.479
+    },
+    "depth": 7
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility-30-6",
+   "family": "knapsack_feasibility",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.033
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.031
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.056
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.038
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.004
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "<=",
+     "domain": "bool",
+     "budget": "<=3s",
+     "size": "<=30",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget+size+density",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.9999,
+     "cortex.optimization.cpsat@0.2.0": 0.479
+    },
+    "depth": 7
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility_1s-30-6",
+   "family": "knapsack_feasibility_1s",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.045
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.039
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.033
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.03
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 1.005
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "<=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=30",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget+size+density",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.9999,
+     "cortex.optimization.cpsat@0.2.0": 0.479
+    },
+    "depth": 7
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility-40-4",
+   "family": "knapsack_feasibility",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.063
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.039
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.072
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.039
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.007
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "<=",
+     "domain": "bool",
+     "budget": "<=3s",
+     "size": "<=100",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.9989,
+     "cortex.optimization.cpsat@0.2.0": 0.3352
+    },
+    "depth": 5
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility_1s-40-4",
+   "family": "knapsack_feasibility_1s",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.069
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.042
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.059
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.038
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 1.006
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "<=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=100",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.9989,
+     "cortex.optimization.cpsat@0.2.0": 0.3352
+    },
+    "depth": 5
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility-40-5",
+   "family": "knapsack_feasibility",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.003
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.006
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.003
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.004
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.005
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "<=",
+     "domain": "bool",
+     "budget": "<=3s",
+     "size": "<=100",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.9989,
+     "cortex.optimization.cpsat@0.2.0": 0.3352
+    },
+    "depth": 5
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility_1s-40-5",
+   "family": "knapsack_feasibility_1s",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.004
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.003
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.003
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.003
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 1.004
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "<=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=100",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.9989,
+     "cortex.optimization.cpsat@0.2.0": 0.3352
+    },
+    "depth": 5
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility-40-6",
+   "family": "knapsack_feasibility",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.03
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.045
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.034
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.048
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.004
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "<=",
+     "domain": "bool",
+     "budget": "<=3s",
+     "size": "<=100",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.9989,
+     "cortex.optimization.cpsat@0.2.0": 0.3352
+    },
+    "depth": 5
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility_1s-40-6",
+   "family": "knapsack_feasibility_1s",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.054
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.032
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.049
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.031
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 1.005
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "<=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=100",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.9989,
+     "cortex.optimization.cpsat@0.2.0": 0.3352
+    },
+    "depth": 5
+   }
+  },
+  {
+   "item_id": "knapsack_optimization-15-4",
+   "family": "knapsack_optimization",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.019
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.019
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.019
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.157
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.02
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_optimization-15-5",
+   "family": "knapsack_optimization",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.02
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.018
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.019
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.206
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.023
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_optimization-15-6",
+   "family": "knapsack_optimization",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.018
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.019
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.017
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.194
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.019
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_optimization-30-4",
+   "family": "knapsack_optimization",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.021
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.016
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.02
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.01
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.12
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_optimization-30-5",
+   "family": "knapsack_optimization",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.019
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.013
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.042
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.013
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.015
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_optimization-30-6",
+   "family": "knapsack_optimization",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.017
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.016
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.014
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.011
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.024
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_optimization-50-4",
+   "family": "knapsack_optimization",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.02
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.02
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.028
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.015
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.029
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_optimization-50-5",
+   "family": "knapsack_optimization",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.017
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.017
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.024
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.018
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.018
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_optimization-50-6",
+   "family": "knapsack_optimization",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.018
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.018
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.017
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.011
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.024
+    }
+   }
+  },
+  {
+   "item_id": "binpack_tight_1s-24x6-4",
+   "family": "binpack_tight_1s",
+   "arms": {
+    "static": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.015
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.592
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.439
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.02
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.461
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=300",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget+size+density",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.671,
+     "cortex.optimization.cpsat@0.2.0": 0.9854
+    },
+    "depth": 7
+   }
+  },
+  {
+   "item_id": "binpack_tight_1s-24x6-5",
+   "family": "binpack_tight_1s",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.675
+    },
+    "class_learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.015
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.885
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.014
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.91
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=300",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget+size+density",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.671,
+     "cortex.optimization.cpsat@0.2.0": 0.9854
+    },
+    "depth": 7
+   }
+  },
+  {
+   "item_id": "binpack_tight_1s-24x6-6",
+   "family": "binpack_tight_1s",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.008
+    },
+    "class_learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.017
+    },
+    "conditional_learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 1.016
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.834
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 1.028
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=300",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget+size+density",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.671,
+     "cortex.optimization.cpsat@0.2.0": 0.9854
+    },
+    "depth": 7
+   }
+  },
+  {
+   "item_id": "binpack_tight_1s-36x6-4",
+   "family": "binpack_tight_1s",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.685
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.568
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.524
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.573
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.524
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=300",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget+size+density",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.671,
+     "cortex.optimization.cpsat@0.2.0": 0.9854
+    },
+    "depth": 7
+   }
+  },
+  {
+   "item_id": "binpack_tight_1s-36x6-5",
+   "family": "binpack_tight_1s",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.576
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.572
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.536
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.566
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.525
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=300",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget+size+density",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.671,
+     "cortex.optimization.cpsat@0.2.0": 0.9854
+    },
+    "depth": 7
+   }
+  },
+  {
+   "item_id": "binpack_tight_1s-36x6-6",
+   "family": "binpack_tight_1s",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.707
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.857
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.532
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.686
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.53
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=300",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget+size+density",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.671,
+     "cortex.optimization.cpsat@0.2.0": 0.9854
+    },
+    "depth": 7
+   }
+  },
+  {
+   "item_id": "binpack_tight_1s-48x8-4",
+   "family": "binpack_tight_1s",
+   "arms": {
+    "static": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.029
+    },
+    "class_learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.028
+    },
+    "conditional_learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 1.022
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.033
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 1.017
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=1000",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.7004,
+     "cortex.optimization.cpsat@0.2.0": 0.8859
+    },
+    "depth": 5
+   }
+  },
+  {
+   "item_id": "binpack_tight_1s-48x8-5",
+   "family": "binpack_tight_1s",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.971
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.817
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.543
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.738
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.542
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=1000",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.7004,
+     "cortex.optimization.cpsat@0.2.0": 0.8859
+    },
+    "depth": 5
+   }
+  },
+  {
+   "item_id": "binpack_tight_1s-48x8-6",
+   "family": "binpack_tight_1s",
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.617
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.808
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.585
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.938
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.541
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=1000",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.7004,
+     "cortex.optimization.cpsat@0.2.0": 0.8859
+    },
+    "depth": 5
+   }
+  },
+  {
+   "item_id": "binpack_tight_1s-60x10-4",
+   "family": "binpack_tight_1s",
+   "arms": {
+    "static": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.045
+    },
+    "class_learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.039
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.763
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.04
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.789
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=1000",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.7004,
+     "cortex.optimization.cpsat@0.2.0": 0.8859
+    },
+    "depth": 5
+   }
+  },
+  {
+   "item_id": "binpack_tight_1s-60x10-5",
+   "family": "binpack_tight_1s",
+   "arms": {
+    "static": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.041
+    },
+    "class_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.849
+    },
+    "conditional_learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.69
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.045
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.669
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=1000",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.7004,
+     "cortex.optimization.cpsat@0.2.0": 0.8859
+    },
+    "depth": 5
+   }
+  },
+  {
+   "item_id": "binpack_tight_1s-60x10-6",
+   "family": "binpack_tight_1s",
+   "arms": {
+    "static": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.093
+    },
+    "class_learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.044
+    },
+    "conditional_learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 1.026
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.049
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 1.035
+    }
+   },
+   "competence": {
+    "policy": "greg-conditional-competence/0.1",
+    "features": {
+     "kind": "feasibility",
+     "ops": "=",
+     "domain": "bool",
+     "budget": "<=1s",
+     "size": "<=1000",
+     "density": "<=0.5"
+    },
+    "decision_level": "kind+ops+domain+budget",
+    "estimates": {
+     "cortex.formal.z3@0.2.0": 0.7004,
+     "cortex.optimization.cpsat@0.2.0": 0.8859
+    },
+    "depth": 5
+   }
+  }
+ ],
+ "summary": {
+  "conditional_vs_static": {
+   "verdict": "INCONCLUSIVE",
+   "correct": [
+    57,
+    56
+   ],
+   "wrong": [
+    0,
+    0
+   ],
+   "wins": 3,
+   "losses": 2,
+   "sign_test_p_one_sided": 0.5
+  },
+  "conditional_vs_class": {
+   "verdict": "INCONCLUSIVE",
+   "correct": [
+    57,
+    56
+   ],
+   "wrong": [
+    0,
+    0
+   ],
+   "wins": 2,
+   "losses": 1,
+   "sign_test_p_one_sided": 0.5
+  },
+  "class_vs_static": {
+   "verdict": "NO_GAIN",
+   "correct": [
+    56,
+    56
+   ],
+   "wrong": [
+    0,
+    0
+   ],
+   "wins": 2,
+   "losses": 2,
+   "sign_test_p_one_sided": 0.6875
+  },
+  "counts": {
+   "static": {
+    "correct": 56,
+    "wrong": 0,
+    "no_decision": 10
+   },
+   "class_learned": {
+    "correct": 56,
+    "wrong": 0,
+    "no_decision": 10
+   },
+   "conditional_learned": {
+    "correct": 57,
+    "wrong": 0,
+    "no_decision": 9
+   },
+   "z3_first": {
+    "correct": 49,
+    "wrong": 0,
+    "no_decision": 17
+   },
+   "cpsat_first": {
+    "correct": 44,
+    "wrong": 0,
+    "no_decision": 22
+   }
+  },
+  "per_family_correct": {
+   "binpack_tight_1s": {
+    "static": 7,
+    "class_learned": 7,
+    "conditional_learned": 9,
+    "z3_first": 6,
+    "cpsat_first": 9,
+    "n": 12
+   },
+   "equalities": {
+    "static": 7,
+    "class_learned": 7,
+    "conditional_learned": 6,
+    "z3_first": 7,
+    "cpsat_first": 5,
+    "n": 9
+   },
+   "knapsack_feasibility": {
+    "static": 9,
+    "class_learned": 9,
+    "conditional_learned": 9,
+    "z3_first": 9,
+    "cpsat_first": 3,
+    "n": 9
+   },
+   "knapsack_feasibility_1s": {
+    "static": 9,
+    "class_learned": 9,
+    "conditional_learned": 9,
+    "z3_first": 9,
+    "cpsat_first": 3,
+    "n": 9
+   },
+   "knapsack_optimization": {
+    "static": 9,
+    "class_learned": 9,
+    "conditional_learned": 9,
+    "z3_first": 3,
+    "cpsat_first": 9,
+    "n": 9
+   },
+   "pigeonhole": {
+    "static": 6,
+    "class_learned": 6,
+    "conditional_learned": 6,
+    "z3_first": 6,
+    "cpsat_first": 6,
+    "n": 9
+   },
+   "schedule": {
+    "static": 9,
+    "class_learned": 9,
+    "conditional_learned": 9,
+    "z3_first": 9,
+    "cpsat_first": 9,
+    "n": 9
+   }
+  },
+  "oracle_either_fixed_order": 59,
+  "median_seconds": {
+   "static": 0.603,
+   "class_learned": 0.598,
+   "conditional_learned": 0.54,
+   "z3_first": 0.642,
+   "cpsat_first": 1.006
+  },
+  "rule": "REGRESSION if learned adds a wrong answer or decides fewer correctly; GAIN if more correct and one-sided exact sign test p < 0.05; NO_GAIN if equal; else INCONCLUSIVE"
+ },
+ "limits": [
+  "bin-packing truth is a 20 s reference label, not a proof for every item",
+  "size buckets are a fixed log scale (10/30/100/300/1000), not tuned to this suite",
+  "one container, one CPU budget; timing-dependent results may differ elsewhere"
+ ]
+}

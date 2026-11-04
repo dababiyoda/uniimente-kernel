@@ -1,0 +1,55 @@
+........................................F                                [100%]
+=================================== FAILURES ===================================
+_____ test_cli_composition_survives_sigkill_without_duplicate_computation ______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-3/test_cli_composition_survives_0')
+
+    def test_cli_composition_survives_sigkill_without_duplicate_computation(tmp_path):
+        home, key, bid, _ = make_body(tmp_path)
+        p = problem('estimation', estimation(), name='process-recovery')
+        p['claims'].append({'claim_id': 'allocation', 'kind': 'optimization',
+                            'data': allocation(), 'conditions': {}})
+        source = tmp_path / 'problem.json'
+        source.write_text(json.dumps(p))
+        signed = subprocess.run(cli(home, 'mission', 'new', 'cognition', '--problem', str(source),
+                                    '--key', str(tmp_path / 'founder.pem'), '--no-passphrase'),
+                                cwd=ROOT, capture_output=True, text=True, timeout=15)
+        assert signed.returncode == 0, signed.stderr
+        child = subprocess.Popen(cli(home, 'run', '--tick-seconds', '0.05'), cwd=ROOT,
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        observed = False
+        started = time.monotonic()
+        try:
+            while time.monotonic() - started < 20:
+                with observe(home, actor='spiffe://uniimente.internal/greg/recovery-test') as journal:
+                    observed = bool(journal.replay('cognition.receipt'))
+                if observed:
+                    child.kill()  # actual SIGKILL; no orderly close or manual tick
+                    break
+                if child.poll() is not None:
+                    break
+                time.sleep(.01)
+        finally:
+            if child.poll() is None:
+                child.kill()
+            _, stderr = child.communicate(timeout=5)
+        assert observed, stderr.decode()
+        before = time.monotonic()
+        recovered = subprocess.run(cli(home, 'run', '--max-ticks', '6', '--tick-seconds', '0.05'),
+                                   cwd=ROOT, capture_output=True, text=True, timeout=20)
+        assert recovered.returncode == 0, recovered.stderr
+        recovery_seconds = time.monotonic() - before
+        assert recovery_seconds < 20
+        with Body(home) as body:
+            receipts = body.journal.replay('cognition.receipt')
+            assert len(receipts) == 1 and receipts[0].payload['answered']
+            assert len({c['method'] for c in receipts[0].payload['claims']}) == 2
+>           assert len([e for e in body.journal.replay('mission.action')
+                        if e.payload.get('capability') == 'cognition.solve']) == 1
+E           assert 0 == 1
+E            +  where 0 = len([])
+
+tests/integration/test_greg_cognition_process.py:63: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_greg_cognition_process.py::test_cli_composition_survives_sigkill_without_duplicate_computation
+1 failed, 40 passed in 13.30s

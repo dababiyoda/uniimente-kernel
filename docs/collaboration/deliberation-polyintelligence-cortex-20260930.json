@@ -1,0 +1,370 @@
+{
+  "decision_id": "polyintelligence-cortex-20260930",
+  "title": "Adopt the GREG Polyintelligence Cortex seed (cortex 0.1.5) into the Kernel as a SANDBOXED, unpromoted experiment",
+  "problem": "GREG answers mixed-geometry questions through single-model reasoning with no epistemic jurisdiction, typed proof, gates-before-ranking or outcome-only learning. The founder ordered a seed experiment; it is built on a draft branch. Merging it adds five names to the shared Kernel contract registry and a CI job; it creates no authority and no external effect.",
+  "founder_intent_refs": [
+    "PC-001",
+    "PC-002",
+    "PC-003",
+    "PC-004",
+    "PC-005",
+    "PC-006",
+    "PC-007",
+    "PC-008",
+    "PC-009",
+    "PC-010",
+    "PC-011",
+    "PC-012",
+    "INTENT-20260930-polyintelligence-cortex",
+    "INTENT-0030"
+  ],
+  "baseline": "main at 19fa33c: no cortex; Capability Genome, policy engine, causal memory and Consequence Gate exist; no capability or model router is implemented.",
+  "alternatives": [
+    {
+      "name": "Strong single model with tools",
+      "description": "Route every question to one strong model with code execution and solver tool calls; no gates, typed proofs or settlement.",
+      "advantages": [
+        "least engineering",
+        "LLMRouterBench shows Best Single is hard to beat"
+      ],
+      "disadvantages": [
+        "no jurisdictional abstention",
+        "no authority separation in the artifact",
+        "confident error on unanswerable items"
+      ],
+      "revival_evidence": "Declared baselines run and the routed seed shows GAIN_ABSENT with no critical-error advantage."
+    },
+    {
+      "name": "Full 16-family cortex now",
+      "description": "Implement every family the review lists before evaluating.",
+      "advantages": [
+        "maximal surface"
+      ],
+      "disadvantages": [
+        "architecture cathedral the review itself warns against",
+        "no evidence any family beats its baseline"
+      ],
+      "revival_evidence": "Node 1 GAIN_VERIFIED and recorded deficits on specific geometries."
+    },
+    {
+      "name": "Gate-and-receipt layer only",
+      "description": "Keep gates, typed receipts and the verifier around a single model, without routing to exact organs.",
+      "advantages": [
+        "keeps the governance value",
+        "smaller"
+      ],
+      "disadvantages": [
+        "loses exactness where solvers dominate (formal, optimization, units)"
+      ],
+      "revival_evidence": "Routing shows no gain but gates/verifier reduce critical errors against baselines."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Branch stays a draft; main keeps single-model cognition; evidence and primitives remain available but unused.",
+    "advantages": [
+      "zero change to main",
+      "no review burden now"
+    ],
+    "disadvantages": [
+      "primitives drift from main",
+      "no path to verified outcomes",
+      "founder directive unexecuted on main"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Every line of the build prompt and every section of both review passes is traced with a status; the literal dominance clause is preserved and prohibited, its lawful effect carried forward.",
+      "material_concerns": [
+        "'Verbatim' conflicts with the review's own corrections (PC-010) and needs a founder ruling",
+        "Exit condition unmet; the build prompt requires reporting that and staying unpromoted"
+      ],
+      "evidence_refs": [
+        "docs/cortex/BUILD_PROMPT_TRACEABILITY.json",
+        "docs/cortex/verbatim-register.json"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "The cortex is a projection of the Capability Genome with one integration edit (five contract names); no second registry, ledger or authority path; stacks cleanly on PR #137.",
+      "material_concerns": [
+        "Adds shared contract names to KNOWN_CONTRACTS, which makes this constitutional-level",
+        "Routing is structural; free-text intake does not exist yet"
+      ],
+      "evidence_refs": [
+        "capabilities/genome.py",
+        "docs/cortex/SEED_EXPERIMENT_REPORT.md#stacking-on-pr-137"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "The strongest counterexample stands: LLMRouterBench reports routers often fail to beat the best single model; the 0.964 is on self-authored structured items. Nothing here shows the router is better than a strong model with tools.",
+      "material_concerns": [
+        "Self-authored held-out suite",
+        "Weak local baseline could manufacture gain",
+        "Four post-freeze fixes, though disclosed, show the first freeze was premature"
+      ],
+      "evidence_refs": [
+        "docs/cortex/INVENTION_DOSSIER.md",
+        "tests/evidence/cortex-seed-v0.1.5/heldout-results.json"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Reproducible: one optional dependency, frozen manifests per version, CI job runs tests, traceability, register, mutation check and the held-out refusal guard.",
+      "material_concerns": [
+        "Documentation volume is high; maintainers must keep the matrix and register current",
+        "Mutation patterns go stale when code moves (the stale guard caught one)"
+      ],
+      "evidence_refs": [
+        ".github/workflows/canonical-ci.yml",
+        "scripts/ci/check_cortex_mutants.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Victim protection is human-led with identity-free receipts; unknown harm is treated as possible harm; abstention is credited so the system is not pushed into confident error.",
+      "material_concerns": [
+        "No held-out item exercises protection, timeouts or optimization",
+        "Who actually receives protective handoffs is undefined"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_cortex_pipeline.py",
+        "docs/cortex/examples/receipt-victim-protection-handoff.json"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Routed seed on frozen held-out",
+      "tier": "deterministic_fixture",
+      "reference": "tests/evidence/cortex-seed-v0.1.5/heldout-results.json",
+      "finding": "0.964 [0.911, 1.000], zero critical errors, unsupported certainty and gate violations; self-authored items"
+    },
+    {
+      "claim": "Authority boundary",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_cortex_pipeline.py",
+      "finding": "receipts schema-pinned to authority_created=false; no actuator import; financial/irreversible hand off"
+    },
+    {
+      "claim": "Safeguards are load-bearing",
+      "tier": "unit_test",
+      "reference": "scripts/ci/check_cortex_mutants.py",
+      "finding": "26 of 26 safeguard-removing mutants caught"
+    },
+    {
+      "claim": "Stacks on PR #137",
+      "tier": "sandbox_execution",
+      "reference": "docs/cortex/SEED_EXPERIMENT_REPORT.md#stacking-on-pr-137",
+      "finding": "clean merge at 71b6f74; 1570 passed vs 1201 for #137 alone, same 12 skips; 26/26 mutants and verifier PASS on the stack"
+    },
+    {
+      "claim": "Router precedents",
+      "tier": "primary_source",
+      "reference": "https://arxiv.org/abs/2601.07206",
+      "finding": "LLMRouterBench: several routers do not beat Best Single"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Routing gain",
+      "tier": "deterministic_fixture",
+      "reference": "tests/evidence/cortex-seed-v0.1.5/heldout-results.json#/exit",
+      "finding": "INCONCLUSIVE: declared baselines NOT_RUN"
+    },
+    {
+      "claim": "First freeze completeness",
+      "tier": "historical_artifact",
+      "reference": "docs/cortex/SEED_EXPERIMENT_REPORT.md",
+      "finding": "four disclosed fixes after the v0.1 freeze (protection, timeout, exit rule, review primitives)"
+    },
+    {
+      "claim": "Semantic organ quality",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_cortex_routes.py",
+      "finding": "only a scripted model client was tested; no live model"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "A reversible, consequence-inert cognition seed on main that later stages can build on, promoted only by evidence.",
+    "advantages": [
+      {
+        "id": "ADV-1",
+        "statement": "Exact organs remove error classes a model cannot (SMT, unit algebra, identification rules)",
+        "amplified_value": "certified optimization and witness checks turn exactness into auditable receipts"
+      },
+      {
+        "id": "ADV-2",
+        "statement": "Authority-free receipts with falsifiers narrow disputes",
+        "amplified_value": "every claim names what would refute it, so accountability compounds with use"
+      },
+      {
+        "id": "ADV-3",
+        "statement": "Outcome-only settlement fenced from authority",
+        "amplified_value": "competence can compound from reality without any path to sovereignty"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "DIS-1",
+        "statement": "No comparative evidence against strong baselines",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "exit rule requires every declared baseline, per-geometry gain, cost and latency; promotion blocked until then"
+      },
+      {
+        "id": "DIS-2",
+        "statement": "Self-authored structured held-out suite",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Node 2 requires an externally authored free-text suite before any shadow use"
+      },
+      {
+        "id": "DIS-3",
+        "statement": "Adds names to the shared contract registry",
+        "severity": "medium",
+        "response_type": "governance",
+        "redesigned_response": "cortex schemas kept out of the shared-boundary allowlist; one-line registry change; founder decision required to merge"
+      },
+      {
+        "id": "DIS-4",
+        "statement": "Large documentation surface",
+        "severity": "low",
+        "response_type": "modularity",
+        "redesigned_response": "matrix and register are tested, so drift fails CI instead of rotting"
+      }
+    ],
+    "comparisons": {
+      "baseline": "main has no cognition routing; the seed adds it without touching any authority path",
+      "do_nothing": "keeps main simplest but leaves the founder directive and primitives off main",
+      "simplest_viable_alternative": "gate-and-receipt layer only; retained as the fallback if routing shows no gain",
+      "strongest_competing_architecture": "strong single model with tools; it is the declared baseline the seed must beat",
+      "reversible_experiment": "merge as SANDBOXED and consequence-inert; revert is one merge revert; run baselines next"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Full 16-family cortex now",
+        "rejection_reason": "cathedral without evidence",
+        "revival_evidence": "GAIN_VERIFIED plus recorded deficits per geometry"
+      },
+      {
+        "name": "Promote on the 0.964 result",
+        "rejection_reason": "self-authored suite and no baselines",
+        "revival_evidence": "GAIN_VERIFIED on an external suite against strong baselines"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attacked the strengthened design for evaluator capture, documentation bureaucracy, centralization of cognition in one router, and drift between frozen evidence and code.",
+    "new_weaknesses": [
+      {
+        "id": "NW-1",
+        "category": "bureaucracy",
+        "statement": "Each fix needs a version bump, freeze, rerun and doc update",
+        "strengthening_response": "kept: the friction is what makes post-hoc changes visible; scripts make it mechanical"
+      },
+      {
+        "id": "NW-2",
+        "category": "gaming",
+        "statement": "The author can tune the exit rule after seeing results",
+        "strengthening_response": "exit tightened only before any baseline ran; every manifest and result preserved; rule changes only add conditions"
+      },
+      {
+        "id": "NW-3",
+        "category": "centralization",
+        "statement": "One router could become a de facto authority",
+        "strengthening_response": "schema pins authority_created=false; static import test; learning cannot touch the registry"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "DIS-1",
+        "outcome": "experiment",
+        "rationale": "decided by running the declared baselines",
+        "owner": "next agent with model access",
+        "review_trigger": "a model becomes reachable"
+      },
+      {
+        "disadvantage_id": "DIS-2",
+        "outcome": "deferred",
+        "rationale": "an independent author is needed",
+        "owner": "Alfonso approves the author",
+        "review_trigger": "Node 1 GAIN_VERIFIED"
+      },
+      {
+        "disadvantage_id": "DIS-3",
+        "outcome": "accepted",
+        "rationale": "minimal, reversible, no authority change",
+        "owner": "Kernel maintainers",
+        "review_trigger": "any further shared-contract change"
+      },
+      {
+        "disadvantage_id": "DIS-4",
+        "outcome": "resolved",
+        "rationale": "tests enforce the docs' accuracy",
+        "owner": "cortex maintainers",
+        "review_trigger": "a traceability or register test fails"
+      }
+    ],
+    "final_design": "Cortex 0.1.5 as on the branch: six SANDBOXED seed organs (incl. lawful deterrence), 28 reserved families disabled, gates before ranking, typed proofs, accountability and protection in receipts, outcome-only settlement, frozen evaluation with a strict exit, CI job 6. Merge only by founder decision; no promotion without GAIN_VERIFIED.",
+    "residual_risks": [
+      {
+        "risk": "Routing gain never materializes",
+        "mitigation": "kill test retires the performance claim; gate-and-receipt fallback",
+        "owner": "Alfonso",
+        "review_trigger": "two GAIN_ABSENT verdicts"
+      },
+      {
+        "risk": "Protective handoff has no named human recipient",
+        "mitigation": "handoffs name the next step; recipient designation is a founder decision",
+        "owner": "Alfonso",
+        "review_trigger": "first real protection-relevant mission"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserved with an evidence threshold; it does not block the draft but blocks promotion.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not treat the seed as evidence of routing value until strong baselines run.",
+        "rationale": "Best Single is hard to beat (LLMRouterBench); the suite is self-authored.",
+        "evidence_threshold": "GAIN_VERIFIED against a strong always-LLM and a committee on the frozen suite, then on an external suite",
+        "owner": "Alfonso",
+        "review_trigger": "Node 1 verdict"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": null
+  },
+  "migration_plan": "Merge the draft branch after founder review; no data migration; cortex stays SANDBOXED; earlier freeze manifests and results kept.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "revert the merge commit",
+      "remove the five cortex names from KNOWN_CONTRACTS in the same revert",
+      "CI job 6 disappears with the revert"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "GAIN_ABSENT against strong baselines on two frozen versions with no critical-error advantage",
+    "any receipt found asserting authority or any cortex import of an actuator"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez",
+  "review_trigger": "Founder review of the draft PR, or a Node 1 verdict."
+}

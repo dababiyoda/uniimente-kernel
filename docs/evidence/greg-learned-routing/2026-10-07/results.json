@@ -1,0 +1,3795 @@
+{
+ "schema": "greg-learned-routing-results/1",
+ "manifest_sha256": "sha256:fb3b7502bcb0d8ea85ae3eab35f2b61c20e8bbfd21e89c7f59f6827470f9a1d2",
+ "finished_at": "2026-10-07T16:37:26.594398+00:00",
+ "source_commit": "4baf5344ff255d4a85aaf307a2e7f88a55a96815",
+ "platform": "Linux-6.18.44-fc-v77-x86_64-with-glibc2.39",
+ "python": "3.11.15",
+ "training": {
+  "runs": [
+   {
+    "item_id": "pigeonhole-6-1",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.338,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "pigeonhole-6-1",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.546,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "pigeonhole-6-2",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.3,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "pigeonhole-6-2",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.11,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "pigeonhole-6-3",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.26,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "pigeonhole-6-3",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.091,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "pigeonhole-7-1",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 2.149,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "pigeonhole-7-1",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.689,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "pigeonhole-7-2",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 2.214,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "pigeonhole-7-2",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.704,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "pigeonhole-7-3",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 2.275,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "pigeonhole-7-3",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.699,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "pigeonhole-8-1",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.007,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "pigeonhole-8-1",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.019,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "pigeonhole-8-2",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.008,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "pigeonhole-8-2",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.005,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "pigeonhole-8-3",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.008,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "pigeonhole-8-3",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.006,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "schedule-8-1",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.224,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "schedule-8-1",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.341,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "schedule-8-2",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.279,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "schedule-8-2",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.378,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "schedule-8-3",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.227,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "schedule-8-3",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.354,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "schedule-12-1",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.586,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "schedule-12-1",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 1.255,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "schedule-12-2",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.572,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "schedule-12-2",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 1.203,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "schedule-12-3",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.584,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "schedule-12-3",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 1.209,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "schedule-16-1",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.795,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "schedule-16-1",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 1.55,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "schedule-16-2",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.821,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "schedule-16-2",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 1.55,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "schedule-16-3",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.872,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "schedule-16-3",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 1.571,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "equalities-4-1",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.027,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "equalities-4-1",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.038,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "equalities-4-2",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.015,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "equalities-4-2",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.037,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "equalities-4-3",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.016,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "equalities-4-3",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.044,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "equalities-6-1",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.268,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "equalities-6-1",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.629,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "equalities-6-2",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.367,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "equalities-6-2",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.003,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "equalities-6-3",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 2.234,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "equalities-6-3",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.004,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "equalities-8-1",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.005,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "equalities-8-1",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.008,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "equalities-8-2",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.005,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "equalities-8-2",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.004,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "equalities-8-3",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 2.275,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "equalities-8-3",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.004,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "knapsack_feasibility-20-1",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.022,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "knapsack_feasibility-20-1",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.028,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "knapsack_feasibility-20-2",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.02,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "knapsack_feasibility-20-2",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.052,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "knapsack_feasibility-20-3",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.027,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "knapsack_feasibility-20-3",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.044,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "knapsack_feasibility-30-1",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.029,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "knapsack_feasibility-30-1",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.005,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "knapsack_feasibility-30-2",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.042,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "knapsack_feasibility-30-2",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.004,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "knapsack_feasibility-30-3",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.026,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "knapsack_feasibility-30-3",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.004,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "knapsack_feasibility-40-1",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.073,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "knapsack_feasibility-40-1",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.004,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "knapsack_feasibility-40-2",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.029,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "knapsack_feasibility-40-2",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.005,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "knapsack_feasibility-40-3",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.039,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "knapsack_feasibility-40-3",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.005,
+    "geometry": "constraint_feasibility"
+   },
+   {
+    "item_id": "knapsack_optimization-15-1",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.091,
+    "geometry": "optimization"
+   },
+   {
+    "item_id": "knapsack_optimization-15-1",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.008,
+    "geometry": "optimization"
+   },
+   {
+    "item_id": "knapsack_optimization-15-2",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.249,
+    "geometry": "optimization"
+   },
+   {
+    "item_id": "knapsack_optimization-15-2",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.007,
+    "geometry": "optimization"
+   },
+   {
+    "item_id": "knapsack_optimization-15-3",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.088,
+    "geometry": "optimization"
+   },
+   {
+    "item_id": "knapsack_optimization-15-3",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.007,
+    "geometry": "optimization"
+   },
+   {
+    "item_id": "knapsack_optimization-30-1",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.007,
+    "geometry": "optimization"
+   },
+   {
+    "item_id": "knapsack_optimization-30-1",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.008,
+    "geometry": "optimization"
+   },
+   {
+    "item_id": "knapsack_optimization-30-2",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.009,
+    "geometry": "optimization"
+   },
+   {
+    "item_id": "knapsack_optimization-30-2",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.012,
+    "geometry": "optimization"
+   },
+   {
+    "item_id": "knapsack_optimization-30-3",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.01,
+    "geometry": "optimization"
+   },
+   {
+    "item_id": "knapsack_optimization-30-3",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.008,
+    "geometry": "optimization"
+   },
+   {
+    "item_id": "knapsack_optimization-50-1",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.01,
+    "geometry": "optimization"
+   },
+   {
+    "item_id": "knapsack_optimization-50-1",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.011,
+    "geometry": "optimization"
+   },
+   {
+    "item_id": "knapsack_optimization-50-2",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.018,
+    "geometry": "optimization"
+   },
+   {
+    "item_id": "knapsack_optimization-50-2",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.015,
+    "geometry": "optimization"
+   },
+   {
+    "item_id": "knapsack_optimization-50-3",
+    "lead": "cortex.formal.z3@0.2.0",
+    "result": "no_decision",
+    "settled": "observed_failure",
+    "state": "TIMEOUT",
+    "seconds": 3.014,
+    "geometry": "optimization"
+   },
+   {
+    "item_id": "knapsack_optimization-50-3",
+    "lead": "cortex.optimization.cpsat@0.2.0",
+    "result": "correct",
+    "settled": "verified_success",
+    "state": "OK",
+    "seconds": 0.01,
+    "geometry": "optimization"
+   }
+  ],
+  "ledger_head": "sha256:9625deff6ce69b2212acce4fc2abeaf660af6ad8b720591c300740a156b37b07",
+  "records": 90,
+  "estimates": [
+   {
+    "method": "cortex.formal.z3",
+    "version": "0.2.0",
+    "geometry": "constraint_feasibility",
+    "conditions": [],
+    "estimate": 0.8507,
+    "weighted_outcomes": 21.6,
+    "basis": "cell"
+   },
+   {
+    "method": "cortex.optimization.cpsat",
+    "version": "0.2.0",
+    "geometry": "constraint_feasibility",
+    "conditions": [],
+    "estimate": 0.6166,
+    "weighted_outcomes": 21.6,
+    "basis": "cell"
+   },
+   {
+    "method": "cortex.formal.z3",
+    "version": "0.2.0",
+    "geometry": "optimization",
+    "conditions": [],
+    "estimate": 0.4427,
+    "weighted_outcomes": 5.4,
+    "basis": "cell"
+   },
+   {
+    "method": "cortex.optimization.cpsat",
+    "version": "0.2.0",
+    "geometry": "optimization",
+    "conditions": [],
+    "estimate": 0.9124,
+    "weighted_outcomes": 5.4,
+    "basis": "cell"
+   }
+  ],
+  "learned_order_by_geometry": {
+   "constraint_feasibility": [
+    "cortex.formal.z3@0.2.0",
+    "cortex.optimization.cpsat@0.2.0"
+   ],
+   "optimization": [
+    "cortex.optimization.cpsat@0.2.0",
+    "cortex.formal.z3@0.2.0"
+   ]
+  }
+ },
+ "heldout": [
+  {
+   "item_id": "pigeonhole-6-4",
+   "family": "pigeonhole",
+   "size": 6,
+   "seed": 4,
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.317,
+     "receipt_id": "sha256:d87e1c6dc299752504d8d89fe2452fcba95598f243894ae77e8398f6b0f8e7f3"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.357,
+     "receipt_id": "sha256:f9b2a114a2e923351542f735a5d34430606359417be2e816744e2e93210817d5"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.384,
+     "receipt_id": "sha256:a473b85e4c1e5e52cf89962c36ce80bc58af730d220b88532aa3ba653ac773f6"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.374,
+     "receipt_id": "sha256:62df71554039a9c9f7812c12d557c8dcd749ec46c0765a6181e74b624a4d2103"
+    }
+   }
+  },
+  {
+   "item_id": "pigeonhole-6-5",
+   "family": "pigeonhole",
+   "size": 6,
+   "seed": 5,
+   "arms": {
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.443,
+     "receipt_id": "sha256:9bc9fa19fc7def2c7b9ae7b6dbbddc8f3e6461a819889fcf5d540c72bc5f576c"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.512,
+     "receipt_id": "sha256:3981ee46bab7ef8c4f0aa23a5ce8111b47264298163ed75ecf9ce89eefc1b958"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.596,
+     "receipt_id": "sha256:68b08e972f4c4e30deb1b2fbbcd9b3bbb78352abdfaf74dae52c42da4efc37c0"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.623,
+     "receipt_id": "sha256:32a003726341507ba6946f2c27f4c02c8cace4bf31dd7053a119c1052e60f21e"
+    }
+   }
+  },
+  {
+   "item_id": "pigeonhole-6-6",
+   "family": "pigeonhole",
+   "size": 6,
+   "seed": 6,
+   "arms": {
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.617,
+     "receipt_id": "sha256:d7631996bbc5877f092576cbddf8e0f1160d69659af73eea9b0232febf983b1a"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.528,
+     "receipt_id": "sha256:5898382d82eabe1f078f7ea45caeea489fc27092cc7e74cb7fec8fce3a217828"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.568,
+     "receipt_id": "sha256:23e9464afb0e0a5d2768b7aab37abe1ab007cc519483ab49a3d5751120f5b222"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.598,
+     "receipt_id": "sha256:b56eee2d9a78a82d5ad4a385611590beadfc4d09da8baa50036c7454de27000d"
+    }
+   }
+  },
+  {
+   "item_id": "pigeonhole-7-4",
+   "family": "pigeonhole",
+   "size": 7,
+   "seed": 4,
+   "arms": {
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.006,
+     "receipt_id": "sha256:0955a1224076d46738af4258b32800e8da4277943e6192f43b037aa8198b9072"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.033,
+     "receipt_id": "sha256:94be823b27d4a3e44e968067cc24ec937acb2ebd0f8cb78afe6f93e3daf8ef80"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.194,
+     "receipt_id": "sha256:9242f3b4fb53639ba14847cfa7b451432db920ca520f8c3ddc786731661fee04"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.22,
+     "receipt_id": "sha256:c44c677b525470af19a314ea878bcf039a7f78e5b5101b3f5163e2c47ac47927"
+    }
+   }
+  },
+  {
+   "item_id": "pigeonhole-7-5",
+   "family": "pigeonhole",
+   "size": 7,
+   "seed": 5,
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.146,
+     "receipt_id": "sha256:a64af88f8f09b774dd3aeb8c859e600115db5fd837c6d83a57d4678854ca70c7"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.083,
+     "receipt_id": "sha256:4435ca8c75e22ba258e59ab3bcbdcee4bcc2cce9cbf0c27d8e20ed552bb2e331"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.164,
+     "receipt_id": "sha256:93a87f2fc4acaa3a674cc484e8a680c54129170d0e49db0d80c5f0cb0cb20f2e"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.695,
+     "receipt_id": "sha256:8d837e22ab0031e20845f7a3fa65d893eead558799df4e9627425acf3b94b707"
+    }
+   }
+  },
+  {
+   "item_id": "pigeonhole-7-6",
+   "family": "pigeonhole",
+   "size": 7,
+   "seed": 6,
+   "arms": {
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.251,
+     "receipt_id": "sha256:30e6e8b091406720ddb1b7354554c1613b2745fef914a63c061b398b6f76f7c6"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.019,
+     "receipt_id": "sha256:5200ce0f04b56a5aaabcbf9e0828c6c113b44834a8c7d131c88dafdb37f4dc28"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.705,
+     "receipt_id": "sha256:deae157085e8b0cb4269d41bf3c398484fd50245a32ad00c661572526ac39319"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.914,
+     "receipt_id": "sha256:42a3849309e730a5525cdacec3441fe5b0e30e57100fced370cd2a4bc56bb77b"
+    }
+   }
+  },
+  {
+   "item_id": "pigeonhole-8-4",
+   "family": "pigeonhole",
+   "size": 8,
+   "seed": 4,
+   "arms": {
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.008,
+     "receipt_id": "sha256:090d6b4979d7ba400515f4021d0ef457eb3a112201771755679d061c42a44536"
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.005,
+     "receipt_id": "sha256:278229a5a39d6e3e69e7094d10aefba468608db5601beffe8b637db2b91f16bd"
+    },
+    "static": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.009,
+     "receipt_id": "sha256:a74f7092a95f8211a47ea839a11a74c633b5816db31dfea6b053976c65c515f2"
+    },
+    "learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.008,
+     "receipt_id": "sha256:e0230f930997c7b868abe1fce220235854bff249959a426ba1e868e0ac5a4419"
+    }
+   }
+  },
+  {
+   "item_id": "pigeonhole-8-5",
+   "family": "pigeonhole",
+   "size": 8,
+   "seed": 5,
+   "arms": {
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.004,
+     "receipt_id": "sha256:df853f021e08ca9bfbbdf10923107ebd316015df1ed674706628c808d32e90fc"
+    },
+    "static": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.007,
+     "receipt_id": "sha256:743b8136eaf8da35703127652f2224841e9a7bea86e99b27026164289488e5f3"
+    },
+    "learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.009,
+     "receipt_id": "sha256:665707c9f9efcb7f2e3ede2475677ea553457e04eab0a0d0161b0ad7be2ca38c"
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.008,
+     "receipt_id": "sha256:ae9c68517ba5c46d3c39ab68b8116e42ca31061f374b86a4b76c287552e4b687"
+    }
+   }
+  },
+  {
+   "item_id": "pigeonhole-8-6",
+   "family": "pigeonhole",
+   "size": 8,
+   "seed": 6,
+   "arms": {
+    "static": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.01,
+     "receipt_id": "sha256:d679729fde70fe821ab798c2f1f1c88502cda349e0d95cab9c664637a9b29ec6"
+    },
+    "learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.008,
+     "receipt_id": "sha256:08916331b0b9c27925c4b2608251b0b9a9edfab6876bb776bc39f0c26e218ed5"
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.009,
+     "receipt_id": "sha256:810a4cc81c906601ecc6bf8d2250b6bb43b3e2e96b7daff719e521bea41c5b33"
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.014,
+     "receipt_id": "sha256:49a6b4472dd95d465ce715ab5b648bba9b393244d62f467569f3f37792ab291c"
+    }
+   }
+  },
+  {
+   "item_id": "schedule-8-4",
+   "family": "schedule",
+   "size": 8,
+   "seed": 4,
+   "arms": {
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.202,
+     "receipt_id": "sha256:ee45ce6d9f1ed2c4c4cf837e0aa93f656909a260330655efdbd06243f5a01c36"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.201,
+     "receipt_id": "sha256:c0cc26e43a61912bd5fcf7c863a0977b0d9208fba6fd6e4a3e211d86bbb493b0"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.318,
+     "receipt_id": "sha256:1ff2ba112763ad402e7beeccac573a167750ab760a655273cde273d044d3d52e"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.196,
+     "receipt_id": "sha256:db82a88af9524d5e82d893f8ddca416edc4640735fbcffa20aa33c3da35f9df1"
+    }
+   }
+  },
+  {
+   "item_id": "schedule-8-5",
+   "family": "schedule",
+   "size": 8,
+   "seed": 5,
+   "arms": {
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.235,
+     "receipt_id": "sha256:e4fcc9f53f3c378d0125a04f5e8e31f3237792773f8b8fd719d01025e044531d"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.303,
+     "receipt_id": "sha256:df3ecef87aa99fbb082939543df75cc74b0511cd71bdaf8b3862f1f49f7c8cdd"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.22,
+     "receipt_id": "sha256:5fb7471f47089c4790369ef44083eee9890baad41d9bb7a77149a74f36549b0d"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.211,
+     "receipt_id": "sha256:d439ba3c0be148391edbb781fc64dc9859663c12584e4e2e010be2e7127cb965"
+    }
+   }
+  },
+  {
+   "item_id": "schedule-8-6",
+   "family": "schedule",
+   "size": 8,
+   "seed": 6,
+   "arms": {
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.293,
+     "receipt_id": "sha256:a303b3724a4228eafaadc27198e3a154096c65746f9052b2a12172b88054ce78"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.213,
+     "receipt_id": "sha256:1afbb8484ed472b0beb2d760b40365def0123f619b7654861174732152798822"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.21,
+     "receipt_id": "sha256:aef08f8ab81b68e59ce3f48a255b951c59ab707b28414da174cbf7488c0fcc67"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.219,
+     "receipt_id": "sha256:d278761621ee893724e9e89f83331e94187a22f6f367c4ce1e23ff0fd22559e4"
+    }
+   }
+  },
+  {
+   "item_id": "schedule-12-4",
+   "family": "schedule",
+   "size": 12,
+   "seed": 4,
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.615,
+     "receipt_id": "sha256:509a0a5312486d41f1386faa8f47a3ff54265b07bab0438603abbf742b8532cc"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.534,
+     "receipt_id": "sha256:1b95af624c72e3c32249a7ce4b94f9e70c1e8260e22ab8c26fcd97a18cc07991"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.506,
+     "receipt_id": "sha256:92db41cbce1968433d7b66a9364c8940cb9bb62475bed407f1382d2a42630843"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.174,
+     "receipt_id": "sha256:6d5faccb74354b3ac3bffcb0fc94f3ca1c70068789e9765d4e99b9a4685a9976"
+    }
+   }
+  },
+  {
+   "item_id": "schedule-12-5",
+   "family": "schedule",
+   "size": 12,
+   "seed": 5,
+   "arms": {
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.535,
+     "receipt_id": "sha256:66efd2432a2c25fc13e61727e6bbd24d0d745224e5861874d42fd73fd5aafe08"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.617,
+     "receipt_id": "sha256:330a07ab337f697a3297873442c79fd0df752f48058ac93cd3d5f7d84851b635"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.101,
+     "receipt_id": "sha256:1155bfd0cbf55661aa3bd58e48c34736a060cae4a2110854d1fbbcdcedc7c942"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.511,
+     "receipt_id": "sha256:8798c41b6075ac080583a037e768ff24010f960b04fb0acd15be0da5854a2477"
+    }
+   }
+  },
+  {
+   "item_id": "schedule-12-6",
+   "family": "schedule",
+   "size": 12,
+   "seed": 6,
+   "arms": {
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.607,
+     "receipt_id": "sha256:ae1733944e00e6cf1409ffb8df032b71843b5f7e753f4416303e0159d9b538a8"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.134,
+     "receipt_id": "sha256:d2c6c7ee8ba7e2918438614a61cc72334bc778ec67a980cc5a433481dbc8cbb4"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.569,
+     "receipt_id": "sha256:951dd9629a9a98b6b37eba344031294d6b60b7179aacbb87815cfbc760c9c712"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.51,
+     "receipt_id": "sha256:6c415c7b25cd9ef1f861687fe536ee012355e37ade09dcb9fa35911f2ab2e305"
+    }
+   }
+  },
+  {
+   "item_id": "schedule-16-4",
+   "family": "schedule",
+   "size": 16,
+   "seed": 4,
+   "arms": {
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.549,
+     "receipt_id": "sha256:01ff0966e9ff4c677bef4735fb54a4fe1dbe8465b8c321d16cf0513035a8176b"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.786,
+     "receipt_id": "sha256:c8ab833790fbca644088f1c546546be4a50f3cf078fab5943b726f237a51b5d4"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.776,
+     "receipt_id": "sha256:370618ad7aab7b3d8dea31f0c4f3afa847e0e87429663f6b1d900ab927f01150"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.855,
+     "receipt_id": "sha256:976f77baba168155052b0d64ee53838e347a6843f61d9fc81da1caedb904233d"
+    }
+   }
+  },
+  {
+   "item_id": "schedule-16-5",
+   "family": "schedule",
+   "size": 16,
+   "seed": 5,
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.889,
+     "receipt_id": "sha256:4bff797fb4b8ee687de19efa6b8a81dc6800a272c5842ef3c2238896e95f2e28"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.879,
+     "receipt_id": "sha256:846a205a48e49871f53bb9d9886a44506fbeb133fc30c13be64553a5ea1754ed"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.825,
+     "receipt_id": "sha256:edfe1ec0f64b09bc4c0de92e436ca2d83d2dea9d2bd49297f23ff33613ab5583"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.549,
+     "receipt_id": "sha256:c0af3df2d437e597aa99ccaeb9d9941a420bb78fc9f553afc8c6fddcc7d07427"
+    }
+   }
+  },
+  {
+   "item_id": "schedule-16-6",
+   "family": "schedule",
+   "size": 16,
+   "seed": 6,
+   "arms": {
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.879,
+     "receipt_id": "sha256:20a1331a8068335710342cf1a488216460104e444451f522e0ab7f01c37b8091"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.785,
+     "receipt_id": "sha256:f544caaedddbd1ca3cac299d8ff8136af2d69611e6f7af679dbdb34a6b916683"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.549,
+     "receipt_id": "sha256:39d48fe46f4ed7f3634f954f30e34c735e3278fe152fa9e6b21d109d8068f853"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.813,
+     "receipt_id": "sha256:9f43edd490563b7cb948f4fc8137d8002e3c8783dcc0cb008c49984a8fb92a5b"
+    }
+   }
+  },
+  {
+   "item_id": "equalities-4-4",
+   "family": "equalities",
+   "size": 4,
+   "seed": 4,
+   "arms": {
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.019,
+     "receipt_id": "sha256:1cd55de95f9a5d1155b5cbac2ae6a23981b047543efc3b1eae122b00c1db4b9c"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.027,
+     "receipt_id": "sha256:6267b08bc2929247a437b560fe8e030b960450fb785832eaf4d05a42a7060bb7"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.026,
+     "receipt_id": "sha256:dc1a7d5f16d5a33da742e6c36743cf7a491f0f3060e86ef52b580c9d0ad40a20"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.024,
+     "receipt_id": "sha256:392189dca7a24668a453ebefdf93dc2af0a208227dfa42bb977e14203859e40b"
+    }
+   }
+  },
+  {
+   "item_id": "equalities-4-5",
+   "family": "equalities",
+   "size": 4,
+   "seed": 5,
+   "arms": {
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.027,
+     "receipt_id": "sha256:73ae6667ba80c878652758d7e15cce4668660ec7403d1fa618fc926d69edcc67"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.02,
+     "receipt_id": "sha256:cfd5674c1c6277d425abdd8c3d2aadc684eedbd11de5952c741557ed3bef1c82"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.024,
+     "receipt_id": "sha256:77352f8ed761cc0947703a630140b6a049f24caf9896551bbabf6adb97edceb8"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.015,
+     "receipt_id": "sha256:cc182e6de9e5d95abe807175663b6d08cdce760c2acc53e1497bd6a7684f1edc"
+    }
+   }
+  },
+  {
+   "item_id": "equalities-4-6",
+   "family": "equalities",
+   "size": 4,
+   "seed": 6,
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.01,
+     "receipt_id": "sha256:cfbd338408b422f3cff3db0d6e2d54135ef8df02b07f65059b190b24ff571ced"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.023,
+     "receipt_id": "sha256:de7efe651ea339f1bcc1d3d1e53bd03ab54afdabfc7e82b971af63474ca30cb3"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.01,
+     "receipt_id": "sha256:01c4134e22e42f3e505dfe135c5f74820a445704eb6a49f86fd926dbc21b724e"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.02,
+     "receipt_id": "sha256:b93ba1ade27eba1aabdb21c105d585a3b96f2dae6db188571d494e952422528a"
+    }
+   }
+  },
+  {
+   "item_id": "equalities-6-4",
+   "family": "equalities",
+   "size": 6,
+   "seed": 4,
+   "arms": {
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.944,
+     "receipt_id": "sha256:be1fbeee478729f6f0905d43966859a3de59cd87b9bfe9e55aa7d2da29cf8fae"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.157,
+     "receipt_id": "sha256:765a65335dd5dbbea9fe39e630202cd80d9d75f3f82d871bf809301ebcf510d1"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.098,
+     "receipt_id": "sha256:fcf6abf12eb595dbb626fbbb5d8fd7bfe15601126a2836d12f358b57fccaa3f4"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.48,
+     "receipt_id": "sha256:62b70faab93566ce2f1c03d77296bcd52ee4a2846eccff62006352664acd9b19"
+    }
+   }
+  },
+  {
+   "item_id": "equalities-6-5",
+   "family": "equalities",
+   "size": 6,
+   "seed": 5,
+   "arms": {
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.23,
+     "receipt_id": "sha256:8c8c1b2f40c2a61bfed0b8a6684a068ebce013012709ad8074b3947c84a4a3b7"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.056,
+     "receipt_id": "sha256:98bf246191a5fa3cc7de2991ea53b194f661ad40e1f3e058814721f4cfee630b"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.092,
+     "receipt_id": "sha256:06cc5f4655f50324c6f1285157209712e0192734790ca009f5b742050db1d086"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.14,
+     "receipt_id": "sha256:a7cfb84dc376aa5ff50f2ad1f83603ca993faeda126e6ff0235df546ab7625f6"
+    }
+   }
+  },
+  {
+   "item_id": "equalities-6-6",
+   "family": "equalities",
+   "size": 6,
+   "seed": 6,
+   "arms": {
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.001,
+     "receipt_id": "sha256:c7e8f79ea9f01fa8582398a0809d470cf7b7148acd551dd548306d6926a6a190"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.686,
+     "receipt_id": "sha256:89efb5786295ccf21656e459d2de127d18b62fa62862a8adea28ebacc0e86cc2"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.785,
+     "receipt_id": "sha256:7eb5ffb0dc0ce47d57a7a9bf199528328871f72da2adc1a1cb97367fbced20b4"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.746,
+     "receipt_id": "sha256:64f2c0b0e5fdd8f8d2e8746dcba33a2e0c675a66dbc465e3eec16abf9b79c1c5"
+    }
+   }
+  },
+  {
+   "item_id": "equalities-8-4",
+   "family": "equalities",
+   "size": 8,
+   "seed": 4,
+   "arms": {
+    "static": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.004,
+     "receipt_id": "sha256:e769c59001bd39025ac64682b57cb1421599c45a5f65516c5ccc10f4421cd1df"
+    },
+    "learned": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.004,
+     "receipt_id": "sha256:6e4ab8ab40eceb418f38c16125aa4acb341f6563f66cedb7bbd0a5ff8659c87d"
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.004,
+     "receipt_id": "sha256:afc209907a56bcf854b6b70521acf6c9637a3e872da46ef7307651bf6bded731"
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.005,
+     "receipt_id": "sha256:1997f958a9f585cb23a5b6c5cfe6ef7a69a0cccb366afbf7ff56594adf05f099"
+    }
+   }
+  },
+  {
+   "item_id": "equalities-8-5",
+   "family": "equalities",
+   "size": 8,
+   "seed": 5,
+   "arms": {
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.903,
+     "receipt_id": "sha256:e6006d5dba77bfa4faf13683be29e16879f9977c26c2406125313d338b96695e"
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.004,
+     "receipt_id": "sha256:e10da617504624314492c62b786de6b0dea23a8215f1476046f2598f484d6c97"
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.004,
+     "receipt_id": "sha256:6713ad2a92568af8d3a928425d77343bd6c06c25a23a6d28d44a1a121820238d"
+    },
+    "static": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.004,
+     "receipt_id": "sha256:49f1a968f82f49d576be663063f04ecac25f17bba8c0622ecea187961590fd7e"
+    }
+   }
+  },
+  {
+   "item_id": "equalities-8-6",
+   "family": "equalities",
+   "size": 8,
+   "seed": 6,
+   "arms": {
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 1.513,
+     "receipt_id": "sha256:a25f4d08b8d7c694715697785cf9869db99dd9c8c2deee0ac1da54670844d65a"
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.003,
+     "receipt_id": "sha256:9fbc2eb0052a0a495b64785fbb19c016b844db253de9455fa472b3d15854580b"
+    },
+    "static": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.003,
+     "receipt_id": "sha256:11c4c89c40cbdd0473bb18a40fe42d3256f6a7f00c497a86e18510a664ff607d"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 2.671,
+     "receipt_id": "sha256:3d8d0972b9f2404202cf13c366bc9a0d8bca8b6992e2c41c0bd8ea3f357e9284"
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility-20-4",
+   "family": "knapsack_feasibility",
+   "size": 20,
+   "seed": 4,
+   "arms": {
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.031,
+     "receipt_id": "sha256:8c0cec6baa9e3f35caa5d67f79731c30eb4d6684d21eb6c0bfdf468b195dc8e3"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.019,
+     "receipt_id": "sha256:687a72f9b12f79a8c0f02ef2f6f6c05a380f0ba0f79f0b02aa677a31384896d0"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.021,
+     "receipt_id": "sha256:a6fc7b08045e33ae92130e5c21f9e337af0b23bbe2250f2b7878d0f736f512bc"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.017,
+     "receipt_id": "sha256:09939366a90a3c357d6a5d2c52ba747af5616fa325daf5fcfbc4516456f28179"
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility-20-5",
+   "family": "knapsack_feasibility",
+   "size": 20,
+   "seed": 5,
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.071,
+     "receipt_id": "sha256:03412ce21894533e8d9d8d3f68fba82ffccc8afd70a918e20156560e1c18a8b5"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.081,
+     "receipt_id": "sha256:91312416a989f28fa28082a292898c1509c562076120402c77a7a8bd434e4219"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.074,
+     "receipt_id": "sha256:ee8f343754682cc4ad8e7775e1041e97c2128520b4aa220fe365acd346f4cdee"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.08,
+     "receipt_id": "sha256:04554034b7c655bb347c8f380999c8505b521383c90f089de1389e76bf65f187"
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility-20-6",
+   "family": "knapsack_feasibility",
+   "size": 20,
+   "seed": 6,
+   "arms": {
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.025,
+     "receipt_id": "sha256:d5852be49a67683ebd6d931074f019aef0bb36011779487990372e38e584e579"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.018,
+     "receipt_id": "sha256:109c9c42a46269d17bbb09acf9d5519ad47d03071d38fcbb0a204bb6dc9c76de"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.045,
+     "receipt_id": "sha256:29be2164fee1d3b43bccf8f4e4e69960b662944d1f8c83e05cd645894e1033b2"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.019,
+     "receipt_id": "sha256:de01865f58ac7e0d5a2e951a100f24336d94b62bdce25de38db6220478098af9"
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility-30-4",
+   "family": "knapsack_feasibility",
+   "size": 30,
+   "seed": 4,
+   "arms": {
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.022,
+     "receipt_id": "sha256:9ff0177caba176a2708bb668b095a7cba0a53c411d5aff4f4667c2c4a0ae3499"
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.004,
+     "receipt_id": "sha256:cb9807656c4b4811a1b304edb810ff46b97adc2f4f5a9cafde70cb36efd47a20"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.026,
+     "receipt_id": "sha256:878f655881a5e020801cec82f4e848fe035c53237d527ee1bc6dbfb2e4ecc42e"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.021,
+     "receipt_id": "sha256:e2bcba603936b22c88a41dc225bcaa682dead3afc258b2b5393c256f3eb75cc6"
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility-30-5",
+   "family": "knapsack_feasibility",
+   "size": 30,
+   "seed": 5,
+   "arms": {
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.004,
+     "receipt_id": "sha256:c5e8b10177f6ae9df70b4e1aa5588a1f154e7f5b3fefc31dd161d3b0435b5f4c"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.003,
+     "receipt_id": "sha256:d3ca9b8040dd630f079d649c007875fd6bf5f825fe41764bbef1ab64d279b614"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.003,
+     "receipt_id": "sha256:566f38d1060757d0c1f1e13f223ad3ca77a8ea9004803b8f39a41bc79c78eaa3"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.003,
+     "receipt_id": "sha256:b6f1292ee278ba169438c39e41d3673c27061e329c4d52e0a16afc45f9276c10"
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility-30-6",
+   "family": "knapsack_feasibility",
+   "size": 30,
+   "seed": 6,
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.048,
+     "receipt_id": "sha256:7b0b63ba09a0e46da763b5be7b9f6ed2ae738ae28d6d3a000369f85f50865cc7"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.051,
+     "receipt_id": "sha256:fd63d2e5591d4b5c839e850d03b7b40b3454a7247761f682a45d3718937e01c4"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.059,
+     "receipt_id": "sha256:5d690081e9df379737b48cae16b1f3acda8474feaea2a481b39839ae45f655ca"
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.003,
+     "receipt_id": "sha256:7899788e885d4a2c2a40d0ee17224e07b211634d4e7dcdd7824ee7f8c3a9e9a4"
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility-40-4",
+   "family": "knapsack_feasibility",
+   "size": 40,
+   "seed": 4,
+   "arms": {
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.058,
+     "receipt_id": "sha256:ab84778f5938c79a6e7f59bfcf198ac064955e8604454ac679545e427e1539a4"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.039,
+     "receipt_id": "sha256:1473e691cf9aff1916517a44e0ab0c36d94a497761247702b7b0f4d9f7c3c857"
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.004,
+     "receipt_id": "sha256:c31acfaad1ffef14581ca3fba8f17de16db300aebc8692d29fe22f9993a6f4a0"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.06,
+     "receipt_id": "sha256:3b5fb5ff554f47a43fe4e41c6a96718262bff3a30ec79bd3ecf35878275f969a"
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility-40-5",
+   "family": "knapsack_feasibility",
+   "size": 40,
+   "seed": 5,
+   "arms": {
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.004,
+     "receipt_id": "sha256:6a5ca196a80c32dceb284147ed2d6ee7a9f75a5505b4047756d9bbae9d4217d5"
+    },
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.004,
+     "receipt_id": "sha256:9dc36a2b8eca811ebbdafdd0bea0fd0a0f1d0a6618d08c3b919ff7e6ce52a344"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.003,
+     "receipt_id": "sha256:56ba700de1a282ff561c90cceda6ae4384488bb2cae962b2ddfe522136625196"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.003,
+     "receipt_id": "sha256:1363046768b93ee1a76c4f79970fbfacbfba51ecb8d818c5ee3af50cccfe77d9"
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_feasibility-40-6",
+   "family": "knapsack_feasibility",
+   "size": 40,
+   "seed": 6,
+   "arms": {
+    "cpsat_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 3.004,
+     "receipt_id": "sha256:0864b6738ec31205a3b86b3fe57de590236661682b8995e19ffd0ccf749b9502"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.027,
+     "receipt_id": "sha256:0e68a054326d4ecbbc9ef352e3aeb175232790563de1909e98c490043301e207"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.03,
+     "receipt_id": "sha256:15ec7ebadc9ad58d1d739368dd95098ff6b29724da0ecd711f6b23da257f33fe"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "seconds": 0.024,
+     "receipt_id": "sha256:1a2733b467979f2abf78d57e02b87fc7ca9122f571269145c1efdff2726c2858"
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_optimization-15-4",
+   "family": "knapsack_optimization",
+   "size": 15,
+   "seed": 4,
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.016,
+     "receipt_id": "sha256:b24d01fe7a6cc59f21313f53aa71a0af8206593c71523af7e0638d7042347fea"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.015,
+     "receipt_id": "sha256:614f295e1df16bd172ea5509d9e07d65ff430aac83b4405285fa0192e8b3a17d"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.148,
+     "receipt_id": "sha256:096d5cbfcaed456d473e1935e1101dff28c06dc9f753995166bc2909c75d342c"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.019,
+     "receipt_id": "sha256:d4ac1e50efbeebb52ff41d89ff76794f7a622000c1f28eb0c276a4f2ca93cc94"
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_optimization-15-5",
+   "family": "knapsack_optimization",
+   "size": 15,
+   "seed": 5,
+   "arms": {
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.017,
+     "receipt_id": "sha256:c613d76a84e9cfcf3a52dcf90fbbf09b2a628971c857dc06201e39eb5bf3e4cb"
+    },
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.486,
+     "receipt_id": "sha256:6a6bb45f0ae68dd85ae8823958aa16dd68d786b7f571b581a0ce79decbb1c6ed"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.024,
+     "receipt_id": "sha256:51db10e68586aab949f9053b252953d124f9ae733de8ab0f9916510b3a768e1e"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.018,
+     "receipt_id": "sha256:a6d674de4e41b70aef8d8da911c3081ea14b166364555567d77942d712d530df"
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_optimization-15-6",
+   "family": "knapsack_optimization",
+   "size": 15,
+   "seed": 6,
+   "arms": {
+    "z3_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.129,
+     "receipt_id": "sha256:d41a9fe027f914ed19dae0be1e2cf6dfcace3fa4edaefc3027dd2105293fec69"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.016,
+     "receipt_id": "sha256:ee73098c874272e4791c7daa9473eb029877ac45a2065451815213a19603c6da"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.016,
+     "receipt_id": "sha256:d1b222d0f70c2e45ce805fac574fdc2255e66a60c5728238ea66279d227318bf"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 0.014,
+     "receipt_id": "sha256:7a39f4e4ac99f8c45d1e1d8a6df10dceda3ab115e8c51512ccf06f87530e798d"
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_optimization-30-4",
+   "family": "knapsack_optimization",
+   "size": 30,
+   "seed": 4,
+   "arms": {
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.011,
+     "receipt_id": "sha256:ab489160655ef37727ccae61ec47e95481c3b84fea317ccd0793cbbc2c4eda81"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.012,
+     "receipt_id": "sha256:fae65297c2d117a84d2a066cfca22afaeea93949b3fb140f54e5380bb0976338"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.012,
+     "receipt_id": "sha256:9a41c7618cf83f98897bb634f3d9d8682509ce55b848ac17ec669775e2aa6fd5"
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.01,
+     "receipt_id": "sha256:ffe94524fdadecc10c579b2fe4c9bfb519dda8d7d9332359ae2304b13c4d4d7f"
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_optimization-30-5",
+   "family": "knapsack_optimization",
+   "size": 30,
+   "seed": 5,
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.016,
+     "receipt_id": "sha256:d7debcf1bd7a086de7124261f042db73f86ac409fd3cb8370433c84a5f67842f"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.02,
+     "receipt_id": "sha256:1ea94df2bfc2a0054d9f4035e46f01f6232a092ba6452994a54eadf10030eeae"
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.008,
+     "receipt_id": "sha256:097f0a8245b1b4bf17601100405c0c65eb7dccbf93a6ed014cd0b29dd4c538c5"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.013,
+     "receipt_id": "sha256:cab80b44f7c6269bf6838a2227ce07506141b5432c7e354b25e37c2eced89445"
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_optimization-30-6",
+   "family": "knapsack_optimization",
+   "size": 30,
+   "seed": 6,
+   "arms": {
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.012,
+     "receipt_id": "sha256:b700026b31b789f9fd561bb70ff52a988423a406b3cd82618a7fc6b353fc1d90"
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.01,
+     "receipt_id": "sha256:40569eb7b517872ff31a5123382321e522febbf8eff35b9367005f1b3cf510e1"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.014,
+     "receipt_id": "sha256:edc67f11d6f5bc59f3dc957c466d4ada97dcc427677683bc5628ab5531538167"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.012,
+     "receipt_id": "sha256:06c504a14fa4d076759ea4c30d52359758b4d04b10b24dd46f964c33f0b1099f"
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_optimization-50-4",
+   "family": "knapsack_optimization",
+   "size": 50,
+   "seed": 4,
+   "arms": {
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.023,
+     "receipt_id": "sha256:7dd56db09a0c6e870394aa891ba239aeeaced8769ae1e5637a51581d23cc7a11"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.016,
+     "receipt_id": "sha256:67ee15a6dc7cee32e7e5e4e71ad0f94f56a977d0a281391e513eac7513e686b6"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.019,
+     "receipt_id": "sha256:c88644679b7d029158d489dd36738d49ee0b8ef98285ccaf50219872f94ad119"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.02,
+     "receipt_id": "sha256:f9408c317bcba1a1444e20441c15ee7364451601bc37fe7fed9f7fcc44405b27"
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_optimization-50-5",
+   "family": "knapsack_optimization",
+   "size": 50,
+   "seed": 5,
+   "arms": {
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.015,
+     "receipt_id": "sha256:9a6b1591ff37f512853c8c15d6cf577acc55148f90f6a938d93f694e407ea1cf"
+    },
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.024,
+     "receipt_id": "sha256:8be0aa2c3b6bc66323de113f175508f4e23aa2d55d5af7dfed457c4a14a86288"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.017,
+     "receipt_id": "sha256:0e114563e1a94fe0fb6bbc1dfb827211af7579c58c36b7b4d35a44e5bb98fb1a"
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.012,
+     "receipt_id": "sha256:e9309826cd356f3db01b6859d2929d0856bb7164a1b467a1603d69abba39950e"
+    }
+   }
+  },
+  {
+   "item_id": "knapsack_optimization-50-6",
+   "family": "knapsack_optimization",
+   "size": 50,
+   "seed": 6,
+   "arms": {
+    "static": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.025,
+     "receipt_id": "sha256:ea674e3b0c93d3891212edf4226ce85931ca4fd3d0d60362e3665f60fe780f91"
+    },
+    "learned": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.046,
+     "receipt_id": "sha256:cc0a2a7fb5ff6ee55eb00a29f0211fc917078c79cc111c42374a67e93c76711c"
+    },
+    "z3_first": {
+     "result": "no_decision",
+     "state": "TIMEOUT",
+     "order": [
+      "cortex.formal.z3@0.2.0",
+      "cortex.optimization.cpsat@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.013,
+     "receipt_id": "sha256:8ad5034e08145e173895840f2102c3fceb8a6447151b0156c52d2b5088ad03e0"
+    },
+    "cpsat_first": {
+     "result": "correct",
+     "state": "OK",
+     "order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "policy_order": [
+      "cortex.optimization.cpsat@0.2.0",
+      "cortex.formal.z3@0.2.0"
+     ],
+     "seconds": 3.023,
+     "receipt_id": "sha256:92739de103f7aa3692d5674e3ddbb7f0fbcbfd9297360448d050d0e9e7d5d4c5"
+    }
+   }
+  }
+ ],
+ "summary": {
+  "verdict": "INCONCLUSIVE",
+  "counts": {
+   "static": {
+    "correct": 39,
+    "wrong": 0,
+    "no_decision": 6
+   },
+   "learned": {
+    "correct": 41,
+    "wrong": 0,
+    "no_decision": 4
+   },
+   "z3_first": {
+    "correct": 34,
+    "wrong": 0,
+    "no_decision": 11
+   },
+   "cpsat_first": {
+    "correct": 32,
+    "wrong": 0,
+    "no_decision": 13
+   }
+  },
+  "learned_wins": 2,
+  "learned_losses": 0,
+  "sign_test_p_one_sided": 0.25,
+  "median_seconds": {
+   "static": 0.615,
+   "learned": 0.598,
+   "z3_first": 0.617,
+   "cpsat_first": 1.549
+  },
+  "rule": "REGRESSION if learned adds a wrong answer or decides fewer correctly; GAIN if more correct and one-sided exact sign test p < 0.05; NO_GAIN if equal; else INCONCLUSIVE"
+ },
+ "limits": [
+  "ground truth stands in for the signed check and separate-process appraisal",
+  "competence is pooled per epistemic class, as the frozen 0.2.1 ledger keys it; families inside one class share a single learned order",
+  "the ledger learns decided/undecided and correct/wrong, not latency",
+  "one container, one CPU budget; timing-dependent results may differ on other hardware"
+ ]
+}

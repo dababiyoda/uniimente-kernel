@@ -1,0 +1,25 @@
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['git', 'show', '3e059c20331d96e05a44daac1b097896aaabde93:constitution/constitution.ucl']' returned non-zero exit status 128.
+
+/usr/lib/python3.13/subprocess.py:578: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+fatal: path 'constitution/constitution.ucl' exists on disk, but not in '3e059c20331d96e05a44daac1b097896aaabde93'
+=============================== warnings summary ===============================
+tests/unit/test_greg_improvement_attacks.py::test_learning_done_inside_a_killed_process_survives_and_a_revert_in_a_killed_process_stays
+tests/unit/test_greg_improvement_attacks.py::test_learning_done_inside_a_killed_process_survives_and_a_revert_in_a_killed_process_stays
+tests/unit/test_greg_local_mission.py::test_missing_grant_blocks_and_stays_remembered
+  /usr/lib/python3.13/multiprocessing/popen_fork.py:73: DeprecationWarning: This process (pid=923) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/unit/test_foundry_systems.py::test_mcp_tools_run_behind_kernel_identity_policy_and_gate
+FAILED tests/unit/test_greg_foundry_worker.py::test_restricted_dsl_verifier_runs_but_ratification_is_still_required
+FAILED tests/unit/test_greg_landlock.py::test_landlock_inherits_into_exact_reviewed_dsl_and_packaging_children
+FAILED tests/unit/test_greg_mcp_worker.py::test_first_party_mcp_reaches_actual_retained_machine_state_without_writes
+FAILED tests/unit/test_greg_packaging.py::test_guarded_owned_bundle_rebuilds_in_fixed_independent_child
+FAILED tests/unit/test_greg_packaging.py::test_inventory_covers_every_current_owned_source_file
+FAILED tests/unit/test_migration_spec_frozen.py::test_continuity_baseline_is_true_right_now
+FAILED tests/unit/test_repair_spec_frozen.py::test_continuity_hashes_describe_the_real_artifacts_now
+8 failed, 2129 passed, 15 skipped, 3 warnings in 573.96s (0:09:33)

@@ -1,0 +1,84 @@
+{
+  "order": {
+    "acceptance": {
+      "criteria": "<= 280 characters; no figures absent from the source; no hype, no calls to buy; not a proposal (no pilot/KPI language)",
+      "output": "post.txt"
+    },
+    "allowed_paths": [
+      "post.txt"
+    ],
+    "authority_ref": "sha256:309af683df4e94f57cdb36d4b55e7c732f3dd0f28dba9c7d436372b7e3a0db85",
+    "base": "HEAD",
+    "context": "",
+    "grant_id": "309f0b4f-101b-4b8e-8320-98c563eb993b",
+    "inputs": [
+      "/tmp/greg-hands/sources/z3-release.json"
+    ],
+    "max_budget_usd": 2.0,
+    "mission_id": "m:media-z3-release-post",
+    "mode": "document",
+    "objective": "Draft one short, factual DALEOBANKS post telling builders that a new z3-solver release is on PyPI, using only the version numbers in the input. Write the post as plain text, at most 280 characters, stating only facts present in the input; every number must appear in the input.",
+    "order": "z3-release-post",
+    "provider": "claude-code",
+    "repo": null,
+    "timeout_seconds": 600,
+    "tools": []
+  },
+  "order_digest": "sha256:51fb9cab97c70a5c9b3ac19ca6807aff3fd7488cd290480f38b967c7f846e59f",
+  "status": "COMPLETED",
+  "summary": {
+    "acceptance_owner": "worker.appraise (independent)",
+    "authority_created": false,
+    "base_commit": "c24f60aa3a88a47a1b194438d6a85e61f15f1c44",
+    "branch": "greg/z3-release-post",
+    "changed_files": [
+      "post.txt"
+    ],
+    "commit": "fbcbf03bd0ffaf99d12c3ffb5e0259992f72b185",
+    "evidence_path": "/tmp/greg-hands/body/workspace/m_media-z3-release-post/work-orders/z3-release-post/evidence.json",
+    "grant_id": "309f0b4f-101b-4b8e-8320-98c563eb993b",
+    "greg_tests": [],
+    "greg_tests_passed": false,
+    "mission_id": "m:media-z3-release-post",
+    "mode": "document",
+    "order_digest": "sha256:51fb9cab97c70a5c9b3ac19ca6807aff3fd7488cd290480f38b967c7f846e59f",
+    "output": {
+      "bytes": 178,
+      "path": "/tmp/greg-hands/body/workspace/m_media-z3-release-post/work-orders/z3-release-post/work/post.txt",
+      "sha256": "sha256:126ff834e07c72c039dc82d0ba2f4856078c085a65d312c6022ca57dd6b0c991"
+    },
+    "patch_path": "/tmp/greg-hands/body/workspace/m_media-z3-release-post/work-orders/z3-release-post/change.patch",
+    "patch_sha256": "sha256:0ad5c1ccf7f2f9b150687d4cf42a887dafeb87f6dbe0c9b0953d6fb3f70c1d52",
+    "repo": null,
+    "scope": {
+      "outside_allowed": [],
+      "protected_touched": [],
+      "too_many_files": false
+    },
+    "status": "COMPLETED",
+    "work_order": "z3-release-post",
+    "worker": {
+      "cost_usd": 0.0255798,
+      "duration_s": 9.33,
+      "error": null,
+      "exit_code": 0,
+      "identity": "claude-code",
+      "permission_denials": [],
+      "provider": "claude-code",
+      "served_models": [
+        "claude-haiku-4-5-20251001",
+        "claude-sonnet-5-5"
+      ],
+      "turns": 4
+    },
+    "worker_claim": {
+      "changed": [
+        "post.txt"
+      ],
+      "confidence": 0.9,
+      "tests_run": [],
+      "unresolved": []
+    },
+    "worker_summary_tail": "I wrote the post to `post.txt`. It's about 175 characters, under the 280 limit. I counted by eye and didn't run a length check.\n\nThe text is:\n\n> z3-solver 5.1.0.0 is now listed on PyPI. It follows 5.0.0.0 and 4.16.0.0 in the release history. Builders pinning z3-solver may want to check the new version against their setup.\n\nThe only numbers in it are 5.1.0.0, 5.0.0.0 and 4.16.0.0, all taken from `inputs/z3-release.json`. It has no hype, no call to buy and no proposal language. I didn't run any tests, and I changed nothing else.\n\nWORK_REPORT: {\"changed\": [\"post.txt\"], \"tests_run\": [], \"unresolved\": [], \"confidence\": 0.9}"
+  }
+}

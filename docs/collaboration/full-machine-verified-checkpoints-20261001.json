@@ -1,0 +1,13 @@
+{
+  "head": "578a1c2d322a1424953de0dc54d55725fb4127ed",
+  "run": 36936194535,
+  "all_six_jobs": "success",
+  "pytest": {
+    "passed": 1695,
+    "skipped": 9
+  },
+  "institutional_verifier": "V1-V5 PASS; V2 1593passed7skipped",
+  "previous_failed_mcp_head": "52e7878097c41de9ba177e716122e350b6b9db08",
+  "failed_run": 36934826793,
+  "continuation": "This checkpoint is not the complete Body + Organs + Mind boundary. Native company delta requires new verification, then automatically continue."
+}

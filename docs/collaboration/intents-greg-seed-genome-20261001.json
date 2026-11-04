@@ -1,0 +1,370 @@
+{
+ "intents": [
+  {
+   "intent_id": "SG-001",
+   "title": "Build the Competency Compiler on the real GREG path",
+   "statement": "The intended engineering result is a Competency Compiler: GREG recognizes a problem, determines which epistemic methods can answer it, recruits the smallest competent mechanism or composition, produces appropriately typed evidence, respects authority, observes outcomes, and improves future selection.",
+   "source": "founder directive, Claude Code session session_01FUAZEkNuHx7ktktUGT2tw2",
+   "source_location": "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md (section 0)",
+   "source_date_or_version": "2026-10-01",
+   "status": "implemented",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "cognition.solve routes a problem by geometry and hard eligibility to typed, verified computation inside signed missions, and settles competence from appraised outcomes",
+   "affected_systems": [
+    "greg/cognition",
+    "cortex"
+   ],
+   "rationale": "Seed delivered and integrated; whether routing beats simpler routing is SG-006",
+   "conflicts": [],
+   "evidence_refs": [
+    "tests/evidence/greg-cortex-rehearsal/rehearsal-summary.json",
+    "tests/evidence/greg-crossgeo-v0.3/results.json"
+   ],
+   "implementation_refs": [
+    "cortex/routing.py",
+    "greg/cognition/bridge.py"
+   ],
+   "owner": "Alfonso Lopez (root authority); cortex and GREG maintainers implement",
+   "next_review_trigger": "a new frozen comparison or P4 exit",
+   "unresolved_questions": [],
+   "created_at": "2026-10-01T18:00:00Z",
+   "updated_at": "2026-10-01T18:00:00Z"
+  },
+  {
+   "intent_id": "SG-002",
+   "title": "Preserve the founder's goal-set words and compile them to engineering",
+   "statement": "Translate \"meniscus\" and \"surface tension\" into the strongest defensible operating frontier within a verified permission, rights, safety, resource, and evidence envelope.",
+   "source": "founder directive, Claude Code session session_01FUAZEkNuHx7ktktUGT2tw2",
+   "source_location": "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md (section 0)",
+   "source_date_or_version": "2026-10-01",
+   "status": "active",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "Operate at the frontier of the verified envelope with margins for uncertainty and tail risk; layered prevention, bounded failure, independent verification and recoverability in place of an 'impermeable shield'; superior lawful capability in place of 'systemic dominance'",
+   "affected_systems": [
+    "cortex",
+    "greg/cognition",
+    "docs/intent"
+   ],
+   "rationale": "The quotations stay verbatim in the source file; the translations are the executable reading",
+   "conflicts": [],
+   "evidence_refs": [
+    "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md",
+    "tests/evidence/cortex-mutants-2026-10-01/run2-after-fixes.log"
+   ],
+   "implementation_refs": [
+    "cortex/organs/adversarial.py",
+    "cortex/gates.py"
+   ],
+   "owner": "Alfonso Lopez (root authority); cortex and GREG maintainers implement",
+   "next_review_trigger": "any request to widen the envelope",
+   "unresolved_questions": [],
+   "created_at": "2026-10-01T18:00:00Z",
+   "updated_at": "2026-10-01T18:00:00Z"
+  },
+  {
+   "intent_id": "SG-003",
+   "title": "No control over people, no resistance to shutdown, no promise of perfection",
+   "statement": "Neither phrase licenses control over people, resistance to shutdown, or promises of perfection.",
+   "source": "founder directive, Claude Code session session_01FUAZEkNuHx7ktktUGT2tw2",
+   "source_location": "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md (section 0)",
+   "source_date_or_version": "2026-10-01",
+   "status": "prohibited",
+   "authority_level": "constitutional_invariant",
+   "consequence_class": "constitutional",
+   "intended_outcome": "These readings are refused by construction: cognition creates no authority, founder stop wins, receipts never claim certainty beyond their proof class",
+   "affected_systems": [
+    "greg",
+    "cortex"
+   ],
+   "rationale": "Directive section 0 states the limit explicitly",
+   "conflicts": [],
+   "evidence_refs": [
+    "tests/evidence/greg-cortex-rehearsal/rehearsal-summary.json"
+   ],
+   "implementation_refs": [
+    "contracts/cortex-receipt.schema.json",
+    "greg/body.py"
+   ],
+   "owner": "Alfonso Lopez (root authority); cortex and GREG maintainers implement",
+   "next_review_trigger": "never; a founder decision only",
+   "unresolved_questions": [],
+   "created_at": "2026-10-01T18:00:00Z",
+   "updated_at": "2026-10-01T18:00:00Z"
+  },
+  {
+   "intent_id": "SG-004",
+   "title": "Deliver the four-class seed with an independent verifier",
+   "statement": "The later four-competency seed governs this build: Semantic, Estimation, Formal/Optimization, Evidence/Causal, plus an independent verifier.",
+   "source": "founder directive, Claude Code session session_01FUAZEkNuHx7ktktUGT2tw2",
+   "source_location": "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md (section 2)",
+   "source_date_or_version": "2026-10-01",
+   "status": "implemented",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "Each class runs with its declared scope; Formal and Optimization keep separate method IDs and proof classes",
+   "affected_systems": [
+    "cortex/organs"
+   ],
+   "rationale": "The semantic class abstains here: no founder-selected local model is reachable",
+   "conflicts": [],
+   "evidence_refs": [
+    "tests/unit/test_greg_cortex_bridge.py",
+    "tests/evidence/greg-crossgeo-v0.3/results.json"
+   ],
+   "implementation_refs": [
+    "cortex/organs/formal.py",
+    "cortex/organs/cpsat.py",
+    "cortex/organs/estimation.py",
+    "cortex/organs/evidence_causal.py",
+    "cortex/organs/semantic.py",
+    "cortex/organs/adversarial.py"
+   ],
+   "owner": "Alfonso Lopez (root authority); cortex and GREG maintainers implement",
+   "next_review_trigger": "a founder-selected local model becomes reachable",
+   "unresolved_questions": [],
+   "created_at": "2026-10-01T18:00:00Z",
+   "updated_at": "2026-10-01T18:00:00Z"
+  },
+  {
+   "intent_id": "SG-005",
+   "title": "Freeze the evaluation before optimizing to it",
+   "statement": "Define normalized per-task loss before observing candidate results.",
+   "source": "founder directive, Claude Code session session_01FUAZEkNuHx7ktktUGT2tw2",
+   "source_location": "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md (section 15)",
+   "source_date_or_version": "2026-10-01",
+   "status": "implemented",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "Loss, suites, arms, decision rule and sample-size plan frozen and committed before any held-out run",
+   "affected_systems": [
+    "cortex/evaluation"
+   ],
+   "rationale": "The freeze commit precedes the results commit in git history",
+   "conflicts": [],
+   "evidence_refs": [
+    "cortex/evaluation/freeze-crossgeo-v0.2.json",
+    "tests/evidence/greg-crossgeo-v0.2/selection-results.json"
+   ],
+   "implementation_refs": [
+    "cortex/evaluation/crossgeo.py",
+    "cortex/evaluation/crossgeo_loss.py"
+   ],
+   "owner": "Alfonso Lopez (root authority); cortex and GREG maintainers implement",
+   "next_review_trigger": "any change to a frozen input",
+   "unresolved_questions": [],
+   "created_at": "2026-10-01T18:00:00Z",
+   "updated_at": "2026-10-01T18:00:00Z"
+  },
+  {
+   "intent_id": "SG-006",
+   "title": "Verified Cross-Geometry Routing Gain",
+   "statement": "The cognition bottleneck is Verified Cross-Geometry Routing Gain.",
+   "source": "founder directive, Claude Code session session_01FUAZEkNuHx7ktktUGT2tw2",
+   "source_location": "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md (section 15)",
+   "source_date_or_version": "2026-10-01",
+   "status": "needs_evidence",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "Frozen verdict: GAIN_VERIFIED_AGAINST_RUN_BASELINES. Against the static router (strongest baseline that ran) on 1,200 fresh held-out items: paired gain 0.0064 (95% CI 0.0044-0.0084), 25.6% relative reduction, zero hard failures. About all of it comes from incomparable option trade-offs handed to the founder; elsewhere the routed system ties or trails by worker latency. v0.2 was GAIN_ABSENT on one hard failure, fixed in 0.2.1. The model arms did not run.",
+   "affected_systems": [
+    "cortex/evaluation",
+    "greg/cognition"
+   ],
+   "rationale": "Seed completeness and superiority are separate claims; the model baselines could not run here",
+   "conflicts": [],
+   "evidence_refs": [
+    "tests/evidence/greg-crossgeo-v0.3/results.json",
+    "tests/evidence/greg-crossgeo-v0.2/results.json"
+   ],
+   "implementation_refs": [
+    "cortex/evaluation/crossgeo.py"
+   ],
+   "owner": "Alfonso Lopez (root authority); cortex and GREG maintainers implement",
+   "next_review_trigger": "a founder-selected local model makes the model arms runnable, or P4 learned routing is ready",
+   "unresolved_questions": [
+    "Does the cortex beat an always-LLM and a tool-enabled model workflow on the same suite?"
+   ],
+   "created_at": "2026-10-01T18:00:00Z",
+   "updated_at": "2026-10-01T18:00:00Z"
+  },
+  {
+   "intent_id": "SG-007",
+   "title": "One GREG identity, one registry, one learning plane",
+   "statement": "One GREG identity, one constitutional authority spine, one canonical mission path, one canonical event semantics, and one institutional learning plane.",
+   "source": "founder directive, Claude Code session session_01FUAZEkNuHx7ktktUGT2tw2",
+   "source_location": "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md (section 3)",
+   "source_date_or_version": "2026-10-01",
+   "status": "implemented",
+   "authority_level": "constitutional_invariant",
+   "consequence_class": "constitutional",
+   "intended_outcome": "The cortex runs as GREG capabilities: one entry, one registry, one receipt envelope, one settlement",
+   "affected_systems": [
+    "greg",
+    "cortex"
+   ],
+   "rationale": "#139's parallel package was placed, not merged, for this reason",
+   "conflicts": [],
+   "evidence_refs": [
+    "tests/integration/test_greg_cortex_mission.py"
+   ],
+   "implementation_refs": [
+    "greg/cognition/bridge.py",
+    "greg/cognition/catalog.py"
+   ],
+   "owner": "Alfonso Lopez (root authority); cortex and GREG maintainers implement",
+   "next_review_trigger": "any second registry or learning plane",
+   "unresolved_questions": [],
+   "created_at": "2026-10-01T18:00:00Z",
+   "updated_at": "2026-10-01T18:00:00Z"
+  },
+  {
+   "intent_id": "SG-008",
+   "title": "No merge, deployment, contact, publication, paid service or live-authority change",
+   "statement": "Do not merge, deploy, contact people, publish content, acquire paid services, or change live authority unless that specific action is already authorized.",
+   "source": "founder directive, Claude Code session session_01FUAZEkNuHx7ktktUGT2tw2",
+   "source_location": "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md (section 20)",
+   "source_date_or_version": "2026-10-01",
+   "status": "active",
+   "authority_level": "external_constraint",
+   "consequence_class": "constitutional",
+   "intended_outcome": "Delivery is a draft pull request; nothing live changes",
+   "affected_systems": [
+    "repository workflow"
+   ],
+   "rationale": "Only a draft PR is authorized by the session instructions",
+   "conflicts": [],
+   "evidence_refs": [
+    "tests/evidence/cortex-mutants-2026-10-01/run2-after-fixes.log"
+   ],
+   "implementation_refs": [
+    "greg/cognition/bridge.py"
+   ],
+   "owner": "Alfonso Lopez (root authority); cortex and GREG maintainers implement",
+   "next_review_trigger": "an explicit founder authorization for a named action",
+   "unresolved_questions": [],
+   "created_at": "2026-10-01T18:00:00Z",
+   "updated_at": "2026-10-01T18:00:00Z"
+  },
+  {
+   "intent_id": "SG-009",
+   "title": "Local and open-source by default; no paid fallback, no unapproved download",
+   "statement": "Local inference and open-source tools are the default.",
+   "source": "founder directive, Claude Code session session_01FUAZEkNuHx7ktktUGT2tw2",
+   "source_location": "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md (section 3)",
+   "source_date_or_version": "2026-10-01",
+   "status": "active",
+   "authority_level": "constitutional_invariant",
+   "consequence_class": "constitutional",
+   "intended_outcome": "The model arms are recorded NOT_RUN with the probe's exact error instead of reaching a paid endpoint",
+   "affected_systems": [
+    "greg/cognition",
+    "cortex/evaluation"
+   ],
+   "rationale": "Model downloads are egress-blocked in this environment; routing around the block is not authorized",
+   "conflicts": [],
+   "evidence_refs": [
+    "tests/evidence/greg-crossgeo-v0.3/results.json"
+   ],
+   "implementation_refs": [
+    "cortex/evaluation/crossgeo_arms.py",
+    "greg/cognition/bridge.py"
+   ],
+   "owner": "Alfonso Lopez (root authority); cortex and GREG maintainers implement",
+   "next_review_trigger": "a founder-selected local model is installed on Body 1",
+   "unresolved_questions": [],
+   "created_at": "2026-10-01T18:00:00Z",
+   "updated_at": "2026-10-01T18:00:00Z"
+  },
+  {
+   "intent_id": "SG-010",
+   "title": "One backcast, P0-P13, subordinate to the active node",
+   "statement": "Maintain one canonical developmental path.",
+   "source": "founder directive, Claude Code session session_01FUAZEkNuHx7ktktUGT2tw2",
+   "source_location": "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md (section 18)",
+   "source_date_or_version": "2026-10-01",
+   "status": "implemented",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "P0-P13 and C1-C8 reconciled into greg/path.json as a subordinate cortex workstream; N1 (VEPMC) stays the one active node",
+   "affected_systems": [
+    "greg/path.json"
+   ],
+   "rationale": "No rival roadmap; later nodes are horizons with gates",
+   "conflicts": [],
+   "evidence_refs": [
+    "tests/unit/test_greg_seed_genome_records.py"
+   ],
+   "implementation_refs": [
+    "greg/path.json"
+   ],
+   "owner": "Alfonso Lopez (root authority); cortex and GREG maintainers implement",
+   "next_review_trigger": "a P-node exit or a founder correction",
+   "unresolved_questions": [],
+   "created_at": "2026-10-01T18:00:00Z",
+   "updated_at": "2026-10-01T18:00:00Z"
+  },
+  {
+   "intent_id": "SG-011",
+   "title": "Chromebook and phone first; other bodies stay gated horizons",
+   "statement": "Chromebook and phone are the immediate user-facing direction.",
+   "source": "founder directive, Claude Code session session_01FUAZEkNuHx7ktktUGT2tw2",
+   "source_location": "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md (section 2)",
+   "source_date_or_version": "2026-10-01",
+   "status": "active",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "The rehearsal stands in for Body 1; the founder's Chromebook run remains the N1 gate",
+   "affected_systems": [
+    "greg"
+   ],
+   "rationale": "The ledger cannot prove whose machine ran it",
+   "conflicts": [],
+   "evidence_refs": [
+    "tests/evidence/greg-cortex-rehearsal/rehearsal-summary.json"
+   ],
+   "implementation_refs": [
+    "greg/chromebook/install.sh"
+   ],
+   "owner": "Alfonso Lopez (root authority); cortex and GREG maintainers implement",
+   "next_review_trigger": "Alfonso runs the Chromebook runbook",
+   "unresolved_questions": [],
+   "created_at": "2026-10-01T18:00:00Z",
+   "updated_at": "2026-10-01T18:00:00Z"
+  },
+  {
+   "intent_id": "SG-012",
+   "title": "Should high privacy harm be a hard gate?",
+   "statement": "Preserve truth, privacy, consent, human agency, appeal, correction, and participant welfare.",
+   "source": "founder directive, Claude Code session session_01FUAZEkNuHx7ktktUGT2tw2",
+   "source_location": "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md (section 3)",
+   "source_date_or_version": "2026-10-01",
+   "status": "conflicted",
+   "authority_level": "unknown",
+   "consequence_class": "material",
+   "intended_outcome": "A founder ruling on whether options with high privacy harm are excluded before ranking (today: ranked, not excluded, unless critical)",
+   "affected_systems": [
+    "cortex/gates.py",
+    "cortex/contracts.py"
+   ],
+   "rationale": "The declared harm policy (cortex HARD_HARM_DIMENSIONS) excludes privacy; the evaluation follows the declared policy rather than silently changing a gate",
+   "conflicts": [
+    "cortex.contracts.HARD_HARM_DIMENSIONS omits privacy"
+   ],
+   "evidence_refs": [
+    "cortex/evaluation/crossgeo_suite.py"
+   ],
+   "implementation_refs": [
+    "cortex/contracts.py"
+   ],
+   "owner": "Alfonso Lopez (root authority); cortex and GREG maintainers implement",
+   "next_review_trigger": "founder ruling",
+   "unresolved_questions": [
+    "Add 'privacy' to HARD_HARM_DIMENSIONS, or keep privacy harm rankable below critical?"
+   ],
+   "created_at": "2026-10-01T18:00:00Z",
+   "updated_at": "2026-10-01T18:00:00Z"
+  }
+ ]
+}

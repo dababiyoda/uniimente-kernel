@@ -1,0 +1,44 @@
+F...........                                                             [100%]
+=================================== FAILURES ===================================
+________ test_signed_settlement_uses_gate_approval_and_survives_restart ________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-12/test_signed_settlement_uses_ga0')
+
+    def test_signed_settlement_uses_gate_approval_and_survives_restart(tmp_path):
+        import uuid
+        from provenance.ledger import sha256_json
+        from greg.journal import NAMESPACE
+        from greg.body import Body
+        from greg.templates import cognitive_problem
+        from tests.greg_fixtures import Clock, make_body, signed, drop
+        home,key,bid,_ = make_body(tmp_path)
+        p = problem('estimation', estimation(), name='signed-settlement')
+        spec = cognitive_problem(p)
+        mid = spec['mission_id']
+        receipt_id = sha256_json({'mission':mid,'problem':p})
+        event_id = str(uuid.uuid5(NAMESPACE, sha256_json({'kind':'cognition.receipt','key':[mid,p['problem_id']]})))
+        spec['light_cone']['capabilities'] += ['cognition.settle','memory.precedents']
+        spec['light_cone']['targets'].append('memory:cognition.settle')
+        spec['light_cone']['max_consequence_class'] = 'internal_write'
+        spec['success_checks'].append({'check_id':'reported-assessment','description':'A settlement action was retained',
+            'sensor':{'capability':'memory.precedents','target':'memory:cognition.settle','params':{'capability':'cognition.settle'}},
+            'predicate':{'op':'gte','field':'action_evidence.count','value':1}})
+        spec['strategies'].append({'action_id':'settle','capability':'cognition.settle','target':'cognition:'+p['problem_id'],
+            'params':{'outcome_id':'signed-o1','receipt_id':receipt_id,'tier':'synthetic','score':None,
+                      'evidence_refs':[event_id],'supersedes':None,'conditions':{'scope':'synthetic demonstration'}},
+            'requires':['verified-answer'],'advances':['reported-assessment'],'rationale':'Retain a synthetic assessment without policy updates'})
+        command = signed(key,bid,'MISSION',spec); drop(home,command)
+        clock=Clock()
+        with Body(home,clock=clock) as body:
+            for _ in range(4):
+                body.tick();clock.advance(1)
+>           assert not body.journal.replay('cognition.outcome')
+E           AssertionError: assert not [Event(type='greg.cognition.outcome', source='spiffe://uniimente.internal/greg/body', actor='spiffe://uniimente.intern...eaee-ed3d-5d5b-95c4-a28b28bcb5df', occurred_at='2026-10-01T14:43:01.676446Z', causal_parent=None, policy_version=None)]
+E            +  where [Event(type='greg.cognition.outcome', source='spiffe://uniimente.internal/greg/body', actor='spiffe://uniimente.intern...eaee-ed3d-5d5b-95c4-a28b28bcb5df', occurred_at='2026-10-01T14:43:01.676446Z', causal_parent=None, policy_version=None)] = replay('cognition.outcome')
+E            +    where replay = <greg.journal.Journal object at 0x7fc7e01b0800>.replay
+E            +      where <greg.journal.Journal object at 0x7fc7e01b0800> = <greg.body.Body object at 0x7fc7e01bd070>.journal
+
+tests/unit/test_greg_cognition.py:362: AssertionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_greg_cognition.py::test_signed_settlement_uses_gate_approval_and_survives_restart
+1 failed, 11 passed in 5.00s

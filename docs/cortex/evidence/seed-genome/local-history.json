@@ -1,0 +1,8 @@
+{
+  "format": "git bundle v2, base64 UTF-8 transport",
+  "sha256": "f9244e8a6d415c0b9718b6697060b5d581edafec3959a72449cd4b5a693cabd7",
+  "local_tip": "abff9234b560c9e1e8675793b223863a20a64ea3",
+  "requires": "3d2bb1762ff709ce74d3053aced060e70d4e6674",
+  "purpose": "Restore exact original local commit history, authors and every frozen source version after connector tree upload.",
+  "restore": "Decode base64 into a temporary .bundle; git fetch that bundle refs/heads/codex/polyintelligence-seed:refs/heads/seed-local-history; inspect before checkout."
+}

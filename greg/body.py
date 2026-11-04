@@ -159,8 +159,9 @@ class Body:
         self.office = AuthorityOffice(compiled=self.compiled, passports=self.passports, signer=signer,
                                       ledger=self.ledger)
         self.registry = CapabilityRegistry()
+        from greg.cognition.catalog import initial_state
         for manifest, adapter in BUILTINS.values():
-            self.registry.register(manifest, adapter, state="ATTACHED")
+            self.registry.register(manifest, adapter, state=initial_state(manifest.capability_id))
         self._apply_capability_states()
         self.secrets = SecretBroker(self.layout.secrets)
         self._refresh_builder()
@@ -171,6 +172,7 @@ class Body:
                                     secrets=self.secrets, workspace_root=self.layout.workspace,
                                     read_roots=tuple(self.config["read_roots"]), genesis=self.genesis,
                                     deliver_root=self.deliver_root, artifact_root=self.layout.artifacts)
+        self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
         return self
 
     def _refresh_builder(self):
@@ -424,8 +426,11 @@ class Body:
         if self.paused():
             self._heartbeat("PAUSED", [])
             return {"commands": commands, "paused": True}
+        self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
         summary = self.engine.tick(now, should_stop=self._stop_now)
         self._close_out(now)
+        from greg.cognition.settlement import reconcile as settle_cognition
+        settle_cognition(self.journal)
         improvement.learn(self.journal, self.ledger, now)   # held-out evidence from this tick's briefs
         sop.propose(self.journal)
         anchored = anchor.anchor_once(self.journal, now) if anchor.due(self.journal, now) else None
@@ -582,6 +587,30 @@ def morning_projection(home: str | Path) -> dict:
         return tribunal.morning_report(journal, SimpleNamespace(book=MissionBook(journal)), heartbeat=heartbeat)
 
 
+def _attach_waiting(journal, achieved: set) -> list[dict]:
+    """Verified capabilities Genesis is waiting for the founder to attach, whatever the ask's answer.
+
+    An Approve on a capability ask only records an answer (greg/asks.py); attaching is its own signed
+    command. Derived from the ledger, so a mission stays unblockable from the console after an answer
+    given here or on the phone (which can never attach)."""
+    mission_of = {e.payload["deficit_id"]: e.payload.get("mission_id") for e in journal.replay("deficit.opened")}
+    resolved = {e.payload["deficit_id"] for e in journal.replay("deficit.resolved")}
+    latest = {}
+    for e in journal.replay("capability.state"):
+        latest[e.payload["capability_id"]] = e.payload["state"]
+    waiting = {}
+    for e in journal.replay("deficit.awaiting_attach"):
+        p = e.payload
+        mission_id = mission_of.get(p["deficit_id"])
+        if p["deficit_id"] in resolved or mission_id in achieved or latest.get(p["capability_id"]) in (
+                "ATTACHED", "QUARANTINED", "DETACHED"):
+            continue
+        waiting[(p["deficit_id"], p["capability_id"])] = {"deficit_id": p["deficit_id"],
+                                                          "capability_id": p["capability_id"],
+                                                          "mission_id": mission_id, "why": p.get("why")}
+    return list(waiting.values())
+
+
 def status(home: str | Path) -> dict:
     """Read-only projection for the founder; safe while the body runs."""
     layout = Layout(home)
@@ -596,9 +625,8 @@ def status(home: str | Path) -> dict:
         journal = Journal(spine, actor="spiffe://uniimente.internal/greg/status-reader")
         registered = {e.payload["mission_id"]: e.payload["spec"] for e in journal.replay("mission.registered")}
         achieved = {e.payload["mission_id"] for e in journal.replay("mission.achieved")}
-        answered = {e.payload["request_id"] for e in journal.replay("decision.answered")}
-        answered |= {e.payload["request_id"] for e in journal.replay("decision.withdrawn")}
-        requests = [e.payload for e in journal.replay("decision.requested") if e.payload["request_id"] not in answered]
+        requests = asks.open_requests(journal.replay("decision.") + journal.replay("mission.achieved")
+                                      + journal.replay("mission.lifecycle"))
         founder = [e.payload["key_id"] for e in journal.replay("founder.enrolled")]
         boots = journal.replay("body.booted")
         registry = CapabilityRegistry()
@@ -617,6 +645,7 @@ def status(home: str | Path) -> dict:
                        "closure": spec["closure"]["kind"], "achieved": mid in achieved}
                       for mid, spec in registered.items()],
             "decisions_required": [asks.surface(r) for r in requests],
+            "attach_waiting": _attach_waiting(journal, achieved),
             "capabilities": registry.inventory(), "permissions": {"read_roots": config["read_roots"]},
             "compute": compute.sample(layout.home),
             "secret_handles": SecretBroker(layout.secrets).names(),
@@ -628,6 +657,13 @@ def status(home: str | Path) -> dict:
                                          heartbeat=heartbeat),
             "designation": [e.payload for e in journal.replay("body.designated")],
             "developmental_position": _path_summary(journal),
+            "cognition": {
+                "receipts": [{k: e.payload[k] for k in
+                    ("receipt_id", "mission_id", "problem_id", "answered", "outcome", "next_step", "claims", "elapsed_ms", "cost_limits")}
+                    for e in journal.replay("cognition.receipt")],
+                "outcomes": __import__('greg.routing', fromlist=['cognitive_knowledge']).cognitive_knowledge(journal),
+                "scope": "conditional computation; no external acceptance or authority",
+            },
         }
     finally:
         ledger.close()
@@ -639,7 +675,8 @@ def _path_summary(journal: Journal) -> dict:
     active = where["active"] or {}
     return {"achieved": where["achieved"], "active": active.get("id"), "title": active.get("title"),
             "gate": active.get("gate"), "measurement": active.get("measurement"),
-            "next": (where["next"] or {}).get("id"), "pull_forward_seams": where["pull_forward_seams"]}
+            "next": (where["next"] or {}).get("id"), "pull_forward_seams": where["pull_forward_seams"],
+            "met_ahead": [n["id"] for n in where["met_ahead"]]}
 
 
 def ingest_external(home: str | Path, *, source: str, content: str, channel: str) -> dict:

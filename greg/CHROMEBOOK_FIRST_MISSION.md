@@ -47,6 +47,11 @@ enrolls it, enables `greg-body.service`, and asks you to sign the designation of
 this machine as your first body. Re-running it changes nothing that is already
 done. Then skip to step 2. The manual steps below do the same thing by hand.
 
+It also installs GREG's open-source reasoning engines (Z3, OR-Tools, SciPy, NetworkX,
+SymPy; about 550 MB, binary wheels only) and prints how many are present. If your
+Chromebook has no wheel for one, the install still finishes and that engine is listed as
+missing; add `--no-engines` to skip the step. N1 needs none of them.
+
 **Manual install (equivalent):**
 
 ```bash
@@ -55,6 +60,7 @@ git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
 git checkout claude/uniimente-greg-reconciliation-39syff   # the one converged GREG branch; use main once merged
 python3 -m venv ~/.uniimente/venv
 ~/.uniimente/venv/bin/pip install -r requirements-dev.txt
+~/.uniimente/venv/bin/pip install --only-binary=:all: -r requirements-cognition.txt   # optional engines
 alias greg='~/.uniimente/venv/bin/python -m greg'
 greg doctor --chromebook                            # stop here if not ready
 greg init --read-root ~/src --deliver-root ~/GREG
@@ -146,6 +152,12 @@ happens only if the digest matches. Interrupt it once with `kill -9` while it wa
 accept the result, then run `greg path` again. A second closure on an unrelated function, e.g.
 **"Confirm ~/src/<draft> is at most 1500 words"**, shows the acquisition is not a one-off.
 
+The same route with an open-source engine, if the engines installed: ask
+**"Maximize 40 chairs + 30 tables. 2 chairs + 3 tables <= 120. 4 chairs + 2 tables at most 160."**
+GREG finds the installed LP engine, shows its version and license, and waits for your Attach.
+It then returns the plan with the price of each limit, accepted only on its own duality
+certificate.
+
 ## The third node (N3): one business case, with you doing every outward act
 
 GREG can now carry one customer case through the Kernel's commercial order (offer, acceptance,
@@ -158,11 +170,12 @@ greg mission new business-case --case "lease review 01" --buyer "Acme Property L
   --acceptance "summary delivered within 5 business days"
 ```
 
-- GREG drafts `offer.md` in the case folder (`greg status` shows the path). It carries a case
+- GREG drafts `offer.md` in the case folder. It carries a case
   reference, for example `CASE-LEASE-REVIEW-01`, which the buyer puts on the payment.
 - **You** send the offer, collect payment, deliver, and ask the buyer to confirm. Each step is
-  one costed ask in the console and on your phone. GREG contacts, charges and pays no one; an
-  answer to these asks is only a record.
+  one costed ask in the console and on your phone, naming the file to save and the folder to
+  save it in. GREG contacts, charges and pays no one. An answer to these asks is only a record,
+  and the ask stays until GREG sees the file, usually within a minute or two.
 - You save the evidence into the case folder:
   - `acceptance.txt`: the buyer's written acceptance;
   - `statement.csv`: an export from your payment account. Its columns default to
@@ -190,8 +203,8 @@ it proposes a standard procedure. Nothing changes until you ratify it.
 ```bash
 greg sop list                                   # proposals waiting for you, and their inputs
 greg sop show <procedure-id>                    # the evidence, the workflow, what may be pre-approved
-greg sop ratify <procedure-id> --pre-approve file-record --key ~/greg-founder.pem
-greg sop run <procedure-id> --set path="$HOME/drafts/essay.md" --set words=500 --key ~/greg-founder.pem
+greg sop ratify <procedure-id> --pre-approve file-record --key ~/.greg-founder.pem
+greg sop run <procedure-id> --set path="$HOME/drafts/essay.md" --set words=500 --key ~/.greg-founder.pem
 greg sop trend                                  # before and after, per verified outcome
 ```
 
@@ -223,10 +236,15 @@ After three verified cases, ratify the procedure GREG proposes, pre-approving it
 run it for a second venture:
 
 ```bash
-greg sop ratify <procedure-id> --pre-approve draft-offer --pre-approve record-settlement --key ~/greg-founder.pem
+greg sop ratify <procedure-id> --pre-approve draft-offer --pre-approve record-settlement --key ~/.greg-founder.pem
 greg sop run <procedure-id> --venture audits --set reference=CASE-AUDIT-01 --set buyer="..." \
-  --set offer="..." --set price=300.00 --set acceptance="..." --key ~/greg-founder.pem
+  --key ~/.greg-founder.pem
 ```
+
+`greg sop list` shows each procedure's inputs. Only what differed between the cases that taught it
+becomes an input. If those three cases shared one price, offer and acceptance, the procedure keeps
+them fixed, and `--set price=...` is refused. Vary them across the teaching cases if the second
+venture needs its own.
 
 Sign what each venture owes before any surplus counts. Tier names come from
 `capital/allocation-policy.yaml`:
@@ -234,7 +252,7 @@ Sign what each venture owes before any surplus counts. Tier names come from
 ```bash
 greg treasury set --venture audits --currency USD \
   --tier taxes_and_binding_legal_obligations=120 \
-  --tier emergency_liquidity_and_operating_reserves=80 --key ~/greg-founder.pem
+  --tier emergency_liquidity_and_operating_reserves=80 --key ~/.greg-founder.pem
 greg treasury books
 ```
 

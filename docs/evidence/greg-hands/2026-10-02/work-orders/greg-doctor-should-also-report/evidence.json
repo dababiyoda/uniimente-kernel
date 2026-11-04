@@ -1,0 +1,103 @@
+{
+  "order": {
+    "acceptance": {
+      "max_changed_files": 8,
+      "run_changed_tests": true
+    },
+    "allowed_paths": [
+      "greg/*",
+      "tests/unit/*"
+    ],
+    "authority_ref": "sha256:83d28112b43ce60ff69f9a98bdc66b1c4e50d9cbf884971aca135eb5b5fa5bf1",
+    "base": "HEAD",
+    "context": "",
+    "grant_id": "d2a85b4e-0914-4279-b68d-063d0bcff66b",
+    "inputs": [],
+    "max_budget_usd": 3.0,
+    "mission_id": "m:work-greg-doctor-should-also-report",
+    "mode": "repository",
+    "objective": "greg doctor should also report which temporary frontier workers (claude, codex, aider) are installed on this body, as a read-only probe that never runs them; add a unit test for it",
+    "order": "greg-doctor-should-also-report",
+    "provider": "claude-code",
+    "repo": "/home/user/uniimente-kernel",
+    "timeout_seconds": 1200,
+    "tools": []
+  },
+  "order_digest": "sha256:53e47ba9bee3283624aa481d98bdaa972a42d882a6e84498c78901c5986a5a2f",
+  "status": "COMPLETED",
+  "summary": {
+    "acceptance_owner": "worker.appraise (independent)",
+    "authority_created": false,
+    "base_commit": "aed2f83e5e352efd0504a45f67307e1366a9ab2b",
+    "branch": "greg/greg-doctor-should-also-report",
+    "changed_files": [
+      "greg/doctor.py",
+      "tests/unit/test_greg_chromebook_doctor.py"
+    ],
+    "commit": "1c52ebe129561e15bbe10f23611d702e4203f6af",
+    "evidence_path": "/tmp/greg-hands/body/workspace/m_work-greg-doctor-should-also-report/work-orders/greg-doctor-should-also-report/evidence.json",
+    "grant_id": "d2a85b4e-0914-4279-b68d-063d0bcff66b",
+    "greg_tests": [
+      {
+        "argv": [
+          "/usr/local/bin/python3",
+          "-m",
+          "pytest",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "tests/unit/test_greg_chromebook_doctor.py"
+        ],
+        "network": "denied",
+        "passed": true,
+        "returncode": 0,
+        "seconds": 0.29,
+        "tail": "...                                                                      [100%]\n3 passed in 0.02s\n"
+      }
+    ],
+    "greg_tests_passed": true,
+    "mission_id": "m:work-greg-doctor-should-also-report",
+    "mode": "repository",
+    "order_digest": "sha256:53e47ba9bee3283624aa481d98bdaa972a42d882a6e84498c78901c5986a5a2f",
+    "output": null,
+    "patch_path": "/tmp/greg-hands/body/workspace/m_work-greg-doctor-should-also-report/work-orders/greg-doctor-should-also-report/change.patch",
+    "patch_sha256": "sha256:30215d6a7cb79e0e00d21acd4550f3508d5e1e49f923be3cee96f5cf29cf686e",
+    "repo": "/home/user/uniimente-kernel",
+    "scope": {
+      "outside_allowed": [],
+      "protected_touched": [],
+      "too_many_files": false
+    },
+    "status": "COMPLETED",
+    "work_order": "greg-doctor-should-also-report",
+    "worker": {
+      "cost_usd": 0.3060818,
+      "duration_s": 25.43,
+      "error": null,
+      "exit_code": 0,
+      "identity": "claude-code",
+      "permission_denials": [
+        "{'tool_name': 'Bash', 'tool_use_id': 'toolu_017u1Jt9maw6t1iprba9AJUb', 'tool_input': {'command': 'cd greg; cat doctor.py; sed -n 495,515p cli.py; ls ../tests/unit | grep -i doctor'}}",
+        "{'tool_name': 'Bash', 'tool_use_id': 'toolu_018x8EYX3UzEPbCdbWXZJBmH', 'tool_input': {'command': 'cat >> tests/unit/test_greg_chromebook_doctor.py <<\\'EOF\\'\\n\\n\\ndef test_doctor_reports_frontier_worke"
+      ],
+      "provider": "claude-code",
+      "served_models": [
+        "claude-haiku-4-5-20251001",
+        "claude-sonnet-5-5"
+      ],
+      "turns": 13
+    },
+    "worker_claim": {
+      "changed": [
+        "greg/doctor.py",
+        "tests/unit/test_greg_chromebook_doctor.py"
+      ],
+      "confidence": 0.95,
+      "tests_run": [
+        "python -m pytest tests/unit/test_greg_chromebook_doctor.py"
+      ],
+      "unresolved": []
+    },
+    "worker_summary_tail": "`greg doctor` now reports which of `claude`, `codex` and `aider` are installed, and the new test passes along with the two existing doctor tests (3 passed).\n\nThe report has a new `frontier_workers_installed` field, a map from each worker name to true or false. It is a read-only PATH lookup, so none of the workers are ever run.\n\nIt is informational only. It is not one of the readiness checks, so it cannot change `ready_for_linux_service` or the exit code.\n\nThe new test, in `tests/unit/test_greg_chromebook_doctor.py`, fakes the PATH lookup with only `codex` present. It asserts the field comes out as `{\"claude\": False, \"codex\": True, \"aider\": False}`. It also asserts the only subprocess call is the existing `systemctl --user show-environment` check, and that the new field is not among the readiness checks.\n\nThe code change is `frontier_workers()` plus the new field in `greg/doctor.py`.\n\nWORK_REPORT: {\"changed\": [\"greg/doctor.py\", \"tests/unit/test_greg_chromebook_doctor.py\"], \"tests_run\": [\"python -m pytest tests/unit/test_greg_chromebook_doctor.py\"], \"unresolved\": [], \"confidence\": 0.95}"
+  }
+}

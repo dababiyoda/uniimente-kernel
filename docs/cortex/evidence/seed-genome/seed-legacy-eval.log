@@ -1,0 +1,37 @@
+{
+  "partition": "heldout",
+  "arms": {
+    "routed_seed": [
+      "RUN",
+      0.9642857142857143,
+      0,
+      null
+    ],
+    "always_llm": [
+      "NOT_RUN",
+      null,
+      null,
+      "configured local model unavailable: URLError: <urlopen error [Errno 111] Connection refused>"
+    ],
+    "llm_committee": [
+      "NOT_RUN",
+      null,
+      null,
+      "configured local model unavailable: URLError: <urlopen error [Errno 111] Connection refused>"
+    ],
+    "always_abstain": [
+      "RUN",
+      0.5773809523809523,
+      0,
+      null
+    ]
+  },
+  "exit": {
+    "verdict": "INCONCLUSIVE",
+    "promote": false,
+    "reasons": [
+      "declared baseline always_llm not run: configured local model unavailable: URLError: <urlopen error [Errno 111] Connection refused>",
+      "declared baseline llm_committee not run: configured local model unavailable: URLError: <urlopen error [Errno 111] Connection refused>"
+    ]
+  }
+}

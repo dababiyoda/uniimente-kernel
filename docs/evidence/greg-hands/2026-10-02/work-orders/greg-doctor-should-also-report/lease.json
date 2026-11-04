@@ -1,0 +1,14 @@
+{
+  "authority_created": false,
+  "authority_ref": "sha256:83d28112b43ce60ff69f9a98bdc66b1c4e50d9cbf884971aca135eb5b5fa5bf1",
+  "grant_id": "d2a85b4e-0914-4279-b68d-063d0bcff66b",
+  "max_budget_usd": 3.0,
+  "mission_id": "m:work-greg-doctor-should-also-report",
+  "order": "greg-doctor-should-also-report",
+  "order_digest": "sha256:53e47ba9bee3283624aa481d98bdaa972a42d882a6e84498c78901c5986a5a2f",
+  "provider": "claude-code",
+  "push_rights": false,
+  "secrets": "none",
+  "timeout_seconds": 1200,
+  "workspace": "/tmp/greg-hands/body/workspace/m_work-greg-doctor-should-also-report/work-orders/greg-doctor-should-also-report/repo"
+}

@@ -1,0 +1,100 @@
+{
+  "allowed_hosts": [
+    "pypi.org"
+  ],
+  "blocked_requests": {
+    "2p66nmmycsj3.statuspage.io": 1,
+    "analytics.python.org": 1,
+    "api.github.com": 4,
+    "cdn.jsdelivr.net": 1,
+    "media.ethicalads.io": 1,
+    "pypi-camo.freetls.fastly.net": 5
+  },
+  "boundary": null,
+  "browser": "chromium via Playwright",
+  "extracted": {
+    "package_header": "z3-solver 5.1.0.0",
+    "recent_versions": [
+      "5.1.0.0",
+      "5.0.0.0",
+      "4.16.0.0",
+      "4.15.8.0",
+      "4.15.7.0"
+    ]
+  },
+  "final_url": "https://pypi.org/project/z3-solver/#history",
+  "os_sandboxed": false,
+  "session": "z3-composed",
+  "start_url": "https://pypi.org/project/z3-solver/",
+  "status": "COMPLETED",
+  "steps": [
+    {
+      "at": "2026-10-07T12:16:46Z",
+      "op": "open",
+      "result": "ok",
+      "screenshot": {
+        "path": "/tmp/greg-p6/body/workspace/m_research-z3-composed-note/browser/z3-composed/step-00.png",
+        "sha256": "sha256:3ceab4f8087f7cd8c2d3bae145dfbaf207b5d68c2ef4780591ce2e339cf07758"
+      },
+      "selector": null,
+      "step": 0,
+      "text_sha256": "sha256:354ab52d2d78d7eb5dab4e310ed4a18a3829960b34dde09c4bcf9f7ecfcc87e6",
+      "title": "z3-solver \u00b7 PyPI",
+      "url": "https://pypi.org/project/z3-solver/"
+    },
+    {
+      "at": "2026-10-07T12:16:46Z",
+      "op": "extract",
+      "result": "ok",
+      "screenshot": {
+        "path": "/tmp/greg-p6/body/workspace/m_research-z3-composed-note/browser/z3-composed/step-01.png",
+        "sha256": "sha256:3ceab4f8087f7cd8c2d3bae145dfbaf207b5d68c2ef4780591ce2e339cf07758"
+      },
+      "selector": "h1",
+      "step": 1,
+      "text_sha256": "sha256:354ab52d2d78d7eb5dab4e310ed4a18a3829960b34dde09c4bcf9f7ecfcc87e6",
+      "title": "z3-solver \u00b7 PyPI",
+      "url": "https://pypi.org/project/z3-solver/",
+      "value": "z3-solver 5.1.0.0"
+    },
+    {
+      "at": "2026-10-07T12:16:46Z",
+      "op": "click",
+      "result": "ok",
+      "screenshot": {
+        "path": "/tmp/greg-p6/body/workspace/m_research-z3-composed-note/browser/z3-composed/step-02.png",
+        "sha256": "sha256:69b55016f5f2a5b984498a7cd24ab8dbac7f232b0ce6283c604284d7e6a2ae82"
+      },
+      "selector": "a[href='#history']",
+      "step": 2,
+      "text_sha256": "sha256:c8e0ca534d59c96d1fb5ff548b370048673492c5b1de0a934ed48fe664746f3c",
+      "title": "z3-solver \u00b7 PyPI",
+      "url": "https://pypi.org/project/z3-solver/#history",
+      "value": "https://pypi.org/project/z3-solver/#history"
+    },
+    {
+      "at": "2026-10-07T12:16:46Z",
+      "op": "extract_all",
+      "result": "ok",
+      "screenshot": {
+        "path": "/tmp/greg-p6/body/workspace/m_research-z3-composed-note/browser/z3-composed/step-03.png",
+        "sha256": "sha256:69b55016f5f2a5b984498a7cd24ab8dbac7f232b0ce6283c604284d7e6a2ae82"
+      },
+      "selector": ".release__version",
+      "step": 3,
+      "text_sha256": "sha256:c8e0ca534d59c96d1fb5ff548b370048673492c5b1de0a934ed48fe664746f3c",
+      "title": "z3-solver \u00b7 PyPI",
+      "url": "https://pypi.org/project/z3-solver/#history",
+      "value": [
+        "5.1.0.0",
+        "5.0.0.0",
+        "4.16.0.0",
+        "4.15.8.0",
+        "4.15.7.0"
+      ]
+    }
+  ],
+  "trace_dir": "/tmp/greg-p6/body/workspace/m_research-z3-composed-note/browser/z3-composed",
+  "trust": "page content is untrusted external data",
+  "trust_anchors_imported": 130
+}

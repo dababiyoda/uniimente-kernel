@@ -1,0 +1,52 @@
+{
+  "frozen_at": "2026-10-07T17:03:46.165119+00:00",
+  "inputs": {
+    "files": {
+      "cortex/evaluation/seed_genome/build.py": "ab67b7c9072f0538ed3b497f224a103f7fdd9137ac515c01450579476e626bb4",
+      "cortex/evaluation/seed_genome/run.py": "4fc187c2c812062d267715423ac8388cad4a7fac64d785ea5152ed311d58b6b7",
+      "cortex/evaluation/seed_genome/suite.json": "eecb5505c68c16ae2e25ef7c266b6cf770b9d0987d329ecc252940bac3b2e4cc",
+      "cortex/seed/contracts.py": "d7f48aed2edc82b475cb2c80b4e12cc601356279107659fe6aa3e16a75af2b89",
+      "cortex/seed/methods.py": "6f25df1c8194fc6e8fefbde701cef32855c4723178de007cd8cdcf0b28605b1b",
+      "cortex/seed/verify.py": "abe268e6e363fe60c2b6578cb71f6eeecac2ddcf0b5682a9e1ba8358ffe7713e",
+      "greg/cognition/seed_path.py": "61d2f74c3ba376fb06f2e7d9175b035e0659efc69e0795b9b8ad215d2250ef1f",
+      "greg/cognitive_worker.py": "af9a9e23f70e0584b32909fd9c228ff8dfaa29333d064f4f2272780f249a9ff0",
+      "greg/models.py": "e99307dc7fbef108fab70daec92e460d9eabb2d0a4848bb93b0e4e14078c1c2a",
+      "requirements-cognition.txt": "174ebe6818fe911393eb7002485163f7d055664e739cafb530ae0010eebe516b",
+      "requirements-cortex.txt": "5558445ce171be8d2247c2e7e1ab1d68c4c3c96e8a0908af279a7427516c0961",
+      "cortex/seed/projections.py": "cc9d9d623bce90b7eac843b37b7839a39ae8a6d9e108cf91892591623442ec62",
+      "cortex/contracts.py": "3ad8b905810f564aa95d6b3bf17ad0bd87f4f95a07915319b53197d22ad59bba"
+    },
+    "scoring": {
+      "version": "seed-genome-loss/3",
+      "weights": {
+        "error": 0.5,
+        "false_claim": 0.25,
+        "unjustified_abstention": 0.1,
+        "uncalibrated_certainty": 0.05,
+        "token_fee_budget_violation": 0.05,
+        "latency": 0.05
+      },
+      "latency_units": "min(1, elapsed_ms / max(1, declared budget_ms))",
+      "authority": "separate hard fail; never traded against score",
+      "cost_limit": "token fees tested; CPU/RAM bounds reported; energy and maintenance NOT_MEASURED",
+      "gain_target": 0.1,
+      "ci_lower_strictly_above": 0,
+      "bootstrap": 4000,
+      "seed": 913,
+      "ci_unit": "20 quality template families resampled; not 100 independent population observations",
+      "exclusions": [
+        "semantic-quality unavailable: report availability separately, exclude from quality loss"
+      ],
+      "baseline_existing": "NOT_RUN: PR137 cannot consume cognition/1 or execute cognition.solve",
+      "baseline_always_llm": "NOT_RUN: no approved reachable local model/weights configuration",
+      "baseline_strong_tool_llm": "NOT_RUN: same missing licensed, resource-fit local model",
+      "strongest_available": "static specialist rules; routed seed IS this simple policy",
+      "exit": "INCONCLUSIVE while required model comparisons unavailable; no superiority claim",
+      "contamination": "self-authored structured templates related to development fixtures; no hidden independent holdout claim"
+    },
+    "dependencies": {
+      "z3-solver": "5.1.0.0",
+      "ortools": "9.15.6755"
+    }
+  }
+}

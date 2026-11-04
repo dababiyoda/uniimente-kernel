@@ -1,0 +1,113 @@
+{
+ "mission_id": "m:browse-pypi-z3-release",
+ "founder_expression": "Find the latest released versions of z3-solver on PyPI by operating the website; do not log in.",
+ "intended_effect": "the requested information is retrieved by operating the site, with per-step evidence; consequential steps stop at the authority boundary",
+ "priority": 50,
+ "closure": {
+  "kind": "bounded"
+ },
+ "success_checks": [
+  {
+   "check_id": "retrieved",
+   "description": "the session's retained trace holds the requested result",
+   "sensor": {
+    "capability": "browser.trace",
+    "params": {
+     "session": "pypi-z3-release"
+    },
+    "target": "web:pypi.org"
+   },
+   "predicate": {
+    "op": "count_gte",
+    "field": "extracted.recent_versions",
+    "value": 1
+   }
+  }
+ ],
+ "strategies": [
+  {
+   "action_id": "operate-browser",
+   "capability": "browser.session",
+   "target": "web:pypi.org",
+   "params": {
+    "url": "https://pypi.org/",
+    "steps": [
+     {
+      "op": "fill",
+      "selector": "input[name=q] >> nth=0",
+      "value": "z3-solver"
+     },
+     {
+      "op": "press",
+      "selector": "input[name=q] >> nth=0",
+      "key": "Enter"
+     },
+     {
+      "op": "goto",
+      "url": "/project/z3-solver/"
+     },
+     {
+      "op": "extract",
+      "selector": "h1",
+      "as": "package_header"
+     },
+     {
+      "op": "click",
+      "selector": "a[href='#history']"
+     },
+     {
+      "op": "extract_all",
+      "selector": ".release__version",
+      "as": "recent_versions",
+      "limit": 5
+     },
+     {
+      "op": "click",
+      "selector": "a[href='#files']"
+     },
+     {
+      "op": "scroll",
+      "dy": 600
+     },
+     {
+      "op": "click",
+      "selector": "a[href^='/account/login/'] >> nth=0"
+     },
+     {
+      "op": "expect_text",
+      "value": "Log in"
+     },
+     {
+      "op": "fill",
+      "selector": "#username",
+      "secret": "pypi_username"
+     },
+     {
+      "op": "click",
+      "selector": "input[type=submit]",
+      "consequential": true,
+      "why": "logging in to an account"
+     }
+    ],
+    "session": "pypi-z3-release",
+    "on_challenge": "skip"
+   },
+   "advances": [
+    "retrieved"
+   ],
+   "rationale": "structured DOM control in a disposable real browser"
+  }
+ ],
+ "light_cone": {
+  "capabilities": [
+   "browser.session",
+   "browser.trace"
+  ],
+  "targets": [
+   "web:pypi.org"
+  ],
+  "max_consequence_class": "internal_write",
+  "budget_usd": 0,
+  "horizon": "2026-10-03T00:12:13.049330Z"
+ }
+}

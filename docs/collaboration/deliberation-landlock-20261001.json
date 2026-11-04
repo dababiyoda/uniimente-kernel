@@ -1,0 +1,369 @@
+{
+  "decision_id": "FM-LANDLOCK-20261001",
+  "title": "Install OS filesystem confinement on capable reviewed GREG workers",
+  "problem": "Actual CI provides an unprivileged kernel confinement facility despite the disconnected local host's unsupported probes; do not freeze this buildable dependency.",
+  "founder_intent_refs": [
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-2026-09-27-FOUNDRY-55"
+  ],
+  "baseline": "PR1471a376f68 native company regression checks passed; full suite/verifier still pending. CI6324 observed Linux6.17.0-1022-azure, Landlock ABI7 and Docker28.0.4; its one remaining authority-inventory failure is preserved.",
+  "alternatives": [
+    {
+      "name": "simplest_viable_alternative",
+      "description": "Add kernel-enforced stage/source/runtime filesystem rules to existing reviewed workers on ABI>=3 hosts; selected.",
+      "advantages": [
+        "Strengthens real native filesystem enforcement without a new authority or source grant."
+      ],
+      "disadvantages": [
+        "Not microVM/gVisor isolation and not arbitrary-source admission."
+      ],
+      "revival_evidence": "Changed ABI, runtime or confinement evidence."
+    },
+    {
+      "name": "strongest_competing_architecture",
+      "description": "OCI plus microVM/gVisor backend for general generated code/providers.",
+      "advantages": [
+        "Broader demanded capability and group isolation."
+      ],
+      "disadvantages": [
+        "Requires an implemented pinned runner/image and its actual escape/revocation/resource tests; ordinary Docker or observed availability alone is insufficient."
+      ],
+      "revival_evidence": "Built and proved runner/image on the available CI host."
+    },
+    {
+      "name": "reversible_experiment",
+      "description": "Raw native private-file escape probes and actual GREG/child/MCP integration under required Landlock in CI.",
+      "advantages": [
+        "Proves OS denial independent of audit hooks on an actual host."
+      ],
+      "disadvantages": [
+        "Does not establish general code safety or founder operational acceptance."
+      ],
+      "revival_evidence": "Changed implementation and deeper adversarial evidence."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Ignore usable ABI7 and retain unnecessarily weak reviewed-code-only filesystem protection.",
+    "advantages": [
+      "No new kernel rules."
+    ],
+    "disadvantages": [
+      "Repeats the false project-wide blocker/local increment stopping failure."
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Measure actual CI host. ABI7 and Docker28.0.4 were observed at6324, while local Codex runtime remains disconnected. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "A local-host failure could be treated as a global technology blocker."
+      ],
+      "evidence_refs": [
+        "greg/isolation.py",
+        "tests/unit/test_greg_landlock.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Require ABI>=3 and complete kernel rule/restriction installation; any supported-host installation error fails the worker. Unavailable reviewed hosts retain explicitly labelled Python protection; source remains refused. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Partial Landlock installation or unsupported ABI could be reported as OS confinement."
+      ],
+      "evidence_refs": [
+        "greg/isolation.py",
+        "tests/unit/test_greg_landlock.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Explicit published files, interpreter-owned runtime paths and loaded ELF inputs; stage-only writes; raw libc open, write, truncate and symlink escape probes without audit hooks. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Library/source rules could expose private files, permit writes outside stage, or miss native reads."
+      ],
+      "evidence_refs": [
+        "greg/isolation.py",
+        "tests/unit/test_greg_landlock.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Test inherited DSL/packaging confinement and first-party MCP with real SDK; test actual GREG staged persistence and all existing runtime suites. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Confinement could break exact child recipes, packaging or MCP instead of advancing the machine."
+      ],
+      "evidence_refs": [
+        "greg/isolation.py",
+        "tests/unit/test_greg_landlock.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Keep source/provider refusal, network-denied workers, budgets/revocation/staging and system10 full acceptance. Landlock filesystem protection does not retire generic execution, microVM/gVisor or group-isolation obligations. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "An OS filesystem proof could be mistaken for microVM completion or authorization of arbitrary code."
+      ],
+      "evidence_refs": [
+        "greg/isolation.py",
+        "tests/unit/test_greg_landlock.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Actual hosted facilities",
+      "tier": "sandbox_execution",
+      "reference": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36939307318",
+      "finding": "Job110627158469 reports ABI7, kernel6.17.0-1022-azure, Docker28.0.4; run itself failed1authority-input test and passed1706/9skipped. Facility availability is not isolation completion."
+    },
+    {
+      "claim": "Native company integration advanced",
+      "tier": "sandbox_execution",
+      "reference": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36939651039",
+      "finding": "Native company runtime regression step passed; full-suite/verifier conclusion pending at this decision."
+    },
+    {
+      "claim": "Kernel semantics",
+      "tier": "other",
+      "reference": "https://docs.kernel.org/userspace-api/landlock.html",
+      "finding": "Rules are deny-by-default for selected access rights, inherited by descendants; previously opened FDs and unhandled access domains are not blanket containment."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Local host proves a universal block",
+      "tier": "other",
+      "reference": "Codex exec-server409environment_offline and earlier local probes",
+      "finding": "False; actual CI has usable facility. Continue other buildable requirements."
+    },
+    {
+      "claim": "New confinement delta is tested",
+      "tier": "other",
+      "reference": "tests/unit/test_greg_landlock.py",
+      "finding": "New tests authored; fresh CI required before claiming they pass."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Actual CI provides an unprivileged kernel confinement facility despite the disconnected local host's unsupported probes; do not freeze this buildable dependency.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Measure actual CI host. ABI7 and Docker28.0.4 were observed at6324, while local Codex runtime remains disconnected.",
+        "amplified_value": "Advance real runtime protection and preserve full-machine continuation."
+      },
+      {
+        "id": "A2",
+        "statement": "Require ABI>=3 and complete kernel rule/restriction installation; any supported-host installation error fails the worker. Unavailable reviewed hosts retain explicitly labelled Python protection; source remains refused.",
+        "amplified_value": "Advance real runtime protection and preserve full-machine continuation."
+      },
+      {
+        "id": "A3",
+        "statement": "Explicit published files, interpreter-owned runtime paths and loaded ELF inputs; stage-only writes; raw libc open, write, truncate and symlink escape probes without audit hooks.",
+        "amplified_value": "Advance real runtime protection and preserve full-machine continuation."
+      },
+      {
+        "id": "A4",
+        "statement": "Test inherited DSL/packaging confinement and first-party MCP with real SDK; test actual GREG staged persistence and all existing runtime suites.",
+        "amplified_value": "Advance real runtime protection and preserve full-machine continuation."
+      },
+      {
+        "id": "A5",
+        "statement": "Keep source/provider refusal, network-denied workers, budgets/revocation/staging and system10 full acceptance. Landlock filesystem protection does not retire generic execution, microVM/gVisor or group-isolation obligations.",
+        "amplified_value": "Advance real runtime protection and preserve full-machine continuation."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "A local-host failure could be treated as a global technology blocker.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Measure actual CI host. ABI7 and Docker28.0.4 were observed at6324, while local Codex runtime remains disconnected."
+      },
+      {
+        "id": "D2",
+        "statement": "Partial Landlock installation or unsupported ABI could be reported as OS confinement.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Require ABI>=3 and complete kernel rule/restriction installation; any supported-host installation error fails the worker. Unavailable reviewed hosts retain explicitly labelled Python protection; source remains refused."
+      },
+      {
+        "id": "D3",
+        "statement": "Library/source rules could expose private files, permit writes outside stage, or miss native reads.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Explicit published files, interpreter-owned runtime paths and loaded ELF inputs; stage-only writes; raw libc open, write, truncate and symlink escape probes without audit hooks."
+      },
+      {
+        "id": "D4",
+        "statement": "Confinement could break exact child recipes, packaging or MCP instead of advancing the machine.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Test inherited DSL/packaging confinement and first-party MCP with real SDK; test actual GREG staged persistence and all existing runtime suites."
+      },
+      {
+        "id": "D5",
+        "statement": "An OS filesystem proof could be mistaken for microVM completion or authorization of arbitrary code.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Keep source/provider refusal, network-denied workers, budgets/revocation/staging and system10 full acceptance. Landlock filesystem protection does not retire generic execution, microVM/gVisor or group-isolation obligations."
+      }
+    ],
+    "comparisons": {
+      "baseline": "PR1471a376f68 native company regression checks passed; full suite/verifier still pending. CI6324 observed Linux6.17.0-1022-azure, Landlock ABI7 and Docker28.0.4; its one remaining authority-inventory failure is preserved.",
+      "simplest_viable_alternative": "Add kernel-enforced stage/source/runtime filesystem rules to existing reviewed workers on ABI>=3 hosts; selected.",
+      "strongest_competing_architecture": "OCI plus microVM/gVisor backend for general generated code/providers.",
+      "do_nothing": "Ignore usable ABI7 and retain unnecessarily weak reviewed-code-only filesystem protection.",
+      "reversible_experiment": "Raw native private-file escape probes and actual GREG/child/MCP integration under required Landlock in CI."
+    }
+  },
+  "pass_2": {
+    "attack_summary": "Second pass attacks false universal-blocker assumptions, partial installation, native syscalls/symlinks/truncation, inherited child regressions and claims of microVM/general-source completion.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "dependency",
+        "statement": "A local-host failure could be treated as a global technology blocker.",
+        "strengthening_response": "Measure actual CI host. ABI7 and Docker28.0.4 were observed at6324, while local Codex runtime remains disconnected."
+      },
+      {
+        "id": "N2",
+        "category": "overfit",
+        "statement": "Partial Landlock installation or unsupported ABI could be reported as OS confinement.",
+        "strengthening_response": "Require ABI>=3 and complete kernel rule/restriction installation; any supported-host installation error fails the worker. Unavailable reviewed hosts retain explicitly labelled Python protection; source remains refused."
+      },
+      {
+        "id": "N3",
+        "category": "gaming",
+        "statement": "Library/source rules could expose private files, permit writes outside stage, or miss native reads.",
+        "strengthening_response": "Explicit published files, interpreter-owned runtime paths and loaded ELF inputs; stage-only writes; raw libc open, write, truncate and symlink escape probes without audit hooks."
+      },
+      {
+        "id": "N4",
+        "category": "dependency",
+        "statement": "Confinement could break exact child recipes, packaging or MCP instead of advancing the machine.",
+        "strengthening_response": "Test inherited DSL/packaging confinement and first-party MCP with real SDK; test actual GREG staged persistence and all existing runtime suites."
+      },
+      {
+        "id": "N5",
+        "category": "overfit",
+        "statement": "An OS filesystem proof could be mistaken for microVM completion or authorization of arbitrary code.",
+        "strengthening_response": "Keep source/provider refusal, network-denied workers, budgets/revocation/staging and system10 full acceptance. Landlock filesystem protection does not retire generic execution, microVM/gVisor or group-isolation obligations."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "A local-host failure could be treated as a global technology blocker. Measure actual CI host. ABI7 and Docker28.0.4 were observed at6324, while local Codex runtime remains disconnected.",
+        "owner": "GREG maintainers",
+        "review_trigger": "New host/runtime/rules/recipe or completion claim."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Partial Landlock installation or unsupported ABI could be reported as OS confinement. Require ABI>=3 and complete kernel rule/restriction installation; any supported-host installation error fails the worker. Unavailable reviewed hosts retain explicitly labelled Python protection; source remains refused.",
+        "owner": "GREG maintainers",
+        "review_trigger": "New host/runtime/rules/recipe or completion claim."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Library/source rules could expose private files, permit writes outside stage, or miss native reads. Explicit published files, interpreter-owned runtime paths and loaded ELF inputs; stage-only writes; raw libc open, write, truncate and symlink escape probes without audit hooks.",
+        "owner": "GREG maintainers",
+        "review_trigger": "New host/runtime/rules/recipe or completion claim."
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "accepted",
+        "rationale": "Confinement could break exact child recipes, packaging or MCP instead of advancing the machine. Test inherited DSL/packaging confinement and first-party MCP with real SDK; test actual GREG staged persistence and all existing runtime suites.",
+        "owner": "GREG maintainers",
+        "review_trigger": "New host/runtime/rules/recipe or completion claim."
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "An OS filesystem proof could be mistaken for microVM completion or authorization of arbitrary code. Keep source/provider refusal, network-denied workers, budgets/revocation/staging and system10 full acceptance. Landlock filesystem protection does not retire generic execution, microVM/gVisor or group-isolation obligations.",
+        "owner": "GREG maintainers",
+        "review_trigger": "New host/runtime/rules/recipe or completion claim."
+      }
+    ],
+    "final_design": "OS-denied filesystem outside explicit public runtime and staged stores on ABI>=3; fail closed on installation errors, observable fallback on unsupported reviewed hosts, no arbitrary source/provider admission.",
+    "residual_risks": [
+      {
+        "risk": "A local-host failure could be treated as a global technology blocker.",
+        "mitigation": "Measure actual CI host. ABI7 and Docker28.0.4 were observed at6324, while local Codex runtime remains disconnected.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Next backend, host or recipe change."
+      },
+      {
+        "risk": "Partial Landlock installation or unsupported ABI could be reported as OS confinement.",
+        "mitigation": "Require ABI>=3 and complete kernel rule/restriction installation; any supported-host installation error fails the worker. Unavailable reviewed hosts retain explicitly labelled Python protection; source remains refused.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Next backend, host or recipe change."
+      },
+      {
+        "risk": "Library/source rules could expose private files, permit writes outside stage, or miss native reads.",
+        "mitigation": "Explicit published files, interpreter-owned runtime paths and loaded ELF inputs; stage-only writes; raw libc open, write, truncate and symlink escape probes without audit hooks.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Next backend, host or recipe change."
+      },
+      {
+        "risk": "Confinement could break exact child recipes, packaging or MCP instead of advancing the machine.",
+        "mitigation": "Test inherited DSL/packaging confinement and first-party MCP with real SDK; test actual GREG staged persistence and all existing runtime suites.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Next backend, host or recipe change."
+      },
+      {
+        "risk": "An OS filesystem proof could be mistaken for microVM completion or authorization of arbitrary code.",
+        "mitigation": "Keep source/provider refusal, network-denied workers, budgets/revocation/staging and system10 full acceptance. Landlock filesystem protection does not retire generic execution, microVM/gVisor or group-isolation obligations.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Next backend, host or recipe change."
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserved rather than represented as independent consensus.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Filesystem confinement is not a microVM and does not by itself admit general callers.",
+        "rationale": "Other syscall/resource/process/authority domains still require broader backend evidence.",
+        "evidence_threshold": "Actual general backend with escape, resource, revocation and commit-time tests.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any arbitrary-source or full-system claim."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Add shared Landlock helper and conditional enforcement to the existing reviewed worker on draft PR147; preserve exact recipes, staged stores, original source and authority.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert this added OS protection if a supported runtime regression is proved; preserve evidence.",
+      "Retain Python guards, network denial, all source/provider refusals and active wider requirements."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Private raw native read/write/truncate accepted.",
+    "Supported-host installation failure reported as confinement.",
+    "Inherited reviewed children break or bypass staging.",
+    "Filesystem proof used to authorize arbitrary providers or narrow completion."
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Kernel/GREG maintainers within authorized development; Alfonso owns consequential decisions",
+  "review_trigger": "Fresh CI, any changed recipe, and every successful increment; automatically resume parent Body + Organs + Mind objective."
+}

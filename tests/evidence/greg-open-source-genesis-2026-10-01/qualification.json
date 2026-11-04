@@ -1,0 +1,368 @@
+{
+ "authority_created": false,
+ "command": "python scripts/qualify_open_source_engines.py tests/evidence/greg-open-source-genesis-2026-10-01",
+ "generated_at": "2026-10-01T20:01:28.337355+00:00",
+ "installed_by_greg": false,
+ "platform": "Linux-6.18.44-fc-v50-x86_64-with-glibc2.39",
+ "python": "3.11.15",
+ "results": [
+  {
+   "card": {
+    "acquisition": "already installed on this body; GREG did not download or install it",
+    "common_mode": [],
+    "competence": "nonnegative finite weights; GREG keeps the lightest of parallel edges",
+    "distribution": "networkx",
+    "function": "graph.shortest_path",
+    "license": "BSD-3-Clause",
+    "limits": "a change to an unpinned file of the distribution without a RECORD change is not detected; license read from installed metadata, not from a legal review",
+    "location": "/tmp/claude-0/-home-user/920444d3-3735-566f-b3b7-f60c0a624436/scratchpad/venv/lib/python3.11/site-packages",
+    "mode": "DEPEND",
+    "module": "networkx",
+    "package_digest": "47fa1afd0edb131cc688f8b503e33c2ca352cefcd8812b8b9df8e3a80991d5cd",
+    "pinned_files": 62,
+    "pinned_paths": [
+     "networkx/__init__.py",
+     "networkx/classes/",
+     "networkx/algorithms/shortest_paths/",
+     "networkx/utils/",
+     "networkx/exception.py"
+    ],
+    "primitive": "Dijkstra with predecessor lists (networkx.dijkstra_predecessor_and_distance)",
+    "runtime": "fixed GREG runner in a separate no-network interpreter; never imported by the body",
+    "upstream": {
+     "source": "https://github.com/networkx/networkx",
+     "urls": {
+      "bug tracker": "https://github.com/networkx/networkx/issues",
+      "documentation": "https://networkx.org/documentation/stable/",
+      "homepage": "https://networkx.org/",
+      "source code": "https://github.com/networkx/networkx"
+     }
+    },
+    "version": "3.6.1"
+   },
+   "distribution": "networkx",
+   "function": "graph.shortest_path",
+   "installed": true,
+   "passed": true,
+   "report": {
+    "cases": 14,
+    "certificate": "GREG-owned, exact; shares no code with the package",
+    "failures": [],
+    "isolation": "no-network interpreter",
+    "oracle": "Bellman-Ford in exact fractions (GREG)",
+    "platform": "linux",
+    "scale_probe": {
+     "agrees_with_local": true,
+     "certified": true,
+     "edges": 10000,
+     "local_seconds": 0.0056,
+     "nodes": 2000,
+     "package_run_seconds_with_interpreter": 0.227,
+     "package_solve_seconds": 0.0224,
+     "simplest_local_alternative": "local binary-heap Dijkstra (plain Python)"
+    }
+   }
+  },
+  {
+   "card": {
+    "acquisition": "already installed on this body; GREG did not download or install it",
+    "common_mode": [
+     {
+      "distribution": "numpy",
+      "record_sha256": "49d23077f691120114d63c743feafe342478e76277e5120c6d3913cce0050f7f",
+      "version": "2.4.6"
+     }
+    ],
+    "competence": "nonnegative finite weights in float64; GREG keeps the lightest of parallel edges, since the sparse matrix would sum them",
+    "distribution": "scipy",
+    "function": "graph.shortest_path",
+    "license": "BSD License (trove classifier)",
+    "limits": "a change to an unpinned file of the distribution without a RECORD change is not detected; license read from installed metadata, not from a legal review",
+    "location": "/tmp/claude-0/-home-user/920444d3-3735-566f-b3b7-f60c0a624436/scratchpad/venv/lib/python3.11/site-packages",
+    "mode": "DEPEND",
+    "module": "scipy.sparse.csgraph",
+    "package_digest": "71f65f7020fdc8b6ae5ed3479c2fe5c8ecae060b44e5cf8c017e2665f1a7a271",
+    "pinned_files": 22,
+    "pinned_paths": [
+     "scipy/__init__.py",
+     "scipy/sparse/csgraph/"
+    ],
+    "primitive": "compiled Dijkstra on a sparse matrix (scipy.sparse.csgraph.dijkstra)",
+    "runtime": "fixed GREG runner in a separate no-network interpreter; never imported by the body",
+    "upstream": {
+     "source": "https://github.com/scipy/scipy",
+     "urls": {
+      "documentation": "https://docs.scipy.org/doc/scipy/",
+      "download": "https://github.com/scipy/scipy/releases",
+      "homepage": "https://scipy.org/",
+      "source": "https://github.com/scipy/scipy",
+      "tracker": "https://github.com/scipy/scipy/issues"
+     }
+    },
+    "version": "1.17.1"
+   },
+   "distribution": "scipy",
+   "function": "graph.shortest_path",
+   "installed": true,
+   "passed": true,
+   "report": {
+    "cases": 14,
+    "certificate": "GREG-owned, exact; shares no code with the package",
+    "failures": [],
+    "isolation": "no-network interpreter",
+    "oracle": "Bellman-Ford in exact fractions (GREG)",
+    "platform": "linux",
+    "scale_probe": {
+     "agrees_with_local": true,
+     "certified": true,
+     "edges": 10000,
+     "local_seconds": 0.0052,
+     "nodes": 2000,
+     "package_run_seconds_with_interpreter": 0.357,
+     "package_solve_seconds": 0.0111,
+     "simplest_local_alternative": "local binary-heap Dijkstra (plain Python)"
+    }
+   }
+  },
+  {
+   "card": {
+    "acquisition": "already installed on this body; GREG did not download or install it",
+    "common_mode": [],
+    "competence": "integer capacities, total at most 2^31-1; directed arcs",
+    "distribution": "networkx",
+    "function": "graph.max_flow",
+    "license": "BSD-3-Clause",
+    "limits": "a change to an unpinned file of the distribution without a RECORD change is not detected; license read from installed metadata, not from a legal review",
+    "location": "/tmp/claude-0/-home-user/920444d3-3735-566f-b3b7-f60c0a624436/scratchpad/venv/lib/python3.11/site-packages",
+    "mode": "DEPEND",
+    "module": "networkx",
+    "package_digest": "31f399e089aa565c68f8259dc8e1eba2fb5e04d0ae73233e9b9ce844e80466f2",
+    "pinned_files": 71,
+    "pinned_paths": [
+     "networkx/__init__.py",
+     "networkx/classes/",
+     "networkx/algorithms/flow/",
+     "networkx/utils/",
+     "networkx/exception.py"
+    ],
+    "primitive": "preflow-push maximum flow (networkx.maximum_flow)",
+    "runtime": "fixed GREG runner in a separate no-network interpreter; never imported by the body",
+    "upstream": {
+     "source": "https://github.com/networkx/networkx",
+     "urls": {
+      "bug tracker": "https://github.com/networkx/networkx/issues",
+      "documentation": "https://networkx.org/documentation/stable/",
+      "homepage": "https://networkx.org/",
+      "source code": "https://github.com/networkx/networkx"
+     }
+    },
+    "version": "3.6.1"
+   },
+   "distribution": "networkx",
+   "function": "graph.max_flow",
+   "installed": true,
+   "passed": true,
+   "report": {
+    "cases": 12,
+    "certificate": "GREG-owned, exact; shares no code with the package",
+    "failures": [],
+    "isolation": "no-network interpreter",
+    "oracle": "brute-force minimum cut over every source side (GREG)",
+    "platform": "linux",
+    "scale_probe": {
+     "agrees_with_local": true,
+     "certified": true,
+     "edges": 2933,
+     "local_seconds": 0.0028,
+     "nodes": 300,
+     "package_run_seconds_with_interpreter": 0.228,
+     "package_solve_seconds": 0.0202,
+     "simplest_local_alternative": "local Edmonds-Karp (plain Python)"
+    }
+   }
+  },
+  {
+   "card": {
+    "acquisition": "already installed on this body; GREG did not download or install it",
+    "common_mode": [
+     {
+      "distribution": "numpy",
+      "record_sha256": "49d23077f691120114d63c743feafe342478e76277e5120c6d3913cce0050f7f",
+      "version": "2.4.6"
+     }
+    ],
+    "competence": "int32 capacities, total at most 2^31-1; directed arcs",
+    "distribution": "scipy",
+    "function": "graph.max_flow",
+    "license": "BSD License (trove classifier)",
+    "limits": "a change to an unpinned file of the distribution without a RECORD change is not detected; license read from installed metadata, not from a legal review",
+    "location": "/tmp/claude-0/-home-user/920444d3-3735-566f-b3b7-f60c0a624436/scratchpad/venv/lib/python3.11/site-packages",
+    "mode": "DEPEND",
+    "module": "scipy.sparse.csgraph",
+    "package_digest": "71f65f7020fdc8b6ae5ed3479c2fe5c8ecae060b44e5cf8c017e2665f1a7a271",
+    "pinned_files": 22,
+    "pinned_paths": [
+     "scipy/__init__.py",
+     "scipy/sparse/csgraph/"
+    ],
+    "primitive": "compiled Dinic maximum flow (scipy.sparse.csgraph.maximum_flow)",
+    "runtime": "fixed GREG runner in a separate no-network interpreter; never imported by the body",
+    "upstream": {
+     "source": "https://github.com/scipy/scipy",
+     "urls": {
+      "documentation": "https://docs.scipy.org/doc/scipy/",
+      "download": "https://github.com/scipy/scipy/releases",
+      "homepage": "https://scipy.org/",
+      "source": "https://github.com/scipy/scipy",
+      "tracker": "https://github.com/scipy/scipy/issues"
+     }
+    },
+    "version": "1.17.1"
+   },
+   "distribution": "scipy",
+   "function": "graph.max_flow",
+   "installed": true,
+   "passed": true,
+   "report": {
+    "cases": 12,
+    "certificate": "GREG-owned, exact; shares no code with the package",
+    "failures": [],
+    "isolation": "no-network interpreter",
+    "oracle": "brute-force minimum cut over every source side (GREG)",
+    "platform": "linux",
+    "scale_probe": {
+     "agrees_with_local": true,
+     "certified": true,
+     "edges": 2933,
+     "local_seconds": 0.0027,
+     "nodes": 300,
+     "package_run_seconds_with_interpreter": 0.331,
+     "package_solve_seconds": 0.0035,
+     "simplest_local_alternative": "local Edmonds-Karp (plain Python)"
+    }
+   }
+  },
+  {
+   "card": {
+    "acquisition": "already installed on this body; GREG did not download or install it",
+    "common_mode": [
+     {
+      "distribution": "numpy",
+      "record_sha256": "49d23077f691120114d63c743feafe342478e76277e5120c6d3913cce0050f7f",
+      "version": "2.4.6"
+     }
+    ],
+    "competence": "at most 500 variables and 2,000 constraints; coefficients up to 1e9",
+    "distribution": "scipy",
+    "function": "lp.optimize",
+    "license": "BSD License (trove classifier)",
+    "limits": "a change to an unpinned file of the distribution without a RECORD change is not detected; license read from installed metadata, not from a legal review",
+    "location": "/tmp/claude-0/-home-user/920444d3-3735-566f-b3b7-f60c0a624436/scratchpad/venv/lib/python3.11/site-packages",
+    "mode": "DEPEND",
+    "module": "scipy.optimize",
+    "package_digest": "941161201c8fb87a34000888f432e9746b138f095fe17ee1094f16a9de83a453",
+    "pinned_files": 13,
+    "pinned_paths": [
+     "scipy/__init__.py",
+     "scipy/optimize/_linprog",
+     "scipy/optimize/_highspy/",
+     "scipy/optimize/__init__.py"
+    ],
+    "primitive": "HiGHS dual simplex and interior point (scipy.optimize.linprog, method='highs')",
+    "runtime": "fixed GREG runner in a separate no-network interpreter; never imported by the body",
+    "upstream": {
+     "source": "https://github.com/scipy/scipy",
+     "urls": {
+      "documentation": "https://docs.scipy.org/doc/scipy/",
+      "download": "https://github.com/scipy/scipy/releases",
+      "homepage": "https://scipy.org/",
+      "source": "https://github.com/scipy/scipy",
+      "tracker": "https://github.com/scipy/scipy/issues"
+     }
+    },
+    "version": "1.17.1"
+   },
+   "distribution": "scipy",
+   "function": "lp.optimize",
+   "installed": true,
+   "passed": true,
+   "report": {
+    "cases": 16,
+    "certificate": "GREG-owned, exact; shares no code with the package",
+    "failures": [],
+    "isolation": "no-network interpreter",
+    "oracle": "vertex enumeration in exact fractions (GREG)",
+    "platform": "linux",
+    "scale_probe": {
+     "certified": true,
+     "constraints": 45,
+     "package_run_seconds_with_interpreter": 0.491,
+     "package_solve_seconds": 0.0167,
+     "simplest_local_alternative": "none simple at this size: GREG's exact vertex enumeration is exponential and serves only as the oracle",
+     "variables": 500
+    }
+   }
+  },
+  {
+   "card": {
+    "acquisition": "already installed on this body; GREG did not download or install it",
+    "common_mode": [
+     {
+      "distribution": "numpy",
+      "record_sha256": "49d23077f691120114d63c743feafe342478e76277e5120c6d3913cce0050f7f",
+      "version": "2.4.6"
+     },
+     {
+      "distribution": "protobuf",
+      "record_sha256": "a02f6c9ee4d8449ec9f98d55e8ccc9d964bab34c5004bfeaa5a5eee94b96eec3",
+      "version": "6.33.6"
+     }
+    ],
+    "competence": "at most 500 variables and 2,000 constraints; coefficients up to 1e9",
+    "distribution": "ortools",
+    "function": "lp.optimize",
+    "license": "Apache Software License (trove classifier)",
+    "limits": "a change to an unpinned file of the distribution without a RECORD change is not detected; license read from installed metadata, not from a legal review",
+    "location": "/tmp/claude-0/-home-user/920444d3-3735-566f-b3b7-f60c0a624436/scratchpad/venv/lib/python3.11/site-packages",
+    "mode": "DEPEND",
+    "module": "ortools.linear_solver.pywraplp",
+    "package_digest": "10d6ba56033cf1b8efa9bd00e2c70b0546993a0ed522789d7726662ab8bd9db0",
+    "pinned_files": 14,
+    "pinned_paths": [
+     "ortools/__init__.py",
+     "ortools/linear_solver/"
+    ],
+    "primitive": "GLOP primal and dual simplex (ortools.linear_solver)",
+    "runtime": "fixed GREG runner in a separate no-network interpreter; never imported by the body",
+    "upstream": {
+     "source": "https://developers.google.com/optimization/",
+     "urls": {
+      "homepage": "https://developers.google.com/optimization/"
+     }
+    },
+    "version": "9.15.6755"
+   },
+   "distribution": "ortools",
+   "function": "lp.optimize",
+   "installed": true,
+   "passed": true,
+   "report": {
+    "cases": 16,
+    "certificate": "GREG-owned, exact; shares no code with the package",
+    "failures": [],
+    "isolation": "no-network interpreter",
+    "oracle": "vertex enumeration in exact fractions (GREG)",
+    "platform": "linux",
+    "scale_probe": {
+     "certified": true,
+     "constraints": 45,
+     "package_run_seconds_with_interpreter": 0.153,
+     "package_solve_seconds": 0.0084,
+     "simplest_local_alternative": "none simple at this size: GREG's exact vertex enumeration is exponential and serves only as the oracle",
+     "variables": 500
+    }
+   }
+  }
+ ],
+ "seed": 20261001
+}

@@ -1,0 +1,352 @@
+{
+  "decision_id": "FULL-MACHINE-INTEGRATION-20261001",
+  "title": "Join guarded Foundry to canonical GREG and continue achievable dependencies",
+  "problem": "Disconnected runtime drafts and direct Foundry caller-source execution prevent safe completion of the machine.",
+  "founder_intent_refs": [
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-2026-09-27-FOUNDRY-55"
+  ],
+  "baseline": "Verified PR142 GREG/cognition, PR132 locally exercised Foundry tools, no joined guarded runtime.",
+  "alternatives": [
+    {
+      "name": "simplest_viable_alternative",
+      "description": "Additive Foundry convergence, bounded reviewed workers and deterministic native media; selected.",
+      "advantages": [
+        "advances or tests one canonical machine"
+      ],
+      "disadvantages": [
+        "strong isolation and real-world acceptance remain open"
+      ],
+      "revival_evidence": "Supported confinement or stronger measured comparative evidence."
+    },
+    {
+      "name": "strongest_competing_architecture",
+      "description": "Container or microVM confinement for arbitrary code; unavailable on this host.",
+      "advantages": [
+        "advances or tests one canonical machine"
+      ],
+      "disadvantages": [
+        "strong isolation and real-world acceptance remain open"
+      ],
+      "revival_evidence": "Supported confinement or stronger measured comparative evidence."
+    },
+    {
+      "name": "reversible_experiment",
+      "description": "Signed synthetic missions, refusal/corruption tests and independent native media decoding without live effects.",
+      "advantages": [
+        "advances or tests one canonical machine"
+      ],
+      "disadvantages": [
+        "strong isolation and real-world acceptance remain open"
+      ],
+      "revival_evidence": "Supported confinement or stronger measured comparative evidence."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Leave buildable machine dependencies disconnected.",
+    "advantages": [
+      "no migration work"
+    ],
+    "disadvantages": [
+      "machine remains unfinished and direct execution stays unsafe"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Keep the whole Body + Organs + Mind and all 55 obligations active; successful increments automatically resume the parent objective. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Keep the whole Body + Organs + Mind and all 55 obligations active; successful increments automatically resume the parent objective."
+      ],
+      "evidence_refs": [
+        "docs/collaboration/FULL-MACHINE-CORRECTION-20261001.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Reuse one GREG authority path, original Foundry lineage and canonical ArtifactStore media. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Reuse one GREG authority path, original Foundry lineage and canonical ArtifactStore media."
+      ],
+      "evidence_refs": [
+        "docs/collaboration/FULL-MACHINE-CORRECTION-20261001.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Block arbitrary source and child providers without real OS filesystem confinement; Python audit hooks do not supply it. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Block arbitrary source and child providers without real OS filesystem confinement; Python audit hooks do not supply it."
+      ],
+      "evidence_refs": [
+        "docs/collaboration/FULL-MACHINE-CORRECTION-20261001.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Bound execution and recover durable effects after failure; stage and validate writes rather than retain partial changes. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Bound execution and recover durable effects after failure; stage and validate writes rather than retain partial changes."
+      ],
+      "evidence_refs": [
+        "docs/collaboration/FULL-MACHINE-CORRECTION-20261001.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Keep byte integrity, fixtures, empirical truth, rights, real-world outcomes and live authority distinct. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Keep byte integrity, fixtures, empirical truth, rights, real-world outcomes and live authority distinct."
+      ],
+      "evidence_refs": [
+        "docs/collaboration/FULL-MACHINE-CORRECTION-20261001.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Joined GREG/Foundry baseline works",
+      "tier": "sandbox_execution",
+      "reference": "tests/unit/test_foundry_systems.py",
+      "finding": "102 focused tests passed before worker hardening; new final verification is required."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Strong OS filesystem confinement is available here",
+      "tier": "other",
+      "reference": "docs/collaboration/FULL-MACHINE-CORRECTION-20261001.md",
+      "finding": "Landlock returned ENOSYS; bwrap namespaces and chroot were refused. No arbitrary-code containment claim is supported."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Join executable dependencies while preserving the full-machine destination and actual effect gates.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Reuse working mechanisms rather than rebuild them.",
+        "amplified_value": "Compounds through reusable verified execution without new authority."
+      },
+      {
+        "id": "A2",
+        "statement": "One governed runtime appraises actual retained bytes.",
+        "amplified_value": "Compounds through reusable verified execution without new authority."
+      },
+      {
+        "id": "A3",
+        "statement": "Reusable immutable storage preserves media canon lineage.",
+        "amplified_value": "Compounds through reusable verified execution without new authority."
+      },
+      {
+        "id": "A4",
+        "statement": "Bounded workers and disposable queries protect persistent state.",
+        "amplified_value": "Compounds through reusable verified execution without new authority."
+      },
+      {
+        "id": "A5",
+        "statement": "Every integration resumes the next full-machine dependency.",
+        "amplified_value": "Compounds through reusable verified execution without new authority."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Python file guards do not isolate arbitrary native code.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Refuse caller source and child providers; retain system 10 as a blocker-specific obligation. Metric: bounded runtime, integrity and concrete refusal tests; residual limits remain explicit."
+      },
+      {
+        "id": "D2",
+        "statement": "Component completion records overstate runtime reachability.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Regress unsupported runtime COMPLETE claims to PARTIAL and retain local fixture evidence. Metric: bounded runtime, integrity and concrete refusal tests; residual limits remain explicit."
+      },
+      {
+        "id": "D3",
+        "statement": "Partial writes and process death can leave uncertain effects.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Stage workspace state, check resource ceilings and commit atomically; keep signed revocation and crash recovery. Metric: bounded runtime, integrity and concrete refusal tests; residual limits remain explicit."
+      },
+      {
+        "id": "D4",
+        "statement": "Deterministic graphics and tones do not establish general media quality.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Generate real native assets, independently decode them, label tone/composition limits and continue stronger production work. Metric: bounded runtime, integrity and concrete refusal tests; residual limits remain explicit."
+      },
+      {
+        "id": "D5",
+        "statement": "Organ repository write access may be unavailable.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Create isolated review branches where access exists; retain exact blocked surfaces and continue other code. Metric: bounded runtime, integrity and concrete refusal tests; residual limits remain explicit."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Verified PR142 GREG/cognition, PR132 locally exercised Foundry tools, no joined guarded runtime.",
+      "do_nothing": "Leave buildable machine dependencies disconnected.",
+      "simplest_viable_alternative": "Additive Foundry convergence, bounded reviewed workers and deterministic native media; selected.",
+      "strongest_competing_architecture": "Container or microVM confinement for arbitrary code; unavailable on this host.",
+      "reversible_experiment": "Signed synthetic missions, refusal/corruption tests and independent native media decoding without live effects."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Copy the entire old Foundry branch tree",
+        "rejection_reason": "Would discard later GREG/cognition work and create another runtime.",
+        "revival_evidence": "A verified equivalence migration preserving all current code and evidence."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack unsafe-code escape, overstated completion, mutation/crash uncertainty, media quality and repository access; do not convert any blocker into retirement of intent.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "overfit",
+        "statement": "Python file guards do not isolate arbitrary native code.",
+        "strengthening_response": "Refuse caller source and child providers; retain system 10 as a blocker-specific obligation."
+      },
+      {
+        "id": "N2",
+        "category": "bureaucracy",
+        "statement": "Component completion records overstate runtime reachability.",
+        "strengthening_response": "Regress unsupported runtime COMPLETE claims to PARTIAL and retain local fixture evidence."
+      },
+      {
+        "id": "N3",
+        "category": "gaming",
+        "statement": "Partial writes and process death can leave uncertain effects.",
+        "strengthening_response": "Stage workspace state, check resource ceilings and commit atomically; keep signed revocation and crash recovery."
+      },
+      {
+        "id": "N4",
+        "category": "dependency",
+        "statement": "Deterministic graphics and tones do not establish general media quality.",
+        "strengthening_response": "Generate real native assets, independently decode them, label tone/composition limits and continue stronger production work."
+      },
+      {
+        "id": "N5",
+        "category": "centralization",
+        "statement": "Organ repository write access may be unavailable.",
+        "strengthening_response": "Create isolated review branches where access exists; retain exact blocked surfaces and continue other code."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Python file guards do not isolate arbitrary native code. Refuse caller source and child providers; retain system 10 as a blocker-specific obligation.",
+        "owner": "GREG/organ maintainers",
+        "review_trigger": "Every next increment, new evidence or completion claim."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Component completion records overstate runtime reachability. Regress unsupported runtime COMPLETE claims to PARTIAL and retain local fixture evidence.",
+        "owner": "GREG/organ maintainers",
+        "review_trigger": "Every next increment, new evidence or completion claim."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Partial writes and process death can leave uncertain effects. Stage workspace state, check resource ceilings and commit atomically; keep signed revocation and crash recovery.",
+        "owner": "GREG/organ maintainers",
+        "review_trigger": "Every next increment, new evidence or completion claim."
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "accepted",
+        "rationale": "Deterministic graphics and tones do not establish general media quality. Generate real native assets, independently decode them, label tone/composition limits and continue stronger production work.",
+        "owner": "GREG/organ maintainers",
+        "review_trigger": "Every next increment, new evidence or completion claim."
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "Organ repository write access may be unavailable. Create isolated review branches where access exists; retain exact blocked surfaces and continue other code.",
+        "owner": "GREG/organ maintainers",
+        "review_trigger": "Every next increment, new evidence or completion claim."
+      }
+    ],
+    "final_design": "One canonical governed runtime, original Foundry lineage, bounded reviewed workers, staged persistence, actual native media and immediate continuation of all achievable requirements.",
+    "residual_risks": [
+      {
+        "risk": "Python file guards do not isolate arbitrary native code.",
+        "mitigation": "Refuse caller source and child providers; retain system 10 as a blocker-specific obligation.",
+        "owner": "GREG/organ maintainers",
+        "review_trigger": "Every next increment or changed execution environment."
+      },
+      {
+        "risk": "Component completion records overstate runtime reachability.",
+        "mitigation": "Regress unsupported runtime COMPLETE claims to PARTIAL and retain local fixture evidence.",
+        "owner": "GREG/organ maintainers",
+        "review_trigger": "Every next increment or changed execution environment."
+      },
+      {
+        "risk": "Partial writes and process death can leave uncertain effects.",
+        "mitigation": "Stage workspace state, check resource ceilings and commit atomically; keep signed revocation and crash recovery.",
+        "owner": "GREG/organ maintainers",
+        "review_trigger": "Every next increment or changed execution environment."
+      },
+      {
+        "risk": "Deterministic graphics and tones do not establish general media quality.",
+        "mitigation": "Generate real native assets, independently decode them, label tone/composition limits and continue stronger production work.",
+        "owner": "GREG/organ maintainers",
+        "review_trigger": "Every next increment or changed execution environment."
+      },
+      {
+        "risk": "Organ repository write access may be unavailable.",
+        "mitigation": "Create isolated review branches where access exists; retain exact blocked surfaces and continue other code.",
+        "owner": "GREG/organ maintainers",
+        "review_trigger": "Every next increment or changed execution environment."
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserved in the decision and report, not averaged into consensus.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not claim arbitrary-code isolation, full Foundry completion, general media quality or the complete machine.",
+        "rationale": "Host isolation is unavailable and local fixtures leave substantial obligations and real-world evidence open.",
+        "evidence_threshold": "Actual escape tests on supported facilities and requirement-specific integration/quality evidence.",
+        "owner": "Kernel/GREG maintainers",
+        "review_trigger": "Any completion/promotion claim."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Governance PR146 separate from executable integration stacked on it; preserve PR132 originals and PR142 cognition. No main writes or automatic merge.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert additive runtime commits or leave the draft unmerged.",
+      "Preserve original sources, evidence, failed probes and negative results.",
+      "Existing signed STOP and revocation remain effective."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Unauthorized effects, self-granted authority, ineffective shutdown or unsafe caller-source execution.",
+    "Unsupported machine-complete, isolation, rights or market-benefit claim."
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Kernel/GREG maintainers within authorized development; Alfonso owns consequential decisions",
+  "review_trigger": "Every completed increment, new evidence or item-specific blocker; automatically resume the parent objective."
+}

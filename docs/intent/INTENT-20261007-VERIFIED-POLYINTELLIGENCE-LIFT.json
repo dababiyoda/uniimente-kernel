@@ -1,0 +1,33 @@
+{
+  "intent_id": "INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT",
+  "exact_source_excerpt": "The Single Bottleneck Metric for the Mind itself should now become:\n\nVerified Polyintelligence Lift: the number/proportion of held-out problem families where problem-geometry routing or composition produces a verified improvement over the strongest single available intelligence, net of cost/latency, without increasing false answers or unauthorized effects.\n\nIf that number remains 0, we have a sophisticated router.",
+  "source_location": "docs/intent/sources/POLYINTELLIGENCE-LIFT-REVIEW-2026-10-07-source.md",
+  "source_date": "2026-10-07",
+  "intended_effect": "The Mind's progress is measured by held-out problem families where routing or composition beats the strongest single available intelligence, net of cost and latency, with no added false answers or unauthorized effects; the five-layer Polyintelligence Mind stays the destination.",
+  "interpretation": "Founder review of PR #155. P4 (learned routing) and P6 (typed composition) are Layer 5 substrate, not the Mind. Sequence: (1) P6 cognitive composition lift, measured as best constituent vs static composition vs geometry-routed composition on families with complementary partial competence; (2) P4 conditional competence memory (method x geometry x subgeometry x size x density x objective x budget ... with hierarchical fallback exact -> neighbor -> class -> global); (3) P8 protected evolutionary cognition against an evaluator it cannot edit; then (4) expand the executable IntelligenceGenome library in batches, each family admitted only if it beats simpler baselines on its native geometry. Layers 1-5 (basal, collective, solver, developmental, meta) are all retained obligations; none is narrowed by this sequence.",
+  "canonical_owner": "GREG cognition (greg/cognition/*, cortex/*) under the existing GREG mission/authority path",
+  "lifecycle_state": "active",
+  "implementation_state": "in_progress_not_complete",
+  "authority_scope": "Reversible implementation, frozen evaluation and review. No merge, deployment, spending beyond signed caps, contact, publication or authority expansion.",
+  "dependencies": [
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-2026-10-01-POLYINTELLIGENCE-SEED",
+    "INTENT-20261001-greg-seed-genome",
+    "PR #155"
+  ],
+  "implementation_refs": [
+    "greg/path.json",
+    "greg/cognition/learned_routing.py",
+    "greg/missions.py"
+  ],
+  "tests": [],
+  "evidence_refs": [
+    "docs/evidence/greg-learned-routing/2026-10-07/README.md",
+    "docs/evidence/greg-composition/2026-10-07/README.md"
+  ],
+  "failure_condition": "Verified Polyintelligence Lift stays 0 while new routing or composition machinery is reported as Mind progress; or an implemented mechanism is reported as a proven lift; or the sequence is used to leave Layers 1, 2 or 4 permanently unbuilt.",
+  "next_gate": "Frozen P6 cognitive composition lift experiment; its result is the first VPL measurement.",
+  "owner": "GREG cognition maintainers; Alfonso remains root human authority",
+  "review_trigger": "Every frozen VPL measurement, P4/P6/P8 exit evidence, or founder correction",
+  "named_skill": "Recorded per docs/PROJECT_COGNITION_SOP.md section 5; source preserved verbatim."
+}

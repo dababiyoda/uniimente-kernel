@@ -1,0 +1,65 @@
+{"family": "basal_bandit", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 28, "losses": 2, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 21, "losses": 8, "ties": 1, "p_better": 0.01206, "p_worse": 0.995935}}
+{"family": "basal_breaker", "status": "NICHE_CAPABILITY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 16, "losses": 14, "ties": 0, "p_better": 0.427768, "p_worse": 0.707668}}
+{"family": "basal_hysteresis", "status": "NICHE_CAPABILITY", "vs_baseline": {"wins": 13, "losses": 0, "ties": 17, "p_better": 0.000122, "p_worse": 1.0}, "vs_competitor": {"wins": 1, "losses": 11, "ties": 18, "p_better": 0.999756, "p_worse": 0.003174}}
+{"family": "basal_kalman", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 29, "losses": 1, "ties": 0, "p_better": 0.0, "p_worse": 1.0}}
+{"family": "basal_pid", "status": "NICHE_CAPABILITY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 2, "losses": 28, "ties": 0, "p_better": 1.0, "p_worse": 0.0}}
+{"family": "bayes_interval", "status": "NICHE_CAPABILITY", "vs_baseline": {"wins": 20, "losses": 10, "ties": 0, "p_better": 0.049369, "p_worse": 0.978613}, "vs_competitor": {"wins": 18, "losses": 12, "ties": 0, "p_better": 0.180797, "p_worse": 0.899756}}
+{"family": "causal_backdoor", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 7, "losses": 5, "ties": 18, "p_better": 0.387207, "p_worse": 0.806152}}
+{"family": "collective_aco", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{"family": "collective_flock", "status": "SUPERSEDED", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 30, "ties": 0, "p_better": 1.0, "p_worse": 0.0}}
+{"family": "collective_immune", "status": "EXPERIMENTAL", "vs_baseline": {"wins": 19, "losses": 10, "ties": 1, "p_better": 0.068023, "p_worse": 0.969286}, "vs_competitor": {"wins": 5, "losses": 25, "ties": 0, "p_better": 0.99997, "p_worse": 0.000162}}
+{"family": "collective_market", "status": "SUPERSEDED", "vs_baseline": {"wins": 25, "losses": 0, "ties": 5, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{"family": "collective_physarum", "status": "NICHE_CAPABILITY", "vs_baseline": {"wins": 20, "losses": 4, "ties": 6, "p_better": 0.000772, "p_worse": 0.999861}, "vs_competitor": {"wins": 2, "losses": 12, "ties": 16, "p_better": 0.999084, "p_worse": 0.00647}}
+{"family": "collective_quorum", "status": "EXPERIMENTAL", "vs_baseline": {"wins": 2, "losses": 0, "ties": 28, "p_better": 0.25, "p_worse": 1.0}, "vs_competitor": {"wins": 3, "losses": 0, "ties": 27, "p_better": 0.125, "p_worse": 1.0}}
+{"family": "control_mpc", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 27, "losses": 3, "ties": 0, "p_better": 4e-06, "p_worse": 1.0}, "vs_competitor": {"wins": 27, "losses": 0, "ties": 3, "p_better": 0.0, "p_worse": 1.0}}
+{"family": "decision_preposterior", "status": "COMPOSITION_ONLY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}}
+{"family": "develop_constraint_release", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 25, "losses": 1, "ties": 4, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 8, "losses": 13, "ties": 9, "p_better": 0.905376, "p_worse": 0.191655}}
+{"family": "develop_repair", "status": "NICHE_CAPABILITY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 12, "losses": 18, "ties": 0, "p_better": 0.899756, "p_worse": 0.180797}}
+{"family": "dp_knapsack", "status": "SUPERSEDED", "vs_baseline": {"wins": 23, "losses": 0, "ties": 7, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{"family": "flow_capacity_plan", "status": "COMPOSITION_ONLY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}}
+{"family": "flow_maxflow", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 14, "losses": 0, "ties": 16, "p_better": 6.1e-05, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{"family": "flow_reinforce_greedy", "status": "SUPERSEDED", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 14, "ties": 16, "p_better": 1.0, "p_worse": 6.1e-05}}
+{"family": "forecast_quantile", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 20, "losses": 10, "ties": 0, "p_better": 0.049369, "p_worse": 0.978613}, "vs_competitor": {"wins": 19, "losses": 11, "ties": 0, "p_better": 0.100244, "p_worse": 0.950631}}
+{"family": "game_minimax", "status": "SUPERSEDED", "vs_baseline": {"wins": 19, "losses": 0, "ties": 11, "p_better": 2e-06, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{"family": "info_experiment", "status": "NICHE_CAPABILITY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 5, "losses": 23, "ties": 2, "p_better": 0.99991, "p_worse": 0.000456}}
+{"family": "mc_importance", "status": "NICHE_CAPABILITY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 3, "losses": 26, "ties": 1, "p_better": 0.999999, "p_worse": 8e-06}}
+{"family": "mech_vcg", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 12, "losses": 0, "ties": 18, "p_better": 0.000244, "p_worse": 1.0}, "vs_competitor": {"wins": 16, "losses": 0, "ties": 14, "p_better": 1.5e-05, "p_worse": 1.0}}
+{"family": "newsvendor_compile", "status": "COMPOSITION_ONLY", "vs_baseline": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 30, "losses": 0, "ties": 0, "p_better": 0.0, "p_worse": 1.0}}
+{"family": "queue_erlang", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 24, "losses": 0, "ties": 6, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 5, "losses": 0, "ties": 25, "p_better": 0.03125, "p_worse": 1.0}}
+{"family": "search_astar", "status": "SUPERSEDED", "vs_baseline": {"wins": 29, "losses": 0, "ties": 1, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{"family": "synth_cegis", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 13, "losses": 0, "ties": 17, "p_better": 0.000122, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 0, "ties": 30, "p_better": 1.0, "p_worse": 1.0}}
+{"family": "verify_modelcheck", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 21, "losses": 3, "ties": 6, "p_better": 0.000139, "p_worse": 0.999982}, "vs_competitor": {"wins": 21, "losses": 3, "ties": 6, "p_better": 0.000139, "p_worse": 0.999982}}
+{
+ "basal_bandit": "DEFAULT_FOR_GEOMETRY",
+ "basal_breaker": "NICHE_CAPABILITY",
+ "basal_hysteresis": "NICHE_CAPABILITY",
+ "basal_kalman": "DEFAULT_FOR_GEOMETRY",
+ "basal_pid": "NICHE_CAPABILITY",
+ "bayes_interval": "NICHE_CAPABILITY",
+ "causal_backdoor": "DEFAULT_FOR_GEOMETRY",
+ "collective_aco": "DEFAULT_FOR_GEOMETRY",
+ "collective_flock": "SUPERSEDED",
+ "collective_immune": "EXPERIMENTAL",
+ "collective_market": "SUPERSEDED",
+ "collective_physarum": "NICHE_CAPABILITY",
+ "collective_quorum": "EXPERIMENTAL",
+ "control_mpc": "DEFAULT_FOR_GEOMETRY",
+ "decision_preposterior": "COMPOSITION_ONLY",
+ "develop_constraint_release": "DEFAULT_FOR_GEOMETRY",
+ "develop_repair": "NICHE_CAPABILITY",
+ "dp_knapsack": "SUPERSEDED",
+ "flow_capacity_plan": "COMPOSITION_ONLY",
+ "flow_maxflow": "DEFAULT_FOR_GEOMETRY",
+ "flow_reinforce_greedy": "SUPERSEDED",
+ "forecast_quantile": "DEFAULT_FOR_GEOMETRY",
+ "game_minimax": "SUPERSEDED",
+ "info_experiment": "NICHE_CAPABILITY",
+ "mc_importance": "NICHE_CAPABILITY",
+ "mech_vcg": "DEFAULT_FOR_GEOMETRY",
+ "newsvendor_compile": "COMPOSITION_ONLY",
+ "queue_erlang": "DEFAULT_FOR_GEOMETRY",
+ "search_astar": "SUPERSEDED",
+ "synth_cegis": "DEFAULT_FOR_GEOMETRY",
+ "verify_modelcheck": "DEFAULT_FOR_GEOMETRY"
+}
+exit=0

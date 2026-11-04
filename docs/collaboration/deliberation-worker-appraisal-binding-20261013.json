@@ -1,0 +1,278 @@
+{
+  "decision_id": "FM-WORKER-APPRAISAL-BINDING-20261013",
+  "title": "Bind independent worker appraisal to the original commission",
+  "problem": "Mutable evidence can substitute acceptance commands and self-rehash a WorkOrder while the appraiser still accepts its patch.",
+  "founder_intent_refs": [
+    "Full-machine directive sections 20,46,47,62,77",
+    "PR157 f66f860a1932f5047d2c35bf765376efea8fcc17 greg/workers.py",
+    "FM-CONVERGENCE-20261007"
+  ],
+  "baseline": "#156 at 62d625c: two substituted-acceptance cases return ACCEPTED.",
+  "alternatives": [
+    {
+      "name": "simplest_viable_alternative",
+      "description": "Reuse #157 frozen order and canonical receipt checks in existing workers/appraisal owners.",
+      "advantages": [
+        "No new evaluator, ledger or authority."
+      ],
+      "disadvantages": [
+        "Historical standalone appraisals cannot establish canonical binding."
+      ],
+      "revival_evidence": "Selected after two passes."
+    },
+    {
+      "name": "strongest_competing_architecture",
+      "description": "Merge all sibling runtime changes immediately.",
+      "advantages": [
+        "Includes confinement and cognitive evidence adapters."
+      ],
+      "disadvantages": [
+        "Broad overlap could regress #156 guards and legacy Cortex contracts."
+      ],
+      "revival_evidence": "Independent cross-lineage parity and regression evidence."
+    },
+    {
+      "name": "reversible_experiment",
+      "description": "Dedicated branch with tamper tests and signed test-key Body missions.",
+      "advantages": [
+        "No main merge or deployment."
+      ],
+      "disadvantages": [
+        "Does not qualify a real frontier provider."
+      ],
+      "revival_evidence": "Current development scope."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Patch checks can be evaluated against substituted acceptance criteria.",
+    "advantages": [
+      "No migration."
+    ],
+    "disadvantages": [
+      "Independent appraisal is not bound to the work authorized."
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Protect governed self-development before expanding worker selection. All five roles performed by one agent; not independent review.",
+      "material_concerns": [
+        "Do not infer new authority from a stronger proof."
+      ],
+      "evidence_refs": [
+        "greg/workers.py",
+        "greg/appraisal.py",
+        "tests/unit/test_greg_workers.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Reuse #157 within one existing ledger and appraiser. All five roles performed by one agent; not independent review.",
+      "material_concerns": [
+        "Do not infer new authority from a stronger proof."
+      ],
+      "evidence_refs": [
+        "greg/workers.py",
+        "greg/appraisal.py",
+        "tests/unit/test_greg_workers.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Challenge local rehashing and canonical receipt substitution. All five roles performed by one agent; not independent review.",
+      "material_concerns": [
+        "Do not infer new authority from a stronger proof."
+      ],
+      "evidence_refs": [
+        "greg/workers.py",
+        "greg/appraisal.py",
+        "tests/unit/test_greg_workers.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Preserve standalone inspection while disclosing absent binding. All five roles performed by one agent; not independent review.",
+      "material_concerns": [
+        "Do not infer new authority from a stronger proof."
+      ],
+      "evidence_refs": [
+        "greg/workers.py",
+        "greg/appraisal.py",
+        "tests/unit/test_greg_workers.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Passing patch tests are not approval under the original specification. All five roles performed by one agent; not independent review.",
+      "material_concerns": [
+        "Do not infer new authority from a stronger proof."
+      ],
+      "evidence_refs": [
+        "greg/workers.py",
+        "greg/appraisal.py",
+        "tests/unit/test_greg_workers.py"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Substituted acceptance is accepted before repair",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_greg_workers.py::test_appraisal_binds_acceptance_to_the_original_commission",
+      "finding": "Two cases fail the expected rejection, including recomputed local hashes."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Hashing local evidence alone is sufficient",
+      "tier": "unit_test",
+      "reference": "same test, readdress=True",
+      "finding": "A self-consistent local forgery still needs a canonical receipt binding."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Only the frozen commissioned specification can govern acceptance.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Existing canonical receipts provide a binding anchor.",
+        "amplified_value": "Stronger proof and safer recursive engineering without another authority."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Local hashes can be recomputed after editing acceptance.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Compare the frozen order and artifact metadata to the original canonical commission receipt."
+      },
+      {
+        "id": "D2",
+        "statement": "Separate-process reobservation currently omits the journal for worker appraisal.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Pass the existing read-only journal to worker.appraise, retaining all Cortex and pipeline context."
+      },
+      {
+        "id": "D3",
+        "statement": "Receipt selection by an edited grant could refer to another commission.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Require a unique receipt and compare current mission plus full order digest; refuse missing or ambiguous anchors."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Unbound acceptance permits local tampering.",
+      "do_nothing": "Leaves a reproduced false-acceptance condition.",
+      "simplest_viable_alternative": "Reuse the existing sibling's canonical binding mechanism.",
+      "strongest_competing_architecture": "Whole sibling merge adds unnecessary simultaneous migration risk.",
+      "reversible_experiment": "Test-key Body replay and hostile local mutations, draft only."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "strongest_competing_architecture",
+        "rejection_reason": "Not needed to close this specific integrity defect.",
+        "revival_evidence": "Cross-contract regression results and material dependency need."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack mutable hashes, foreign receipt reuse, missing anchors, standalone overclaims, compatibility and complexity.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "gaming",
+        "statement": "An attacker could self-rehash and reuse an unrelated grant.",
+        "strengthening_response": "Require unique canonical receipt, original order identity and matching mission."
+      },
+      {
+        "id": "N2",
+        "category": "dependency",
+        "statement": "A missing journal could be mistaken for canonical verification.",
+        "strengthening_response": "Return explicit standalone binding limitation; canonical Body/appraiser always supply the journal."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Bound through canonical history and checked by adversarial regression.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Regression or promotion."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Bound through canonical history and checked by adversarial regression.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Regression or promotion."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Bound through canonical history and checked by adversarial regression.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Regression or promotion."
+      }
+    ],
+    "final_design": "Reuse #157 order/receipt binding in existing owners, preserving all #156 proof, budget, pipeline and isolation boundaries.",
+    "residual_risks": [
+      {
+        "risk": "Standalone appraisal lacks institutional anchoring.",
+        "mitigation": "Explicitly disclose limitation; canonical paths supply read-only journal.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any stronger proof claim."
+      },
+      {
+        "risk": "Hostile privileged ledger rewrite is outside this local binding.",
+        "mitigation": "Retain independent witness and founder-device gates; no invulnerability claim.",
+        "owner": "Alfonso / authorized reviewers",
+        "review_trigger": "Deployment or incident."
+      }
+    ],
+    "recommendation": "RETAIN"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserve scope limitations and unfinished full-machine obligations.",
+    "entries": [
+      {
+        "role": "Founder-Intent Steward",
+        "position": "This repair does not finish Mind-to-Hands selection.",
+        "rationale": "Necessary appraisal control, not general planning.",
+        "evidence_threshold": "Dynamic capability selection and original mission resumption.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Next unblocked build."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Selective reuse on dedicated branch; all historical lineages remain.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert the binding repair; preserve tests and negative evidence."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Original legitimate WorkOrders cannot be appraised.",
+    "A local forgery is accepted on the canonical path.",
+    "Any existing protected boundary is relaxed."
+  ],
+  "decision": "RETAIN",
+  "decision_owner": "GREG maintainers for development; Alfonso for reserved promotion",
+  "review_trigger": "Regression, sibling integration or promotion."
+}

@@ -1,0 +1,8 @@
+diff --git a/post.txt b/post.txt
+new file mode 100644
+index 0000000..6391537
+--- /dev/null
++++ b/post.txt
+@@ -0,0 +1 @@
++z3-solver 5.1.0.0 is now listed on PyPI. It follows 5.0.0.0 and 4.16.0.0 in the release history. Builders pinning z3-solver may want to check the new version against their setup.
+\ No newline at end of file

@@ -4,13 +4,23 @@
 
 **Foundry delivery scope (2026-09-27):** Read `docs/intent/INTENT-2026-09-27-FOUNDRY-55.json`. All 55 numbered systems remain binding build obligations, each with integrated executable behavior, meaningful tests and reproducible evidence. `foundry/arsenal.py` is a selection catalog, not completion proof. Bounded sequencing does not delete an item; removal/substitution needs Alfonso's explicit approval. Alfonso currently owns no Mac, so body hardware is undecided. No new deployment or consequence authority follows from this build order.
 
-## Latest founder correction — real product over laboratory output
+## Controlling founder correction — complete machine, 2026-10-01
+
+**BODY + ORGANS + MIND = GREG / UNIIMENTE is the fixed completion boundary.**
+Read `docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json` and its verbatim source.
+A seed, experiment, sandbox, benchmark, PR, smallest falsifiable build or VEPMC milestone is an intermediate sequencing unit, never the project stopping condition. A narrow PR does not narrow the machine.
+
+Reconstruct that whole boundary; select the highest-priority unfinished dependency; implement the smallest rigorous increment; verify and integrate it; **automatically resume the parent objective and the next unblocked requirement**. Continue until the currently achievable machine is executable and integrated, or an item has a precise founder-only action, genuine external dependency, or demonstrated technology limit. Finish unrelated achievable work while an item is blocked. Build the strongest defensible approximation and retain the backcast for technology limits. A registry, placeholder or prose cannot substitute for feasible executable machinery.
+
+Founder-use evidence may remain pending. VEPMC remains an authentic body/use milestone; it does not forbid building the remaining machine before Alfonso's sustained use. Keep one canonical runtime, institutional memory and authority spine; implementation creates no deployment, activation, expenditure, publishing or contact authority. The existing signed gates, refusal, consent, welfare, pause/revocation and shutdown limits remain effective.
+
+## Earlier founder correction — real product over laboratory output
 
 Read `docs/intent/INTENT-2026-09-26-REAL-PRODUCT-METABOLISM.json` and its verbatim source **before choosing new work**.
 
 The repository is developmental substrate for the real GREG product. Mine experiments, simulations, failures, duplicates and superseded architectures for mechanisms; then PRODUCTIZE, EXTRACT, RECOMBINE, RETAIN_AS_EVIDENCE, ARCHIVE, or KILL_ACTIVE_COMPLEXITY. Historical work does not earn canonical ownership from sunk cost.
 
-A substantial coding session must answer: **What can the actual GREG now do that it could not do before?** Tests, sandboxes, simulations, benchmarks and documents verify product work; they are not the product milestone. Until evidence changes the bottleneck, optimize VEPMC 0 -> 1 and the vertical product path that makes that closure real.
+A substantial coding session must answer: **What can the actual GREG now do that it could not do before?** Tests, sandboxes, simulations, benchmarks and documents verify product work; they are not the product milestone. Prioritize the verified embodied path while completing every currently achievable Body + Organs + Mind requirement; VEPMC does not gate unrelated reversible implementation.
 
 Do not create another framework to implement this rule. Apply it to `greg/` and the existing canonical owners.
 
@@ -21,7 +31,7 @@ Current product correction: `docs/intent/INTENT-GREG-EMBODIED-2026-09-11.md`.
 GREG's interface belongs to a persistent operating layer above the founder's
 computer OS. Background mission continuity and authorized computer use are core
 requirements. Human collaborators and replaceable cloud mechanics remain valid.
-Advance one verified embodied mission before expanding infrastructure. Preserve
+Use verified embodied missions to test integration without making founder-use evidence a stopping gate for buildable machinery. Preserve
 history while choosing one active semantic owner; autonomy never creates authority.
 
 Before substantive work, read:

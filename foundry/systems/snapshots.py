@@ -16,6 +16,16 @@ from pathlib import Path
 from foundry.systems import cas
 
 
+def _under(root: Path, relative: str) -> Path:
+    if not isinstance(relative, str) or Path(relative).is_absolute():
+        raise ValueError("workspace access refused: relative snapshot path required")
+    root = Path(root).resolve()
+    target = (root / relative).resolve()
+    if target != root and root not in target.parents:
+        raise ValueError("workspace access refused: snapshot path escapes store")
+    return target
+
+
 def snapshot(state: Path, store: Path) -> str:
     files = {}
     for path in sorted(Path(state).rglob("*")):
@@ -33,7 +43,7 @@ def fork(store: Path, snap: str, branch_dir: Path) -> Path:
     if branch_dir.exists():
         raise FileExistsError(f"branch {branch_dir} exists; forks never overwrite")
     for rel, address in manifest(store, snap).items():
-        target = branch_dir / rel
+        target = _under(branch_dir, rel)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(cas.get(store, address))
     return branch_dir
@@ -50,9 +60,9 @@ def discard(branch_dir: Path) -> None:
     shutil.rmtree(branch_dir)
 
 
-QUERY_OPS = {"compare": lambda a, r: compare(r / a["a"], r / a["b"])}
-APPLY_OPS = {"snapshot": lambda a, r: {"snapshot": snapshot(r / a["state"], r / "store")},
-             "fork": lambda a, r: {"branch": str(fork(r / "store", a["snapshot"], r / "branches" / a["branch"]).name)}}
+QUERY_OPS = {"compare": lambda a, r: compare(_under(r, a["a"]), _under(r, a["b"]))}
+APPLY_OPS = {"snapshot": lambda a, r: {"snapshot": snapshot(_under(r, a["state"]), r / "store")},
+             "fork": lambda a, r: {"branch": str(fork(r / "store", a["snapshot"], _under(r / "branches", a["branch"])).name)}}
 
 
 def exercise(root) -> dict:

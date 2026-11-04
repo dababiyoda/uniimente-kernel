@@ -1,0 +1,34 @@
+{
+  "governance_source": "PR145 a5b121f9a8cc86c3385445427dd625a3b48eea85",
+  "runtime_base": "PR142 3de9f950ec49e1f7a320216200004983ee8926b6",
+  "foundry_source": "PR132 da3d4ac8643ecf6791ffadcac064f8bb1cc6269d",
+  "original_foundry_commits": [
+    "cd2f570",
+    "3ad8372",
+    "cbb0bfe",
+    "096b153",
+    "da3d4ac"
+  ],
+  "governance_review": "https://github.com/dababiyoda/uniimente-kernel/pull/146",
+  "main_modified": false,
+  "inspection": {
+    "local_inventory": {
+      "entries": 1061,
+      "unclassified_entries": 102,
+      "errors": 0,
+      "truncated": false
+    },
+    "exact_duplicates": {
+      "groups": 10,
+      "files": 26,
+      "candidate_bytes": 114989,
+      "mode": "report_only_no_deletion"
+    }
+  },
+  "claim_limits": [
+    "39 prior COMPLETE rows describe local contract fixtures, not complete machine.",
+    "Runtime source and child execution require unavailable stronger filesystem confinement.",
+    "New native media is deterministic composition and tone audio, not general cinematic/speech generation.",
+    "No paid service, live publication, contact, deployment or merge."
+  ]
+}

@@ -1,0 +1,13 @@
+ABLATION: execute only the exact base awaiting_realization function in a separate process, retaining the new scalar CLI.
+Production hashes unchanged: ['b206a1050af5b5c05c93377fb50f86508a692733dbe9991e1d1bd68ab1ebfd50', '0d04593275f524407158637ed71d8ee3f6f4f258aa452cdadb75aa1fe33accfb']
+
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_a_pending_construction_names_the_promised_objective_and_does_not_write __
+tests/unit/test_greg_pending_construction_realization.py:44: in test_a_pending_construction_names_the_promised_objective_and_does_not_write
+    [row] = settlement.awaiting_realization(journal)
+    ^^^^^
+E   ValueError: not enough values to unpack (expected 1, got 0)
+=========================== short test summary info ============================
+FAILED tests/unit/test_greg_pending_construction_realization.py::test_a_pending_construction_names_the_promised_objective_and_does_not_write
+1 failed, 1 passed in 0.48s

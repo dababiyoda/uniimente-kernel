@@ -279,6 +279,7 @@ def projection(console) -> dict:
         "resilience": _resilience(console), "credentials": _credentials(console.home, st.get("secret_handles", [])),
         "refused_keys": st.get("refused_model_keys", []),
         "traces": traces, "sandbox_integration": sandbox,
+        "blockers": morning["blockers"],    # greg/blockers.py section: the records, or why they could not be computed
     }
     out["costs"] = cost_rows(action_rows, out["missions"], out["rehearsals"], build_rows)
     return out
@@ -541,7 +542,13 @@ def _goals(console, p, form) -> str:
         ["Its gate", _e(pos.get("gate"))], ["Next node", _e(pos.get("next"))],
         ["Measurement", f"<pre>{_e(json.dumps(pos.get('measurement'), indent=1, default=str))}</pre>"]])
             + "<p class=muted>Exactly one node is operationally primary: the first whose exit evidence does not hold on this ledger.</p></section>"
-            f"<section><h2>Persistent goals</h2>{_table(['Goal'], [[_e(json.dumps(g, default=str)[:300])] for g in p['goals']])}</section>")
+            f"<section><h2>Persistent goals</h2>{_table(['Goal'], [[_e(json.dumps(g, default=str)[:300])] for g in p['goals']])}</section>"
+            "<section><h2>Blocked goals</h2>" + (_table(
+                ["Mission", "Blocker", "Why", "Reconsidered when", "Evidence needed", "Authority needed", "Next move"],
+                [[_e(b["mission_id"]), _cls(b["kind"]) + " " + _e(b["blocker"])]
+                 + [_e(b[k]) for k in ("why", "reconsider_when", "required_evidence", "required_authority", "next_move")]
+                 for b in p["blockers"]]) if isinstance(p["blockers"], list) else
+                f"<p class=warn>{_e(p['blockers']['unavailable'])}: {_e(p['blockers']['error'])}</p>") + "</section>")
 
 
 def _ventures(console, p, form) -> str:
@@ -565,6 +572,12 @@ def _ventures(console, p, form) -> str:
 def _tier_line(tier: dict, v: dict) -> str:
     if not tier:
         return "unknown"
+    if tier.get("rehearsal_body"):            # attested or not, no attestation on this body counts, so none is advised
+        signed = (" Its throwaway key signed FOUNDER_TIER; that does not count." if tier.get("enrolled_key_attested")
+                  else "")
+        return (f"<b class=warn>rehearsal body</b>: {_e(tier.get('consequence', ''))}.{signed} "
+                f"<b>{_e(v.get('founder_tier_count', 0))}</b> closure(s) at the founder tier. "
+                f"The tier is reached on another body: <code>{_e(tier.get('how', ''))}</code>")
     if tier.get("enrolled_key_attested"):
         since = ", ".join(a.get("issued_at") or "?" for a in tier.get("attested", []))
         return (f"attested since {_e(since)}; <b>{_e(v.get('founder_tier_count', 0))}</b> closure(s) at the founder tier"

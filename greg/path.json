@@ -3,7 +3,8 @@
   "version": "2026-09-30",
   "intent": [
     "INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE",
-    "INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE"
+    "INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE",
+    "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN"
   ],
   "reality_status": "Agent-proposed sequencing for founder review. Node order may change; the destination and horizons change only by explicit founder decision.",
   "mechanism_from": "PR #68 planning model (node gate / SBM / exit evidence / pivot / kill; evidence_status with 'no refs -> unresolved'); ordering from the 2026-09-30 directive section 46, verified against repository evidence",
@@ -68,6 +69,9 @@
         "tests/integration/test_greg_vepmc_path.py",
         "greg/CHROMEBOOK_FIRST_MISSION.md"
       ],
+      "rehearsal": [
+        "tests/integration/test_greg_chromebook_rehearsal.py::test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_a_model"
+      ],
       "smallest_next_build": "done agent-side: greg/chromebook/install.sh, and the runbook rehearsed as written (tests/integration/test_greg_chromebook_rehearsal.py ends at a structurally complete VEPMC row that stays a STRUCTURAL_CANDIDATE: its --no-passphrase key never reaches the founder tier, so greg path stays at N1, as the kill condition requires; #138 673726a). The path moves only on a closure signed by the enrolled founder key at the founder tier (greg/metrics.py founder_tier; tests/integration/test_greg_vepmc_path.py shows a passphrase-protected key moving it). Remains: the founder's run on Body 1 and his inspection; the ledger cannot prove whose machine or key it is",
       "pivot_condition": "If ChromeOS Linux cannot be enabled (managed device), Alfonso chooses another body he owns or rents; GREG may research candidates only as a read-only mission",
       "kill_condition": "A closure counted with a test key, a fixture or a human manually ticking after interruption",
@@ -97,6 +101,9 @@
         "tests/unit/test_greg_genesis_builder.py",
         "tests/unit/test_greg_self_repair.py"
       ],
+      "rehearsal": [
+        "tests/integration/test_greg_chromebook_rehearsal.py::test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_a_model"
+      ],
       "pivot_condition": "If model-built candidates keep failing verification, prefer installed software or open-source acquisition routes before any new builder",
       "kill_condition": "Ported from PR #68 node 1: if a candidate can read or alter its evaluator, stop; the result would be worthless",
       "founder_attention": "sign one mission and one capability contract",
@@ -122,6 +129,9 @@
       "evidence_refs": [
         "tests/unit/test_greg_business_case.py",
         "greg/business_loop.py"
+      ],
+      "rehearsal": [
+        "tests/unit/test_greg_business_case.py::test_a_case_closes_in_commercial_order_with_people_doing_every_outward_act"
       ],
       "pivot_condition": "If publication authority is withheld, pick a wedge whose first external effect Alfonso does authorize",
       "kill_condition": "Engagement or revenue obtained through deception or without consent",
@@ -155,6 +165,9 @@
       "evidence_refs": [
         "tests/unit/test_greg_sop_compounding.py",
         "greg/sop.py"
+      ],
+      "rehearsal": [
+        "tests/unit/test_greg_sop_compounding.py::test_a_ratified_procedure_runs_without_a_model_or_an_approval_stop_and_closes_n4"
       ],
       "components": [
         "proposal from three or more verified closures with the same capabilities and the same signed shape (greg/sop.py propose)",
@@ -207,6 +220,9 @@
         "greg/templates.py",
         "greg/missions.py"
       ],
+      "rehearsal": [
+        "tests/unit/test_greg_shared_work.py::test_a_named_person_agrees_delivers_is_reviewed_and_the_outcome_is_recorded"
+      ],
       "components": [
         "founder-signed shared-work mission naming the person, a contract or employment Alfonso arranges and pays, the deliverable and the acceptance terms (greg/templates.py shared_work)",
         "GREG writes the handoff, including the person's right to decline, before anyone is asked anything",
@@ -238,6 +254,9 @@
         "tests/unit/test_greg_venture_books.py",
         "greg/venture_books.py",
         "capital/treasury.py"
+      ],
+      "rehearsal": [
+        "tests/unit/test_greg_venture_books.py::test_a_procedure_from_one_venture_makes_a_second_cheaper_and_its_revenue_funds_reserves_first"
       ],
       "components": [
         "business cases carry their venture; a procedure ratified from one venture's verified cases runs in another (greg/sop.py instantiate venture)",
@@ -1292,7 +1311,7 @@
           "id": "P5",
           "title": "Demand-led repertoire expansion",
           "maps_to": "N2",
-          "status": "IMPLEMENTED for graph.shortest_path, graph.max_flow (reserved family cortex.graph.search) and lp.optimize (continuous optimization) from installed open-source engines; VERIFIED_IN_TESTED_ENVIRONMENT; founder attach required; 2026-10-13: 31 executable genomes across L1-L4 evaluated on held-out seeds 1000-1029 (frozen 496c85b): 12 DEFAULT_FOR_GEOMETRY, 8 NICHE_CAPABILITY, 6 SUPERSEDED, 3 COMPOSITION_ONLY, 2 EXPERIMENTAL, 0 REJECTED (20 admitted); all registered VERIFIED (withheld); attaching any is the founder's decision; after admission v2 (2026-10-14, seeds 1100-1129) and v3 (2026-10-15, seeds 1200-1229, frozen 878f76c) and v4 (2026-10-16, seeds 1300-1329, frozen 3da09c0: grid_dijkstra 1.1.0 DEFAULT, two flow genomes replicate) the then 47 executable genomes carried evidence at their versions, 35 admitted; after admission v5 (2026-10-21, seeds 1400-1429, frozen b8061a21: maxsat_cpsat, binpack_cpsat, community_louvain, blackbox_multistart_lbfgsb, crowd_weighted_vote, graph_node_cut_exact and basal_token_bucket DEFAULT; reconcile_qp and basal_nlms NICHE; collective_auction SUPERSEDED; develop_diffusion REJECTED) all 58 executable genomes carry evidence at their current version: 31 DEFAULT_FOR_GEOMETRY, 13 NICHE_CAPABILITY, 9 SUPERSEDED, 3 COMPOSITION_ONLY, 0 EXPERIMENTAL, 2 REJECTED (44 admitted); none attached.; admission v6 (2026-10-21, seeds 1500-1529, freeze f33cb2a9): develop_repair 1.1.2 NICHE_CAPABILITY (replicates, 7-23 against the replanner) and develop_repair_hybrid 1.0.0 NICHE_CAPABILITY (23-7 against the local rules, 7-7-16 against the replanner with 0 wrong answers against its 3, about 92x slower, loses 3-7 on stale controllers); 59 genomes then carried current-version evidence (45 admitted); admission v7 (2026-10-21, seeds 1600-1629, freeze 568c4b7b): search_ida_star, search_beam, evo_map_elites, graph_betweenness_topk and develop_ca_repair DEFAULT, evo_ga_factored and search_mcts EXPERIMENTAL, formal_property_search and basal_hopfield SUPERSEDED; all 68 executable genomes carry evidence at their current version: 36 DEFAULT_FOR_GEOMETRY, 14 NICHE_CAPABILITY, 11 SUPERSEDED, 3 COMPOSITION_ONLY, 2 EXPERIMENTAL, 2 REJECTED (50 admitted); none attached",
+          "status": "IMPLEMENTED for graph.shortest_path, graph.max_flow (reserved family cortex.graph.search) and lp.optimize (continuous optimization) from installed open-source engines; VERIFIED_IN_TESTED_ENVIRONMENT; founder attach required; 2026-10-13: 31 executable genomes across L1-L4 evaluated on held-out seeds 1000-1029 (frozen 496c85b): 12 DEFAULT_FOR_GEOMETRY, 8 NICHE_CAPABILITY, 6 SUPERSEDED, 3 COMPOSITION_ONLY, 2 EXPERIMENTAL, 0 REJECTED (20 admitted); all registered VERIFIED (withheld); attaching any is the founder's decision; after admission v2 (2026-10-14, seeds 1100-1129) and v3 (2026-10-15, seeds 1200-1229, frozen 878f76c) and v4 (2026-10-16, seeds 1300-1329, frozen 3da09c0: grid_dijkstra 1.1.0 DEFAULT, two flow genomes replicate) the then 47 executable genomes carried evidence at their versions, 35 admitted; after admission v5 (2026-10-21, seeds 1400-1429, frozen b8061a21: maxsat_cpsat, binpack_cpsat, community_louvain, blackbox_multistart_lbfgsb, crowd_weighted_vote, graph_node_cut_exact and basal_token_bucket DEFAULT; reconcile_qp and basal_nlms NICHE; collective_auction SUPERSEDED; develop_diffusion REJECTED) all 58 executable genomes carry evidence at their current version: 31 DEFAULT_FOR_GEOMETRY, 13 NICHE_CAPABILITY, 9 SUPERSEDED, 3 COMPOSITION_ONLY, 0 EXPERIMENTAL, 2 REJECTED (44 admitted); none attached.; admission v6 (2026-10-21, seeds 1500-1529, freeze f33cb2a9): develop_repair 1.1.2 NICHE_CAPABILITY (replicates, 7-23 against the replanner) and develop_repair_hybrid 1.0.0 NICHE_CAPABILITY (23-7 against the local rules, 7-7-16 against the replanner with 0 wrong answers against its 3, about 92x slower, loses 3-7 on stale controllers); 59 genomes then carried current-version evidence (45 admitted); admission v7 (2026-10-21, seeds 1600-1629, freeze 568c4b7b): search_ida_star, search_beam, evo_map_elites, graph_betweenness_topk and develop_ca_repair DEFAULT, evo_ga_factored and search_mcts EXPERIMENTAL, formal_property_search and basal_hopfield SUPERSEDED; admission v9 (2026-10-22, seeds 1800-1829, freeze 11a8e318), after the stdin transport fix (93bf43a3), re-admits convex_qp_dual 1.0.0, which is DEFAULT_FOR_GEOMETRY with the canonical-path smoke passing on a 92.5 kB request (13-1-16 against the baseline, 23-0-7 against trust-constr); all 83 executable genomes carry evidence at their current version: 45 DEFAULT_FOR_GEOMETRY, 17 NICHE_CAPABILITY, 12 SUPERSEDED, 3 COMPOSITION_ONLY, 4 EXPERIMENTAL, 2 REJECTED (62 admitted); none attached",
           "current_record": {
             "workstream": "polyintelligence_cortex",
             "node": "P5"
@@ -1314,7 +1333,9 @@
             "docs/evidence/greg-genome-admission/2026-10-21-v5/results.json",
             "docs/evidence/greg-genome-admission/2026-10-21-v6/results.json",
             "docs/evidence/greg-genome-admission/2026-10-21-v7/results.json",
-            "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/results.json"
+            "docs/evidence/greg-genome-admission/2026-10-22-joined-operations/results.json",
+            "docs/evidence/greg-genome-admission/2026-10-22-v8/results.json",
+            "docs/evidence/greg-genome-admission/2026-10-22-v9/results.json"
           ]
         },
         {
@@ -1513,7 +1534,7 @@
         "intent_ref": "docs/intent/INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT.json",
         "previous": "Verified Cross-Geometry Routing Gain"
       },
-      "current": "VPL = 3 of 4 held-out families in P6 v2 (F2R, F3, F4 lift; natural M4 family F5 not significant); P6 v3 (2026-10-14): the natural call-centre family F6 (real bank arrivals, forecast quantile -> Erlang C) lifts, 74-16 against the best constituent, 6.1% cheaper, so natural families were then 1 of 2 (3 of 4 after F7 and F8); the lift is composition, not routing (routed = static on all 90 days), and the weekly-mean practitioner pipeline is not beaten on day count (40-50). P4 decisive retest: REGRESSION (timing noise, identical orders), conditional routing demoted, shadow default. P8 cycles 1-6: cycles 1-5 REJECT (cycle 4 at the held-out gate; cycle 5, search policy cover/1 reaching p_restart 1.0, at the adversarial gate); cycle 6 (2026-10-21) RETAIN at p=0.00995, the first kept improvement, proposed and not applied, and not better than random restart. Genome admission v1 (31 genomes), v2 (10 re-measured on fresh seeds; forecast_quantile's seeds redrew P8 series, recorded) and v3 (2026-10-15, seeds 1200-1229: 15 new, 5 version-bumped and the 4 Layer 2 genomes on their native regimes): 34 admitted of 47 after v3; after admission v4 (2026-10-16), 35 admitted of 47; after admission v5 (2026-10-21, seeds 1400-1429, frozen b8061a21; 11 new families: 7 DEFAULT, 2 NICHE, collective_auction SUPERSEDED, develop_diffusion REJECTED), 44 admitted of 58; after admission v6 (2026-10-21, seeds 1500-1529, frozen f33cb2a9; develop_repair 1.1.2 NICHE, replicating, and develop_repair_hybrid 1.0.0 NICHE), 45 admitted of 59; after admission v7 (2026-10-21, seeds 1600-1629, frozen 568c4b7b; nine new families for absent coverage items: search_ida_star, search_beam, evo_map_elites, graph_betweenness_topk and develop_ca_repair DEFAULT, evo_ga_factored and search_mcts EXPERIMENTAL, formal_property_search and basal_hopfield SUPERSEDED), 50 admitted of 68, none stale. flow_expansion_mcf is DEFAULT against the F7 composition twin (equal quality on all 30, about 7x faster, both measured on 30 synthetic capacity-expansion instances, seeds 1200-1229; v3 did not run it on F7's SNDlib items, the 2026-10-16 re-measurement below did): on that capacity-expansion geometry the single exact method is canonical. Eight DEFAULT verdicts tie their competitor on all 30 instances and rest on being no slower than 1.25x the competitor's median latency (two, game_lp_dual and knapsack_bnb, also tie their baseline and pass only by being at least 1.25x cheaper than it); bootstrap_ci REJECTED; grid shortest paths had no admitted genome at v3 (grid_dijkstra 1.0.0 EXPERIMENTAL at 1.22x); admission v4 (2026-10-16, seeds 1300-1329) admits grid_dijkstra 1.1.0 DEFAULT_FOR_GEOMETRY at 2.60x its baseline, and flow_reinforce_greedy 1.0.2 (SUPERSEDED) and flow_capacity_plan 1.0.3 (COMPOSITION_ONLY) replicate. On F7's real SNDlib items flow_expansion_mcf matches the composition 200/200 at 0.26x its latency (2026-10-16). Competency Compiler, Lawful Leverage Foundry and Goal Gravity integrated; independent review defects fixed. No genome attached. N1/VEPMC remains primary.",
+      "current": "VPL = 3 of 4 held-out families in P6 v2 (F2R, F3, F4 lift; natural M4 family F5 not significant); P6 v3 (2026-10-14): the natural call-centre family F6 (real bank arrivals, forecast quantile -> Erlang C) lifts, 74-16 against the best constituent, 6.1% cheaper, so natural families were then 1 of 2 (3 of 4 after F7 and F8); the lift is composition, not routing (routed = static on all 90 days), and the weekly-mean practitioner pipeline is not beaten on day count (40-50). P4 decisive retest: REGRESSION (timing noise, identical orders), conditional routing demoted, shadow default. P8 cycles 1-6: cycles 1-5 REJECT (cycle 4 at the held-out gate; cycle 5, search policy cover/1 reaching p_restart 1.0, at the adversarial gate); cycle 6 (2026-10-21) RETAIN at p=0.00995, the first kept improvement, proposed and not applied, and not better than random restart. Genome admission v1 (31 genomes), v2 (10 re-measured on fresh seeds; forecast_quantile's seeds redrew P8 series, recorded) and v3 (2026-10-15, seeds 1200-1229: 15 new, 5 version-bumped and the 4 Layer 2 genomes on their native regimes): 34 admitted of 47 after v3; after admission v4 (2026-10-16), 35 admitted of 47; after admission v5 (2026-10-21, seeds 1400-1429, frozen b8061a21; 11 new families: 7 DEFAULT, 2 NICHE, collective_auction SUPERSEDED, develop_diffusion REJECTED), 44 admitted of 58; after admission v6 (2026-10-21, seeds 1500-1529, frozen f33cb2a9; develop_repair 1.1.2 NICHE, replicating, and develop_repair_hybrid 1.0.0 NICHE), 45 admitted of 59; after admission v7 (2026-10-21, seeds 1600-1629, frozen 568c4b7b; nine new families for absent coverage items: search_ida_star, search_beam, evo_map_elites, graph_betweenness_topk and develop_ca_repair DEFAULT, evo_ga_factored and search_mcts EXPERIMENTAL, formal_property_search and basal_hopfield SUPERSEDED) and admission v8 (2026-10-22, seeds 1700-1729, frozen bc966a18; fifteen new families from five parallel lanes: develop_differentiate, evo_novelty_search, forecast_scenarios, prove_resolution (checkable-proof scoring; Z3 decides as well), mdl_model_select, game_repeated_sustain, game_stackelberg_commit and basal_cusum_detect DEFAULT; convex_qp_dual (demoted by a 64 KiB request-limit smoke failure), basal_hamming_correct, hyper_select_lowlevel and forecast_recalibration (2-28 against Platt scaling) NICHE; control_robust_tube and forecast_judgment_pool EXPERIMENTAL; game_nash_bargaining SUPERSEDED), 62 admitted of 83, none stale; admission v9 (2026-10-22, seeds 1800-1829) re-admits convex_qp_dual DEFAULT after the stdin transport fix, so 45 DEFAULT and 17 NICHE. flow_expansion_mcf is DEFAULT against the F7 composition twin (equal quality on all 30, about 7x faster, both measured on 30 synthetic capacity-expansion instances, seeds 1200-1229; v3 did not run it on F7's SNDlib items, the 2026-10-16 re-measurement below did): on that capacity-expansion geometry the single exact method is canonical. Eight DEFAULT verdicts tie their competitor on all 30 instances and rest on being no slower than 1.25x the competitor's median latency (two, game_lp_dual and knapsack_bnb, also tie their baseline and pass only by being at least 1.25x cheaper than it); bootstrap_ci REJECTED; grid shortest paths had no admitted genome at v3 (grid_dijkstra 1.0.0 EXPERIMENTAL at 1.22x); admission v4 (2026-10-16, seeds 1300-1329) admits grid_dijkstra 1.1.0 DEFAULT_FOR_GEOMETRY at 2.60x its baseline, and flow_reinforce_greedy 1.0.2 (SUPERSEDED) and flow_capacity_plan 1.0.3 (COMPOSITION_ONLY) replicate. On F7's real SNDlib items flow_expansion_mcf matches the composition 200/200 at 0.26x its latency (2026-10-16). Competency Compiler, Lawful Leverage Foundry and Goal Gravity integrated; independent review defects fixed. No genome attached. N1/VEPMC remains primary.",
       "nodes": [
         {
           "id": "P0",

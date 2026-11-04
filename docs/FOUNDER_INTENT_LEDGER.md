@@ -2,6 +2,59 @@
 
 # Founder Intent Ledger
 
+## Build the whole prompt first; the device run is its acceptance — 2026-10-30
+
+Founder message in session `session_01Kucyfm6YBHMTjaiC1M9hqD`, verbatim: "Continue building and doing the prompt verbatim. No real Chromebook run is needed. That is done when we completely build the prompt". It answered a report that listed the first Chromebook run (VEPMC 0 to 1) as remaining work. It is intent evidence, not founder authentication.
+
+| Required field | INTENT-20261030-BUILD-BEFORE-DEVICE-RUN |
+| --- | --- |
+| statement | Continue building and doing the prompt verbatim. No real Chromebook run is needed. That is done when we completely build the prompt |
+| source_refs | [verbatim source](intent/sources/FOUNDER-CORRECTION-2026-10-30-source.md); [record](intent/INTENT-20261030-BUILD-BEFORE-DEVICE-RUN.json); the prompt it refers to, `INTENT-20261028-OPUS-MAXIMUS-REISSUE` |
+| owner | Alfonso Lopez decides; the integration owner and implementing sessions on board #96 build |
+| state | active |
+| binding_scope | sequencing of work on the integration line (#196 and its children); reversible implementation and draft review only |
+| constitutional_constraints | changed axis: sequence and timing only. The final effect, the evidence ladder (directive section 56) and the authority envelope are unchanged. Nothing built in a container is labelled founder-used, live or externally verified |
+| success_evidence | later directive nodes land as draft PRs with fail-before/pass-after tests while VEPMC stays 0; `tests/unit/test_founder_correction_20261030.py` |
+| failure_evidence | a container run reported as founder-used; a test key or rehearsal that moves VEPMC or `greg path` N1 |
+| dependencies | `INTENT-20261001-FULL-MACHINE-COMPLETION` (VEPMC already stops no unrelated software work) |
+| conflicts | `opus-maximus/NEXT_WAVE_AND_HORIZONS.md` §1 names the device run the single bottleneck metric; directive §58 warns against jumping to later nodes. Both resolved by founder sequencing: the metric is kept for device acceptance, and §56's evidence labels apply to every later node |
+| next_review_trigger | the founder declares the prompt built, runs the device acceptance, or corrects the sequence again |
+| supersedes | reading VEPMC 0 to 1 as the gate in front of the directive's later nodes (sequencing only) |
+| superseded_by | none |
+| implementation_refs | `greg/metrics.py` (unchanged: nine conditions, founder tier), `opus-maximus/NEXT_WAVE_AND_HORIZONS.md` (dated note) |
+
+## The 77-section master build directive, re-issued with a preamble — 2026-10-28
+
+`INTENT-20261028-OPUS-MAXIMUS-REISSUE` ([record](intent/INTENT-20261028-OPUS-MAXIMUS-REISSUE.json), [complete verbatim text](intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md)): the founder re-sent the 2026-09-30 OPUS MAXIMUS master build directive in full, given twice, behind a new preamble.
+
+The preamble:
+- asks for one persistent GREG whose unified agency emerges from an ecology of computational, institutional, economic and human systems and "Different forms of intelligence as described by levin";
+- asks that the public community influence GREG while GREG helps it;
+- asks for an architecture that absorbs future technology toward "Jarvis/self-driving-car level of mechanistic aliveness", "without confusing that appearance with biological consciousness or allowing operational autonomy to erase legitimate human shutdown authority".
+
+Every section the 2026-09-30 source kept is word for word the same (tested). INTENT-0030 governs the reading: Levin's forms of intelligence compile to the existing multiscale Mind and governed workers, community influence enters as evidence through the untrusted data plane, and "survival" is continuity of function, never a right to survive (section 47). State: active. Authority delta: none. VEPMC: 0.
+
+## Organ pins upgraded — 2026-10-23
+
+Founder message in the #196 session, verbatim: "All organs should have upgraded pins". It is not founder authentication; it settles the open "organ pin upgrade" decision.
+
+| Required field | INTENT-20261023-ORGAN-PINS-UPGRADED |
+| --- | --- |
+| statement | All organs should have upgraded pins |
+| source_refs | #196 session, 2026-10-23; `opus-maximus/NEXT_WAVE_AND_HORIZONS.md` item 3; `opus-maximus/ORGAN_MAP.md` defect 4 |
+| owner | Alfonso Lopez decides; the #196 integration owner implements |
+| state | implemented on organ branches; organ `main` merges open |
+| binding_scope | `uniimente-kernel-boundaries` pins in DALEOBANKS and WealthMachineIntelligence; their CI's cross-organ pin; Canonical CI jobs 7 and 8; `greg/organs.py` keys |
+| constitutional_constraints | no merge to any `main`; no new authority; keys exist per invocation only and are never written |
+| success_evidence | `tests/unit/test_greg_organs.py` (wrong-organ key and shared scope refused; 5 tests fail without the change); DALEOBANKS 387/387; WealthMachine 126/128 locally (the 2 need port 5000 and fail identically on the old pin); 15-step mission step 9 asserts the certified answer in the packet evidence |
+| failure_evidence | WealthMachine holds DALEOBANKS's key in order to verify it, and HMAC lets a verifier forge; WealthMachine counts evidence items but does not read figures; the archive pin is unhashed |
+| dependencies | DALEOBANKS #96, WealthMachineIntelligence #44, uniimente-kernel #196 (`e7dc0cbc`) |
+| conflicts | the frozen local proof mission and the repository guardian expect `4999acff`/0.1.2 on the organs' `main`; they stay right until the founder merges |
+| next_review_trigger | organ CI on #44; founder merge of #96/#44 |
+| supersedes | the "organ pin upgrade" open decision |
+| superseded_by | none |
+| implementation_refs | `greg/organs.py`, `greg/organ_bridge.py`, DALEOBANKS `services/idea_refinery.py`, both organs' `docs/KERNEL_PIN_UPGRADE_2026-10-23.md` |
+
 ## Seed Cortex 0.2.2 on GREG's path, stacked on #184 — 2026-10-21
 
 Faithful summary, not verbatim and not founder authentication. Repetition adds no authority.
@@ -91,6 +144,29 @@ Progress 2026-10-21 (measured; negative results kept):
     - property-based search: Z3 finds every counterexample;
     - Hopfield recall: exact nearest neighbour is the ceiling.
   - 50 of 68 genomes are admitted. None is attached.
+- **Genome admission v8** ([evidence](evidence/greg-genome-admission/2026-10-22-v8/README.md)): fifteen genomes from five parallel lanes, built for the ABSENT coverage items left after v7. Pre-registered at `28e29538`, frozen at `bc966a18`, run once on seeds 1700-1729.
+  - **DEFAULT (8):**
+    - role differentiation (beats a centralised MIS on rounds, 20-8);
+    - novelty search (16-1 against MAP-Elites on deceptive mazes);
+    - scenario fans (29-1 against Monte Carlo);
+    - resolution proofs (Z3 decides as well, and the win is the declared value of a checkable proof);
+    - MDL (ties BIC);
+    - repeated games (ties simulation, faster);
+    - Stackelberg commitment (ties HiGHS multiple LPs);
+    - CUSUM (Shiryaev–Roberts is at least as good).
+  - **NICHE (4):**
+    - convex QP with a duality certificate: 30/30 and 20-0 against SciPy, but demoted because GREG's 64 KiB request limit refused a held-out instance (an integration defect, recorded);
+    - Hamming correction (the Bayes decoder is better on noisy blocks);
+    - the hyper-heuristic (no significant edge over random selection);
+    - isotonic recalibration (superseded in substance, 2-28 against Platt scaling; the rule calls any win NICHE, a policy question).
+  - **EXPERIMENTAL (2):** robust tube MPC; judgmental pooling (14-16 against the mean; dev did not replicate).
+  - **SUPERSEDED:** Nash bargaining (SLSQP ties and is faster).
+  - Merge review before the freeze: replaced a Stackelberg competitor weak by construction, and fixed a CUSUM benchmark that every detector failed.
+  - 62 of 83 genomes are admitted. None is attached.
+- **Request transport fix and genome admission v9** ([evidence](evidence/greg-genome-admission/2026-10-22-v9/README.md)).
+  - **Fix (`93bf43a3`):** cognitive requests reach the solver and verifier on stdin instead of one argv string, which Linux caps at 128 KiB. The request ceiling is now 1 MiB.
+  - **Admission v9:** pre-registered at `ce760f7a`, frozen at `11a8e318` and run once on seeds 1800-1829. It re-admits `convex_qp_dual` 1.0.0 as **DEFAULT** (13-1-16 against the baseline, 23-0-7 against trust-constr). The smoke passes on a 92.5 KB request, which the old limit refused.
+  - 62 of 83 are admitted: 45 DEFAULT and 17 NICHE. None is attached.
 
 ## FABLE 5.1 OPUS MAXIMUS: one GREG, stacked on #178 — 2026-10-15
 
@@ -109,7 +185,7 @@ Progress 2026-10-21 (measured; negative results kept):
 - **Proof:** the ten-step proof and #178's one-mission test both pass on one tree with real DALEOBANKS and WealthMachine code.
 - **Next-wave items 2 and 7 (2026-10-21):** #155's four operation verdicts were re-measured once on the merged solvers, pre-registered at `462bd98` on fresh seeds 2600-2629: control, game and information route DEFAULT again; probabilistic did not replicate and is EXPERIMENTAL, out of routing (`evidence/greg-genome-admission/2026-10-21-operations/`). A `decision.answered` row now moves a mission only as the record re-derived from a founder-signed DECISION at its own acceptance; a three-lens review of that change found 16 defects, all fixed with tests, among them a refused answer that could be revived by a backdated acceptance and an unsigned ask that could redirect the founder's approve (ADR-GOAL-GRAVITY-002).
 - **Founder correction of 2026-10-19 (#190, `INTENT-20261019-UPWARD-ASCENT`, on #190's branch):** convergence is incomplete until every material overlap is recombined into a measured capability on GREG's path; the full vision is the acceptance floor. Applied here: #173's head `27a57cb` was inspected against this tree (about 100 commits not contained, not 20 as recorded; the convergence map is corrected). Seven defects it fixed exist on this branch's path and are ported first. The first capability dividend selected is a worker-independent acceptance check that recombines #173's evaluator freeze, #178's independent re-derivation and this branch's appraiser. Second is graduated worker confinement, with #173's Landlock grants as the floor under `supervised`. Each comes with a pre-declared threshold, floors and an ablation.
-- **Open founder decisions:** VEPMC device and acceptance; organ pin upgrade; the canonical Goal Gravity runtime; contacting brokers for the freight proof-of-delivery cell; merge of this branch.
+- **Open founder decisions:** VEPMC device and acceptance; organ pin upgrade (decided 2026-10-23, see the entry at the top; organ `main` merges open); the canonical Goal Gravity runtime; contacting brokers for the freight proof-of-delivery cell; merge of this branch.
 - State: active. Reality: INTEGRATION and SANDBOX-WHOLE-MACHINE. VEPMC 0. No authority, spending, publication, contact or merge.
 
 ## Convergence of the two Mind lineages — 2026-10-14

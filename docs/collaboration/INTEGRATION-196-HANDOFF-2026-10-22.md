@@ -37,6 +37,13 @@ that was 13 PRs, plus the deltas listed under Pending.
 | Operation re-admission (pre-registered `244b652c`, frozen `3520efe6`) | `4691f039` | merged; ledger and index regenerated | `5d9a43c7` |
 | #198 (two-session rehearsal) | `162e388b` | already contained (GitHub-merged) | — |
 | #168 (contains #137's 3 later commits) | `0fd430f3` | merged via `wip/join-168`; three seams resolved toward the stronger mechanism (verified answers on the path surface, founder tier for met-ahead, the sealed oracle over a weakened evaluator) | `1b48ab7f`, joined at the merge after `5d9a43c7`; owned source `a07cdc3e` |
+| #201 evidence-soundness patch (`session_013k41DnwrjzpXL33r3j9BgB`) | `cb5d8647`; follow-up `962fdd3a` | applied; the refusal watch marks inconclusive observations | `3d2f9cc4`, `8d0a2303` |
+| Construction decision (relaxation fix) | `7276de8f` | merged | `8befbc71`, loop map `78da0332` |
+| One mission across all 15 steps; a precondition-held mission resumes when the world satisfies it (dispatched worker) | `cab84e87` | merged after review: the engine change withdraws a NO_STRATEGY ask only for strategies its own retained evidence names as precondition-held, once every such precondition is observed passing; 16 mutation anchors intact; regression test fails on the old engine | the join after `d52b09d7` |
+| #202 antifragility v3 and v3b (both NO_GAIN; mechanism off by default, `KEY="dimension"`) | `47ac8d5f` | merged; the line is closed as pre-registered | `79ac8c6f` |
+| #158 admission v8 (15 genomes) | `9a354321` | merged; CI job 1 limit 75 -> 90 min (the job took 65 min at `78da0332`); index and ledger regenerated | `55edb401`, `813ca188` |
+| #158 stdin transport fix (requests above the 128 KiB argv cap reach the solver) | `93bf43a3` | merged; the joined tree's thinking-budget check is kept before the new 1 MiB ceiling | `bf7c5fec` |
+| #158 admission v9 (`convex_qp_dual` DEFAULT on seeds 1800-1829) | `883237a0`, `21ae7f5a` | merged; P5 counted two sets of totals and misread `1.0.0` and `92.5 KB` as statuses (`test_frontier_backcasts`), fixed here and ported to #158 | `05ce137a`, `4dac1608`, `98e49f65` |
 
 ## Conflict decisions
 
@@ -101,16 +108,50 @@ that was 13 PRs, plus the deltas listed under Pending.
 | `4bdcbeb5` | P6, ledger, evidence index, convergence, mind status and path tests (local) | 320 passed |
 | `ac84ad7d` | appraisal closure, discovery and every discovery-using test (local) | 29 + 75 passed; 3 failed before |
 | `wip/join-168` `1b48ab7f` | #168's affected suites (local); worker appraisal mutation gate | 432 passed, 1 load-sensitive failure that passes 44/44 in three reruns; 7 of 7 mutants caught |
+| `a0109641` | Canonical CI | job 9 V2: `test_frontier_backcasts` (P5 cited stale results; fixed `3b7f4436`) and 5 evidence-strength failures on a runner without usable bubblewrap (fixed `9e12b9a6`) |
+| `9e12b9a6` | evidence-strength tests with bubblewrap blocked, then real (local) | 5 failed before the fixture, 10 passed after; 79 passed with real bubblewrap |
+| `8befbc71` | construction-decision tests on `9e12b9a6`'s compiler vs the fix (local) | fails on base (closure spends 9 against a cap of 5), 2 passed with the fix; 105 compiler, construction, recombine, budgeted and portfolio tests pass; 2 new mutants caught |
+| `78da0332` | **Canonical CI** | **all 9 jobs success**, the first fully green head of this candidate (job 1 full suite 65 min; job 6 every mutation gate; job 8 one machine with real organs; job 9 V1-V5) |
+| `8d0a2303` | #201 decided-fields follow-up (local); **Canonical CI** | 186 passed locally; 16 mutation anchors intact; **CI all jobs success** |
+| `55edb401` | genome, condition-competence, compiler, settlement, index, path and admission suites (local) | 2723 passed, 2 skipped |
+| `bf7c5fec` | CI job 6 gates (local): cortex, seed-path and residual tests; three mutation gates; Seed Genome; migrated-seed replay; held-out run | 803 passed; cortex mutants 192/192, cognition boundary 6/6, residual 86/86 caught; Seed Genome 100/100 matched, 0 hard failures; replay 120/120; held-out accepted by the freeze manifest, INCONCLUSIVE only for want of a local model (as in CI) |
+| `4dac1608` | the same suites plus cognition and cortex (local) | 3582 passed, 5 skipped |
+| join of `cab84e87` | the 15-step mission, `test_one_machine.py` and mission, precondition, Goal Gravity, appraisal, restore and incomplete-evidence suites, with real organs (DALEOBANKS `667439f`, WealthMachine `ec82b80`) and bubblewrap (local) | 749 passed, 4 skipped; three mutants (wake, attach gate, organ binding removed) each fail the 15-step test (worker's run) |
 
 Organs: DALEOBANKS `667439f`, WealthMachine `ec82b80` (CI pins, unchanged; neither organ moved its pinned code).
 
 ## Dispatched
 
-- **§14 antifragility v3 (condition-specific competence):** accepted by `session_01GRT2jX7cQXwvMkn64ZgvLk` (#96).
-  - Design: a 36-mission stress set and a fresh holdout; the compute-matched control B1 is the kill rule, the shuffled
-    condition is required for GAIN, the LOW floor is 0, and GAIN needs p < 0.05.
-  - Seeds come from 6000-6999. Hooks are on `claude/antifragility-v3-condition-competence`.
-  - Nothing is frozen or run until this candidate's head settles.
+- **§14 antifragility v3 (condition-specific competence):** run by `session_01GRT2jX7cQXwvMkn64ZgvLk` (#202), frozen
+  `4229fe1b` on `9e12b9a6`, run once. Verdict **NO_GAIN**, accepted by the owner with no rerun:
+  - the pre-registered 20-d cell was 11-6 discordant, p 0.17 against the required p < 0.05;
+  - every arm equals PRE at 66/100 on the holdout;
+  - the compute-matched control B1 was invalid as run;
+  - the split by objective that suggested where gain might live is post hoc and claims nothing;
+  - `78da0332` cannot touch this request shape: routing is byte-identical on the pilot seeds.
+- **v3b approved under conditions** (design `533020e4`, frozen `07b9f128` on a tree containing `78da0332`; no v3b
+  mission or holdout instance had run at freeze):
+  - condition key `dimension_objective`, read from the request only;
+  - coarser readers merge finer evidence;
+  - the shuffle control permutes objectives under a seed;
+  - fresh seeds 6100-6219 (stress) and 6300-6319 (holdout), none drawn before;
+  - B1 is the best-of-k incumbent within the accepted compute budget;
+  - power 0.935 at 24 stress per objective and 20 holdout per cell;
+  - declared the last experiment in this line; a NO_GAIN closes it.
+
+- **Fresh-receiver test:** `session_01Jwps9aYCMfYFNh66iMMJaB` resumed the #197/#199 handoff read-only from
+  the durable records alone ([#96 comment 6341046052](https://github.com/dababiyoda/uniimente-kernel/issues/96#issuecomment-6341046052)).
+  - Its first action was correct, it needed no founder reconstruction, and the Chromebook drift guard passed
+    18/18 at `950c61e6`, with a negative control.
+  - Two frictions it reported are now fixed in the docs: START_HERE step 4 says to read the board's newest
+    comments (the connector's comment pages start with the oldest), and RECEIPT.md says `integration.branch`
+    names the destination, not the work branch.
+  - Limits: one receiver; the task was read-only, and its dispatch named the board, so finding the board unaided
+    was not tested.
+- **#201's review findings 5a, 5b, 6** (routed here): fixed at `af6fdfe1` with three failing-first tests. A
+  member kept only as a prefix no longer settles a check by a miss. A value holding such a member, or a list at
+  the 1,000-item limit, is never bound as whole. An incomplete output still decides its own `complete` field.
+  Other settled fields stay the capability's to name in `decided`.
 
 ## Self-review
 
@@ -140,15 +181,90 @@ This is one agent working through five lenses. It is not independent review.
 - Attack 2: Alfonso cannot review a 1000-commit stack. Answer: the review unit is this record's decision table, plus
   CI and acceptance on one head. Merge stays his decision.
 
-## Pending
+## Ten-item handoff (2026-10-22; code head `98e49f65`)
 
-- CI green on the joined head (#168 included).
-- One mission across all 15 steps (`LOOP-15-MAP-2026-10-22.md`). Today the steps are shown across three episodes.
-- A decision changed by settled construction outcomes. This needs at least 10 outcomes on two competing fits.
-- Natural-family recipe lifts (F5-F8) re-measured on the joined code. This needs fresh natural data, and the network
-  policy blocks the NYC TLC source.
-- Antifragility v3 freeze and run (dispatched).
-- Device acceptance (founder). #182 (founder signature). Decisions D1-D8 in `FOUNDER-ACTIONS-2026-10-22.md`.
+1. **New integrated capability.** One CI-checked tree now holds every verified open increment: #192's machine, the
+   portfolio chain, Cortex 0.2.2, Track B, #179/#158, #168, #201's evidence soundness and the construction-decision
+   fix. On it, GREG:
+   - answers a capped portfolio question only with a method that honours the cap; before, a certified uncapped plan
+     spending 9 against a cap of 5 closed ACHIEVED;
+   - settles a construction's verified answer under its own id, and those settled outcomes reorder later compiles;
+   - closes a check only on what the retained evidence proves, re-observing and then asking the founder when it
+     cannot decide;
+   - names the exact commit a founder-device acceptance ran.
+   Live VPL on this tree is 3 (F1, F2R, F4); control, game and information routing is re-admitted.
+2. **Requirement-to-evidence inventory.** `docs/opus-maximus/FOUNDER_INTENT_COVERAGE_MATRIX.md` §5, one row per
+   requirement, each with its path, tier, command, owner and next action. No row reaches FOUNDER-DEVICE or EXTERNAL.
+3. **Exact revisions.** Base #192 `397a38e3`; code head `98e49f65`. Source heads are pinned in
+   the intake table above.
+4. **Changes and rationale.** The intake table, the conflict decisions (both defenses kept at every seam) and
+   defects 1-6, each fixed with a test that fails without the fix.
+5. **Independent review status.** Track B's 21-file join had an independent reviewer per coupled group. The #168
+   join, the #201 patches and this record are self-reviewed (five lenses, two passes), not independently reviewed.
+   #196 has no human review. Merge is the founder's.
+6. **Validation and negatives.** Canonical CI all 9 jobs green on `78da0332`; `8d0a2303` running. Negatives kept:
+   antifragility NO_GAIN three times; F3 NO_LIFT; probabilistic reads differently in two runs; construction outcomes
+   reorder compiles, but there is no positive dividend yet; one load-sensitive test failure that passes on rerun.
+7. **Remaining engineering work.**
+   - Done at the join of `cab84e87`: one founder-signed goal and mission cross all 15 steps
+     (`tests/integration/test_one_mission_fifteen_steps.py`, CI job 8). Its honest gaps are listed in the test's `GAPS`:
+     the observation enters through the stopped-body intake, the organs do not carry the staffing figures into
+     WealthMachine's assessment, and the changed decision comes from a kept capability, not reordered outcomes.
+   - Closed since: the **live intake**. A running body now reads untrusted observations dropped into `intake/`
+     (`greg intake --source S --channel C`) on its next tick, as data only (`Body.ingest_intake`,
+     `tests/unit/test_greg_live_intake.py`). In the 15-step mission the observation now arrives with the body
+     running, with no restart. Disabling the read fails 8 of the 9 unit tests and the 15-step mission. Remaining
+     on step 2: the drop is local, so no connector delivers an outside feed.
+   - A positive construction dividend. **Mechanism built at `4c7a3a97`** (dispatched worker, reviewed and joined
+     here; note `CONSTRUCTION-REALIZATION-2026-10-22.md`): a founder-signed REALIZATION of the objective a
+     construction's answer promised settles it wrong in the world when it falls short by more than 5% of the
+     promise. In a test, 10 synthetic realizations, 6 of them short, reordered a later compile by the Fisher rule;
+     with realizations disabled the choice does not change. **The dividend itself is not measured.** No real
+     realized outcome is reachable from this container: a realized portfolio profit or staffing result exists only
+     after a founder executes a plan in the world, and GREG has executed none (VEPMC 0). A pre-registered run waits
+     on the founder's first real portfolio or staffing decision, reported with `greg realize`.
+   - Antifragility: closed. v3b was NO_GAIN by its frozen rule (best cell 3-0, no preference fired; B1 beats every
+     learned arm); no v3c.
+   - Per-geometry pooling of settled competence (a stated limitation).
+   - ~~A signed mission binds at most 16 KiB of inline data, so a founder mission cannot yet carry the large QPs the
+     solver now accepts; it needs a by-reference input path.~~ **Corrected by measurement at `048a8ca4`:** a
+     founder-signed mission carrying a 509 KB `convex_qp_dual` request inline (development seed 5) registered, solved
+     and closed ACHIEVED. `DEFAULT_BIND_BYTES` limits only a value bound from one action's receipt into another
+     (receipts keep 16 KiB strings and 1,000 list items), and such a cut value is now refused (#201 review 5b). The
+     remaining needs are:
+     - large values passed between actions by artifact reference;
+     - the ledger cost of large inline missions. That one mission grew the ledger 3.2 MB: the 1 MB spec holds the
+       request twice (sensor and strategy), and the ledger keeps the spec three times (`command.accepted` keeps both
+       the body and the signed envelope, and `mission.registered` keeps it again).
+   - A third probabilistic operation run.
+   - **Organ pin upgrade: decided and built (founder, 2026-10-23: "All organs should have upgraded pins").**
+     - **Pins.** DALEOBANKS #96 (`664ac98c`) and WealthMachineIntelligence #44 (`7a45d223`) pin
+       `uniimente-kernel-boundaries` at Kernel `e7dc0cbc`, which has per-organ keys. WealthMachine's CI also pins
+       its DALEOBANKS producer at `664ac98c`. CI jobs 7 and 8 here pin both organ commits.
+     - **Keys.** `organ.exchange` mints one key per organ, and no shared key. DALEOBANKS gets only its own key;
+       WealthMachine gets its own plus DALEOBANKS's, which it needs to verify. GREG refuses a sender identity that
+       is not isolated.
+     - **Tests.** An answer signed with DALEOBANKS's key in WealthMachine's name is refused, and so is a
+       shared-scope answer (`tests/unit/test_greg_organs.py`; 5 tests fail without the change).
+     - **Refinery.** DALEOBANKS now carries a seed's stated evidence into its packet, so the 15-step mission's
+       certified answer reaches WealthMachine whole (step 9 asserts it).
+     - **Still open.** WealthMachine counts evidence items but does not read the figures. A verifier holding an HMAC
+       key can forge, so asymmetric signatures are the next step. Merging into the organs' `main` is the founder's.
+     - **Other repositories.** RailScout, PumpStation and RESEARCH-IN pin no Kernel boundary package, so there was
+       nothing in them to upgrade.
+8. **Irreducible founder or external actions.**
+   - Founder-device acceptance on the Chromebook (`FOUNDER-ACTIONS-2026-10-22.md` §1). VEPMC moves only on it.
+   - #182: founder signature.
+   - D1-D8 in `FOUNDER-ACTIONS-2026-10-22.md`, including network allowance for `huggingface.co`, `ollama.com` and
+     the NYC TLC source (local-model baselines; F5-F8 natural data).
+   - Merge of #196 into #192, and onward.
+9. **Next assignment.**
+   - Integration owner (`session_01FBS4KNJR59nSbdGbxo8Mbx`): CI on `8d0a2303`, then the single 15-step mission.
+   - `session_01GRT2jX7cQXwvMkn64ZgvLk`: #158 lineage (v8 and v9 joined here).
+   - `session_013k41DnwrjzpXL33r3j9BgB`: license qualification before attach (its draft PR).
+   - Alfonso: device acceptance first; it is the one action that moves VEPMC.
+10. **Full-machine verdict: NOT complete.** BODY + ORGANS + MIND are integrated and green in a sandbox. Nothing has
+    run on the founder device or in the world. VEPMC **0**.
 
 ## Rollback
 

@@ -1,0 +1,7 @@
+Integrator intake runs for #219 on 0bf8528c7092de57dae5ed214e6d5bf5bb62dbe0 (py3.11, local):
+1) goal_gravity, Goal Gravity, founder, mission suites:
+527 passed, 5 skipped in 262.40s (0:04:22)
+   (the 5 skips are environment-dependent tests, e.g. the browser Mission Control test without playwright in this venv)
+2) CI job 8 whole set + test_combined_construction_outcome.py, real organs (DALEOBANKS 664ac98c, WMI 0e80582d), UNIIMENTE_REQUIRE_ORGANS=1, GREG_REQUIRE_LANDLOCK=1:
+SKIPPED [1] tests/integration/test_one_machine_ten_steps.py:225: supervisord (requirements-dev) not installed
+117 passed, 1 skipped in 170.69s (0:02:50)

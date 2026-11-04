@@ -324,7 +324,7 @@ def test_the_verifier_worker_spends_only_its_remaining_budget_on_the_certificate
     launched, run = [], capabilities.run_isolated
 
     def watched(argv, **kw):
-        launched.append((time.time(), json.loads(argv[-1]).get("deadline")))
+        launched.append((time.time(), json.loads(kw.get("input_bytes") or argv[-1]).get("deadline")))  # stdin since 2026-10-22
         return run(argv, **kw)
     monkeypatch.setattr(capabilities, "run_isolated", watched)
     geometry = cortex.compile_problem({"problem_id": "budget", "operation": "optimize", "data": SMALL})[0]

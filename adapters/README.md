@@ -26,7 +26,7 @@ Modules:
 
 - `bridge_transport.py` — canonical exact-context HMAC and nonce verification.
   Shared key (`WEALTHMACHINE_SIGNING_KEY`): messages are byte-compatible with
-  the transport the organs pin (`4999acff`) and report `identity_isolated:
+  the one-key transport at `4999acff` (organs on `main`) and report `identity_isolated:
   "false"`. Per-organ keys (`UNIIMENTE_BRIDGE_KEY_<ORGAN>`): signed under a
   `key-scope:identity` context bound into the signature. They report
   `identity_isolated: "true"` only when the key collides with neither the shared

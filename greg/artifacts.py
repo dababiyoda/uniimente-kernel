@@ -46,8 +46,11 @@ def _digest(value: str) -> str:
 class ArtifactStore:
     """Small immutable byte store. The older Genesis filename layout is supported."""
 
-    def __init__(self, root: Path, *, legacy_source_suffix: str = ""):
+    def __init__(self, root: Path, *, legacy_source_suffix: str = "", max_object_bytes: int = MAX_READ_BYTES):
         self.root = Path(root)
+        # Imports stay at the read ceiling; an action's whole receipt output (greg/authority.py keep_output) may be
+        # larger. The store-wide quota below bounds both.
+        self.max_object_bytes = max_object_bytes
         if legacy_source_suffix not in ("", ".py"):
             raise ValueError("unsupported legacy source suffix")
         self.legacy_source_suffix = legacy_source_suffix
@@ -59,28 +62,28 @@ class ArtifactStore:
         return self.root / "sha256" / digest[:2] / digest
 
     @staticmethod
-    def _read_file(path: Path) -> bytes:
+    def _read_file(path: Path, limit: int = MAX_READ_BYTES) -> bytes:
         try:
             info = path.lstat()
-            if not stat.S_ISREG(info.st_mode) or info.st_size > MAX_READ_BYTES:
+            if not stat.S_ISREG(info.st_mode) or info.st_size > limit:
                 raise CapabilityError("artifact is not a bounded regular file")
             flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
             with os.fdopen(os.open(path, flags), "rb") as stream:
-                data = stream.read(MAX_READ_BYTES + 1)
+                data = stream.read(limit + 1)
         except (FileNotFoundError, OSError) as exc:
             raise CapabilityError("artifact is missing or unreadable") from exc
-        if len(data) > MAX_READ_BYTES:
+        if len(data) > limit:
             raise CapabilityError("artifact exceeds the size ceiling")
         return data
 
     def read(self, address: str) -> bytes:
-        data = self._read_file(self.path(address))
+        data = self._read_file(self.path(address), self.max_object_bytes)
         if hashlib.sha256(data).hexdigest() != _digest(address):
             raise CapabilityError("artifact bytes disagree with their address")
         return data
 
     def put(self, data: bytes) -> tuple[str, bool]:
-        if not isinstance(data, bytes) or len(data) > MAX_READ_BYTES:
+        if not isinstance(data, bytes) or len(data) > self.max_object_bytes:
             raise CapabilityError("artifact must be bytes under the size ceiling")
         address = "sha256:" + hashlib.sha256(data).hexdigest()
         path = self.path(address)

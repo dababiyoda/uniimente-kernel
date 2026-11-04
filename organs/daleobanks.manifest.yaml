@@ -78,14 +78,15 @@ authority:
 health:
   test_command: python -m pytest tests
   last_verified:
-    date: "2026-07-20"
-    commit: 829c5f2810776bef65d6ea108800a3516c9f4c2b
-    tests_passed: 293
+    date: "2026-10-23"
+    commit: 664ac98c553759ce754bb684cb248225343edd7e
+    tests_passed: 387
     tests_failed: 0
     notes: >-
-      Verified in-session; requires requirements.txt deps plus an OPENAI_API_KEY
-      value present in the environment (any value; tests run offline in dry-run
-      mode).
+      Upgraded pin (founder decision 2026-10-23): uniimente-kernel-boundaries at Kernel
+      e7dc0cbc (per-organ bridge keys); packets carry stated evidence. Branch
+      claude/greg-full-machine-completion-whgiee, draft PR #96; not on main. The
+      capability list above is from the 829c5f28 inspection and was not regenerated.
 shutdown_behavior: Dry-run by default; live posting requires explicit arming plus credentials.
 recovery: Organ-local ledger replay; approval queue state persists in its database.
 status: active

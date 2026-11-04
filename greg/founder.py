@@ -79,6 +79,20 @@ class FounderAuthError(ValueError):
     """Unauthenticated, replayed, expired or malformed founder interaction."""
 
 
+def accepted_body(payload):
+    """The signed body of one retained ``command.accepted``: its envelope's ``body``, the bytes the founder signed.
+
+    Records written before 2026-10-23 also carry a top-level ``body`` copy beside the envelope; a new record keeps
+    only the envelope (a 509 KB request was stored once more per copy). Either shape reads here, the envelope
+    first; a bare ``body`` counts only when a record has no envelope. Nothing here verifies a signature."""
+    if not isinstance(payload, dict):
+        return None
+    env = payload.get("envelope")
+    if isinstance(env, dict) and "body" in env:
+        return env["body"]
+    return payload.get("body")
+
+
 def spent_nonce(event_type: str, payload) -> str | None:
     """The nonce one retained command record spends: the one predicate ``Body`` (replay refusal) and the
     goal tick (``greg.goal_gravity.founder_facts``) share.

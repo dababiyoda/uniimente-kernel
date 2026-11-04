@@ -66,6 +66,8 @@ do not merge until the destination and applicable review are acknowledged.
 ````
 
 The outer text fence is explanatory; paste the markers and inner JSON fence only.
+`integration.branch` names the destination the work is proposed into (a PR's base), not the branch
+that carries the work; the PR's head branch already names that.
 Standard/constitutional changes need a deliberation_ref and recorded completed
 review before becoming non-draft. Review and receiver acknowledgment are separate:
 a reviewer need not become the next implementer. A receiver may remain pending;

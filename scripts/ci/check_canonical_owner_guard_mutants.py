@@ -5,7 +5,7 @@ tests/unit/test_canonical_owner_guard.py. A mutant here is a change a contributo
 entry or a field, import a historical alternate from greg/, add a re-implementation or a copy, add a second owner,
 resolve a founder decision alone, narrow the markers, rename what the registry names, or weaken a guard. Each names
 the test that must fail on it. The mutants added after the 2026-10-30 review of 77deac50 name the finding they
-replay (F1-F8, MUH-F1-MUH-F5).
+replay (F1-F8, MUH-F1-MUH-F5); those added when #196 was merged in on 2026-11-04 are marked MERGE-196.
 
 Every mutant runs in one scratch copy of the repository with ``python -B`` and PYTHONDONTWRITEBYTECODE=1, after every
 ``__pycache__`` in the copy is purged, and the copy is restored after each. The unmutated copy must pass the whole
@@ -31,6 +31,7 @@ IMPORTS = "test_no_greg_module_imports_a_retired_or_historical_alternate"
 DYNAMIC = "test_every_dynamic_import_in_greg_resolves_or_is_allowlisted"
 DEFINES = "test_no_unrecorded_reimplementation_of_a_registered_function"
 VACUOUS = "test_the_registry_has_at_least_one_alternate_the_import_guard_applies_to"
+AUTONOMY_B = "test_the_adopted_autonomy_ladder_is_candidate_side_b_and_only_a_founder_ruling_promotes_it"
 REHEARSAL = ("        status: ALTERNATE\n        reason: >-\n"
              "          a FIXTURE rehearsal of the Foundry company loop")
 ORGAN_ALT = "        status: ALTERNATE\n        reason: >-\n          the organs.exchange capability"
@@ -197,7 +198,31 @@ MUTANTS = [
      [("replace", MAP, "    migration_path: >-\n      the organ-exchange template signs organ.exchange;",
        "    note: >-\n      the organ-exchange template signs organ.exchange;")], SHAPE),
     ("MUH-F5: the autonomy review_trigger removed",
-     [("replace", MAP, "    review_trigger: >-\n      PR #235 landing", "    note: >-\n      PR #235 landing")], SHAPE),
+     [("replace", MAP, "    review_trigger: >-\n      the founder's ruling on section 59's five levels",
+       "    note: >-\n      the founder's ruling on section 59's five levels")], SHAPE),
+    # -- MERGE-196: entries for what #196 adopted after b1950be2 (#235 at 6fc4b22b, #236 at 2161dbe2) -------------
+    ("MERGE-196: #235's ladder, candidate side B (greg.autonomy), removed from the record",
+     [("cut", MAP, "      - side: B\n        module: greg.autonomy\n",
+       "    decision_needed: >-\n      whether autonomy/levels.py")], DEFINES),
+    ("MERGE-196: one side-B qualname dropped (regress)",
+     [("replace", MAP, "qualnames: [LEVELS, EARNED_CEILING, earned_level, report, regress]",
+       "qualnames: [LEVELS, EARNED_CEILING, earned_level, report]")], PINS),
+    ("MERGE-196: side B made canonical by an agent, with no founder ruling",
+     [("replace", MAP, "    owner_status: NEEDS_FOUNDER_DECISION\n    canonical: []\n    candidates:\n"
+                       "      - side: A\n        module: autonomy.levels\n",
+       "    owner_status: CANONICAL\n    canonical:\n      - module: greg.autonomy\n"
+       "        qualnames: [LEVELS, EARNED_CEILING, earned_level, report, regress]\n"
+       "    evidence: [\"flipped by an agent\"]\n    candidates:\n      - side: A\n        module: autonomy.levels\n")],
+     PINS),
+    ("MERGE-196: greg.autonomy unpinned, so a founder ruling could not promote it",
+     [("replace", TESTS, ',\n                       "greg.autonomy": ("LEVELS", "EARNED_CEILING", "earned_level", "report", '
+                         '"regress")},', "},")], AUTONOMY_B),
+    ("MERGE-196: the greg.autonomy regress distinct entry removed (regression closing)",
+     [("cut", MAP, "      - module: greg.autonomy\n        qualnames: [regress]\n",
+       "      - module: foundry.systems.repair\n")], PINS),
+    ("MERGE-196: #236's greg.path build-state distinct entry removed (evidence ladder)",
+     [("cut", MAP, "      - module: greg.path\n        qualnames: [STRUCTURALLY_BUILT",
+       "    migration_path: >-\n      the founder's ruling names the canonical tuple")], PINS),
     # -- F8: module-level bindings the definition scan did not see ---------------------------------------------------
     ("F8: a ladder bound by a module-level for loop (governance/reality_loop.py)",
      [("create", "governance/reality_loop.py", "for REALITY_LADDER in [('ASPIRATIONAL', 'PROPOSED')]:\n    pass\n")],

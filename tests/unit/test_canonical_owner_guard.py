@@ -89,11 +89,16 @@ PINNED = {
                      "egregore.experience": ("TRUST_LEVELS",), "scripts.mind_status": ("LABELS",),
                      "greg.institution": ("SCORING_MODEL",), "evolution.capsule": ("VERIFIER_LEVELS",),
                      "scripts.build_mind_coverage_record": ("STATUSES",), "greg.cognition.genome_library": ("STATUSES",),
-                     "egregore.brief_learning": ("rank",)},
+                     "egregore.brief_learning": ("rank",),
+                     "greg.path": ("STRUCTURALLY_BUILT", "BUILD_OPEN", "NO_PREDICATE", "ACCEPTANCE_STATUS",
+                                   "build_status")},
     },
     "OWN-FN-AUTONOMY-LEVELS": {
         "canonical": {},
-        "candidates": {"autonomy.levels": ("LEVELS", "AutonomyTuple", "AutonomyAuthority", "PROMOTION_CRITERIA")},
+        # side B: #235's ladder, adopted into #196 at 6fc4b22b. Pinned so that it cannot leave silently, and so that
+        # the founder's ruling may make it canonical (a ruling promotes only a pinned candidate).
+        "candidates": {"autonomy.levels": ("LEVELS", "AutonomyTuple", "AutonomyAuthority", "PROMOTION_CRITERIA"),
+                       "greg.autonomy": ("LEVELS", "EARNED_CEILING", "earned_level", "report", "regress")},
         "alternates": {},
         "distinct": {"greg.missions": ("pre_approved",), "greg.cognition.genomes.forecasting": ("LEVELS",)},
     },
@@ -103,7 +108,8 @@ PINNED = {
         "candidates": {},
         "alternates": {},
         "distinct": {"greg.tribunal": ("critique",), "greg.goal_gravity": ("_reopen",),
-                     "autonomy.levels": ("AutonomyAuthority.regress",), "foundry.systems.repair": ("regression_test",)},
+                     "autonomy.levels": ("AutonomyAuthority.regress",), "foundry.systems.repair": ("regression_test",),
+                     "greg.autonomy": ("regress",)},
     },
     "OWN-FN-ORGAN-EXCHANGE": {
         "canonical": {"greg.organs": ("exchange", "status")},
@@ -910,6 +916,42 @@ def test_the_registry_has_at_least_one_alternate_the_import_guard_applies_to():
     # Without one, guard 2 would pass vacuously.
     statuses = [e["status"] for r in load()["function_owner_records"] for e in r.get("alternates") or []]
     assert set(statuses) & set(NOT_IMPORTABLE)
+
+
+def test_the_adopted_autonomy_ladder_is_candidate_side_b_and_only_a_founder_ruling_promotes_it(tmp_path):
+    # #235's greg/autonomy.py, adopted into #196 at 6fc4b22b, is a second autonomy ladder. It is recorded as
+    # candidate side B of an undecided record, never as an owner, and without that entry guard 3 reports its names.
+    data = load()
+    record = next(r for r in data["function_owner_records"] if r["record_id"] == "OWN-FN-AUTONOMY-LEVELS")
+    assert record["owner_status"] == "NEEDS_FOUNDER_DECISION" and not record.get("canonical")
+    assert {c["side"]: c["module"] for c in record["candidates"]} == {"A": "autonomy.levels", "B": "greg.autonomy"}
+    side_a, side_b = sorted(record["candidates"], key=lambda c: c["side"])
+    without_b = {**record, "candidates": [side_a]}
+    found = {(line.split(":")[0], line.split(" defines '")[1].split("'")[0])
+             for line in unrecorded([without_b], packages=("greg",))}
+    assert found == {("greg/autonomy.py", "LEVELS"), ("greg/autonomy.py", "EARNED_CEILING"),
+                     ("greg/autonomy.py", "earned_level")}
+
+    # Only the founder's ruling may make side B canonical, and it must keep side A as an alternate.
+    root = _tree(tmp_path, {"docs/decisions/ADR-AUTONOMY.md":
+                            "- Status: accepted\nOWN-FN-AUTONOMY-LEVELS: section 59's five levels are canonical.\n"})
+    ruled = {**record, "owner_status": "CANONICAL", "candidates": [],
+             "canonical": [{"module": "greg.autonomy", "qualnames": side_b["qualnames"]}],
+             "alternates": [{"module": "autonomy.levels", "qualnames": side_a["qualnames"], "status": "ALTERNATE",
+                             "reason": "ruled", "retirement_condition": "ruled"}]}
+
+    def problems(replacement):
+        changed = copy.deepcopy(data)
+        changed["function_owner_records"] = [replacement if r["record_id"] == record["record_id"] else r
+                                             for r in changed["function_owner_records"]]
+        return [p for p in pin_problems(changed, root) if p.startswith(record["record_id"])]
+
+    assert any("without a founder_ruling" in p for p in problems(ruled))
+    assert problems({**ruled, "founder_ruling": "docs/decisions/ADR-AUTONOMY.md"}) == []
+    assert any("only a module that was a candidate" in p for p in problems(
+        {**ruled, "founder_ruling": "docs/decisions/ADR-AUTONOMY.md",
+         "canonical": [{"module": "greg.earned", "qualnames": ["LEVELS"]}]}))
+    assert any("candidates greg.autonomy.LEVELS is pinned" in p for p in problems(without_b))
 
 
 # -- the guards themselves, on synthetic trees -------------------------------------------------------------------

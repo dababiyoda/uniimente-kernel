@@ -495,6 +495,12 @@ function_owner_records:
       - module: egregore.brief_learning
         qualnames: [rank]
         why: "orders brief findings by kind"
+      - module: greg.path
+        qualnames: [STRUCTURALLY_BUILT, BUILD_OPEN, NO_PREDICATE, ACCEPTANCE_STATUS, build_status]
+        why: >-
+          #236's build frontier, adopted into #196 at 2161dbe2: whether a path node's ledger predicate is structurally
+          met on this ledger, and what its founder acceptance waits for; a node's build state, not a claim's evidence
+          level (EVIDENCE_STATUS, side C, stays the path's evidence vocabulary)
     migration_path: >-
       the founder's ruling names the canonical tuple; the others import it or are recorded here as ALTERNATE with
       their retirement condition; Mission Control's REALITY stays HISTORICAL unless it is the one chosen
@@ -519,24 +525,24 @@ function_owner_records:
         qualnames: [LEVELS, AutonomyTuple, AutonomyAuthority, PROMOTION_CRITERIA]
         evidence:
           - "the A0-A9 ladder with ten promotion criteria and a named human authorizer; imported by closure/kernel_registry.py and tests only, by no module under greg/"
-    open_proposals:
-      - pr: 235
-        branch: claude/standing-approval-regression-20261030
+      - side: B
         module: greg.autonomy
-        evidence: >-
-          LEVELS SHADOW to MANAGE_BY_EXCEPTION (section 59's five names); regress() withdraws a standing approval on
-          failure evidence and is called from Body.tick. Not on this base: when it lands it records itself here as a
-          candidate or an alternate, and the guard fails until it does
+        qualnames: [LEVELS, EARNED_CEILING, earned_level, report, regress]
+        evidence:
+          - "#235, adopted into #196 at 6fc4b22b: LEVELS is section 59's five names, SHADOW to MANAGE_BY_EXCEPTION; earned_level names SHADOW, RECOMMENDER or SUPERVISED_CANARY (EARNED_CEILING) from verified runs since the latest failure, and nothing above it"
+          - "on the mission path: Body.tick (greg/body.py) calls regress first, which withdraws a standing approval when failure evidence names a run it allowed; `greg autonomy` (greg/cli.py) prints report, a read-only fold per (capability, action class, target pattern, budget band)"
+          - "imports neither side A nor anything under autonomy/; neither side imports the other"
     decision_needed: >-
-      whether autonomy/levels.py's A0-A9 or section 59's five levels (as #235 implements them) is the ladder GREG
-      reports, and which module owns it
+      whether autonomy/levels.py's A0-A9 (side A) or section 59's five levels in greg/autonomy.py (side B, adopted
+      from #235 and the one the body runs) is the ladder GREG reports, and which module owns it
     safe_default: "no level grants anything; every action still needs its light cone, its exact-scope approvals and the Gate"
     review_trigger: >-
-      PR #235 landing (it must add greg.autonomy here as candidate side B), or the founder's ruling on section 59's
-      five levels against autonomy/levels.py's A0-A9
+      the founder's ruling on section 59's five levels (side B) against autonomy/levels.py's A0-A9 (side A), or a
+      third ladder appearing on #196
     migration_path: >-
-      #235's greg.autonomy joins as candidate side B; the founder's ruling makes one ladder canonical and records
-      the other as an ALTERNATE with its retirement condition, or maps one onto the other with a parity test
+      #235's greg.autonomy joined as candidate side B when #196 adopted it (6fc4b22b); the founder's ruling makes one
+      ladder canonical and records the other as an ALTERNATE with its retirement condition, or maps one onto the
+      other with a parity test
     alternates: []
     distinct:
       - module: greg.missions
@@ -545,6 +551,8 @@ function_owner_records:
       - module: greg.cognition.genomes.forecasting
         qualnames: [LEVELS]
         why: "forecast quantile levels"
+    # side B's report is a common name (nine other guarded modules define one); the structural copy check still applies
+    generic_names: [report]
     markers:
       - '_?([A-Z][A-Za-z0-9]*)?Autonomy([A-Z][A-Za-z0-9]*)?'
       - '_?([A-Z0-9]+_)*AUTONOMY(_[A-Z0-9]+)*'
@@ -582,6 +590,12 @@ function_owner_records:
       - module: autonomy.levels
         qualnames: [AutonomyAuthority.regress]
         why: "lowers an autonomy license"
+      - module: greg.autonomy
+        qualnames: [regress]
+        why: >-
+          withdraws a standing approval when failure evidence names a run it allowed (#235, section 59): it narrows
+          what the founder approved, like autonomy.levels AutonomyAuthority.regress, and writes no
+          critique.regression_closed or critique.regression_reopened
       - module: foundry.systems.repair
         qualnames: [regression_test]
         why: "writes the failing test a code repair must turn green"

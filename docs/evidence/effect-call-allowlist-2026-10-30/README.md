@@ -3,7 +3,9 @@
 Founder directive of 2026-10-28 (OPUS MAXIMUS build), unit MU-D, items S37 and S67. Base: `b1950be2` (#196 head).
 Round 1 was `78e986bb`..`f4028f3d`. Round 2 answers the fourteen findings of two independent reviews (below).
 The branch has since merged #196 three times, at `4dc0d581`, `638457a4` and `a986fc74`; the merges and the one site
-the base added are under "Merges of the PR base" below.
+the base added are under "Merges of the PR base" below. Round 4 answers the thirteen findings of the third review
+(attack and fidelity lenses, on `9b4bf062`); it is under "Round 4" below and changes the scan, the allowlist and the
+mutant gate, still no source module.
 
 ## What changed
 
@@ -44,8 +46,11 @@ or the #26 relay could only be noticed by a reviewer reading the diff.
   `urlopen`. `exempt_when` is checked against the function's signature: the keyword must be keyword-only with that
   literal as its default.
 - Each site is keyed by (module path, enclosing qualname, callee) with an occurrence count, never by line number.
-- `tests/security/effect-call-allowlist.json`: 93 keys and 106 occurrences across 28 `greg/` and 14 `foundry/systems/`
-  modules (round 2: 92 keys, 105 occurrences, 27 `greg/` modules; round 1: 67 keys, 79 occurrences); 6 wrappers.
+- `tests/security/effect-call-allowlist.json`: after round 4, 108 keys and 124 occurrences across 32 `greg/`, 14
+  `foundry/systems/`, 2 `egregore/` and 1 `tools/` modules; 8 wrappers; 33 path lookups (40 occurrences). Before
+  round 4: 93 keys and 106 occurrences across 28 `greg/` and 14 `foundry/systems/` modules, 6 wrappers (round 2: 92
+  keys, 105 occurrences, 27 `greg/` modules; round 1: 67 keys, 79 occurrences). The sub-bullets below give the
+  round-2 numbers; round 4's are under "Round 4".
   - 90 `allowed` entries. Each names what it serves as `kind:detail`: `capability:` (checked against
     `greg.capabilities.BUILTINS`), `confinement:`, `egress:`, `supervised-worker:`, `model-route:`, `founder-command:`,
     `operator:` (a command a person runs) or `installer:`, plus a justification taken from the code.
@@ -79,7 +84,38 @@ holds wire schemas; `tests/data/` does not exist. `tests/security/` already hold
   runs `dpkg-query -S <binary>` from the body's own tick to read an installed tool's DEP-5 license. The argv, the 5 s
   timeout and the scrubbed environment are fixed; the executable is found on the body's ambient PATH and runs
   unconfined with the body's privileges. A recorded finding, not an approval: being listed does not make the spawn
-  acceptable, it stops it growing unseen.
+  acceptable. What the listing stops from going unseen (round 4, MUD-R4-2): a new spawn site, a changed count, a
+  rewritten spawn or constant (the pin), and a new direct caller (`system_binary` is a declared wrapper, so
+  `genesis._binary_license` and `licensing.requalify_binary` are findings of their own). It does not see a new route
+  to an existing caller: `a986fc74` added one (below) and the scan stayed green. Routes are read from the code.
+- **The envelope's own binary (round 4, MUD-ATK-1).** `worker_isolation._backend` and `relay_door.namespace_argv` take
+  `bwrap` from `shutil.which` on the body's ambient PATH and run it unconfined. Every worker envelope and door namespace
+  is whatever file of that name comes first there. The 14 allowed entries that rely on it now say so, and the test
+  requires it while the lookup stays ambient. A pin is proposed on `claude/licensing-binary-pin-20261030`
+  (`db09035e`, not merged here).
+- **known_unmediated `tools/offline_test.py :: install_filter :: ctypes.util.find_library`** (round 4, MUD-ATK-8). The
+  seccomp filter's loader runs `find_library("seccomp")` in each confined child, after fork and before the filter. It
+  always runs `/sbin/ldconfig -p` (observed with an audit hook). When the ldconfig cache lacks libseccomp, it also
+  runs `gcc` or `cc` and `ld` found on the body's PATH (the reviewer simulated this; this host's cache has the
+  library). Genesis reaches it from the body loop through `_run_bounded` -> `run_isolated`. Loading the library by a
+  fixed soname would remove the spawn; that source change is outside this unit.
+- **git on the ambient PATH (round 4, MUD-ATK-6, MUD-ATK-7).** `egregore/repository_audit.git_read` (behind
+  `brief.engineering`, `repo.pin_audit` and `repo.integration_audit`, whose manifests name `/usr/bin/git`) and
+  `ventures._git_head` (no env at all, so every inherited `GIT_*` variable applies) run the first `git` on the body's
+  PATH. A planted `git` ran in the reviewer's probes. `git_read` also applies the repository's own config: here,
+  `briefs._git(path, "status", "--porcelain")` ran a `core.fsmonitor` command a scratch repository named, which
+  `read_only_git` would have blanked. `git_read` is now a declared wrapper.
+- **Genesis's acquired binaries (round 4, MUD-ATK-10, plausible).** `capabilities.installed_binary` searches
+  `/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin` with no ownership check. Genesis runs what it finds from the body
+  loop through `run_isolated(isolate_network=True)`, which confines the network only. With Homebrew on a Mac,
+  `/usr/local/bin` and `/opt/homebrew/bin` can be user-writable. This was not run on a Mac. Earlier wording called these
+  "fixed system roots"; that wording is gone.
+- **System 52's string check (round 4, found while classifying `repair._trace_lines`).** `foundry_bridge._call`
+  refuses a request whose `system`, at any depth, is the string `"52"`, but it compares strings. A nested `"052"`
+  passes it, observed through `foundry.query` -> `mcp_gateway.foundry_tool`. The MCP tool then selects system 52 with
+  `int()`. Inside GREG, the foundry worker's guard refused the `exec` of the caller's source (`PermissionError`,
+  observed). Outside GREG, `mcp_gateway._query` with `"052"` ran the caller's source in the MCP server child
+  (observed).
 - **`greg/cognition/bridge.py :: run_worker`** (MUD-4/F3). With a founder-selected Ollama model and a problem that has
   sources or a schedule request, it calls `run_isolated(isolate_network=False)`, so the cortex worker runs with full
   network, not loopback only. Reproduced: `run_isolated(..., isolate_network=False)` let a child create a socket;
@@ -92,7 +128,9 @@ holds wire schemas; `tests/data/` does not exist. `tests/security/` already hold
 
 Reachability of the operator-only entries was re-audited with a reverse search over callers by terminal name across
 `greg/`, `foundry/` and `cortex/`, then each hit was checked by hand: only `memory_bytes` is reached by the body loop.
-That audit was of round 2's tree (`b1950be2`); `system_binary` arrived later with the base and is filed above.
+That audit was of round 2's tree (`b1950be2`); `system_binary` arrived later with the base and is filed above. Round
+4 did not repeat it for the confinement and capability entries. Instead it records what their confinement rests on
+(the `bwrap` lookups, the path lookups). Those entries are reached through a capability's adapter and the Gate.
 `a986fc74` added `fs.search` to `greg/appraisal.py`'s `REOBSERVABLE` set. It is a read-only, streamed file read, so
 the `Body.appraise` reason ("it re-runs only the read-only `REOBSERVABLE` sensors") still holds.
 
@@ -120,20 +158,33 @@ and `greg/textquery.py`. The diff was read for each. What it adds:
   `http_get`, `browser_render` and `fs.read` now return. Their spawns and connections are the ones already listed,
   with unchanged counts;
 - a new read-only capability, `fs.search`, its planner route and its mission template; judge changes in
-  `greg/missions.py`; and a watched sensing block. The watch re-reads a blocked mission's sensors through the
-  existing `_observe` and returns (WAITING or RESUMED) before the self-repair branch, so it opens no new path to
-  `Genesis` or `system_binary`. No added line calls `_form`, `genesis`, `licensing` or `_self_repair`.
+  `greg/missions.py`; and a watched sensing block.
 
-It starts no process, opens no connection, listens nowhere and calls no declared wrapper. The scan agrees: with the
-entries from `77d5e9b8`, **9 passed** on the merged tree, so nothing is unlisted or stale and no count changed.
-No new site was classified, and no entry was added.
+**Correction (round 4, MUD-R4-1).** The earlier version of this paragraph said the watched block "opens no new path
+to `Genesis` or `system_binary`". That was false. It is true that no added line calls `_form`, `genesis`,
+`licensing` or `_self_repair`. But `a986fc74` gives the sensor-failure blocker `failing_checks` and `sensing: True`.
+That routes a sensing-blocked mission into `_watch_while_blocked` (missions.py:2070), which calls `_observe`
+(:2534). When the sensor no longer resolves, `_observe` calls `_deficit` (:2421), and the chain continues through
+`_form` (:2741), `Genesis.resolve`, `_manifest_for` and `_binary_license` to `system_binary`. The body reaches this
+while the founder's SENSOR_FAILURE ask is still open, for example after the founder detaches the sensor as the ask
+suggests. The fidelity reviewer reproduced it, and it was re-run here on the round-4 tree with a scratch copy of the
+reviewer's probe: while sensing-blocked after the detach, the calls were `_deficit`, `Genesis.resolve('hash.sha256')`,
+`system_binary('/usr/bin/sha256sum')` and `system_binary('/usr/bin/shasum')`. At `638457a4` the same scenario
+recorded none. The route is now a `body-loop:` serve of the `system_binary` and `_binary_license` findings. It was
+traced by hand and by one runtime probe; the scan does not check routes.
+
+The diff starts no process, opens no connection, listens nowhere and calls no declared wrapper. The scan agrees: with
+the entries from `77d5e9b8`, **9 passed** on the merged tree, so nothing is unlisted or stale and no count changed. No
+new site was classified, and no entry was added at that merge.
 
 **`4dc0d581`: the licensing site.** The base added it in `bd7e3f9e` (#201/#230, 2026-10-22, "GREG reads PDFs on the
 mission path; acquired system binaries carry their DEP-5 license"); that commit is not in `b1950be2`, where this
 unit was seeded, and reached #196 with the #201/#230 adoption before `4dc0d581`. Line numbers below are from the
 merged tree at `10d8fafa`. `a986fc74` changed none of `greg/licensing.py`, `greg/genesis.py`, `greg/body.py` or
-`greg/goal_gravity.py`, so their numbers hold at `640e6eb9`; `greg/missions.py` grew, and its numbers at `640e6eb9`
-are `_step` :2008 (`_form` at :2113), `_deficit` :2732 (:2741) and `_after_outage` :2856 (:2871).
+`greg/goal_gravity.py`, so their numbers hold at `640e6eb9`. Two cited files grew. `greg/missions.py`'s numbers at
+`640e6eb9` are `_step` :2008 (`_form` at :2113), `_deficit` :2732 (:2741) and `_after_outage` :2856 (:2871).
+`greg/capabilities.py` changed by +115/-23 lines, so `installed_binary`, cited below at :1290 for `10d8fafa`, is at
+:1382 at `640e6eb9` (round 4, MUD-R4-3).
 
 - The call. `system_binary` (greg/licensing.py:679) resolves `dpkg = shutil.which("dpkg-query")` (:684) on the body
   process's own PATH and runs `subprocess.run([dpkg, "-S", real], capture_output=True, text=True,
@@ -175,12 +226,17 @@ are `_step` :2008 (`_form` at :2113), `_deficit` :2732 (:2741) and `_after_outag
   mission and Goal Gravity schedules and a reason that says the above. The precedents are `Body.appraise` and
   `compute.memory_bytes`: the body reaches each on its own with nothing governing the spawn. It is a recorded finding,
   not an approval, and listing it authorizes nothing.
-- The fix is outside this unit, which changes no source module. A fix that pins the executable to a trusted,
-  root-owned system path is proposed on branch `claude/licensing-binary-pin-20261030` as a separate child PR of #196
-  (when this record was written the branch existed at `638457a4` with no commits of its own, and it still had none
-  when the record was updated for `640e6eb9`). The entry stays `known_unmediated` after that fix: pinning the path
-  decides which binary runs, but the spawn is still unconfined and still on the body loop. Removing the finding needs
-  the spawn behind confinement (for example `run_isolated`) or behind a governed path, and a re-classification.
+- The fix is outside this unit, which changes no source module. A fix that pins the executable to a root-owned
+  system file is proposed on branch `claude/licensing-binary-pin-20261030` as a separate child PR of #196. When this
+  record was written the branch had no commits of its own, and it still had none at the `640e6eb9` update. At round
+  4 it holds `db09035e`, which pins `dpkg-query` and both `bwrap` lookups. That commit is not merged here. The third
+  review found that the pin checks only the final file, not the directories on its path or the symlink chain, and that
+  it returns a path that is resolved again at exec (MUD-ATK-9). The entry stays `known_unmediated` after that fix:
+  pinning the path decides which binary runs, but the spawn is still unconfined and still on the body loop. Removing
+  the finding needs the spawn behind confinement (for example `run_isolated`) or behind a governed path, and a
+  re-classification. When the pin merges, the `bwrap` and `dpkg-query` path lookups change and fail this check
+  until they are re-listed. The texts that say "ambient PATH" must then be re-read by hand: the check requires those
+  words while the lookup is ambient, but it does not remove them afterwards.
 
 ## Review findings and dispositions (round 2)
 
@@ -265,21 +321,146 @@ nothing uncommitted was read:
 Counts at `640e6eb9` are the same as at `77d5e9b8`: 93 keys and 106 occurrences across 28 `greg/` and 14
 `foundry/systems/` modules, 90 `allowed`, 3 `known_unmediated` and 6 wrappers.
 
+## Round 4: the third review's thirteen findings
+
+A session interrupted at 22:05Z on 2026-10-30 left uncommitted changes to the three unit files, saved before that as
+`mud-r3fix/uncommitted-at-2109Z.patch` in the session's scratch directory. Round 4 read them, kept what held, and
+finished the rest: the allowlist had not been updated to match the scanner, and four tests failed.
+
+### What changed
+
+- **Scope.** The scan reads `greg/`, `foundry/systems/` and every repository module they import, followed import by
+  import (`read_tree`). Imports are resolved from the repository root and from `tools/`, which
+  `greg.capabilities._network_filter` and `segmentation` put on `sys.path`. `test_sys_path_roots_are_module_roots`
+  keeps that list complete. On this tree it reads 325 modules, up from 216, including 18 under `egregore/` and
+  `tools/offline_test.py`.
+- **Effect table.** It now also counts these as effects:
+  - stdlib calls that start a child themselves: `platform.platform|processor|architecture` (`uname -p`) and
+    `ctypes.util.find_library` (`ldconfig -p`, then `gcc`/`ld` on PATH);
+  - `multiprocessing.get_context|Manager`, `multiprocessing.pool.Pool` and the `multiprocessing.managers` managers;
+  - the `urllib.request` handlers and legacy openers that connect, `socket.SocketType`, `ssl.create_connection`,
+    `ssl.get_server_certificate`, `telnetlib` and `nntplib`;
+  - name lookups (`socket.getaddrinfo|gethostbyname|gethostbyname_ex|gethostbyaddr|getnameinfo|getfqdn`), because a
+    lookup sends the name to a resolver;
+  - code run from a string in this process: `exec` and `eval` (where the module does not rebind the name) and
+    `runpy.run_module|run_path`.
+- **Names the scan cannot follow.**
+  - An effect module (`subprocess`, `os`, `socket`, `urllib.request`, ...) used as a value is a "module reference"
+    site: on an attribute or a class, as a default, as an argument (`vars(subprocess)`,
+    `attrgetter("run")(subprocess)`), in a container, as a loop or `with` source, as a return value, or through its
+    namespace (`__dict__`).
+  - A loop method (`create_connection`, `subprocess_exec`, `getaddrinfo`, ...) counts on any receiver.
+  - A rebound `isinstance` or `exec` is no longer read as the builtin.
+- **Pins (MUD-ATK-4).** Every entry carries a `pin`.
+  - A known_unmediated pin is the sha256 of its whole enclosing definition, parsed, plus every module-level constant
+    it reads (`DPKG_TIMEOUT`, `ACTIVE_BINARY_POLICY`).
+  - An allowed pin covers the calls recorded at its site (callee, arguments, keywords, in any order) and the constants
+    they read.
+  - A changed spawn fails until someone re-reads the text and re-pins it. A pin binds what runs, not who reaches it.
+- **Findings stay findings (MUD-ATK-5).** `FINDINGS` in the test names the six known_unmediated keys. Moving one under
+  `allowed`, with any serves, fails as `FINDING RE-FILED`. Filing a new one needs an edit of the test.
+- **Wrappers (MUD-R4-2, MUD-ATK-6).** `greg.licensing.system_binary` and `egregore.repository_audit.git_read` are
+  declared wrappers, so each caller is a site: `_binary_license` and `requalify_binary` are findings, and `capture`,
+  `briefs._git` and `capabilities._repo_report` are allowed.
+- **Path lookups (MUD-ATK-1, MUD-ATK-7, MUD-ATK-10).** `path_lookups` lists each place a program is chosen by name:
+  `shutil.which` (its `path=`, else the ambient PATH), or an argv whose first item has no slash (the PATH of the env
+  it is given: none means ambient, a literal is that string, an env without PATH means `os.defpath`, anything else is
+  computed). Each entry has its count, what it searches and a note on who runs the file found, with what privileges
+  and confinement. There are 33 lookups: 25 ambient, 6 `/usr/bin:/bin`, 1 `installed_binary`'s list and 1 computed.
+  While `bwrap` is looked up on the ambient PATH, an allowed justification that relies on bubblewrap, a namespace or
+  the envelope must say "ambient PATH".
+- **Allowlist.**
+  - 10 new allowed sites: 2 in `egregore/local_model.py`, `git_read` and its 3 callers, `repair._trace_lines`'s
+    `exec`, `evolution_room`'s `runpy`, and 2 in `tools/offline_test.main`. The 2 `platform.platform` sites from the
+    patch are kept.
+  - 3 new known_unmediated entries: `_binary_license`, `requalify_binary` and `install_filter`.
+  - The `_watch_while_blocked` route (MUD-R4-1) is added to the `system_binary` and `_binary_license` serves.
+  - These justifications were rewritten: the 14 entries that rely on the namespace or the envelope (`_backend`
+    among them), `ventures._git_head`, `repair._pytest` and `repair._Runner.run`'s reach claim.
+  - Totals: 102 allowed, 6 known_unmediated, 8 wrappers and 33 path lookups.
+- **Self-tests.** There are 9 new ones (18 in all): module references and the added callees, known_unmediated
+  pins, allowed pins, findings re-filed, the round-3 forms, program lookups, envelope claims, import following, and
+  the `sys.path` roots. Two existing ones were corrected for the new `pin` field. The envelope rule applies to
+  allowed entries only: a known_unmediated reason names the envelope only to say it is absent.
+
+### Dispositions
+
+| Id | Disposition |
+| --- | --- |
+| MUD-ATK-1 | fixed in the inventory: the 14 entries that rely on the envelope say `bwrap` is found on the ambient PATH, the two `bwrap` lookups are listed, and the test requires the wording while the lookup is ambient. The source pin is LIC-PIN's (`db09035e`, not merged here) |
+| MUD-ATK-2 | fixed: `platform.platform|processor|architecture` are effects; both sites are listed |
+| MUD-ATK-3 | fixed: every form in the reviewer's probe is now a site (15 of 15; the round-3 scanner found 0) |
+| MUD-ATK-4 | fixed: pins on every entry (whole definition for findings, the calls for allowed) |
+| MUD-ATK-5 | fixed: `FINDINGS` in the test; re-filing with an operator serves fails |
+| MUD-ATK-6 | fixed: imports are followed into `egregore/` and `tools/`; `git_read` is a wrapper and is listed with its callers and its lookup |
+| MUD-ATK-7 | fixed in the inventory: the justification and the lookup say git comes from the ambient PATH with the inherited `GIT_*` variables. `greg/ventures.py` is held by another session, so the source is unchanged |
+| MUD-ATK-8 | fixed in the inventory: `install_filter`'s `find_library` is a known_unmediated finding. Loading by a fixed soname is a source change outside this unit (deferred) |
+| MUD-ATK-9 | deferred: it concerns LIC-PIN's pin (`greg/isolation.trusted_system_executable`), which is not on this branch. Recorded above for that PR |
+| MUD-ATK-10 | fixed in the record: no text calls `installed_binary`'s directories trusted; its lookup is listed with a note that there is no ownership check. Not run on a Mac |
+| MUD-R4-1 | fixed: the README paragraph is corrected, the route is a serve, and it was re-run on this tree |
+| MUD-R4-2 | fixed: the wording is corrected, and `system_binary` is a wrapper, so a new caller fails |
+| MUD-R4-3 | fixed: `installed_binary` is at :1382 at `640e6eb9` |
+
+### Commands and results
+
+Every run used `PYTHONDONTWRITEBYTECODE=1 /home/user/venv311/bin/python -B` (pytest with `-q -p no:cacheprovider`).
+
+| Step | Where | Result |
+| --- | --- | --- |
+| fail-before | detached worktree of the unit base `a986fc74`, with round 4's test and round 3's allowlist (`9b4bf062`) | **2 failed, 16 passed**. `test_allowlist_is_well_formed`: 93 malformed (no pins, round-3 fields). `test_every_effect_call_site_is_listed`: 10 unlisted (`egregore/local_model` ×2, `git_read`, `repair._trace_lines`, both `platform.platform`, `evolution_room`, `tools/offline_test` ×3), 93 pin mismatches, 3 finding problems, 33 unlisted path lookups, 14 envelope claims |
+| fail-before | the same worktree with round 3's test and allowlist, and the reviewers' probes | round 3's test: 9 passed. Scan probe: 15 of 15 forms `NO SITE`, and no `characterize.py` site. Re-filing all 3 findings as allowed: no problem. Rewriting both pinned spawns: no problem. A new `system_binary` caller: no problem. A new `git_read` caller: no problem. `egregore/` and `tools/` modules scanned: none |
+| pass-after | this branch | `tests/unit/test_effect_call_allowlist.py`: **18 passed**. The same probes give 15 of 15 forms found. Re-filing gives 14 problems (6 `FINDING RE-FILED`). The rewrite gives 2 `PIN MISMATCH known_unmediated`. A new `system_binary` or `git_read` caller gives `UNLISTED`. Restoring `_backend`'s round-2 text gives `ENVELOPE CLAIM` |
+| runtime | scratch copy of the fidelity reviewer's probe, removed after | sensing-blocked after a detach: `_deficit`, `Genesis.resolve`, `system_binary` ×2 (MUD-R4-1) |
+| runtime | `briefs._git` on a scratch repository with `core.fsmonitor` set | its command ran |
+| runtime | `foundry_bridge.query` and `mcp_gateway._query` with nested system `"052"` | the bridge passed it; GREG's foundry worker guard refused the `exec` (`PermissionError`); the gateway outside GREG ran the source |
+| runtime | `ctypes.util.find_library("seccomp")` under an audit hook | `subprocess.Popen /sbin/ldconfig ['-p']` |
+| mutants | `scripts/ci/check_effect_call_allowlist_mutants.py`, this branch | see "Mutant gate" below |
+| other | `test_greg_packaging.py`, `test_greg_platform.py`, `test_developmental_inheritance.py` | 3, 19 and 23 passed |
+| other | `check_authority_singleton.py`, `check_schema_refs.py` | rc 0; 27 schemas, 130 local refs, all resolve |
+| lint | `ruff check --line-length 120` on both Python files | only the script's one-line stdlib import (I001), as in the committed file |
+
+### Mutant gate
+
+`scripts/ci/check_effect_call_allowlist_mutants.py` has **117 mutants**, up from 52. They break down as:
+- 48 source mutants: round 2's 23, the round-3 patch's 14, and 11 added in round 4 (a new `git_read` caller, an effect in
+  `egregore/`, a new module reached only through an import, an effect in `tools/offline_test.py`, `exec` of a literal,
+  `multiprocessing.get_context`, a loop method on a class attribute, a new ambient lookup, a pinned git lookup moved to
+  the ambient PATH, a rewritten allowed call and a constant it reads);
+- 25 allowlist mutants: round 2's 11, the patch's 5 and round 4's 9 (a finding re-filed with an operator serves, a
+  site filed as a finding without `FINDINGS`, the `install_filter` entry removed, `git_read` undeclared, an allowed
+  pin dropped or stale, a lookup removed or misstated, an envelope claim without the ambient PATH);
+- 44 scanner mutants: round 2's 18, the patch's 12 and round 4's 14.
+
+The gate ran in three shards on the final tree. Each shard was a separate process that imported the script, kept
+every third mutant and ran its own `main()`, with its own scratch copy and baseline, because the machine was shared.
+The result: **BASELINE passes in each shard, 117/117 caught**, 0 survived, 0 stale, exit 0 in each, 741 s wall time.
+
+The first full run (same split, before two fixes) caught 114 of 117. Two mutants made their test fail, but the
+output did not name the expected site (an `IndexError`, and an assertion that printed only the problems found). The
+five new tests now compare prefixes, so a failure prints the missing problem. The third mutant was equivalent: the
+reference rule still recorded the loop call. That mutant now reverts both loop rules to round 3's. Every one of the
+three was then run on its own and caught, before the clean full run.
+
 ## Limitations
 
-The scan is static and reads only `greg/` and `foundry/systems/`. It does not see:
+The scan is static. It reads `greg/`, `foundry/systems/` and the repository modules they import. It does not see:
 - effects inside third-party libraries (model SDKs, the MCP SDK, Playwright, Chromium). The `browser.session` WebSocket
   bypass fixed in 8bdca11f lived there and in the `CONFINED_EGRESS` policy set; reverting that fix leaves this check
   green. Round 1's product statement that it now catches that class was wrong;
 - code run from a string in a child (`python -c`); the spawn that runs it is listed;
-- names imported from modules outside the scanned tree (a `cortex/` helper re-exporting `subprocess.run` is matched
-  only as `x.subprocess.run`), `importlib.import_module` or `getattr` with a non-literal name, `ctypes` calls,
-  `multiprocessing.get_context(...)` objects, and `socket.fromfd` (it wraps an existing descriptor);
-- callers of functions that wrap an effect but are not declared wrappers: the reachability claims in those entries'
-  justifications ("exercise() only", "reached only from …") come from reading code and are not machine-checked.
+- `importlib.import_module` or `getattr` with a non-literal name, `ctypes` calls other than `find_library`,
+  `socket.fromfd` (it wraps an existing descriptor), and stdlib modules that spawn internally and are not in the
+  table (`uuid`'s command fallbacks among them);
+- who reaches a site. A pin binds what runs; the routes in `serves` and the reachability claims in justifications
+  ("exercise() only", "reached only from …") are read from the code and not machine-checked, except that a declared
+  wrapper makes each caller a site. MUD-R4-1 shows a new route can arrive with the scan green;
+- what a program found on the PATH is. `path_lookups` says where the file is searched for, not who owns that
+  directory: a fixed list such as `installed_binary`'s is not an ownership check.
 
-Name binding is flow-insensitive, so a reused local name may over-report. The mutants script is not a step in
-`.github/workflows/canonical-ci.yml` (outside this unit's scope); the test itself runs in CI job 1's full pytest run.
+Name binding is flow-insensitive, so a reused local name may over-report. The envelope rule matches words
+("bubblewrap", "namespace", "envelope"), so a justification that relies on the envelope in other words is not held to
+it. The mutants script is not a step in `.github/workflows/canonical-ci.yml` (outside this unit's scope); the test
+itself runs in CI job 1's full pytest run.
 
 The `system_binary` entry's body-loop paths were traced at runtime only for the mission path (one test, the
 installed-software rung); the Goal Gravity path is read from the code. The planted-binary probe ran in this Linux
@@ -295,10 +476,16 @@ the record, not a defect of the code.
 
 ## Reality level
 
-UNIT-TESTED: static analysis plus mutation testing on scratch copies. Three runtime probes reproduced findings
-(`run_isolated` network; the body loop's `sysctl` spawn, with the spawn intercepted; the body loop's `dpkg-query`
-spawn, traced from `Body.tick`, and a planted `dpkg-query` earlier on PATH that it ran). The `dpkg-query` trace and
-probe were re-run at `640e6eb9`. No runtime effect was blocked, nothing ran on a founder device, and no authority,
-capability or behaviour changed. The `system_binary` entry is a recorded finding, not an approval.
+UNIT-TESTED: static analysis plus mutation testing on scratch copies. Runtime probes in this Linux container reproduced
+these findings:
+- `run_isolated` network;
+- the body loop's `sysctl` spawn, with the spawn intercepted;
+- the body loop's `dpkg-query` spawn, traced from `Body.tick`, and a planted `dpkg-query` earlier on PATH that it ran;
+- in round 4: the watched-block route to `system_binary`, a repository's `core.fsmonitor` run by `briefs._git`, the
+  system-52 string check passed by `"052"`, and `find_library` running `ldconfig`.
+
+The third review's planted `bwrap`, `git` and `uname` probes are the reviewers' runs; they were not repeated here.
+No runtime effect was blocked, nothing ran on a founder device or a Mac, and no authority, capability or behaviour
+changed. Every known_unmediated entry is a recorded finding, not an approval.
 
 Rollback: revert the commits. The three files have no dependents.

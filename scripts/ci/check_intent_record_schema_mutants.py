@@ -72,6 +72,9 @@ MARKDOWN = c("test_deleting_a_markdown_intent_record_fails")
 LEDGER = c("test_scrubbing_a_ledger_only_intent_fails")
 HORIZON = c("test_deleting_a_horizon_fails_unless_a_horizon_supersedes_it")
 BACKCAST = c("test_deleting_a_frontier_backcast_fails")
+MENTION = c("test_an_intent_the_ledger_only_mentions_is_pinned")
+TREE = c("test_head_ids_are_read_from_the_tree_alone")
+LONGER = c("test_a_longer_id_in_the_ledger_does_not_keep_a_shorter_one")
 
 # (name, edits, test that must fail). An edit is ("replace", path, old, new), ("cut", path, start, end): remove from
 # the unique ``start`` up to the next ``end``, ("create", path, text) or ("delete", path).
@@ -143,6 +146,8 @@ MUTANTS = [
        '      "enabling_interfaces_dropped": {\n        "value": [\n          "launchd plist",')], H_WHERE),
     ("a directive interface paraphrased (computer_use)",
      [("replace", PATH_JSON, '"keyboard input",', '"keyboard and voice input",')], VERBATIM),
+    ("a directive interface cited from another section (computer_use under section 39)",
+     [("replace", PATH_JSON, '-source.md#31-computer-use"', '-source.md#39-organizational-morphogenesis"')], VERBATIM),
     ("a copied falsifier cut short (continuity)",
      [("replace", PATH_JSON, '"value": "a restore drill loses founder intent, ledger history or the ability to swap '
        'the model",', '"value": "a restore drill loses founder intent",')], VERBATIM),
@@ -153,6 +158,8 @@ MUTANTS = [
      [("replace", PATH_JSON, '"id": "voice",', '"id": "voice_and_speech",')], HEAD),
     ("an id dropped from the pinned snapshot",
      [("replace", SNAPSHOT, '   "INTENT-20260930-open-source-first",\n', "")], PINNED),
+    ("an id the ledger only mentions dropped from the pinned snapshot",
+     [("replace", SNAPSHOT, '   "INTENT-20261001-open-source-mechanism-harvest",\n', "")], MENTION),
     ("the check stops reading horizons",
      [("replace", CHECK, '"horizons": lambda i: i in now["horizons"],', '"horizons": lambda i: True,')], HORIZON),
     ("the check stops reading frontier backcasts",
@@ -164,6 +171,12 @@ MUTANTS = [
     ("the check stops reading the ledger",
      [("replace", CHECK, '"ledger_records": lambda i: i in declared or bool(_token(i).search(ledger)),',
        '"ledger_records": lambda i: True,')], LEDGER),
+    ("ledger ids read from headings only, so an id the ledger only mentions is never pinned",
+     [("replace", CHECK, '    return re.findall(rf"(?<![\\w/-])({ID})(?![\\w-])", text)',
+       '    return re.findall(rf"^#+ ({ID})\\b", text, re.M)')], TREE),
+    ("a ledger id read as present while the ledger names only a longer id",
+     [("replace", CHECK, '"ledger_records": lambda i: i in declared or bool(_token(i).search(ledger)),',
+       '"ledger_records": lambda i: i in declared or i in ledger,')], LONGER),
     ("succession read from any mention in a record",
      [("replace", CHECK, '        named = row.get("supersedes")', '        named = [json.dumps(row)]')], NOT_SUCCESSION),
     ("an id matched as a prefix of a longer one",

@@ -36,6 +36,24 @@ def whole(value: str, text: str) -> bool:
     return re.search(r'(?:^|(?<=[\n"])|(?<=\* ))' + re.escape(value) + r'(?=["\n;.]|$)', text) is not None
 
 
+def cited(source: str) -> str:
+    """The text a file source cites: the whole file, or the numbered section its ``#<n>-<heading>`` anchor names
+    (the first ``<n>. HEADING`` line up to section n+1), whose heading must match the anchor."""
+    name, _, anchor = source.partition("#")
+    file = ROOT / name
+    assert file.is_file(), source
+    text = file.read_text(encoding="utf-8")
+    section = re.fullmatch(r"(\d+)-([a-z0-9-]+)", anchor)
+    if not section:
+        return text
+    number, slug = int(section.group(1)), section.group(2)
+    lines = text.splitlines()
+    start = next(i for i, line in enumerate(lines) if line.startswith(f"{number}. "))
+    assert re.sub(r"[^a-z0-9]+", "-", lines[start][len(f"{number}. "):].lower()).strip("-") == slug, source
+    end = next(i for i in range(start + 1, len(lines)) if lines[i].startswith(f"{number + 1}. "))
+    return "\n".join(lines[start:end]) + "\n"
+
+
 def entries(field_value) -> list[dict]:
     return field_value if isinstance(field_value, list) else [field_value]
 
@@ -61,7 +79,8 @@ def test_every_horizon_not_currently_buildable_carries_section_8():
 
 
 def test_every_copied_value_is_verbatim_in_its_source():
-    """A ``value`` must be found, item by item, in the text it cites; nothing is paraphrased into the path."""
+    """A ``value`` must be found, item by item, in the text it cites (for a directive anchor, the section it names);
+    nothing is paraphrased into the path."""
     data = path.load()
     checked = 0
     for horizon in data["horizons"]:
@@ -76,9 +95,7 @@ def test_every_copied_value_is_verbatim_in_its_source():
                     if source.startswith(path.PATH_SOURCE):
                         texts.append(path.resolve_text(data, horizon, source[len(path.PATH_SOURCE):]))
                     else:
-                        file = ROOT / source.partition("#")[0]
-                        assert file.is_file(), (horizon["id"], field, source)
-                        texts.append(file.read_text(encoding="utf-8"))
+                        texts.append(cited(source))
                 for value in values:
                     if all(s.startswith(path.PATH_SOURCE) for s in sources):
                         found = any(value in text for text in texts if text)      # an interface named in a field

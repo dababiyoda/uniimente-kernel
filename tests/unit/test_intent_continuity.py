@@ -119,6 +119,22 @@ def test_scrubbing_a_ledger_only_intent_fails(tree):
     assert missing(snapshot(), tree) == [("ledger_records", "INTENT-20261023-ORGAN-PINS-UPGRADED")]
 
 
+def test_a_longer_id_in_the_ledger_does_not_keep_a_shorter_one(tree):
+    ledger = tree / "docs/FOUNDER_INTENT_LEDGER.md"
+    pins = "INTENT-20261023-ORGAN-PINS-UPGRADED"
+    ledger.write_text(ledger.read_text(encoding="utf-8").replace(pins, f"{pins}-AGAIN"), encoding="utf-8")
+    assert missing(snapshot(), tree) == [("ledger_records", pins)]
+
+
+def test_an_intent_the_ledger_only_mentions_is_pinned(tree):
+    """Draft #144's intent has no record on this tree; the ledger's mention is what keeps it."""
+    harvest = "INTENT-20261001-open-source-mechanism-harvest"
+    assert harvest in snapshot()["ids"]["ledger_records"]
+    ledger = tree / "docs/FOUNDER_INTENT_LEDGER.md"
+    ledger.write_text(ledger.read_text(encoding="utf-8").replace(f"`{harvest}`", "the harvest draft"), encoding="utf-8")
+    assert missing(snapshot(), tree) == [("ledger_records", harvest)]
+
+
 def _path(root: Path) -> dict:
     return json.loads((root / "greg/path.json").read_text())
 

@@ -11,8 +11,9 @@ shallow). ``--write-snapshot COMMIT`` regenerates the snapshot from that commit'
 Ids by kind:
   intent_records      ``intent_id`` of every record in docs/intent/*.json (a file may hold a list under ``intents``)
   intent_documents    the id in the title line of every docs/intent/*.md record
-  ledger_records      ids the Founder Intent Ledger declares itself: a ``| Required field |`` table header, an
-                      ``- intent_id:`` line, a heading or a line that begins with the id
+  ledger_records      every id the Founder Intent Ledger names as a whole token: the ids it declares (a
+                      ``| Required field |`` table header, an ``- intent_id:`` line, a heading) and the ids it only
+                      mentions, such as an intent kept on a draft branch (a path segment is a link, not a mention)
   horizons, frontier_backcasts   ``id`` of every horizon and frontier backcast on greg/path.json
 
 A JSON record must stay a JSON record; a markdown record may become JSON; a ledger id must stay mentioned in the
@@ -62,17 +63,9 @@ def _markdown_ids(root: Path) -> list[str]:
 
 
 def _ledger_ids(text: str) -> list[str]:
-    ids = []
-    for line in text.splitlines():
-        header = re.match(r"^\| Required field \|(.*)\|\s*$", line)
-        if header:
-            ids += [cell.strip() for cell in header.group(1).split("|") if re.fullmatch(ID, cell.strip())]
-            continue
-        declared = (re.match(rf"^- intent_id: ({ID})\s*$", line) or re.match(rf"^#+ ({ID})\b", line)
-                    or re.match(rf"^({ID}): ", line))
-        if declared:
-            ids.append(declared.group(1))
-    return ids
+    """Every intent id the ledger names as a whole token: the ids it declares (a ``| Required field |`` table header,
+    an ``- intent_id:`` line, a heading) and the ids it only mentions, such as an intent kept on a draft branch."""
+    return re.findall(rf"(?<![\w/-])({ID})(?![\w-])", text)
 
 
 def _path(root: Path) -> dict:
@@ -153,8 +146,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     snapshot = json.loads(Path(args.snapshot).read_text(encoding="utf-8"))
     gone = missing(snapshot, Path(args.root))
+    distinct = len(set().union(*map(set, snapshot["ids"].values())))     # a record id the ledger names counts twice
     total = sum(len(ids) for ids in snapshot["ids"].values())
-    print(f"{total} ids pinned at {snapshot['pinned_commit'][:12]}; {len(gone)} missing at HEAD")
+    print(f"{total} ids ({distinct} distinct) pinned at {snapshot['pinned_commit'][:12]}; {len(gone)} missing at HEAD")
     for kind, identifier in gone:
         print(f"MISSING {kind} {identifier}: restore it, or name it in a successor's supersedes")
     return int(bool(gone))

@@ -122,7 +122,37 @@ PARSERS = {
     "last_hex_token": lambda out: out.strip().split()[-1].lower() if out.split() else "",
     "first_int": lambda out: int(out.split()[0]) if out.split() else -1,
     "words": documents.fold,               # whitespace collapsed, in the folded comparison form (DOC-5)
+    "text": lambda out: out[:-1] if out.endswith("\n") else out,     # the output as printed, one final newline off
+    "lines": lambda out: out.splitlines(),
 }
+
+# Discovery by behaviour (acceptance C.G3): a function with a founder-signed contract and no catalog entry is
+# tried against installed tools before any builder is commissioned. The set is fixed and auditable: each entry is a
+# POSIX/coreutils filter that reads the one file it is given and writes only stdout. Nothing here is found by
+# scanning PATH for arbitrary programs, and every run is the acquired-binary run (isolated, no network, output,
+# memory and time ceilings) on a copy in a throwaway directory. A match proves behaviour on the contract's
+# vectors, never meaning: the founder's contract is the whole acceptance.
+DISCOVERY_TEMPLATES = (
+    Candidate("wc", ("{binary}", "-l", "{file}"), "first_int"),
+    Candidate("wc", ("{binary}", "-w", "{file}"), "first_int"),
+    Candidate("wc", ("{binary}", "-c", "{file}"), "first_int"),
+    Candidate("wc", ("{binary}", "-m", "{file}"), "first_int"),
+    Candidate("wc", ("{binary}", "-L", "{file}"), "first_int"),
+    Candidate("sha256sum", ("{binary}", "--", "{file}"), "first_hex_token"),
+    Candidate("sha1sum", ("{binary}", "--", "{file}"), "first_hex_token"),
+    Candidate("sha512sum", ("{binary}", "--", "{file}"), "first_hex_token"),
+    Candidate("md5sum", ("{binary}", "--", "{file}"), "first_hex_token"),
+    Candidate("b2sum", ("{binary}", "--", "{file}"), "first_hex_token"),
+    Candidate("cksum", ("{binary}", "{file}"), "first_int"),
+    Candidate("sort", ("{binary}", "--", "{file}"), "lines"),
+    Candidate("sort", ("{binary}", "-u", "--", "{file}"), "lines"),
+    Candidate("sort", ("{binary}", "-n", "--", "{file}"), "lines"),
+    Candidate("uniq", ("{binary}", "--", "{file}"), "lines"),
+    Candidate("tac", ("{binary}", "--", "{file}"), "lines"),
+    Candidate("head", ("{binary}", "-n", "1", "--", "{file}"), "text"),
+    Candidate("tail", ("{binary}", "-n", "1", "--", "{file}"), "text"),
+    Candidate("base64", ("{binary}", "-w", "0", "--", "{file}"), "text"),
+)
 
 CATALOG = {
     "hash.sha256": {
@@ -592,9 +622,10 @@ def _companion_outputs(candidate: Candidate, path: Path, ctx: InvocationContext)
     return outputs
 
 
-def catalog_adapter(function: str, candidate: Candidate, binary: str):
-    """Adapter bound to one verified binary; re-checked against its content hash."""
-    spec = CATALOG[function]
+def catalog_adapter(function: str, candidate: Candidate, binary: str, spec: dict | None = None):
+    """Adapter bound to one verified binary; re-checked against its content hash. ``spec`` is the contract's
+    description and output field for a tool found by behaviour (C.G3); otherwise the catalog entry."""
+    spec = spec or CATALOG[function]
 
     def adapter(params, ctx: InvocationContext):
         path = Path(params["path"]).resolve()
@@ -627,6 +658,23 @@ def catalog_adapter(function: str, candidate: Candidate, binary: str):
             if snapshot != path:
                 snapshot.unlink(missing_ok=True)
     return adapter
+
+
+def _screen(candidate: Candidate, binary: str, examples: list) -> str | None:
+    """Run one discovery template on the contract's public examples; None when it answers every one, else why not."""
+    with tempfile.TemporaryDirectory(prefix="greg-discover-") as tmp:
+        tmp = Path(tmp)
+        for index, example in enumerate(examples):
+            path = tmp / f"example{index}.txt"
+            path.write_text(example["input_text"])
+            argv = [binary if t == "{binary}" else str(path) if t == "{file}" else t for t in candidate.argv]
+            returncode, stdout, stderr = _run_bounded(argv, tmp, candidate.binary_name)
+            if returncode:
+                return f"public example {index}: exit status {returncode}"
+            got = PARSERS[candidate.parse](stdout.decode("utf-8", errors="replace"))
+            if got != example["expected"]:
+                return f"public example {index}: got {str(got)[:60]!r}"
+    return None
 
 
 SNAPSHOT_MAX = 256 * 1024 ** 2          # bytes of one input copied for a reader with companions
@@ -898,7 +946,8 @@ class Genesis:
                 if isinstance(c, dict)]
             intact = all(path and Path(path).exists() and hashlib.sha256(Path(path).read_bytes()).hexdigest() == digest
                          for path, digest in pinned)
-            self.registry.register(manifest, catalog_adapter(origin["function"], candidate, binary),
+            self.registry.register(manifest, catalog_adapter(origin["function"], candidate, binary,
+                                                             spec=origin.get("contract")),
                                    state=self._restored_state(cid, state, None if intact else
                                                               "binary missing or changed since verification",
                                                               [cid, "quarantine", manifest.provenance.get("binary_sha256")]))
@@ -1331,8 +1380,13 @@ class Genesis:
             return self._builder_route(mission, function, deficit_id, now, contract, repair)
 
         if spec is None:
-            self._route(deficit_id, "installed_software", "no catalogued installed tool or oracle for this function",
-                        None)
+            if contract is not None:
+                found = self._discovery_route(mission, function, contract, deficit_id, now)
+                if found is not False:
+                    return found
+            else:
+                self._route(deficit_id, "installed_software", "no catalogued installed tool or oracle for this "
+                            "function", None)
             return self._builder_route(mission, function, deficit_id, now, contract, repair)
 
         if spec.get("kind") == "package":
@@ -1783,6 +1837,91 @@ class Genesis:
         data = path.read_bytes()
         return data.decode("utf-8", errors="replace") if len(data) <= builders.MAX_INPUT else None
 
+    def _discovery_route(self, mission, function, contract, deficit_id, now):
+        """Installed software found by behaviour against the founder-signed contract (acceptance C.G3).
+
+        Each installed template is screened on the contract's public examples; the first that answers all of them is
+        qualified on examples and held-out vectors through the same adapter it will serve with, then registered and
+        attached under the usual rules. Returns the attached manifest, None when a match waits for the founder, and
+        False when nothing installed behaves as the contract says (the builder is next)."""
+        spec = {"description": contract["description"], "output_field": contract["output_field"]}
+        public = [v for v in contract["examples"] if isinstance(v.get("input_text"), str)]
+        held = [v for v in contract["held_out"] if isinstance(v.get("input_text"), str)]
+        tried, unusable = [], {cid for cid, st in self.registry.state.items() if st in ("DETACHED", "QUARANTINED")}
+        if not public or len(public) != len(contract["examples"]) or len(held) != len(contract["held_out"]):
+            self._route(deficit_id, "installed_software", "the contract's vectors are not text inputs; no installed "
+                        "tool can be tried on them", None)
+            return False
+        # what is installed, by content: a search that found nothing is not run again until this changes
+        present = {}
+        for name in dict.fromkeys(c.binary_name for c in DISCOVERY_TEMPLATES):
+            found = installed_binary(name)
+            if found:
+                present[name] = hashlib.sha256(Path(found).read_bytes()).hexdigest()
+        fingerprint = sha256_json({"installed": present, "unusable": sorted(unusable)})
+        if any(e.payload["deficit_id"] == deficit_id and e.payload.get("selected") is None
+               and e.payload.get("installed") == fingerprint for e in self.journal.replay("genesis.discovery")):
+            self._route(deficit_id, "installed_software", "no installed tool behaves as the contract says (searched "
+                        "earlier on this deficit; nothing installed has changed)", None)
+            return False
+        for candidate in DISCOVERY_TEMPLATES:
+            entry = {"binary_name": candidate.binary_name, "argv": list(candidate.argv[1:]), "parse": candidate.parse}
+            tried.append(entry)
+            cid = f"acquired.{function}.{candidate.binary_name}"
+            binary = installed_binary(candidate.binary_name)
+            if binary is None:
+                entry["result"] = "not installed"
+                continue
+            if cid in unusable:
+                entry["result"] = f"{cid} is {self.registry.state[cid]}; not re-registered by discovery"
+                continue
+            try:
+                miss = _screen(candidate, binary, public)
+            except CapabilityError as exc:
+                if exc.failure_class == "transient":
+                    self._route(deficit_id, "installed_software", f"discovery not finished: host outage "
+                                f"({str(exc)[:200]})", None)
+                    raise
+                miss = f"refused a public example: {str(exc)[:120]}"
+            if miss:
+                entry["result"] = miss
+                continue
+            manifest = self._manifest_for(function, candidate, binary, deficit_id, spec=spec)
+            vectors = [{"name": f"case{i}.txt", "data": v["input_text"].encode(), "expected": v["expected"]}
+                       for i, v in enumerate(public + held)]
+            passed, report = self._verify(function, candidate, binary, None, manifest, vectors=vectors, spec=spec)
+            self.journal.record("genesis.verified", {"deficit_id": deficit_id, "capability_id": manifest.capability_id,
+                                                     "passed": passed, "report": report,
+                                                     "verifier": "founder-signed contract: public examples and held-"
+                                                                 "out vectors, through the serving adapter"},
+                                key=[deficit_id, manifest.capability_id, " ".join(entry["argv"])])
+            if not passed:
+                entry["result"] = f"matched the public examples, failed {len(report['failures'])} of " \
+                                  f"{report['cases']} contract vectors"
+                continue
+            entry["result"] = "qualified"
+            self.journal.record("genesis.discovery", {"deficit_id": deficit_id, "function": function,
+                                                      "tried": tried, "selected": manifest.capability_id,
+                                                      "templates": len(DISCOVERY_TEMPLATES), "installed": fingerprint},
+                                key=[deficit_id, "discovery", fingerprint])
+            self.registry.register(manifest, catalog_adapter(function, candidate, binary, spec=spec), state="VERIFIED")
+            self.journal.record("capability.registered", {
+                "manifest": manifest.to_dict(), "state": "VERIFIED", "deficit_id": deficit_id,
+                "origin": {"kind": "discovered", "function": function, "binary_name": candidate.binary_name,
+                           "argv": list(candidate.argv), "parse": candidate.parse, "contract": spec}},
+                key=[manifest.capability_id, manifest.digest()])
+            self._route(deficit_id, "installed_software", "discovered by behaviour: " + " ".join(
+                [candidate.binary_name, *entry["argv"]]), manifest.capability_id)
+            return self._attach(mission, manifest, deficit_id, now)
+        installed = sum(1 for e in tried if e["result"] != "not installed")
+        self.journal.record("genesis.discovery", {"deficit_id": deficit_id, "function": function, "tried": tried,
+                                                  "selected": None, "templates": len(DISCOVERY_TEMPLATES),
+                                                  "installed": fingerprint},
+                            key=[deficit_id, "discovery", fingerprint])
+        self._route(deficit_id, "installed_software", f"no installed tool behaves as the contract says ({installed} "
+                    f"of {len(DISCOVERY_TEMPLATES)} templates installed and tried)", None)
+        return False
+
     def _builder_route(self, mission, function, deficit_id, now, contract=None, repair=None, offered=None):
         """Commission the residual capability against the founder-frozen contract, verify, register."""
         if self._form_only:
@@ -2008,7 +2147,8 @@ class Genesis:
                         "license": "generated for this body by the named builder",
                         "runtime": "isolated interpreter per call; never in the body process"})
 
-    def _manifest_for(self, function, candidate: Candidate, binary: str, deficit_id: str) -> CapabilityManifest:
+    def _manifest_for(self, function, candidate: Candidate, binary: str, deficit_id: str,
+                      spec: dict | None = None) -> CapabilityManifest:
         # the probe is a run like any other: under the output and memory ceilings, its timeout typed transient
         with tempfile.TemporaryDirectory(prefix="greg-version-") as probe:
             try:
@@ -2021,27 +2161,31 @@ class Genesis:
                 version_text = [f"unknown ({str(exc)[:VERSION_LINE]})"]   # identity is the hash, not this line
         manifest = CapabilityManifest(
             capability_id=f"acquired.{function}.{candidate.binary_name}", version="1.0.0",
-            provider="installed:" + binary, function=function, description=CATALOG[function]["description"],
+            provider="installed:" + binary, function=function, description=(spec or CATALOG[function])["description"],
             route="cli", consequence_class="read_only", inputs={"path": "str"},
-            outputs={CATALOG[function]["output_field"]: "value"}, target_prefix="fs:", filesystem="read-scoped",
-            binaries=(binary,), retry_safe=True, tests=(f"frozen-oracle:{function}",),
+            outputs={(spec or CATALOG[function])["output_field"]: "value"}, target_prefix="fs:",
+            filesystem="read-scoped", binaries=(binary,), retry_safe=True,
+            tests=(f"founder-signed contract:{function}" if spec else f"frozen-oracle:{function}",),
             strengthens=("capability_formation", "proof"),
             provenance={"binary": binary, "binary_sha256": hashlib.sha256(Path(binary).read_bytes()).hexdigest(),
                         "version": version_text[0] if version_text else "unknown", "deficit_id": deficit_id,
                         **_binary_license(binary), "companions": _companions(candidate),
-                        "builder": "none: existing installed software acquired by search"})
+                        "builder": "none: existing installed software acquired by search",
+                        **({"discovered_by": "behaviour against the founder-signed contract",
+                            "argv": list(candidate.argv), "parse": candidate.parse} if spec else {})})
         # what this binary's terms permit for the use GREG actually makes of it, bound to the assessed facts
         manifest.provenance["use_qualification"] = licensing.capability_qualification(manifest)
         return manifest
 
-    def _verify(self, function, candidate: Candidate, binary: str, seed: int, manifest) -> tuple[bool, dict]:
-        spec = CATALOG[function]
-        vectors = spec["oracle"](seed)
+    def _verify(self, function, candidate: Candidate, binary: str, seed, manifest, vectors=None,
+                spec=None) -> tuple[bool, dict]:
+        spec = spec or CATALOG[function]
+        vectors = vectors if vectors is not None else spec["oracle"](seed)
         failures = []
         with tempfile.TemporaryDirectory(prefix="greg-genesis-") as tmp:
             tmp = Path(tmp)
             ctx = InvocationContext(workspace=tmp, read_roots=(tmp,), secrets=None, manifest=manifest)
-            adapter = catalog_adapter(function, candidate, binary)
+            adapter = catalog_adapter(function, candidate, binary, spec=spec)
             for case in vectors:
                 path = tmp / case["name"]
                 path.write_bytes(case["data"])

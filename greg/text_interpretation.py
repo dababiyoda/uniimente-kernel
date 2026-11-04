@@ -115,19 +115,28 @@ def loose(text, phrase) -> bool:
     return any(form in folded for form in forms)
 
 
-def interior(text, phrase) -> bool:
-    """Whether a whole-word hit of ``phrase`` ends before the end of ``text``.
+_CLOSED = re.compile(r"[.,;:!?)\]\"']*\s")
 
-    A hit that ends where a kept prefix was cut is not proof the whole word is there: the next character,
-    which was not kept, may continue it ("renewal" cut out of "renewals")."""
+
+def interior(text, phrase, *, start_cut: bool = False, end_cut: bool = True) -> bool:
+    """Whether a whole-word hit of ``phrase`` has both of its boundaries inside ``text``, a text that was cut.
+
+    At a cut end, a hit is proof only when ``text`` itself closes it with whitespace, after any closing
+    punctuation. What follows the cut was not kept and may continue it: "renewal" cut out of "renewals", and,
+    past closing punctuation, "$1,000" out of "$1,000,000" or "Tenant" out of "Tenant's" (review of #250).
+    At a cut start (a text kept as its end), a hit at the very start may end a longer word ("renewal" in
+    "nonrenewal")."""
     prepared = _prepared(text, phrase)
     if prepared is None:
         return False
     folded, forms = prepared
     for form in forms:
         for match in _word_spans(folded, form):
-            if match.end() < len(folded):
-                return True
+            if start_cut and match.start() == 0:
+                continue
+            if end_cut and not _CLOSED.match(folded, match.end()):
+                continue
+            return True
     return False
 
 

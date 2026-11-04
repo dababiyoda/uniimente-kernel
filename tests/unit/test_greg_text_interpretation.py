@@ -233,3 +233,80 @@ def test_not_contains_tenant_on_a_lease_that_states_it_does_not_close(tmp_path):
     observed = [e for e in events(home, "mission.observed") if e["mission_id"] == "m:lease"]
     assert observed and observed[-1]["passed"] is False
     assert "Tenant" in observed[-1]["detail"] and not observed[-1]["detail"].startswith("sensor ")
+
+
+# Review of #250 (owner of #209/#228/#229). A whole-word hit is proof only when the kept text closes both of its
+# boundaries. The receipt keeps a long text's first RECEIPT_TEXT_LIMIT characters; a hit that only closing
+# punctuation separates from the cut may continue past it ("$1,000" in "$1,000,000", "Tenant" in "Tenant's").
+def _long_reading(tail: str, phrase: str) -> dict:
+    """A reading whose text the receipt cuts two characters after ``phrase`` (inside ``tail``)."""
+    from greg.authority import RECEIPT_TEXT_LIMIT
+    pad = RECEIPT_TEXT_LIMIT - 2 - len(phrase) - tail.index(phrase)
+    text = documents.fold(("proof " * pad)[:pad - pad % 6 - 1] + "x" * (pad % 6) + " " + tail)
+    assert text.index(phrase, RECEIPT_TEXT_LIMIT - 200) + len(phrase) + 2 == RECEIPT_TEXT_LIMIT
+    out = documents.find_phrase(text, {}, text, {"pdfimages": ""})
+    out["text"] = text
+    return out
+
+
+@pytest.mark.parametrize("interpretation", [True, False])
+@pytest.mark.parametrize("tail, phrase", [("The fee is $1,000,000 per year.", "$1,000"),
+                                          ("The Tenant’s deposit is held.", "Tenant"),
+                                          ("See renewal.example now.", "renewal")])
+def test_a_hit_the_cut_leaves_open_after_closing_punctuation_is_not_presence(tmp_path, interpretation, tail, phrase):
+    from greg.authority import keep_output
+    from greg.missions import judge_receipt
+    out = _long_reading(tail, phrase)
+    if not interpretation:
+        out.pop("interpretation")
+    predicate = {"op": "contains", "field": "text", "value": phrase}
+    assert judge(predicate, out, whole=True)[0] == FALSE           # not a whole word in the whole text
+    kept, record = keep_output(out, tmp_path)
+    assert isinstance(kept["text"], dict) and record["address"]
+    assert judge(predicate, kept)[0] == INSUFFICIENT               # the prefix alone cannot tell
+    verdict, detail = judge_receipt(predicate, {"output": kept, "output_artifact": record}, tmp_path)
+    assert verdict == FALSE, detail                                # decided over the whole output it kept
+
+
+@pytest.mark.parametrize("kept_as", ["text", "prefix record"])
+def test_a_text_kept_as_its_end_does_not_prove_the_word_it_begins_with(kept_as):
+    import hashlib
+    tail = "renewal term is twelve months."
+    whole = "The nonrenewal term is twelve months."
+    assert judge({"op": "contains", "field": "text", "value": "renewal term"}, _receipt(whole, interpretation=True))[0] \
+        == FALSE
+    value = tail if kept_as == "text" else {"prefix": tail, "truncated": True, "length": len(tail) + 9,
+                                            "sha256": hashlib.sha256(b"x").hexdigest()}
+    out = _receipt(tail, interpretation=True, complete=False, cut_at={"text": "start"}, decided=[])
+    out["text"] = value
+    assert judge({"op": "contains", "field": "text", "value": "renewal term"}, out)[0] == INSUFFICIENT
+    # a word the kept text opens itself is still present
+    assert judge({"op": "contains", "field": "text", "value": "twelve"}, out)[0] == TRUE
+
+
+@pytest.mark.parametrize("record", ["contract", "text_form only", "foreign contract", "foreign inside a contract"])
+def test_an_inspected_reading_is_judged_under_its_producers_contract(tmp_path, record):
+    """pipeline.inspect hands the producer's declaration on beside the value, as it hands on ``complete``. Before,
+    it dropped it, and not_contains on a curly-apostrophe phrase read the folded lease as absent (TRUE)."""
+    from greg import text_interpretation
+    from greg.body import Body
+    from tests.greg_fixtures import signed
+    from tests.unit.test_greg_handoff_evidence import _body_with, _inspect, _produce, _ref
+    reading = _read("The Tenant’s deposit is held in trust.", "deposit")
+    if record == "text_form only":
+        reading.pop("interpretation")
+    if record == "foreign contract":
+        reading["interpretation"] = {**text_interpretation.record(), "id": "greg.text-interpretation/0"}
+    produced = {"reading": reading, "note": "a producer that nests its reading"}
+    if record == "foreign inside a contract":     # the declaration nearest the text decides, as the judge reads it
+        reading["interpretation"] = {**text_interpretation.record(), "id": "greg.text-interpretation/0"}
+        produced.update(interpretation=text_interpretation.record(), text_form=documents.FOLDING)
+    home, key, body_id, spec = _body_with(tmp_path)
+    with Body(home) as body:
+        body.apply(signed(key, body_id, "MISSION", spec), channel="inbox")
+        state = body.engine.book.missions["m:hand"]
+        _produce(body, state, "read", produced)
+        inspected = _inspect(body, state, _ref("read", "reading.text", "string"))
+    predicate = {"op": "not_contains", "field": "value", "value": CURLY}
+    assert judge({"op": "not_contains", "field": "reading.text", "value": CURLY}, produced)[0] == \
+        judge(predicate, inspected)[0] == (INSUFFICIENT if record.startswith("foreign") else FALSE)

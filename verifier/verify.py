@@ -6,6 +6,8 @@ ROOT = os.path.dirname(os.path.abspath(__file__)) + "/.."
 sys.path.insert(0, ROOT)
 os.chdir(ROOT)
 
+from verifier.run_binding import head_commit  # Finding 3: bind records to the tree they measure
+
 failures, passes = [], []
 
 def check(cid, ok, msg):
@@ -78,6 +80,7 @@ status = "PASS" if not failures else "FAIL"
 run = {
   "ts_utc": datetime.datetime.now(datetime.UTC).isoformat(),
   "command": "python3 verifier/verify.py",
+  "head_commit": head_commit(),
   "exit_code": 0 if not failures else 1,
   "passes": passes, "failures": failures,
 }

@@ -819,22 +819,6 @@ def main(argv=None) -> int:
             with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
                 data = metrics.vepmc(journal) if args.cmd == "vepmc" else routing.routing_knowledge(journal)
             print(json.dumps(data, indent=1))
-        elif args.cmd == "cathedral":
-            from greg import cathedral
-            try:
-                since, until = cathedral.window(since=args.since, until=args.until, days=args.days)
-            except cathedral.CathedralError as exc:
-                raise BodyError(str(exc)) from None
-            repo = args.repo or str(cathedral.KERNEL_ROOT)
-            if args.body is None:
-                data = cathedral.detect(repo, since=since, until=until)
-            else:
-                body_home = args.body or home
-                if not Layout(body_home).ledger.exists():
-                    raise BodyError(f"no body ledger at {body_home}: nothing to read outcomes from")
-                with observe(body_home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
-                    data = cathedral.detect(repo, journal=journal, since=since, until=until, body=str(body_home))
-            print(json.dumps(data, indent=1))
         elif args.cmd == "path":
             from greg import path as devpath
 
@@ -995,6 +979,22 @@ def main(argv=None) -> int:
         elif args.cmd == "acceptance":
             from greg import acceptance
             return acceptance.main(home)
+        elif args.cmd == "cathedral":
+            from greg import cathedral
+            try:
+                since, until = cathedral.window(since=args.since, until=args.until, days=args.days)
+            except cathedral.CathedralError as exc:
+                raise BodyError(str(exc)) from None
+            repo = args.repo or str(cathedral.KERNEL_ROOT)
+            if args.body is None:
+                data = cathedral.detect(repo, since=since, until=until)
+            else:
+                body_home = args.body or home
+                if not Layout(body_home).ledger.exists():
+                    raise BodyError(f"no body ledger at {body_home}: nothing to read outcomes from")
+                with observe(body_home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    data = cathedral.detect(repo, journal=journal, since=since, until=until, body=str(body_home))
+            print(json.dumps(data, indent=1))
         elif args.cmd == "rehearse":
             from greg import rehearsal
             return rehearsal.main(args)

@@ -99,3 +99,14 @@ whose new-lead table is empty, or fully disposed, is the cheap check that the in
 fix.
 
 **Authority:** none created. **VEPMC:** 0, unchanged.
+
+## Re-run 2026-11-04 against #196 `d35d92a5`
+
+Same command, 161 open PR heads (inputs and outputs in `docs/evidence/intake-audit/2026-11-04/d35d92a5/`; 348 s).
+57 contained by ancestry, 6 behaviour-contained, 98 with an unported delta; 172 commits since 2026-10-10 unported,
+751 of their tests absent.
+
+**Leads from 2026-10-22 that are still undisposed after the 7 + 7 adoptions since:** #184 (now 15 commits, 49 of 52
+tests absent; head `55e6d74a`), #160 (99 tests), #143 (65), #167 (73 of 85), #182 (founder signature). No record on
+#196 disposes of them. The other rows are drafts in the integrator's announced queue or waiting on their authors
+(#237 conflict; #240, #243, #244 red), and #206 / #241 (the shared-registry experiment).

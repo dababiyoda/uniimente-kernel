@@ -49,6 +49,32 @@ from greg.founder import generate_founder_key, load_founder_key, public_bytes
 from greg.tribunal import mark_reviewed, morning_report
 from provenance.ledger import WriterConflict
 
+
+def _replace_with(target: Path, text: str, mode: int = 0o644) -> None:
+    """Replace ``target`` with ``text`` through a temporary file in its directory that nobody else could have
+    planted: mkstemp gives a fresh name with O_EXCL, so no symlink or existing file there is followed or clobbered,
+    and the file has ``mode`` (never wider than its owner while written) before it is renamed over ``target``. A
+    failure removes the temporary file and leaves ``target`` as it was (review of #238)."""
+    import tempfile
+    target = Path(target)
+    fd, name = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.", suffix=".tmp")
+    try:
+        data = text.encode()
+        while data:
+            data = data[os.write(fd, data):]
+        os.fchmod(fd, mode)
+        os.close(fd)
+        fd = -1
+        os.replace(name, target)
+    except BaseException:
+        if fd >= 0:
+            os.close(fd)
+        try:
+            os.unlink(name)
+        except FileNotFoundError:
+            pass
+        raise
+
 DEFAULT_HOME = os.environ.get("GREG_HOME", str(Path.home() / ".uniimente" / "greg"))
 
 
@@ -775,10 +801,7 @@ def main(argv=None) -> int:
                 out.mkdir(parents=True, exist_ok=True)
                 presentation = disclosure.present(holder)
                 for name, content, mode in (("holder.json", holder, 0o600), ("presentation.json", presentation, 0o644)):
-                    tmp = out / (name + ".tmp")
-                    tmp.write_text(json.dumps(content, indent=1) + "\n")
-                    tmp.chmod(mode)
-                    tmp.replace(out / name)
+                    _replace_with(out / name, json.dumps(content, indent=1) + "\n", mode)
                 checked = disclosure.verify_presentation(presentation)
                 data = {"package_digest": holder["package_digest"], "items": len(holder["package"]["items"]),
                         "contradictions": holder["package"]["contradictions"], "revealed": holder["default_reveal"],
@@ -924,10 +947,8 @@ def main(argv=None) -> int:
                 if runs < 1:
                     raise BodyError("--runs must be at least 1")
                 result = compute.benchmark(runs)
-                tmp = out.with_name(out.name + ".tmp")
                 try:
-                    tmp.write_text(json.dumps(result, indent=1))
-                    tmp.replace(out)
+                    _replace_with(out, json.dumps(result, indent=1))
                 except OSError as exc:
                     raise BodyError(f"cannot write {out}: {exc.strerror}") from None
                 shown = {k: result[k] for k in ("runs", "median_seconds", "iqr_seconds", "deterministic")}
@@ -1113,9 +1134,7 @@ def main(argv=None) -> int:
                     result = anchor.export_witness(journal, Path(args.roots).read_text(), existing)
                 except anchor.AnchorError as exc:
                     raise BodyError(str(exc)) from None
-            tmp = out.with_suffix(out.suffix + ".tmp")
-            tmp.write_text(json.dumps(result["bundle"], indent=1) + "\n")
-            tmp.replace(out)
+            _replace_with(out, json.dumps(result["bundle"], indent=1) + "\n")
             print(json.dumps({"witness": str(out), "admitted": result["admitted"], "rejected": result["rejected"],
                               "witnessed_heads": len(result["bundle"]["witnesses"])}, indent=1))
         elif args.cmd == "serve":

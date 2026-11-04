@@ -30,7 +30,7 @@ def strict_json(raw):
 def validator(name):
     if name not in ('opportunity-packet', 'venture-assessment',
                     'wire-opportunity-packet', 'wire-venture-assessment',
-                    'capability-grant', 'workflow-execution'):
+                    'capability-grant', 'workflow-execution', 'institutional-leverage'):
         raise ValueError('unregistered contract')
     schema = strict_json(files('contracts').joinpath(name + '.schema.json').read_bytes())
     Draft202012Validator.check_schema(schema)

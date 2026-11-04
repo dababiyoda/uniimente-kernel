@@ -22,7 +22,6 @@ from __future__ import annotations
 
 import ast
 import difflib
-import hashlib
 import json
 import math
 import os
@@ -35,6 +34,7 @@ import tempfile
 from pathlib import Path
 
 from foundry.systems import versions
+from provenance.digests import sha256_json, sha256_tagged as _sha256
 
 
 MAX_SUSPECT_LINES = 8
@@ -244,12 +244,8 @@ class RepairEscalation(RepairError):
         self.evidence = evidence
 
 
-def _sha256(data: bytes) -> str:
-    return "sha256:" + hashlib.sha256(data).hexdigest()
-
-
 def _digest(value) -> str:
-    return _sha256(json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode())
+    return sha256_json(value, allow_nan=False)
 
 
 def _relative(path) -> str:

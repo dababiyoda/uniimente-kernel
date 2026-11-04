@@ -29,13 +29,18 @@ import pytest
 
 from greg import doctor, metrics, service
 from greg import path as devpath
-from tests.integration.test_greg_body_supervised import (SUPERVISORD, events, heartbeat, history,
-                                                         supervisor_endpoint, wait_for)
+from tests.integration.test_greg_body_supervised import events, heartbeat, history, supervisor_endpoint, wait_for
 from tests.integration.test_greg_product_path import enter_console, free_port, http
+from tests.supervisor_requirement import require_supervisord
 
 ROOT = Path(__file__).resolve().parents[2]
 INSTALL = ROOT / "greg/chromebook/install.sh"
-pytestmark = pytest.mark.skipif(SUPERVISORD is None, reason="supervisord stands in for the systemd user unit")
+
+
+@pytest.fixture(autouse=True)
+def supervisor_on_path():
+    """Skip without supervisord, or fail under GREG_REQUIRE_SUPERVISOR=1 (tests/supervisor_requirement.py)."""
+    require_supervisord("supervisord stands in for the systemd user unit")
 
 
 def test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_a_model(tmp_path):

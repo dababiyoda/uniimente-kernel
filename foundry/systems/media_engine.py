@@ -22,7 +22,6 @@ nothing here contacts a network.
 """
 from __future__ import annotations
 
-import hashlib
 import html
 import io
 import json
@@ -37,6 +36,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey,
 
 from foundry.company import REQUIRED_EDITORIAL_RULES
 from foundry.systems import cas
+from provenance.digests import compact_json_bytes as _canon, sha256_tagged as _sha
 
 SAMPLE_RATE = 22050
 KINDS = ("image", "audio", "video", "interactive")
@@ -47,14 +47,6 @@ NOTE_HZ = {"C4": 261.63, "D4": 293.66, "E4": 329.63, "F4": 349.23, "G4": 392.0, 
 
 class MediaError(ValueError):
     pass
-
-
-def _canon(v) -> bytes:
-    return json.dumps(v, sort_keys=True, separators=(",", ":")).encode()
-
-
-def _sha(data: bytes) -> str:
-    return "sha256:" + hashlib.sha256(data).hexdigest()
 
 
 def _rgb(hex_color: str) -> tuple[int, int, int]:

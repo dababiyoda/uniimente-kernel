@@ -381,3 +381,236 @@ def test_a_link_swapped_in_after_the_path_was_checked_is_not_followed(tmp_path, 
     monkeypatch.setattr(greg.textquery, "_inside", lambda path, roots: Path(path))   # checked before the swap
     with pytest.raises(CapabilityError, match="became a link"):
         _search({"path": str(tmp_path / "data" / "app.log"), "phrases": [FATAL]}, ctx)
+
+
+# -- a PDF is not text: its bytes are page syntax, not the words a reader shows ----------------------------------------
+# The planner sent a question about a PDF to fs.search, which read the file's bytes (scout of #229, direction A). In
+# an uncompressed PDF a line is one text operator: a phrase over two lines is not in the bytes, and an operator or
+# font name is. Before: "never mentions" closed ACHIEVED on a PDF whose reader shows the phrase, and "mentions" on a
+# name only the page syntax holds.
+
+LEASE = ["The renewal term is twelve months", "with notice due net thirty."]
+SHOWN = "twelve months with notice"            # what pdftotext reads (two lines); not in the bytes
+SYNTAX = "BaseFont /Helvetica"                 # in the bytes; not in the text a reader shows
+
+
+def _pdf(lines, *, junk=b""):
+    """An uncompressed one-page PDF that draws ``lines`` in Helvetica, all ASCII (no binary comment line, which the
+    format leaves optional), with ``junk`` before its header (readers look for the header in the first 1024 bytes)."""
+    ops = ["BT", "/F1 12 Tf", "16 TL", "72 720 Td"] + [f"({line}) Tj\nT*" for line in lines] + ["ET"]
+    stream = "\n".join(ops).encode("latin-1")
+    objects = [b"<< /Type /Catalog /Pages 2 0 R >>", b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+               b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> "
+               b"/Contents 5 0 R >>",
+               b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+               b"<< /Length %d >>\nstream\n" % len(stream) + stream + b"\nendstream"]
+    out, offsets = bytearray(b"%PDF-1.4\n"), []
+    for number, obj in enumerate(objects, start=1):
+        offsets.append(len(out))
+        out += b"%d 0 obj\n" % number + obj + b"\nendobj\n"
+    xref = len(out)
+    out += b"xref\n0 %d\n0000000000 65535 f \n" % (len(objects) + 1)
+    out += b"".join(b"%010d 00000 n \n" % offset for offset in offsets)
+    out += b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (len(objects) + 1, xref)
+    return junk + bytes(out)
+
+
+# a header at byte 0, after junk, and starting at byte 1019: its last byte is byte 1023, the last a reader looks at
+JUNK = {"at-0": b"", "after-junk": b"HTTP/1.1 200 OK\r\n" * 30, "last-start": b"J" * 1018 + b"\n"}
+
+
+@pytest.mark.parametrize("junk", list(JUNK.values()), ids=list(JUNK))
+def test_a_pdf_is_never_answered_from_its_bytes(tmp_path, junk):
+    ctx = _ctx(tmp_path)
+    pdf = tmp_path / "data" / "lease.pdf"
+    pdf.write_bytes(_pdf(LEASE, junk=junk))
+    assert SHOWN not in " ".join(pdf.read_bytes().decode("ascii").split()) and SYNTAX.encode() in pdf.read_bytes()
+    out = _search({"path": str(pdf), "phrases": [SHOWN, SYNTAX], "whitespace": "collapse"}, ctx)
+    # before: [False, True], complete: the reader's phrase "absent" and a font name "mentioned"
+    assert [q["found"] for q in out["queries"]] == [None, None] and out["complete"] is False
+    assert out["unreadable"] == ("a PDF: its text is drawn by page operators, not stored as text; read it with "
+                                 "document.text")
+    for value, field in ((False, "queries.0.found"), (True, "queries.1.found")):
+        verdict, detail = judge(p("equals", value, field), out)
+        assert verdict == INSUFFICIENT and "a PDF" in detail
+    data = pdf.read_bytes()
+    for size in (1, 7, 1000):                                                     # the header split over pieces
+        pieces = Query([SHOWN, SYNTAX], whitespace="collapse")
+        for i in range(0, len(data), size):
+            pieces.feed(data[i:i + size])
+        pieces.finish()
+        got = pieces.result()        # it stops reading at the header, so bytes_read depends on where pieces end
+        assert [q["found"] for q in got["queries"]] == [None, None] and got["unreadable"] == out["unreadable"], size
+
+
+@pytest.mark.parametrize("at", [1020, 5000, CHUNK_BYTES + 3])
+def test_a_text_that_quotes_a_pdf_header_past_where_readers_look_is_read_as_text(tmp_path, at):
+    """A log that records "%PDF-1.7" is not a PDF unless the header is where a reader looks for it."""
+    ctx = _ctx(tmp_path)
+    log = tmp_path / "data" / "upload.log"
+    log.write_bytes(b"x" * at + b"received %PDF-1.7 from the scanner\n" + LINE * 40)
+    assert log.read_bytes().index(b"%PDF-") == at + 9
+    out = _search({"path": str(log), "phrases": ["%PDF-1.7 from the scanner", FATAL]}, ctx)
+    assert "unreadable" not in out and out["complete"] is True
+    assert [q["found"] for q in out["queries"]] == [True, False]
+
+
+def test_a_reading_stopped_before_a_reader_would_find_the_header_decides_nothing(tmp_path):
+    """A byte limit under 1024 stops before the bytes that tell a PDF from text: what it found may be junk before a
+    PDF's header, which no reader shows."""
+    ctx = _ctx(tmp_path)
+    pdf = tmp_path / "data" / "download.pdf"
+    pdf.write_bytes(_pdf(LEASE, junk=b"Content-Type: application/pdf\r\n" + b"J" * 600 + b"\r\n"))
+    out = _search({"path": str(pdf), "phrases": ["application/pdf"], "max_bytes": 100}, ctx)
+    assert out["queries"][0]["found"] is None and "byte limit" in out["stopped"]   # before: True
+    assert judge(p("equals", True, "queries.0.found"), out)[0] == INSUFFICIENT
+    log = tmp_path / "data" / "app.log"                                           # text: 1024 bytes are enough
+    log.write_bytes(b"application/json\n" + b"y" * 2000)
+    for limit, found in ((1023, None), (1024, True)):
+        out = _search({"path": str(log), "phrases": ["application/json"], "max_bytes": limit}, ctx)
+        assert out["queries"][0]["found"] is found and out["complete"] is False, limit
+    short = tmp_path / "data" / "short.log"                                       # a file shorter than 1024 bytes
+    short.write_bytes(b"application/json\n")
+    assert _search({"path": str(short), "phrases": ["application/json"], "max_bytes": 100}, ctx)["queries"][0][
+        "found"] is True
+
+
+def _pdf_mission(home, key, body_id, mission_id, pdf, phrase, *, absent):
+    submit(home, key, body_id, "MISSION", mission(mission_id, checks=[
+        {"check_id": "c", "description": f"{pdf.name} {'never mentions' if absent else 'mentions'} {phrase}",
+         "sensor": {"capability": "fs.search", "params": {"path": str(pdf), "phrases": [phrase],
+                                                          "whitespace": "collapse"}, "target": f"fs:{pdf.name}"},
+         "predicate": {"op": "equals", "field": "queries.0.found", "value": not absent}}],
+        strategies=[], capabilities=["fs.search"], ceiling="read_only"))
+
+
+def test_a_search_mission_never_closes_on_a_pdfs_bytes(tmp_path):
+    """The scout's repro, with fs.search named by hand: "never mentions" a phrase the reader shows closed ACHIEVED."""
+    home, key, body_id, data = make_body(tmp_path)
+    pdf = data / "lease.pdf"
+    pdf.write_bytes(_pdf(LEASE))
+    _pdf_mission(home, key, body_id, "m:never", pdf, SHOWN, absent=True)
+    _pdf_mission(home, key, body_id, "m:font", pdf, SYNTAX, absent=False)
+    missions, requests = run(home, Clock(), ticks=12, step=600.0)
+    for mission_id in ("m:never", "m:font"):
+        assert missions[mission_id].status != "ACHIEVED", mission_id               # before: ACHIEVED, both
+        observed = [e for e in events(home, "mission.observed") if e["mission_id"] == mission_id]
+        assert observed and all(not e["passed"] and "a PDF: its text is drawn by page operators" in e["detail"]
+                                for e in observed)                               # the reason, on every reading
+        assert [r.get("kind") for r in requests if r.get("mission_id") == mission_id] == ["SENSOR_FAILURE"]
+    assert not [e for e in events(home, "mission.appraised") if e["mission_id"] in ("m:never", "m:font")]
+
+
+@pytest.mark.parametrize("junk", [b"", b"%!PS-Adobe junk a mail gateway added\n" * 12], ids=["at-0", "after-junk"])
+def test_the_founders_words_about_a_pdf_are_asked_when_no_reader_is_known(tmp_path, monkeypatch, junk):
+    """On a body whose genesis knows no PDF reader (document.text is #201's), GREG asks, with the reason, instead of
+    drafting a search of the PDF's bytes. A text file that quotes a header deep inside is still searched."""
+    from greg import genesis
+    monkeypatch.delitem(genesis.CATALOG, "document.text", raising=False)
+    data = tmp_path / "data"
+    data.mkdir()
+    (data / "lease.pdf").write_bytes(_pdf(LEASE, junk=junk))
+    ctx = PlannerContext(read_roots=(str(data),), capabilities=[], workspace=tmp_path / "ws")
+    asked = template_route(f'Confirm {data / "lease.pdf"} never mentions "{SHOWN}"', ctx)
+    assert asked["status"] == "NEEDS_INPUT" and "spec" not in asked                # before: a fs.search mission
+    assert asked["origin"] == "template:document-phrase"
+    assert "is a PDF" in asked["questions"][0] and "document.text" in asked["questions"][0]
+    (data / "notes.txt").write_bytes(b"n" * 2000 + b"%PDF-1.4 is the header\n")
+    searched = template_route(f'Confirm {data / "notes.txt"} never mentions "{SHOWN}"', ctx)
+    assert searched["status"] == "PROPOSED" and searched["origin"] == "template:file-search"
+
+
+@pytest.mark.parametrize("words, present", [('Confirm {f} never mentions "{a}" or "{b}"', [False, False]),
+                                            ('Does {f} mention "{a}" and "{b}"?', [True, True])],
+                         ids=["never", "mentions"])
+def test_the_founders_words_about_a_pdf_go_to_its_reader_when_genesis_has_one(tmp_path, words, present):
+    from greg import genesis
+    assert "document.text" in genesis.CATALOG                                    # #201's reader, on #196
+    data = tmp_path / "data"
+    data.mkdir()
+    pdf = data / "lease.pdf"
+    pdf.write_bytes(_pdf(LEASE))
+    ctx = PlannerContext(read_roots=(str(data),), capabilities=[], workspace=tmp_path / "ws")
+    proposal = template_route(words.format(f=pdf, a=SHOWN, b="net thirty"), ctx)
+    assert proposal["status"] == "PROPOSED" and proposal["origin"] == "template:document-phrase"
+    spec = validate_mission(proposal["spec"])
+    assert [c["sensor"] for c in spec["success_checks"]] == [
+        {"function": "document.text", "params": {"path": str(pdf.resolve()), "phrase": phrase},
+         "target": "fs:lease.pdf"} for phrase in (SHOWN, "net thirty")]
+    assert [c["predicate"] for c in spec["success_checks"]] == [
+        {"op": "equals", "field": "found", "value": value} for value in present]
+    assert spec["light_cone"]["capabilities"] == ["acquired.document.text.*"]
+    assert spec["light_cone"]["max_consequence_class"] == "read_only" and spec["light_cone"]["budget_usd"] == 0
+    assert spec["auto_attach"] == {"max_consequence_class": "read_only"} and spec["strategies"] == []
+    assert "fs.search" not in json.dumps(spec)
+
+
+@pytest.mark.parametrize("swap", ["fifo", "link"])
+def test_a_file_swapped_after_the_planner_checked_it_is_not_opened_through(tmp_path, monkeypatch, swap):
+    """The planner opens the file the words name to look for a PDF header: a FIFO swapped in never blocks it, and a
+    link swapped in after the roots were checked is not followed to a PDF outside them. Both are left to fs.search,
+    which refuses them when it reads."""
+    import os
+    import threading
+    from pathlib import Path
+    from greg import genesis
+    assert "document.text" in genesis.CATALOG                                    # #201's reader, on #196
+    data = tmp_path / "data"
+    data.mkdir()
+    named = data / "lease.pdf"
+    if swap == "fifo":
+        os.mkfifo(named)
+        monkeypatch.setattr(Path, "is_file", lambda self: True)                  # it was a file when GREG looked
+    else:
+        (tmp_path / "outside.pdf").write_bytes(_pdf(LEASE))
+        named.write_text("ok\n")
+        real = Path.resolve
+        monkeypatch.setattr(Path, "resolve", lambda self, strict=False: self if self == named else real(self, strict))
+        named.unlink()
+        named.symlink_to(tmp_path / "outside.pdf")                                # swapped in after the check
+    ctx = PlannerContext(read_roots=(str(data),), capabilities=[], workspace=tmp_path / "ws")
+    proposals = []
+    planner = threading.Thread(target=lambda: proposals.append(
+        template_route(f'Confirm {named} never mentions "{SHOWN}"', ctx)), daemon=True)
+    planner.start()
+    planner.join(10)
+    assert proposals and proposals[0]["origin"] == "template:file-search", swap
+
+
+def test_the_founders_words_about_a_pdf_are_decided_by_what_its_reader_shows(tmp_path):
+    """End to end on #196, with #201's reader and the real pinned poppler: the planner's document route, genesis
+    acquiring pdftotext, the engine, the judge and the appraiser. The reader shows the phrase over two lines, and a
+    font name only the page syntax holds is absent: "mentions" the shown phrase and "never mentions" the font name
+    close, verified; "never mentions" the shown phrase and "mentions" the font name stay open on the reader's answer,
+    not on a sensor failure."""
+    pytest.importorskip("greg.documents")
+    from greg import genesis
+    if genesis.installed_binary("pdftotext") is None or genesis.installed_binary("pdfimages") is None:
+        pytest.skip("pdftotext and pdfimages are needed to read the PDF")
+    home, key, body_id, data = make_body(tmp_path)
+    pdf = data / "lease.pdf"
+    pdf.write_bytes(_pdf(LEASE))
+    ctx = PlannerContext(read_roots=(str(data),), capabilities=[], workspace=home / "ws")
+    cases = {"never-shown": (f'Confirm {pdf} never mentions "{SHOWN}"', True, False),       # (words, found, closes)
+             "mentions-shown": (f'Confirm {pdf} mentions "{SHOWN}"', True, True),
+             "never-syntax": (f'Confirm {pdf} never mentions "{SYNTAX}"', False, True),
+             "mentions-syntax": (f'Does {pdf} mention "{SYNTAX}"?', False, False)}
+    specs = {}
+    for name, (words, _, _) in cases.items():
+        proposal = template_route(words, ctx)
+        assert proposal["origin"] == "template:document-phrase", proposal
+        specs[name] = proposal["spec"]
+        submit(home, key, body_id, "MISSION", specs[name])
+    missions, requests = run(home, Clock(), ticks=8, step=120.0)
+    for name, (_, found, closes) in cases.items():
+        mission_id = specs[name]["mission_id"]
+        observed = [e for e in events(home, "mission.observed") if e["mission_id"] == mission_id]
+        assert observed and all(e["detail"].startswith(f"{found} == ") for e in observed), (name, observed)
+        appraised = [e for e in events(home, "mission.appraised") if e["mission_id"] == mission_id]
+        if closes:
+            assert missions[mission_id].status == "ACHIEVED", name
+            assert appraised and appraised[-1]["verdict"] == "VERIFIED", name
+        else:                                       # before: "never-shown" ACHIEVED on the bytes (scout repro)
+            assert missions[mission_id].status != "ACHIEVED" and not appraised, name
+            assert all(not e["passed"] for e in observed), name
+            assert [r.get("kind") for r in requests if r.get("mission_id") == mission_id] == ["NO_STRATEGY"], name

@@ -24,12 +24,15 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
+import stat
 import subprocess
 
 from greg import models, templates
 from greg.missions import MissionError, validate_mission
+from greg.textquery import PDF, PDF_HEAD, is_pdf
 
 PLANNER = "greg.planner/1"
 MAX_HORIZON = timedelta(days=7)
@@ -175,6 +178,8 @@ def _search_route(text: str, ctx: PlannerContext) -> dict | None:
             f"{'them' if len(phrases) > 1 else 'it'}? GREG cannot tell: {why}. Ask again with only \"mentions\" or "
             "\"never mentions\" outside the quotes."]}
     absent = bool(negated)
+    if _is_pdf(file):
+        return _document_route(text, file, phrases, absent)
     spec = templates.file_search(file=file, phrases=phrases, absent=absent)
     spec["founder_expression"] = text
     return _proposal(spec, "template:file-search", notes=[
@@ -183,6 +188,38 @@ def _search_route(text: str, ctx: PlannerContext) -> dict | None:
         ("absence is claimed only after every byte is read and decoded; a file cut short or not readable as text "
          "leaves the answer open, and GREG asks you with the reason") if absent else
         "a phrase found anywhere in the file closes the check"])
+
+
+def _is_pdf(file: Path) -> bool:
+    """The same header check fs.search makes (``textquery.is_pdf``), on the file the words name. A file that cannot
+    be opened here is left to the sensor, which refuses it with the reason."""
+    try:   # never blocks on a FIFO swapped in, never follows a link swapped in after the roots were checked
+        fd = os.open(file, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
+    except OSError:
+        return False
+    try:
+        return stat.S_ISREG(os.fstat(fd).st_mode) and is_pdf(os.pread(fd, PDF_HEAD, 0))
+    finally:
+        os.close(fd)
+
+
+def _document_route(text: str, file: Path, phrases: list, absent: bool) -> dict:
+    """A PDF is asked about as its reader shows it: ``document.text`` (#201), acquired by genesis, read-only. Where
+    genesis knows no PDF reader, GREG asks, with the reason, and drafts no search of the PDF's bytes."""
+    from greg.genesis import CATALOG
+    if "document.text" not in CATALOG:
+        return {"status": "NEEDS_INPUT", "origin": "template:document-phrase", "questions": [
+            f"{file} is {PDF}, and GREG has no PDF reader (document.text) on this body. Save its text as a .txt file "
+            "where GREG may read, and ask about that file."]}
+    spec = templates.document_phrase(file=file, phrases=phrases, absent=absent)
+    spec["founder_expression"] = text
+    return _proposal(spec, "template:document-phrase", notes=[
+        "read-only: GREG reads the PDF's text with a PDF reader it acquires and verifies (pdftotext today), and "
+        "changes nothing",
+        "a phrase matches as whole words, after typographic quotes, dashes and ligatures are folded",
+        ("absence is claimed only when every page yields text and none holds an image (which could hold the phrase "
+         "as pixels); otherwise the answer stays open, and GREG asks you with the reason") if absent else
+        "the phrase found anywhere in the PDF's text closes the check"])
 
 
 def _verify_route(text: str, ctx: PlannerContext) -> dict:

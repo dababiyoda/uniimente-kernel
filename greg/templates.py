@@ -398,6 +398,39 @@ def file_search(*, file: Path, phrases: list, absent: bool, horizon_days: float 
     }
 
 
+def document_phrase(*, file: Path, phrases: list, absent: bool, horizon_days: float = 2) -> dict:
+    """Whether a PDF mentions some phrases, or never mentions them, as its reader shows them: one read-only mission
+    over ``document.text`` (#201), one check per phrase. A PDF's bytes are page syntax, not its text, so
+    ``fs.search`` refuses it.
+
+    ``document.text`` is not built in: genesis acquires a PDF reader and verifies it against a frozen oracle before it
+    may attach (read-only auto-attach is signed here). It answers each phrase over the whole extraction (``found``);
+    absence only over a complete one (every page yields text, no page holds an image), so a scanned page leaves the
+    check undecided and GREG asks, with the reason."""
+    if not isinstance(phrases, list) or not phrases or not all(isinstance(p, str) and p.strip() for p in phrases):
+        raise ValueError("phrases must be a nonempty list of nonblank strings")
+    file = Path(file).expanduser().resolve()
+    slug = re.sub(r"[^a-z0-9]+", "-", file.name.lower()).strip("-")[:40] or "file"
+    digest = hashlib.sha256(json.dumps([str(file), phrases, absent, "document.text"]).encode()).hexdigest()[:8]
+    verb = "never mentions" if absent else "mentions"
+    return {
+        "mission_id": f"m:document-{'absent' if absent else 'mentions'}-{slug}-{digest}",
+        "founder_expression": f"Confirm {file} {verb} " + ", ".join(repr(p) for p in phrases) + ".",
+        "intended_effect": f"the text of {file.name}, as a PDF reader shows it, is proven to be one that {verb} the "
+                           "phrases",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": f"phrase_{i}", "description": f"{file.name} {verb} {phrase!r}",
+                            "sensor": {"function": "document.text", "params": {"path": str(file), "phrase": phrase},
+                                       "target": f"fs:{file.name}"},
+                            "predicate": {"op": "equals", "field": "found", "value": not absent}}
+                           for i, phrase in enumerate(phrases)],
+        "strategies": [],
+        "light_cone": {"capabilities": ["acquired.document.text.*"], "targets": ["fs:*"],
+                       "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+        "auto_attach": {"max_consequence_class": "read_only"},
+    }
+
+
 def human_work(*, function: str, purpose: str, workspace_root: Path, deliverable: str = "deliverable.pdf",
                horizon_days: float = 30) -> dict:
     """A step only a person may do (directive section 60: "I need a licensed professional for this decision").

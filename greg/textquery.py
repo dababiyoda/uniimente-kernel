@@ -9,6 +9,10 @@ normalization form (``greg.textform``), and returns a result small enough for an
 covered: the bytes read and their digest, the encoding, and whether it reached the end. A phrase found is found however
 much more there is; a phrase is absent only when every byte was read and faithfully decoded. Anything else is left
 undecided, with the reason, through the incomplete-observation contract the judge reads (``complete``, ``decided``).
+
+A PDF is not text, however plain its bytes: a page draws its words with text operators, so a phrase over two lines is
+not in the bytes and an operator or font name is. ``Query`` refuses a source whose header is where PDF readers look
+for it (``is_pdf``), and decides nothing until it has read that far or reached the end.
 """
 from __future__ import annotations
 
@@ -32,6 +36,16 @@ MAX_SECONDS = 60.0
 MAX_OPEN_CHARS = 64 * 1024         # text whose normalized form is still open: a run of marks with no starter
 WHITESPACE = ("exact", "collapse")
 SPACES = re.compile(r"\s+")
+PDF_HEAD = 1024      # readers look for the header this far in; junk may precede it (PDF Reference 1.7, appendix H,
+                     # the note on section 3.4.1). poppler reads a PDF whatever precedes it: see is_pdf
+PDF = "a PDF: its text is drawn by page operators, not stored as text; read it with document.text"
+
+
+def is_pdf(head: bytes) -> bool:
+    """Whether a source whose first bytes are ``head`` is a PDF: its header "%PDF-" within the first PDF_HEAD bytes.
+    A text that quotes a header further in is text. Not caught: a PDF with more than about 1 KiB of junk before its
+    header, which pdftotext still reads."""
+    return b"%PDF-" in head[:PDF_HEAD]
 
 
 class Query:
@@ -53,6 +67,7 @@ class Query:
         self.codec, self.unreadable, self.finished = None, None, False
         self.first, self.count = [None] * len(self.phrases), [0] * len(self.phrases)
         self._head = b""           # the first bytes, until their byte-order mark (or its absence) can be told
+        self._lead = b""           # the first PDF_HEAD bytes, until they tell a PDF from text
         self._decoder = None
         self._open = ""            # decoded text whose NFC form a later character could still change
         self._tail = ""            # the last ``overlap`` characters searched, for a match across two pieces
@@ -64,6 +79,11 @@ class Query:
             return
         self.digest.update(data)
         self.read += len(data)
+        if len(self._lead) < PDF_HEAD:
+            self._lead = (self._lead + data)[:PDF_HEAD]
+            if is_pdf(self._lead):
+                self.unreadable = PDF
+                return
         if self._decoder is None:
             self._head += data
             if len(self._head) < 4 and not final:
@@ -116,9 +136,10 @@ class Query:
     def result(self, stopped: str | None = None) -> dict:
         """The compact answer. ``complete`` only when every byte was read, decoded and searched; then ``found`` is
         True or False. Otherwise a phrase found is True and vouched for (``decided``), and every other answer is None,
-        with the reason in ``stopped`` or ``unreadable``."""
+        with the reason in ``stopped`` or ``unreadable``. A reading stopped before PDF_HEAD bytes found nothing yet: the
+        bytes it read could be junk before a PDF's header."""
         complete = self.finished and not self.unreadable and stopped is None
-        readable = self.unreadable is None
+        readable = self.unreadable is None and (self.finished or self.read >= PDF_HEAD)
         queries = [{"phrase": phrase, "found": True if count and readable else (False if complete else None),
                     "first_offset": first if readable else None, "occurrences": count if readable else None}
                    for phrase, first, count in zip(self.phrases, self.first, self.count)]

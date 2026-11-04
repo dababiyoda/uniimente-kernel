@@ -1,0 +1,536 @@
+{
+  "decision_id": "TYPED-BLOCKERS-20261030",
+  "title": "Type every open mission blocker from retained facts and the engine's own rule, on greg blockers, the morning report and Mission Control",
+  "problem": "Directive section 29 says: 'Blocked goals remain durable. Store: blocker, why blocked, reconsideration condition, required evidence, required authority, next possible move.' At base b1950be2 the engine keeps each blocker on the journal (mission.blocked, mission.unblocked) and decides when it lifts (MissionEngine._blocker_resolved), but no founder surface states the six fields. An outage back-off appears on status.active_constraint (as lifted_by: \"outage\"), on morning q4 and on morning q13, and none of the three carries a required authority (probe docs/evidence/typed-blockers-2026-10-30/outage_surfaces.py). A spend stop is visible only as an ask. The founder cannot read, in one place, who must act on a blocked goal and with what.",
+  "founder_intent_refs": [
+    "INTENT-20261028-OPUS-MAXIMUS-REISSUE (directive sections 29 PERSISTENT OPERATION: 'Blocked goals remain durable. Store: ...'; 30 NIGHT SHIFT / MORNING TRIBUNAL: the morning review answers 'what intentionally was not done' and 'what requires founder judgment'; 70 REQUIRED QUESTION; recorded by #227, now on #196's head 4dc0d581, not in this branch's base b1950be2)",
+    "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN (build the whole directive first; the founder-device run comes after, as its acceptance; recorded by #227)",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-20261019-UPWARD-ASCENT (existing mechanisms, MissionBook, _blocker_resolved, active_constraint's withdrawn and paused_by markers, body_pauses, and the appraiser's read-only registry view, are composed into a capability none had alone; this is integration, not invention)"
+  ],
+  "baseline": "b1950be2 (#196's head when the unit started): blockers live on the journal and in the MissionBook; missions.active_constraint gives greg status a blocker with lifted_by (for an outage, the string \"outage\"); the morning report has no blockers section; Mission Control has no blocked-goals table; greg decisions lists founder asks only. No surface names the required evidence or required authority for every blocker kind.",
+  "alternatives": [
+    {
+      "name": "Proposed: a read-only projection, greg/blockers.py, on three founder surfaces",
+      "description": "Fold the journal through the one MissionBook; ask MissionEngine._blocker_resolved (on the running engine, or on a read-only engine over registry_view plus Genesis.restore(record=False)) whether each blocker still holds; type each one as {mission_id, kind, blocker, why, reconsider_when, required_evidence, required_authority, next_move, since, source_event}, every field non-empty text, 'none required: <reason>' where a field does not apply, BlockerError for an incomplete record. Reuse active_constraint's withdrawn marker and its paused_by over body.body_pauses so holds lead each record. Surfaces: `greg blockers [--mission ID]` (one parser block, one handler), a guarded morning-report section (blockers.section: the records, or {unavailable, error}), and Mission Control's projection()['blockers'] with a 'Blocked goals' table.",
+      "advantages": [
+        "All six section-29 fields for five of the six blocker kinds, on three surfaces, from one function",
+        "Listing follows the engine's own rule (a test monkeypatches _blocker_resolved to prove it is called, not copied)",
+        "No edit to greg/missions.py, greg/asks.py, greg/genesis.py, greg/body.py or greg/console.py; no new ledger record",
+        "Records, signs, attaches and asks nothing; never opens the secret broker (tested)",
+        "Founder surfaces stay up with the reason when the records cannot be computed"
+      ],
+      "disadvantages": [
+        "The fields beyond blocker and why are derived at read time, not stored at block time",
+        "Couples to a private engine method and to active_constraint's markers",
+        "Re-runs Genesis.restore(record=False) on each call; cost grows with formed capabilities (unmeasured on a large body)",
+        "An unpaused no_strategy blocker is never listed, because the engine's rule always treats it as resolved",
+        "Two added lines in greg/tribunal.py, which three stale open drafts (#115, #119, #121) also edit"
+      ],
+      "revival_evidence": "Retained as the proposal; revisit if the missions.py owner makes _blocker_resolved distinguish 're-evaluate at the next tick' from 'resolved', or if the founder reads 'Store' as a persisted record."
+    },
+    {
+      "name": "Simplest viable: add the six fields to missions.active_constraint (greg status)",
+      "description": "Extend the blocker entry that greg status already shows with reconsider_when, required_evidence, required_authority and next_move.",
+      "advantages": [
+        "One function, one surface already in use, no new module",
+        "Shares the withdrawn and paused_by logic by construction"
+      ],
+      "disadvantages": [
+        "Edits greg/missions.py, which the unit spec avoid-lists and open PRs #209, #228, #229 and #244 edit",
+        "Leaves the morning report and Mission Control without the fields, which the unit's acceptance requires"
+      ],
+      "revival_evidence": "After #209, #228, #229 and #244 land, the missions.py owner can have active_constraint adopt blockers.typed records instead of lifted_by='outage' (recorded follow-up)."
+    },
+    {
+      "name": "Strongest competing design: store the six fields at block time in mission.blocked",
+      "description": "Extend MissionEngine._block so each mission.blocked fact carries reconsider_when, required_evidence, required_authority and next_move, a literal reading of section 29's 'Store:'.",
+      "advantages": [
+        "The text is fixed in the ledger when the blocker is raised; historical records never change with later code",
+        "No resolution rule re-run at read time"
+      ],
+      "disadvantages": [
+        "Edits greg/missions.py (avoid-listed; open PRs) and changes a ledger record format that other readers and digests consume",
+        "Text frozen at block time goes stale: a later pause, body hold, withdrawal or answer changes what the founder must do",
+        "Existing mission.blocked facts lack the fields and would need a read-time fallback anyway"
+      ],
+      "revival_evidence": "A founder ruling that section 29's 'Store' means a persisted per-blocker record, or the missions.py owner adopting block-time fields after the open PRs on that file land."
+    },
+    {
+      "name": "Staged / reversible experiment: the `greg blockers` command only",
+      "description": "Ship the module and the CLI command, leave the morning report and Mission Control untouched for a first stage.",
+      "advantages": [
+        "No edit to greg/tribunal.py or greg/mission_control.py; satisfies a strict 'no file any open PR edits' reading",
+        "Smallest blast radius: one read-only command"
+      ],
+      "disadvantages": [
+        "Fails the unit's acceptance ('mission_control and the morning report show them') and section 30's morning-review use",
+        "The founder must know to run a separate command"
+      ],
+      "revival_evidence": "The #196 integrator chooses the strict reading for the two greg/tribunal.py lines because of stale drafts #115, #119 and #121; the morning section then moves to a follow-up."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Blocked goals stay durable in the journal, but the founder sees an outage as lifted_by \"outage\" with no authority named, sees spend stops only as asks, and has to infer from greg status, greg decisions and the code what evidence or authority would lift each blocker. Section 29's six fields stay unmet on every founder surface.",
+    "advantages": [
+      "No new code on founder surfaces and no read-time Genesis restore",
+      "No coupling to the engine's private resolution rule"
+    ],
+    "disadvantages": [
+      "Section 29 'Store: ... required evidence, required authority, next possible move' remains unmet",
+      "The morning report cannot say, per blocked goal, who must act and with what"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Section 29 asks that a blocked goal stay durable with six named fields. The blocker and its reason are already stored on the one journal; this unit derives the other four from those stored facts and the engine's own rule, and shows all six where the founder already looks: the morning report (section 30), Mission Control and a dedicated command. Section 70's answer is concrete: for every pursued mission, GREG now states what blocks it, why, when it is reconsidered, what evidence and whose authority would lift it, and the next move. No authority is created; a record names who must act and grants nothing.",
+      "material_concerns": [
+        "Section 29 says 'Store:'. Here four of the six fields are derived at read time from stored facts, not persisted at block time. This is a translation the founder may read differently",
+        "An unpaused, self-clearing no_strategy blocker is never listed, so such a stuck mission does not appear on the new surfaces; greg status still shows it",
+        "The console's /morning page (greg/console.py, avoid-listed) does not show the section; Mission Control's Goal Chase view does",
+        "Reality is UNIT-TESTED with integration-tested surfaces on in-process SANDBOX bodies with per-test keys; VEPMC stays 0, and per INTENT-20261030-BUILD-BEFORE-DEVICE-RUN the device run is the later acceptance"
+      ],
+      "evidence_refs": [
+        "docs/evidence/typed-blockers-2026-10-30/README.md",
+        "tests/unit/test_greg_blockers.py::test_an_outage_blocker_names_its_required_authority_in_the_morning_report",
+        "tests/unit/test_greg_blockers.py::test_each_blocker_type_yields_one_record_with_every_field",
+        "tests/unit/test_greg_blockers.py::test_a_self_clearing_no_strategy_blocker_is_typed_but_not_listed"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "The design adds no store, no ledger record, no engine and no authority path. It reuses the one MissionBook, the engine's _blocker_resolved (imported and called, never copied), active_constraint's withdrawn marker and its paused_by over body.body_pauses, and the read-only registry view the independent appraiser already uses (registry_view plus Genesis.restore(record=False)). Mission Control reuses the morning report's section, so one page view computes it once. The surfaces' edits are small: greg/cli.py +7, greg/tribunal.py +2, greg/mission_control.py +8/-1.",
+      "material_concerns": [
+        "_blocker_resolved is a private engine method; a change to it or to active_constraint's markers changes what is listed. The monkeypatch test and 28 mutants make such a change fail tests rather than pass silently",
+        "Genesis.restore(record=False) re-pins installed packages on each call; the reviewer measured about 0.01-0.05 s per formed package; not measured on a large body",
+        "greg/cli.py is also edited by open PRs #235, #237 and #238; git merge-tree with each is clean",
+        "foundry/owned-source.json was not updated, so the packaging inventory test fails on this head (found while preparing this record; see the Operator's concern)"
+      ],
+      "evidence_refs": [
+        "greg/blockers.py",
+        "tests/unit/test_greg_blockers.py::test_the_engines_own_resolution_rule_decides_what_is_listed",
+        "scripts/ci/check_typed_blockers_mutants.py (28 of 28 caught at a251d322)",
+        "git merge-tree --write-tree with #196's heads f65638b3 and 4dc0d581, #233, #234, #235, #236, #237, #238 and the local node-revoke and effect-call-allowlist branches: all clean"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Two adversarial reviews of 4f109258 by separate agents of this same session (not independent sessions, not humans), one attack and one fidelity, confirmed: F1 (medium), a formed capability that no longer restores took down the morning report and Mission Control; F2/TB-2 (low), a withdrawn ask told the founder to run greg decide, which MissionEngine.answer refuses; F3 (low), under a body hold the outage still said 'nothing for you to do'; F4/TB-1 (medium), a paused mission whose decision was answered vanished from the list; TB-3 and TB-4 (low), test-coverage gaps (budget stop mislabelled; NO_STRATEGY, SENSOR_FAILURE and SENSOR_SCOPE untested); F5 (info), the console /morning page drops the section; TB-5 (info), the README omits OBSERVE from section 29's behaviours. They refuted two attacks: the read-only surfaces wrote nothing in six fixtures (R1), and a forged unsigned decision.answered row did not hide a blocker (R2). F1-F4 and TB-1 to TB-4 are fixed, each with a regression test that fails on 4f109258 (8 failed, 25 passed there; 33 passed at a251d322).",
+      "material_concerns": [
+        "The round-2 fixes were re-verified (tests, mutants, merges) but not attacked by a third review",
+        "R1's no-write probe ran at 4f109258; the round-2 reads of body_pauses and the PAUSE file were not re-probed",
+        "'The next tick lifts it' assumes the body runs: an answered, resolved or withdrawn blocker is not listed when no pause or hold is in force, even if the body process is down",
+        "The crash-loop and restore holds reach the projection through the same body_pauses call but no test builds them",
+        "A withdrawn shared ask is typed as lifted at the next tick, although the next tick re-asks the undecided part",
+        "F5 and TB-5 are not addressed"
+      ],
+      "evidence_refs": [
+        "scratchpad review-typed-blockers-attack/wt/tests/unit/test_probe_attack_blockers.py (probes for F1-F5, R1, R2)",
+        "scratchpad review-typed-blockers-fidelity/probes/ (probe_paused_answered.py, probe_withdrawn.py, probe_overbudget.py)",
+        "tests/unit/test_greg_blockers.py::test_a_withdrawn_ask_never_sends_the_founder_to_answer_it",
+        "tests/unit/test_greg_blockers.py::test_a_capability_that_no_longer_restores_leaves_the_morning_report_and_mission_control_standing",
+        "tests/unit/test_greg_blockers.py::test_a_paused_mission_whose_decision_was_answered_stays_listed_with_its_pause"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Operation is one read-only command and two surfaces the founder already opens. Nothing to configure, nothing written. Reverting is a revert of six commits with nothing to migrate. When the records cannot be computed, the morning report and Mission Control show the reason and keep every other section; `greg blockers` raises, as the dedicated command should.",
+      "material_concerns": [
+        "Found while preparing this record: tests/unit/test_greg_packaging.py::test_inventory_covers_every_current_owned_source_file fails on this head (1 failed) because foundry/owned-source.json does not list greg/blockers.py; it passes on base b1950be2 (2 passed). Canonical CI's full-suite job will fail until scripts/refresh_owned_source.py adds that one line, reviewed as an inventory change",
+        "The mutant gate scripts/ci/check_typed_blockers_mutants.py is not wired into .github/workflows/canonical-ci.yml (which #196 itself and open PRs #209, #214, #215 and #232 edit); the #196 integrator must add it",
+        "Canonical CI has not run on this head; the broad suite was not run locally",
+        "Known timing failures under load, also seen on base: test_attack_founder_stop_during_ongoing_work_ends_the_worker_now (body returns -15 after SIGTERM) and six test_greg_cognition.py solver timeouts at load average 7.9 (37 passed, 3 skipped alone)",
+        "12 integration tests were skipped on this host (one observed reason: bubblewrap namespaces unavailable)"
+      ],
+      "evidence_refs": [
+        "docs/evidence/typed-blockers-2026-10-30/README.md (commands and results)",
+        "tests/unit/test_greg_blockers.py::test_the_cli_returns_the_module_records",
+        "tests/unit/test_greg_packaging.py::test_inventory_covers_every_current_owned_source_file",
+        "scripts/refresh_owned_source.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "No evidence is written, rewritten or summarized away: every record cites the mission.blocked fact it came from (source_event, since), and a missing field is refused rather than shown half-typed. The projection never opens the secret broker (a test plants a value in the broker and the environment and makes the broker raise if opened). Negative results are kept: the round-1 crash path F1, the invalid first mutant (27 of 28, rewritten and caught), the flaky stop-attack test on base and branch, the no_strategy gap and the inventory failure found here.",
+      "material_concerns": [
+        "Journal text is shown as recorded: a secret GREG itself wrote into a blocker reason would be shown, as greg status already shows it on base",
+        "All evidence is in-process SANDBOX bodies with a test clock and per-test founder keys; no founder device, no real outage, no external effect",
+        "The evidence README still omits OBSERVE from section 29's list of behaviours (TB-5); its conclusion (behaviours, not blocker kinds) is unaffected",
+        "The adversarial reviews and the final verification were done by separate agents of this same session"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_greg_blockers.py::test_no_secret_value_reaches_a_record_and_the_secret_store_is_never_opened",
+        "tests/unit/test_greg_blockers.py::test_an_incomplete_record_is_refused_never_shown",
+        "docs/evidence/typed-blockers-2026-10-30/README.md (limitations and negatives)"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The defect reproduces on base: an outage blocker is shown on three surfaces and none carries a required authority",
+      "tier": "sandbox_execution",
+      "reference": "docs/evidence/typed-blockers-2026-10-30/outage_surfaces.py, run on b1950be2 and on the branch",
+      "finding": "Base: status.active_constraint, morning q4 and morning q13 show the outage with required_authority_field=False; morning.blockers does not exist. Branch: morning.blockers shows it with required_authority_field=True; the first lines are unchanged"
+    },
+    {
+      "claim": "Fail-before and pass-after for the final 33-test file",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_greg_blockers.py; README 'Commands and results'",
+      "finding": "Base b1950be2: 33 failed (31 ImportError, 2 KeyError 'blockers'). Previous head 4f109258: 8 failed, 25 passed (the eight regression tests for F1-F4). Head a251d322: 33 passed (author and final verifier)"
+    },
+    {
+      "claim": "Every safeguard fails a behavioural test when removed",
+      "tier": "unit_test",
+      "reference": "scripts/ci/check_typed_blockers_mutants.py",
+      "finding": "28 of 28 caught at a251d322 by the final verifier (baseline passes first, 408 s); round one 17 of 17 at 6a1a2a03 and 16 of 16 at c1a99797"
+    },
+    {
+      "claim": "Related suites pass",
+      "tier": "unit_test",
+      "reference": "README 'Related suites'; final verification",
+      "finding": "412 passed on 22 related unit and integration files at 742a5b0d; 230 passed on the source-scanning suites; final verification at a251d322: 554 passed, 3 skipped, 6 failed on 30 unit files (all 6 solver timeouts in test_greg_cognition.py under load, 37 passed alone) and 51 passed, 12 skipped, 1 failed on 14 integration files (the known stop-attack flake)"
+    },
+    {
+      "claim": "The read-only surfaces write nothing to the body home or the working directory",
+      "tier": "sandbox_execution",
+      "reference": "reviewer probe test_probe_read_only_surfaces_write_nothing (R1), at 4f109258",
+      "finding": "sha256 snapshots unchanged for six fixtures (host_outage, missing_capability, paid_approval, person_step, interrupted_write, expired_mandate); not re-run after the round-2 fixes"
+    },
+    {
+      "claim": "An unsigned forged answer row cannot hide a blocker",
+      "tier": "unit_test",
+      "reference": "reviewer probe test_probe_forged_unsigned_answer_row_does_not_hide_a_blocker (R2)",
+      "finding": "The APPROVAL blocker is still listed; the MissionBook counts only answers re-derived from a founder-signed DECISION"
+    },
+    {
+      "claim": "The branch merges cleanly into #196's current and earlier heads and into the sibling branches",
+      "tier": "other",
+      "reference": "git merge-tree --write-tree",
+      "finding": "Clean with f65638b3 and 4dc0d581 (#196), #233, #234, #235, #236, #237 (capability-readiness-ladder), #238 (compute-closure) and the local node-revoke and effect-call-allowlist branches. On a merge with f65638b3: 33 blocker tests passed and 27 Mission Control integration and platform tests passed. Not re-run on a merge with 4dc0d581"
+    },
+    {
+      "claim": "Repository authority and schema checks pass",
+      "tier": "deterministic_fixture",
+      "reference": "scripts/ci/check_authority_singleton.py; scripts/ci/check_schema_refs.py",
+      "finding": "Exactly one source for each of 6 governed artifacts; 27 schemas, 130 local refs resolve"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "The packaging inventory test fails on this head",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_greg_packaging.py::test_inventory_covers_every_current_owned_source_file",
+      "finding": "Run while preparing this record: 1 failed on the branch (greg/blockers.py is not in foundry/owned-source.json), 2 passed on base b1950be2 in a temporary worktree (removed). Not fixed in this record-only step"
+    },
+    {
+      "claim": "Round one introduced a crash path on founder surfaces",
+      "tier": "unit_test",
+      "reference": "F1; test_a_capability_that_no_longer_restores_leaves_the_morning_report_and_mission_control_standing",
+      "finding": "At 4f109258 morning_projection, `greg blockers` and Mission Control raised IsADirectoryError when a formed capability no longer restored; on base those surfaces stood. Fixed: the surfaces now show {unavailable, error}; `greg blockers` still raises"
+    },
+    {
+      "claim": "An unpaused no_strategy blocker is never listed",
+      "tier": "unit_test",
+      "reference": "test_a_self_clearing_no_strategy_blocker_is_typed_but_not_listed",
+      "finding": "_blocker_resolved returns (True, 're-evaluate strategies at cadence') unconditionally; the mission re-blocks each tick while its sensor is not read-only. Listed only under a pause or hold; greg status still shows it"
+    },
+    {
+      "claim": "Timing failures under load",
+      "tier": "sandbox_execution",
+      "reference": "tests/integration/test_one_machine_attacks.py::test_attack_founder_stop_during_ongoing_work_ends_the_worker_now; tests/unit/test_greg_cognition.py",
+      "finding": "The stop attack fails intermittently on branch and base (alone on branch: 1 of 4 passed in round 2, then 1 of 2 in final verification; on base 1 of 2). Six cognition solver tests timed out at load average 7.9 and pass alone. The running body's loop does not call the changed code"
+    },
+    {
+      "claim": "Two review findings are not addressed",
+      "tier": "historical_artifact",
+      "reference": "F5 (greg/console.py render_morning keeps a fixed key list); TB-5 (README section-29 behaviours list omits OBSERVE)",
+      "finding": "F5: console.py is avoid-listed for this unit; follow-up for its owner. TB-5: the README was not corrected"
+    },
+    {
+      "claim": "The first 28-mutant run caught 27",
+      "tier": "unit_test",
+      "reference": "scripts/ci/check_typed_blockers_mutants.py",
+      "finding": "The survivor was an invalid mutant ('return [] or {...}' still returns the dict); rewritten as 'return []; {...}' and caught on the full re-run"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "For every mission GREG still pursues, the founder reads in one place, derived from retained facts and the engine's own rule, what blocks it, why, when it is reconsidered, what evidence and whose authority would lift it, and the next move; nothing on those surfaces is written, signed or asked by the projection.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "One typed record per open blocker, on `greg blockers`, the morning report and Mission Control",
+        "amplified_value": "The morning report can answer section 30's 'what requires founder judgment' per blocked goal with the exact authority asked (for a spend stop, '$2.00 for this one action'). Reverses into a liability if the derived text drifts from what the engine actually does; the mutants and the rule-reuse test bound that"
+      },
+      {
+        "id": "A2",
+        "statement": "The listing follows MissionEngine._blocker_resolved, called rather than copied",
+        "amplified_value": "When the engine's rule changes, every surface changes with it; there is no second rule to keep in step"
+      },
+      {
+        "id": "A3",
+        "statement": "'none required: <reason>' replaces silence",
+        "amplified_value": "An outage back-off now says no authority is needed and why, instead of lifted_by \"outage\"; a record without a field is refused, never shown half-typed"
+      },
+      {
+        "id": "A4",
+        "statement": "Read-only, no authority, no new record",
+        "amplified_value": "Adds a view without adding a decision path; the founder's signed commands remain the only way any blocker lifts"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Four of section 29's six fields are derived at read time rather than stored when the blocker is raised",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Each record cites the stored mission.blocked fact (source_event, since); the stored facts stay the one truth. Recorded as a translation for the founder to confirm; block-time storage kept as the strongest competing design"
+      },
+      {
+        "id": "D2",
+        "statement": "Coupling to a private engine method and to active_constraint's markers",
+        "severity": "medium",
+        "response_type": "modularity",
+        "redesigned_response": "A test monkeypatches _blocker_resolved to prove it decides the listing; 28 mutants each remove one safeguard; a format change fails tests rather than passing silently"
+      },
+      {
+        "id": "D3",
+        "statement": "Genesis.restore(record=False) on every call",
+        "severity": "low",
+        "response_type": "evidence",
+        "redesigned_response": "Mission Control reuses the morning report's section, so one page view pays once; the per-package cost was measured by the reviewer at about 0.01-0.05 s; a large body is not measured"
+      },
+      {
+        "id": "D4",
+        "statement": "A failure to restore or to type a record could take down the founder's surfaces",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Pass 2: blockers.section returns {unavailable, error} in place of the records; every other section stays; Mission Control shows the reason"
+      },
+      {
+        "id": "D5",
+        "statement": "Blockers the engine's rule treats as resolved disappear: the unpaused no_strategy blocker, and answered or withdrawn blockers while the body is down",
+        "severity": "medium",
+        "response_type": "learning",
+        "redesigned_response": "Disclosed; greg status still shows them; listed whenever a pause or hold keeps the next tick away; follow-up for the missions.py owner to distinguish 're-evaluate' from 'resolved'"
+      },
+      {
+        "id": "D6",
+        "statement": "Edits to files other branches also edit: greg/cli.py (#235, #237, #238) and greg/tribunal.py (stale drafts #115, #119, #121)",
+        "severity": "low",
+        "response_type": "governance",
+        "redesigned_response": "One parser block and one handler in cli.py, two lines at the end of morning_report; merge-tree clean with every listed head; the strict-reading decision on the two tribunal.py lines is left to the integrator"
+      }
+    ],
+    "comparisons": {
+      "baseline": "b1950be2: no surface names required evidence or authority for every blocker kind; an outage reads lifted_by \"outage\"",
+      "do_nothing": "Section 29's six fields stay unmet; the founder infers who must act from several commands and the code",
+      "simplest_viable_alternative": "Add the fields to missions.active_constraint: edits an avoid-listed file under four open PRs and leaves the morning report and Mission Control without them",
+      "strongest_competing_architecture": "Store the fields at block time in mission.blocked: fixed historical text, but edits missions.py, changes a ledger record format and goes stale when holds, withdrawals or answers change",
+      "reversible_experiment": "The `greg blockers` command alone, or this change minus the two tribunal.py lines; the whole change is one revert with nothing to migrate"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Extend missions.active_constraint (greg status) with the six fields",
+        "rejection_reason": "greg/missions.py is avoid-listed by the unit spec and edited by open PRs #209, #228, #229 and #244; status alone misses the morning report and Mission Control",
+        "revival_evidence": "Those PRs land and the missions.py owner adopts the typed records in active_constraint"
+      },
+      {
+        "name": "Persist the fields in mission.blocked at block time",
+        "rejection_reason": "Changes the ledger record format, edits missions.py, and freezes text that later holds, withdrawals and answers make wrong",
+        "revival_evidence": "A founder ruling that 'Store' means a persisted per-blocker record"
+      },
+      {
+        "name": "Rely on greg decisions and the founder asks",
+        "rejection_reason": "Covers only decision-kind blockers; outage, capability, human-work and reconciliation blockers would stay untyped",
+        "revival_evidence": "Every blocker kind becomes an ask (not the case in missions.py)"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Two adversarial reviews of 4f109258 by separate agents of this same session attacked the deployed Pass-1 design for crash paths on founder surfaces, instructions the engine refuses, blindness to pauses and holds, disappearing blockers, coverage gaps and record fidelity; a final verification by another agent of this session re-ran tests, mutants, related suites, repository checks and merges at a251d322; preparing this record ran the packaging inventory test.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "fragility",
+        "statement": "F1: a formed capability that no longer restores (IsADirectoryError) or an untypable record (BlockerError) crashed morning_projection and Mission Control, removing the founder's diagnostic view exactly when the body cannot start",
+        "strengthening_response": "blockers.section: {unavailable, error} in place of the records; every other section stays; Mission Control renders the reason; `greg blockers` still raises. Two regression tests fail on 4f109258"
+      },
+      {
+        "id": "W2",
+        "category": "fragility",
+        "statement": "F2/TB-2: a withdrawn but not yet lifted ask told the founder 'answer it: greg decide <rid> approve|reject', which MissionEngine.answer refuses",
+        "strengthening_response": "Reuse active_constraint's withdrawn marker: not listed when the next tick lifts it; under a pause or hold, listed with 'nothing to answer' and the withdrawal's reason. Regression test fails on 4f109258"
+      },
+      {
+        "id": "W3",
+        "category": "fragility",
+        "statement": "F3: under a signed BODY_PAUSE (and by the same path a crash-loop hold) the outage record still said 'nothing for you to do', and its retry time could already be past",
+        "strengthening_response": "Holds read through active_constraint's paused_by over body.body_pauses lead next_move and reconsider_when, with what lifts each; the outage drops 'nothing for you to do' under a hold. Two regression tests fail on 4f109258"
+      },
+      {
+        "id": "W4",
+        "category": "fragility",
+        "statement": "F4/TB-1: a paused mission whose decision was answered vanished from the list, though _step returns PAUSED before resolving and the blocker is held until a signed LIFECYCLE ACTIVE",
+        "strengthening_response": "A resolved or withdrawn blocker stays listed while a pause or hold is in force, with the pause, 'nothing to answer', the recorded answer and the resume as required authority; the same rule lists a paused no_strategy blocker. Two regression tests fail on 4f109258"
+      },
+      {
+        "id": "W5",
+        "category": "overfit",
+        "statement": "TB-3/TB-4: the 'budget stop' fixture was a paid scope stop, and NO_STRATEGY, SENSOR_FAILURE and SENSOR_SCOPE asks and the NO_STRATEGY re-observation clause had no fixture or mutant",
+        "strengthening_response": "paid_approval relabelled; over_budget, no_strategy_ask, sensor_failure and sensor_scope fixtures added to SHOWN; a mutant dropping the re-observation clause is caught"
+      },
+      {
+        "id": "W6",
+        "category": "comprehensibility",
+        "statement": "F5: the console's /morning page keeps a fixed list of sections and drops 'blockers'",
+        "strengthening_response": "Not addressed: greg/console.py is avoid-listed for this unit. Disclosed in the README; follow-up for the console owner; Mission Control's Goal Chase view shows the table"
+      },
+      {
+        "id": "W7",
+        "category": "fragility",
+        "statement": "Found while preparing this record: foundry/owned-source.json does not list greg/blockers.py, so tests/unit/test_greg_packaging.py::test_inventory_covers_every_current_owned_source_file fails (passes on base) and Canonical CI's full suite will fail",
+        "strengthening_response": "Not fixed in this record-only step. Before the PR leaves draft: run scripts/refresh_owned_source.py, review the one-line inventory diff as an inventory change, re-run test_greg_packaging"
+      },
+      {
+        "id": "W8",
+        "category": "comprehensibility",
+        "statement": "TB-5: the evidence README lists section 29's behaviours without OBSERVE",
+        "strengthening_response": "Not corrected; the conclusion (behaviours, not blocker kinds; no kind invented) is unaffected; recorded here and in the PR"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "The stored facts remain the one truth and each record cites its source fact; derived text stays correct when holds, withdrawals or answers change after the block. Whether 'Store' means a persisted record is the founder's reading to confirm",
+        "owner": "Alfonso Lopez (interpretation); greg/missions.py owner (block-time fields, if ruled)",
+        "review_trigger": "A founder ruling on section 29's 'Store', or the missions.py owner proposing block-time fields"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Calling the engine's rule is what keeps one rule; the coupling is pinned by a monkeypatch test and 28 mutants",
+        "owner": "greg/blockers.py maintainer with the greg/missions.py owner",
+        "review_trigger": "Any change to MissionEngine._blocker_resolved, _finish_withdrawal or active_constraint's withdrawn and paused_by markers"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Measured per package by the reviewer; one restore per Mission Control page; no founder-hardware measurement exists",
+        "owner": "greg/blockers.py maintainer",
+        "review_trigger": "The morning report or Mission Control measured slow on founder hardware, or a body with many formed capabilities"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "resolved",
+        "rationale": "W1's guarded section keeps every other section standing and states why the records are missing",
+        "owner": "greg/blockers.py maintainer",
+        "review_trigger": "Any founder surface raising because of the projection"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "deferred",
+        "rationale": "Listing a blocker the engine treats as resolved would contradict the reused rule; under a pause or hold it is now listed (W4); greg status still shows it",
+        "owner": "greg/missions.py owner",
+        "review_trigger": "_blocker_resolved distinguishes 're-evaluate at the next tick' from 'resolved', or a stuck unpaused no_strategy mission is reported"
+      },
+      {
+        "disadvantage_id": "D6",
+        "outcome": "accepted",
+        "rationale": "Merge-tree is clean with every listed head; the stale drafts #115, #119 and #121 were last updated 2026-10-02 on older bases",
+        "owner": "#196 integrator",
+        "review_trigger": "#235, #237 or #238 lands, or #115, #119 or #121 is revived"
+      }
+    ],
+    "final_design": "greg/blockers.py: a read-only projection over the one MissionBook that calls MissionEngine._blocker_resolved on the running engine or on a read-only engine (registry_view plus Genesis.restore(record=False)), reuses active_constraint's withdrawn marker and paused_by over body.body_pauses, and types each blocker that still holds, or that a pause or hold keeps from lifting, into ten non-empty fields with 'none required: <reason>' where a field does not apply and BlockerError for an incomplete record. Surfaces: `greg blockers [--mission ID]` (raises on failure), the morning report's guarded blockers section and Mission Control's 'Blocked goals' table (the reason when unavailable). 33 tests, 28 mutants. Before leaving draft: the owned-source inventory line for greg/blockers.py.",
+    "residual_risks": [
+      {
+        "risk": "A stuck mission on an unpaused no_strategy blocker, or a blocker an answer resolved while the body is down, is absent from the new surfaces",
+        "mitigation": "Disclosed on the README and PR; greg status still shows it; listed under any pause or hold",
+        "owner": "greg/missions.py owner",
+        "review_trigger": "The follow-up on _blocker_resolved, or a report of such a mission"
+      },
+      {
+        "risk": "Canonical CI fails on the packaging inventory test until foundry/owned-source.json lists greg/blockers.py",
+        "mitigation": "scripts/refresh_owned_source.py before the PR leaves draft; the PR states it",
+        "owner": "session_01Kucyfm6YBHMTjaiC1M9hqD (this draft) and the #196 integrator",
+        "review_trigger": "Canonical CI's first run on the PR head"
+      },
+      {
+        "risk": "A future change to the engine's private rule or markers changes what is listed",
+        "mitigation": "Rule-reuse test and 28 mutants; the mutant gate must be wired into canonical-ci.yml",
+        "owner": "#196 integrator (CI wiring); greg/missions.py owner",
+        "review_trigger": "Any PR editing _blocker_resolved, _finish_withdrawal or active_constraint"
+      },
+      {
+        "risk": "The round-2 fixes have had no third adversarial review, and the no-write probe was not re-run after them",
+        "mitigation": "Final verification re-ran the 33 tests, the 28 mutants, related suites and merges at a251d322",
+        "owner": "session_01Kucyfm6YBHMTjaiC1M9hqD",
+        "review_trigger": "Any reviewer finding on the PR"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded with thresholds; none blocks the draft; the Operator's entry blocks marking the PR ready or taking intake until met.",
+    "entries": [
+      {
+        "role": "Founder-Intent Steward",
+        "position": "Section 29 says 'Store:'. If the founder means a persisted record per blocker, block-time storage (the strongest competing design) is still owed; this unit stores nothing new.",
+        "rationale": "Derived text is recomputed by current code; a stored record would fix what GREG said at the time.",
+        "evidence_threshold": "A founder ruling that 'Store' requires the six fields persisted with the blocker",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "Founder review of this PR"
+      },
+      {
+        "role": "Adversarial Reviewer",
+        "position": "A mission stuck on an unpaused no_strategy blocker, or one whose resolving tick waits on a down body, should appear on the blocked-goals surfaces rather than disappear; reusing the engine's rule as-is hides it.",
+        "rationale": "The founder looks at the morning report for what is stuck; greg status is a separate command.",
+        "evidence_threshold": "A mission observed blocked across consecutive ticks while absent from the morning report's blockers section",
+        "owner": "greg/missions.py owner",
+        "review_trigger": "The follow-up that makes _blocker_resolved distinguish 're-evaluate' from 'resolved'"
+      },
+      {
+        "role": "Operator and Maintainer",
+        "position": "Do not mark the PR ready or take intake into #196 until foundry/owned-source.json lists greg/blockers.py and Canonical CI passes on the head.",
+        "rationale": "test_greg_packaging's inventory test fails on this head and passes on base; the full-suite CI job runs it.",
+        "evidence_threshold": "tests/unit/test_greg_packaging.py passing on the PR head and Canonical CI's full-suite job green",
+        "owner": "session_01Kucyfm6YBHMTjaiC1M9hqD and the #196 integrator",
+        "review_trigger": "Canonical CI's first run on the PR head"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "Alfonso Lopez (adoption and any merge); #196 integrator for intake"
+  },
+  "migration_plan": "None required: no ledger record, file format or signature changes. Existing ledgers project as they are; the new morning section changes only report_digest, which no consumer recomputes or compares (reviewer grep for tribunal.reported). Before intake, foundry/owned-source.json gains the greg/blockers.py line via scripts/refresh_owned_source.py.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert this branch's six commits (c1a99797, 6a1a2a03, 4f109258, 742a5b0d, a251d322 and this record's commit), or decline intake into #196",
+      "Nothing to migrate: the projection wrote no record and no file"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "A typed record that tells the founder to run a command the engine refuses, or omits a pause or hold in force",
+    "Any write to the body home, signature, ask, attach or secret-broker read caused by the projection",
+    "A blocker the engine still holds and the next tick will not lift, absent from the surfaces, beyond the documented unpaused no_strategy and body-down cases",
+    "The morning report or Mission Control failing because the projection failed",
+    "The listing diverging from MissionEngine._blocker_resolved"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez decides adoption and any merge, and whether section 29's 'Store' requires block-time persistence; the #196 integrator decides intake, the mutant-gate wiring and whether to keep the two greg/tribunal.py lines given stale drafts #115, #119 and #121; session_01Kucyfm6YBHMTjaiC1M9hqD owns the reversible draft and the owned-source inventory line. All five roles recommend RETAIN for the code.",
+  "review_trigger": "Canonical CI's first run on the PR head (the packaging inventory test); a founder ruling on 'Store'; the missions.py follow-up on _blocker_resolved; any change to the engine's blocker records or resolution rule."
+}

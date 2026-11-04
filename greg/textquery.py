@@ -11,8 +11,10 @@ much more there is; a phrase is absent only when every byte was read and faithfu
 undecided, with the reason, through the incomplete-observation contract the judge reads (``complete``, ``decided``).
 
 A PDF is not text, however plain its bytes: a page draws its words with text operators, so a phrase over two lines is
-not in the bytes and an operator or font name is. ``Query`` refuses a source whose header is where PDF readers look
-for it (``is_pdf``), and decides nothing until it has read that far or reached the end.
+not in the bytes and an operator or font name is. ``Query`` refuses a source a PDF reader could read as a PDF
+(``PdfEvidence``): one with a header where readers look for it, or with PDF structure anywhere, since poppler reads a
+PDF whose header is missing, misspelled or lowercased. It decides nothing until it has read 1024 bytes or reached the
+end.
 """
 from __future__ import annotations
 
@@ -37,15 +39,62 @@ MAX_OPEN_CHARS = 64 * 1024         # text whose normalized form is still open: a
 WHITESPACE = ("exact", "collapse")
 SPACES = re.compile(r"\s+")
 PDF_HEAD = 1024      # readers look for the header this far in; junk may precede it (PDF Reference 1.7, appendix H,
-                     # the note on section 3.4.1). poppler reads a PDF whatever precedes it: see is_pdf
-PDF = "a PDF: its text is drawn by page operators, not stored as text; read it with document.text"
+                     # the note on section 3.4.1). poppler reads a PDF whatever precedes it, and with no header at all
+PDF_CARRY = 1024     # bytes kept between pieces, so structure split over two is still seen: with no "startxref" or
+                     # "endobj", pdftotext 24.02 reads a PDF with 200 spaces between an object's number and "obj",
+                     # and not with 300
+PDF = ("may be a PDF ({}): a PDF's text is drawn by page operators, not stored as text, so GREG does not search its "
+       "bytes; read it with document.text")
+_PDF_SPACE = rb"[\x00\t\n\x0b\f\r ]+"     # PDF whitespace, and vertical tab: never fewer than a reader allows
+OBJECT_HEADER = re.compile(rb"(?<![0-9])[0-9]+" + _PDF_SPACE + rb"[0-9]+" + _PDF_SPACE   # "12 0 obj", ended by a
+                           + rb"obj(?=[\x00\t\n\x0b\f\r ()<>\[\]{}/%])")                  # delimiter
+PDF_KEYWORDS = (b"startxref", b"endobj")
 
 
-def is_pdf(head: bytes) -> bool:
-    """Whether a source whose first bytes are ``head`` is a PDF: its header "%PDF-" within the first PDF_HEAD bytes.
-    A text that quotes a header further in is text. Not caught: a PDF with more than about 1 KiB of junk before its
-    header, which pdftotext still reads."""
-    return b"%PDF-" in head[:PDF_HEAD]
+class PdfEvidence:
+    """What in a source's bytes says a PDF reader could read it as a PDF, streamed in bounded memory: a header
+    ("%PDF-") within the first PDF_HEAD bytes, or PDF structure anywhere.
+
+    The structure is what poppler needs, measured on pdftotext 24.02 with no header: it reads a PDF through
+    "startxref" (wherever it stands: 2000 bytes from the end it still does), through a linearized first object ended
+    by "endobj", or, with neither, by finding objects as "N G obj" with only whitespace between the three. Comments
+    between them it allows only on the first two routes. A PDF it reads therefore holds "startxref", "endobj" or such
+    an object header. Each is looked for anywhere, which never refuses less than poppler reads, and refuses a text
+    that quotes one (a program that writes PDFs). Another reader may read files poppler does not."""
+
+    def __init__(self):
+        self.read = 0
+        self.header = None          # the byte "%PDF-" starts at, within the first PDF_HEAD bytes
+        self.structure = None       # (what, the byte it starts at): the first PDF structure seen
+        self.finished = False       # every byte was fed
+        self._lead = b""            # the first PDF_HEAD bytes, while the header may still be in them
+        self._carry = b""           # the last PDF_CARRY bytes, for structure split over two pieces
+
+    def feed(self, data: bytes) -> None:
+        start, self.read = self.read, self.read + len(data)
+        if self.header is None and start < PDF_HEAD:
+            self._lead = (self._lead + data)[:PDF_HEAD]
+            at = self._lead.find(b"%PDF-")
+            self.header = at if at != -1 else None
+        if self.structure is None:
+            window, base = self._carry + data, start - len(self._carry)
+            seen = [(at, f'"{word.decode()}"') for word in PDF_KEYWORDS if (at := window.find(word)) != -1]
+            if (match := OBJECT_HEADER.search(window)) is not None:
+                shown = re.sub(_PDF_SPACE, b" ", match.group())[:40].decode()
+                seen.append((match.start(), f'an object header "{shown}"'))
+            if seen:
+                at, what = min(seen)
+                self.structure = (what, base + at)
+            self._carry = window[-PDF_CARRY:]
+
+    def finish(self) -> None:
+        self.finished = True
+
+    def reason(self) -> str | None:
+        """What was seen, with where: None when nothing so far says a PDF reader could read this source."""
+        seen = ([f'a PDF header ("%PDF-") at byte {self.header}'] if self.header is not None else []) + (
+            [f"PDF structure ({self.structure[0]} at byte {self.structure[1]})"] if self.structure else [])
+        return "; ".join(seen) or None
 
 
 class Query:
@@ -67,7 +116,7 @@ class Query:
         self.codec, self.unreadable, self.finished = None, None, False
         self.first, self.count = [None] * len(self.phrases), [0] * len(self.phrases)
         self._head = b""           # the first bytes, until their byte-order mark (or its absence) can be told
-        self._lead = b""           # the first PDF_HEAD bytes, until they tell a PDF from text
+        self._pdf = PdfEvidence()   # whether a PDF reader could read the bytes as a PDF
         self._decoder = None
         self._open = ""            # decoded text whose NFC form a later character could still change
         self._tail = ""            # the last ``overlap`` characters searched, for a match across two pieces
@@ -79,11 +128,12 @@ class Query:
             return
         self.digest.update(data)
         self.read += len(data)
-        if len(self._lead) < PDF_HEAD:
-            self._lead = (self._lead + data)[:PDF_HEAD]
-            if is_pdf(self._lead):
-                self.unreadable = PDF
-                return
+        self._pdf.feed(data)
+        if final:
+            self._pdf.finish()
+        if (seen := self._pdf.reason()) is not None:
+            self.unreadable = PDF.format(seen)
+            return
         if self._decoder is None:
             self._head += data
             if len(self._head) < 4 and not final:

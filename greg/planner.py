@@ -32,7 +32,7 @@ import subprocess
 
 from greg import models, templates
 from greg.missions import MissionError, validate_mission
-from greg.textquery import PDF, PDF_HEAD, is_pdf
+from greg.textquery import CHUNK_BYTES, PDF_HEAD, PdfEvidence
 
 PLANNER = "greg.planner/1"
 MAX_HORIZON = timedelta(days=7)
@@ -150,11 +150,18 @@ def _words_route(text: str, ctx: PlannerContext, match) -> dict:
     if question:
         return question
     limit = int(match.group(2)) - (1 if match.group(1).lower() in ("under", "fewer than", "below") else 0)
-    spec = templates.word_limit(file=file, max_words=max(limit, 1), workspace_root=Path(ctx.workspace))
+    # wc -w on a PDF counts its page syntax (329 words where its reader shows 1440): a PDF's words are its reader's
+    route = _pdf_route(file, "count its words", "template:word-limit")
+    if isinstance(route, dict):
+        return route
+    spec = templates.word_limit(file=file, max_words=max(limit, 1), workspace_root=Path(ctx.workspace),
+                                reader=route == READER)
     spec["founder_expression"] = text
-    return _proposal(spec, "template:word-limit",
-                     notes=["GREG has no word-count capability yet: it will acquire and verify one (read-only)",
-                            "filing the record asks you first, and happens only within the limit"])
+    return _proposal(spec, "template:word-limit", notes=[
+        ("GREG counts the words its PDF reader shows (pdftotext, acquired and verified, read-only), not the PDF's "
+         "bytes; a page with no text layer leaves the count open, and GREG asks you with the reason")
+        if route == READER else "GREG has no word-count capability yet: it will acquire and verify one (read-only)",
+        "filing the record asks you first, and happens only within the limit"])
 
 
 def _search_route(text: str, ctx: PlannerContext) -> dict | None:
@@ -178,7 +185,10 @@ def _search_route(text: str, ctx: PlannerContext) -> dict | None:
             f"{'them' if len(phrases) > 1 else 'it'}? GREG cannot tell: {why}. Ask again with only \"mentions\" or "
             "\"never mentions\" outside the quotes."]}
     absent = bool(negated)
-    if _is_pdf(file):
+    route = _pdf_route(file, "search it for the phrases", "template:document-phrase")
+    if isinstance(route, dict):
+        return route
+    if route == READER:
         return _document_route(text, file, phrases, absent)
     spec = templates.file_search(file=file, phrases=phrases, absent=absent)
     spec["founder_expression"] = text
@@ -190,27 +200,78 @@ def _search_route(text: str, ctx: PlannerContext) -> dict | None:
         "a phrase found anywhere in the file closes the check"])
 
 
-def _is_pdf(file: Path) -> bool:
-    """The same header check fs.search makes (``textquery.is_pdf``), on the file the words name. A file that cannot
-    be opened here is left to the sensor, which refuses it with the reason."""
+PLAN_BYTES = 1024 ** 2   # the most of a named file the planner reads to choose its route; fs.search reads all of it
+READER = "reader"
+
+
+def _pdf_evidence(file: Path) -> PdfEvidence:
+    """What the first PLAN_BYTES of the file the words name say about it being a PDF: the check fs.search makes on
+    every byte it reads (``textquery.PdfEvidence``). A file that cannot be opened or read here, or is not a regular
+    file, shows nothing: it is left to the sensor, which refuses it with the reason."""
+    evidence = PdfEvidence()
     try:   # never blocks on a FIFO swapped in, never follows a link swapped in after the roots were checked
         fd = os.open(file, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
     except OSError:
-        return False
+        return evidence
     try:
-        return stat.S_ISREG(os.fstat(fd).st_mode) and is_pdf(os.pread(fd, PDF_HEAD, 0))
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            return evidence
+        # until structure is seen and the header is known (it can only stand in the first PDF_HEAD bytes)
+        while evidence.read < PLAN_BYTES and (evidence.structure is None or (evidence.header is None
+                                                                       and evidence.read < PDF_HEAD)):
+            chunk = os.read(fd, min(CHUNK_BYTES, PLAN_BYTES - evidence.read))
+            if not chunk:
+                evidence.finish()
+                break
+            evidence.feed(chunk)
+    except OSError:
+        pass                                # what was read stands; the sensor reads the file again
     finally:
         os.close(fd)
+    return evidence
+
+
+def _pdf_route(file: Path, task: str, origin: str):
+    """How a question about the file the words name is answered: None (its bytes are text), READER (a PDF: by its
+    reader, document.text), or a question for the founder.
+
+    A file with PDF structure is a PDF when it also has a PDF header where readers look for one, or a .pdf name; then
+    its reader reads it, even with a damaged header (pdftotext reads it with none). Its bytes are never searched: a
+    PDF reader could read them as a PDF. With structure and neither, it may as well be a text that quotes PDF syntax,
+    which a reader would misread; with a header and no structure, no PDF reader can read it. Then GREG asks."""
+    evidence = _pdf_evidence(file)
+    if evidence.reason() is None:
+        return None
+    scope = "the whole file" if evidence.finished else f"its first {evidence.read} bytes"
+    if evidence.structure is None:
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"{file} looks like a PDF, but no PDF reader can read it: it has a PDF header (\"%PDF-\" at byte "
+            f"{evidence.header}) where PDF readers look for one, and no PDF structure in {scope} (no object, no "
+            "\"endobj\", no \"startxref\"), which a PDF reader needs to show any text. GREG does not read a file that "
+            f"may be a PDF as text, so it drafts no mission to {task}. If it is a damaged PDF, replace it with a "
+            "readable copy and ask again: GREG reads that with its PDF reader (document.text). If it is a text file "
+            "that quotes a PDF header, ask about a copy with no \"%PDF-\" in its first 1024 bytes."]}
+    what, at = evidence.structure
+    if evidence.header is None and file.suffix.lower() != ".pdf":
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"{file} may be a PDF: it has PDF structure ({what} at byte {at}), but no PDF header (\"%PDF-\") in its "
+            "first 1024 bytes and no .pdf name. A PDF reader still reads a PDF whose header is missing or damaged, so "
+            "GREG does not read its bytes as text; a text that quotes PDF syntax (a program that writes PDFs) has the "
+            f"same structure, and a PDF reader would misread it. GREG drafts no mission to {task}. If it is a PDF, "
+            "give it a name ending in .pdf, or repair its header, and ask again: GREG reads it with its PDF reader "
+            "(document.text). If it is a text file, GREG cannot answer from its bytes while it holds PDF structure: "
+            "check it yourself, or ask about a copy without the PDF syntax."]}
+    from greg.genesis import CATALOG
+    if "document.text" not in CATALOG:
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"{file} is a PDF ({evidence.reason()}): its text is drawn by page operators, not stored as text, and "
+            "GREG has no PDF reader (document.text) on this body. Save its text as a .txt file where GREG may read, "
+            "and ask about that file."]}
+    return READER
 
 
 def _document_route(text: str, file: Path, phrases: list, absent: bool) -> dict:
-    """A PDF is asked about as its reader shows it: ``document.text`` (#201), acquired by genesis, read-only. Where
-    genesis knows no PDF reader, GREG asks, with the reason, and drafts no search of the PDF's bytes."""
-    from greg.genesis import CATALOG
-    if "document.text" not in CATALOG:
-        return {"status": "NEEDS_INPUT", "origin": "template:document-phrase", "questions": [
-            f"{file} is {PDF}, and GREG has no PDF reader (document.text) on this body. Save its text as a .txt file "
-            "where GREG may read, and ask about that file."]}
+    """A PDF is asked about as its reader shows it: ``document.text`` (#201), acquired by genesis, read-only."""
     spec = templates.document_phrase(file=file, phrases=phrases, absent=absent)
     spec["founder_expression"] = text
     return _proposal(spec, "template:document-phrase", notes=[

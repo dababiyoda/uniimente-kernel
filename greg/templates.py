@@ -332,18 +332,25 @@ def verify_download(*, file: Path, sha256: str, workspace_root: Path, horizon_da
     }
 
 
-def word_limit(*, file: Path, max_words: int, workspace_root: Path, horizon_days: float = 2) -> dict:
+def word_limit(*, file: Path, max_words: int, workspace_root: Path, horizon_days: float = 2,
+               reader: bool = False) -> dict:
     """Confirm a draft is within a word limit, then file a record: a second, unrelated genesis function.
 
     Word counting is not built in either; genesis acquires and verifies an installed tool
     (wc). The record ``requires`` the limit check, so a draft over the limit is never
     recorded as within it. Filing stops for founder approval (outside the read-only cone).
+
+    ``reader``: the draft is a PDF, whose bytes are page syntax (wc -w counted 329 words in a PDF whose reader shows
+    1440), so its words are counted as its reader shows them: ``document.text``'s ``words`` (#201). A page with no
+    text layer makes that reading incomplete, and the judge never passes an at-most check on an incomplete count.
     """
     if not isinstance(max_words, int) or max_words < 1:
         raise ValueError("max_words must be a positive integer")
     file = Path(file).expanduser().resolve()
     slug = re.sub(r"[^a-z0-9]+", "-", file.name.lower()).strip("-")[:40] or "file"
-    mission_id = f"m:words-{slug}"
+    mission_id = f"m:{'document-' if reader else ''}words-{slug}"
+    counter = ({"function": "document.text", "params": {"path": str(file)}} if reader else
+               {"function": "text.wordcount", "params": {"path": str(file)}})
     record = Path(workspace_root) / mission_id.replace(":", "_") / f"{file.name}.words"
     statement = f"{file.name}: at most {max_words} words"
     return {
@@ -352,8 +359,9 @@ def word_limit(*, file: Path, max_words: int, workspace_root: Path, horizon_days
         "intended_effect": "the draft is proven within the word limit, and a record is filed only if it is",
         "priority": 60, "closure": {"kind": "bounded"},
         "success_checks": [
-            {"check_id": "within_limit", "description": f"{file.name} has at most {max_words} words",
-             "sensor": {"function": "text.wordcount", "params": {"path": str(file)}, "target": f"fs:{file.name}"},
+            {"check_id": "within_limit", "description": f"{file.name} has at most {max_words} words"
+                                                          + (" as its PDF reader shows them" if reader else ""),
+             "sensor": {**counter, "target": f"fs:{file.name}"},
              "predicate": {"op": "lte", "field": "words", "value": max_words}},
             {"check_id": "recorded", "description": "a record states the limit was met",
              "sensor": {"capability": "fs.read", "params": {"path": str(record)}, "target": f"fs:{record.name}"},
@@ -362,7 +370,8 @@ def word_limit(*, file: Path, max_words: int, workspace_root: Path, horizon_days
                         "params": {"relative_path": record.name, "content": statement + " (checked by GREG)\n"},
                         "target": f"workspace:{record.name}", "advances": ["recorded"], "requires": ["within_limit"],
                         "rationale": "file the record only after the count is within the limit (asks Alfonso first)"}],
-        "light_cone": {"capabilities": ["fs.read", "acquired.text.wordcount.*"], "targets": ["fs:*", "workspace:*"],
+        "light_cone": {"capabilities": ["fs.read", f"acquired.{counter['function']}.*"],
+                       "targets": ["fs:*", "workspace:*"],
                        "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
         "auto_attach": {"max_consequence_class": "read_only"},
     }

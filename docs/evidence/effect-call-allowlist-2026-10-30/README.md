@@ -2,10 +2,10 @@
 
 Founder directive of 2026-10-28 (OPUS MAXIMUS build), unit MU-D, items S37 and S67. Base: `b1950be2` (#196 head).
 Round 1 was `78e986bb`..`f4028f3d`. Round 2 answers the fourteen findings of two independent reviews (below).
-The branch has since merged #196 three times, at `4dc0d581`, `638457a4` and `a986fc74`; the merges and the one site
-the base added are under "Merges of the PR base" below. Round 4 answers the thirteen findings of the third review
-(attack and fidelity lenses, on `9b4bf062`); it is under "Round 4" below and changes the scan, the allowlist and the
-mutant gate, still no source module.
+The branch has since merged #196 four times, at `4dc0d581`, `638457a4`, `a986fc74` and `d35d92a5`; the merges and the
+two sites the base added are under "Merges of the PR base" below. Round 4 answers the thirteen findings of the third
+review (attack and fidelity lenses, on `9b4bf062`); it is under "Round 4" below and changes the scan, the allowlist
+and the mutant gate, still no source module.
 
 ## What changed
 
@@ -47,7 +47,8 @@ or the #26 relay could only be noticed by a reviewer reading the diff.
   literal as its default.
 - Each site is keyed by (module path, enclosing qualname, callee) with an occurrence count, never by line number.
 - `tests/security/effect-call-allowlist.json`: after round 4, 108 keys and 124 occurrences across 32 `greg/`, 14
-  `foundry/systems/`, 2 `egregore/` and 1 `tools/` modules; 8 wrappers; 33 path lookups (40 occurrences). Before
+  `foundry/systems/`, 2 `egregore/` and 1 `tools/` modules; 8 wrappers; 33 path lookups (40 occurrences). The
+  fourth merge (`7f179554`) added one allowed key: 109 keys and 125 occurrences across the same modules. Before
   round 4: 93 keys and 106 occurrences across 28 `greg/` and 14 `foundry/systems/` modules, 6 wrappers (round 2: 92
   keys, 105 occurrences, 27 `greg/` modules; round 1: 67 keys, 79 occurrences). The sub-bullets below give the
   round-2 numbers; round 4's are under "Round 4".
@@ -141,6 +142,7 @@ the `Body.appraise` reason ("it re-runs only the read-only `REOBSERVABLE` sensor
 | `275e9d86` | #196 at `4dc0d581` (66 base commits since `b1950be2`, 95 files) | none: no file changed on both sides | 1: `greg/licensing.py :: system_binary :: subprocess.run` | committed with the scan red on that site, left unlisted pending this classification |
 | `10d8fafa` | #196 at `638457a4` (#209's whole-output judgment adopted; 25 commits, 19 files) | none: no file changed on both sides; `foundry/owned-source.json` was not touched by either side, so `refresh_owned_source.py` was not run | 0 | `system_binary` is still the only unlisted site |
 | `640e6eb9` | #196 at `a986fc74` (#228's faithful text and #229's section IX adopted; 29 commits, 19 files) | none: no file changed on both sides; only the base changed `foundry/owned-source.json` (2 lines), so there was no conflict to resolve. `refresh_owned_source.py`, run on a scratch checkout of the merge, added and removed nothing | 0 | the scan passes with the `system_binary` entry from `77d5e9b8`; no stale entry, no count mismatch |
+| `7f179554` | #196 at `d35d92a5` (#232, #235, #238, #239, #242, #246, #249, #251 and #252 adopted; 72 commits, 122 files) | none in git: no file changed on both sides. Only the base changed `foundry/owned-source.json`; `refresh_owned_source.py`, run on a scratch copy of the merge, added and removed nothing | 1: `greg/compute.py :: benchmark :: subprocess.run` | the merged tree failed the scan on that site alone; the merge commit itself lists it under `allowed` (below) |
 
 **`638457a4` (#209).** It changes five scanned modules: `greg/appraisal.py`, `greg/authority.py`,
 `greg/goal_gravity.py`, `greg/missions.py` and `greg/pipeline.py`. The diff was read for each. What it adds is
@@ -176,6 +178,42 @@ traced by hand and by one runtime probe; the scan does not check routes.
 The diff starts no process, opens no connection, listens nowhere and calls no declared wrapper. The scan agrees: with
 the entries from `77d5e9b8`, **9 passed** on the merged tree, so nothing is unlisted or stale and no count changed. No
 new site was classified, and no entry was added at that merge.
+
+**`d35d92a5` (#232, #235, #238, #239, #242, #246, #249, #251, #252).** The scan now reads 328 modules, against
+325 at round 4. The base changed 34 of them, 3 of which are new: `greg/autonomy.py`, `greg/blockers.py` and
+`provenance/digests.py`. The scan found the new site; the 34 diffs were not each read by hand. Those of four
+modules with listed sites were read (`genesis.py`, `body.py`, `ventures.py`, `foundry/systems/repair.py`), and so
+were `compute.py`'s new `benchmark` and `host_facts`.
+- Before the entry, the scan reported one problem: `UNLISTED … greg/compute.py :: benchmark :: subprocess.run
+  (1 call)` (**1 failed, 17 passed**). Every pin still matched, so no listed call, and no finding's definition,
+  changed as parsed.
+- The site. #238's `compute.benchmark` (greg/compute.py:476, the call at :492) runs `[sys.executable, "-I", "-c",
+  "pass"]` once per run, to time one interpreter spawn, with `check=True`, `capture_output=True` and a 60 s timeout.
+  The argv is fixed and takes nothing from the caller. Its only caller is `greg compute benchmark`
+  (greg/cli.py:949), a command a person runs. A search of `greg/`, `foundry/`, `egregore/`, `tools/` and `scripts/`
+  found no other. The merge commit lists it under `allowed` with that `operator:` serves; this was the only edit
+  needed for the merged tree to pass.
+- Routes. Genesis's installed-software rung now tries an acquired reader that already failed to measure after the
+  others (#239). The candidates are the same, and so is the route from `_manifest_for` through `_binary_license` to
+  `system_binary`, so the findings' serves stand. `Body.tick` now calls `autonomy.regress` first (#235); that module
+  starts no process.
+- Not in the inventory. On macOS, two person-run commands now also reach `memory_bytes`'s `sysctl` spawn:
+  `greg compute benchmark` (through `host_facts`) and `greg compute status` (through `sample`). The finding's
+  `operator:` serves still names only `greg.body.status`. The JSON was not changed for this.
+
+On the merged tree `7f179554`:
+
+| Check | Result |
+| --- | --- |
+| `tests/unit/test_effect_call_allowlist.py` | **18 passed** |
+| `test_greg_egress.py`, `test_founder_effect_doctrine.py` | 16 and 5 passed |
+| `test_greg_packaging.py`, `test_greg_platform.py`, `test_developmental_inheritance.py` | 3, 19 and 23 passed |
+| `check_authority_singleton.py`, `check_schema_refs.py` | rc 0; 27 schemas, 130 local refs, all resolve |
+| round 4's probes and the reviewers' scan probe | unchanged tree: 0 problems. Re-filing every finding: 14 problems (6 `FINDING RE-FILED`). Rewriting both spawns: 2 `PIN MISMATCH known_unmediated`. A new `system_binary` or `git_read` caller: `UNLISTED`. `_backend`'s round-2 text: `ENVELOPE CLAIM`. Probe forms found: 15 of 15 |
+| `scripts/ci/check_effect_call_allowlist_mutants.py`, run once as a single process (not sharded) | BASELINE passes, **117/117 caught**, 0 survived, 0 stale, exit 0, 27m14s |
+| `git merge-tree` against 22 sibling branches | 20 clean. 2 conflict, and each conflicts with `d35d92a5` alone too: `cursor/text-interpretation-contract-bddd` (`foundry/owned-source.json`, `greg/appraisal.py`, `greg/missions.py`) and `cursor/receipt-pinned-appraisal-ba20` (`greg/appraisal.py`) |
+| the allowlist test on the merge with each clean sibling the base does not already contain (10) | 18 passed on each |
+| counts | 103 `allowed`, 6 `known_unmediated`, 8 wrappers, 33 path lookups (40 occurrences) |
 
 **`4dc0d581`: the licensing site.** The base added it in `bd7e3f9e` (#201/#230, 2026-10-22, "GREG reads PDFs on the
 mission path; acquired system binaries carry their DEP-5 license"); that commit is not in `b1950be2`, where this

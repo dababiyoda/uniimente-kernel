@@ -81,8 +81,8 @@ MUTANTS = [
      '                                 output_artifact=result.get("output_artifact"), **base)', "**base)",
      T + "test_a_required_phrase_past_16_kib_closes_the_mission_without_asking_and_is_verified"),
     ("the appraiser re-derives a closure from the prefix only", "greg/appraisal.py",
-     'verdict, detail = judge_receipt(check["predicate"], receipt.payload["result"], artifacts)',
-     'verdict, detail = judge_receipt(check["predicate"], receipt.payload["result"], None)',
+     'verdict, detail = judge_receipt(check["predicate"], result, artifacts)',      # #250 names the result first
+     'verdict, detail = judge_receipt(check["predicate"], result, None)',
      T + "test_a_required_phrase_past_16_kib_closes_the_mission_without_asking_and_is_verified"),
     ("the appraiser checks a precondition by the prefix only", "greg/appraisal.py",
      'predicates[check_id], receipt.payload["result"], artifacts)[0])',
@@ -260,17 +260,26 @@ MUTANTS = [
      'return None if _canon(expected).startswith(_canon(_stable(cut["prefix"]))) else False',
      'return None',
      F + 'test_a_long_string_equal_as_text_is_never_called_different_by_its_digest'),
+    # #250 split _compare's string branch and _judge_whole's search by op; the NFC safeguards keep their mutants
     ('a whole string is compared in its code points', "greg/missions.py",
-     'return isinstance(expected, str) and _canon(kept) == _canon(expected)',
-     'return kept == expected',
+     '        return _canon(kept) == _canon(expected)\n',
+     '        return kept == expected\n',
      F + 'test_a_forbidden_name_in_another_normalization_form_is_found'),
     ("two keys spelling one text decide an object's equality", "greg/missions.py",
      'return keys if len(keys) == len(mapping) else None',
      'return keys',
      F + 'test_two_keys_spelling_one_text_decide_nothing'),
     ('a whole text is searched in its code points', "greg/missions.py",
-     '        value, expected = _canon(value), _canon(expected)',
-     '        pass',
+     '        if isinstance(value, str) and searchable:         # one text, whichever normalization form either side is in\n'
+     '            value, expected = _canon(value), _canon(expected)\n',
+     '        if isinstance(value, str) and searchable:         # one text, whichever normalization form either side is in\n'
+     '            pass\n',
+     F + 'test_a_forbidden_name_in_another_normalization_form_is_found'),
+    ('a whole text is checked for absence in its code points', "greg/missions.py",
+     '        if isinstance(value, str) and searchable:\n            value, expected = _canon(value), _canon(expected)\n'
+     '        return as_verdict(searchable and expected not in value)',
+     '        if isinstance(value, str) and searchable:\n            pass\n'
+     '        return as_verdict(searchable and expected not in value)',
      F + 'test_a_forbidden_name_in_another_normalization_form_is_found'),
     ("an unreadable field's reason is not shown to the founder", "greg/missions.py",
      '                return node[f"{parts[i]}_unreadable"]',

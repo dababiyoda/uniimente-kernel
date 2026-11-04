@@ -4,17 +4,23 @@ Run once, from the repository root, at the commit before it landed: ``python -B 
 record missing a required field it appends, after the record's last field and without touching a byte before it:
 
 * the field, copied verbatim from the name this same record already states it under (``COPIES``), or
-* ``{"unrecorded": "<reason>"}`` when the record does not state it;
-* ``normalization_2026_10_30``: the contract, the rule and which fields were copied from which.
+* the field, copied verbatim from the row of the same name in the record's companion Intent Record document,
+  ``docs/intent/<intent_id>.md`` (a ``| `field` | value |`` table row), or
+* ``{"unrecorded": "<reason>"}`` when neither states it;
+* ``normalization_2026_10_30``: the contract, the rule and which fields were copied from which (``copied`` for the
+  record's own fields, ``copied_from_document`` for the companion document, present only when used).
 
 It refuses a record it has already normalized, and checks after each write that deleting the inserted text gives
 back the original file byte for byte and that every original field parses to the same value. It invents nothing:
-a value is either the record's own words or the marker. Kept as evidence of how the records were changed.
+a value is the record's own words, its companion document's words, or the marker. Kept as evidence of how the
+records were changed. (The companion-document step was added after review finding MUF-N1: GOAL-GRAVITY's seven
+fields had first been marked unrecorded although its own Intent Record document states them.)
 """
 from __future__ import annotations
 
 import json
 from pathlib import Path
+import re
 import sys
 
 ROOT = Path.cwd()
@@ -54,8 +60,24 @@ def reason(field: str, record: dict) -> str:
     return "; ".join([base] + notes)
 
 
+def document_rows(intent_id: str) -> tuple[str, dict]:
+    """(path, field -> value) of the record's companion Intent Record document, if it has one."""
+    name = f"docs/intent/{intent_id}.md"
+    path = ROOT / name
+    if not path.exists():
+        return name, {}
+    rows = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        found = re.fullmatch(r"\| `([a-z_]+)` \| (.*) \|", line)
+        if found:
+            assert "|" not in found.group(2).replace("\\|", ""), (name, found.group(1))
+            rows[found.group(1)] = found.group(2)
+    return name, rows
+
+
 def additions(record: dict) -> tuple[dict, dict]:
-    added, copied = {}, {}
+    added, copied, from_document = {}, {}, {}
+    document, rows = document_rows(record["intent_id"])
     for field in LEDGER + SECTION_11:
         if field in record:
             continue
@@ -64,9 +86,14 @@ def additions(record: dict) -> tuple[dict, dict]:
             value = record[alias]
             added[field] = [value] if field in LIST_FIELDS and isinstance(value, str) else value
             copied[field] = alias
+        elif field in rows:
+            added[field] = rows[field]
+            from_document[field] = document
         else:
             added[field] = {"unrecorded": reason(field, record)}
     added[BLOCK] = {"contract": CONTRACT, "rule": RULE, "copied": copied}
+    if from_document:
+        added[BLOCK]["copied_from_document"] = from_document
     return added, copied
 
 

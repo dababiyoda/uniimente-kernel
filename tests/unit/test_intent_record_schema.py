@@ -45,8 +45,9 @@ ALIASES = {"state": ("status", "lifecycle_state"),
            "intended_effect": ("intended_outcome", "intended_observable_effect")}
 # docs/intent/*.json files that hold no intent record (a manifest, a map), by name, with what they are.
 NOT_INTENT_RECORDS: dict[str, str] = {}
-# The unrecorded markers at normalization (2026-10-30). A later record may close a gap; it may not add one silently.
-MAX_UNRECORDED = 129
+# The unrecorded markers at normalization (2026-10-30), less the seven GOAL-GRAVITY fields its own Intent Record
+# document states (review finding MUF-N1). A later record may close a gap; it may not add one silently.
+MAX_UNRECORDED = 122
 
 
 def schema() -> dict:
@@ -138,6 +139,41 @@ def test_a_copied_field_repeats_the_records_own_words():
             assert record[field] == expected, (record["intent_id"], field)
             copies += 1
     assert copies > 0
+
+
+def document_rows(name: str) -> dict:
+    """field -> value of the ``| `field` | value |`` rows of an Intent Record document."""
+    rows = {}
+    for line in (ROOT / name).read_text(encoding="utf-8").splitlines():
+        found = re.fullmatch(r"\| `([a-z_]+)` \| (.*) \|", line)
+        if found:
+            rows[found.group(1)] = found.group(2)
+    return rows
+
+
+def test_a_field_copied_from_the_companion_document_repeats_its_row():
+    copies = 0
+    for _, record in records():
+        for field, document in (record.get(NORMALIZATION) or {}).get("copied_from_document", {}).items():
+            assert document == f"docs/intent/{record['intent_id']}.md", (record["intent_id"], document)
+            assert record[field] == document_rows(document)[field], (record["intent_id"], field)
+            copies += 1
+    assert copies == 7
+
+
+def test_no_field_is_marked_unrecorded_where_the_records_own_document_states_it():
+    """A record's companion Intent Record document (docs/intent/<intent_id>.md) is its own source: a field it states
+    is recorded, never an unrecorded gap."""
+    checked = 0
+    for _, record in records():
+        document = INTENT_DIR / f"{record['intent_id']}.md"
+        if not document.exists():
+            continue
+        rows = document_rows(str(document.relative_to(ROOT)))
+        checked += 1
+        stated = [field for field in LEDGER_FIELDS + SECTION_11_FIELDS if unrecorded(record[field]) and field in rows]
+        assert stated == [], (record["intent_id"], stated)
+    assert checked >= 1
 
 
 def test_names_for_the_same_field_agree_wherever_both_are_present():

@@ -174,6 +174,13 @@ def test_prose_that_mentions_an_id_is_not_succession(tree):
     assert main(["--root", str(tree)]) == 1
 
 
+def test_goal_gravitys_own_supersedes_prose_keeps_intent_0030_guarded(tree):
+    gravity = json.loads(_intent_file(tree, "INTENT-20261013-GOAL-GRAVITY").read_text(encoding="utf-8"))["intents"][0]
+    assert "INTENT-0030" in gravity["supersedes"] and gravity["supersedes"] != "INTENT-0030"
+    (tree / "docs/intent/INTENT-0030-effect-not-metaphor.md").unlink()
+    assert missing(snapshot(), tree) == [("intent_documents", "INTENT-0030")]
+
+
 def test_an_intent_record_cannot_supersede_a_horizon(tree):
     """voice, continuity and robotics are ordinary words. Only a horizon's supersedes releases a horizon; an intent
     record's does not, even when one entry is exactly the horizon id."""

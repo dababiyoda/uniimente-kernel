@@ -259,7 +259,7 @@
    "title": "Post-outcome disposition review RETAIN / REPAIR / REGRESS / REMOVE for every formed capability, proposed, never self-applied",
    "source": "gap map of the 77 sections against #196 head 4ec00605 (session 2026-10-30), section 22 (unnamed there)",
    "depends_on": [],
-   "closed_by": "claude/capability-disposition-20261104 on #196 d35d92a5: greg/disposition.py reviews every formed capability with settled outcomes each body tick and proposes RETAIN, REPAIR, REGRESS or REMOVE by the settlement demotion bound; a change asks the founder (CAPABILITY_DISPOSITION, answer only recorded); the registry changes only by signed CAPABILITY_DETACH or ATTACH"
+   "closed_by": "claude/capability-disposition-20261104 on #196 d35d92a5: greg/disposition.py reviews every capability Genesis formed (built:, installed:, composed:) each body tick against its counted outcomes and faults in service, and proposes RETAIN, REPAIR, REGRESS or REMOVE by the compiler's own demotion rule (ten outcomes, Wilson upper bound below one half); a change asks the founder once (CAPABILITY_DISPOSITION, answer only recorded); the registry changes only by signed CAPABILITY_DETACH or ATTACH"
   },
   {
    "id": "S24-A",
@@ -1984,7 +1984,8 @@
      "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "SANDBOX_VERIFIED",
      "tier": "SANDBOX_VERIFIED",
-     "coverage": "covered"
+     "coverage": "covered",
+     "note": "Settlement credits outcomes only to constructions and installed Python packages, so a built or catalog-binary capability is reviewed on its faults in service alone; the realized values in the body tests are synthetic."
     }
    ]
   },

@@ -251,6 +251,24 @@ def test_a_pinned_compile_at_another_registered_version_raises_before_any_solver
         _pinned_run(params, registry, pin)
 
 
+@pytest.mark.parametrize("change", ["version", "detached"])
+def test_a_pinned_compile_of_a_changed_method_raises_before_any_solver_runs(monkeypatch, change):
+    """#243's fail-closed rule at the compiler, before the appraiser's postcondition: a method re-versioned or
+    detached since the receipt is never run under its pin."""
+    from greg.cognition import cortex
+    from greg.cognition.contracts import CognitionError
+    registry = _attached_registry()
+    params = {"problem_id": "pin", "compile": {"geometry": {"geometry": "optimization"}, "data": _request()}}
+    pin = _pin(cc.INCUMBENT, registry.manifests[cc.INCUMBENT].version, "admission_status", params)
+    if change == "version":
+        registry.manifests[cc.INCUMBENT] = replace(registry.manifests[cc.INCUMBENT], version="9.9.9")
+    else:
+        registry.set_state(cc.INCUMBENT, "DETACHED")
+    monkeypatch.setattr(cortex, "reason", lambda *a, **k: pytest.fail("a solver ran"))
+    with pytest.raises(CognitionError, match=UNAVAILABLE):
+        _pinned_run(params, registry, pin)
+
+
 def test_routing_changed_since_the_receipt_never_changes_which_method_a_pinned_compile_runs(monkeypatch):
     """Here another fit was admitted since the receipt, so current routing serves it first; the pin still names
     the receipt's method (planned only: no solver runs)."""
@@ -342,9 +360,14 @@ def test_a_formed_mechanism_compile_closure_is_still_re_read_and_verified(tmp_pa
             return [(replace(m, provenance={**m.provenance, "version": "0.0.0-other"}), a)
                     for m, a in real(registry, data, geometry)]
 
+        engines = []
+        real_run = genesis.run_formed
         monkeypatch.setattr(genesis, "formed_cognition", repackaged)
+        monkeypatch.setattr(genesis, "run_formed", lambda m, a, d: engines.append(m.capability_id) or
+                            real_run(m, a, d))
         verdict = appraisal.appraise(body.appraisal_request("m:formed"))
         assert verdict["verdict"] != "VERIFIED" and _refused(verdict["findings"]), verdict["findings"]
+        assert engines == []                    # refused before the engine runs, not only by the postcondition
 
 
 def test_a_success_the_alternative_answered_on_its_native_route_is_verified(tmp_path):
@@ -692,4 +715,7 @@ def test_a_pinned_compile_reads_no_settled_outcomes(monkeypatch):
     again = _pinned_run(params, registry, pin)
     assert again["method_or_composition_selected"] == cc.INCUMBENT
     assert not any(d["method"] == cc.INCUMBENT for d in again["methods_demoted"])
+    inhibition = compiler._settled_inhibition(10, 0)
+    assert inhibition and inhibition in routed["dissent"] + [d["why"] for d in routed["methods_demoted"]]
+    assert inhibition not in again["dissent"]
     assert again["replay"]["learned_routing"] is False and "settled_preference" not in again

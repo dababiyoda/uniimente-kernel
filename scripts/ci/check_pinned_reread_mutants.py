@@ -40,6 +40,7 @@ HUMAN = TESTS + "test_the_human_route_is_re_read_on_that_route_alone"
 VERSIONLESS = TESTS + "test_a_versionless_pin_is_never_honoured_on_an_operation_route"
 BOUND = TESTS + "test_a_bound_pin_is_honoured_only_on_a_compile_of_the_receipts_inputs"
 CHANNEL = TESTS + "test_the_pin_has_one_channel_and_nothing_in_the_compiler_rebinds_it"
+CHANGED_PIN = TESTS + "test_a_pinned_compile_of_a_changed_method_raises_before_any_solver_runs"
 SETTLED = TESTS + "test_a_pinned_compile_reads_no_settled_outcomes"
 # #243's own tests, on the kept channel
 OWN = "tests/unit/test_greg_receipt_pinned_appraisal.py::"
@@ -146,8 +147,8 @@ MUTANTS = [
      PREFERENCE.replace('if route["selection"]', 'if False and route["selection"]'), SERVED),
     ("pinned re-read runs an unadmitted alternative", COMPILER, OFFERABLE,
      "if not condition_competence._attached(registry):", SERVED),
-    ("pinned re-read runs a detached alternative", COMPILER, OFFERABLE,
-     "if not condition_competence._admitted():", DETACHED),
+    # "pinned re-read runs a detached alternative" (OFFERABLE -> "if not condition_competence._admitted():") is not
+    # listed: it is equivalent, since _pinned_row's _usable check refuses a detached alternative's operation row too
     ("adapter row offered whatever route the receipt took (body)", COMPILER, PREFERENCE,
      PREFERENCE.replace('if route["selection"] == "preferred_by_condition_evidence":',
                         'if route["selection"] == "preferred_by_condition_evidence" or method == '
@@ -167,7 +168,7 @@ MUTANTS = [
      'return next((dict(r) for r in rows if r.get("method") == method and not r.get("rejected")), None)',
      NO_NATIVE_BODY),
     ("pinned compile not restricted to the named method", COMPILER, NAMED,
-     'matches = [r for r in rows if not r.get("rejected")][:1]', ROUTED),
+     'matches = [min((r for r in rows if not r.get("rejected")), key=lambda r: _rank(r, [], {}))]', ROUTED),
     ("versionless pin honoured on an operation route", COMPILER, KINDS,
      'if version is not None and row.get("kind") not in ("operation", "problem"):', VERSIONLESS),
     ("composition pin refused (#243's refusal)", COMPILER, KINDS,
@@ -176,10 +177,10 @@ MUTANTS = [
      'if row.get("kind") not in (("composition",) if version is None else ("operation", "problem")):', BUILT),
     ("formed pin refused (#243's refusal, Genesis suite)", COMPILER, FORMED_ROUTE, "if False:", GENESIS),
     ("registered version not compared", COMPILER, REGISTERED, "if manifest is None:", EARLY),
-    ("registered version not compared (#243's own test)", COMPILER, REGISTERED, "if manifest is None:", CHANGED
-     + "[version]"),
-    ("detached method re-read (#243's own test)", COMPILER, "    return row if usable else None",
-     "    return row", OWN_CLOSED),
+    ("registered version not compared (compile)", COMPILER, REGISTERED, "if manifest is None:",
+     CHANGED_PIN + "[version]"),
+    ("detached method re-read (compile)", COMPILER, "    return row if usable else None", "    return row",
+     CHANGED_PIN + "[detached]"),
     ("condition hook consulted under a pin", COMPILER, HOOK,
      "    if True:\n        runnable = condition_competence.compile_hook(", SHADOW),
     ("learned routing consulted under a pin", COMPILER, LEARNING, "    if True:\n        # learned routing:", SETTLED),
@@ -224,7 +225,10 @@ def main():
                 run = _run(repo, node)
             finally:
                 path.write_text(original)
-            caught = (run is not None and run.returncode == 1 and f"FAILED {node}" in run.stdout
+            # a module fixture that asserts the body's own appraisal (``failed``) errors the test instead: that is
+            # the named test failing too, never a collection error
+            caught = (run is not None and run.returncode == 1 and (f"FAILED {node}" in run.stdout
+                                                                   or f"ERROR {node}" in run.stdout)
                       and "ERROR collecting" not in run.stdout)
             print("CAUGHT" if caught else "TIMED OUT" if run is None else "SURVIVED", name, "--",
                   node.split("::")[-1])

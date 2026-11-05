@@ -1,0 +1,1598 @@
+{
+ "version": 1,
+ "purpose": "Every effectful call site in greg/, foundry/systems/ and the repository modules they import (a child process, a stdlib call that starts one, an outbound connection, a name lookup, an inbound listener, code run from a string, an effect module handed out as a value, and every caller of a declared wrapper), keyed by module, enclosing qualname and callee with an occurrence count, what governs it and a pin binding its text to the code; and every place that code picks a program by name, with what it searches. Read by tests/unit/test_effect_call_allowlist.py; a site or lookup missing here, an entry with no site, a wrong count or a stale pin fails it. Listing a site authorizes nothing: this is a review-time inventory, not a grant.",
+ "rule": "allowed: the site is reached only through a registered capability's adapter (its manifest, signed mission scope and Gate), the confinement those adapters run behind (run_isolated, the worker envelope, the #26 relay and door), the supervised worker path, a founder-signed selection or command, or a command a person runs by hand (greg CLI, installer, python -m harness, CI audit). known_unmediated: the body reaches the site on its own schedule (body-loop:) with none of those behind it; each is a finding, kept so it cannot grow silently, not an approval, and the test's FINDINGS names each one. wrappers: in-tree functions that pass an effect on with no check of their own; every call or reference to one is a site, keyed by the wrapper's dotted name, unless it keeps the wrapper's exempt_when keywords at their literal. pin: the sha256 the test prints for the code an entry's text describes (the whole definition for known_unmediated, the calls at the site for allowed); re-pin only after re-reading the text. path_lookups: where a program is chosen by name and what is searched; a program found on the ambient PATH is whatever file of that name comes first in a directory the body inherited.",
+ "seeded_from": "b1950be215b564dec9665793b891009310d47249",
+ "wrappers": [
+  {
+   "module": "greg/egress.py",
+   "qualname": "send",
+   "exempt_when": {},
+   "why": "sends one request through opener() without the https and allowlist check open_checked applies first"
+  },
+  {
+   "module": "greg/egress.py",
+   "qualname": "opener",
+   "exempt_when": {},
+   "why": "returns the raw outbound opener; its open() checks no scheme, host or allowlist"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "run_isolated",
+   "exempt_when": {
+    "isolate_network": true
+   },
+   "why": "with isolate_network other than True and no confine or confine_to it spawns with no network filter (macOS: no sandbox-exec; Linux: preexec=None)"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "_spawn",
+   "exempt_when": {},
+   "why": "launches whatever preexec it is handed, including None; only run_isolated decides the confinement"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "_launch",
+   "exempt_when": {},
+   "why": "runs argv with the preexec it is handed, including None; it applies no confinement of its own"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "supervised_run",
+   "exempt_when": {},
+   "why": "starts argv under the preexec_fn and env it is handed and only adds STOP polling and bounded output; the envelope comes from the caller"
+  },
+  {
+   "module": "greg/licensing.py",
+   "qualname": "system_binary",
+   "exempt_when": {},
+   "why": "spawns dpkg-query -S on whatever binary path it is handed, unconfined and with dpkg-query taken from the body's ambient PATH; it checks neither its caller nor the path, so every caller passes that spawn on"
+  },
+  {
+   "module": "egregore/repository_audit.py",
+   "qualname": "git_read",
+   "exempt_when": {},
+   "why": "runs git with whatever arguments and repository path it is handed, git taken from the body's ambient PATH and the repository's own config applied; it checks neither, so every caller passes that spawn on"
+  }
+ ],
+ "allowed": [
+  {
+   "module": "egregore/local_model.py",
+   "qualname": "LocalModelClient.__init__",
+   "callee": "urllib.request.build_opener",
+   "count": 1,
+   "serves": [
+    "capability:cognition.cortex.semantic",
+    "model-route:ollama"
+   ],
+   "justification": "built only inside the cortex worker (greg.cognition.worker.cortex_main) when the founder selected a local model; ProxyHandler({}) and no redirects, and LocalModelConfig refuses any base URL that is not a loopback /v1 URL without credentials",
+   "pin": "ec61442291b3dfee9105bfddf88bed3ca3f0d8ec803a02655567659dcd48f6c3"
+  },
+  {
+   "module": "egregore/local_model.py",
+   "qualname": "LocalModelClient.complete",
+   "callee": "urllib.request.build_opener().open",
+   "count": 1,
+   "serves": [
+    "capability:cognition.cortex.semantic",
+    "model-route:ollama"
+   ],
+   "justification": "one POST to the loopback /v1/chat/completions of the founder-selected local model, input capped at 128 KiB and the reply at 1 MiB; bridge.run_worker runs this worker with no network filter at all when a model is selected (listed there), so loopback is this check's, not the worker's",
+   "pin": "d953a025d8931f25a7b091af98237b387bc6fa8d33ac263a3f9ddb312999965d"
+  },
+  {
+   "module": "egregore/repository_audit.py",
+   "qualname": "capture",
+   "callee": "egregore.repository_audit.git_read",
+   "count": 3,
+   "serves": [
+    "capability:repo.pin_audit",
+    "capability:repo.integration_audit"
+   ],
+   "justification": "rev-parse of the cached origin/main, then cat-file -s and cat-file blob of each audited file at the observed commit, sizes bounded by MAX_BLOB; reached only through capabilities._repo_report",
+   "pin": "9710a560235d2495fdf38ec108bbc762fa1e604371443f1a757ab3da2b20fd4b"
+  },
+  {
+   "module": "egregore/repository_audit.py",
+   "qualname": "git_read",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:brief.engineering",
+    "capability:repo.pin_audit",
+    "capability:repo.integration_audit"
+   ],
+   "justification": "`git --no-pager -C <path> <args>` with PATH=os.defpath, no system or global config, no prompts and a 5 s timeout; git is shutil.which('git') on the body's ambient PATH (the manifests name /usr/bin/git) and runs unconfined, and the repository's own config applies, so `git status` runs a core.fsmonitor command it names (reproduced); git_read is a declared wrapper",
+   "pin": "b369bb2f37e22a279abdf76655d196596fd5d0e1b00e67fbe3e718c2aeeeb91d"
+  },
+  {
+   "module": "foundry/systems/build.py",
+   "qualname": "build_in_subprocess",
+   "callee": "subprocess.run",
+   "count": 2,
+   "serves": [
+    "capability:foundry.apply",
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "APPLY_OPS['verify'] and exercise() rebuild the owned bundle in a child: under GREG_FOUNDRY_STORE (set inside the foundry worker) only the reviewed `greg.foundry_protocol_worker build-owned` recipe, scrubbed env, fixed source root; otherwise build() in a `python -c` child",
+   "pin": "139e6e137c1c55da05ee7aca376c935d3d3603b3d78f109b3d7da49bef0cdf5d"
+  },
+  {
+   "module": "foundry/systems/build.py",
+   "qualname": "smoke",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only: imports foundry.systems from the extracted bundle in a child with PYTHONPATH=<bundle> and PATH=/usr/bin:/bin, to show the bundle runs on its own",
+   "pin": "0feddc2fd6d6694b659d5363bd499584d43d95d93e427748f771597aec5bbf3a"
+  },
+  {
+   "module": "foundry/systems/commissioning.py",
+   "qualname": "Commission._ci",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only (APPLY_OPS is empty: running an agent is a founder-authorized act): runs the frozen contract's own `ci` argv in the commissioned worktree with scrubbed_env() and CI_TIMEOUT",
+   "pin": "97b47b2a9141ed4bf7fc3eee2a84c9a282213759385af6e8d13e6c0fdcbc5739"
+  },
+  {
+   "module": "foundry/systems/commissioning.py",
+   "qualname": "git",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only: git with GIT_ENV on the scratch repository the exercise creates; QUERY_OPS['contracts'] reads the store and runs no git",
+   "pin": "2d613f1baeb6eec844e72f2b8240940faa85cb0a6fb944d0ca09180c478b9941"
+  },
+  {
+   "module": "foundry/systems/containers.py",
+   "qualname": "_cleanup",
+   "callee": "subprocess.run",
+   "count": 3,
+   "serves": [
+    "capability:foundry.apply",
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "after run(): deletes the container, lazily unmounts leftovers and removes its state directory, each through _privileged(), which refuses unless the founder's approval variable names this host",
+   "pin": "a8be1a8e53421d792ec92ea3db626c5c4085bab3264a3497f64c0c10907cf6c4"
+  },
+  {
+   "module": "foundry/systems/containers.py",
+   "qualname": "run",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:foundry.apply",
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "APPLY_OPS['run'] and exercise(): runc/runsc on a prepared bundle only after privileged_runtime_approved() (the founder's approval variable equals this hostname); refused before any command otherwise",
+   "pin": "1636c19b4a06f7368940545b4291f417a6388b7fba6a4ae6c3e5c34503b7a79f"
+  },
+  {
+   "module": "foundry/systems/embassy_wire.py",
+   "qualname": "ForeignAgent.http",
+   "callee": "urllib.request.urlopen",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only (APPLY_OPS is empty: admitting foreign agents is an operator act): the test agents' client to the embassy serve() binds on 127.0.0.1:0",
+   "pin": "580817a40091f517111fc18acb4b9f194c7bb9d4febdacd83926a1e27554c569"
+  },
+  {
+   "module": "foundry/systems/embassy_wire.py",
+   "qualname": "serve",
+   "callee": "http.server.ThreadingHTTPServer",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "listener bound to 127.0.0.1:0 only; started only by exercise() (APPLY_OPS is empty: admitting foreign agents is an operator act)",
+   "pin": "6a074755294ff5e58d3560f5568354f824fad005359c2705a0ddfcbd65aa41fb"
+  },
+  {
+   "module": "foundry/systems/federation.py",
+   "qualname": "Instance.serve",
+   "callee": "http.server.ThreadingHTTPServer",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "listener bound to 127.0.0.1:0 only; Instances are served only by the exercises of federation, commons and company_loop (their APPLY_OPS are empty: fediverse publishing is an external act)",
+   "pin": "dbbc9c408b52f627aa7fd5d9e31230013e930f21dfc8b172082c144bc700d954"
+  },
+  {
+   "module": "foundry/systems/federation.py",
+   "qualname": "_http",
+   "callee": "urllib.request.urlopen",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "Instance delivery and fetch, reached only from the exercises of federation, commons and company_loop (their APPLY_OPS are empty: fediverse publishing is an external act), against Instances served on 127.0.0.1:0",
+   "pin": "7fe39cacc92c1b0be8f7c827e4f5601ce92f13fba96440d40beb5f173bf90d78"
+  },
+  {
+   "module": "foundry/systems/mcp_gateway.py",
+   "qualname": "_remote",
+   "callee": "httpx2.AsyncClient",
+   "count": 1,
+   "serves": [
+    "capability:mcp.act"
+   ],
+   "justification": "a url provider is built only by greg.mcp_remote.main, the confined client mcp_tools._remote_act starts in the namespace whose only way out is a door to a relay allowing the approved server host on 443; the bwrap that builds the namespace is the file found first on the body's ambient PATH (worker_isolation._backend probes it, relay_door.namespace_argv runs it), run with the body's privileges",
+   "pin": "10786f286130a9a6f8ada728180e901f71062c941afa7bc8494ecbd5bf4d4729"
+  },
+  {
+   "module": "foundry/systems/media_engine.py",
+   "qualname": "Engine.inspect",
+   "callee": "subprocess.run",
+   "count": 2,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "ffmpeg re-reads a rendered asset; Engine is built only by the exercises of media_engine and company_loop (APPLY_OPS is empty: rendering is an operator act under a ratified canon)",
+   "pin": "ab98f602c00f462c37c53e6dd41b238579b8e372bff01f2c5cc0a5d4947f5dbb"
+  },
+  {
+   "module": "foundry/systems/media_engine.py",
+   "qualname": "Engine.render_video",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "ffmpeg encodes raw frames piped on stdin with a 120 s timeout; same reach as Engine.inspect",
+   "pin": "5debce90378cc798b3451d559b17a5e1d97fb02346cb91b0c70b1b9cd39f1869"
+  },
+  {
+   "module": "foundry/systems/media_engine.py",
+   "qualname": "engine_versions",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "`ffmpeg -version`, called only from Engine.__init__; same reach as Engine.inspect",
+   "pin": "4064a95ddb39eb6ecdab03b0c31fe138c18c8c647a01a17f34190400c4ec4ab7"
+  },
+  {
+   "module": "foundry/systems/payments.py",
+   "qualname": "start_emulator",
+   "callee": "http.server.ThreadingHTTPServer",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "the local Stripe emulator bound to 127.0.0.1:0; started only by the exercises of marketplace, company_loop and agent_commerce (APPLY_OPS of payments is empty: charging is a gate-executed act)",
+   "pin": "6a074755294ff5e58d3560f5568354f824fad005359c2705a0ddfcbd65aa41fb"
+  },
+  {
+   "module": "foundry/systems/promotion.py",
+   "qualname": "_stage_verification",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:foundry.query",
+    "capability:foundry.apply",
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "verification stage of promote() (QUERY_OPS dry_run, APPLY_OPS promote, exercise()): recomputes the DSL cases in the reviewed `greg.foundry_protocol_worker dsl-verify` child with a scrubbed env",
+   "pin": "af53267e430faeec11cb4008c6e328b76e5c89dced873155ae33c550383d5fea"
+  },
+  {
+   "module": "foundry/systems/relay_door.py",
+   "qualname": "Door.__init__",
+   "callee": "socket.socket",
+   "count": 1,
+   "serves": [
+    "egress:#26 door (foundry.systems.relay_door.Door)",
+    "capability:browser.render",
+    "capability:browser.session",
+    "capability:mcp.act",
+    "capability:daleobanks.publish",
+    "capability:worker.commission",
+    "model-route:anthropic, openai, claude-code"
+   ],
+   "justification": "the #26 door: an AF_UNIX listener in a directory private to the body's user (refused otherwise) through which a namespaced program reaches only its scoped Relay; the bwrap that builds the namespace is the file found first on the body's ambient PATH (worker_isolation._backend probes it, relay_door.namespace_argv runs it), run with the body's privileges",
+   "pin": "6882cc869f770626d4a62fbf67a470d2aa813c3aa9d1f35a5de1a075b0182caf"
+  },
+  {
+   "module": "foundry/systems/repair.py",
+   "qualname": "_Runner.run",
+   "callee": "greg.workers.supervised_run",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "runs one candidate's tests only inside prepare_worker's bubblewrap envelope with network=False, and refuses unless the evidence says network_isolated bubblewrap; greg.foundry_bridge refuses APPLY_OPS['repair_source'] for a system it reads as the string '52' (a string comparison; see repair._trace_lines), so exercise() is its only intended caller; the bwrap that builds the envelope is the file worker_isolation._backend finds first on the body's ambient PATH, run with the body's privileges",
+   "pin": "467a5d4f509d0665b90e73346a69185a53ae0ae83eeb0c78131ad7cfc8e728a8"
+  },
+  {
+   "module": "foundry/systems/repair.py",
+   "qualname": "_pytest",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "pytest on repair()'s candidate in a temp dir; reached by exercise() and APPLY_OPS['repair']; greg.foundry_bridge._call refuses a request whose system, at any depth, is the string '52', but compares it as a string, so a nested '052' passes while int() still selects system 52; GREG's foundry worker guard then refuses caller source execution (PermissionError, observed)",
+   "pin": "3370066bd3cb764ef324aa7247e7cd9e9865f7ec967a1561680935ac5f63a122"
+  },
+  {
+   "module": "foundry/systems/repair.py",
+   "qualname": "_trace_lines",
+   "callee": "builtins.exec",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "compiles and runs the caller's source in this process to trace which lines a case hits (localize, repair); reached by exercise() and QUERY_OPS['localize'] / APPLY_OPS['repair']; foundry_bridge refuses a nested system '52' only as that string ('052' passed it, observed), and GREG's foundry worker guard refused the exec (PermissionError, observed); outside GREG, mcp_gateway._query with '052' ran the source (observed)",
+   "pin": "8c96a2c0fd1479488eac1ffe662ba08192511a9cc24cdbc80698bc81cb42c471"
+  },
+  {
+   "module": "foundry/systems/sandbox.py",
+   "qualname": "_listener",
+   "callee": "socket.socket",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only (through probe()): a 127.0.0.1:0 listener that counts escape connections",
+   "pin": "81461b2fd74416f148482e313f8c60542c3423bca634b24b0864d019f0731950"
+  },
+  {
+   "module": "foundry/systems/sandbox.py",
+   "qualname": "probe",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only: the host-process control of the escape probes; it exits before the external probe (TEST-NET 192.0.2.1, tried only inside the sandbox) and touches the scratch root and the loopback listener",
+   "pin": "9442ad46e8a98da76f08da5020fc8cc3a5544dce5745cd796692c08167b946b8"
+  },
+  {
+   "module": "foundry/systems/segmentation.py",
+   "qualname": "Relay.__init__",
+   "callee": "socket.create_connection",
+   "count": 1,
+   "serves": [
+    "egress:#26 relay (foundry.systems.segmentation.Relay)",
+    "capability:http.get",
+    "capability:github.pulls",
+    "capability:browser.session",
+    "founder-command:ANCHOR_CONFIGURE (signed TSA url for proof anchoring)"
+   ],
+   "justification": "the relay's upstream connector, injected as a default: it opens a connection only after the per-identity allowlist check, and every decision is journaled",
+   "pin": "974b5a53e9f351e1be916334d01f60cfe6d349053c3ce20ed374699c3cac6b5a"
+  },
+  {
+   "module": "foundry/systems/segmentation.py",
+   "qualname": "egress_connect",
+   "callee": "socket.socket",
+   "count": 2,
+   "serves": [
+    "egress:#26 relay (foundry.systems.segmentation.Relay)"
+   ],
+   "justification": "runs inside a confined component: adopts the inherited door fd (GREG_EGRESS_FD) and the one fd the relay passes back; it opens no socket of its own",
+   "pin": "4f74a380d32491b95764dc8a457428187890a944af0753a442e1245c81238a7f"
+  },
+  {
+   "module": "foundry/systems/segmentation.py",
+   "qualname": "exercise",
+   "callee": "http.server.ThreadingHTTPServer",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only: a test origin bound to 127.0.0.1:0 for the relay to reach (APPLY_OPS is empty)",
+   "pin": "dbbc9c408b52f627aa7fd5d9e31230013e930f21dfc8b172082c144bc700d954"
+  },
+  {
+   "module": "foundry/systems/segmentation.py",
+   "qualname": "exercise.connect",
+   "callee": "socket.create_connection",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only: the proof relay's connector to the loopback organ server the exercise serves on 127.0.0.1",
+   "pin": "1a802d836ec36fcf3b323b22197e22878fa2af3908b534508091c3ef48a6319b"
+  },
+  {
+   "module": "foundry/systems/segmentation.py",
+   "qualname": "run_confined",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "egress:#26 relay (foundry.systems.segmentation.Relay)",
+    "capability:http.get",
+    "capability:github.pulls",
+    "founder-command:ANCHOR_CONFIGURE (signed TSA url for proof anchoring)"
+   ],
+   "justification": "launches a component under the Kernel seccomp filter that denies every socket (_confiner) with exactly one door, the relay, passed by pass_fds",
+   "pin": "7234f5fe52c7a39830d4bb592e06c8e2aec775cd5a60fcd0636d40a5967284b9"
+  },
+  {
+   "module": "foundry/systems/webserver.py",
+   "qualname": "exercise",
+   "callee": "urllib.request.build_opener",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only: a loopback opener with ProxyHandler({}) (never via a proxy) for the site it serves on 127.0.0.1",
+   "pin": "dbab89959ca6a74570e8df67eef08f047b64bd4a8864d82a0a95aad126629136"
+  },
+  {
+   "module": "foundry/systems/webserver.py",
+   "qualname": "exercise.get",
+   "callee": "urllib.request.build_opener().open",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "exercise() only: requests to the 127.0.0.1 site through that loopback opener",
+   "pin": "8b7359bfe3a71a8a5a48dc688e8cb1d2760ae626df9536871bb852271ba2d570"
+  },
+  {
+   "module": "foundry/systems/webserver.py",
+   "qualname": "serve",
+   "callee": "http.server.ThreadingHTTPServer",
+   "count": 1,
+   "serves": [
+    "operator:greg foundry run <system> / python -m foundry.completion --audit (foundry.completion.run calls exercise())"
+   ],
+   "justification": "refuses any non-loopback host without a recorded Consequence Gate grant; called only by exercise() on 127.0.0.1:0 and by its refusal check on 0.0.0.0, which raises before binding",
+   "pin": "ca97e6d23346c8d36e22ec1e2deb7a7133eba9137812e99fe3ce418a1df9f3fe"
+  },
+  {
+   "module": "greg/anchor.py",
+   "qualname": "_post",
+   "callee": "greg.egress.send",
+   "count": 1,
+   "serves": [
+    "egress:greg.egress (GREG's one outbound opener)",
+    "founder-command:ANCHOR_CONFIGURE (signed TSA url for proof anchoring)"
+   ],
+   "justification": "POSTs a timestamp query only to the tsa_url of the founder-signed ANCHOR_CONFIGURE; send surfaces a redirect as an error, so the request is never re-sent elsewhere",
+   "pin": "4ed977b195bb38720b957965f58b3d4467667a77b06c1d6a373c878da7684654"
+  },
+  {
+   "module": "greg/briefs.py",
+   "qualname": "_git",
+   "callee": "egregore.repository_audit.git_read",
+   "count": 1,
+   "serves": [
+    "capability:brief.engineering"
+   ],
+   "justification": "the brief's local reads (rev-parse, rev-list --count, status --porcelain, log -5) of each repository the signed brief names, called only from gather_local; `status` honours the repository's core.fsmonitor (reproduced: its command ran), which read_only_git would blank",
+   "pin": "cb81a4b04be7bd44fdc33716f67a41a630bdaa10604ce8c5a89fe5c5ec85da11"
+  },
+  {
+   "module": "greg/builders.py",
+   "qualname": "ClaudeCodeBuilder.__init__",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg run --builder claude-code"
+   ],
+   "justification": "default runner: build() calls it with the founder's installed claude CLI (no tools, no MCP, empty cwd, --max-budget-usd), behind the relay door on a confined body; built only by `greg run --builder claude-code`",
+   "pin": "aa3d1b6516aef2b7f9991b6b1b01a4d42843095f4479744d2ee92443fdb7d2d2"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "SecretBroker.resolve",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:github.pulls",
+    "capability:browser.session",
+    "model-route:anthropic, openai"
+   ],
+   "justification": "macOS only: a read-only Keychain lookup (`/usr/bin/security find-generic-password -w`) for a credential name resolve() first checks against the declared handles (InvocationContext.secret passes manifest.credentials)",
+   "pin": "548f42820059c3bfff5b898687813d900d184822f6661d54397a948938fd4b5b"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "_launch",
+   "callee": "greg.workers.supervised_run",
+   "count": 1,
+   "serves": [
+    "confinement:greg.capabilities.run_isolated"
+   ],
+   "justification": "run_isolated's supervised spawn when a stop_check is given: argv and the isolating preexec come from run_isolated, and _die_with_body is added before it",
+   "pin": "3184f7bde326430c55ff49b5b6d46fe8e8bafc4ef9c3b7e6747f40bba0f06e85"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "_launch",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "confinement:greg.capabilities.run_isolated"
+   ],
+   "justification": "run_isolated's unsupervised spawn, reached only through _spawn: under sandbox-exec (macOS) or with the seccomp no-network or Landlock preexec (Linux) when isolate_network, confine or confine_to apply; with isolate_network False and neither, preexec is None and the child has full network (those callers are listed as run_isolated sites)",
+   "pin": "e7143c9a4924ad507202c27021fc4470f11c4c3239d25b553d8f028d16bcaab7"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "_render_behind_relay",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:browser.render"
+   ],
+   "justification": "confined browser.render: the browser runs in a bubblewrap network namespace whose only way out is a door to a relay allowlisted for the target alone; without namespaces nothing runs; the bwrap that builds the namespace is the file found first on the body's ambient PATH (worker_isolation._backend probes it, relay_door.namespace_argv runs it), run with the body's privileges",
+   "pin": "739a84cccece6baef83b326cd8ac186e3ba6ae3d67325c888fc6f7a19d0cd06e"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "_repo_report",
+   "callee": "egregore.repository_audit.git_read",
+   "count": 1,
+   "serves": [
+    "capability:repo.pin_audit",
+    "capability:repo.integration_audit"
+   ],
+   "justification": "`git rev-parse refs/remotes/origin/main` of each repository path the signed mission names, after _inside() confines it to the mission's read roots",
+   "pin": "09ab21180692272b237d6283eb4792df961b164579208dbec039d90ed4f78204"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "_spawn",
+   "callee": "greg.capabilities._launch",
+   "count": 1,
+   "serves": [
+    "confinement:greg.capabilities.run_isolated"
+   ],
+   "justification": "passes run_isolated's preexec (the seccomp or Landlock filter, or None) through unchanged and maps a refusal byte to CapabilityError",
+   "pin": "82454da9eed77f7fc05cdca21b3e58756841c986a327d7656ae158f1f8c01e97"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "browser_render",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:browser.render"
+   ],
+   "justification": "unconfined browser.render: headless Chrome, fresh profile, resolving only the signed web:<host> target (every other name maps to NOTFOUND)",
+   "pin": "10c21536f6b953c575074c971ae4f6698d23abc024f49efbd5ba9eb86a554505"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "mac_frontmost_app",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:mac.frontmost_app"
+   ],
+   "justification": "macOS osascript query naming the frontmost application; read-only",
+   "pin": "67bdffe27fa9330d007b6d1c150c1bf31de5b7f08193e3b7fc7334202797bbc6"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "mac_notify",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:mac.notify"
+   ],
+   "justification": "macOS osascript notification shown to the founder",
+   "pin": "67bdffe27fa9330d007b6d1c150c1bf31de5b7f08193e3b7fc7334202797bbc6"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "mac_screenshot",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:mac.screenshot"
+   ],
+   "justification": "`/usr/sbin/screencapture -x` into the capability's workspace",
+   "pin": "dc7a81425bf248a933edce08dd9e58d94807a91696956c4f701b0a7cc24d3a63"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "read_only_git",
+   "callee": "subprocess.run",
+   "count": 2,
+   "serves": [
+    "capability:git.inspect",
+    "operator:greg acceptance"
+   ],
+   "justification": "hardened read-only git (fsmonitor off, hooks /dev/null, every filter driver blanked, no global or system config) for git.inspect and the acceptance report's code identity",
+   "pin": "7271651e4b9f1899f8bad2224de19de04e3d6f4e98b2a0c7d543eda3744e31c6"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "run_cli",
+   "callee": "greg.capabilities.run_isolated",
+   "count": 1,
+   "serves": [
+    "confinement:greg.capabilities.run_cli"
+   ],
+   "justification": "passes its own isolate_network (default True) through; refuses an argv[0] not in the invoking capability's manifest.binaries; no in-tree capability calls run_cli (tests only)",
+   "pin": "f42c1e6032297ca6a14b0d6cf567adbbf9c890a7a36c3b7683232a8074ff755b"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "run_isolated",
+   "callee": "greg.capabilities._spawn",
+   "count": 2,
+   "serves": [
+    "confinement:greg.capabilities.run_isolated"
+   ],
+   "justification": "the two spawns: with the isolating preexec when isolate_network, confine or confine_to apply, otherwise with preexec=None; the callers that pass isolate_network other than True are listed as run_isolated sites",
+   "pin": "9c7c44e814c68f48ddef0d63a593a230d3058ab1ff34c7b9054fae5b73329e97"
+  },
+  {
+   "module": "greg/cognition/bridge.py",
+   "qualname": "run_worker",
+   "callee": "greg.capabilities.run_isolated",
+   "count": 1,
+   "serves": [
+    "capability:cognition.cortex",
+    "capability:cognition.cortex.semantic",
+    "model-route:ollama"
+   ],
+   "justification": "isolate_network=semantic_model is None: when the founder-selected route config names an Ollama model and the problem has sources or a schedule request, the cortex worker runs with no network filter at all, not loopback only; otherwise the no-network filter applies",
+   "pin": "f878cbcc3c0b49c8480eeb2a86ebc69fcd59e886f2b973f649a830d5876af04d"
+  },
+  {
+   "module": "greg/cognition/characterize.py",
+   "qualname": "_environment",
+   "callee": "platform.platform",
+   "count": 1,
+   "serves": [
+    "operator:python -m greg.cognition.characterize (seed characterization harness)"
+   ],
+   "justification": "platform.platform() runs `uname -p` found on PATH to fill the report's environment; _environment is called only by characterize(), which only this module's main calls",
+   "pin": "458418730ae7ae4dd2f11b4532dadd17b76d6fc95701d4e0d0f89bad1ec6091e"
+  },
+  {
+   "module": "greg/cognition/code_binding.py",
+   "qualname": "at_commit.read",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:python scripts/build_mind_evidence_index.py"
+   ],
+   "justification": "`git show <commit>:<path>` in the kernel checkout; at_commit is used only by scripts/build_mind_evidence_index.py (the runtime compiler reads code_binding.working_tree)",
+   "pin": "9ed05843691b6d5558208f19d1a128a1ce003a9f05d015b9671dbe4e6bc75ee4"
+  },
+  {
+   "module": "greg/cognition/evolution.py",
+   "qualname": "_clean_room_violations",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:python -m greg.cognition.evolution --freeze F --out O (P8 protected evolution)"
+   ],
+   "justification": "`git status --porcelain --ignored` of the kernel checkout, to refuse a recorded cycle run from a dirty tree",
+   "pin": "a3f6059fa3315de81e2695e3e8fbd10dc979d25eba7df426abf9de6d51d6568d"
+  },
+  {
+   "module": "greg/cognition/evolution.py",
+   "qualname": "_dirty",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:python -m greg.cognition.evolution --freeze F --out O (P8 protected evolution)"
+   ],
+   "justification": "`git ls-tree` of the frozen paths at HEAD, compared by content to find edits git status could hide",
+   "pin": "8421602b3cbf06975067718d6b7a505bccef87371c64f7917b605943d12d143a"
+  },
+  {
+   "module": "greg/cognition/evolution.py",
+   "qualname": "_freeze_commit",
+   "callee": "subprocess.check_output",
+   "count": 1,
+   "serves": [
+    "operator:python -m greg.cognition.evolution --freeze F --out O (P8 protected evolution)"
+   ],
+   "justification": "`git log -1` naming the commit that last changed the freeze",
+   "pin": "751b4b7db56659e8b442b121b04f61629547d26c9caf5ee841e2cee96c31ac54"
+  },
+  {
+   "module": "greg/cognition/evolution.py",
+   "qualname": "_freeze_commit",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:python -m greg.cognition.evolution --freeze F --out O (P8 protected evolution)"
+   ],
+   "justification": "`git rev-parse --is-shallow-repository`, so a shallow clone's boundary is never named as the freeze commit",
+   "pin": "44e05b6e09fa55f42c449b4f266d785950de0fef3c3ca77912c81c8657385c70"
+  },
+  {
+   "module": "greg/cognition/evolution.py",
+   "qualname": "cycle",
+   "callee": "subprocess.check_output",
+   "count": 1,
+   "serves": [
+    "operator:python -m greg.cognition.evolution --freeze F --out O (P8 protected evolution)"
+   ],
+   "justification": "`git rev-parse HEAD` recorded as the cycle's source_commit",
+   "pin": "69ebda832f3b31d98f8dd58d75dc4aad5001b46b1b4f053b131a21089ed37e17"
+  },
+  {
+   "module": "greg/cognition/evolution.py",
+   "qualname": "run_recorded",
+   "callee": "subprocess.check_output",
+   "count": 1,
+   "serves": [
+    "operator:python -m greg.cognition.evolution --freeze F --out O (P8 protected evolution)"
+   ],
+   "justification": "`git rev-parse HEAD`: the commit the clean room checks out",
+   "pin": "69ebda832f3b31d98f8dd58d75dc4aad5001b46b1b4f053b131a21089ed37e17"
+  },
+  {
+   "module": "greg/cognition/evolution.py",
+   "qualname": "run_recorded",
+   "callee": "subprocess.run",
+   "count": 3,
+   "serves": [
+    "operator:python -m greg.cognition.evolution --freeze F --out O (P8 protected evolution)"
+   ],
+   "justification": "adds a detached git worktree of HEAD (hooks off), runs the source-only evolution_room entry in it (-E -s -B -P, fresh pycache prefix), then removes the worktree",
+   "pin": "1d2e75ca329aa02cc158bf1f904ba15e8392dd9ebeeb279220f9c2629cc5edc5"
+  },
+  {
+   "module": "greg/cognition/evolution_room.py",
+   "qualname": "<module>",
+   "callee": "runpy.run_module",
+   "count": 1,
+   "serves": [
+    "operator:python -m greg.cognition.evolution --freeze F --out O (P8 protected evolution)"
+   ],
+   "justification": "under __main__ only: the clean-room entry evolution.run_recorded starts in a fresh detached checkout runs greg.cognition.evolution from source with a source-only loader; never imported",
+   "pin": "6f9a72741584027176f9f36c1abab238b59e3f0957f1286251fbcc8504da581d"
+  },
+  {
+   "module": "greg/cognition/evolution_routing.py",
+   "qualname": "ProtectedEvaluator.__call__",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:python cortex/evaluation/evolution/run.py (#155 routing-genome evolution, retained isolated)"
+   ],
+   "justification": "runs the hash-pinned evaluator module (checked before and after the call) in `python -I`; only cortex/evaluation/evolution/run.py constructs a ProtectedEvaluator",
+   "pin": "f0199a6d3a5679783c94d451d56a85f19b1755d31656b04bb92270fd295ce950"
+  },
+  {
+   "module": "greg/cognition/genomes/admission.py",
+   "qualname": "report_header",
+   "callee": "platform.platform",
+   "count": 1,
+   "serves": [
+    "operator:python -m greg.cognition.genomes.admission (genome admission harness)"
+   ],
+   "justification": "platform.platform() runs `uname -p` found on PATH to record the host in the admission results header; report_header is called only from main's --run path",
+   "pin": "458418730ae7ae4dd2f11b4532dadd17b76d6fc95701d4e0d0f89bad1ec6091e"
+  },
+  {
+   "module": "greg/cognition/genomes/admission.py",
+   "qualname": "report_header",
+   "callee": "subprocess.check_output",
+   "count": 1,
+   "serves": [
+    "operator:python -m greg.cognition.genomes.admission (genome admission harness)"
+   ],
+   "justification": "`git rev-parse HEAD` recorded in the admission results header",
+   "pin": "0be1128f1fef40c0e769fc1a038a5ad4d106a9cad075079f87916fd0ff32b5cb"
+  },
+  {
+   "module": "greg/cognition/genomes/admission.py",
+   "qualname": "source_dirty",
+   "callee": "subprocess.run",
+   "count": 2,
+   "serves": [
+    "operator:python -m greg.cognition.genomes.admission (genome admission harness)"
+   ],
+   "justification": "`git ls-tree` and `git hash-object` over the frozen files, binding the bytes run to the recorded commit",
+   "pin": "4735e10908d69a54e5540c008c19e71b3ad2a7d3ff7b619f116c2af259464cf1"
+  },
+  {
+   "module": "greg/cognition/seed_path.py",
+   "qualname": "_worker",
+   "callee": "subprocess.Popen",
+   "count": 1,
+   "serves": [
+    "capability:cognition.seed.solve",
+    "capability:cognition.status"
+   ],
+   "justification": "the seed path's bounded `greg.cognitive_worker` child: scrubbed env, seccomp no-network preexec (Linux) or sandbox-exec deny-network (macOS) except for a semantic claim, STOP polled, killed at the deadline",
+   "pin": "7ad21d9be5ad5fbe2f39610465a4bbdb63a8217e14a7bba0b17d4a083fc4bb62"
+  },
+  {
+   "module": "greg/compute.py",
+   "qualname": "benchmark",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg compute benchmark --out B.json (greg/cli.py is its only caller)"
+   ],
+   "justification": "times one interpreter spawn per run: `sys.executable -I -c pass`, a fixed argv with nothing from the caller, check=True, capture_output and a 60 s timeout; the person running the command chooses only --runs and --out",
+   "pin": "cc7d8b781201045ebd44e1844e09a5ed30243e67a83f16c3ca16adaeda8c8a46"
+  },
+  {
+   "module": "greg/computer.py",
+   "qualname": "_trust_profile",
+   "callee": "subprocess.run",
+   "count": 2,
+   "serves": [
+    "capability:browser.session"
+   ],
+   "justification": "certutil creates the disposable session profile's NSS store and imports the operator-configured CA bundle; TLS verification stays on",
+   "pin": "0594348d71172e694669c9912310589402a524f5841d580da2c7fd3507ee8bb8"
+  },
+  {
+   "module": "greg/console.py",
+   "qualname": "serve",
+   "callee": "http.server.ThreadingHTTPServer",
+   "count": 1,
+   "serves": [
+    "operator:greg console"
+   ],
+   "justification": "the console listener on 127.0.0.1:<port>, started only by `greg console`; it signs only for the owner holding the one-time link",
+   "pin": "0cefd9b262c51f86d3e5bd1bccfe33590a3ae6df4f6156b52a87bc255a8d3c13"
+  },
+  {
+   "module": "greg/daleobanks_bridge.py",
+   "qualname": "_behind_door",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:daleobanks.verify",
+    "capability:daleobanks.publish"
+   ],
+   "justification": "DALEOBANKS's interpreter in a bubblewrap namespace whose only way out is a relay allowlisted for the hosts the manifest declares (none for verify); its ledger directory is the one writable place; the bwrap that builds the namespace is the file found first on the body's ambient PATH (worker_isolation._backend probes it, relay_door.namespace_argv runs it), run with the body's privileges",
+   "pin": "613310651c348707cf8b74bd2692d7e23484d059bc2d51ad4659e6e73893cb5d"
+  },
+  {
+   "module": "greg/daleobanks_bridge.py",
+   "qualname": "_run",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:daleobanks.verify",
+    "capability:daleobanks.publish"
+   ],
+   "justification": "unconfined body only: the DALEOBANKS organ script in its own process with a scrubbed env and a 120 s timeout; a confined body (ctx.egress) takes _behind_door instead",
+   "pin": "109490aac5b57d1b905593f05494619ee891f1665b02cb01497f635d7efc058a"
+  },
+  {
+   "module": "greg/doctor.py",
+   "qualname": "chromebook",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg doctor --chromebook",
+    "installer:greg/chromebook/install.sh (step 5/8)"
+   ],
+   "justification": "`systemctl --user show-environment`, read-only, to learn whether a user service can run",
+   "pin": "5fbb29f7fd8d5de4b843a6dae416237de2892a69e78701af69ee2fa683333aea"
+  },
+  {
+   "module": "greg/doctor.py",
+   "qualname": "confined_egress",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg doctor --chromebook",
+    "installer:greg/chromebook/install.sh (step 5/8)"
+   ],
+   "justification": "a throwaway child that installs the Kernel seccomp filter, proving the host can confine egress; called only from doctor.chromebook()",
+   "pin": "e9f50a8883dc04f76e5cb2e6c391ee74147bc3942a39c1252d9b12343a747571"
+  },
+  {
+   "module": "greg/egress.py",
+   "qualname": "open_checked",
+   "callee": "greg.egress.send",
+   "count": 1,
+   "serves": [
+    "egress:greg.egress (GREG's one outbound opener)",
+    "capability:http.get",
+    "capability:github.pulls",
+    "capability:foundry.apply"
+   ],
+   "justification": "check() refuses anything but https to an allowlisted host before the first send and again on every redirect hop, at most MAX_HOPS, dropping credentials across origins",
+   "pin": "9d84f3110d48f5fe3faef633118d05eef78a16e855e77bbd3875c4e914cd7ef3"
+  },
+  {
+   "module": "greg/egress.py",
+   "qualname": "opener",
+   "callee": "urllib.request.build_opener",
+   "count": 1,
+   "serves": [
+    "egress:greg.egress (GREG's one outbound opener)",
+    "capability:http.get",
+    "capability:github.pulls",
+    "capability:foundry.apply",
+    "founder-command:ANCHOR_CONFIGURE (signed TSA url for proof anchoring)"
+   ],
+   "justification": "the one outbound opener: urllib's default chain with NoRedirect, so a 3xx surfaces for open_checked to re-check instead of being followed",
+   "pin": "cfcab80aa4e0e8dca2d7d6e885616f986edc13e280b78f54bd5ab80773abbc57"
+  },
+  {
+   "module": "greg/egress.py",
+   "qualname": "send",
+   "callee": "greg.egress.opener",
+   "count": 1,
+   "serves": [
+    "egress:greg.egress (GREG's one outbound opener)"
+   ],
+   "justification": "send's one opener; send itself is a declared wrapper, so each of its callers is listed",
+   "pin": "4acb98821189271191afee047b106d3a1793c74a971610f47c22749b64d94a44"
+  },
+  {
+   "module": "greg/egress.py",
+   "qualname": "send",
+   "callee": "urllib.request.build_opener().open",
+   "count": 1,
+   "serves": [
+    "egress:greg.egress (GREG's one outbound opener)",
+    "capability:http.get",
+    "capability:github.pulls",
+    "capability:foundry.apply",
+    "founder-command:ANCHOR_CONFIGURE (signed TSA url for proof anchoring)"
+   ],
+   "justification": "one request through opener(), with no check of its own; send is a declared wrapper, so each caller (open_checked, anchor._post) is listed with the check it applies",
+   "pin": "db3036debc062302fd212a1cb995daa6538842d3d883965a26ba0042fbbf842c"
+  },
+  {
+   "module": "greg/foundry_bridge.py",
+   "qualname": "_execute",
+   "callee": "subprocess.Popen",
+   "count": 1,
+   "serves": [
+    "capability:foundry.query",
+    "capability:foundry.apply"
+   ],
+   "justification": "the disposable greg.foundry_worker child that runs every foundry.query/apply op, started with _no_network_preexec",
+   "pin": "5c48ac2d06f8a7f1940e35cb29fea69b424d785d350775c77353785e6f771d7d"
+  },
+  {
+   "module": "greg/mcp_login.py",
+   "qualname": "_callback_server",
+   "callee": "asyncio.start_server",
+   "count": 1,
+   "serves": [
+    "operator:greg mcp login"
+   ],
+   "justification": "the OAuth redirect listener on 127.0.0.1:0 for one authorization during `greg mcp login`, closed when the login ends",
+   "pin": "12d6abac64819aeb26454009fe217f085be892ac48506849eb7a60e33011350e"
+  },
+  {
+   "module": "greg/mcp_login.py",
+   "qualname": "login",
+   "callee": "httpx2.AsyncClient",
+   "count": 1,
+   "serves": [
+    "operator:greg mcp login"
+   ],
+   "justification": "runs in the founder's own `greg mcp login` process, not behind the relay: remote_url allows only https on 443 with no credentials in the URL, and the client talks to that server and the OAuth endpoints it advertises",
+   "pin": "8fece3570317893d4e88be7e4c610d3b6a0f04d87c583f6ca939ad59ed94fda5"
+  },
+  {
+   "module": "greg/mcp_login.py",
+   "qualname": "register_token",
+   "callee": "httpx2.AsyncClient",
+   "count": 1,
+   "serves": [
+    "operator:greg mcp token"
+   ],
+   "justification": "runs in the founder's own `greg mcp token` process, not behind the relay: one list_tools call to the remote_url-checked https server with the founder's bearer token",
+   "pin": "855f7973d010d29086b9dd13138fb9e7b2c6d8035a0764240aa0a324a7261ca5"
+  },
+  {
+   "module": "greg/mcp_remote.py",
+   "qualname": "renew",
+   "callee": "httpx2.Client",
+   "count": 1,
+   "serves": [
+    "capability:mcp.act"
+   ],
+   "justification": "one refresh POST inside the confined client, through the door to a relay allowing only the approved server host and the token host recorded at login, on 443",
+   "pin": "b6bfb16c07758da1472b6db0bdc481108097a9ade3417122b161b567df47044e"
+  },
+  {
+   "module": "greg/mcp_tools.py",
+   "qualname": "_remote_act",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:mcp.act"
+   ],
+   "justification": "GREG's MCP client in a bubblewrap namespace behind a door to a relay allowing only the approved server host; the token reaches it by handle in its environment; the bwrap that builds the namespace is the file found first on the body's ambient PATH (worker_isolation._backend probes it, relay_door.namespace_argv runs it), run with the body's privileges",
+   "pin": "694318fa618fbd28979358ffe9dd3c91a42e54002a1ac50aa1934c688d2e6399"
+  },
+  {
+   "module": "greg/models.py",
+   "qualname": "ClaudeCodeRoute.__init__",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "model-route:claude-code"
+   ],
+   "justification": "default runner for the claude CLI route (no tools, no MCP, empty cwd, spend cap), behind the relay door on a confined body; built only when the founder-signed route order names claude-code",
+   "pin": "aa3d1b6516aef2b7f9991b6b1b01a4d42843095f4479744d2ee92443fdb7d2d2"
+  },
+  {
+   "module": "greg/models.py",
+   "qualname": "OllamaRoute._request",
+   "callee": "http.client.HTTPConnection",
+   "count": 1,
+   "serves": [
+    "model-route:ollama",
+    "capability:cognition.semantic"
+   ],
+   "justification": "a fixed numeric loopback address (127.0.0.1:<port>) to the founder-selected local Ollama model: no DNS, proxy, redirect or remote base URL",
+   "pin": "44ecbbb2ad393e9b2827eb4dbbccb5efe5a248d317c851440a408780698c6783"
+  },
+  {
+   "module": "greg/models.py",
+   "qualname": "confined_call",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "model-route:anthropic, openai"
+   ],
+   "justification": "greg.model_child in a network namespace behind a door to a relay scoped to the provider host; the key crosses only stdin; the bwrap that builds the namespace is the file found first on the body's ambient PATH (worker_isolation._backend probes it, relay_door.namespace_argv runs it), run with the body's privileges",
+   "pin": "5aa9b533862b6374d16049ca7bd4aef883a5388518e4c2a5936bbc1116fad89e"
+  },
+  {
+   "module": "greg/organ_exchange.py",
+   "qualname": "_organ",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:organs.exchange"
+   ],
+   "justification": "one organ in its own process; on a confined body inside a bubblewrap namespace with no door at all and read-only checkouts; the bwrap that builds the namespace is the file found first on the body's ambient PATH (worker_isolation._backend probes it, relay_door.namespace_argv runs it), run with the body's privileges",
+   "pin": "ff61183518f8a3c608f981c6995f260348b88f89a0d6a9dfdbf9cf1f38974fd4"
+  },
+  {
+   "module": "greg/organs.py",
+   "qualname": "_head",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:organ.exchange"
+   ],
+   "justification": "`git rev-parse HEAD` (GIT_CONFIG_NOSYSTEM, PATH only) pinning the organ code organ.exchange runs",
+   "pin": "9906f9c1d3c98f064e707f0631881f185663d8284da87c02bfe03dcc56db4cf2"
+  },
+  {
+   "module": "greg/organs.py",
+   "qualname": "_snapshot",
+   "callee": "subprocess.run",
+   "count": 3,
+   "serves": [
+    "capability:organ.exchange"
+   ],
+   "justification": "`git archive` of the pinned HEAD (hooks off), `tar -x` into the snapshot dir, and `git status` to record uncommitted changes the snapshot leaves out",
+   "pin": "157f8f88c8a42dc8f375b29923bb19d0c4a52161e40adeb6186f9b80a7a5af54"
+  },
+  {
+   "module": "greg/remote.py",
+   "qualname": "make_server",
+   "callee": "http.server.ThreadingHTTPServer",
+   "count": 1,
+   "serves": [
+    "operator:greg serve"
+   ],
+   "justification": "refuses any non-loopback host (ValueError) and is started only by `greg serve`; the phone reaches it through the founder's own TLS proxy",
+   "pin": "4ad9dd65b1aedd025802492cd330feff1745a38f8d21e25101eb64964088ba08"
+  },
+  {
+   "module": "greg/ventures.py",
+   "qualname": "_git_head",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:venture.assess",
+    "capability:organs.exchange"
+   ],
+   "justification": "`git rev-parse HEAD` on the organ checkouts the receipt names, with no env: git is the file found first on the body's ambient PATH, and it runs unconfined with every GIT_* variable the body inherited, unlike organs._head and workers._git (PATH=/usr/bin:/bin, no system config); a planted git ran (MUD-ATK-7)",
+   "pin": "e0db2f84d04357bd427671682d908d2c06d756d45809ffdee262648952492247"
+  },
+  {
+   "module": "greg/ventures.py",
+   "qualname": "_organ",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:venture.assess"
+   ],
+   "justification": "one organ in its own process with no GREG secrets, keys or ledger; on a confined body inside a namespace with no door; the bwrap that builds the namespace is the file found first on the body's ambient PATH (worker_isolation._backend probes it, relay_door.namespace_argv runs it), run with the body's privileges",
+   "pin": "18a65fbae3ff7d4a136e3e38048a6ebfa3f2f68b30c28d5d77ab36bb29ae1188"
+  },
+  {
+   "module": "greg/worker_isolation.py",
+   "qualname": "_backend",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "confinement:greg.worker_isolation",
+    "operator:greg doctor --chromebook"
+   ],
+   "justification": "probe: /usr/bin/true inside a bubblewrap envelope, to learn whether workers and namespaced capabilities can be confined; the bwrap it runs, and that every envelope and namespace then uses, is shutil.which('bwrap') on the body's ambient PATH, run unconfined with the body's privileges, so a file of that name earlier on it is the confinement (a planted one ran as root and dropped every option, MUD-ATK-1)",
+   "pin": "cef57c174619a34b6dcc0a98bbcf30a632ffc4b84e1743a14a4de1def90540e2"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "ClaudeCodeWorker.__init__",
+   "callee": "greg.workers.supervised_run",
+   "count": 1,
+   "serves": [
+    "capability:worker.commission",
+    "supervised-worker:greg.workers.supervised_run"
+   ],
+   "justification": "the injected runner default; _run calls it only with prepare_worker's envelope (bubblewrap, a relay door when egress is confined) or, under the founder's supervised choice and with no door, the supervised fallback with the Landlock floor where the host has it; the bwrap that builds the envelope is the file worker_isolation._backend finds first on the body's ambient PATH, run with the body's privileges",
+   "pin": "864a118ece2b6b1de372da07c778d98dd8df815b75e593b621c30fae476d346c"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "CliAgentWorker.__init__",
+   "callee": "greg.workers.supervised_run",
+   "count": 1,
+   "serves": [
+    "capability:worker.commission",
+    "supervised-worker:greg.workers.supervised_run"
+   ],
+   "justification": "the injected runner default; _run calls it only with prepare_worker's envelope or, under the founder's supervised choice and with no door, the supervised fallback with the Landlock floor where the host has it; the bwrap that builds the envelope is the file worker_isolation._backend finds first on the body's ambient PATH, run with the body's privileges",
+   "pin": "864a118ece2b6b1de372da07c778d98dd8df815b75e593b621c30fae476d346c"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "ScriptWorker.__init__",
+   "callee": "greg.workers.supervised_run",
+   "count": 1,
+   "serves": [
+    "capability:worker.commission",
+    "supervised-worker:greg.workers.supervised_run"
+   ],
+   "justification": "the injected runner default; run calls it only with prepare_worker's envelope with network=False and an isolated interpreter reading the script from stdin; the bwrap that builds the envelope is the file worker_isolation._backend finds first on the body's ambient PATH, run with the body's privileges",
+   "pin": "864a118ece2b6b1de372da07c778d98dd8df815b75e593b621c30fae476d346c"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "_git",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:worker.commission",
+    "capability:worker.appraise"
+   ],
+   "justification": "git with _GIT_HARDENING on GREG's private clones and work trees",
+   "pin": "549ed86606f974ae06a5d66201e87f8520437bd081273d99f00dafdce9c368c1"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "appraise",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:worker.appraise"
+   ],
+   "justification": "`git clone --no-hardlinks` of the work tree into a fresh directory for the independent appraisal",
+   "pin": "70da7e3d4efe30156b067a2df74023fc161face83c146e4444b7a9ebc5377bc1"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "private_clone",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "capability:worker.commission",
+    "capability:worker.appraise"
+   ],
+   "justification": "`git clone --no-hardlinks --no-checkout` into a private clone whose origin is then removed, so it reaches no remote",
+   "pin": "c19b9005860ed16775b0a96d468828dce2cc5e7331b0947e97c7169e429c1a51"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "run_tests",
+   "callee": "greg.workers.supervised_run",
+   "count": 1,
+   "serves": [
+    "capability:worker.commission",
+    "capability:worker.appraise",
+    "supervised-worker:greg.workers.supervised_run"
+   ],
+   "justification": "a work order's acceptance tests in prepare_worker's no-network envelope; where the envelope cannot confine and the founder chose supervised it uses run_isolated(isolate_network=True) instead; the bwrap that builds the envelope is the file worker_isolation._backend finds first on the body's ambient PATH, run with the body's privileges",
+   "pin": "7cc3f2835831ce76c083ce7babd50f0c59f250dd82063155c3ad91cbe21697ce"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "supervised_run",
+   "callee": "subprocess.Popen",
+   "count": 1,
+   "serves": [
+    "supervised-worker:greg.workers.supervised_run",
+    "confinement:greg.capabilities.run_isolated"
+   ],
+   "justification": "the supervised worker path itself: file-backed bounded output, STOP polled, the process group killed on stop or timeout",
+   "pin": "94d0976375f2ed72ff19b6cda9b258dcc299f8cc54a5013a2e3411e22f81f64d"
+  },
+  {
+   "module": "tools/offline_test.py",
+   "qualname": "main",
+   "callee": "os.execve",
+   "count": 1,
+   "serves": [
+    "operator:python tools/offline_test.py --python P --cwd C --tmp T -- ARGS (no-network test launcher)"
+   ],
+   "justification": "replaces this process, under the seccomp filter install_filter() loaded, with the person's own Python command and a scrubbed env",
+   "pin": "79060292e04a7e0e0062c8e5d63e6a63d4fdd2d4e0b666b2184ff2a5233664a0"
+  },
+  {
+   "module": "tools/offline_test.py",
+   "qualname": "main",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:python tools/offline_test.py --python P --cwd C --tmp T -- ARGS (no-network test launcher)"
+   ],
+   "justification": "after install_filter() in this process: the isolation probe, the absolute --python with -I -c PROBE, a scrubbed env and a 10 s timeout",
+   "pin": "d4a2a3e4b70be2b628a45a9a4cc1e68fa5be05d0011a4b55aa478cf8a4eb4752"
+  }
+ ],
+ "known_unmediated": [
+  {
+   "module": "greg/body.py",
+   "qualname": "Body.appraise",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "body-loop:Body._appraise_closure (each mission closure)",
+    "operator:greg rehearse"
+   ],
+   "reason": "runs `python -m greg.appraisal` on the body's own schedule when a mission closes (Body._appraise_closure); no capability manifest, Gate or worker envelope stands behind the spawn, and the child, though it runs reviewed GREG code with a scrubbed env and a timeout, is not network- or filesystem-confined (it re-runs only the read-only REOBSERVABLE sensors)",
+   "pin": "d09210ae760141103bc4cb83916aae506fd37fd9fe2e83fb715d6fe430c23041"
+  },
+  {
+   "module": "greg/compute.py",
+   "qualname": "memory_bytes",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "body-loop:Body.run -> compute.record_telemetry -> sample (every telemetry_every active ticks)",
+    "operator:greg.body.status (greg console, phone /api/status, mission control, greg acceptance)"
+   ],
+   "reason": "macOS only: Body.run's own loop spawns `/usr/sbin/sysctl -n hw.memsize` through record_telemetry with no capability manifest, Gate or worker envelope behind it; the argv is fixed and read-only with a 5 s timeout, and Linux uses os.sysconf and spawns nothing",
+   "pin": "1604c03528770afbd6a14edc12168443525c1104fe739c22799e8d8fedb69a0f"
+  },
+  {
+   "module": "greg/licensing.py",
+   "qualname": "system_binary",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "body-loop:Body.tick -> MissionEngine._step/_deficit/_after_outage -> _form -> Genesis.resolve -> _manifest_for -> _binary_license/_companions (each installed tool a mission's deficit or formation finds)",
+    "body-loop:Body.tick -> MissionEngine._step -> _watch_while_blocked -> _observe -> _deficit -> _form -> Genesis.resolve -> _manifest_for (a sensing-blocked mission whose sensor stops resolving, for example after the founder detaches it; since a986fc74)",
+    "body-loop:Body.tick -> goal_gravity.tick -> _form_requested -> Genesis.form_for_goal -> resolve -> _manifest_for (a founder-signed goal whose plan node needs a function nothing attached serves)",
+    "body-loop:Body.tick -> MissionEngine._step or _watch_while_blocked -> _self_repair -> _form -> Genesis.repair -> resolve -> _manifest_for (an acquired binary that faults twice in service is re-formed)",
+    "body-loop:Body.tick -> MissionEngine._deficit -> _form -> Genesis.resolve -> _verify -> catalog_adapter -> requalify_binary (each frozen oracle vector while an installed binary is qualified; only when ACTIVE_BINARY_POLICY is 'P4c')",
+    "body-loop:Body.tick -> MissionEngine._observe -> authority.act -> execute -> catalog_adapter -> requalify_binary (each run of an attached acquired binary; only when ACTIVE_BINARY_POLICY is 'P4c')"
+   ],
+   "reason": "the argv ([dpkg-query, -S, the binary's real path]), the 5 s timeout (DPKG_TIMEOUT) and the scrubbed environment (PATH=/usr/bin:/bin, LC_ALL=C) are fixed; the executable is shutil.which('dpkg-query') on the body process's own ambient PATH, and it runs unconfined with the body's privileges, with no capability manifest, Gate, run_isolated confinement, worker envelope or person-run command behind it; a dpkg-query planted earlier on PATH ran (reproduced), and since its output names the package whose /usr/share/doc copyright file is read, it also chose the license verdict (reproduced: coreutils, GPL-3+, CLEARED_WITH_OBLIGATIONS, reported as zlib1g, Zlib, CLEARED); a change that pins the executable to a root-owned system file is proposed separately (branch claude/licensing-binary-pin-20261030, db09035e, not merged here), after which the spawn is still unconfined on the body loop and the entry stays here; a recorded finding, not an approval",
+   "pin": "a012802ab38a3c39602f34ac1ff19f19aa6501e25d4861b81e368b248df8175f"
+  },
+  {
+   "module": "greg/genesis.py",
+   "qualname": "_binary_license",
+   "callee": "greg.licensing.system_binary",
+   "count": 1,
+   "serves": [
+    "body-loop:Body.tick -> MissionEngine._step/_deficit/_after_outage -> _form -> Genesis.resolve -> _manifest_for -> _binary_license/_companions (each installed tool a mission's deficit or formation finds)",
+    "body-loop:Body.tick -> MissionEngine._step -> _watch_while_blocked -> _observe -> _deficit -> _form -> Genesis.resolve -> _manifest_for (a sensing-blocked mission whose sensor stops resolving; since a986fc74)",
+    "body-loop:Body.tick -> goal_gravity.tick -> _form_requested -> Genesis.form_for_goal -> resolve -> _manifest_for (a founder-signed goal whose plan node needs a function nothing attached serves)",
+    "body-loop:Body.tick -> MissionEngine._step or _watch_while_blocked -> _self_repair -> _form -> Genesis.repair -> resolve -> _manifest_for (an acquired binary that faults twice in service is re-formed)"
+   ],
+   "reason": "passes greg.licensing.system_binary's unconfined dpkg-query spawn (its own entry) on for each installed binary Genesis acquires and each companion _companions pins; it checks nothing itself, and the assessment it returns goes into the manifest's provenance, from which capability_qualification derives the use qualification, so whatever dpkg-query prints decides the license recorded; a recorded finding, not an approval",
+   "pin": "c90b29839ed741dae0ae82f1ce1983d287d9ced2966c39fbe3e95eb9ab952608"
+  },
+  {
+   "module": "greg/licensing.py",
+   "qualname": "requalify_binary",
+   "callee": "greg.licensing.system_binary",
+   "count": 2,
+   "serves": [
+    "body-loop:Body.tick -> MissionEngine._deficit -> _form -> Genesis.resolve -> _verify -> catalog_adapter -> requalify_binary (each frozen oracle vector while an installed binary is qualified; only when ACTIVE_BINARY_POLICY is 'P4c')",
+    "body-loop:Body.tick -> MissionEngine._observe -> authority.act -> execute -> catalog_adapter -> requalify_binary (each run of an attached acquired binary; only when ACTIVE_BINARY_POLICY is 'P4c')"
+   ],
+   "reason": "under the draft P4c policy it re-reads the DEP-5 facts of an acquired binary and of each companion through greg.licensing.system_binary's unconfined dpkg-query spawn (its own entry) before every run, in qualification and in service; while ACTIVE_BINARY_POLICY is 'P0', as now, it returns before the spawn, so the site is dead; the pin covers ACTIVE_BINARY_POLICY, so setting it to 'P4c' fails this check until the reason is re-read; a recorded finding, not an approval",
+   "pin": "17b923f7df7b6f8c838871073b0160422d449d8422eab84a9704ec694fadcd58"
+  },
+  {
+   "module": "tools/offline_test.py",
+   "qualname": "install_filter",
+   "callee": "ctypes.util.find_library",
+   "count": 1,
+   "serves": [
+    "body-loop:Body.tick -> MissionEngine._deficit/_form -> Genesis.resolve -> _manifest_for / _verify -> _run_bounded -> run_isolated -> _isolating_preexec -> install_filter (each probe of an acquired binary, in the forked child before the filter is loaded)",
+    "confinement:greg.capabilities.run_isolated (every isolate_network child: the same preexec)",
+    "confinement:greg.foundry_bridge (foundry.query/apply workers under _no_network_preexec)"
+   ],
+   "reason": "the Kernel seccomp filter's own loader: find_library('seccomp') runs in each confined child after fork and before the filter it loads, with the body's environment; it always spawns /sbin/ldconfig -p, and when the ldconfig cache lacks libseccomp it also runs gcc or cc and ld found on the body's ambient PATH, unconfined, as the body (simulated, not observed: this host's cache has libseccomp); loading the library by a fixed soname or path would remove the spawn; a recorded finding, not an approval",
+   "pin": "66c59c827cd624fd9a7bb585c0d77c6dff0d092d730265d8016c224568d9b735"
+  }
+ ],
+ "path_lookups": [
+  {
+   "module": "egregore/repository_audit.py",
+   "qualname": "git_read",
+   "program": "git",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "the file found first on the body's ambient PATH runs as the body, unconfined, for brief.engineering, repo.pin_audit and repo.integration_audit (their manifests name /usr/bin/git); the child gets PATH=os.defpath and no system or global config"
+  },
+  {
+   "module": "foundry/systems/commissioning.py",
+   "qualname": "AgentSDKBuilder.available",
+   "program": "claude",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "a presence check only; the Agent SDK then starts the claude CLI it finds itself, in exercise() only (APPLY_OPS is empty), unconfined"
+  },
+  {
+   "module": "foundry/systems/commissioning.py",
+   "qualname": "git",
+   "program": "git",
+   "count": 1,
+   "searches": "<computed>",
+   "note": "env={**os.environ, **GIT_ENV}: the person's git, unconfined, in exercise() only, on the scratch repository the exercise creates"
+  },
+  {
+   "module": "foundry/systems/containers.py",
+   "qualname": "_privileged",
+   "program": "sudo",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "a presence check; the argv then names bare sudo, which subprocess resolves on the same ambient PATH, run as `sudo -n` only after privileged_runtime_approved() (the founder's approval variable names this host)"
+  },
+  {
+   "module": "foundry/systems/containers.py",
+   "qualname": "runtime",
+   "program": "<computed>",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "UNIIMENTE_<NAME>, else the runsc or runc found first on the body's ambient PATH, run as root through _privileged only after the founder's approval variable names this host"
+  },
+  {
+   "module": "foundry/systems/mcp_gateway.py",
+   "qualname": "_confined",
+   "program": "node",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "the node runtime found first on the body's ambient PATH is shown read-only inside the door namespace and runs an npm MCP server there with no network"
+  },
+  {
+   "module": "foundry/systems/relay_door.py",
+   "qualname": "namespace_argv",
+   "program": "bwrap",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "the file found first on the body's ambient PATH builds every door namespace (browser, model child, MCP client, DALEOBANKS, organs) and runs unconfined with the body's privileges, so a file of that name earlier on it is the confinement (MUD-ATK-1; claude/licensing-binary-pin-20261030 db09035e pins it, not merged here)"
+  },
+  {
+   "module": "greg/builders.py",
+   "qualname": "ClaudeCodeBuilder.__init__",
+   "program": "claude",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "unless a binary is given, the file found first on the body's ambient PATH; build() runs it with no tools and an empty cwd, behind the relay door on a confined body, only under `greg run --builder claude-code`"
+  },
+  {
+   "module": "greg/capabilities.py",
+   "qualname": "installed_binary",
+   "program": "<computed>",
+   "count": 1,
+   "searches": "/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin",
+   "note": "Genesis's installed-software rung: the first file of that name in /usr/local/bin, /usr/bin, /bin, /opt/homebrew/bin with no ownership check (with Homebrew on macOS the first and last can be user-writable); Genesis runs it from the body loop through run_isolated(isolate_network=True), network-confined only (MUD-ATK-10)"
+  },
+  {
+   "module": "greg/cognition/code_binding.py",
+   "qualname": "at_commit.read",
+   "program": "git",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "the person's git, run by scripts/build_mind_evidence_index.py only"
+  },
+  {
+   "module": "greg/cognition/evolution.py",
+   "qualname": "_clean_room_violations",
+   "program": "git",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "the person's git, in the P8 harness a person runs (python -m greg.cognition.evolution)"
+  },
+  {
+   "module": "greg/cognition/evolution.py",
+   "qualname": "_dirty",
+   "program": "git",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "the person's git, in the P8 harness a person runs"
+  },
+  {
+   "module": "greg/cognition/evolution.py",
+   "qualname": "_freeze_commit",
+   "program": "git",
+   "count": 2,
+   "searches": "ambient PATH",
+   "note": "the person's git, in the P8 harness a person runs"
+  },
+  {
+   "module": "greg/cognition/evolution.py",
+   "qualname": "cycle",
+   "program": "git",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "the person's git, in the P8 harness a person runs"
+  },
+  {
+   "module": "greg/cognition/evolution.py",
+   "qualname": "run_recorded",
+   "program": "git",
+   "count": 3,
+   "searches": "ambient PATH",
+   "note": "the person's git, in the P8 harness a person runs; the clean room's worktree is added and removed with it"
+  },
+  {
+   "module": "greg/cognition/genomes/admission.py",
+   "qualname": "report_header",
+   "program": "git",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "the person's git, in the genome admission harness a person runs"
+  },
+  {
+   "module": "greg/cognition/genomes/admission.py",
+   "qualname": "source_dirty",
+   "program": "git",
+   "count": 2,
+   "searches": "ambient PATH",
+   "note": "the person's git, in the genome admission harness a person runs"
+  },
+  {
+   "module": "greg/doctor.py",
+   "qualname": "chromebook",
+   "program": "git",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "a presence check only (git_available), in `greg doctor --chromebook` and the installer"
+  },
+  {
+   "module": "greg/doctor.py",
+   "qualname": "chromebook",
+   "program": "systemctl",
+   "count": 2,
+   "searches": "ambient PATH",
+   "note": "a presence check, then the person's systemctl runs `--user show-environment`, in `greg doctor --chromebook` and the installer"
+  },
+  {
+   "module": "greg/licensing.py",
+   "qualname": "system_binary",
+   "program": "dpkg-query",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "the known_unmediated finding: the file found first on the body's ambient PATH runs unconfined from the body loop with the body's privileges (planted one reproduced); claude/licensing-binary-pin-20261030 db09035e pins it, not merged here"
+  },
+  {
+   "module": "greg/models.py",
+   "qualname": "ClaudeCodeRoute.__init__",
+   "program": "claude",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "unless a binary is given, the file found first on the body's ambient PATH; the founder-signed claude-code route runs it with no tools, behind the relay door on a confined body"
+  },
+  {
+   "module": "greg/models.py",
+   "qualname": "cli_home",
+   "program": "node",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "the node runtime found first on the body's ambient PATH is shown read-only to the claude CLI's namespace"
+  },
+  {
+   "module": "greg/organs.py",
+   "qualname": "_head",
+   "program": "git",
+   "count": 1,
+   "searches": "/usr/bin:/bin",
+   "note": "PATH=/usr/bin:/bin with no system config, for organ.exchange"
+  },
+  {
+   "module": "greg/organs.py",
+   "qualname": "_snapshot",
+   "program": "git",
+   "count": 2,
+   "searches": "/usr/bin:/bin",
+   "note": "PATH=/usr/bin:/bin with no system config, for organ.exchange"
+  },
+  {
+   "module": "greg/organs.py",
+   "qualname": "_snapshot",
+   "program": "tar",
+   "count": 1,
+   "searches": "/usr/bin:/bin",
+   "note": "PATH=/usr/bin:/bin, extracting the git archive for organ.exchange"
+  },
+  {
+   "module": "greg/ventures.py",
+   "qualname": "_git_head",
+   "program": "git",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "no env: the file found first on the body's ambient PATH runs unconfined with every GIT_* variable the body inherited, for venture.assess and organs.exchange (MUD-ATK-7)"
+  },
+  {
+   "module": "greg/worker_isolation.py",
+   "qualname": "_backend",
+   "program": "bwrap",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "the file found first on the body's ambient PATH is probed here and builds every worker envelope (prepare_worker) and, through the same lookup in relay_door, every door namespace; it runs unconfined with the body's privileges (MUD-ATK-1; claude/licensing-binary-pin-20261030 db09035e pins it, not merged here)"
+  },
+  {
+   "module": "greg/worker_isolation.py",
+   "qualname": "_runtime_paths",
+   "program": "<computed>",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "python, python3 and node found on the body's ambient PATH: their bin and lib directories are granted read-only in the envelope; nothing runs here"
+  },
+  {
+   "module": "greg/worker_isolation.py",
+   "qualname": "prepare_worker",
+   "program": "<computed>",
+   "count": 2,
+   "searches": "ambient PATH",
+   "note": "the worker's argv[0] when it is not a path inside the workspace, and the node and python runtimes, found on the body's ambient PATH; the worker runs that file inside the envelope"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "_found",
+   "program": "<computed>",
+   "count": 1,
+   "searches": "ambient PATH",
+   "note": "a provider CLI (claude, or a CliAgentWorker's argv[0]) found first on the body's ambient PATH and made absolute; it runs inside prepare_worker's envelope or the founder-chosen supervised fallback"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "_git",
+   "program": "git",
+   "count": 1,
+   "searches": "/usr/bin:/bin",
+   "note": "PATH=/usr/bin:/bin with _GIT_HARDENING, on GREG's private clones"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "appraise",
+   "program": "git",
+   "count": 1,
+   "searches": "/usr/bin:/bin",
+   "note": "PATH=/usr/bin:/bin, cloning the work tree for the independent appraisal"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "private_clone",
+   "program": "git",
+   "count": 1,
+   "searches": "/usr/bin:/bin",
+   "note": "PATH=/usr/bin:/bin, the private clone with its origin removed"
+  }
+ ]
+}

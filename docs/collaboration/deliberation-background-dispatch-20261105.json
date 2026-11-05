@@ -1,0 +1,322 @@
+{
+ "decision_id": "BACKGROUND-DISPATCH-S38A-20261105",
+ "title": "Run a long worker's adapter off the Body's turn so one worker no longer freezes every other mission (S38-A)",
+ "problem": "Directive 2026-10-28 section 38 (gap-map unit S38-A, 'Non-blocking worker dispatch: a long worker must not freeze every other mission'). On #196's head 3a2ba265 MissionEngine._pursue calls AuthorityOffice.act inline; for worker.commission the Gate calls the provider adapter and waits for it, inside Body.tick. While a worker runs (minutes for a frontier worker), every other mission, the inbox (only BODY_STOP is read) and the heartbeat stop. Reproduced by tests/unit/test_greg_background_dispatch.py::test_a_long_worker_does_not_freeze_the_other_missions on the base: the quick mission never closes while the worker holds (timed out after 30 s).",
+ "founder_intent_refs": [
+  "INTENT-20261028-OPUS-MAXIMUS-REISSUE (section 38; gap-map unit S38-A in acceptance/directive-sections.json)",
+  "Directive 2026-10-14 section 3A: 'long-running missions, asynchronous workers, temporary teams, unattended computation'; section 3C: 'Durable job management'",
+  "INTENT-20261014-ONE-MACHINE (one Body, one constitutional consequence path; no second execution authority)"
+ ],
+ "baseline": "3a2ba265: the adapter runs inside the turn. Write-ahead intent (mission.dispatching) plus the Gate's claim already make a body killed inside office.act recoverable (MissionEngine._recover_dispatch).",
+ "alternatives": [
+  {
+   "name": "Proposed: only the adapter leaves the turn (greg/background.py)",
+   "description": "Body.tick holds a turn lock for the whole turn. For a capability in BACKGROUND_CAPABILITIES (worker.commission), _pursue runs the Gate's whole act on a thread that holds the same lock, except inside the adapter, which a wrapper runs unlocked. The turn waits until the adapter has started (or the act ended without it, which is then recorded exactly as inline), and goes on. A mission whose adapter still runs is not stepped (WORKING). The outcome is recorded by _record_outcome on the dispatch's thread under the lock, with the mission re-read from the ledger and the completion time. Enabled by Body.run only; tick() callers keep dispatching inline.",
+   "advantages": [
+    "Gate, AuthorityOffice, MissionBook and journal stay single-threaded: only the adapter body runs beside a turn",
+    "Crash, STOP and reconciliation semantics are the existing ones (write-ahead intent, claim without receipt -> UNCERTAIN)",
+    "No ledger record type and no Gate change; 2 engine sites changed",
+    "Every turn-by-turn test keeps its exact inline behaviour"
+   ],
+   "disadvantages": [
+    "A turn lock is new shared state; a future code path that writes the ledger outside a turn without it would race",
+    "Background mode is exercised only by Body.run (process tests and the new thread test), not by the many tick()-driven tests",
+    "A signed BODY_STOP reaches a running worker only after a turn ingests it (the main loop wakes on a new inbox file)"
+   ],
+   "revival_evidence": "Retained as the proposal."
+  },
+  {
+   "name": "Simplest viable: shorter worker timeouts",
+   "description": "Bound every worker so a turn never waits long.",
+   "advantages": [
+    "No concurrency"
+   ],
+   "disadvantages": [
+    "Caps what a worker can do; the body still freezes for the bound",
+    "Does not meet section 38"
+   ],
+   "revival_evidence": "If background dispatch shows a defect that cannot be bounded."
+  },
+  {
+   "name": "Strongest competing design: a durable job model (start, poll, collect as separate receipted steps)",
+   "description": "worker.commission becomes start (receipted STARTED with a job id) and a later collect step; the Gate learns a two-phase act.",
+   "advantages": [
+    "Survives a restart without reconciliation: a running job can be re-adopted",
+    "No in-process threads"
+   ],
+   "disadvantages": [
+    "Changes the Gate's act contract, the canonical consequence path, and the receipt shape every reader binds to",
+    "A re-adopted job needs supervision outside the body process (PDEATHSIG no longer applies)"
+   ],
+   "revival_evidence": "When workers must outlive a body restart (founder ruling) or run on another node (section 48 nodes)."
+  },
+  {
+   "name": "Run each mission's whole step on a thread",
+   "description": "Step missions concurrently.",
+   "advantages": [
+    "General"
+   ],
+   "disadvantages": [
+    "The engine, book and office are not thread-safe; races everywhere"
+   ],
+   "revival_evidence": "None foreseen."
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "One worker freezes the body for its duration; section 38 stays unmet.",
+  "advantages": [
+   "No new shared state"
+  ],
+  "disadvantages": [
+   "Every mission, the inbox and the heartbeat stop while a worker runs",
+   "A long worker reads to Mission Control as a hung body"
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "Section 38 and the 2026-10-14 directive's asynchronous workers: the body keeps pursuing its other goals while one worker runs. No authority changes: the same Gate admits, claims and receipts the same act.",
+   "material_concerns": [
+    "A pause no longer catches every dispatch mid-flight: a worker already running finishes (STOP still interrupts it). Recorded as a founder ruling."
+   ],
+   "evidence_refs": [
+    "tests/unit/test_greg_background_dispatch.py",
+    "greg/background.py"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "Smallest change that meets the effect: one module, two engine sites, the Body's turn. No second execution path: the background act is the same office.act call.",
+   "material_concerns": [
+    "The turn lock must cover every ledger write outside the turn in Body.run (note_gap, telemetry, heartbeat, body.stopped): done"
+   ],
+   "evidence_refs": [
+    "tests/unit/test_greg_background_dispatch.py",
+    "greg/background.py"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "Attacked: a stop predicate that writes the ledger off the turn (fixed: _stop_flag is lock-free), a busy mission mistaken for a killed dispatch (fixed: not stepped while busy), an error after hand-off swallowed (fixed: raised by the next turn), a body that records it stopped before its workers recorded (fixed: join first).",
+   "material_concerns": [
+    "Abandon or supersede while the worker runs: the worker finishes, the outcome is recorded on the ended mission and compensation sees it"
+   ],
+   "evidence_refs": [
+    "tests/unit/test_greg_background_dispatch.py",
+    "greg/background.py"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "The heartbeat names WORKING missions (also while paused); body.stopped names dispatches still unfinished after the join timeout.",
+   "material_concerns": [
+    "Threads make failures harder to read; the dispatch thread is named after its mission and action"
+   ],
+   "evidence_refs": [
+    "tests/unit/test_greg_background_dispatch.py",
+    "greg/background.py"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "Nothing is recorded for a dispatch that is still running; the outcome is recorded once, from the Gate's receipt, at its completion time.",
+   "material_concerns": [
+    "Spend of the running worker is reserved only by the write-ahead and the Gate's claim, as inline"
+   ],
+   "evidence_refs": [
+    "tests/unit/test_greg_background_dispatch.py",
+    "greg/background.py"
+   ],
+   "recommendation": "EXPERIMENT"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "The freeze reproduces on base and is gone on the branch",
+   "tier": "sandbox_execution",
+   "reference": "tests/unit/test_greg_background_dispatch.py::test_a_long_worker_does_not_freeze_the_other_missions",
+   "finding": "Base (greg/body.py, greg/missions.py at 3a2ba265): failed, the quick mission never closed while the worker held (30 s). Branch: passed; the worker's outcome is recorded once, after it returned; the chain verifies."
+  },
+  {
+   "claim": "An error after the hand-off kills the next turn",
+   "tier": "unit_test",
+   "reference": "tests/unit/test_greg_background_dispatch.py::test_an_error_after_the_hand_off_kills_the_next_turn_as_it_did_inline",
+   "finding": "Raised by the next tick; the write-ahead intent stays for the restart"
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "STOP and SIGKILL during a background worker are covered only by the existing process tests",
+   "tier": "sandbox_execution",
+   "reference": "tests/integration/test_one_machine.py, test_one_machine_attacks.py::test_attack_founder_stop_during_ongoing_work_ends_the_worker_now, test_greg_worker_midflight_kill.py",
+   "finding": "They drive Body.run, so they now run the background path; no new STOP test was written"
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "While one worker runs, every other mission is stepped, the inbox is read and the heartbeat moves; the worker's act is admitted, receipted and reconciled exactly as before.",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "Other missions progress during a worker",
+    "amplified_value": "Persistent goal pursuit holds with paid workers in flight; reverses if a race corrupts the ledger, bounded by the turn lock"
+   },
+   {
+    "id": "A2",
+    "statement": "Existing crash and reconciliation semantics reused",
+    "amplified_value": "No new recovery path to prove; a killed body is settled by _recover_dispatch as before"
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D1",
+    "statement": "New shared state: the turn lock",
+    "severity": "medium",
+    "response_type": "modularity",
+    "redesigned_response": "One plain Lock, held by Body.tick for a whole turn and by a background dispatch everywhere but inside its adapter; every other Body.run ledger write (note_gap, telemetry, heartbeat, body.stopped) takes it; documented in greg/background.py"
+   },
+   {
+    "id": "D2",
+    "statement": "A pause no longer catches a dispatch mid-flight; a running worker finishes",
+    "severity": "medium",
+    "response_type": "governance",
+    "redesigned_response": "STOP still interrupts a running worker (lock-free _stop_flag); whether a pause should too is recorded as a founder ruling; the heartbeat names running work while paused"
+   },
+   {
+    "id": "D3",
+    "statement": "Only Body.run exercises the background path",
+    "severity": "low",
+    "response_type": "evidence",
+    "redesigned_response": "A thread test drives Body.run with a real clock; the process tests that drive Body.run (one-machine, attacks, mid-flight kill) now run the background path"
+   }
+  ],
+  "selected_design": "Proposed",
+  "comparisons": {
+   "baseline": "3a2ba265: the adapter runs inside the turn; one worker freezes the body",
+   "do_nothing": "Section 38 unmet; a long worker reads as a hung body",
+   "simplest_viable_alternative": "Shorter worker timeouts: still freezes, caps what a worker can do",
+   "strongest_competing_architecture": "A durable two-phase job model: changes the Gate's act contract and receipt shape",
+   "reversible_experiment": "This design, enabled only by Body.run; engine.background None restores inline dispatch"
+  },
+  "rejected_alternatives": [
+   {
+    "name": "Simplest viable: shorter worker timeouts",
+    "rejection_reason": "Caps what a worker can do; the body still freezes for the bound; Does not meet section 38",
+    "revival_evidence": "If background dispatch shows a defect that cannot be bounded."
+   },
+   {
+    "name": "Strongest competing design: a durable job model (start, poll, collect as separate receipted steps)",
+    "rejection_reason": "Changes the Gate's act contract, the canonical consequence path, and the receipt shape every reader binds to; A re-adopted job needs supervision outside the body process (PDEATHSIG no longer applies)",
+    "revival_evidence": "When workers must outlive a body restart (founder ruling) or run on another node (section 48 nodes)."
+   },
+   {
+    "name": "Run each mission's whole step on a thread",
+    "rejection_reason": "The engine, book and office are not thread-safe; races everywhere",
+    "revival_evidence": "None foreseen."
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Attacked the Pass-1 design for writes outside the lock, a stale mission state at record time, lost errors, ordering of the stop record and in-flight missions being re-dispatched or settled.",
+  "new_weaknesses": [
+   {
+    "id": "W1",
+    "category": "fragility",
+    "statement": "Body._stop_now reads the inbox (writes the ledger) and was the adapter's stop check",
+    "strengthening_response": "Background adapters get _stop_flag, which only reads flags and the stop file"
+   },
+   {
+    "id": "W2",
+    "category": "fragility",
+    "statement": "The outcome would be recorded against the mission state of the dispatching turn",
+    "strengthening_response": "finish() re-reads the mission from the ledger and uses the completion time when the adapter ran off the turn"
+   },
+   {
+    "id": "W3",
+    "category": "fragility",
+    "statement": "body.stopped could precede a running worker's outcome",
+    "strengthening_response": "Body.run joins every dispatch first (60 s on STOP); unfinished ones are named on body.stopped"
+   }
+  ],
+  "residual_risks": [
+   {
+    "risk": "A future ledger writer outside a turn and without the lock",
+    "mitigation": "Documented in greg/background.py and greg/body.py; kill criterion on any broken chain",
+    "owner": "GREG maintainers",
+    "review_trigger": "Any new thread or timer in greg/"
+   },
+   {
+    "risk": "A worker still running 60 s after STOP",
+    "mitigation": "Named on body.stopped (dispatches_unfinished) and settled on restart by _recover_dispatch",
+    "owner": "GREG maintainers",
+    "review_trigger": "A body.stopped record with dispatches_unfinished"
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D1",
+    "outcome": "resolved",
+    "rationale": "Bounded by one lock that covers every writer outside the adapter",
+    "owner": "GREG maintainers",
+    "review_trigger": "A new ledger writer outside Body.tick"
+   },
+   {
+    "disadvantage_id": "D2",
+    "outcome": "deferred",
+    "rationale": "Pause semantics during a running worker are the founder's",
+    "owner": "Alfonso Lopez",
+    "review_trigger": "Founder review of this PR"
+   },
+   {
+    "disadvantage_id": "D3",
+    "outcome": "accepted",
+    "rationale": "Inline remains the behaviour of turn-by-turn callers; the background path has thread and process tests",
+    "owner": "GREG maintainers",
+    "review_trigger": "A defect found only on the background path"
+   }
+  ],
+  "final_design": "Only the adapter of a BACKGROUND_CAPABILITIES dispatch (worker.commission) runs off the Body's turn, enabled by Body.run; the Gate's admission, claim, commit and receipt and the outcome record stay serialized under the turn lock; a busy mission is not stepped; errors after hand-off are raised by the next turn; STOP reaches the adapter lock-free and the Body joins before recording it stopped.",
+  "recommendation": "EXPERIMENT"
+ },
+ "dissent": {
+  "present": true,
+  "handling": "Recorded; does not block the draft.",
+  "entries": [
+   {
+    "role": "Founder-Intent Steward",
+    "position": "Should a signed BODY_PAUSE also interrupt a running worker (as STOP does), turning it into a reconciliation?",
+    "rationale": "A pause is 'suspend'; a paid worker continuing to spend while paused may surprise the founder",
+    "evidence_threshold": "A founder ruling",
+    "owner": "Alfonso Lopez",
+    "review_trigger": "Founder review of this PR"
+   }
+  ]
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": false,
+  "approval_status": "not_required",
+  "approver": "None for this draft experiment; adoption into #196 by its integrator, and any merge, remain Alfonso's"
+ },
+ "migration_plan": "None: no record type, schema or stored state changes. The background path is enabled by Body.run at boot.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "Revert this branch's commit, or decline intake into #196",
+   "Or, at runtime, leave engine.background None (inline dispatch)"
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "A ledger write from two threads at once (a broken hash chain or a lost record) on any test or body",
+  "A dispatch recorded twice, or recorded for a mission while its worker still runs",
+  "A STOP that no longer terminates a running worker"
+ ],
+ "decision": "EXPERIMENT",
+ "decision_owner": "GREG maintainers for development; Alfonso for the pause ruling and any merge",
+ "review_trigger": "A founder ruling on pause, the durable job model becoming necessary (workers that outlive a restart), or a concurrency defect"
+}

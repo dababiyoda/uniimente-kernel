@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import os
 
+import dataclasses
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 import hashlib
@@ -34,6 +35,7 @@ from typing import Any
 from jsonschema import Draft202012Validator, FormatChecker
 
 from greg.authority import RECEIPT_LIST_LIMIT, ActionOutcome, AuthorityOffice, text_bytes
+from greg.background import BACKGROUND_CAPABILITIES
 from greg.capabilities import CapabilityError, InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
 from greg import asks, improvement, routing
@@ -1519,6 +1521,9 @@ class MissionEngine:
         self.book = MissionBook(journal)
         self._stop_check = None
         self.selector = None          # the Body installs Goal Gravity here; None keeps the static order
+        # greg.background.Background when the Body's main loop runs a long adapter off its turn; None runs every
+        # dispatch inline (the Body's own tick() callers, the tests that drive a Body turn by turn)
+        self.background = None
 
     # -- founder inputs (already signature-verified by the body) ---------------
     def register(self, spec: dict, command_digest: str) -> str:
@@ -1747,6 +1752,13 @@ class MissionEngine:
             ranked = list(dict.fromkeys(mid for mid in self.selector(order) if mid in self.book.missions))
             order = [self.book.missions[mid] for mid in ranked] + [m for m in order if m.mission_id not in ranked]
         for m in order:
+            running = self.background.busy(m.mission_id) if self.background is not None else None
+            if running is not None:
+                # Its adapter is still running off the turn: the mission is not stepped (its write-ahead intent is
+                # in flight, not the trace of a body killed inside a dispatch) until the outcome is recorded.
+                summary.append({"mission_id": m.mission_id, "state": "WORKING", "action": running["action_id"],
+                                "attempt": running["attempt"], "since": iso(running["since"])})
+                continue
             if should_stop is not None and should_stop():
                 summary.append({"mission_id": m.mission_id, "state": "NOT_STEPPED", "why": "stop requested"})
                 continue
@@ -3516,23 +3528,46 @@ class MissionEngine:
         # A founder-signed SOP pre-approval covers exactly this step's final scope: the one dispatched,
         # after any budget cap, so a pre-approval never covers a scope it did not name.
         signed = frozenset({scope}) if pre_approved(m.spec, s, manifest) else frozenset()
-        outcome = self.office.act(
-            mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
-            adapter=adapter, ctx=self._context(m, manifest), params=bound_params, target=s["target"],
-            cost_usd=float(s.get("cost_usd", 0.0)), expected_outcome=s.get("expected_outcome", "strategy executed"),
-            evidence_refs=evidence + [r for r in sources if r not in evidence], attempt=attempt,
-            spent_usd=m.committed_usd, approved_scopes=m.approved_scopes,
-            evidence_confidence=float(s.get("evidence_confidence", 1.0)), signed_scopes=signed)
-        if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"
-                and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):
-            # Extracted from #157 (#184): the Gate completed collection, but the cancellable worker stopped after
-            # possible partial effects and spend. Keep its receipt and route it through the same no-blind-retry
-            # reconciliation as any uncertain act, with the signed cap reserved.
-            outcome.status = "UNCERTAIN"
-            outcome.reasons = ["worker execution interrupted; partial outcome and spend require reconciliation"]
-        return self._record_outcome(m, s, manifest, outcome, attempt=attempt, routing_decision=routing_decision,
-                                    input_bindings=input_bindings, bindings=bindings, budget_capped=budget_capped,
-                                    prepare_for=prepare_for, now=now, bound_params=bound_params)
+        background = self.background if manifest.capability_id in BACKGROUND_CAPABILITIES else None
+        ctx = self._context(m, manifest)
+        if background is not None:
+            # Read from inside the adapter while the turn goes on: a lock-free predicate (the turn's stop check
+            # can read the inbox, which writes the ledger).
+            ctx = dataclasses.replace(ctx, stop_check=background.stop_check)
+
+        def act(wrap):
+            return self.office.act(
+                mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
+                adapter=wrap(adapter), ctx=ctx, params=bound_params, target=s["target"],
+                cost_usd=float(s.get("cost_usd", 0.0)),
+                expected_outcome=s.get("expected_outcome", "strategy executed"),
+                evidence_refs=evidence + [r for r in sources if r not in evidence], attempt=attempt,
+                spent_usd=m.committed_usd, approved_scopes=m.approved_scopes,
+                evidence_confidence=float(s.get("evidence_confidence", 1.0)), signed_scopes=signed)
+
+        def finish(outcome, off_turn: bool):
+            mission, when = m, now
+            if off_turn:   # recorded after other turns ran: the mission as the ledger holds it now, at this time
+                self.book.rebuild()
+                mission, when = self.book.missions[m.mission_id], background.clock()
+            if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"
+                    and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):
+                # Extracted from #157 (#184): the Gate completed collection, but the cancellable worker stopped
+                # after possible partial effects and spend. Keep its receipt and route it through the same
+                # no-blind-retry reconciliation as any uncertain act, with the signed cap reserved.
+                outcome.status = "UNCERTAIN"
+                outcome.reasons = ["worker execution interrupted; partial outcome and spend require reconciliation"]
+            return self._record_outcome(mission, s, manifest, outcome, attempt=attempt,
+                                        routing_decision=routing_decision, input_bindings=input_bindings,
+                                        bindings=bindings, budget_capped=budget_capped, prepare_for=prepare_for,
+                                        now=when, bound_params=bound_params)
+
+        if background is None:
+            return finish(act(lambda a: a), False)
+        result = background.dispatch(m.mission_id, aid, attempt, act, finish)
+        if result is None:   # the adapter runs off the turn; the mission is WORKING until its outcome is recorded
+            return {"state": "WORKING", "action": aid, "attempt": attempt}
+        return result
 
     def _recover_dispatch(self, m: MissionState, now: datetime) -> dict | None:
         """Settle a dispatch this body began but never recorded, before anything else is decided.

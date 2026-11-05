@@ -4382,7 +4382,7 @@
   {
    "n": 53,
    "heading": "OPEN-PR AND BRANCH METABOLISM",
-   "status": "PARTIAL",
+   "status": "DONE",
    "asks": [
     {
      "id": "S53.A1",
@@ -4414,20 +4414,19 @@
      "owner_paths": [
       "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
       "scripts/lineage_map.py",
-      "docs/collaboration/KERNEL-PR-PLACEMENTS.json"
+      "docs/collaboration/KERNEL-PR-PLACEMENTS.json",
+      ".github/workflows/pr-close-extraction.yml"
      ],
      "evidence": [
       "tests/unit/test_developmental_inheritance.py::test_each_rule_rejects_a_bad_placement",
-      "tests/unit/test_lineage_map.py::test_place_lets_a_pr_close_only_after_section_53s_nine_extractions"
+      "tests/unit/test_lineage_map.py::test_place_lets_a_pr_close_only_after_section_53s_nine_extractions",
+      "tests/unit/test_lineage_map.py::test_close_check_judges_a_closed_pr_by_section_53",
+      "tests/unit/test_pr_close_extraction_workflow.py::test_it_fires_on_close_checks_out_the_base_and_holds_no_write_token",
+      "tests/unit/test_pr_close_extraction_workflow.py::test_its_step_fails_an_unextracted_close_and_passes_an_extracted_one"
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
-     "coverage": "partial",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "lineage_map --place refuses a recorded close without the nine fields and lists every closing-kind placement not yet extracted (167 of 262 on 2026-11-04), but a PR closed or a branch deleted on GitHub does not run it",
-      "unit": "S53-A"
-     }
+     "coverage": "covered"
     },
     {
      "id": "S53.A3",

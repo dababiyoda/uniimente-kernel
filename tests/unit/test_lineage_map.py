@@ -232,3 +232,54 @@ def test_place_puts_a_branch_without_a_pr_with_the_open_pr_that_contains_it():
     assert not rows["branch:review-of-2"]["close_ready"]      # deleting a branch is a close: extract first
     assert [(v["pr"], v["kind"]) for v in out["violations"]] == [("branch:lost", "unplaced")]
     assert [p["pr"] for p in out["placements"]][:2] == [1, 2]   # PRs first, then branches
+
+
+def test_close_check_judges_a_closed_pr_by_section_53(tmp_path, monkeypatch):
+    repo = tmp_path / "r"
+    repo.mkdir()
+    git(repo, "init", "-q", "-b", "canon")
+    contained = commit(repo, "a.py", "landed\n")
+    canonical = commit(repo, "b.py", "canonical head\n")
+    git(repo, "checkout", "-q", "-b", "side", contained)
+    extracted = commit(repo, "c.py", "extracted before the close\n")
+    moved = commit(repo, "c.py", "pushed after the extraction\n")
+    monkeypatch.chdir(repo)
+    first_class = next(iter(lineage_map.FROM_CLASS))
+    inheritance = {"placements": [{"id": "L1", "classification": first_class, "lineage": ["#7 old lineage"],
+                                   "inheritance_test": {f"q{i}": "answered" for i in range(9)}},
+                                  {"id": "L2", "classification": first_class, "lineage": ["#8 thin lineage"],
+                                   "inheritance_test": {"q0": "answered"}}]}
+    record = {"placements": [
+        {"number": 4, "head_sha": extracted, "disposition": "SUPERSEDED IMPLEMENTATION", "basis": "x",
+         "nine": NINE_FILLED},
+        {"number": 5, "head_sha": extracted, "disposition": "SUPERSEDED IMPLEMENTATION", "basis": "x",
+         "nine": NINE_FILLED},
+        {"number": 6, "head_sha": extracted, "disposition": "HISTORICAL", "basis": "x",
+         "nine": dict(NINE_FILLED, prerequisites="")}]}
+
+    def judge(number, sha, merged=False):
+        return lineage_map.close_check({"number": number, "sha": sha, "merged": merged}, canonical, record,
+                                       inheritance)
+
+    assert judge(1, moved, merged=True)["verdict"] == "MERGED"
+    assert judge(2, contained)["verdict"] == "CONTAINED"
+    assert judge(4, extracted)["verdict"] == "EXTRACTED"
+    assert judge(5, moved)["verdict"] == "MOVED_SINCE_EXTRACTION"
+    partial = judge(6, extracted)
+    assert partial["verdict"] == "CLOSED_WITHOUT_EXTRACTION" and partial["detail"].startswith("missing: prerequisites.")
+    assert judge(7, moved)["verdict"] == "EXTRACTED_INHERITED"
+    thin = judge(8, moved)
+    assert thin["verdict"] == "CLOSED_WITHOUT_EXTRACTION" and not thin["lawful"]
+    unknown = judge(9, moved)
+    assert unknown["detail"].startswith("missing: " + ", ".join(lineage_map.NINE))
+    lawful = {r["verdict"] for r in (judge(1, moved, True), judge(2, contained), judge(4, extracted),
+                                     judge(7, moved)) if r["lawful"]}
+    assert lawful == {"MERGED", "CONTAINED", "EXTRACTED", "EXTRACTED_INHERITED"}
+
+    (tmp_path / "rec.json").write_text(json.dumps(record))
+    (tmp_path / "inh.json").write_text(json.dumps(inheritance))
+    for number, sha, code in ((9, moved, 1), (4, extracted, 0)):
+        (tmp_path / "closed.json").write_text(json.dumps({"number": number, "sha": sha, "merged": False}))
+        assert lineage_map.main(["--base", canonical, "--close", str(tmp_path / "closed.json"),
+                                 "--record", str(tmp_path / "rec.json"),
+                                 "--inheritance", str(tmp_path / "inh.json")]) == code

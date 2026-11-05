@@ -1311,8 +1311,8 @@
     "body-loop:Body.tick -> goal_gravity.tick -> _form_requested -> Genesis.form_for_goal -> resolve -> _manifest_for (a founder-signed goal whose plan node needs a function nothing attached serves)",
     "body-loop:Body.tick -> MissionEngine._step or _watch_while_blocked -> _self_repair -> _form -> Genesis.repair -> resolve -> _manifest_for (an acquired binary that faults twice in service is re-formed)"
    ],
-   "reason": "passes greg.licensing.system_binary's unconfined dpkg-query spawn (its own entry) on for each installed binary Genesis acquires and each companion _companions pins; it checks nothing itself, and the assessment it returns goes into the manifest's provenance, from which capability_qualification derives the use qualification, so whatever dpkg-query prints decides the license recorded; a recorded finding, not an approval",
-   "pin": "c90b29839ed741dae0ae82f1ce1983d287d9ced2966c39fbe3e95eb9ab952608"
+   "reason": "passes greg.licensing.system_binary's unconfined dpkg-query spawn (its own entry) on for each installed binary Genesis acquires and each companion _companions pins; it checks nothing itself, and the assessment it returns goes into the manifest's provenance, from which capability_qualification derives the use qualification, so whatever dpkg-query prints decides the license recorded; it also reads the owning package's installed version from dpkg's status database as a plain file (greg.licensing.installed_package_version, no spawn), recorded as package_version, which no qualification digest reads; a recorded finding, not an approval",
+   "pin": "c0b23c66797fcf6839171c6b0aa17d81a514fc8de9dc4d028fb9a06095a5d9e8"
   },
   {
    "module": "greg/licensing.py",

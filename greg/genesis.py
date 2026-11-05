@@ -710,12 +710,22 @@ def _snapshot(path: Path, workspace: Path) -> tuple[Path, str]:
         os.close(fd)
 
 
+UNRESOLVED = "unresolved"     # no package manager on this body says which package owns the binary, or its version
+
+
 def _binary_license(binary: str) -> dict:
     """What the OS package owning an installed binary declares, read from DEP-5 where the body has dpkg."""
     assessment = licensing.system_binary(binary)
     if assessment is None:
-        return {"license": "system package; license not readable on this body (no dpkg or no DEP-5 file)"}
-    return {"license": assessment["parts"][0]["expression"][:200], "license_assessment": assessment}
+        return {"license": "system package; license not readable on this body (no dpkg or no DEP-5 file)",
+                "package": UNRESOLVED, "package_version": UNRESOLVED, "license_source": UNRESOLVED}
+    package = assessment.get("package")
+    if not package:                                       # an assessment that names no package says nothing more
+        return {"license": assessment["parts"][0]["expression"][:200], "license_assessment": assessment,
+                "package": UNRESOLVED, "package_version": UNRESOLVED, "license_source": UNRESOLVED}
+    return {"license": assessment["parts"][0]["expression"][:200], "license_assessment": assessment,
+            "package": package, "package_version": licensing.installed_package_version(package) or UNRESOLVED,
+            "license_source": f"/usr/share/doc/{package}/copyright ({assessment['parts'][0]['basis']})"}
 
 
 def _companions(candidate: Candidate) -> dict:

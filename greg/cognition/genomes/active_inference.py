@@ -580,7 +580,7 @@ _DEV = "seeds 0-9 dev, held-out seeds fixed by the admission freeze"
 INTELLIGENCES = [
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="meta.active_inference.efe_diagnosis", version="1.0.0", family=FAMILY,
+            intelligence_id="meta.active_inference.efe_diagnosis", version="1.0.0", family="meta_active_inference",
             layer=5, operation="active_infer_diagnose", epistemic_class="causal",
             subgeometry="sequential fault diagnosis: one true fault among N hypotheses, noisy costed tests run at "
                         "most once each, stop by declaring a fault (misdiagnosis loss) or escalating (fixed cost)",

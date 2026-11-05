@@ -282,8 +282,18 @@ def contained_receipts(journal) -> dict:
 
 
 def measured_outcomes(journal):
+    return _measure(journal)[0]
+
+
+def impugned_identities(journal) -> dict:
+    """Claim identity -> the correction that contains any receipt observed for it (S45-A, #270). The outcome is per
+    identity, so containing one receipt of an answer withholds the answer, not only that receipt (skeptic P2)."""
+    return _measure(journal)[1]
+
+
+def _measure(journal):
     if journal is None:
-        return []
+        return [], {}
     from .cortex import geometry_key
     from greg.capabilities import BUILTINS
     formed = _formed_versions(journal)
@@ -297,11 +307,13 @@ def measured_outcomes(journal):
     observations = {}
     appraisal_of = _observation_appraisal(journal, _settling_appraisals(journal))
     contained = contained_receipts(journal)
+    impugned = {}                         # claim identity -> the correction containing a receipt observed for it
     for event in journal.replay("mission.observed"):
         data = event.payload
         appraisal = appraisal_of(event)
-        if appraisal is None or not data.get("receipt") or data["receipt"] in contained:
+        if appraisal is None or not data.get("receipt"):
             continue
+        cause = contained.get(data["receipt"])
         record = journal.ledger.find(data["receipt"])
         if record is None or record.record_type != "receipt":
             continue
@@ -318,6 +330,9 @@ def measured_outcomes(journal):
                 data, event, appraisal)
             if outcome is not None:
                 identity = _outcome_identity(outcome)
+                if cause:
+                    impugned.setdefault(identity, cause)
+                    continue
                 observations[identity] = outcome
                 claim_receipts[identity].add(data["receipt"])
                 promise = _promise(built, functions.get(outcome["method"]))
@@ -354,7 +369,13 @@ def measured_outcomes(journal):
                                  "selected_by": "competency_compiler"} if compiled else {}),
                              **condition_competence.settlement_fields(compiled, check, data["passed"])}
         # Reobservations revise this signed claim; another check/input is not its duplicate.
+        if cause:
+            impugned.setdefault(_outcome_identity(outcome), cause)
+            continue
         observations[_outcome_identity(outcome)] = outcome
+    for identity in impugned:             # withheld per answer: an earlier receipt of it does not stand in
+        observations.pop(identity, None)
+        world_seen.pop(identity, None)
     if world_seen:
         order = _realization_order(journal)
         signed = _signed_realizations(journal)
@@ -368,7 +389,7 @@ def measured_outcomes(journal):
                     observations.pop(identity)    # a live dispute about one answer: scored as neither
                 else:
                     observations[identity] = settled
-    return list(observations.values())
+    return list(observations.values()), impugned
 
 
 def competence(journal):
@@ -494,9 +515,10 @@ def reconcile(journal):
                               "history retained"}, key=[identity, "invalidate", shadow.event_id],
                     causal_parent=shadow.event_id)
     contained = contained_receipts(journal) if current else {}
+    impugned = impugned_identities(journal) if contained else {}
     for identity, prior in current.items():
         if identity not in measured and identity not in succeeded and not prior.payload.get("invalidated"):
-            cause = contained.get(prior.payload.get("receipt"))
+            cause = impugned.get(identity) or contained.get(prior.payload.get("receipt"))
             revision = {**prior.payload, "invalidated": True, "supersedes": prior.event_id,
                         "reason": "current appraisal no longer supports competence; history retained"}
             if cause:      # withheld, not wrong: the evidence it rests on was impugned by a recorded correction

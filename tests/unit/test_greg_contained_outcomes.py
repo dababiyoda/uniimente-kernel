@@ -98,3 +98,42 @@ def test_with_the_real_corrections_module_a_body_without_corrections_contains_no
     pytest.importorskip("greg.corrections")
     journal, first, second = two_answers()
     assert settlement.contained_receipts(journal) == {} and receipts(journal) == {first, second}
+
+
+def reobserved():
+    """One certified answer observed through two ledger receipts (the same claim identity), appraised VERIFIED."""
+    journal, first = pending()
+    again = answer(journal, rerun=1)                 # a new receipt of the same answer
+    observe(journal, again)
+    appraise(journal, "VERIFIED")
+    assert first != again and counts(journal) == (1, 1)
+    return journal, first, again
+
+
+@pytest.mark.parametrize("which", ["latest", "earliest"])
+def test_containing_any_receipt_of_an_answer_withholds_the_answer(corrections, which):
+    """Skeptic P2 on #221 (...foabg): the outcome is per answer, not per receipt; containing the latest receipt
+    used to fall back to an earlier receipt of the same answer, so nothing was withheld."""
+    journal, first, again = reobserved()
+    settlement.reconcile(journal)
+    target = again if which == "latest" else first
+    corrections.contained = {target: {"cause": "FOUNDER_REJECTED", "cause_id": "c:3", "event": "e:y", "path": []}}
+    assert receipts(journal) == set() and counts(journal) == (0, 0)
+    [(identity, cause)] = settlement.impugned_identities(journal).items()
+    assert cause["cause"] == "FOUNDER_REJECTED"
+    corrections.contained = {}
+    assert counts(journal) == (1, 1)                 # requalified: counted once again, never twice
+
+
+def test_withholding_names_the_cause_when_the_contained_receipt_is_not_the_settled_head(corrections):
+    """Skeptic P3 on #221: reconcile looked up only the settled row's receipt, so containing another receipt of
+    the answer closed it with the generic reason and no contained_by."""
+    journal, first, again = reobserved()
+    settlement.reconcile(journal)
+    head = [e.payload for e in journal.replay("cognition.settled")][-1]["receipt"]
+    other = first if head == again else again
+    corrections.contained = {other: {"cause": "APPRAISAL_REFUTED", "cause_id": "c:4", "event": "e:z", "path": []}}
+    settlement.reconcile(journal)
+    closed = [e.payload for e in journal.replay("cognition.settled") if e.payload.get("invalidated")]
+    assert len(closed) == 1 and closed[0]["reason"].startswith("withheld: the evidence it rests on was invalidated")
+    assert closed[0]["contained_by"] == {"cause": "APPRAISAL_REFUTED", "cause_id": "c:4", "event": "e:z"}

@@ -37,6 +37,7 @@ anything: it reads the directive, this tree and test outcomes.
 """
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 from pathlib import Path
@@ -483,10 +484,11 @@ def pin_ratchet_problems(base: dict, head: dict) -> list[str]:
     return out
 
 
-def evidence_files(ask: dict, manifest: dict, contract: dict) -> list[str]:
-    """The test files an ask's evidence reaches: a cited pytest node is its file; a mission requirement is the
-    files of its tests and, for a mission that carries a trace, of every trace link's proof; a contract function is
-    the requirements its evidence names. Declarations (coverage, tier, notes, obligation) are not evidence."""
+def evidence_nodes(ask: dict, manifest: dict, contract: dict) -> list[str]:
+    """The test nodes an ask's evidence reaches: its own pytest nodes and guards; for a mission requirement, its
+    tests and, for a mission that carries a trace, every trace link's proof; for a contract function, the
+    requirements its evidence names. Parametrization brackets are dropped. Declarations (coverage, tier, notes,
+    obligation) are not evidence."""
     missions = {m["id"]: m for m in manifest["missions"]}
     functions = {f["id"]: f for f in contract["functions"]}
 
@@ -506,88 +508,137 @@ def evidence_files(ask: dict, manifest: dict, contract: dict) -> list[str]:
         elif kind == "contract":
             for req_ref in (functions.get(name) or {}).get("evidence", []):
                 nodes += requirement(req_ref)
-    return sorted({n.split("::")[0] for n in nodes if n.startswith("tests/")})
+    return sorted({re.sub(r"\[.*\]$", "", n) for n in nodes if n.startswith("tests/")})
 
 
-def _met_at_base(base: tuple[dict, dict, dict], root: Path) -> dict[str, bool]:
+def evidence_files(ask: dict, manifest: dict, contract: dict) -> list[str]:
+    """The test files an ask's evidence reaches (``evidence_nodes`` without their node paths)."""
+    return sorted({n.split("::")[0] for n in evidence_nodes(ask, manifest, contract)})
+
+
+def node_text(text: str | None, node: str) -> str | None:
+    """The source of one test node inside its file's text: the named function, or class and method, as written.
+    A node with no path is its whole file. None when the file or the node is absent; the whole file when the file
+    does not parse."""
+    if text is None:
+        return None
+    path = node.split("::")[1:]
+    if not path:
+        return text
+    try:
+        scope = ast.parse(text).body
+    except SyntaxError:
+        return text
+    found = None
+    for name in path:
+        found = next((x for x in scope if isinstance(x, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+                      and x.name == name), None)
+        if found is None:
+            return None
+        scope = getattr(found, "body", [])
+    return ast.get_source_segment(text, found, padded=True)
+
+
+def _met_at_base(base: tuple[dict, dict, dict], root: Path, source: Path | None) -> dict[str, bool]:
     """Whether each ask of the base map is met there. An ask the base withdrew by a record counts as open: it
     closed nothing, so reinstating it closes nothing either."""
     rows = {a["id"]: a["met"] for s in directive_report(*base, root=root)["sections"] for a in s["asks"]}
     return {a["id"]: rows.get(a["id"], False) for s in base[0]["sections"] for a in s["asks"]}
 
 
+FOUNDER_AT_MERGE = "the founder's decision at merge, not a map edit that passes the check"
+
+
 def evidence_ratchet_problems(base: tuple[dict, dict, dict], head: tuple[dict, dict, dict], read_base, read_head,
                               root: Path = ROOT) -> list[str]:
-    """The map against the map at a base: an obligation open at the base is discharged at the head only through new
-    or changed executable evidence, never by editing a declaration. Each of ``base`` and ``head`` is
-    (map, manifest, contract); ``read_base``/``read_head`` return a file's content at that side, or None.
+    """The map against the map at a base, as an allow-list: what remains to build may shrink only through new or
+    changed executable evidence. Each of ``base`` and ``head`` is (map, manifest, contract); ``read_base`` and
+    ``read_head`` return a file's content at that side, or None.
 
-    An ask's evidence is the test files it reaches (``evidence_files``); it changed when one of them differs from
-    the base or did not exist there. Coverage, tier, blockers and excerpts, in the map or in a mission requirement,
-    are declarations: editing them discharges nothing.
+    Evidence is the test nodes an ask reaches (``evidence_nodes``); it changed when one node's own source (the
+    test function, not its file) differs from the base or did not exist there. Coverage, tiers, blockers,
+    excerpts and lines, in the map or in a mission requirement, are declarations: editing them discharges nothing.
 
-    - Closing: an ask open at the base whose row reads met at the head, live or through the successor it is
-      retired into, must have changed evidence of its own. Retiring many asks into one successor and then closing
-      the successor closes none of them.
-    - Withdrawing: a new or changed ``record`` withdrawal of an ask open at the base is refused. So is a new
-      ``not_asks`` set-aside of a listed line. Both are the founder's decision, made at merge, not map edits that
-      pass the check.
-    - Accounting: a listed line the base left unanswered and the head answers must be claimed by an ask that is
-      still open at the head (it becomes an obligation), or by a met ask whose own evidence changed.
-    - Guarding: a PRINCIPLE ask UNGUARDED at the base leaves the residual only when a guard file changed.
+    Allowed without the founder:
+    - closing: a live ask open at the base reads met at the head only through changed evidence of its own;
+    - editing an open ask that stays open (the pin bounds its class);
+    - a new ask pinned BUILDABLE_NOT_BUILT, met at the head only through changed evidence;
+    - answering a listed line the base left unanswered with a live ask that is open and BUILDABLE_NOT_BUILT (a new
+      obligation), or with a met ask whose own evidence changed;
+    - guarding a PRINCIPLE that was UNGUARDED with a guard whose source changed.
+    Refused, as the founder's decision at merge: any new or changed retirement (superseded_by or record), a new
+    ask pinned other than BUILDABLE_NOT_BUILT, a new ``not_asks`` set-aside, and any change to the directive source
+    or to the digest the map reads it against.
 
-    An ask withdrawn at the base counts as open there. Both sides are judged at the static ceiling (no test runs),
-    as ``directive_report`` computes it. The rule asks for new evidence, not sufficient evidence: whether what changed
-    answers the obligation stays the tiers' and the reviewers' to judge."""
+    Both sides are judged at the static ceiling (no test runs), as ``directive_report`` computes it. The rule asks
+    for new evidence, not sufficient evidence: whether what changed answers the obligation stays the tiers' and the
+    reviewers' to judge."""
+    source_rel = SOURCE
+    out = []
+    if read_base(source_rel) != read_head(source_rel) or base[0].get("source") != head[0].get("source"):
+        out.append(f"ratchet: the directive source {source_rel} or the digest the map reads it against changed; "
+                   f"what the directive asks is {FOUNDER_AT_MERGE}")
     try:
-        was_met = _met_at_base(base, root)
+        was_met = _met_at_base(base, root, None)
         texts = _source_texts(base[0], root)
         base_lines = {s["n"]: set(accounted_lines(s, texts[s["n"]][1])[0]) for s in base[0]["sections"]
                       if s["n"] in texts}
     except (KeyError, TypeError, ValueError) as exc:
-        return [f"ratchet: the base map cannot be read by this tree's directive schema ({type(exc).__name__}: "
-                f"{exc}); migrate it before comparing"]
-    now_met = {a["id"]: a["met"] for s in directive_report(*head, root=root)["sections"] for a in s["asks"]}
+        return out + [f"ratchet: the base map cannot be read by this tree's directive schema ({type(exc).__name__}: "
+                      f"{exc}); migrate it before comparing"]
+    rows = {a["id"]: a for s in directive_report(*head, root=root)["sections"] for a in s["asks"]}
     base_asks = {a["id"]: a for s in base[0]["sections"] for a in s["asks"]}
+    pin_text = read_head(PIN.relative_to(ROOT).as_posix())
+    head_pin = (json.loads(pin_text) if pin_text else {}).get("asks", {})
 
-    def changed(ask: dict, files=None) -> bool:
-        files = evidence_files(ask, head[1], head[2]) if files is None else files
-        return any(read_head(f) is not None and read_head(f) != read_base(f) for f in files)
+    def changed(ask: dict, nodes=None) -> bool:
+        nodes = evidence_nodes(ask, head[1], head[2]) if nodes is None else nodes
+        for node in nodes:
+            path = node.split("::")[0]
+            now = node_text(read_head(path), node)
+            if now is not None and now != node_text(read_base(path), node):
+                return True
+        return False
 
-    out = []
     for section in head[0]["sections"]:
         for ask in section["asks"]:
-            aid = ask["id"]
-            if aid not in base_asks or was_met[aid]:
+            aid, row = ask["id"], rows.get(ask["id"]) or {}
+            gone = ask.get("retired") or {}
+            if aid not in base_asks:
+                if gone:
+                    out.append(f"ratchet: {aid} is new and retired at once; retiring an obligation is {FOUNDER_AT_MERGE}")
+                elif head_pin.get(aid, "BUILDABLE_NOT_BUILT") != "BUILDABLE_NOT_BUILT":
+                    out.append(f"ratchet: {aid} is new and pinned {head_pin[aid]}; a new ask is pinned "
+                               f"BUILDABLE_NOT_BUILT, and taking one out of the build residual is {FOUNDER_AT_MERGE}")
+                elif row.get("met") and not changed(ask):
+                    out.append(f"ratchet: {aid} is new and reads met, but no test its own evidence reaches changed")
                 continue
-            gone, then = ask.get("retired") or {}, base_asks[aid].get("retired") or {}
-            if "record" in gone:
-                if gone != then:
-                    out.append(f"ratchet: {aid} was open at the base and is newly withdrawn by the record "
-                               f"{gone['record']!r}; withdrawing an obligation is the founder's decision at merge, "
-                               "not a map edit")
+            then = base_asks[aid].get("retired") or {}
+            if gone != then:
+                if not was_met[aid] or gone:
+                    out.append(f"ratchet: {aid}'s retirement changed ({then or 'live'} to {gone or 'live'}); "
+                               f"retiring, re-pointing or withdrawing an obligation is {FOUNDER_AT_MERGE}")
                 continue
-            if now_met.get(aid) and not changed(ask):
-                via = f" through its successor {gone['superseded_by']}" if "superseded_by" in gone else ""
-                out.append(f"ratchet: {aid} was open at the base and reads met at the head{via}, but no test file "
-                           "its own evidence reaches changed: closing an ask needs new or changed evidence, not an "
-                           "edit to its coverage, required tier, blocker or retirement, here or in a mission "
-                           "requirement")
+            if gone or was_met[aid]:
+                continue
+            if row.get("met") and not changed(ask):
+                out.append(f"ratchet: {aid} was open at the base and reads met at the head, but no test its own "
+                           "evidence reaches changed: closing an ask needs new or changed evidence, not an edit to "
+                           "its coverage, required tier or blocker, here or in a mission requirement")
             guard, prior = (ask.get("blocker") or {}).get("guarded_by"), \
                 (base_asks[aid].get("blocker") or {}).get("guarded_by")
-            if not now_met.get(aid) and prior == UNGUARDED and isinstance(guard, list) and guard and \
-                    not changed(ask, sorted({g.split("::")[0] for g in guard})):
+            if not row.get("met") and prior == UNGUARDED and isinstance(guard, list) and guard and \
+                    not changed(ask, sorted({re.sub(r"\[.*\]$", "", g) for g in guard})):
                 out.append(f"ratchet: {aid} was UNGUARDED at the base and names guards at the head, but no guard "
-                           "file changed: a standing rule is guarded by a test written for it, not by naming an "
-                           "existing one")
-    out += _accounting_problems(base[0], head[0], base_lines, now_met, changed, root)
+                           "changed: a standing rule is guarded by a test written for it, not by naming an existing one")
+    out += _accounting_problems(base[0], head[0], base_lines, rows, changed, root)
     return out
 
 
-def _accounting_problems(base_doc: dict, head_doc: dict, base_lines: dict, now_met: dict, changed,
+def _accounting_problems(base_doc: dict, head_doc: dict, base_lines: dict, rows: dict, changed,
                          root: Path) -> list[str]:
-    """Listed lines answered at the head that the base left unanswered, claimed without an obligation or new
-    evidence: see ``evidence_ratchet_problems``."""
+    """Listed lines answered at the head that the base left unanswered, claimed without a buildable obligation or
+    new evidence: see ``evidence_ratchet_problems``."""
     texts = _source_texts(head_doc, root)
     base_aside = {s["n"]: {_norm(x["line"]) for x in s.get("not_asks", [])} for s in base_doc["sections"]}
     out = []
@@ -595,17 +646,25 @@ def _accounting_problems(base_doc: dict, head_doc: dict, base_lines: dict, now_m
         n = section["n"]
         if n not in texts or n not in base_lines:
             continue
+        aside = {_norm(x["line"]) for x in section.get("not_asks", [])} - base_aside.get(n, set())
         for line in sorted(set(accounted_lines(section, texts[n][1])[0]) - base_lines[n]):
-            claimants = [a for a in section["asks"] if line in {_norm(x) for x in a.get("lines", [])}
-                         or _core(line) in _norm(a["excerpt"])]
-            if any(not now_met.get(a["id"]) or changed(a) for a in claimants):
+            claimants = [a for a in section["asks"] if "retired" not in a
+                         and (line in {_norm(x) for x in a.get("lines", [])} or _core(line) in _norm(a["excerpt"]))]
+
+            def answers(a: dict) -> bool:
+                row = rows.get(a["id"]) or {}
+                if row.get("met"):
+                    return changed(a)
+                return (row.get("blocker") or {}).get("class") == "BUILDABLE_NOT_BUILT"
+
+            if any(answers(a) for a in claimants):
                 continue
-            aside = line in {_norm(x["line"]) for x in section.get("not_asks", [])} - base_aside.get(n, set())
             out.append(f"ratchet: section {n}: the listed line {line[:80]!r} is newly "
-                       + ("set aside in not_asks; setting a line aside is the founder's decision at merge"
-                          if aside and not claimants else
-                          "answered only by asks that are already met and cite no new or changed evidence; answer it "
-                          "with an open ask, or with evidence that changed"))
+                       + (f"set aside in not_asks; setting a line aside is {FOUNDER_AT_MERGE}" if line in aside
+                          and not claimants else
+                          "answered only by asks that are met with no changed evidence, retired, or open for a "
+                          "reason building cannot close; answer it with an open BUILDABLE_NOT_BUILT ask, or with "
+                          "evidence that changed"))
     return out
 
 

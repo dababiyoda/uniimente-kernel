@@ -146,6 +146,10 @@ def report(home: str | Path) -> dict:
            "properties": [{"property": p, "status": "PASS" if v else "NOT_YET", "means": means, "runbook": step}
                           for p, v, means, step in props],
            "passed": sum(1 for _, v, _, _ in props if v), "total": len(props),
+           "scope": ("the properties judge the Founder's First Mission (runbook step 4) and the steps after it; the "
+                     "step 2 (N1) closure is judged by greg vepmc, summarised under n1"),
+           "n1": {"evidence_level": vepmc["evidence_level"], "structural_candidate_count": vepmc["VEPMC"],
+                  "founder_tier_count": vepmc["founder_tier_count"]},
            "first_mission": first_row, "egress": egress, "vepmc": vepmc["VEPMC"], "recoveries": recovered,
            "acceptances": accepted,
            "runbook": RUNBOOK, "authority_created": False}

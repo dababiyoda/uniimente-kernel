@@ -163,11 +163,12 @@ then choose **Accept result** or reject it truthfully. Run:
 greg vepmc
 greg morning
 greg presence --hours 2
-greg acceptance > ~/GREG/acceptance.json
+greg vepmc > ~/GREG/vepmc.json
 ```
 
-`greg acceptance` reads only this body's ledger. It names the exact code commit it ran, and its
-`code_identified` property passes only on a clean checkout of one named commit. Keep the file with the brief.
+Keep `vepmc.json` with the brief: its row for this mission is the N1 closure, with its `evidence_level`.
+`greg acceptance` is for after step 4 (section 8): its properties judge the Founder's First Mission, so run
+now it would read NOT_YET for a closure `greg vepmc` already counts (its `n1` field repeats the vepmc result).
 
 If GitHub refused some reads (rate limit, or a private repository), the brief lists
 those gaps and GREG asks **once** for access, with the evidence and a no-cost option.

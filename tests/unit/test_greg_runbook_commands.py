@@ -71,3 +71,13 @@ def test_a_signed_command_names_its_key_and_a_missing_key_is_one_line(tmp_path):
     assert signed.returncode == 0, signed.stderr
     [dropped] = list((body_home / "inbox").glob("*.json"))
     assert json.loads(dropped.read_text())["kind"] == "MISSION"
+
+
+def test_step_2_keeps_the_report_that_judges_its_own_closure():
+    """C4: step 2 once kept `greg acceptance`, which judges only the step-4 First Mission and read NOT_YET even after a
+    founder-tier N1 closure. Step 2 keeps `greg vepmc` (the N1 judge); `greg acceptance` runs after step 4."""
+    text = RUNBOOK.read_text()
+    step2 = text[text.index("## 2. Run and judge one bounded mission"):text.index("## After the first closure")]
+    fenced = "\n".join(re.findall(r"```bash\n(.*?)```", step2, re.S))
+    assert "greg vepmc > ~/GREG/vepmc.json" in fenced and "greg acceptance" not in fenced
+    assert text.index("## 4. The Founder's First Mission") < text.index("```bash\ngreg acceptance\n```")

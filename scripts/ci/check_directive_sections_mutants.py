@@ -4,8 +4,9 @@
 
 Mutants are applied to acceptance/directive.py and acceptance/__main__.py in a scratch copy of the repository, never to
 the working tree; the copy runs without bytecode and its __pycache__ is purged before each mutant. A mutant is caught
-only when tests/unit/test_directive_sections.py reports a FAILED test (an import or collection error does not count).
-Exit status 1 if any mutant survives or no longer applies.
+only when one of TESTS reports a FAILED test (an import or collection error does not count), and only after the
+unmutated copy passes them all, so a test that fails in the copy for its own reasons catches nothing.
+Exit status 1 if the unmutated copy fails, or if any mutant survives or no longer applies.
 """
 from pathlib import Path
 import os
@@ -17,7 +18,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[2]
 DIRECTIVE = "acceptance/directive.py"
 CLI = "acceptance/__main__.py"
-TESTS = "tests/unit/test_directive_sections.py"
+TESTS = ["tests/unit/test_directive_sections.py", "tests/unit/test_directive_ratchet.py"]
 MUTANTS = [
     # the sections and the source
     (DIRECTIVE, "a missing section passes", 'if numbers.count(n) == 0:', 'if False:'),
@@ -174,7 +175,57 @@ MUTANTS = [
      '"prompt_completely_built": not residual and not unread and whole,', '"prompt_completely_built": not residual and not unread,'),
     (DIRECTIVE, "every section done ignores missing sections", '"every_section_done": whole and all(',
      '"every_section_done": all('),
+    # the evidence ratchet against a base, an allow-list (review of #249 findings 1-2; three ratchet reviews)
+    (DIRECTIVE, "an ask closes with no test changed",
+     '            if row.get("met") and not changed(ask):\n                out.append(f"ratchet: {aid} was open',
+     '            if False:\n                out.append(f"ratchet: {aid} was open'),
+    (DIRECTIVE, "an unchanged test counts as new evidence",
+     'if now is not None and now != node_text(read_base(path), node):', 'if now is not None:'),
+    (DIRECTIVE, "a change anywhere in a cited file counts for every node in it",
+     '    path = node.split("::")[1:]\n    if not path:', '    path = []\n    if not path:'),
+    (DIRECTIVE, "a mission requirement's tests are not followed",
+     '        elif kind == "mission":\n            nodes += requirement(name)', '        elif kind == "mission":\n            pass'),
+    (DIRECTIVE, "a contract function's requirements are not followed",
+     '                nodes += requirement(req_ref)', '                pass'),
+    (DIRECTIVE, "a new or changed retirement of an open ask passes",
+     '                if not was_met[aid] or gone:', '                if False:'),
+    (DIRECTIVE, "an ask withdrawn at the base counts as met there",
+     'return {a["id"]: rows.get(a["id"], False) for s in base[0]["sections"] for a in s["asks"]}',
+     'return {a["id"]: rows.get(a["id"], True) for s in base[0]["sections"] for a in s["asks"]}'),
+    (DIRECTIVE, "an unreadable base map raises",
+     'except (KeyError, TypeError, ValueError) as exc:', 'except ZeroDivisionError as exc:'),
+    (DIRECTIVE, "a new ask may be pinned out of the build residual",
+     'elif head_pin.get(aid, "BUILDABLE_NOT_BUILT") != "BUILDABLE_NOT_BUILT":', 'elif False:'),
+    (DIRECTIVE, "a new ask meets on old evidence",
+     '                elif row.get("met") and not changed(ask):', '                elif False:'),
+    (DIRECTIVE, "a new ask may be retired at birth",
+     '                if gone:\n                    out.append(f"ratchet: {aid} is new and retired at once',
+     '                if False:\n                    out.append(f"ratchet: {aid} is new and retired at once'),
+    (DIRECTIVE, "a line answered by an open founder-only ask passes",
+     'return (row.get("blocker") or {}).get("class") == "BUILDABLE_NOT_BUILT"', 'return True'),
+    (DIRECTIVE, "a line answered by a met ask with no new evidence passes",
+     '                if row.get("met"):\n                    return changed(a)', '                if row.get("met"):\n                    return True'),
+    (DIRECTIVE, "the line accounting is never ratcheted",
+     '    out += _accounting_problems(base[0], head[0], base_lines, rows, changed, root)', '    pass'),
+    (DIRECTIVE, "an unguarded principle is guarded by naming an old test",
+     'not changed(ask, sorted({re.sub(r"\\[.*\\]$", "", g) for g in guard})):', 'False:'),
+    (DIRECTIVE, "a whole-file node is compared as raw text",
+     '    if not path:\n        return ast.dump(module)', '    if not path:\n        return text'),
+    (DIRECTIVE, "a named node is compared as source text, comments included",
+     '    return ast.dump(found)', '    return ast.get_source_segment(text, found)'),
+    (DIRECTIVE, "the first of two same-named definitions is read",
+     'found = next((x for x in reversed(scope) if', 'found = next((x for x in scope if'),
+    (DIRECTIVE, "one change may close any number of asks",
+     '    if len(closed) > CLOSE_BUDGET:', '    if False:'),
+    (DIRECTIVE, "one change may answer any number of lines",
+     '    if answered > LINE_BUDGET:', '    if False:'),
+    (DIRECTIVE, "an ask that closes may take on new lines",
+     '            if added:\n                out.append(f"ratchet: {ask[\'id\']} closes in this change',
+     '            if False:\n                out.append(f"ratchet: {ask[\'id\']} closes in this change'),
+    (DIRECTIVE, "an edit to the directive source passes",
+     'if read_base(source_rel) != read_head(source_rel) or base[0].get("source") != head[0].get("source"):', 'if False:'),
     # the command line
+    (CLI, "the CLI never runs the evidence ratchet", 'if prior is not None:', 'if False:'),
     (CLI, "the CLI never collects", 'if args.cmd == "directive" and args.collect and not found:', 'if False:'),
     (CLI, "the CLI never ratchets", 'if args.cmd == "directive" and args.against and not found:', 'if False:'),
     (CLI, "the CLI ignores an unsound map",
@@ -193,6 +244,14 @@ def main() -> int:
         repo = Path(temp) / "repo"
         shutil.copytree(ROOT, repo, ignore=shutil.ignore_patterns(".git", "__pycache__", ".pytest_cache"))
         env = {**os.environ, "PYTHONPATH": str(repo), "PYTHONDONTWRITEBYTECODE": "1"}
+        purge(repo)
+        baseline = subprocess.run([sys.executable, "-B", "-m", "pytest", "-q", "-p", "no:cacheprovider", *TESTS],
+                                  cwd=repo, env=env, capture_output=True, text=True, timeout=1800)
+        if baseline.returncode != 0:
+            print("UNMUTATED FAIL: the tests do not pass on the unmutated copy, so no mutant can be judged")
+            print(baseline.stdout[-3000:])
+            return 1
+        print("UNMUTATED PASS", flush=True)
         for target, name, old, new in MUTANTS:
             path = repo / target
             original = path.read_text()
@@ -203,11 +262,12 @@ def main() -> int:
             path.write_text(original.replace(old, new))
             purge(repo)
             try:
-                run = subprocess.run([sys.executable, "-B", "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", TESTS],
+                run = subprocess.run([sys.executable, "-B", "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", *TESTS],
                                      cwd=repo, env=env, capture_output=True, text=True, timeout=900)
             finally:
                 path.write_text(original)
-            caught = (run.returncode == 1 and f"FAILED {TESTS}::" in run.stdout and "ERROR collecting" not in run.stdout)
+            caught = (run.returncode == 1 and any(f"FAILED {t}::" in run.stdout for t in TESTS)
+                      and "ERROR collecting" not in run.stdout)
             print("CAUGHT" if caught else "SURVIVED_OR_INVALID", name, flush=True)
             invalid += not caught
     print(f"{len(MUTANTS) - invalid}/{len(MUTANTS)} caught")

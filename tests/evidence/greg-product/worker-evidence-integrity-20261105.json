@@ -509,7 +509,8 @@
  "limits": [
   "replayed commits were authored by agents in this project, several by this session's lineage",
   "true-positive coverage of the policy experiment is the corrupted unit cases plus e9c92e1, not an adversarial corpus",
-  "the fallback's '-> None' mutant is killed by a test that only checks its subject is callable; a founder oracle closes that residual"
+  "the fallback's '-> None' mutant is killed by a test that only checks its subject is callable; a founder oracle closes that residual",
+  "A change with no Python source (a data deliverable such as plan.json) is not mutated ('applicable': false) and stays certified by its worker tests, as before this change; a wrong JSON value with a test that only loads the file is still accepted. Found when CI job 8 on 5502651a refused the fifteen-step mission under the first, broader fail-closed rule; narrowed in the next commit."
  ],
  "vepmc": 0
 }

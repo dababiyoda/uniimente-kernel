@@ -231,6 +231,20 @@ def test_the_founders_acceptance_test_certifies_a_change_with_nothing_to_corrupt
     assert result["verdict"] == "ACCEPTED" and result["evidence_strength"]["mutation"]["measured"] is False
 
 
+DATA = {"plan/plan.json": '{"staffed": 3}\n',
+        "tests/test_plan.py": "import json\n\n\ndef test_plan():\n    assert json.load(open('plan/plan.json'))['staffed'] == 3\n"}
+
+
+def test_a_data_deliverable_is_outside_the_adversary_and_keeps_its_earlier_acceptance(tmp_path, monkeypatch):
+    """CI on 5502651a (job 8): the fifteen-step mission's worker delivers plan/plan.json, no Python source;
+    failing closed there refused the founder's own flagship mission. Mutation is not applicable to data."""
+    home, _, _, events, _ = run_mission(tmp_path, monkeypatch, DATA, allowed=("plan/*", "tests/*"))
+    assert "greg.mission.achieved" in events
+    result = appraise_again(home, tmp_path)
+    mutation = result["evidence_strength"]["mutation"]
+    assert result["verdict"] == "ACCEPTED" and mutation["applicable"] is False and mutation["measured"] is False
+
+
 # -- the parts on their own ---------------------------------------------------------------
 
 def test_sealed_paths_cover_files_directories_and_node_ids():

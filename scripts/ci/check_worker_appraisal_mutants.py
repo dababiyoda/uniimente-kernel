@@ -33,9 +33,13 @@ MUTANTS = [
      "tests/unit/test_greg_worker_evidence_strength.py::"
      "test_an_alias_certified_only_by_importing_it_is_refused_by_the_fallback_tier"),
     ("nothing to corrupt counted as adequate", "greg/evidence_strength.py",
-     "adequate = oracle if not measured else", "adequate = True if not measured else",
+     "adequate = (oracle or not applicable) if not measured else", "adequate = True if not measured else",
      "tests/unit/test_greg_worker_evidence_strength.py::"
      "test_a_change_with_nothing_to_corrupt_needs_the_founders_acceptance_test"),
+    ("data deliverable held to the Python rule", "greg/evidence_strength.py",
+     "applicable = bool(sources)", "applicable = True",
+     "tests/unit/test_greg_worker_evidence_strength.py::"
+     "test_a_data_deliverable_is_outside_the_adversary_and_keeps_its_earlier_acceptance"),
 ]
 DEFAULT_TEST = "tests/unit/test_greg_workers.py::test_appraisal_binds_acceptance_to_the_original_commission"
 

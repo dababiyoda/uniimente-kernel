@@ -23,8 +23,10 @@ changed in role:
 Thresholds were fixed before measurement. Limits, stated: mutation testing samples at most
 ``MAX_MUTANTS`` sites. Equivalent mutants count as survivors. Python sources only. Only the
 worker-authored tests are scored; a founder-named oracle is trusted as the founder's judgment.
-A change the primary operators cannot reach (a string, an alias) is mutated by ``_Fallback``; one
-that even those cannot reach is certified only by a founder-named acceptance test. Compiled modules
+A change the primary operators cannot reach (a string, an alias) is mutated by ``_Fallback``; Python
+source that even those cannot reach is certified only by a founder-named acceptance test. A change
+with no Python source (a data deliverable) is not mutated at all ("applicable": False): its worker
+tests still certify it, as before this mechanism existed. Compiled modules
 in a patch are refused (``compiled_modules``). A test that checks only that its subject is callable
 still kills the fallback's ``-> None`` mutant: that residual is closed by a founder oracle, not here.
 """
@@ -266,10 +268,12 @@ def judge(*, fresh: Path, base_clone: Path, patch: Path, base: str, names: list[
     killed = sum(r["killed"] for r in results)
     ratio = killed / len(results) if results else None
     measured = bool(results)
-    # Nothing to corrupt is no evidence (PIT's failWhenNoMutations defaults to true): only the founder's
-    # named acceptance test, which already passed, can certify such a change.
-    adequate = oracle if not measured else (killed >= MIN_KILLED and ratio >= MIN_KILL_RATIO)
-    report["mutation"] = {"measured": measured, "mutants": len(results), "killed": killed,
+    # Python source the operators cannot reach is no evidence (PIT's failWhenNoMutations defaults to true):
+    # only the founder's named acceptance test, which already passed, can certify it. A change with no Python
+    # source (a data deliverable such as plan.json) is outside what this adversary mutates: not applicable.
+    applicable = bool(sources)
+    adequate = (oracle or not applicable) if not measured else (killed >= MIN_KILLED and ratio >= MIN_KILL_RATIO)
+    report["mutation"] = {"measured": measured, "applicable": applicable, "mutants": len(results), "killed": killed,
                           "kill_ratio": round(ratio, 3) if ratio is not None else None,
                           "thresholds": {"min_killed": MIN_KILLED, "min_kill_ratio": MIN_KILL_RATIO,
                                          "max_mutants": MAX_MUTANTS},

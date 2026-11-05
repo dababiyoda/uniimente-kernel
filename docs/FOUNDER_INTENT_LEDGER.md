@@ -167,6 +167,11 @@ Progress 2026-10-21 (measured; negative results kept):
   - **Fix (`93bf43a3`):** cognitive requests reach the solver and verifier on stdin instead of one argv string, which Linux caps at 128 KiB. The request ceiling is now 1 MiB.
   - **Admission v9:** pre-registered at `ce760f7a`, frozen at `11a8e318` and run once on seeds 1800-1829. It re-admits `convex_qp_dual` 1.0.0 as **DEFAULT** (13-1-16 against the baseline, 23-0-7 against trust-constr). The smoke passes on a 92.5 KB request, which the old limit refused.
   - 62 of 83 are admitted: 45 DEFAULT and 17 NICHE. None is attached.
+- **Genome admission v10, the meta wave** ([evidence](evidence/greg-genome-admission/2026-11-05-v10/README.md)): the three directive-named families with no executor, built in three parallel lanes, pre-registered at `e48292d3`, frozen at `0493e706` and run once on seeds 1900-1929.
+  - `collective_ecology_bidding` is **DEFAULT**: it beats static allocation 23-7, but ties its certainty-equivalent ablation 13-17. The bidding market adds no measured value over certainty equivalence.
+  - `meta_global_workspace` is **NICHE**: it beats no communication 25-3-2 and ties the token ring 9-10-11, at 1.53x its latency. Its edge is on narrow, strongly coupled buses.
+  - `meta_active_inference` is **SUPERSEDED**: it loses 0-24-6 to Bayesian decision theory without the epistemic term.
+  - 64 of 86 are admitted: 46 DEFAULT and 18 NICHE. None is attached.
 
 ## FABLE 5.1 OPUS MAXIMUS: one GREG, stacked on #178 — 2026-10-15
 

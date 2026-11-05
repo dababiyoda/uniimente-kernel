@@ -106,7 +106,7 @@
     ]
    }
   ],
-  "equality_digest": "sha256:90bfec89c905b4b110737c42619d25d2e3b54dece8360746a252d47703b74ed9",
+  "equality_digest": "sha256:090586b5e8e8b79d0bc82fcd2fa4e48b144221faf41f63995f346c0f7a42c470",
   "equivalences": [
    {
     "a": "greg.cognition.genomes.collective:flock_dropout_instance",
@@ -199,7 +199,7 @@
     ]
    }
   ],
-  "generators_sampled": 85,
+  "generators_sampled": 88,
   "sample_seeds": [
    0,
    1,
@@ -217,14 +217,14 @@
  "counts": {
   "by_lineage": {
    "#158": 332,
-   "#179": 142,
+   "#179": 151,
    "both": 42
   },
   "by_role": {
    "P8 held-out": 7,
-   "admission held-out": 147,
+   "admission held-out": 150,
    "canary": 1,
-   "dev": 273,
+   "dev": 279,
    "held-out": 68,
    "review-pilot": 11,
    "train": 9
@@ -233,10 +233,10 @@
    "P8 held-out / #158": 6,
    "P8 held-out / #179": 1,
    "admission held-out / #158": 90,
-   "admission held-out / #179": 57,
+   "admission held-out / #179": 60,
    "canary / #158": 1,
    "dev / #158": 205,
-   "dev / #179": 45,
+   "dev / #179": 51,
    "dev / both": 23,
    "held-out / #158": 13,
    "held-out / #179": 36,
@@ -245,7 +245,7 @@
    "train / #158": 6,
    "train / #179": 3
   },
-  "exposures": 516,
+  "exposures": 525,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -314,10 +314,10 @@
    },
    "#179": {
     "glob": "docs/evidence/.*/PREREGISTRATION\\.md",
-    "matched": 4,
+    "matched": 5,
     "missing": [],
     "no_declaration": [],
-    "parsed": 4
+    "parsed": 5
    }
   },
   "admission freezes (#158 form)": {
@@ -330,10 +330,10 @@
    },
    "#179": {
     "glob": "docs/evidence/greg-genome-admission/[^/]+/freeze\\.json",
-    "matched": 4,
+    "matched": 5,
     "missing": [],
     "no_declaration": [],
-    "parsed": 4
+    "parsed": 5
    }
   },
   "admission freezes (#179 operation form)": {
@@ -23389,6 +23389,264 @@
   },
   {
    "artifact": {
+    "commit": "0493e7067474b8d5ee3a54d70eaf89361d656e4a",
+    "path": "docs/evidence/greg-genome-admission/2026-11-05-v10/freeze.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:0cf370a98ee4be03584569ee3e869218728f665f2a2ee699fefb669747131c21"
+   },
+   "exposure_commit": "0493e7067474b8d5ee3a54d70eaf89361d656e4a",
+   "family": "collective_ecology_bidding",
+   "generator": {
+    "code_sha256": "sha256:77fd05df2e952890f11d59ab566ec99a235cea3ea4a0050f201d1e923cdc73d5",
+    "commit": "0493e7067474b8d5ee3a54d70eaf89361d656e4a",
+    "delegates": [],
+    "function": "ecology_instance",
+    "key": "greg.cognition.genomes.ecology:ecology_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.ecology",
+    "module_file_sha256": "sha256:2a345ff4896eaf3f15282866b87f394106e8595911a6fc9e36c213540ba1da04",
+    "prng": [
+     "Random(f'genome:collective_ecology_bidding:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#179|docs/evidence/greg-genome-admission/2026-11-05-v10/freeze.json|admission held-out|collective_ecology_bidding|heldout",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-11-05-v10/results.json",
+   "n": 30,
+   "part": "heldout",
+   "present_in": [
+    "#179"
+   ],
+   "program": "admission",
+   "role": "admission held-out",
+   "seeds": [
+    [
+     1900,
+     1929
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "0493e7067474b8d5ee3a54d70eaf89361d656e4a",
+    "path": "docs/evidence/greg-genome-admission/2026-11-05-v10/freeze.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:0cf370a98ee4be03584569ee3e869218728f665f2a2ee699fefb669747131c21"
+   },
+   "exposure_commit": "0493e7067474b8d5ee3a54d70eaf89361d656e4a",
+   "family": "meta_active_inference",
+   "generator": {
+    "code_sha256": "sha256:5b23c1d7e232329a0f32dc2f9495c36c75e1adc68ea99e748c7bf1a1ce81ea6c",
+    "commit": "0493e7067474b8d5ee3a54d70eaf89361d656e4a",
+    "delegates": [],
+    "function": "instance",
+    "key": "greg.cognition.genomes.active_inference:instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.active_inference",
+    "module_file_sha256": "sha256:17410c9d1deb16a7779b122ae9f591b5cf28e9d99f8226c97b5afd84d8fe52d0",
+    "prng": [
+     "Random(f'genome:{FAMILY}:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#179|docs/evidence/greg-genome-admission/2026-11-05-v10/freeze.json|admission held-out|meta_active_inference|heldout",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-11-05-v10/results.json",
+   "n": 30,
+   "part": "heldout",
+   "present_in": [
+    "#179"
+   ],
+   "program": "admission",
+   "role": "admission held-out",
+   "seeds": [
+    [
+     1900,
+     1929
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "0493e7067474b8d5ee3a54d70eaf89361d656e4a",
+    "path": "docs/evidence/greg-genome-admission/2026-11-05-v10/freeze.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:0cf370a98ee4be03584569ee3e869218728f665f2a2ee699fefb669747131c21"
+   },
+   "exposure_commit": "0493e7067474b8d5ee3a54d70eaf89361d656e4a",
+   "family": "meta_global_workspace",
+   "generator": {
+    "code_sha256": "sha256:929750e4d791f883001e40ea2e1d080fe1d6123a36c095ca91dfa25a5f2e293b",
+    "commit": "0493e7067474b8d5ee3a54d70eaf89361d656e4a",
+    "delegates": [],
+    "function": "ws_instance",
+    "key": "greg.cognition.genomes.workspace:ws_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.workspace",
+    "module_file_sha256": "sha256:e1840d1c92b3b8853fa3cdf965f3af0838c1c4c83f5fc9da3185ac5275c87d47",
+    "prng": [
+     "Random(f'genome:meta_global_workspace:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#179|docs/evidence/greg-genome-admission/2026-11-05-v10/freeze.json|admission held-out|meta_global_workspace|heldout",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-11-05-v10/results.json",
+   "n": 30,
+   "part": "heldout",
+   "present_in": [
+    "#179"
+   ],
+   "program": "admission",
+   "role": "admission held-out",
+   "seeds": [
+    [
+     1900,
+     1929
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "0493e7067474b8d5ee3a54d70eaf89361d656e4a",
+    "path": "docs/evidence/greg-genome-admission/2026-11-05-v10/freeze.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:0cf370a98ee4be03584569ee3e869218728f665f2a2ee699fefb669747131c21"
+   },
+   "exposure_commit": "0493e7067474b8d5ee3a54d70eaf89361d656e4a",
+   "family": "collective_ecology_bidding",
+   "generator": {
+    "code_sha256": "sha256:77fd05df2e952890f11d59ab566ec99a235cea3ea4a0050f201d1e923cdc73d5",
+    "commit": "0493e7067474b8d5ee3a54d70eaf89361d656e4a",
+    "delegates": [],
+    "function": "ecology_instance",
+    "key": "greg.cognition.genomes.ecology:ecology_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.ecology",
+    "module_file_sha256": "sha256:2a345ff4896eaf3f15282866b87f394106e8595911a6fc9e36c213540ba1da04",
+    "prng": [
+     "Random(f'genome:collective_ecology_bidding:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#179|docs/evidence/greg-genome-admission/2026-11-05-v10/freeze.json|dev|collective_ecology_bidding|dev",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "development seeds are run by builders (admission --dev) by protocol",
+   "n": 10,
+   "part": "dev",
+   "present_in": [
+    "#179"
+   ],
+   "program": "admission",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "0493e7067474b8d5ee3a54d70eaf89361d656e4a",
+    "path": "docs/evidence/greg-genome-admission/2026-11-05-v10/freeze.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:0cf370a98ee4be03584569ee3e869218728f665f2a2ee699fefb669747131c21"
+   },
+   "exposure_commit": "0493e7067474b8d5ee3a54d70eaf89361d656e4a",
+   "family": "meta_active_inference",
+   "generator": {
+    "code_sha256": "sha256:5b23c1d7e232329a0f32dc2f9495c36c75e1adc68ea99e748c7bf1a1ce81ea6c",
+    "commit": "0493e7067474b8d5ee3a54d70eaf89361d656e4a",
+    "delegates": [],
+    "function": "instance",
+    "key": "greg.cognition.genomes.active_inference:instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.active_inference",
+    "module_file_sha256": "sha256:17410c9d1deb16a7779b122ae9f591b5cf28e9d99f8226c97b5afd84d8fe52d0",
+    "prng": [
+     "Random(f'genome:{FAMILY}:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#179|docs/evidence/greg-genome-admission/2026-11-05-v10/freeze.json|dev|meta_active_inference|dev",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "development seeds are run by builders (admission --dev) by protocol",
+   "n": 10,
+   "part": "dev",
+   "present_in": [
+    "#179"
+   ],
+   "program": "admission",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "0493e7067474b8d5ee3a54d70eaf89361d656e4a",
+    "path": "docs/evidence/greg-genome-admission/2026-11-05-v10/freeze.json",
+    "read_at": "HEAD",
+    "sha256": "sha256:0cf370a98ee4be03584569ee3e869218728f665f2a2ee699fefb669747131c21"
+   },
+   "exposure_commit": "0493e7067474b8d5ee3a54d70eaf89361d656e4a",
+   "family": "meta_global_workspace",
+   "generator": {
+    "code_sha256": "sha256:929750e4d791f883001e40ea2e1d080fe1d6123a36c095ca91dfa25a5f2e293b",
+    "commit": "0493e7067474b8d5ee3a54d70eaf89361d656e4a",
+    "delegates": [],
+    "function": "ws_instance",
+    "key": "greg.cognition.genomes.workspace:ws_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.workspace",
+    "module_file_sha256": "sha256:e1840d1c92b3b8853fa3cdf965f3af0838c1c4c83f5fc9da3185ac5275c87d47",
+    "prng": [
+     "Random(f'genome:meta_global_workspace:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#179|docs/evidence/greg-genome-admission/2026-11-05-v10/freeze.json|dev|meta_global_workspace|dev",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "development seeds are run by builders (admission --dev) by protocol",
+   "n": 10,
+   "part": "dev",
+   "present_in": [
+    "#179"
+   ],
+   "program": "admission",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
     "commit": "12c8eb1614d93826cfc6ad1896ca5395d6c9eb23",
     "path": "tests/evidence/antifragility-2026-10-15/workload.json",
     "sha256": "sha256:c1a6a1b64992b20795ef08abb0dbeb19263395248d1add6256b4bb335581c79e"
@@ -23758,6 +24016,45 @@
   },
   {
    "artifact": {
+    "commit": "477b9a86638eb4c582096f937a86bc3d7c881a1a",
+    "line_commits": [
+     "477b9a86638eb4c582096f937a86bc3d7c881a1a"
+    ],
+    "lines": [
+     92
+    ],
+    "path": "tests/unit/test_genomes_active_inference.py",
+    "sha256": "sha256:df0f86b0933d9d95c020f1b06b6412c1046fc4fca9766d5c83963fb15af59016"
+   },
+   "exposure_commit": "477b9a86638eb4c582096f937a86bc3d7c881a1a",
+   "family": null,
+   "generator": {
+    "commit": "477b9a86638eb4c582096f937a86bc3d7c881a1a",
+    "key": "ITEM.instance",
+    "kind": "code",
+    "resolved": false,
+    "why": "receiver not resolved statically"
+   },
+   "id": "#179|tests/unit/test_genomes_active_inference.py|dev|-|?:ITEM.instance:92",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 10,
+   "part": "?:ITEM.instance:92",
+   "present_in": [],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
     "commit": "3483dd832717c78ef4f7dc1903ef2ad9f3dd4ee4",
     "line_commits": [
      "3483dd832717c78ef4f7dc1903ef2ad9f3dd4ee4"
@@ -23891,6 +24188,45 @@
     [
      0,
      9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "daf003c4dd81b20a3bb0d23c8fa3a0804bccc44d",
+    "line_commits": [
+     "daf003c4dd81b20a3bb0d23c8fa3a0804bccc44d"
+    ],
+    "lines": [
+     82
+    ],
+    "path": "tests/unit/test_genomes_ecology.py",
+    "sha256": "sha256:466d7febb7dc9dc6365ff778aa6b0b7e415aff693e2834d9788c2fde354c0d1f"
+   },
+   "exposure_commit": "daf003c4dd81b20a3bb0d23c8fa3a0804bccc44d",
+   "family": null,
+   "generator": {
+    "commit": "daf003c4dd81b20a3bb0d23c8fa3a0804bccc44d",
+    "key": "ITEM.instance",
+    "kind": "code",
+    "resolved": false,
+    "why": "receiver not resolved statically"
+   },
+   "id": "#179|tests/unit/test_genomes_ecology.py|dev|-|?:ITEM.instance:82",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 1,
+   "part": "?:ITEM.instance:82",
+   "present_in": [],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     3,
+     3
     ]
    ]
   },
@@ -24381,6 +24717,52 @@
    "looked_at_basis": "a test asserts on these instances",
    "n": 10,
    "part": "greg.cognition.genomes.strategic_b:sc_instance:363",
+   "present_in": [],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "d19d8fef3e9a532145dcc6f9ccb86d3545bf3c55",
+    "line_commits": [
+     "d19d8fef3e9a532145dcc6f9ccb86d3545bf3c55"
+    ],
+    "lines": [
+     92
+    ],
+    "path": "tests/unit/test_genomes_workspace.py",
+    "sha256": "sha256:19170243bc0d7b55ee6de4613b829d9cb4e34462e6a7472ee5214d0fd531a2e5"
+   },
+   "exposure_commit": "d19d8fef3e9a532145dcc6f9ccb86d3545bf3c55",
+   "family": null,
+   "generator": {
+    "code_sha256": "sha256:929750e4d791f883001e40ea2e1d080fe1d6123a36c095ca91dfa25a5f2e293b",
+    "commit": "d19d8fef3e9a532145dcc6f9ccb86d3545bf3c55",
+    "delegates": [],
+    "function": "ws_instance",
+    "key": "greg.cognition.genomes.workspace:ws_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.workspace",
+    "module_file_sha256": "sha256:e1840d1c92b3b8853fa3cdf965f3af0838c1c4c83f5fc9da3185ac5275c87d47",
+    "prng": [
+     "Random(f'genome:meta_global_workspace:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#179|tests/unit/test_genomes_workspace.py|dev|-|greg.cognition.genomes.workspace:ws_instance:92",
+   "lineages": [
+    "#179"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 10,
+   "part": "greg.cognition.genomes.workspace:ws_instance:92",
    "present_in": [],
    "program": "test fixture",
    "role": "dev",
@@ -26296,6 +26678,19 @@
    ],
    "path": "docs/evidence/greg-genome-admission/2026-10-22-v9/PREREGISTRATION.md",
    "sha256": "sha256:ba696de69de3ded0b5b059a664328634b30ed452b4bfe561b3dcb7823866d8fa"
+  },
+  {
+   "commit": "e48292d33fe0274f627d1e7fd42c80c3aaa1b612",
+   "declared_ranges": [
+    [
+     1900,
+     1929
+    ]
+   ],
+   "lineage": "#179",
+   "not_in_any_exposure": [],
+   "path": "docs/evidence/greg-genome-admission/2026-11-05-v10/PREREGISTRATION.md",
+   "sha256": "sha256:fb702a95a29fe615c5a3409cddada117db1bd8ac9a8b8e84db8ab4d99d00d25a"
   }
  ],
  "reservations": {

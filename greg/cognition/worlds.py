@@ -107,6 +107,8 @@ GENOMES = {
     "maxsat_cpsat": (MATHEMATICAL, "generated weighted MaxSAT instances; exact optimum by an independent MILP"),
     "mc_importance": (MATHEMATICAL, "Gamma upper tails; truth from the closed-form survival function"),
     "mechanism_check": (MATHEMATICAL, "declared direct mechanisms; exhaustive check"),
+    "meta_active_inference": (MATHEMATICAL, "generated fault-diagnosis models (declared prior, test likelihoods, "
+                                            "losses); truth is the exact Bayes-optimal expected loss by DP"),
     "milp_optimize": (MATHEMATICAL, "generated integer programmes; exact optimum"),
     "min_cost_flow": (MATHEMATICAL, "generated flow networks; exact optimum"),
     "newsvendor_compile": (MATHEMATICAL, "structural translation checks on generated scenario sets"),

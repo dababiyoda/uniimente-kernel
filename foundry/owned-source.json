@@ -484,6 +484,7 @@
     "greg/cognition/evolution_sandbox.py",
     "greg/cognition/genome_library.py",
     "greg/cognition/genomes/__init__.py",
+    "greg/cognition/genomes/active_inference.py",
     "greg/cognition/genomes/admission.py",
     "greg/cognition/genomes/basal.py",
     "greg/cognition/genomes/basal_b.py",

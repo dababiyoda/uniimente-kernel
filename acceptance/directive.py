@@ -517,26 +517,27 @@ def evidence_files(ask: dict, manifest: dict, contract: dict) -> list[str]:
 
 
 def node_text(text: str | None, node: str) -> str | None:
-    """The source of one test node inside its file's text: the named function, or class and method, as written.
-    A node with no path is its whole file. None when the file or the node is absent; the whole file when the file
-    does not parse."""
+    """What a test node is, compared without its comments or layout: ``ast.dump`` of the named function or class
+    (decorators, and so parametrize cases, included), and of the whole module for a node with no path. When a name
+    is defined more than once the last definition is read, as pytest runs it. None when the file or the node is
+    absent. A file that does not parse is its raw text: it collects nothing, which --collect reports."""
     if text is None:
         return None
-    path = node.split("::")[1:]
-    if not path:
-        return text
     try:
-        scope = ast.parse(text).body
+        module = ast.parse(text)
     except SyntaxError:
         return text
-    found = None
+    path = node.split("::")[1:]
+    if not path:
+        return ast.dump(module)
+    scope, found = module.body, None
     for name in path:
-        found = next((x for x in scope if isinstance(x, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
-                      and x.name == name), None)
+        found = next((x for x in reversed(scope) if isinstance(x, (ast.FunctionDef, ast.AsyncFunctionDef,
+                                                                     ast.ClassDef)) and x.name == name), None)
         if found is None:
             return None
         scope = getattr(found, "body", [])
-    return ast.get_source_segment(text, found, padded=True)
+    return ast.dump(found)
 
 
 def _met_at_base(base: tuple[dict, dict, dict], root: Path, source: Path | None) -> dict[str, bool]:
@@ -547,6 +548,8 @@ def _met_at_base(base: tuple[dict, dict, dict], root: Path, source: Path | None)
 
 
 FOUNDER_AT_MERGE = "the founder's decision at merge, not a map edit that passes the check"
+CLOSE_BUDGET = 5            # asks one change may close, and listed lines it may newly answer, before the founder decides
+LINE_BUDGET = 20
 
 
 def evidence_ratchet_problems(base: tuple[dict, dict, dict], head: tuple[dict, dict, dict], read_base, read_head,
@@ -555,8 +558,9 @@ def evidence_ratchet_problems(base: tuple[dict, dict, dict], head: tuple[dict, d
     changed executable evidence. Each of ``base`` and ``head`` is (map, manifest, contract); ``read_base`` and
     ``read_head`` return a file's content at that side, or None.
 
-    Evidence is the test nodes an ask reaches (``evidence_nodes``); it changed when one node's own source (the
-    test function, not its file) differs from the base or did not exist there. Coverage, tiers, blockers,
+    Evidence is the test nodes an ask reaches (``evidence_nodes``); it changed when one node's syntax tree
+    (``node_text``: the test function or class with its decorators, or a whole-file node's module; comments and
+    layout never count) differs from the base or did not exist there. Coverage, tiers, blockers,
     excerpts and lines, in the map or in a mission requirement, are declarations: editing them discharges nothing.
 
     Allowed without the founder:
@@ -632,6 +636,37 @@ def evidence_ratchet_problems(base: tuple[dict, dict, dict], head: tuple[dict, d
                 out.append(f"ratchet: {aid} was UNGUARDED at the base and names guards at the head, but no guard "
                            "changed: a standing rule is guarded by a test written for it, not by naming an existing one")
     out += _accounting_problems(base[0], head[0], base_lines, rows, changed, root)
+    out += _budget_problems(base, head, base_asks, was_met, rows, base_lines, root)
+    return out
+
+
+def _budget_problems(base, head, base_asks, was_met, rows, base_lines, root) -> list[str]:
+    """One change may discharge only a bounded amount on its own: changed evidence shows something new was written,
+    not how much it answers, and one trivial test cited by every ask would otherwise close them all. Beyond
+    CLOSE_BUDGET closed asks or LINE_BUDGET newly answered lines the change is the founder's at merge. An ask that
+    closes in the change may not also take on listed lines the base left unanswered."""
+    closed = [aid for aid, row in rows.items() if row.get("met") and not was_met.get(aid, False)
+              and "retired" not in row]
+    texts = _source_texts(head[0], root)
+    answered = sum(len(set(accounted_lines(s, texts[s["n"]][1])[0]) - base_lines.get(s["n"], set()))
+                   for s in head[0]["sections"] if s["n"] in texts)
+    out = []
+    if len(closed) > CLOSE_BUDGET:
+        out.append(f"ratchet: this change closes {len(closed)} asks ({', '.join(sorted(closed)[:8])}"
+                   f"{', ...' if len(closed) > 8 else ''}); more than {CLOSE_BUDGET} in one change is "
+                   f"{FOUNDER_AT_MERGE}")
+    if answered > LINE_BUDGET:
+        out.append(f"ratchet: this change newly answers {answered} listed lines; more than {LINE_BUDGET} in one "
+                   f"change is {FOUNDER_AT_MERGE}")
+    for section in head[0]["sections"]:
+        for ask in section["asks"]:
+            if ask["id"] not in closed:
+                continue
+            prior = {_norm(x) for x in (base_asks.get(ask["id"]) or {}).get("lines", [])}
+            added = [x for x in ask.get("lines", []) if _norm(x) not in prior]
+            if added:
+                out.append(f"ratchet: {ask['id']} closes in this change and also takes on {len(added)} listed "
+                           "line(s); answer new lines with an open ask, and close it in a later change")
     return out
 
 

@@ -279,7 +279,7 @@ def test_answering_listed_lines_with_asks_already_met_is_refused(world):
             holder.setdefault("lines", []).extend(lines[s["n"]][:2])
             moved += len(lines[s["n"]][:2])
     assert moved >= 4
-    problems = ratchet(head, world)
+    problems = [p for p in ratchet(head, world) if not p.startswith("ratchet: this change")]
     assert len(problems) == moved and all(p.startswith("ratchet: section ") for p in problems)
 
 
@@ -355,12 +355,79 @@ def test_a_base_map_this_schema_cannot_read_is_reported_not_raised(world):
     assert len(problems) == 1 and "cannot be read by this tree's directive schema (KeyError" in problems[0]
 
 
-def test_node_text_is_the_named_function_and_none_when_it_is_absent():
+def test_node_text_is_the_named_syntax_tree_and_none_when_it_is_absent():
     text = "import x\n\ndef test_a():\n    assert 1\n\nclass TestB:\n    def test_c(self):\n        pass\n"
-    assert d.node_text(text, "f.py::test_a").strip() == "def test_a():\n    assert 1"
-    assert d.node_text(text, "f.py::TestB::test_c").strip() == "def test_c(self):\n        pass"
+    assert d.node_text(text, "f.py::test_a") == d.node_text("def test_a():  # why\n\n    assert 1\n", "f.py::test_a")
+    assert d.node_text(text, "f.py::TestB::test_c") != d.node_text(text, "f.py::test_a")
     assert d.node_text(text, "f.py::test_missing") is None and d.node_text(None, "f.py::test_a") is None
-    assert d.node_text(text, "f.py") == text and d.node_text("def (", "f.py::x") == "def ("
+    assert d.node_text("def (", "f.py::x") == "def ("
+
+
+def test_a_comment_or_layout_never_counts_as_evidence_even_for_a_whole_file_node():
+    """Review 4, F1: a whole-file node was raw text, so one comment closed 130 asks and answered 655 lines."""
+    text = "def test_a():\n    assert 1\n"
+    assert d.node_text(text, "f.py") == d.node_text(text + "\n# reviewed\n\n\n", "f.py")
+    assert d.node_text(text, "f.py") != d.node_text(text + "def test_b():\n    assert 2\n", "f.py")
+
+
+def test_parametrize_cases_count_and_the_last_definition_is_the_one_read():
+    """Review 4, N2 (a false refusal) and N3."""
+    one = "import pytest\n@pytest.mark.parametrize('x', [1])\ndef test_a(x):\n    assert x\n"
+    assert d.node_text(one, "f.py::test_a") != d.node_text(one.replace("[1]", "[1, 2, 3]"), "f.py::test_a")
+    real = "def test_a():\n    assert 1\n"
+    assert d.node_text("def test_a():\n    pass\n\n" + real, "f.py::test_a") == d.node_text(real, "f.py::test_a")
+
+
+def test_a_comment_in_a_whole_file_the_map_cites_closes_nothing(world):
+    """Review 4, F1, end to end: the ask cites a whole file and only a comment in it changed."""
+    head = declared_covered(world, ("S5.A1",))
+    whole = next(n for s in world[0]["sections"] for a in s["asks"] for n in a.get("evidence", [])
+                 if n.startswith("tests/") and "::" not in n)
+    ask(head, "S5.A1")["evidence"] = [whole]
+    assert ids(ratchet(head, world, edited(whole, lambda t: t + "\n# reviewed\n"))) == ["S5.A1"]
+    assert ratchet(head, world, edited(whole, lambda t: t + "\n\ndef test_reviewed():\n    assert 2\n")) == []
+
+
+def test_one_change_closes_at_most_the_budget_of_asks(world):
+    """Review 4, N1: one trivial new test cited by every open ask closed all 130 of them."""
+    targets = open_buildable(world)[:d.CLOSE_BUDGET + 1]
+    head = declared_covered(world, targets)
+    new = "tests/unit/test_brand_new_evidence.py::test_it"
+    for aid in targets:
+        ask(head, aid)["evidence"] = [new]
+        ask(head, aid)["required_tier"] = "UNIT_VERIFIED"
+    tree = d.read_tree()
+    reader = lambda p: "def test_it():\n    pass\n" if p.endswith("brand_new_evidence.py") else tree(p)  # noqa: E731
+    closed = met(head, world) - met(world[0], world)
+    assert len(closed) > d.CLOSE_BUDGET
+    found = ratchet(head, world, reader)
+    assert [p for p in found if p.startswith("ratchet: this change closes")] and not ids(found)
+    for aid in targets[d.CLOSE_BUDGET:]:
+        ask(head, aid).update(coverage="partial", blocker={"class": "BUILDABLE_NOT_BUILT", "reason": "x"})
+    if len(met(head, world) - met(world[0], world)) <= d.CLOSE_BUDGET:
+        assert ratchet(head, world, reader) == []
+
+
+def test_an_ask_that_closes_may_not_take_on_new_lines_and_lines_are_budgeted(world):
+    lines = _unanswered(world[0])
+    head = declared_covered(world, ("S5.A1",))
+    ask(head, "S5.A1").setdefault("lines", []).append(lines[5][0] if lines[5] else lines[1][0])
+    found = ratchet(head, world, change_cited_function(ask(world[0], "S5.A1"), world))
+    assert any("closes in this change and also takes on" in p for p in found)
+    rep = d.directive_report(world[0], world[1], world[2])
+    rows = {a["id"]: a for s in rep["sections"] for a in s["asks"]}
+    head = copy.deepcopy(world[0])
+    moved = 0
+    for s in head["sections"]:
+        holder = next((a for a in s["asks"] if "retired" not in a and not rows[a["id"]]["met"]
+                       and (rows[a["id"]]["blocker"] or {}).get("class") == "BUILDABLE_NOT_BUILT"), None)
+        if holder and lines[s["n"]]:
+            holder.setdefault("lines", []).extend(lines[s["n"]])
+            moved += len(lines[s["n"]])
+    assert moved > d.LINE_BUDGET
+    found = ratchet(head, world)
+    assert found == [f"ratchet: this change newly answers {moved} listed lines; more than {d.LINE_BUDGET} in one "
+                     f"change is {d.FOUNDER_AT_MERGE}"]
 
 
 def test_every_node_an_asks_evidence_reaches_is_a_test_node(world):

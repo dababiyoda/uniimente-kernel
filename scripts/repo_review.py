@@ -182,6 +182,87 @@ def ratchet(observed: set, kept: dict) -> dict:
     return {"new": sorted(observed - set(kept)), "gone": sorted(set(kept) - observed)}
 
 
+# ------------------------------------------------------------------ gate liveness
+
+# Mutation-gate scripts that no workflow runs, with the reason each is tolerated.
+# Shrink-only: a new unwired gate fails, and so does a listed gate once it is wired.
+KEPT_UNWIRED_GATES = {
+    "check_seed_mutants.py":
+        "7/7 caught locally with requirements installed, but run by no workflow; "
+        "wiring it into CI is a founder/CI-owner decision (register S-3)",
+}
+_PATHLIKE = re.compile(r"^[\w./-]+\.(py|json|md|ya?ml|txt)(::\S+)?$")
+
+
+def _gate_anchors(gate: Path, root: Path) -> list[tuple[str, str]]:
+    """(target file, anchor text) pairs written as literals in a mutation gate.
+
+    Conservative: only a literal tuple/list in which a string naming an existing
+    repository .py file is directly followed by a non-path string is read as an
+    anchor. Anything else is not inspected, so this never reports a false stale.
+    """
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        try:
+            tree = ast.parse(gate.read_text(encoding="utf-8"))
+        except SyntaxError:
+            return []
+    pairs = []
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.Tuple, ast.List)):
+            continue
+        vals = [e.value if isinstance(e, ast.Constant) and isinstance(e.value, str) else None
+                for e in node.elts]
+        for i, target in enumerate(vals[:-1]):
+            anchor = vals[i + 1]
+            if (target and target.endswith(".py") and (root / target).is_file()
+                    and anchor and not _PATHLIKE.match(anchor)):
+                pairs.append((target, anchor))
+                break
+    return pairs
+
+
+def gate_liveness(root: Path = ROOT) -> dict:
+    """Static health of every scripts/ci/check_*mutant*.py gate.
+
+    stale: an anchor that no longer occurs in its target, the failure CI reports
+    as STALE only after a long run; multi_site: an anchor that occurs more than
+    once (the gate mutates every site; advisory); unwired: no workflow names it.
+    """
+    workflows = " ".join(p.read_text(encoding="utf-8")
+                         for p in sorted((root / ".github" / "workflows").glob("*.y*ml")))
+    gates = {}
+    for gate in sorted((root / "scripts" / "ci").glob("check_*mutant*.py")):
+        anchors = _gate_anchors(gate, root)
+        counts = [(t, a, (root / t).read_text(encoding="utf-8").count(a)) for t, a in anchors]
+        gates[gate.name] = {
+            "anchors_checked": len(counts),
+            "stale": [{"target": t, "anchor": a[:80]} for t, a, c in counts if c == 0],
+            "multi_site": [{"target": t, "anchor": a[:80], "sites": c} for t, a, c in counts if c > 1],
+            "wired": gate.name in workflows,
+        }
+    return gates
+
+
+def lint_trend(root: Path = ROOT) -> dict:
+    """Count of pyflakes/syntax findings, if ruff is installed. A trend, never a gate."""
+    import shutil
+    if not shutil.which("ruff"):
+        return {"not_run": "ruff not installed"}
+    try:
+        out = subprocess.run(["ruff", "check", "--select", "F,E9", "--exit-zero",
+                              "--output-format", "json", "--no-cache", "."],
+                             cwd=root, capture_output=True, text=True, timeout=300)
+        findings = json.loads(out.stdout or "[]")
+    except (OSError, subprocess.SubprocessError, ValueError) as exc:
+        return {"not_run": f"{type(exc).__name__}: {exc}"}
+    by_rule: dict[str, int] = {}
+    for f in findings:
+        by_rule[f.get("code") or "?"] = by_rule.get(f.get("code") or "?", 0) + 1
+    return {"findings": len(findings), "by_rule": dict(sorted(by_rule.items()))}
+
+
 # ------------------------------------------------------------------------ GitHub
 
 def _get(url: str, token: str | None):
@@ -241,7 +322,8 @@ def size_profile(root: Path = ROOT, top: int = 10) -> dict:
 
 
 def build_report(root: Path = ROOT, github: str | None = None,
-                 kept_two_way: dict | None = None, kept_boundary: dict | None = None) -> dict:
+                 kept_two_way: dict | None = None, kept_boundary: dict | None = None,
+                 kept_unwired: dict | None = None, lint: bool = False) -> dict:
     kept_two_way = KEPT_TWO_WAY if kept_two_way is None else kept_two_way
     kept_boundary = KEPT_BOUNDARY if kept_boundary is None else kept_boundary
     edges = import_edges(root)
@@ -256,6 +338,12 @@ def build_report(root: Path = ROOT, github: str | None = None,
         "two_way_package_imports": ratchet(pairs, kept_two_way),
         "boundary_package_imports": ratchet(boundary, kept_boundary),
     }
+    gates = gate_liveness(root)
+    hard["stale_mutation_anchors"] = sorted(
+        f"{g}: {s['target']}" for g, row in gates.items() for s in row["stale"])
+    hard["unwired_mutation_gates"] = ratchet(
+        {g for g, row in gates.items() if not row["wired"]},
+        KEPT_UNWIRED_GATES if kept_unwired is None else kept_unwired)
     report = {
         "schema": "uniimente.repo_review/1",
         "authority": "none; evidence for a review, not a decision",
@@ -267,7 +355,15 @@ def build_report(root: Path = ROOT, github: str | None = None,
                      "two_way_pairs_kept": len(kept_two_way),
                      "boundary_violations_kept": len(kept_boundary)},
         "size": size_profile(root),
+        "gates": {
+            "scripts": len(gates),
+            "anchors_checked": sum(r["anchors_checked"] for r in gates.values()),
+            "not_statically_checkable": sorted(g for g, r in gates.items() if not r["anchors_checked"]),
+            "multi_site_advisory": {g: r["multi_site"] for g, r in gates.items() if r["multi_site"]},
+        },
     }
+    if lint:
+        report["lint"] = lint_trend(root)
     if github:
         token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
         try:
@@ -298,6 +394,15 @@ def to_markdown(report: dict) -> str:
               f"median {size['median_file_lines']}; {size['files_over_1500_lines']} files over "
               "1,500 lines.", ""]
     lines += [f"- {f['path']}: {f['lines']}" for f in size["largest"]]
+    g = report["gates"]
+    lines += ["", "## Mutation gates",
+              f"{g['scripts']} gate scripts, {g['anchors_checked']} literal anchors checked; "
+              f"not statically checkable: {', '.join(g['not_statically_checkable']) or 'none'}."]
+    for name, sites in g["multi_site_advisory"].items():
+        lines += [f"- advisory, {name}: anchor occurs at {s['sites']} sites in {s['target']}"
+                  for s in sites]
+    if "lint" in report:
+        lines += ["", "## Lint trend (ruff F, E9; never a gate)", f"{report['lint']}"]
     gh = report.get("github")
     if gh:
         lines += ["", "## Pull-request flow (SOP-06 proxies)", ""]
@@ -312,8 +417,9 @@ def main(argv=None) -> int:
     ap.add_argument("--json", action="store_true", help="print JSON instead of markdown")
     ap.add_argument("--check", action="store_true", help="exit 1 on any hard finding")
     ap.add_argument("--github", metavar="OWNER/REPO", help="add PR-flow metrics (network)")
+    ap.add_argument("--lint", action="store_true", help="add a ruff finding count (trend only)")
     args = ap.parse_args(argv)
-    report = build_report(ROOT, args.github)
+    report = build_report(ROOT, args.github, lint=args.lint)
     print(json.dumps(report, indent=2, sort_keys=True) if args.json else to_markdown(report))
     return 1 if args.check and report["hard_finding_count"] else 0
 

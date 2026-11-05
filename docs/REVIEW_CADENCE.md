@@ -44,9 +44,15 @@ non-zero):
    - no new import out of the published boundary distribution.
 
    The tables are shrink-only.
-3. **Size profile:** the largest files and how many exceed 1,500 lines. This is
+3. **Mutation-gate liveness.** Every literal anchor in `scripts/ci/check_*mutant*.py`
+   must still occur in its target file. A stale anchor is a hard finding. An anchor
+   at several sites is advisory. Every gate must be run by some workflow (shrink-only).
+   On the tree before commit `5ad39868`, this check names the anchor that CI job 6
+   reported STALE, in about 3 s instead of after a CI run.
+4. **Lint trend (`--lint`):** a ruff F/E9 finding count by rule. A trend, never a gate.
+5. **Size profile:** the largest files and how many exceed 1,500 lines. This is
    a trend, not a rule.
-4. **PR-flow proxies (SOP-06), when given `--github`:**
+6. **PR-flow proxies (SOP-06), when given `--github`:**
    - open PRs and drafts, and their base branches;
    - receipt coverage of recently closed PRs;
    - how many recently closed PRs mention rework words (stale, superseded,
@@ -55,7 +61,7 @@ non-zero):
    These are **proxies**. A receipt block is a declaration, not a verified
    handoff, and a word count is not a measure of rework.
 
-The structural rules in items 1–2 are the same functions the unit tests call,
+The structural rules in items 1–3 are the same functions the unit tests call,
 so the weekly report and a PR cannot disagree about a rule.
 
 ## Practices adopted and their sources

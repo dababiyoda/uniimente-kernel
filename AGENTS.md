@@ -48,7 +48,8 @@ conflict-resolution hierarchy).
 | Tests | `python -m pytest` (deps `requirements-dev.txt`); about 90 minutes in full. Run the files that import what you changed first. Frozen-history tests need `git fetch --unshallow` |
 | Constitutional integrity | `python -m governance.integrity --check` |
 | Verifier | `python verifier/v2/verify.py` (V1–V5) |
-| Structural review | `python scripts/repo_review.py`; cadence in `docs/REVIEW_CADENCE.md` |
+| Before running tests | `python scripts/dev_env_check.py` names missing modules, a tmpfs `/tmp`, a shallow clone and missing bubblewrap, pdftotext or Playwright: failures that come from the machine, not the code |
+| Structural review | `python scripts/repo_review.py` (map, layering, mutation-gate liveness; `--lint` adds a ruff trend); cadence in `docs/REVIEW_CADENCE.md` |
 | CI | `.github/workflows/canonical-ci.yml` (9 jobs), plus `directive-completion.yml`, `build-frontier.yml`, `collaboration-receipt.yml` |
 | Live branch | the integration branch named on #96 (today `claude/greg-full-machine-completion-whgiee`, draft #196). `main` is behind it |
 | Friction to report | `.github/ISSUE_TEMPLATE/contributor-friction.yml` |

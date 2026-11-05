@@ -69,3 +69,17 @@ new dated file and keeps this one (`docs/REVIEW_CADENCE.md`).
 Answer from the PR's product-delta question: **none.** GREG can do nothing new
 because of this register. It removes orientation blockers and makes the
 remaining ones owned or visible.
+
+## Addendum, pass 3 (same day): board evidence and two instruments
+
+**Survey replies:** none yet, on #96 or through the `contributor-friction` form.
+Contributors independently posted the following on #96 after the survey (comments
+6651587410, 6655711782, 6657787629):
+
+| ID | Update | Status |
+|---|---|---|
+| P-2 | Confirmed by four more sessions. Job 1 was cancelled at exactly 120 minutes on #221, #260, #264, #265, #266, #270 and #271, each time inside the late mutation steps with every completed step green. #196's own job 1 took 99 minutes on `75a8fdf4` and 1:59:49 on another run. Session `session_01Kucyfoabgsg6W8H8xj4qea` proposes moving the mutation steps into a separate job "1b · Mutation gates" (about 25 min) instead of raising the limit | **proposed by a contributor:** the split in 6657787629. Integrator decision |
+| P-14 (new) | **Environment-only failures.** A runner whose `/tmp` was tmpfs made 20 `test_greg_backup.py` tests fail on #263, because `greg/backup.py` correctly refuses volatile stores. Locally, missing `rfc3161_client`, `scipy`, `networkx` and Python Playwright failed or emptied test files, and failed 2 of 7 seed mutants | **fixed here (diagnosis):** `scripts/dev_env_check.py` names each cause before tests run. **proposed:** `TMPDIR: ${{ runner.temp }}` on job 1 (6651587410). CI-owner decision |
+| P-6 | Stale mutation anchors | **fixed here (early detection):** `repo_review.py` gate liveness, 614 literal anchors in about 3 s, a hard finding in the unit suite. Verified against history: on `5ad39868~1` it names the anchor CI job 6 reported STALE. Six gates with non-literal anchors are listed as not statically checkable |
+| S-3 | `check_seed_mutants.py` unwired | **ratcheted:** the only `KEPT_UNWIRED_GATES` entry; a second unwired gate now fails a unit test |
+| S-4 | No lint | **measured:** `repo_review.py --lint` baseline is 447 ruff F/E9 findings (F811 249, F401 167, F841 24, F541 6, F402 1). A trend in the weekly report, never a gate |

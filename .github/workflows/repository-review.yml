@@ -30,12 +30,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Lint tool for the trend line (report only)
+        run: python -m pip install ruff==0.16.9
       - name: Structural review and PR-flow proxies
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          python scripts/repo_review.py --github "${{ github.repository }}" > review.md
-          python scripts/repo_review.py --github "${{ github.repository }}" --json > review.json
+          python scripts/repo_review.py --lint --github "${{ github.repository }}" > review.md
+          python scripts/repo_review.py --lint --github "${{ github.repository }}" --json > review.json
           cat review.md >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:

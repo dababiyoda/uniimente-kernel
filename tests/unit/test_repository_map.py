@@ -69,7 +69,7 @@ def mini(tmp_path):
 
 
 def test_mini_tree_is_clean(mini):
-    report = review.build_report(mini, kept_two_way={}, kept_boundary={})
+    report = review.build_report(mini, kept_two_way={}, kept_boundary={}, kept_unwired={})
     assert report["hard_finding_count"] == 0, report["hard_findings"]
 
 

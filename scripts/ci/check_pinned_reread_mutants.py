@@ -179,8 +179,8 @@ MUTANTS = [
     ("registered version not compared", COMPILER, REGISTERED, "if manifest is None:", EARLY),
     ("registered version not compared (compile)", COMPILER, REGISTERED, "if manifest is None:",
      CHANGED_PIN + "[version]"),
-    ("detached method re-read (compile)", COMPILER, "    return row if usable else None", "    return row",
-     CHANGED_PIN + "[detached]"),
+    # "detached method re-read" ("return row if usable else None" -> "return row") is not listed: it is equivalent,
+    # since run() re-checks every eligible row's _usable and raises under a pin when none can run
     ("condition hook consulted under a pin", COMPILER, HOOK,
      "    if True:\n        runnable = condition_competence.compile_hook(", SHADOW),
     ("learned routing consulted under a pin", COMPILER, LEARNING, "    if True:\n        # learned routing:", SETTLED),

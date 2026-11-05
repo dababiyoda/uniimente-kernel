@@ -1,0 +1,968 @@
+b1950be2 Pin claim_settles to "any observation settles" (reviewer cases A and B on a6c29bbd)
+FF.FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF.                         [100%]
+=================================== FAILURES ===================================
+__ test_after_a_signed_answer_a_still_sustained_cpu_bottleneck_is_asked_again __
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2289/test_after_a_signed_answer_a_s0')
+
+    def test_after_a_signed_answer_a_still_sustained_cpu_bottleneck_is_asked_again(tmp_path):
+        """The defect: request_id hashed the resource alone, so after one answered cpu ask GREG could never ask again."""
+        home, key, body_id, _ = make_body(tmp_path)
+        with Body(home) as body:
+            window(body.journal, "2026-10-30T00:00", **CPU)
+            first = compute.recommend(body.journal)
+        answer(home, key, body_id, first["request_id"])
+        with Body(home) as body:
+            window(body.journal, "2026-10-30T02:00", **CPU)
+            again = compute.recommend(body.journal)
+>       assert again is not None and again["request_id"] != first["request_id"]
+E       assert (None is not None)
+
+tests/unit/test_greg_compute_closure.py:65: AssertionError
+_ test_a_bottleneck_that_outlives_an_answer_is_asked_again_once_and_never_while_pending _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2289/test_a_bottleneck_that_outlive0')
+
+    def test_a_bottleneck_that_outlives_an_answer_is_asked_again_once_and_never_while_pending(tmp_path):
+        home, key, body_id, _ = make_body(tmp_path)
+        with Body(home) as body:
+            window(body.journal, "2026-10-30T00:00", **CPU)
+            first = compute.recommend(body.journal)
+>           assert first is not None and first["evidence"]["epoch"] == 0
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'epoch'
+
+tests/unit/test_greg_compute_closure.py:73: KeyError
+__________________ test_a_withdrawn_ask_also_closes_its_epoch __________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2289/test_a_withdrawn_ask_also_clos0')
+
+    def test_a_withdrawn_ask_also_closes_its_epoch(tmp_path):
+        home, *_ = make_body(tmp_path)
+        with Body(home) as body:
+            window(body.journal, "2026-10-30T00:00", **CPU)
+            first = compute.recommend(body.journal)
+            # what a restore from a backup records for an ask the old body raised (greg/recovery.py)
+            body.journal.record("decision.withdrawn", {"request_id": first["request_id"], "mission_id": None,
+                                                       "why": "restored from a backup", "at": "2026-10-30T00:30:00Z"},
+                                key=[first["request_id"], "withdrawn"])
+            assert compute.recommend(body.journal) is None           # the samples so far predate the withdrawal
+            window(body.journal, "2026-10-30T01:00", **CPU)
+            second = compute.recommend(body.journal)
+>       assert second is not None and second["evidence"]["epoch"] == 1
+E       assert (None is not None)
+
+tests/unit/test_greg_compute_closure.py:114: AssertionError
+__ test_an_answer_row_no_signed_decision_stands_behind_does_not_close_the_ask __
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2289/test_an_answer_row_no_signed_d0')
+
+    def test_an_answer_row_no_signed_decision_stands_behind_does_not_close_the_ask(tmp_path):
+        home, *_ = make_body(tmp_path)
+        with Body(home) as body:
+            window(body.journal, "2026-10-30T00:00", **CPU)
+            first = compute.recommend(body.journal)
+            body.journal.record("decision.answered", {"request_id": first["request_id"], "mission_id": None,
+                                                      "answer": "reject", "reason": "", "command_digest": "sha256:forged"})
+            window(body.journal, "2026-10-30T01:00", **CPU)
+            assert compute.recommend(body.journal) is None
+>           state = compute.ask_state(body.journal, "cpu")
+                    ^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'greg.compute' has no attribute 'ask_state'
+
+tests/unit/test_greg_compute_closure.py:126: AttributeError
+_ test_a_pending_compute_ask_for_the_resource_blocks_a_new_one_whatever_its_identity _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2289/test_a_pending_compute_ask_for0')
+
+    def test_a_pending_compute_ask_for_the_resource_blocks_a_new_one_whatever_its_identity(tmp_path):
+        home, *_ = make_body(tmp_path)
+        with Body(home) as body:
+            window(body.journal, "2026-10-30T00:00", **CPU)
+            found = compute.bottleneck(body.journal)
+            asks.record(body.journal, asks.resource_request(                 # an ask under another identity scheme
+                request_id="req-compute-recorded-elsewhere", kind="COMPUTE", resource="compute", why_now=found["measure"],
+                recommendation="optimize first", evidence={"bottleneck": found},
+                options=[{"option": "optimize", "cost": "none", "expected_effect": "less load"},
+                         {"option": "a node", "cost": "hardware price", "expected_effect": "more capacity"}],
+                expected_effect="less queueing", uncertainty="unpriced", authority_requested={"spend": "none requested"},
+                consequence_of_no_response="nothing is bought", created_at="2026-10-30T00:05:00Z"))
+>           assert compute.ask_state(body.journal, "cpu")["pending"] == ["req-compute-recorded-elsewhere"]
+                   ^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'greg.compute' has no attribute 'ask_state'
+
+tests/unit/test_greg_compute_closure.py:142: AttributeError
+_ test_an_ask_row_under_another_identity_is_not_an_ask_and_does_not_advance_the_epoch _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2289/test_an_ask_row_under_another_0')
+
+    def test_an_ask_row_under_another_identity_is_not_an_ask_and_does_not_advance_the_epoch(tmp_path):
+        home, *_ = make_body(tmp_path)
+        with Body(home) as body:
+            window(body.journal, "2026-10-30T00:00", **CPU)
+            found = compute.bottleneck(body.journal)
+            # not keyed on its request id, so no founder surface shows it (asks.open_requests) and nobody can answer it
+            body.journal.record("decision.requested", {"request_id": "req-compute-copy", "kind": "COMPUTE",
+                                                       "mission_id": None, "evidence": {"bottleneck": found}},
+                                key=["copy", "elsewhere"])
+>           state = compute.ask_state(body.journal, "cpu")
+                    ^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'greg.compute' has no attribute 'ask_state'
+
+tests/unit/test_greg_compute_closure.py:155: AttributeError
+____________ test_one_open_ask_per_resource_not_one_for_all_compute ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2289/test_one_open_ask_per_resource0')
+
+    def test_one_open_ask_per_resource_not_one_for_all_compute(tmp_path):
+        home, *_ = make_body(tmp_path)
+        with Body(home) as body:
+            window(body.journal, "2026-10-30T00:00", **CPU)
+            cpu = compute.recommend(body.journal)
+            window(body.journal, "2026-10-30T01:00", **CPU, psi_memory_some_avg60=40.0)
+            memory = compute.recommend(body.journal)
+        assert cpu["evidence"]["bottleneck"]["resource"] == "cpu"
+>       assert memory["evidence"]["bottleneck"]["resource"] == "memory" and memory["request_id"] != cpu["request_id"]
+               ^^^^^^^^^^^^^^^^^^
+E       TypeError: 'NoneType' object is not subscriptable
+
+tests/unit/test_greg_compute_closure.py:169: TypeError
+_____ test_sustained_memory_pressure_with_low_load_is_a_memory_bottleneck ______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2289/test_sustained_memory_pressure0')
+
+    def test_sustained_memory_pressure_with_low_load_is_a_memory_bottleneck(tmp_path):
+        home, *_ = make_body(tmp_path)
+        with Body(home) as body:
+            window(body.journal, "2026-10-30T00:00", psi_memory_some_avg60=35.0)     # load/cores 0.2: no cpu rule
+            found = compute.bottleneck(body.journal)
+>           assert found is not None and found["resource"] == "memory" and found["also_sustained"] == []
+E           assert (None is not None)
+
+tests/unit/test_greg_compute_closure.py:179: AssertionError
+_______ test_memavailable_below_the_floor_is_memory_pressure_without_psi _______
+
+    def test_memavailable_below_the_floor_is_memory_pressure_without_psi():
+>       floor = compute.MEM_AVAILABLE_FLOOR
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'MEM_AVAILABLE_FLOOR'
+
+tests/unit/test_greg_compute_closure.py:187: AttributeError
+________________ test_sustained_io_pressure_is_an_io_bottleneck ________________
+
+    def test_sustained_io_pressure_is_an_io_bottleneck():
+>       samples = [{"at": str(i), "load_ratio": 0.3, "disk_free_ratio": 0.5,
+                    "psi_io_some_avg60": compute.IO_PSI_THRESHOLD} for i in range(N)]
+
+tests/unit/test_greg_compute_closure.py:195: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+.0 = <range_iterator object at 0x7f4f3adef930>
+
+    samples = [{"at": str(i), "load_ratio": 0.3, "disk_free_ratio": 0.5,
+>               "psi_io_some_avg60": compute.IO_PSI_THRESHOLD} for i in range(N)]
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'greg.compute' has no attribute 'IO_PSI_THRESHOLD'
+
+tests/unit/test_greg_compute_closure.py:196: AttributeError
+_ test_precedence_is_memory_then_io_then_cpu_then_disk_and_the_rest_are_reported _
+
+    def test_precedence_is_memory_then_io_then_cpu_then_disk_and_the_rest_are_reported():
+        every = {"load_ratio": 2.0, "disk_free_ratio": 0.01, "psi_memory_some_avg60": 50.0, "psi_io_some_avg60": 50.0}
+        order = []
+        for drop_rule in (None, "psi_memory_some_avg60", "psi_io_some_avg60", "load_ratio"):
+            fields = {k: v for k, v in every.items() if k != drop_rule}
+>           found = compute.assess([{"at": str(i), **fields} for i in range(N)])
+                    ^^^^^^^^^^^^^^
+E           AttributeError: module 'greg.compute' has no attribute 'assess'
+
+tests/unit/test_greg_compute_closure.py:205: AttributeError
+_________ test_a_sample_missing_a_field_never_counts_as_pressure[None] _________
+
+hole = None
+
+    @pytest.mark.parametrize("hole", [None, "missing"])
+    def test_a_sample_missing_a_field_never_counts_as_pressure(hole):
+        pressed = [{"at": str(i), "load_ratio": 0.1, "disk_free_ratio": 0.5, "psi_memory_some_avg60": 90.0,
+                    "psi_io_some_avg60": 90.0, "mem_available_ratio": 0.01} for i in range(N)]
+        gap = {"at": "gap", "load_ratio": 0.1, "disk_free_ratio": 0.5}
+        if hole is None:
+            gap.update(psi_memory_some_avg60=None, psi_io_some_avg60=None, mem_available_ratio=None)
+>       assert compute.assess(pressed)["resource"] == "memory"
+               ^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'assess'
+
+tests/unit/test_greg_compute_closure.py:221: AttributeError
+_______ test_a_sample_missing_a_field_never_counts_as_pressure[missing] ________
+
+hole = 'missing'
+
+    @pytest.mark.parametrize("hole", [None, "missing"])
+    def test_a_sample_missing_a_field_never_counts_as_pressure(hole):
+        pressed = [{"at": str(i), "load_ratio": 0.1, "disk_free_ratio": 0.5, "psi_memory_some_avg60": 90.0,
+                    "psi_io_some_avg60": 90.0, "mem_available_ratio": 0.01} for i in range(N)]
+        gap = {"at": "gap", "load_ratio": 0.1, "disk_free_ratio": 0.5}
+        if hole is None:
+            gap.update(psi_memory_some_avg60=None, psi_io_some_avg60=None, mem_available_ratio=None)
+>       assert compute.assess(pressed)["resource"] == "memory"
+               ^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'assess'
+
+tests/unit/test_greg_compute_closure.py:221: AttributeError
+________ test_sample_reads_real_pressure_and_memavailable_on_this_host _________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2289/test_sample_reads_real_pressur0')
+
+    @pytest.mark.skipif(not Path("/proc/pressure/memory").exists(), reason="this kernel exposes no PSI")
+    def test_sample_reads_real_pressure_and_memavailable_on_this_host(tmp_path):
+        data = compute.sample(tmp_path)
+        for resource in ("cpu", "memory", "io"):
+            for window_ in ("avg10", "avg60"):
+>               value = data[f"psi_{resource}_some_{window_}"]
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               KeyError: 'psi_cpu_some_avg10'
+
+tests/unit/test_greg_compute_closure.py:232: KeyError
+___________ test_unreadable_or_malformed_pressure_is_none_never_zero ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2289/test_unreadable_or_malformed_p0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f4f3a3b73d0>
+
+    def test_unreadable_or_malformed_pressure_is_none_never_zero(tmp_path, monkeypatch):
+>       monkeypatch.setattr(compute, "PROC", tmp_path / "no-proc")
+E       AttributeError: <module 'greg.compute' from '/tmp/claude-0/-home-user/bd844dc6-7f27-56cd-96d7-839d33aad4cc/scratchpad/fb-compute-closure/greg/compute.py'> has no attribute 'PROC'
+
+tests/unit/test_greg_compute_closure.py:243: AttributeError
+_ test_quantify_names_the_heaviest_measured_workload_and_labels_the_delay_an_estimate _
+
+    def test_quantify_names_the_heaviest_measured_workload_and_labels_the_delay_an_estimate():
+        journal = timed_journal()
+>       found = compute.quantify(journal, journal.replay("compute.telemetry"))
+                ^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'quantify'
+
+tests/unit/test_greg_compute_closure.py:302: AttributeError
+__ test_the_ask_names_the_heaviest_workload_only_when_the_journal_timed_steps __
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2289/test_the_ask_names_the_heavies0')
+
+    def test_the_ask_names_the_heaviest_workload_only_when_the_journal_timed_steps(tmp_path):
+        journal = timed_journal()
+        named = compute.recommend(journal)
+        asks.validate(named)
+>       assert "cognition.solve" in named["options"][0]["option"] and "71%" in named["options"][0]["option"]
+E       AssertionError: assert ('cognition.solve' in 'software/workload optimization (no spend)')
+
+tests/unit/test_greg_compute_closure.py:318: AssertionError
+_________ test_steps_outside_the_bottleneck_window_point_outside_greg __________
+
+    def test_steps_outside_the_bottleneck_window_point_outside_greg():
+        journal = Journal(EventSpine(EvidenceLedger("compute-closure-fixture")), actor="spiffe://uniimente.internal/t")
+        step(journal, "m:a", "w0", "fs.write", "2026-10-29T10:00:00Z", "2026-10-29T10:00:02Z")
+        for i in range(N):
+            emit(journal, "compute.telemetry", {"at": f"t{i}", "cores": 4, "load_ratio": 1.5, "disk_free_ratio": 0.5},
+                 f"2026-10-30T00:{i * 10:02d}:00Z", f"t{i}")
+        message = compute.recommend(journal)
+>       assert "no GREG mission step ran in the bottleneck window" in message["options"][0]["option"]
+E       AssertionError: assert 'no GREG mission step ran in the bottleneck window' in 'software/workload optimization (no spend)'
+
+tests/unit/test_greg_compute_closure.py:339: AssertionError
+____ test_a_step_that_waited_for_the_founder_or_for_a_restart_is_not_timed _____
+
+    def test_a_step_that_waited_for_the_founder_or_for_a_restart_is_not_timed():
+        """Review finding WU05-F1: a re-dispatch reuses its deduplicated first intent, so the founder's approval wait and
+        the body's downtime were booked as capability time and could name the wrong heaviest workload."""
+        journal = fixture_journal()
+        # APPROVAL: the intent, the ask and the block, the founder's answer an hour later, then the same intent runs
+        intent = {"mission_id": "m:a", "action_id": "pay", "attempt": 0, "capability": "fs.write"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T10:00:00Z", ["m:a", "pay", 0, "s"])
+        emit(journal, "decision.requested", {"request_id": "req-a", "mission_id": "m:a", "kind": "APPROVAL"},
+             "2026-10-30T10:00:01Z", "req-a")
+        emit(journal, "mission.blocked", {"mission_id": "m:a", "blocker": {"request_id": "req-a"}},
+             "2026-10-30T10:00:01Z", ["m:a", "blocked"])
+        emit(journal, "decision.answered", {"request_id": "req-a", "mission_id": "m:a", "answer": "approve"},
+             "2026-10-30T11:00:00Z", ["req-a", "answered"])
+        emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T11:00:02Z", ["m:a", "pay", "a"])
+        # RESTART: the intent, then the body stops before the Gate claims the dispatch and boots ten minutes later
+        intent = {"mission_id": "m:b", "action_id": "w", "attempt": 0, "capability": "fs.write"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T12:00:00Z", ["m:b", "w", 0, "s"])
+        emit(journal, "body.booted", {"boot_id": "boot-2"}, "2026-10-30T12:10:00Z", "boot-2")
+        emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T12:10:02Z", ["m:b", "w", "a"])
+        # a later intent for the same slot (its scope changed) that ran straight through: timed from that intent
+        intent = {"mission_id": "m:c", "action_id": "w", "attempt": 0, "capability": "fs.write"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T13:00:00Z", ["m:c", "w", 0, "s1"])
+        emit(journal, "mission.observed", {"mission_id": "m:c", "check_id": "n"}, "2026-10-30T13:30:00Z", ["m:c", "o"])
+        emit(journal, "mission.dispatching", intent, "2026-10-30T13:30:01Z", ["m:c", "w", 0, "s2"])
+        emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T13:30:04Z", ["m:c", "w", "a"])
+        # a capability's own record inside its dispatch is not an interruption
+        intent = {"mission_id": "m:d", "action_id": "f", "attempt": 0, "capability": "foundry.repair"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T14:00:00Z", ["m:d", "f", 0, "s"])
+        emit(journal, "foundry.committing", {"mission_id": "m:d"}, "2026-10-30T14:00:01Z", ["m:d", "commit"])
+        emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T14:00:02Z", ["m:d", "f", "a"])
+>       assert [(s["mission_id"], s["seconds"]) for s in compute.step_times(journal)] == [("m:c", 3.0), ("m:d", 2.0)]
+                                                         ^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'step_times'
+
+tests/unit/test_greg_compute_closure.py:376: AttributeError
+_ test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[mission.observed] _
+
+between = 'mission.observed'
+
+    @pytest.mark.parametrize("between", ["mission.observed", "decision.answered", "body.booted", "command.accepted",
+                                         "compute.telemetry"])
+    def test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing(between):
+        """The body is single-threaded: only its loop writes these, never a dispatch in progress (compute.LOOP_RECORDS)."""
+        journal = fixture_journal()
+        intent = {"mission_id": "m:a", "action_id": "w", "attempt": 0, "capability": "fs.write"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T10:00:00Z", ["m:a", "w", 0, "s"])
+        emit(journal, between, {"mission_id": "m:a"}, "2026-10-30T10:30:00Z", ["between", between])
+        emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T10:30:02Z", ["m:a", "w", "a"])
+>       assert compute.step_times(journal) == []
+               ^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'step_times'
+
+tests/unit/test_greg_compute_closure.py:389: AttributeError
+_ test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[decision.answered] _
+
+between = 'decision.answered'
+
+    @pytest.mark.parametrize("between", ["mission.observed", "decision.answered", "body.booted", "command.accepted",
+                                         "compute.telemetry"])
+    def test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing(between):
+        """The body is single-threaded: only its loop writes these, never a dispatch in progress (compute.LOOP_RECORDS)."""
+        journal = fixture_journal()
+        intent = {"mission_id": "m:a", "action_id": "w", "attempt": 0, "capability": "fs.write"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T10:00:00Z", ["m:a", "w", 0, "s"])
+        emit(journal, between, {"mission_id": "m:a"}, "2026-10-30T10:30:00Z", ["between", between])
+        emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T10:30:02Z", ["m:a", "w", "a"])
+>       assert compute.step_times(journal) == []
+               ^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'step_times'
+
+tests/unit/test_greg_compute_closure.py:389: AttributeError
+_ test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[body.booted] _
+
+between = 'body.booted'
+
+    @pytest.mark.parametrize("between", ["mission.observed", "decision.answered", "body.booted", "command.accepted",
+                                         "compute.telemetry"])
+    def test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing(between):
+        """The body is single-threaded: only its loop writes these, never a dispatch in progress (compute.LOOP_RECORDS)."""
+        journal = fixture_journal()
+        intent = {"mission_id": "m:a", "action_id": "w", "attempt": 0, "capability": "fs.write"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T10:00:00Z", ["m:a", "w", 0, "s"])
+        emit(journal, between, {"mission_id": "m:a"}, "2026-10-30T10:30:00Z", ["between", between])
+        emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T10:30:02Z", ["m:a", "w", "a"])
+>       assert compute.step_times(journal) == []
+               ^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'step_times'
+
+tests/unit/test_greg_compute_closure.py:389: AttributeError
+_ test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[command.accepted] _
+
+between = 'command.accepted'
+
+    @pytest.mark.parametrize("between", ["mission.observed", "decision.answered", "body.booted", "command.accepted",
+                                         "compute.telemetry"])
+    def test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing(between):
+        """The body is single-threaded: only its loop writes these, never a dispatch in progress (compute.LOOP_RECORDS)."""
+        journal = fixture_journal()
+        intent = {"mission_id": "m:a", "action_id": "w", "attempt": 0, "capability": "fs.write"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T10:00:00Z", ["m:a", "w", 0, "s"])
+        emit(journal, between, {"mission_id": "m:a"}, "2026-10-30T10:30:00Z", ["between", between])
+        emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T10:30:02Z", ["m:a", "w", "a"])
+>       assert compute.step_times(journal) == []
+               ^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'step_times'
+
+tests/unit/test_greg_compute_closure.py:389: AttributeError
+_ test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[compute.telemetry] _
+
+between = 'compute.telemetry'
+
+    @pytest.mark.parametrize("between", ["mission.observed", "decision.answered", "body.booted", "command.accepted",
+                                         "compute.telemetry"])
+    def test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing(between):
+        """The body is single-threaded: only its loop writes these, never a dispatch in progress (compute.LOOP_RECORDS)."""
+        journal = fixture_journal()
+        intent = {"mission_id": "m:a", "action_id": "w", "attempt": 0, "capability": "fs.write"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T10:00:00Z", ["m:a", "w", 0, "s"])
+        emit(journal, between, {"mission_id": "m:a"}, "2026-10-30T10:30:00Z", ["between", between])
+        emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T10:30:02Z", ["m:a", "w", "a"])
+>       assert compute.step_times(journal) == []
+               ^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'step_times'
+
+tests/unit/test_greg_compute_closure.py:389: AttributeError
+_ test_reconciliations_outcomes_without_an_intent_and_a_stepped_clock_are_not_timing _
+
+    def test_reconciliations_outcomes_without_an_intent_and_a_stepped_clock_are_not_timing():
+        journal = fixture_journal()
+        # an UNCERTAIN dispatch, then the founder's reconciliation of that same dispatch twenty minutes later
+        intent = {"mission_id": "m:r", "action_id": "c", "attempt": 0, "capability": "worker.commission"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T00:11:00Z", ["m:r", "c", 0, "s"])
+        emit(journal, "mission.action", {**intent, "status": "UNCERTAIN"}, "2026-10-30T00:11:05Z", ["m:r", "c", "u"])
+        emit(journal, "mission.action", {**intent, "status": "DONE", "route": "founder_reconciliation"},
+             "2026-10-30T00:31:00Z", ["m:r", "c", "reconciled"])
+        # refused before any intent was written
+        emit(journal, "mission.action", {"mission_id": "m:n", "action_id": "x", "attempt": 0, "status": "REFUSED",
+                                         "capability": "fs.write"}, "2026-10-30T00:40:00Z", ["m:n", "x", "a"])
+        # the clock stepped back between the intent and the outcome
+        intent = {"mission_id": "m:s", "action_id": "w", "attempt": 0, "capability": "fs.write"}
+        emit(journal, "mission.dispatching", intent, "2026-10-30T00:50:00Z", ["m:s", "w", 0, "s"])
+        emit(journal, "mission.action", {**intent, "status": "DONE"}, "2026-10-30T00:49:00Z", ["m:s", "w", "a"])
+>       assert [s["seconds"] for s in compute.step_times(journal)] == [5.0]
+                                      ^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'step_times'
+
+tests/unit/test_greg_compute_closure.py:406: AttributeError
+_ test_a_step_without_a_capability_or_a_window_of_zero_second_steps_never_breaks_the_ask _
+
+    def test_a_step_without_a_capability_or_a_window_of_zero_second_steps_never_breaks_the_ask():
+        """Review finding WU05-F4: a capability-less outcome beside a named one, or a 0 s total, raised in recommend()."""
+        def unnamed(journal):
+            step(journal, "m:a", "x", "fs.write", "2026-10-30T00:11:00Z", "2026-10-30T00:11:06Z")
+            emit(journal, "mission.dispatching", {"mission_id": "m:a", "action_id": "y", "attempt": 0,
+                                                  "capability": "fs.write"}, "2026-10-30T00:12:00Z", ["m:a", "y", "d"])
+            emit(journal, "mission.action", {"mission_id": "m:a", "action_id": "y", "attempt": 0, "status": "REFUSED",
+                                             "reasons": ["pipeline input unavailable"]},     # no capability: its input
+                 "2026-10-30T00:12:06Z", ["m:a", "y", "a"])
+        message = compute.recommend(journal_with_window(unnamed))
+        asks.validate(message)
+>       assert [r["capability"] for r in message["evidence"]["workload"]["by_capability"]] == ["fs.write"]
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'workload'
+
+tests/unit/test_greg_compute_closure.py:430: KeyError
+__ test_on_a_real_body_the_founders_approval_wait_is_not_booked_as_step_time ___
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2289/test_on_a_real_body_the_founde0')
+
+    def test_on_a_real_body_the_founders_approval_wait_is_not_booked_as_step_time(tmp_path):
+        home, key, body_id, _ = make_body(tmp_path)
+        paid_write(home, key, body_id, "m:urgent-taxes")
+        clock = Clock()
+        with Body(home, clock=clock) as body:
+            for _ in range(4):
+                body.tick()
+                clock.advance(1)
+            rid = next(e.payload["request_id"] for e in body.journal.replay("decision.requested")
+                       if e.payload["kind"] == "APPROVAL")
+        time.sleep(WAIT)
+        drop(home, signed(key, body_id, "DECISION", {"request_id": rid, "answer": "approve"}))
+        with Body(home, clock=clock) as body:
+            for _ in range(6):
+                body.tick()
+                clock.advance(1)
+            assert len(body.journal.replay("mission.dispatching")) == 1        # the approved run reused the intent
+            assert [e.payload["status"] for e in body.journal.replay("mission.action")] == ["DONE"]
+>           assert compute.step_times(body.journal) == []
+                   ^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'greg.compute' has no attribute 'step_times'
+
+tests/unit/test_greg_compute_closure.py:473: AttributeError
+_ test_on_a_real_body_downtime_before_the_gate_claimed_a_dispatch_is_not_step_time _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2289/test_on_a_real_body_downtime_b0')
+
+    def test_on_a_real_body_downtime_before_the_gate_claimed_a_dispatch_is_not_step_time(tmp_path):
+        home, key, body_id, _ = make_body(tmp_path)
+        plain_write(home, key, body_id, "m:write-once")
+        clock = Clock()
+        with pytest.raises(Killed):
+            with Body(home, clock=clock) as body:
+                act = body.engine.office.act
+    
+                def die(*args, **kwargs):           # the process dies inside the dispatch, before the Gate claims it
+                    if kwargs.get("manifest") is not None and kwargs["manifest"].capability_id == "fs.write":
+                        raise Killed()
+                    return act(*args, **kwargs)
+                body.engine.office.act = die
+                for _ in range(8):
+                    body.tick()
+                    clock.advance(1)
+        time.sleep(WAIT)
+        with Body(home, clock=clock) as body:
+            for _ in range(12):
+                body.tick()
+                clock.advance(40)
+            actions = [e.payload for e in body.journal.replay("mission.action")]
+            assert [a["status"] for a in actions] == ["DONE"] and not actions[0]["routing"].get("recovered")
+>           assert compute.step_times(body.journal) == []
+                   ^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'greg.compute' has no attribute 'step_times'
+
+tests/unit/test_greg_compute_closure.py:503: AttributeError
+______ test_on_a_real_body_a_dispatch_that_ran_straight_through_is_timed _______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2289/test_on_a_real_body_a_dispatch0')
+
+    def test_on_a_real_body_a_dispatch_that_ran_straight_through_is_timed(tmp_path):
+        home, key, body_id, _ = make_body(tmp_path)
+        plain_write(home, key, body_id, "m:write-once")
+        clock = Clock()
+        with Body(home, clock=clock) as body:
+            for _ in range(6):
+                body.tick()
+                clock.advance(1)
+>           steps = compute.step_times(body.journal)
+                    ^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'greg.compute' has no attribute 'step_times'
+
+tests/unit/test_greg_compute_closure.py:514: AttributeError
+_ test_the_benchmark_is_deterministic_scratch_only_and_reports_median_iqr_and_host _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2289/test_the_benchmark_is_determin0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f4f3a2ffe10>
+
+    def test_the_benchmark_is_deterministic_scratch_only_and_reports_median_iqr_and_host(tmp_path, monkeypatch):
+        home, *_ = make_body(tmp_path)
+        ledger = home / "ledger.jsonl"
+        # A private temporary directory: any other benchmark on this host shares the default one (review finding F3).
+        scratch = tmp_path / "tmp"
+        scratch.mkdir()
+        monkeypatch.setattr(tempfile, "tempdir", str(scratch))
+        held = ledger.read_bytes() if ledger.exists() else None
+>       one = compute.benchmark(3, workload=SMALL)
+              ^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'benchmark'
+
+tests/unit/test_greg_compute_closure.py:532: AttributeError
+___________________ test_a_clearly_faster_after_is_verified ____________________
+
+    def test_a_clearly_faster_after_is_verified():
+>       result = compute.verify_improvement(bench(BEFORE), bench([0.80, 0.82, 0.79, 0.81, 0.78, 0.83, 0.80]))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'verify_improvement'
+
+tests/unit/test_greg_compute_closure.py:566: AttributeError
+_________ test_overlapping_or_slower_samples_are_not_improved[after0] __________
+
+after = [0.99, 1.01, 1.0, 0.98, 1.02, 0.97, ...]
+
+    @pytest.mark.parametrize("after", [
+        [0.99, 1.01, 1.00, 0.98, 1.02, 0.97, 1.03],          # the same distribution
+        [1.20, 1.22, 1.19, 1.21, 1.18, 1.23, 1.20],          # slower: one-sided, never "improved"
+        [0.96, 1.04, 0.95, 1.05, 0.97, 1.03, 0.99],          # overlapping
+        [0.80, 1.30, 0.82, 1.25, 0.85, 1.20, 0.90],          # a 10% lower median, but no consistent shift (p 0.36)
+    ])
+    def test_overlapping_or_slower_samples_are_not_improved(after):
+>       assert compute.verify_improvement(bench(BEFORE), bench(after))["verdict"] == "NOT_IMPROVED"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'verify_improvement'
+
+tests/unit/test_greg_compute_closure.py:579: AttributeError
+_________ test_overlapping_or_slower_samples_are_not_improved[after1] __________
+
+after = [1.2, 1.22, 1.19, 1.21, 1.18, 1.23, ...]
+
+    @pytest.mark.parametrize("after", [
+        [0.99, 1.01, 1.00, 0.98, 1.02, 0.97, 1.03],          # the same distribution
+        [1.20, 1.22, 1.19, 1.21, 1.18, 1.23, 1.20],          # slower: one-sided, never "improved"
+        [0.96, 1.04, 0.95, 1.05, 0.97, 1.03, 0.99],          # overlapping
+        [0.80, 1.30, 0.82, 1.25, 0.85, 1.20, 0.90],          # a 10% lower median, but no consistent shift (p 0.36)
+    ])
+    def test_overlapping_or_slower_samples_are_not_improved(after):
+>       assert compute.verify_improvement(bench(BEFORE), bench(after))["verdict"] == "NOT_IMPROVED"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'verify_improvement'
+
+tests/unit/test_greg_compute_closure.py:579: AttributeError
+_________ test_overlapping_or_slower_samples_are_not_improved[after2] __________
+
+after = [0.96, 1.04, 0.95, 1.05, 0.97, 1.03, ...]
+
+    @pytest.mark.parametrize("after", [
+        [0.99, 1.01, 1.00, 0.98, 1.02, 0.97, 1.03],          # the same distribution
+        [1.20, 1.22, 1.19, 1.21, 1.18, 1.23, 1.20],          # slower: one-sided, never "improved"
+        [0.96, 1.04, 0.95, 1.05, 0.97, 1.03, 0.99],          # overlapping
+        [0.80, 1.30, 0.82, 1.25, 0.85, 1.20, 0.90],          # a 10% lower median, but no consistent shift (p 0.36)
+    ])
+    def test_overlapping_or_slower_samples_are_not_improved(after):
+>       assert compute.verify_improvement(bench(BEFORE), bench(after))["verdict"] == "NOT_IMPROVED"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'verify_improvement'
+
+tests/unit/test_greg_compute_closure.py:579: AttributeError
+_________ test_overlapping_or_slower_samples_are_not_improved[after3] __________
+
+after = [0.8, 1.3, 0.82, 1.25, 0.85, 1.2, ...]
+
+    @pytest.mark.parametrize("after", [
+        [0.99, 1.01, 1.00, 0.98, 1.02, 0.97, 1.03],          # the same distribution
+        [1.20, 1.22, 1.19, 1.21, 1.18, 1.23, 1.20],          # slower: one-sided, never "improved"
+        [0.96, 1.04, 0.95, 1.05, 0.97, 1.03, 0.99],          # overlapping
+        [0.80, 1.30, 0.82, 1.25, 0.85, 1.20, 0.90],          # a 10% lower median, but no consistent shift (p 0.36)
+    ])
+    def test_overlapping_or_slower_samples_are_not_improved(after):
+>       assert compute.verify_improvement(bench(BEFORE), bench(after))["verdict"] == "NOT_IMPROVED"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'verify_improvement'
+
+tests/unit/test_greg_compute_closure.py:579: AttributeError
+__ test_a_shift_inside_the_before_noise_is_not_improved_even_when_significant __
+
+    def test_a_shift_inside_the_before_noise_is_not_improved_even_when_significant():
+        noisy = [1.00, 1.01, 1.02, 1.30, 1.31, 1.32, 1.00]    # a contended before run: IQR / median = 0.29
+        shifted = [0.95, 0.96, 0.97, 0.95, 0.96, 0.97, 0.96]   # every value below every before value, but 6% faster
+>       result = compute.verify_improvement(bench(noisy), bench(shifted))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'verify_improvement'
+
+tests/unit/test_greg_compute_closure.py:585: AttributeError
+_________ test_too_few_samples_or_different_workloads_are_inconclusive _________
+
+    def test_too_few_samples_or_different_workloads_are_inconclusive():
+>       few = compute.verify_improvement(bench(BEFORE[:4]), bench([0.5, 0.5, 0.5, 0.5]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'verify_improvement'
+
+tests/unit/test_greg_compute_closure.py:591: AttributeError
+____ test_large_samples_use_a_seeded_permutation_test_that_repeats_exactly _____
+
+    def test_large_samples_use_a_seeded_permutation_test_that_repeats_exactly():
+        before = [1.0 + (i % 7) / 100 for i in range(30)]
+        after = [0.9 + (i % 7) / 100 for i in range(30)]
+>       one = compute.verify_improvement(bench(before), bench(after))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'verify_improvement'
+
+tests/unit/test_greg_compute_closure.py:602: AttributeError
+________ test_tied_samples_take_midranks_so_the_exact_p_value_is_right _________
+
+    def test_tied_samples_take_midranks_so_the_exact_p_value_is_right():
+        # 126 of the 252 arrangements put three or more of the five 1.0s on the after side
+>       p_value, method = compute._rank_sum_p([1.0, 1.0, 2.0, 2.0, 2.0], [1.0, 1.0, 1.0, 2.0, 2.0])
+                          ^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute '_rank_sum_p'
+
+tests/unit/test_greg_compute_closure.py:609: AttributeError
+____________ test_the_same_code_on_a_quieter_host_is_never_verified ____________
+
+    def test_the_same_code_on_a_quieter_host_is_never_verified():
+        """Review findings WU05-F2 and F1-verify: only ambient load changed between the runs, and verify said VERIFIED."""
+>       result = compute.verify_improvement(bench(BEFORE, contention=BUSY), bench(FASTER, contention=QUIET))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'verify_improvement'
+
+tests/unit/test_greg_compute_closure.py:619: AttributeError
+_ test_no_change_on_a_busier_host_is_inconclusive_and_a_speed_up_despite_it_is_verified _
+
+    def test_no_change_on_a_busier_host_is_inconclusive_and_a_speed_up_despite_it_is_verified():
+>       masked = compute.verify_improvement(bench(BEFORE), bench(BEFORE, contention=BUSY))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'verify_improvement'
+
+tests/unit/test_greg_compute_closure.py:632: AttributeError
+__________ test_a_verdict_needs_contention_measured_during_both_runs ___________
+
+    def test_a_verdict_needs_contention_measured_during_both_runs():
+        for before, after in ((bench(BEFORE, contention=None), bench(FASTER)), (bench(BEFORE), FASTER),
+                              (bench(BEFORE, contention=dict.fromkeys(QUIET)), bench(FASTER))):
+>           result = compute.verify_improvement(before, after)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'greg.compute' has no attribute 'verify_improvement'
+
+tests/unit/test_greg_compute_closure.py:640: AttributeError
+___________ test_verify_reports_whether_both_runs_used_the_same_host ___________
+
+    def test_verify_reports_whether_both_runs_used_the_same_host():
+        one = {"machine": "x86_64", "cores": 4, "conditions": {"load1": 1.0}}
+        later = {**one, "conditions": {"load1": 3.0}, "conditions_at_end": {"load1": 2.0}}
+>       assert compute.verify_improvement(bench(BEFORE, host=one), bench(BEFORE, host=later))["same_host"] is True
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'greg.compute' has no attribute 'verify_improvement'
+
+tests/unit/test_greg_compute_closure.py:647: AttributeError
+_ test_a_scratch_ledger_that_fails_verification_stops_the_benchmark_and_varying_output_is_flagged _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2289/test_a_scratch_ledger_that_fai0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f4f3a2df010>
+
+    def test_a_scratch_ledger_that_fails_verification_stops_the_benchmark_and_varying_output_is_flagged(tmp_path,
+                                                                                                         monkeypatch):
+        monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+        real = EvidenceLedger.verify_chain
+    
+        def tampered(self, *args, **kwargs):        # only the benchmark's own final check sees a broken chain
+            caller = sys._getframe(1).f_globals.get("__name__")
+            return (False, "tampered") if caller == "greg.compute" else real(self, *args, **kwargs)
+        with monkeypatch.context() as patched:
+            patched.setattr(EvidenceLedger, "verify_chain", tampered)
+            with pytest.raises(RuntimeError, match="failed verification"):
+>               compute.benchmark(1, workload=SMALL)
+                ^^^^^^^^^^^^^^^^^
+E               AttributeError: module 'greg.compute' has no attribute 'benchmark'
+
+tests/unit/test_greg_compute_closure.py:663: AttributeError
+______ test_cli_compute_reads_the_body_and_writes_only_the_files_it_names ______
+
+self = ArgumentParser(prog='greg', usage=None, description='GREG: persistent personal agentic operating layer', formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+args = ['--home', '/tmp/pytest-of-root/pytest-2289/test_cli_compute_reads_the_bod0/body', 'compute', 'status']
+namespace = Namespace(home='/tmp/pytest-of-root/pytest-2289/test_cli_compute_reads_the_bod0/body', cmd=None)
+
+    def parse_known_args(self, args=None, namespace=None):
+        if args is None:
+            # args default to the system args
+            args = _sys.argv[1:]
+        else:
+            # make sure that args are mutable
+            args = list(args)
+    
+        # default Namespace built from parser defaults
+        if namespace is None:
+            namespace = Namespace()
+    
+        # add any action defaults that aren't present
+        for action in self._actions:
+            if action.dest is not SUPPRESS:
+                if not hasattr(namespace, action.dest):
+                    if action.default is not SUPPRESS:
+                        setattr(namespace, action.dest, action.default)
+    
+        # add any parser defaults that aren't present
+        for dest in self._defaults:
+            if not hasattr(namespace, dest):
+                setattr(namespace, dest, self._defaults[dest])
+    
+        # parse the arguments and exit if there are any errors
+        if self.exit_on_error:
+            try:
+>               namespace, args = self._parse_known_args(args, namespace)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/usr/lib/python3.11/argparse.py:1919: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.11/argparse.py:2143: in _parse_known_args
+    stop_index = consume_positionals(start_index)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.11/argparse.py:2099: in consume_positionals
+    take_action(action, args)
+/usr/lib/python3.11/argparse.py:1979: in take_action
+    argument_values = self._get_values(action, argument_strings)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.11/argparse.py:2528: in _get_values
+    self._check_value(action, value[0])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ArgumentParser(prog='greg', usage=None, description='GREG: persistent personal agentic operating layer', formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+action = _SubParsersAction(option_strings=[], dest='cmd', nargs='A...', const=None, default=None, type=None, choices={'init': A...ss=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)}, required=True, help=None, metavar=None)
+value = 'compute'
+
+    def _check_value(self, action, value):
+        # converted value must be one of the choices (if specified)
+        if action.choices is not None and value not in action.choices:
+            args = {'value': value,
+                    'choices': ', '.join(map(repr, action.choices))}
+            msg = _('invalid choice: %(value)r (choose from %(choices)s)')
+>           raise ArgumentError(action, msg % args)
+E           argparse.ArgumentError: argument cmd: invalid choice: 'compute' (choose from 'init', 'founder', 'body', 'model', 'cognition', 'mission', 'decide', 'critique', 'pause', 'resume', 'stop', 'attach', 'detach', 'lifecycle', 'accept', 'realize', 'device', 'anchor', 'serve', 'secret', 'intake', 'start', 'status', 'decisions', 'vepmc', 'routing', 'path', 'treasury', 'sop', 'resilience', 'gravity', 'presence', 'mcp', 'doctor', 'foundry', 'learning', 'acceptance', 'rehearse', 'console', 'morning', 'run', 'service')
+
+/usr/lib/python3.11/argparse.py:2575: ArgumentError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2289/test_cli_compute_reads_the_bod0')
+capsys = <_pytest.capture.CaptureFixture object at 0x7f4f3a4b9f90>
+
+    def test_cli_compute_reads_the_body_and_writes_only_the_files_it_names(tmp_path, capsys):
+        from greg import cli
+        home, *_ = make_body(tmp_path)
+        with Body(home) as body:
+            window(body.journal, "2026-10-30T00:00", **CPU)
+            compute.recommend(body.journal)
+        ledger = home / "ledger.jsonl"
+        held = ledger.read_bytes()
+>       assert cli.main(["--home", str(home), "compute", "status"]) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/unit/test_greg_compute_closure.py:679: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+greg/cli.py:601: in main
+    args = p.parse_args(argv)
+           ^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.11/argparse.py:1886: in parse_args
+    args, argv = self.parse_known_args(args, namespace)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.11/argparse.py:1921: in parse_known_args
+    self.error(str(err))
+/usr/lib/python3.11/argparse.py:2652: in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ArgumentParser(prog='greg', usage=None, description='GREG: persistent personal agentic operating layer', formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+status = 2
+message = "greg: error: argument cmd: invalid choice: 'compute' (choose from 'init', 'founder', 'body', 'model', 'cognition', 'm...presence', 'mcp', 'doctor', 'foundry', 'learning', 'acceptance', 'rehearse', 'console', 'morning', 'run', 'service')\n"
+
+    def exit(self, status=0, message=None):
+        if message:
+            self._print_message(message, _sys.stderr)
+>       _sys.exit(status)
+E       SystemExit: 2
+
+/usr/lib/python3.11/argparse.py:2639: SystemExit
+----------------------------- Captured stderr call -----------------------------
+usage: greg [-h] [--home HOME]
+            {init,founder,body,model,cognition,mission,decide,critique,pause,resume,stop,attach,detach,lifecycle,accept,realize,device,anchor,serve,secret,intake,start,status,decisions,vepmc,routing,path,treasury,sop,resilience,gravity,presence,mcp,doctor,foundry,learning,acceptance,rehearse,console,morning,run,service}
+            ...
+greg: error: argument cmd: invalid choice: 'compute' (choose from 'init', 'founder', 'body', 'model', 'cognition', 'mission', 'decide', 'critique', 'pause', 'resume', 'stop', 'attach', 'detach', 'lifecycle', 'accept', 'realize', 'device', 'anchor', 'serve', 'secret', 'intake', 'start', 'status', 'decisions', 'vepmc', 'routing', 'path', 'treasury', 'sop', 'resilience', 'gravity', 'presence', 'mcp', 'doctor', 'foundry', 'learning', 'acceptance', 'rehearse', 'console', 'morning', 'run', 'service')
+_ test_cli_benchmark_guard_expands_the_home_and_never_overwrites_a_file_it_did_not_write _
+
+self = ArgumentParser(prog='greg', usage=None, description='GREG: persistent personal agentic operating layer', formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+args = ['--home', '~/body', 'compute', 'status']
+namespace = Namespace(home='~/body', cmd=None)
+
+    def parse_known_args(self, args=None, namespace=None):
+        if args is None:
+            # args default to the system args
+            args = _sys.argv[1:]
+        else:
+            # make sure that args are mutable
+            args = list(args)
+    
+        # default Namespace built from parser defaults
+        if namespace is None:
+            namespace = Namespace()
+    
+        # add any action defaults that aren't present
+        for action in self._actions:
+            if action.dest is not SUPPRESS:
+                if not hasattr(namespace, action.dest):
+                    if action.default is not SUPPRESS:
+                        setattr(namespace, action.dest, action.default)
+    
+        # add any parser defaults that aren't present
+        for dest in self._defaults:
+            if not hasattr(namespace, dest):
+                setattr(namespace, dest, self._defaults[dest])
+    
+        # parse the arguments and exit if there are any errors
+        if self.exit_on_error:
+            try:
+>               namespace, args = self._parse_known_args(args, namespace)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/usr/lib/python3.11/argparse.py:1919: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.11/argparse.py:2143: in _parse_known_args
+    stop_index = consume_positionals(start_index)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.11/argparse.py:2099: in consume_positionals
+    take_action(action, args)
+/usr/lib/python3.11/argparse.py:1979: in take_action
+    argument_values = self._get_values(action, argument_strings)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.11/argparse.py:2528: in _get_values
+    self._check_value(action, value[0])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ArgumentParser(prog='greg', usage=None, description='GREG: persistent personal agentic operating layer', formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+action = _SubParsersAction(option_strings=[], dest='cmd', nargs='A...', const=None, default=None, type=None, choices={'init': A...ss=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)}, required=True, help=None, metavar=None)
+value = 'compute'
+
+    def _check_value(self, action, value):
+        # converted value must be one of the choices (if specified)
+        if action.choices is not None and value not in action.choices:
+            args = {'value': value,
+                    'choices': ', '.join(map(repr, action.choices))}
+            msg = _('invalid choice: %(value)r (choose from %(choices)s)')
+>           raise ArgumentError(action, msg % args)
+E           argparse.ArgumentError: argument cmd: invalid choice: 'compute' (choose from 'init', 'founder', 'body', 'model', 'cognition', 'mission', 'decide', 'critique', 'pause', 'resume', 'stop', 'attach', 'detach', 'lifecycle', 'accept', 'realize', 'device', 'anchor', 'serve', 'secret', 'intake', 'start', 'status', 'decisions', 'vepmc', 'routing', 'path', 'treasury', 'sop', 'resilience', 'gravity', 'presence', 'mcp', 'doctor', 'foundry', 'learning', 'acceptance', 'rehearse', 'console', 'morning', 'run', 'service')
+
+/usr/lib/python3.11/argparse.py:2575: ArgumentError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2289/test_cli_benchmark_guard_expan0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f4f3a45ff90>
+capsys = <_pytest.capture.CaptureFixture object at 0x7f4f3a45ec90>
+
+    def test_cli_benchmark_guard_expands_the_home_and_never_overwrites_a_file_it_did_not_write(tmp_path, monkeypatch,
+                                                                                              capsys):
+        """Review finding WU05-F3: a home given as '~/body' slipped past the guard and --out replaced the ledger."""
+        from greg import cli
+        home, *_ = make_body(tmp_path)                                         # tmp_path/body
+        monkeypatch.setenv("HOME", str(tmp_path))
+        ledger = home / "ledger.jsonl"
+        held = ledger.read_bytes()
+>       assert cli.main(["--home", "~/body", "compute", "status"]) == 0        # '~/body' is the real body
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/unit/test_greg_compute_closure.py:705: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+greg/cli.py:601: in main
+    args = p.parse_args(argv)
+           ^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.11/argparse.py:1886: in parse_args
+    args, argv = self.parse_known_args(args, namespace)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.11/argparse.py:1921: in parse_known_args
+    self.error(str(err))
+/usr/lib/python3.11/argparse.py:2652: in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ArgumentParser(prog='greg', usage=None, description='GREG: persistent personal agentic operating layer', formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+status = 2
+message = "greg: error: argument cmd: invalid choice: 'compute' (choose from 'init', 'founder', 'body', 'model', 'cognition', 'm...presence', 'mcp', 'doctor', 'foundry', 'learning', 'acceptance', 'rehearse', 'console', 'morning', 'run', 'service')\n"
+
+    def exit(self, status=0, message=None):
+        if message:
+            self._print_message(message, _sys.stderr)
+>       _sys.exit(status)
+E       SystemExit: 2
+
+/usr/lib/python3.11/argparse.py:2639: SystemExit
+----------------------------- Captured stderr call -----------------------------
+usage: greg [-h] [--home HOME]
+            {init,founder,body,model,cognition,mission,decide,critique,pause,resume,stop,attach,detach,lifecycle,accept,realize,device,anchor,serve,secret,intake,start,status,decisions,vepmc,routing,path,treasury,sop,resilience,gravity,presence,mcp,doctor,foundry,learning,acceptance,rehearse,console,morning,run,service}
+            ...
+greg: error: argument cmd: invalid choice: 'compute' (choose from 'init', 'founder', 'body', 'model', 'cognition', 'mission', 'decide', 'critique', 'pause', 'resume', 'stop', 'attach', 'detach', 'lifecycle', 'accept', 'realize', 'device', 'anchor', 'serve', 'secret', 'intake', 'start', 'status', 'decisions', 'vepmc', 'routing', 'path', 'treasury', 'sop', 'resilience', 'gravity', 'presence', 'mcp', 'doctor', 'foundry', 'learning', 'acceptance', 'rehearse', 'console', 'morning', 'run', 'service')
+=========================== short test summary info ============================
+FAILED tests/unit/test_greg_compute_closure.py::test_after_a_signed_answer_a_still_sustained_cpu_bottleneck_is_asked_again
+FAILED tests/unit/test_greg_compute_closure.py::test_a_bottleneck_that_outlives_an_answer_is_asked_again_once_and_never_while_pending
+FAILED tests/unit/test_greg_compute_closure.py::test_a_withdrawn_ask_also_closes_its_epoch
+FAILED tests/unit/test_greg_compute_closure.py::test_an_answer_row_no_signed_decision_stands_behind_does_not_close_the_ask
+FAILED tests/unit/test_greg_compute_closure.py::test_a_pending_compute_ask_for_the_resource_blocks_a_new_one_whatever_its_identity
+FAILED tests/unit/test_greg_compute_closure.py::test_an_ask_row_under_another_identity_is_not_an_ask_and_does_not_advance_the_epoch
+FAILED tests/unit/test_greg_compute_closure.py::test_one_open_ask_per_resource_not_one_for_all_compute
+FAILED tests/unit/test_greg_compute_closure.py::test_sustained_memory_pressure_with_low_load_is_a_memory_bottleneck
+FAILED tests/unit/test_greg_compute_closure.py::test_memavailable_below_the_floor_is_memory_pressure_without_psi
+FAILED tests/unit/test_greg_compute_closure.py::test_sustained_io_pressure_is_an_io_bottleneck
+FAILED tests/unit/test_greg_compute_closure.py::test_precedence_is_memory_then_io_then_cpu_then_disk_and_the_rest_are_reported
+FAILED tests/unit/test_greg_compute_closure.py::test_a_sample_missing_a_field_never_counts_as_pressure[None]
+FAILED tests/unit/test_greg_compute_closure.py::test_a_sample_missing_a_field_never_counts_as_pressure[missing]
+FAILED tests/unit/test_greg_compute_closure.py::test_sample_reads_real_pressure_and_memavailable_on_this_host
+FAILED tests/unit/test_greg_compute_closure.py::test_unreadable_or_malformed_pressure_is_none_never_zero
+FAILED tests/unit/test_greg_compute_closure.py::test_quantify_names_the_heaviest_measured_workload_and_labels_the_delay_an_estimate
+FAILED tests/unit/test_greg_compute_closure.py::test_the_ask_names_the_heaviest_workload_only_when_the_journal_timed_steps
+FAILED tests/unit/test_greg_compute_closure.py::test_steps_outside_the_bottleneck_window_point_outside_greg
+FAILED tests/unit/test_greg_compute_closure.py::test_a_step_that_waited_for_the_founder_or_for_a_restart_is_not_timed
+FAILED tests/unit/test_greg_compute_closure.py::test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[mission.observed]
+FAILED tests/unit/test_greg_compute_closure.py::test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[decision.answered]
+FAILED tests/unit/test_greg_compute_closure.py::test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[body.booted]
+FAILED tests/unit/test_greg_compute_closure.py::test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[command.accepted]
+FAILED tests/unit/test_greg_compute_closure.py::test_any_loop_record_between_an_intent_and_its_outcome_voids_the_timing[compute.telemetry]
+FAILED tests/unit/test_greg_compute_closure.py::test_reconciliations_outcomes_without_an_intent_and_a_stepped_clock_are_not_timing
+FAILED tests/unit/test_greg_compute_closure.py::test_a_step_without_a_capability_or_a_window_of_zero_second_steps_never_breaks_the_ask
+FAILED tests/unit/test_greg_compute_closure.py::test_on_a_real_body_the_founders_approval_wait_is_not_booked_as_step_time
+FAILED tests/unit/test_greg_compute_closure.py::test_on_a_real_body_downtime_before_the_gate_claimed_a_dispatch_is_not_step_time
+FAILED tests/unit/test_greg_compute_closure.py::test_on_a_real_body_a_dispatch_that_ran_straight_through_is_timed
+FAILED tests/unit/test_greg_compute_closure.py::test_the_benchmark_is_deterministic_scratch_only_and_reports_median_iqr_and_host
+FAILED tests/unit/test_greg_compute_closure.py::test_a_clearly_faster_after_is_verified
+FAILED tests/unit/test_greg_compute_closure.py::test_overlapping_or_slower_samples_are_not_improved[after0]
+FAILED tests/unit/test_greg_compute_closure.py::test_overlapping_or_slower_samples_are_not_improved[after1]
+FAILED tests/unit/test_greg_compute_closure.py::test_overlapping_or_slower_samples_are_not_improved[after2]
+FAILED tests/unit/test_greg_compute_closure.py::test_overlapping_or_slower_samples_are_not_improved[after3]
+FAILED tests/unit/test_greg_compute_closure.py::test_a_shift_inside_the_before_noise_is_not_improved_even_when_significant
+FAILED tests/unit/test_greg_compute_closure.py::test_too_few_samples_or_different_workloads_are_inconclusive
+FAILED tests/unit/test_greg_compute_closure.py::test_large_samples_use_a_seeded_permutation_test_that_repeats_exactly
+FAILED tests/unit/test_greg_compute_closure.py::test_tied_samples_take_midranks_so_the_exact_p_value_is_right
+FAILED tests/unit/test_greg_compute_closure.py::test_the_same_code_on_a_quieter_host_is_never_verified
+FAILED tests/unit/test_greg_compute_closure.py::test_no_change_on_a_busier_host_is_inconclusive_and_a_speed_up_despite_it_is_verified
+FAILED tests/unit/test_greg_compute_closure.py::test_a_verdict_needs_contention_measured_during_both_runs
+FAILED tests/unit/test_greg_compute_closure.py::test_verify_reports_whether_both_runs_used_the_same_host
+FAILED tests/unit/test_greg_compute_closure.py::test_a_scratch_ledger_that_fails_verification_stops_the_benchmark_and_varying_output_is_flagged
+FAILED tests/unit/test_greg_compute_closure.py::test_cli_compute_reads_the_body_and_writes_only_the_files_it_names
+FAILED tests/unit/test_greg_compute_closure.py::test_cli_benchmark_guard_expands_the_home_and_never_overwrites_a_file_it_did_not_write
+46 failed, 2 passed in 17.44s

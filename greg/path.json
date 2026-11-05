@@ -3,7 +3,8 @@
   "version": "2026-09-30",
   "intent": [
     "INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE",
-    "INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE"
+    "INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE",
+    "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN"
   ],
   "reality_status": "Agent-proposed sequencing for founder review. Node order may change; the destination and horizons change only by explicit founder decision.",
   "mechanism_from": "PR #68 planning model (node gate / SBM / exit evidence / pivot / kill; evidence_status with 'no refs -> unresolved'); ordering from the 2026-09-30 directive section 46, verified against repository evidence",
@@ -68,6 +69,9 @@
         "tests/integration/test_greg_vepmc_path.py",
         "greg/CHROMEBOOK_FIRST_MISSION.md"
       ],
+      "rehearsal": [
+        "tests/integration/test_greg_chromebook_rehearsal.py::test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_a_model"
+      ],
       "smallest_next_build": "done agent-side: greg/chromebook/install.sh, and the runbook rehearsed as written (tests/integration/test_greg_chromebook_rehearsal.py ends at a structurally complete VEPMC row that stays a STRUCTURAL_CANDIDATE: its --no-passphrase key never reaches the founder tier, so greg path stays at N1, as the kill condition requires; #138 673726a). The path moves only on a closure signed by the enrolled founder key at the founder tier (greg/metrics.py founder_tier; tests/integration/test_greg_vepmc_path.py shows a passphrase-protected key moving it). Remains: the founder's run on Body 1 and his inspection; the ledger cannot prove whose machine or key it is",
       "pivot_condition": "If ChromeOS Linux cannot be enabled (managed device), Alfonso chooses another body he owns or rents; GREG may research candidates only as a read-only mission",
       "kill_condition": "A closure counted with a test key, a fixture or a human manually ticking after interruption",
@@ -97,6 +101,9 @@
         "tests/unit/test_greg_genesis_builder.py",
         "tests/unit/test_greg_self_repair.py"
       ],
+      "rehearsal": [
+        "tests/integration/test_greg_chromebook_rehearsal.py::test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_a_model"
+      ],
       "pivot_condition": "If model-built candidates keep failing verification, prefer installed software or open-source acquisition routes before any new builder",
       "kill_condition": "Ported from PR #68 node 1: if a candidate can read or alter its evaluator, stop; the result would be worthless",
       "founder_attention": "sign one mission and one capability contract",
@@ -122,6 +129,9 @@
       "evidence_refs": [
         "tests/unit/test_greg_business_case.py",
         "greg/business_loop.py"
+      ],
+      "rehearsal": [
+        "tests/unit/test_greg_business_case.py::test_a_case_closes_in_commercial_order_with_people_doing_every_outward_act"
       ],
       "pivot_condition": "If publication authority is withheld, pick a wedge whose first external effect Alfonso does authorize",
       "kill_condition": "Engagement or revenue obtained through deception or without consent",
@@ -155,6 +165,9 @@
       "evidence_refs": [
         "tests/unit/test_greg_sop_compounding.py",
         "greg/sop.py"
+      ],
+      "rehearsal": [
+        "tests/unit/test_greg_sop_compounding.py::test_a_ratified_procedure_runs_without_a_model_or_an_approval_stop_and_closes_n4"
       ],
       "components": [
         "proposal from three or more verified closures with the same capabilities and the same signed shape (greg/sop.py propose)",
@@ -207,6 +220,9 @@
         "greg/templates.py",
         "greg/missions.py"
       ],
+      "rehearsal": [
+        "tests/unit/test_greg_shared_work.py::test_a_named_person_agrees_delivers_is_reviewed_and_the_outcome_is_recorded"
+      ],
       "components": [
         "founder-signed shared-work mission naming the person, a contract or employment Alfonso arranges and pays, the deliverable and the acceptance terms (greg/templates.py shared_work)",
         "GREG writes the handoff, including the person's right to decline, before anyone is asked anything",
@@ -238,6 +254,9 @@
         "tests/unit/test_greg_venture_books.py",
         "greg/venture_books.py",
         "capital/treasury.py"
+      ],
+      "rehearsal": [
+        "tests/unit/test_greg_venture_books.py::test_a_procedure_from_one_venture_makes_a_second_cheaper_and_its_revenue_funds_reserves_first"
       ],
       "components": [
         "business cases carry their venture; a procedure ratified from one venture's verified cases runs in another (greg/sop.py instantiate venture)",

@@ -279,3 +279,15 @@ def test_the_fallback_tier_runs_only_where_the_primary_operators_find_nothing():
     assert [label for label, _ in evidence_strength.mutants(source, changed, tier="fallback")] == [
         "line 3: string emptied", "line 3: assign value -> None", "line 4: assign value -> None",
         "line 8: return value -> None"]                                  # never the docstring, never the import
+
+
+def test_a_sample_budget_of_one_or_none_never_crashes_the_appraisal():
+    """Found by the held-out replay: a second source file reached with one mutant of budget left
+    divided by ``limit - 1`` and raised ZeroDivisionError inside the appraisal."""
+    source = "def f(a, b):\n    return a + b - 1 * 2\n"
+    every = evidence_strength.mutants(source, {2})
+    assert len(every) > 1
+    assert evidence_strength.mutants(source, {2}, limit=0) == []
+    one = evidence_strength.mutants(source, {2}, limit=1)
+    assert len(one) == 1 and one[0] in every
+    assert len(evidence_strength.mutants(source, {2}, limit=1, tier="fallback")) <= 1

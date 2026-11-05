@@ -40,6 +40,10 @@ MUTANTS = [
      "applicable = bool(sources)", "applicable = True",
      "tests/unit/test_greg_worker_evidence_strength.py::"
      "test_a_data_deliverable_is_outside_the_adversary_and_keeps_its_earlier_acceptance"),
+    ("a one-mutant budget divides by zero", "greg/evidence_strength.py",
+     "    elif limit == 1:", "    elif False:",
+     "tests/unit/test_greg_worker_evidence_strength.py::"
+     "test_a_sample_budget_of_one_or_none_never_crashes_the_appraisal"),
 ]
 DEFAULT_TEST = "tests/unit/test_greg_workers.py::test_appraisal_binds_acceptance_to_the_original_commission"
 

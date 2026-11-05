@@ -199,7 +199,14 @@ def mutants(source: str, lines: set[int], limit: int = MAX_MUTANTS, tier: str = 
     probe = kind(lines)
     probe.visit(ast.parse(source))
     total = len(probe.labels)
-    picks = range(total) if total <= limit else sorted({round(i * (total - 1) / (limit - 1)) for i in range(limit)})
+    if limit < 1:
+        return []
+    if total <= limit:
+        picks = range(total)
+    elif limit == 1:  # one site of budget left: take the middle one, never divide by limit - 1
+        picks = [total // 2]
+    else:
+        picks = sorted({round(i * (total - 1) / (limit - 1)) for i in range(limit)})
     out = []
     for index in picks:
         tree = kind(lines, target=index).visit(ast.parse(source))

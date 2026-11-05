@@ -65,6 +65,40 @@ def test_live_passport_ceiling_refuses_another_issue():
         _passport(registry, ttl_seconds=3600)
 
 
+def test_a_finished_passport_frees_its_live_slot_and_a_revocation_still_stays():
+    """A governed act's passport must leave the live set when the act finishes.
+
+    The ceiling counts identities still in use. A run longer than that ceiling
+    still issues, one finished passport at a time. Finishing is not revocation:
+    a revoked identity stays, and folding never drops it.
+    """
+    registry = PassportRegistry(max_live=2, max_expired_audit=3)
+    body = _passport(registry, kind="process", ttl_seconds=3600)
+    finished = []
+    for _ in range(6):
+        worker = _passport(registry, kind="agent", ttl_seconds=900)
+        finished.append(worker.passport_id)
+        registry.retire(worker.passport_id)
+    report = registry.retention()
+    assert report["live"] == 1
+    assert report["expired_retained"] == 3
+    assert report["folded"] == 3
+    assert report["revoked"] == 0
+    assert registry.verify(body.passport_id) == (True, "identity_verified")
+    assert registry.verify(finished[-1]) == (False, "expired")
+    assert registry.verify(finished[0]) == (False, "unknown_identity")
+    assert registry.inspect(finished[-1])["which_entity_bears_liability"] == "alfonso_lopez"
+    registry.retire(finished[-2])  # already in the audit window
+    assert registry.verify(finished[-2]) == (False, "expired")
+    registry.revoke(finished[-1], reason="compromise suspected", revoker="alfonso")
+    registry.retire(finished[-1])
+    assert registry.retention()["revoked"] == 1
+    assert registry.verify(finished[-1])[1].startswith("revoked:")
+    _passport(registry, ttl_seconds=3600)
+    with pytest.raises(PassportError, match="live passport ceiling"):
+        _passport(registry, ttl_seconds=3600)
+
+
 def test_queue_drops_acked_bodies_and_refuses_an_unbounded_backlog(tmp_path):
     queue = Queue(tmp_path, "signals", visibility=1, max_unacked=2, max_acked=2)
     for i in range(40):

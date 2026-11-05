@@ -268,6 +268,19 @@ def _observation_appraisal(journal, settling: dict):
     return appraisal
 
 
+def contained_receipts(journal) -> dict:
+    """Observation receipts whose measurement a recorded correction impugns and no evidence has requalified
+    (``greg.corrections``, S45-A: REPLICATION_FAILED, APPRAISAL_REFUTED, FOUNDER_REJECTED), as receipt -> {cause,
+    cause_id, event, path}. An outcome resting on one is withheld from competence, neither credited nor counted wrong;
+    ``reconcile`` then closes its settlement once, naming the cause. Other outcomes, of the same method too, still count.
+    A body without that module contains nothing."""
+    try:
+        from greg.corrections import contained_receipts as corrections_contained
+    except ImportError:
+        return {}
+    return corrections_contained(journal) or {}
+
+
 def measured_outcomes(journal):
     if journal is None:
         return []
@@ -283,10 +296,11 @@ def measured_outcomes(journal):
     witnesses = {r.payload["witness_id"]: r.payload for r in journal.ledger.by_type("witness")}
     observations = {}
     appraisal_of = _observation_appraisal(journal, _settling_appraisals(journal))
+    contained = contained_receipts(journal)
     for event in journal.replay("mission.observed"):
         data = event.payload
         appraisal = appraisal_of(event)
-        if appraisal is None or not data.get("receipt"):
+        if appraisal is None or not data.get("receipt") or data["receipt"] in contained:
             continue
         record = journal.ledger.find(data["receipt"])
         if record is None or record.record_type != "receipt":
@@ -479,10 +493,16 @@ def reconcile(journal):
                     "reason": "current appraisal no longer supports competence; a duplicate chain of the claim, "
                               "history retained"}, key=[identity, "invalidate", shadow.event_id],
                     causal_parent=shadow.event_id)
+    contained = contained_receipts(journal) if current else {}
     for identity, prior in current.items():
         if identity not in measured and identity not in succeeded and not prior.payload.get("invalidated"):
+            cause = contained.get(prior.payload.get("receipt"))
             revision = {**prior.payload, "invalidated": True, "supersedes": prior.event_id,
                         "reason": "current appraisal no longer supports competence; history retained"}
+            if cause:      # withheld, not wrong: the evidence it rests on was impugned by a recorded correction
+                revision.update(reason=f"withheld: the evidence it rests on was invalidated ({cause['cause']}, "
+                                       f"{cause.get('event')}); neither credited nor counted wrong; history retained",
+                                contained_by={k: cause.get(k) for k in ("cause", "cause_id", "event")})
             journal.record("cognition.settled", revision, key=[identity, "invalidate", prior.event_id], causal_parent=prior.event_id)
 
 

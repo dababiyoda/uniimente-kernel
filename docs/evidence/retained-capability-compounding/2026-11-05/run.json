@@ -1,0 +1,92 @@
+{
+ "counterfactual_mission_b_alone": {
+  "builder_calls": 2,
+  "deficits_opened": [
+   "m:release"
+  ],
+  "formed": [
+   {
+    "acquisition": {
+     "blocked_seconds": 0.0,
+     "build_cost_known": true,
+     "build_cost_usd": 0.0,
+     "builder_calls": 2,
+     "founder_attach": false,
+     "verifications": 2
+    },
+    "capability_id": "built.markdown.unchecked_count.2a6f0ba8ed8d",
+    "function": "markdown.unchecked_count",
+    "mission_id": "m:release"
+   }
+  ],
+  "mission_states": {
+   "m:release": "ACHIEVED"
+  }
+ },
+ "with_retained_capability": {
+  "builder_calls_mission_a": 2,
+  "builder_calls_mission_b": 0,
+  "deficits_opened": [
+   "m:runbook"
+  ],
+  "mission_states": {
+   "m:release": "ACHIEVED",
+   "m:runbook": "ACHIEVED"
+  },
+  "result": {
+   "blocker": "the founder's path moves only on a closure signed by the enrolled founder key at the founder tier; a test key, a fixture or a --no-passphrase rehearsal is structural evidence only through the supported tools",
+   "compounding": true,
+   "evidence_level": "STRUCTURAL_CANDIDATE",
+   "formed": [
+    {
+     "acquisition": {
+      "blocked_seconds": 0.0,
+      "build_cost_known": true,
+      "build_cost_usd": 0.0,
+      "builder_calls": 2,
+      "founder_attach": false,
+      "verifications": 2
+     },
+     "capability_id": "built.markdown.unchecked_count.2a6f0ba8ed8d",
+     "function": "markdown.unchecked_count",
+     "mission_id": "m:runbook"
+    }
+   ],
+   "met": false,
+   "not_founder_tier": {
+    "m:release": "its signing key never attested passphrase custody: a test key, a fixture's key or a --no-passphrase rehearsal never moves the founder's path",
+    "m:runbook": "its signing key never attested passphrase custody: a test key, a fixture's key or a --no-passphrase rehearsal never moves the founder's path"
+   },
+   "per_pair_price": "each reuse reports the whole price its formation paid; several reuses of one formation are not to be summed as total savings",
+   "reality": "measured from the ledger: a later different mission used a capability an earlier one formed, and paid none of the earlier acquisition; that it could not have obtained the function another way, and that the outcomes mattered, are not provable here. A mission that differs from the forming one by one trivial check is 'different' by signed shape; that is a limit.",
+   "refused": [],
+   "reuses": [
+    {
+     "avoided": {
+      "blocked_seconds": 0.0,
+      "build_cost_known": true,
+      "build_cost_usd": 0.0,
+      "builder_calls": 2,
+      "founder_attach": false,
+      "verifications": 2
+     },
+     "capability_id": "built.markdown.unchecked_count.2a6f0ba8ed8d",
+     "formed_in": "m:runbook",
+     "function": "markdown.unchecked_count",
+     "paid_in_reuse": {
+      "blocked_seconds": 0.0,
+      "build_cost_usd": 0.0,
+      "builder_calls": 0,
+      "deficits_opened": 0,
+      "verifications": 0
+     },
+     "relation": "different procedure",
+     "reused_in": "m:release"
+    }
+   ],
+   "structural_value": 1,
+   "structurally_met": true,
+   "value": 0
+  }
+ }
+}

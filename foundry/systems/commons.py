@@ -39,6 +39,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey,
 from foundry.systems import reputation
 from foundry.systems.webserver import Site
 from provenance.digests import compact_json_bytes as _canon, sha256_json as _sha
+from foundry.systems.refusals import refusal_recorder
 
 POST_LIMIT = 5
 POST_WINDOW = timedelta(hours=1)
@@ -327,14 +328,7 @@ def exercise(root) -> dict:
     pub = {n: public_bytes(k.public_key()).hex() for n, k in keys.items()}
     t = lambda m: f"2026-10-13T{15 + m // 60:02d}:{m % 60:02d}:00Z"
     c = Community(root / "community", name="greg-commons", key_seed=bytes(32 * [60]), owner_public_hex=pub["owner"])
-    refusals = {}
-
-    def refused(label, fn):
-        try:
-            fn()
-            refusals[label] = None
-        except CommunityError as exc:
-            refusals[label] = str(exc)[:80]
+    refusals, refused = refusal_recorder(CommunityError, limit=80)
 
     reg = lambda who, display: sign(keys[who], {"public_key": pub[who], "display": display})
     ids = {"owner": fingerprint(pub["owner"])}

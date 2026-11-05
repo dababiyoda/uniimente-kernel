@@ -970,6 +970,8 @@ class Genesis:
             why = "reduction code changed since qualification"
         elif origin["target_capability_id"] not in self.registry.manifests:
             why = "the engine it was qualified over is no longer registered"
+        elif not recombine.gate_current(manifest.provenance.get("qualification"), found[0][0]):
+            why = "qualified without the emergence gate its reduction states now; requalification required"
         path = found[0] if found else []
         self.registry.register(manifest, recombine.composed_adapter(path, self.registry), state=self._restored_state(
             cid, state, why, [cid, "quarantine", origin["chain_digest"], why]))
@@ -1687,8 +1689,10 @@ class Genesis:
             return False
         prior = self._recorded_qualification(deficit_id, manifest.capability_id)
         if prior is not None:
-            self._route(deficit_id, "constructed", f"{'qualified' if prior['passed'] else 'failed qualification'} "
-                        "earlier on this deficit (recorded; not re-run)", manifest.capability_id)
+            refusal = None if prior["passed"] else recombine.integration_refusal(prior.get("report"), earlier=True)
+            verdict = "qualified" if prior["passed"] else "failed qualification"
+            self._route(deficit_id, "constructed", refusal or f"{verdict} earlier on this deficit (recorded; not re-run)",
+                        manifest.capability_id)
             return False
         adapter = recombine.composed_adapter(path, self.registry)
         try:
@@ -1707,7 +1711,9 @@ class Genesis:
                                                              "the engine"},
                             key=[deficit_id, manifest.capability_id, manifest.provenance["chain_digest"]])
         if not passed:
-            self._route(deficit_id, "constructed", "failed qualification", manifest.capability_id)
+            self._route(deficit_id, "constructed", "failed qualification"
+                        if (refusal := recombine.integration_refusal(report)) is None else refusal,
+                        manifest.capability_id)
             return False
         manifest = self._composed_manifest(function, path, engine, deficit_id, report)
         self.registry.register(manifest, adapter, state="VERIFIED")

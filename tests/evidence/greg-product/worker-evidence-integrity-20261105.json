@@ -1,0 +1,515 @@
+{
+ "record": "worker-evidence-integrity-20261105",
+ "line": "integration candidate #196 (claude/greg-full-machine-completion-whgiee) at d35d92a5",
+ "product_delta": "worker.appraise no longer ACCEPTS work whose tests ran planted compiled code instead of the delivered source, nor work whose change the mutation adversary could not reach (an alias, an import) on the worker's own tests alone.",
+ "defects_probed_before_the_change": {
+  "planted_bytecode": {
+   "patch": "pkg/calc.py `sub = add` (wrong) + pkg/__pycache__/calc.cpython-311.pyc compiled from a correct sub with PycInvalidationMode.UNCHECKED_HASH",
+   "observed_on_d35d92a5": "mission achieved; worker.appraise ACCEPTED; mutation measured False (0 mutants), discrimination established (ImportError on base)",
+   "after": "REJECTED: 'the patch delivers compiled modules [...]'; the base state of those paths is restored, so the recorded acceptance run executes the source and fails"
+  },
+  "unreachable_change": {
+   "patch": "pkg/calc.py `sub = add` + a test that only imports sub",
+   "observed_on_d35d92a5": "mission achieved; mutation unmeasured counted as adequate",
+   "after": "fallback tier: 'line 5: assign value -> None' survives, 0/1 killed, REJECTED"
+  }
+ },
+ "external_precedent": {
+  "pit_default_mutators": "hcoles/pitest Mutator.java newDefaults(): INVERT_NEGS, MATH, VOID_METHOD_CALLS, NEGATE_CONDITIONALS, CONDITIONALS_BOUNDARY, INCREMENTS + return-value mutators; INLINE_CONSTS is not a default (fetched 2026-11-05)",
+  "pit_fail_when_no_mutations": "hcoles/pitest pitest-entry ConfigOption.java line 143: FAIL_WHEN_NOT_MUTATIONS(\"failWhenNoMutations\", true) (fetched 2026-11-05); ReportOptions' field initialiser is false but the CLI/config default is true"
+ },
+ "policy_experiment": {
+  "question": "Does restricting inline-constant mutation (PIT's choice) or scoring adequacy per mutated line cut the false rejections measured on 2026-10-21 without losing true findings?",
+  "policies": {
+   "all": "shipped operators",
+   "expressions": "no integer +-1 inside dict/list/tuple/set displays",
+   "none": "no integer +-1 at all (closest to PIT defaults)"
+  },
+  "scorings": {
+   "ratio": "shipped: killed >= 1 and killed/mutants >= 0.5",
+   "perline": "a mutated line counts as covered if any of its mutants is killed; covered/lines >= 0.5"
+  },
+  "method": "tests/evidence/greg-product/worker-evidence-replay.py: each real commit replayed as a worker patch (base = parent), the commit's own changed tests run against the base and against every mutant each policy samples (PYTHONDONTWRITEBYTECODE=1); analysis in worker-evidence-replay-analyze.py",
+  "measurement_hazard_found": "the first run wrote bytecode: a same-size mutant written within the same second as the import can be served from a stale .pyc and look like a survivor. Restarted with bytecode writing off; the product's acceptance runs already set PYTHONDONTWRITEBYTECODE=1.",
+  "dev_set": {
+   "commits": "the 18 replayed on 2026-10-21",
+   "tally": {
+    "all_ratio": "14/16 accepted",
+    "all_perline": "13/16 accepted",
+    "expressions_ratio": "14/16 accepted",
+    "expressions_perline": "14/16 accepted",
+    "none_ratio": "13/16 accepted",
+    "none_perline": "14/16 accepted",
+    "unmeasured_by_primary_operators": [
+     "73f0425",
+     "476d6cc"
+    ]
+   },
+   "rows": [
+    {
+     "sha": "1dfef4e",
+     "seconds": 9.5,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "ACCEPT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "ACCEPT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 2,
+     "killed_all": 2,
+     "survivors_all": []
+    },
+    {
+     "sha": "bd0c17d",
+     "seconds": 74.7,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "ACCEPT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "ACCEPT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 12,
+     "killed_all": 12,
+     "survivors_all": []
+    },
+    {
+     "sha": "3c92bc9",
+     "seconds": 55.0,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "ACCEPT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "ACCEPT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 12,
+     "killed_all": 12,
+     "survivors_all": []
+    },
+    {
+     "sha": "73f0425",
+     "seconds": 5.5,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "ACCEPT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "ACCEPT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 0,
+     "killed_all": 0,
+     "survivors_all": []
+    },
+    {
+     "sha": "924bede",
+     "seconds": 126.4,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "ACCEPT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "ACCEPT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 12,
+     "killed_all": 7,
+     "survivors_all": [
+      "line 745: flip comparison",
+      "line 769: swap and/or",
+      "line 770: 0 -> -1",
+      "line 785: False -> True",
+      "line 801: flip comparison"
+     ]
+    },
+    {
+     "sha": "53e0b3e",
+     "seconds": 331.6,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "ACCEPT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "REJECT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 12,
+     "killed_all": 7,
+     "survivors_all": [
+      "line 201: drop '+ 1e-09'",
+      "line 201: swap +/-",
+      "line 204: 6 -> 5",
+      "line 1031: 0 -> -1",
+      "line 1031: swap and/or"
+     ]
+    },
+    {
+     "sha": "476d6cc",
+     "seconds": 4.9,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "ACCEPT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "ACCEPT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 0,
+     "killed_all": 0,
+     "survivors_all": []
+    },
+    {
+     "sha": "23cb3d6",
+     "seconds": 20.9,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "ACCEPT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "ACCEPT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 2,
+     "killed_all": 1,
+     "survivors_all": [
+      "line 403: negate comparison"
+     ]
+    },
+    {
+     "sha": "2a8deff",
+     "seconds": 52.2,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "ACCEPT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "ACCEPT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 12,
+     "killed_all": 6,
+     "survivors_all": [
+      "line 70: 200 -> 201",
+      "line 143: 0 -> 1",
+      "line 172: swap and/or",
+      "line 198: 0 -> 1",
+      "line 198: 0 -> -1",
+      "line 198: drop 'not'"
+     ]
+    },
+    {
+     "sha": "8531595",
+     "seconds": 470.7,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "ACCEPT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "ACCEPT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 12,
+     "killed_all": 8,
+     "survivors_all": [
+      "line 341: drop '+  '",
+      "line 363: swap and/or",
+      "line 367: drop 'not'",
+      "line 363: drop '+ </td></tr>'"
+     ]
+    },
+    {
+     "sha": "c047586",
+     "seconds": 12.0,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "ACCEPT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "ACCEPT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 1,
+     "killed_all": 1,
+     "survivors_all": []
+    },
+    {
+     "sha": "19d30ca",
+     "seconds": 10.5,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "ACCEPT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "ACCEPT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 5,
+     "killed_all": 3,
+     "survivors_all": [
+      "line 488: 1 -> 2",
+      "line 489: swap and/or"
+     ]
+    },
+    {
+     "sha": "0097eb5",
+     "seconds": 25.4,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "ACCEPT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "ACCEPT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 9,
+     "killed_all": 6,
+     "survivors_all": [
+      "line 35: swap and/or",
+      "line 80: 0 -> -1",
+      "line 80: 0 -> -1"
+     ]
+    },
+    {
+     "sha": "e9c92e1",
+     "seconds": 112.5,
+     "discrimination": true,
+     "all_ratio": "REJECT",
+     "all_perline": "REJECT",
+     "expressions_ratio": "REJECT",
+     "expressions_perline": "REJECT",
+     "none_ratio": "REJECT",
+     "none_perline": "REJECT",
+     "mutants_all": 7,
+     "killed_all": 2,
+     "survivors_all": [
+      "line 678: swap and/or",
+      "line 335: 1 -> 2",
+      "line 335: 1 -> 0",
+      "line 335: drop '+ 1'",
+      "line 335: swap +/-"
+     ]
+    },
+    {
+     "sha": "9712733",
+     "skipped": "commit's own tests fail at the commit (rc 1): environment"
+    },
+    {
+     "sha": "4e35530",
+     "seconds": 8.4,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "REJECT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "ACCEPT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 12,
+     "killed_all": 6,
+     "survivors_all": [
+      "line 79: 3 -> 4",
+      "line 94: 500 -> 501",
+      "line 100: flip comparison",
+      "line 103: 200 -> 199",
+      "line 106: 16 -> 15",
+      "line 115: flip comparison"
+     ]
+    },
+    {
+     "sha": "76ebb40",
+     "seconds": 40.2,
+     "discrimination": true,
+     "all_ratio": "REJECT",
+     "all_perline": "REJECT",
+     "expressions_ratio": "REJECT",
+     "expressions_perline": "REJECT",
+     "none_ratio": "REJECT",
+     "none_perline": "REJECT",
+     "mutants_all": 12,
+     "killed_all": 1,
+     "survivors_all": [
+      "line 36: 0 -> 1",
+      "line 36: 1 -> 2",
+      "line 36: 2 -> 3",
+      "line 36: 3 -> 4",
+      "line 36: 8 -> 9",
+      "line 252: 1 -> 2",
+      "line 252: 0 -> 1",
+      "line 252: negate comparison",
+      "line 252: 0 -> -1",
+      "line 252: 1 -> 0",
+      "line 368: swap and/or"
+     ]
+    },
+    {
+     "sha": "d311392",
+     "skipped": "commit's own tests fail at the commit (rc 1): environment"
+    }
+   ]
+  },
+  "held_out_set": {
+   "commits": "every third of the 92 commits on #196 since 2026-10-21 that change greg/*.py together with tests/unit/test_*.py",
+   "status": "partial",
+   "tally": {
+    "all_ratio": "6/7 accepted",
+    "all_perline": "6/7 accepted",
+    "expressions_ratio": "6/7 accepted",
+    "expressions_perline": "6/7 accepted",
+    "none_ratio": "6/7 accepted",
+    "none_perline": "6/7 accepted",
+    "unmeasured_by_primary_operators": []
+   },
+   "rows": [
+    {
+     "sha": "b2475087",
+     "seconds": 27.4,
+     "discrimination": true,
+     "all_ratio": "REJECT",
+     "all_perline": "REJECT",
+     "expressions_ratio": "REJECT",
+     "expressions_perline": "REJECT",
+     "none_ratio": "REJECT",
+     "none_perline": "REJECT",
+     "mutants_all": 12,
+     "killed_all": 0,
+     "survivors_all": [
+      "line 53: 420 -> 421",
+      "line 53: 420 -> 419",
+      "line 67: 1 -> 0",
+      "line 70: 0 -> 1",
+      "line 70: flip comparison",
+      "line 804: 1 -> 2",
+      "line 804: drop '+ \n'",
+      "line 804: swap +/-",
+      "line 951: 1 -> 0",
+      "line 1137: 1 -> 2",
+      "line 1137: drop '+ \n'",
+      "line 1137: swap +/-"
+     ]
+    },
+    {
+     "sha": "954677a4",
+     "seconds": 25.0,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "ACCEPT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "ACCEPT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 12,
+     "killed_all": 8,
+     "survivors_all": [
+      "line 160: 64 -> 65",
+      "line 160: 64 -> 63",
+      "line 192: 1 -> 2",
+      "line 192: 0 -> -1"
+     ]
+    },
+    {
+     "sha": "742a5b0d",
+     "seconds": 60.8,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "ACCEPT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "ACCEPT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 12,
+     "killed_all": 10,
+     "survivors_all": [
+      "line 282: 300 -> 301",
+      "line 282: 300 -> 299"
+     ]
+    },
+    {
+     "sha": "c7908b8e",
+     "seconds": 56.7,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "ACCEPT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "ACCEPT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 12,
+     "killed_all": 12,
+     "survivors_all": []
+    },
+    {
+     "sha": "18c4cc4b",
+     "seconds": 77.9,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "ACCEPT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "ACCEPT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 12,
+     "killed_all": 9,
+     "survivors_all": [
+      "line 163: 16 -> 17",
+      "line 175: 1 -> 0",
+      "line 175: flip comparison"
+     ]
+    },
+    {
+     "sha": "be3f0c31",
+     "seconds": 423.8,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "ACCEPT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "ACCEPT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 12,
+     "killed_all": 8,
+     "survivors_all": [
+      "line 25: 180 -> 181",
+      "line 38: 0 -> -1",
+      "line 45: True -> False",
+      "line 49: 1 -> 2"
+     ]
+    },
+    {
+     "sha": "a3382526",
+     "seconds": 679.8,
+     "discrimination": true,
+     "all_ratio": "ACCEPT",
+     "all_perline": "ACCEPT",
+     "expressions_ratio": "ACCEPT",
+     "expressions_perline": "ACCEPT",
+     "none_ratio": "ACCEPT",
+     "none_perline": "ACCEPT",
+     "mutants_all": 12,
+     "killed_all": 8,
+     "survivors_all": [
+      "line 66: 1 -> 2",
+      "line 66: 20 -> 21",
+      "line 66: 20 -> 19",
+      "line 219: True -> False"
+     ]
+    }
+   ]
+  },
+  "result": "No policy or scoring removes the known false rejection: 76ebb40 is REJECTED under all six combinations. With the ordinal +-1 mutants removed, the sample moves to negations and and/or swaps on other changed lines its tests do not exercise, so the 2026-10-21 reading ('mostly false rejection') was itself a sampling artefact; it is closer to weak coverage. 'none' creates a new rejection (53e0b3e). 'expressions' and per-line change one verdict between them (4e35530) in opposite directions.",
+  "decision": "RETAIN the shipped operators and scoring. The constant-policy switch built for the experiment was not kept."
+ },
+ "fallback_tier_on_real_commits": {
+  "question": "Does the new fail-closed rule turn honest commits the primary operators cannot reach into rejections?",
+  "method": "tests/evidence/greg-product/worker-evidence-replay-fallback.py on every dev commit with 0 primary mutants",
+  "rows": [
+   {
+    "sha": "73f0425",
+    "killed": 2,
+    "mutants": 2
+   },
+   {
+    "sha": "476d6cc",
+    "killed": 8,
+    "mutants": 8
+   }
+  ],
+  "result": "both were measured by the fallback tier and every mutant was killed: ACCEPTED, where they had been accepted unmeasured before. No new rejection on the dev set."
+ },
+ "limits": [
+  "replayed commits were authored by agents in this project, several by this session's lineage",
+  "true-positive coverage of the policy experiment is the corrupted unit cases plus e9c92e1, not an adversarial corpus",
+  "the fallback's '-> None' mutant is killed by a test that only checks its subject is callable; a founder oracle closes that residual"
+ ],
+ "vepmc": 0
+}

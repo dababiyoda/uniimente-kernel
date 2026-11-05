@@ -5,6 +5,8 @@ On a body with dpkg, Genesis records beside the DEP-5 licence:
 - its installed version, read from dpkg's status database as a file (no new spawn);
 - the copyright file the licence was read from.
 
+The owning package is whatever dpkg names on the host: coreutils on Debian, rust-coreutils on newer Ubuntu.
+
 Where no package manager answers, each field says ``unresolved`` and the binary is acquired exactly as before. A
 version is never guessed: a status database that is missing, oversized, not installed, malformed or ambiguous gives
 None.
@@ -57,16 +59,25 @@ def _provenance(body, cid=CID):
 
 @pytest.mark.skipif(not (DPKG and SHA256SUM and licensing.system_binary(SHA256SUM or "/")),
                     reason="needs a dpkg body on which a package owns sha256sum")
-def test_sha256sum_provenance_names_coreutils_its_installed_version_and_the_copyright_file(tmp_path):
+def test_sha256sum_provenance_names_its_owning_package_installed_version_and_copyright_file(tmp_path):
     body, states = _run(tmp_path)
     assert "ACHIEVED" in states
     prov = _provenance(body)
-    assert prov["package"] == "coreutils"
-    assert prov["package_version"] == licensing.installed_package_version("coreutils") != genesis_mod.UNRESOLVED
-    assert "GPL-3" in prov["license"]
-    assert prov["license_source"] == "/usr/share/doc/coreutils/copyright (Debian DEP-5 copyright file)"
-    assert prov["license_assessment"]["package"] == "coreutils"
+    owner = _dpkg_owner(SHA256SUM)          # coreutils on Debian; rust-coreutils on newer Ubuntu: whatever dpkg says
+    assert prov["package"] == owner
+    assert prov["package_version"] == licensing.installed_package_version(owner) != genesis_mod.UNRESOLVED
+    assert prov["license"] and prov["license"] == prov["license_assessment"]["parts"][0]["expression"][:200]
+    assert prov["license_source"] == f"/usr/share/doc/{owner}/copyright (Debian DEP-5 copyright file)"
+    assert prov["license_assessment"]["package"] == owner
     body.close()
+
+
+def _dpkg_owner(binary):
+    """The package dpkg itself names for a binary, asked independently of the code under test."""
+    import os
+    import subprocess
+    out = subprocess.run(["dpkg-query", "-S", os.path.realpath(binary)], capture_output=True, text=True).stdout
+    return out.split(":", 1)[0].split(":")[0].strip()
 
 
 @pytest.mark.skipif(not SHA256SUM, reason="sha256sum is needed")

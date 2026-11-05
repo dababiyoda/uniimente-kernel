@@ -102,8 +102,6 @@ jobs:
         run: python scripts/ci/check_native_cognition_mutants.py
       - name: Enclosing cognition budget and verification reserve mutations
         run: python scripts/ci/check_cognition_budget_mutants.py
-      - name: Evidence-correction mutations (a changed, retracted, expired or contradicted reading marks what rests on it)
-        run: python scripts/ci/check_evidence_corrections_mutants.py
       - name: Fork-safe commodity WASM compiler lifecycle mutation
         run: python scripts/ci/check_wasm_lifecycle_mutant.py
       - name: Canonical WorkOrder and reobservation mutations
@@ -404,6 +402,11 @@ jobs:
           UNIIMENTE_WEALTHMACHINE_ROOT: "${{ github.workspace }}/organs/wealthmachine"
           UNIIMENTE_WEALTHMACHINE_PYTHON: "${{ github.workspace }}/organs/wealthmachine-venv/bin/python"
         run: python scripts/ci/check_organ_verdict_mutants.py
+      # Runs here, not in job 1: job 1 already takes about its whole 120-minute limit on the base (#221, #260), and
+      # this 41-mutant gate (about 1.5 minutes) needs only the kernel environment this job installs.
+      - name: Evidence-correction mutations (a changed, retracted, expired or contradicted reading marks what rests on it)
+        working-directory: kernel
+        run: python scripts/ci/check_evidence_corrections_mutants.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

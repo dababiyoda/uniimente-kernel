@@ -677,6 +677,87 @@ def _screen(candidate: Candidate, binary: str, examples: list) -> str | None:
     return None
 
 
+# Two-stage composition (acceptance C.G4, doctrine rung 2): a stage that turns one file into text feeds any discovery
+# template. Only these parses hand the next stage a faithful text; the raw output of stage 1 is what stage 2 reads.
+PIPELINE_STAGE1_PARSES = ("text", "lines")
+PIPELINE_INTERMEDIATE_MAX = 16 * 1024 ** 2      # bytes one stage may hand the next; more is refused, not truncated
+
+
+def _stage1_key(candidate: Candidate) -> str:
+    return "stage1:" + candidate.binary_name
+
+
+def pipeline_adapter(function: str, first: Candidate, first_binary: str, second: Candidate, second_binary: str,
+                     spec: dict):
+    """Adapter for ``first {file} | second`` bound to two verified binaries, each re-checked against its pinned hash.
+
+    Stage 1's raw output is written to a private file in the workspace and stage 2 reads that file; nothing else is
+    passed between them. Both run under the same ceilings and isolation as any acquired binary."""
+
+    def adapter(params, ctx: InvocationContext):
+        path = Path(params["path"]).resolve()
+        roots = ctx.read_roots + (ctx.workspace,)
+        if not any(path == Path(r).resolve() or Path(r).resolve() in path.parents for r in roots):
+            raise CapabilityError(f"path {path} outside permitted roots")
+        prov = ctx.manifest.provenance
+        pinned = (prov.get("companions") or {}).get(_stage1_key(first)) or {}
+        for binary, expected in ((second_binary, prov.get("binary_sha256")), (first_binary, pinned.get("binary_sha256"))):
+            if not expected or hashlib.sha256(Path(binary).read_bytes()).hexdigest() != expected:
+                raise CapabilityError("installed binary changed since verification; quarantine required")
+        requalified, why = licensing.requalify_binary(ctx.manifest, second_binary)   # covers the stage-1 companion
+        if not requalified:
+            raise CapabilityError(f"capability refused: {why}")
+        ctx.workspace.mkdir(parents=True, exist_ok=True)
+        argv = [first_binary if t == "{binary}" else str(path) if t == "{file}" else t for t in first.argv]
+        returncode, stdout, stderr = _run_bounded(argv, ctx.workspace, first.binary_name)
+        if returncode:
+            raise _exit_refusal(first.binary_name, returncode, stderr)
+        if len(stdout) > PIPELINE_INTERMEDIATE_MAX:
+            raise CapabilityError(f"{first.binary_name} produced more than the pipeline passes between stages")
+        fd, middle = tempfile.mkstemp(prefix="greg-pipe-", dir=ctx.workspace)
+        try:
+            with os.fdopen(fd, "wb") as handle:
+                handle.write(stdout)
+            argv = [second_binary if t == "{binary}" else middle if t == "{file}" else t for t in second.argv]
+            returncode, out, stderr = _run_bounded(argv, ctx.workspace, second.binary_name)
+            if returncode:
+                raise _exit_refusal(second.binary_name, returncode, stderr)
+            return {spec["output_field"]: PARSERS[second.parse](out.decode("utf-8", errors="replace")),
+                    "path": str(path)}
+        finally:
+            Path(middle).unlink(missing_ok=True)
+    return adapter
+
+
+def _stage_outputs(first: Candidate, binary: str, examples: list, tmp: Path) -> list | str:
+    """Stage 1's raw output on each public example, or why it cannot feed a pipeline."""
+    outputs = []
+    for index, example in enumerate(examples):
+        path = tmp / f"stage1-{index}.txt"
+        path.write_text(example["input_text"])
+        argv = [binary if t == "{binary}" else str(path) if t == "{file}" else t for t in first.argv]
+        returncode, stdout, _ = _run_bounded(argv, tmp, first.binary_name)
+        if returncode or len(stdout) > PIPELINE_INTERMEDIATE_MAX:
+            return f"stage 1 on public example {index}: exit status {returncode}"
+        outputs.append(stdout)
+    return outputs
+
+
+def _screen_second(second: Candidate, binary: str, middles: list, examples: list, tmp: Path) -> str | None:
+    """Stage 2 on stage 1's outputs; None when the pair answers every public example."""
+    for index, (middle, example) in enumerate(zip(middles, examples)):
+        path = tmp / f"stage2-{index}.txt"
+        path.write_bytes(middle)
+        argv = [binary if t == "{binary}" else str(path) if t == "{file}" else t for t in second.argv]
+        returncode, stdout, _ = _run_bounded(argv, tmp, second.binary_name)
+        if returncode:
+            return f"public example {index}: exit status {returncode}"
+        got = PARSERS[second.parse](stdout.decode("utf-8", errors="replace"))
+        if got != example["expected"]:
+            return f"public example {index}: got {str(got)[:60]!r}"
+    return None
+
+
 SNAPSHOT_MAX = 256 * 1024 ** 2          # bytes of one input copied for a reader with companions
 
 
@@ -934,6 +1015,9 @@ class Genesis:
             if origin.get("kind") == "composed":
                 self._restore_composed(cid, manifest, origin, state)
                 continue
+            if origin.get("kind") == "pipeline":
+                self._restore_pipeline(cid, manifest, origin, state)
+                continue
             binary = manifest.binaries[0]
             # the catalog's own candidate, so its companions (pdfimages beside pdftotext) run after a restart too;
             # the registration record keeps only the main binary's argv
@@ -953,6 +1037,23 @@ class Genesis:
                                                               [cid, "quarantine", manifest.provenance.get("binary_sha256")]))
         if record:
             self._finish_attaches()
+
+    def _restore_pipeline(self, cid, manifest, origin, state):
+        """A two-stage pipeline, re-registered with both binaries pinned; either one changed quarantines it."""
+        first_rec, second_rec = origin["stages"]
+        first = Candidate(first_rec["binary_name"], tuple(first_rec["argv"]), first_rec["parse"])
+        second = Candidate(second_rec["binary_name"], tuple(second_rec["argv"]), second_rec["parse"])
+        stage = (manifest.provenance.get("companions") or {}).get(_stage1_key(first)) or {}
+        pinned = [(manifest.binaries[0], manifest.provenance.get("binary_sha256")),
+                  (stage.get("binary"), stage.get("binary_sha256"))]
+        intact = all(path and digest and Path(path).exists()
+                     and hashlib.sha256(Path(path).read_bytes()).hexdigest() == digest for path, digest in pinned)
+        self.registry.register(manifest, pipeline_adapter(origin["function"], first, stage.get("binary") or "",
+                                                          second, manifest.binaries[0], origin["contract"]),
+                               state=self._restored_state(cid, state, None if intact else
+                                                          "a pipeline binary missing or changed since verification",
+                                                          [cid, "quarantine", manifest.provenance.get("binary_sha256"),
+                                                           stage.get("binary_sha256")]))
 
     def _finish_attaches(self):
         """Resolve the deficit of an auto-attach the body died inside (acceptance H.G7).
@@ -1859,7 +1960,9 @@ class Genesis:
             found = installed_binary(name)
             if found:
                 present[name] = hashlib.sha256(Path(found).read_bytes()).hexdigest()
-        fingerprint = sha256_json({"installed": present, "unusable": sorted(unusable)})
+        attached_sources, examined = self._stage1_sources(function)
+        fingerprint = sha256_json({"installed": present, "unusable": sorted(unusable),
+                                   "attached": [cid for cid, _, _ in attached_sources]})
         if any(e.payload["deficit_id"] == deficit_id and e.payload.get("selected") is None
                and e.payload.get("installed") == fingerprint for e in self.journal.replay("genesis.discovery")):
             self._route(deficit_id, "installed_software", "no installed tool behaves as the contract says (searched "
@@ -1915,12 +2018,137 @@ class Genesis:
                 [candidate.binary_name, *entry["argv"]]), manifest.capability_id)
             return self._attach(mission, manifest, deficit_id, now)
         installed = sum(1 for e in tried if e["result"] != "not installed")
+        found = self._pipeline_search(mission, function, spec, public, held, attached_sources, examined, unusable,
+                                      deficit_id, now, tried, fingerprint)
+        if found is not False:
+            return found
         self.journal.record("genesis.discovery", {"deficit_id": deficit_id, "function": function, "tried": tried,
                                                   "selected": None, "templates": len(DISCOVERY_TEMPLATES),
-                                                  "installed": fingerprint},
+                                                  "registry_examined": examined, "installed": fingerprint},
                             key=[deficit_id, "discovery", fingerprint])
         self._route(deficit_id, "installed_software", f"no installed tool behaves as the contract says ({installed} "
-                    f"of {len(DISCOVERY_TEMPLATES)} templates installed and tried)", None)
+                    f"of {len(DISCOVERY_TEMPLATES)} templates installed and tried, alone and as two-stage pipelines; "
+                    f"{len(examined)} registry entries examined)", None)
+        return False
+
+    def _origin(self, capability_id: str) -> dict:
+        return next((e.payload.get("origin") or {} for e in reversed(self.journal.replay("capability.registered"))
+                     if e.payload["manifest"]["capability_id"] == capability_id), {})
+
+    def _stage1_sources(self, function: str):
+        """ATTACHED registry capabilities that can be a pipeline's stage 1, and every registry entry examined.
+
+        A stage 1 reads one file and prints text: an acquired binary (catalogued or discovered) with a ``text`` or
+        ``lines`` parse, one ``{file}`` argument, no companions, and a binary that still matches its pinned hash."""
+        sources, examined = [], []
+        for cid in sorted(self.registry.state):
+            state = self.registry.state[cid]
+            manifest = self.registry.manifests[cid]
+            if state != "ATTACHED":
+                examined.append({"capability_id": cid, "state": state, "usable": f"not ATTACHED ({state})"})
+                continue
+            origin = self._origin(cid)
+            binary = manifest.binaries[0] if manifest.binaries else None
+            why = None
+            if origin.get("kind") not in (None, "discovered") or "argv" not in origin:
+                why = "not an acquired binary that reads one file"
+            elif origin.get("parse") not in PIPELINE_STAGE1_PARSES:
+                why = f"its output ({origin.get('parse')}) is not text another tool can read"
+            elif list(origin["argv"]).count("{file}") != 1 or (manifest.provenance.get("companions") or {}):
+                why = "it reads more than one file"
+            elif not binary or not Path(binary).exists() or hashlib.sha256(Path(binary).read_bytes()).hexdigest() \
+                    != manifest.provenance.get("binary_sha256"):
+                why = "its binary changed since verification"
+            examined.append({"capability_id": cid, "state": state, "usable": why or "stage 1"})
+            if why is None:
+                sources.append((cid, Candidate(origin["binary_name"], tuple(origin["argv"]), origin["parse"]), binary))
+        return sources, examined
+
+    def _pipeline_search(self, mission, function, spec, public, held, attached_sources, examined, unusable,
+                         deficit_id, now, tried, fingerprint):
+        """Two existing tools composed, ``first {file} | second``, before anything is built (acceptance C.G4).
+
+        Stage 1 is an ATTACHED capability the registry already holds, then an installed text template; stage 2 is any
+        installed template. Each stage-1 output is computed once per public example and shared by every stage 2. A
+        pair that answers the public examples is qualified on the examples and the held-out vectors through the
+        adapter it will serve with, and registered and attached under the usual rules."""
+        firsts = [(cid, c, b) for cid, c, b in attached_sources]
+        seen = {(b, c.argv) for _, c, b in firsts}
+        for candidate in DISCOVERY_TEMPLATES:
+            binary = installed_binary(candidate.binary_name)
+            if binary and candidate.parse in PIPELINE_STAGE1_PARSES and (binary, candidate.argv) not in seen:
+                firsts.append((None, candidate, binary))
+                seen.add((binary, candidate.argv))
+        seconds = [(c, installed_binary(c.binary_name)) for c in DISCOVERY_TEMPLATES]
+        seconds = [(c, b) for c, b in seconds if b]
+        with tempfile.TemporaryDirectory(prefix="greg-compose-") as tmp:
+            tmp = Path(tmp)
+            for source, first, first_binary in firsts:
+                try:
+                    middles = _stage_outputs(first, first_binary, public, tmp)
+                except CapabilityError as exc:
+                    if exc.failure_class == "transient":
+                        self._route(deficit_id, "installed_software", f"composition not finished: host outage "
+                                    f"({str(exc)[:200]})", None)
+                        raise
+                    continue
+                if isinstance(middles, str):
+                    continue
+                for second, second_binary in seconds:
+                    if (first.binary_name, first.argv) == (second.binary_name, second.argv):
+                        continue                            # a tool fed its own output adds nothing
+                    cid = f"acquired.{function}.{first.binary_name}-{second.binary_name}"
+                    label = f"{' '.join([first.binary_name, *first.argv[1:]])} | " \
+                            f"{' '.join([second.binary_name, *second.argv[1:]])}"
+                    if cid in unusable:
+                        continue
+                    try:
+                        miss = _screen_second(second, second_binary, middles, public, tmp)
+                    except CapabilityError as exc:
+                        if exc.failure_class == "transient":
+                            self._route(deficit_id, "installed_software", f"composition not finished: host outage "
+                                        f"({str(exc)[:200]})", None)
+                            raise
+                        miss = f"refused a public example: {str(exc)[:120]}"
+                    if miss:
+                        continue
+                    entry = {"pipeline": label, "stage1_source": source or "installed template"}
+                    tried.append(entry)
+                    manifest = self._manifest_for(function, second, second_binary, deficit_id, spec=spec,
+                                                  first=(first, first_binary, source or "installed template"))
+                    adapter = pipeline_adapter(function, first, first_binary, second, second_binary, spec)
+                    vectors = [{"name": f"case{i}.txt", "data": v["input_text"].encode(), "expected": v["expected"]}
+                               for i, v in enumerate(public + held)]
+                    passed, report = self._verify(function, second, second_binary, None, manifest, vectors=vectors,
+                                                  spec=spec, adapter=adapter)
+                    self.journal.record("genesis.verified", {
+                        "deficit_id": deficit_id, "capability_id": manifest.capability_id, "passed": passed,
+                        "report": report, "verifier": "founder-signed contract: public examples and held-out "
+                                                      "vectors, through the serving pipeline"},
+                        key=[deficit_id, manifest.capability_id, label])
+                    if not passed:
+                        entry["result"] = f"matched the public examples, failed {len(report['failures'])} of " \
+                                          f"{report['cases']} contract vectors"
+                        continue
+                    entry["result"] = "qualified"
+                    self.journal.record("genesis.discovery", {
+                        "deficit_id": deficit_id, "function": function, "tried": tried,
+                        "selected": manifest.capability_id, "templates": len(DISCOVERY_TEMPLATES),
+                        "registry_examined": examined, "installed": fingerprint},
+                        key=[deficit_id, "discovery", fingerprint])
+                    self.registry.register(manifest, adapter, state="VERIFIED")
+                    self.journal.record("capability.registered", {
+                        "manifest": manifest.to_dict(), "state": "VERIFIED", "deficit_id": deficit_id,
+                        "origin": {"kind": "pipeline", "function": function, "contract": spec,
+                                   "stages": [{"binary_name": first.binary_name, "argv": list(first.argv),
+                                               "parse": first.parse, "source": source or "installed template"},
+                                              {"binary_name": second.binary_name, "argv": list(second.argv),
+                                               "parse": second.parse}]}},
+                        key=[manifest.capability_id, manifest.digest()])
+                    reused = f" (stage 1 reuses attached {source})" if source else ""
+                    self._route(deficit_id, "installed_software", f"composed from existing tools: {label}{reused}",
+                                manifest.capability_id)
+                    return self._attach(mission, manifest, deficit_id, now)
         return False
 
     def _builder_route(self, mission, function, deficit_id, now, contract=None, repair=None, offered=None):
@@ -2149,7 +2377,9 @@ class Genesis:
                         "runtime": "isolated interpreter per call; never in the body process"})
 
     def _manifest_for(self, function, candidate: Candidate, binary: str, deficit_id: str,
-                      spec: dict | None = None) -> CapabilityManifest:
+                      spec: dict | None = None, first: tuple | None = None) -> CapabilityManifest:
+        """``first`` is a pipeline's stage 1, ``(candidate, binary, source)``: pinned as a companion, so licence
+        qualification, requalification and restore check it exactly as they check a companion binary."""
         # the probe is a run like any other: under the output and memory ceilings, its timeout typed transient
         with tempfile.TemporaryDirectory(prefix="greg-version-") as probe:
             try:
@@ -2174,19 +2404,32 @@ class Genesis:
                         "builder": "none: existing installed software acquired by search",
                         **({"discovered_by": "behaviour against the founder-signed contract",
                             "argv": list(candidate.argv), "parse": candidate.parse} if spec else {})})
+        if first is not None:
+            stage, stage_binary, source = first
+            manifest.capability_id = f"acquired.{function}.{stage.binary_name}-{candidate.binary_name}"
+            manifest.binaries = (binary, stage_binary)
+            manifest.provenance["companions"] = {
+                **manifest.provenance["companions"],
+                _stage1_key(stage): {"binary": stage_binary,
+                                     "binary_sha256": hashlib.sha256(Path(stage_binary).read_bytes()).hexdigest(),
+                                     "argv": list(stage.argv), "parse": stage.parse, "source": source,
+                                     **_binary_license(stage_binary)}}
+            manifest.provenance["pipeline"] = [" ".join([stage.binary_name, *stage.argv[1:]]),
+                                               " ".join([candidate.binary_name, *candidate.argv[1:]])]
+            manifest.provenance["discovered_by"] = "composition of existing tools against the founder-signed contract"
         # what this binary's terms permit for the use GREG actually makes of it, bound to the assessed facts
         manifest.provenance["use_qualification"] = licensing.capability_qualification(manifest)
         return manifest
 
     def _verify(self, function, candidate: Candidate, binary: str, seed, manifest, vectors=None,
-                spec=None) -> tuple[bool, dict]:
+                spec=None, adapter=None) -> tuple[bool, dict]:
         spec = spec or CATALOG[function]
         vectors = vectors if vectors is not None else spec["oracle"](seed)
         failures = []
         with tempfile.TemporaryDirectory(prefix="greg-genesis-") as tmp:
             tmp = Path(tmp)
             ctx = InvocationContext(workspace=tmp, read_roots=(tmp,), secrets=None, manifest=manifest)
-            adapter = catalog_adapter(function, candidate, binary, spec=spec)
+            adapter = adapter or catalog_adapter(function, candidate, binary, spec=spec)
             for case in vectors:
                 path = tmp / case["name"]
                 path.write_bytes(case["data"])

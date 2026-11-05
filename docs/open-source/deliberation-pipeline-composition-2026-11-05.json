@@ -1,0 +1,294 @@
+{
+ "decision_id": "DELIB-20261105-PIPELINE-COMPOSITION",
+ "title": "Capability Genesis composes two existing tools, attached capabilities first, before it builds (C.G4)",
+ "problem": "A founder-signed contract that two installed tools answer together (distinct lines = sort -u | wc -l) still paid for a build, and the uncatalogued route never looked at what the registry already had ATTACHED.",
+ "founder_intent_refs": [
+  "INTENT-20261022-OSS-METABOLISM",
+  "INTENT-20260930-open-source-first",
+  "INTENT-20261019-UPWARD-ASCENT"
+ ],
+ "baseline": "#256 head 0fe656c6: single installed templates only, then the builder.",
+ "alternatives": [
+  {
+   "name": "Proposed: two-stage pipelines, attached registry capabilities first, qualified like single tools",
+   "description": "Stage 1 prints text from one file (attached capability or text template); stage 2 is any template. Stage 1 pinned as a companion.",
+   "advantages": [
+    "Reuses formed capabilities",
+    "No new licensing or restore machinery: companions are already checked"
+   ],
+   "disadvantages": [
+    "Search cost grows with stage-1 x stage-2 pairs",
+    "Two stages only"
+   ],
+   "revival_evidence": "n/a (selected)"
+  },
+  {
+   "name": "Arbitrary-depth shell pipelines",
+   "description": "Search chains of any length.",
+   "advantages": [
+    "Broader"
+   ],
+   "disadvantages": [
+    "Combinatorial search",
+    "Harder to audit"
+   ],
+   "revival_evidence": "A recurring deficit that needs three stages"
+  },
+  {
+   "name": "Compose any ATTACHED capabilities through their adapters",
+   "description": "e.g. fs.read output into cognition.solve.",
+   "advantages": [
+    "Covers non-binary capabilities"
+   ],
+   "disadvantages": [
+    "Needs typed adapter contracts between capability outputs and inputs"
+   ],
+   "revival_evidence": "Typed output-to-input contracts exist for two attached capabilities"
+  },
+  {
+   "name": "Let the builder write the composition",
+   "description": "Model writes a script.",
+   "advantages": [
+    "Flexible"
+   ],
+   "disadvantages": [
+    "Spends the build budget on what existing tools do; generated code instead of pinned binaries"
+   ],
+   "revival_evidence": "Composition coverage proves too narrow"
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "Every contract two tools could answer pays for a build.",
+  "advantages": [
+   "No change"
+  ],
+  "disadvantages": [
+   "Violates composition-before-build (doctrine rung 2)",
+   "Formed capabilities are never reused by later deficits"
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "Composition before build is rung 2 of the resourcefulness ladder.",
+   "material_concerns": [
+    "Do not claim general composition; two binary stages only"
+   ],
+   "evidence_refs": [
+    "acceptance/missions.json C.G4 next"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "One more step inside the existing discovery route; stage 1 rides the companion mechanism.",
+   "material_concerns": [
+    "Origin kind 'pipeline' is distinct from recombine's 'composed'"
+   ],
+   "evidence_refs": [
+    "git merge-tree vs #258, #260: clean"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "Held-out vectors decide; both binaries pinned; a changed stage 1 quarantines at restart.",
+   "material_concerns": [
+    "A pipeline that matches public examples by coincidence"
+   ],
+   "evidence_refs": [
+    "test_a_pipeline_that_answers_the_public_examples_but_not_the_held_out_vectors_is_never_acquired",
+    "test_a_pipeline_whose_stage_one_binary_changes_is_quarantined_at_restart"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "Stage-1 outputs computed once per example and shared; failed searches stay memoized by fingerprint including attached sources.",
+   "material_concerns": [
+    "Search time on bodies with many attached capabilities"
+   ],
+   "evidence_refs": [
+    "composition tests run in about 25 s for 7 tests"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "No authority change; attach under existing rules; each binary's licence is qualified.",
+   "material_concerns": [
+    "Intermediate output is bounded (16 MiB) and refused, not truncated"
+   ],
+   "evidence_refs": [
+    "pipeline_adapter"
+   ],
+   "recommendation": "EXPERIMENT"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "text.distinct_line_count served by sort -u | wc -l with no build",
+   "tier": "sandbox_execution",
+   "reference": "tests/unit/test_greg_genesis_composition.py",
+   "finding": "ACHIEVED, builder.calls == [], ATTACHED after restart; all 6 original tests fail on 0fe656c6"
+  },
+  {
+   "claim": "Capability dividend is caused by composition",
+   "tier": "sandbox_execution",
+   "reference": "test_without_composition_the_same_mission_pays_for_a_build",
+   "finding": "with _pipeline_search disabled the same mission calls the builder once"
+  },
+  {
+   "claim": "Formed capabilities are reused",
+   "tier": "sandbox_execution",
+   "reference": "test_an_attached_capability_is_reused_as_stage_one_and_the_route_names_what_it_examined",
+   "finding": "stage 1 is the attached acquired.text.sorted_unique_lines.sort; the record lists fs.read as examined and unusable"
+  },
+  {
+   "claim": "Each guard is load-bearing",
+   "tier": "sandbox_execution",
+   "reference": "scripts/ci/check_cortex_mutants.py metabolism group",
+   "finding": "4 new mutants caught; 2 existing patterns re-anchored, 0 stale across all groups"
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "Composition only adds coverage",
+   "tier": "sandbox_execution",
+   "reference": "test_greg_genesis_discovery held-out test",
+   "finding": "it also changes an outcome: text.lines_including_last, which #256 sent to the builder, is now served correctly by sort -- {file} | wc -l; that test was scoped to single tools"
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "Contracts two existing tools answer together are served without a build, reusing attached capabilities first.",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "Formed capabilities become building blocks for later deficits",
+    "amplified_value": "Each acquisition widens what the next mission can get without a build"
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D1",
+    "statement": "Pair search cost",
+    "severity": "low",
+    "response_type": "modularity",
+    "redesigned_response": "Stage-1 outputs shared; memo by fingerprint"
+   },
+   {
+    "id": "D2",
+    "statement": "Only two binary stages",
+    "severity": "medium",
+    "response_type": "evidence",
+    "redesigned_response": "Stated in C.G4 next; builder remains the next rung"
+   },
+   {
+    "id": "D3",
+    "statement": "A coincidental pipeline match",
+    "severity": "medium",
+    "response_type": "evidence",
+    "redesigned_response": "Held-out vectors through the serving pipeline decide"
+   }
+  ],
+  "comparisons": {
+   "baseline": "single templates then builder",
+   "do_nothing": "builds what two tools do",
+   "simplest_viable_alternative": "two-stage pipelines (selected)",
+   "strongest_competing_architecture": "typed composition of any attached capabilities",
+   "reversible_experiment": "disable _pipeline_search"
+  },
+  "rejected_alternatives": [
+   {
+    "name": "Arbitrary-depth pipelines",
+    "rejection_reason": "combinatorial and hard to audit",
+    "revival_evidence": "a recurring three-stage deficit"
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Attack: unpinned stage 1, oversized intermediate, stale memo after a new attach, detached pair re-registered.",
+  "new_weaknesses": [
+   {
+    "id": "W1",
+    "category": "fragility",
+    "statement": "A changed stage-1 binary keeps serving",
+    "strengthening_response": "Both hashes checked at serve and at restore; restore mutant caught"
+   },
+   {
+    "id": "W2",
+    "category": "gaming",
+    "statement": "A huge intermediate exhausts memory",
+    "strengthening_response": "16 MiB ceiling, refused not truncated"
+   },
+   {
+    "id": "W3",
+    "category": "fragility",
+    "statement": "A failed search is never retried after a new capability is attached",
+    "strengthening_response": "Fingerprint includes attached stage-1 sources"
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D1",
+    "outcome": "resolved",
+    "rationale": "shared stage-1 outputs and memo",
+    "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+    "review_trigger": "a recurring deficit composition cannot serve"
+   },
+   {
+    "disadvantage_id": "D2",
+    "outcome": "accepted",
+    "rationale": "residual recorded in C.G4",
+    "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+    "review_trigger": "a recurring deficit composition cannot serve"
+   },
+   {
+    "disadvantage_id": "D3",
+    "outcome": "resolved",
+    "rationale": "held-out decides",
+    "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+    "review_trigger": "a recurring deficit composition cannot serve"
+   }
+  ],
+  "final_design": "Two-stage pipelines after single templates, attached registry capabilities first, qualified on public plus held-out vectors through the serving pipeline, both binaries pinned and licence-qualified, restored with both pins.",
+  "residual_risks": [
+   {
+    "risk": "Search cost on bodies with many attached text capabilities",
+    "mitigation": "memoized; measured on next real body",
+    "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+    "review_trigger": "a search over 30 s"
+   }
+  ],
+  "recommendation": "EXPERIMENT"
+ },
+ "dissent": {
+  "present": false,
+  "handling": "No dissent recorded.",
+  "entries": []
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": false,
+  "approval_status": "not_required",
+  "approver": null
+ },
+ "migration_plan": "None; existing capabilities and routes are unchanged.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "Make _pipeline_search return False",
+   "Or revert the commit"
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "A pipeline attaches while failing any held-out vector",
+  "A pipeline keeps serving after either binary changed",
+  "A pipeline writes outside its workspace or reaches the network"
+ ],
+ "decision": "EXPERIMENT",
+ "decision_owner": "Alfonso Lopez (merge); this workstream (implementation)",
+ "review_trigger": "First real mission served by a pipeline, or a proposal for deeper or typed composition"
+}

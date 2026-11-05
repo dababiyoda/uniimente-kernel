@@ -137,7 +137,8 @@ METABOLISM_TESTS = ["tests/unit/test_greg_license_expressions.py", "tests/unit/t
                     "tests/unit/test_greg_document_text.py", "tests/unit/test_greg_license_qualification.py",
                     "tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_greg_license_use_context.py",
                     "tests/unit/test_greg_genesis_restore.py", "tests/unit/test_greg_binary_failure_types.py",
-                    "tests/unit/test_greg_document_phrase.py", "tests/unit/test_greg_genesis_discovery.py"]
+                    "tests/unit/test_greg_document_phrase.py", "tests/unit/test_greg_genesis_discovery.py",
+                    "tests/unit/test_greg_genesis_composition.py"]
 OSS_MUTANTS = [
     ("certificate skips edge feasibility", "greg/cognition/network.py",
      "if exact[b] > exact[a] + w + tolerance(exact[a] + w):", "if False:"),
@@ -803,11 +804,22 @@ METABOLISM_MUTANTS = [
      "                found = self._discovery_route(mission, function, contract, deficit_id, now)\n",
      "                found = False\n"),
     ("a discovered tool is qualified on public examples only", "greg/genesis.py",
-     "for i, v in enumerate(public + held)]", "for i, v in enumerate(public)]"),
+     "for i, v in enumerate(public + held)]\n            passed, report = self._verify(function, candidate,",
+     "for i, v in enumerate(public)]\n            passed, report = self._verify(function, candidate,"),
     ("discovery re-registers a tool the founder detached", "greg/genesis.py",
-     "            if cid in unusable:\n", "            if False:\n"),
+     "            if cid in unusable:\n                entry[\"result\"]", "            if False:\n                entry[\"result\"]"),
     ("a search that found nothing runs again though nothing installed changed", "greg/genesis.py",
      'and e.payload.get("installed") == fingerprint for e in', "and False for e in"),
+    # two-stage composition (acceptance C.G4): existing tools composed before anything is built
+    ("composition is skipped and the builder runs first", "greg/genesis.py",
+     "        found = self._pipeline_search(mission,", "        found = False and self._pipeline_search(mission,"),
+    ("a pipeline is qualified on public examples only", "greg/genesis.py",
+     "for i, v in enumerate(public + held)]\n                    passed, report = self._verify(function, second,",
+     "for i, v in enumerate(public)]\n                    passed, report = self._verify(function, second,"),
+    ("the registry's attached capabilities are never reused as stage 1", "greg/genesis.py",
+     "        firsts = [(cid, c, b) for cid, c, b in attached_sources]", "        firsts = []"),
+    ("a changed stage-1 binary does not quarantine a restored pipeline", "greg/genesis.py",
+     '                  (stage.get("binary"), stage.get("binary_sha256"))]', "                  ]"),
 ]
 
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),

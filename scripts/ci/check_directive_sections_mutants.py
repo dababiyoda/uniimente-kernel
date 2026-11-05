@@ -4,8 +4,9 @@
 
 Mutants are applied to acceptance/directive.py and acceptance/__main__.py in a scratch copy of the repository, never to
 the working tree; the copy runs without bytecode and its __pycache__ is purged before each mutant. A mutant is caught
-only when tests/unit/test_directive_sections.py reports a FAILED test (an import or collection error does not count).
-Exit status 1 if any mutant survives or no longer applies.
+only when one of TESTS reports a FAILED test (an import or collection error does not count), and only after the
+unmutated copy passes them all, so a test that fails in the copy for its own reasons catches nothing.
+Exit status 1 if the unmutated copy fails, or if any mutant survives or no longer applies.
 """
 from pathlib import Path
 import os
@@ -17,7 +18,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[2]
 DIRECTIVE = "acceptance/directive.py"
 CLI = "acceptance/__main__.py"
-TESTS = "tests/unit/test_directive_sections.py"
+TESTS = ["tests/unit/test_directive_sections.py", "tests/unit/test_directive_ratchet.py"]
 MUTANTS = [
     # the sections and the source
     (DIRECTIVE, "a missing section passes", 'if numbers.count(n) == 0:', 'if False:'),
@@ -174,7 +175,18 @@ MUTANTS = [
      '"prompt_completely_built": not residual and not unread and whole,', '"prompt_completely_built": not residual and not unread,'),
     (DIRECTIVE, "every section done ignores missing sections", '"every_section_done": whole and all(',
      '"every_section_done": all('),
+    # the evidence ratchet against a base (review of #249, findings 1-2)
+    (DIRECTIVE, "an ask closes with nothing it cites changed",
+     'if not any(digest is not None and prior.get(item) != digest for item, digest in cited.items()):', 'if False:'),
+    (DIRECTIVE, "evidence already in the tree closes an ask",
+     'if not any(digest is not None and prior.get(item) != digest for item, digest in cited.items()):',
+     'if not any(digest is not None for item, digest in cited.items()):'),
+    (DIRECTIVE, "an open ask retires into one already met",
+     'if (before.get(successor) or {}).get("met"):', 'if False:'),
+    (DIRECTIVE, "a cited file's content is never read",
+     'out[f"file:{ref.split(\'::\')[0]}"] = digest(read(ref.split("::")[0]))', 'out[f"file:{ref.split(\'::\')[0]}"] = "same"'),
     # the command line
+    (CLI, "the CLI never runs the evidence ratchet", 'if prior is not None:', 'if False:'),
     (CLI, "the CLI never collects", 'if args.cmd == "directive" and args.collect and not found:', 'if False:'),
     (CLI, "the CLI never ratchets", 'if args.cmd == "directive" and args.against and not found:', 'if False:'),
     (CLI, "the CLI ignores an unsound map",
@@ -193,6 +205,14 @@ def main() -> int:
         repo = Path(temp) / "repo"
         shutil.copytree(ROOT, repo, ignore=shutil.ignore_patterns(".git", "__pycache__", ".pytest_cache"))
         env = {**os.environ, "PYTHONPATH": str(repo), "PYTHONDONTWRITEBYTECODE": "1"}
+        purge(repo)
+        baseline = subprocess.run([sys.executable, "-B", "-m", "pytest", "-q", "-p", "no:cacheprovider", *TESTS],
+                                  cwd=repo, env=env, capture_output=True, text=True, timeout=1800)
+        if baseline.returncode != 0:
+            print("UNMUTATED FAIL: the tests do not pass on the unmutated copy, so no mutant can be judged")
+            print(baseline.stdout[-3000:])
+            return 1
+        print("UNMUTATED PASS", flush=True)
         for target, name, old, new in MUTANTS:
             path = repo / target
             original = path.read_text()
@@ -203,11 +223,12 @@ def main() -> int:
             path.write_text(original.replace(old, new))
             purge(repo)
             try:
-                run = subprocess.run([sys.executable, "-B", "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", TESTS],
+                run = subprocess.run([sys.executable, "-B", "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", *TESTS],
                                      cwd=repo, env=env, capture_output=True, text=True, timeout=900)
             finally:
                 path.write_text(original)
-            caught = (run.returncode == 1 and f"FAILED {TESTS}::" in run.stdout and "ERROR collecting" not in run.stdout)
+            caught = (run.returncode == 1 and any(f"FAILED {t}::" in run.stdout for t in TESTS)
+                      and "ERROR collecting" not in run.stdout)
             print("CAUGHT" if caught else "SURVIVED_OR_INVALID", name, flush=True)
             invalid += not caught
     print(f"{len(MUTANTS) - invalid}/{len(MUTANTS)} caught")

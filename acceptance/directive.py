@@ -483,6 +483,113 @@ def pin_ratchet_problems(base: dict, head: dict) -> list[str]:
     return out
 
 
+def _test_files(value) -> list[str]:
+    """The test files named anywhere inside a manifest requirement or contract function record."""
+    if isinstance(value, str):
+        return [value.split("::")[0]] if value.startswith("tests/") else []
+    if isinstance(value, dict):
+        value = list(value.values())
+    return [f for v in value for f in _test_files(v)] if isinstance(value, list) else []
+
+
+def evidence_items(ask: dict, manifest: dict, contract: dict, read) -> dict[str, str | None]:
+    """What one ask cites, each item with a digest of its content as ``read(path)`` returns it (None: absent).
+    A cited pytest node is its file; a mission requirement or contract function is its record and the test files
+    it names. Two digests that differ mean that item changed."""
+    missions = {m["id"]: {r["id"]: r for r in m["requirements"]} for m in manifest["missions"]}
+    functions = {f["id"]: f for f in contract["functions"]}
+    out: dict[str, str | None] = {}
+
+    def digest(text) -> str | None:
+        return None if text is None else hashlib.sha256(text.encode() if isinstance(text, str) else text).hexdigest()
+
+    for ref in ask.get("evidence", []) + _guards(ask):
+        kind, _, name = ref.partition(":")
+        if ref.startswith("tests/"):
+            out[f"file:{ref.split('::')[0]}"] = digest(read(ref.split("::")[0]))
+            continue
+        mid, _, rid = name.partition(".")
+        record = (missions.get(mid, {}).get(rid) if kind == "mission" else
+                  functions.get(name) if kind == "contract" else None)
+        out[ref] = digest(None if record is None else json.dumps(record, sort_keys=True))
+        for f in _test_files(record or {}):
+            out[f"file:{f}"] = digest(read(f))
+    return out
+
+
+def evidence_ratchet_problems(base: tuple[dict, dict, dict], head: tuple[dict, dict, dict], read_base, read_head,
+                              root: Path = ROOT) -> list[str]:
+    """The map against the map at a base: an ask open at the base may read met at the head only through new or
+    changed evidence, never by editing its coverage, its required tier or its blocker. Each of ``base`` and ``head``
+    is (map, manifest, contract); ``read_base``/``read_head`` return a file's content at that side, or None.
+
+    - An ask that was open at the base and is met at the head must cite at least one item (a test file, or a
+      mission requirement or contract function with the test files it names) whose content differs from the base
+      or did not exist there. Citing evidence that was already in the tree unchanged does not close an ask.
+    - An ask that was open and live at the base may be newly retired into a successor only if that successor was
+      open at the base too: retiring an obligation into one already met closes nothing it did not close before.
+
+    Both sides are judged at the static ceiling (no test runs), as ``directive_report`` computes it. The rule asks
+    for new evidence, not sufficient evidence: whether what changed answers the ask stays the tiers' and the
+    reviewers' to judge."""
+    before = {a["id"]: a for s in directive_report(*base, root=root)["sections"] for a in s["asks"]}
+    after = directive_report(*head, root=root)
+    base_asks = {a["id"]: a for s in base[0]["sections"] for a in s["asks"]}
+    out = []
+    for section in head[0]["sections"]:
+        for ask in section["asks"]:
+            aid, was = ask["id"], before.get(ask["id"])
+            if was is None or was["met"]:
+                continue
+            gone, then = ask.get("retired") or {}, base_asks.get(aid, {})
+            successor = gone.get("superseded_by")
+            if successor and "retired" not in then:
+                if (before.get(successor) or {}).get("met"):
+                    out.append(f"ratchet: {aid} was open at the base and is newly retired into {successor}, which "
+                               "was already met there; retire it into an open ask, or withdraw it by a founder "
+                               "record")
+                continue
+            now = next((a for s in after["sections"] for a in s["asks"] if a["id"] == aid), None)
+            if not now or not now["met"] or gone:
+                continue
+            cited = evidence_items(ask, head[1], head[2], read_head)
+            prior = evidence_items(ask, base[1], base[2], read_base)
+            if not any(digest is not None and prior.get(item) != digest for item, digest in cited.items()):
+                out.append(f"ratchet: {aid} was open at the base and reads met at the head, but nothing it cites "
+                           "changed: closing an ask needs new or changed evidence, not an edit to its coverage, "
+                           "required tier or blocker")
+    return out
+
+
+def read_at(ref: str, root: Path = ROOT):
+    """A reader of files as committed at git ``ref`` (None for a file absent there), cached per path."""
+    cache: dict[str, str | None] = {}
+
+    def read(path: str) -> str | None:
+        if path not in cache:
+            shown = subprocess.run(["git", "show", f"{ref}:{path}"], cwd=root, capture_output=True)
+            cache[path] = shown.stdout.decode("utf-8", "replace") if shown.returncode == 0 else None
+        return cache[path]
+    return read
+
+
+def read_tree(root: Path = ROOT):
+    """A reader of files as they are in the working tree at ``root`` (None for a file absent there)."""
+    def read(path: str) -> str | None:
+        try:
+            return (root / path).read_text(encoding="utf-8", errors="replace")
+        except (FileNotFoundError, IsADirectoryError, NotADirectoryError):
+            return None
+    return read
+
+
+def map_at(ref: str, root: Path = ROOT) -> tuple[dict, dict, dict] | None:
+    """(map, manifest, contract) as committed at git ``ref``, or None when the ref has no directive map."""
+    read = read_at(ref, root)
+    texts = [read(p.relative_to(ROOT).as_posix()) for p in (DIRECTIVE_MAP, MANIFEST, CONTRACT)]
+    return None if any(t is None for t in texts) else tuple(json.loads(t) for t in texts)
+
+
 def pin_at(ref: str, root: Path = ROOT) -> tuple[dict | None, str | None]:
     """The pin as committed at git ``ref``: (pin, None), (None, None) when the ref has no pin yet, or (None, why)
     when the ref cannot be read."""

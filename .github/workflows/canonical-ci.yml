@@ -49,7 +49,8 @@ jobs:
     # (83 genomes) adds its tests, and on its own line the full suite alone took 38 minutes at 14608914. Raised to 90.
     # ubuntu-latest then moved to a runner where bubblewrap namespaces work, so the confined tests that used to skip
     # now run: the full suite took 86 minutes at dacf6975 and fa80ace7 (7795 passed at fa80ace7, run 39984114068), and
-    # the job was cancelled at 90 during the mutation steps that follow it. Raised to 120.
+    # the job was cancelled at 90 during the mutation steps that follow it. Raised to 120. The mutation steps now run
+    # in job 10 (mutation_gates), in parallel.
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
@@ -96,6 +97,31 @@ jobs:
           path: cognition-report.json
           if-no-files-found: error
           retention-days: 90
+  mutation_gates:
+    name: "10 · Mutation gates"
+    runs-on: ubuntu-latest
+    # Each gate removes one safeguard in a scratch copy and requires a failing test. They need none of job 1's
+    # results, so they run here in parallel with it. In job 1, after the full suite, they had pushed the job past its
+    # 120-minute limit on the joined tree: cancelled twice on #274's 68b772cb with no test failed (10571 and 10572
+    # passed; the gates after the suite took about 24 minutes), and 99 minutes on #196's 75a8fdf4. The limit bounds a
+    # hung run, not a speed target.
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-dev.txt -r requirements-cognition.txt
+      - name: Provision worker namespace isolation (bubblewrap), as job 1 does
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q bubblewrap
+          if bwrap --unshare-user --unshare-pid --unshare-net --die-with-parent --ro-bind / / -- /usr/bin/true; then
+            echo "bubblewrap namespaces: usable"
+          else
+            echo "bubblewrap namespaces: NOT usable on this runner; real-isolation tests skip and say why"
+          fi
       - name: Typed handoff authority, scope and type mutations
         run: python scripts/ci/check_pipeline_mutants.py
       - name: Native source-bound appraisal and workload mutations
@@ -110,6 +136,8 @@ jobs:
         run: python scripts/ci/check_whole_output_mutants.py
       - name: Standing-approval regression mutations (a failed run under a standing approval withdraws it)
         run: python scripts/ci/check_standing_approval_regression_mutants.py
+      - name: Capability disposition mutations (RETAIN, REPAIR, REGRESS or REMOVE proposed after outcomes, never applied)
+        run: python scripts/ci/check_capability_disposition_mutants.py
       - name: Founder-device acceptance tier and live-runtime mutations
         run: python scripts/ci/check_acceptance_mutants.py
       - name: Path predicates and build frontier mutations
@@ -120,6 +148,16 @@ jobs:
         run: python scripts/ci/check_typed_blockers_mutants.py
       - name: Compute closure mutations (a lasting bottleneck is asked again; memory and IO measured; changes verified)
         run: python scripts/ci/check_compute_closure_mutants.py
+      - name: Emergence gate mutations (a construction that does not beat its runnable baseline is refused as integration)
+        run: python scripts/ci/check_emergence_gate_mutants.py
+      - name: Ask-terms mutations (every ask shows its authority, what approving covers and what silence does)
+        run: python scripts/ci/check_ask_terms_mutants.py
+      - name: Canonical-owner registry mutations (one owner per duplicated function, guarded)
+        run: python scripts/ci/check_canonical_owner_guard_mutants.py
+      - name: Cathedral detector mutations (activity rising while founder-tier outcomes do not)
+        run: python scripts/ci/check_cathedral_detector_mutants.py
+      - name: Effect-call allowlist mutations (every process or connection GREG's code opens is listed)
+        run: python scripts/ci/check_effect_call_allowlist_mutants.py
 
   verifier:
     # Its V2 re-runs tests/unit, so inside job 1 it pushed that job past its 30 minutes once the
@@ -402,6 +440,11 @@ jobs:
           UNIIMENTE_WEALTHMACHINE_ROOT: "${{ github.workspace }}/organs/wealthmachine"
           UNIIMENTE_WEALTHMACHINE_PYTHON: "${{ github.workspace }}/organs/wealthmachine-venv/bin/python"
         run: python scripts/ci/check_organ_verdict_mutants.py
+      # Runs here, not in job 1: job 1 already takes about its whole 120-minute limit on the base (#221, #260), and
+      # this 41-mutant gate (about 1.5 minutes) needs only the kernel environment this job installs.
+      - name: Evidence-correction mutations (a changed, retracted, expired or contradicted reading marks what rests on it)
+        working-directory: kernel
+        run: python scripts/ci/check_evidence_corrections_mutants.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

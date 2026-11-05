@@ -1,0 +1,83 @@
+{
+ "intent_id": "INTENT-20261105-REGULAR-REVIEW",
+ "title": "Make the repository easy to enter for humans and agents, learn contributors' pain points, and review its structure on a regular cadence",
+ "statement": "Delete nothing; audit the egregore project for organization, duplication and elegance against the most organized open-source projects; improve documentation for user and agent comprehension; engage contributors on pain points; establish a regular review process that maintains integrity and adapts to evolving standards.",
+ "exact_source_excerpt": "Engage with contributors to gather insights on pain points they encounter, which can inform your restructuring efforts. ... Finally, establish a regular review process to maintain the project's integrity and adapt to evolving standards in software development.",
+ "source": "Founder chat directive, session session_01KucyfnCuSTnjx5Fa6T4A3d, 2026-11-05 (two messages, verbatim in the source file)",
+ "source_refs": [
+  "docs/intent/sources/REGULAR-REVIEW-2026-11-05-source.md",
+  "docs/collaboration/START_HERE.md (SOP-06)",
+  "docs/RECURSIVE_COLLABORATION_PROTOCOL.md (section 6)"
+ ],
+ "source_location": "docs/intent/sources/REGULAR-REVIEW-2026-11-05-source.md",
+ "source_date": "2026-11-05",
+ "source_date_or_version": "2026-11-05",
+ "changed_axis": "process: it adds a recurring review where SOP-06 recorded 'No recurring job is enabled'. The final intended effect, the evidence standard and the authority envelope are unchanged.",
+ "intended_effect": "A new human or agent contributor reaches the right reading order, live branch, owner and protected-file list from AGENTS.md in two hops; structural drift (undocumented directories, unindexed docs, new package cycles, new boundary escapes) is caught on every PR; and a weekly read-only report plus monthly and quarterly reviews keep the contributor process measured against SOP-06 and current practice.",
+ "intended_outcome": "Less stale-context rework and fewer duplicate or misrouted starts, measured through the SOP-06 measures the weekly report proxies.",
+ "executable_interpretation": "Additive documentation (canonical reading order, indexes, module map, directory READMEs), two shrink-only structural tests, one read-only scheduled workflow, one friction issue form, a pain-point register built from the repository's own records plus a survey on board #96, and docs/REVIEW_CADENCE.md. Nothing deleted, moved or renamed; no sealed, frozen or integrity-protected file changed.",
+ "affected_systems": [
+  "AGENTS.md and the other entry files",
+  "docs/ indexes and ARCHITECTURE.md",
+  "directory READMEs",
+  "scripts/repo_review.py",
+  "tests/unit/test_repository_map.py",
+  "tests/unit/test_import_layering.py",
+  ".github/workflows/repository-review.yml",
+  ".github/ISSUE_TEMPLATE"
+ ],
+ "rationale": "The repository's own records show that orientation and coordination friction recur. SOP-06 already defined the right measures but never measured them. A recurring, read-only review closes that gap without creating authority.",
+ "owner": "Alfonso Lopez (founder authority); the #196 integration owner for intake; the claiming session for the draft",
+ "state": "active",
+ "status": "active",
+ "authority_level": "active_requirement",
+ "consequence_class": "bounded",
+ "binding_scope": "Contributor documentation, structural tests and a read-only scheduled report on the integration line. Reversible implementation and draft review only. No merge, deployment, spending, publishing, credential, outside-contact or live-activation authority.",
+ "constitutional_constraints": [
+  "Chat text is intent evidence, not founder authentication",
+  "Delete nothing: additive edits only; history and evidence preserved",
+  "No sealed, frozen or integrity-protected file is edited",
+  "The review workflow is read-only and never gates a PR",
+  "A review output is evidence for a decision, never the decision"
+ ],
+ "success_evidence": [
+  "tests/unit/test_repository_map.py and tests/unit/test_import_layering.py fail on the unmodified base (6 failures) and pass after the change",
+  "scripts/repo_review.py: 38 hard findings before, 0 after",
+  "tests/unit/test_repository_map.py::test_review_workflow_is_read_only_and_never_gates_a_pr"
+ ],
+ "failure_evidence": [
+  "the weekly report is never read at intake",
+  "the friction form receives no reports over a quarter",
+  "ratchet KEPT tables grow instead of shrinking",
+  "another reading order appears in an entry file"
+ ],
+ "evidence_refs": [
+  "docs/collaboration/CONTRIBUTOR-PAIN-POINTS-2026-11-05.md",
+  "docs/collaboration/deliberation-regular-review-20261105.json",
+  "board #96 comment 6648797976"
+ ],
+ "dependencies": [
+  "INTENT-20261021-PROFESSIONAL-PARALLEL-TEAM",
+  "INTENT-20261021-COMPLETE-COLLABORATION"
+ ],
+ "conflicts": [
+  "SOP-06 'No recurring job is enabled' (2026-10-21): superseded for the review only, by this later founder instruction; SOP-06's measures and its five-PR trigger are kept"
+ ],
+ "next_review_trigger": "The first weekly report after the workflow reaches main; the first monthly friction review; or a founder correction.",
+ "supersedes": "SOP-06's 'No recurring job is enabled', for the read-only review only",
+ "superseded_by": null,
+ "implementation_refs": [
+  "docs/REVIEW_CADENCE.md",
+  "scripts/repo_review.py",
+  ".github/workflows/repository-review.yml",
+  "AGENTS.md#canonical-reading-order"
+ ],
+ "unresolved_questions": [
+  "Which of the two PR templates survives (P-10)",
+  "Whether check_seed_mutants.py joins a CI job (S-3)",
+  "Whether F-1 (unvalidated reserved powers in the UCL compiler) is fixed"
+ ],
+ "authority_delta": "none",
+ "created_at": "2026-11-05T04:00:00Z",
+ "updated_at": "2026-11-05T04:00:00Z"
+}

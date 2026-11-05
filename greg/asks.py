@@ -307,8 +307,14 @@ ANSWER_ONLY_RECORDS = {
                     "yourself if it should not stand.",
     "HUMAN_JUDGMENT": "Your answer is recorded as the decision on this one question; it acts on nothing by itself. "
                       "Any consequence still crosses the Gate under its own authority.",
+    "EVIDENCE_CORRECTION": "Your answer is only recorded; GREG undoes, re-runs and withdraws nothing. The claims stay "
+                           "delivered and marked NEEDS_REVIEW until a later reading requalifies them; a new mission "
+                           "you sign answers again.",
     "CAPABILITY_ATTACH": "Approve or Reject only records your answer. Attaching is its own signed command: the "
                          "Attach button beside a verified candidate, or `greg attach <capability_id>`.",
+    "CAPABILITY_DISPOSITION": "Your answer is only recorded; GREG applies no disposition. Detaching or re-attaching "
+                              "is its own signed command: `greg detach <capability_id>`, `greg attach "
+                              "<capability_id>`.",
 }
 
 
@@ -379,11 +385,13 @@ NOT_ANSWERABLE = {
 
 
 def surface(request: dict) -> dict:
-    """The fields every founder surface (console, phone, status, morning report) shows."""
-    keys = ("request_id", "kind", "mission_id", "resource", "why_now", "recommendation", "expected_effect",
-            "options", "alternatives", "uncertainty", "authority_requested", "evidence",
-            "consequence_of_no_response", "deadline", "deadline_evidence", "wording_withheld", "answered",
-            "unsigned_answer_recorded", "unsigned_answer_cause", "unsigned_answer_why")
+    """The fields every founder surface (console, phone, status, morning report) shows. ``action_id``, an
+    APPROVAL's ``bound_params`` view and its ``compensation`` marker are display data: an answer binds the scope
+    digest, never these."""
+    keys = ("request_id", "kind", "mission_id", "action_id", "resource", "why_now", "recommendation",
+            "expected_effect", "options", "alternatives", "uncertainty", "authority_requested", "bound_params",
+            "compensation", "evidence", "consequence_of_no_response", "deadline", "deadline_evidence",
+            "wording_withheld", "answered", "unsigned_answer_recorded", "unsigned_answer_cause", "unsigned_answer_why")
     shown = {k: request[k] for k in keys if k in request}
     if request.get("kind") in ANSWER_ONLY_RECORDS:
         shown["answer_effect"] = ANSWER_ONLY_RECORDS[request["kind"]]

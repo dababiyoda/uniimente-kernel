@@ -1010,6 +1010,187 @@ def judge_budgeted(answer: dict, expected: dict) -> bool:
     return answer.get("certified") is True and answer["profit"] == expected["profit"]
 
 
+# == emergence: what a construction does that no source does alone (directive section 20) ==========
+# "If there is no precise answer, it may merely be integration." Each reduction states the simplest
+# alternative in `baseline`; here that alternative runs. A construction qualifies only when, on the frozen
+# cases, it is never worse than its baseline and strictly better on at least one, with its certificate
+# checked in the problem's own terms on every case. A reduction without a runnable baseline, or whose
+# baseline reaches the exact answer on every case, is integration, and Genesis refuses it.
+
+@dataclass(frozen=True)
+class Emergence:
+    claim: str            # what the construction does that neither its engine nor its baseline does
+    baseline: object      # the stated simplest alternative, executable: normalized problem -> answer
+    agrees: object        # (baseline answer, expected) -> True when the baseline reaches the exact answer
+    expect: object        # normalized problem -> the oracle's expected answer (brute force)
+    traps: tuple = ()     # frozen (name, input) cases built to the baseline's stated weakness
+
+
+def baseline_staffing(p: dict) -> dict:
+    """Greedy assignment: each order in turn takes what its eligible workers have left."""
+    left, staffed = dict(map(tuple, p["workers"])), 0
+    for o, d in p["orders"]:
+        for w in p["eligible"][o]:
+            x = min(left[w], d)
+            left[w], d, staffed = left[w] - x, d - x, staffed + x
+    return {"staffed": staffed}
+
+
+def baseline_matching(p: dict) -> dict:
+    """Greedy matching: each right id takes its first free partner."""
+    used = set()
+    for r in p["right"]:
+        free = [l for l in p["allowed"][r] if l not in used]
+        used.update(free[:1])
+    return {"size": len(used)}
+
+
+def baseline_crash(p: dict) -> dict:
+    """Trial and error: shorten the cheapest task left on a critical chain by one unit until the deadline holds."""
+    spec = {t: (d, s, c) for t, d, s, c in p["tasks"]}
+    durations, cost = {t: v[0] for t, v in spec.items()}, 0
+    while True:
+        length, chain = _longest(p, durations)
+        if length <= p["deadline"]:
+            return {"feasible": True, "cost": cost}
+        shortenable = [t for t in chain if durations[t] > spec[t][1]]
+        if not shortenable:
+            return {"feasible": False, "cost": None}
+        t = min(shortenable, key=lambda t: (spec[t][2], t))
+        durations[t], cost = durations[t] - 1, cost + spec[t][2]
+
+
+def baseline_selection(p: dict) -> dict:
+    """Rank items by value and take each with its missing prerequisites when that alone pays."""
+    value, needs, chosen = dict(map(tuple, p["items"])), _needs(p), set()
+    for item, v in sorted(p["items"], key=lambda iv: (-iv[1], iv[0])):
+        added = _down({item}, needs) - chosen
+        if v > 0 and item not in chosen and sum(value[i] for i in added) > 0:
+            chosen |= added
+    return {"profit": sum(value[i] for i in chosen)}
+
+
+def baseline_budgeted(p: dict) -> dict:
+    """The uncapped best portfolio, then, while over the cap, drop the costliest cost and all that needs it, and any
+    cost no kept offer still needs; never worse than taking nothing (the empty plan is always within the cap)."""
+    value, needs, items = dict(map(tuple, p["items"])), _needs(p), [i for i, _ in p["items"]]
+    best = set()
+    for mask in range(1 << len(items)):
+        S = {items[k] for k in range(len(items)) if mask >> k & 1}
+        if _down(S, needs) == S and (sum(value[i] for i in S), -len(S)) > (sum(value[i] for i in best), -len(best)):
+            best = S
+    while _spend(value, best) > p["budget"]:
+        cost = max((i for i in best if value[i] < 0), key=lambda i: (-value[i], i))
+        best = {i for i in best if cost not in _down({i}, needs)}
+        needed = _down({i for i in best if value[i] > 0}, needs)
+        best = {i for i in best if value[i] > 0 or i in needed}
+    return {"profit": max(0, sum(value[i] for i in best))}
+
+
+def agrees_crash(answer: dict, expected: dict) -> bool:
+    return answer["feasible"] == expected["feasible"] and (not expected["feasible"] or answer["cost"] == expected["cost"])
+
+
+def expect_crash(p: dict) -> dict:
+    best = crash_brute_force(p)
+    return {"feasible": best is not None, "cost": best}
+
+
+TRAP_STAFFING = (("first-come-takes-the-flexible-worker", {
+    "workers": [{"id": "Ana", "capacity": 1, "skills": ["dock", "line"]}, {"id": "Ben", "capacity": 1, "skills": ["dock"]}],
+    "orders": [{"id": "Dock", "demand": 1, "skill": "dock"}, {"id": "Line", "demand": 1, "skill": "line"}]}),)
+TRAP_BUDGETED = (("costliest-cost-pays-most", {
+    "items": [{"id": "Anchor", "value": 20}, {"id": "Plant", "value": -6}, {"id": "Small", "value": 3},
+              {"id": "Kit", "value": -2}],
+    "requires": [["Anchor", "Plant"], ["Small", "Kit"]], "budget": 6}),)
+TRAP_CRASH = (("shared-predecessor", {
+    "tasks": [{"id": "Site", "duration": 2, "min_duration": 1, "cost_per_unit": 3},
+              {"id": "East", "duration": 2, "min_duration": 1, "cost_per_unit": 2},
+              {"id": "West", "duration": 2, "min_duration": 1, "cost_per_unit": 2}],
+    "precedences": [["Site", "East"], ["Site", "West"]], "deadline": 3}),)
+
+
+def _source(fn) -> str:
+    try:
+        return inspect.getsource(fn)
+    except (OSError, TypeError):
+        return repr(fn)
+
+
+def trap_cases(reduction) -> list[dict]:
+    """The emergence spec's frozen trap cases, with their brute-force expected answers."""
+    spec = reduction.emergence
+    return [{"name": f"trap:{name}", "input": params, "expected": spec.expect(reduction.normalize(params))}
+            for name, params in (spec.traps if spec else ())]
+
+
+def emergence(reduction, cases: list, answers: list) -> dict:
+    """Did the construction beat its own stated baseline on these frozen cases? (verdict EMERGENT or INTEGRATION)"""
+    spec = reduction.emergence
+    report = {"baseline": reduction.baseline, "cases": len(cases)}
+    if spec is None:
+        return {**report, "verdict": "INTEGRATION",
+                "why": "no runnable baseline: what the construction adds over the simplest alternative is unmeasured"}
+    report.update(claim=spec.claim, baseline_digest=hashlib.sha256("\n".join(
+        [_source(spec.baseline), _source(spec.agrees), repr(spec.traps)]).encode()).hexdigest(),
+        spec_digest=emergence_digest(reduction))
+    if not str(spec.claim).strip():
+        return {**report, "verdict": "INTEGRATION",
+                "why": "the construction does not state what it does that no source does alone"}
+    certified, matched, beaten, worse = 0, [], [], []
+    for case, answer in zip(cases, answers):
+        right = not isinstance(answer, Exception) and reduction.judge(answer, case["expected"])
+        certified += right
+        try:
+            reached = bool(spec.agrees(spec.baseline(reduction.normalize(case["input"])), case["expected"]))
+        except Exception as exc:                  # a broken baseline would make every construction look emergent
+            return {**report, "verdict": "INTEGRATION",
+                    "why": f"the baseline could not run on {case['name']}: {type(exc).__name__}: {str(exc)[:120]}"}
+        if reached:
+            matched.append(case["name"])
+            if not right:
+                worse.append(case["name"])
+        elif right:
+            beaten.append(case["name"])
+    report.update(construction_certified=certified, baseline_matched=len(matched), beaten_on=beaten)
+    if worse:
+        return {**report, "verdict": "INTEGRATION", "baseline_better_on": worse,
+                "why": "the baseline reaches the exact answer where the construction does not"}
+    if certified < len(cases):
+        return {**report, "verdict": "INTEGRATION", "why": "the construction is not certified exact on every case"}
+    if not beaten:
+        return {**report, "verdict": "INTEGRATION",
+                "why": "the baseline reaches the exact answer on every frozen case: nothing is shown to emerge"}
+    return {**report, "verdict": "EMERGENT"}
+
+
+def emergence_digest(reduction) -> str | None:
+    """Identity of the gate a construction must pass: its claim, baseline, agreement rule, oracle and traps. It is
+    kept out of the capability id (a stricter gate must not rename a qualified construction), so a restore compares
+    it with the qualification on record instead and re-gates on any difference."""
+    spec = reduction.emergence
+    if spec is None:
+        return None
+    return hashlib.sha256("\n".join([spec.claim, _source(spec.baseline), _source(spec.agrees), _source(spec.expect),
+                                     repr(spec.traps)]).encode()).hexdigest()
+
+
+def integration_refusal(report: dict | None, *, earlier: bool = False) -> str | None:
+    """The record of a construction refused only by the gate: every case answered right, nothing shown to emerge.
+    None when it failed its oracle (that is a failed qualification, whatever the gate says) or passed."""
+    gate = (report or {}).get("emergence") or {}
+    if report is not None and not report.get("failures") and gate.get("verdict") == "INTEGRATION":
+        return ("failed the emergence gate" + (" earlier on this deficit (recorded; not re-run)" if earlier else "")
+                + ", refused as integration: " + str(gate.get("why"))[:300])
+    return None
+
+
+def gate_current(qualification: dict | None, reduction) -> bool:
+    """Was this construction qualified EMERGENT under the gate its reduction states now?"""
+    gate = (qualification or {}).get("emergence") or {}
+    return gate.get("verdict") == "EMERGENT" and gate.get("spec_digest") == emergence_digest(reduction) is not None
+
+
 # == the reduction library ===================================================================
 
 @dataclass(frozen=True)
@@ -1032,6 +1213,7 @@ class Reduction:
     # rounds: encode(problem, history) asks the level below for a list of requests, round after round,
     # until it returns []; decode(problem, history) then answers. Allowed only at the head of a chain.
     rounds: bool = False
+    emergence: Emergence | None = None   # the runnable baseline it must beat (section 20); None is integration
 
 
 CARD_FIELDS = ("source", "source_version_and_license", "observed_behavior", "underlying_function",
@@ -1239,6 +1421,67 @@ REDUCTIONS["selection.budgeted"] = Reduction(
                     "portfolio-in-words with 'Spend at most N.'",
           rollback="CAPABILITY_DETACH of the composed id; selection.closure and the engine stay"),
     rounds=True)
+
+
+def agrees_staffing(answer: dict, expected: dict) -> bool:
+    return answer["staffed"] == expected["staffed"]
+
+
+def agrees_matching(answer: dict, expected: dict) -> bool:
+    return answer["size"] == expected["size"]
+
+
+def agrees_profit(answer: dict, expected: dict) -> bool:
+    return answer["profit"] == expected["profit"]
+
+
+def expect_staffing(p: dict) -> dict:
+    return {"staffed": staffing_brute_force(p)}
+
+
+def expect_matching(p: dict) -> dict:
+    return {"size": matching_brute_force(p)}
+
+
+def expect_selection(p: dict) -> dict:
+    return {"profit": selection_brute_force(p)}
+
+
+def expect_budgeted(p: dict) -> dict:
+    return {"profit": budgeted_brute_force(p)}
+
+
+EMERGENCE = {
+    "assignment.staffing": Emergence(
+        "the most units any assignment can staff and, when short, the exact orders and the only workers who can "
+        "serve them, checked from the original problem; the max-flow engine answers flows on a network, not "
+        "staffing, and greedy assignment misses the optimum and proves nothing",
+        baseline_staffing, agrees_staffing, expect_staffing, TRAP_STAFFING),
+    "assignment.matching": Emergence(
+        "a maximum matching with a Koenig-Hall deficiency checked from the original pairs, through the qualified "
+        "staffing construction and no new solver; greedy matching stops at a maximal matching and proves nothing",
+        baseline_matching, agrees_matching, expect_matching),
+    "project.crash": Emergence(
+        "the cheapest shortening that meets the deadline, or a chain proving none exists, checked in the "
+        "project's own terms; the LP engine answers a linear program, not a schedule, and trial and error "
+        "shortens two branches where shortening their shared predecessor is cheaper, and proves nothing",
+        baseline_crash, agrees_crash, expect_crash, TRAP_CRASH),
+    "selection.closure": Emergence(
+        "the most profitable closed set with a funding flow proving that no closed set earns more; ranking by "
+        "value misses an offer that pays only with a prerequisite shared by others, and proves nothing",
+        baseline_selection, agrees_profit, expect_selection),
+    "selection.budgeted": Emergence(
+        "the most profitable plan within the cap with a search tree whose every bound is re-proved; dropping "
+        "the costliest cost from the uncapped best throws away the offer that pays most when a cheaper "
+        "combination elsewhere is what must go, and proves nothing",
+        baseline_budgeted, agrees_profit, expect_budgeted, TRAP_BUDGETED),
+}
+REDUCTIONS["assignment.matching"] = replace(
+    REDUCTIONS["assignment.matching"],
+    baseline="greedy matching (maximal, not maximum, and proves nothing); augmenting paths by hand (Hopcroft-Karp) "
+             "would be exact but a new solver to qualify; reusing staffing adds none")
+for _function, _reduction in list(REDUCTIONS.items()):      # in place: the library object stays the same
+    REDUCTIONS[_function] = replace(_reduction, emergence=EMERGENCE.get(_function))
 
 
 def source_digest(reduction: Reduction) -> str:
@@ -1460,10 +1703,13 @@ def composed_adapter(path, registry):
 
 
 def qualify(path, adapter, manifest, seed: int) -> tuple[bool, dict]:
-    """The constructed function's own frozen brute-force oracle, run through the real engine in one batch."""
+    """The constructed function's own frozen brute-force oracle and its baseline's traps, run through the real
+    engine in one batch; it qualifies only when every case is certified exact and it beats its baseline."""
     head = path[0]
-    cases = head.oracle(seed)
-    report = {"cases": len(cases), "failures": [], "oracle": f"brute force for {head.function} (GREG)",
+    traps = trap_cases(head)
+    cases = head.oracle(seed) + traps
+    report = {"cases": len(cases), "traps": len(traps), "failures": [],
+              "oracle": f"brute force for {head.function} (GREG)",
               "through": "the attached engine, exactly as in service (one isolated batch)",
               "chain": [r.reduction_id for r in path]}
     with tempfile.TemporaryDirectory(prefix="greg-recombine-") as tmp:
@@ -1484,4 +1730,5 @@ def qualify(path, adapter, manifest, seed: int) -> tuple[bool, dict]:
         if not head.judge(answer, case["expected"]):
             report["failures"].append({"case": case["name"], "expected": str(case["expected"])[:120]})
     report["engine_calls"] = engine_calls
-    return not report["failures"], report
+    report["emergence"] = emergence(head, cases, answers)
+    return not report["failures"] and report["emergence"]["verdict"] == "EMERGENT", report

@@ -1,3 +1,5 @@
+> **Reading order:** one canonical sequence for every entry file is in [AGENTS.md § Canonical reading order](AGENTS.md#canonical-reading-order). The lists below are kept as written.
+
 > **Team entry:** Before new or resumed work, read [the pinned founder Discussion](https://github.com/dababiyoda/uniimente-kernel/discussions/89), follow [START_HERE](docs/collaboration/START_HERE.md), and refresh [work claims and handoffs](https://github.com/dababiyoda/uniimente-kernel/issues/96). Check relevant open branches and PRs before editing; searching only `main` is insufficient. Record your actual session identity, bounded scope, base/head, overlap split, acceptance evidence and integration destination. A claim coordinates work; it grants no authority. From a cloud session, where the github.com page is unreachable and the GitHub connector has no Discussion tool, read it with `curl -sS https://api.github.com/repos/dababiyoda/uniimente-kernel/discussions/89` (public REST API, no credential).
 
 ## Full-machine completion — controlling correction, October 1, 2026

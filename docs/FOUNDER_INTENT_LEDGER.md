@@ -2,6 +2,21 @@
 
 # Founder Intent Ledger
 
+## Regular structural review and contributor orientation — 2026-11-05
+
+`INTENT-20261105-REGULAR-REVIEW` ([record](intent/INTENT-20261105-REGULAR-REVIEW.json), [verbatim source](intent/sources/REGULAR-REVIEW-2026-11-05-source.md), [deliberation](collaboration/deliberation-regular-review-20261105.json)): delete nothing; audit organization, duplication and elegance against well-organized open-source projects; improve documentation for human and agent comprehension; engage contributors on pain points; establish a regular review process. It is chat intent evidence, not founder authentication.
+
+- **Implemented as a draft:**
+  - one canonical reading order in `AGENTS.md`;
+  - `docs/README.md`, `docs/collaboration/INDEX.md` and a current module map;
+  - READMEs for 13 directories;
+  - two shrink-only structural tests;
+  - a weekly read-only report (`.github/workflows/repository-review.yml`, active once on `main`);
+  - a friction issue form, the [pain-point register](collaboration/CONTRIBUTOR-PAIN-POINTS-2026-11-05.md) and `docs/REVIEW_CADENCE.md`.
+- **Changed axis:** process. SOP-06's "No recurring job is enabled" is superseded for this read-only review only; SOP-06's measures and its five-PR trigger stay.
+- **Founder decisions:** the PR template merge (P-10), `check_seed_mutants.py` in CI (S-3), F-1 (S-6).
+- **State:** active. **Authority delta:** none. **Product delta:** none. **VEPMC:** 0.
+
 ## Build the whole prompt first; the device run is its acceptance — 2026-10-30
 
 Founder message in session `session_01Kucyfm6YBHMTjaiC1M9hqD`, verbatim: "Continue building and doing the prompt verbatim. No real Chromebook run is needed. That is done when we completely build the prompt". It answered a report that listed the first Chromebook run (VEPMC 0 to 1) as remaining work. It is intent evidence, not founder authentication.

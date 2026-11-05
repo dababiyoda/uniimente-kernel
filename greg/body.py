@@ -984,7 +984,7 @@ class Body:
         self.ingest_intake()
         # Goal Gravity first, so an awake goal's pulled observation is stepped in this same tick. Without a
         # founder-signed goal on the ledger it does no work and writes nothing (None).
-        from greg import autonomy, goal_gravity
+        from greg import autonomy, disposition, goal_gravity
         autonomy.regress(self.journal, self.engine.book, now)   # failure evidence withdraws a standing approval first
         gravity = goal_gravity.tick(self, now)
         self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
@@ -993,10 +993,13 @@ class Body:
         if self._stop_now():
             return {"commands": commands, "missions": summary, "stopped": True}
         self._close_out(now)
+        from greg import corrections     # a changed, expired or contradicted reading marks what rests on it
+        corrections.propagate(self.journal, now)
         from greg.cognition.settlement import reconcile as settle_cognition
         settle_cognition(self.journal)
         improvement.learn(self.journal, self.ledger, now)   # held-out evidence from this tick's briefs
         sop.propose(self.journal)
+        disposition.propose(self.journal, now)    # proposals and asks only; the registry changes by founder command
         transport = (anchor.relay_transport(self.egress, self.layout.workspace / ".anchor")
                      if getattr(self, "egress", None) is not None else None)
         anchored = anchor.anchor_once(self.journal, now, transport=transport) if anchor.due(self.journal, now) else None

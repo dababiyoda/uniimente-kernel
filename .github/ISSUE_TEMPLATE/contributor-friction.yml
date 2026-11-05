@@ -1,0 +1,50 @@
+name: Contributor friction
+description: Something in this repository cost you time (human or AI agent). Read monthly (docs/REVIEW_CADENCE.md).
+title: "Friction: "
+labels: ["contributor-friction"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report friction, not a feature request. Agents: give your session ID. Nothing here grants authority or changes an obligation.
+  - type: input
+    id: who
+    attributes:
+      label: Who hit it
+      description: Your name, or the agent session ID (for example session_01…), and the branch/commit you were on.
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you were trying to do, what got in the way, and the exact file, command, CI job or document.
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - Orientation (which document, branch or owner)
+        - Generated record to refresh or a merge conflict in one
+        - CI time, flakiness or environment
+        - Coordination (claims, handoffs, receipts)
+        - Tooling or test harness
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: cost
+    attributes:
+      label: Rough cost
+      description: Minutes lost, reruns, or rework (an estimate is fine; say it is one).
+  - type: textarea
+    id: fix
+    attributes:
+      label: Smallest fix you can see (optional)
+  - type: input
+    id: register
+    attributes:
+      label: Matching register row (optional)
+      description: The P-/S- id in the newest docs/collaboration/CONTRIBUTOR-PAIN-POINTS-*.md, if one fits.

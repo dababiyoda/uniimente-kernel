@@ -77,6 +77,12 @@ def test_an_empty_typed_passphrase_is_refused_and_writes_no_key(tmp_path):
     assert code == 0 and not left and encrypted(key)                    # one empty answer, then a real one
 
 
+def test_a_whitespace_only_passphrase_is_refused_at_keygen(tmp_path):
+    key = tmp_path / "founder.pem"                                       # space-then-Enter is as weak as Enter
+    code, out, _ = greg_typed(tmp_path / "body", ["founder", "keygen", "--key", str(key)], ["   ", "\t", " "])
+    assert code == 2 and "an empty passphrase is refused" in out and "Traceback" not in out and not key.exists()
+
+
 def test_a_mismatched_confirmation_is_refused_and_writes_no_key(tmp_path):
     key = tmp_path / "founder.pem"
     code, out, _ = greg_typed(tmp_path / "body", ["founder", "keygen", "--key", str(key)],

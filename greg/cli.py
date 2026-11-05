@@ -66,7 +66,9 @@ def _passphrase(args, *, confirm: bool = False) -> bytes | None:
         return None
     for _ in range(3):
         typed = getpass.getpass("founder key passphrase: ")
-        if not typed:
+        # Whitespace alone is as weak as nothing: refused when a new key is made (``confirm``). A key already made
+        # with one still opens, so signing never locks out its own founder.
+        if not typed or (confirm and not typed.strip()):
             print(f"greg: {NO_EMPTY_PASSPHRASE}", file=sys.stderr)
             continue
         if confirm and getpass.getpass("founder key passphrase, again: ") != typed:

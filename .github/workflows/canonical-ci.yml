@@ -49,7 +49,8 @@ jobs:
     # (83 genomes) adds its tests, and on its own line the full suite alone took 38 minutes at 14608914. Raised to 90.
     # ubuntu-latest then moved to a runner where bubblewrap namespaces work, so the confined tests that used to skip
     # now run: the full suite took 86 minutes at dacf6975 and fa80ace7 (7795 passed at fa80ace7, run 39984114068), and
-    # the job was cancelled at 90 during the mutation steps that follow it. Raised to 120.
+    # the job was cancelled at 90 during the mutation steps that follow it. Raised to 120. The mutation steps now run
+    # in job 10 (mutation_gates), in parallel.
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
@@ -96,6 +97,31 @@ jobs:
           path: cognition-report.json
           if-no-files-found: error
           retention-days: 90
+  mutation_gates:
+    name: "10 · Mutation gates"
+    runs-on: ubuntu-latest
+    # Each gate removes one safeguard in a scratch copy and requires a failing test. They need none of job 1's
+    # results, so they run here in parallel with it. In job 1, after the full suite, they had pushed the job past its
+    # 120-minute limit on the joined tree: cancelled twice on #274's 68b772cb with no test failed (10571 and 10572
+    # passed; the gates after the suite took about 24 minutes), and 99 minutes on #196's 75a8fdf4. The limit bounds a
+    # hung run, not a speed target.
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-dev.txt -r requirements-cognition.txt
+      - name: Provision worker namespace isolation (bubblewrap), as job 1 does
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q bubblewrap
+          if bwrap --unshare-user --unshare-pid --unshare-net --die-with-parent --ro-bind / / -- /usr/bin/true; then
+            echo "bubblewrap namespaces: usable"
+          else
+            echo "bubblewrap namespaces: NOT usable on this runner; real-isolation tests skip and say why"
+          fi
       - name: Typed handoff authority, scope and type mutations
         run: python scripts/ci/check_pipeline_mutants.py
       - name: Native source-bound appraisal and workload mutations

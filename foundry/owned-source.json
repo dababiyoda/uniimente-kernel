@@ -524,6 +524,7 @@
     "greg/cognition/network.py",
     "greg/cognition/protection.py",
     "greg/cognition/repertoire.py",
+    "greg/cognition/replay.py",
     "greg/cognition/reserved.py",
     "greg/cognition/restatement.py",
     "greg/cognition/seed_compat.py",

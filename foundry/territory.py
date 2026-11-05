@@ -8,7 +8,9 @@ nodes cannot publish.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime
+
+from common.clock import utc_now
 
 from provenance.commit_witness import sha256_obj
 
@@ -18,8 +20,7 @@ PRODUCTION_MAX_NODES = 300
 PUBLISH_EVIDENCE_FLOOR = 0.7
 
 
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
+_now = utc_now  # historical private name; see common/clock.py
 
 
 class TerritoryError(ValueError):

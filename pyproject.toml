@@ -15,3 +15,45 @@ packages = ["adapters", "contracts", "events", "provenance"]
 
 [tool.setuptools.package-data]
 contracts = ["*.schema.json"]
+
+# ---------------------------------------------------------------------------
+# Developer tooling. Nothing below changes the published boundary package.
+
+[tool.pytest.ini_options]
+# `python -m pytest` from the repo root collects exactly these suites.
+# Frozen-experiment tests need full git history (`git fetch --unshallow`).
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+target-version = "py311"
+# Evidence patches and generated output are records, not source.
+extend-exclude = ["tests/evidence", "verifier/runs", "build"]
+
+[tool.ruff.lint]
+# Correctness-only baseline: pyflakes, syntax errors, and the bugbear checks
+# that catch real defects. Style is deliberately not enforced here.
+select = ["F", "E9", "B"]
+ignore = [
+    "B904",  # raise-from inside except: style; changing it alters tracebacks only
+    "B905",  # zip(strict=): existing call sites rely on equal-length inputs
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Sealed artifacts. Their bytes or source are pinned by frozen experiment
+# records (evolution/repair/subjects.py, evolution/*/spec.py); edits invalidate
+# preserved evidence, so lint findings there are recorded, not fixed.
+"policy/consequence_gate.py" = ["F401"]
+"evolution/repair/*" = ["F401", "F841", "B007"]
+"evolution/migration/*" = ["F401", "F841"]
+# Closure probes import and construct objects to prove they still load.
+"closure/kernel_registry.py" = ["F401", "F841"]
+# Names imported here are part of these modules' public namespace.
+"closure/developmental_registry.py" = ["F401"]
+"compiler/ucl_compiler.py" = ["F401"]
+"linker/linker.py" = ["F401"]
+"policy/engine.py" = ["F401"]
+"developmental/mica.py" = ["F401"]
+# Tests import shared fixtures by name (e.g. `stack`) and keep historical
+# assertions verbatim.
+"tests/**" = ["F401", "F811", "F841", "B007", "B017"]

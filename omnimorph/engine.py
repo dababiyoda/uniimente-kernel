@@ -7,7 +7,6 @@ never calls the Gate, mints authority, moves capital, or activates itself.
 """
 from __future__ import annotations
 
-import json
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -17,6 +16,7 @@ from capabilities.genome import CONSEQUENCE_CLASSES
 from foundry.advantage import AdvantageArchitecture, AdvantageRefused
 from foundry.composition import CompositionPlan
 from foundry.tribunal import SpiderWebTribunal, TribunalReport
+from common.canonical import is_sha256_ref, sha256_ref
 
 
 class GenomeRegistryLike(Protocol):
@@ -60,8 +60,7 @@ class OrganManifest:
 
     @property
     def digest(self) -> str:
-        raw = json.dumps(asdict(self), sort_keys=True, separators=(",", ":"))
-        return "sha256:" + sha256(raw.encode()).hexdigest()
+        return sha256_ref(asdict(self))
 
 
 @dataclass(frozen=True)
@@ -426,7 +425,7 @@ class OmnimorphEngine:
 
 def _require_hash(value: Any, field_name: str) -> str:
     value = str(value or "")
-    if not value.startswith("sha256:") or len(value) != 71:
+    if not is_sha256_ref(value):
         raise AdvantageRefused(f"canonical sha256 {field_name} required")
     return value
 

@@ -12,10 +12,9 @@ that names UNIIMENTE as legal principal is invalid.
 """
 from __future__ import annotations
 
-import hashlib
-import json
 import uuid
 from dataclasses import dataclass, field
+from common.canonical import sha256_ref
 
 HUMAN_REQUIRED_CLASSES = ("irreversible", "financial", "external_contact")
 SIDE_EFFECT_CLASSES = ("internal_write", "external_contact", "financial", "irreversible")
@@ -88,5 +87,4 @@ class WorkflowPattern:
     def hash(self) -> str:
         """Content hash. Any edit after ratification yields a new hash —
         and an unratified pattern. Ratification binds to THIS definition."""
-        blob = json.dumps(self.canonical(), sort_keys=True, separators=(",", ":"))
-        return "sha256:" + hashlib.sha256(blob.encode()).hexdigest()
+        return sha256_ref(self.canonical())

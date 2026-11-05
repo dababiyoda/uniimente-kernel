@@ -8,11 +8,11 @@ nonnegative contribution margin, clean authority state, and receipt lineage.
 """
 from __future__ import annotations
 
-import json
 from dataclasses import asdict, dataclass, field
 from enum import Enum
 from hashlib import sha256
 from typing import Any, Iterable
+from common.canonical import sha256_ref
 
 STRATEGY_ROUTES = (
     "fastest_path",
@@ -80,8 +80,7 @@ class OpportunitySpec:
 
     @property
     def digest(self) -> str:
-        payload = json.dumps(asdict(self), sort_keys=True, separators=(",", ":"))
-        return "sha256:" + sha256(payload.encode()).hexdigest()
+        return sha256_ref(asdict(self))
 
 
 @dataclass(frozen=True)
@@ -159,8 +158,7 @@ class AdvantageArchitecture:
 
     @property
     def digest(self) -> str:
-        payload = json.dumps(asdict(self), sort_keys=True, separators=(",", ":"))
-        return "sha256:" + sha256(payload.encode()).hexdigest()
+        return sha256_ref(asdict(self))
 
 
 @dataclass(frozen=True)
@@ -329,9 +327,7 @@ class AdvantageFoundry:
             need.validate()
         if not control_surfaces or not success_metrics or not kill_conditions:
             raise AdvantageRefused("control surfaces, metrics, and kill conditions are required")
-        branch_digest = "sha256:" + sha256(
-            json.dumps(asdict(winner), sort_keys=True, separators=(",", ":")).encode()
-        ).hexdigest()
+        branch_digest = sha256_ref(asdict(winner))
         seed = f"{opportunity.digest}|{winner.route}|{'|'.join(sorted(control_surfaces))}"
         architecture = AdvantageArchitecture(
             architecture_id="adv-" + sha256(seed.encode()).hexdigest()[:16],

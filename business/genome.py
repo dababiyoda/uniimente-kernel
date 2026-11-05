@@ -27,15 +27,16 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
+
+from common.clock import utc_now
 
 from provenance.commit_witness import sha256_obj
 
 FALSIFICATION_WINDOW_DAYS = 90
 
 
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
+_now = utc_now  # historical private name; see common/clock.py
 
 
 class GenomeCompileError(ValueError):

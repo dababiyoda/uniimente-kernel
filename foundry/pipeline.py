@@ -7,7 +7,6 @@ must be supplied as a separately verified record.
 """
 from __future__ import annotations
 
-import json
 from dataclasses import asdict, dataclass
 from enum import Enum
 from hashlib import sha256
@@ -35,6 +34,7 @@ from .tribunal import (
     TribunalReport,
     TribunalVerdict,
 )
+from common.canonical import is_sha256_ref, sha256_ref
 
 
 class PipelineStatus(str, Enum):
@@ -357,11 +357,10 @@ class FoundryPipeline:
 
 
 def _outcome_hash(outcome: ExternalOutcome) -> str:
-    raw = json.dumps(asdict(outcome), sort_keys=True, separators=(",", ":"))
-    return "sha256:" + sha256(raw.encode()).hexdigest()
+    return sha256_ref(asdict(outcome))
 
 
 def _require_hash(value: str, field_name: str) -> str:
-    if not value.startswith("sha256:") or len(value) != 71:
+    if not is_sha256_ref(value):
         raise AdvantageRefused(f"{field_name} must be a canonical sha256 reference")
     return value

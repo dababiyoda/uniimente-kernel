@@ -10,7 +10,7 @@ The genome is data. Organs consume genomes; the kernel validates them.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 KNOWN_CONTRACTS = (
     "capability-grant", "context-packet", "decision", "event", "evidence",

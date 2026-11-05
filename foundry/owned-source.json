@@ -539,6 +539,7 @@
     "greg/cognition/worker.py",
     "greg/cognition/worlds.py",
     "greg/cognitive_worker.py",
+    "greg/compounding.py",
     "greg/compute.py",
     "greg/computer.py",
     "greg/console.py",

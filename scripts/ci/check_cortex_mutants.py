@@ -901,14 +901,21 @@ METABOLISM_MUTANTS = [
      "        if folded in known and key != known[folded]:", "        if False:"),
     ("a manifest's JSON keys are not checked", "greg/licensing.py",
      '            _go_fields(document, _GO_MANIFEST_FIELDS, "the model\'s manifest")\n', ""),
+    # these three named _go_fields calls in _ollama_list and _ollama_runs until the review of 49aaa812; the check of
+    # the whole manifest (_go_value over its "manifests", "layers" and "config") does that work now
     ("a manifest-list entry's JSON keys are not checked", "greg/licensing.py",
-     '        _go_fields(child, _GO_MANIFEST_FIELDS, "a manifest-list entry")\n', ""),
+     '                _go_fields(item, _GO_LAYER_FIELDS if kind == "layers" else _GO_MANIFEST_FIELDS, '
+     'f"{what} item")\n',
+     '                _go_fields(item, _GO_LAYER_FIELDS, f"{what} item") if kind == "layers" else None\n'),
     ("a list child manifest's JSON keys are not checked", "greg/licensing.py",
      '        _go_fields(document, _GO_MANIFEST_FIELDS, f"the list\'s manifest {digest[7:19]}")\n', ""),
     ("a layer's JSON keys are not checked", "greg/licensing.py",
-     '        _go_fields(layer, _GO_LAYER_FIELDS, f"{where}a layer of the manifest")\n', "        pass\n"),
+     '                _go_fields(item, _GO_LAYER_FIELDS if kind == "layers" else _GO_MANIFEST_FIELDS, '
+     'f"{what} item")\n',
+     '                None if kind == "layers" else _go_fields(item, _GO_MANIFEST_FIELDS, f"{what} item")\n'),
     ("the config descriptor's JSON keys are not checked", "greg/licensing.py",
-     '    _go_fields(config, _GO_LAYER_FIELDS, f"{where}the manifest\'s config")\n', ""),
+     '            _go_fields(value, _GO_LAYER_FIELDS if kind == "layer" else _GO_DRAFT_FIELDS, what)\n',
+     '            _go_fields(value, _GO_DRAFT_FIELDS, what) if kind == "draft" else None\n'),
     ("the config blob's JSON keys are not checked", "greg/licensing.py",
      '        _go_fields(settings, _GO_CONFIG_FIELDS, f"{where}the model\'s config blob")\n', ""),
     ("a request name's form is not read", "greg/licensing.py",
@@ -1028,7 +1035,8 @@ METABOLISM_MUTANTS = [
      "            elif item is not None and not isinstance(item, dict):\n                wrong = True\n",
      "            elif item is not None and not isinstance(item, dict):\n                pass\n"),
     ("a struct slice's items are not checked", "greg/licensing.py",
-     '                _go_fields(item, _GO_LAYER_FIELDS if kind == "layers" else _GO_MANIFEST_FIELDS, f"{what} item")\n',
+     '                _go_fields(item, _GO_LAYER_FIELDS if kind == "layers" else _GO_MANIFEST_FIELDS, '
+     'f"{what} item")\n',
      "                pass\n"),
     ("a string slice's items are not checked", "greg/licensing.py",
      '                _go_value(item, "string", f"{what} item")\n', "                pass\n"),

@@ -1223,7 +1223,6 @@ def _ollama_list(store: Path, listing: dict) -> tuple[list, list, dict]:
     entries = listing["manifests"]
     runners = {}
     for child in entries:
-        _go_fields(child, _GO_MANIFEST_FIELDS, "a manifest-list entry")
         digest = child.get("digest")
         if "layers" in child or "config" in child or not _SHA256_DIGEST.fullmatch(str(digest)):
             raise _Unservable("the model's manifest is not a readable Ollama manifest: a manifest-list entry carries "
@@ -1266,14 +1265,12 @@ def _ollama_runs(store: Path, label: str, manifest: dict, where: str = "") -> tu
     """(the license parts, the weight digests) of one manifest Ollama would run. Its weights are its weight layers;
     a manifest whose config names a remote host and model is a relay Ollama forwards to that host (server/routes.go,
     Config.RemoteHost and RemoteModel), whose weights are not in this store; a manifest with no weight layer runs
-    nothing GREG can read. Either, or a config blob that is not in the store or does not match, is held. A layer, the
-    config or the config blob whose keys Ollama could read otherwise, or with a value Go cannot store in its field,
-    raises ``_Unservable`` (``_go_fields``)."""
+    nothing GREG can read. Either, or a config blob that is not in the store or does not match, is held. A config
+    blob whose keys Ollama could read otherwise, or with a value Go cannot store in its field, raises ``_Unservable``
+    (``_go_fields``); the manifest's own layers and config were checked with it, by ``_go_fields`` over the
+    manifest."""
     layers = [layer for layer in manifest["layers"] if isinstance(layer, dict)]
-    for layer in layers:
-        _go_fields(layer, _GO_LAYER_FIELDS, f"{where}a layer of the manifest")
     problem, config = None, manifest.get("config")
-    _go_fields(config, _GO_LAYER_FIELDS, f"{where}the manifest's config")
     weights = sorted(str(layer.get("digest")) for layer in layers if layer.get("mediaType") in OLLAMA_WEIGHTS)
     if config is not None and config.get("digest"):
         data = _ollama_blob(store, config["digest"], MAX_MANIFEST_BYTES)

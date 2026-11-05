@@ -38,6 +38,7 @@ from pathlib import Path
 
 from foundry.systems import cas
 from provenance.digests import compact_json_bytes as _canon, sha256_json as _sha
+from foundry.systems.refusals import refusal_recorder
 
 FORBIDDEN = {"subprocess": r"\bsubprocess\b", "socket": r"\bsocket\b", "os.system": r"\bos\.system\b",
              "os.environ": r"\bos\.environ\b|\bgetenv\b", "eval/exec": r"\b(eval|exec)\s*\(", "__import__": r"__import__",
@@ -344,14 +345,7 @@ def exercise(root) -> dict:
         frozen = engine.freeze(contract_id="vat", purpose="Add VAT computation in integer cents with half-up rounding",
                                write_cone=cone, public_tests=VAT_TESTS_PUBLIC, held_out_tests=VAT_TESTS_HELD_OUT,
                                docs_required=["README.md### Tax"], ci=[pytest_cmd, secret_check], max_rounds=2)
-        refusals = {}
-
-        def refused(label, fn):
-            try:
-                fn()
-                refusals[label] = None
-            except CommissionError as exc:
-                refusals[label] = str(exc)[:80]
+        refusals, refused = refusal_recorder(CommissionError, limit=80)
         refused("refreeze", lambda: engine.freeze(contract_id="vat", purpose="x", write_cone=cone, public_tests={}, held_out_tests=VAT_TESTS_HELD_OUT,
                                                   docs_required=[], ci=[pytest_cmd]))
         refused("contract_without_held_out", lambda: engine.freeze(contract_id="nope", purpose="x", write_cone=cone, public_tests={},

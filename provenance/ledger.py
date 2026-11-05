@@ -25,7 +25,7 @@ import weakref
 from array import array
 from collections.abc import Sequence
 from dataclasses import dataclass, asdict, fields
-from datetime import datetime, timezone
+from provenance.digests import sha256_json as _sha256_json, utc_now_z as _now
 
 GENESIS_PREV = "sha256:" + "0" * 64
 # Hot paths verify only records not yet verified; the whole chain is still reconstructed on open,
@@ -55,14 +55,8 @@ class WriterConflict(RuntimeError):
     """This POSIX ledger supports exactly one writer process."""
 
 
-def _now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-
-
 def sha256_json(obj) -> str:
-    return "sha256:" + hashlib.sha256(
-        json.dumps(obj, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
-    ).hexdigest()
+    return _sha256_json(obj, default=str)
 
 
 @dataclass(slots=True)

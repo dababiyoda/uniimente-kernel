@@ -137,7 +137,7 @@ METABOLISM_TESTS = ["tests/unit/test_greg_license_expressions.py", "tests/unit/t
                     "tests/unit/test_greg_document_text.py", "tests/unit/test_greg_license_qualification.py",
                     "tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_greg_license_use_context.py",
                     "tests/unit/test_greg_genesis_restore.py", "tests/unit/test_greg_binary_failure_types.py",
-                    "tests/unit/test_greg_document_phrase.py"]
+                    "tests/unit/test_greg_document_phrase.py", "tests/unit/test_greg_genesis_discovery.py"]
 OSS_MUTANTS = [
     ("certificate skips edge feasibility", "greg/cognition/network.py",
      "if exact[b] > exact[a] + w + tolerance(exact[a] + w):", "if False:"),
@@ -925,6 +925,16 @@ METABOLISM_MUTANTS = [
      '    return not re.search(r"[.;:!?]", holder)\n'),
     ("the Apache notice's copyright field takes any text", "greg/licensing.py",
      "            if notice and _copyright_only(next(g for g in notice.groups() if g)):", "            if notice:"),
+    # behaviour discovery (acceptance C.G3, C.G5): an installed tool found by what it does, before any build
+    ("discovery is skipped and the builder runs first", "greg/genesis.py",
+     "                found = self._discovery_route(mission, function, contract, deficit_id, now)\n",
+     "                found = False\n"),
+    ("a discovered tool is qualified on public examples only", "greg/genesis.py",
+     "for i, v in enumerate(public + held)]", "for i, v in enumerate(public)]"),
+    ("discovery re-registers a tool the founder detached", "greg/genesis.py",
+     "            if cid in unusable:\n", "            if False:\n"),
+    ("a search that found nothing runs again though nothing installed changed", "greg/genesis.py",
+     'and e.payload.get("installed") == fingerprint for e in', "and False for e in"),
 ]
 
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),

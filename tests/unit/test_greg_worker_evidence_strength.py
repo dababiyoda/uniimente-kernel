@@ -8,7 +8,9 @@ oracle the worker rewrote, an ablation that removes the new mechanism, and a res
 """
 from __future__ import annotations
 
+import importlib.util
 import json
+import py_compile
 from pathlib import Path
 
 import pytest
@@ -17,6 +19,7 @@ from greg import evidence_strength, templates, workers
 from greg.body import Body, Layout
 from greg.capabilities import BUILTINS, InvocationContext, SecretBroker
 from tests.greg_fixtures import Clock, drop, make_body, signed
+import tests.unit.test_greg_workers as tw
 from tests.unit.test_greg_workers import GOOD, ScriptedWorker, git, make_repo, run_mission
 # The worker tests' autouse envelope applies here too: real confinement where the host provides it, else the
 # labelled scripted envelope, so these appraisal tests run on a host without usable bubblewrap (CI runners).
@@ -137,6 +140,111 @@ def test_a_restart_does_not_turn_a_refusal_into_acceptance(tmp_path, monkeypatch
     assert worker.calls == 1                                                   # no blind re-commission
 
 
+SHOWN = "def add(a, b):\n    return a + b\n\n\nsub = add\n"                       # what the founder reviews: wrong
+COMPILED_FROM = GOOD["pkg/calc.py"]                                               # what a planted .pyc runs
+
+
+class BytesWorker(ScriptedWorker):
+    """Scripted double that also writes binary files, as any real worker in the clone can."""
+
+    def __init__(self, edits, blobs):
+        super().__init__(edits)
+        self.blobs = blobs
+
+    def run(self, order, cwd):
+        report = super().run(order, cwd)
+        for rel, data in self.blobs.items():
+            (cwd / rel).parent.mkdir(parents=True, exist_ok=True)
+            (cwd / rel).write_bytes(data)
+        return report
+
+
+def planted_bytecode(tmp_path):
+    src = tmp_path / "calc.py"
+    src.write_text(COMPILED_FROM)
+    pyc = Path(importlib.util.cache_from_source(str(src)))
+    py_compile.compile(str(src), cfile=str(pyc), invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH)
+    return {"pkg/__pycache__/" + pyc.name: pyc.read_bytes()}
+
+
+def test_a_planted_bytecode_file_cannot_stand_in_for_the_source_under_review(tmp_path, monkeypatch):
+    """Probed on 196 (d35d92a5): ACCEPTED, mission achieved, with a delivered ``sub`` that adds."""
+    worker = BytesWorker({"pkg/calc.py": SHOWN, "tests/test_calc.py": WEAK["tests/test_calc.py"].replace(
+        "sub(0, 0) == 0", "sub(5, 2) == 3")}, planted_bytecode(tmp_path))
+    monkeypatch.setattr(tw, "ScriptedWorker", lambda edits, cost=0.01: worker)
+    home, _, _, events, _ = run_mission(tmp_path, monkeypatch, {})
+    assert worker.calls == 1
+    assert "greg.mission.achieved" not in events
+    result = appraise_again(home, tmp_path)
+    assert result["verdict"] == "REJECTED"
+    assert any("compiled modules" in f and "__pycache__" in f for f in result["findings"])
+    ran = [t for t in result["independent_tests"] if "tests/test_calc.py" in t["argv"]]
+    assert ran and not any(t["passed"] for t in ran)                 # the source, sub = add, is what ran
+
+
+def test_compiled_modules_name_bytecode_caches_and_native_extensions_only():
+    names = ["pkg/__pycache__/calc.cpython-311.pyc", "pkg/calc.pyc", "pkg/_calc.cpython-311-x86_64-linux-gnu.so",
+             "pkg/calc.pyd", "pkg/calc.py", "docs/pyc-notes.md", "tests/test_calc.py"]
+    assert evidence_strength.compiled_modules(names) == [
+        "pkg/__pycache__/calc.cpython-311.pyc", "pkg/_calc.cpython-311-x86_64-linux-gnu.so", "pkg/calc.pyc",
+        "pkg/calc.pyd"]
+
+
+ADD = "def add(a, b):\n    return a + b\n"
+ALIAS = {"pkg/calc.py": ADD + "\n\nsub = add\n",                                 # corrupted: an alias, no operator
+         "tests/test_calc.py": "from pkg.calc import sub\n\n\ndef test_sub():\n    assert True\n"}
+LABEL = {"pkg/calc.py": ADD + '\n\nLABEL = "Approving records your answer; attaching is its own command"\n',
+         "tests/test_calc.py": "from pkg.calc import LABEL\n\n\ndef test_label():\n    assert 'its own command' in LABEL\n"}
+IMPORTED = {"pkg/calc.py": "from operator import sub\n\n\n" + ADD,                  # correct, but no site at all
+            "tests/test_calc.py": "from pkg.calc import sub\n\n\ndef test_sub():\n    assert sub(5, 2) == 3\n"}
+
+
+def test_an_alias_certified_only_by_importing_it_is_refused_by_the_fallback_tier(tmp_path, monkeypatch):
+    """Probed on 196 (d35d92a5): ``sub = add`` gave no primary site, mutation went unmeasured, ACCEPTED."""
+    home, _, _, events, _ = run_mission(tmp_path, monkeypatch, ALIAS)
+    assert "greg.mission.achieved" not in events
+    mutation = appraise_again(home, tmp_path)["evidence_strength"]["mutation"]
+    assert mutation["tier"] == "fallback" and mutation["killed"] == 0
+    assert mutation["survivors"] == ["line 5: assign value -> None"]
+
+
+def test_a_string_change_pinned_by_its_test_is_measured_and_accepted(tmp_path, monkeypatch):
+    home, _, _, events, _ = run_mission(tmp_path, monkeypatch, LABEL)
+    assert "greg.mission.achieved" in events
+    result = appraise_again(home, tmp_path)
+    mutation = result["evidence_strength"]["mutation"]
+    assert result["verdict"] == "ACCEPTED" and mutation["tier"] == "fallback" and mutation["kill_ratio"] == 1.0
+
+
+def test_a_change_with_nothing_to_corrupt_needs_the_founders_acceptance_test(tmp_path, monkeypatch):
+    home, _, _, events, _ = run_mission(tmp_path, monkeypatch, IMPORTED)
+    assert "greg.mission.achieved" not in events
+    result = appraise_again(home, tmp_path)
+    assert result["evidence_strength"]["mutation"]["measured"] is False
+    assert any("nothing to corrupt" in f and "name an acceptance test" in f for f in result["findings"])
+
+
+def test_the_founders_acceptance_test_certifies_a_change_with_nothing_to_corrupt(tmp_path, monkeypatch):
+    home, events = run_with_oracle(tmp_path, monkeypatch, IMPORTED)
+    assert "greg.mission.achieved" in events
+    result = appraise_again(home, tmp_path)
+    assert result["verdict"] == "ACCEPTED" and result["evidence_strength"]["mutation"]["measured"] is False
+
+
+DATA = {"plan/plan.json": '{"staffed": 3}\n',
+        "tests/test_plan.py": "import json\n\n\ndef test_plan():\n    assert json.load(open('plan/plan.json'))['staffed'] == 3\n"}
+
+
+def test_a_data_deliverable_is_outside_the_adversary_and_keeps_its_earlier_acceptance(tmp_path, monkeypatch):
+    """CI on 5502651a (job 8): the fifteen-step mission's worker delivers plan/plan.json, no Python source;
+    failing closed there refused the founder's own flagship mission. Mutation is not applicable to data."""
+    home, _, _, events, _ = run_mission(tmp_path, monkeypatch, DATA, allowed=("plan/*", "tests/*"))
+    assert "greg.mission.achieved" in events
+    result = appraise_again(home, tmp_path)
+    mutation = result["evidence_strength"]["mutation"]
+    assert result["verdict"] == "ACCEPTED" and mutation["applicable"] is False and mutation["measured"] is False
+
+
 # -- the parts on their own ---------------------------------------------------------------
 
 def test_sealed_paths_cover_files_directories_and_node_ids():
@@ -161,3 +269,25 @@ def test_mutants_touch_only_the_changed_lines_and_are_deterministic():
     assert {"swap and/or", "drop 'not'", "negate comparison", "flip comparison"} <= {l.split(": ", 1)[1] for l in labels}
     assert all("a + b" in text for _, text in first)                            # line 2 untouched
     assert len(evidence_strength.mutants("x = [" + ", ".join(["1"] * 40) + "]\n", {1}, limit=5)) == 5
+
+
+def test_the_fallback_tier_runs_only_where_the_primary_operators_find_nothing():
+    source = '"""Module docstring."""\nfrom operator import sub\nLABEL = "text"\nalias = sub\n\n\ndef f(x):\n    return g(x) + 1\n'
+    changed = set(range(1, 9))
+    assert [label for label, _ in evidence_strength.mutants(source, changed)] == [
+        "line 8: 1 -> 2", "line 8: 1 -> 0", "line 8: drop '+ 1'", "line 8: swap +/-"]
+    assert [label for label, _ in evidence_strength.mutants(source, changed, tier="fallback")] == [
+        "line 3: string emptied", "line 3: assign value -> None", "line 4: assign value -> None",
+        "line 8: return value -> None"]                                  # never the docstring, never the import
+
+
+def test_a_sample_budget_of_one_or_none_never_crashes_the_appraisal():
+    """Found by the held-out replay: a second source file reached with one mutant of budget left
+    divided by ``limit - 1`` and raised ZeroDivisionError inside the appraisal."""
+    source = "def f(a, b):\n    return a + b - 1 * 2\n"
+    every = evidence_strength.mutants(source, {2})
+    assert len(every) > 1
+    assert evidence_strength.mutants(source, {2}, limit=0) == []
+    one = evidence_strength.mutants(source, {2}, limit=1)
+    assert len(one) == 1 and one[0] in every
+    assert len(evidence_strength.mutants(source, {2}, limit=1, tier="fallback")) <= 1

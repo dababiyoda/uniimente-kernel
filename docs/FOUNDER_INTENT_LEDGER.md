@@ -2,6 +2,21 @@
 
 # Founder Intent Ledger
 
+## Regular structural review and contributor orientation — 2026-11-05
+
+`INTENT-20261105-REGULAR-REVIEW` ([record](intent/INTENT-20261105-REGULAR-REVIEW.json), [verbatim source](intent/sources/REGULAR-REVIEW-2026-11-05-source.md), [deliberation](collaboration/deliberation-regular-review-20261105.json)): delete nothing; audit organization, duplication and elegance against well-organized open-source projects; improve documentation for human and agent comprehension; engage contributors on pain points; establish a regular review process. It is chat intent evidence, not founder authentication.
+
+- **Implemented as a draft:**
+  - one canonical reading order in `AGENTS.md`;
+  - `docs/README.md`, `docs/collaboration/INDEX.md` and a current module map;
+  - READMEs for 13 directories;
+  - two shrink-only structural tests;
+  - a weekly read-only report (`.github/workflows/repository-review.yml`, active once on `main`);
+  - a friction issue form, the [pain-point register](collaboration/CONTRIBUTOR-PAIN-POINTS-2026-11-05.md) and `docs/REVIEW_CADENCE.md`.
+- **Changed axis:** process. SOP-06's "No recurring job is enabled" is superseded for this read-only review only; SOP-06's measures and its five-PR trigger stay.
+- **Founder decisions:** the PR template merge (P-10), `check_seed_mutants.py` in CI (S-3), F-1 (S-6).
+- **State:** active. **Authority delta:** none. **Product delta:** none. **VEPMC:** 0.
+
 ## Build the whole prompt first; the device run is its acceptance — 2026-10-30
 
 Founder message in session `session_01Kucyfm6YBHMTjaiC1M9hqD`, verbatim: "Continue building and doing the prompt verbatim. No real Chromebook run is needed. That is done when we completely build the prompt". It answered a report that listed the first Chromebook run (VEPMC 0 to 1) as remaining work. It is intent evidence, not founder authentication.
@@ -167,6 +182,11 @@ Progress 2026-10-21 (measured; negative results kept):
   - **Fix (`93bf43a3`):** cognitive requests reach the solver and verifier on stdin instead of one argv string, which Linux caps at 128 KiB. The request ceiling is now 1 MiB.
   - **Admission v9:** pre-registered at `ce760f7a`, frozen at `11a8e318` and run once on seeds 1800-1829. It re-admits `convex_qp_dual` 1.0.0 as **DEFAULT** (13-1-16 against the baseline, 23-0-7 against trust-constr). The smoke passes on a 92.5 KB request, which the old limit refused.
   - 62 of 83 are admitted: 45 DEFAULT and 17 NICHE. None is attached.
+- **Genome admission v10, the meta wave** ([evidence](evidence/greg-genome-admission/2026-11-05-v10/README.md)): the three directive-named families with no executor, built in three parallel lanes, pre-registered at `e48292d3`, frozen at `0493e706` and run once on seeds 1900-1929.
+  - `collective_ecology_bidding` is **DEFAULT**: it beats static allocation 23-7, but ties its certainty-equivalent ablation 13-17. The bidding market adds no measured value over certainty equivalence.
+  - `meta_global_workspace` is **NICHE**: it beats no communication 25-3-2 and ties the token ring 9-10-11, at 1.53x its latency. Its edge is on narrow, strongly coupled buses.
+  - `meta_active_inference` is **SUPERSEDED**: it loses 0-24-6 to Bayesian decision theory without the epistemic term.
+  - 64 of 86 are admitted: 46 DEFAULT and 18 NICHE. None is attached.
 
 ## FABLE 5.1 OPUS MAXIMUS: one GREG, stacked on #178 — 2026-10-15
 

@@ -38,5 +38,21 @@ jobs:
           else
             python -m acceptance directive --collect
           fi
+      # The step above runs this change's own acceptance/ code, which the change can edit. This one runs the base's
+      # checker over this change's map, manifest and contract, so weakening the checker does not weaken the check
+      # that judges the change making it. A change to this workflow file itself is still only caught by review.
+      - name: The base's own directive checker judges this change's map
+        if: github.base_ref != ''
+        run: |
+          judged="$RUNNER_TEMP/judged"
+          cp -a . "$judged"
+          if git cat-file -e FETCH_HEAD:acceptance/directive.py 2>/dev/null; then
+            for f in $(git ls-tree --name-only FETCH_HEAD acceptance/ | grep '\.py$'); do
+              git show "FETCH_HEAD:$f" > "$judged/$f"
+            done
+            (cd "$judged" && python -m acceptance directive --against FETCH_HEAD)
+          else
+            echo "the base has no directive checker; nothing to judge with"
+          fi
       - name: Every directive-completion safeguard fails its tests when removed
         run: python scripts/ci/check_directive_sections_mutants.py

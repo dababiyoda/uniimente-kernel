@@ -42,6 +42,7 @@ import urllib.parse
 from pathlib import Path
 
 from foundry.systems import accounting
+from foundry.systems.refusals import refusal_recorder
 
 RESERVE_SHARE = 0.10
 FEE_BPS = 290          # 2.9% + 30c, Stripe's published card rate, used only by the emulator
@@ -355,13 +356,7 @@ def exercise(root) -> dict:
         def _grant_for(case_id, amount_cents):
             return charge_grant(case_id, amount_cents, gate=gate)
         receipt = "sha256:" + "ab" * 32
-        refusals = {}
-        def refused(label, fn):
-            try:
-                fn()
-                refusals[label] = None
-            except PaymentError as exc:
-                refusals[label] = str(exc)[:70]
+        refusals, refused = refusal_recorder(PaymentError, limit=70)
         refused("live_key", lambda: Rail(root / "live", api_key="sk_live_nope", base=base))
         refused("no_delivery_receipt", lambda: rail.charge(case_id="c0", customer="acme", amount_cents=90000,
                                                            delivery_receipt="", grant=_grant_for("c0", 90000)))

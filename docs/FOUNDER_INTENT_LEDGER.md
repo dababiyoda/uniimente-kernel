@@ -2,6 +2,38 @@
 
 # Founder Intent Ledger
 
+## Build the whole prompt first; the device run is its acceptance — 2026-10-30
+
+Founder message in session `session_01Kucyfm6YBHMTjaiC1M9hqD`, verbatim: "Continue building and doing the prompt verbatim. No real Chromebook run is needed. That is done when we completely build the prompt". It answered a report that listed the first Chromebook run (VEPMC 0 to 1) as remaining work. It is intent evidence, not founder authentication.
+
+| Required field | INTENT-20261030-BUILD-BEFORE-DEVICE-RUN |
+| --- | --- |
+| statement | Continue building and doing the prompt verbatim. No real Chromebook run is needed. That is done when we completely build the prompt |
+| source_refs | [verbatim source](intent/sources/FOUNDER-CORRECTION-2026-10-30-source.md); [record](intent/INTENT-20261030-BUILD-BEFORE-DEVICE-RUN.json); the prompt it refers to, `INTENT-20261028-OPUS-MAXIMUS-REISSUE` |
+| owner | Alfonso Lopez decides; the integration owner and implementing sessions on board #96 build |
+| state | active |
+| binding_scope | sequencing of work on the integration line (#196 and its children); reversible implementation and draft review only |
+| constitutional_constraints | changed axis: sequence and timing only. The final effect, the evidence ladder (directive section 56) and the authority envelope are unchanged. Nothing built in a container is labelled founder-used, live or externally verified |
+| success_evidence | later directive nodes land as draft PRs with fail-before/pass-after tests while VEPMC stays 0; `tests/unit/test_founder_correction_20261030.py` |
+| failure_evidence | a container run reported as founder-used; a test key or rehearsal that moves VEPMC or `greg path` N1 |
+| dependencies | `INTENT-20261001-FULL-MACHINE-COMPLETION` (VEPMC already stops no unrelated software work) |
+| conflicts | `opus-maximus/NEXT_WAVE_AND_HORIZONS.md` §1 names the device run the single bottleneck metric; directive §58 warns against jumping to later nodes. Both resolved by founder sequencing: the metric is kept for device acceptance, and §56's evidence labels apply to every later node |
+| next_review_trigger | the founder declares the prompt built, runs the device acceptance, or corrects the sequence again |
+| supersedes | reading VEPMC 0 to 1 as the gate in front of the directive's later nodes (sequencing only) |
+| superseded_by | none |
+| implementation_refs | `greg/metrics.py` (unchanged: nine conditions, founder tier), `opus-maximus/NEXT_WAVE_AND_HORIZONS.md` (dated note) |
+
+## The 77-section master build directive, re-issued with a preamble — 2026-10-28
+
+`INTENT-20261028-OPUS-MAXIMUS-REISSUE` ([record](intent/INTENT-20261028-OPUS-MAXIMUS-REISSUE.json), [complete verbatim text](intent/sources/OPUS-MAXIMUS-MASTER-BUILD-DIRECTIVE-2026-10-28-source.md)): the founder re-sent the 2026-09-30 OPUS MAXIMUS master build directive in full, given twice, behind a new preamble.
+
+The preamble:
+- asks for one persistent GREG whose unified agency emerges from an ecology of computational, institutional, economic and human systems and "Different forms of intelligence as described by levin";
+- asks that the public community influence GREG while GREG helps it;
+- asks for an architecture that absorbs future technology toward "Jarvis/self-driving-car level of mechanistic aliveness", "without confusing that appearance with biological consciousness or allowing operational autonomy to erase legitimate human shutdown authority".
+
+Every section the 2026-09-30 source kept is word for word the same (tested). INTENT-0030 governs the reading: Levin's forms of intelligence compile to the existing multiscale Mind and governed workers, community influence enters as evidence through the untrusted data plane, and "survival" is continuity of function, never a right to survive (section 47). State: active. Authority delta: none. VEPMC: 0.
+
 ## Organ pins upgraded — 2026-10-23
 
 Founder message in the #196 session, verbatim: "All organs should have upgraded pins". It is not founder authentication; it settles the open "organ pin upgrade" decision.
@@ -135,6 +167,11 @@ Progress 2026-10-21 (measured; negative results kept):
   - **Fix (`93bf43a3`):** cognitive requests reach the solver and verifier on stdin instead of one argv string, which Linux caps at 128 KiB. The request ceiling is now 1 MiB.
   - **Admission v9:** pre-registered at `ce760f7a`, frozen at `11a8e318` and run once on seeds 1800-1829. It re-admits `convex_qp_dual` 1.0.0 as **DEFAULT** (13-1-16 against the baseline, 23-0-7 against trust-constr). The smoke passes on a 92.5 KB request, which the old limit refused.
   - 62 of 83 are admitted: 45 DEFAULT and 17 NICHE. None is attached.
+- **Genome admission v10, the meta wave** ([evidence](evidence/greg-genome-admission/2026-11-05-v10/README.md)): the three directive-named families with no executor, built in three parallel lanes, pre-registered at `e48292d3`, frozen at `0493e706` and run once on seeds 1900-1929.
+  - `collective_ecology_bidding` is **DEFAULT**: it beats static allocation 23-7, but ties its certainty-equivalent ablation 13-17. The bidding market adds no measured value over certainty equivalence.
+  - `meta_global_workspace` is **NICHE**: it beats no communication 25-3-2 and ties the token ring 9-10-11, at 1.53x its latency. Its edge is on narrow, strongly coupled buses.
+  - `meta_active_inference` is **SUPERSEDED**: it loses 0-24-6 to Bayesian decision theory without the epistemic term.
+  - 64 of 86 are admitted: 46 DEFAULT and 18 NICHE. None is attached.
 
 ## FABLE 5.1 OPUS MAXIMUS: one GREG, stacked on #178 — 2026-10-15
 

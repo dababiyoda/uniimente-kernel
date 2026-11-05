@@ -1,0 +1,297 @@
+{
+  "decision_id": "DELIB-20261022-LICENSE-QUALIFICATION",
+  "title": "License qualification as a gate on Genesis's signed auto-attach of installed packages",
+  "problem": "Genesis attached an installed open-source package under a founder-signed read-only auto_attach whatever its declared license (undeclared, BUSL, AGPL, proprietary). Technical qualification existed; legal qualification did not.",
+  "founder_intent_refs": [
+    "INTENT-20261022-OSS-METABOLISM",
+    "INTENT-20260930-open-source-first",
+    "INTENT-20261001-open-source-mechanism-harvest"
+  ],
+  "baseline": "#196 a3fa3795: Mechanism Card holds license_of() display string; Genesis._attach and _attach_dependency never read it.",
+  "alternatives": [
+    {
+      "name": "Proposed: packaging.licenses + fail-closed obligation table + attach gate",
+      "description": "Parse SPDX with PyPA packaging; classify six obligation classes for GREG's use; auto-attach only cleared; founder attach unchanged.",
+      "advantages": [
+        "No new dependency",
+        "Fails closed",
+        "Covers every future package on the route"
+      ],
+      "disadvantages": [
+        "Small table sends unusual licenses to founder review",
+        "Reads self-declared metadata only"
+      ],
+      "revival_evidence": "n/a (selected)"
+    },
+    {
+      "name": "Strongest competitor: license-expression + ScanCode LicenseDB",
+      "description": "nexB library with categories for over 2,000 licenses.",
+      "advantages": [
+        "Far broader classification"
+      ],
+      "disadvantages": [
+        "New dependency and large data set",
+        "Categories describe licenses, not GREG's use"
+      ],
+      "revival_evidence": "Founder-review volume from unclassified licenses exceeds a few per month"
+    },
+    {
+      "name": "Simplest viable: display-only",
+      "description": "Show the assessment to the founder, no gate.",
+      "advantages": [
+        "Zero behavior change"
+      ],
+      "disadvantages": [
+        "auto_attach still attaches a BUSL package silently"
+      ],
+      "revival_evidence": "Integrator rejects any genesis.py edit"
+    },
+    {
+      "name": "Block all non-permissive licenses outright",
+      "description": "Refuse even the founder's attach.",
+      "advantages": [
+        "Strongest protection"
+      ],
+      "disadvantages": [
+        "Removes founder decision; blocks lawful local GPL use"
+      ],
+      "revival_evidence": "Founder decides D-LIC-1 in favour of refusal"
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "A signed mission continues to attach any installed package regardless of license.",
+    "advantages": [
+      "No change to integrator's merge surface"
+    ],
+    "disadvantages": [
+      "Legal liability enters silently",
+      "Violates directive 5.3/6 state distinction"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Advances 5.3/6 without banning any package; founder keeps the decision.",
+      "material_concerns": [
+        "Must not shrink OSS adoption"
+      ],
+      "evidence_refs": [
+        "sweep: 2 of 123 installed packages go to review"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "One module, one condition at each existing attach point; no new registry.",
+      "material_concerns": [
+        "Integrator's merge seam in genesis.py"
+      ],
+      "evidence_refs": [
+        "#96 integrator acknowledgement 6332987196"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Independent agent found a bypass and fail-open parsing; all fixed with tests.",
+      "material_concerns": [
+        "False self-declarations undetected",
+        "Riders in full license texts undetected"
+      ],
+      "evidence_refs": [
+        "087ce5e regression tests"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "No new dependency beyond explicit packaging>=24.2; mutation gate added.",
+      "material_concerns": [
+        "Table maintenance"
+      ],
+      "evidence_refs": [
+        "scripts/ci/check_cortex_mutants.py OSS group"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Respects upstream authors' terms; obligations shown before use; not a legal review and says so.",
+      "material_concerns": [
+        "Must not be represented as legal clearance"
+      ],
+      "evidence_refs": [
+        "licensing.LIMITS"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Uncleared package is not auto-attached; founder attach closes the mission",
+      "tier": "sandbox_execution",
+      "reference": "tests/unit/test_greg_license_qualification.py end-to-end tests",
+      "finding": "pass on 087ce5e; fail on a3fa3795"
+    },
+    {
+      "claim": "Gate is causal",
+      "tier": "sandbox_execution",
+      "reference": "ablation test",
+      "finding": "with gate removed BUSL package attaches itself"
+    },
+    {
+      "claim": "No live routing change",
+      "tier": "deterministic_fixture",
+      "reference": "scripts/mind_status.py before/after",
+      "finding": "byte-identical, 4,681 lines"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Phrase scan of full license texts is reliable",
+      "tier": "sandbox_execution",
+      "reference": "scipy License field",
+      "finding": "false: bundled GPL text says 'noncommercially'; scan limited to short fields"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "GREG never attaches a legally uncleared package without the founder, and states obligations on every card.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Gate covers every future package acquisition",
+        "amplified_value": "Each new OSS capability inherits legal qualification without per-package work"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Trove classifiers lack versions",
+        "severity": "low",
+        "response_type": "protective",
+        "redesigned_response": "Map a family only when every version shares a class"
+      },
+      {
+        "id": "D2",
+        "statement": "Unusual licenses cost founder attention",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Measure review volume; ScanCode upgrade path recorded"
+      },
+      {
+        "id": "D3",
+        "statement": "Other attach paths may bypass the gate",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Gate _attach_dependency too; mutants on both conditions"
+      }
+    ],
+    "comparisons": {
+      "baseline": "no legal qualification",
+      "do_nothing": "silent liability",
+      "simplest_viable_alternative": "display-only assessment",
+      "strongest_competing_architecture": "license-expression + ScanCode",
+      "reversible_experiment": "gate behind one condition; revert restores baseline"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Block all non-permissive outright",
+        "rejection_reason": "removes the founder's decision",
+        "revival_evidence": "founder rules D-LIC-1 for refusal"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Independent review attacked bypass paths, parsing quirks, legacy records and misclassifications.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "fragility",
+        "statement": "Cards recorded before assessments would block permissive packages forever",
+        "strengthening_response": "Re-assess from the installed distribution at the qualified version"
+      },
+      {
+        "id": "W2",
+        "category": "gaming",
+        "statement": "A permissive classifier plus a restrictive License field cleared",
+        "strengthening_response": "Stricter recognised field or restrictive phrase in a short field wins"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "resolved",
+        "rationale": "family mapping rule",
+        "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+        "review_trigger": "new classifier families"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "fail-closed costs attention, not safety",
+        "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+        "review_trigger": "more than a few reviews per month"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "resolved",
+        "rationale": "both set_state(ATTACHED) paths gated and mutant-tested",
+        "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+        "review_trigger": "any new attach path in genesis.py"
+      }
+    ],
+    "final_design": "greg/licensing.py with fail-closed classes, legacy re-assessment and short-field phrase scan; gate in _attach (after formation-only and cognition guards) and _attach_dependency.",
+    "residual_risks": [
+      {
+        "risk": "False self-declared licenses",
+        "mitigation": "stated limit; not a legal review",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "first commercial distribution of GREG"
+      },
+      {
+        "risk": "System binaries, builder output and model weights unassessed",
+        "mitigation": "next increments in this lane",
+        "owner": "session_013k41DnwrjzpXL33r3j9BgB",
+        "review_trigger": "first model acquired through Genesis"
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded; the founder decides.",
+    "entries": [
+      {
+        "role": "Founder-Intent Steward",
+        "position": "A founder-command attach of a license-held package should still be allowed (current behavior).",
+        "rationale": "The integrator asked that whether to refuse be left to the founder.",
+        "evidence_threshold": "Founder ruling D-LIC-1",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "founder review of #201"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Additive card field; legacy cards are re-assessed on read; no data migration.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert the licensed condition in Genesis._attach and _attach_dependency",
+      "The card field is inert without the gate"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "A cleared engine (networkx, scipy, ortools) stops auto-attaching on a supported body",
+    "Founder rules license gating out of scope"
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Alfonso Lopez (merge); integrator session_01FBS4KNJR59nSbdGbxo8Mbx (intake)",
+  "review_trigger": "Integrator intake of #201 or founder review"
+}

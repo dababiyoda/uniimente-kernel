@@ -1,0 +1,526 @@
+{
+  "decision_id": "PATH-BUILD-FRONTIER-20261030",
+  "title": "Read the build frontier beside the acceptance frontier on greg path, and place the 2026-10-30 correction on N1",
+  "problem": "At feb531d2, greg path stops at N1 in every container. N1 moves only on a closure signed at the founder tier, and the founder's 2026-10-30 correction puts the device run at the end of the build ('That is done when we completely build the prompt'). So how much of the prompt is built could only be claimed in prose, which is the inflation the directive forbids. Reproduced on feb531d2: greg/path.py has no build_status, `greg path --build` exits with 'greg: error: unrecognized arguments: --build', and the first 11-test unit file fails 10 of 11.",
+  "founder_intent_refs": [
+    "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN",
+    "INTENT-20261028-OPUS-MAXIMUS-REISSUE (sections 12, 14, 15, 16, 57, 68 and 70, as mapped in the unit plan WU-01)",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-20261019-UPWARD-ASCENT",
+    "INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE (placement with the nine-question test; exactly one operationally primary node)"
+  ],
+  "baseline": "feb531d2: greg/path.py position() walks the path at the founder tier and reports achieved, active and met_ahead. Each predicate already computes structurally_met through _tiered(). greg/cli.py has `greg path` and `greg path --node`. There is no build view, no mutation gate for the path predicates, and the correction is recorded in the intent ledger but not on greg/path.json or as a placement.",
+  "alternatives": [
+    {
+      "name": "Proposed: build_status beside position(), guarded by a live-mutant read and a gate that runs exactly that read",
+      "description": "greg/path.py build_status(journal) gives each node STRUCTURALLY_BUILT, BUILD_OPEN or NO_PREDICATE from the predicates' own structurally_met. It reports the build frontier (first node not built), the acceptance frontier (position()'s active node, with a status derived from its build state), achieved unchanged, built_ahead (reported, never counted) and structural_depth (consecutive built nodes that are mutation-guarded). mutation_guarded() reads the gate's MUTANTS with ast.literal_eval and counts only live mutants. scripts/ci/check_path_predicate_mutants.py runs exactly that read (33 mutants). `greg path --build` prints it. greg/path.json gains the intent id and `rehearsal` refs; the placement n1.vepmc_is_final_acceptance_not_build_gate is appended.",
+      "advantages": [
+        "Build progress is read from the body's own ledger, not claimed in prose",
+        "position() output is unchanged and stays the one operationally primary node; a reviewer probe found plain `greg path` and `greg path --node N3` byte-identical between feb531d2 and the reviewed head",
+        "Every node predicate and the frontier rule have at least one weakening mutant, all 33 caught",
+        "Uses mechanisms already in the tree: _tiered structurally_met, the founder tier, the existing mutant-gate pattern"
+      ],
+      "disadvantages": [
+        "The gate is not in CI, so mutation_guarded shows a mutant is listed and live, not that it is caught",
+        "One weakening per predicate is not exhaustive",
+        "structural_depth reaches only 2 on one body driven through the CLI",
+        "The gate takes about 167-197 s"
+      ],
+      "revival_evidence": "Retained; revisit when the gate is wired into canonical-ci.yml or when the N5 and N8 predicates land."
+    },
+    {
+      "name": "Simplest viable: build_status from structurally_met alone",
+      "description": "The unit plan's first sketch without the guard: a node is built when its predicate is structurally met, and the build frontier is the first node that is not. No mutation_guarded, no structural_depth, no gate.",
+      "advantages": [
+        "Smallest change: one function and one CLI flag",
+        "No gate run time"
+      ],
+      "disadvantages": [
+        "A weakened predicate would raise the build count silently; the first plan critique noted that N4, N6 and N7 then had no mutant, so they could read as built while the build-phase counting rule says they cannot count",
+        "No instrument to stop a later PR from loosening a predicate"
+      ],
+      "revival_evidence": "If every predicate is permanently guarded by a gate that runs in CI, the per-node guard could be reduced to a CI badge."
+    },
+    {
+      "name": "Strongest competing design: a gate-written receipt, keyed to source hashes, that mutation_guarded requires",
+      "description": "The gate writes a receipt naming the source hashes it ran against; mutation_guarded counts a node only when a receipt for the current greg/path.py and named tests shows its mutant caught.",
+      "advantages": [
+        "Shows caught, not only listed and live",
+        "Closes the scenario where a live mutant names a test that cannot catch it"
+      ],
+      "disadvantages": [
+        "Every edit to greg/path.py or to a named test, by any PR, drops structural_depth to 0 until the gate is re-run",
+        "A receipt in the tree is one more artifact to keep in step on every branch",
+        "Wiring the gate into CI gives the same assurance per head at lower cost"
+      ],
+      "revival_evidence": "Revive if the gate cannot be wired into canonical-ci.yml, or if a merged head shows a guarded node whose mutant survives a gate run."
+    },
+    {
+      "name": "Staged and reversible: a read-only view first, then CI wiring, then the missing predicates",
+      "description": "Land build_status and `greg path --build` as a draft child PR stacked on #227. The #196 integrator then wires the gate into canonical-ci.yml. WU-02 rehearses the whole path on one body; WU-04 and WU-06 add the N5 and N8 predicates; WU-08 tightens N3. Each later PR adds its own mutant and rehearsal ref.",
+      "advantages": [
+        "Each step is separately reviewable and revertible",
+        "Avoids canonical-ci.yml, which is hot on other open PRs",
+        "The view writes nothing, so reverting it loses no data"
+      ],
+      "disadvantages": [
+        "Until the gate is wired, a catch is shown only where someone runs the gate",
+        "The build frontier cannot pass N5 until its predicate exists"
+      ],
+      "revival_evidence": "Adopted as the delivery sequence of the proposed design; revisit if the integrator cannot wire the gate into canonical-ci.yml."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "greg path keeps stopping at N1 in every container. Build progress toward the full prompt stays a prose claim that no command can check, and the later units (WU-02, WU-04, WU-06, WU-08) have no instrument to report against.",
+    "advantages": [
+      "No new code in greg/path.py",
+      "No gate run time"
+    ],
+    "disadvantages": [
+      "The founder's correction stays unexecutable: 'done when we completely build the prompt' cannot be measured",
+      "Completeness can only be claimed in prose, the inflation the directive forbids",
+      "Nothing stops a later PR from weakening a predicate unnoticed"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "The correction changes sequence and timing only. The device run stays the founder's final acceptance, VEPMC's nine conditions and the founder tier are unchanged, and N1 stays the one operationally primary node. The build is now measured on its own axis, which is what 'done when we completely build the prompt' needs.",
+      "material_concerns": [
+        "The view must never be read as founder progress; the acceptance frontier keeps its own status and evidence level",
+        "The placement must reroute, not delete: intended_effect_status stays active and q1-q9 are answered",
+        "The placement's q9 still says `greg path --build` reports N3 citing the unit test, which calls build_status directly; the CLI path to N3 is shown by the integration rehearsal (review WU01-FID-2, not changed)"
+      ],
+      "evidence_refs": [
+        "docs/intent/INTENT-20261030-BUILD-BEFORE-DEVICE-RUN.json",
+        "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json (n1.vepmc_is_final_acceptance_not_build_gate)"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "One function beside position(), sharing its walk (_walk), reading the predicates' existing structurally_met. No new store, ledger record or authority path. The gate reuses the repository's mutant-gate pattern and runs exactly the read the frontier uses, so the two cannot disagree.",
+      "material_concerns": [
+        "A node-tagged mutant counts only inside greg/path.py; a weakening in a module a predicate delegates to (greg/metrics.py, greg/venture_books.py) guards nothing",
+        "A predicate's reach is every module-level function of greg/path.py it names, transitively, including a helper it names but never calls",
+        "validate() checks only the shape of `rehearsal`, because greg path must load on installs without tests/"
+      ],
+      "evidence_refs": [
+        "greg/path.py",
+        "scripts/ci/check_path_predicate_mutants.py",
+        "greg/path.json"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Two review rounds, each by two separate agents of this same session, attacked the unit. Round 1 reported seven findings, all reproduced; round 2 reported seven, six confirmed and one plausible. The ones that let the guard or the gate overstate (self-certifying guard, import-breaking mutant counted as caught, a static read that could disagree with the gate's run) are fixed and pinned by tests and mutants. Structural evidence was attacked and never moved achieved, the acceptance frontier or VEPMC.",
+      "material_concerns": [
+        "The gate is not in CI; a live mutant whose named test cannot catch it keeps its node guarded until someone runs the gate (review WU01-FID-3 probe)",
+        "A mutant that makes another module raise a non-import exception while it is imported lazily would still count as caught",
+        "The static read cannot see code that reaches MUTANTS without naming it (exec of built strings)",
+        "acceptance_frontier carries no blocker field, so 'founder acceptance pending (final step)' could be read as a click (review WU01-ATK-4, plausible, not changed)"
+      ],
+      "evidence_refs": [
+        "docs/evidence/path-build-frontier-2026-10-30/README.md (review round and review round 2 tables)",
+        "tests/unit/test_path_build_frontier.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Additive and read-only: a new CLI flag, a new function, an optional path.json field and an appended placement. It writes no ledger record and needs no migration. It merges cleanly into the integration line at b1950be2.",
+      "material_concerns": [
+        "The gate takes 167-197 s; where it runs in CI is the integrator's call",
+        "Each future predicate (N5, N8, a tightened N3) must add a node-tagged mutant inside it and a rehearsal ref in the same PR, or extend the target rule",
+        "`greg path --build` must keep working without tests/ and scripts/ (checked by probe: N1 frontiers, depth 0, no crash)"
+      ],
+      "evidence_refs": [
+        "greg/cli.py",
+        "git merge-tree --write-tree origin/claude/greg-full-machine-completion-whgiee HEAD: exit 0, tree 146b907c"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Claims stay at UNIT-TESTED and INTEGRATION-TESTED in a container. The records keep every negative: the self-certifying first guard, the import-breaking catch, the stale implementer report, the one non-reproducing fail-before pass. No person's data is read or sent.",
+      "material_concerns": [
+        "Never founder-used, not live, not externally verified; VEPMC stays 0",
+        "structural_depth 2 is one body driven through the CLI; N3, N4, N6 and N7 are met only on separate unit-test bodies, which do not add up",
+        "The 539-test related run used pytest-xdist with 2 workers; the full suite and Canonical CI were not run at this head"
+      ],
+      "evidence_refs": [
+        "docs/evidence/path-build-frontier-2026-10-30/README.md (limitations and negatives)",
+        "tests/integration/test_greg_chromebook_rehearsal.py"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The defect is real at feb531d2",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_path_build_frontier.py (11-test version) on a detached worktree at feb531d2; tests/integration/test_greg_chromebook_rehearsal.py (extended) at feb531d2",
+      "finding": "Unit: 10 failed, 1 passed (8 AttributeError for build_status or mutation_guarded, the missing placement, the missing rehearsal refs; the pass pins existing N7 behaviour and reproduces no defect). Integration: 1 failed with 'greg: error: unrecognized arguments: --build'"
+    },
+    {
+      "claim": "On one body driven only through the installed greg command with a --no-passphrase key, the build frontier moves and the founder's path does not",
+      "tier": "sandbox_execution",
+      "reference": "tests/integration/test_greg_chromebook_rehearsal.py, supervisord on PATH, at 2a735d8a",
+      "finding": "After N1: build frontier N2, built [N0, N1], achieved [N0]. After two genesis closures: build frontier N3, built [N0, N1, N2], acceptance frontier N1 (STRUCTURALLY_BUILT, STRUCTURAL_CANDIDATE, 'founder acceptance pending (final step)'), achieved [N0], structural_depth 2, VEPMC founder_tier_count 0. With test_greg_vepmc_path.py: 4 passed in 153.88 s, none skipped"
+    },
+    {
+      "claim": "The unit tests pass at the head",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_path_build_frontier.py, tests/unit/test_developmental_inheritance.py, tests/unit/test_greg_platform.py at 2a735d8a",
+      "finding": "62 passed (20 + 23 + 19)"
+    },
+    {
+      "claim": "Every node predicate and the frontier rule have a weakening mutant, and the gate catches all of them",
+      "tier": "sandbox_execution",
+      "reference": "python -B scripts/ci/check_path_predicate_mutants.py",
+      "finding": "33/33 caught, exit 0 (197 s at 2a735d8a; 167 s at c7908b8e). 7 weaken a predicate (N1, N2, N3, N4, N6, N7 twice); 26 weaken the frontier, its read of the gate or the gate's catch rule"
+    },
+    {
+      "claim": "The gate refuses invalid catches",
+      "tier": "sandbox_execution",
+      "reference": "negative-control copy of the fixed gate (implementer's run; not re-run by the final verifier)",
+      "finding": "0/3 caught, exit 1: NOT_LIVE (the reviewer's off-target mutant), INVALID (the same edit untagged, SyntaxError), SURVIVED_OR_INVALID (an equivalent mutant), and six UNCOVERED"
+    },
+    {
+      "claim": "Related and consuming suites stay green",
+      "tier": "unit_test",
+      "reference": "24 related files (README note 2 plus test_developmental_inertness, test_evidence_bundle_digests, test_greg_goal_gravity_founder_effect); 17 unit files that import greg.cli; 6 integration files that read path.json or call the CLI",
+      "finding": "539 passed (pytest-xdist, 2 workers); 294 passed, 3 skipped (unconditional preserved-research skips); 41 passed, 5 skipped (organ checkouts not configured; bubblewrap unavailable)"
+    },
+    {
+      "claim": "position() output and the plain CLI views are unchanged",
+      "tier": "sandbox_execution",
+      "reference": "review round 2 probe plain_path_diff.py (base feb531d2 against 66745a89)",
+      "finding": "Plain `greg path` and `greg path --node N3` byte-identical on a fresh and a ticked body"
+    },
+    {
+      "claim": "No authority or schema change, and the branch merges into the integration line",
+      "tier": "other",
+      "reference": "scripts/ci/check_authority_singleton.py; scripts/ci/check_schema_refs.py; git merge-tree into origin/claude/greg-full-machine-completion-whgiee at b1950be2",
+      "finding": "Authority singleton exit 0 (6 artifacts, 1 path each); 27 schemas and 130 local refs resolve; merge clean, tree 146b907c, merge base 4ec00605"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Review round 1: mutation_guarded certified itself",
+      "tier": "unit_test",
+      "reference": "README review-round table (WU01-F1, F1); tests/unit/test_path_build_frontier.py at 76853dfc",
+      "finding": "A gate with a stale N3 mutant and a no-op N4 mutant still guarded {N1, N2, N3, N4, N6} where {N6} is right. Fixed: only live mutants guard. Fail-before at 76853dfc: 6 failed, 9 passed"
+    },
+    {
+      "claim": "Review round 1: `greg path --build` crashed on a malformed list, and the acceptance status always said 'final step'",
+      "tier": "unit_test",
+      "reference": "README review-round table (WU01-F3, WU01-F2)",
+      "finding": "MUTANTS = None, 5 or {[1]: 2} raised TypeError; an N5 NO_PREDICATE frontier and a fresh N1 BUILD_OPEN both said 'final step'. Both fixed"
+    },
+    {
+      "claim": "Review round 1: the repository-node rule had no test or mutant, and a unit assertion was vacuous",
+      "tier": "unit_test",
+      "reference": "README review-round table (WU01-F4 and F3; F2)",
+      "finding": "The repository-node mutant survived (34 passed); founder_tier_count == 0 in the unit test stayed 0 even with every mission forced to the founder tier. Test and mutant added; the vacuous assertion removed and the real one kept in the integration rehearsal"
+    },
+    {
+      "claim": "Review round 2 (WU01-ATK-1): the gate counted an import-breaking mutant as caught",
+      "tier": "sandbox_execution",
+      "reference": "copy of the gate at 66745a89 holding one syntax-error mutant on greg/venture_books.py",
+      "finding": "Printed 'CAUGHT', '1/1 caught'. Fixed at c7908b8e: a mutated file must import first, and a test failing on a syntax or import error is INVALID"
+    },
+    {
+      "claim": "Review round 2 (WU01-ATK-2): the static read could disagree with what the gate runs or counts",
+      "tier": "sandbox_execution",
+      "reference": "probe atk2.py against greg.path at 66745a89",
+      "finding": "A reassigned or cleared list read as {N3}; a README line tagged N3 guarded N3; a docstring 'def test_gone():' counted as a test. Fixed: single binding, predicate-span targeting, AST test lookup. Round-2 fail-before at 66745a89: 6 failed, 14 passed (5 on the defects, 1 refactor)"
+    },
+    {
+      "claim": "Review round 2 (WU01-FID-1): the implementer's round-1 report was stale against the branch",
+      "tier": "historical_artifact",
+      "reference": "wave-1 implementer report against HEAD 66745a89",
+      "finding": "It named head 76853dfc, three commits, 14 mutants, 11 tests and an unconditional 'final step'. The README was accurate; the report was regenerated from it"
+    },
+    {
+      "claim": "Not changed after review round 2: rows past the frontier, the acceptance blocker and the q9 wording",
+      "tier": "historical_artifact",
+      "reference": "review round 2 findings WU01-ATK-3 (info), WU01-ATK-4 (plausible), WU01-FID-2 (info); greg/path.py BUILD_RULE",
+      "finding": "Rows past the frontier still carry build STRUCTURALLY_BUILT with counted false (BUILD_RULE says they are reported, never counted, and a caught mutant pins it). acceptance_frontier has no blocker field. Placement q9 still attributes the CLI claim to the unit test"
+    },
+    {
+      "claim": "The gate is not in CI and its coverage has stated gaps",
+      "tier": "sandbox_execution",
+      "reference": "README limitations; review WU01-FID-3 negative-control probe",
+      "finding": "A wrong-test N3 mutant read as guarding N3 while a gate run caught 0/5. One mutant per predicate is not exhaustive; delegated modules are out of the target rule"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "GREG reports from its own ledger how far the developmental path is structurally built, beside the founder's acceptance frontier, without moving achieved, N1 or VEPMC, and without counting a node whose predicate no live mutant guards.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Build progress becomes an executable read instead of a prose claim",
+        "amplified_value": "Every later unit (WU-02, WU-04, WU-06, WU-08) reports against one instrument, and each new predicate must arrive with its own mutant and rehearsal ref"
+      },
+      {
+        "id": "A2",
+        "statement": "The founder's path is untouched: position() output is unchanged and one node stays operationally primary",
+        "amplified_value": "The correction is encoded without loosening the founder tier, so container work cannot be mislabelled founder-used"
+      },
+      {
+        "id": "A3",
+        "statement": "A mutation gate covers every node predicate and the frontier rule itself",
+        "amplified_value": "A later PR that weakens a predicate, or lets structure set met or join achieved, fails the gate wherever it runs"
+      },
+      {
+        "id": "A4",
+        "statement": "The placement records the correction as a reroute on N1 with all nine inheritance answers",
+        "amplified_value": "Future agents neither read VEPMC as the gate in front of the build nor treat it as removed"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "The gate is not in CI, so mutation_guarded shows a mutant is listed and live, not that it is caught",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Liveness is checked on every read and enforced in CI by the unit tests; the CLI prints mutation_guard saying a catch is shown only by a gate run; wiring the gate into canonical-ci.yml is handed to the integrator"
+      },
+      {
+        "id": "D2",
+        "statement": "One weakening per predicate is not exhaustive",
+        "severity": "low",
+        "response_type": "learning",
+        "redesigned_response": "Stated as a limitation; N7 has two mutants; each future predicate change adds its own"
+      },
+      {
+        "id": "D3",
+        "statement": "structural_depth reaches 2 on one body; N3, N4, N6 and N7 are met only on separate unit-test bodies",
+        "severity": "medium",
+        "response_type": "learning",
+        "redesigned_response": "structural_depth is defined on one ledger only, so separate bodies cannot add up; WU-02 rehearses the whole path on one body"
+      },
+      {
+        "id": "D4",
+        "statement": "N5 and N8 have no predicate, so the build frontier cannot pass N5",
+        "severity": "medium",
+        "response_type": "protective",
+        "redesigned_response": "A node without a predicate stops the frontier and is reported NO_PREDICATE, never built (caught mutant); WU-04 and WU-06 add the predicates"
+      },
+      {
+        "id": "D5",
+        "statement": "A node-tagged mutant counts only inside greg/path.py; weakenings in delegated modules are out of reach",
+        "severity": "low",
+        "response_type": "modularity",
+        "redesigned_response": "The rule is explicit (NOT_LIVE when tagged elsewhere); new predicates must follow it or extend it in the same PR"
+      },
+      {
+        "id": "D6",
+        "statement": "acceptance_frontier has no blocker field, so 'founder acceptance pending (final step)' could be read as a click (review WU01-ATK-4)",
+        "severity": "low",
+        "response_type": "governance",
+        "redesigned_response": "The status is printed only when the node is built; the plain greg path view keeps FOUNDER_TIER_RULE; no code change in this PR"
+      },
+      {
+        "id": "D7",
+        "statement": "Rows past the frontier carry build STRUCTURALLY_BUILT although they are not counted (review WU01-ATK-3)",
+        "severity": "low",
+        "response_type": "evidence",
+        "redesigned_response": "BUILD_RULE says such rows are reported, never counted; built, counted and built_ahead carry progress; the mutant 'a node past the frontier is counted' is caught"
+      }
+    ],
+    "comparisons": {
+      "baseline": "feb531d2: greg path shows only N1 in any container; `greg path --build` is an unrecognized argument; no path-predicate gate",
+      "do_nothing": "Build progress stays a prose claim; the founder's 'done when we completely build the prompt' cannot be checked",
+      "simplest_viable_alternative": "structurally_met alone: smallest, but a weakened predicate would inflate the count unseen",
+      "strongest_competing_architecture": "A gate-written receipt keyed to source hashes: shows caught, but every edit to greg/path.py or a named test drops structural_depth to 0 until the gate re-runs; CI wiring is cheaper",
+      "reversible_experiment": "This change as a draft child PR stacked on #227: read-only, writes nothing, reverts by commit"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "validate() raises when a rehearsal test file is missing (unit plan sketch)",
+        "rejection_reason": "load() calls validate() on every `greg path`, so an install that ships without tests/ would break (plan critique); a unit test checks the refs instead",
+        "revival_evidence": "If greg is only ever installed together with its tests"
+      },
+      {
+        "name": "Show both frontiers in the tribunal morning report q13 (unit plan sketch)",
+        "rejection_reason": "q13 is tonight's mission status; repository build progress there invites reading rehearsal progress as founder progress (plan critique); WU-12 also edits greg/tribunal.py",
+        "revival_evidence": "The founder asks for build progress in the morning report"
+      },
+      {
+        "name": "Rewrite the N1 note and the cognition_cortex workstream rule text (unit plan sketch)",
+        "rejection_reason": "It replaces founder-era text; the intent id was added to path.json and the correction recorded as an appended placement instead",
+        "revival_evidence": "A founder decision to rewrite that text"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Two review rounds, each by two separate agents of this same session, attacked the strengthened design: whether the guard certifies itself, whether a malformed gate crashes the view, whether the status overstates, whether an invalid mutant can count as caught, whether the static read can disagree with what the gate runs, whether structural evidence can move the founder's path, and whether the records overclaim.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "gaming",
+        "statement": "mutation_guarded certified itself: a stale or no-op mutant kept its node guarded and counted in structural_depth (round 1, WU01-F1)",
+        "strengthening_response": "A mutant guards only while live: its text occurs exactly once, its replacement differs, and its named test is one pytest would collect"
+      },
+      {
+        "id": "W2",
+        "category": "fragility",
+        "statement": "MUTANTS = None, 5 or {[1]: 2} raised TypeError out of `greg path --build` (round 1, WU01-F3)",
+        "strengthening_response": "A literal that is not a list, or is malformed, reads as nothing; the CLI exits 0; two mutants pin it"
+      },
+      {
+        "id": "W3",
+        "category": "gaming",
+        "statement": "The acceptance status said 'final step' even for an unbuilt or unmeasurable node (round 1, WU01-F2)",
+        "strengthening_response": "The status follows the node's build state: pending only when built, 'build open; acceptance follows the build' or 'no ledger predicate yet; cannot be accepted' otherwise"
+      },
+      {
+        "id": "W4",
+        "category": "fragility",
+        "statement": "The repository-node rule had no test or mutant, and one unit assertion on founder_tier_count was vacuous (round 1)",
+        "strengthening_response": "A test and a caught mutant for the repository rule; the vacuous assertion removed; the real founder_tier_count assertion lives in the integration rehearsal"
+      },
+      {
+        "id": "W5",
+        "category": "gaming",
+        "statement": "The gate counted a mutant that broke a lazily imported module as caught (round 2, WU01-ATK-1)",
+        "strengthening_response": "A mutated Python file must import under its dotted name before its test runs; a test failing on SyntaxError, ImportError or ModuleNotFoundError is INVALID; two mutants pin it"
+      },
+      {
+        "id": "W6",
+        "category": "gaming",
+        "statement": "The static read could disagree with what the gate runs or counts: a re-bound list, an off-target mutant, a docstring 'test' (round 2, WU01-ATK-2)",
+        "strengthening_response": "The list is read only when bound once and named nowhere else, and the gate runs exactly that read; a node-tagged mutant must sit in its predicate's span; tests are found by AST as pytest collects them; ten mutants pin it"
+      },
+      {
+        "id": "W7",
+        "category": "comprehensibility",
+        "statement": "The implementer's report went stale against the branch it described (round 2, WU01-FID-1)",
+        "strengthening_response": "The report was regenerated from the evidence README, and the PR text is built from the README"
+      },
+      {
+        "id": "W8",
+        "category": "expense",
+        "statement": "The gate takes about 167-197 s per run",
+        "strengthening_response": "Kept out of canonical-ci.yml in this PR; the integrator decides where it runs"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "deferred",
+        "rationale": "canonical-ci.yml is hot on other open PRs and is the repository's single official workflow; liveness is already enforced in CI by unit tests",
+        "owner": "#196 integrator",
+        "review_trigger": "The gate is wired into canonical-ci.yml, or a predicate change lands with no gate run"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "At least one weakening per predicate is caught; exhaustive mutation is out of scope for this view",
+        "owner": "greg/path.py maintainers",
+        "review_trigger": "A predicate weakening is found that the gate lists no mutant for"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "deferred",
+        "rationale": "Separate bodies must not add up; only a one-body rehearsal can raise the depth honestly",
+        "owner": "WU-02 implementer",
+        "review_trigger": "WU-02 lands a one-body CLI rehearsal of the whole path"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "deferred",
+        "rationale": "The frontier stops correctly at a node without a predicate; the predicates are separate units",
+        "owner": "WU-04 and WU-06 implementers",
+        "review_trigger": "An N5 or N8 predicate lands with a node-tagged mutant and a rehearsal ref"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "All seven node mutants today sit in greg/path.py; the rule is explicit and refuses rather than over-counts",
+        "owner": "Implementers of new or tightened predicates",
+        "review_trigger": "A predicate that delegates its decisive check to another module"
+      },
+      {
+        "disadvantage_id": "D6",
+        "outcome": "deferred",
+        "rationale": "No authority moves; the founder tier still governs; adding blocker and not_founder_tier to the block changes an asserted output and was not in the round-2 fix",
+        "owner": "greg/path.py maintainers",
+        "review_trigger": "A reader takes the pending status for a click, or the founder asks for the reason in the build view"
+      },
+      {
+        "disadvantage_id": "D7",
+        "outcome": "accepted",
+        "rationale": "The per-row build is per node by design; progress is carried by built, counted and built_ahead, stated in BUILD_RULE and pinned by a caught mutant",
+        "owner": "greg/path.py maintainers",
+        "review_trigger": "A consumer counts rows by their build field"
+      }
+    ],
+    "final_design": "build_status beside position(), sharing _walk; STRUCTURALLY_BUILT, BUILD_OPEN or NO_PREDICATE per node from structurally_met; the build frontier stops at the first unbuilt or unmeasurable node; the acceptance frontier is position()'s active node with a status derived from its build; achieved unchanged; built_ahead reported, never counted; structural_depth counts consecutive built nodes guarded by a live mutant; mutation_guarded reads MUTANTS statically, only when bound once, with predicate-span targeting and AST test lookup; the gate runs exactly that read, imports each mutated file first and refuses import-error catches; `greg path --build` exclusive with --node; path.json gains the intent id and rehearsal refs (shape-checked only); one appended N1 placement.",
+    "residual_risks": [
+      {
+        "risk": "Until the gate runs in CI, a later PR can weaken a predicate while structural_depth still counts the node",
+        "mitigation": "Liveness is enforced in CI by unit tests; the CLI states that a catch is shown only by a gate run; the integrator wires the gate",
+        "owner": "#196 integrator",
+        "review_trigger": "CI wiring decision, or a merged head where a guarded node's mutant survives a gate run"
+      },
+      {
+        "risk": "The read cannot see code that reaches MUTANTS without naming it, and a non-import exception from a lazily imported module still counts as a catch",
+        "mitigation": "Stated in the README; the gate runs the same read, so a run cannot diverge from it",
+        "owner": "greg/path.py maintainers",
+        "review_trigger": "A gate edit that builds or executes mutant text dynamically"
+      },
+      {
+        "risk": "Structural build progress is read as founder progress",
+        "mitigation": "Separate frontier, STRUCTURAL_CANDIDATE labels, founder tier unchanged; the integration rehearsal asserts achieved [N0] and founder_tier_count 0",
+        "owner": "Alfonso Lopez and the #196 integrator",
+        "review_trigger": "Any report that quotes the build frontier as acceptance"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded with a threshold; it does not block the draft, and it decides the CI-wiring follow-up.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "structural_depth should count a node only after a recorded gate run has shown its mutant caught, not on a static liveness read.",
+        "rationale": "A live mutant whose named test cannot catch it keeps its node guarded: in the WU01-FID-3 probe a wrong-test N3 mutant read as guarding N3 while the gate run caught 0/5.",
+        "evidence_threshold": "The integrator cannot wire the gate into canonical-ci.yml, or a merged head shows a guarded node whose mutant survives a gate run",
+        "owner": "#196 integrator; greg/path.py maintainers",
+        "review_trigger": "The CI wiring decision for scripts/ci/check_path_predicate_mutants.py"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "Alfonso Lopez (adoption and any merge); #196 integrator for intake"
+  },
+  "migration_plan": "None required. The change is additive: a new function, a new CLI flag, an optional `rehearsal` field checked for shape only, an intent id in path.json and an appended placement. No ledger record is written and no data format changes. The integrator wires the gate into canonical-ci.yml as a follow-up.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert this branch's commits on the child branch, or decline intake into #196",
+      "No data migration: build_status writes nothing, so every body ledger is unchanged either way"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Any structural evidence (a test key, a fixture, a --no-passphrase rehearsal) moves achieved, the acceptance frontier, N1 or VEPMC founder_tier_count",
+    "Plain `greg path` or `greg path --node` output differs from position()'s",
+    "More than one node reports operationally_primary",
+    "The build frontier passes a node without a ledger predicate",
+    "structural_depth counts a node whose predicate weakening survives a gate run",
+    "`greg path` or `greg path --build` fails on an install without tests/ or scripts/"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez decides adoption and any merge; the #196 integrator decides intake and where the gate runs in CI; session_01Kucyfm6YBHMTjaiC1M9hqD owns the reversible draft. The five role positions are recorded by the implementing session; the adversarial reviews were done by separate agents of this same session, not by independent sessions or humans. All five roles recommend RETAIN; the Adversarial Reviewer's dissent is recorded.",
+  "review_trigger": "The gate is wired into canonical-ci.yml; the first N5 or N8 predicate lands (WU-04, WU-06); WU-02's one-body rehearsal of the whole path; or the founder's device acceptance"
+}

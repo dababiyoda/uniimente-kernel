@@ -711,14 +711,18 @@ SNIFF = (b'"""Sniff uploads."""\nPDF_MAGIC = b"%PDF-"\n\ndef is_pdf(data):\n    
 def test_a_text_with_a_pdf_header_and_no_structure_is_asked_about_with_what_happened(tmp_path, words):
     """Review of 111263fa, finding 4: a program that quotes "%PDF-" in its first KiB went to the PDF reader, which
     cannot read it, and the ask said "repair or replace the sensor capability". Now GREG asks before drafting: it says
-    the file looks like a PDF, that no PDF reader can read it, and what the founder can do. Nothing is searched."""
+    the file looks like a PDF, what it saw (a header, and no structure in the whole file, which pdftotext needs), and
+    what the founder can do. Nothing is searched."""
     asked = _plan(tmp_path, "sniff.py", SNIFF, words)
     assert asked["status"] == "NEEDS_INPUT" and "spec" not in asked and asked["origin"] == "template:document-phrase"
     question = asked["questions"][0]
     at = SNIFF.index(b"%PDF-")
-    assert f'looks like a PDF, but no PDF reader can read it: it has a PDF header ("%PDF-" at byte {at})' in question
+    assert f'looks like a PDF: it has a PDF header ("%PDF-" at byte {at})' in question
     assert "no PDF structure in the whole file" in question and "sensor" not in question
-    assert "replace it with a readable copy" in question and 'no "%PDF-" in its first 1024 bytes' in question
+    assert "which GREG's PDF reader (pdftotext) needs to show any text" in question     # measured just below
+    assert "replace it with a copy its PDF reader can read" in question
+    assert 'no "%PDF-" in its first 1024 bytes' in question
+    assert "no PDF reader can read it" not in question
     out = _search({"path": str(tmp_path / "data" / "sniff.py"), "phrases": ["PDF_MAGIC"]}, _ctx(tmp_path))
     assert out["queries"][0]["found"] is None                                     # the sensor still fails closed
     assert out["unreadable"] == greg.textquery.PDF.format(f'a PDF header ("%PDF-") at byte {at}')
@@ -919,3 +923,136 @@ def test_a_word_limit_on_a_pdf_is_decided_by_the_words_its_reader_shows(tmp_path
             assert not [r for r in requests if r.get("mission_id") == mission_id and r.get("kind") == "APPROVAL"]
     long = [e for e in events(home, "mission.observed") if e["mission_id"] == specs["long.pdf"]["mission_id"]]
     assert any(e["detail"].startswith("1440 ") for e in long), long
+
+
+# -- review of e573bf18 ----------------------------------------------------------------------------------------------
+# Finding 1: wc -w looks for no PDF, and the planner looked at only the first MiB, so a PDF whose structure begins past
+# it (1 MiB of spaces first) was counted by wc: 329 words where its reader shows 1440, and "under 1000" passed.
+
+PAD = b" " * (1024 ** 2 + 1)                                                    # one byte past the planner's window
+
+
+def test_a_word_limit_on_a_pdf_whose_structure_lies_past_the_planner_window_is_counted_by_its_reader(tmp_path):
+    padded = PAD + _long_pdf()
+    assert padded.find(b"%PDF-") > 1024 and padded.find(b"obj") > 1024 ** 2    # nothing in the first MiB says PDF
+    proposal = _plan(tmp_path, "padded.pdf", padded, "Confirm {f} has under 1000 words")
+    assert proposal["status"] == "PROPOSED" and proposal["origin"] == "template:word-limit", proposal
+    assert proposal["spec"]["success_checks"][0]["sensor"]["function"] == "document.text"   # before: text.wordcount
+    asked = _plan(tmp_path, "padded.txt", padded, "Confirm {f} has under 1000 words")
+    assert asked["status"] == "NEEDS_INPUT" and "spec" not in asked and asked["origin"] == "template:word-limit"
+    assert "may be a PDF: it has PDF structure (" in asked["questions"][0]           # before: text.wordcount
+    assert f"at byte {len(PAD) + _long_pdf().index(b' 0 obj') - 1})" in asked["questions"][0]
+
+
+def test_a_word_limit_on_a_padded_pdf_is_decided_by_the_words_its_reader_shows(tmp_path):
+    """The reviewer's repro end to end: before, within_limit passed on "329 lte 999"; now the reader's 1440 fail."""
+    from greg import genesis
+    binary = _pdftotext()
+    if genesis.installed_binary("pdftotext") is None or genesis.installed_binary("pdfimages") is None:
+        pytest.skip("pdftotext and pdfimages are needed to read the PDF")
+    home, key, body_id, data = make_body(tmp_path)
+    (data / "padded.pdf").write_bytes(PAD + _long_pdf())
+    code, text = _read(binary, data / "padded.pdf")
+    assert code == 0 and len(text.split()) == 1440                               # the reader reads it whole
+    ctx = PlannerContext(read_roots=(str(data),), capabilities=[], workspace=home / "ws")
+    spec = template_route(f"Confirm {data / 'padded.pdf'} has under 1000 words", ctx)["spec"]
+    submit(home, key, body_id, "MISSION", spec)
+    missions, requests = run(home, Clock(), ticks=8, step=120.0)
+    observed = [e for e in events(home, "mission.observed") if e["mission_id"] == spec["mission_id"]
+                and e["check_id"] == "within_limit"]
+    assert observed and all(not e["passed"] for e in observed), observed
+    assert any(e["detail"].startswith("1440 ") for e in observed), observed
+    assert missions[spec["mission_id"]].status != "ACHIEVED"
+    assert not [r for r in requests if r.get("mission_id") == spec["mission_id"] and r.get("kind") == "APPROVAL"]
+
+
+@pytest.mark.parametrize("stop", ["bytes", "time"])
+def test_a_draft_the_planner_cannot_read_to_its_end_is_asked_about_not_counted(tmp_path, monkeypatch, stop):
+    """What the planner did not read could hold a PDF's structure, and wc would count it: GREG asks instead. A draft
+    exactly as long as the planner reads is read whole, and counted."""
+    import greg.planner
+    monkeypatch.setattr(greg.planner, "WORD_BYTES", 3 * CHUNK_BYTES)
+    if stop == "time":
+        ticks = iter(range(0, 10_000, 5))                                         # each look at the clock: 5 s on
+        monkeypatch.setattr(greg.planner.time, "monotonic", lambda: next(ticks))
+        monkeypatch.setattr(greg.planner, "WORD_SECONDS", 7.0)
+    draft = LINE * (4 * CHUNK_BYTES // len(LINE))
+    asked = _plan(tmp_path, "draft.txt", draft, "Confirm {f} has under 1000 words")
+    assert asked["status"] == "NEEDS_INPUT" and "spec" not in asked and asked["origin"] == "template:word-limit", asked
+    read = 3 * CHUNK_BYTES if stop == "bytes" else CHUNK_BYTES
+    assert f"GREG read the first {read} bytes of " in asked["questions"][0] and "no mission to count its words" in \
+        asked["questions"][0]
+    if stop == "bytes":
+        exact = _plan(tmp_path, "exact.txt", b"z " * (3 * CHUNK_BYTES // 2), "Confirm {f} has under 1000 words")
+        assert exact["spec"]["success_checks"][0]["sensor"]["function"] == "text.wordcount", exact
+
+
+# Finding 4: a header and a 1 MiB comment before a valid PDF: pdftotext reads it, and the ask said no reader could.
+
+def test_a_pdf_whose_structure_lies_past_the_planner_window_is_not_called_unreadable(tmp_path):
+    data = b"%PDF-1.4\n%" + b"c" * 1024 ** 2 + b"\n" + _pdf(LEASE, header=b"")
+    asked = _plan(tmp_path, "lease.pdf", data)
+    assert asked["status"] == "NEEDS_INPUT" and "spec" not in asked, asked
+    question = asked["questions"][0]
+    assert "no PDF reader can read it" not in question and "no PDF structure in the whole file" not in question
+    assert f'no PDF structure (no object, no "endobj", no "startxref") in its first {1024 ** 2} bytes, which is as ' \
+           "far as GREG reads to choose how to answer; structure further in is not ruled out" in question
+    assert "replace it with" not in question and "save a copy whose PDF structure begins within" in question
+    counted = _plan(tmp_path, "lease.pdf", data, "Confirm {f} has under 1000 words")      # read whole: its reader
+    assert counted["spec"]["success_checks"][0]["sensor"]["function"] == "document.text", counted
+    code, text = _read(_pdftotext(), tmp_path / "data" / "lease.pdf")
+    assert code == 0 and SHOWN in text                                           # what the ask no longer denies
+
+
+# Finding 3: surviving mutants. An object header poppler reads is at most 255 bytes long (measured below); one split
+# by a chunk's end is seen however far before it it starts, up to PDF_CARRY. A stopped reading of a PDF vouches for
+# nothing it read, whether the header or structure was seen before it stopped.
+
+def _object_header(gap):
+    return b"1" + b" " * gap + b"0" + b" " * gap + b"obj"
+
+
+def test_pdftotext_reads_an_object_header_of_255_bytes_and_not_one_of_257(tmp_path):
+    """With no header, no "endobj" and no "startxref", poppler reads objects by their headers alone: pdftotext 24.02
+    reads one with 125 spaces in each gap (255 bytes) and not with 126 (257). PDF_CARRY (1024) keeps more than that."""
+    binary = _pdftotext()
+    for gap, reads in ((125, True), (126, False)):
+        assert len(_object_header(gap)) == 2 * gap + 5
+        pdf = tmp_path / f"gap{gap}.pdf"
+        pdf.write_bytes(_pdf(LEASE, header=b"", sep=b" " * gap, endobj=False, xref=False))
+        code, text = _read(binary, pdf)
+        assert (code == 0 and SHOWN in text) is reads, (gap, code, text)
+    assert greg.textquery.PDF_CARRY >= len(_object_header(125)) - 1
+
+
+@pytest.mark.parametrize("header, before", [(_object_header(125), 128), (b"1 0" + b" " * 1018 + b"obj", 1023)],
+                         ids=["longest-poppler-reads", "as-long-as-the-carry"])
+def test_an_object_header_split_far_before_a_chunks_end_is_seen(tmp_path, header, before):
+    ctx = _ctx(tmp_path)
+    at = 5 * CHUNK_BYTES - before
+    log = tmp_path / "data" / "dump.log"
+    log.write_bytes(b"x" * at + header + b"\n" + LINE * 2000)
+    assert len(header) <= greg.textquery.PDF_CARRY and 0 < before < len(header)   # split, and within the carry
+    out = _search({"path": str(log), "phrases": ["route=/settle"]}, ctx)
+    assert out["queries"][0]["found"] is None, out                                # before (carry 8 or 300): True
+    assert f'PDF structure (an object header "1 0 obj" at byte {at})' in out["unreadable"], out["unreadable"]
+
+
+@pytest.mark.parametrize("stop", ["byte-limit", "time-limit"])
+def test_a_stopped_reading_of_a_pdf_vouches_for_nothing_it_read(tmp_path, monkeypatch, stop):
+    ctx = _ctx(tmp_path)
+    pdf = tmp_path / "data" / "lease.pdf"
+    pdf.write_bytes(_pdf(LEASE) + b"%" + LINE * 3000)                             # longer than three chunks
+    assert pdf.read_bytes().index(b"/Type /Catalog") < 1024
+    params = {"path": str(pdf), "phrases": ["/Type /Catalog"]}
+    if stop == "byte-limit":
+        params["max_bytes"] = CHUNK_BYTES
+    else:
+        ticks = iter(range(0, 10_000, 5))                                         # each look at the clock: 5 s on
+        monkeypatch.setattr(greg.textquery.time, "monotonic", lambda: next(ticks))
+        params["max_seconds"] = 7
+    out = _search(params, ctx)
+    assert out["queries"][0]["found"] is None and out["complete"] is False, out   # before: True, and vouched for
+    assert out["unreadable"].startswith('may be a PDF (a PDF header ("%PDF-") at byte 0; PDF structure (')
+    assert "queries.0.found" not in out["decided"]
+    assert judge(p("equals", True, "queries.0.found"), out)[0] == INSUFFICIENT

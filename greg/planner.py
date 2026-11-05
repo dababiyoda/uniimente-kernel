@@ -29,10 +29,11 @@ from pathlib import Path
 import re
 import stat
 import subprocess
+import time
 
 from greg import models, templates
 from greg.missions import MissionError, validate_mission
-from greg.textquery import CHUNK_BYTES, PDF_HEAD, PdfEvidence
+from greg.textquery import CHUNK_BYTES, MAX_BYTES, MAX_SECONDS, PDF_HEAD, PdfEvidence
 
 PLANNER = "greg.planner/1"
 MAX_HORIZON = timedelta(days=7)
@@ -150,8 +151,9 @@ def _words_route(text: str, ctx: PlannerContext, match) -> dict:
     if question:
         return question
     limit = int(match.group(2)) - (1 if match.group(1).lower() in ("under", "fewer than", "below") else 0)
-    # wc -w on a PDF counts its page syntax (329 words where its reader shows 1440): a PDF's words are its reader's
-    route = _pdf_route(file, "count its words", "template:word-limit")
+    # wc -w on a PDF counts its page syntax (329 words where its reader shows 1440): a PDF's words are its reader's.
+    # wc reads every byte and looks for no PDF, so the planner looks at every byte first (WORD_BYTES), not a window
+    route = _pdf_route(file, "count its words", "template:word-limit", whole=True)
     if isinstance(route, dict):
         return route
     spec = templates.word_limit(file=file, max_words=max(limit, 1), workspace_root=Path(ctx.workspace),
@@ -201,14 +203,20 @@ def _search_route(text: str, ctx: PlannerContext) -> dict | None:
 
 
 PLAN_BYTES = 1024 ** 2   # the most of a named file the planner reads to choose its route; fs.search reads all of it
+# A word count is acquired (genesis: wc -w), and wc refuses no PDF: the planner reads every byte of a draft it would
+# count, as far as fs.search would, and asks when it cannot (review of e573bf18, finding 1: PDF structure 1 MiB in)
+WORD_BYTES = MAX_BYTES
+WORD_SECONDS = MAX_SECONDS
 READER = "reader"
 
 
-def _pdf_evidence(file: Path) -> PdfEvidence:
-    """What the first PLAN_BYTES of the file the words name say about it being a PDF: the check fs.search makes on
-    every byte it reads (``textquery.PdfEvidence``). A file that cannot be opened or read here, or is not a regular
-    file, shows nothing: it is left to the sensor, which refuses it with the reason."""
+def _pdf_evidence(file: Path, limit: int = PLAN_BYTES, seconds: float | None = None) -> PdfEvidence:
+    """What the first ``limit`` bytes of the file the words name say about it being a PDF, read for at most
+    ``seconds``: the check fs.search makes on every byte it reads (``textquery.PdfEvidence``). ``finished`` says
+    whether that was the whole file. A file that cannot be opened or read here, or is not a regular file, shows
+    nothing: it is left to the sensor, which refuses it with the reason."""
     evidence = PdfEvidence()
+    deadline = None if seconds is None else time.monotonic() + seconds
     try:   # never blocks on a FIFO swapped in, never follows a link swapped in after the roots were checked
         fd = os.open(file, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
     except OSError:
@@ -217,9 +225,14 @@ def _pdf_evidence(file: Path) -> PdfEvidence:
         if not stat.S_ISREG(os.fstat(fd).st_mode):
             return evidence
         # until structure is seen and the header is known (it can only stand in the first PDF_HEAD bytes)
-        while evidence.read < PLAN_BYTES and (evidence.structure is None or (evidence.header is None
-                                                                       and evidence.read < PDF_HEAD)):
-            chunk = os.read(fd, min(CHUNK_BYTES, PLAN_BYTES - evidence.read))
+        while evidence.structure is None or (evidence.header is None and evidence.read < PDF_HEAD):
+            if evidence.read >= limit:
+                if not os.read(fd, 1):                      # exactly at the limit: that was all of it
+                    evidence.finish()
+                break
+            if deadline is not None and time.monotonic() > deadline:
+                break
+            chunk = os.read(fd, min(CHUNK_BYTES, limit - evidence.read))
             if not chunk:
                 evidence.finish()
                 break
@@ -231,26 +244,42 @@ def _pdf_evidence(file: Path) -> PdfEvidence:
     return evidence
 
 
-def _pdf_route(file: Path, task: str, origin: str):
+def _pdf_route(file: Path, task: str, origin: str, *, whole: bool = False):
     """How a question about the file the words name is answered: None (its bytes are text), READER (a PDF: by its
     reader, document.text), or a question for the founder.
 
     A file with PDF structure is a PDF when it also has a PDF header where readers look for one, or a .pdf name; then
     its reader reads it, even with a damaged header (pdftotext reads it with none). Its bytes are never searched: a
     PDF reader could read them as a PDF. With structure and neither, it may as well be a text that quotes PDF syntax,
-    which a reader would misread; with a header and no structure, no PDF reader can read it. Then GREG asks."""
-    evidence = _pdf_evidence(file)
+    which a reader would misread; with a header and no structure seen, GREG says what it saw. Then GREG asks.
+
+    A route whose sensor refuses a PDF in every byte it reads (fs.search) needs only the first PLAN_BYTES here. A
+    route whose sensor does not (``whole``: the word count, wc -w) is read to its end first, within fs.search's own
+    limits, and a file not read to its end with no PDF sign is asked about: what was not read could be a PDF's."""
+    limit, seconds = (WORD_BYTES, WORD_SECONDS) if whole else (PLAN_BYTES, None)
+    evidence = _pdf_evidence(file, limit, seconds)
     if evidence.reason() is None:
-        return None
+        if evidence.finished or not whole:
+            return None
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"GREG read the first {evidence.read} bytes of {file} and saw no PDF sign, but could not read the rest "
+            f"(it reads at most {limit} bytes for at most {seconds:g} seconds before choosing how to answer). A PDF "
+            "reader reads a PDF whatever precedes its structure, and a PDF's bytes are page syntax, not its words, "
+            f"so GREG drafts no mission to {task}. Ask about a smaller copy, or save its text as a .txt file."]}
     scope = "the whole file" if evidence.finished else f"its first {evidence.read} bytes"
     if evidence.structure is None:
+        seen = (f"no PDF structure in the whole file (no object, no \"endobj\", no \"startxref\"), which GREG's PDF "
+                "reader (pdftotext) needs to show any text" if evidence.finished else
+                f"no PDF structure (no object, no \"endobj\", no \"startxref\") in {scope}, which is as far as GREG "
+                "reads to choose how to answer; structure further in is not ruled out")
+        fix = ("If it is a damaged PDF, replace it with a copy its PDF reader can read" if evidence.finished else
+               f"If it is a PDF, save a copy whose PDF structure begins within its first {evidence.read} bytes (for "
+               "example, re-saved by a PDF program), or its text as a .txt file,")
         return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
-            f"{file} looks like a PDF, but no PDF reader can read it: it has a PDF header (\"%PDF-\" at byte "
-            f"{evidence.header}) where PDF readers look for one, and no PDF structure in {scope} (no object, no "
-            "\"endobj\", no \"startxref\"), which a PDF reader needs to show any text. GREG does not read a file that "
-            f"may be a PDF as text, so it drafts no mission to {task}. If it is a damaged PDF, replace it with a "
-            "readable copy and ask again: GREG reads that with its PDF reader (document.text). If it is a text file "
-            "that quotes a PDF header, ask about a copy with no \"%PDF-\" in its first 1024 bytes."]}
+            f"{file} looks like a PDF: it has a PDF header (\"%PDF-\" at byte {evidence.header}) where PDF readers "
+            f"look for one, and {seen}. GREG does not read a file that may be a PDF as text, so it drafts no mission "
+            f"to {task}. {fix} and ask again: GREG reads that with its PDF reader (document.text). If it is a text "
+            "file that quotes a PDF header, ask about a copy with no \"%PDF-\" in its first 1024 bytes."]}
     what, at = evidence.structure
     if evidence.header is None and file.suffix.lower() != ".pdf":
         return {"status": "NEEDS_INPUT", "origin": origin, "questions": [

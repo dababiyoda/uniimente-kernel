@@ -11,8 +11,9 @@ comparison and in every field path, decoding without replacement, cut output dec
 continuation can renormalize it, and files refused before they are buffered or read through a link swapped in
 (greg/textform.py, greg/capabilities.py, greg/business_loop.py); or of the bounded text query that reads a whole
 file of any size (greg/textquery.py, its planner route) and refuses a PDF, by its header or its structure, which the
-planner sends to its reader, or asks about, also for a word count (greg/planner.py, greg/templates.py). The named test
-must fail for every mutant. Mutants are applied to a scratch copy of the repository, never to the working tree.
+planner sends to its reader, or asks about, also for a word count, which it reads whole (greg/planner.py,
+greg/templates.py). The named test must fail for every mutant. Mutants are applied to a scratch copy of the
+repository, never to the working tree.
 Exit status 1 if any mutant survives or no longer applies.
 
 Mutants run one after another in one copy, so no run may see another's bytecode. Python reuses a cached .pyc when
@@ -560,13 +561,56 @@ MUTANTS = [
      '                                reader=False)',
      Q + 'test_the_founders_word_limit_on_a_pdf_is_counted_by_its_reader'),
     ('the word-limit route counts a text with a PDF header', "greg/planner.py",
-     '    route = _pdf_route(file, "count its words", "template:word-limit")\n',
+     '    route = _pdf_route(file, "count its words", "template:word-limit", whole=True)\n',
      '    route = None\n',
      Q + 'test_the_founders_word_limit_on_a_pdf_is_counted_by_its_reader'),
     ("the word-limit template counts a PDF's words with wc", "greg/templates.py",
      '    counter = ({"function": "document.text", "params": {"path": str(file)}} if reader else',
      '    counter = ({"function": "text.wordcount", "params": {"path": str(file)}} if reader else',
      Q + 'test_the_founders_word_limit_on_a_pdf_is_counted_by_its_reader'),
+    # review of e573bf18, finding 1: wc looks for no PDF, so the planner reads the whole draft it would count
+    ("the word-limit route looks for a PDF only in the planner's window", "greg/planner.py",
+     'route = _pdf_route(file, "count its words", "template:word-limit", whole=True)',
+     'route = _pdf_route(file, "count its words", "template:word-limit", whole=False)',
+     Q + 'test_a_word_limit_on_a_pdf_whose_structure_lies_past_the_planner_window_is_counted_by_its_reader'),
+    ('a draft the planner did not read to its end is counted by wc', "greg/planner.py",
+     '        if evidence.finished or not whole:\n',
+     '        if True:\n',
+     Q + 'test_a_draft_the_planner_cannot_read_to_its_end_is_asked_about_not_counted[bytes]'),
+    ('the planner reads a draft past its time limit', "greg/planner.py",
+     '            if deadline is not None and time.monotonic() > deadline:\n',
+     '            if False:\n',
+     Q + 'test_a_draft_the_planner_cannot_read_to_its_end_is_asked_about_not_counted[time]'),
+    ('a draft exactly as long as the planner reads is asked about', "greg/planner.py",
+     '                if not os.read(fd, 1):                      # exactly at the limit',
+     '                if False:                      # exactly at the limit',
+     Q + 'test_a_draft_the_planner_cannot_read_to_its_end_is_asked_about_not_counted[bytes]'),
+    ('the word-limit route reads only as far as the planner window', "greg/planner.py",
+     'WORD_BYTES = MAX_BYTES\n',
+     'WORD_BYTES = PLAN_BYTES\n',
+     Q + 'test_a_word_limit_on_a_pdf_whose_structure_lies_past_the_planner_window_is_counted_by_its_reader'),
+    # review of e573bf18, finding 4: the ask says what was seen, not that no reader can read the file
+    ('the planner says a PDF with structure past its window has none at all', "greg/planner.py",
+     '                "reader (pdftotext) needs to show any text" if evidence.finished else',
+     '                "reader (pdftotext) needs to show any text" if True else',
+     Q + 'test_a_pdf_whose_structure_lies_past_the_planner_window_is_not_called_unreadable'),
+    # review of e573bf18, finding 3 (Y3, Y4, Y11): structure split far before a chunk's end; a stopped reading
+    ('Y3: a PDF object header split more than 8 bytes before a chunk ends is missed', "greg/textquery.py",
+     '            self._carry = window[-PDF_CARRY:]',
+     '            self._carry = window[-8:]',
+     Q + 'test_an_object_header_split_far_before_a_chunks_end_is_seen[longest-poppler-reads]'),
+    ('Y4: a PDF object header split more than 300 bytes before a chunk ends is missed', "greg/textquery.py",
+     '            self._carry = window[-PDF_CARRY:]',
+     '            self._carry = window[-300:]',
+     Q + 'test_an_object_header_split_far_before_a_chunks_end_is_seen[as-long-as-the-carry]'),
+    ('Y11: the sensor refuses a PDF only once it has read all of it', "greg/textquery.py",
+     '        if (seen := self._pdf.reason()) is not None:\n            self.unreadable',
+     '        if final and (seen := self._pdf.reason()) is not None:\n            self.unreadable',
+     Q + 'test_a_stopped_reading_of_a_pdf_vouches_for_nothing_it_read[byte-limit]'),
+    ('Y11: a reading stopped by its clock vouches for a PDF it read', "greg/textquery.py",
+     '        if (seen := self._pdf.reason()) is not None:\n            self.unreadable',
+     '        if final and (seen := self._pdf.reason()) is not None:\n            self.unreadable',
+     Q + 'test_a_stopped_reading_of_a_pdf_vouches_for_nothing_it_read[time-limit]'),
     ('the appraiser trusts a whole-file search instead of reading the file again', "greg/appraisal.py",
      'REOBSERVABLE = {"fs.read", "fs.search", "fs.list",',
      'REOBSERVABLE = {"fs.read", "fs.list",',

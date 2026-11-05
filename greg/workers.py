@@ -52,6 +52,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 from greg import evidence_strength, isolation
@@ -143,6 +144,23 @@ def _kill_process_group(proc):
     proc.wait()
 
 
+_LIVE_GROUPS: set[int] = set()   # process groups of supervised children still running (start_new_session: pgid == pid)
+_LIVE_LOCK = threading.Lock()
+
+
+def kill_live_workers() -> list[int]:
+    """Kill the process group of every supervised child still running: the last resort of a Body that is going away
+    while an adapter has stopped polling its stop predicate (greg.background.Background.shutdown)."""
+    with _LIVE_LOCK:
+        groups = sorted(_LIVE_GROUPS)
+    for group in groups:
+        try:
+            os.killpg(group, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
+    return groups
+
+
 def supervised_run(argv, *, input=None, capture_output=True, text=False, timeout, cwd, env,
                    preexec_fn=None, close_fds=True, stop_check=None, pass_fds=()):
     """Cancellable child supervision with file-backed, bounded stdout/stderr (extracted from #157).
@@ -159,6 +177,8 @@ def supervised_run(argv, *, input=None, capture_output=True, text=False, timeout
         proc = subprocess.Popen(argv, stdin=incoming, stdout=outgoing, stderr=errors, cwd=cwd, env=env,
                                 preexec_fn=preexec_fn, close_fds=close_fds, pass_fds=tuple(pass_fds),
                                 start_new_session=True)
+        with _LIVE_LOCK:
+            _LIVE_GROUPS.add(proc.pid)
         deadline = time.monotonic() + timeout
         try:
             while proc.poll() is None:
@@ -178,6 +198,8 @@ def supervised_run(argv, *, input=None, capture_output=True, text=False, timeout
                 output.append(value.decode("utf-8", "replace") if text else value)
             return subprocess.CompletedProcess(argv, proc.returncode, output[0], output[1])
         finally:
+            with _LIVE_LOCK:
+                _LIVE_GROUPS.discard(proc.pid)
             if proc.poll() is None:
                 _kill_process_group(proc)
             else:

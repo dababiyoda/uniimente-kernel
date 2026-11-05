@@ -10,6 +10,8 @@ The founder key is a per-test Ed25519 key, not Alfonso's; the worker is a script
 """
 from __future__ import annotations
 
+import os
+import sys
 import threading
 import time
 
@@ -125,3 +127,257 @@ def test_an_error_after_the_hand_off_kills_the_next_turn_as_it_did_inline(tmp_pa
 def facts_in(body):
     return {"commissions": [e.payload for e in body.journal.replay("mission.action")
                             if e.payload.get("capability") == "worker.commission"]}
+
+
+class GatedLock:
+    """The Body's turn lock, except that the test's own thread can be made to wait at one acquire: it lets a test
+    decide which thread takes the turn lock next, instead of leaving it to the scheduler."""
+
+    def __init__(self):
+        self._lock, self.gate, self.owner = threading.Lock(), None, threading.get_ident()
+
+    def acquire(self, *args, **kwargs):
+        gate = self.gate
+        if gate is not None and threading.get_ident() == self.owner:
+            assert gate.wait(WAIT), "the gate never opened"
+        return self._lock.acquire(*args, **kwargs)
+
+    def release(self):
+        self._lock.release()
+
+    def __enter__(self):
+        self.acquire()
+        return self
+
+    def __exit__(self, *exc):
+        self.release()
+
+
+def worker_mission(home, repo, order, provider, priority):
+    spec = templates.code_change(repo=str(repo), objective="add sub()", order=order, provider=provider,
+                                 allowed_paths=["pkg/*", "tests/*"], budget_usd=1.0,
+                                 workspace_root=Layout(home).workspace)
+    spec["priority"] = priority
+    return spec
+
+
+def test_a_mission_stepped_after_its_own_background_outcome_landed_mid_turn_reads_the_recorded_state(
+        tmp_path, monkeypatch):
+    """Integrator intake review of #273, item 1. The turn sorts the missions once, then steps them in order; while it
+    hands mission A's worker off, mission B's earlier dispatch can record its outcome (and rebuild the book) on its
+    own thread. B is then no longer busy and is stepped in the same turn: it must be stepped from the state the
+    ledger now holds (its commission recorded, its spend booked), not from the copy taken before that record."""
+    data = tmp_path / "data"
+    (data / "a").mkdir(parents=True)
+    (data / "b").mkdir()
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    a_worker, b_worker = HoldingWorker(GOOD), HoldingWorker(GOOD)
+    b_worker.release = a_worker.holding          # B's worker returns the moment A's worker starts
+    monkeypatch.setitem(workers.PROVIDERS, "scripted-a", a_worker)
+    monkeypatch.setitem(workers.PROVIDERS, "scripted-b", b_worker)
+    a = worker_mission(home, make_repo(data / "a"), "add-sub-a", "scripted-a", 10)
+    b = worker_mission(home, make_repo(data / "b"), "add-sub-b", "scripted-b", 0)
+    with Body(home) as body:
+        body._turn = turn = GatedLock()
+        body.engine.background = background = Background(turn, clock=body.clock, stop_check=body._stop_flag)
+        b_recorded = threading.Event()
+        original = body.engine._record_outcome
+
+        def records(m, *args, **kwargs):
+            out = original(m, *args, **kwargs)
+            if m.mission_id == b["mission_id"]:
+                b_recorded.set()
+            return out
+        monkeypatch.setattr(body.engine, "_record_outcome", records)
+        dispatch = background.dispatch
+
+        def gated(mission_id, *args, **kwargs):
+            # While A's worker is handed off, the turn waits for B's outcome to be recorded on B's thread first.
+            turn.gate = b_recorded if mission_id == a["mission_id"] else None
+            try:
+                return dispatch(mission_id, *args, **kwargs)
+            finally:
+                turn.gate = None
+        monkeypatch.setattr(background, "dispatch", gated)
+        admitted, act = [], body.engine.office.act
+
+        def admits(**kwargs):
+            admitted.append((kwargs["mission_id"], kwargs["manifest"].capability_id, kwargs["spent_usd"]))
+            return act(**kwargs)
+        monkeypatch.setattr(body.engine.office, "act", admits)
+        stepped_from, step = [], body.engine._step
+
+        def steps(m, now):
+            # What the ledger holds for this mission's spend when it is stepped (no dispatch here is unreconciled).
+            booked = round(sum(float(e.payload.get("cost_usd") or 0.0) for e in body.journal.replay("mission.action")
+                               if e.payload.get("mission_id") == m.mission_id), 9)
+            stepped_from.append((m.mission_id, m.committed_usd, booked, abs(m.committed_usd - booked) < 1e-9))
+            return step(m, now)
+        monkeypatch.setattr(body.engine, "_step", steps)
+
+        drop(home, signed(key, body_id, "MISSION", b))
+        body.tick()
+        assert b_worker.holding.wait(WAIT), "B's worker was never commissioned"
+        drop(home, signed(key, body_id, "MISSION", a))
+        turn_two = body.tick()                   # A is handed off; B's outcome lands; B is stepped in this turn
+        assert b_recorded.is_set()
+        stepped_b = [s for s in turn_two["missions"] if s["mission_id"] == b["mission_id"]]
+        a_worker.release.set()
+        wait_for(lambda: a["mission_id"] not in background.running, "A's dispatch to end")
+        for _ in range(4):
+            body.tick()
+        assert background.join(WAIT) == []
+        commissions = [e.payload for e in body.journal.replay("mission.action")
+                       if e.payload.get("capability") == "worker.commission"]
+        intents = [e.payload for e in body.journal.replay("mission.dispatching")
+                   if e.payload["mission_id"] == b["mission_id"]]
+        recovered = [e.payload for e in body.journal.replay("mission.action")
+                     if e.payload.get("mission_id") == b["mission_id"]
+                     and e.payload.get("route") == "standing_reconciliation"]
+        achieved = [e.payload["mission_id"] for e in body.journal.replay("mission.achieved")]
+        assert b_worker.calls == 1 and a_worker.calls == 1
+        # Every step starts from the mission as the ledger holds it at that moment, B's own commission included.
+        assert all(same for *_, same in stepped_from), [x for x in stepped_from if not x[-1]]
+        assert [c["status"] for c in commissions if c["mission_id"] == b["mission_id"]] == ["DONE"], (stepped_b,
+                                                                                                         commissions)
+        body.engine.book.rebuild()
+        settled = body.engine.book.missions[b["mission_id"]].committed_usd
+        assert settled > 0, "the commission's spend is booked"
+        # B's next act was admitted against the spend the ledger held when it was stepped, not a stale copy's.
+        assert [s for mid, aid, s in admitted if mid == b["mission_id"] and aid == "fs.write"] == [settled], (
+            stepped_b, admitted, settled)
+        assert len(intents) == 2 and recovered == [], (stepped_b, intents, recovered)
+        assert {a["mission_id"], b["mission_id"]} <= set(achieved), (stepped_b, achieved)
+        assert body.ledger.verify_chain()[0]
+
+
+class SleepingWorker(workers.ScriptWorker):
+    """A test double of a governed worker: its child (a real process under greg.workers.supervised_run, without the
+    bubblewrap envelope) sleeps until something stops it. ``polls`` False is a worker that ignores its stop predicate,
+    so only killing its process group ends it."""
+
+    name = "sleeping-test-double"
+
+    def __init__(self, pidfile, *, polls=True):
+        super().__init__()
+        self.pidfile, self.polls, self.calls = pidfile, polls, 0
+
+    def run(self, order, cwd, *, stop_check=None, egress=None):
+        self.calls += 1
+        script = f"import os, time\nopen({str(self.pidfile)!r}, 'w').write(str(os.getpid()))\ntime.sleep(600)\n"
+        try:
+            proc = workers.supervised_run([sys.executable, "-c", script], timeout=600, cwd=cwd, env={},
+                                          stop_check=stop_check if self.polls else None)
+        except workers.WorkerInterrupted as exc:
+            return workers.WorkerReport(self.name, "sleeper", -1, 0.0, 0.0, error=str(exc), interrupted=True)
+        return workers.WorkerReport(self.name, "sleeper", proc.returncode, 0.0, 0.0,
+                                    error=f"exited {proc.returncode}")
+
+    def child(self):
+        wait_for(lambda: self.pidfile.exists() and self.pidfile.read_text(), "the worker's child to start")
+        return int(self.pidfile.read_text())
+
+
+def alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    try:                                   # a zombie the supervisor has not reaped yet is not running
+        with open(f"/proc/{pid}/stat") as stat:
+            return stat.read().split()[2] != "Z"
+    except OSError:
+        return False
+
+
+def sleeping_mission(tmp_path, monkeypatch, *, polls=True):
+    data = tmp_path / "data"
+    data.mkdir()
+    repo = make_repo(data)
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    worker = SleepingWorker(tmp_path / "child.pid", polls=polls)
+    monkeypatch.setitem(workers.PROVIDERS, "sleeping", worker)
+    spec = worker_mission(home, repo, "sleep", "sleeping", 0)
+    drop(home, signed(key, body_id, "MISSION", spec))
+    return home, key, body_id, worker, spec["mission_id"]
+
+
+def worker_outcomes(journal, mission_id):
+    return [e.payload["status"] for e in journal.replay("mission.action")
+            if e.payload.get("mission_id") == mission_id and e.payload.get("capability") == "worker.commission"]
+
+
+def started_off_turn(body, worker, mission_id):
+    body.engine.background = Background(body._turn, clock=body.clock, stop_check=body._stop_flag)
+    body.tick()
+    pid = worker.child()
+    assert mission_id in body.engine.background.running and alive(pid)
+    return pid
+
+
+def test_a_body_closing_on_an_error_stops_and_records_its_running_worker_before_the_ledger_closes(
+        tmp_path, monkeypatch):
+    """Integrator intake review of #273, item 2: whatever ends the body, an error included, every worker it runs off
+    its turn is stopped and its outcome recorded before the ledger closes; no worker child outlives the body."""
+    home, _, _, worker, mid = sleeping_mission(tmp_path, monkeypatch)
+    with pytest.raises(RuntimeError, match="the body failed"):
+        with Body(home) as body:
+            pid = started_off_turn(body, worker, mid)
+            raise RuntimeError("the body failed")
+    assert not alive(pid), "the worker's child outlived the body"
+    assert not body.engine.background.running and body.ledger is None
+    with observe(home, actor="spiffe://uniimente.internal/test/background") as journal:
+        assert worker_outcomes(journal, mid) == ["UNCERTAIN"], "recorded once, as an interrupted worker"
+        assert journal.ledger.verify_chain()[0]
+
+
+def test_a_worker_that_ignores_its_stop_has_its_process_group_killed_when_the_body_closes(tmp_path, monkeypatch):
+    """Item 2: a worker that stopped polling its stop predicate does not hold the body open: after the join timeout
+    its process group is killed, and its outcome is still recorded before the ledger closes."""
+    from greg import body as body_module
+    monkeypatch.setattr(body_module, "STOP_JOIN_SECONDS", 1)
+    home, _, _, worker, mid = sleeping_mission(tmp_path, monkeypatch, polls=False)
+    began = time.monotonic()
+    with Body(home) as body:
+        pid = started_off_turn(body, worker, mid)
+    assert time.monotonic() - began < WAIT
+    assert not alive(pid) and not body.engine.background.running
+    with observe(home, actor="spiffe://uniimente.internal/test/background") as journal:
+        assert len(worker_outcomes(journal, mid)) == 1 and worker_outcomes(journal, mid) != ["DONE"]
+
+
+@pytest.mark.parametrize("command", ["cancel", "supersede", "detach"])
+def test_a_founder_cancel_or_detach_while_the_worker_runs_interrupts_it(tmp_path, monkeypatch, command):
+    """Item 3: commands keep being ingested while a worker runs off the turn. A cancel of its mission or a detach of
+    worker.commission withdraws the authority it runs under: the worker is stopped, the interruption recorded once,
+    and its outcome is UNCERTAIN (reconciled, never re-run blind)."""
+    home, key, body_id, worker, mid = sleeping_mission(tmp_path, monkeypatch)
+    with Body(home) as body:
+        pid = started_off_turn(body, worker, mid)
+        drop(home, signed(key, body_id, *{
+            "cancel": ("LIFECYCLE", {"mission_id": mid, "state": "ABANDONED"}),
+            "supersede": ("LIFECYCLE", {"mission_id": mid, "state": "SUPERSEDED"}),
+            "detach": ("CAPABILITY_DETACH", {"capability_id": "worker.commission"})}[command]))
+        body.tick()
+        wait_for(lambda: mid not in body.engine.background.running, "the interrupted dispatch to record its outcome")
+        assert not alive(pid)
+        body.tick()
+        interrupted = [e.payload for e in body.journal.replay("mission.dispatch_interrupted")]
+        assert [(i["mission_id"], i["capability"]) for i in interrupted] == [(mid, "worker.commission")]
+        assert worker_outcomes(body.journal, mid) == ["UNCERTAIN"] and worker.calls == 1
+
+
+def test_a_pause_while_the_worker_runs_does_not_interrupt_the_admitted_act(tmp_path, monkeypatch):
+    """Item 3: a mission pause or a BODY_PAUSE changes what is admitted next, never an act the Gate already admitted,
+    as when they waited for an inline worker to return. Whether a pause should interrupt is an open founder ruling."""
+    home, key, body_id, worker, mid = sleeping_mission(tmp_path, monkeypatch)
+    with Body(home) as body:
+        pid = started_off_turn(body, worker, mid)
+        drop(home, signed(key, body_id, "LIFECYCLE", {"mission_id": mid, "state": "PAUSED"}))
+        drop(home, signed(key, body_id, "BODY_PAUSE", {}))
+        body.tick()
+        body.tick()
+        assert alive(pid) and mid in body.engine.background.running
+        assert list(body.journal.replay("mission.dispatch_interrupted")) == []
+        os.kill(pid, 9)                     # end the test's sleeper; the dispatch records what the worker returned
+        wait_for(lambda: mid not in body.engine.background.running, "the dispatch to record its outcome")

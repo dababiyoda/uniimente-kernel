@@ -501,9 +501,15 @@ class Body:
             self.genesis.builder = self.builder
 
     def close(self):
-        if self.ledger is not None:
-            self.ledger.close()
-            self.ledger = None
+        # Every dispatch running off the turn stops and records its outcome before the ledger closes, whatever ended
+        # the body (an error included): the turn lock is not held while they finish, since they need it to record.
+        background = self.engine.background if getattr(self, "engine", None) is not None else None
+        if background is not None and background.running:
+            background.shutdown(STOP_JOIN_SECONDS)
+        with self._turn:     # a dispatch that outlived even that cannot be mid-write while the ledger closes
+            if self.ledger is not None:
+                self.ledger.close()
+                self.ledger = None
 
     def __enter__(self):
         return self.open()
@@ -748,9 +754,12 @@ class Body:
 
     def _stop_now(self) -> bool:
         if not self.stop_requested and not self.layout.stop_file.exists() and self.ledger is not None:
-            # Extracted from #157: a paid worker can run for minutes. While it is supervised, only pending
-            # founder-signed STOP commands are authenticated; every other command waits for the next tick
-            # and cannot change in-flight strategy or approval state.
+            # Extracted from #157: the stop check of a turn that runs an adapter inline (a tick() caller outside the
+            # main loop, or any capability the main loop does not run off its turn). While that adapter runs, only
+            # pending founder-signed STOP commands are authenticated; every other command waits for the next tick.
+            # A worker the main loop runs off its turn polls Background.stop_for instead, and the following turns
+            # keep ingesting commands: a cancel of its mission or a detach of its capability interrupts it
+            # (MissionEngine.interrupt_withdrawn); nothing else changes an act the Gate already admitted.
             self.ingest_inbox(only_kind="BODY_STOP")
         return self.stop_requested or self.layout.stop_file.exists()
 
@@ -963,6 +972,7 @@ class Body:
             self.engine.background.raise_failed()   # a background dispatch's error kills the turn, as it did inline
         now = self.clock()
         commands = self.ingest_inbox()
+        self.engine.interrupt_withdrawn(now)   # a cancel or detach that arrived while a worker ran stops it, paused too
         if self.stop_requested:
             return {"commands": commands, "stopped": True}
         if self.paused():
@@ -1214,7 +1224,8 @@ class Body:
             # Every running dispatch records its outcome before the body says it stopped. A STOP has reached each
             # adapter through _stop_flag (the worker is terminated and recorded UNCERTAIN, as inline); a body that
             # ends for another reason lets its workers finish, as an inline turn did.
-            unfinished = self.engine.background.join(timeout=STOP_JOIN_SECONDS if self._stop_flag() else None)
+            unfinished = (self.engine.background.shutdown(STOP_JOIN_SECONDS) if self._stop_flag()
+                          else self.engine.background.join())
             with self._turn:
                 self.engine.background.raise_failed()
                 self.journal.record("body.stopped", {"boot_id": self.boot_id, "reason": reason,

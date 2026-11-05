@@ -1751,7 +1751,15 @@ class MissionEngine:
             # Goal Gravity orders the signed missions (greg.gravity.select); it never adds or drops one.
             ranked = list(dict.fromkeys(mid for mid in self.selector(order) if mid in self.book.missions))
             order = [self.book.missions[mid] for mid in ranked] + [m for m in order if m.mission_id not in ranked]
+        seen = self.background.recorded if self.background is not None else 0
         for m in order:
+            if self.background is not None and self.background.recorded != seen:
+                # A dispatch handed off earlier recorded its outcome while this turn handed off another one: the
+                # copies sorted above predate that record, so every mission is stepped from the book as it is now
+                # (integrator intake review of #273, item 1).
+                seen = self.background.recorded
+                self.book.rebuild()
+            m = self.book.missions.get(m.mission_id, m)
             running = self.background.busy(m.mission_id) if self.background is not None else None
             if running is not None:
                 # Its adapter is still running off the turn: the mission is not stepped (its write-ahead intent is
@@ -1764,6 +1772,33 @@ class MissionEngine:
                 continue
             summary.append({"mission_id": m.mission_id, **self._step(m, now)})
         return summary
+
+    def interrupt_withdrawn(self, now: datetime) -> list[dict]:
+        """Interrupt the running dispatches whose authority the founder withdrew while they ran (caller holds the turn).
+
+        A founder cancel of the mission (LIFECYCLE ABANDONED or SUPERSEDED) and the dispatched capability leaving the
+        ATTACHED state (a founder detach, or a quarantine: either makes it unusable for a new dispatch) stop its
+        adapter: the worker is terminated and its outcome recorded UNCERTAIN, then reconciled. A pause does not
+        interrupt an act the Gate already admitted (greg.background). Each interruption is recorded once."""
+        if self.background is None or not self.background.running:
+            return []
+        self.book.rebuild()
+        done = []
+        for mid, entry in sorted(self.background.running.items()):
+            m = self.book.missions.get(mid)
+            cid = entry.get("capability")
+            why = (f"the founder ended the mission ({m.status}) while its worker ran" if m is not None and m.status
+                   in ("ABANDONED", "SUPERSEDED") else
+                   f"{cid} became {self.registry.state.get(cid)} (no longer attached) while it ran"
+                   if cid is not None and cid in self.registry.manifests
+                   and self.registry.state.get(cid) != "ATTACHED" else None)
+            if why is not None and self.background.interrupt(mid, why):
+                record = {"mission_id": mid, "action_id": entry["action_id"], "attempt": entry["attempt"],
+                          "capability": cid, "why": why, "at": iso(now)}
+                self.journal.record("mission.dispatch_interrupted", record,
+                                    key=[mid, entry["action_id"], entry["attempt"], "interrupted"])
+                done.append(record)
+        return done
 
     def _ledger_reader(self):
         from greg.ventures import LedgerReader
@@ -3533,7 +3568,7 @@ class MissionEngine:
         if background is not None:
             # Read from inside the adapter while the turn goes on: a lock-free predicate (the turn's stop check
             # can read the inbox, which writes the ledger).
-            ctx = dataclasses.replace(ctx, stop_check=background.stop_check)
+            ctx = dataclasses.replace(ctx, stop_check=background.stop_for(m.mission_id))
 
         def act(wrap):
             return self.office.act(
@@ -3564,7 +3599,7 @@ class MissionEngine:
 
         if background is None:
             return finish(act(lambda a: a), False)
-        result = background.dispatch(m.mission_id, aid, attempt, act, finish)
+        result = background.dispatch(m.mission_id, aid, attempt, act, finish, capability=manifest.capability_id)
         if result is None:   # the adapter runs off the turn; the mission is WORKING until its outcome is recorded
             return {"state": "WORKING", "action": aid, "attempt": attempt}
         return result

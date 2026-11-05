@@ -101,7 +101,9 @@
    "role": "Adversarial Reviewer",
    "position": "Attacked: a stop predicate that writes the ledger off the turn (fixed: _stop_flag is lock-free), a busy mission mistaken for a killed dispatch (fixed: not stepped while busy), an error after hand-off swallowed (fixed: raised by the next turn), a body that records it stopped before its workers recorded (fixed: join first).",
    "material_concerns": [
-    "Abandon or supersede while the worker runs: the worker finishes, the outcome is recorded on the ended mission and compensation sees it"
+    "Integrator intake review: a mission whose own background outcome landed mid-turn was stepped from the copy sorted before that record (fixed: the turn rebuilds and re-reads after any off-turn record)",
+    "Integrator intake review: a body ending on an error neither joined nor stopped its running workers before closing the ledger (fixed: Body.close shuts down every dispatch, kills a non-polling worker's process group, then closes under the turn lock)",
+    "Integrator intake review: a cancel or detach ingested while a worker ran did not reach it (fixed: it interrupts the worker; a pause, DECISION or DEVICE_REVOKE does not change an act the Gate already admitted)"
    ],
    "evidence_refs": [
     "tests/unit/test_greg_background_dispatch.py",
@@ -146,6 +148,12 @@
    "tier": "unit_test",
    "reference": "tests/unit/test_greg_background_dispatch.py::test_an_error_after_the_hand_off_kills_the_next_turn_as_it_did_inline",
    "finding": "Raised by the next tick; the write-ahead intent stays for the restart"
+  },
+  {
+   "claim": "Intake review items fixed, each with a test that fails on the pre-fix code",
+   "tier": "sandbox_execution",
+   "reference": "tests/unit/test_greg_background_dispatch.py",
+   "finding": "On d04b2563's greg/: 6 of the new tests fail (stale step state 0.00 vs 0.01 booked; worker child alive after an error close; non-polling worker not killed; cancel, supersede and detach not interrupting). With the fixes: all 9 pass"
   }
  ],
  "counterevidence": [
@@ -239,6 +247,24 @@
     "category": "fragility",
     "statement": "body.stopped could precede a running worker's outcome",
     "strengthening_response": "Body.run joins every dispatch first (60 s on STOP); unfinished ones are named on body.stopped"
+   },
+   {
+    "id": "W4",
+    "category": "fragility",
+    "statement": "Same-turn stale state: MissionEngine.tick sorted copies once; while it handed one worker off, another mission's background outcome could record (and rebuild the book), and that mission was then stepped from its pre-record copy (committed spend 0.00 against 0.01 booked)",
+    "strengthening_response": "Background.recorded counts off-turn records; tick rebuilds the book when it moved and steps each mission from book.missions; failing-first test tests/unit/test_greg_background_dispatch.py::test_a_mission_stepped_after_its_own_background_outcome_landed_mid_turn_reads_the_recorded_state"
+   },
+   {
+    "id": "W5",
+    "category": "fragility",
+    "statement": "Shutdown and error paths: Body.close ran without the turn lock and without a join, so a dispatch could append after body.stopped or race ledger.close, and a worker child could outlive the body",
+    "strengthening_response": "Background.shutdown stops every adapter (closing flag in its stop predicate), joins, kills the process groups of live supervised children (greg.workers.kill_live_workers) when an adapter stopped polling, and joins again; Body.close calls it on every exit path, then closes the ledger under the turn lock; failing-first tests tests/unit/test_greg_background_dispatch.py::test_a_body_closing_on_an_error_stops_and_records_its_running_worker_before_the_ledger_closes and tests/unit/test_greg_background_dispatch.py::test_a_worker_that_ignores_its_stop_has_its_process_group_killed_when_the_body_closes"
+   },
+   {
+    "id": "W6",
+    "category": "fragility",
+    "statement": "Commands mid-run: turns keep ingesting commands while a worker runs, but a cancel of its mission or a detach of its capability did not reach it",
+    "strengthening_response": "MissionEngine.interrupt_withdrawn (every turn, paused too) interrupts the dispatch through Background.stop_for and records mission.dispatch_interrupted once; the worker stops and its outcome is UNCERTAIN, reconciled; pause, BODY_PAUSE, DECISION and DEVICE_REVOKE do not interrupt (documented, pinned by tests/unit/test_greg_background_dispatch.py::test_a_pause_while_the_worker_runs_does_not_interrupt_the_admitted_act); failing-first test tests/unit/test_greg_background_dispatch.py::test_a_founder_cancel_or_detach_while_the_worker_runs_interrupts_it"
    }
   ],
   "residual_risks": [
@@ -249,10 +275,16 @@
     "review_trigger": "Any new thread or timer in greg/"
    },
    {
-    "risk": "A worker still running 60 s after STOP",
-    "mitigation": "Named on body.stopped (dispatches_unfinished) and settled on restart by _recover_dispatch",
+    "risk": "A dispatch still running after shutdown (its adapter neither polls nor runs a supervised child)",
+    "mitigation": "Named on body.stopped (dispatches_unfinished); Body.close then closes the ledger under the turn lock, so its late record fails instead of interleaving; settled on restart by _recover_dispatch",
     "owner": "GREG maintainers",
     "review_trigger": "A body.stopped record with dispatches_unfinished"
+   },
+   {
+    "risk": "kill_live_workers kills every supervised child of the process, not only this body's",
+    "mitigation": "Called only by a closing body after its join timeout; one body runs per process",
+    "owner": "GREG maintainers",
+    "review_trigger": "Two bodies in one process"
    }
   ],
   "pass_1_disadvantage_dispositions": [
@@ -278,7 +310,7 @@
     "review_trigger": "A defect found only on the background path"
    }
   ],
-  "final_design": "Only the adapter of a BACKGROUND_CAPABILITIES dispatch (worker.commission) runs off the Body's turn, enabled by Body.run; the Gate's admission, claim, commit and receipt and the outcome record stay serialized under the turn lock; a busy mission is not stepped; errors after hand-off are raised by the next turn; STOP reaches the adapter lock-free and the Body joins before recording it stopped.",
+  "final_design": "Only the adapter of a BACKGROUND_CAPABILITIES dispatch (worker.commission) runs off the Body's turn, enabled by Body.run; the Gate's admission, claim, commit and receipt and the outcome record stay serialized under the turn lock; a busy mission is not stepped; errors after hand-off are raised by the next turn; STOP reaches the adapter lock-free and the Body joins before recording it stopped. After intake review: each mission is stepped from the book as it is after any off-turn record; every exit path stops and joins running dispatches (process groups killed if an adapter stops polling) before the ledger closes under the turn lock; a founder cancel or a capability leaving ATTACHED interrupts the running worker.",
   "recommendation": "EXPERIMENT"
  },
  "dissent": {
@@ -318,5 +350,5 @@
  ],
  "decision": "EXPERIMENT",
  "decision_owner": "GREG maintainers for development; Alfonso for the pause ruling and any merge",
- "review_trigger": "A founder ruling on pause, the durable job model becoming necessary (workers that outlive a restart), or a concurrency defect"
+ "review_trigger": "A founder ruling on pause, the durable job model becoming necessary (workers that outlive a restart), or a concurrency defect; an intake review finding"
 }

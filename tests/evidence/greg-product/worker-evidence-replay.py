@@ -1,7 +1,8 @@
 """Replay real commits as worker output and record, per mutant, whether the commit's own tests kill it.
 
 Usage: python3 replay_policies.py WT KERNEL OUT.jsonl SHA...   (WT = worktree holding greg/evidence_strength.py)
-One JSON line per commit: discrimination, and for every policy the mutant labels with killed flags, so
+Runs against d35d92a5 with worker-evidence-constant-policy-switch.patch applied (the experiment's
+``constants=`` argument; the switch was not kept). One JSON line per commit: discrimination, and for every policy the mutant labels with killed flags, so
 policies and scorings can be compared offline from one set of test runs.
 """
 import json, os, subprocess, sys, tempfile, time

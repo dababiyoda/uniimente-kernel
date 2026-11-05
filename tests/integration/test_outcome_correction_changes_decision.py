@@ -1,8 +1,10 @@
 """An authorized correction of a disputed world outcome changes a later decision; without the repair it does not.
 
 Pre-registered in docs/evidence/outcome-correction-2026-10-28/DECLARATION.md (committed and pushed at 3886d727
-before this file existed). Arms, the frozen scoring rule and the eight predictions are taken from it verbatim; a
-miss fails this test. Laboratory tier: a temporary body, a per-test founder key, declared world values. Real
+before this file existed). Arms and the frozen scoring rule are taken from it verbatim. Six of the eight
+predictions are asserted as declared. Two were missed as worded and are asserted as recorded instead, with the miss
+disclosed in the evidence README: prediction 5's method total (5 of 11, not 4 of 10; the ten reported claims are 4 of
+10) and prediction 8's attach count (three attaches, not two). Laboratory tier: a temporary body, a per-test founder key, declared world values. Real
 constructions, compile receipts, signed missions, signed REALIZATION commands and appraisals on the canonical path.
 """
 from __future__ import annotations
@@ -65,8 +67,14 @@ def test_an_authorized_correction_changes_the_later_selection_and_the_ablation_d
         states_before = len(journal.replay("capability.state"))
         # prediction 8 declared "the two founder attaches"; the setup records three attaches: one founder command and
         # two signed read-only auto_attach (review of #210, record item). Asserted as recorded, not as declared.
-        setup = [e.payload.get("by") for e in journal.replay("capability.state") if e.payload.get("state") == "ATTACHED"]
-        assert setup == ["founder command"] + ["founder-signed mission auto_attach (read_only)"] * 2
+        setup = [(e.payload.get("capability_id"), e.payload.get("state"), e.payload.get("by"))
+                 for e in journal.replay("capability.state")]
+        auto = "founder-signed mission auto_attach (read_only)"
+        engine = next(row[0] for row in setup if row[0] not in ("cognition.flow_maxflow", cid))
+        # every setup record, not only the attaches: a setup-time QUARANTINED or DETACHED row fails here (review
+        # of #221, T-d)
+        assert setup == [("cognition.flow_maxflow", "ATTACHED", "founder command"), (engine, "ATTACHED", auto),
+                         (cid, "ATTACHED", auto)]
 
         receipts = {}
 
@@ -116,8 +124,9 @@ def test_an_authorized_correction_changes_the_later_selection_and_the_ablation_d
             body = {**row["prepared_resolution"]["body"], "note": "time-clock export, external record"}
             run.command("REALIZATION", body)
         arm_c = decide("C")
-        # prediction 2 asks that the frozen rule decide: the compiler's settled-outcome preference (Holm-adjusted
-        # one-sided Fisher) chose flow_maxflow over the construction (review of #210, record item)
+        # the selection in arm C is the compiler's existing settled-outcome rule (Holm-adjusted one-sided Fisher),
+        # not the frozen evaluation rule: score() below is the frozen rule, applied to what was selected (second
+        # review of #219, R2)
         preference = receipts["C"].get("settled_preference") or {}
         assert preference.get("against") == cid and preference.get("preferred") == "cognition.flow_maxflow"
         assert receipts["C"]["selection_level"] == "preferred_by_settled_outcomes"
@@ -156,6 +165,8 @@ def test_an_authorized_correction_changes_the_later_selection_and_the_ablation_d
         assert trust["decisions_to_recheck"] == 1
         # prediction 8: safeguards
         assert len(journal.replay("capability.state")) == states_before
+        assert [(e.payload.get("capability_id"), e.payload.get("state"), e.payload.get("by"))
+                for e in journal.replay("capability.state")] == setup             # no capability state changed
         assert not any((e.payload or {}).get("authority_created") is True for e in journal.replay(""))
         compiles = [r.payload["result"]["output"] for r in run.body.ledger.by_type("receipt")
                     if isinstance(r.payload["result"].get("output"), dict)

@@ -50,6 +50,8 @@ for _family, _spec in _genome_families().items():
 SEED_FAMILIES = frozenset(("micro", "exact", "estimation", "formal", "optimization", "causal", "evidence", "semantic"))
 
 def initial_state(capability_id):
+    if capability_id.startswith("records.observe."):    # an outcome reader waits for the founder's attach
+        return "VERIFIED"
     family = capability_id.removeprefix("cognition.")
     return "VERIFIED" if capability_id.startswith("cognition.") and family in FAMILIES and family not in SEED_FAMILIES else "ATTACHED"
 

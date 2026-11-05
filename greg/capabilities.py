@@ -1322,6 +1322,7 @@ BUILTINS.update({
 from greg.cognition.catalog import builtin_entries as _cognitive_entries  # noqa: E402
 BUILTINS.update(_cognitive_entries(CapabilityManifest, _lazy))
 from greg.backup import builtin_entries as _bk; BUILTINS.update(_bk(CapabilityManifest, _lazy))  # noqa: E402,E702
+from greg.outcome_records import builtin_entries as _orec; BUILTINS.update(_orec(CapabilityManifest, _lazy))  # noqa: E402,E702
 
 
 class CapabilityRegistry:

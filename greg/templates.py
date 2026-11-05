@@ -1700,3 +1700,36 @@ def one_machine(*, problem_id: str, data: dict, sandbox_repo: str, organs: dict,
 
 
 TEMPLATES["one-machine"] = one_machine
+
+
+def dispute_verification(*, claim, receipt: str, mission_id: str, objective: str, sense: str, threshold: float,
+                         answer_version: str, observer: dict, horizon_days: float = 2) -> dict:
+    """A bounded, read-only verification task for a disputed construction outcome (directive on #210, section 2).
+
+    Settlement prepares it only when a capability the founder attached declares a read-only observation of the
+    disputed quantity (``world.observe.<objective>``). The one check reads that capability's observation for this
+    answer; nothing is written, contacted or paid beyond the capability's own declared ceiling, and the reading
+    decides nothing by itself: the founder signs a REALIZATION naming its receipt, then the resolution.
+    """
+    claim_digest = hashlib.sha256(json.dumps([claim, receipt], sort_keys=True, default=str).encode()).hexdigest()[:12]
+    target = f"{observer['target_prefix']}{objective}"
+    side = "at or above" if sense == "max" else "at or below"
+    sensor = {"capability": observer["capability_id"], "target": target,
+              "params": {"receipt": receipt, "objective": objective, "answer_version": answer_version,
+                         "claim": claim_digest}}
+    return {
+        "mission_id": f"m:verify-dispute-{claim_digest}",
+        "founder_expression": (f"Observe the realized {objective} for the disputed answer of {mission_id} "
+                               f"(receipt {receipt}) through {observer['capability_id']}."),
+        "intended_effect": (f"an observation of the realized {objective} from outside the disputed reports: "
+                            f"{side} {threshold:g} the answer kept its promise, otherwise it did not"),
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "observed", "description": f"{observer['capability_id']} returned a "
+                            f"realized {objective} for this answer", "sensor": sensor,
+                            "predicate": {"op": "exists", "field": "realized"}}],
+        "strategies": [],
+        "light_cone": {"capabilities": [observer["capability_id"]], "targets": [target],
+                       "max_consequence_class": "read_only", "budget_usd": float(observer["budget_ceiling_usd"]),
+                       "horizon": _horizon(horizon_days),
+                       **({"data_classes": observer["data_classes"]} if observer.get("data_classes") else {})},
+    }

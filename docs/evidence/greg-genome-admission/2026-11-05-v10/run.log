@@ -1,0 +1,10 @@
+start 2026-11-05T04:50:59Z load 0.61 0.86 0.97 commit 0493e7067474b8d5ee3a54d70eaf89361d656e4a
+{"family": "collective_ecology_bidding", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 23, "losses": 7, "ties": 0, "p_better": 0.002611, "p_worse": 0.999285}, "vs_competitor": {"wins": 13, "losses": 17, "ties": 0, "p_better": 0.819203, "p_worse": 0.292332}}
+{"family": "meta_active_inference", "status": "SUPERSEDED", "vs_baseline": {"wins": 28, "losses": 2, "ties": 0, "p_better": 0.0, "p_worse": 1.0}, "vs_competitor": {"wins": 0, "losses": 24, "ties": 6, "p_better": 1.0, "p_worse": 0.0}}
+{"family": "meta_global_workspace", "status": "NICHE_CAPABILITY", "vs_baseline": {"wins": 25, "losses": 3, "ties": 2, "p_better": 1.4e-05, "p_worse": 0.999998}, "vs_competitor": {"wins": 9, "losses": 10, "ties": 11, "p_better": 0.676197, "p_worse": 0.5}}
+{
+ "collective_ecology_bidding": "DEFAULT_FOR_GEOMETRY",
+ "meta_active_inference": "SUPERSEDED",
+ "meta_global_workspace": "NICHE_CAPABILITY"
+}
+exit 0 end 2026-11-05T04:51:06Z load 0.67 0.87 0.97

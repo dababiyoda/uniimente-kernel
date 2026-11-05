@@ -50,7 +50,7 @@ conflict-resolution hierarchy).
 | Verifier | `python verifier/v2/verify.py` (V1–V5) |
 | Before running tests | `python scripts/dev_env_check.py` names missing modules, a tmpfs `/tmp`, a shallow clone and missing bubblewrap, pdftotext or Playwright: failures that come from the machine, not the code |
 | Structural review | `python scripts/repo_review.py` (map, layering, mutation-gate liveness; `--lint` adds a ruff trend); cadence in `docs/REVIEW_CADENCE.md` |
-| CI | `.github/workflows/canonical-ci.yml` (9 jobs), plus `directive-completion.yml`, `build-frontier.yml`, `collaboration-receipt.yml` |
+| CI | `.github/workflows/canonical-ci.yml` (job 1 is the full suite; the mutation gates run in their own job; read the file for the current job list rather than trusting a count here), plus `directive-completion.yml`, `build-frontier.yml`, `collaboration-receipt.yml` |
 | Live branch | the integration branch named on #96 (today `claude/greg-full-machine-completion-whgiee`, draft #196). `main` is behind it |
 | Friction to report | `.github/ISSUE_TEMPLATE/contributor-friction.yml` |
 

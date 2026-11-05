@@ -83,3 +83,5 @@ Contributors independently posted the following on #96 after the survey (comment
 | P-6 | Stale mutation anchors | **fixed here (early detection):** `repo_review.py` gate liveness, 614 literal anchors in about 3 s, a hard finding in the unit suite. Verified against history: on `5ad39868~1` it names the anchor CI job 6 reported STALE. Six gates with non-literal anchors are listed as not statically checkable |
 | S-3 | `check_seed_mutants.py` unwired | **ratcheted:** the only `KEPT_UNWIRED_GATES` entry; a second unwired gate now fails a unit test |
 | S-4 | No lint | **measured:** `repo_review.py --lint` baseline is 447 ruff F/E9 findings (F811 249, F401 167, F841 24, F541 6, F402 1). A trend in the weekly report, never a gate |
+
+**Later the same day, 13:00Z:** the #196 integrator adopted the contributor proposal for P-2. Base `6a96e020` runs the mutation gates as Canonical CI job "10 · Mutation gates" (26 min on #271's run 42031832471), separate from job 1's full suite. P-2's status is **addressed upstream (split landed)**. Whether job 1 alone now fits its limit is measured by the next runs, not assumed here.

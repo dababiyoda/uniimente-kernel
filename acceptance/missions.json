@@ -810,10 +810,11 @@
     {
      "id": "G12",
      "gap": "G12. Provenance for acquired binaries does not inspect the license.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "In Genesis._manifest_for, offline on Debian-like hosts, resolve the owning package (dpkg -S <binary>, dpkg-query -W version) and read /usr/share/doc/<pkg>/copyright. Record package, version, license and source; on other platforms record 'unresolved'. Test: acquired.hash.sha256.sha256sum provenance records package 'coreutils', a GPL-3 license and a version string. A binary outside any package records 'unresolved' and is still not refused."
+     "next": "In Genesis._manifest_for, offline on Debian-like hosts, resolve the owning package (dpkg -S <binary>, dpkg-query -W version) and read /usr/share/doc/<pkg>/copyright. Record package, version, license and source; on other platforms record 'unresolved'. Test: acquired.hash.sha256.sha256sum provenance records package 'coreutils', a GPL-3 license and a version string. A binary outside any package records 'unresolved' and is still not refused.",
+     "closed_by": "Genesis._binary_license (greg/genesis.py) records package, package_version and license_source beside the DEP-5 license for every acquired binary and pinned companion; the version comes from dpkg's status database as a file (greg/licensing.py installed_package_version), with no new spawn. Where no package manager answers each field is 'unresolved' and the binary is still acquired. tests/unit/test_greg_binary_package_provenance.py: sha256sum records package coreutils, its installed version and a GPL-3 license; a body without dpkg and a binary no package owns record 'unresolved'; missing, oversized, not-installed, malformed or ambiguous status data gives no version. Three metabolism mutants are caught."
     },
     {
      "id": "G13",

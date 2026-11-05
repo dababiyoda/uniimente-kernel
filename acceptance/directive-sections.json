@@ -3647,11 +3647,13 @@
      "ask": "Quality: factual verification, source validation and correction handling gate what GREG produces",
      "excerpt": "* factual verification; * source validation; * editorial review;",
      "owner_paths": [
-      "greg/daleobanks_bridge.py",
-      "greg/cognition/evidence.py"
+      "greg/cognition/evidence.py",
+      "greg/corrections.py",
+      "greg/daleobanks_bridge.py"
      ],
      "evidence": [
-      "tests/unit/test_greg_media_case.py::test_real_daleobanks_consumes_the_minds_receipts"
+      "tests/unit/test_greg_media_case.py::test_real_daleobanks_consumes_the_minds_receipts",
+      "tests/unit/test_greg_evidence_corrections.py"
      ],
      "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "SANDBOX_VERIFIED",
@@ -3659,7 +3661,7 @@
      "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Verification and source checks exist; corrections after delivery are not handled",
+      "reason": "Corrections after delivery are recorded, propagated and put to the founder; a corrected claim does not yet hold a later mission that consumes its output, and settlement does not yet skip the outcomes a cause contains",
       "unit": "S45-A"
      }
     },
@@ -3789,17 +3791,17 @@
      "ask": "Freshness is tracked after delivery and corrections are preserved append-only",
      "excerpt": "* track freshness;",
      "owner_paths": [
-      "greg/cognition/evidence.py"
+      "greg/corrections.py",
+      "greg/body.py"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_greg_evidence_corrections.py"
+     ],
      "required_tier": "SANDBOX_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No correction watch",
-      "unit": "S45-A"
-     }
+     "tier": "SANDBOX_VERIFIED",
+     "coverage": "covered",
+     "tests_tier": "SANDBOX_VERIFIED",
+     "note": "Freshness is shown per delivered claim (confirmed_at, fresh_until) and a passed expiry is a recorded cause; the body sees a later reading only when a signed mission reads the source again."
     },
     {
      "id": "S45.A4",

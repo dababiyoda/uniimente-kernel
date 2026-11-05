@@ -81,6 +81,17 @@ def test_a_list_of_test_paths_is_not_read_as_an_anchor(tmp_path):
     assert review.gate_liveness(root)["check_demo_mutants.py"]["anchors_checked"] == 0
 
 
+def test_text_a_mutant_appends_or_creates_is_not_read_as_an_anchor(tmp_path):
+    """("append", path, text) and ("create", path, text) add new text; it is not expected in the file. The
+    canonical-owner guard gate (#253) uses both, and every one read as stale on the joined tree."""
+    gate = ('MUTANTS = [("dup", [("append", "pkg/mod.py", "\\n\\ndef _probe():\\n    pass\\n")], "t"),\n'
+            '           ("new", [("create", "pkg/mod.py", "def f():\\n    return 1\\n")], "t"),\n'
+            '           ("swap", [("replace", "pkg/mod.py", "if ok:", "if True:")], "t")]\n')
+    root = _mini(tmp_path, "if ok:\n    pass\n", gate, "check_demo_mutants.py")
+    row = review.gate_liveness(root)["check_demo_mutants.py"]
+    assert row["stale"] == [] and row["anchors_checked"] == 1        # only the replace anchor is checked
+
+
 # ---------------------------------------------------------------- environment doctor
 
 def test_doctor_report_shape_and_read_only():

@@ -150,6 +150,14 @@ jobs:
         run: python scripts/ci/check_compute_closure_mutants.py
       - name: Emergence gate mutations (a construction that does not beat its runnable baseline is refused as integration)
         run: python scripts/ci/check_emergence_gate_mutants.py
+      - name: Ask-terms mutations (every ask shows its authority, what approving covers and what silence does)
+        run: python scripts/ci/check_ask_terms_mutants.py
+      - name: Canonical-owner registry mutations (one owner per duplicated function, guarded)
+        run: python scripts/ci/check_canonical_owner_guard_mutants.py
+      - name: Cathedral detector mutations (activity rising while founder-tier outcomes do not)
+        run: python scripts/ci/check_cathedral_detector_mutants.py
+      - name: Effect-call allowlist mutations (every process or connection GREG's code opens is listed)
+        run: python scripts/ci/check_effect_call_allowlist_mutants.py
 
   verifier:
     # Its V2 re-runs tests/unit, so inside job 1 it pushed that job past its 30 minutes once the

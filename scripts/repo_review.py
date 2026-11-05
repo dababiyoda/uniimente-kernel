@@ -45,6 +45,9 @@ KEPT_TWO_WAY = {
     ("business", "closure"): "closure registries import the business loop to close it",
     ("capabilities", "cortex"): "router and cortex reference each other's genomes",
     ("capabilities", "greg"): "greg registers capabilities; the router reads greg genomes",
+    ("capabilities", "provenance"): "capabilities/router.py uses provenance.digests (the right direction, #254); the "
+                                    "cycle is only the kept boundary defect provenance/witness.py -> capabilities "
+                                    "(KEPT_BOUNDARY, pain point S-2), and goes when that is fixed",
     ("closure", "egregore"): "closure probes egregore; egregore reports closure",
     ("closure", "evolution"): "closure probes evolution; evolution uses closure fixtures",
     ("closure", "foundry"): "closure probes foundry; foundry uses closure fixtures",
@@ -194,12 +197,17 @@ KEPT_UNWIRED_GATES = {
 _PATHLIKE = re.compile(r"^[\w./-]+\.(py|json|md|ya?ml|txt)(::\S+)?$")
 
 
+# Mutation operations whose text is added rather than found: what follows the path is not an anchor.
+NEW_TEXT_OPS = ("append", "create")
+
+
 def _gate_anchors(gate: Path, root: Path) -> list[tuple[str, str]]:
     """(target file, anchor text) pairs written as literals in a mutation gate.
 
     Conservative: only a literal tuple/list in which a string naming an existing
     repository .py file is directly followed by a non-path string is read as an
-    anchor. Anything else is not inspected, so this never reports a false stale.
+    anchor. Anything else is not inspected, so this never reports a false stale; text an ``append`` or ``create``
+    operation adds (NEW_TEXT_OPS) is not an anchor.
     """
     import warnings
     with warnings.catch_warnings():
@@ -216,6 +224,8 @@ def _gate_anchors(gate: Path, root: Path) -> list[tuple[str, str]]:
                 for e in node.elts]
         for i, target in enumerate(vals[:-1]):
             anchor = vals[i + 1]
+            if i and vals[i - 1] in NEW_TEXT_OPS:              # ("append"|"create", path, text): new text, no anchor
+                break
             if (target and target.endswith(".py") and (root / target).is_file()
                     and anchor and not _PATHLIKE.match(anchor)):
                 pairs.append((target, anchor))

@@ -635,6 +635,17 @@
    "pin": "9c7c44e814c68f48ddef0d63a593a230d3058ab1ff34c7b9054fae5b73329e97"
   },
   {
+   "module": "greg/cathedral.py",
+   "qualname": "_git",
+   "callee": "subprocess.run",
+   "count": 1,
+   "serves": [
+    "operator:greg cathedral (read-only: git activity against founder-tier outcomes)"
+   ],
+   "justification": "read-only git reads (rev-parse, config --get-regexp, rev-list, log) of the repository the operator names, with every GIT_* variable dropped, GIT_OPTIONAL_LOCKS=0 (no index refresh or lock), GIT_NO_REPLACE_OBJECTS=1 and GIT_NO_LAZY_FETCH=1 (no fetch); a missing git or a timeout is reported as incomplete history (#262)",
+   "pin": "f9ada797dffe02282a07b84298b3b770b30978940cb3aecef653dcb992a4bd57"
+  },
+  {
    "module": "greg/cognition/bridge.py",
    "qualname": "run_worker",
    "callee": "greg.capabilities.run_isolated",

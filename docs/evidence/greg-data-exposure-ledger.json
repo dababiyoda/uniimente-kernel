@@ -23414,8 +23414,8 @@
    "lineages": [
     "#179"
    ],
-   "looked_at": false,
-   "looked_at_basis": "no results file binds this freeze's digest",
+   "looked_at": true,
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-11-05-v10/results.json",
    "n": 30,
    "part": "heldout",
    "present_in": [
@@ -23457,8 +23457,8 @@
    "lineages": [
     "#179"
    ],
-   "looked_at": false,
-   "looked_at_basis": "no results file binds this freeze's digest",
+   "looked_at": true,
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-11-05-v10/results.json",
    "n": 30,
    "part": "heldout",
    "present_in": [
@@ -23500,8 +23500,8 @@
    "lineages": [
     "#179"
    ],
-   "looked_at": false,
-   "looked_at_basis": "no results file binds this freeze's digest",
+   "looked_at": true,
+   "looked_at_basis": "results bind this freeze's digest: docs/evidence/greg-genome-admission/2026-11-05-v10/results.json",
    "n": 30,
    "part": "heldout",
    "present_in": [

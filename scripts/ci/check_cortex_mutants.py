@@ -138,7 +138,8 @@ METABOLISM_TESTS = ["tests/unit/test_greg_license_expressions.py", "tests/unit/t
                     "tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_greg_license_use_context.py",
                     "tests/unit/test_greg_genesis_restore.py", "tests/unit/test_greg_binary_failure_types.py",
                     "tests/unit/test_greg_document_phrase.py", "tests/unit/test_greg_genesis_discovery.py",
-                    "tests/unit/test_greg_genesis_composition.py"]
+                    "tests/unit/test_greg_genesis_composition.py",
+                    "tests/unit/test_greg_genesis_oracle_frozen.py"]
 OSS_MUTANTS = [
     ("certificate skips edge feasibility", "greg/cognition/network.py",
      "if exact[b] > exact[a] + w + tolerance(exact[a] + w):", "if False:"),
@@ -820,6 +821,13 @@ METABOLISM_MUTANTS = [
      "        firsts = [(cid, c, b) for cid, c, b in attached_sources]", "        firsts = []"),
     ("a changed stage-1 binary does not quarantine a restored pipeline", "greg/genesis.py",
      '                  (stage.get("binary"), stage.get("binary_sha256"))]', "                  ]"),
+    # the acceptance oracle is frozen first and recomputable (acceptance C.G7)
+    ("a contract's frozen digest leaves out the held-out vectors", "greg/genesis.py",
+     '"vector_digest": sha256_json([contract["examples"], contract["held_out"]])',
+     '"vector_digest": sha256_json([contract["examples"]])'),
+    ("a catalogued oracle's seed is not derived from the deficit", "greg/genesis.py",
+     '        seed = int(sha256_json({"deficit": deficit_id})[7:15], 16)\n        acceptance = {"oracle":',
+     '        seed = 0\n        acceptance = {"oracle":'),
 ]
 
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),

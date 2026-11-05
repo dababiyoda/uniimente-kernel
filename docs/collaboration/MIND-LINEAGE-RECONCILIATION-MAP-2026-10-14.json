@@ -2501,8 +2501,8 @@
    "path": "tests/unit/test_cortex_reserved_drift.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); v10 meta wave (claude/v10-meta-wave): a mechanism that gains an executor keeps its code fact in its EXECUTED_ON_GREG coverage note"
   },
   {
    "path": "tests/unit/test_data_exposure_ledger.py",

@@ -58,6 +58,20 @@ def sealed_paths(acceptance: dict, base_files: set[str]) -> set[str]:
     return sealed
 
 
+# -- compiled modules -------------------------------------------------------------------------
+
+# Python imports a native extension before the source beside it, and an unchecked-hash .pyc in __pycache__
+# without ever reading the source. A worker that ships either has acceptance run code the founder never
+# sees: probed on this path, a patch whose source says ``sub = add`` and whose planted .pyc subtracts was
+# ACCEPTED and closed its mission.
+COMPILED_SUFFIXES = (".pyc", ".pyo", ".so", ".pyd")
+
+
+def compiled_modules(names: list[str]) -> list[str]:
+    """Changed paths that Python could import in place of source: bytecode, __pycache__ and native extensions."""
+    return sorted(n for n in names if "__pycache__" in n.split("/") or n.endswith(COMPILED_SUFFIXES))
+
+
 # -- adversary --------------------------------------------------------------------------------
 
 class _Adversary(repair._Mutator):

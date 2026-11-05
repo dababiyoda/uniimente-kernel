@@ -24,6 +24,10 @@ MUTANTS = [
     ("strength step skipped", "greg/workers.py",
      'if verdict == "ACCEPTED" and order["acceptance"].get("run_changed_tests") and authored:', "if False:",
      "tests/unit/test_greg_worker_evidence_strength.py::test_a_vacuous_test_no_longer_certifies_a_corrupted_change"),
+    ("compiled modules stand in for source", "greg/workers.py",
+     "compiled = evidence_strength.compiled_modules(names)", "compiled = []",
+     "tests/unit/test_greg_worker_evidence_strength.py::"
+     "test_a_planted_bytecode_file_cannot_stand_in_for_the_source_under_review"),
 ]
 DEFAULT_TEST = "tests/unit/test_greg_workers.py::test_appraisal_binds_acceptance_to_the_original_commission"
 

@@ -1320,6 +1320,16 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
             if evaluator["replaced"]:
                 findings.append(f"the worker changed the frozen evaluator it is judged by: {evaluator['replaced']}")
                 verdict = "REJECTED"
+        compiled = evidence_strength.compiled_modules(names)
+        if compiled:
+            findings.append(f"the patch delivers compiled modules {compiled}; Python would run them in place of "
+                            "the source under review, so the base's state of them is what ran")
+            verdict = "REJECTED"
+            at_base = set(_git(fresh, "ls-tree", "-r", "--name-only", base, "--", *compiled).stdout.split())
+            if at_base:
+                _git(fresh, "checkout", "--quiet", base, "--", *sorted(at_base))
+            if set(compiled) - at_base:
+                _git(fresh, "rm", "-q", "-f", "--ignore-unmatch", "--", *sorted(set(compiled) - at_base))
         if order["mode"] == "repository":
             # Sealed oracle (#168, 68240cc): what the founder named as the judge is judged as it was at the base.
             base_files = set(_git(fresh, "ls-tree", "-r", "--name-only", base).stdout.split())

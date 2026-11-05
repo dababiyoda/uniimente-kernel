@@ -8,7 +8,9 @@ oracle the worker rewrote, an ablation that removes the new mechanism, and a res
 """
 from __future__ import annotations
 
+import importlib.util
 import json
+import py_compile
 from pathlib import Path
 
 import pytest
@@ -17,6 +19,7 @@ from greg import evidence_strength, templates, workers
 from greg.body import Body, Layout
 from greg.capabilities import BUILTINS, InvocationContext, SecretBroker
 from tests.greg_fixtures import Clock, drop, make_body, signed
+import tests.unit.test_greg_workers as tw
 from tests.unit.test_greg_workers import GOOD, ScriptedWorker, git, make_repo, run_mission
 # The worker tests' autouse envelope applies here too: real confinement where the host provides it, else the
 # labelled scripted envelope, so these appraisal tests run on a host without usable bubblewrap (CI runners).
@@ -135,6 +138,56 @@ def test_a_restart_does_not_turn_a_refusal_into_acceptance(tmp_path, monkeypatch
     assert "greg.mission.achieved" not in after
     assert observed and not any(o["passed"] for o in observed)
     assert worker.calls == 1                                                   # no blind re-commission
+
+
+SHOWN = "def add(a, b):\n    return a + b\n\n\nsub = add\n"                       # what the founder reviews: wrong
+COMPILED_FROM = GOOD["pkg/calc.py"]                                               # what a planted .pyc runs
+
+
+class BytesWorker(ScriptedWorker):
+    """Scripted double that also writes binary files, as any real worker in the clone can."""
+
+    def __init__(self, edits, blobs):
+        super().__init__(edits)
+        self.blobs = blobs
+
+    def run(self, order, cwd):
+        report = super().run(order, cwd)
+        for rel, data in self.blobs.items():
+            (cwd / rel).parent.mkdir(parents=True, exist_ok=True)
+            (cwd / rel).write_bytes(data)
+        return report
+
+
+def planted_bytecode(tmp_path):
+    src = tmp_path / "calc.py"
+    src.write_text(COMPILED_FROM)
+    pyc = Path(importlib.util.cache_from_source(str(src)))
+    py_compile.compile(str(src), cfile=str(pyc), invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH)
+    return {"pkg/__pycache__/" + pyc.name: pyc.read_bytes()}
+
+
+def test_a_planted_bytecode_file_cannot_stand_in_for_the_source_under_review(tmp_path, monkeypatch):
+    """Probed on 196 (d35d92a5): ACCEPTED, mission achieved, with a delivered ``sub`` that adds."""
+    worker = BytesWorker({"pkg/calc.py": SHOWN, "tests/test_calc.py": WEAK["tests/test_calc.py"].replace(
+        "sub(0, 0) == 0", "sub(5, 2) == 3")}, planted_bytecode(tmp_path))
+    monkeypatch.setattr(tw, "ScriptedWorker", lambda edits, cost=0.01: worker)
+    home, _, _, events, _ = run_mission(tmp_path, monkeypatch, {})
+    assert worker.calls == 1
+    assert "greg.mission.achieved" not in events
+    result = appraise_again(home, tmp_path)
+    assert result["verdict"] == "REJECTED"
+    assert any("compiled modules" in f and "__pycache__" in f for f in result["findings"])
+    ran = [t for t in result["independent_tests"] if "tests/test_calc.py" in t["argv"]]
+    assert ran and not any(t["passed"] for t in ran)                 # the source, sub = add, is what ran
+
+
+def test_compiled_modules_name_bytecode_caches_and_native_extensions_only():
+    names = ["pkg/__pycache__/calc.cpython-311.pyc", "pkg/calc.pyc", "pkg/_calc.cpython-311-x86_64-linux-gnu.so",
+             "pkg/calc.pyd", "pkg/calc.py", "docs/pyc-notes.md", "tests/test_calc.py"]
+    assert evidence_strength.compiled_modules(names) == [
+        "pkg/__pycache__/calc.cpython-311.pyc", "pkg/_calc.cpython-311-x86_64-linux-gnu.so", "pkg/calc.pyc",
+        "pkg/calc.pyd"]
 
 
 # -- the parts on their own ---------------------------------------------------------------

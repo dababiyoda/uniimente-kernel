@@ -155,6 +155,24 @@ def test_citing_old_unchanged_evidence_does_not_close_an_ask(world):
     assert ids(ratchet(head, world)) == ["S5.A1"]
 
 
+def test_an_ask_that_cites_only_a_mission_requirement_closes_on_that_requirements_tests(world):
+    """The requirement's own tests are followed: changing one of them is the ask's evidence."""
+    rep = d.directive_report(world[0], world[1], world[2])
+    open_ids = {a["id"] for s in rep["sections"] for a in s["asks"] if not a["met"]}
+    a = next(a for s in world[0]["sections"] for a in s["asks"] if a["id"] in open_ids and a.get("evidence")
+             and all(r.startswith("mission:") for r in a["evidence"]) and "retired" not in a
+             and any("::" in n for n in d.evidence_nodes(a, world[1], world[2])))
+    head, manifest = copy.deepcopy(world[0]), copy.deepcopy(world[1])
+    reqs = {(m["id"], r["id"]): r for m in manifest["missions"] for r in m["requirements"]}
+    for ref in (r.partition(":")[2] for r in a["evidence"]):
+        reqs[tuple(ref.split(".", 1))]["coverage"] = "covered"
+    ask(head, a["id"]).update(coverage="covered", required_tier="IMPLEMENTED")
+    ask(head, a["id"]).pop("blocker", None)
+    assert a["id"] in met(head, world, manifest)
+    assert ids(ratchet(head, world, manifest=manifest)) == [a["id"]]
+    assert ratchet(head, world, change_cited_function(a, world), manifest=manifest) == []
+
+
 def test_an_ask_that_cites_only_a_contract_function_closes_on_its_requirements_tests(world):
     """Review 1, F6 (a false refusal): a contract function's evidence is requirement ids; their tests count."""
     rep = d.directive_report(world[0], world[1], world[2])
@@ -260,6 +278,15 @@ def test_a_new_ask_is_pinned_buildable_and_meets_only_on_changed_evidence(world)
     assert ratchet(head, world, change_cited_function(ask(world[0], "S1.A1"), world), pin=pin) == []
     s1["asks"][-1].update(coverage="partial", blocker={"class": "BUILDABLE_NOT_BUILT", "reason": "x"})
     assert ratchet(head, world, pin=pin) == []                                       # a new open obligation
+
+
+def test_a_new_ask_may_not_be_retired_at_birth(world):
+    head, pin = copy.deepcopy(world[0]), copy.deepcopy(d.load_map(d.PIN))
+    next(s for s in head["sections"] if s["n"] == 1)["asks"].append(
+        {**copy.deepcopy(ask(head, "S1.A2")), "id": "S1.A97", "retired": {"superseded_by": "S1.A2"}})
+    pin["asks"]["S1.A97"] = "BUILDABLE_NOT_BUILT"
+    found = ratchet(head, world, pin=pin)
+    assert ids(found) == ["S1.A97"] and "new and retired at once" in found[0]
 
 
 # -- listed lines -----------------------------------------------------------------------------------------------

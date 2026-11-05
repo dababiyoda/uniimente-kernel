@@ -152,7 +152,12 @@ def _numeric(family, data, geometry):
 
 def _semantic(data, geometry, model_config):
     from greg.models import OllamaRoute
+    from greg.model_license_hold import gate_model_config
     from .semantic import RESPONSE_SCHEMA, validate_semantic
+    model_config = gate_model_config(model_config)
+    hold = model_config.get("model_license_hold") if isinstance(model_config, dict) else None
+    if isinstance(hold, dict):
+        raise CognitionError("license: " + str(hold.get("reason") or "model license does not permit this use")[:300])
     if not model_config or "ollama" not in model_config.get("order", []) or not model_config.get("ollama_model"):
         raise CognitionError("CAPABILITY_UNAVAILABLE: no founder-selected local model")
     if model_config.get("_thinking_budget") is not None:

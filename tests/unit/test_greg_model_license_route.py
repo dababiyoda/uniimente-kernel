@@ -145,3 +145,205 @@ def test_an_inbox_command_for_a_disallowed_model_is_rejected_and_recorded(tmp_pa
         refused = body.journal.replay("command.rejected")
         assert refused and "license" in refused[-1].payload["reason"].lower()
         assert body.journal.replay("model.configured") == []
+
+
+def _select_cleared_model(tmp_path, monkeypatch):
+    """A body whose signed selection names an Apache-licensed local model."""
+    root = store(tmp_path, "registry.ollama.ai/library/test/small")
+    _isolate_store(monkeypatch, tmp_path, root)
+    home, key, body_id, _ = make_body(tmp_path)
+    with Body(home) as body:
+        drop(home, signed(key, body_id, "MODEL_ROUTE_SET",
+                          {"order": ["ollama"], "ollama_model": "test:small"}))
+        outcome = body.ingest_inbox()
+        assert outcome[0]["status"] == "APPLIED", outcome
+        assert body.journal.replay("model.configured")
+    return home
+
+
+def test_a_license_change_after_selection_holds_the_route_and_the_body_still_opens_and_ticks(
+        tmp_path, monkeypatch):
+    """A stored selection whose license no longer permits use is a hold, not a crash.
+
+    Review 6528337584 (g5, g8), correction 6530419356: Body open and Body.tick
+    re-validate the stored selection by raising. The body must stay up, drop the
+    route, and record the reason.
+    """
+    home = _select_cleared_model(tmp_path, monkeypatch)
+    later = store(tmp_path / "later", "registry.ollama.ai/library/test/small", licenses=(LLAMA,))
+    monkeypatch.setenv("OLLAMA_MODELS", str(later))
+    with Body(home) as body:
+        selected = body.engine.cognition_model
+        assert "ollama" not in selected.get("order", [])
+        assert "ollama_model" not in selected
+        hold = selected.get("model_license_hold")
+        assert isinstance(hold, dict) and "license" in str(hold.get("reason", "")).lower()
+        body.boot()
+        body.tick()
+        body.tick()
+        recorded = body.journal.replay("model.license_held")
+        assert recorded and recorded[-1].payload["model"] == "test:small"
+        assert "license" in recorded[-1].payload["reason"].lower()
+
+
+def test_a_selected_model_the_body_cannot_read_is_held_not_a_crash(tmp_path, monkeypatch):
+    """g6: the body process cannot see the store that was visible when the model was selected."""
+    home = _select_cleared_model(tmp_path, monkeypatch)
+    invisible = tmp_path / "no-store"
+    invisible.mkdir()
+    monkeypatch.setenv("OLLAMA_MODELS", str(invisible))
+    monkeypatch.setenv("HOME", str(tmp_path / "other-home"))
+    with Body(home) as body:
+        selected = body.engine.cognition_model
+        assert "ollama" not in selected.get("order", [])
+        assert isinstance(selected.get("model_license_hold"), dict)
+        body.boot()
+        assert body.tick().get("stopped") is not True
+
+
+def test_an_init_model_whose_license_does_not_permit_use_is_held_when_the_body_opens(
+        tmp_path, monkeypatch):
+    """g3: `greg init --local-model` writes the name and never asks the license helper.
+
+    Opening the body is where that config becomes a route. A disallowed model is
+    held there, so cognition is not handed the name.
+    """
+    from greg.body import init_body
+
+    root = store(tmp_path, "registry.ollama.ai/library/llama3.1/8b", licenses=(LLAMA,))
+    _isolate_store(monkeypatch, tmp_path, root)
+    home = tmp_path / "init-body"
+    init_body(home, read_roots=[str(tmp_path / "data")], local_model="llama3.1:8b")
+    with Body(home) as body:
+        selected = body.engine.cognition_model
+        assert "ollama" not in selected.get("order", [])
+        hold = selected.get("model_license_hold")
+        assert isinstance(hold, dict) and hold.get("model") == "llama3.1:8b"
+        assert "license" in str(hold.get("reason", "")).lower()
+
+
+def test_semantic_cognition_does_not_call_a_model_whose_license_does_not_permit_use(
+        tmp_path, monkeypatch):
+    """The direct OllamaRoute path in cortex._semantic posts a held model today."""
+    from greg.cognition.contracts import CognitionError, ProblemGeometry
+    from greg.cognition.cortex import _semantic
+
+    root = store(tmp_path, "registry.ollama.ai/library/test/small", licenses=(LLAMA,))
+    _isolate_store(monkeypatch, tmp_path, root)
+    called = []
+
+    def spy(self, *args, **kwargs):
+        called.append(self.model)
+        raise AssertionError("a held model was called")
+
+    monkeypatch.setattr(models.OllamaRoute, "complete", spy)
+    with pytest.raises(CognitionError, match="license"):
+        _semantic({"sources": [{"id": "s", "text": "hello"}]}, ProblemGeometry(),
+                  {"order": ["ollama"], "ollama_model": "test:small"})
+    assert called == []
+
+
+def test_admit_model_selection_runs_after_validate_and_a_hold_rejects_the_command(
+        tmp_path, monkeypatch):
+    """#264's gate is called after validate_route_selection. Its output is not stored:
+    extra evidence would fail the next validate. A hold rejects the new command.
+    """
+    root = store(tmp_path, "registry.ollama.ai/library/test/small")
+    _isolate_store(monkeypatch, tmp_path, root)
+    calls = []
+    real = models.validate_route_selection
+
+    def tracking(body):
+        calls.append("validate")
+        return real(body)
+
+    def admit(config, models_dir=None):
+        calls.append("admit")
+        return {"order": [name for name in config.get("order", []) if name != "ollama"],
+                "model_license_hold": {"model": config.get("ollama_model"), "verdict": "FOUNDER_REVIEW",
+                                       "reason": "stricter gate", "manifest_sha256": None,
+                                       "assessment_digest": None}}
+
+    monkeypatch.setattr(models, "validate_route_selection", tracking)
+    monkeypatch.setattr(licensing, "admit_model_selection", admit, raising=False)
+    home, key, body_id, _ = make_body(tmp_path)
+    with Body(home) as body:
+        drop(home, signed(key, body_id, "MODEL_ROUTE_SET",
+                          {"order": ["ollama"], "ollama_model": "test:small"}))
+        outcome = body.ingest_inbox()
+        assert outcome[0]["status"] == "REJECTED"
+        assert "stricter gate" in outcome[0]["reason"]
+        assert body.journal.replay("model.configured") == []
+    assert calls[:2] == ["validate", "admit"]
+
+
+def test_admit_evidence_is_not_written_into_the_signed_selection(tmp_path, monkeypatch):
+    """A cleared admit result may carry license_evidence. The ledger keeps the
+    validated selection, which validate_route_selection can read again."""
+    root = store(tmp_path, "registry.ollama.ai/library/test/small")
+    _isolate_store(monkeypatch, tmp_path, root)
+    calls = []
+    real = models.validate_route_selection
+
+    def tracking(body):
+        calls.append("validate")
+        return real(body)
+
+    def admit(config, models_dir=None):
+        calls.append("admit")
+        return {**config, "license_evidence": {"model": config.get("ollama_model"), "verdict": "CLEARED",
+                                               "manifest_sha256": "abc", "assessment_digest": "def"}}
+
+    monkeypatch.setattr(models, "validate_route_selection", tracking)
+    monkeypatch.setattr(licensing, "admit_model_selection", admit, raising=False)
+    home, key, body_id, _ = make_body(tmp_path)
+    with Body(home) as body:
+        drop(home, signed(key, body_id, "MODEL_ROUTE_SET",
+                          {"order": ["ollama"], "ollama_model": "test:small"}))
+        outcome = body.ingest_inbox()
+        assert outcome[0]["status"] == "APPLIED", outcome
+        stored = body.journal.replay("model.configured")[-1].payload["selection"]
+        assert stored == {"order": ["ollama"], "ollama_model": "test:small"}
+        assert calls[:2] == ["validate", "admit"]
+
+
+def test_a_replayed_selection_is_admitted_after_it_is_validated(tmp_path, monkeypatch):
+    """On open, validate runs on the stored selection and then admit. Admit's hold
+    is what the body uses. Admit is not fed back into validate."""
+    home = _select_cleared_model(tmp_path, monkeypatch)
+    calls = []
+    real = models.validate_route_selection
+
+    def tracking(body):
+        calls.append(("validate", set(body)))
+        return real(body)
+
+    def admit(config, models_dir=None):
+        calls.append(("admit", set(config)))
+        return {"order": [name for name in config.get("order", []) if name != "ollama"],
+                **{k: v for k, v in config.items() if k not in ("order", "ollama_model")},
+                "model_license_hold": {"model": config.get("ollama_model"), "verdict": "FOUNDER_REVIEW",
+                                       "reason": "gate hold on replay", "manifest_sha256": "abc",
+                                       "assessment_digest": "def"}}
+
+    monkeypatch.setattr(models, "validate_route_selection", tracking)
+    monkeypatch.setattr(licensing, "admit_model_selection", admit, raising=False)
+    with Body(home) as body:
+        selected = body.engine.cognition_model
+        assert "ollama" not in selected.get("order", [])
+        assert selected["model_license_hold"]["reason"] == "gate hold on replay"
+        kinds = [name for name, _ in calls]
+        assert kinds.index("validate") < kinds.index("admit")
+        admitted = next(fields for name, fields in calls if name == "admit")
+        assert "model_license_hold" not in admitted
+        assert "ollama_model" in admitted
+
+
+def test_a_cleared_model_stays_selected_when_the_body_reopens(tmp_path, monkeypatch):
+    home = _select_cleared_model(tmp_path, monkeypatch)
+    with Body(home) as body:
+        selected = body.engine.cognition_model
+        assert selected.get("order") == ["ollama"]
+        assert selected.get("ollama_model") == "test:small"
+        assert "model_license_hold" not in selected
+        assert body.journal.replay("model.license_held") == []

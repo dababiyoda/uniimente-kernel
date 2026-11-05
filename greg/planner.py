@@ -764,8 +764,19 @@ def propose(text: str, ctx: PlannerContext, *, transport=None) -> dict:
 
 def default_transport(secrets=None, *, config: dict | None = None, egress=None):
     """Every model route this body can reach behind one router, or None when there is none. ``egress`` is the body's
-    #26 relay when confined egress is on; paid routes then reach their providers only through it."""
-    routes, _ = models.available_routes(secrets, config=config, egress=egress)
+    #26 relay when confined egress is on; paid routes then reach their providers only through it.
+
+    A license hold drops ollama before a route is built. A refusal that is not a
+    license hold stays with ``available_routes``, which already records it.
+    """
+    from greg.model_license_hold import gate_model_config
+    routed = config
+    if isinstance(config, dict):
+        try:
+            routed = gate_model_config(config)
+        except ValueError:
+            routed = config
+    routes, _ = models.available_routes(secrets, config=routed, egress=egress)
     return models.ModelRouter(routes) if routes else None
 
 

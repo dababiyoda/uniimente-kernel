@@ -976,8 +976,8 @@ def main(argv=None) -> int:
             if layout.config.is_file():
                 body_config = json.loads(layout.config.read_text())
                 with observe(home, actor="spiffe://uniimente.internal/greg/model-reader") as journal:
-                    from greg.models import effective_route_config
-                    models_config = effective_route_config(body_config.get("models"), journal)
+                    from greg.model_license_hold import route_config_for_body
+                    models_config = route_config_for_body(body_config.get("models"), journal)
                 from greg.body import egress_relay
                 egress = egress_relay(layout.home, body_config)       # #26: the console's model calls too
             transport = None if args.no_model else planner.default_transport(SecretBroker(layout.secrets),

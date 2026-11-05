@@ -22,9 +22,10 @@ from greg import asks, blockers
 from greg.body import Body, hold_ask, morning_projection, observe, status
 from greg import console as console_page
 from greg.console import Console, _ask_details, render_home, render_mission_control
-from greg.missions import MissionBook
+from greg.missions import MissionBook, MissionEngine
 from provenance.ledger import sha256_json
 from tests.greg_fixtures import Clock, drop, make_body, mission, note_check, signed, workspace, write_strategy
+from tests.unit.test_greg_blockers import no_strategy_ask, records as blocker_records, sensor_scope
 
 ROOT = Path(__file__).resolve().parents[2]
 SILENT_A = "the executed effect stands; nothing is run for it"
@@ -387,13 +388,12 @@ RESTORE = {"capability": "fs.write", "params": {"relative_path": "note.txt", "co
            "target": "workspace:note.txt"}
 
 
-@pytest.fixture(scope="module")
-def compensation_body(tmp_path_factory):
+def _compensation_home(where):
     """Both compensation APPROVAL sites of greg/missions.py, set up as tests/integration/test_greg_compensation.py
     does. Action w wrote "draft"; each mission signed a compensation that writes "original" back. m:comp is
     superseded, so a successor may rely on the write. m:late is abandoned after its signed horizon, so the Gate puts
     the compensation outside the scope."""
-    home, key, body_id, _ = make_body(tmp_path_factory.mktemp("compensation"))
+    home, key, body_id, _ = make_body(where)
     horizon = datetime.now(timezone.utc) + timedelta(seconds=6)    # the Gate judges the horizon on the wall clock
     for mid in ("m:comp", "m:late"):
         note = workspace(home, mid) / "note.txt"
@@ -420,6 +420,38 @@ def compensation_body(tmp_path_factory):
     return home, key, body_id
 
 
+@pytest.fixture(scope="module")
+def compensation_body(tmp_path_factory):
+    return _compensation_home(tmp_path_factory.mktemp("compensation"))
+
+
+@pytest.fixture(scope="module")
+def legacy_compensation_body(tmp_path_factory):
+    """The same two asks, recorded as the engine did before the compensation marker existed: ``_request`` drops the
+    marker, so the ledger holds what an upgraded body still has open (a recorded ask is never rewritten)."""
+    original = MissionEngine._request
+
+    def unmarked(self, *args, compensation=False, **kw):
+        return original(self, *args, **kw)
+
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(MissionEngine, "_request", unmarked)
+        return _compensation_home(tmp_path_factory.mktemp("legacy-compensation"))
+
+
+def _marked_asks(home):
+    found = _compensation_asks(home)
+    # the engine marks both today; the fallback below reads only what an older engine recorded without it
+    assert all(r.get("compensation") is True for r in found.values()), found
+    return found
+
+
+def _legacy_asks(home):
+    found = _compensation_asks(home)
+    assert all("compensation" not in r for r in found.values()), found      # no marker: the old record
+    return found
+
+
 def _compensation_asks(home):
     found = {r["mission_id"]: r for r in status(home)["decisions_required"]
              if r["kind"] == "APPROVAL" and r["mission_id"] in ("m:comp", "m:late")}
@@ -437,9 +469,11 @@ def _covers_compensation(mid):
             f"{sha256_json(params)}). Asked to compensate action w.")
 
 
-def test_a_compensation_approval_names_the_compensation_not_the_action_it_undoes(compensation_body):
-    home = compensation_body[0]
-    found = _compensation_asks(home)
+@pytest.mark.parametrize("which", ["marked", "legacy"])
+def test_a_compensation_approval_names_the_compensation_not_the_action_it_undoes(compensation_body,
+                                                                                legacy_compensation_body, which):
+    home = (compensation_body if which == "marked" else legacy_compensation_body)[0]
+    found = (_marked_asks if which == "marked" else _legacy_asks)(home)
     for page in (render_home(Console(home)), render_mission_control(Console(home), "overview")):
         rows = _rows(page.decode())
         for mid, r in found.items():
@@ -449,15 +483,51 @@ def test_a_compensation_approval_names_the_compensation_not_the_action_it_undoes
 
 
 @NEEDS_NODE
-def test_the_phone_names_the_compensation_too(compensation_body, tmp_path):
-    home = compensation_body[0]
-    found = _compensation_asks(home)
+@pytest.mark.parametrize("which", ["marked", "legacy"])
+def test_the_phone_names_the_compensation_too(compensation_body, legacy_compensation_body, which, tmp_path):
+    home = (compensation_body if which == "marked" else legacy_compensation_body)[0]
+    found = (_marked_asks if which == "marked" else _legacy_asks)(home)
     cards = _phone(home, tmp_path)["cards"]
     for mid, r in found.items():
         card = cards[r["request_id"]]
         assert _in_order(card["text"], [_covers_compensation(mid), "If you do not answer: " + SILENT_A]), card["text"]
         assert "Asked for action" not in card["text"]
 
+
+
+LEGACY_ASK = {"request_id": "req-L", "kind": "APPROVAL", "mission_id": "m:comp", "action_id": "w",
+              "why_now": "compensation of w: the mission was superseded, and its successor may rely on the effect "
+                         "this compensation would undo",
+              "evidence": {"original_receipt": "sha256:" + "1" * 64, "lifecycle": "SUPERSEDED"}}
+NEAR_MISSES = {   # each unmarked: only the record the two compensation sites write reads as one
+    "legacy": (LEGACY_ASK, True),
+    "marked": ({**LEGACY_ASK, "compensation": True}, True),
+    "marker says no": ({**LEGACY_ASK, "compensation": False}, False),
+    "another action": ({**LEGACY_ASK, "why_now": "compensation of w2: superseded"}, False),
+    "not at the start": ({**LEGACY_ASK, "why_now": "outside scope; compensation of w: later"}, False),
+    "no receipt key": ({**LEGACY_ASK, "evidence": {"lifecycle": "SUPERSEDED"}}, False),
+    "evidence not a map": ({**LEGACY_ASK, "evidence": ["original_receipt"]}, False),
+    "no evidence": ({k: v for k, v in LEGACY_ASK.items() if k != "evidence"}, False),
+    "not an APPROVAL": ({**LEGACY_ASK, "kind": "COMPENSATION"}, False),
+    "no action": ({**LEGACY_ASK, "action_id": None}, False),
+}
+
+
+def test_only_a_compensation_record_reads_as_one_on_both_surfaces(tmp_path):
+    """Display only (greg/console.py is_compensation, greg/phone/core.js isCompensation): an ask recorded before
+    the marker existed is named a compensation from its own record, and no other ask is."""
+    names = list(NEAR_MISSES)
+    console = [console_page.is_compensation(NEAR_MISSES[n][0]) for n in names]
+    assert dict(zip(names, console)) == {n: want for n, (_, want) in NEAR_MISSES.items()}
+    if shutil.which("node") is None or _node_major() < 20:
+        pytest.skip("needs node >= 20")
+    script = tmp_path / "compensation.mjs"
+    records = json.dumps([NEAR_MISSES[n][0] for n in names])
+    script.write_text(f"import {{ isCompensation }} from {json.dumps((ROOT / 'greg/phone/core.js').as_uri())};\n"
+                      f"console.log(JSON.stringify(JSON.parse({json.dumps(records)}).map(isCompensation)));\n")
+    out = subprocess.run(["node", str(script)], capture_output=True, text=True, timeout=60)
+    assert out.returncode == 0, out.stderr
+    assert json.loads(out.stdout) == console
 
 # ---- the typed blockers (greg/blockers.py, from #251): the morning report, Mission Control's Goals page, greg blockers
 
@@ -485,9 +555,11 @@ def test_a_typed_blocker_says_what_approving_covers_and_what_silence_does(engine
         assert _in_order(goals[mid], [b["blocker"], _covers_real(mid, content), "if you do not answer: " + SILENT_B])
 
 
-def test_a_compensation_approval_is_never_typed_as_the_action_it_undoes(compensation_body):
-    home = compensation_body[0]
-    found = _compensation_asks(home)
+@pytest.mark.parametrize("which", ["marked", "legacy"])
+def test_a_compensation_approval_is_never_typed_as_the_action_it_undoes(compensation_body, legacy_compensation_body,
+                                                                        which):
+    home = (compensation_body if which == "marked" else legacy_compensation_body)[0]
+    found = (_marked_asks if which == "marked" else _legacy_asks)(home)
     # Today neither compensation ask blocks a pursued mission: both are asked once the mission is SUPERSEDED or
     # ABANDONED, and no surface lists those missions' blockers.
     shown = morning_projection(home)["blockers"]
@@ -505,3 +577,21 @@ def test_a_compensation_approval_is_never_typed_as_the_action_it_undoes(compensa
             assert b["required_authority"].endswith(". " + _covers_compensation(mid)), b
             assert b["next_move"].endswith("; if you do not answer: " + SILENT_A), b
             assert "on action" not in b["blocker"] and "Asked for action" not in b["required_authority"]
+
+
+# ---- a decision blocker that is not an APPROVAL: no approval is asked, so none is described ----------------------
+
+@pytest.mark.parametrize("build,kind", [(no_strategy_ask, "NO_STRATEGY"), (sensor_scope, "SENSOR_SCOPE")],
+                         ids=["NO_STRATEGY", "SENSOR_SCOPE"])
+def test_a_decision_blocker_that_is_not_an_approval_never_says_what_approving_covers(tmp_path, build, kind):
+    home, *_, mid = build(tmp_path)
+    [b] = blocker_records(home, mission_id=mid)
+    assert b["kind"] == "decision" and f"founder decision: {kind} ask " in b["blocker"], b
+    with observe(home, actor="spiffe://uniimente.internal/greg/morning-reader") as journal:
+        book = MissionBook(journal)
+        book.rebuild()
+        request = book.requests[book.missions[mid].blocker["request_id"]]
+    assert request["kind"] == kind
+    # it answers exactly the scope the ask records, and nothing describes an approval it is not
+    assert b["required_authority"].endswith("answering exactly: " + blockers._scope(request)), b
+    assert "Approving covers" not in b["required_authority"] and "Asked for action" not in b["required_authority"]

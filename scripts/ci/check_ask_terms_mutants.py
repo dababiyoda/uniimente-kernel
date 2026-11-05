@@ -19,6 +19,11 @@ COMP = FILE + "::test_a_compensation_approval_names_the_compensation_not_the_act
 PHONE_COMP = FILE + "::test_the_phone_names_the_compensation_too"
 TYPED = FILE + "::test_a_typed_blocker_says_what_approving_covers_and_what_silence_does"
 TYPED_COMP = FILE + "::test_a_compensation_approval_is_never_typed_as_the_action_it_undoes"
+LEGACY = COMP + "[legacy]"
+PHONE_LEGACY = PHONE_COMP + "[legacy]"
+TYPED_LEGACY = TYPED_COMP + "[legacy]"
+NEAR = FILE + "::test_only_a_compensation_record_reads_as_one_on_both_surfaces"
+NOT_APPROVAL = FILE + "::test_a_decision_blocker_that_is_not_an_approval_never_says_what_approving_covers"
 
 CONSOLE, CORE, APP, BLOCKERS = "greg/console.py", "greg/phone/core.js", "greg/phone/app.js", "greg/blockers.py"
 TERMS = '    for (const line of askTerms(r)) card.append(el("p", line));'
@@ -44,9 +49,20 @@ MUTANTS = [
     ("console drops the action an approval was asked for", CONSOLE,
      [('return COVERS + "; ".join(parts) + "." + asked_for(r)', 'return COVERS + "; ".join(parts) + "."')], REAL),
     ("console asks for action w on a compensation", CONSOLE,
-     [('if r.get("compensation") is True\n', 'if False\n')], COMP),
+     [('if is_compensation(r)\n', 'if False\n')], COMP),
     ("console names every approval a compensation", CONSOLE,
-     [('if r.get("compensation") is True\n', 'if True\n')], REAL),
+     [('if is_compensation(r)\n', 'if True\n')], REAL),
+    ("console reads no compensation from an ask recorded before the marker", CONSOLE,
+     [('    if "compensation" in r or r.get("kind") != "APPROVAL" or not r.get("action_id"):\n        return False\n',
+       '    return False\n')], LEGACY),
+    ("console's unmarked fallback ignores the original receipt", CONSOLE,
+     [('and isinstance(evidence, dict) and "original_receipt" in evidence)', ')')], NEAR),
+    ("console's unmarked fallback matches any action's compensation", CONSOLE,
+     [('.startswith(f"compensation of {r[\'action_id\']}:")', '.startswith("compensation of ")')], NEAR),
+    ("console's fallback overrides a marker that says no", CONSOLE,
+     [('if "compensation" in r or r.get("kind")', 'if r.get("kind")')], NEAR),
+    ("console's fallback reads any kind", CONSOLE,
+     [('if "compensation" in r or r.get("kind") != "APPROVAL" or', 'if "compensation" in r or')], NEAR),
     ("console drops the params an approval covers", CONSOLE,
      [('if isinstance(p, dict) and isinstance(p.get("json"), str):', "if False:")], REAL),
     ("console drops the mission an approval covers", CONSOLE,
@@ -95,9 +111,14 @@ MUTANTS = [
     ("a typed decision blocker drops what silence does", BLOCKERS,
      [('if request.get("consequence_of_no_response") else "")}', 'if False else "")}')], TYPED),
     ("a typed blocker names a compensation as the action it undoes", BLOCKERS,
-     [('if kind == "APPROVAL" and request.get("compensation") is True else', "if False else")], TYPED_COMP),
+     [('if kind == "APPROVAL" and is_compensation(request) else', "if False else")], TYPED_COMP),
     ("a typed blocker names every approval a compensation", BLOCKERS,
-     [('if kind == "APPROVAL" and request.get("compensation") is True else', "if True else")], TYPED),
+     [('if kind == "APPROVAL" and is_compensation(request) else', "if True else")], TYPED),
+    ("a typed blocker reads only the marker, not an ask recorded before it", BLOCKERS,
+     [('if kind == "APPROVAL" and is_compensation(request) else',
+       'if kind == "APPROVAL" and request.get("compensation") is True else')], TYPED_LEGACY),
+    ("a non-APPROVAL decision blocker says what approving covers", BLOCKERS,
+     [('    if request.get("kind") != "APPROVAL":\n        return ""\n', "")], NOT_APPROVAL),
     ("the typed blockers list a closed mission's blocker", BLOCKERS,
      [("if m.blocker is None or m.status in TERMINAL or", "if m.blocker is None or")], TYPED_COMP),
     # the phone
@@ -129,9 +150,19 @@ MUTANTS = [
     ("phone drops the action an approval was asked for", CORE,
      [('parts.join("; ") + "." + asked;', 'parts.join("; ") + ".";')], PHONE_REAL),
     ("phone asks for action w on a compensation", CORE,
-     [("r.compensation === true ?", "false ?")], PHONE_COMP),
+     [("isCompensation(r) ?", "false ?")], PHONE_COMP),
     ("phone names every approval a compensation", CORE,
-     [("r.compensation === true ?", "true ?")], PHONE_REAL),
+     [("isCompensation(r) ?", "true ?")], PHONE_REAL),
+    ("phone reads no compensation from an ask recorded before the marker", CORE,
+     [('  if ("compensation" in r || r.kind !== "APPROVAL" || !r.action_id) return false;\n', "  return false;\n")],
+     PHONE_LEGACY),
+    ("phone's unmarked fallback ignores the original receipt", CORE,
+     [('    && evidence !== null && typeof evidence === "object" && "original_receipt" in evidence;',
+       "    ;")], NEAR),
+    ("phone's unmarked fallback matches any action's compensation", CORE,
+     [(".startsWith(`compensation of ${r.action_id}:`)", '.startsWith("compensation of ")')], NEAR),
+    ("phone's fallback reads any kind", CORE,
+     [('if ("compensation" in r || r.kind !== "APPROVAL" ||', 'if ("compensation" in r ||')], NEAR),
     ("phone shows cut params as whole", CORE, [("whole = p.length === shownLength", "whole = true")], PHONE_REAL),
     ("phone prints dicts as JSON", CORE,
      [('if (typeof v === "object") return "{" + Object.keys(v).sort(byCodePoint)',

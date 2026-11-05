@@ -62,7 +62,8 @@ def _decision(m, b: dict, request: dict, state: str, held: bool) -> dict:
         reconsider += (f"; meanwhile GREG re-observes {', '.join(b['failing_checks'])} at the mission's cadence and "
                        "withdraws the ask if they pass without any GREG action")
     # A compensation APPROVAL's approve runs the compensation signed with the action, never the action again.
-    on = "to compensate action" if kind == "APPROVAL" and request.get("compensation") is True else "on action"
+    from greg.console import is_compensation
+    on = "to compensate action" if kind == "APPROVAL" and is_compensation(request) else "on action"
     out = {"blocker": f"founder decision: {kind} ask {rid}"
                       + (f" {on} {b['action_id']}" if b.get("action_id") else "")
                       + (f" ({spend})" if request.get("resource") == "spend"

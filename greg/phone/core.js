@@ -92,6 +92,16 @@ export function shownValue(v) {
   return String(v);
 }
 
+// Whether an APPROVAL's approve runs the compensation signed with its action: greg/console.py is_compensation,
+// display only. An ask recorded before the marker existed is read from its own why_now and evidence.
+export function isCompensation(r) {
+  if (r.compensation === true) return true;
+  if ("compensation" in r || r.kind !== "APPROVAL" || !r.action_id) return false;
+  const evidence = r.evidence;
+  return String(r.why_now || "").startsWith(`compensation of ${r.action_id}:`)
+    && evidence !== null && typeof evidence === "object" && "original_receipt" in evidence;
+}
+
 // What approving one APPROVAL covers: the scope its digest binds. The same sentence as greg/console.py
 // approval_covers; display only, the answer binds the digest.
 function approvalCovers(r) {
@@ -106,7 +116,7 @@ function approvalCovers(r) {
     parts.push("params: not recorded with this ask");
   }
   // A compensation ask's approve runs the compensation signed with the action, never the action again.
-  const asked = !r.action_id ? "" : r.compensation === true ? ` Asked to compensate action ${r.action_id}.`
+  const asked = !r.action_id ? "" : isCompensation(r) ? ` Asked to compensate action ${r.action_id}.`
     : ` Asked for action ${r.action_id}.`;
   return "Approving covers this exact scope: " + parts.join("; ") + "." + asked;
 }

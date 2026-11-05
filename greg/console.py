@@ -351,12 +351,27 @@ def approval_covers(r: dict) -> str:
     return COVERS + "; ".join(parts) + "." + asked_for(r)
 
 
+def is_compensation(r: dict) -> bool:
+    """Whether an APPROVAL's approve runs the compensation signed with its action (greg/missions.py
+    ``compensation``). Display only: nothing that decides authority reads it, and the answer binds the scope digest.
+    An ask recorded before the marker existed carries none, and ``_request`` never rewrites a recorded ask, so one
+    still open after an upgrade is read from its own record: only the two compensation APPROVAL sites write a
+    ``why_now`` that starts "compensation of <its action>:" with ``evidence.original_receipt``."""
+    if r.get("compensation") is True:
+        return True
+    if "compensation" in r or r.get("kind") != "APPROVAL" or not r.get("action_id"):
+        return False
+    evidence = r.get("evidence")
+    return (str(r.get("why_now") or "").startswith(f"compensation of {r['action_id']}:")
+            and isinstance(evidence, dict) and "original_receipt" in evidence)
+
+
 def asked_for(r: dict) -> str:
     """The action an APPROVAL was asked for. A compensation ask's approve runs the compensation signed with that
     action, never the action again (greg/missions.py ``compensation``), so it says so."""
     if not r.get("action_id"):
         return ""
-    return (f" Asked to compensate action {r['action_id']}." if r.get("compensation") is True
+    return (f" Asked to compensate action {r['action_id']}." if is_compensation(r)
             else f" Asked for action {r['action_id']}.")
 
 

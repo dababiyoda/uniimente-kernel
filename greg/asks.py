@@ -307,6 +307,9 @@ ANSWER_ONLY_RECORDS = {
                     "yourself if it should not stand.",
     "HUMAN_JUDGMENT": "Your answer is recorded as the decision on this one question; it acts on nothing by itself. "
                       "Any consequence still crosses the Gate under its own authority.",
+    "EVIDENCE_CORRECTION": "Your answer is only recorded; GREG undoes, re-runs and withdraws nothing. The claims stay "
+                           "delivered and marked NEEDS_REVIEW until a later reading requalifies them; a new mission "
+                           "you sign answers again.",
     "CAPABILITY_ATTACH": "Approve or Reject only records your answer. Attaching is its own signed command: the "
                          "Attach button beside a verified candidate, or `greg attach <capability_id>`.",
 }

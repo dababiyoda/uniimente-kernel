@@ -967,6 +967,8 @@ class Body:
         if self._stop_now():
             return {"commands": commands, "missions": summary, "stopped": True}
         self._close_out(now)
+        from greg import corrections     # a changed, expired or contradicted reading marks what rests on it
+        corrections.propagate(self.journal, now)
         from greg.cognition.settlement import reconcile as settle_cognition
         settle_cognition(self.journal)
         improvement.learn(self.journal, self.ledger, now)   # held-out evidence from this tick's briefs

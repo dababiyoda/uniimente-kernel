@@ -562,6 +562,23 @@ PORT_MUTANTS = [
      "    if raised:\n        declared[\"harm\"]", "    if False:\n        declared[\"harm\"]"),
 ]
 
+# attach authorization (acceptance C.G8): what may make an acquired capability usable, attacked; a group of its own
+ATTACH_AUTH_TESTS = ["tests/unit/test_greg_attach_authorization.py"]
+ATTACH_AUTH_MUTANTS = [
+    ("the founder can attach a quarantined capability", "greg/body.py",
+     'if kind == "CAPABILITY_ATTACH" and self.registry.state[cid] not in ("VERIFIED", "DETACHED", "ATTACHED"):',
+     "if False:"),
+    ("an unregistered capability id reaches the registry", "greg/body.py",
+     "if cid not in self.registry.manifests:", "if False:"),
+    ("auto_attach reaches past the mission's light cone", "greg/genesis.py",
+     '                   and mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"\n'
+     '                   and manifest.consequence_class == "read_only"\n'
+     "                   and mission.cone._capability_inside(manifest.capability_id))",
+     '                   and mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"\n'
+     '                   and manifest.consequence_class == "read_only")'),
+    ("a model draft keeps auto_attach", "greg/planner.py", '    draft.pop("auto_attach", None)\n', ""),
+]
+
 METABOLISM_MUTANTS = [
     # license qualification (directive 2026-10-22, 5.3 and 6): legally qualified is a separate state
     ("an uncleared license still auto-attaches", "greg/genesis.py",
@@ -823,7 +840,8 @@ GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("goal-requested formation", GOAL_FORMATION_TESTS, GOAL_FORMATION_MUTANTS),
           ("portfolio words", PORTFOLIO_WORDS_TESTS, PORTFOLIO_WORDS_MUTANTS),
           ("budgeted selection", BUDGETED_TESTS, BUDGETED_MUTANTS),
-          ("seed ports", PORT_TESTS, PORT_MUTANTS)]
+          ("seed ports", PORT_TESTS, PORT_MUTANTS),
+          ("attach authorization", ATTACH_AUTH_TESTS, ATTACH_AUTH_MUTANTS)]
 
 
 def _run_one(work: Path, group: str, tests: list, name: str, rel: str, old: str, new: str) -> tuple[bool, str]:

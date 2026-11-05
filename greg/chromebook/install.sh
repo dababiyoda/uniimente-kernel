@@ -245,13 +245,31 @@ KEYGEN_FLAGS=()
 [ "$NO_PASSPHRASE" = 1 ] && KEYGEN_FLAGS+=(--no-passphrase) && echo "WARNING: --no-passphrase leaves the key unprotected (tests only)."
 # The public key is derived from the actual signing key (#138 b8a0ccd); a companion .pub that names another
 # key, or a key that is not this body's currently enrolled founder key, stops before service or designation.
+# Order matters: a key is proven to open with your passphrase before it is enrolled, and a body that already has an
+# enrolled key never gets a new key file written next to it.
+ENROLLED="$(status_field 'len(s.get("security", {}).get("founder_keys_enrolled", []))')"
+[ -n "$ENROLLED" ] || fail "Cannot inspect this body's founder enrollment; keeping it unchanged. Resolve greg status before continuing." 14
+if [ ! -f "$KEY" ] && [ "${ENROLLED:-0}" -gt 0 ] 2>/dev/null; then
+  fail "This body already has an enrolled founder key, and there is no key file at $KEY. Nothing was created. Rerun with --key pointing at the enrolled key file (see greg/CHROMEBOOK_FIRST_MISSION.md, \"A key you cannot open\")." 14
+fi
 if [ -f "$KEY" ]; then
   echo "Keeping your existing key at $KEY."
-  PUBLIC="$("$GREG" founder public --key "$KEY" "${KEYGEN_FLAGS[@]}")"
 else
-  echo "Choose a passphrase you will remember; GREG cannot recover it. Never give this key to an agent."
+  echo "Choose a passphrase you will remember; GREG cannot recover it. You type it twice. Never give this key to an agent."
   mkdir -p "$(dirname "$KEY")"
-  PUBLIC="$("$GREG" founder keygen --key "$KEY" "${KEYGEN_FLAGS[@]}")"
+  GENERATED="$("$GREG" founder keygen --key "$KEY" "${KEYGEN_FLAGS[@]}")" || fail "No founder key was created (see the line above). Run the installer again." 16
+fi
+# A founder key without a passphrase never reaches the founder tier: every closure it signs stays a structural
+# candidate, so N1 could never close. Only --no-passphrase (tests) may enrol one.
+if [ "$NO_PASSPHRASE" != 1 ] && [ "$(head -n 1 "$KEY")" != "-----BEGIN ENCRYPTED PRIVATE KEY-----" ]; then
+  fail "The founder key $KEY is not protected by a passphrase, so nothing it signs could reach the founder tier. Nothing was enrolled with it here. Move it aside (mv $KEY $KEY.unprotected) and run the installer again to create a protected key, or pass --no-passphrase for a test body (see greg/CHROMEBOOK_FIRST_MISSION.md, \"A key you cannot open\")." 17
+fi
+# Self-test before enrolment: the key must open with the passphrase you type now. A key created with a typo would
+# otherwise be enrolled and then refuse every signature.
+echo "Checking that your passphrase opens $KEY (type it once more):"
+PUBLIC="$("$GREG" founder public --key "$KEY" "${KEYGEN_FLAGS[@]}")" || fail "Your passphrase did not open $KEY (see the line above). Nothing was enrolled. Run the installer again and type the passphrase you chose; if you cannot recall it and this key was never enrolled, move it aside (mv $KEY $KEY.forgotten) and run the installer again (greg/CHROMEBOOK_FIRST_MISSION.md, \"A key you cannot open\")." 16
+if [ -n "${GENERATED:-}" ] && [ "$GENERATED" != "$PUBLIC" ]; then
+  fail "The key at $KEY is not the one just generated. Nothing was enrolled." 16
 fi
 if [ -e "$KEY.pub" ]; then
   [ "$(cat "$KEY.pub")" = "$PUBLIC" ] || fail "The public companion $KEY.pub does not match $KEY. Keeping both unchanged; resolve the mismatch before enrolling or starting the body." 14
@@ -260,8 +278,6 @@ else
   chmod 644 "$KEY.pub"
 fi
 SIGNER_ID="$(PYTHONPATH="$REPO${PYTHONPATH:+:$PYTHONPATH}" "$GREG_PY" -c 'from greg.founder import key_id; import sys; print(key_id(sys.argv[1]))' "$PUBLIC")"
-ENROLLED="$(status_field 'len(s.get("security", {}).get("founder_keys_enrolled", []))')"
-[ -n "$ENROLLED" ] || fail "Cannot inspect this body's founder enrollment; keeping it unchanged. Resolve greg status before continuing." 14
 if [ "${ENROLLED:-0}" -gt 0 ] 2>/dev/null; then
   ACTIVE_KEYS="$(status_field '" ".join(s.get("security", {}).get("founder_keys_enrolled", []))')"
   case " $ACTIVE_KEYS " in
@@ -311,7 +327,8 @@ elif ls "$GREG_HOME_DIR"/inbox/*body_designate*.json >/dev/null 2>&1; then
   echo "A signed designation is already waiting in the inbox for the body to accept."
 else
   echo "Sign the designation of THIS machine as your first body (your passphrase again):"
-  "$GREG" body designate --key "$KEY" "${KEYGEN_FLAGS[@]}" >/dev/null
+  "$GREG" body designate --key "$KEY" "${KEYGEN_FLAGS[@]}" >/dev/null \
+    || fail "The designation was not signed (see the line above). Nothing else changed; run the installer again to sign it." 16
   echo "Designation queued; the running body accepts it on its next tick."
 fi
 

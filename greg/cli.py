@@ -42,20 +42,56 @@ import sys
 from greg import service
 from greg.body import (Body, BodyError, Layout, init_body, morning_projection, observe, send_signed,
                        status)
-from greg.founder import generate_founder_key, load_founder_key, public_bytes
+from greg.founder import FounderAuthError, generate_founder_key, load_founder_key, public_bytes
 from greg.tribunal import mark_reviewed, morning_report
 from provenance.ledger import WriterConflict
 
 DEFAULT_HOME = os.environ.get("GREG_HOME", str(Path.home() / ".uniimente" / "greg"))
 
 
-def _passphrase(args) -> bytes | None:
+NO_EMPTY_PASSPHRASE = ("an empty passphrase is refused: it would leave your founder key unprotected, and an "
+                       "unprotected key never reaches the founder tier. Type a passphrase, or pass --no-passphrase "
+                       "for a test key")
+
+
+def _passphrase(args, *, confirm: bool = False) -> bytes | None:
+    """The founder key passphrase: from GREG_FOUNDER_PASSPHRASE (tests and scripts; empty means none), None for
+    --no-passphrase, otherwise typed at a hidden prompt. A typed empty answer never means "no passphrase" (that is
+    --no-passphrase), and ``confirm`` (keygen) asks twice: a typo there would lock the founder out of their own key."""
     env = os.environ.get("GREG_FOUNDER_PASSPHRASE")
     if env is not None:
         return env.encode() or None
     if getattr(args, "no_passphrase", False):
         return None
-    return getpass.getpass("founder key passphrase: ").encode() or None
+    for _ in range(3):
+        typed = getpass.getpass("founder key passphrase: ")
+        if not typed:
+            print(f"greg: {NO_EMPTY_PASSPHRASE}", file=sys.stderr)
+            continue
+        if confirm and getpass.getpass("founder key passphrase, again: ") != typed:
+            print("greg: the two passphrases differ; nothing was written. Type it again", file=sys.stderr)
+            continue
+        return typed.encode()
+    raise BodyError("no usable passphrase after three tries; nothing was written or signed")
+
+
+def _load_key(path, passphrase: bytes | None):
+    """The founder key, or one plain line (never a traceback) when the passphrase does not open it."""
+    try:
+        return load_founder_key(Path(path).expanduser(), passphrase)
+    except FounderAuthError as exc:        # a key readable by others, or not Ed25519
+        raise BodyError(str(exc)) from None
+    except TypeError:                      # cryptography: a password for a plain key, or none for an encrypted one
+        if passphrase is None:
+            raise BodyError(f"the founder key {path} is passphrase-protected; run without --no-passphrase and type "
+                            "its passphrase") from None
+        raise BodyError(f"the founder key {path} is not passphrase-protected; pass --no-passphrase to use it "
+                        "(it never reaches the founder tier)") from None
+    except ValueError as exc:
+        if "password" not in str(exc).lower() and "decrypt" not in str(exc).lower():
+            raise
+        raise BodyError(f"incorrect passphrase for the founder key {path}; nothing was signed "
+                        "(greg/CHROMEBOOK_FIRST_MISSION.md, \"A key you cannot open\")") from None
 
 
 def _known_handles() -> set:
@@ -112,7 +148,7 @@ def _key_file(args, kind: str | None) -> str:
 
 
 def _drop(home: str, kind: str, body: dict, args) -> Path:
-    key = load_founder_key(_key_file(args, kind), _passphrase(args))
+    key = _load_key(_key_file(args, kind), _passphrase(args))
     return send_signed(home, key, kind, body, ttl=timedelta(hours=getattr(args, "ttl_hours", 24)))
 
 
@@ -214,7 +250,7 @@ def _drop_attested(home: str, kind: str, body: dict, args, *, require: bool = Fa
     passphrase = _passphrase(args)
     if passphrase is None and require:
         raise BodyError(NO_FOUNDER_TIER)
-    key = load_founder_key(keyfile, passphrase)
+    key = _load_key(keyfile, passphrase)
     ttl = timedelta(hours=getattr(args, "ttl_hours", 24))
     dropped = [send_signed(home, key, kind, body, ttl=ttl)] if kind else []
     if passphrase is not None:
@@ -599,9 +635,9 @@ def main(argv=None) -> int:
                                        confined_egress=args.confined_egress,
                                        worker_confinement=args.worker_confinement), indent=1))
         elif args.cmd == "founder" and args.founder_cmd == "keygen":
-            print(generate_founder_key(args.key, _passphrase(args)))
+            print(generate_founder_key(args.key, _passphrase(args, confirm=True)))
         elif args.cmd == "founder" and args.founder_cmd == "public":
-            key = load_founder_key(args.key, _passphrase(args))
+            key = _load_key(args.key, _passphrase(args))
             print(public_bytes(key.public_key()).hex())
         elif args.cmd == "founder" and args.founder_cmd == "enroll":
             with Body(home) as body:
@@ -948,7 +984,7 @@ def main(argv=None) -> int:
             from greg import planner
             from greg.capabilities import SecretBroker
             from greg.console import Console, serve
-            key = load_founder_key(args.key, _passphrase(args)) if args.key else None
+            key = _load_key(args.key, _passphrase(args)) if args.key else None
             layout = Layout(home)
             models_config, egress = None, None
             if layout.config.is_file():

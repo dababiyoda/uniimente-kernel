@@ -140,6 +140,31 @@ behavior remain unverified until this run. The official container lifecycle
 description is at
 <https://www.chromium.org/chromium-os/developer-library/guides/containers/containers-and-vms/>.
 
+### A key you cannot open
+
+The installer asks for your passphrase twice when it creates the key (an empty answer or two different answers are
+refused), then once more to prove the key opens **before** it enrols it. A key that does not open is never enrolled:
+the installer stops with `STOP` and exit 16, and running it again and typing the passphrase you chose continues. A
+key without a passphrase stops it with exit 17 (only `--no-passphrase`, for tests, enrols one). Anywhere a `greg`
+command signs, a wrong passphrase is one line, `greg: incorrect passphrase for the founder key ...; nothing was
+signed`, and exit 2; nothing is signed.
+
+If you cannot recall the passphrase:
+
+- **The key was never enrolled** (the installer stopped at the check): move it aside, never delete it,
+  `mv ~/.greg-founder.pem ~/.greg-founder.pem.forgotten`, and run the installer again to create a new key.
+- **The key is enrolled, and the body holds no mission evidence** (`greg vepmc` lists no missions and `greg status`
+  shows no mission): stop the body (`greg stop --local && systemctl --user stop greg-body.service`), then move the
+  body and the key aside yourself, `mv ~/.uniimente/greg ~/.uniimente/greg.unusable-key` and
+  `mv ~/.greg-founder.pem ~/.greg-founder.pem.forgotten`, and run the installer again. This is your explicit act;
+  GREG and the installer never remove a body or a key.
+- **The key is enrolled and the body holds mission evidence**: keep that body and its ledger unchanged. Only the
+  enrolled key can sign a rotation, so this body can no longer take your commands; install a new body beside it
+  by running `bash greg/chromebook/install.sh` with `--home` and `--key` naming a new body folder and a new key
+  file (for example `~/.uniimente/greg-2` and `~/.greg-founder-2.pem`), and keep the old one as evidence.
+- A rerun whose `--key` names a file that does not exist, on a body that already has an enrolled key, stops with
+  exit 14 before creating any key file: point `--key` at the enrolled key.
+
 ## 2. Run and judge one bounded mission
 
 ```bash

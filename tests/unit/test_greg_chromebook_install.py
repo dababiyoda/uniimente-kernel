@@ -17,7 +17,7 @@ import sys
 import pytest
 
 from greg.body import Body
-from greg.founder import FounderAuthError, generate_founder_key, key_id, load_founder_key, sign_command
+from greg.founder import generate_founder_key, key_id, load_founder_key, sign_command
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "greg/chromebook/install.sh"
@@ -293,9 +293,9 @@ def test_founder_public_unlocks_encrypted_key_without_opening_a_body(tmp_path, m
     assert main(["--home", str(missing_body), "founder", "public", "--key", str(key)]) == 0
     assert capsys.readouterr().out.strip() == public
     assert not missing_body.exists() and key.read_bytes() == before
-    key.chmod(0o644)
-    with pytest.raises(FounderAuthError, match="readable by others"):
-        main(["--home", str(missing_body), "founder", "public", "--key", str(key)])
+    key.chmod(0o644)                                     # one plain line and exit 2, not a FounderAuthError traceback
+    assert main(["--home", str(missing_body), "founder", "public", "--key", str(key)]) == 2
+    assert "readable by others" in capsys.readouterr().err
 
 
 def test_a_rerun_offers_the_founder_tier_to_a_body_designated_without_it(tmp_path):

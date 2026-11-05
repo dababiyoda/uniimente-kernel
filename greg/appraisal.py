@@ -42,8 +42,8 @@ from events.spine import EventSpine
 from greg.authority import AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityError, CapabilityManifest, InvocationContext
 from greg.cognition.replay import bind as bind_cognition_replay, matches as cognition_replay_matches
-from greg.cognition.replay import pin_from_output as cognition_pin_from_output
-from greg.cognition.replay import reset as reset_cognition_replay
+from greg.cognition.replay import receipt_pin as cognition_receipt_pin
+from greg.cognition.replay import reset as reset_cognition_replay, unmeasured as cognition_replay_unmeasured
 from greg.founder import _signing_bytes
 from greg.journal import Journal
 from greg.lightcone import LightCone
@@ -496,23 +496,22 @@ def appraise(request: dict) -> dict:
                     from greg.pipeline import resolve
                     bound_params, _ = resolve(check["sensor"].get("params", {}), journal, mid)
                     # A compiled cognition receipt is re-read by the method, route and version it
-                    # pinned. Today's learned routing is not a fallback when that method is gone.
-                    pinned = None
-                    if cap.startswith("cognition."):
-                        original = receipt.payload["result"].get("output")
-                        if isinstance(original, dict) and str(original.get("schema", "")).startswith(
-                                "greg-competency-compilation/"):
-                            pinned = cognition_pin_from_output(original)
-                            if pinned is None:
-                                raise CapabilityError(
-                                    "receipt method unavailable: the cognition receipt does not pin a method, "
-                                    "route and version")
-                            replay_token = bind_cognition_replay(pinned)
+                    # pinned, on the inputs it answered. Today's learned routing is not a fallback when
+                    # that method is gone, and a receipt whose route its own records contradict, or
+                    # that answered other inputs, is not re-read at all (ValueError).
+                    pinned = cognition_receipt_pin(receipt.payload["result"].get("output"), bound_params) \
+                        if cap.startswith("cognition.") else None
+                    if pinned is not None:
+                        replay_token = bind_cognition_replay(pinned)
                     output = adapter(bound_params, ctx)
                     if pinned is not None and not cognition_replay_matches(output, pinned):
                         raise CapabilityError(
                             "receipt method unavailable: re-observation did not replay the pinned method, "
                             "route and version")
+                    if pinned is not None and cognition_replay_unmeasured(output):
+                        # the pinned method ran on the recorded route and gave no answer: nothing was measured
+                        raise CapabilityError("receipt method unavailable: the pinned re-read gave no answer "
+                                              f"({cognition_replay_unmeasured(output)})")
                     # a fresh output is never cut: a value shaped like a receipt's record in it is the sensor's data
                     now_verdict, now_detail = judge(check["predicate"], output, whole=True)
                     # an undecided re-reading (a list at the item limit, a declared-incomplete output) or an

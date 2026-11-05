@@ -252,6 +252,10 @@ ENROLLED="$(status_field 'len(s.get("security", {}).get("founder_keys_enrolled",
 if [ ! -f "$KEY" ] && [ "${ENROLLED:-0}" -gt 0 ] 2>/dev/null; then
   fail "This body already has an enrolled founder key, and there is no key file at $KEY. Nothing was created. Rerun with --key pointing at the enrolled key file (see greg/CHROMEBOOK_FIRST_MISSION.md, \"A key you cannot open\")." 14
 fi
+if [ ! -f "$KEY" ] && [ -e "$KEY.pub" ]; then
+  # A key moved aside without its companion: a new key would be generated, then refused for not matching it.
+  fail "There is a public companion $KEY.pub but no key $KEY. Nothing was created. If you moved the key aside, move its companion with it (mv $KEY.pub <the name you gave the key>.pub), then run the installer again (see greg/CHROMEBOOK_FIRST_MISSION.md, \"A key you cannot open\")." 14
+fi
 if [ -f "$KEY" ]; then
   echo "Keeping your existing key at $KEY."
 else
@@ -262,12 +266,23 @@ fi
 # A founder key without a passphrase never reaches the founder tier: every closure it signs stays a structural
 # candidate, so N1 could never close. Only --no-passphrase (tests) may enrol one.
 if [ "$NO_PASSPHRASE" != 1 ] && [ "$(head -n 1 "$KEY")" != "-----BEGIN ENCRYPTED PRIVATE KEY-----" ]; then
-  fail "The founder key $KEY is not protected by a passphrase, so nothing it signs could reach the founder tier. Nothing was enrolled with it here. Move it aside (mv $KEY $KEY.unprotected) and run the installer again to create a protected key, or pass --no-passphrase for a test body (see greg/CHROMEBOOK_FIRST_MISSION.md, \"A key you cannot open\")." 17
+  if [ "${ENROLLED:-0}" -gt 0 ] 2>/dev/null; then
+    # An earlier install (or --no-passphrase) enrolled this body's key; moving the file aside cannot help, because
+    # the body keeps that enrollment. The enrolled key signs its own replacement by a protected key.
+    UNPROTECTED_ID="$("$GREG" founder public --key "$KEY" --no-passphrase 2>/dev/null | { read -r hex; PYTHONPATH="$REPO${PYTHONPATH:+:$PYTHONPATH}" "$GREG_PY" -c 'from greg.founder import key_id; import sys; print(key_id(sys.argv[1]))' "$hex"; } 2>/dev/null || true)"
+    case " $(status_field '" ".join(s.get("security", {}).get("founder_keys_enrolled", []))') " in
+      *" ${UNPROTECTED_ID:-none} "*)
+        fail "The founder key $KEY is enrolled on this body but is not protected by a passphrase, so nothing it signs reaches the founder tier. Keeping the key and the body unchanged. Rotate to a protected key: greg founder keygen --key $KEY.protected (type a new passphrase twice), then greg founder rotate --key $KEY --new-key $KEY.protected; once greg status lists only the new key, run the installer again with --key $KEY.protected (see greg/CHROMEBOOK_FIRST_MISSION.md, \"A key you cannot open\")." 17 ;;
+      *)
+        fail "The founder key $KEY is not protected by a passphrase and is not this body's enrolled founder key. Keeping enrollment unchanged; rerun with --key pointing at the enrolled key file (see greg/CHROMEBOOK_FIRST_MISSION.md, \"A key you cannot open\")." 17 ;;
+    esac
+  fi
+  fail "The founder key $KEY is not protected by a passphrase, so nothing it signs could reach the founder tier. Nothing was enrolled with it here. Move it and its companion aside (mv $KEY $KEY.unprotected; and, if it exists, mv $KEY.pub $KEY.unprotected.pub) and run the installer again to create a protected key, or pass --no-passphrase for a test body (see greg/CHROMEBOOK_FIRST_MISSION.md, \"A key you cannot open\")." 17
 fi
 # Self-test before enrolment: the key must open with the passphrase you type now. A key created with a typo would
 # otherwise be enrolled and then refuse every signature.
 echo "Checking that your passphrase opens $KEY (type it once more):"
-PUBLIC="$("$GREG" founder public --key "$KEY" "${KEYGEN_FLAGS[@]}")" || fail "Your passphrase did not open $KEY (see the line above). Nothing was enrolled. Run the installer again and type the passphrase you chose; if you cannot recall it and this key was never enrolled, move it aside (mv $KEY $KEY.forgotten) and run the installer again (greg/CHROMEBOOK_FIRST_MISSION.md, \"A key you cannot open\")." 16
+PUBLIC="$("$GREG" founder public --key "$KEY" "${KEYGEN_FLAGS[@]}")" || fail "Your passphrase did not open $KEY (see the line above). Nothing was enrolled. Run the installer again and type the passphrase you chose; if you cannot recall it and this key was never enrolled, move it aside (mv $KEY $KEY.forgotten; and, if it exists, mv $KEY.pub $KEY.forgotten.pub) and run the installer again (greg/CHROMEBOOK_FIRST_MISSION.md, \"A key you cannot open\")." 16
 if [ -n "${GENERATED:-}" ] && [ "$GENERATED" != "$PUBLIC" ]; then
   fail "The key at $KEY is not the one just generated. Nothing was enrolled." 16
 fi

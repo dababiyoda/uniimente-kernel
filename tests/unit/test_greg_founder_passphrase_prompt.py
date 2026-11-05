@@ -158,3 +158,77 @@ def test_the_recovery_every_refusal_names_is_in_the_runbook():
     assert "never delete" in section and "no mission evidence" in section and "exit 16" in section
     assert "A key you cannot open" in (ROOT / "greg/cli.py").read_text()
     assert "A key you cannot open" in SCRIPT.read_text()
+
+
+def _runbook_bullet(start: str) -> str:
+    runbook = (ROOT / "greg/CHROMEBOOK_FIRST_MISSION.md").read_text()
+    section = runbook[runbook.index("### A key you cannot open"):runbook.index("## 2. Run and judge")]
+    bullet = section[section.index(start):]
+    return bullet[:bullet.index("\n- ", 1)]
+
+
+def test_the_documented_recovery_for_an_enrolled_key_works_as_written(tmp_path):
+    """Verifier finding on C2(e): the runbook moved the body and the key aside but not founder.pem.pub, so the
+    rerun generated a new key and then stopped (exit 14) on the stale companion, every time. The mv steps of the
+    bullet are run here exactly as written, with ~ as this test's HOME."""
+    home = tmp_path / "home"
+    paths = ["--home", str(home / ".uniimente/greg"), "--key", str(home / ".greg-founder.pem")]
+    code, out, left = _install(tmp_path, ["first", "first", "first", "first"], extra=paths)
+    assert code == 0 and not left, out[-3000:]
+    assert (home / ".greg-founder.pem.pub").exists()
+    import re
+    moves = re.findall(r"`(mv [^`]+)`", _runbook_bullet("**The key is enrolled, and the body holds no mission"))
+    assert len(moves) == 3 and any(".pem.pub" in m for m in moves)
+    for move in moves:
+        assert subprocess.run(["bash", "-c", move], env={**os.environ, "HOME": str(home)}).returncode == 0
+    code, out, left = _install(tmp_path, ["second", "second", "second", "second"], extra=paths)
+    assert code == 0 and not left, out[-3000:]
+    with Body(home / ".uniimente/greg") as body:
+        assert list(body.enrolled_keys()) != []
+    assert (home / ".greg-founder.pem.forgotten").exists() and (home / ".uniimente/greg.unusable-key").exists()
+
+
+def test_a_companion_without_its_key_stops_before_any_key_is_written(tmp_path):
+    code, out, _ = _install(tmp_path, ["pw", "pw", "pw", "pw"])
+    assert code == 0, out[-3000:]
+    os.rename(tmp_path / "body", tmp_path / "body.aside")
+    os.rename(tmp_path / "founder.pem", tmp_path / "founder.pem.aside")  # founder.pem.pub left behind
+    code, out, left = _install(tmp_path, ["pw2", "pw2", "pw2", "pw2"])
+    assert code == 14 and "public companion" in out and "Nothing was created" in out and "Traceback" not in out
+    assert not (tmp_path / "founder.pem").exists() and left == ["pw2", "pw2", "pw2", "pw2"]  # never asked
+
+
+def test_an_enrolled_unprotected_key_says_so_and_rotates_to_a_protected_key(tmp_path):
+    """Verifier finding on C1: a body whose enrolled key has no passphrase (the state C1 shipped) was told to move
+    the key aside, which then stopped with exit 14 forever. Now: exit 17 names the enrolled key and the rotation,
+    and the rotation it names reaches the founder tier."""
+    assert run(dev_args(tmp_path), tmp_path).returncode == 0           # the unprotected key is enrolled
+    old_key = tmp_path / "founder.pem"
+    before = (tmp_path / "body/ledger.jsonl").read_bytes()
+    code, out, left = _install(tmp_path, ["x", "x", "x", "x"])
+    assert code == 17 and "is enrolled on this body but is not protected" in out and "founder rotate" in out
+    assert "Nothing was enrolled with it here" not in out and left == ["x", "x", "x", "x"]
+    assert old_key.exists() and (tmp_path / "body/ledger.jsonl").read_bytes() == before
+    new_key = tmp_path / "founder.pem.protected"
+    code, out, _ = greg_typed(tmp_path / "body", ["founder", "keygen", "--key", str(new_key)], ["new pw", "new pw"])
+    assert code == 0 and encrypted(new_key)
+    new_public = out.strip().splitlines()[-1]
+    code, out, _ = greg_typed(tmp_path / "body", ["founder", "rotate", "--key", str(old_key),
+                                                  "--new-key", str(new_key)], ["new pwx"])
+    assert code == 2 and "incorrect passphrase" in out and "Traceback" not in out
+    assert not list((tmp_path / "body/inbox").glob("*rotate*.json"))     # nothing was signed
+    code, out, left = greg_typed(tmp_path / "body", ["founder", "rotate", "--key", str(old_key),
+                                                     "--new-key", str(new_key)], ["new pw"])
+    assert code == 0 and not left, out
+    greg_cli = [str(tmp_path / "bin/greg")]
+    env = {**os.environ, "HOME": str(tmp_path / "home")}
+    subprocess.run([*greg_cli, "run", "--tick-seconds", "0.05", "--max-ticks", "1"], env=env, check=True,
+                   capture_output=True, timeout=120)
+    from greg.founder import key_id
+    status = json.loads(subprocess.run([*greg_cli, "status"], env=env, capture_output=True, text=True,
+                                       timeout=60).stdout)
+    assert status["security"]["founder_keys_enrolled"] == [key_id(new_public)]
+    code, out, left = _install(tmp_path, ["new pw", "new pw"], extra=["--key", str(new_key)])
+    assert code == 0 and not left, out[-3000:]
+    kinds = [json.loads(p.read_text())["kind"] for p in (tmp_path / "body/inbox").glob("*.json")]
+    assert kinds == ["FOUNDER_TIER"]

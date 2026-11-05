@@ -15,6 +15,7 @@
     greg body designate --key K                   founder signs the intended first body (and, with a
                                                   passphrase-protected key, the founder-tier attestation)
     greg founder attest --key K                   founder-tier attestation alone (e.g. after key rotation)
+    greg founder rotate --key OLD --new-key NEW   the enrolled key signs its replacement by a protected key
     greg device enroll --pubkey HEX --label phone --key K   delegate a narrow key to a phone
     greg serve                                   loopback remote channel for the phone
     greg anchor configure --tsa-url URL --roots ROOTS.pem --key K   timestamp the ledger head externally
@@ -258,6 +259,35 @@ def _drop_attested(home: str, kind: str, body: dict, args, *, require: bool = Fa
     return dropped
 
 
+def _protected(path: str) -> bool:
+    try:
+        return Path(path).expanduser().read_text().startswith("-----BEGIN ENCRYPTED PRIVATE KEY-----")
+    except (OSError, UnicodeDecodeError):
+        return False
+
+
+def _rotate(home: str, args) -> Path:
+    """The way out of an enrolled key that never reaches the founder tier (an unprotected one, the state the C1
+    defect left behind): the enrolled key signs ROTATE_FOUNDER_KEY naming a new passphrase-protected key, which is
+    proven to open before anything is signed. Nothing moves until the running body accepts the signed file."""
+    old_file = _key_file(args, "ROTATE_FOUNDER_KEY")
+    new_file = _key_file(argparse.Namespace(key=args.new_key), "ROTATE_FOUNDER_KEY")
+    if not _protected(new_file):
+        raise BodyError(f"the new key {args.new_key} is not passphrase-protected; create one with "
+                        f"greg founder keygen --key {args.new_key} (nothing was signed)")
+    if Path(new_file).resolve() == Path(old_file).resolve():
+        raise BodyError("--new-key names the enrolled key itself; nothing was signed")
+    if _protected(old_file):
+        print(f"passphrase for the enrolled key {args.key}:", file=sys.stderr)
+        old = _load_key(old_file, _passphrase(args))
+    else:
+        old = _load_key(old_file, None)
+    print(f"passphrase for the new key {args.new_key}:", file=sys.stderr)
+    new = _load_key(new_file, _passphrase(args))
+    return send_signed(home, old, "ROTATE_FOUNDER_KEY", {"new_public_key": public_bytes(new.public_key()).hex()},
+                       ttl=timedelta(hours=args.ttl_hours))
+
+
 def _slot_value(declared: dict, assignment: str):
     name, sep, raw = assignment.partition("=")
     if not sep or name not in declared:
@@ -352,6 +382,10 @@ def main(argv=None) -> int:
     at = fs.add_parser("attest", help="sign a founder-tier attestation from a passphrase-protected key (grants nothing)")
     at.add_argument("--key", required=True); at.add_argument("--no-passphrase", action="store_true")
     at.add_argument("--ttl-hours", type=int, default=24)
+    ro = fs.add_parser("rotate", help="the enrolled founder key signs its replacement by a passphrase-protected key")
+    ro.add_argument("--key", required=True, help="the currently enrolled key (protected or not)")
+    ro.add_argument("--new-key", required=True, help="the new, passphrase-protected key (greg founder keygen)")
+    ro.add_argument("--ttl-hours", type=int, default=24)
     b = sub.add_parser("body", help="founder designation of the first physical execution body")
     bs = b.add_subparsers(dest="body_cmd", required=True)
     bd = bs.add_parser("designate"); bd.add_argument("--key", required=True)
@@ -722,6 +756,8 @@ def main(argv=None) -> int:
         elif args.cmd == "accept":
             print(_drop(home, "CRITIQUE", {"target_event_id": args.event_id, "verdict": "accept",
                                            "evidence_type": "founder_judgment", "text": args.text}, args))
+        elif args.cmd == "founder" and args.founder_cmd == "rotate":
+            print(_rotate(home, args))
         elif args.cmd == "founder" and args.founder_cmd == "attest":
             print(*_drop_attested(home, None, {}, args, require=True), sep="\n")
         elif args.cmd == "body" and args.body_cmd == "designate":

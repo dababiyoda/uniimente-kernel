@@ -151,17 +151,31 @@ signed`, and exit 2; nothing is signed.
 
 If you cannot recall the passphrase:
 
+A key always moves together with its public companion `~/.greg-founder.pem.pub` when that file exists; the
+installer stops with exit 14, before creating anything, if it finds the companion without its key.
+
 - **The key was never enrolled** (the installer stopped at the check): move it aside, never delete it,
-  `mv ~/.greg-founder.pem ~/.greg-founder.pem.forgotten`, and run the installer again to create a new key.
+  `mv ~/.greg-founder.pem ~/.greg-founder.pem.forgotten` (and, if it exists,
+  `mv ~/.greg-founder.pem.pub ~/.greg-founder.pem.forgotten.pub`), and run the installer again to create a new key.
 - **The key is enrolled, and the body holds no mission evidence** (`greg vepmc` lists no missions and `greg status`
   shows no mission): stop the body (`greg stop --local && systemctl --user stop greg-body.service`), then move the
-  body and the key aside yourself, `mv ~/.uniimente/greg ~/.uniimente/greg.unusable-key` and
-  `mv ~/.greg-founder.pem ~/.greg-founder.pem.forgotten`, and run the installer again. This is your explicit act;
-  GREG and the installer never remove a body or a key.
+  body, the key and its companion aside yourself, `mv ~/.uniimente/greg ~/.uniimente/greg.unusable-key`,
+  `mv ~/.greg-founder.pem ~/.greg-founder.pem.forgotten` and
+  `mv ~/.greg-founder.pem.pub ~/.greg-founder.pem.forgotten.pub`, and run the installer again. This is your
+  explicit act; GREG and the installer never remove a body or a key.
 - **The key is enrolled and the body holds mission evidence**: keep that body and its ledger unchanged. Only the
   enrolled key can sign a rotation, so this body can no longer take your commands; install a new body beside it
   by running `bash greg/chromebook/install.sh` with `--home` and `--key` naming a new body folder and a new key
   file (for example `~/.uniimente/greg-2` and `~/.greg-founder-2.pem`), and keep the old one as evidence.
+- **The key is enrolled but has no passphrase** (an install from before empty passphrases were refused, or one run
+  with `--no-passphrase`): the installer stops with exit 17 and keeps the key and the body. Nothing that key signs
+  reaches the founder tier, but it opens without a passphrase, so it can sign its own replacement. Create a
+  protected key, `greg founder keygen --key ~/.greg-founder.pem.protected` (a new passphrase, twice), have the
+  enrolled key sign the rotation, `greg founder rotate --key ~/.greg-founder.pem --new-key
+  ~/.greg-founder.pem.protected` (the new passphrase once more), and wait until `greg status` lists only the new
+  key under `founder_keys_enrolled` (the running body accepts the rotation on its next tick; with `--no-service`,
+  run `greg run` until it does). Then run the installer again with `--key ~/.greg-founder.pem.protected`: it signs
+  the founder-tier attestation with the new key. Keep the old key file as evidence; it no longer signs.
 - A rerun whose `--key` names a file that does not exist, on a body that already has an enrolled key, stops with
   exit 14 before creating any key file: point `--key` at the enrolled key.
 

@@ -6,7 +6,9 @@ the digests in ``answers.json`` (what Ollama's own code serves for each store, f
 the files ``tests/unit/test_greg_ollama_oracle.py`` builds; ``fingerprint`` checks that.
 
 The first 54 scenarios are the independent reviewer's differential harness of 52f5703b (diff_harness.py), ported
-with the same store bytes and without its LAYOUT switch; the rest were added with the fix of its findings F1 to F4.
+with the same store bytes and without its LAYOUT switch; the next 22 were added with the fix of its findings F1 to
+F4, and the last 9 with the fix of the review of d1724006 (N1 to N3: OLLAMA_MODELS read as envconfig.Var reads it,
+only the store it names, and a manifest Go's decoder rejects).
 ``CLEARS`` are the stores both Ollama versions serve as one Apache-licensed manifest GREG is meant to clear: the
 positive controls that keep the test from passing on a reader that holds everything.
 """
@@ -28,13 +30,19 @@ APACHE_DIGEST = "sha256:" + hashlib.sha256(APACHE.encode()).hexdigest()
 
 SCENARIOS = []
 CLEARS = set()
+# The OLLAMA_MODELS value a scenario runs under, "{models}" standing for <dir>/models, with HOME=<dir>. A scenario not
+# named here runs under OLLAMA_MODELS=<dir>/models exactly; the test passes that store to GREG as ``models_dir``,
+# and an ENV scenario's value to GREG through the environment, with no ``models_dir``.
+ENV = {}
 
 
-def scenario(fn=None, *, clears=False):
+def scenario(fn=None, *, clears=False, env=None):
     def register(f):
         SCENARIOS.append(f)
         if clears:
             CLEARS.add(f.__name__)
+        if env is not None:
+            ENV[f.__name__] = env
         return f
     return register(fn) if fn is not None else register
 
@@ -709,3 +717,68 @@ def relay_host_only(root):
 def stored_name_kelvin(root):
     link(root, mf(root), "ollama.com", "library", "\u212aimi", "4b")
     return "kimi:4b", "the only entry is stored as \u212aimi (U+212A, Kelvin sign)"
+
+
+# --- N1, N2: OLLAMA_MODELS as envconfig.Var reads it (TrimSpace, then Trim of " and '), and no other store ----------
+def two_stores(root):
+    """Llama under the store OLLAMA_MODELS names (<dir>/models), Apache under HOME's default store."""
+    home = root.parent / ".ollama" / "models"
+    link(root, mf(root, licenses=(LLAMA,), weights=b"llama-w"))
+    link(home, mf(home, weights=b"apache-w"))
+    return "qwen3.5:4b"
+
+
+@scenario(env='"{models}"')
+def env_models_double_quoted(root):
+    return two_stores(root), 'OLLAMA_MODELS="<store>" (Llama there), Apache in the home store'
+
+
+@scenario(env="'{models}'")
+def env_models_single_quoted(root):
+    return two_stores(root), "OLLAMA_MODELS='<store>' (Llama there), Apache in the home store"
+
+
+@scenario(env="{models} ")
+def env_models_trailing_space(root):
+    return two_stores(root), "OLLAMA_MODELS='<store> ' (Llama there), Apache in the home store"
+
+
+@scenario(env=" {models}")
+def env_models_leading_space(root):
+    return two_stores(root), "OLLAMA_MODELS=' <store>' (Llama there), Apache in the home store"
+
+
+@scenario(clears=True, env='\t"\'{models}\'" ')
+def env_models_quoted_apache(root):
+    home = root.parent / ".ollama" / "models"
+    link(root, mf(root, weights=b"apache-w"))
+    link(home, mf(home, licenses=(LLAMA,), weights=b"llama-w"))
+    return "qwen3.5:4b", "OLLAMA_MODELS padded and quoted twice, naming an Apache store; Llama in the home store"
+
+
+@scenario(clears=True, env=' "" ')
+def env_models_empty_after_trim(root):
+    home = root.parent / ".ollama" / "models"
+    link(home, mf(home))
+    return "qwen3.5:4b", 'OLLAMA_MODELS=\' "" \' (empty once trimmed: the home store), Apache there'
+
+
+@scenario(env="{models}")
+def env_models_home_only(root):
+    home = root.parent / ".ollama" / "models"
+    root.joinpath("blobs").mkdir()
+    link(home, mf(home))
+    return "qwen3.5:4b", "OLLAMA_MODELS names a store without the model; Apache only in the home store"
+
+
+# --- N3: a manifest Go's encoding/json cannot decode ------------------------------------------------------------
+@scenario
+def manifest_utf8_bom(root):
+    link(root, b"\xef\xbb\xbf" + mf(root))
+    return "qwen3.5:4b", "an Apache manifest written with a UTF-8 BOM"
+
+
+@scenario
+def manifest_utf16(root):
+    link(root, mf(root).decode().encode("utf-16"))
+    return "qwen3.5:4b", "an Apache manifest written as UTF-16 (with its BOM)"

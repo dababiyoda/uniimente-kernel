@@ -1,7 +1,7 @@
 {"provenance": {
- "build_script_sha256": "7918b62ec5998597ed2c1c8ef44aae0f7921e0e94d4dab921936b428966aad71",
+ "build_script_sha256": "358fbff35a9cc2f286e0e4ebf75f6e0d5ccd3d58291d005c9fe96e31f1321f04",
  "freeze": "tests/fixtures/ollama_oracle/freeze.py",
- "frozen": "2026-11-04",
+ "frozen": "2026-11-05",
  "ollama": {
   "main": "https://github.com/ollama/ollama/tree/e9fde36d75fea66579d84099956ce1430792737a",
   "v040": "https://github.com/ollama/ollama/tree/0d0720e51fb2fd9aa58781c3d720c06d720c2e7b"
@@ -11,8 +11,8 @@
   "v040": "go1.24.7"
  },
  "oracle_sha256": {
-  "main": "0ebedbbc98483eeb114fcbb6a3d4692da39aec49410722b1ea0a4ef8b1661dfc",
-  "v040": "08b5611dc4fb072f3e17d4eeb75ae8e0888c505adb3eb2567ebda5cadf74ecfe"
+  "main": "4c434f68d76e280a39fd5c57c49322e93ffc8df14148fcfd9285cc84d9a759c7",
+  "v040": "f8d180a8e3276732c58523ea6eed0718422e4e6038cd9d558e6f68175f840e18"
  },
  "oracle_template_sha256": "0f42b0ecbe17705ef73447a8168e143d213429c026864a70b0460e282601753c",
  "platform": "linux/x86_64",
@@ -23,6 +23,7 @@
     "request": "qwen3.5:4b"
    ,"label": "v2 link, Apache"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "9d5a78dcda63ba80b538d22748a6ee43ea67b82618fcb1ecf15304cee8865e90"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -32,6 +33,7 @@
     "request": "qwen3.5:4b"
    ,"label": "v2 link + downgrade anchor, Apache"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "07a63e56089cb3f3ddab947f0656ed23bdab299343ca262fb9f8294b1fb0585b"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -41,6 +43,7 @@
     "request": "qwen3.5:4b"
    ,"label": "config with empty digest"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "20a6141cd358fad3c5b7a844bd61339e735e6022e3183ec7a380a103c592c406"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -50,6 +53,7 @@
     "request": "qwen3.5:4b"
    ,"label": "config blob missing"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "4da4119f1193c7f2f571fa937016677da42e043f90259dde54ae1ad202cfa8ab"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -59,6 +63,7 @@
     "request": "qwen3.5:4b"
    ,"label": "dangling v2 link + Apache legacy"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "31e2ebe9ff7dcab01b551847943d28b456ae605489a49ddc1e2361cd3413a510"
    ,"runs": {"main/-":1,"main/ggml":1,"main/llamacpp":1,"main/mlx":1,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -69,6 +74,7 @@
     "request": "deadbeefcafe"
    ,"label": "a 12-hex name with no matching blob"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "b5d7606cd8e55656c3c481e030fe24809b171f47401f1f710ad0bf6afc8a08da"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -78,6 +84,7 @@
     "request": "qwen3.5:4b"
    ,"label": "two config keys (relay first, plain last)"
    ,"relays": ["sha256:cff185ba32ddc0efdb32649fa369442d068509dca95cc374af471d2beb0faf37"]
+   ,"ollama_models": "{models}"
    ,"fingerprint": "051b7fb4cebfd9f90105d46ffb17982bae4cda7a9b41d3b6ffa546cdc9e380ad"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":2,"main/mlx":1,"v040/-":0,"v040/ggml":0,"v040/llamacpp":2,"v040/mlx":1}
    ,"served": [
@@ -85,10 +92,81 @@
     ,{"error":"no compatible manifest found for runners: mlx"}
     ,{"error":"no compatible manifest found for runners: llamacpp"}
    ]}
+  ,"env_models_double_quoted": {
+    "request": "qwen3.5:4b"
+   ,"label": "OLLAMA_MODELS=\"<store>\" (Llama there), Apache in the home store"
+   ,"relays": []
+   ,"ollama_models": "\"{models}\""
+   ,"fingerprint": "7ef209adf084d70da8374a8e2cfa44950e7d26b3118bbc4e3b3ea773abacbb64"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"config":"","digest":"147e5cf9e7668b1ac1d1e0ad683ebcdb3c9e19483a97e68b51181ed8ab3b46fe","layers":[["application/vnd.ollama.image.model","sha256:363ebc36c2dde5216988343e15bd92938275fa74d43441232c95b63a72a963a1"],["application/vnd.ollama.image.license","sha256:3ebad2bb01ab03291da30ea463fb1c1f1096e0fb922831f1c124f9e34dc5aa8a"]],"runner":"","selected":"147e5cf9e7668b1ac1d1e0ad683ebcdb3c9e19483a97e68b51181ed8ab3b46fe"}
+   ]}
+  ,"env_models_empty_after_trim": {
+    "request": "qwen3.5:4b"
+   ,"label": "OLLAMA_MODELS=' \"\" ' (empty once trimmed: the home store), Apache there"
+   ,"relays": []
+   ,"ollama_models": " \"\" "
+   ,"fingerprint": "4a3e64553eeda0a720a7f205c9d04e55870d2ff1405ba70bb6715678807ceb30"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"config":"","digest":"5ea7f334d0fc048ad08bdd19234466ff853aa35a604d336f721908a3eed1b25a","layers":[["application/vnd.ollama.image.model","sha256:8a46a62632e21d0c832005a28cb86dfd5921227920a84939ba90bf55f9f3b737"],["application/vnd.ollama.image.license","sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"]],"runner":"","selected":"5ea7f334d0fc048ad08bdd19234466ff853aa35a604d336f721908a3eed1b25a"}
+   ]}
+  ,"env_models_home_only": {
+    "request": "qwen3.5:4b"
+   ,"label": "OLLAMA_MODELS names a store without the model; Apache only in the home store"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "88e58fc4b032f0660ecec1c296f4f12a033780c975242f3a80e1eaca60404a57"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"file does not exist"}
+   ]}
+  ,"env_models_leading_space": {
+    "request": "qwen3.5:4b"
+   ,"label": "OLLAMA_MODELS=' <store>' (Llama there), Apache in the home store"
+   ,"relays": []
+   ,"ollama_models": " {models}"
+   ,"fingerprint": "7ef209adf084d70da8374a8e2cfa44950e7d26b3118bbc4e3b3ea773abacbb64"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"config":"","digest":"147e5cf9e7668b1ac1d1e0ad683ebcdb3c9e19483a97e68b51181ed8ab3b46fe","layers":[["application/vnd.ollama.image.model","sha256:363ebc36c2dde5216988343e15bd92938275fa74d43441232c95b63a72a963a1"],["application/vnd.ollama.image.license","sha256:3ebad2bb01ab03291da30ea463fb1c1f1096e0fb922831f1c124f9e34dc5aa8a"]],"runner":"","selected":"147e5cf9e7668b1ac1d1e0ad683ebcdb3c9e19483a97e68b51181ed8ab3b46fe"}
+   ]}
+  ,"env_models_quoted_apache": {
+    "request": "qwen3.5:4b"
+   ,"label": "OLLAMA_MODELS padded and quoted twice, naming an Apache store; Llama in the home store"
+   ,"relays": []
+   ,"ollama_models": "\t\"'{models}'\" "
+   ,"fingerprint": "cb520595ee84ea03afe5cb764d07e50d5fe4764839152537696b80012ec62d3e"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"config":"","digest":"8688bd2137897fff9c9636e5d84aee2ba4ff0ab8186d96b91bec03bc1df112de","layers":[["application/vnd.ollama.image.model","sha256:ab0f9da9fedcab8be87d5ee90455e6f6a00e48646efc233b041920f9f3d8d563"],["application/vnd.ollama.image.license","sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"]],"runner":"","selected":"8688bd2137897fff9c9636e5d84aee2ba4ff0ab8186d96b91bec03bc1df112de"}
+   ]}
+  ,"env_models_single_quoted": {
+    "request": "qwen3.5:4b"
+   ,"label": "OLLAMA_MODELS='<store>' (Llama there), Apache in the home store"
+   ,"relays": []
+   ,"ollama_models": "'{models}'"
+   ,"fingerprint": "7ef209adf084d70da8374a8e2cfa44950e7d26b3118bbc4e3b3ea773abacbb64"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"config":"","digest":"147e5cf9e7668b1ac1d1e0ad683ebcdb3c9e19483a97e68b51181ed8ab3b46fe","layers":[["application/vnd.ollama.image.model","sha256:363ebc36c2dde5216988343e15bd92938275fa74d43441232c95b63a72a963a1"],["application/vnd.ollama.image.license","sha256:3ebad2bb01ab03291da30ea463fb1c1f1096e0fb922831f1c124f9e34dc5aa8a"]],"runner":"","selected":"147e5cf9e7668b1ac1d1e0ad683ebcdb3c9e19483a97e68b51181ed8ab3b46fe"}
+   ]}
+  ,"env_models_trailing_space": {
+    "request": "qwen3.5:4b"
+   ,"label": "OLLAMA_MODELS='<store> ' (Llama there), Apache in the home store"
+   ,"relays": []
+   ,"ollama_models": "{models} "
+   ,"fingerprint": "7ef209adf084d70da8374a8e2cfa44950e7d26b3118bbc4e3b3ea773abacbb64"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"config":"","digest":"147e5cf9e7668b1ac1d1e0ad683ebcdb3c9e19483a97e68b51181ed8ab3b46fe","layers":[["application/vnd.ollama.image.model","sha256:363ebc36c2dde5216988343e15bd92938275fa74d43441232c95b63a72a963a1"],["application/vnd.ollama.image.license","sha256:3ebad2bb01ab03291da30ea463fb1c1f1096e0fb922831f1c124f9e34dc5aa8a"]],"runner":"","selected":"147e5cf9e7668b1ac1d1e0ad683ebcdb3c9e19483a97e68b51181ed8ab3b46fe"}
+   ]}
   ,"hardlinked_v2": {
     "request": "qwen3.5:4b"
    ,"label": "v2 entry hard-linked to its blob"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "6cd52d794823cb22e92e8020eaeafac22225d10ffceeeb7fcbad2ee6230af18f"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -98,6 +176,7 @@
     "request": "myhost:5000/ns/m:t"
    ,"label": "host:port, legacy under %3A"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "b55db5c3c6206c19c0403b21db0deb225cba17c4da4806c30a92410c9b791f40"
    ,"runs": {"main/-":1,"main/ggml":1,"main/llamacpp":1,"main/mlx":1,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -108,6 +187,7 @@
     "request": "myhost:5000/ns/m:t"
    ,"label": "host:port, legacy under literal colon"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "d356b5a4b4e30f594fa8e8af757e58c5c074fa593b3f7c1c047afcd4d456b938"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -117,6 +197,7 @@
     "request": "myhost:5000/ns/m:t"
    ,"label": "host:port, v2 under %3A"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "a412786138ac4ccc23782926a8bf3ea3aa7004da0b1655bda06945523448125f"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -126,6 +207,7 @@
     "request": "myhost:5000/ns/m:t"
    ,"label": "host:port, v2 under a literal colon"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "422d7ce63d8a2a1decf32ba40d0ce1e0e95d548f2e6d2cbd4324c9da8e17b54d"
    ,"runs": {"main/-":1,"main/ggml":1,"main/llamacpp":1,"main/mlx":1,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -136,6 +218,7 @@
     "request": "myhost:5000/ns/m:t"
    ,"label": "host:port, v2 under %3a"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "18062af3367eec35dfd4738e904f248792c50885e89ff7da0b3bd7aefc32afd1"
    ,"runs": {"main/-":1,"main/ggml":1,"main/llamacpp":1,"main/mlx":1,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -146,6 +229,7 @@
     "request": "qwen3.5:4b"
    ,"label": "relay config under 'Config'"
    ,"relays": ["sha256:cff185ba32ddc0efdb32649fa369442d068509dca95cc374af471d2beb0faf37"]
+   ,"ollama_models": "{models}"
    ,"fingerprint": "0b6c5a7451f99abfe3c852f029c15aafc06eef9e1fae7a1c2a8e88053c9c880c"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -155,6 +239,7 @@
     "request": "qwen3.5:4b"
    ,"label": "a relay 'config', then a second 'config' without a digest (Go merges the two)"
    ,"relays": ["sha256:cff185ba32ddc0efdb32649fa369442d068509dca95cc374af471d2beb0faf37"]
+   ,"ollama_models": "{models}"
    ,"fingerprint": "5f660e5dc19a909fde96b1ce8987794bd07ca3f338658a9dd1b51008b57b079f"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -164,6 +249,7 @@
     "request": "qwen3.5:4b"
    ,"label": "manifest with 'layers' (Apache) and 'Layers' (Llama)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "e5908ace1490eac8bb97968703ae71b274f15cf10815fce34ef971db8fcbb89d"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -173,6 +259,7 @@
     "request": "qwen3.5:4b"
    ,"label": "'layers' twice, spelled the same (Llama, then Apache)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "0ddf4feb9a7111ab033731cbba8b39445ee55f96cabef08a9a74a8e1a1653eec"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -182,6 +269,7 @@
     "request": "qwen3.5:4b"
    ,"label": "an adapter layer spelled MediaType"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "b0fa0d6b1088c63e1395f4e3bd2048c0580e8a7e846a06f7e563a50194cc058c"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -191,6 +279,7 @@
     "request": "qwen3.5:4b"
    ,"label": "a license layer spelled MediaType/Digest (Llama)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "a92ec632d11cb5804f7bad99782b59fc8dfded298b166bcf48ab110d45fe8287"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -200,6 +289,7 @@
     "request": "qwen3.5:4b"
    ,"label": "a license layer with digest (Apache) and Digest (Llama)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "22bd8c6b995910255708d1fd5746e8a5cdaa12b4e739ff198ddff8da54b2d7ae"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -209,6 +299,7 @@
     "request": "qwen3.5:4b"
    ,"label": "list entries with digest (Apache child) and Digest (Llama child)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "335e6f0dbc4f9dec769cd01364062d22b084f240a96b135ebe0db2e0cce16a3a"
    ,"runs": {"main/-":0,"main/ggml":2,"main/llamacpp":0,"main/mlx":1,"v040/-":0,"v040/ggml":2,"v040/llamacpp":0,"v040/mlx":1}
    ,"served": [
@@ -220,6 +311,7 @@
     "request": "qwen3.5:4b"
    ,"label": "list entries naming an Apache blob but carrying 'Layers' (Llama)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "fddf6690f40d8920d751f77e57d19ae5dc1c37ae17b35830eb20a0b520c641c4"
    ,"runs": {"main/-":0,"main/ggml":2,"main/llamacpp":0,"main/mlx":1,"v040/-":0,"v040/ggml":2,"v040/llamacpp":0,"v040/mlx":1}
    ,"served": [
@@ -231,6 +323,7 @@
     "request": "qwen3.5:4b"
    ,"label": "list with manifests (Apache) and Manifests (Llama)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "2d14ef05ac35c70f4fe89109a7eb7ba0fcf4eafa6fb34cb6c2793ca26728491e"
    ,"runs": {"main/-":0,"main/ggml":2,"main/llamacpp":0,"main/mlx":1,"v040/-":0,"v040/ggml":2,"v040/llamacpp":0,"v040/mlx":1}
    ,"served": [
@@ -242,6 +335,7 @@
     "request": "qwen3.5:4b"
    ,"label": "'layers' (Apache) then 'layerſ' (U+017F) (Llama)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "afef7a611813dd15dfc37e22b76d489eb24facf698c108c2999fce30b6b3572c"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -251,6 +345,7 @@
     "request": "qwen3.5:4b"
    ,"label": "a list with 'manifests' (Apache) then 'manifeſts' (U+017F) (Llama)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "36a273650f6a7df639300a1d48fe1b24047b75484b3f1b1c57302289526ee6a0"
    ,"runs": {"main/-":0,"main/ggml":2,"main/llamacpp":0,"main/mlx":1,"v040/-":0,"v040/ggml":2,"v040/llamacpp":0,"v040/mlx":1}
    ,"served": [
@@ -262,6 +357,7 @@
     "request": "qwen3.5:4b"
    ,"label": "a relay config whose host key is spelled remote_hoſt (U+017F)"
    ,"relays": ["sha256:c49abbc1f026e5afa4d71d2011f6da7506afefb6a9c7c4f4b5cb348db34a3f84"]
+   ,"ollama_models": "{models}"
    ,"fingerprint": "1647d408be445785cf6a4debef7c5bb47bb7650b7d4abf193cee20fd71b8049d"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -271,6 +367,7 @@
     "request": "qwen3.5:4b"
    ,"label": "relay config with Remote_Host/Remote_Model keys"
    ,"relays": ["sha256:ca876ee7110440e9bd7e811ba4f72ef190ee1a0c2466f769fa933543aadd7693"]
+   ,"ollama_models": "{models}"
    ,"fingerprint": "e465f305609a84eeaa6cd74ee62b670d9987fd3799c6f449f9e33a511c4cce6a"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -280,6 +377,7 @@
     "request": "qwen3.5:4b"
    ,"label": "mediaType=docker then MediaType=list"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "40567cc65535bd4c4e6615e637b29cae69fe03814b8ca72a8b6b1e651e8bb039"
    ,"runs": {"main/-":0,"main/ggml":2,"main/llamacpp":0,"main/mlx":1,"v040/-":0,"v040/ggml":2,"v040/llamacpp":0,"v040/mlx":1}
    ,"served": [
@@ -291,6 +389,7 @@
     "request": "qwen3.5:4b"
    ,"label": "top-level MediaType=list (Go) beside Apache 'layers' (Python)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "9e6af557fcce14e68adae15d84eed6f1d871cbbdb0c28c9d4e32a009d35b4121"
    ,"runs": {"main/-":0,"main/ggml":2,"main/llamacpp":0,"main/mlx":1,"v040/-":0,"v040/ggml":2,"v040/llamacpp":0,"v040/mlx":1}
    ,"served": [
@@ -302,6 +401,7 @@
     "request": "qwen3.5:4b"
    ,"label": "legacy only (Ollama 0.35 store)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "e20a808905f986d942774492e5248179c91a20762d52ced85591d839232cbc24"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -311,6 +411,7 @@
     "request": "qwen3.5:4b"
    ,"label": "legacy only, under ollama.com"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "c01b51ade07808c86297fa4be5e6c16b4b1fb8193e83f13f9afa88f5075128fb"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -320,6 +421,7 @@
     "request": "qwen3.5:4b"
    ,"label": "list, two Apache children"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "bc3d54f7adba57e64017c6e3361367757e98306574d9174e4ad8274b199693e7"
    ,"runs": {"main/-":0,"main/ggml":2,"main/llamacpp":0,"main/mlx":1,"v040/-":0,"v040/ggml":2,"v040/llamacpp":0,"v040/mlx":1}
    ,"served": [
@@ -331,6 +433,7 @@
     "request": "qwen3.5:4b"
    ,"label": "a child blob that is itself a list"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "0f4f6f4aef6264eedc30bccb36ed9847013cd152ed8949ae8e9c563e577aad27"
    ,"runs": {"main/-":0,"main/ggml":2,"main/llamacpp":0,"main/mlx":1,"v040/-":0,"v040/ggml":2,"v040/llamacpp":0,"v040/mlx":1}
    ,"served": [
@@ -342,6 +445,7 @@
     "request": "qwen3.5:4b"
    ,"label": "a child digest spelled sha256-<hex> (unlicensed) and an Apache child"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "1494e60f24f526626676139374aa9be2f537cfe2dfa235995d63a256d7d62ab9"
    ,"runs": {"main/-":0,"main/ggml":2,"main/llamacpp":0,"main/mlx":1,"v040/-":0,"v040/ggml":2,"v040/llamacpp":0,"v040/mlx":1}
    ,"served": [
@@ -353,6 +457,7 @@
     "request": "qwen3.5:4b"
    ,"label": "list children without mediaType"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "9b557bee64fb3557406197807474d1109424f6343b3dbdd567be08c072927a9c"
    ,"runs": {"main/-":0,"main/ggml":2,"main/llamacpp":0,"main/mlx":1,"v040/-":0,"v040/ggml":2,"v040/llamacpp":0,"v040/mlx":1}
    ,"served": [
@@ -364,6 +469,7 @@
     "request": "qwen3.5:4b"
    ,"label": "an OCI-typed child (unlicensed) Ollama skips, then Apache"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "2dfea51482b426dfab97438a4e8ef399d1565d2e117e3a937efedd9a56bd72c7"
    ,"runs": {"main/-":0,"main/ggml":2,"main/llamacpp":0,"main/mlx":1,"v040/-":0,"v040/ggml":2,"v040/llamacpp":0,"v040/mlx":1}
    ,"served": [
@@ -375,6 +481,7 @@
     "request": "qwen3.5:4b"
    ,"label": "an unlicensed child whose blob is a link"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "29487d3d006e16be17bbdcfed27c2761aa4c68a3eb1f3e5dcc549e184f3cdfc2"
    ,"runs": {"main/-":0,"main/ggml":2,"main/llamacpp":0,"main/mlx":1,"v040/-":0,"v040/ggml":2,"v040/llamacpp":0,"v040/mlx":1}
    ,"served": [
@@ -386,6 +493,7 @@
     "request": "qwen3.5:4b"
    ,"label": "an mlx child with tensor and draft layers"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "e8f131f353ed06efab9fef6a6658c4bff675b93ec4cf650fb3c895e58bfe49fd"
    ,"runs": {"main/-":0,"main/ggml":2,"main/llamacpp":1,"main/mlx":0,"v040/-":0,"v040/ggml":2,"v040/llamacpp":1,"v040/mlx":0}
    ,"served": [
@@ -397,6 +505,7 @@
     "request": "qwen3.5:4b"
    ,"label": "a child digest in upper-case hex (unlicensed) and an Apache child"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "dcd1fe099f6ae17fe2722ae96164bfa1d4d801e155ec9b1fa2c18fdb848e6345"
    ,"runs": {"main/-":0,"main/ggml":2,"main/llamacpp":0,"main/mlx":1,"v040/-":0,"v040/ggml":2,"v040/llamacpp":0,"v040/mlx":1}
    ,"served": [
@@ -408,6 +517,7 @@
     "request": "qwen3.5:4b"
    ,"label": "an empty list"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "f628f7726219c8fe1b985693beab1e88f28eb9e231c2cdac4a203be5b1ab0261"
    ,"runs": {"main/-":0,"main/ggml":3,"main/llamacpp":2,"main/mlx":1,"v040/-":0,"v040/ggml":3,"v040/llamacpp":2,"v040/mlx":1}
    ,"served": [
@@ -420,6 +530,7 @@
     "request": "qwen3.5:4b"
    ,"label": "list entries naming an Apache blob and carrying a config of their own"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "0bbb28514ddd8494e97f2f2573f2bf50dcb5f7ddf865718d49cecfdf34233034"
    ,"runs": {"main/-":0,"main/ggml":2,"main/llamacpp":0,"main/mlx":1,"v040/-":0,"v040/ggml":2,"v040/llamacpp":0,"v040/mlx":1}
    ,"served": [
@@ -431,6 +542,7 @@
     "request": "qwen3.5:4b"
    ,"label": "first llamacpp child absent, second llamacpp child Apache"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "bedc1e80cc0b64e887b73baf09b17d5b2e958078af3cd712f77508f2c0e95db0"
    ,"runs": {"main/-":0,"main/ggml":2,"main/llamacpp":1,"main/mlx":0,"v040/-":0,"v040/ggml":2,"v040/llamacpp":1,"v040/mlx":0}
    ,"served": [
@@ -442,6 +554,7 @@
     "request": "qwen3.5:4b"
    ,"label": "runner alias llama.cpp (Apache) and llamacpp (Llama)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "9ed2929875363acdf34b1822e74be09dc5c5bc9b439a391ee0e3877166058775"
    ,"runs": {"main/-":0,"main/ggml":2,"main/llamacpp":0,"main/mlx":1,"v040/-":0,"v040/ggml":2,"v040/llamacpp":0,"v040/mlx":1}
    ,"served": [
@@ -453,6 +566,7 @@
     "request": "qwen3.5:4b"
    ,"label": "list children whose runners are 'LlamaCPP' and ' MLX '"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "fbcdba4dd688cc82a2eb70947786a0ad19fde2b15762924082bc8b64a8318e50"
    ,"runs": {"main/-":0,"main/ggml":2,"main/llamacpp":0,"main/mlx":1,"v040/-":0,"v040/ggml":2,"v040/llamacpp":0,"v040/mlx":1}
    ,"served": [
@@ -464,6 +578,7 @@
     "request": "qwen3.5:4b"
    ,"label": "list with top-level Llama layers"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "c6a72e4f871404f6b18784324a9faae5dfec9069f5d785e1c58a537c764423f4"
    ,"runs": {"main/-":0,"main/ggml":2,"main/llamacpp":0,"main/mlx":1,"v040/-":0,"v040/ggml":2,"v040/llamacpp":0,"v040/mlx":1}
    ,"served": [
@@ -471,10 +586,31 @@
     ,{"error":"no compatible manifest found for runners: mlx"}
     ,{"error":"no compatible manifest found for runners: ggml"}
    ]}
+  ,"manifest_utf16": {
+    "request": "qwen3.5:4b"
+   ,"label": "an Apache manifest written as UTF-16 (with its BOM)"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "2b7d1520a7185e85fc4719c7d748897886544960e07dbec463ba9e26659a58f2"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"invalid character 'ÿ' looking for beginning of value"}
+   ]}
+  ,"manifest_utf8_bom": {
+    "request": "qwen3.5:4b"
+   ,"label": "an Apache manifest written with a UTF-8 BOM"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "056c7fc7572ca4182c5d12ea5f649da2d8a22de56d102629ae84af15014ea481"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"invalid character 'ï' looking for beginning of value"}
+   ]}
   ,"name_alias_ggml_upper_dash": {
     "request": "Ggml:SHA256-1F41F13B7E17638E7F40CB67BD134BD1C8AE0AB15A3748640AC6C79877C61D2A"
    ,"label": "Ggml:SHA256-<64 HEX>: named manifest Apache, blob Llama"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "5e1fb1e5e6c99700470b15f3d0f3c47ff388f9aadf24c57b768015a9496cd8d7"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -484,6 +620,7 @@
     "request": "llama.cpp:1f41f13b7e17"
    ,"label": "llama.cpp:<12 hex>: named manifest Apache, blob Llama"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "1d7b68a746714a16f0a1d9b5f3be0d9a2b45f6a014477f8a9cf204629b223280"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -493,6 +630,7 @@
     "request": "llama_cpp:1f41f13b7e17638e7f40cb67bd134bd1c8ae0ab15a3748640ac6c79877c61d2a"
    ,"label": "llama_cpp:<64 hex>: named manifest Apache, blob Llama"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "77f53fbfd8b16706aac89dfcb5223fc9657290e39cc8b364f86c5cd312993203"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -502,6 +640,7 @@
     "request": "MLXRUNNER:1f41f13b7e17638e7f40cb67bd134bd1c8ae0ab15a3748640ac6c79877c61d2a"
    ,"label": "MLXRUNNER:<64 hex>: named manifest Apache, blob Llama"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "835848b099a69ab429b3b281881517304326e77bd01c8f5fcfe294fe772a2d43"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -511,6 +650,7 @@
     "request": "qwen3.5:4b-cloud"
    ,"label": "a local Apache manifest under tag 4b-cloud (Ollama: cloud source)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "c5709294f0ea7ae1232d29475d9da594afa08542a9b635d1984dbe9e27cfdcb8"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -520,6 +660,7 @@
     "request": "qwen3.5:4b-Cloud"
    ,"label": "a local Apache manifest under tag 4b-Cloud (Ollama: cloud source)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "1a351a73bd668691c6931f5c62f350245b636b550444af9cc1bc6abf3da9ae1c"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -529,6 +670,7 @@
     "request": "qwen3.5:4b-CLOUD"
    ,"label": "a local Apache manifest under tag 4b-CLOUD (Ollama: cloud source)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "c096bc64a811f8a4b1da9e40424531c9513f9606e83f67f255b6850204f21094"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -538,6 +680,7 @@
     "request": "qwen3.5:CLOUD"
    ,"label": "a local Apache manifest under tag CLOUD (Ollama: cloud source)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "5afe8b9308ab30cdf04973eb018d8f096c4ea774a715cac2a84935617997adb7"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -547,6 +690,7 @@
     "request": "qwen-cloud"
    ,"label": "qwen-cloud with no tag: Ollama reads a local model of that name"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "a6f5efb97eb059b1a13758f14e31c45ac0c075b8b848373ad03152ab39bef764"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -556,6 +700,7 @@
     "request": "Library/1f41f13b7e17638e7f40cb67bd134bd1c8ae0ab15a3748640ac6c79877c61d2a"
    ,"label": "Library/<64 hex>: named manifest Apache, blob Llama"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "d89d084fb1308cca04cea3e55068ca934576084be341fdf164135668e2988755"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -565,6 +710,7 @@
     "request": "REGISTRY.OLLAMA.AI/LIBRARY/1f41f13b7e17638e7f40cb67bd134bd1c8ae0ab15a3748640ac6c79877c61d2a:LATEST"
    ,"label": "fully qualified, upper-cased digest name"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "d89d084fb1308cca04cea3e55068ca934576084be341fdf164135668e2988755"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -574,6 +720,7 @@
     "request": "1f41f13b7e17638e7f40cb67bd134bd1c8ae0ab15a3748640ac6c79877c61d2a:Latest"
    ,"label": "<64 hex>:Latest: named manifest Apache, blob Llama"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "db343c55b58ec0c6f10bf1b8b17e7391da515567414478ad497a1dda4b5bfeca"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -583,6 +730,7 @@
     "request": "qwen3.5:4b:local"
    ,"label": "qwen3.5:4b:local: Ollama serves qwen3.5:4b (Llama)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "b6d9f96362a9ce178a47d514165ee18fd0be854e7856f4e68e70c88c2b51085f"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -592,6 +740,7 @@
     "request": "qwen3.5:LOCAL"
    ,"label": "tag LOCAL (Apache) beside latest (Llama): Ollama strips ':LOCAL'"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "94694111dfbb786887f931d8f636e7a9545efa32e36018f327417dbba2dc7c6b"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -601,6 +750,7 @@
     "request": "mlx:sha256-1f41f13b7e17638e7f40cb67bd134bd1c8ae0ab15a3748640ac6c79877c61d2a"
    ,"label": "mlx:sha256-<64 hex>: named manifest Apache, blob Llama"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "2693f605704ce1234cea27d8c58dfeb575675f34d0a7ce16fd07adc62ec011fd"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -610,6 +760,7 @@
     "request": "llamacpp:1f41f13b7e17"
    ,"label": "llamacpp:<12 hex>: named manifest Apache, blob sha256-<hex>.. Llama"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "bafd3e7a3d3273f0994f08d819f57b66c168bbcd1055dcd2bd11bde8986a45fa"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -619,6 +770,7 @@
     "request": "llamacpp:abcdefabcdef"
    ,"label": "llamacpp:<12 hex> that no blob begins with: Ollama reads the named manifest"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "538fbd88473fc34380d6cde164e75da33fbfd0dd40f47c63c964e9ca81d9c639"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -628,6 +780,7 @@
     "request": "sha256:1f41f13b7e17638e7f40cb67bd134bd1c8ae0ab15a3748640ac6c79877c61d2a"
    ,"label": "sha256:<64 hex>: named manifest Apache, blob Llama"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "39d4f845e67bedf842421a7502f0cf9d131437e44370d51c47c12033bee26c9f"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -637,6 +790,7 @@
     "request": "SHA256-1F41F13B7E17638E7F40CB67BD134BD1C8AE0AB15A3748640AC6C79877C61D2A"
    ,"label": "SHA256-<64 HEX>: named manifest Apache, blob Llama"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "b0e8e00d3989a61aa7882cfb5a359b4d6032a10f98c51bfd919e0f7a2f3bbeaa"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -646,6 +800,7 @@
     "request": "qwen3.5:4b"
    ,"label": "plain manifest with projector and adapter"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "2d3c05616d88d34c4d7ffa642a022c766133335de9578bb67fc71aef05374760"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -655,6 +810,7 @@
     "request": "Qwen3.5:4b"
    ,"label": "R4b: request Qwen3.5:4b, store holds qwen3.5 v2 only"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "9d5a78dcda63ba80b538d22748a6ee43ea67b82618fcb1ecf15304cee8865e90"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -664,6 +820,7 @@
     "request": "REGISTRY.OLLAMA.AI/LIBRARY/QWEN3.5:4B"
    ,"label": "R4b': everything upper-cased"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "9d5a78dcda63ba80b538d22748a6ee43ea67b82618fcb1ecf15304cee8865e90"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -673,6 +830,7 @@
     "request": "ollama.com/library/qwen3.5:4b"
    ,"label": "explicit ollama.com host, stored Qwen3.5"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "9dec95df90d124121e8fc6cff61f7eafe9a18dd4d813cba926d820ecefc5e109"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -682,6 +840,7 @@
     "request": "qwen3.5:4b"
    ,"label": "v2 stored under Ollama.com"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "325c19d3fca85271f22a9a9febbec45e1067895e71e62c7cd36130396081c6b8"
    ,"runs": {"main/-":1,"main/ggml":1,"main/llamacpp":1,"main/mlx":1,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -692,6 +851,7 @@
     "request": "qwen3.5:4b"
    ,"label": "a config naming a remote host and no remote model (Ollama runs the local weights)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "119e0c11d3b17a3485661e7bf214349fa502eef1b251b262ebbe08131972c244"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -701,6 +861,7 @@
     "request": "kimi:4b"
    ,"label": "the only entry is stored as Kimi (U+212A, Kelvin sign)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "50d7a9ac85a317da12f28683b38ecd67db46b9236687175da235a5ebac1e24d3"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -710,6 +871,7 @@
     "request": "qwen3.5:4b"
    ,"label": "v2 link to a blob that is itself a link out of the store"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "b5743818e19c9d8b0bb8045d251dfe533cf63475d46badfa23b547e96b7a5c8b"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -719,6 +881,7 @@
     "request": "qwen3.5:4b"
    ,"label": "manifests-v2/ollama.com is a link to a directory outside the store"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "7328930ac568efbd1f74af00708e967ac1544d57cbc0ba06bf2a59e9d5d9e8dc"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -728,6 +891,7 @@
     "request": "qwen3.5:4b"
    ,"label": "v2 under both registry spellings (Llama at registry.ollama.ai)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "c737b92f5bb78806cb27afa68782e15b82cc414dcae6ef13faf8958c56a15a14"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -737,6 +901,7 @@
     "request": "qwen3.5:4b"
    ,"label": "v2 link to sha256-<UPPER HEX> blob"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "106cbf75b9ba06f443aaf2a4774b69d5056ba8db1eb3192d20a51eeed654ff63"
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
@@ -746,6 +911,7 @@
     "request": "qwen3.5:4b"
    ,"label": "v2 link to another v2 link (chain to a blob)"
    ,"relays": []
+   ,"ollama_models": "{models}"
    ,"fingerprint": "90074ce32dc62c369c90f358d20f4ecb215fe46013ff42a4856a9fea73a085ec"
    ,"runs": {"main/-":1,"main/ggml":1,"main/llamacpp":1,"main/mlx":1,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [

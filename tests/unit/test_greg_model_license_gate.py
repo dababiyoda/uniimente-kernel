@@ -162,7 +162,7 @@ def test_the_legacy_tree_is_read_under_either_spelling_of_the_default_registry(t
     assert licensing.ollama_model("qwen3.5:4b", root)["verdict"] == "CLEARED"
     root = tmp_path / "b"
     legacy(root, manifest(root, (APACHE,)))
-    assert licensing.ollama_model("ollama.com/library/qwen3.5:4b", root)["verdict"] == "CLEARED"
+    assert licensing.ollama_model("registry.ollama.ai/library/qwen3.5:4b", root)["verdict"] == "CLEARED"
     dangling = root / "manifests-v2" / "ollama.com" / "library" / "qwen3.5" / "4b"
     dangling.parent.mkdir(parents=True)
     dangling.symlink_to("../../../../blobs/sha256-" + "1" * 64)
@@ -206,10 +206,26 @@ def test_a_name_is_matched_to_the_stored_one_ignoring_case_as_ollama_does(tmp_pa
     root = tmp_path / "v2only"
     digest = link(root, manifest(root, (APACHE,)))
     (root / "manifests-v2" / "ollama.com" / "library" / "QWEN3.5" / "4b").mkdir(parents=True)   # not a manifest
-    for name in ("Qwen3.5:4B", "Registry.Ollama.AI/library/qwen3.5:4b", "OLLAMA.COM/Library/QWEN3.5:4b"):
+    for name in ("Qwen3.5:4B", "Registry.Ollama.AI/library/qwen3.5:4b", "REGISTRY.OLLAMA.AI/Library/QWEN3.5:4b"):
         a = licensing.ollama_model(name, root)
         assert a is not None and a["verdict"] == "CLEARED", (name, a and a["reason"])
         assert a["subject"]["manifest_sha256"] == digest.split(":")[1]
+
+
+def test_a_name_under_the_host_ollama_com_is_held(tmp_path):
+    """Ollama main (e9fde36d) names local models registry.ollama.ai and finds none asked for under ollama.com, in any
+    case, so it would pull the name from the registry (the frozen oracle: r4b_explicit_ollama_com). v0.40.0 serves the
+    local one when the spelling matches; GREG holds both, and the same store clears without a host. On d1724006 every
+    one of these cleared."""
+    root = tmp_path / "models"
+    legacy(root, manifest(root, (APACHE,)))
+    link(root, manifest(root, (APACHE,)))
+    assert licensing.ollama_model("qwen3.5:4b", root)["verdict"] == "CLEARED"
+    for name in ("ollama.com/library/qwen3.5:4b", "OLLAMA.COM/Library/QWEN3.5:4b", "Ollama.Com/library/qwen3.5",
+                 "ollama.com/library/absent:1b"):
+        a = licensing.ollama_model(name, root)
+        assert a["held"] and "under the host ollama.com" in a["reason"], (name, a["reason"])
+        assert a["subject"]["manifest_sha256"] is None and a["subject"]["weights"] == [], a["subject"]
 
 
 def test_two_stored_names_that_differ_only_in_case_hold_the_model(tmp_path):
@@ -670,3 +686,67 @@ def test_stale_evidence_and_holds_never_ride_on_any_result_and_an_order_must_be_
             "reason": "the selection's order is not a list of routes, so no route is admitted",
             "manifest_sha256": None, "assessment_digest": None}}, held
     assert licensing.admit_model_selection(["ollama"], root) == ["ollama"]
+
+
+def two_stores(tmp_path: Path) -> tuple[Path, Path]:
+    """Llama under <tmp>/srv, Apache under HOME's default store <tmp>/home/.ollama/models."""
+    srv, home = tmp_path / "srv", tmp_path / "home" / ".ollama" / "models"
+    link(srv, manifest(srv, (LLAMA,), weights=b"llama weights"))
+    link(home, manifest(home, (APACHE,), weights=b"apache weights"))
+    return srv, home
+
+
+def test_ollama_models_is_read_as_envconfig_var_reads_it(tmp_path, monkeypatch):
+    """N1 (review of d1724006). Ollama reads OLLAMA_MODELS through envconfig.Var: strings.TrimSpace, then
+    strings.Trim of every leading and trailing " and ' (v0.40.0 and main). A Docker --env-file line
+    OLLAMA_MODELS="/srv" keeps its quotes; on d1724006 GREG took the quoted path, found nothing there and cleared the
+    home store's Apache copy while Ollama served the Llama manifest in /srv."""
+    srv, home = two_stores(tmp_path)
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    for value in (f'"{srv}"', f"'{srv}'", f"{srv} ", f" {srv}", f"\t\"'{srv}'\"\n", f"　{srv}\x85",
+                  f" {srv} "):
+        monkeypatch.setenv("OLLAMA_MODELS", value)
+        a = licensing.ollama_model("qwen3.5:4b")
+        assert a is not None and a["held"] and "llama-3.1" in a["reason"], (value, a and a["reason"])
+    monkeypatch.setenv("OLLAMA_MODELS", f'" {srv}"')     # Trim is last: the space inside the quotes stays
+    assert licensing.ollama_model("qwen3.5:4b") is None
+    for empty in ("", " ", '""', " '' ", "\"'\""):      # empty once trimmed: Ollama's default, HOME's store
+        monkeypatch.setenv("OLLAMA_MODELS", empty)
+        a = licensing.ollama_model("qwen3.5:4b")
+        assert a is not None and a["verdict"] == "CLEARED", (empty, a and a["reason"])
+
+
+def test_while_ollama_models_is_set_no_other_store_is_read(tmp_path, monkeypatch):
+    """N2 (review of d1724006). envconfig.Models returns OLLAMA_MODELS when it is set, with no fallback; Ollama
+    answers "not found" and a run would pull bytes GREG never read. On d1724006 GREG fell through to the home store."""
+    srv, home = two_stores(tmp_path)
+    (tmp_path / "empty" / "blobs").mkdir(parents=True)
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("OLLAMA_MODELS", str(tmp_path / "empty"))
+    assert licensing.ollama_model("qwen3.5:4b") is None
+    held = licensing.admit_model_selection({"order": ["ollama", "openai"], "ollama_model": "qwen3.5:4b"})
+    assert held["order"] == ["openai"] and "in no Ollama store" in held["model_license_hold"]["reason"], held
+    monkeypatch.delenv("OLLAMA_MODELS")
+    assert licensing.ollama_model("qwen3.5:4b")["verdict"] == "CLEARED"
+
+
+def test_a_manifest_go_cannot_decode_is_held(tmp_path):
+    """N3 (review of d1724006). Python's json.loads(bytes) takes a UTF-8 BOM, UTF-16 or UTF-32; Go's encoding/json
+    rejects them ("invalid character"), so Ollama runs nothing. On d1724006 each of these cleared."""
+    for i, encode in enumerate((lambda raw: b"\xef\xbb\xbf" + raw, lambda raw: raw.decode().encode("utf-16"),
+                                lambda raw: raw.decode().encode("utf-32"), lambda raw: raw.decode().encode("utf-16-le"))):
+        root = tmp_path / str(i)
+        link(root, encode(manifest(root, (APACHE,))))
+        a = licensing.ollama_model("qwen3.5:4b", root)
+        assert a["held"] and "not a readable Ollama manifest" in a["reason"], (i, a["reason"])
+    root = tmp_path / "config"
+    document = json.loads(manifest(root, (APACHE,)))
+    config = blob(root, b"\xef\xbb\xbf" + json.dumps({"model_format": "gguf"}).encode())
+    document["config"] = {"mediaType": "application/vnd.docker.container.image.v1+json", "digest": config, "size": 1}
+    link(root, json.dumps(document).encode())
+    assert licensing.ollama_model("qwen3.5:4b", root)["held"]
+    child = tmp_path / "child"
+    digest = blob(child, b"\xef\xbb\xbf" + manifest(child, (APACHE,)))
+    link(child, json.dumps({"schemaVersion": 2, "mediaType": MANIFEST_LIST,
+                            "manifests": [{"mediaType": DOCKER_V2, "digest": digest, "runner": "llamacpp"}]}).encode())
+    assert licensing.ollama_model("qwen3.5:4b", child)["held"]

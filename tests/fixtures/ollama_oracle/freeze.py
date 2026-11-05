@@ -4,8 +4,9 @@
     python -B -I tests/fixtures/ollama_oracle/freeze.py <oracle-dir>
 
 Each scenario is built in a fresh directory and both oracles (Ollama v0.40.0 0d0720e and main e9fde36d, see
-build_oracle.sh) are asked for its request name with no runner and with each runner. A temporary directory's path in
-an error is written as <dir>. Run it on Linux: with no runner, Ollama orders the runners by platform.
+build_oracle.sh) are asked for its request name with no runner and with each runner, with HOME=<dir> and
+OLLAMA_MODELS as scenarios.ENV says (<dir>/models unless it names another spelling). A temporary directory's path
+in an error is written as <dir>. Run it on Linux: with no runner, Ollama orders the runners by platform.
 """
 from __future__ import annotations
 
@@ -37,8 +38,13 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def ask(binary: Path, directory: Path, name: str, runner: str) -> dict:
-    env = {"PATH": os.environ.get("PATH", ""), "OLLAMA_MODELS": str(directory / "models"), "HOME": str(directory)}
+def models_env(scenarios, scenario: str, directory: Path) -> str:
+    """The OLLAMA_MODELS value a scenario runs under (scenarios.ENV, "{models}" standing for <dir>/models)."""
+    return scenarios.ENV.get(scenario, "{models}").replace("{models}", str(directory / "models"))
+
+
+def ask(binary: Path, directory: Path, name: str, runner: str, models: str) -> dict:
+    env = {"PATH": os.environ.get("PATH", ""), "OLLAMA_MODELS": models, "HOME": str(directory)}
     out = subprocess.run([str(binary), name, runner], capture_output=True, text=True, env=env, timeout=60)
     try:
         answer = json.loads(out.stdout.strip().splitlines()[-1])
@@ -76,11 +82,12 @@ def main() -> int:
             served, runs = [], {}
             for v in OLLAMA:
                 for r in RUNNERS:
-                    answer = ask(oracles[v], directory, name, r)
+                    answer = ask(oracles[v], directory, name, r, models_env(scenarios, fn.__name__, directory))
                     if answer not in served:
                         served.append(answer)
                     runs[f"{v}/{r or '-'}"] = served.index(answer)
             frozen["scenarios"][fn.__name__] = {"request": name, "label": label, "relays": relays,
+                                                "ollama_models": scenarios.ENV.get(fn.__name__, "{models}"),
                                                 "fingerprint": fingerprint, "runs": runs,
                                                 "served": served}
         finally:
@@ -97,7 +104,7 @@ def dump(frozen: dict) -> str:
     for i, (name, s) in enumerate(sorted(frozen["scenarios"].items())):
         out.append(f'  {"," if i else " "}{line(name)}: {{')
         out += [f'   {"," if j else " "}{line(key)}: {line(s[key])}'
-                for j, key in enumerate(("request", "label", "relays", "fingerprint", "runs"))]
+                for j, key in enumerate(("request", "label", "relays", "ollama_models", "fingerprint", "runs"))]
         out.append('   ,"served": [')
         out += [f'    {"," if j else " "}{line(answer)}' for j, answer in enumerate(s["served"])]
         out.append("   ]}")

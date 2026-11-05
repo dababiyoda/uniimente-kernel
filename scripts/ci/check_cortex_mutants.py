@@ -969,6 +969,25 @@ METABOLISM_MUTANTS = [
     ("the gate raises when the store cannot be read", "greg/licensing.py",
      "    except Exception as exc:        # a store this reader",
      "    except ZeroDivisionError as exc:        # a store this reader"),
+    # the review of d1724006: OLLAMA_MODELS as envconfig.Var reads it (N1), no store beside it (N2), Go's decoder
+    # (N3), and a name under the host ollama.com, which main never finds locally
+    ("OLLAMA_MODELS is read raw, as on d1724006", "greg/licensing.py",
+     "    named = _ollama_models_env()\n", '    named = __import__("os").environ.get("OLLAMA_MODELS", "")\n'),
+    ("OLLAMA_MODELS keeps its spaces", "greg/licensing.py",
+     """.strip(_GO_SPACE).strip("\\"'")""", """.strip("\\"'")"""),
+    ("OLLAMA_MODELS keeps its quotes", "greg/licensing.py",
+     """.strip(_GO_SPACE).strip("\\"'")""", """.strip(_GO_SPACE)"""),
+    ("OLLAMA_MODELS is trimmed of quotes before spaces", "greg/licensing.py",
+     """.strip(_GO_SPACE).strip("\\"'")""", """.strip("\\"'").strip(_GO_SPACE)"""),
+    ("a set OLLAMA_MODELS falls back to the home and system stores", "greg/licensing.py",
+     "        return [Path(named)]\n",
+     '        return [Path(named), Path.home() / ".ollama" / "models", Path("/usr/share/ollama/.ollama/models")]\n'),
+    ("a manifest with a BOM or in UTF-16 is decoded", "greg/licensing.py",
+     'json.loads(data.decode("utf-8") if isinstance(data, (bytes, bytearray)) else data,', "json.loads(data,"),
+    ("a name under the host ollama.com is read from the store", "greg/licensing.py",
+     "    if parts[0].lower() == OLLAMA_PUBLIC_HOSTS[1]:", "    if False:"),
+    ("a name under the host OLLAMA.COM is read from the store", "greg/licensing.py",
+     "    if parts[0].lower() == OLLAMA_PUBLIC_HOSTS[1]:", "    if parts[0] == OLLAMA_PUBLIC_HOSTS[1]:"),
 ]
 
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),

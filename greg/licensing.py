@@ -916,12 +916,21 @@ def _ollama_parts(name: str) -> tuple[str, str, str, str] | None:
     return host, namespace, model, tag
 
 
-def _ollama_stores(models_dir) -> list:
+def _ollama_models_env() -> str:
+    """OLLAMA_MODELS as Ollama reads it: envconfig.Var trims Go's TrimSpace whitespace, then every leading and
+    trailing " and ' (strings.Trim; v0.40.0 0d0720e and main e9fde36d), so a value quoted in an env file or padded
+    with spaces names the same store for GREG as for Ollama."""
     import os
+    return os.environ.get("OLLAMA_MODELS", "").strip(_GO_SPACE).strip("\"'")
+
+
+def _ollama_stores(models_dir) -> list:
     if models_dir is not None:
         return [Path(models_dir)]
-    stores = [Path(os.environ["OLLAMA_MODELS"])] if os.environ.get("OLLAMA_MODELS") else []
-    return stores + [Path.home() / ".ollama" / "models", Path("/usr/share/ollama/.ollama/models")]
+    named = _ollama_models_env()
+    if named:        # envconfig.Models: a non-empty OLLAMA_MODELS is the only store Ollama reads, with no fallback
+        return [Path(named)]
+    return [Path.home() / ".ollama" / "models", Path("/usr/share/ollama/.ollama/models")]
 
 
 def model_assessment(model: str, licenses: list, subject: dict, problem: str | None = None) -> dict:
@@ -996,8 +1005,11 @@ def _go_object(pairs) -> _GoObject:
 
 
 def _go_json(data: bytes):
-    """``data`` decoded with every object a ``_GoObject``, so ``_go_fields`` can see the keys json.loads merges."""
-    return json.loads(data, object_pairs_hook=_go_object)
+    """``data`` decoded with every object a ``_GoObject``, so ``_go_fields`` can see the keys json.loads merges. The
+    bytes are read as UTF-8 and nothing else: json.loads(bytes) would also take a UTF-8 BOM, UTF-16 or UTF-32, which
+    Go's encoding/json rejects, so a manifest Ollama cannot decode is not one GREG reads (ValueError: held)."""
+    return json.loads(data.decode("utf-8") if isinstance(data, (bytes, bytearray)) else data,
+                      object_pairs_hook=_go_object)
 
 
 def _go_key(key: str) -> str:
@@ -1279,6 +1291,11 @@ def ollama_model(model: str, models_dir=None) -> dict | None:
         return model_assessment(name, [], {"model": name, "manifest_sha256": None, "weights": []},
                                 "Ollama reads this name as the digest of a local manifest blob before any model of "
                                 "that name, and GREG does not read it")
+    if parts[0].lower() == OLLAMA_PUBLIC_HOSTS[1]:
+        return model_assessment(name, [], {"model": name, "manifest_sha256": None, "weights": []},
+                                "Ollama main (e9fde36d) finds no local model asked for under the host ollama.com (it "
+                                "names local models registry.ollama.ai), so it would pull this name from the registry "
+                                "and run bytes GREG did not read; name the model without a host")
     for store in _ollama_stores(models_dir):
         found = _ollama_manifest(store, parts)
         if found is None:

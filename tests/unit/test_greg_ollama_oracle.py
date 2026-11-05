@@ -12,7 +12,12 @@ child of the list), carry license layers that are exactly the Apache text GREG c
 list, and no relay config; no run may go to ollama.com; and the child /api/tags reports in GREG's evidence must be
 the one Ollama selects on this platform. The stores in ``scenarios.CLEARS`` must clear, so a reader that holds
 everything does not pass. On 52f5703b, 15 of the reviewer's 54 scenarios broke this rule (12 JSON-key cases, 3
-digest names); the F3 cloud names broke it too, through the cloud-proxy check added here.
+digest names); the F3 cloud names broke it too, through the cloud-proxy check added here. A clear is a break as well
+when Ollama does not find the model under some run, or serves it under none (it would pull bytes GREG never read): on d1724006 the four quoted or
+padded OLLAMA_MODELS spellings cleared the home store's Apache copy while Ollama served the named store's Llama
+manifest (N1), a store without the model fell through to the home store (N2), and a manifest with a UTF-8 BOM or in
+UTF-16, which Go's decoder rejects, cleared (N3); and a name under the host ollama.com cleared a local manifest that
+main never finds under that host.
 """
 from __future__ import annotations
 
@@ -38,7 +43,9 @@ NAMES = [fn.__name__ for fn in scenarios.SCENARIOS]
 
 def test_every_scenario_is_frozen_with_its_provenance():
     assert sorted(FROZEN["scenarios"]) == sorted(NAMES), "re-run tests/fixtures/ollama_oracle/freeze.py"
-    assert len(NAMES) == len(set(NAMES)) >= 76
+    assert len(NAMES) == len(set(NAMES)) >= 85
+    assert {n: s["ollama_models"] for n, s in FROZEN["scenarios"].items() if s["ollama_models"] != "{models}"} == \
+        {n: v for n, v in scenarios.ENV.items() if v != "{models}"}, "re-run tests/fixtures/ollama_oracle/freeze.py"
     provenance = FROZEN["provenance"]
     assert provenance["ollama"] == {
         "v040": "https://github.com/ollama/ollama/tree/0d0720e51fb2fd9aa58781c3d720c06d720c2e7b",
@@ -48,13 +55,18 @@ def test_every_scenario_is_frozen_with_its_provenance():
 
 
 @pytest.mark.parametrize("name", NAMES)
-def test_greg_never_clears_what_ollama_would_serve_differently(name, tmp_path):
+def test_greg_never_clears_what_ollama_would_serve_differently(name, tmp_path, monkeypatch):
     frozen = FROZEN["scenarios"][name]
     (tmp_path / "models").mkdir()
     got = getattr(scenarios, name)(tmp_path / "models")
     assert (got[0], scenarios.fingerprint(tmp_path)) == (frozen["request"], frozen["fingerprint"]), \
         "the scenario writes other bytes than were frozen: re-run tests/fixtures/ollama_oracle/freeze.py"
-    a = licensing.ollama_model(frozen["request"], tmp_path / "models")
+    if name in scenarios.ENV:       # GREG finds the store as Ollama does, from the same environment
+        monkeypatch.setenv("OLLAMA_MODELS", scenarios.ENV[name].replace("{models}", str(tmp_path / "models")))
+        monkeypatch.setenv("HOME", str(tmp_path))
+        a = licensing.ollama_model(frozen["request"])
+    else:
+        a = licensing.ollama_model(frozen["request"], tmp_path / "models")
     cleared = a is not None and not a["held"]
     if name in scenarios.CLEARS:
         assert cleared, (name, a and a["reason"])
@@ -67,6 +79,8 @@ def test_greg_never_clears_what_ollama_would_serve_differently(name, tmp_path):
         answer = frozen["served"][index]
         if "error" in answer:
             assert not answer["error"].startswith("CLOUD PROXY"), (name, run, "Ollama runs this on ollama.com")
+            assert answer["error"] != "file does not exist", (name, run, "Ollama does not have this model here and "
+                                                              "would pull bytes GREG never read")
             continue
         served += 1
         licenses = [d for media, d in answer["layers"] if media == licensing.OLLAMA_LICENSE]
@@ -79,4 +93,4 @@ def test_greg_never_clears_what_ollama_would_serve_differently(name, tmp_path):
             assert subject["api_tags_digest"]["llamacpp>ggml>mlx"] == answer["selected"], (name, run)
         if "api_tags_digest" in subject and run.endswith("/mlx"):
             assert subject["api_tags_digest"]["mlx>llamacpp>ggml"] == answer["selected"], (name, run)
-    assert served or name not in scenarios.CLEARS, (name, "a positive control Ollama serves nothing for")
+    assert served, (name, "GREG clears a model Ollama does not have here: a run would pull bytes GREG never read")

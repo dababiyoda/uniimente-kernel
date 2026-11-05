@@ -1000,8 +1000,14 @@ def test_a_pdf_whose_structure_lies_past_the_planner_window_is_not_called_unread
     assert "replace it with" not in question and "save a copy whose PDF structure begins within" in question
     counted = _plan(tmp_path, "lease.pdf", data, "Confirm {f} has under 1000 words")      # read whole: its reader
     assert counted["spec"]["success_checks"][0]["sensor"]["function"] == "document.text", counted
-    code, text = _read(_pdftotext(), tmp_path / "data" / "lease.pdf")
-    assert code == 0 and SHOWN in text                                           # what the ask no longer denies
+
+
+def test_pdftotext_reads_a_pdf_whose_structure_lies_past_the_planner_window(tmp_path):
+    """What the ask above no longer denies, measured (needs pdftotext; the planner test above does not)."""
+    pdf = tmp_path / "lease.pdf"
+    pdf.write_bytes(b"%PDF-1.4\n%" + b"c" * 1024 ** 2 + b"\n" + _pdf(LEASE, header=b""))
+    code, text = _read(_pdftotext(), pdf)
+    assert code == 0 and SHOWN in text
 
 
 # Finding 3: surviving mutants. An object header poppler reads is at most 255 bytes long (measured below); one split

@@ -1,0 +1,46 @@
+name: Repository review
+
+# The weekly half of docs/REVIEW_CADENCE.md. Read-only by construction: the
+# token can read contents and pull requests and nothing else; no step posts,
+# comments, labels, opens issues or pushes. It never gates a pull request
+# (the same structural rules already run in the unit suite). GitHub runs
+# scheduled workflows only from the default branch, so the schedule starts
+# when this file reaches main.
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: repository-review
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Structural review and PR-flow proxies
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/repo_review.py --github "${{ github.repository }}" > review.md
+          python scripts/repo_review.py --github "${{ github.repository }}" --json > review.json
+          cat review.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: repository-review
+          path: |
+            review.md
+            review.json
+          retention-days: 90

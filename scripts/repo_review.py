@@ -1,0 +1,322 @@
+#!/usr/bin/env python3
+"""Repository review: one read-only instrument for the recurring structural review.
+
+Usage:
+    python scripts/repo_review.py                    # offline report (markdown)
+    python scripts/repo_review.py --json             # same, machine-readable
+    python scripts/repo_review.py --check            # exit 1 on any hard finding
+    python scripts/repo_review.py --github OWNER/REPO --json   # add PR-flow metrics
+
+What it measures, and why each item exists, is in docs/REVIEW_CADENCE.md.
+The structural checks here are the same functions the unit tests call
+(tests/unit/test_repository_map.py, tests/unit/test_import_layering.py), so a
+weekly report and a pull request can never disagree about the rules.
+
+Authority: none. The script reads files and, with --github, the public REST API
+(optionally with a read-only token). It writes nothing, posts nothing and
+changes no setting. Its output is evidence for a human or agent review; it
+decides nothing.
+"""
+from __future__ import annotations
+
+import argparse
+import ast
+import json
+import os
+import re
+import statistics
+import subprocess
+import sys
+import urllib.request
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+# The published boundary distribution (pyproject.toml [tool.setuptools]
+# packages). Consumers (WealthMachineIntelligence, DALEOBANKS) install only these,
+# so any import from them to another repository package is a latent ImportError
+# in a consumer install.
+BOUNDARY = ("adapters", "contracts", "events", "provenance")
+
+# Shrink-only ratchets. A new entry fails the check; an entry that no longer
+# occurs also fails, so the list can only get shorter. Each kept entry carries
+# the reason it is tolerated today. Measured at #196 head 3a2ba265 (2026-11-05).
+KEPT_TWO_WAY = {
+    ("business", "closure"): "closure registries import the business loop to close it",
+    ("capabilities", "cortex"): "router and cortex reference each other's genomes",
+    ("capabilities", "greg"): "greg registers capabilities; the router reads greg genomes",
+    ("closure", "egregore"): "closure probes egregore; egregore reports closure",
+    ("closure", "evolution"): "closure probes evolution; evolution uses closure fixtures",
+    ("closure", "foundry"): "closure probes foundry; foundry uses closure fixtures",
+    ("cortex", "greg"): "greg.cognition bridges cortex, which calls back into greg",
+    ("foundry", "greg"): "greg runs foundry systems; foundry systems call greg services",
+    ("foundry", "omnimorph"): "omnimorph composes foundry architectures and vice versa",
+}
+KEPT_BOUNDARY = {
+    ("provenance", "capabilities"):
+        "provenance/witness.py capability_genome() imports capabilities.genome lazily; "
+        "calling it from a boundary-only install raises ImportError (recorded defect, "
+        "docs/collaboration/CONTRIBUTOR-PAIN-POINTS-2026-11-05.md S-2)",
+}
+
+# Entry surfaces that must defer to the canonical reading order in AGENTS.md.
+ENTRY_SURFACES = ("CLAUDE.md", "CONTRIBUTING.md", "README.md", ".github/copilot-instructions.md")
+CANONICAL_ORDER_MARKER = "<!-- canonical-reading-order -->"
+
+
+# --------------------------------------------------------------------------- files
+
+def tracked_files(root: Path = ROOT) -> list[str]:
+    try:
+        out = subprocess.run(["git", "ls-files"], cwd=root, capture_output=True,
+                             text=True, check=True, timeout=60).stdout
+        return out.splitlines()
+    except (OSError, subprocess.SubprocessError):
+        return [str(p.relative_to(root)) for p in root.rglob("*") if p.is_file()
+                and ".git" not in p.parts]
+
+
+def top_level_dirs(root: Path = ROOT) -> list[str]:
+    dirs = {p.split("/", 1)[0] for p in tracked_files(root) if "/" in p}
+    return sorted(d for d in dirs if not d.startswith("."))
+
+
+def packages(root: Path = ROOT) -> list[str]:
+    return sorted(d for d in top_level_dirs(root) if (root / d / "__init__.py").is_file())
+
+
+# ------------------------------------------------------------------- orientation
+
+def readme_layout_names(root: Path = ROOT) -> set[str]:
+    text = (root / "README.md").read_text(encoding="utf-8")
+    start = text.index("## Layout")
+    end = text.find("\n## ", start + 1)
+    return set(re.findall(r"`/([A-Za-z0-9_.-]+)`", text[start:end if end > 0 else None]))
+
+
+def dirs_without_readme(root: Path = ROOT) -> list[str]:
+    return [d for d in top_level_dirs(root) if not (root / d / "README.md").is_file()]
+
+
+def dirs_missing_from_layout(root: Path = ROOT) -> list[str]:
+    listed = readme_layout_names(root)
+    return [d for d in top_level_dirs(root) if d not in listed]
+
+
+def layout_ghosts(root: Path = ROOT) -> list[str]:
+    return sorted(d for d in readme_layout_names(root) if not (root / d).is_dir())
+
+
+def docs_missing_from_index(root: Path = ROOT) -> list[str]:
+    index_path = root / "docs" / "README.md"
+    if not index_path.is_file():
+        return ["docs/README.md (index missing)"]
+    index = index_path.read_text(encoding="utf-8")
+    names = sorted(p.name for p in (root / "docs").iterdir()
+                   if p.is_file() and p.name != "README.md")
+    return [n for n in names if n not in index]
+
+
+def entry_surfaces_not_deferring(root: Path = ROOT) -> list[str]:
+    """Entry files that do not point readers at AGENTS.md's canonical order."""
+    agents = (root / "AGENTS.md").read_text(encoding="utf-8")
+    bad = [] if CANONICAL_ORDER_MARKER in agents else ["AGENTS.md (marker missing)"]
+    for rel in ENTRY_SURFACES:
+        text = (root / rel).read_text(encoding="utf-8")
+        if "AGENTS.md#canonical-reading-order" not in text:
+            bad.append(rel)
+    return bad
+
+
+def pr_template_ambiguity(root: Path = ROOT) -> list[str]:
+    """Two case-variant PR templates must say which one is canonical."""
+    upper = root / ".github" / "PULL_REQUEST_TEMPLATE.md"
+    lower = root / ".github" / "pull_request_template.md"
+    if not (upper.is_file() and lower.is_file()):
+        return []
+    head = upper.read_text(encoding="utf-8")[:600]
+    return [] if "pull_request_template.md" in head else [".github/PULL_REQUEST_TEMPLATE.md"]
+
+
+# ----------------------------------------------------------------------- layering
+
+def import_edges(root: Path = ROOT) -> dict[tuple[str, str], list[str]]:
+    """(importer package, imported package) -> files, module-level and lazy alike."""
+    pkgs = set(packages(root))
+    edges: dict[tuple[str, str], list[str]] = {}
+    for rel in tracked_files(root):
+        if not rel.endswith(".py"):
+            continue
+        top = rel.split("/", 1)[0]
+        if top not in pkgs:
+            continue
+        try:
+            tree = ast.parse((root / rel).read_text(encoding="utf-8"), filename=rel)
+        except (SyntaxError, UnicodeDecodeError, FileNotFoundError):
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                names = [a.name for a in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
+                names = [node.module]
+            else:
+                continue
+            for name in names:
+                target = name.split(".", 1)[0]
+                if target in pkgs and target != top:
+                    edges.setdefault((top, target), [])
+                    if rel not in edges[(top, target)]:
+                        edges[(top, target)].append(rel)
+    return edges
+
+
+def two_way_pairs(edges) -> set[tuple[str, str]]:
+    return {tuple(sorted(e)) for e in edges if (e[1], e[0]) in edges}
+
+
+def boundary_violations(edges) -> set[tuple[str, str]]:
+    return {e for e in edges if e[0] in BOUNDARY and e[1] not in BOUNDARY}
+
+
+def ratchet(observed: set, kept: dict) -> dict:
+    return {"new": sorted(observed - set(kept)), "gone": sorted(set(kept) - observed)}
+
+
+# ------------------------------------------------------------------------ GitHub
+
+def _get(url: str, token: str | None):
+    req = urllib.request.Request(url, headers={"Accept": "application/vnd.github+json",
+                                               "User-Agent": "uniimente-repo-review"})
+    if token:
+        req.add_header("Authorization", f"Bearer {token}")
+    with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310 (fixed host)
+        return json.load(resp)
+
+
+def github_metrics(repo: str, token: str | None, limit: int = 100) -> dict:
+    """SOP-06 proxies from public PR metadata. Proxies, not the SOP's measures:
+    a receipt block is a declaration, not a verified handoff."""
+    base = f"https://api.github.com/repos/{repo}"
+    open_prs = _get(f"{base}/pulls?state=open&per_page=100", token)
+    closed = _get(f"{base}/pulls?state=closed&per_page={min(limit, 100)}", token)
+    marker = "<!-- uniimente:receipt -->"
+    merged = [p for p in closed if p.get("merged_at")]
+    unmerged = [p for p in closed if not p.get("merged_at")]
+    words = re.compile(r"\b(stale|supersed|duplicate|rework|re-record|conflict)", re.I)
+    return {
+        "proxy_note": "metadata proxies for SOP-06; not proof of reading or handoff",
+        "open_prs": len(open_prs),
+        "open_drafts": sum(1 for p in open_prs if p.get("draft")),
+        "recent_closed": len(closed),
+        "recent_merged": len(merged),
+        "recent_closed_unmerged": len(unmerged),
+        "receipt_coverage_recent_closed": round(
+            sum(1 for p in closed if marker in (p.get("body") or "")) / len(closed), 3)
+        if closed else None,
+        "recent_closed_mentioning_rework_words": sum(
+            1 for p in closed if words.search(p.get("body") or "")),
+        "open_pr_base_branches": dict(sorted(
+            {b: sum(1 for p in open_prs if p["base"]["ref"] == b)
+             for b in {p["base"]["ref"] for p in open_prs}}.items())),
+    }
+
+
+# ------------------------------------------------------------------------ report
+
+def size_profile(root: Path = ROOT, top: int = 10) -> dict:
+    sizes = []
+    for rel in tracked_files(root):
+        if rel.endswith(".py") and not rel.startswith("tests/"):
+            try:
+                n = sum(1 for _ in (root / rel).open(encoding="utf-8", errors="replace"))
+            except FileNotFoundError:
+                continue
+            sizes.append((n, rel))
+    sizes.sort(reverse=True)
+    lines = [n for n, _ in sizes]
+    return {"python_files": len(sizes), "python_lines": sum(lines),
+            "median_file_lines": statistics.median(lines) if lines else 0,
+            "files_over_1500_lines": sum(1 for n in lines if n > 1500),
+            "largest": [{"path": p, "lines": n} for n, p in sizes[:top]]}
+
+
+def build_report(root: Path = ROOT, github: str | None = None,
+                 kept_two_way: dict | None = None, kept_boundary: dict | None = None) -> dict:
+    kept_two_way = KEPT_TWO_WAY if kept_two_way is None else kept_two_way
+    kept_boundary = KEPT_BOUNDARY if kept_boundary is None else kept_boundary
+    edges = import_edges(root)
+    pairs, boundary = two_way_pairs(edges), boundary_violations(edges)
+    hard = {
+        "dirs_without_readme": dirs_without_readme(root),
+        "dirs_missing_from_readme_layout": dirs_missing_from_layout(root),
+        "readme_layout_ghosts": layout_ghosts(root),
+        "docs_missing_from_index": docs_missing_from_index(root),
+        "entry_surfaces_not_deferring_to_agents": entry_surfaces_not_deferring(root),
+        "pr_template_ambiguity": pr_template_ambiguity(root),
+        "two_way_package_imports": ratchet(pairs, kept_two_way),
+        "boundary_package_imports": ratchet(boundary, kept_boundary),
+    }
+    report = {
+        "schema": "uniimente.repo_review/1",
+        "authority": "none; evidence for a review, not a decision",
+        "hard_findings": hard,
+        "hard_finding_count": sum(
+            (len(v["new"]) + len(v["gone"])) if isinstance(v, dict) else len(v)
+            for v in hard.values()),
+        "layering": {"packages": len(packages(root)), "edges": len(edges),
+                     "two_way_pairs_kept": len(kept_two_way),
+                     "boundary_violations_kept": len(kept_boundary)},
+        "size": size_profile(root),
+    }
+    if github:
+        token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+        try:
+            report["github"] = github_metrics(github, token)
+        except Exception as exc:  # network is optional; say so instead of guessing
+            report["github"] = {"not_run": f"{type(exc).__name__}: {exc}"}
+    return report
+
+
+def to_markdown(report: dict) -> str:
+    lines = ["# Repository review", "",
+             f"Hard findings: **{report['hard_finding_count']}** "
+             "(0 means every structural rule holds).", ""]
+    for name, value in report["hard_findings"].items():
+        if isinstance(value, dict):
+            status = "ok" if not value["new"] and not value["gone"] else \
+                f"new {value['new']} · gone {value['gone']}"
+        else:
+            status = "ok" if not value else ", ".join(map(str, value))
+        lines.append(f"- `{name}`: {status}")
+    lay, size = report["layering"], report["size"]
+    lines += ["", "## Layering",
+              f"{lay['packages']} packages, {lay['edges']} cross-package import edges, "
+              f"{lay['two_way_pairs_kept']} two-way pairs and "
+              f"{lay['boundary_violations_kept']} boundary import kept by the ratchet.",
+              "", "## Size",
+              f"{size['python_files']} Python files outside tests, {size['python_lines']} lines, "
+              f"median {size['median_file_lines']}; {size['files_over_1500_lines']} files over "
+              "1,500 lines.", ""]
+    lines += [f"- {f['path']}: {f['lines']}" for f in size["largest"]]
+    gh = report.get("github")
+    if gh:
+        lines += ["", "## Pull-request flow (SOP-06 proxies)", ""]
+        lines += [f"- {k}: {v}" for k, v in gh.items()]
+    lines += ["", "Review procedure and what to do with each finding: "
+              "`docs/REVIEW_CADENCE.md`."]
+    return "\n".join(lines) + "\n"
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("--json", action="store_true", help="print JSON instead of markdown")
+    ap.add_argument("--check", action="store_true", help="exit 1 on any hard finding")
+    ap.add_argument("--github", metavar="OWNER/REPO", help="add PR-flow metrics (network)")
+    args = ap.parse_args(argv)
+    report = build_report(ROOT, args.github)
+    print(json.dumps(report, indent=2, sort_keys=True) if args.json else to_markdown(report))
+    return 1 if args.check and report["hard_finding_count"] else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

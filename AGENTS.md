@@ -4,6 +4,57 @@
 
 # UNIIMENTE Agent Entry Contract
 
+<!-- canonical-reading-order -->
+## Canonical reading order
+
+Six entry files (this one, `CLAUDE.md`, `README.md`, `CONTRIBUTING.md`,
+`.github/copilot-instructions.md`, `docs/collaboration/START_HERE.md`) each had their own
+"read first" list, in five different orders. This block consolidates them into one sequence.
+It adds and removes no obligation. Every other entry file points here. If this order ever
+disagrees with a founder record, the founder record wins: the latest explicit founder
+instruction outranks everything else (`docs/PROJECT_SOURCE_CENSUS_2026-09-26.md`,
+conflict-resolution hierarchy).
+
+1. **Coordinate.** Discussion #89 (from a cloud session:
+   `curl -sS https://api.github.com/repos/dababiyoda/uniimente-kernel/discussions/89`);
+   `docs/collaboration/START_HERE.md`; the **newest** comments on work board #96 (the comment
+   API pages oldest first); the open PRs for what you will touch. Work on the integration
+   branch the board names, not `main`. Post a bounded claim before editing.
+2. **Latest founder corrections.** Read the top entries of `docs/FOUNDER_INTENT_LEDGER.md`
+   (newest first). Today these are `INTENT-20261030-BUILD-BEFORE-DEVICE-RUN`,
+   `INTENT-20261019-UPWARD-ASCENT`, `INTENT-20261001-FULL-MACHINE-COMPLETION` and
+   `INTENT-2026-09-26-REAL-PRODUCT-METABOLISM`, each with its verbatim source under
+   `docs/intent/sources/`.
+3. **Procedure.** `docs/PROJECT_COGNITION_SOP.md`, `docs/PROJECT_COGNITION_CONTINUITY.md`,
+   `docs/PROJECT_SOURCE_CENSUS_2026-09-26.md`.
+4. **Doctrine.** `docs/FOUNDER_EFFECT_COMPILER.md`, the rest of
+   `docs/FOUNDER_INTENT_LEDGER.md`, `docs/RECURSIVE_COLLABORATION_PROTOCOL.md`,
+   `docs/UNIIMENTE_FINAL_BUILD_ORDER.md`, `docs/CANONICAL_EXECUTION_ORDER.md`.
+5. **Your task.** Use the table below.
+
+| If you will… | Read first |
+|---|---|
+| change any code | `docs/ARCHITECTURE.md` § Current module map, then the package `README.md` |
+| touch the Constitution, authority, identity, the Gate or founder keys | `governance/integrity/README.md`; these need a founder signature |
+| touch a frozen evaluation or evidence bundle | its `freeze*.json` and README; new runs get new paths |
+| add a dependency or model | `docs/OPEN_SOURCE_STACK.md`, `docs/intent/INTENT-20260930-open-source-first.json` |
+| open a PR | `.github/pull_request_template.md` and `docs/collaboration/RECEIPT.md` |
+| find any document | `docs/README.md`; for collaboration records, `docs/collaboration/INDEX.md` |
+
+**Working facts**
+
+| Fact | Value |
+|---|---|
+| Tests | `python -m pytest` (deps `requirements-dev.txt`); about 90 minutes in full. Run the files that import what you changed first. Frozen-history tests need `git fetch --unshallow` |
+| Constitutional integrity | `python -m governance.integrity --check` |
+| Verifier | `python verifier/v2/verify.py` (V1–V5) |
+| Structural review | `python scripts/repo_review.py`; cadence in `docs/REVIEW_CADENCE.md` |
+| CI | `.github/workflows/canonical-ci.yml` (9 jobs), plus `directive-completion.yml`, `build-frontier.yml`, `collaboration-receipt.yml` |
+| Live branch | the integration branch named on #96 (today `claude/greg-full-machine-completion-whgiee`, draft #196). `main` is behind it |
+| Friction to report | `.github/ISSUE_TEMPLATE/contributor-friction.yml` |
+
+The rest of this file is kept as written.
+
 Current gate repair and source-coverage correction: read
 `docs/collaboration/GREG-GATE-REPAIR-20260930.md` and
 `docs/intent/INTENT-20260930-MASTER-BUILD-GATE.json` before claiming independent

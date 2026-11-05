@@ -17,7 +17,10 @@ when Ollama does not find the model under some run, or serves it under none (it 
 padded OLLAMA_MODELS spellings cleared the home store's Apache copy while Ollama served the named store's Llama
 manifest (N1), a store without the model fell through to the home store (N2), and a manifest with a UTF-8 BOM or in
 UTF-16, which Go's decoder rejects, cleared (N3); and a name under the host ollama.com cleared a local manifest that
-main never finds under that host.
+main never finds under that host. On 49aaa812 a manifest Go's decoder rejects for a NaN or Infinity, or for a value
+its field cannot hold (a layer size 1e2, 1.5, 2**63, "1" or true), cleared (F2); and with OLLAMA_MODELS unset GREG
+read the system store /usr/share/ollama beside HOME's (F1), which a fixture cannot write: the stores here run with
+OLLAMA_MODELS unset, and HOME set, unset (Ollama panics) or empty, as scenarios.HOME says.
 """
 from __future__ import annotations
 
@@ -43,15 +46,17 @@ NAMES = [fn.__name__ for fn in scenarios.SCENARIOS]
 
 def test_every_scenario_is_frozen_with_its_provenance():
     assert sorted(FROZEN["scenarios"]) == sorted(NAMES), "re-run tests/fixtures/ollama_oracle/freeze.py"
-    assert len(NAMES) == len(set(NAMES)) >= 85
+    assert len(NAMES) == len(set(NAMES)) >= 110
     assert {n: s["ollama_models"] for n, s in FROZEN["scenarios"].items() if s["ollama_models"] != "{models}"} == \
         {n: v for n, v in scenarios.ENV.items() if v != "{models}"}, "re-run tests/fixtures/ollama_oracle/freeze.py"
+    assert {n: s["home"] for n, s in FROZEN["scenarios"].items() if "home" in s} == scenarios.HOME, \
+        "re-run tests/fixtures/ollama_oracle/freeze.py"
     provenance = FROZEN["provenance"]
     assert provenance["ollama"] == {
         "v040": "https://github.com/ollama/ollama/tree/0d0720e51fb2fd9aa58781c3d720c06d720c2e7b",
         "main": "https://github.com/ollama/ollama/tree/e9fde36d75fea66579d84099956ce1430792737a"}
     assert provenance["platform"].startswith("linux/"), "runs with no runner use Ollama's non-Apple runner order"
-    assert scenarios.CLEARS <= set(NAMES) and len(scenarios.CLEARS) >= 15
+    assert scenarios.CLEARS <= set(NAMES) and len(scenarios.CLEARS) >= 25
 
 
 @pytest.mark.parametrize("name", NAMES)
@@ -62,8 +67,12 @@ def test_greg_never_clears_what_ollama_would_serve_differently(name, tmp_path, m
     assert (got[0], scenarios.fingerprint(tmp_path)) == (frozen["request"], frozen["fingerprint"]), \
         "the scenario writes other bytes than were frozen: re-run tests/fixtures/ollama_oracle/freeze.py"
     if name in scenarios.ENV:       # GREG finds the store as Ollama does, from the same environment
-        monkeypatch.setenv("OLLAMA_MODELS", scenarios.ENV[name].replace("{models}", str(tmp_path / "models")))
-        monkeypatch.setenv("HOME", str(tmp_path))
+        for variable, value, stands_for in (("OLLAMA_MODELS", scenarios.ENV[name], ("{models}", tmp_path / "models")),
+                                            ("HOME", scenarios.HOME.get(name, "{dir}"), ("{dir}", tmp_path))):
+            if value is None:
+                monkeypatch.delenv(variable, raising=False)
+            else:
+                monkeypatch.setenv(variable, value.replace(stands_for[0], str(stands_for[1])))
         a = licensing.ollama_model(frozen["request"])
     else:
         a = licensing.ollama_model(frozen["request"], tmp_path / "models")

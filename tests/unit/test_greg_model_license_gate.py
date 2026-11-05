@@ -750,3 +750,140 @@ def test_a_manifest_go_cannot_decode_is_held(tmp_path):
     link(child, json.dumps({"schemaVersion": 2, "mediaType": MANIFEST_LIST,
                             "manifests": [{"mediaType": DOCKER_V2, "digest": digest, "runner": "llamacpp"}]}).encode())
     assert licensing.ollama_model("qwen3.5:4b", child)["held"]
+
+
+# -- the review of 49aaa812 ---------------------------------------------------------------------------------------
+
+def test_with_ollama_models_unset_only_homes_store_is_read(tmp_path, monkeypatch):
+    """F1 (review of 49aaa812). envconfig.Models (v0.40.0 and main) returns $HOME/.ollama/models when OLLAMA_MODELS
+    is unset or empty once trimmed, and nothing else. On 49aaa812 GREG also read /usr/share/ollama/.ollama/models, the
+    Linux service's store: with HOME's store empty and an Apache copy there, GREG cleared a model this process's
+    Ollama does not have, and a run would pull bytes GREG never read. The system store is read only when a caller
+    names it as models_dir."""
+    (tmp_path / "home" / ".ollama" / "models" / "blobs").mkdir(parents=True)
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    monkeypatch.delenv("OLLAMA_MODELS", raising=False)
+    listed, scandir = [], os.scandir
+
+    def tracing(path=".", *args):
+        listed.append(str(path))
+        return scandir(path, *args)
+    monkeypatch.setattr(os, "scandir", tracing)
+    assert licensing.ollama_model("qwen3.5:4b") is None
+    assert listed and all(p.startswith(str(tmp_path / "home" / ".ollama" / "models")) for p in listed), listed
+    held = licensing.admit_model_selection({"order": ["ollama", "openai"], "ollama_model": "qwen3.5:4b"})
+    assert held["order"] == ["openai"] and "in no Ollama store" in held["model_license_hold"]["reason"], held
+    system = tmp_path / "usr-share-ollama" / ".ollama" / "models"      # what a caller passes for the service's store
+    link(system, manifest(system, (APACHE,)))
+    assert licensing.ollama_model("qwen3.5:4b", system)["verdict"] == "CLEARED"
+    assert licensing.ollama_model("qwen3.5:4b") is None
+    home = tmp_path / "home" / ".ollama" / "models"
+    link(home, manifest(home, (APACHE,), weights=b"home weights"))
+    assert licensing.ollama_model("qwen3.5:4b")["verdict"] == "CLEARED"
+
+
+def test_with_ollama_models_and_home_unset_or_empty_the_model_is_held(tmp_path, monkeypatch):
+    """F1. With OLLAMA_MODELS and HOME unset or empty, os.UserHomeDir fails and envconfig.Models panics: Ollama runs
+    nothing. Python's Path.home() would read the password database's home for an unset HOME and "/" for an empty
+    one; GREG reads neither and holds, naming models_dir as the way to point the gate at a store."""
+    monkeypatch.delenv("OLLAMA_MODELS", raising=False)
+    for home in (None, ""):
+        if home is None:
+            monkeypatch.delenv("HOME", raising=False)
+        else:
+            monkeypatch.setenv("HOME", home)
+        a = licensing.ollama_model("qwen3.5:4b")
+        assert a is not None and a["held"] and a["subject"]["manifest_sha256"] is None, (home, a)
+        assert "HOME" in a["reason"] and "models_dir" in a["reason"], a["reason"]
+        held = licensing.admit_model_selection({"order": ["ollama", "openai"], "ollama_model": "qwen3.5:4b"})
+        assert held["order"] == ["openai"] and "HOME" in held["model_license_hold"]["reason"], held
+    root = tmp_path / "models"
+    link(root, manifest(root, (APACHE,)))
+    assert licensing.ollama_model("qwen3.5:4b", root)["verdict"] == "CLEARED"
+    monkeypatch.setenv("OLLAMA_MODELS", str(root))
+    assert licensing.ollama_model("qwen3.5:4b")["verdict"] == "CLEARED"
+
+
+def literal_manifest(root: Path, size: str, schema: str = "2") -> bytes:
+    """An Apache manifest written by hand, its weight layer's size the JSON text ``size``."""
+    weights, license_ = blob(root, b"GGUF weights"), blob(root, APACHE.encode())
+    return ('{"schemaVersion":%s,"mediaType":"%s","layers":[{"mediaType":"application/vnd.ollama.image.model",'
+            '"digest":"%s","size":%s},{"mediaType":"%s","digest":"%s","size":1}]}'
+            % (schema, DOCKER_V2, weights, size, licensing.OLLAMA_LICENSE, license_)).encode()
+
+
+def test_a_manifest_value_go_cannot_store_in_its_field_is_held(tmp_path):
+    """F2 (review of 49aaa812). Python's json.loads takes NaN, Infinity and -Infinity, which Go's encoding/json
+    rejects as invalid characters, and GREG never looked at a field's type; Go fails the whole decode on a value its
+    field cannot hold: a layer's int64 size of 1e999, 1e2, 1.5, 2**63, "1" or true. Ollama loads none of these, and
+    each cleared on 49aaa812. null, -1, the int64 bounds and a lone surrogate escape (Go reads U+FFFD) decode in Go,
+    and clear."""
+    held = {"NaN": "NaN", "Infinity": "Infinity", "-Infinity": "-Infinity", "1e999": "1e999", "1e2": "1e2",
+            "1.5": "1.5", "1.0": "1.0", "2**63": "9223372036854775808", "-2**63-1": "-9223372036854775809",
+            '"1"': '"1"', "true": "true", "[]": "[]", "{}": "{}"}
+    for label, size in held.items():
+        root = tmp_path / f"held-{len(list(tmp_path.iterdir()))}"
+        link(root, literal_manifest(root, size))
+        a = licensing.ollama_model("qwen3.5:4b", root)
+        assert a["held"] and a["verdict"] == "FOUNDER_REVIEW", (label, a["reason"])
+        assert "Go" in a["reason"], (label, a["reason"])
+    for label, (size, schema) in {"schemaVersion 2.0": ("1", "2.0"), "schemaVersion \"2\"": ("1", '"2"'),
+                                  "NaN under an unknown key": ('1,"x":NaN', "2")}.items():
+        root = tmp_path / f"held-{len(list(tmp_path.iterdir()))}"
+        link(root, literal_manifest(root, size, schema))
+        assert licensing.ollama_model("qwen3.5:4b", root)["held"], label
+    for label, size in {"null": "null", "-1": "-1", "2**63-1": "9223372036854775807",
+                        "-2**63": "-9223372036854775808", "a lone surrogate": '1,"x":"\\ud800"',
+                        "1e999 under an unknown key": '1,"x":1e999', "1.5 under an unknown key": '1,"x":[1.5]'}.items():
+        root = tmp_path / f"clear-{len(list(tmp_path.iterdir()))}"
+        link(root, literal_manifest(root, size))
+        a = licensing.ollama_model("qwen3.5:4b", root)
+        assert a["verdict"] == "CLEARED", (label, a["reason"])
+
+
+def test_a_wrong_json_type_in_any_typed_field_is_held(tmp_path):
+    """F2. Every field the gate decodes has a Go type: a string field takes no number, a struct no string, a slice no
+    object, an int no fraction, and the config blob's generation_defaults (map[string]any) no number beyond float64."""
+    def store(name, mutate, config=None):
+        root = tmp_path / name
+        document = json.loads(manifest(root, (APACHE,)))
+        if config is not None:
+            document["config"] = {"mediaType": "application/vnd.docker.container.image.v1+json",
+                                  "digest": blob(root, config.encode()), "size": 1}
+        mutate(document)
+        link(root, json.dumps(document).encode())
+        return licensing.ollama_model("qwen3.5:4b", root)
+
+    def layer(key, value):
+        return lambda d: d["layers"][1].__setitem__(key, value)
+    held = {"mediaType 1": layer("mediaType", 1), "digest true": layer("digest", True),
+            "from {}": layer("from", {}), "name []": layer("name", []),
+            "mediaType of the manifest 2": lambda d: d.__setitem__("mediaType", 2),
+            "runner 1": lambda d: d.__setitem__("runner", 1), "format false": lambda d: d.__setitem__("format", False),
+            "config a string": lambda d: d.__setitem__("config", "x"),
+            "config a list": lambda d: d.__setitem__("config", []),
+            "layers an object": lambda d: d.__setitem__("layers", {"a": d["layers"]}),
+            "a layer a string": lambda d: d["layers"].append("x"),
+            "manifests a string": lambda d: d.__setitem__("manifests", "x"),
+            "a nested manifest with a fractional size": lambda d: d.__setitem__(
+                "manifests", [{"layers": [{"size": 1.5}]}])}
+    for label, mutate in held.items():
+        a = store(f"m{len(list(tmp_path.iterdir()))}", mutate)
+        assert a["held"] and "Go" in a["reason"], (label, a["reason"])
+    configs = {"context_length 1.5": '{"context_length":1.5}', "embedding_length \"8\"": '{"embedding_length":"8"}',
+               "capabilities [1]": '{"capabilities":[1]}', "model_families \"x\"": '{"model_families":"x"}',
+               "draft \"x\"": '{"draft":"x"}', "draft.config 1": '{"draft":{"config":1}}',
+               "remote_host 1": '{"remote_host":1}', "generation_defaults 1e999":
+               '{"generation_defaults":{"temperature":1e999}}', "generation_defaults a list":
+               '{"generation_defaults":[0.7]}', "generation_defaults nested -1e999":
+               '{"generation_defaults":{"x":[{"y":-1e999}]}}', "voices {}": '{"voices":{}}',
+               "NaN": '{"model_format":"gguf","context_length":NaN}'}
+    for label, config in configs.items():
+        a = store(f"c{len(list(tmp_path.iterdir()))}", lambda d: None, config)
+        assert a["held"], (label, a["reason"])
+    for label, config in {"generation_defaults of floats and ints":
+                          '{"generation_defaults":{"temperature":0.7,"top_k":40,"stop":["x",null]},'
+                          '"context_length":4096,"capabilities":["completion",null],"draft":null}',
+                          "an unknown key with 1e999": '{"model_format":"gguf","extra":1e999}'}.items():
+        a = store(f"c{len(list(tmp_path.iterdir()))}", lambda d: None, config)
+        assert a["verdict"] == "CLEARED", (label, a["reason"])

@@ -7,8 +7,10 @@ the files ``tests/unit/test_greg_ollama_oracle.py`` builds; ``fingerprint`` chec
 
 The first 54 scenarios are the independent reviewer's differential harness of 52f5703b (diff_harness.py), ported
 with the same store bytes and without its LAYOUT switch; the next 22 were added with the fix of its findings F1 to
-F4, and the last 9 with the fix of the review of d1724006 (N1 to N3: OLLAMA_MODELS read as envconfig.Var reads it,
-only the store it names, and a manifest Go's decoder rejects).
+F4, the next 9 with the fix of the review of d1724006 (N1 to N3: OLLAMA_MODELS read as envconfig.Var reads it,
+only the store it names, and a manifest Go's decoder rejects), and the last 25 with the fix of the review of 49aaa812
+(F1: with OLLAMA_MODELS unset, only $HOME/.ollama/models, and nothing with HOME unset or empty; F2: a value Go's
+decoder cannot store in its field's type, or a NaN or Infinity).
 ``CLEARS`` are the stores both Ollama versions serve as one Apache-licensed manifest GREG is meant to clear: the
 positive controls that keep the test from passing on a reader that holds everything.
 """
@@ -32,17 +34,23 @@ SCENARIOS = []
 CLEARS = set()
 # The OLLAMA_MODELS value a scenario runs under, "{models}" standing for <dir>/models, with HOME=<dir>. A scenario not
 # named here runs under OLLAMA_MODELS=<dir>/models exactly; the test passes that store to GREG as ``models_dir``,
-# and an ENV scenario's value to GREG through the environment, with no ``models_dir``.
+# and an ENV scenario's value to GREG through the environment, with no ``models_dir``. None: OLLAMA_MODELS unset.
 ENV = {}
+# The HOME a scenario runs under when it is not <dir> ("{dir}"): None for HOME unset, "" for HOME empty. Only ENV
+# scenarios name one, since a scenario passed ``models_dir`` reads no environment.
+HOME = {}
+_NO_ENV = object()
 
 
-def scenario(fn=None, *, clears=False, env=None):
+def scenario(fn=None, *, clears=False, env=_NO_ENV, home="{dir}"):
     def register(f):
         SCENARIOS.append(f)
         if clears:
             CLEARS.add(f.__name__)
-        if env is not None:
+        if env is not _NO_ENV:
             ENV[f.__name__] = env
+        if home != "{dir}":
+            HOME[f.__name__] = home
         return f
     return register(fn) if fn is not None else register
 
@@ -782,3 +790,98 @@ def manifest_utf8_bom(root):
 def manifest_utf16(root):
     link(root, mf(root).decode().encode("utf-16"))
     return "qwen3.5:4b", "an Apache manifest written as UTF-16 (with its BOM)"
+
+
+# --- F1 (review of 49aaa812): with OLLAMA_MODELS unset, $HOME/.ollama/models and nothing else ---------------------
+# The system store /usr/share/ollama/.ollama/models, which 49aaa812 also read, cannot be written by a fixture; the
+# unit test traces that GREG lists nothing outside HOME's store, and the reviewer's usrshare.py writes it under a
+# private tmpfs. Here Ollama's own envconfig.Models answers for HOME's store, and panics without HOME.
+def home_store(root, *licenses):
+    home = root.parent / ".ollama" / "models"
+    if licenses:
+        link(home, mf(home, licenses=licenses, weights=b"home-w"))
+    else:
+        home.joinpath("blobs").mkdir(parents=True)
+    return home
+
+
+@scenario(env=None)
+def env_unset_home_store_empty(root):
+    home_store(root)
+    return "qwen3.5:4b", "OLLAMA_MODELS unset, HOME's store empty (on 49aaa812 GREG read /usr/share/ollama next)"
+
+
+@scenario(clears=True, env=None)
+def env_unset_home_store_apache(root):
+    home_store(root, APACHE)
+    return "qwen3.5:4b", "OLLAMA_MODELS unset, Apache in HOME's store"
+
+
+@scenario(env=None)
+def env_unset_home_store_llama(root):
+    home_store(root, LLAMA)
+    link(root, mf(root, weights=b"apache-w"))
+    return "qwen3.5:4b", "OLLAMA_MODELS unset, Llama in HOME's store, Apache in <dir>/models (not read)"
+
+
+@scenario(env=None, home=None)
+def env_unset_home_unset(root):
+    home_store(root, APACHE)
+    return "qwen3.5:4b", "OLLAMA_MODELS and HOME unset (Ollama panics), Apache in <dir>/.ollama/models"
+
+
+@scenario(env=None, home="")
+def env_unset_home_empty(root):
+    home_store(root, APACHE)
+    return "qwen3.5:4b", "OLLAMA_MODELS unset and HOME empty (Ollama panics), Apache in <dir>/.ollama/models"
+
+
+@scenario(env=" ", home=None)
+def env_blank_home_unset(root):
+    home_store(root, APACHE)
+    return "qwen3.5:4b", "OLLAMA_MODELS a space (empty once trimmed) and HOME unset (Ollama panics)"
+
+
+@scenario(clears=True, env="{models}", home=None)
+def env_set_home_unset(root):
+    link(root, mf(root))
+    return "qwen3.5:4b", "OLLAMA_MODELS names an Apache store, HOME unset (Models() never reads it)"
+
+
+# --- F2 (review of 49aaa812): a value Go's encoding/json cannot store in its field, and NaN or Infinity -----------
+def literal(root, size, schema="2", where="size"):
+    """An Apache manifest written by hand, the weight layer's ``where`` (its size) the JSON text ``size``."""
+    weights, license_ = blob(root, b"GGUF weights"), blob(root, APACHE.encode())
+    raw = ('{"schemaVersion":%s,"mediaType":"%s","layers":[{"mediaType":"%s","digest":"%s","%s":%s},'
+           '{"mediaType":"%s","digest":"%s","size":1}]}' % (schema, D2, MODEL, weights, where, size, LIC, license_))
+    link(root, raw.encode())
+    return "qwen3.5:4b"
+
+
+def _literal_scenario(name, size, label, clears=False, schema="2", where="size"):
+    def write(root):
+        return literal(root, size, schema, where), label
+    write.__name__ = write.__qualname__ = name
+    scenario(write, clears=clears)
+    globals()[name] = write
+
+
+for _name, _size, _label in (
+        ("go_size_nan", "NaN", "a layer size NaN"), ("go_size_infinity", "Infinity", "a layer size Infinity"),
+        ("go_size_minus_infinity", "-Infinity", "a layer size -Infinity"),
+        ("go_size_1e999", "1e999", "a layer size 1e999"), ("go_size_1e2", "1e2", "a layer size 1e2"),
+        ("go_size_fraction", "1.5", "a layer size 1.5"), ("go_size_1_0", "1.0", "a layer size 1.0"),
+        ("go_size_2_63", "9223372036854775808", "a layer size 2**63"),
+        ("go_size_below_int64", "-9223372036854775809", "a layer size -2**63 - 1"),
+        ("go_size_string", '"1"', 'a layer size "1"'), ("go_size_true", "true", "a layer size true"),
+        ("go_size_nan_unknown_key", '1,"x":NaN', "NaN under a key Ollama does not read")):
+    _literal_scenario(_name, _size, _label)
+_literal_scenario("go_schema_version_float", "1", "schemaVersion 2.0", schema="2.0")
+_literal_scenario("go_size_array", "[1]", "a layer size [1]")
+for _name, _size, _label in (
+        ("go_size_null", "null", "a layer size null"), ("go_size_minus_one", "-1", "a layer size -1"),
+        ("go_size_int64_max", "9223372036854775807", "a layer size 2**63 - 1"),
+        ("go_size_int64_min", "-9223372036854775808", "a layer size -2**63"),
+        ("go_lone_surrogate", '1,"x":"\\ud800"', "a lone surrogate escape under a key Ollama does not read"),
+        ("go_float_unknown_key", '1,"x":[1e999,1.5]', "1e999 and 1.5 under a key Ollama does not read")):
+    _literal_scenario(_name, _size, _label, clears=True)

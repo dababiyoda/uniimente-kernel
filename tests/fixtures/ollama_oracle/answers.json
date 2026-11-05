@@ -92,6 +92,17 @@
     ,{"error":"no compatible manifest found for runners: mlx"}
     ,{"error":"no compatible manifest found for runners: llamacpp"}
    ]}
+  ,"env_blank_home_unset": {
+    "request": "qwen3.5:4b"
+   ,"label": "OLLAMA_MODELS a space (empty once trimmed) and HOME unset (Ollama panics)"
+   ,"relays": []
+   ,"ollama_models": " "
+   ,"home": null
+   ,"fingerprint": "31780412d2b0b83141e04bb836d0ec441b8a851d6d666aa4935078577b4bf0db"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"oracle crashed: panic: $HOME is not defined"}
+   ]}
   ,"env_models_double_quoted": {
     "request": "qwen3.5:4b"
    ,"label": "OLLAMA_MODELS=\"<store>\" (Llama there), Apache in the home store"
@@ -161,6 +172,269 @@
    ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
    ,"served": [
      {"config":"","digest":"147e5cf9e7668b1ac1d1e0ad683ebcdb3c9e19483a97e68b51181ed8ab3b46fe","layers":[["application/vnd.ollama.image.model","sha256:363ebc36c2dde5216988343e15bd92938275fa74d43441232c95b63a72a963a1"],["application/vnd.ollama.image.license","sha256:3ebad2bb01ab03291da30ea463fb1c1f1096e0fb922831f1c124f9e34dc5aa8a"]],"runner":"","selected":"147e5cf9e7668b1ac1d1e0ad683ebcdb3c9e19483a97e68b51181ed8ab3b46fe"}
+   ]}
+  ,"env_set_home_unset": {
+    "request": "qwen3.5:4b"
+   ,"label": "OLLAMA_MODELS names an Apache store, HOME unset (Models() never reads it)"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"home": null
+   ,"fingerprint": "9d5a78dcda63ba80b538d22748a6ee43ea67b82618fcb1ecf15304cee8865e90"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"config":"","digest":"5ea7f334d0fc048ad08bdd19234466ff853aa35a604d336f721908a3eed1b25a","layers":[["application/vnd.ollama.image.model","sha256:8a46a62632e21d0c832005a28cb86dfd5921227920a84939ba90bf55f9f3b737"],["application/vnd.ollama.image.license","sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"]],"runner":"","selected":"5ea7f334d0fc048ad08bdd19234466ff853aa35a604d336f721908a3eed1b25a"}
+   ]}
+  ,"env_unset_home_empty": {
+    "request": "qwen3.5:4b"
+   ,"label": "OLLAMA_MODELS unset and HOME empty (Ollama panics), Apache in <dir>/.ollama/models"
+   ,"relays": []
+   ,"ollama_models": null
+   ,"home": ""
+   ,"fingerprint": "31780412d2b0b83141e04bb836d0ec441b8a851d6d666aa4935078577b4bf0db"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"oracle crashed: panic: $HOME is not defined"}
+   ]}
+  ,"env_unset_home_store_apache": {
+    "request": "qwen3.5:4b"
+   ,"label": "OLLAMA_MODELS unset, Apache in HOME's store"
+   ,"relays": []
+   ,"ollama_models": null
+   ,"fingerprint": "31780412d2b0b83141e04bb836d0ec441b8a851d6d666aa4935078577b4bf0db"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"config":"","digest":"f989e8300d0b352caf4dbf4bfefc33dbbf39499f0533b1a0f7706bdd7165ea75","layers":[["application/vnd.ollama.image.model","sha256:c8a43472d613ed9a6dcd7e948186f483f9a1322053b796af24358c01ad5a6797"],["application/vnd.ollama.image.license","sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"]],"runner":"","selected":"f989e8300d0b352caf4dbf4bfefc33dbbf39499f0533b1a0f7706bdd7165ea75"}
+   ]}
+  ,"env_unset_home_store_empty": {
+    "request": "qwen3.5:4b"
+   ,"label": "OLLAMA_MODELS unset, HOME's store empty (on 49aaa812 GREG read /usr/share/ollama next)"
+   ,"relays": []
+   ,"ollama_models": null
+   ,"fingerprint": "e5b08afd2b2c25099e3314888e8ad4d346364c86ee73ceea3d122455331a1e22"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"file does not exist"}
+   ]}
+  ,"env_unset_home_store_llama": {
+    "request": "qwen3.5:4b"
+   ,"label": "OLLAMA_MODELS unset, Llama in HOME's store, Apache in <dir>/models (not read)"
+   ,"relays": []
+   ,"ollama_models": null
+   ,"fingerprint": "acd9352e30cb7da0659123b3d0139646d99c9a14a56131d1f4773669648670e4"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"config":"","digest":"07c6dbe314a09d2e4ce4ec2fedf55db7f5e02be5549faf6c828d8edef668d3ea","layers":[["application/vnd.ollama.image.model","sha256:c8a43472d613ed9a6dcd7e948186f483f9a1322053b796af24358c01ad5a6797"],["application/vnd.ollama.image.license","sha256:3ebad2bb01ab03291da30ea463fb1c1f1096e0fb922831f1c124f9e34dc5aa8a"]],"runner":"","selected":"07c6dbe314a09d2e4ce4ec2fedf55db7f5e02be5549faf6c828d8edef668d3ea"}
+   ]}
+  ,"env_unset_home_unset": {
+    "request": "qwen3.5:4b"
+   ,"label": "OLLAMA_MODELS and HOME unset (Ollama panics), Apache in <dir>/.ollama/models"
+   ,"relays": []
+   ,"ollama_models": null
+   ,"home": null
+   ,"fingerprint": "31780412d2b0b83141e04bb836d0ec441b8a851d6d666aa4935078577b4bf0db"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"oracle crashed: panic: $HOME is not defined"}
+   ]}
+  ,"go_float_unknown_key": {
+    "request": "qwen3.5:4b"
+   ,"label": "1e999 and 1.5 under a key Ollama does not read"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "442832ea8051bc01ecc94801ab9e91cda083cf4909fef5e31da481ec9fc553f0"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"config":"","digest":"7520980834d42d1e0f6af4d8d2d9be157889507c0ffbd89e2016f7862a5ef625","layers":[["application/vnd.ollama.image.model","sha256:8a46a62632e21d0c832005a28cb86dfd5921227920a84939ba90bf55f9f3b737"],["application/vnd.ollama.image.license","sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"]],"runner":"","selected":"7520980834d42d1e0f6af4d8d2d9be157889507c0ffbd89e2016f7862a5ef625"}
+   ]}
+  ,"go_lone_surrogate": {
+    "request": "qwen3.5:4b"
+   ,"label": "a lone surrogate escape under a key Ollama does not read"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "1a4161b041daeb7a8c3e09ccaa644b7edba841a41a8c8d852fea20f0d10a4161"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"config":"","digest":"959059cc31bdb7606702d9d22da8c9ee0c7b2f52aab808f2a4fbde356da65406","layers":[["application/vnd.ollama.image.model","sha256:8a46a62632e21d0c832005a28cb86dfd5921227920a84939ba90bf55f9f3b737"],["application/vnd.ollama.image.license","sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"]],"runner":"","selected":"959059cc31bdb7606702d9d22da8c9ee0c7b2f52aab808f2a4fbde356da65406"}
+   ]}
+  ,"go_schema_version_float": {
+    "request": "qwen3.5:4b"
+   ,"label": "schemaVersion 2.0"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "a877794cea73455be67f4fa41aed958da2c732021efbc012555321a1586af07d"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"json: cannot unmarshal number 2.0 into Go struct field .schemaVersion of type int"}
+   ]}
+  ,"go_size_1_0": {
+    "request": "qwen3.5:4b"
+   ,"label": "a layer size 1.0"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "0a2f4f91c9ae9420a42ffa3fb81dd9ae45e1d08b07db142246b690b1d478e2b8"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"json: cannot unmarshal number 1.0 into Go struct field Layer.layers.size of type int64"}
+   ]}
+  ,"go_size_1e2": {
+    "request": "qwen3.5:4b"
+   ,"label": "a layer size 1e2"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "bd2e6ba88ac9339dc7eea11c269029eb968a557f75f1c1631b84ad4f680b73d6"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"json: cannot unmarshal number 1e2 into Go struct field Layer.layers.size of type int64"}
+   ]}
+  ,"go_size_1e999": {
+    "request": "qwen3.5:4b"
+   ,"label": "a layer size 1e999"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "48fd68f7099951c10b478ecdf358a6c041227633f5f7c38f3bd83be576e0bd3a"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"json: cannot unmarshal number 1e999 into Go struct field Layer.layers.size of type int64"}
+   ]}
+  ,"go_size_2_63": {
+    "request": "qwen3.5:4b"
+   ,"label": "a layer size 2**63"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "0cf351a9f7c3a70c96a990493dc38a8b8a2365a87e73751fd513d52ee10aee54"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"json: cannot unmarshal number 9223372036854775808 into Go struct field Layer.layers.size of type int64"}
+   ]}
+  ,"go_size_array": {
+    "request": "qwen3.5:4b"
+   ,"label": "a layer size [1]"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "edc609a659f7d41d9d94264f391ee88bec1f87b3aef29ba40b048ae06d4bd39c"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"json: cannot unmarshal array into Go struct field Layer.layers.size of type int64"}
+   ]}
+  ,"go_size_below_int64": {
+    "request": "qwen3.5:4b"
+   ,"label": "a layer size -2**63 - 1"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "4719c3cabebd1d97dbedd4d3363cdbc06d59656b54ed74d6f9647c4d0a0352a2"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"json: cannot unmarshal number -9223372036854775809 into Go struct field Layer.layers.size of type int64"}
+   ]}
+  ,"go_size_fraction": {
+    "request": "qwen3.5:4b"
+   ,"label": "a layer size 1.5"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "cba1ebb4203fb93375ba21e488e1a070bd7c59a22dae9348fe422a727e2257a5"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"json: cannot unmarshal number 1.5 into Go struct field Layer.layers.size of type int64"}
+   ]}
+  ,"go_size_infinity": {
+    "request": "qwen3.5:4b"
+   ,"label": "a layer size Infinity"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "e9fbbe5013cd956e59a4e6e881c347b159105b356ca05df66f9e6ca6e8a74238"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"invalid character 'I' looking for beginning of value"}
+   ]}
+  ,"go_size_int64_max": {
+    "request": "qwen3.5:4b"
+   ,"label": "a layer size 2**63 - 1"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "c41b0d68cb5ae2e243cf19bf2c4ab2e8e661ffbe42b17884b0779751ebfa639c"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"config":"","digest":"d50e72ece12273dc42378570a37f1de17ce9b3a94eb2edf926af82dcc64b278e","layers":[["application/vnd.ollama.image.model","sha256:8a46a62632e21d0c832005a28cb86dfd5921227920a84939ba90bf55f9f3b737"],["application/vnd.ollama.image.license","sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"]],"runner":"","selected":"d50e72ece12273dc42378570a37f1de17ce9b3a94eb2edf926af82dcc64b278e"}
+   ]}
+  ,"go_size_int64_min": {
+    "request": "qwen3.5:4b"
+   ,"label": "a layer size -2**63"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "3b75d9ffaefd8086775abbc0054e05f91b899a0b75dc5fc595f405bb64537414"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"config":"","digest":"474d193470b64e203f9a41bce8eb72846b5b4a3a2aa39f6f31fef72a22d25ec2","layers":[["application/vnd.ollama.image.model","sha256:8a46a62632e21d0c832005a28cb86dfd5921227920a84939ba90bf55f9f3b737"],["application/vnd.ollama.image.license","sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"]],"runner":"","selected":"474d193470b64e203f9a41bce8eb72846b5b4a3a2aa39f6f31fef72a22d25ec2"}
+   ]}
+  ,"go_size_minus_infinity": {
+    "request": "qwen3.5:4b"
+   ,"label": "a layer size -Infinity"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "df0182641d01096227cd0f9ad9dda0d7ba4527194fe0954b63278a598c179f3f"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"invalid character 'I' in numeric literal"}
+   ]}
+  ,"go_size_minus_one": {
+    "request": "qwen3.5:4b"
+   ,"label": "a layer size -1"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "b4de112b710be4c73182b7d16f6b90da9a6871f4fea6c208fafdbf2b77e83ce1"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"config":"","digest":"9b02c8dad72fc620bc057f12ca6233be35289d05d2a564952b26906ddee5edc2","layers":[["application/vnd.ollama.image.model","sha256:8a46a62632e21d0c832005a28cb86dfd5921227920a84939ba90bf55f9f3b737"],["application/vnd.ollama.image.license","sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"]],"runner":"","selected":"9b02c8dad72fc620bc057f12ca6233be35289d05d2a564952b26906ddee5edc2"}
+   ]}
+  ,"go_size_nan": {
+    "request": "qwen3.5:4b"
+   ,"label": "a layer size NaN"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "a30763f743523c9acb8a0030916baf3c5e5925198b1752f7919cc9d9e0958acb"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"invalid character 'N' looking for beginning of value"}
+   ]}
+  ,"go_size_nan_unknown_key": {
+    "request": "qwen3.5:4b"
+   ,"label": "NaN under a key Ollama does not read"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "d9ca35da97ccdc1c6f257fc0238cf5a71d87d9cf76f3fca7e819982cc1e79a74"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"invalid character 'N' looking for beginning of value"}
+   ]}
+  ,"go_size_null": {
+    "request": "qwen3.5:4b"
+   ,"label": "a layer size null"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "5935bbcfc45df6373fe33aa16a1bb3935f47f57ded8378552cbd8dd4f9e4be9c"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"config":"","digest":"4d6618574998bffb79929a814b4bec7990c19a13457d5d5110c771701bef366d","layers":[["application/vnd.ollama.image.model","sha256:8a46a62632e21d0c832005a28cb86dfd5921227920a84939ba90bf55f9f3b737"],["application/vnd.ollama.image.license","sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"]],"runner":"","selected":"4d6618574998bffb79929a814b4bec7990c19a13457d5d5110c771701bef366d"}
+   ]}
+  ,"go_size_string": {
+    "request": "qwen3.5:4b"
+   ,"label": "a layer size \"1\""
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "1a5224186aeb85ecad616ec069cba5fec747f7104425d925cddc14f2e8958b8f"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"json: cannot unmarshal string into Go struct field Layer.layers.size of type int64"}
+   ]}
+  ,"go_size_true": {
+    "request": "qwen3.5:4b"
+   ,"label": "a layer size true"
+   ,"relays": []
+   ,"ollama_models": "{models}"
+   ,"fingerprint": "1ea4a08b277fe2390f89de5abaa82681e6998871c52712a891b4c0576fc0cef9"
+   ,"runs": {"main/-":0,"main/ggml":0,"main/llamacpp":0,"main/mlx":0,"v040/-":0,"v040/ggml":0,"v040/llamacpp":0,"v040/mlx":0}
+   ,"served": [
+     {"error":"json: cannot unmarshal bool into Go struct field Layer.layers.size of type int64"}
    ]}
   ,"hardlinked_v2": {
     "request": "qwen3.5:4b"

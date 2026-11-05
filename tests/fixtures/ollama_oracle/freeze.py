@@ -4,9 +4,10 @@
     python -B -I tests/fixtures/ollama_oracle/freeze.py <oracle-dir>
 
 Each scenario is built in a fresh directory and both oracles (Ollama v0.40.0 0d0720e and main e9fde36d, see
-build_oracle.sh) are asked for its request name with no runner and with each runner, with HOME=<dir> and
-OLLAMA_MODELS as scenarios.ENV says (<dir>/models unless it names another spelling). A temporary directory's path
-in an error is written as <dir>. Run it on Linux: with no runner, Ollama orders the runners by platform.
+build_oracle.sh) are asked for its request name with no runner and with each runner, with HOME=<dir> unless
+scenarios.HOME names another (None: unset) and OLLAMA_MODELS as scenarios.ENV says (<dir>/models unless it names
+another spelling; None: unset). A temporary directory's path in an error is written as <dir>, and an oracle that
+panics (Ollama's envconfig.Models without a HOME) is recorded by its panic line, since its stack trace varies. Run it on Linux: with no runner, Ollama orders the runners by platform.
 """
 from __future__ import annotations
 
@@ -38,18 +39,28 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def models_env(scenarios, scenario: str, directory: Path) -> str:
-    """The OLLAMA_MODELS value a scenario runs under (scenarios.ENV, "{models}" standing for <dir>/models)."""
-    return scenarios.ENV.get(scenario, "{models}").replace("{models}", str(directory / "models"))
+def models_env(scenarios, scenario: str, directory: Path) -> str | None:
+    """The OLLAMA_MODELS value a scenario runs under (scenarios.ENV, "{models}" standing for <dir>/models; None:
+    unset)."""
+    value = scenarios.ENV.get(scenario, "{models}")
+    return None if value is None else value.replace("{models}", str(directory / "models"))
 
 
-def ask(binary: Path, directory: Path, name: str, runner: str, models: str) -> dict:
-    env = {"PATH": os.environ.get("PATH", ""), "OLLAMA_MODELS": models, "HOME": str(directory)}
+def home_env(scenarios, scenario: str, directory: Path) -> str | None:
+    """The HOME a scenario runs under (scenarios.HOME, "{dir}" standing for <dir>; None: unset)."""
+    value = getattr(scenarios, "HOME", {}).get(scenario, "{dir}")
+    return None if value is None else value.replace("{dir}", str(directory))
+
+
+def ask(binary: Path, directory: Path, name: str, runner: str, models: str | None, home: str | None) -> dict:
+    env = {"PATH": os.environ.get("PATH", ""), "OLLAMA_MODELS": models, "HOME": home}
+    env = {key: value for key, value in env.items() if value is not None}
     out = subprocess.run([str(binary), name, runner], capture_output=True, text=True, env=env, timeout=60)
     try:
         answer = json.loads(out.stdout.strip().splitlines()[-1])
     except (IndexError, ValueError):
-        answer = {"error": "oracle crashed: " + (out.stderr.strip()[-200:] or out.stdout[-200:])}
+        panic = next((line for line in out.stderr.splitlines() if line.startswith("panic: ")), None)
+        answer = {"error": "oracle crashed: " + (panic or out.stderr.strip()[-200:] or out.stdout[-200:])}
     answer.pop("version", None)
     if "error" in answer:
         answer["error"] = answer["error"].replace(str(directory), "<dir>")
@@ -82,7 +93,8 @@ def main() -> int:
             served, runs = [], {}
             for v in OLLAMA:
                 for r in RUNNERS:
-                    answer = ask(oracles[v], directory, name, r, models_env(scenarios, fn.__name__, directory))
+                    answer = ask(oracles[v], directory, name, r, models_env(scenarios, fn.__name__, directory),
+                                 home_env(scenarios, fn.__name__, directory))
                     if answer not in served:
                         served.append(answer)
                     runs[f"{v}/{r or '-'}"] = served.index(answer)
@@ -90,6 +102,8 @@ def main() -> int:
                                                 "ollama_models": scenarios.ENV.get(fn.__name__, "{models}"),
                                                 "fingerprint": fingerprint, "runs": runs,
                                                 "served": served}
+            if fn.__name__ in getattr(scenarios, "HOME", {}):
+                frozen["scenarios"][fn.__name__]["home"] = scenarios.HOME[fn.__name__]
         finally:
             shutil.rmtree(directory)
     out_path.write_text(dump(frozen), encoding="utf-8")
@@ -104,7 +118,8 @@ def dump(frozen: dict) -> str:
     for i, (name, s) in enumerate(sorted(frozen["scenarios"].items())):
         out.append(f'  {"," if i else " "}{line(name)}: {{')
         out += [f'   {"," if j else " "}{line(key)}: {line(s[key])}'
-                for j, key in enumerate(("request", "label", "relays", "ollama_models", "fingerprint", "runs"))]
+                for j, key in enumerate(k for k in ("request", "label", "relays", "ollama_models", "home",
+                                                    "fingerprint", "runs") if k in s)]
         out.append('   ,"served": [')
         out += [f'    {"," if j else " "}{line(answer)}' for j, answer in enumerate(s["served"])]
         out.append("   ]}")

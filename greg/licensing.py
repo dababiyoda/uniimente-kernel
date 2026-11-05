@@ -741,16 +741,24 @@ _DIGEST_PREFIX = re.compile(r"[0-9a-f]{12,64}")      # manifest/paths.go digestP
 OLLAMA_RUNNER_NAMES = ("mlx", "mlxrunner", "ggml", "llamacpp", "llama.cpp", "llama-cpp", "llama_cpp")
 _GO_SPACE = " \t\n\v\f\r\x85\xa0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a" \
             "\u2028\u2029\u202f\u205f\u3000"
-# The JSON fields Ollama decodes from each object the gate reads (manifest/manifest.go Manifest.UnmarshalJSON,
-# manifest/layer.go Layer, types/model/config.go ConfigV2; v0.40.0 and main, "voices" in main only). Go's
-# encoding/json matches a key to a field ignoring case, folding beyond ASCII (U+017F is s, U+212A is k), and a
-# repeated key overwrites or merges into the first; GREG reads exact keys, so ``_go_fields`` holds any object whose
-# keys Go could read otherwise.
-_GO_MANIFEST_FIELDS = ("schemaVersion", "mediaType", "config", "layers", "runner", "format", "manifests", "digest")
-_GO_LAYER_FIELDS = ("mediaType", "digest", "size", "from", "name")
-_GO_CONFIG_FIELDS = ("model_format", "model_family", "model_families", "model_type", "file_type",
-                     "generation_defaults", "renderer", "parser", "requires", "remote_host", "remote_model",
-                     "capabilities", "context_length", "embedding_length", "voices", "base_name", "draft")
+# The JSON fields Ollama decodes from each object the gate reads, with the Go type of each (manifest/manifest.go
+# Manifest.UnmarshalJSON, manifest/layer.go Layer, types/model/config.go ConfigV2 and Draft, types/model/generation.go
+# GenerationDefaults; v0.40.0 and main, "voices" in main only). Go's encoding/json matches a key to a field ignoring
+# case, folding beyond ASCII (U+017F is s, U+212A is k), and a repeated key overwrites or merges into the first; GREG
+# reads exact keys, so ``_go_fields`` holds any object whose keys Go could read otherwise. A value Go cannot store in
+# its field's type fails the whole decode, so ``_go_fields`` holds that too: "int" is a Go int or int64 (64 bits on
+# every platform Ollama ships), which takes only an integer literal in range; "map" is a map[string]any: an
+# object, whose numbers Go reads as float64.
+_GO_LAYER_FIELDS = {"mediaType": "string", "digest": "string", "size": "int", "from": "string", "name": "string"}
+_GO_MANIFEST_FIELDS = {"schemaVersion": "int", "mediaType": "string", "config": "layer", "layers": "layers",
+                       "runner": "string", "format": "string", "manifests": "manifests", "digest": "string"}
+_GO_DRAFT_FIELDS = {"model_format": "string", "architecture": "string", "tensor_prefix": "string",
+                    "config": "string"}
+_GO_CONFIG_FIELDS = {"model_format": "string", "model_family": "string", "model_families": "strings",
+                     "model_type": "string", "file_type": "string", "generation_defaults": "map",
+                     "renderer": "string", "parser": "string", "requires": "string", "remote_host": "string",
+                     "remote_model": "string", "capabilities": "strings", "context_length": "int",
+                     "embedding_length": "int", "voices": "strings", "base_name": "string", "draft": "draft"}
 MAX_MANIFEST_BYTES = MAX_MODEL_LICENSE_BYTES = 1 << 20
 MODEL_LIMITS = ("read from the model's own license layers in the local Ollama store, not a legal review: Apache-2.0 "
                 "and MIT are recognised only when their terms match the standard text; any other text, and any text "
@@ -925,12 +933,24 @@ def _ollama_models_env() -> str:
 
 
 def _ollama_stores(models_dir) -> list:
+    """The store Ollama reads (envconfig.Models, v0.40.0 0d0720e and main e9fde36d): ``models_dir`` when the caller
+    names one; else OLLAMA_MODELS while it is non-empty once trimmed, with no fallback; else $HOME/.ollama/models, and
+    nothing else. Ollama never reads /usr/share/ollama/.ollama/models unless its own HOME or OLLAMA_MODELS names it
+    (the Linux service's HOME is /usr/share/ollama), so GREG reads that store only when a caller passes it as
+    ``models_dir``. With HOME unset or empty Ollama panics (os.UserHomeDir fails) and runs nothing: ``_Unservable``.
+    HOME is read raw, as os.UserHomeDir reads it; Python's Path.home() would fall back to the password database for
+    an unset HOME and to "/" for an empty one."""
+    import os
     if models_dir is not None:
         return [Path(models_dir)]
     named = _ollama_models_env()
     if named:        # envconfig.Models: a non-empty OLLAMA_MODELS is the only store Ollama reads, with no fallback
         return [Path(named)]
-    return [Path.home() / ".ollama" / "models", Path("/usr/share/ollama/.ollama/models")]
+    home = os.environ.get("HOME", "")
+    if not home:
+        raise _Unservable("OLLAMA_MODELS and HOME are unset or empty, so Ollama finds no store (envconfig.Models "
+                          "panics) and GREG reads none; name the store with models_dir")
+    return [Path(home) / ".ollama" / "models"]
 
 
 def model_assessment(model: str, licenses: list, subject: dict, problem: str | None = None) -> dict:
@@ -1004,12 +1024,19 @@ def _go_object(pairs) -> _GoObject:
     return obj
 
 
+def _go_constant(name: str):
+    raise _Unservable(f"the model's manifest or config carries the JSON constant {name}, which Python's decoder "
+                      "accepts and Ollama's Go decoder rejects, so Ollama cannot load it")
+
+
 def _go_json(data: bytes):
-    """``data`` decoded with every object a ``_GoObject``, so ``_go_fields`` can see the keys json.loads merges. The
-    bytes are read as UTF-8 and nothing else: json.loads(bytes) would also take a UTF-8 BOM, UTF-16 or UTF-32, which
-    Go's encoding/json rejects, so a manifest Ollama cannot decode is not one GREG reads (ValueError: held)."""
+    """``data`` decoded with every object a ``_GoObject``, so ``_go_fields`` can see the keys json.loads merges (and a
+    number with a fraction or an exponent a float, which Go stores in no int field). The bytes are read as UTF-8 and
+    nothing else: json.loads(bytes) would also take a UTF-8 BOM, UTF-16 or UTF-32, which Go's encoding/json rejects, so
+    a manifest Ollama cannot decode is not one GREG reads (ValueError: held). NaN, Infinity and -Infinity, which
+    json.loads accepts and Go does not, raise ``_Unservable``."""
     return json.loads(data.decode("utf-8") if isinstance(data, (bytes, bytearray)) else data,
-                      object_pairs_hook=_go_object)
+                      object_pairs_hook=_go_object, parse_constant=_go_constant)
 
 
 def _go_key(key: str) -> str:
@@ -1020,7 +1047,9 @@ def _go_fields(obj, fields, what: str) -> None:
     """Raise ``_Unservable`` unless Ollama's Go decoder reads ``fields`` from this object exactly as GREG reads them:
     no key that is not ASCII, no two keys equal ignoring case (a repeated key included), and no key equal to one of
     ``fields`` ignoring case but spelled otherwise. Go matches the remaining ASCII keys to fields by ASCII case
-    folding, which these rules make the identity. Anything that is not a JSON object is left to the caller."""
+    folding, which these rules make the identity. Each field's value must be one Go stores in the field's type
+    (``_go_value``), and the objects inside it are checked the same way. Anything that is not a JSON object is left
+    to the caller."""
     if not isinstance(obj, dict):
         return
     known, seen = {field.lower(): field for field in fields}, {}
@@ -1036,6 +1065,48 @@ def _go_fields(obj, fields, what: str) -> None:
         if folded in known and key != known[folded]:
             raise _Unservable(f"{what} carries the key {_go_key(key)}, which Ollama's JSON decoder reads as "
                               f"{known[folded]!r} (Go matches keys ignoring case) and GREG does not")
+    for field, kind in fields.items():
+        if field in obj:
+            _go_value(obj[field], kind, f"{what}: {field!r}")
+
+
+def _go_value(value, kind: str, what: str) -> None:
+    """Raise ``_Unservable`` unless Go's encoding/json stores ``value`` in a field of this kind (``_GO_*_FIELDS``).
+    null is stored in every kind, as Go leaves the field empty; a string takes a string only (Go reads a lone
+    surrogate escape as U+FFFD); an int takes an integer literal from -2**63 to 2**63 - 1, not 1.5, 1e2 or 2**63;
+    an object or array kind takes that, with its members checked; "map" takes an object whose numbers, at any depth,
+    are float64."""
+    if value is None:
+        return
+    wrong = None
+    if kind == "string":
+        wrong = not isinstance(value, str)
+    elif kind == "int":
+        wrong = not (type(value) is int and -(1 << 63) <= value < (1 << 63))
+    elif kind in ("layer", "draft"):
+        wrong = not isinstance(value, dict)
+        if not wrong:
+            _go_fields(value, _GO_LAYER_FIELDS if kind == "layer" else _GO_DRAFT_FIELDS, what)
+    elif kind in ("layers", "manifests", "strings"):
+        wrong = not isinstance(value, list)
+        for item in [] if wrong else value:
+            if kind == "strings":
+                _go_value(item, "string", f"{what} item")
+            elif item is not None and not isinstance(item, dict):
+                wrong = True
+            else:
+                _go_fields(item, _GO_LAYER_FIELDS if kind == "layers" else _GO_MANIFEST_FIELDS, f"{what} item")
+    elif kind == "map":
+        wrong, stack = not isinstance(value, dict), [value]
+        while stack:
+            item = stack.pop()
+            if isinstance(item, (int, float)) and not isinstance(item, bool) and \
+                    float(str(item)) in (float("inf"), float("-inf")):
+                wrong = True
+            stack += item.values() if isinstance(item, dict) else item if isinstance(item, list) else ()
+    if wrong:
+        raise _Unservable(f"{what} holds {_go_key(json.dumps(value)[:40])}, which Ollama's Go decoder cannot store "
+                          f"in that field ({kind}), so Ollama cannot load the model")
 
 
 def _ollama_named(store: Path, parts) -> list:
@@ -1196,7 +1267,8 @@ def _ollama_runs(store: Path, label: str, manifest: dict, where: str = "") -> tu
     a manifest whose config names a remote host and model is a relay Ollama forwards to that host (server/routes.go,
     Config.RemoteHost and RemoteModel), whose weights are not in this store; a manifest with no weight layer runs
     nothing GREG can read. Either, or a config blob that is not in the store or does not match, is held. A layer, the
-    config or the config blob whose keys Ollama could read otherwise raises ``_Unservable`` (``_go_fields``)."""
+    config or the config blob whose keys Ollama could read otherwise, or with a value Go cannot store in its field,
+    raises ``_Unservable`` (``_go_fields``)."""
     layers = [layer for layer in manifest["layers"] if isinstance(layer, dict)]
     for layer in layers:
         _go_fields(layer, _GO_LAYER_FIELDS, f"{where}a layer of the manifest")
@@ -1265,20 +1337,22 @@ def _ollama_request_form(model: str) -> str | None:
 
 
 def ollama_model(model: str, models_dir=None) -> dict | None:
-    """The license assessment of an Ollama model installed on this body, read from its manifest and license blobs,
-    bound to the manifest and weight digests. None when the name is malformed or no store holds the model; a store
-    that cannot be listed raises OSError, or ValueError for a path the OS cannot take (``admit_model_selection``
-    holds the model then).
+    """The license assessment of an Ollama model installed on this body, read from its manifest and license blobs, bound
+    to the manifest and weight digests. None when the name is malformed or no store holds the model; a store that cannot
+    be listed raises OSError, or ValueError for a path the OS cannot take (``admit_model_selection`` holds the model
+    then).
 
     The manifest is the one Ollama serves for the name (``_ollama_manifest``); a name Ollama reads as a cloud or
-    ':local' name or as a digest of a local blob (``_ollama_request_form``, ``_digest_reference``) is held, and so is
-    a manifest, list entry, layer, config or config blob whose JSON keys Ollama's decoder could read otherwise
-    (``_go_fields``). ``manifest_sha256`` is the digest of the manifest the name holds, which is the digest
-    Ollama's /api/tags reports for a plain manifest. For a manifest list every child the store holds is assessed on
-    its own and any held child holds the model, since Ollama may run any of them; ``subject["children"]`` gives each
-    child's digest, runners, weights and verdict, and ``subject["api_tags_digest"]`` the child /api/tags reports
-    (and Ollama runs) in each order of runners: "mlx>llamacpp>ggml" on Apple-silicon macOS, "llamacpp>ggml>mlx"
-    elsewhere (server/model_list.go describeModelRows; manifest.go runnerPreferences)."""
+    ':local' name or as a digest of a local blob (``_ollama_request_form``, ``_digest_reference``) is held, and so is a
+    manifest, list entry, layer, config or config blob whose JSON keys Ollama's decoder could read otherwise, or that
+    holds a value Go cannot store in its field's type, or NaN or Infinity, which Go rejects (``_go_fields``,
+    ``_go_json``). The store is the one Ollama's envconfig.Models names (``_ollama_stores``); with neither OLLAMA_MODELS
+    nor HOME set, Ollama finds none, and the model is held. ``manifest_sha256`` is the digest of the manifest the name
+    holds, which is the digest Ollama's /api/tags reports for a plain manifest. For a manifest list every child the
+    store holds is assessed on its own and any held child holds the model, since Ollama may run any of them;
+    ``subject["children"]`` gives each child's digest, runners, weights and verdict, and ``subject["api_tags_digest"]``
+    the child /api/tags reports (and Ollama runs) in each order of runners: "mlx>llamacpp>ggml" on Apple-silicon macOS,
+    "llamacpp>ggml>mlx" elsewhere (server/model_list.go describeModelRows; manifest.go runnerPreferences)."""
     parts = _ollama_parts(model)
     form = _ollama_request_form(model)
     if form is not None:
@@ -1296,7 +1370,11 @@ def ollama_model(model: str, models_dir=None) -> dict | None:
                                 "Ollama main (e9fde36d) finds no local model asked for under the host ollama.com (it "
                                 "names local models registry.ollama.ai), so it would pull this name from the registry "
                                 "and run bytes GREG did not read; name the model without a host")
-    for store in _ollama_stores(models_dir):
+    try:
+        stores = _ollama_stores(models_dir)
+    except _Unservable as exc:
+        return model_assessment(name, [], {"model": name, "manifest_sha256": None, "weights": []}, str(exc))
+    for store in stores:
         found = _ollama_manifest(store, parts)
         if found is None:
             continue

@@ -190,6 +190,47 @@ def test_compiled_modules_name_bytecode_caches_and_native_extensions_only():
         "pkg/calc.pyd"]
 
 
+ADD = "def add(a, b):\n    return a + b\n"
+ALIAS = {"pkg/calc.py": ADD + "\n\nsub = add\n",                                 # corrupted: an alias, no operator
+         "tests/test_calc.py": "from pkg.calc import sub\n\n\ndef test_sub():\n    assert True\n"}
+LABEL = {"pkg/calc.py": ADD + '\n\nLABEL = "Approving records your answer; attaching is its own command"\n',
+         "tests/test_calc.py": "from pkg.calc import LABEL\n\n\ndef test_label():\n    assert 'its own command' in LABEL\n"}
+IMPORTED = {"pkg/calc.py": "from operator import sub\n\n\n" + ADD,                  # correct, but no site at all
+            "tests/test_calc.py": "from pkg.calc import sub\n\n\ndef test_sub():\n    assert sub(5, 2) == 3\n"}
+
+
+def test_an_alias_certified_only_by_importing_it_is_refused_by_the_fallback_tier(tmp_path, monkeypatch):
+    """Probed on 196 (d35d92a5): ``sub = add`` gave no primary site, mutation went unmeasured, ACCEPTED."""
+    home, _, _, events, _ = run_mission(tmp_path, monkeypatch, ALIAS)
+    assert "greg.mission.achieved" not in events
+    mutation = appraise_again(home, tmp_path)["evidence_strength"]["mutation"]
+    assert mutation["tier"] == "fallback" and mutation["killed"] == 0
+    assert mutation["survivors"] == ["line 5: assign value -> None"]
+
+
+def test_a_string_change_pinned_by_its_test_is_measured_and_accepted(tmp_path, monkeypatch):
+    home, _, _, events, _ = run_mission(tmp_path, monkeypatch, LABEL)
+    assert "greg.mission.achieved" in events
+    result = appraise_again(home, tmp_path)
+    mutation = result["evidence_strength"]["mutation"]
+    assert result["verdict"] == "ACCEPTED" and mutation["tier"] == "fallback" and mutation["kill_ratio"] == 1.0
+
+
+def test_a_change_with_nothing_to_corrupt_needs_the_founders_acceptance_test(tmp_path, monkeypatch):
+    home, _, _, events, _ = run_mission(tmp_path, monkeypatch, IMPORTED)
+    assert "greg.mission.achieved" not in events
+    result = appraise_again(home, tmp_path)
+    assert result["evidence_strength"]["mutation"]["measured"] is False
+    assert any("nothing to corrupt" in f and "name an acceptance test" in f for f in result["findings"])
+
+
+def test_the_founders_acceptance_test_certifies_a_change_with_nothing_to_corrupt(tmp_path, monkeypatch):
+    home, events = run_with_oracle(tmp_path, monkeypatch, IMPORTED)
+    assert "greg.mission.achieved" in events
+    result = appraise_again(home, tmp_path)
+    assert result["verdict"] == "ACCEPTED" and result["evidence_strength"]["mutation"]["measured"] is False
+
+
 # -- the parts on their own ---------------------------------------------------------------
 
 def test_sealed_paths_cover_files_directories_and_node_ids():
@@ -214,3 +255,13 @@ def test_mutants_touch_only_the_changed_lines_and_are_deterministic():
     assert {"swap and/or", "drop 'not'", "negate comparison", "flip comparison"} <= {l.split(": ", 1)[1] for l in labels}
     assert all("a + b" in text for _, text in first)                            # line 2 untouched
     assert len(evidence_strength.mutants("x = [" + ", ".join(["1"] * 40) + "]\n", {1}, limit=5)) == 5
+
+
+def test_the_fallback_tier_runs_only_where_the_primary_operators_find_nothing():
+    source = '"""Module docstring."""\nfrom operator import sub\nLABEL = "text"\nalias = sub\n\n\ndef f(x):\n    return g(x) + 1\n'
+    changed = set(range(1, 9))
+    assert [label for label, _ in evidence_strength.mutants(source, changed)] == [
+        "line 8: 1 -> 2", "line 8: 1 -> 0", "line 8: drop '+ 1'", "line 8: swap +/-"]
+    assert [label for label, _ in evidence_strength.mutants(source, changed, tier="fallback")] == [
+        "line 3: string emptied", "line 3: assign value -> None", "line 4: assign value -> None",
+        "line 8: return value -> None"]                                  # never the docstring, never the import

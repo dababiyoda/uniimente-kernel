@@ -23,10 +23,15 @@ changed in role:
 Thresholds were fixed before measurement. Limits, stated: mutation testing samples at most
 ``MAX_MUTANTS`` sites. Equivalent mutants count as survivors. Python sources only. Only the
 worker-authored tests are scored; a founder-named oracle is trusted as the founder's judgment.
+A change the primary operators cannot reach (a string, an alias) is mutated by ``_Fallback``; one
+that even those cannot reach is certified only by a founder-named acceptance test. Compiled modules
+in a patch are refused (``compiled_modules``). A test that checks only that its subject is callable
+still kills the fallback's ``-> None`` mutant: that residual is closed by a founder oracle, not here.
 """
 from __future__ import annotations
 
 import ast
+import copy
 from fnmatch import fnmatchcase
 from pathlib import Path
 import re
@@ -130,19 +135,72 @@ def added_lines(diff_u0: str) -> set[int]:
     return lines
 
 
-def mutants(source: str, lines: set[int], limit: int = MAX_MUTANTS) -> list[tuple[str, str]]:
-    """Deterministic, evenly spread sample of single-site mutants of ``lines``; no-op mutants dropped."""
+class _Fallback(repair._Mutator):
+    """Used only when ``_Adversary`` finds no site on the changed lines: a string-only edit (a label, a
+    message) or a new binding (``sub = add``) would otherwise leave mutation unmeasured, and a test that only
+    imports its subject would certify it. Empties an added string (bare string statements such as docstrings
+    excluded) and replaces a newly assigned or returned value with ``None``."""
+
+    def visit_Constant(self, node):
+        if getattr(node, "lineno", None) in self.lines and isinstance(node.value, str) and node.value:
+            return self._string(node, node.lineno)
+        return node
+
+    def visit_BinOp(self, node):
+        self.generic_visit(node)
+        return node
+
+    def visit_Compare(self, node):
+        self.generic_visit(node)
+        return node
+
+    def visit_Expr(self, node):
+        if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+            return node
+        self.generic_visit(node)
+        return node
+
+    def visit_JoinedStr(self, node):
+        return self._string(node, node.lineno) if getattr(node, "lineno", None) in self.lines else node
+
+    def _string(self, node, lineno):
+        return self._site(node, f"line {lineno}: string emptied",
+                          lambda: ast.copy_location(ast.Constant(""), node))
+
+    def visit_Assign(self, node):
+        self.generic_visit(node)
+        return self._none(node)
+
+    visit_AnnAssign = visit_Return = visit_Assign
+
+    def _none(self, node):
+        value = getattr(node, "value", None)
+        if node.lineno not in self.lines or value is None or (isinstance(value, ast.Constant) and value.value is None):
+            return node
+
+        def replace():
+            changed = copy.copy(node)
+            changed.value = ast.copy_location(ast.Constant(None), value)
+            return changed
+        return self._site(node, f"line {node.lineno}: {type(node).__name__.lower()} value -> None", replace)
+
+
+def mutants(source: str, lines: set[int], limit: int = MAX_MUTANTS, tier: str = "primary") -> list[tuple[str, str]]:
+    """Deterministic, evenly spread sample of single-site mutants of ``lines``; no-op mutants dropped.
+
+    ``tier="fallback"`` uses the string and binding operators, for a change the primary ones cannot reach."""
     try:
         original = ast.unparse(ast.parse(source)) + "\n"
     except SyntaxError:
         return []
-    probe = _Adversary(lines)
+    kind = _Adversary if tier == "primary" else _Fallback
+    probe = kind(lines)
     probe.visit(ast.parse(source))
     total = len(probe.labels)
     picks = range(total) if total <= limit else sorted({round(i * (total - 1) / (limit - 1)) for i in range(limit)})
     out = []
     for index in picks:
-        tree = _Adversary(lines, target=index).visit(ast.parse(source))
+        tree = kind(lines, target=index).visit(ast.parse(source))
         text = ast.unparse(ast.fix_missing_locations(tree)) + "\n"
         if text != original:
             out.append((probe.labels[index], text))
@@ -160,7 +218,7 @@ def worker_tests(names: list[str]) -> list[str]:
 
 
 def judge(*, fresh: Path, base_clone: Path, patch: Path, base: str, names: list[str], command: list[str],
-          git, run_tests, timeout: int) -> dict:
+          git, run_tests, timeout: int, oracle: bool = False) -> dict:
     """Score the worker-authored tests against the base and against mutants of the worker's change.
 
     ``fresh`` holds the patched tree; ``base_clone`` is a second clean clone at ``base``. ``git`` and
@@ -186,33 +244,43 @@ def judge(*, fresh: Path, base_clone: Path, patch: Path, base: str, names: list[
                         f"about it (pytest exit {on_base['returncode']} on the base)")
 
     sources = [n for n in names if n.endswith(".py") and not fnmatchcase(n, TEST_SIDE) and (fresh / n).is_file()]
-    results = []
-    for name in sources:
-        lines = added_lines(git(fresh, "diff", "--cached", "-U0", base, "--", name).stdout)
-        path = fresh / name
-        original = path.read_bytes()
-        for label, text in mutants(original.decode("utf-8", "replace"), lines,
-                                   max(0, MAX_MUTANTS - len(results))):
-            try:
-                path.write_text(text)
-                [run] = run_tests([command], fresh, timeout=timeout)
-            finally:
-                path.write_bytes(original)
-            results.append({"file": name, "mutant": label, "killed": not run["passed"],
-                            "returncode": run["returncode"]})
-        if len(results) >= MAX_MUTANTS:
+    results, tier = [], "primary"
+    for tier in ("primary", "fallback"):
+        for name in sources:
+            lines = added_lines(git(fresh, "diff", "--cached", "-U0", base, "--", name).stdout)
+            path = fresh / name
+            original = path.read_bytes()
+            for label, text in mutants(original.decode("utf-8", "replace"), lines,
+                                       max(0, MAX_MUTANTS - len(results)), tier=tier):
+                try:
+                    path.write_text(text)
+                    [run] = run_tests([command], fresh, timeout=timeout)
+                finally:
+                    path.write_bytes(original)
+                results.append({"file": name, "mutant": label, "killed": not run["passed"],
+                                "returncode": run["returncode"]})
+            if len(results) >= MAX_MUTANTS:
+                break
+        if results:
             break
     killed = sum(r["killed"] for r in results)
     ratio = killed / len(results) if results else None
     measured = bool(results)
-    adequate = (not measured) or (killed >= MIN_KILLED and ratio >= MIN_KILL_RATIO)
+    # Nothing to corrupt is no evidence (PIT's failWhenNoMutations defaults to true): only the founder's
+    # named acceptance test, which already passed, can certify such a change.
+    adequate = oracle if not measured else (killed >= MIN_KILLED and ratio >= MIN_KILL_RATIO)
     report["mutation"] = {"measured": measured, "mutants": len(results), "killed": killed,
                           "kill_ratio": round(ratio, 3) if ratio is not None else None,
                           "thresholds": {"min_killed": MIN_KILLED, "min_kill_ratio": MIN_KILL_RATIO,
                                          "max_mutants": MAX_MUTANTS},
                           "survivors": [r["mutant"] for r in results if not r["killed"]][:MAX_MUTANTS],
-                          "operators": "foundry/systems/repair.py _Mutator + greg/evidence_strength.py _Adversary"}
-    if not adequate:
+                          "tier": tier if measured else None,
+                          "operators": "foundry/systems/repair.py _Mutator + greg/evidence_strength.py _Adversary"
+                                       + (" (fallback: _Fallback)" if measured and tier == "fallback" else "")}
+    if not adequate and not measured:
+        findings.append("the change gives the mutation adversary nothing to corrupt, so the worker's own tests "
+                        "cannot be shown to tell it from a wrong version; name an acceptance test for this order")
+    elif not adequate:
         findings.append(f"the worker's tests kill {killed} of {len(results)} mutants of its own change; "
                         "they cannot tell it from a corrupted version")
     return {"findings": findings, **report}

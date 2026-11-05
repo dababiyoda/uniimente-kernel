@@ -13,7 +13,7 @@ MUTANTS = [
      'discriminates = on_base["returncode"] in (1, 2, -1)', "discriminates = True",
      "tests/unit/test_greg_worker_evidence_strength.py::test_a_vacuous_test_no_longer_certifies_a_corrupted_change"),
     ("mutation adversary threshold", "greg/evidence_strength.py",
-     "adequate = (not measured) or (killed >= MIN_KILLED and ratio >= MIN_KILL_RATIO)", "adequate = True",
+     "else (killed >= MIN_KILLED and ratio >= MIN_KILL_RATIO)", "else True",
      "tests/unit/test_greg_worker_evidence_strength.py::"
      "test_a_test_that_cannot_tell_add_from_sub_is_refused_by_the_mutation_adversary"),
     ("sealed acceptance oracle", "greg/workers.py",
@@ -28,6 +28,14 @@ MUTANTS = [
      "compiled = evidence_strength.compiled_modules(names)", "compiled = []",
      "tests/unit/test_greg_worker_evidence_strength.py::"
      "test_a_planted_bytecode_file_cannot_stand_in_for_the_source_under_review"),
+    ("fallback mutation tier skipped", "greg/evidence_strength.py",
+     'for tier in ("primary", "fallback"):', 'for tier in ("primary",):',
+     "tests/unit/test_greg_worker_evidence_strength.py::"
+     "test_an_alias_certified_only_by_importing_it_is_refused_by_the_fallback_tier"),
+    ("nothing to corrupt counted as adequate", "greg/evidence_strength.py",
+     "adequate = oracle if not measured else", "adequate = True if not measured else",
+     "tests/unit/test_greg_worker_evidence_strength.py::"
+     "test_a_change_with_nothing_to_corrupt_needs_the_founders_acceptance_test"),
 ]
 DEFAULT_TEST = "tests/unit/test_greg_workers.py::test_appraisal_binds_acceptance_to_the_original_commission"
 

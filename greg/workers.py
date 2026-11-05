@@ -1359,7 +1359,8 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
                 strength = evidence_strength.judge(
                     fresh=fresh, base_clone=base_clone, patch=Path(tmp) / "change.patch", base=base, names=names,
                     command=acceptance_commands({"run_changed_tests": True}, names)[-1], git=_git,
-                    run_tests=confined_tests, timeout=min(timeout, 300))
+                    run_tests=confined_tests, timeout=min(timeout, 300),
+                    oracle=bool(order["acceptance"].get("tests")))
                 if strength["findings"]:
                     findings.extend(strength["findings"])
                     verdict = "REJECTED"

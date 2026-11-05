@@ -4390,38 +4390,42 @@
      "excerpt": "Do not rely on hard-coded PR numbers without verifying current state.",
      "owner_paths": [
       "scripts/lineage_map.py",
-      "docs/collaboration/ORGAN-PR-PLACEMENTS-2026-09-30.json"
+      "docs/collaboration/ORGAN-PR-PLACEMENTS-2026-09-30.json",
+      "docs/collaboration/KERNEL-PR-PLACEMENTS.json"
      ],
      "evidence": [
       "tests/unit/test_organ_pr_placements.py",
       "tests/unit/test_developmental_inheritance.py::test_every_open_kernel_pr_is_placed_on_the_path",
-      "tests/unit/test_lineage_map.py"
+      "tests/unit/test_lineage_map.py",
+      "tests/unit/test_lineage_map.py::test_place_derives_from_facts_inherits_reviewed_placements_and_reports_the_rest",
+      "tests/unit/test_lineage_map.py::test_place_refuses_stale_moved_contradicted_and_incomplete_records",
+      "tests/unit/test_lineage_map.py::test_place_puts_a_branch_without_a_pr_with_the_open_pr_that_contains_it",
+      "tests/unit/test_lineage_map.py::test_every_inheritance_class_maps_to_a_section_53_disposition",
+      "tests/unit/test_lineage_map.py::test_the_reviewed_inheritance_records_classes_all_map"
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
-     "coverage": "partial",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Placements are dated snapshots, not read from live state",
-      "unit": "S53-A"
-     }
+     "coverage": "covered"
     },
     {
      "id": "S53.A2",
      "ask": "Before a PR is closed or superseded its nine fields are extracted",
      "excerpt": "Before closing or superseding a PR, extract:",
      "owner_paths": [
-      "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json"
+      "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+      "scripts/lineage_map.py",
+      "docs/collaboration/KERNEL-PR-PLACEMENTS.json"
      ],
      "evidence": [
-      "tests/unit/test_developmental_inheritance.py::test_each_rule_rejects_a_bad_placement"
+      "tests/unit/test_developmental_inheritance.py::test_each_rule_rejects_a_bad_placement",
+      "tests/unit/test_lineage_map.py::test_place_lets_a_pr_close_only_after_section_53s_nine_extractions"
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
      "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "The inheritance test answers nine questions for recorded placements; current PRs are not placed",
+      "reason": "lineage_map --place refuses a recorded close without the nine fields and lists every closing-kind placement not yet extracted (167 of 262 on 2026-11-04), but a PR closed or a branch deleted on GitHub does not run it",
       "unit": "S53-A"
      }
     },

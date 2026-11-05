@@ -130,7 +130,9 @@ RESERVED_WITHOUT_EXECUTOR = {
                                 "verified incidents or feeds its detections into that quarantine and repair",
     "cortex.developmental.molecular_micro": "cognition.micro is a ternary set-point rule with no association or "
                                             "decay",
-    "cortex.meta.global_workspace": "no module competition or selective broadcast exists",
+    "cortex.meta.global_workspace": "partial precursor only: cognition.meta_global_workspace executes salience-gated "
+                                    "selective broadcast among the block specialists of one problem on a declared "
+                                    "bus; no workspace arbitrates among GREG's intelligences on a mixed suite",
 }
 
 

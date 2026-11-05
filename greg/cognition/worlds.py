@@ -148,6 +148,8 @@ GENOMES = {
     "develop_differentiate": (MATHEMATICAL, "generated graphs (geometric, small-world, holed grids, random); exact "
                                             "pattern check, CP-SAT reference leader optimum and exact component "
                                             "radii"),
+    "meta_global_workspace": (MATHEMATICAL, "generated block-partitioned spin glasses with a declared bus budget; "
+                                            "exact minimum energy by enumerating all 2^n assignments"),
 }
 
 # P6 composition-lift families, as each frozen run's own ``limits`` describes them.

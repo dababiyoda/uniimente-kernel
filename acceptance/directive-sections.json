@@ -259,7 +259,8 @@
    "id": "S22-B",
    "title": "Post-outcome disposition review RETAIN / REPAIR / REGRESS / REMOVE for every formed capability, proposed, never self-applied",
    "source": "gap map of the 77 sections against #196 head 4ec00605 (session 2026-10-30), section 22 (unnamed there)",
-   "depends_on": []
+   "depends_on": [],
+   "closed_by": "claude/capability-disposition-20261104 on #196 d35d92a5: greg/disposition.py reviews every capability Genesis formed (built:, installed:, composed:) each body tick against its counted outcomes and faults in service, and proposes RETAIN, REPAIR, REGRESS or REMOVE by the compiler's own demotion rule (ten outcomes, Wilson upper bound below one half); a change asks the founder once (CAPABILITY_DISPOSITION, answer only recorded); the registry changes only by signed CAPABILITY_DETACH or ATTACH"
   },
   {
    "id": "S24-A",
@@ -1908,7 +1909,7 @@
   {
    "n": 22,
    "heading": "FUNCTIONAL MORPHOGENESIS / CAPABILITY GENESIS",
-   "status": "OPEN",
+   "status": "PARTIAL",
    "asks": [
     {
      "id": "S22.A1",
@@ -1974,17 +1975,18 @@
      "ask": "After a real outcome each formed capability is proposed RETAIN, REPAIR, REGRESS or REMOVE, never self-applied",
      "excerpt": "RETAIN / REPAIR / REGRESS / REMOVE",
      "owner_paths": [
-      "greg/genesis.py"
+      "greg/disposition.py",
+      "greg/body.py",
+      "greg/asks.py"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_greg_capability_disposition.py"
+     ],
+     "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "SANDBOX_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No post-outcome disposition review",
-      "unit": "S22-B"
-     }
+     "tier": "SANDBOX_VERIFIED",
+     "coverage": "covered",
+     "note": "Settlement credits outcomes only to constructions and installed Python packages, so a built or catalog-binary capability is reviewed on its faults in service alone; the realized values in the body tests are synthetic."
     }
    ]
   },

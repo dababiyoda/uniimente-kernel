@@ -309,6 +309,9 @@ ANSWER_ONLY_RECORDS = {
                       "Any consequence still crosses the Gate under its own authority.",
     "CAPABILITY_ATTACH": "Approve or Reject only records your answer. Attaching is its own signed command: the "
                          "Attach button beside a verified candidate, or `greg attach <capability_id>`.",
+    "CAPABILITY_DISPOSITION": "Your answer is only recorded; GREG applies no disposition. Detaching or re-attaching "
+                              "is its own signed command: `greg detach <capability_id>`, `greg attach "
+                              "<capability_id>`.",
 }
 
 

@@ -69,6 +69,9 @@ GENOMES = {
     "collective_market": (SIMULATED, "synthetic lognormal private values"),
     "collective_quorum": (SIMULATED, "seeded observer panels with shared noise; truth is the hidden state"),
     "control_mpc": (SIMULATED, "simulated double-integrator plant"),
+    "collective_ecology_bidding": (SIMULATED, "seeded Bernoulli solver-run processes over a hidden species x context "
+                                              "competence table, with seeded outcome tapes; truth is that hidden table "
+                                              "and the exact static oracle value under it"),
     "crowd_weighted_vote": (SIMULATED, "simulated crowds of seeded worker types; truth is the hidden item labels"),
     "develop_repair": (SIMULATED, "simulated TARGET_FORM_001 lattices with seeded damage and controller failures"),
     "develop_repair_hybrid": (SIMULATED, "develop_repair's simulated TARGET_FORM_001 lattices (same generator) with "

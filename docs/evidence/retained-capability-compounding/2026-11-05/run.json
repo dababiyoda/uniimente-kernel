@@ -11,6 +11,7 @@
      "build_cost_known": true,
      "build_cost_usd": 0.0,
      "builder_calls": 2,
+     "founder_attach": false,
      "verifications": 2
     },
     "capability_id": "built.markdown.unchecked_count.2a6f0ba8ed8d",
@@ -43,6 +44,7 @@
       "build_cost_known": true,
       "build_cost_usd": 0.0,
       "builder_calls": 2,
+      "founder_attach": false,
       "verifications": 2
      },
      "capability_id": "built.markdown.unchecked_count.2a6f0ba8ed8d",
@@ -65,6 +67,7 @@
       "build_cost_known": true,
       "build_cost_usd": 0.0,
       "builder_calls": 2,
+      "founder_attach": false,
       "verifications": 2
      },
      "capability_id": "built.markdown.unchecked_count.2a6f0ba8ed8d",
@@ -77,6 +80,7 @@
       "deficits_opened": 0,
       "verifications": 0
      },
+     "relation": "different procedure",
      "reused_in": "m:release"
     }
    ],

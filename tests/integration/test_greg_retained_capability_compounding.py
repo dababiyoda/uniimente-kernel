@@ -94,7 +94,7 @@ def test_the_counterfactual_body_without_the_capability_pays_the_acquisition_its
     body.close()
 
 
-def test_a_rerun_of_the_same_procedure_is_not_a_different_mission(tmp_path):
+def test_the_same_problem_asked_again_is_not_a_different_mission(tmp_path):
     home, key, body_id, data = make_body(tmp_path)
     drop(home, signed(key, body_id, "MISSION", mission_a(data)))
     body = run(home, builders.StaticBuilder(WRONG, GOOD, identity="static-test"))
@@ -108,7 +108,7 @@ def test_a_rerun_of_the_same_procedure_is_not_a_different_mission(tmp_path):
     assert measured["reuses"] == []
     [refused] = measured["refused"]
     assert refused["reused_in"] == "m:runbook-again"
-    assert any("same procedure" in w for w in refused["why_not"])
+    assert refused["why_not"] == ["the same problem asked again (a replay), not a different mission"]
     body.close()
 
 
@@ -144,3 +144,49 @@ def test_a_quarantined_capability_is_rebuilt_and_its_later_use_is_not_credited_t
     assert sorted(f["mission_id"] for f in measured["formed"]) == ["m:release", "m:runbook"]
     assert measured["refused"] == []
     body.close()
+
+
+# -- the Mind's path: constructions the founder attaches, answered through cognition.solve (#213's harness) --------
+
+import pytest  # noqa: E402
+
+from scripts import greg_transfer_eval as transfer  # noqa: E402
+
+NAMESPACE = "compounding-test-2026-11-05"        # never the pre-registered experiment's spent namespace
+
+
+@pytest.fixture(scope="module")
+def tasks():
+    return transfer.instances(NAMESPACE, {"replay": 1, "same_family": 1, "cross_family": 1, "unrelated": 1})
+
+
+def mind_body(tmp_path, tier, problem):
+    from tests.greg_fixtures import Clock
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock()
+    first = transfer.run_mission(home, key, body_id, transfer.task_spec("construction", 0, transfer.CONSTRUCTION,
+                                                                        "compounding"), clock)
+    second = transfer.run_mission(home, key, body_id, transfer.task_spec(tier, 0, problem, "compounding"), clock)
+    return home, clock, first, second
+
+
+@pytest.mark.parametrize("tier, reused", [
+    ("same_family", {"assignment.staffing", "graph.max_flow"}),   # the construction and the engine under it
+    ("cross_family", {"graph.max_flow"}),                         # B formed the matching itself; it reused the engine
+    ("unrelated", set()),                                         # the negative control: nothing applies
+])
+def test_the_minds_founder_attached_constructions_are_seen_when_a_later_mission_reuses_them(tmp_path, tasks, tier,
+                                                                                          reused):
+    home, clock, first, second = mind_body(tmp_path, tier, tasks[tier][0])
+    assert first["appraisal"] == second["appraisal"] == "VERIFIED"
+    with Body(home, clock=clock) as body:
+        measured = compounding.retained_reuse(body.journal)
+    construction, task = first["mission_id"], second["mission_id"]
+    formed_by_a = {f["function"] for f in measured["formed"] if f["mission_id"] == construction}
+    assert formed_by_a == {"assignment.staffing", "graph.max_flow"}
+    assert all(f["acquisition"]["founder_attach"] for f in measured["formed"])     # no resolution: the founder attached
+    credited = [r for r in measured["reuses"] if (r["formed_in"], r["reused_in"]) == (construction, task)]
+    assert {r["function"] for r in credited} == reused
+    assert all(r["relation"] == "different procedure" or tier == "same_family" for r in credited)
+    if tier == "cross_family":
+        assert {f["function"] for f in measured["formed"] if f["mission_id"] == task} == {"assignment.matching"}

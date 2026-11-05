@@ -75,7 +75,8 @@ def a_then_b(tmp_path, **form):
 def test_a_reuse_is_priced_from_what_the_forming_mission_paid(tmp_path):
     [reuse] = compounding.retained_reuse(a_then_b(tmp_path).j)["reuses"]
     assert reuse["avoided"] == {"builder_calls": 2, "build_cost_usd": 0.75, "build_cost_known": True,
-                                "verifications": 2, "blocked_seconds": 90.0}
+                                "verifications": 2, "founder_attach": False, "blocked_seconds": 90.0}
+    assert reuse["relation"] == "different procedure"
 
 
 def test_an_unknown_build_cost_is_reported_as_unknown_not_zero(tmp_path):
@@ -341,4 +342,79 @@ def test_a_formation_needs_a_passing_verification_of_the_capability_it_attached(
     led.register("m:b", check="c2")
     led.use("m:b")
     led.appraise("m:b")
+    assert compounding.retained_reuse(led.j)["formed"] == []
+
+
+# -- formation by founder attach (the Mind's constructions): verified under A's deficit, then attached -------------
+
+def founder_formed(led, mid, did="d1", cid=CID, attach_first=False, attach_id=None):
+    led.rec("deficit.opened", {"deficit_id": did, "mission_id": mid, "function": FN, "at": "2026-11-05T00:00:00Z"})
+    if attach_first:
+        led.rec("capability.state", {"capability_id": attach_id or cid, "state": "ATTACHED", "by": "founder command"})
+    led.rec("genesis.verified", {"deficit_id": did, "passed": True, "capability_id": cid})
+    led.rec("deficit.awaiting_attach", {"deficit_id": did, "capability_id": cid})
+    if not attach_first:
+        led.rec("capability.state", {"capability_id": attach_id or cid, "state": "ATTACHED", "by": "founder command"})
+
+
+def b_after(led):
+    led.register("m:b", check="c2")
+    led.use("m:b")
+    led.appraise("m:b")
+
+
+def test_a_capability_the_founder_attached_after_it_passed_under_a_deficit_is_a_formation(tmp_path):
+    led = Ledger(tmp_path)
+    led.register("m:a")
+    founder_formed(led, "m:a")
+    led.use("m:a")
+    led.appraise("m:a")
+    b_after(led)
+    [reuse] = compounding.retained_reuse(led.j)["reuses"]
+    assert reuse["formed_in"] == "m:a" and reuse["avoided"]["founder_attach"] is True
+    assert reuse["avoided"]["verifications"] == 1 and reuse["avoided"]["blocked_seconds"] is not None
+
+
+@pytest.mark.parametrize("variant", [{"attach_first": True}, {"attach_id": "built.text.count.other"}])
+def test_an_attach_before_verification_or_of_another_capability_is_not_a_formation(tmp_path, variant):
+    led = Ledger(tmp_path)
+    led.register("m:a")
+    founder_formed(led, "m:a", **variant)
+    led.appraise("m:a")
+    b_after(led)
+    assert compounding.retained_reuse(led.j)["formed"] == []
+
+
+def test_a_founder_attach_after_the_forming_missions_verdict_is_not_its_formation(tmp_path):
+    led = Ledger(tmp_path)
+    led.register("m:a")
+    led.rec("deficit.opened", {"deficit_id": "d1", "mission_id": "m:a", "function": FN, "at": "2026-11-05T00:00:00Z"})
+    led.rec("genesis.verified", {"deficit_id": "d1", "passed": True, "capability_id": CID})
+    led.appraise("m:a")
+    led.rec("capability.state", {"capability_id": CID, "state": "ATTACHED", "by": "founder command"})
+    b_after(led)
+    assert compounding.retained_reuse(led.j)["formed"] == []
+
+
+def test_the_same_procedure_on_new_inputs_is_a_different_mission_and_says_so(tmp_path):
+    led = Ledger(tmp_path)
+    led.register("m:a")
+    led.form("m:a")
+    led.appraise("m:a")
+    led.rec("mission.registered", {"mission_id": "m:b", "spec": dict(spec("m:b"), success_checks=[
+        dict(spec("m:b")["success_checks"][0], sensor={"function": FN, "params": {"path": "/other"}, "target": "fs:x"})])})
+    led.use("m:b")
+    led.appraise("m:b")
+    [reuse] = compounding.retained_reuse(led.j)["reuses"]
+    assert reuse["relation"] == "same procedure, new inputs"
+
+
+def test_a_founder_attach_of_a_candidate_that_failed_verification_is_not_a_formation(tmp_path):
+    led = Ledger(tmp_path)
+    led.register("m:a")
+    led.rec("deficit.opened", {"deficit_id": "d1", "mission_id": "m:a", "function": FN, "at": "2026-11-05T00:00:00Z"})
+    led.rec("genesis.verified", {"deficit_id": "d1", "passed": False, "capability_id": CID})
+    led.rec("capability.state", {"capability_id": CID, "state": "ATTACHED", "by": "founder command"})
+    led.appraise("m:a")
+    b_after(led)
     assert compounding.retained_reuse(led.j)["formed"] == []

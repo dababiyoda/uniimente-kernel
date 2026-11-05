@@ -108,19 +108,21 @@ def test_one_realization_per_receipt_a_repeat_is_idempotent_and_a_different_valu
         first, second = run.ask("pf-a", PORTFOLIO), run.ask("pf-b", PORTFOLIO)
         cid = construction_id(run.body)
         run.realize(first, 0)
-        run.realize(first, 0, source="founder_reported")                       # same value: the kept fact stands
+        run.realize(first, 0)                                                  # same value and source: idempotent
         assert len(list(run.body.journal.replay("cognition.realization"))) == 1
+        run.realize(first, 0, source="founder_reported")                       # same value, another source: kept as
+        assert len(list(run.body.journal.replay("cognition.realization"))) == 2    # corroboration (2026-10-28)
         assert run.outcome(first)["correct"] is False
         run.realize(second, PROMISED)
         assert compiler._settled_counts(run.body.journal)[cid] == (2, 1)
         conflict = run.realize(first, PROMISED)                                # a different value for one receipt
         assert conflict["status"] == "APPLIED"
         facts = [e.payload for e in run.body.journal.replay("cognition.realization") if e.payload["receipt"] == first.hash]
-        assert len(facts) == 2 and facts[1]["conflicts_with"]
+        assert len(facts) == 3 and facts[1]["corroborates"] and facts[2]["conflicts_with"]
         assert run.outcome(first) is None                                      # neither correct nor wrong
         assert compiler._settled_counts(run.body.journal)[cid] == (1, 1)
         run.realize(first, PROMISED)                                           # the conflict itself is idempotent
-        assert len(list(run.body.journal.replay("cognition.realization"))) == 3
+        assert len(list(run.body.journal.replay("cognition.realization"))) == 4
 
 
 def test_a_realization_is_refused_on_an_unknown_or_unanswered_receipt_and_on_a_non_numeric_value(tmp_path):

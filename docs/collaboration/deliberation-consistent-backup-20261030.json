@@ -1,0 +1,561 @@
+{
+  "decision_id": "CONSISTENT-BACKUP-RESTORE-DRILL-20261030",
+  "title": "Back up a running body consistently, on a founder-signed cadence, and count a backup only after it restores",
+  "problem": "At a6c29bbd (#196 head), foundry/systems/seed.make_seed copied every file of the body home and only then read the ledger head, with no lock and no consistency between the two. A body appending in between produced a seed whose recorded head is not where its packed ledger ends, and greg.recovery.restore_body refuses such a seed (RestoreError 'not at the head the seed recorded'). With a real `python -m greg run` process appending, only 10, 5 and 7 of 20 seeds restored in three runs. A torn last line made make_seed raise JSONDecodeError (half a record) or pack a ledger no restore accepts (a whole record without its newline). There was also no backup cadence, no recovery point objective (RPO) and no proof that any backup restores. Losing the disk or the computer was therefore not survivable with a known recovery point.",
+  "founder_intent_refs": [
+    "INTENT-20261028-OPUS-MAXIMUS-REISSUE (directive sections 47 FUNCTIONAL SURVIVAL, 49 MULTIPLE BODIES and 24 EMBODIMENT; recorded on #227)",
+    "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN (build the whole directive first; the founder-device run comes after, as its acceptance; recorded on #227)",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-20261019-UPWARD-ASCENT",
+    "INTENT-0030 (docs/FOUNDER_EFFECT_COMPILER.md: 'Make UNIIMENTE immortal' compiles to continuity, backups, recovery and migration; no literal immortality is claimed)"
+  ],
+  "baseline": "a6c29bbd: make_seed walks the home with rglob, copies every file, then calls ledger_head(), which runs json.loads on the last line. restore_body checks that the restored ledger ends at the recorded head and refuses otherwise. The derived heartbeat.json is packed and restored. Links are followed. Nothing schedules a backup, and nothing proves a stored seed restores.",
+  "alternatives": [
+    {
+      "name": "Proposed: consistent seeds plus a founder-signed cadence whose every backup is proven by a restore drill",
+      "description": "Part 1 (foundry/systems/seed.py): read the waiting queues (inbox/, intake/) first, then the ledger once, packing only complete lines verified with EvidenceLedger(read_only=True) exactly as restore_body verifies them; the last packed record is the seed's ledger_head. Then walk every other file with os.fwalk, opening with O_NOFOLLOW and re-checking the inode after the open; list what is left out in not_packed. Never pack key material, the derived heartbeat files, or a tool call's credential and scratch directories. Rewrite a rotten stored object from the correct bytes (cas.repair). Part 2 (greg/backup.py): a standing mission over two new built-ins. body.backup (internal_write) writes one seed to exactly the signed target backup:<absolute path>, runs greg.recovery.drill (restore into a scratch home, re-verify the restored ledger from its file, require the body held, remove the scratch home) and only its positive Gate receipt counts as a verified backup. body.backup_status (read_only) reports fresh, current and why. Store placement, privacy and identity checks refuse unsafe stores. Registration is one additive line in greg/capabilities.py; no edit to greg/body.py, greg/missions.py or greg/templates.py.",
+      "advantages": [
+        "Seeds taken while a real body appends restore: 20 of 20 restored held, against 10, 5 and 7 of 20 at the base",
+        "A backup counts as verified only after its seed restored in a scratch home and its ledger re-verified from the file",
+        "Reuses existing mechanisms: seed and CAS, read-only ledger verification, restore_body, the standing-mission cadence, the Gate's receipts and the one ask path",
+        "Inert without a founder-signed mission; writes only to the one signed store"
+      ],
+      "disadvantages": [
+        "The backup runs synchronously inside the live body and reads each file whole: +298 MiB RSS measured for one 300 MiB workspace file, with no time bound and no stop-flag check (R2-7, deferred)",
+        "No encryption at rest; objects are 0644 inside a 0700 objects directory",
+        "'Another filesystem' is decided by st_dev, which distinguishes filesystems, not disks",
+        "Every status read re-hashes every object of the latest backup, and status, before_dispatch and each seed load and verify the whole ledger; none of this was measured on a large body"
+      ],
+      "revival_evidence": "Retained as proposed; revisit when the founder-device run or a large-ledger measurement shows the synchronous in-body backup costs too much."
+    },
+    {
+      "name": "Simplest viable: fix the seed's consistency only and leave backups to the founder by hand or by cron",
+      "description": "Land part 1 alone. The founder or a cron job runs `greg foundry seed` when they choose. No new capability, no cadence, no drill.",
+      "advantages": [
+        "Smallest change: one module, no new capability, no new consequence class",
+        "Removes the correctness race, which is the defect that made seeds of a running body fail to restore"
+      ],
+      "disadvantages": [
+        "No RPO and no record of when the last good backup was taken",
+        "No proof that any stored seed restores; a damaged store is found only at the moment of need",
+        "A cron job runs outside the Gate, so it leaves no receipt and raises no ask when it stops working",
+        "Does not meet the unit's acceptance tests for a signed cadence, a drill and one ask on failure"
+      ],
+      "revival_evidence": "If the founder declines to sign any backup mission, part 1 alone still stands as the correctness fix."
+    },
+    {
+      "name": "Strongest competing design: a commodity backup tool (restic or borg) or filesystem snapshots, with the drill on top",
+      "description": "Feed a backup tool, or take an LVM/btrfs/ZFS snapshot, and keep only the restore drill and the cadence as GREG code.",
+      "advantages": [
+        "Encryption at rest, retention and pruning, and off-site backends come with the tool",
+        "Mature, widely used mechanisms",
+        "A filesystem snapshot is atomic across every file, not only the ledger"
+      ],
+      "disadvantages": [
+        "restic and borg are not installed in this container (unit spec), so nothing could be measured here",
+        "A file-level copy of a live ledger has the same race unless it is given a consistent snapshot first; part 1 is needed either way",
+        "Snapshots need a snapshot-capable filesystem under the body home; the founder's first body was not inspected for one",
+        "A new external dependency on the founder's device"
+      ],
+      "revival_evidence": "Preferred next step for an off-site, encrypted store once the founder chooses the store: restic over a consistent seed, with the same drill and receipts."
+    },
+    {
+      "name": "Staged, reversible experiment: ship the cadence inert, and trial it with one short founder-signed mission",
+      "description": "This branch as a draft child of #196. Nothing runs until the founder signs one backup mission (default horizon 30 days) naming a store on a second disk; the first verified backups and one deliberate restore onto a new home are the trial. Reverting the branch removes it.",
+      "advantages": [
+        "No backup, no store write and no ask happens without a founder signature",
+        "The trial exercises exactly what the founder will rely on: a second disk, the drill, and a restore onto a new home",
+        "One revert removes it; existing stores stay plain CAS directories"
+      ],
+      "disadvantages": [
+        "The trial needs founder time and a second disk",
+        "Until the trial runs, every result here is from a Linux container with per-test keys"
+      ],
+      "revival_evidence": "This is how the proposed design is meant to be adopted; it is the review trigger for the decision below."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Seeds of a running body keep failing to restore (10, 5 and 7 of 20 in three runs at a6c29bbd). Disk or computer loss stays unsurvivable with a known recovery point, which contradicts directive sections 47 and 49 and the continuity reading of 'immortality'.",
+    "advantages": [
+      "No new capability and no new writer outside the body home",
+      "No change to seed.py or recovery.py"
+    ],
+    "disadvantages": [
+      "A backup of a running body restores only by chance",
+      "A torn last line crashes make_seed or produces a seed no restore accepts",
+      "No cadence, no RPO, no proof any backup restores, and no ask when backups stop"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Section 47 asks for continuity across loss of disks and computers, and section 49 for further bodies under one identity. A backup that restores, taken on a cadence the founder signs, is the real mechanism behind both. The body still has no right to survive: nothing backs up without a signed mission, and a restored body comes back held until the founder resumes it.",
+      "material_concerns": [
+        "This is INTEGRATION-TESTED in a container. It is not founder-used, not REBOOT-VERIFIED, not off-site and not externally verified; it must not be presented as disk-loss survival on the founder's machine",
+        "The unit's design sketch also asked for a doctor and Mission Control line ('last verified backup N h old') and an availability ask when the RPO passes with no cadence mission; neither is built",
+        "VEPMC stays 0; per INTENT-20261030-BUILD-BEFORE-DEVICE-RUN the device run is the later acceptance, not a reason to stop building"
+      ],
+      "evidence_refs": [
+        "docs/evidence/consistent-backup-2026-10-30/README.md",
+        "tests/unit/test_greg_backup.py::test_disk_loss_restores_the_latest_verified_backup_and_the_cadence_resumes_after_the_founder",
+        "tests/unit/test_greg_backup.py::test_without_a_signed_mission_nothing_is_backed_up"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "The design reuses what exists: seed and CAS, the read-only ledger verification restore_body already uses, restore_body itself as the drill, the standing-mission cadence and the one ask path. It adds no body command, no second scheduler and no second evidence record: the Gate's positive receipt of body.backup is the only record that a backup is verified. It avoids the files open PRs edit.",
+      "material_concerns": [
+        "body.backup_status reads the engine's greg.mission.dispatching and grant records and the Gate's witnesses and receipts; a format change would show up as failing tests (disk-loss or downtime tests), not silently",
+        "status, before_dispatch and each seed open and verify the whole ledger read-only, because missions.py does not pass ctx.journal to body.* capabilities; missions.py is edited by five open PRs",
+        "body.backup_status is not in greg/appraisal.py REOBSERVABLE (edited by #209 and #229), so the appraiser judges a backup hold from receipts without re-observing it",
+        "foundry/owned-source.json and greg/capabilities.py are also touched by open PRs (#201, #228, #229); each change here is a one-line addition in a separate hunk, but the merge was checked only against b1950be2"
+      ],
+      "evidence_refs": [
+        "greg/backup.py",
+        "greg/recovery.py (drill appended; restore_body unchanged)",
+        "greg/capabilities.py (one additive line)",
+        "git merge-tree against origin/claude/greg-full-machine-completion-whgiee (b1950be2): clean, tree b7208dbd"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Two adversarial reviews of d96756b0 by separate agents of this same session (not independent sessions, not humans) confirmed six defects and one plausible one: downtime right after a backup blocked the cadence with a NO_STRATEGY ask (R2-1); a tool call's plaintext credential file was packed (R2-2); <store>/objects could be a link or mount that redirected the backup into a read root (R2-3); a tmpfs store passed as another disk (R2-4); a rotten object stayed 'fresh' and blocked every later backup (R2-5); backups were readable by other local users (R2-6); and memory grows by the largest file with no time bound (R2-7, plausible). R2-1 to R2-6 are fixed, each with a test that fails before its fix; R2-7 is deferred with a measurement. The fidelity review found the evidence README described an older commit (FID-1, FID-2) and five safeguards that survived removal (FID-3); these are fixed, and all 55 mutants are caught.",
+      "material_concerns": [
+        "R2-7 is open: a large workspace file can grow the live body by its size during a backup (+298 MiB for one 300 MiB file); OOM and STOP latency were not run",
+        "The first-read rule still blames a backup for a rot or loss found between that backup and its first read (one NO_STRATEGY ask), and a status read of the same store by another mission counts as the first read",
+        "FID-4 is not addressed: no suite test covers an unwritable store; the reviewer's probe (an objects path that is a regular file, ENOTDIR) confirmed one ask and no verified backup",
+        "A store directory other users can write can still be raced mid-backup; the identity re-check then refuses to count the backup, but objects already written may land where the race pointed"
+      ],
+      "evidence_refs": [
+        "scripts/ci/check_consistent_backup_mutants.py (55 of 55 caught)",
+        "tests/unit/test_greg_backup.py",
+        "tests/unit/test_greg_seed_consistency.py",
+        "scratchpad review-consistent-backup-attack probes (probe_downtime2.py, probe_cred.py, probe_objects_link.py, probe_home_named_objects.py, test_probe_backup.py, probe_mem.py)"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Operation is one signed mission: `python -m greg.backup --store DIR [--accept-same-filesystem]` prints the spec and the founder signs it with `greg mission submit`. A failed backup asks once and the body keeps running. The store must already exist, must not be on a memory filesystem, and needs signed acceptance if it is on the body's own filesystem. Reverting is one revert with no data migration.",
+      "material_concerns": [
+        "The mutant gate is not wired into .github/workflows/canonical-ci.yml (five open PRs edit that file); the integrator must add it",
+        "The broad unit suite was not re-run at 8e0e0b96; the last broad run was a reviewer's at d96756b0 (2825 passed, 76 skipped, 0 failed)",
+        "Canonical CI has not run on this head",
+        "Memory filesystems are detected only where /proc/self/mountinfo exists (not macOS); the per-read re-hash cost on a large body is unmeasured"
+      ],
+      "evidence_refs": [
+        "docs/evidence/consistent-backup-2026-10-30/README.md (commands and results)",
+        "tests/unit/test_greg_backup.py::test_the_founder_signs_the_printed_cadence_with_the_existing_mission_command",
+        "tests/unit/test_greg_backup.py::test_a_store_damaged_between_the_seed_and_its_drill_records_no_verified_backup_asks_once_and_the_body_runs"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "No evidence is rewritten: the live ledger is never modified, and a backup is counted only on a Gate receipt bound to the exact signed store, never on a file found in the store. Secrets stay out: key material, other names of it, and a tool call's credential files are never packed. Negative results are kept: the intake loss at ec462575, the interrupted round-1 commit, the deferred memory finding and the base fail-before breakdown.",
+      "material_concerns": [
+        "No encryption at rest: a store on removable media holds the body's whole confidential history; only the objects directory is private (0700)",
+        "The 'another filesystem' tests use /dev/shm with the memory-filesystem check stubbed as a stand-in for a second disk; no real second disk was exercised",
+        "Of the 16 base failures of the seed test file, 8 fail only because the base lacks an internal or manifest field the test hooks (measured while preparing this record); they are regression guards, not base fail-before evidence",
+        "Every key is a per-test key; nothing is founder-signed"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_greg_seed_consistency.py::test_a_tool_calls_credential_file_is_never_packed",
+        "tests/unit/test_greg_seed_consistency.py::test_a_seed_never_follows_a_link_or_packs_another_name_of_a_key",
+        "tests/unit/test_greg_backup.py::test_a_backup_is_private_to_the_bodys_user",
+        "docs/evidence/consistent-backup-2026-10-30/README.md (limitations)"
+      ],
+      "recommendation": "NEEDS_FOUNDER_DECISION"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Seeds taken while a real body appends now restore",
+      "tier": "sandbox_execution",
+      "reference": "tests/integration/test_greg_backup_process.py (20 seeds from a real `python -m greg run` process)",
+      "finding": "Base a6c29bbd: 10, 5 and 7 of 20 restored in three runs (a reviewer saw 9 and 12 of 20 in two more), every failure RestoreError 'not at the head the seed recorded'. Head: 20 of 20 taken while the body appended and 20 of 20 restored held, in every run (7 in round 0, 3 by the fidelity reviewer at d96756b0, 1 in the round-2 fixes, 1 in final verification at 8e0e0b96)"
+    },
+    {
+      "claim": "The torn-line, heartbeat, key, credential and race defects fail before and pass after",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_greg_seed_consistency.py (19 collected)",
+      "finding": "At a6c29bbd: 16 failed, 3 passed (controls). Re-run while preparing this record: 7 failures show the defect directly (concurrent append RestoreError; half record JSONDecodeError; whole record without newline 'partial or blank history record'; heartbeat packed; stale heartbeat BodyError; private key packed through a link or hard link; tool-call credential packed), 1 is the missing SeedError refusal, and 8 fail because the base lacks an internal or manifest field the test hooks. At 8e0e0b96: 19 passed"
+    },
+    {
+      "claim": "The cadence, drill, store checks and status behave as specified",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_greg_backup.py (42 collected)",
+      "finding": "At a6c29bbd: collection error, cannot import name 'backup' from 'greg'. At d96756b0 with the current files: 15 failed, 44 passed, 2 errors (stub of an absent helper). At 8e0e0b96: 61 passed across both unit files (19 + 42)"
+    },
+    {
+      "claim": "Downtime right after a backup no longer blocks the cadence (R2-1)",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_greg_backup.py::test_a_body_stopped_between_a_backup_and_its_first_read_keeps_its_cadence_without_an_ask",
+      "finding": "At d96756b0, without the two new status-field lines, both cases (48 h at RPO 24 h / cadence 1 h; 9 h at RPO 2 h / cadence 1 h) raised a NO_STRATEGY ask after the first backup; at the head both pass with no ask"
+    },
+    {
+      "claim": "Each safeguard fails a test when removed",
+      "tier": "unit_test",
+      "reference": "scripts/ci/check_consistent_backup_mutants.py",
+      "finding": "55 of 55 mutants caught, exit 0 (16 round 0, 17 round 1, 22 round 2, including the 5 FID-3 survivors); each in a scratch copy with python -B and __pycache__ purged"
+    },
+    {
+      "claim": "After disk loss the latest verified backup restores and the cadence resumes after the founder's BODY_RESUME with no extra ask",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_greg_backup.py::test_disk_loss_restores_the_latest_verified_backup_and_the_cadence_resumes_after_the_founder; reviewer probe_restore_later.py",
+      "finding": "Passes; the reviewer's probe with a consistent clock skew (restore days later) gave ACTED, HOLDING, HOLDING, ACTED with no asks"
+    },
+    {
+      "claim": "Existing restore, seed, capability and MCP suites still pass",
+      "tier": "unit_test",
+      "reference": "15 files incl. test_foundry_systems, test_greg_restore, test_greg_restore_fold, test_greg_seed_compat, test_seed_compatibility_seal, test_greg_capabilities, test_greg_packaging, test_greg_mcp_tools; and the README's 14-file set",
+      "finding": "235 passed, 3 skipped, 0 failed; the README's set gave 211 passed, 8 skipped, as recorded"
+    },
+    {
+      "claim": "No authority, schema or completion-result change",
+      "tier": "other",
+      "reference": "scripts/ci/check_authority_singleton.py; scripts/ci/check_schema_refs.py; python -m foundry.completion --run 36 / --run 46",
+      "finding": "Authority singleton exit 0 (6 governed artifacts, one source each); schema refs exit 0 (27 schemas, 130 refs); completion digests for #36 and #46 identical to a6c29bbd's (prior round, code identical to the head)"
+    },
+    {
+      "claim": "The branch merges cleanly into the integration branch",
+      "tier": "sandbox_execution",
+      "reference": "git merge-tree --write-tree origin/claude/greg-full-machine-completion-whgiee HEAD",
+      "finding": "Exit 0, tree b7208dbd, no conflicts; the target b1950be2 is one commit past a6c29bbd and touches only tests/unit/test_greg_closure_scoped_claims.py"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "The first version's ordering lost a waiting intake item",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_greg_seed_consistency.py::test_an_item_waiting_in_the_intake_is_never_lost_whenever_the_running_body_consumes_it, run at ec462575",
+      "finding": "'Ledger first, then every other file' lost an intake item the running body consumed after the ledger was read: 2 of 3 variants KeyError 'intake/<item>.json'. Fixed by reading the queues before the ledger"
+    },
+    {
+      "claim": "Round-2 review confirmed six defects in d96756b0 and one plausible one",
+      "tier": "sandbox_execution",
+      "reference": "review by a separate agent of this session; probes in scratchpad review-consistent-backup-attack",
+      "finding": "R2-1 downtime block, R2-2 credential packed, R2-3 objects-link redirection (3 objects inside a read root, status fresh), R2-4 tmpfs accepted, R2-5 rot stays fresh and blocks later backups, R2-6 object 0644 / dir 0755 confirmed and fixed; R2-7 memory plausible and deferred"
+    },
+    {
+      "claim": "A backup grows the live body's memory by the largest file",
+      "tier": "sandbox_execution",
+      "reference": "reviewer probe_mem.py; re-run by the fixer at the head",
+      "finding": "Peak RSS 66 MiB to 365 MiB (+298 MiB) for one 300 MiB workspace file, unchanged at the head; OOM and STOP latency not run"
+    },
+    {
+      "claim": "Five round-1 safeguards survived removal with all tests green",
+      "tier": "unit_test",
+      "reference": "fidelity review by a separate agent of this session (FID-3)",
+      "finding": "O_NOFOLLOW on the queue open (a linked intake packed outside files), the inode re-check, O_NOFOLLOW on the file open, the same-filesystem branch of status and the unknown-param refusal; each now has a test and a caught mutant"
+    },
+    {
+      "claim": "The evidence README described an older commit while the branch head was an unverified WIP commit",
+      "tier": "historical_artifact",
+      "reference": "d96756b0 'Work in progress ... (interrupted)'; findings R2-8, FID-1, FID-2",
+      "finding": "A container restart interrupted the round-1 fixes; the README's counts (8, 13, 16 of 16, 6 failed / 2 passed) described ec462575. Rewritten for the head in 8e0e0b96"
+    },
+    {
+      "claim": "An unwritable store has no dedicated suite test",
+      "tier": "sandbox_execution",
+      "reference": "fidelity finding FID-4; reviewer probe test_unwritable_probe.py",
+      "finding": "Behaviour confirmed by probe only (ENOTDIR store: refusal, one NO_STRATEGY ask, no verified backup); no test was added"
+    },
+    {
+      "claim": "No real second disk, reboot, founder device or CI run",
+      "tier": "readme_claim",
+      "reference": "docs/evidence/consistent-backup-2026-10-30/README.md (limitations)",
+      "finding": "Every real store was on the container's one disk with accept_same_filesystem signed; the other-filesystem tests use /dev/shm with the memory check stubbed; the broad unit suite and Canonical CI were not run at 8e0e0b96"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Loss of the body's disk or computer becomes survivable with a known recovery point: a backup of a running body restores, backups happen on a cadence the founder signs, and each counts only after it has been restored once.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "A seed of a running body is consistent with itself by construction, with no lock against the writer",
+        "amplified_value": "Every later continuity mechanism (migration to a second body, recovery after loss, a future off-site tool) can start from a seed that restores; the race no longer depends on timing"
+      },
+      {
+        "id": "A2",
+        "statement": "A backup is verified only by its own restore drill and a Gate receipt bound to the exact signed store",
+        "amplified_value": "The recovery point the body reports is one that has actually restored; a file placed in the store by hand, or a damaged object, never counts"
+      },
+      {
+        "id": "A3",
+        "statement": "Built from existing mechanisms with no new body command and no edit to the hot files",
+        "amplified_value": "Low merge friction with open PRs; one revert removes it; the founder's existing mission controls start and stop it"
+      },
+      {
+        "id": "A4",
+        "statement": "A restored body comes back held and resumes its cadence after the founder's BODY_RESUME with no extra ask",
+        "amplified_value": "Recovery onto a new machine keeps the founder in control and needs no repair of the backup mission itself"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "The backup runs synchronously in the live body, reads each file whole, has no time bound and does not check the stop flag between files",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Measured (+298 MiB for a 300 MiB file) and recorded. Bounded fix named: stream files into and out of CAS, cap very large files with a not_packed reason, place the drill's scratch beside the store, check the stop flag (needs greg/body.py, edited by #221)"
+      },
+      {
+        "id": "D2",
+        "statement": "No encryption at rest, and backups were readable by other local users",
+        "severity": "medium",
+        "response_type": "protective",
+        "redesigned_response": "objects is created or made 0700 and the backup is refused when it cannot be; encryption at rest and off-site storage are named for a commodity tool (restic) once the founder chooses a store"
+      },
+      {
+        "id": "D3",
+        "statement": "'Another filesystem' is st_dev, not another disk; a memory filesystem could pass as one",
+        "severity": "medium",
+        "response_type": "governance",
+        "redesigned_response": "tmpfs and ramfs stores are refused; a store on the body's own filesystem needs the founder's signed accept_same_filesystem; the limit (partitions and subvolumes of one disk pass) is stated plainly"
+      },
+      {
+        "id": "D4",
+        "statement": "Cost is unmeasured on a large body: status re-hashes every object, and status, before_dispatch and each seed verify the whole ledger",
+        "severity": "low",
+        "response_type": "evidence",
+        "redesigned_response": "Recorded as a limitation; follow-up to pass ctx.journal to body.* capabilities through greg/missions.py once it is free, and to measure on a 30k-record ledger"
+      },
+      {
+        "id": "D5",
+        "statement": "The cadence reads engine and Gate record formats it does not own",
+        "severity": "low",
+        "response_type": "evidence",
+        "redesigned_response": "A format change fails the disk-loss or downtime tests rather than passing silently"
+      },
+      {
+        "id": "D6",
+        "statement": "All evidence is from a Linux container with per-test keys; no second disk, reboot, founder device, broad suite at the head or CI run",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Reality is stated as INTEGRATION-TESTED only; the founder-device run is the later acceptance under INTENT-20261030-BUILD-BEFORE-DEVICE-RUN; CI on the PR head is the next check"
+      },
+      {
+        "id": "D7",
+        "statement": "Parts of the unit's design sketch are not built: the doctor and Mission Control line, and an availability ask when the RPO passes with no cadence mission",
+        "severity": "medium",
+        "response_type": "learning",
+        "redesigned_response": "Listed as follow-ups; the cadence mission itself asks once when a backup fails"
+      }
+    ],
+    "comparisons": {
+      "baseline": "a6c29bbd: seeds of a running body restored 10, 5 and 7 of 20; a torn line crashed or poisoned the seed; no cadence, RPO or drill",
+      "do_nothing": "Backups of a running body restore only by chance, and disk loss has no known recovery point",
+      "simplest_viable_alternative": "Part 1 alone with backups by hand or cron: fixes the race but gives no RPO, no proof of restore and no ask when backups stop",
+      "strongest_competing_architecture": "restic/borg or filesystem snapshots: better at encryption, retention and off-site, but not installed here, and a file-level tool still needs a consistent seed",
+      "reversible_experiment": "This draft: inert without a founder-signed mission; trial with one short mission to a second disk; one revert removes it"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Hold a lock against the body's writer, or pause the body, while seeding",
+        "rejection_reason": "Stops the body's work for the length of the copy; reading the verified ledger prefix gives a consistent seed with no lock",
+        "revival_evidence": "A file outside the ledger and queues whose consistency with the ledger turns out to matter"
+      },
+      {
+        "name": "A new body command for backups",
+        "rejection_reason": "Needs greg/body.py, which open PR #221 edits; a standing mission over two built-ins needs no body change",
+        "revival_evidence": "A need the mission engine cannot express, such as the stop-flag check of D1"
+      },
+      {
+        "name": "Count a backup verified when its seed is present in the store",
+        "rejection_reason": "Presence is not restorability; a rotten object or a hand-placed file would count",
+        "revival_evidence": "None expected"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Two separate agents of this same session attacked d96756b0: one for failure, abuse and secret leakage on the live cadence, one for fidelity between the evidence record and the code. Their confirmed findings were reproduced at d96756b0 and fixed in a3382526 and 8e0e0b96, except R2-7.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "fragility",
+        "statement": "A body stopped, asleep or paused right after a successful backup, for longer than the RPO minus the cadence, made the engine blame the backup and ask the founder (R2-1)",
+        "strengthening_response": "The mission's check reads a new 'current' field: it holds at the first receipted read since the latest verified backup when that backup was within the RPO as taken; later reads judge by age. fresh still reports the true age. 2 tests fail before, 5 mutants"
+      },
+      {
+        "id": "W2",
+        "category": "other",
+        "statement": "A tool call's plaintext credential file (workspace/<mission>/cred-*/) was packed into a seed taken during the call or from a crashed body (R2-2)",
+        "strengthening_response": "make_seed excludes workspace/<mission>/<greg.mcp_tools.LEFTOVER>/ and lists it in excluded_secrets; a lookalike file is still packed. 1 test, 1 mutant"
+      },
+      {
+        "id": "W3",
+        "category": "gaming",
+        "statement": "<store>/objects as a link or a separate mount, or a body home named <store>/objects, redirected the backup into a read root or the body home while status stayed fresh (R2-3)",
+        "strengthening_response": "objects must be a real directory on the store's device holding no link, and the home or a read root may not be or lie inside it; checked before and after the backup and by status. 6 tests, 6 mutants"
+      },
+      {
+        "id": "W4",
+        "category": "fragility",
+        "statement": "A tmpfs store passed the 'another filesystem' check and would vanish at the reboot that follows a disk failure (R2-4)",
+        "strengthening_response": "tmpfs and ramfs stores are refused (read from /proc/self/mountinfo); the st_dev limit is stated. 1 test, 1 mutant"
+      },
+      {
+        "id": "W5",
+        "category": "fragility",
+        "statement": "A rotten object left status fresh although the latest backup no longer restored, and one rotten shared object blocked every later backup (R2-5)",
+        "strengthening_response": "status re-hashes every object of the latest backup (cas.intact); make_seed rewrites a rotten object from the correct bytes (cas.repair) and lists it in repaired_objects. 1 test, 2 mutants"
+      },
+      {
+        "id": "W6",
+        "category": "other",
+        "statement": "Backups copied the 0700 home's confidential contents into world-readable objects (R2-6)",
+        "strengthening_response": "objects is created or made 0700; the backup is refused when it stays group- or world-accessible. 1 test, 2 mutants; the integration test asserts 0700"
+      },
+      {
+        "id": "W7",
+        "category": "comprehensibility",
+        "statement": "The evidence README and commit messages described ec462575 while the head was an unverified WIP commit; the intake-loss defect and its fix were unrecorded (R2-8, FID-1, FID-2)",
+        "strengthening_response": "README rewritten for 8e0e0b96 with recomputed counts (61 unit, 2 integration, 55 of 55 mutants, fail-before 16/3 at a6c29bbd and 15/44/2 at d96756b0); the intake loss at ec462575 is recorded; the final verification re-ran and matched every number it checked"
+      },
+      {
+        "id": "W8",
+        "category": "overfit",
+        "statement": "Five safeguards added in round 1 survived removal with every test green (FID-3)",
+        "strengthening_response": "Tests added for the queue-directory link (2), the listing/open swap (2), the same-filesystem branch of status and an unknown param; each is now a caught mutant"
+      },
+      {
+        "id": "W9",
+        "category": "comprehensibility",
+        "statement": "The a6c29bbd fail-before count mixes behavioural failures with harness artifacts (FID-5), and an unwritable store has no suite test (FID-4)",
+        "strengthening_response": "Measured while preparing this record: of 16 failures, 7 show the defect directly, 1 is the missing SeedError refusal and 8 fail on internals or a manifest field the base lacks. FID-4 stays open; the behaviour is confirmed by probe only"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "deferred",
+        "rationale": "Reproduced at the head and measured; the bounded fix is larger than the review round and the stop-flag check needs greg/body.py, which #221 edits",
+        "owner": "Next continuity unit after #221 lands; #196 integrator schedules it",
+        "review_trigger": "#221 merged into #196, or a body killed or a STOP delayed by a backup on any machine"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "deferred",
+        "rationale": "The private objects directory removes the local-read exposure; encryption at rest depends on which store the founder chooses and is best supplied by a commodity tool",
+        "owner": "Alfonso Lopez (store choice and whether encryption is required before use); continuity maintainer (restic adapter)",
+        "review_trigger": "The founder's first signed backup mission, or any store on removable or shared media"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Memory filesystems are refused and same-filesystem stores need the founder's signature; the remaining partition/subvolume case is stated and needs block-device or filesystem-UUID comparison to close",
+        "owner": "Continuity maintainer",
+        "review_trigger": "A founder body whose home and store are partitions or subvolumes of one disk"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "deferred",
+        "rationale": "Correct at test scale; the cheaper path needs greg/missions.py, which five open PRs edit",
+        "owner": "Continuity maintainer with the missions.py owner",
+        "review_trigger": "A measured backup or status read on a 30k-record ledger, or missions.py free of open edits"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "The couplings are read-only and a format change fails named tests",
+        "owner": "Mission engine and Gate owners",
+        "review_trigger": "Any change to greg.mission.dispatching, grant records or the Gate's receipt format"
+      },
+      {
+        "disadvantage_id": "D6",
+        "outcome": "deferred",
+        "rationale": "The device run is the acceptance after the build (INTENT-20261030-BUILD-BEFORE-DEVICE-RUN); CI and the broad suite run on the PR head",
+        "owner": "#196 integrator (CI); Alfonso Lopez (device run)",
+        "review_trigger": "Canonical CI on the PR head; the founder-device run"
+      },
+      {
+        "disadvantage_id": "D7",
+        "outcome": "deferred",
+        "rationale": "Not built in this unit; the cadence's own failure ask covers a failing backup but not a missing mission",
+        "owner": "Next continuity unit",
+        "review_trigger": "Adoption of this PR into #196"
+      }
+    ],
+    "final_design": "Seeds read the queues, then the verified complete ledger prefix, then every other file without following links; key material, derived heartbeats and tool-call credential directories are never packed; a rotten object is rewritten. A founder-signed standing mission runs body.backup to exactly one signed store, refused when the store is missing, in memory, linked, redirected, shared with a read root, not private, or on the body's own filesystem without signed acceptance. Each backup is verified only by its restore drill and the Gate's receipt; body.backup_status reports fresh, current and why, re-hashing the latest backup. A failed backup asks once and the body keeps running. No body command and no edits to body.py, missions.py or templates.py.",
+    "residual_risks": [
+      {
+        "risk": "A large file grows the live body's memory during a backup, and a backup can delay a STOP",
+        "mitigation": "Measured and recorded; bounded fix named; the founder chooses when to sign a cadence",
+        "owner": "Continuity maintainer",
+        "review_trigger": "#221 merged, or any OOM or delayed STOP during a backup"
+      },
+      {
+        "risk": "Backups are not encrypted at rest",
+        "mitigation": "objects kept 0700; founder decides the store and whether encryption is required first",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "The first signed backup mission"
+      },
+      {
+        "risk": "Two filesystems of one disk pass as separate",
+        "mitigation": "Stated in the README and docstring; same-filesystem stores need a signature",
+        "owner": "Continuity maintainer",
+        "review_trigger": "A founder store on a partition or subvolume of the body's disk"
+      },
+      {
+        "risk": "The mutant gate does not run in CI",
+        "mitigation": "Named as an integrator follow-up; the unit and integration tests run in CI job 1's full suite",
+        "owner": "#196 integrator",
+        "review_trigger": "Intake into #196"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded with thresholds; does not block the draft or intake into #196; blocks the founder signing a cadence if a threshold is met.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not sign a cadence on the founder's body until the memory and stop-latency bound (R2-7) exists.",
+        "rationale": "The backup runs inside the live body; one large workspace file grows it by that file's size, and nothing bounds the backup's time.",
+        "evidence_threshold": "Any measured OOM kill or delayed STOP caused by a backup, in a test at the body's memory limit or on founder hardware",
+        "owner": "Continuity maintainer",
+        "review_trigger": "The R2-7 unit, or the founder's first signed backup mission"
+      },
+      {
+        "role": "Evidence and Welfare Guardian",
+        "position": "A store on removable or shared media should not be used before encryption at rest exists.",
+        "rationale": "A backup holds the body's whole confidential history; the object files themselves are 0644 inside the private directory.",
+        "evidence_threshold": "A founder ruling that encryption at rest is or is not required for a given store",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "The founder chooses a store"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "Alfonso Lopez (adoption, any merge, and signing any backup mission with its store, RPO, cadence and same-filesystem acceptance); #196 integrator for intake"
+  },
+  "migration_plan": "None required. Existing seeds and stores are read by the unchanged restore_body; the seed manifest gains optional fields (not_packed, excluded_secrets, repaired_objects), and the existing restore and seed-compatibility suites pass. No backup runs until the founder signs a backup mission.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert this branch's commits on the child branch, or decline intake into #196",
+      "Stop any signed backup mission with the existing mission controls; it also expires at its signed horizon (30 days by default)",
+      "A store already written stays a plain content-addressed directory that the unchanged restore_body reads"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "A seed taken from a running body that does not restore",
+    "A backup counted as verified whose seed does not restore",
+    "Any key material or tool-call credential found in a seed",
+    "A backup that writes outside the one signed store, or runs without a founder-signed mission",
+    "A backup that kills the running body or delays its STOP on founder hardware",
+    "body.backup_status reporting fresh while the latest verified backup does not restore"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez decides adoption, whether and how to sign a backup mission (store, RPO, cadence, same-filesystem acceptance) and whether encryption at rest is required first; the #196 integrator decides intake; session_01Kucyfm6YBHMTjaiC1M9hqD owns the reversible draft. Four roles recommend RETAIN or EXPERIMENT for the code; the Evidence and Welfare Guardian asks for the founder's decision on the store.",
+  "review_trigger": "Canonical CI on the PR head; the founder's first signed backup mission or founder-device run; the R2-7 memory-bound unit; any change to the engine's dispatching or grant records or the Gate's receipt format."
+}

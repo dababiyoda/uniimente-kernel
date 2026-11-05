@@ -1,0 +1,22 @@
+Combined-machine check: tests/integration/test_combined_construction_outcome.py
+Session session_01KucyfnwWG7Lgp8QvCTKeHg, 2026-10-28, local, Python 3.11.17, bubblewrap usable, real organs.
+Kernel: this branch (#196 e6c5058c + #205 b84361d9 + fix ea02c2e7). DALEOBANKS 664ac98c (organ venv from its requirements.txt).
+Env: UNIIMENTE_REQUIRE_ORGANS=1 and the four UNIIMENTE_* organ variables (as CI job 8).
+
+| Kernel settlement               | WMI organ           | result |
+| this branch (fix)               | #47 0e80582d        | 1 passed (15.2 s) |
+| this branch (fix)               | #45 b2c7f234        | 1 passed (14.9 s) |
+| this branch (fix)               | #44 7a45d223 (pin)  | 1 failed: no staffing reading (WMI does not read figures) |
+| #205 as merged (b84361d9 file)  | #47 0e80582d        | 1 failed: one claim offered as more than one pending row |
+
+What the passing run shows, on one body's ledger:
+  - Capability Genesis constructs assignment.staffing; the organs assess the certified answer (8 of 9).
+    WMI's retained assessment reads staffed=8, total_demand=9, shortage=1, and validation_plan[0] validates the
+    shortage; the verdict is below go.
+  - The answer's world outcome is pending exactly once; competence (1, 1) from the certificate alone.
+  - One founder-signed `greg realize RECEIPT --objective-value 7` settles it once: met=False, competence (1, 0),
+    with certificate_correct kept True; nothing left pending.
+  - The realization re-runs no organ; WMI's retained assessment is byte-identical after it.
+Gate: needs WMI >= #45 in job 8. It skips (with the reason) wherever the organ variables are unset, so it cannot
+fail on this branch's job 1. It becomes a CI gate when job 8 lists it with #212's WMI repin.
+The realized value is synthetic. No real-world outcome or learning dividend is claimed.

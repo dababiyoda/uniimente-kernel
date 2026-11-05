@@ -30,9 +30,10 @@ def met(doc, world):
     return {a["id"] for s in d.directive_report(doc, world[1], world[2])["sections"] for a in s["asks"] if a["met"]}
 
 
-def ratchet(head, world, read_head=None):
+def ratchet(head, world, read_head=None, manifest=None, contract=None, base=None):
     tree = d.read_tree()
-    return d.evidence_ratchet_problems(world, (head, world[1], world[2]), tree, read_head or tree)
+    return d.evidence_ratchet_problems(base or world, (head, manifest or world[1], contract or world[2]), tree,
+                                       read_head or tree)
 
 
 def declared_covered(world, ids=ATTACKED):
@@ -53,7 +54,7 @@ def test_the_reviewed_asks_are_open_at_the_base_and_the_edit_alone_closes_them(w
 def test_declaring_coverage_without_new_evidence_is_refused(world):
     problems = ratchet(declared_covered(world), world)
     assert [p.split()[1] for p in problems] == list(ATTACKED)
-    assert all("nothing it cites changed" in p for p in problems)
+    assert all("no test file its evidence reaches changed" in p for p in problems)
 
 
 def test_lowering_the_required_tier_without_new_evidence_is_refused(world):
@@ -80,8 +81,8 @@ def test_retiring_an_open_ask_into_one_already_met_is_refused(world):
     ask(head, "S1.A2")["retired"] = {"superseded_by": "S1.A1"}
     assert "S1.A2" in met(head, world)                                     # what the review reproduced
     assert ratchet(head, world) == [
-        "ratchet: S1.A2 was open at the base and is newly retired into S1.A1, which was already met there; retire it "
-        "into an open ask, or withdraw it by a founder record"]
+        "ratchet: S1.A2 was open at the base and is newly retired into S1.A1, which was not an open ask there; retire "
+        "it into an ask that was open at the base"]
 
 
 def test_retiring_into_an_ask_that_was_open_at_the_base_is_allowed(world):
@@ -151,3 +152,117 @@ def test_the_cli_refuses_what_the_evidence_ratchet_refuses(world, monkeypatch, c
     monkeypatch.setattr(d, "evidence_ratchet_problems", lambda *a, **k: [])
     assert cli.main(["directive", "--against", "base"]) == 0
     assert "every ask closed since cites new or changed evidence" in capsys.readouterr().out
+
+
+# -- review of the first ratchet (f3a1df61): each bypass and the false refusal it found --------------------------
+
+def test_declaring_coverage_in_a_mission_requirement_closes_nothing(world):
+    """Finding 1: the same claim edit, one level down in missions.json, closed 15 asks with no test changed."""
+    manifest, head = copy.deepcopy(world[1]), copy.deepcopy(world[0])
+    reqs = {(m["id"], r["id"]): r for m in manifest["missions"] for r in m["requirements"]}
+    before = met(world[0], world)
+    for s in head["sections"]:
+        for a in s["asks"]:
+            cited = [e.partition(":")[2] for e in a.get("evidence", []) if e.startswith("mission:")]
+            if a["id"] in before or not cited:
+                continue
+            for ref in cited:
+                reqs[tuple(ref.split("."))]["coverage"] = "covered"
+            a["coverage"] = "covered"
+            a.pop("blocker", None)
+    closed = {x["id"] for s in d.directive_report(head, manifest, world[2])["sections"] for x in s["asks"]
+              if x["met"]} - before
+    assert len(closed) >= 3                                               # the attack does close asks unguarded
+    refused = {p.split()[1] for p in ratchet(head, world, manifest=manifest)}
+    assert closed <= refused
+
+
+def test_retiring_into_an_ask_created_in_the_same_change_is_refused(world):
+    """Finding 2: a copy of a met ask, added at the head, was an unchecked successor."""
+    head = copy.deepcopy(world[0])
+    s1 = next(s for s in head["sections"] if s["n"] == 1)
+    s1["asks"].append({**copy.deepcopy(ask(head, "S1.A1")), "id": "S1.A9"})
+    ask(head, "S1.A2")["retired"] = {"superseded_by": "S1.A9"}
+    assert ratchet(head, world) == [
+        "ratchet: S1.A2 was open at the base and is newly retired into S1.A9, which was not an open ask there; retire "
+        "it into an ask that was open at the base"]
+
+
+def test_withdrawing_an_open_ask_by_a_record_is_refused(world):
+    """Finding 3: a record retirement left the head report, so the residual could be emptied by any intent file."""
+    head = copy.deepcopy(world[0])
+    record = "docs/intent/INTENT-20261030-BUILD-BEFORE-DEVICE-RUN.json#Continue building"
+    open_ids = [a for a in sorted(set(i for s in head["sections"] for i in (x["id"] for x in s["asks"]))
+                                  - met(world[0], world))][:5]
+    for aid in open_ids:
+        ask(head, aid)["retired"] = {"record": record}
+    problems = ratchet(head, world)
+    assert [p.split()[1] for p in problems] == open_ids
+    assert all("withdrawing an obligation is the founder's decision at merge" in p for p in problems)
+
+
+def test_re_pointing_a_retirement_at_a_met_ask_is_refused(world):
+    """Finding 4: an ask already retired at the base skipped the successor check when its successor changed."""
+    base = copy.deepcopy(world[0])
+    ask(base, "S1.A2")["retired"] = {"superseded_by": "S3.A1"}            # open successor at the base
+    head = copy.deepcopy(base)
+    ask(head, "S1.A2")["retired"] = {"superseded_by": "S1.A1"}            # re-pointed at a met one
+    problems = ratchet(head, world, base=(base, world[1], world[2]))
+    assert [p.split()[1] for p in problems] == ["S1.A2"]
+    assert ratchet(copy.deepcopy(base), world, base=(base, world[1], world[2])) == []
+
+
+def test_reinstating_a_withdrawn_ask_closes_nothing_without_new_evidence(world):
+    """Finding 5: an ask withdrawn at the base was absent there, so reinstated and met it went unchecked."""
+    base = copy.deepcopy(world[0])
+    ask(base, "S5.A1")["retired"] = {"record": "docs/intent/INTENT-20261030-BUILD-BEFORE-DEVICE-RUN.json#x"}
+    head = declared_covered(world, ("S5.A1",))
+    assert [p.split()[1] for p in ratchet(head, world, base=(base, world[1], world[2]))] == ["S5.A1"]
+
+
+def test_an_ask_that_cites_only_a_contract_function_closes_on_its_requirements_tests(world):
+    """Finding 6 (a false refusal): a contract function's evidence is requirement ids; their tests are followed."""
+    rep = d.directive_report(world[0], world[1], world[2])
+    open_ids = {a["id"] for s in rep["sections"] for a in s["asks"] if not a["met"]}
+    functions = {f["id"]: f for f in world[2]["functions"]}
+    for s in world[0]["sections"]:
+        for a in s["asks"]:
+            refs = a.get("evidence", [])
+            if a["id"] in open_ids and refs and all(r.startswith("contract:") for r in refs) and "retired" not in a:
+                break
+        else:
+            continue
+        break
+    else:
+        pytest.skip("no open ask cites only contract functions")
+    files = d.evidence_files(a, world[1], world[2])
+    assert files, "a contract function's requirements name test files"
+    assert all(f.startswith("tests/") for f in files)
+    tree = d.read_tree()
+    head, manifest = copy.deepcopy(world[0]), copy.deepcopy(world[1])
+    reqs = {(m["id"], r["id"]): r for m in manifest["missions"] for r in m["requirements"]}
+    for ref in (r.partition(":")[2] for r in a["evidence"]):
+        for req_ref in functions[ref]["evidence"]:
+            reqs[tuple(req_ref.split("."))]["coverage"] = "covered"     # the reviewer's reproduction
+    ask(head, a["id"]).update(coverage="covered", required_tier="IMPLEMENTED")
+    ask(head, a["id"]).pop("blocker", None)
+    assert a["id"] in {x["id"] for s in d.directive_report(head, manifest, world[2])["sections"] for x in s["asks"]
+                       if x["met"]}
+    assert [p.split()[1] for p in ratchet(head, world, manifest=manifest)] == [a["id"]]   # no test changed
+    assert ratchet(head, world, lambda p: tree(p) + "\n# new\n" if p == files[0] else tree(p),
+                   manifest=manifest) == []                                              # one did
+
+
+def test_a_base_map_this_schema_cannot_read_is_reported_not_raised(world):
+    """Finding 7: a base on an older schema raised a traceback."""
+    base = copy.deepcopy(world[0])
+    del ask(base, "S1.A1")["coverage"]
+    problems = ratchet(copy.deepcopy(world[0]), world, base=(base, world[1], world[2]))
+    assert len(problems) == 1 and problems[0].startswith("ratchet: the base map cannot be read by this tree's "
+                                                          "directive schema (KeyError")
+
+
+def test_every_file_an_asks_evidence_reaches_is_a_test_file(world):
+    for s in world[0]["sections"]:
+        for a in s["asks"]:
+            assert all(f.startswith("tests/") and "::" not in f for f in d.evidence_files(a, world[1], world[2]))

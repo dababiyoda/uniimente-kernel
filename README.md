@@ -21,6 +21,8 @@ Alfonso's terms such as `egregore`, `morphogenesis`, `cells`, `tissues`, `organs
 
 Canonical UNIIMENTE morphogenesis means **functional capability formation/reconfiguration in response to a verified discrepancy or CapabilityDeficit**. Existing biological/developmental and organizational-morphogenesis work remains valuable research and mechanism substrate, but it does not define the required final geometry.
 
+Humans start with `CONTRIBUTING.md` (setup, commands, sealed artifacts) and `docs/README.md` (index of every document and which governs on conflict).
+
 ## The invariant
 
 No consequential external effect occurs without:
@@ -45,33 +47,83 @@ This repository contains no production secrets. It contains law, contracts, and 
 
 ## Layout
 
+Every top-level directory is listed here; `tests/unit/test_repository_map.py`
+fails if one is added without a row. Read `docs/ARCHITECTURE.md` for how the
+pieces connect and `CONTRIBUTING.md` for how to work in them.
+
+**Law and authority (data, not code).** Several of these files are byte-sealed; see "Sealed artifacts" in `docs/ARCHITECTURE.md`.
+
 | Path | Contents |
 |---|---|
 | `/constitution` | The Constitution as executable UCL: purpose, rights, prohibitions, sovereignty hierarchy, amendment and shutdown policy |
 | `/authority` | Authority matrix, legal principals, reserved matters (permanently non-delegable) |
-| `/contracts` | Versioned JSON Schemas shared by every organ: events, evidence, decisions, outcomes, capability grants, packets, charters |
-| `/identity` | Organ registry, agent registry, service identities (SPIFFE-style) + executable machine passports (Layer 2) |
 | `/affect` | Functional affect policy: bounded machine control states, identity coherence, pathological-state tests |
-| `/capital` | Allocation waterfall, liquidity policy, concentration limits, acquisition gates |
-| `/workflows` | Approval lifecycle, venture validation gates, incident response, shutdown recovery |
-| `/tests` | Governance laboratory: constitutional, authority, capital, security, recovery, provenance test specifications + `/tests/unit` executable suites |
-| `/compiler` | UCL compiler (Layer 1): doctrine → deterministic policy decisions, relationship tuples, invariants, grant contract |
-| `/policy` | Policy engine + Consequence Gate (Layer 3): the sole path to external effects |
-| `/provenance` | Evidence Ledger + Commit Witness + Merkle proofs (Layers 3+10): hash-chained, HMAC-signed, checkpoint-anchored institutional memory |
-| `/closure` | Orthogonal loop closure: five closures per module + Whole-Body Closure Controller (13 loops) |
-| `/evolution` | Recursive self-improvement: strategy trees, spider-web audits, experiments, capsules, the ClosureLoop, and the Phase 3 machine-paced auto-cycle |
-| `/events` | Event spine + durable workflows (Layer 4): typed events, idempotent inbox, mediated outbox, replay, kill-and-resume workflows |
-| `/autonomy` | Autonomy licensing (Layer 13): evidence-earned A0–A8 levels on exact 9-dimension tuples; A9 reserved human sovereignty |
-| `/loom` | Automation Loom (Phase 4): machine-authored, human-ratified workflow patterns woven onto the durable spine |
-| `/twins` | Institutional Twins + Counterfactual Tribunal (Phase 5): hermetic counterfactual forks; dominance-verdict hearings that recommend and never apply |
-| `/capabilities` | Capability genomes (Layer 5): portable organelles with bounded authority envelopes |
-| `/embassy` | Agent Embassy (Layer 7): foreign agents admitted as minimum-privilege guests; every request routed through the gate |
-| `/memory` | Causal memory + functional affect (Layer 8): precedent, outcome weighting, calibration, bounded control states |
+| `/workflows` | Declarative institutional workflows: approval lifecycle, venture validation, incident response, shutdown recovery |
+| `/contracts` | Versioned JSON Schemas shared by every organ (events, evidence, decisions, outcomes, grants, packets, charters, wire v1.1) |
+| `/organs` | Organ manifests the Linker resolves (`*.manifest.yaml`) |
+| `/integration` | Integration program manifests (e.g. Egregore v1 assembly) |
+
+**The consequence path (code).**
+
+| Path | Contents |
+|---|---|
+| `/compiler` | Layer 1 — UCL compiler: doctrine → deterministic policy decisions, relationship tuples, invariants, grant contract |
+| `/identity` | Layer 2 — organ/agent/service registries (YAML) + executable machine passports |
+| `/policy` | Layer 3 — policy engine + Consequence Gate: the sole path to external effects |
+| `/provenance` | Layers 3+10 — Evidence Ledger, Commit Witness, Merkle proofs |
+| `/events` | Layer 4 — event spine and durable workflows: typed events, idempotent inbox, mediated outbox, replay, kill-and-resume |
+| `/adapters` | Contract-version adapters between organ wire formats; declare loss, additions and assumptions |
+| `/linker` | Resolves typed cross-organ edges from organ manifests; reports unresolved fields instead of inventing them |
+| `/common` | Shared mechanics only (canonical JSON, `sha256:` references, UTC clock); no policy, no authority |
+
+**Governed capability, memory and evolution (code).**
+
+| Path | Contents |
+|---|---|
+| `/capabilities` | Layer 5 — capability genomes with bounded authority envelopes; non-canonical capability router |
+| `/embassy` | Layer 7 — foreign agents admitted as minimum-privilege guests; every request routed through the gate |
+| `/memory` | Layer 8 — causal memory, outcome weighting, calibration, bounded functional affect |
+| `/autonomy` | Layer 13 — evidence-earned A0–A8 autonomy levels; A9 reserved human sovereignty |
+| `/closure` | Five orthogonal closures per module + Whole-Body Closure Controller; registries the verifier runs |
+| `/evolution` | Strategy trees, spider-web audits, experiments, capsules, ClosureLoop, auto-cycle; frozen repair/migration experiments |
+| `/loom` | Automation Loom: machine-authored, human-ratified (hash-bound) workflow patterns |
+| `/twins` | Institutional Twins + Counterfactual Tribunal: hermetic forks whose verdicts recommend and never apply |
+| `/capital` | Allocation waterfall, liquidity policy, concentration limits, regenerative treasury |
+| `/egregore` | ADE-1 standing cognition: scheduled, bounded, evidence-bound deliberation that produces candidates only |
+
+**Ventures, commerce and composition (generic extension candidates).**
+
+| Path | Contents |
+|---|---|
+| `/business` | Business Genome compiler and the commercial loop (problem → buyer → offer → payment → delivery → outcome) |
+| `/foundry` | Advantage Foundry: opportunity intake, tribunal, composition, pipeline, open-source research line |
+| `/omnimorph` | Optional temporary-organization/capability-composition mechanism; produces `PROPOSED_NOT_EXECUTED` manifests |
+| `/morphogenesis` | Bounded target-state and venture-cell control primitives (one lineage; not the definition of morphogenesis) |
+
+**Research (sealed from consequence).**
+
+| Path | Contents |
+|---|---|
+| `/developmental` | Biology-inspired mechanism research laboratory; not the canonical definition of morphogenesis |
+
+**Specifications not yet built.**
+
+| Path | Contents |
+|---|---|
 | `/sandbox` `/observability` | Kernel module specifications (build targets) |
 | `/sdk-python` `/sdk-typescript` | Organ integration SDKs (build targets) |
-| `/developmental` | biology-inspired mechanism research laboratory; not the canonical definition of morphogenesis |
-| `/omnimorph` | optional temporary-organization/capability-composition mechanism; subordinate to Capability Genesis |
-| `/docs` | architecture, founder doctrine, build order, Backcast GPS plan, UCL specification, collaboration and evidence records |
+
+**Verification, tooling and records.**
+
+| Path | Contents |
+|---|---|
+| `/tests` | Executable suites (`tests/unit`, `tests/integration`), governance test specifications (YAML), preserved evidence (`tests/evidence`) |
+| `/verifier` | Institutional verifier (V1–V5) and every recorded run under `verifier/runs/` |
+| `/scripts` | CI guard scripts (`scripts/ci/`): schema references, authority singletons, sealed developmental work |
+| `/tools` | Standalone operator tools (fail-closed offline test launcher) |
+| `/deploy` | Local deployment recipes for the research line (compose, settings) |
+| `/examples` | Example inputs and fixtures for runnable entry points |
+| `/docs` | Founder doctrine, architecture, build orders, release and evidence records — start at `docs/README.md` |
 
 ## Build status
 
@@ -83,7 +135,7 @@ This repository contains no production secrets. It contains law, contracts, and 
 
 **Phase 4 — Automation Loom + Phase 5 Institutional Twins + Layers 5/7/8: executable and verified (2026-07-20).** The Loom weaves the institution's own routines: workflow patterns authored as data by the machine, ratified by the human (hash-bound — any edit invalidates ratification), executed on the durable spine; all three canonical workflows (daily reconciliation, evidence-floor review, venture validation gate) run end-to-end, including mid-flight kill → resume. Twins rehearse change in hermetic forks; the Counterfactual Tribunal renders dominance verdicts over frozen, quality-labeled corpora — harm increases can never be named superior, and verdicts recommend but never apply. Layer 5 capability genomes bound every organelle's authority envelope; the Layer 7 Embassy admits foreign agents as zero-budget, TTL-clamped guests whose every request routes through the gate; Layer 8 causal memory reconstructs precedent (outcome→receipt→witness), weights outcomes by verification strength, calibrates confidence against reality, and bounds functional affect (attributable triggers, ceilings, decay, descending authority — structurally unable to change facts, create evidence, raise authority, override law, resist shutdown, or authorize irreversible action).
 
-172 unit tests green. 13 modules × 5 orthogonal closures green. Verifier: `python3 verifier/v2/verify.py` (V2–V5 green; every run recorded under `verifier/runs/`). These are internal evidence for the stated versions, not proof that the full egregore is integrated or operational in the real world.
+Current evidence is whatever the commands produce, not a number written here: `make test` (full suite), `make verify` (institutional verifier V1–V5; every run recorded under `verifier/runs/`), `make ci` (every check CI runs). Test counts in the phase notes above are historical at their dates. These are internal evidence for the stated versions, not proof that the full egregore is integrated or operational in the real world.
 
 Next work must follow `docs/CANONICAL_EXECUTION_ORDER.md` and the active repository evidence, not stale phase labels alone.
 

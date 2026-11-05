@@ -12,6 +12,7 @@ from typing import Any
 
 from business.commercial_loop import ACCEPTED_VERIFICATIONS, CustomerCase
 from .advantage import AdvantageRefused, ExternalOutcome
+from common.canonical import is_sha256_ref
 
 
 @dataclass(frozen=True)
@@ -85,6 +86,6 @@ def external_outcome_from_case(
 
 def _require_hash(value: Any, field_name: str) -> str:
     value = str(value or "")
-    if not value.startswith("sha256:") or len(value) != 71:
+    if not is_sha256_ref(value):
         raise AdvantageRefused(f"{field_name} must be a canonical sha256 reference")
     return value

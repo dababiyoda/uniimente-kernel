@@ -21,7 +21,8 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone
+
+from common.clock import utc_now_iso
 
 VERIFIER_LEVELS = (
     "formal_proof", "external_outcome", "cryptographic_receipt",
@@ -31,8 +32,7 @@ VERIFIER_LEVELS = (
 HYPOTHESIS_ONLY = ("same_model_critique", "intrinsic_confidence")
 
 
-def _now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+_now = utc_now_iso  # historical private name; see common/clock.py
 
 
 @dataclass

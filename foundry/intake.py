@@ -16,6 +16,7 @@ from typing import Any, Mapping
 import jsonschema
 
 from .advantage import AdvantageRefused, OpportunitySpec
+from common.canonical import is_sha256_ref
 
 KERNEL_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -70,7 +71,7 @@ def _require_text(payload: Mapping[str, Any], key: str) -> str:
 
 def _require_hash(value: Any, field_name: str) -> str:
     value = str(value or "")
-    if not value.startswith("sha256:") or len(value) != 71:
+    if not is_sha256_ref(value):
         raise AdvantageRefused(f"{field_name} must be a canonical sha256 reference")
     return value
 

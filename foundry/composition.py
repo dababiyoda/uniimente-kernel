@@ -8,14 +8,13 @@ smallest bounded validation experiment.
 """
 from __future__ import annotations
 
-import hashlib
-import json
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from typing import Any, Mapping
 
 from capabilities.genome import CapabilityGenome, CONSEQUENCE_CLASSES
 from .arsenal import ARSENAL, TechnologySpec
+from common.canonical import sha256_ref
 
 ALLOWED_CONTROL_SURFACES = frozenset(
     surface for spec in ARSENAL.values() for surface in spec.control_surfaces
@@ -169,13 +168,11 @@ class CompositionPlan:
 
 
 def request_hash(request: CompositionRequest) -> str:
-    raw = json.dumps(asdict(request), sort_keys=True, separators=(",", ":"), default=str)
-    return "sha256:" + hashlib.sha256(raw.encode("utf-8")).hexdigest()
+    return sha256_ref(asdict(request), default=str)
 
 
 def plan_id_for(payload: dict[str, Any]) -> str:
-    raw = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
-    return "plan:" + hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
+    return "plan:" + sha256_ref(payload, default=str)[len("sha256:"):][:24]
 
 
 def utc_now() -> str:

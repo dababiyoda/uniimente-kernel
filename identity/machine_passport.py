@@ -19,8 +19,10 @@ and a mandatory expiry).
 from __future__ import annotations
 
 import uuid
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, asdict
 from datetime import datetime, timezone, timedelta
+
+from common.clock import utc_now
 
 NAMESPACE = "spiffe://uniimente.internal"
 
@@ -56,8 +58,7 @@ class MachinePassport:
         return None
 
 
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
+_now = utc_now  # historical private name; see common/clock.py
 
 
 def _rfc3339(dt: datetime) -> str:

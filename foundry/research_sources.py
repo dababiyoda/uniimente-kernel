@@ -28,7 +28,7 @@ def local_url(value):
             or url.query or url.fragment or url.path not in ("", "/")):
         raise ValueError("SearXNG requires a loopback root URL without credentials")
     # Access the port here so malformed authorities fail during planning.
-    url.port
+    _ = url.port
     return value.rstrip("/")
 
 

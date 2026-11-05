@@ -24,7 +24,7 @@ recovery; and kill criteria.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 
 EIGHT_SIDES = (
     "reality_failure_geometry",

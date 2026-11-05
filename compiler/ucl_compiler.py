@@ -24,7 +24,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, asdict
 from typing import Any
 
 try:
@@ -144,13 +144,16 @@ def compile_constitution(root: str) -> CompiledConstitution:
 
     # --- sovereignty.ucl ---
     ranks: dict[str, int] = {}
-    alfonso_powers: list[str] = []
+    # AUDIT FINDING F-1 (docs/audits/STRUCTURAL_AUDIT_2026-11-05.md): the
+    # reserved powers are parsed but never validated. Adding a check changes
+    # what the Constitution compiler accepts, so it awaits founder review.
+    alfonso_powers: list[str] = []  # noqa: F841
     for b in parsed["sovereignty.ucl"]:
         if b.type == "sovereignty_hierarchy":
             for lvl in b.children("level"):
                 ranks[lvl.get("name")] = int(lvl.get("rank"))
         if b.type == "reserved_authority" and b.label == "alfonso":
-            alfonso_powers = list(b.get("powers"))
+            alfonso_powers = list(b.get("powers"))  # noqa: F841 (see F-1 above)
     if ranks.get("law_safety_rights") != 1 or ranks.get("individual_tasks") != 10:
         raise CompilationError("sovereignty hierarchy must run rank 1 (law/safety/rights) to rank 10 (tasks)")
 

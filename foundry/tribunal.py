@@ -7,13 +7,13 @@ Eligibility, Default Routing, Proof and Truth, and Cashflow and Settlement.
 """
 from __future__ import annotations
 
-import json
 from dataclasses import asdict, dataclass
 from enum import Enum
 from hashlib import sha256
 from typing import Iterable
 
 from .advantage import AdvantageArchitecture, AdvantageRefused
+from common.canonical import sha256_ref
 
 TRIBUNAL_LENSES = (
     "reality_and_failure_geometry",
@@ -84,8 +84,7 @@ class TribunalReport:
 
     @property
     def digest(self) -> str:
-        payload = json.dumps(asdict(self), sort_keys=True, separators=(",", ":"), default=str)
-        return "sha256:" + sha256(payload.encode()).hexdigest()
+        return sha256_ref(asdict(self), default=str)
 
 
 class SpiderWebTribunal:

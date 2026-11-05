@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+
+from common.clock import utc_now
 
 from closure.whole_body import Loop, LoopEvidence, WholeBodyClosureController
 from policy.engine import Proposal
@@ -20,8 +21,7 @@ ACCEPTED_VERIFICATIONS = ("deterministic_invariant", "external_outcome",
                           "external_receipt", "human_review", "independent_model")
 
 
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
+_now = utc_now  # historical private name; see common/clock.py
 
 
 class CommercialLoopError(ValueError):

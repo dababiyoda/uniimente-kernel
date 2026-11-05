@@ -23,8 +23,11 @@ is MIT whatever the weights are, so qualifying the server says nothing about the
 `licensing.ollama_model("qwen3.5:4b")` reads the model's own manifest in the local Ollama store and returns an
 assessment in the shape the gate already uses:
 
-- **Where it reads.** It tries the store named by `OLLAMA_MODELS`, then `~/.ollama/models`, then
-  `/usr/share/ollama/.ollama/models` (the Linux service user's home). In each it reads the manifest Ollama would
+- **Where it reads.** When `OLLAMA_MODELS` is set it reads that store and no other, the value trimmed as Ollama's
+  `envconfig.Var` trims it (spaces, then `"` and `'`; see
+  [the review of `d1724006`](#the-review-of-d1724006-ollama_models-and-what-gos-decoder-takes)). When it is unset
+  or empty once trimmed, it tries `~/.ollama/models`, then `/usr/share/ollama/.ollama/models` (the
+  Linux service user's home). In each it reads the manifest Ollama would
   serve for the name, completed as Ollama completes names: `manifests-v2/<host>/<namespace>/<model>/<tag>` (Ollama
   0.40 and later), else `manifests/<host>/<namespace>/<model>/<tag>` (0.35 and earlier). See
   [Ollama 0.40's store](#ollama-040s-store-and-the-selection-gate).
@@ -235,7 +238,8 @@ and 22 more for F1 to F4), what both versions serve with no runner and with each
 GREG assessed, with Apache license layers only, no unlisted weights, no relay config, no cloud proxy, and the
 `/api/tags` child GREG reports must be the one Ollama selects. 15 stores must clear. To refreeze:
 `sh tests/fixtures/ollama_oracle/build_oracle.sh <dir>` (git, github.com, Go 1.24; it fetches only `manifest/`,
-`types/model/` and `internal/modelref/` at the two commits and stubs `envconfig`), then
+`types/model/` and `internal/modelref/` at the two commits and stubs `envconfig`; since the review of `d1724006`
+it compiles Ollama's own `envconfig/` instead), then
 `python -B -I tests/fixtures/ollama_oracle/freeze.py <dir>`. The oracle program is the reviewer's, with only its
 header comment and the two variant fill-ins changed.
 
@@ -252,6 +256,48 @@ header comment and the two variant fill-ins changed.
 | The reviewer's `diff_harness.py` on `edb9dd3b`, default and legacy layouts | 54 of 54 match each, 0 false clears |
 | The licensing suites on `edb9dd3b` | 45, 1866, 40, 30 (after a throwaway `git init`; 29 + 1 skipped without), 1 (+1 xfailed), 39 and 4 passed |
 | Mutants | the whole metabolism group on `edb9dd3b`, 179 mutants (the 156 and 23 for the new guards; the oracle test added to the group's test list), each in its own copy of the repository, docs/evidence included, through the script's own `main()` and `_run_one`, default `TMPDIR`: 179 reported caught, 0 survived or stale. Two were caught only because the mutated file did not parse. One is new here, "a layer's JSON keys are not checked": it removed the loop's only statement. It now leaves `pass`, and re-run alone it is caught by a failing test (1,933 passed before it). The other, "the use verdict mixes terms across alternatives" (`4f995317`, not this round's), replaces the first line of a three-line `return`; it is reported, not changed. The group's 11 test files pass unmutated: 2,205 passed, 1 skipped (no git checkout) |
+
+### The review of `d1724006`: `OLLAMA_MODELS`, and what Go's decoder takes
+
+An independent review of `d1724006` found one false clear (N1), one fall-through (N2) and a note (N3), with an oracle
+rebuilt on Ollama's real `envconfig.Var`. Making the frozen test fail a clear of a model Ollama does not find (it
+would pull bytes GREG never read) exposed one more fall-through, under the host `ollama.com`.
+
+| Finding | `d1724006` | Now |
+| --- | --- | --- |
+| N1 (medium): Ollama reads `OLLAMA_MODELS` through `envconfig.Var`, `strings.Trim(strings.TrimSpace(v), "\"'")` (identical in `0d0720e` and `e9fde36d`); a Docker `--env-file` line keeps its quotes. `"<srv>"`, `'<srv>'`, `"<srv> "`, `" <srv>"` with Llama in `<srv>` and Apache in `~/.ollama/models` | CLEARED the home store's Apache manifest (`30e11c14fa`) while Ollama serves `1cf2835061` (Llama) | held (Llama), from the store Ollama serves: Go's `TrimSpace` set (`_GO_SPACE`), then every leading and trailing `"` and `'` (`_ollama_models_env`) |
+| N2 (low): `OLLAMA_MODELS` names a store without the model | CLEARED from `~/.ollama/models` or `/usr/share/ollama`; Ollama answers "not found" and a run would pull | not in any store (`None`; the gate holds it, "in no Ollama store"). `envconfig.Models` has no fallback, so neither has GREG. Unset or empty once trimmed (`' "" '`), the home and system stores are read as before |
+| N3 (note): a manifest with a UTF-8 BOM, or in UTF-16 or UTF-32 | CLEARED (`json.loads(bytes)` detects the encoding); Go: "invalid character" | held: manifests and config blobs are decoded as UTF-8 only (`_go_json`) |
+| Found here: a name under the host `ollama.com`, any case | CLEARED from the local entry; `main` never finds a local model asked for under that host (it names them `registry.ollama.ai`) and answers "file does not exist", `v0.40.0` only for an exact spelling | held, with no bytes bound, whatever the store holds. Without a host, or as `registry.ollama.ai/...`, the same store clears |
+
+**The oracle runs Ollama's own `envconfig`.** `build_oracle.sh` fetched `manifest/`, `types/model/` and
+`internal/modelref/` and stubbed `envconfig` with a raw `os.Getenv`, so it could not see N1. It now also fetches
+`envconfig/` at both commits and compiles it (its non-test file imports only the standard library). Nine stores were
+added (85 in all): the four spellings of N1, a value padded and quoted twice that names an Apache store (it must
+clear), one empty once trimmed (it must clear, from the home store), a model only in the home store (N2), and a BOM
+and a UTF-16 manifest (N3). `scenarios.ENV` gives each one's `OLLAMA_MODELS` spelling, `freeze.py` runs both oracles
+under it with `HOME=<dir>`, `answers.json` records it, and the test passes the same environment to GREG with no
+`models_dir`. The test also fails a clear when any run answers "file does not exist", or no run serves the model; the
+old rule skipped every error and asked for a served run only of the stores that must clear. 17 stores must clear.
+
+Every run below is on `221e1ea7`, whose code and tests the head carries unchanged (the head adds this file and
+`g-PR.md`'s text only), unless it names another revision; "on `d1724006`'s" means a lean tree of `221e1ea7`
+(`git archive`) with `greg/licensing.py` replaced by `d1724006`'s.
+
+| Run | Result |
+| --- | --- |
+| `build_oracle.sh` from a fresh fetch of `0d0720e` and `e9fde36d` (Go 1.24.7, linux/amd64) | both oracles built; oracle sha256 `f8d180a8…` (v040) and `4c434f68…` (main), recorded in `answers.json` |
+| `answers.json` refrozen | the 76 earlier stores answer byte for byte as before; frozen twice, byte-identical after the provenance block; frozen with the reviewer's `oracle-main-var.bin` in place of the main oracle, the same 85 answers |
+| The reviewer's `envrepro.py`, rebuilt main oracle and the reviewer's `oracle-main-var.bin` | on `d1724006`: the four spellings CLEARED `30e11c14fa` while Ollama serves `1cf2835061` (also with the rebuilt v040 oracle); on `221e1ea7`: all four HELD `1cf2835061`, the manifest Ollama serves |
+| `test_greg_model_license_gate.py` (38 tests: the 34 and 4 new) on `d1724006`'s | 4 failed: the four new tests (N1, N2, N3, the `ollama.com` host). Two existing tests now ask for `registry.ollama.ai/...` where they asked for `ollama.com/...`, which they cleared and Ollama `main` does not find |
+| The same on `221e1ea7` | 38 passed |
+| `test_greg_ollama_oracle.py` (86 tests) on `d1724006`'s | 9 failed: the four N1 spellings, the doubly quoted store that must clear, the home-only store, the BOM and UTF-16 manifests, and `r4b_explicit_ollama_com` |
+| The same on `221e1ea7` | 86 passed |
+| `test_greg_model_license.py` on `d1724006`'s and on `221e1ea7` | 45 passed each |
+| The reviewer's `h3.py` and `diff_harness.py` (stub oracles, explicit store), default and legacy layouts | `h3.py` 94 of 94 ok each, 0 false clears; against the reviewer's run its BOM and UTF-16 stores moved from CLEARED to HELD and `r4b_explicit_ollama_com` from CLEARED to HELD. `diff_harness.py` 54 of 54 ok each, 0 false clears, `r4b_explicit_ollama_com` the only verdict changed |
+| The licensing suites | 45, 1866, 40, 30 (after a throwaway `git init`; 29 + 1 skipped without), 1 (+1 xfailed), 39 and 4 passed |
+| `git merge-tree` with #245 `0ecd091f` | clean, tree `ff98012f`. On it: `test_greg_model_license_route.py` 5, `test_greg_ollama.py` 8, the gate file 38, the oracle test 86, `test_greg_model_license.py` 45 passed |
+| Mutants | the whole metabolism group on `221e1ea7`, 187 mutants (the 179 and 8 for the new guards), each in its own copy of a lean tree (docs/evidence left out of the copies) through the script's own `main()` and `_run_one`, 4 workers, default `TMPDIR`: 187 reported caught, 0 survived or stale. 186 are caught by a failing test; the existing "the use verdict mixes terms across alternatives" (`4f995317`) is still caught only by a collection error, as reported before. The 8 new ones each fail 1 test (1,919 to 1,948 passed before it). The group's 11 test files pass unmutated: 2218 passed, 1 skipped (no git checkout) |
 
 ## Limits
 
@@ -278,8 +324,12 @@ header comment and the two variant fill-ins changed.
   `admit_model_selection` is the hook a caller outside it can use where the selection becomes a route
   (`greg/body.py`, `greg/planner.py`), with no re-seal; nothing calls it yet.
 - **What the selection gate does not establish:**
-  - **The store read is the first that holds the name.** The running Ollama server may use another, for example
-    when a service's `OLLAMA_MODELS` or `HOME` differs from the body's. `license_evidence` carries the digest
+  - **The store read is the one this process's environment names.** `OLLAMA_MODELS`, trimmed as Ollama trims it,
+    is the only store read while it is set; otherwise the first of the home and system stores that holds the name.
+    The running Ollama server may use another, for example when a service's `OLLAMA_MODELS` or `HOME` differs from
+    the body's. GREG reads the environment as Python decodes it (UTF-8 here); a value with bytes that are not UTF-8
+    is not trimmed of a non-ASCII space Go would not see either, and `HOME` set but empty, on which Ollama's
+    `Models()` panics, is not modelled. `license_evidence` carries the digest
     `/api/tags` reports: `manifest_sha256` for a plain manifest, and `api_tags_digest` for a list, under each runner
     order. A verifier can compare it with the digest `OllamaRoute` reads. Enforcing their equality at the call
     belongs to `greg/cognition/cortex.py` or `greg/models.py`.

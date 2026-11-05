@@ -1,0 +1,53 @@
+# Directive 2026-10-28 section 53: "Before closing or superseding a PR, extract" nine items. A PR closed unmerged is
+# judged by `scripts/lineage_map.py --close` against the record on its base and the canonical integration head. It
+# passes when the PR was merged (intake, not a close), when its head is already in the canonical head (nothing is
+# lost), or when its nine items are recorded at the head that was closed. Otherwise this run fails and names what
+# is missing.
+#
+# Limits: GitHub cannot refuse a close, so this detects; it does not prevent. It runs only where the PR's base
+# carries this file. Branch deletion and scheduled runs fire only from the default branch, so adopting it there is
+# the founder's merge. It checks out the base, never the closed PR's code, and holds a read-only token. It grants,
+# merges and publishes nothing.
+name: pr-close-extraction
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+
+env:
+  # The integration line the record names (docs/collaboration/KERNEL-PR-PLACEMENTS.json "method").
+  CANONICAL_REF: claude/greg-full-machine-completion-whgiee
+
+jobs:
+  nine-items-before-close:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: The closed PR's nine items, or nothing lost
+        env:
+          NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          git fetch --no-tags origin "pull/$NUMBER/head" "$CANONICAL_REF"
+          jq '{number: .pull_request.number, sha: .pull_request.head.sha, merged: .pull_request.merged}' \
+            "$GITHUB_EVENT_PATH" > "$RUNNER_TEMP/closed.json"
+          set +e
+          python scripts/lineage_map.py --base "origin/$CANONICAL_REF" --close "$RUNNER_TEMP/closed.json" \
+            --record docs/collaboration/KERNEL-PR-PLACEMENTS.json \
+            --inheritance docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json > "$RUNNER_TEMP/verdict.json"
+          status=$?
+          set -e
+          cat "$RUNNER_TEMP/verdict.json"
+          { echo '### Section 53 close check'; echo '```json'; cat "$RUNNER_TEMP/verdict.json"; echo '```'; } \
+            >> "$GITHUB_STEP_SUMMARY"
+          exit $status

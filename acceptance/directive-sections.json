@@ -244,7 +244,8 @@
    "id": "S20-A",
    "title": "Executable emergence gate: a recombination must beat its own stated baseline on frozen cases or is refused as integration",
    "source": "gap map of the 77 sections against #196 head 4ec00605 (session 2026-10-30), section 20 (unnamed there)",
-   "depends_on": []
+   "depends_on": [],
+   "closed_by": "claude/emergence-gate-20261104 on #196 d35d92a5: every reduction's stated baseline runs (greg/recombine.py Emergence); qualify refuses a construction that states no claim or does not beat it on its frozen oracle cases and traps, Genesis records 'failed the emergence gate, refused as integration' on every tick, and a restore re-gates a construction qualified under a different gate"
   },
   {
    "id": "S21-A",
@@ -258,7 +259,8 @@
    "id": "S22-B",
    "title": "Post-outcome disposition review RETAIN / REPAIR / REGRESS / REMOVE for every formed capability, proposed, never self-applied",
    "source": "gap map of the 77 sections against #196 head 4ec00605 (session 2026-10-30), section 22 (unnamed there)",
-   "depends_on": []
+   "depends_on": [],
+   "closed_by": "claude/capability-disposition-20261104 on #196 d35d92a5: greg/disposition.py reviews every capability Genesis formed (built:, installed:, composed:) each body tick against its counted outcomes and faults in service, and proposes RETAIN, REPAIR, REGRESS or REMOVE by the compiler's own demotion rule (ten outcomes, Wilson upper bound below one half); a change asks the founder once (CAPABILITY_DISPOSITION, answer only recorded); the registry changes only by signed CAPABILITY_DETACH or ATTACH"
   },
   {
    "id": "S24-A",
@@ -1824,17 +1826,17 @@
      "ask": "Each recombination states what it does that no source does alone and beats its baseline, or is refused as integration",
      "excerpt": "If there is no precise answer, it may merely be integration.",
      "owner_paths": [
-      "greg/recombine.py"
+      "greg/recombine.py",
+      "greg/genesis.py"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_greg_emergence_gate.py"
+     ],
+     "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "SANDBOX_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No executable emergence gate",
-      "unit": "S20-A"
-     }
+     "tier": "SANDBOX_VERIFIED",
+     "coverage": "covered",
+     "note": "Beating the baseline is executed; the statement of what no source does alone is required (a construction that states none is integration) and recorded with the qualification, and is evidenced by the beaten baseline and the certificate rather than run as a separate competitor."
     }
    ]
   },
@@ -1907,7 +1909,7 @@
   {
    "n": 22,
    "heading": "FUNCTIONAL MORPHOGENESIS / CAPABILITY GENESIS",
-   "status": "OPEN",
+   "status": "PARTIAL",
    "asks": [
     {
      "id": "S22.A1",
@@ -1973,17 +1975,18 @@
      "ask": "After a real outcome each formed capability is proposed RETAIN, REPAIR, REGRESS or REMOVE, never self-applied",
      "excerpt": "RETAIN / REPAIR / REGRESS / REMOVE",
      "owner_paths": [
-      "greg/genesis.py"
+      "greg/disposition.py",
+      "greg/body.py",
+      "greg/asks.py"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_greg_capability_disposition.py"
+     ],
+     "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "SANDBOX_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No post-outcome disposition review",
-      "unit": "S22-B"
-     }
+     "tier": "SANDBOX_VERIFIED",
+     "coverage": "covered",
+     "note": "Settlement credits outcomes only to constructions and installed Python packages, so a built or catalog-binary capability is reviewed on its faults in service alone; the realized values in the body tests are synthetic."
     }
    ]
   },
@@ -3647,11 +3650,13 @@
      "ask": "Quality: factual verification, source validation and correction handling gate what GREG produces",
      "excerpt": "* factual verification; * source validation; * editorial review;",
      "owner_paths": [
-      "greg/daleobanks_bridge.py",
-      "greg/cognition/evidence.py"
+      "greg/cognition/evidence.py",
+      "greg/corrections.py",
+      "greg/daleobanks_bridge.py"
      ],
      "evidence": [
-      "tests/unit/test_greg_media_case.py::test_real_daleobanks_consumes_the_minds_receipts"
+      "tests/unit/test_greg_media_case.py::test_real_daleobanks_consumes_the_minds_receipts",
+      "tests/unit/test_greg_evidence_corrections.py"
      ],
      "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "SANDBOX_VERIFIED",
@@ -3659,7 +3664,7 @@
      "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Verification and source checks exist; corrections after delivery are not handled",
+      "reason": "Corrections after delivery are recorded, propagated and put to the founder; a corrected claim does not yet hold a later mission that consumes its output, and settlement does not yet skip the outcomes a cause contains",
       "unit": "S45-A"
      }
     },
@@ -3789,17 +3794,17 @@
      "ask": "Freshness is tracked after delivery and corrections are preserved append-only",
      "excerpt": "* track freshness;",
      "owner_paths": [
-      "greg/cognition/evidence.py"
+      "greg/corrections.py",
+      "greg/body.py"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_greg_evidence_corrections.py"
+     ],
      "required_tier": "SANDBOX_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No correction watch",
-      "unit": "S45-A"
-     }
+     "tier": "SANDBOX_VERIFIED",
+     "coverage": "covered",
+     "tests_tier": "SANDBOX_VERIFIED",
+     "note": "Freshness is shown per delivered claim (confirmed_at, fresh_until) and a passed expiry is a recorded cause; the body sees a later reading only when a signed mission reads the source again."
     },
     {
      "id": "S45.A4",
@@ -4382,7 +4387,7 @@
   {
    "n": 53,
    "heading": "OPEN-PR AND BRANCH METABOLISM",
-   "status": "PARTIAL",
+   "status": "DONE",
    "asks": [
     {
      "id": "S53.A1",
@@ -4390,40 +4395,43 @@
      "excerpt": "Do not rely on hard-coded PR numbers without verifying current state.",
      "owner_paths": [
       "scripts/lineage_map.py",
-      "docs/collaboration/ORGAN-PR-PLACEMENTS-2026-09-30.json"
+      "docs/collaboration/ORGAN-PR-PLACEMENTS-2026-09-30.json",
+      "docs/collaboration/KERNEL-PR-PLACEMENTS.json"
      ],
      "evidence": [
       "tests/unit/test_organ_pr_placements.py",
       "tests/unit/test_developmental_inheritance.py::test_every_open_kernel_pr_is_placed_on_the_path",
-      "tests/unit/test_lineage_map.py"
+      "tests/unit/test_lineage_map.py",
+      "tests/unit/test_lineage_map.py::test_place_derives_from_facts_inherits_reviewed_placements_and_reports_the_rest",
+      "tests/unit/test_lineage_map.py::test_place_refuses_stale_moved_contradicted_and_incomplete_records",
+      "tests/unit/test_lineage_map.py::test_place_puts_a_branch_without_a_pr_with_the_open_pr_that_contains_it",
+      "tests/unit/test_lineage_map.py::test_every_inheritance_class_maps_to_a_section_53_disposition",
+      "tests/unit/test_lineage_map.py::test_the_reviewed_inheritance_records_classes_all_map"
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
-     "coverage": "partial",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Placements are dated snapshots, not read from live state",
-      "unit": "S53-A"
-     }
+     "coverage": "covered"
     },
     {
      "id": "S53.A2",
      "ask": "Before a PR is closed or superseded its nine fields are extracted",
      "excerpt": "Before closing or superseding a PR, extract:",
      "owner_paths": [
-      "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json"
+      "docs/collaboration/DEVELOPMENTAL-INHERITANCE-2026-09-30.json",
+      "scripts/lineage_map.py",
+      "docs/collaboration/KERNEL-PR-PLACEMENTS.json",
+      ".github/workflows/pr-close-extraction.yml"
      ],
      "evidence": [
-      "tests/unit/test_developmental_inheritance.py::test_each_rule_rejects_a_bad_placement"
+      "tests/unit/test_developmental_inheritance.py::test_each_rule_rejects_a_bad_placement",
+      "tests/unit/test_lineage_map.py::test_place_lets_a_pr_close_only_after_section_53s_nine_extractions",
+      "tests/unit/test_lineage_map.py::test_close_check_judges_a_closed_pr_by_section_53",
+      "tests/unit/test_pr_close_extraction_workflow.py::test_it_fires_on_close_checks_out_the_base_and_holds_no_write_token",
+      "tests/unit/test_pr_close_extraction_workflow.py::test_its_step_fails_an_unextracted_close_and_passes_an_extracted_one"
      ],
      "required_tier": "UNIT_VERIFIED",
      "tier": "UNIT_VERIFIED",
-     "coverage": "partial",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "The inheritance test answers nine questions for recorded placements; current PRs are not placed",
-      "unit": "S53-A"
-     }
+     "coverage": "covered"
     },
     {
      "id": "S53.A3",

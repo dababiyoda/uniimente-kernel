@@ -1,3 +1,5 @@
+> **Reading order:** one canonical sequence for every entry file is in [AGENTS.md § Canonical reading order](AGENTS.md#canonical-reading-order). The lists below are kept as written.
+
 > **Cognition continuity:** also read `docs/PROJECT_COGNITION_CONTINUITY.md` for continuous source ingestion, context checksum, repository registry, propagation receipts, and the anti-context-loss test.
 
 > **Agent entry:** before material work, read [AGENTS.md](AGENTS.md), [Project Cognition SOP](docs/PROJECT_COGNITION_SOP.md), and [Project Source Census](docs/PROJECT_SOURCE_CENSUS_2026-09-26.md). The source census currently records 93 Project-backed sources and the SOP defines how to reconstruct founder intent without mistaking historical experiments for current product architecture.
@@ -76,7 +78,23 @@ This repository contains no production secrets. It contains law, contracts, and 
 | `/greg` | GREG body: persistent founder-sovereign operating layer (signed founder commands, Infinite Goal Chase missions, Capability Genesis, morning tribunal, supervisor configs); composes the Gate, owns no policy |
 | `/developmental` | biology-inspired mechanism research laboratory; not the canonical definition of morphogenesis |
 | `/omnimorph` | optional temporary-organization/capability-composition mechanism; subordinate to Capability Genesis |
-| `/docs` | architecture, founder doctrine, build order, Backcast GPS plan, UCL specification, collaboration and evidence records |
+| `/acceptance` | Whole-machine acceptance: Missions A–L, the completion contract, the directive's computed completeness (`python -m acceptance directive`) |
+| `/cortex` | Polyintelligence Cortex: eligibility-first routing among solvers, verifiers and organs; pre-registered frozen evaluations |
+| `/foundry` | The 55 Foundry systems, Advantage Foundry, Lawful Leverage Foundry and the open-source research line |
+| `/egregore` | ADE-1 standing cognition, Goal Chase, `main`'s Goal Gravity runtime, morning review |
+| `/governance` | Live constitutional-integrity tripwire (`python -m governance.integrity --check`) and the protected-file manifest |
+| `/business` | Business Genome compiler and the commercial loop (problem → buyer → offer → payment → delivery → outcome) |
+| `/morphogenesis` | Bounded target-state and venture-cell control primitives (one lineage; not the definition of morphogenesis) |
+| `/adapters` | Contract-version adapters between organ wire formats; declare loss, additions and assumptions (boundary package) |
+| `/linker` | Resolves typed cross-organ edges from organ manifests; reports unresolved fields instead of inventing them |
+| `/organs` | Organ manifests (`*.manifest.yaml`) the Linker resolves |
+| `/integration` | Integration program manifests (e.g. Egregore v1) |
+| `/verifier` | Institutional verifier V1–V5 and every recorded run (`verifier/runs/`) |
+| `/scripts` | CI guards (`scripts/ci/`), record regenerators, evidence builders, and the recurring structural review (`repo_review.py`) |
+| `/tools` | Standalone operator tools (fail-closed offline test launcher) |
+| `/deploy` | Local deployment recipes for the research line |
+| `/examples` | Example inputs and fixtures for runnable entry points |
+| `/docs` | architecture, founder doctrine, build order, Backcast GPS plan, UCL specification, collaboration and evidence records — start at `docs/README.md` |
 
 ## Build status
 
@@ -88,7 +106,7 @@ This repository contains no production secrets. It contains law, contracts, and 
 
 **Phase 4 — Automation Loom + Phase 5 Institutional Twins + Layers 5/7/8: executable and verified (2026-07-20).** The Loom weaves the institution's own routines: workflow patterns authored as data by the machine, ratified by the human (hash-bound — any edit invalidates ratification), executed on the durable spine; all three canonical workflows (daily reconciliation, evidence-floor review, venture validation gate) run end-to-end, including mid-flight kill → resume. Twins rehearse change in hermetic forks; the Counterfactual Tribunal renders dominance verdicts over frozen, quality-labeled corpora — harm increases can never be named superior, and verdicts recommend but never apply. Layer 5 capability genomes bound every organelle's authority envelope; the Layer 7 Embassy admits foreign agents as zero-budget, TTL-clamped guests whose every request routes through the gate; Layer 8 causal memory reconstructs precedent (outcome→receipt→witness), weights outcomes by verification strength, calibrates confidence against reality, and bounds functional affect (attributable triggers, ceilings, decay, descending authority — structurally unable to change facts, create evidence, raise authority, override law, resist shutdown, or authorize irreversible action).
 
-172 unit tests green. 13 modules × 5 orthogonal closures green. Verifier: `python3 verifier/v2/verify.py` (V2–V5 green; every run recorded under `verifier/runs/`). These are internal evidence for the stated versions, not proof that the full egregore is integrated or operational in the real world.
+At the 2026-07-20 phase gate: 172 unit tests and 13 modules × 5 orthogonal closures green (historical figures, kept as written). Current evidence is what the commands produce, not a number written here: `python -m pytest`, `python verifier/v2/verify.py` (V1–V5; every run recorded under `verifier/runs/`), and Canonical CI. These are internal evidence for the stated versions, not proof that the full egregore is integrated or operational in the real world.
 
 Next work must follow `docs/CANONICAL_EXECUTION_ORDER.md` and the active repository evidence, not stale phase labels alone.
 

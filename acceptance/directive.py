@@ -518,28 +518,42 @@ def _met_at_base(base: tuple[dict, dict, dict], root: Path) -> dict[str, bool]:
 
 def evidence_ratchet_problems(base: tuple[dict, dict, dict], head: tuple[dict, dict, dict], read_base, read_head,
                               root: Path = ROOT) -> list[str]:
-    """The map against the map at a base: an ask open at the base may read met at the head only through new or
-    changed executable evidence, never by editing a declaration. Each of ``base`` and ``head`` is
+    """The map against the map at a base: an obligation open at the base is discharged at the head only through new
+    or changed executable evidence, never by editing a declaration. Each of ``base`` and ``head`` is
     (map, manifest, contract); ``read_base``/``read_head`` return a file's content at that side, or None.
 
-    - An ask open at the base and met at the head must reach (``evidence_files``) at least one test file whose
-      content differs from the base or did not exist there. Coverage, tier and blockers, in the map or in a mission
-      requirement, are declarations: editing them closes nothing.
-    - A new or re-pointed ``superseded_by`` on an ask open at the base must name an ask that existed and was open at
-      the base: retiring an obligation into one already met, or into one created in the same change, closes nothing.
-    - A new or changed ``record`` withdrawal of an ask open at the base is refused here: withdrawing an obligation is
-      the founder's decision, made at merge, never a map edit that passes the check.
+    An ask's evidence is the test files it reaches (``evidence_files``); it changed when one of them differs from
+    the base or did not exist there. Coverage, tier, blockers and excerpts, in the map or in a mission requirement,
+    are declarations: editing them discharges nothing.
 
-    Both sides are judged at the static ceiling (no test runs), as ``directive_report`` computes it. The rule asks
-    for new evidence, not sufficient evidence: whether what changed answers the ask stays the tiers' and the
-    reviewers' to judge."""
+    - Closing: an ask open at the base whose row reads met at the head, live or through the successor it is
+      retired into, must have changed evidence of its own. Retiring many asks into one successor and then closing
+      the successor closes none of them.
+    - Withdrawing: a new or changed ``record`` withdrawal of an ask open at the base is refused. So is a new
+      ``not_asks`` set-aside of a listed line. Both are the founder's decision, made at merge, not map edits that
+      pass the check.
+    - Accounting: a listed line the base left unanswered and the head answers must be claimed by an ask that is
+      still open at the head (it becomes an obligation), or by a met ask whose own evidence changed.
+    - Guarding: a PRINCIPLE ask UNGUARDED at the base leaves the residual only when a guard file changed.
+
+    An ask withdrawn at the base counts as open there. Both sides are judged at the static ceiling (no test runs),
+    as ``directive_report`` computes it. The rule asks for new evidence, not sufficient evidence: whether what changed
+    answers the obligation stays the tiers' and the reviewers' to judge."""
     try:
         was_met = _met_at_base(base, root)
+        texts = _source_texts(base[0], root)
+        base_lines = {s["n"]: set(accounted_lines(s, texts[s["n"]][1])[0]) for s in base[0]["sections"]
+                      if s["n"] in texts}
     except (KeyError, TypeError, ValueError) as exc:
         return [f"ratchet: the base map cannot be read by this tree's directive schema ({type(exc).__name__}: "
                 f"{exc}); migrate it before comparing"]
     now_met = {a["id"]: a["met"] for s in directive_report(*head, root=root)["sections"] for a in s["asks"]}
     base_asks = {a["id"]: a for s in base[0]["sections"] for a in s["asks"]}
+
+    def changed(ask: dict, files=None) -> bool:
+        files = evidence_files(ask, head[1], head[2]) if files is None else files
+        return any(read_head(f) is not None and read_head(f) != read_base(f) for f in files)
+
     out = []
     for section in head[0]["sections"]:
         for ask in section["asks"]:
@@ -553,20 +567,45 @@ def evidence_ratchet_problems(base: tuple[dict, dict, dict], head: tuple[dict, d
                                f"{gone['record']!r}; withdrawing an obligation is the founder's decision at merge, "
                                "not a map edit")
                 continue
-            if "superseded_by" in gone:
-                successor = gone["superseded_by"]
-                if gone.get("superseded_by") != then.get("superseded_by") and \
-                        (successor not in base_asks or was_met.get(successor, True)):
-                    out.append(f"ratchet: {aid} was open at the base and is newly retired into {successor}, which "
-                               "was not an open ask there; retire it into an ask that was open at the base")
+            if now_met.get(aid) and not changed(ask):
+                via = f" through its successor {gone['superseded_by']}" if "superseded_by" in gone else ""
+                out.append(f"ratchet: {aid} was open at the base and reads met at the head{via}, but no test file "
+                           "its own evidence reaches changed: closing an ask needs new or changed evidence, not an "
+                           "edit to its coverage, required tier, blocker or retirement, here or in a mission "
+                           "requirement")
+            guard, prior = (ask.get("blocker") or {}).get("guarded_by"), \
+                (base_asks[aid].get("blocker") or {}).get("guarded_by")
+            if not now_met.get(aid) and prior == UNGUARDED and isinstance(guard, list) and guard and \
+                    not changed(ask, sorted({g.split("::")[0] for g in guard})):
+                out.append(f"ratchet: {aid} was UNGUARDED at the base and names guards at the head, but no guard "
+                           "file changed: a standing rule is guarded by a test written for it, not by naming an "
+                           "existing one")
+    out += _accounting_problems(base[0], head[0], base_lines, now_met, changed, root)
+    return out
+
+
+def _accounting_problems(base_doc: dict, head_doc: dict, base_lines: dict, now_met: dict, changed,
+                         root: Path) -> list[str]:
+    """Listed lines answered at the head that the base left unanswered, claimed without an obligation or new
+    evidence: see ``evidence_ratchet_problems``."""
+    texts = _source_texts(head_doc, root)
+    base_aside = {s["n"]: {_norm(x["line"]) for x in s.get("not_asks", [])} for s in base_doc["sections"]}
+    out = []
+    for section in head_doc["sections"]:
+        n = section["n"]
+        if n not in texts or n not in base_lines:
+            continue
+        for line in sorted(set(accounted_lines(section, texts[n][1])[0]) - base_lines[n]):
+            claimants = [a for a in section["asks"] if line in {_norm(x) for x in a.get("lines", [])}
+                         or _core(line) in _norm(a["excerpt"])]
+            if any(not now_met.get(a["id"]) or changed(a) for a in claimants):
                 continue
-            if not now_met.get(aid):
-                continue
-            files = evidence_files(ask, head[1], head[2])
-            if not any(read_head(f) is not None and read_head(f) != read_base(f) for f in files):
-                out.append(f"ratchet: {aid} was open at the base and reads met at the head, but no test file its "
-                           "evidence reaches changed: closing an ask needs new or changed evidence, not an edit to "
-                           "its coverage, required tier or blocker, here or in a mission requirement")
+            aside = line in {_norm(x["line"]) for x in section.get("not_asks", [])} - base_aside.get(n, set())
+            out.append(f"ratchet: section {n}: the listed line {line[:80]!r} is newly "
+                       + ("set aside in not_asks; setting a line aside is the founder's decision at merge"
+                          if aside and not claimants else
+                          "answered only by asks that are already met and cite no new or changed evidence; answer it "
+                          "with an open ask, or with evidence that changed"))
     return out
 
 

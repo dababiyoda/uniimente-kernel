@@ -54,7 +54,7 @@ def test_the_reviewed_asks_are_open_at_the_base_and_the_edit_alone_closes_them(w
 def test_declaring_coverage_without_new_evidence_is_refused(world):
     problems = ratchet(declared_covered(world), world)
     assert [p.split()[1] for p in problems] == list(ATTACKED)
-    assert all("no test file its evidence reaches changed" in p for p in problems)
+    assert all("no test file its own evidence reaches changed" in p for p in problems)
 
 
 def test_lowering_the_required_tier_without_new_evidence_is_refused(world):
@@ -80,9 +80,9 @@ def test_retiring_an_open_ask_into_one_already_met_is_refused(world):
     head = copy.deepcopy(world[0])
     ask(head, "S1.A2")["retired"] = {"superseded_by": "S1.A1"}
     assert "S1.A2" in met(head, world)                                     # what the review reproduced
-    assert ratchet(head, world) == [
-        "ratchet: S1.A2 was open at the base and is newly retired into S1.A1, which was not an open ask there; retire "
-        "it into an ask that was open at the base"]
+    assert len(problems := ratchet(head, world)) == 1 and problems[0].startswith(
+        "ratchet: S1.A2 was open at the base and reads met at the head through its successor S1.A1, but no test file "
+        "its own evidence reaches changed")
 
 
 def test_retiring_into_an_ask_that_was_open_at_the_base_is_allowed(world):
@@ -183,9 +183,8 @@ def test_retiring_into_an_ask_created_in_the_same_change_is_refused(world):
     s1 = next(s for s in head["sections"] if s["n"] == 1)
     s1["asks"].append({**copy.deepcopy(ask(head, "S1.A1")), "id": "S1.A9"})
     ask(head, "S1.A2")["retired"] = {"superseded_by": "S1.A9"}
-    assert ratchet(head, world) == [
-        "ratchet: S1.A2 was open at the base and is newly retired into S1.A9, which was not an open ask there; retire "
-        "it into an ask that was open at the base"]
+    assert len(problems := ratchet(head, world)) == 1 and problems[0].startswith(
+        "ratchet: S1.A2 was open at the base and reads met at the head through its successor S1.A9")
 
 
 def test_withdrawing_an_open_ask_by_a_record_is_refused(world):
@@ -266,3 +265,86 @@ def test_every_file_an_asks_evidence_reaches_is_a_test_file(world):
     for s in world[0]["sections"]:
         for a in s["asks"]:
             assert all(f.startswith("tests/") and "::" not in f for f in d.evidence_files(a, world[1], world[2]))
+
+
+# -- second review (d065eb62): mass retirement, line accounting, guards, and two false refusals -----------------
+
+def test_retiring_many_asks_into_one_successor_then_closing_it_closes_none_of_them(world):
+    """N1: 150 open asks retired into one successor, closed by touching one file, raised met 77 to 228."""
+    target = "S5.A1"
+    cited = ask(world[0], target)["evidence"][0].split("::")[0]
+    open_ids = sorted({a["id"] for s in world[0]["sections"] for a in s["asks"]} - met(world[0], world) - {target})
+    head = declared_covered(world, (target,))
+    for aid in open_ids[:20]:
+        ask(head, aid)["retired"] = {"superseded_by": target}
+    tree = d.read_tree()
+    touched = lambda p: tree(p) + "\n# touched\n" if p == cited else tree(p)
+    closed = met(head, world) - met(world[0], world)
+    assert target in closed and len(closed) > 1                            # the attack closes them unguarded
+    refused = {p.split()[1] for p in ratchet(head, world, touched)}
+    reach = {aid for aid in closed if cited in d.evidence_files(ask(head, aid), world[1], world[2])}
+    assert target in reach and refused == closed - reach        # only asks whose own evidence reaches the change stand
+    assert len(refused) >= 10
+
+
+def test_retiring_into_a_successor_that_is_still_open_is_allowed_wherever_it_came_from(world):
+    """F1/F2: a re-scope into a new or reopened ask that is open closes nothing, so it passes."""
+    head = copy.deepcopy(world[0])
+    s1 = next(s for s in head["sections"] if s["n"] == 1)
+    s1["asks"].append({**copy.deepcopy(ask(head, "S1.A2")), "id": "S1.A9"})   # a copy of an open ask: open
+    ask(head, "S1.A2")["retired"] = {"superseded_by": "S1.A9"}
+    assert "S1.A9" not in met(head, world)
+    assert ratchet(head, world) == []
+
+
+def _unanswered(doc):
+    texts = d.source_sections(d.ROOT / doc["source"]["directive"])
+    return {s["n"]: d.accounted_lines(s, texts[s["n"]][1])[1] for s in doc["sections"]}
+
+
+def test_answering_listed_lines_with_asks_already_met_is_refused(world):
+    """N2: appending unanswered lines to a met ask's ``lines`` took 655 unaccounted lines to 0."""
+    head, before = copy.deepcopy(world[0]), met(world[0], world)
+    lines, moved = _unanswered(world[0]), 0
+    for s in head["sections"]:
+        holder = next((a for a in s["asks"] if a["id"] in before), None)
+        if holder and lines[s["n"]]:
+            holder.setdefault("lines", []).extend(lines[s["n"]][:2])
+            moved += len(lines[s["n"]][:2])
+    assert moved >= 4
+    problems = ratchet(head, world)
+    assert len(problems) == moved and all("answered only by asks that are already met" in p for p in problems)
+
+
+def test_a_line_answered_by_an_ask_that_stays_open_is_allowed(world):
+    head, before = copy.deepcopy(world[0]), met(world[0], world)
+    lines = _unanswered(world[0])
+    s = next(s for s in head["sections"] if lines[s["n"]] and any(a["id"] not in before for a in s["asks"]))
+    holder = next(a for a in s["asks"] if a["id"] not in before)
+    holder.setdefault("lines", []).append(lines[s["n"]][0])
+    assert ratchet(head, world) == []
+
+
+def test_setting_a_listed_line_aside_is_refused(world):
+    head = copy.deepcopy(world[0])
+    lines = _unanswered(world[0])
+    s = next(s for s in head["sections"] if lines[s["n"]])
+    s.setdefault("not_asks", []).append({"line": lines[s["n"]][0], "reason": "not an obligation"})
+    problems = ratchet(head, world)
+    assert len(problems) == 1 and "setting a line aside is the founder's decision at merge" in problems[0]
+
+
+def test_guarding_an_unguarded_principle_with_an_unchanged_test_is_refused(world):
+    """N4: a PRINCIPLE moved from UNGUARDED to an existing node left the residual with no new evidence."""
+    base = copy.deepcopy(world[0])
+    principle = next(a for s in base["sections"] for a in s["asks"]
+                     if (a.get("blocker") or {}).get("class") == "PRINCIPLE" and a["id"] not in met(base, world))
+    guard = principle["blocker"]["guarded_by"]
+    principle["blocker"]["guarded_by"] = d.UNGUARDED
+    head = copy.deepcopy(base)
+    ask(head, principle["id"])["blocker"]["guarded_by"] = guard
+    based = (base, world[1], world[2])
+    assert [p.split()[1] for p in ratchet(head, world, base=based)] == [principle["id"]]
+    tree = d.read_tree()
+    first = guard[0].split("::")[0]
+    assert ratchet(head, world, lambda p: tree(p) + "\n# guard\n" if p == first else tree(p), base=based) == []

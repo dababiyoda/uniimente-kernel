@@ -500,6 +500,7 @@
     "greg/cognition/genomes/developmental_b.py",
     "greg/cognition/genomes/developmental_ca.py",
     "greg/cognition/genomes/developmental_hybrid.py",
+    "greg/cognition/genomes/ecology.py",
     "greg/cognition/genomes/evolutionary.py",
     "greg/cognition/genomes/flow.py",
     "greg/cognition/genomes/forecasting.py",

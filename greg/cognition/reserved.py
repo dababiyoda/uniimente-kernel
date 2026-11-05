@@ -101,6 +101,17 @@ EXECUTED_ON_GREG = {
                                            "strong centralized baseline with replication (the P10 exit) is not met"),
     "cortex.developmental.mica_field": (("cognition.develop_repair",),
                                         "sink-potential waves and local adoption rules on a simulated lattice"),
+    "cortex.meta.active_inference": (("cognition.meta_active_inference",),
+                                     "receding-horizon expected-free-energy policy selection (risk plus epistemic "
+                                     "value, horizon 2) on declared fault-diagnosis generative models, scored "
+                                     "against the exact DP optimum; admission evidence decides its status"),
+    "cortex.collective.ecology_market": (("cognition.collective_ecology_bidding",),
+                                         "species bid optimistic success claims discounted by a proper-scoring "
+                                         "reputation; a budgeted greedy auction allocates runs and restarts on a "
+                                         "simulated world; admission evidence decides its status. It does not replace "
+                                         "the Competency Compiler's settled competence "
+                                         "(greg.cognition.compiler._settled_competence, _settled_inhibition), which "
+                                         "re-ranks methods by settled outcomes without a market"),
 }
 
 RESERVED_WITHOUT_EXECUTOR = {
@@ -117,16 +128,9 @@ RESERVED_WITHOUT_EXECUTOR = {
                                 "quarantines a formed capability that fails in service and re-forms its function "
                                 "through Capability Genesis; no anomaly-tolerance family updates its tolerance from "
                                 "verified incidents or feeds its detections into that quarantine and repair",
-    "cortex.collective.ecology_market": "partial precursors only: cognition.collective_market allocates capacity "
-                                        "among tasks by a clock auction, and the Competency Compiler settles each "
-                                        "method's outcomes on the body and re-ranks and demotes methods by them "
-                                        "(greg.cognition.compiler._settled_competence, _settled_inhibition); methods "
-                                        "do not bid for problems, no market allocates problems among methods, and "
-                                        "conditional routing was demoted (P4 v3 REGRESSION)",
     "cortex.developmental.molecular_micro": "cognition.micro is a ternary set-point rule with no association or "
                                             "decay",
     "cortex.meta.global_workspace": "no module competition or selective broadcast exists",
-    "cortex.meta.active_inference": "no generative-model policy selection exists",
 }
 
 

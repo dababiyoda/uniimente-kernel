@@ -1476,11 +1476,23 @@ def _operation_usable(registry, operation: str) -> bool:
 
 
 def _pinned_row(rows: list[dict], registry, pin: dict, data: dict) -> dict | None:
-    """The one catalog row the receipt named, or None when that method cannot be replayed.
+    """The one row the receipt's route ran, or None when that method cannot be replayed.
 
     Version, route and attachment are the receipt's. A different fit that routing would
     choose today is not a substitute, including when this row is rejected, detached or
     no longer the version the receipt ran.
+
+    * A preference-route receipt (``preferred_by_condition_evidence``) ran the alternative
+      through its declared adapter, on the row ``condition_competence.compile_hook`` builds.
+      That row alone is offered again, and only while the alternative is founder-attached
+      and admitted, as the hook requires. The alternative's native catalog row answers the
+      native fields' question (another one when a request carries both shapes), so it is
+      never offered in its place.
+    * Any other route is the catalog row naming the method: an operation or organ at the
+      registered version its executed-method receipt recorded, or a composition or
+      construction, whose compile records no executed-method receipt and so pins no
+      version (``replay.pin_from_output``). A versionless pin on any other kind of row is
+      refused.
     """
     route = pin.get("route")
     if not isinstance(route, dict) or route.get("kind") not in ("compiler", "cortex"):
@@ -1488,33 +1500,55 @@ def _pinned_row(rows: list[dict], registry, pin: dict, data: dict) -> dict | Non
     if not isinstance(route.get("selection"), str) or not route["selection"]:
         return None
     method, version = pin.get("method"), pin.get("version")
-    matches = [r for r in rows if r.get("method") == method and not r.get("rejected")]
-    if len(matches) != 1 or not isinstance(version, str):
+    if version is not None and not isinstance(version, str):
         return None
-    row = dict(matches[0])
-    try:
-        manifest = registry.manifests.get(method)
-    except Exception:
-        return None
-    if manifest is None or str(manifest.version) != version:
-        return None
+    if route["selection"] == "preferred_by_condition_evidence":
+        if method != condition_competence.ALTERNATIVE or version is None or route["kind"] != "compiler":
+            return None
+        if not (condition_competence._attached(registry) and condition_competence._admitted()):
+            return None          # the receipt's route cannot run here: never the native row in its place
+        try:
+            adapted = condition_competence.adapter(data)
+        except (KeyError, TypeError, ValueError):
+            return None
+        from .genomes import library
+        row = {"method": method, "kind": "operation", "inputs": [], "epistemic_classes": [],
+               "operation": library.genome(condition_competence.ALTERNATIVE_FAMILY).operation,
+               "status": "CONDITION_PREFERRED", "rejected": None, "adapted_data": adapted,
+               "condition_preferred": {"pinned": True}}
+    else:
+        matches = [r for r in rows if r.get("method") == method and not r.get("rejected")]
+        if len(matches) != 1:
+            return None
+        row = dict(matches[0])
+        # no executed-method receipt (no version) only on the routes that never record one
+        if row.get("kind") not in (("composition", "constructed") if version is None else ("operation", "problem")):
+            return None
+    if version is not None:
+        try:
+            manifest = registry.manifests.get(method)
+        except Exception:
+            return None
+        if manifest is None or str(manifest.version) != version:
+            return None
     try:
         usable, _why = _usable(registry, row)
     except Exception:
         return None
-    if not usable:
-        return None
-    if route["selection"] == "preferred_by_condition_evidence":
-        # that selection ran the admitted alternative through its declared adapter; the
-        # adapter is part of the route the receipt pinned
-        if method != condition_competence.ALTERNATIVE:
-            return None
-        try:
-            row["adapted_data"] = condition_competence.adapter(data)
-        except (KeyError, TypeError, ValueError):
-            return None
-        row["condition_preferred"] = {"pinned": True}
-    return row
+    return row if usable else None
+
+
+def _pinned_selection(pin: dict) -> str | None:
+    """The selection level a replay pin names, or None when its route is malformed."""
+    route = pin.get("route")
+    return route.get("selection") if isinstance(route, dict) and route.get("kind") in ("compiler", "cortex") \
+        else None
+
+
+def _replayed(receipt: dict, pin: dict) -> None:
+    """Record on a pinned compile that it re-read the receipt's route, never learned routing."""
+    receipt["replay"] = {"method": pin["method"], "version": pin["version"], "route": pin["route"],
+                         "learned_routing": False, "shadows": False}
 
 
 _REPLAY_UNAVAILABLE = (
@@ -1591,7 +1625,7 @@ def _state(registry, method: str) -> str | None:
 
 
 def _formed(registry, data: dict, g: CompetencyGeometry, body: dict, high: bool, receipt: dict, budget, *, pid: str,
-            vector, journal=None):
+            vector, journal=None, pin=None):
     """Directive section 24, after the founder's attach: a mechanism Capability Genesis formed for a residual
     geometry (an installed open-source engine qualified on GREG's frozen oracle; ``greg.genesis``) serves it.
 
@@ -1612,7 +1646,11 @@ def _formed(registry, data: dict, g: CompetencyGeometry, body: dict, high: bool,
     except Exception as exc:          # a registry object without the views Genesis reads: recorded, not fatal
         receipt["dissent"].append(f"formed mechanisms not consulted: {type(exc).__name__}: {exc}"[:300])
         return None
-    settled = _settled_counts(journal) if formed else {}
+    if pin is not None:
+        # a replay: the named mechanism alone, at the package version its own receipt recorded (not the manifest's)
+        formed = [(m, a) for m, a in formed if m.capability_id == pin.get("method")
+                  and isinstance(pin.get("version"), str) and str(m.provenance.get("version")) == pin["version"]]
+    settled = _settled_counts(journal) if formed and pin is None else {}     # a replay reads no settled outcomes
     inhibited = {m.capability_id: _settled_inhibition(*settled.get(m.capability_id, (0, 0))) for m, _ in formed}
     receipt["methods_demoted"] += [{"method": cid, "why": why} for cid, why in inhibited.items() if why]
     formed.sort(key=lambda pair: bool(inhibited[pair[0].capability_id]))      # stable: demoted, never deleted
@@ -1970,6 +2008,12 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
         receipt["receipt_id"] = digest({k: v for k, v in receipt.items() if k != "receipt_id"})
         return receipt
 
+    # A receipt replay names the method, route and version that already ran (greg.cognition.replay). It is read
+    # once, here, from the one channel the appraiser binds, and nothing below rebinds it. It is honoured only on a
+    # compile of the inputs the receipt answered: any other compile under a bound pin fails closed, never routes.
+    pin = replay_pin()
+    if pin is not None and (not isinstance(pin, dict) or pin.get("inputs_digest") != receipt["inputs_digest"]):
+        raise CognitionError(_REPLAY_UNAVAILABLE)
     from .contracts import ConsequenceVector
     try:
         vector = ConsequenceVector(**consequence)
@@ -1984,8 +2028,13 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
     if protection:
         receipt["abstentions"].append(f"protection matter: {protection}; a handoff, never a capability gap")
     if g.human_judgment_required or g.legal_content or g.rights_impact or g.geometry in HUMAN_CLASSES or protection:
+        if pin is not None and (pin.get("method"), _pinned_selection(pin), pin.get("version")) != (
+                "human:qualified_judgment", "constitutional_route", None):
+            raise CognitionError(_REPLAY_UNAVAILABLE)
         receipt["method_or_composition_selected"] = "human:qualified_judgment"
         receipt["selection_level"] = "constitutional_route"
+        if pin is not None:
+            _replayed(receipt, pin)
         # the question's identity: what the founder's signed answer must be bound to (judgments excluded,
         # so views arriving later address the same question)
         scope = digest({"problem_id": pid, "geometry": body.get("geometry", {}), "data": data,
@@ -2057,19 +2106,25 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
                    and not r["superseded_by"].get("promoted_as")
                    and not (g.geometry and g.geometry not in r["epistemic_classes"])]
     high = g.consequence_class in HIGH_CONSEQUENCE or vector.high
-    # A receipt replay names the method that already ran. Learned routing below must not
-    # replace it, and a method that can no longer run is unavailable: no other fit, and no
-    # formed mechanism, stands in for it.
-    pin = replay_pin()
+    # Under a replay pin, learned routing below must not replace the receipt's method, and a method that can no
+    # longer run is unavailable: no other fit, and no other formed mechanism, stands in for it. A receipt a
+    # Genesis-formed mechanism answered is re-read on that route alone, by the package version it recorded.
     if pin is not None:
-        pinned = _pinned_row(rows, registry, pin, data)
-        if pinned is None:
-            raise CognitionError(_REPLAY_UNAVAILABLE)
-        eligible[:] = [pinned]
+        if _pinned_selection(pin) == "formed_by_capability_genesis":
+            eligible[:] = []
+            _replayed(receipt, pin)
+        else:
+            pinned = _pinned_row(rows, registry, pin, data)
+            if pinned is None:
+                raise CognitionError(_REPLAY_UNAVAILABLE)
+            eligible[:] = [pinned]
     if not eligible:
-        formed = _formed(registry, data, g, body, high, receipt, budget, pid=pid, vector=vector, journal=journal)
+        formed = _formed(registry, data, g, body, high, receipt, budget, pid=pid, vector=vector, journal=journal,
+                         pin=pin)
         if formed is not None:
             return finish(*formed)
+        if pin is not None:
+            raise CognitionError(_REPLAY_UNAVAILABLE)
         # catalogued methods and recipes the request supplies in part, flat and (in a one-part recipe's shape) in
         # its part
         part = _one_part(data)
@@ -2134,24 +2189,26 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
                     "search_order": ["attached", "verified_detached", "constructed", "builder", "founder"]})
         return finish("CAPABILITY_DEFICIT")
     competence = _settled_competence(journal, g.geometry)
-    settled = _settled_counts(journal)
-    for r in eligible:
-        inhibited = _settled_inhibition(*settled.get(r["method"], (0, 0)))
-        if inhibited and not r.get("demoted"):
-            r["demoted"] = inhibited                    # live negative evidence changes routing
-            r["settled_inhibition"] = True
-    by_outcomes = {r["method"] for r in eligible if r.get("settled_inhibition")}
-    for r in eligible:
-        if r.get("matched_by") and by_outcomes & {m["method"] for m in r["matched_by"]}:
-            # a matched genome is a demoted fit too: the recipe need not rank after it. candidates composed the
-            # reason from this same list after any earlier one (a lift verdict), and a demoted row is not rewritten
-            r["demoted"] = r["demoted"].replace(_matched_reason(r["matched_by"]),
-                                                _matched_reason(r["matched_by"], by_outcomes))
-    receipt["methods_demoted"] = [{"method": r["method"], "why": r["demoted"]} for r in rows if r.get("demoted")]
-    eligible.sort(key=lambda r: _rank(r, plan["prefer"], competence))
-    preference = _settled_preference(eligible, settled)
-    if preference:
-        receipt["settled_preference"] = preference
+    if pin is None:
+        # learned routing: settled inhibition, ranking and the settled preference (a replay keeps the receipt's row)
+        settled = _settled_counts(journal)
+        for r in eligible:
+            inhibited = _settled_inhibition(*settled.get(r["method"], (0, 0)))
+            if inhibited and not r.get("demoted"):
+                r["demoted"] = inhibited                    # live negative evidence changes routing
+                r["settled_inhibition"] = True
+        by_outcomes = {r["method"] for r in eligible if r.get("settled_inhibition")}
+        for r in eligible:
+            if r.get("matched_by") and by_outcomes & {m["method"] for m in r["matched_by"]}:
+                # a matched genome is a demoted fit too: the recipe need not rank after it. candidates composed the
+                # reason from this same list after any earlier one (a lift verdict), and a demoted row is not rewritten
+                r["demoted"] = r["demoted"].replace(_matched_reason(r["matched_by"]),
+                                                    _matched_reason(r["matched_by"], by_outcomes))
+        receipt["methods_demoted"] = [{"method": r["method"], "why": r["demoted"]} for r in rows if r.get("demoted")]
+        eligible.sort(key=lambda r: _rank(r, plan["prefer"], competence))
+        preference = _settled_preference(eligible, settled)
+        if preference:
+            receipt["settled_preference"] = preference
     for r in eligible:
         r["usable"], r["usable_why"] = _usable(registry, r)
     best = eligible[0]
@@ -2224,8 +2281,7 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
         # the route label is the one the original receipt recorded, not a label recomputed from
         # today's settled outcomes
         receipt["selection_level"] = pin["route"]["selection"]
-        receipt["replay"] = {"method": pin["method"], "version": pin["version"], "route": pin["route"],
-                             "learned_routing": False, "shadows": False}
+        _replayed(receipt, pin)
     region = chosen.get("subregion")
     if region:
         receipt["subregion_evidence"] = region

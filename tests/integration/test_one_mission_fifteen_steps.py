@@ -563,7 +563,10 @@ def test_one_mission_crosses_all_fifteen_steps(tmp_path, capsys):
     assert len(settled) == settled_at_close == 1 and settled[0]["check_id"] == "answered"
     assert Counter(a["action_id"] for a in ev(home, "mission.action", mission_id=MID) if a["status"] == "DONE") == \
         {"compile": 1, "organs": 1, "commission": 1}
-    steps[13] = {"name": "settlement happens once", "events": [ref(achieved[0])] + [ref(s) for s in settled],
+    # a cited settlement names what settled, so scripts/mind_status.py projects it as an exercised mechanism
+    steps[13] = {"name": "settlement happens once", "events": [ref(achieved[0])] + [
+        {**ref(s), "mission_id": MID, "check_id": s["check_id"], "method": s.get("method"),
+         "method_version": s.get("method_version"), "correct": s.get("correct")} for s in settled],
                  "restarts_after_closure": 2}
 
     # 14-15. retained evidence changes a later decision on fresh work

@@ -38,6 +38,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 
 from foundry.systems import cas, versions
+from provenance.digests import compact_json_bytes as _canon
 
 CONTENT_TYPES = {".html": "text/html; charset=utf-8", ".json": "application/json", ".txt": "text/plain; charset=utf-8",
                  ".svg": "image/svg+xml", ".css": "text/css", ".xml": "application/xml"}
@@ -53,10 +54,6 @@ def _b64(data: bytes) -> str:
 
 def _unb64(text: str) -> bytes:
     return base64.urlsafe_b64decode(text + "=" * (-len(text) % 4))
-
-
-def _canon(value) -> bytes:
-    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
 
 
 def normalize(path: str) -> str:

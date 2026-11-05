@@ -1,0 +1,88 @@
+{
+ "detach_construction": {
+  "construction": {
+   "state": "ACHIEVED",
+   "work": 6,
+   "attach_asks": 2,
+   "qualifications": 2,
+   "deficits": [
+    "assignment.staffing",
+    "graph.max_flow"
+   ]
+  },
+  "caps_before_detach": {
+   "acquired.graph.max_flow.networkx": "ATTACHED",
+   "composed.assignment.staffing.networkx.5670bf4c5c": "ATTACHED"
+  },
+  "detached": [
+   "composed.assignment.staffing.networkx.5670bf4c5c"
+  ],
+  "caps_after_task": {
+   "acquired.graph.max_flow.networkx": "ATTACHED",
+   "composed.assignment.staffing.networkx.5670bf4c5c": "DETACHED"
+  },
+  "task": {
+   "state": "WAITING",
+   "ticks": 16,
+   "work": 2,
+   "attach_asks": 1,
+   "asks_by_kind": {
+    "CAPABILITY_ATTACH": 1
+   },
+   "qualifications": 0,
+   "deficits": [
+    "assignment.staffing"
+   ],
+   "first_compile_state": "CAPABILITY_DEFICIT",
+   "method": null,
+   "appraisal": null,
+   "self_attached": 0
+  },
+  "task_correct": false
+ },
+ "detach_construction_and_engine": {
+  "construction": {
+   "state": "ACHIEVED",
+   "work": 6,
+   "attach_asks": 2,
+   "qualifications": 2,
+   "deficits": [
+    "assignment.staffing",
+    "graph.max_flow"
+   ]
+  },
+  "caps_before_detach": {
+   "acquired.graph.max_flow.networkx": "ATTACHED",
+   "composed.assignment.staffing.networkx.5670bf4c5c": "ATTACHED"
+  },
+  "detached": [
+   "acquired.graph.max_flow.networkx",
+   "composed.assignment.staffing.networkx.5670bf4c5c"
+  ],
+  "caps_after_task": {
+   "acquired.graph.max_flow.networkx": "DETACHED",
+   "composed.assignment.staffing.networkx.5670bf4c5c": "DETACHED",
+   "acquired.graph.max_flow.scipy": "ATTACHED",
+   "composed.assignment.staffing.scipy.5670bf4c5c": "ATTACHED"
+  },
+  "task": {
+   "state": "ACHIEVED",
+   "ticks": 3,
+   "work": 6,
+   "attach_asks": 2,
+   "asks_by_kind": {
+    "CAPABILITY_ATTACH": 2
+   },
+   "qualifications": 2,
+   "deficits": [
+    "assignment.staffing",
+    "graph.max_flow"
+   ],
+   "first_compile_state": "CAPABILITY_DEFICIT",
+   "method": "composed.assignment.staffing.scipy.5670bf4c5c",
+   "appraisal": "VERIFIED",
+   "self_attached": 0
+  },
+  "task_correct": true
+ }
+}

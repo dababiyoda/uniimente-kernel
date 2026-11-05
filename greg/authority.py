@@ -42,6 +42,7 @@ class ActionOutcome:
     grant_id: str | None = None
     cost_usd: float = 0.0
     failure_class: str | None = None     # typed where a capability failure was raised (CapabilityError)
+    output_artifact: dict | None = None  # the receipt's record of the whole output kept beside a cut one (keep_output)
 
 
 class AuthorityOffice:
@@ -133,7 +134,8 @@ class AuthorityOffice:
                 return ActionOutcome("DONE" if positive else "REFUSED", ["retained legacy receipt; no redispatch"],
                                      output=result.get("output"), receipt_hash=old_receipt.hash,
                                      grant_id=old_receipt.payload.get("grant_id"),
-                                     cost_usd=cost_usd if positive else 0.0, **old_base)
+                                     cost_usd=cost_usd if positive else 0.0,
+                                     output_artifact=result.get("output_artifact") if positive else None, **old_base)
             if old_claim is not None:
                 return ActionOutcome("UNCERTAIN", ["retained legacy dispatch; no receipt or blind retry"], **old_base)
         outside = cone.admits(capability=manifest.capability_id, target=target, consequence_class=consequence,
@@ -143,9 +145,11 @@ class AuthorityOffice:
 
         claim, receipt = self._prior(proposal_id)
         if receipt is not None:  # already done before an interruption: reuse, never redo
+            # with the whole output it kept, so a reused reading is judged as the fresh one was (review of #209)
             return ActionOutcome("DONE", ["retained receipt reused after restart"], output=receipt.payload["result"].get("output"),
                                  receipt_hash=receipt.hash, grant_id=receipt.payload.get("grant_id"),
-                                 cost_usd=cost_usd, **base)
+                                 cost_usd=cost_usd, output_artifact=receipt.payload["result"].get("output_artifact"),
+                                 **base)
         if claim is not None:  # the dispatch the claim names, so its reconciliation settles exactly that one
             return ActionOutcome("UNCERTAIN", ["dispatch claimed without receipt; outcome unknown"],
                                  grant_id=claim.payload.get("grant_id"), **base)
@@ -223,25 +227,42 @@ class AuthorityOffice:
                                      receipt_hash=record.receipt_hash, grant_id=grant["grant_id"],
                                      failure_class=result.get("failure_class"), **base)
             return ActionOutcome("DONE", [], output=result.get("output"), receipt_hash=record.receipt_hash,
-                                 grant_id=grant["grant_id"], cost_usd=cost_usd, **base)
+                                 grant_id=grant["grant_id"], cost_usd=cost_usd,
+                                 output_artifact=result.get("output_artifact"), **base)
         if record.state == "reconciliation_required":
             return ActionOutcome("UNCERTAIN", record.refusal_reasons, grant_id=grant["grant_id"], **base)
         return ActionOutcome("REFUSED", record.refusal_reasons or [record.state], grant_id=grant["grant_id"], **base)
 
 
 RECEIPT_TEXT_LIMIT = 16 * 1024
+RECEIPT_LIST_LIMIT = 1000      # items a receipt keeps of a list; greg/missions.py reads this one constant
+
+
+def text_bytes(value: str) -> bytes:
+    """The bytes a receipt digests a string by: UTF-8, with a lone surrogate (which JSON from an untrusted tool or
+    server can carry) kept as its own code unit instead of failing the action. Identical to UTF-8 for any other
+    string."""
+    return value.encode("utf-8", "surrogatepass")
+
+
+NON_FINITE = {"NaN", "Infinity", "-Infinity"}
 
 
 def bounded(value):
-    """Receipts keep evidence, not bulk: long strings keep a prefix plus their digest."""
+    """Receipts keep evidence, not bulk: long strings keep a prefix plus their digest. A number that is not finite
+    (NaN or an infinity, which JSON cannot carry) is kept as ``{"non_finite": ...}``: before, it passed through and
+    made the ledger's strict JSON raise after the action had run, out of every tick (review of #196, J6)."""
     import hashlib
+    import math
+    if isinstance(value, float) and not math.isfinite(value):
+        return {"non_finite": "NaN" if value != value else "Infinity" if value > 0 else "-Infinity"}
     if isinstance(value, str) and len(value) > RECEIPT_TEXT_LIMIT:
         return {"prefix": value[:RECEIPT_TEXT_LIMIT], "truncated": True,
-                "sha256": hashlib.sha256(value.encode()).hexdigest(), "length": len(value)}
+                "sha256": hashlib.sha256(text_bytes(value)).hexdigest(), "length": len(value)}
     if isinstance(value, dict):
         return {k: bounded(v) for k, v in value.items()}
     if isinstance(value, list):
-        return [bounded(v) for v in value[:1000]]
+        return [bounded(v) for v in value[:RECEIPT_LIST_LIMIT]]
     return value
 
 
@@ -274,7 +295,10 @@ def keep_output(output, artifact_root):
     if artifact_root is None:
         return kept, {"address": None, "unavailable": "this body has no artifact store"}
     try:
-        data = json.dumps(output, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()
+        try:
+            data = json.dumps(output, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()
+        except UnicodeEncodeError:   # a lone surrogate: the same JSON value, written with escapes
+            data = json.dumps(output, sort_keys=True, separators=(",", ":")).encode()
         address, _ = output_store(artifact_root).put(data)
     except (TypeError, ValueError, CapabilityError, OSError) as exc:
         return kept, {"address": None, "unavailable": "whole output not kept: " + str(exc)[:200]}

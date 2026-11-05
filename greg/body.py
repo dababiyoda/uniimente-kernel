@@ -404,7 +404,7 @@ class Body:
                                     secrets=self.secrets, workspace_root=self.layout.workspace,
                                     read_roots=tuple(self.config["read_roots"]), genesis=self.genesis,
                                     deliver_root=self.deliver_root, artifact_root=self.layout.artifacts)
-        self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
+        self.engine.cognition_model = self._licensed_route_config()
         self.engine.egress = self.egress
         self.engine.worker_confinement = confinement_mode(self.config.get("worker_confinement"))
         self.engine.selector = self._gravity_order
@@ -474,11 +474,26 @@ class Body:
                         "writes nothing; restore the ledger that contains that head, or, if this history is the "
                         "one to keep, remove heartbeat.json on this machine")
 
+    def _licensed_route_config(self) -> dict:
+        """The route this process may use. A license hold is recorded once and never raises."""
+        from greg.model_license_hold import route_config_for_body
+        selection = route_config_for_body(self.config.get("models"), self.journal)
+        hold = selection.get("model_license_hold") if isinstance(selection, dict) else None
+        if isinstance(hold, dict):
+            payload = {"model": hold.get("model"), "verdict": hold.get("verdict"),
+                       "reason": str(hold.get("reason") or "")[:500],
+                       "manifest_sha256": hold.get("manifest_sha256"),
+                       "assessment_digest": hold.get("assessment_digest")}
+            self.journal.record("model.license_held", payload, key=[
+                "license-held", payload["model"], payload["verdict"], payload["reason"],
+                payload["manifest_sha256"], payload["assessment_digest"]])
+        return selection
+
     def _refresh_builder(self):
         """Replace the model adapter, never the mission engine, ledger or authority office."""
         if self._builder_factory is not None:
             try:
-                config = {**self.config, "models": models.effective_route_config(self.config.get("models"), self.journal)}
+                config = {**self.config, "models": self._licensed_route_config()}
                 # A confined body hands its relay to the factory; one that cannot take it builds nothing (fail closed).
                 extra = {"egress": self.egress} if getattr(self, "egress", None) is not None else {}
                 self.builder = self._builder_factory(self.secrets, config, **extra)
@@ -703,7 +718,11 @@ class Body:
             self.journal.record("treasury.requirements", {**declared, "command_digest": digest}, key=digest)
             return {**declared, "money_moved": False, "authority_changed": False}
         if kind == "MODEL_ROUTE_SET":
-            selection = models.validate_route_selection(body)
+            from greg.model_license_hold import refusal_after_admit, validate_then_admit
+            selection, admitted = validate_then_admit(body)
+            refused = refusal_after_admit(selection, admitted)
+            if refused:
+                raise MissionError(refused)
             self.journal.record("model.configured", {"selection": selection, "command_digest": digest}, key=digest)
             self._refresh_builder()
             return {"selection": selection, "builder_configured": self.builder is not None,
@@ -960,7 +979,7 @@ class Body:
         # founder-signed goal on the ledger it does no work and writes nothing (None).
         from greg import goal_gravity
         gravity = goal_gravity.tick(self, now)
-        self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
+        self.engine.cognition_model = self._licensed_route_config()
         recovered = self.genesis.recover(now)     # quarantined capabilities may earn back eligibility (sandbox)
         summary = self.engine.tick(now, should_stop=self._stop_now)
         if self._stop_now():

@@ -172,13 +172,13 @@ class Console:
         if self.transport_factory is None:
             return
         with observe(self.home, actor="spiffe://uniimente.internal/greg/console-model-reader") as journal:
-            from greg.models import effective_route_config
+            from greg.model_license_hold import route_config_for_body
             events = journal.replay("model.configured")
             revision = (events[-1].event_id if events else None, self._keys_stamp())
             if revision == self._route_revision:
                 return
             base = json.loads(self.layout.config.read_text()).get("models")
-            selected = effective_route_config(base, journal)
+            selected = route_config_for_body(base, journal)
         replacement = self._held(self.transport_factory(selected))
         with self.lock:
             self.transport = replacement

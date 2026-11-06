@@ -24,12 +24,16 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
+import stat
 import subprocess
+import time
 
 from greg import models, templates
 from greg.missions import MissionError, validate_mission
+from greg.textquery import CHUNK_BYTES, MAX_BYTES, MAX_SECONDS, PDF_HEAD, PdfEvidence
 
 PLANNER = "greg.planner/1"
 MAX_HORIZON = timedelta(days=7)
@@ -43,7 +47,22 @@ WORD_LIMIT = re.compile(r"\b(under|at most|no more than|fewer than|below)\s+(\d{
 FILE_PATH = re.compile(r"(~?/[^\s'\"“”]+)")
 CODE_WORK = re.compile(r"^\s*(?:improve|change|fix|modify|update|extend)\s+(?:the\s+)?(?P<name>[\w.-]+)"
                        r"(?:\s+(?:repo|repository|code(?:base)?))?\s*[:\u2014-]\s*(?P<objective>\S.*)$", re.I | re.S)
-QUOTED = re.compile(r"[\"“']([^\"”']{1,400})[\"”']")
+MENTIONS = re.compile(r"\b(?:mention(?:s|ed)?|contain(?:s|ed)?|include(?:s|d)?)\b", re.I)
+# A phrase to search for: double or curly quotes, or single quotes that stand at word boundaries, so the apostrophe in
+# "doesn't" or "server's" never opens a phrase and one inside 'don't panic' never closes it.
+PHRASE = re.compile(r"[\"\u201c]([^\"\u201c\u201d]{1,400})[\"\u201d]"
+                    r"|\u2018((?:[^\u2018\u2019\n]|(?<=\w)\u2019(?=\w)){1,400})\u2019"
+                    r"|(?<!\w)'((?:[^'\n]|(?<=\w)'(?=\w)){1,400})'(?!\w)")
+# Polarity is read only outside the phrases and the path. A negation counts only where it governs the mention verb
+# ("never mentions", "doesn't contain", "is not mentioned", "mentions none of"); any other negating or limiting word
+# leaves the founder's meaning open, and GREG asks.
+_NOT = (r"(?:never|not|cannot|no\s+longer|nowhere"
+        r"|(?:does|do|did|is|are|was|were|has|have|had|ca|can|wo|could|would|should|must)n['\u2019]?t)")
+NEGATED_VERB = re.compile(r"\b" + _NOT + r"\s+(?:\w+\s+)?(?:mention|contain|include)\w*\b"
+                          r"|\b(?:mention|contain|include)\w*\s+(?:no|none\s+of|neither|nothing\s+like|nowhere)\b",
+                          re.I)
+LOOSE_POLARITY = re.compile(r"\b(?:" + _NOT + r"|no|none|neither|nor|nothing|without|except|unless|only|just|"
+                            r"instead|rather|other\s+than|apart\s+from|besides)\b", re.I)
 SCHEDULE = re.compile(r"\b(?:shift|window)\s*:?\s*(?:is\s+)?\d{1,5}\s*(?:h|hours?)\b.*\btakes\s+\d", re.I | re.S)
 NETWORK = re.compile(r"\b(?:(?:shortest|cheapest|fastest|quickest)\s+(?:route|path|way)|(?:maximum|max|most)\s+"
                      r"(?:flow|units|throughput|capacity))\s+from\s+\w+\s+to\s+\w+", re.I)
@@ -132,11 +151,165 @@ def _words_route(text: str, ctx: PlannerContext, match) -> dict:
     if question:
         return question
     limit = int(match.group(2)) - (1 if match.group(1).lower() in ("under", "fewer than", "below") else 0)
-    spec = templates.word_limit(file=file, max_words=max(limit, 1), workspace_root=Path(ctx.workspace))
+    # wc -w on a PDF counts its page syntax (329 words where its reader shows 1440): a PDF's words are its reader's.
+    # wc reads every byte and looks for no PDF, so the planner looks at every byte first (WORD_BYTES), not a window
+    route = _pdf_route(file, "count its words", "template:word-limit", whole=True)
+    if isinstance(route, dict):
+        return route
+    spec = templates.word_limit(file=file, max_words=max(limit, 1), workspace_root=Path(ctx.workspace),
+                                reader=route == READER)
     spec["founder_expression"] = text
-    return _proposal(spec, "template:word-limit",
-                     notes=["GREG has no word-count capability yet: it will acquire and verify one (read-only)",
-                            "filing the record asks you first, and happens only within the limit"])
+    return _proposal(spec, "template:word-limit", notes=[
+        ("GREG counts the words its PDF reader shows (pdftotext, acquired and verified, read-only), not the PDF's "
+         "bytes; a page with no text layer leaves the count open, and GREG asks you with the reason")
+        if route == READER else "GREG has no word-count capability yet: it will acquire and verify one (read-only)",
+        "filing the record asks you first, and happens only within the limit"])
+
+
+def _search_route(text: str, ctx: PlannerContext) -> dict | None:
+    """A file the words name, read whole for the quoted phrases, however large. Words that name no readable file
+    fall through to the routes after this one."""
+    file, question = _readable_file(text, ctx, "template:file-search")
+    if question:
+        return None
+    phrases = [next(g for g in m.groups() if g is not None) for m in PHRASE.finditer(text)][:16]
+    rest = FILE_PATH.sub(" ", PHRASE.sub(" ", text))
+    verbs = list(MENTIONS.finditer(rest))
+    if not phrases or not verbs:
+        return None                         # the mention verb was inside a quoted phrase: not a search request
+    negated = [v for v in verbs if any(n.start() <= v.start() < n.end() for n in NEGATED_VERB.finditer(rest))]
+    loose = LOOSE_POLARITY.findall(NEGATED_VERB.sub(" ", rest))
+    if loose or 0 < len(negated) < len(verbs):
+        why = (f"outside the quotes, {', '.join(repr(w) for w in dict.fromkeys(w.lower() for w in loose))} "
+               "could change that") if loose else "the request says both"
+        return {"status": "NEEDS_INPUT", "origin": "template:file-search", "questions": [
+            f"Should {file} mention {', '.join(repr(p) for p in phrases)}, or never mention "
+            f"{'them' if len(phrases) > 1 else 'it'}? GREG cannot tell: {why}. Ask again with only \"mentions\" or "
+            "\"never mentions\" outside the quotes."]}
+    absent = bool(negated)
+    route = _pdf_route(file, "search it for the phrases", "template:document-phrase")
+    if isinstance(route, dict):
+        return route
+    if route == READER:
+        return _document_route(text, file, phrases, absent)
+    spec = templates.file_search(file=file, phrases=phrases, absent=absent)
+    spec["founder_expression"] = text
+    return _proposal(spec, "template:file-search", notes=[
+        "read-only: GREG reads the whole file as a stream, in bounded memory, and changes nothing",
+        "line breaks and runs of spaces count as one space; accented letters match in either Unicode form",
+        ("absence is claimed only after every byte is read and decoded; a file cut short or not readable as text "
+         "leaves the answer open, and GREG asks you with the reason") if absent else
+        "a phrase found anywhere in the file closes the check"])
+
+
+PLAN_BYTES = 1024 ** 2   # the most of a named file the planner reads to choose its route; fs.search reads all of it
+# A word count is acquired (genesis: wc -w), and wc refuses no PDF: the planner reads every byte of a draft it would
+# count, as far as fs.search would, and asks when it cannot (review of e573bf18, finding 1: PDF structure 1 MiB in)
+WORD_BYTES = MAX_BYTES
+WORD_SECONDS = MAX_SECONDS
+READER = "reader"
+
+
+def _pdf_evidence(file: Path, limit: int = PLAN_BYTES, seconds: float | None = None) -> PdfEvidence:
+    """What the first ``limit`` bytes of the file the words name say about it being a PDF, read for at most
+    ``seconds``: the check fs.search makes on every byte it reads (``textquery.PdfEvidence``). ``finished`` says
+    whether that was the whole file. A file that cannot be opened or read here, or is not a regular file, shows
+    nothing: it is left to the sensor, which refuses it with the reason."""
+    evidence = PdfEvidence()
+    deadline = None if seconds is None else time.monotonic() + seconds
+    try:   # never blocks on a FIFO swapped in, never follows a link swapped in after the roots were checked
+        fd = os.open(file, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
+    except OSError:
+        return evidence
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            return evidence
+        # until structure is seen and the header is known (it can only stand in the first PDF_HEAD bytes)
+        while evidence.structure is None or (evidence.header is None and evidence.read < PDF_HEAD):
+            if evidence.read >= limit:
+                if not os.read(fd, 1):                      # exactly at the limit: that was all of it
+                    evidence.finish()
+                break
+            if deadline is not None and time.monotonic() > deadline:
+                break
+            chunk = os.read(fd, min(CHUNK_BYTES, limit - evidence.read))
+            if not chunk:
+                evidence.finish()
+                break
+            evidence.feed(chunk)
+    except OSError:
+        pass                                # what was read stands; the sensor reads the file again
+    finally:
+        os.close(fd)
+    return evidence
+
+
+def _pdf_route(file: Path, task: str, origin: str, *, whole: bool = False):
+    """How a question about the file the words name is answered: None (its bytes are text), READER (a PDF: by its
+    reader, document.text), or a question for the founder.
+
+    A file with PDF structure is a PDF when it also has a PDF header where readers look for one, or a .pdf name; then
+    its reader reads it, even with a damaged header (pdftotext reads it with none). Its bytes are never searched: a
+    PDF reader could read them as a PDF. With structure and neither, it may as well be a text that quotes PDF syntax,
+    which a reader would misread; with a header and no structure seen, GREG says what it saw. Then GREG asks.
+
+    A route whose sensor refuses a PDF in every byte it reads (fs.search) needs only the first PLAN_BYTES here. A
+    route whose sensor does not (``whole``: the word count, wc -w) is read to its end first, within fs.search's own
+    limits, and a file not read to its end with no PDF sign is asked about: what was not read could be a PDF's."""
+    limit, seconds = (WORD_BYTES, WORD_SECONDS) if whole else (PLAN_BYTES, None)
+    evidence = _pdf_evidence(file, limit, seconds)
+    if evidence.reason() is None:
+        if evidence.finished or not whole:
+            return None
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"GREG read the first {evidence.read} bytes of {file} and saw no PDF sign, but could not read the rest "
+            f"(it reads at most {limit} bytes for at most {seconds:g} seconds before choosing how to answer). A PDF "
+            "reader reads a PDF whatever precedes its structure, and a PDF's bytes are page syntax, not its words, "
+            f"so GREG drafts no mission to {task}. Ask about a smaller copy, or save its text as a .txt file."]}
+    scope = "the whole file" if evidence.finished else f"its first {evidence.read} bytes"
+    if evidence.structure is None:
+        seen = (f"no PDF structure in the whole file (no object, no \"endobj\", no \"startxref\"), which GREG's PDF "
+                "reader (pdftotext) needs to show any text" if evidence.finished else
+                f"no PDF structure (no object, no \"endobj\", no \"startxref\") in {scope}, which is as far as GREG "
+                "reads to choose how to answer; structure further in is not ruled out")
+        fix = ("If it is a damaged PDF, replace it with a copy its PDF reader can read" if evidence.finished else
+               f"If it is a PDF, save a copy whose PDF structure begins within its first {evidence.read} bytes (for "
+               "example, re-saved by a PDF program), or its text as a .txt file,")
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"{file} looks like a PDF: it has a PDF header (\"%PDF-\" at byte {evidence.header}) where PDF readers "
+            f"look for one, and {seen}. GREG does not read a file that may be a PDF as text, so it drafts no mission "
+            f"to {task}. {fix} and ask again: GREG reads that with its PDF reader (document.text). If it is a text "
+            "file that quotes a PDF header, ask about a copy with no \"%PDF-\" in its first 1024 bytes."]}
+    what, at = evidence.structure
+    if evidence.header is None and file.suffix.lower() != ".pdf":
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"{file} may be a PDF: it has PDF structure ({what} at byte {at}), but no PDF header (\"%PDF-\") in its "
+            "first 1024 bytes and no .pdf name. A PDF reader still reads a PDF whose header is missing or damaged, so "
+            "GREG does not read its bytes as text; a text that quotes PDF syntax (a program that writes PDFs) has the "
+            f"same structure, and a PDF reader would misread it. GREG drafts no mission to {task}. If it is a PDF, "
+            "give it a name ending in .pdf, or repair its header, and ask again: GREG reads it with its PDF reader "
+            "(document.text). If it is a text file, GREG cannot answer from its bytes while it holds PDF structure: "
+            "check it yourself, or ask about a copy without the PDF syntax."]}
+    from greg.genesis import CATALOG
+    if "document.text" not in CATALOG:
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"{file} is a PDF ({evidence.reason()}): its text is drawn by page operators, not stored as text, and "
+            "GREG has no PDF reader (document.text) on this body. Save its text as a .txt file where GREG may read, "
+            "and ask about that file."]}
+    return READER
+
+
+def _document_route(text: str, file: Path, phrases: list, absent: bool) -> dict:
+    """A PDF is asked about as its reader shows it: ``document.text`` (#201), acquired by genesis, read-only."""
+    spec = templates.document_phrase(file=file, phrases=phrases, absent=absent)
+    spec["founder_expression"] = text
+    return _proposal(spec, "template:document-phrase", notes=[
+        "read-only: GREG reads the PDF's text with a PDF reader it acquires and verifies (pdftotext today), and "
+        "changes nothing",
+        "a phrase matches as whole words, after typographic quotes, dashes and ligatures are folded",
+        ("absence is claimed only when every page yields text and none holds an image (which could hold the phrase "
+         "as pixels); otherwise the answer stays open, and GREG asks you with the reason") if absent else
+        "the phrase found anywhere in the PDF's text closes the check"])
 
 
 def _verify_route(text: str, ctx: PlannerContext) -> dict:
@@ -464,6 +637,9 @@ def template_route(text: str, ctx: PlannerContext) -> dict | None:
         return proposal                     # a tool on an MCP server the founder installed, named in the words
     if templates.FIRST_MISSION_WORDS.search(text):      # the founder's first mission: where am I going, what next
         return _first_mission_route(text, ctx)
+    if MENTIONS.search(text) and FILE_PATH.search(text) and PHRASE.search(text) and \
+            (proposal := _search_route(text, ctx)) is not None:
+        return proposal                     # whether a file of any size mentions, or never mentions, a phrase
     if BRIEF.search(text):
         repos = ctx.repos()
         named = {n: r for n, r in repos.items() if n.lower() in lowered}
@@ -485,11 +661,11 @@ def template_route(text: str, ctx: PlannerContext) -> dict | None:
                 "questions": ["Which Kernel boundary package commit (40 hex) and version must every organ pin? "
                               "Use `greg mission new repo-guardian --pin ... --version ...` once known."]}
     if NOTE.search(text):
-        quoted = QUOTED.search(text)
+        quoted = PHRASE.search(text)
         if not quoted or ctx.workspace is None:
             return {"status": "NEEDS_INPUT", "origin": "template:workspace-note",
                     "questions": ["Put the exact note text in quotes."]}
-        body = quoted.group(1)
+        body = next(g for g in quoted.groups() if g is not None)
         spec = templates.workspace_note(text=body, must_contain=body.split()[0],
                                         workspace_file=Path(ctx.workspace) / "m_first-note" / "note.txt")
         spec["founder_expression"] = text

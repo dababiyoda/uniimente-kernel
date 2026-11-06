@@ -241,9 +241,12 @@ def main() -> int:
                                           if adapted.unresolved else None},
                                  causal_parent=ev_signal.event_id))
     assessment = asm_adapter.adapt(wire_assessment, transport_identity=a_meta["identity"])
+    bound, bound_why = pkt_adapter.justified_verdict(
+        assessment["verdict"], adapted.unresolved, wire_packet.get("evidence") or [])
     ev_assessment = spine.emit(Event(type="bridge.assessment_adapted", source=KERNEL,
                                      actor=a_meta["identity"], legal_principal="alfonso_lopez",
-                                     payload={"verdict": assessment["verdict"],
+                                     payload={"verdict": bound, "engine_verdict": assessment["verdict"],
+                                              "verdict_why": bound_why,
                                               "requires_human_approval": assessment["requires_human_approval"],
                                               "assessment_sha256": findings["stages"]["wealthmachine"]["assessment_sha256"]},
                                      causal_parent=ev_packet.event_id))

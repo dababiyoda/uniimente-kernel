@@ -28,8 +28,9 @@ NAMESPACE = "spiffe://uniimente.internal"
 
 PASSPORT_KINDS = ("process", "agent", "workflow", "organ", "connector", "venture_cell")
 CONSEQUENCE_CLASSES = ("read_only", "internal_write", "external_contact", "financial", "irreversible")
-# A running body issues a passport per governed act. Unexpired ones stay. Expired ones stay
-# only inside this audit window; older expirations fold into a chain head. Revocations never fold.
+# A running body issues a passport per governed act. One still in use stays live. A finished
+# act leaves that set for this audit window at once; time expiry does the same. Older
+# expirations fold into a chain head. Revocations never fold.
 MAX_LIVE = 256
 MAX_EXPIRED_AUDIT = 1024
 _FOLDED_GENESIS = "sha256:" + "0" * 64
@@ -86,11 +87,12 @@ def _parse(ts: str) -> datetime:
 class PassportRegistry:
     """Issues, verifies, and revokes short-lived machine passports.
 
-    At most ``max_live`` unexpired, unrevoked passports are issued. Expired identities
-    stay addressable until ``max_expired_audit`` of them have accumulated; older ones
-    leave the map and extend ``retention()["folded_head"]``. A revocation stays in the
-    map for the life of the registry: forgetting one would let a compromised identity
-    read as merely unknown.
+    At most ``max_live`` unexpired, unrevoked passports are issued. A finished act calls
+    ``retire`` and that passport joins the expired audit window immediately, so the
+    ceiling counts identities still in use. Expired identities stay addressable until
+    ``max_expired_audit`` of them have accumulated; older ones leave the map and extend
+    ``retention()["folded_head"]``. A revocation stays in the map for the life of the
+    registry: forgetting one would let a compromised identity read as merely unknown.
     """
 
     def __init__(self, max_ttl_seconds: int = 3600, *, max_live: int = MAX_LIVE,
@@ -147,6 +149,20 @@ class PassportRegistry:
         if (at or _now()) >= _parse(p.expires_at):
             return False, "expired"
         return True, "identity_verified"
+
+    def retire(self, passport_id: str, *, at: datetime | None = None) -> None:
+        """A finished act leaves the live set and enters the expired audit window.
+
+        This is not a revocation. A revoked passport stays in the live map for the
+        life of the registry. An id already expired, folded, or unknown is left as
+        it is: retiring it again must not invent a record.
+        """
+        passport = self._passports.get(passport_id)
+        if passport is None or passport.revoked:
+            return
+        self._passports.pop(passport_id)
+        self._remember_expired(passport)
+        self.retain(at=at)
 
     def retain(self, *, at: datetime | None = None) -> dict:
         """Move expired passports out of the live map. Ones past the audit window fold

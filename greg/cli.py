@@ -15,7 +15,10 @@
     greg body designate --key K                   founder signs the intended first body (and, with a
                                                   passphrase-protected key, the founder-tier attestation)
     greg founder attest --key K                   founder-tier attestation alone (e.g. after key rotation)
+    greg founder rotate --key OLD --new-key NEW   the enrolled key signs its replacement by a protected key
     greg device enroll --pubkey HEX --label phone --key K   delegate a narrow key to a phone
+    greg node enroll NODE_ID --pubkey HEX --cone CONE.json --key K   admit a node's own key (founder-signed)
+    greg node revoke NODE_ID --key K | greg node list   end a node's enrollment; read-only node states
     greg serve                                   loopback remote channel for the phone
     greg anchor configure --tsa-url URL --roots ROOTS.pem --key K   timestamp the ledger head externally
     greg anchor export --roots R.pem --out W.json   witness bundle kept OUTSIDE GREG
@@ -24,6 +27,10 @@
     greg gravity authorize --from-mission M --print-only > g.json; greg gravity authorize g.json --key K
     greg gravity authorize g.json --supersedes GOAL --key K   replace an admitted goal (the old one is kept)
     greg gravity goals | greg gravity evidence GOAL   read-only; greg gravity control GOAL --kind stop_pushing --value true --key K
+    greg cathedral [--days N | --since T] [--body [HOME]]   read-only: git activity against founder-tier outcomes
+    greg compute status                       read-only: pressure, the sustained bottleneck, COMPUTE asks, step time
+    greg compute benchmark --out B.json       a fixed workload in a scratch directory; writes B.json only
+    greg compute verify --before A.json --after B.json   did the change measurably help
 
 The CLI never opens the ledger as a writer while the body runs: commands are
 signed files dropped into the body inbox, so any interface can close at any time.
@@ -42,20 +49,84 @@ import sys
 from greg import service
 from greg.body import (Body, BodyError, Layout, init_body, morning_projection, observe, send_signed,
                        status)
-from greg.founder import generate_founder_key, load_founder_key, public_bytes
+from greg.founder import FounderAuthError, generate_founder_key, load_founder_key, public_bytes
 from greg.tribunal import mark_reviewed, morning_report
 from provenance.ledger import WriterConflict
+
+
+def _replace_with(target: Path, text: str, mode: int = 0o644) -> None:
+    """Replace ``target`` with ``text`` through a temporary file in its directory that nobody else could have
+    planted: mkstemp gives a fresh name with O_EXCL, so no symlink or existing file there is followed or clobbered,
+    and the file has ``mode`` (never wider than its owner while written) before it is renamed over ``target``. A
+    failure removes the temporary file and leaves ``target`` as it was (review of #238)."""
+    import tempfile
+    target = Path(target)
+    fd, name = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.", suffix=".tmp")
+    try:
+        data = text.encode()
+        while data:
+            data = data[os.write(fd, data):]
+        os.fchmod(fd, mode)
+        os.close(fd)
+        fd = -1
+        os.replace(name, target)
+    except BaseException:
+        if fd >= 0:
+            os.close(fd)
+        try:
+            os.unlink(name)
+        except FileNotFoundError:
+            pass
+        raise
 
 DEFAULT_HOME = os.environ.get("GREG_HOME", str(Path.home() / ".uniimente" / "greg"))
 
 
-def _passphrase(args) -> bytes | None:
+NO_EMPTY_PASSPHRASE = ("an empty passphrase is refused: it would leave your founder key unprotected, and an "
+                       "unprotected key never reaches the founder tier. Type a passphrase, or pass --no-passphrase "
+                       "for a test key")
+
+
+def _passphrase(args, *, confirm: bool = False) -> bytes | None:
+    """The founder key passphrase: from GREG_FOUNDER_PASSPHRASE (tests and scripts; empty means none), None for
+    --no-passphrase, otherwise typed at a hidden prompt. A typed empty answer never means "no passphrase" (that is
+    --no-passphrase), and ``confirm`` (keygen) asks twice: a typo there would lock the founder out of their own key."""
     env = os.environ.get("GREG_FOUNDER_PASSPHRASE")
     if env is not None:
         return env.encode() or None
     if getattr(args, "no_passphrase", False):
         return None
-    return getpass.getpass("founder key passphrase: ").encode() or None
+    for _ in range(3):
+        typed = getpass.getpass("founder key passphrase: ")
+        # Whitespace alone is as weak as nothing: refused when a new key is made (``confirm``). A key already made
+        # with one still opens, so signing never locks out its own founder.
+        if not typed or (confirm and not typed.strip()):
+            print(f"greg: {NO_EMPTY_PASSPHRASE}", file=sys.stderr)
+            continue
+        if confirm and getpass.getpass("founder key passphrase, again: ") != typed:
+            print("greg: the two passphrases differ; nothing was written. Type it again", file=sys.stderr)
+            continue
+        return typed.encode()
+    raise BodyError("no usable passphrase after three tries; nothing was written or signed")
+
+
+def _load_key(path, passphrase: bytes | None):
+    """The founder key, or one plain line (never a traceback) when the passphrase does not open it."""
+    try:
+        return load_founder_key(Path(path).expanduser(), passphrase)
+    except FounderAuthError as exc:        # a key readable by others, or not Ed25519
+        raise BodyError(str(exc)) from None
+    except TypeError:                      # cryptography: a password for a plain key, or none for an encrypted one
+        if passphrase is None:
+            raise BodyError(f"the founder key {path} is passphrase-protected; run without --no-passphrase and type "
+                            "its passphrase") from None
+        raise BodyError(f"the founder key {path} is not passphrase-protected; pass --no-passphrase to use it "
+                        "(it never reaches the founder tier)") from None
+    except ValueError as exc:
+        if "password" not in str(exc).lower() and "decrypt" not in str(exc).lower():
+            raise
+        raise BodyError(f"incorrect passphrase for the founder key {path}; nothing was signed "
+                        "(greg/CHROMEBOOK_FIRST_MISSION.md, \"A key you cannot open\")") from None
 
 
 def _known_handles() -> set:
@@ -112,7 +183,7 @@ def _key_file(args, kind: str | None) -> str:
 
 
 def _drop(home: str, kind: str, body: dict, args) -> Path:
-    key = load_founder_key(_key_file(args, kind), _passphrase(args))
+    key = _load_key(_key_file(args, kind), _passphrase(args))
     return send_signed(home, key, kind, body, ttl=timedelta(hours=getattr(args, "ttl_hours", 24)))
 
 
@@ -214,12 +285,41 @@ def _drop_attested(home: str, kind: str, body: dict, args, *, require: bool = Fa
     passphrase = _passphrase(args)
     if passphrase is None and require:
         raise BodyError(NO_FOUNDER_TIER)
-    key = load_founder_key(keyfile, passphrase)
+    key = _load_key(keyfile, passphrase)
     ttl = timedelta(hours=getattr(args, "ttl_hours", 24))
     dropped = [send_signed(home, key, kind, body, ttl=ttl)] if kind else []
     if passphrase is not None:
         dropped.append(send_signed(home, key, "FOUNDER_TIER", dict(FOUNDER_TIER_BODY), ttl=ttl))
     return dropped
+
+
+def _protected(path: str) -> bool:
+    try:
+        return Path(path).expanduser().read_text().startswith("-----BEGIN ENCRYPTED PRIVATE KEY-----")
+    except (OSError, UnicodeDecodeError):
+        return False
+
+
+def _rotate(home: str, args) -> Path:
+    """The way out of an enrolled key that never reaches the founder tier (an unprotected one, the state the C1
+    defect left behind): the enrolled key signs ROTATE_FOUNDER_KEY naming a new passphrase-protected key, which is
+    proven to open before anything is signed. Nothing moves until the running body accepts the signed file."""
+    old_file = _key_file(args, "ROTATE_FOUNDER_KEY")
+    new_file = _key_file(argparse.Namespace(key=args.new_key), "ROTATE_FOUNDER_KEY")
+    if not _protected(new_file):
+        raise BodyError(f"the new key {args.new_key} is not passphrase-protected; create one with "
+                        f"greg founder keygen --key {args.new_key} (nothing was signed)")
+    if Path(new_file).resolve() == Path(old_file).resolve():
+        raise BodyError("--new-key names the enrolled key itself; nothing was signed")
+    if _protected(old_file):
+        print(f"passphrase for the enrolled key {args.key}:", file=sys.stderr)
+        old = _load_key(old_file, _passphrase(args))
+    else:
+        old = _load_key(old_file, None)
+    print(f"passphrase for the new key {args.new_key}:", file=sys.stderr)
+    new = _load_key(new_file, _passphrase(args))
+    return send_signed(home, old, "ROTATE_FOUNDER_KEY", {"new_public_key": public_bytes(new.public_key()).hex()},
+                       ttl=timedelta(hours=args.ttl_hours))
 
 
 def _slot_value(declared: dict, assignment: str):
@@ -316,6 +416,10 @@ def main(argv=None) -> int:
     at = fs.add_parser("attest", help="sign a founder-tier attestation from a passphrase-protected key (grants nothing)")
     at.add_argument("--key", required=True); at.add_argument("--no-passphrase", action="store_true")
     at.add_argument("--ttl-hours", type=int, default=24)
+    ro = fs.add_parser("rotate", help="the enrolled founder key signs its replacement by a passphrase-protected key")
+    ro.add_argument("--key", required=True, help="the currently enrolled key (protected or not)")
+    ro.add_argument("--new-key", required=True, help="the new, passphrase-protected key (greg founder keygen)")
+    ro.add_argument("--ttl-hours", type=int, default=24)
     b = sub.add_parser("body", help="founder designation of the first physical execution body")
     bs = b.add_subparsers(dest="body_cmd", required=True)
     bd = bs.add_parser("designate"); bd.add_argument("--key", required=True)
@@ -456,6 +560,19 @@ def main(argv=None) -> int:
     for q in (de, dr):
         q.add_argument("--key", required=True); q.add_argument("--no-passphrase", action="store_true")
         q.add_argument("--ttl-hours", type=int, default=24)
+    nd = sub.add_parser("node", help="other compute nodes: admit or revoke one (founder-signed), or list them; a node "
+                                     "never signs a founder command")
+    nds = nd.add_subparsers(dest="node_cmd", required=True)
+    ne = nds.add_parser("enroll", help="founder-signed: admit a node's own key under a bounded light cone")
+    ne.add_argument("node_id"); ne.add_argument("--pubkey", required=True, help="the node's Ed25519 public key (hex)")
+    ne.add_argument("--cone", required=True, help="light cone JSON file: capabilities, targets, max_consequence_class, "
+                                                  "budget_usd, horizon")
+    ne.add_argument("--expires-at", help="ISO 8601 instant with a timezone; the node is inactive from then on")
+    nr = nds.add_parser("revoke", help="founder-signed: end a node's current enrollment"); nr.add_argument("node_id")
+    for q in (ne, nr):
+        q.add_argument("--key", required=True); q.add_argument("--no-passphrase", action="store_true")
+        q.add_argument("--ttl-hours", type=int, default=24)
+    nds.add_parser("list", help="read-only: each enrolled node and whether it is active, revoked or expired")
     an = sub.add_parser("anchor", help="RFC 3161 time anchoring of the ledger head")
     ans = an.add_subparsers(dest="anchor_cmd", required=True)
     ac = ans.add_parser("configure", help="founder-signed: timestamp the ledger head at this TSA")
@@ -489,8 +606,14 @@ def main(argv=None) -> int:
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
+    sub.add_parser("autonomy", help="read-only: the level each (capability, action class, target pattern, budget band) "
+                                    "has earned from the ledger; it grants nothing")
     pp = sub.add_parser("path", help="where GREG stands on its developmental path: active node, gate, exit evidence, horizons")
-    pp.add_argument("--node", help="read one node's own measurement (e.g. N6), even past where the path stops")
+    pq = pp.add_mutually_exclusive_group()
+    pq.add_argument("--node", help="read one node's own measurement (e.g. N6), even past where the path stops")
+    pq.add_argument("--build", action="store_true",
+                    help="the build frontier beside the acceptance frontier: per node STRUCTURALLY_BUILT, BUILD_OPEN "
+                         "or NO_PREDICATE; structural evidence moves only the build frontier, never the founder's path")
     tr = sub.add_parser("treasury", help="venture books: verified revenue through your waterfall (node N7); moves no money")
     trs = tr.add_subparsers(dest="treasury_cmd", required=True)
     trs.add_parser("books", help="per venture: verified revenue, obligations and reserves, reinvestable surplus, transfers")
@@ -540,6 +663,19 @@ def main(argv=None) -> int:
     gv.add_argument("--print-only", action="store_true", help="authorize: print the GOAL body without signing")
     gv.add_argument("--supersedes", help="authorize: replace this admitted goal (id or prefix); it stays on the "
                                          "ledger as superseded")
+    cp = sub.add_parser("compute", help="the body's compute: measured pressure, a fixed benchmark and before/after "
+                                        "verification; it buys, rents and installs nothing")
+    cps = cp.add_subparsers(dest="compute_cmd", required=True)
+    cps.add_parser("status", help="read-only: a live sample, the sustained bottleneck, the COMPUTE asks per "
+                                  "resource and measured mission step time")
+    cb = cps.add_parser("benchmark", help="run the fixed workload in a scratch directory; writes --out only, "
+                                          "never the body's ledger and never over a file that is not a benchmark")
+    cb.add_argument("--out", required=True)
+    cb.add_argument("--runs", type=int, default=None, help="replicates (default 7; verify needs at least 5)")
+    cv = cps.add_parser("verify", help="did --after measurably beat --before (one-sided permutation test above "
+                                       "the before run's noise, on a host no quieter than before)")
+    cv.add_argument("--before", required=True)
+    cv.add_argument("--after", required=True)
     pr = sub.add_parser("presence", help="was the body actually running: measured availability, absences, late work")
     pr.add_argument("--hours", type=float, default=72.0)
     mcp = sub.add_parser("mcp", help="MCP tool servers you installed under GREG's read roots (read-only)")
@@ -575,9 +711,25 @@ def main(argv=None) -> int:
     fdr2.add_argument("--seed", required=True, help="the seed's sha256: address, as `greg foundry seed` printed it")
     sub.add_parser("learning", help="brief corrections per labelled brief, and every learned change kept, rejected or reverted")
     sub.add_parser("acceptance", help="read-only founder-device acceptance report from this body's own ledger")
+    cd = sub.add_parser("cathedral", help="read-only: the constitution's cathedral kill condition over a window, git "
+                                          "activity against founder-tier outcomes; asks, pauses and grants nothing")
+    cd.add_argument("--repo", help="the git repository whose activity is measured (default: this kernel checkout)")
+    cdw = cd.add_mutually_exclusive_group()
+    cdw.add_argument("--days", type=float, help="window length ending at --until (default 30)")
+    cdw.add_argument("--since", help="window start, ISO 8601 (UTC when no offset is given)")
+    cd.add_argument("--until", help="window end, ISO 8601 (default: now)")
+    cd.add_argument("--body", nargs="?", const="", default=None, metavar="HOME",
+                    help="read outcomes from a body's ledger, read-only: the body at --home, or HOME")
+    bl = sub.add_parser("blockers", help="read-only: each open mission blocker, typed: why, when it is reconsidered, "
+                                         "the evidence and authority it needs, and the next move")
+    bl.add_argument("--mission", default=None, help="only this mission's blocker")
     rh = sub.add_parser("rehearse", help="credential-free rehearsal: a throwaway body and REHEARSAL key run the "
-                                          "Founder's First Mission end to end")
+                                          "Founder's First Mission end to end, or --path for N3 then N4 then N7 "
+                                          "on that one body")
     rh.add_argument("--dir"); rh.add_argument("--kernel-root"); rh.add_argument("--effort", type=int, default=8)
+    rh.add_argument("--path", action="store_true",
+                    help="on one throwaway body, reach N3, then N4, then N7 in that order; the founder's path "
+                         "does not move")
     rh.add_argument("--console", type=int, help="then serve Mission Control for that body on this port")
     c = sub.add_parser("console", help="the founder console on http://127.0.0.1:PORT")
     c.add_argument("--key", help="founder key; without it the console is read-only")
@@ -608,9 +760,9 @@ def main(argv=None) -> int:
                                        confined_egress=args.confined_egress,
                                        worker_confinement=args.worker_confinement), indent=1))
         elif args.cmd == "founder" and args.founder_cmd == "keygen":
-            print(generate_founder_key(args.key, _passphrase(args)))
+            print(generate_founder_key(args.key, _passphrase(args, confirm=True)))
         elif args.cmd == "founder" and args.founder_cmd == "public":
-            key = load_founder_key(args.key, _passphrase(args))
+            key = _load_key(args.key, _passphrase(args))
             print(public_bytes(key.public_key()).hex())
         elif args.cmd == "founder" and args.founder_cmd == "enroll":
             with Body(home) as body:
@@ -695,6 +847,8 @@ def main(argv=None) -> int:
         elif args.cmd == "accept":
             print(_drop(home, "CRITIQUE", {"target_event_id": args.event_id, "verdict": "accept",
                                            "evidence_type": "founder_judgment", "text": args.text}, args))
+        elif args.cmd == "founder" and args.founder_cmd == "rotate":
+            print(_rotate(home, args))
         elif args.cmd == "founder" and args.founder_cmd == "attest":
             print(*_drop_attested(home, None, {}, args, require=True), sep="\n")
         elif args.cmd == "body" and args.body_cmd == "designate":
@@ -750,10 +904,7 @@ def main(argv=None) -> int:
                 out.mkdir(parents=True, exist_ok=True)
                 presentation = disclosure.present(holder)
                 for name, content, mode in (("holder.json", holder, 0o600), ("presentation.json", presentation, 0o644)):
-                    tmp = out / (name + ".tmp")
-                    tmp.write_text(json.dumps(content, indent=1) + "\n")
-                    tmp.chmod(mode)
-                    tmp.replace(out / name)
+                    _replace_with(out / name, json.dumps(content, indent=1) + "\n", mode)
                 checked = disclosure.verify_presentation(presentation)
                 data = {"package_digest": holder["package_digest"], "items": len(holder["package"]["items"]),
                         "contradictions": holder["package"]["contradictions"], "revealed": holder["default_reveal"],
@@ -805,10 +956,16 @@ def main(argv=None) -> int:
             with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
                 data = metrics.vepmc(journal) if args.cmd == "vepmc" else routing.routing_knowledge(journal)
             print(json.dumps(data, indent=1))
+        elif args.cmd == "autonomy":
+            from greg import autonomy
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                print(json.dumps(autonomy.report(journal), indent=1))
         elif args.cmd == "path":
             from greg import path as devpath
 
             def where(journal):
+                if getattr(args, "build", False):
+                    return devpath.build_status(journal)
                 if not getattr(args, "node", None):
                     return devpath.position(journal)
                 try:
@@ -865,6 +1022,46 @@ def main(argv=None) -> int:
             except (gravity.GravityError, LeverageRefused) as exc:     # a refusal, reported like any other
                 raise BodyError(f"gravity refused the situation: {exc}") from exc
             print(json.dumps(data, indent=1))
+        elif args.cmd == "compute":
+            from greg import compute
+            # The body is the ledger's one writer: these read it through a read-only view, or touch files only.
+            if args.compute_cmd == "status":
+                where = Path(home) if Path(home).exists() else Path.home()
+                if Layout(home).ledger.exists():
+                    with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                        data = {"sample": compute.sample(where), **compute.status(journal)}
+                else:
+                    data = {"sample": compute.sample(where), "reality_status": "NO_BODY_LEDGER"}
+                print(json.dumps(data, indent=1))
+            elif args.compute_cmd == "benchmark":
+                out = Path(args.out).expanduser().resolve()
+                body_home = Layout(home).home              # the home the body itself uses: '~' expanded, resolved
+                if any(p == body_home or (p.exists() and body_home.exists() and p.samefile(body_home))
+                       for p in (out, *out.parents)):
+                    raise BodyError("benchmark results live outside the body; the CLI writes nothing in its home")
+                if out.exists():                           # it replaces only its own earlier result, never a file
+                    try:
+                        kept = json.loads(out.read_text())
+                    except (OSError, ValueError, UnicodeDecodeError):
+                        kept = None
+                    if not isinstance(kept, dict) or kept.get("kind") != "compute.benchmark":
+                        raise BodyError(f"{out} exists and is not a benchmark result; the CLI will not overwrite it")
+                runs = compute.BENCHMARK_RUNS if args.runs is None else args.runs
+                if runs < 1:
+                    raise BodyError("--runs must be at least 1")
+                result = compute.benchmark(runs)
+                try:
+                    _replace_with(out, json.dumps(result, indent=1))
+                except OSError as exc:
+                    raise BodyError(f"cannot write {out}: {exc.strerror}") from None
+                shown = {k: result[k] for k in ("runs", "median_seconds", "iqr_seconds", "deterministic")}
+                print(json.dumps({"written": str(out), **shown}, indent=1))
+            else:
+                try:
+                    runs = [json.loads(Path(p).expanduser().read_text()) for p in (args.before, args.after)]
+                    print(json.dumps(compute.verify_improvement(*runs), indent=1))
+                except (OSError, ValueError) as exc:
+                    raise BodyError(f"cannot compare these benchmark files: {exc}") from None
         elif args.cmd == "presence":
             from greg import presence
             now = datetime.now(timezone.utc)
@@ -960,9 +1157,29 @@ def main(argv=None) -> int:
         elif args.cmd == "lifecycle":
             print(_drop(home, "LIFECYCLE", {"mission_id": args.mission_id, "state": args.state,
                                             "reason": args.reason}, args))
+        elif args.cmd == "blockers":
+            from greg import blockers
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                print(json.dumps(blockers.open_blockers(journal, home=home, mission_id=args.mission), indent=1))
         elif args.cmd == "acceptance":
             from greg import acceptance
             return acceptance.main(home)
+        elif args.cmd == "cathedral":
+            from greg import cathedral
+            try:
+                since, until = cathedral.window(since=args.since, until=args.until, days=args.days)
+            except cathedral.CathedralError as exc:
+                raise BodyError(str(exc)) from None
+            repo = args.repo or str(cathedral.KERNEL_ROOT)
+            if args.body is None:
+                data = cathedral.detect(repo, since=since, until=until)
+            else:
+                body_home = args.body or home
+                if not Layout(body_home).ledger.exists():
+                    raise BodyError(f"no body ledger at {body_home}: nothing to read outcomes from")
+                with observe(body_home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    data = cathedral.detect(repo, journal=journal, since=since, until=until, body=str(body_home))
+            print(json.dumps(data, indent=1))
         elif args.cmd == "rehearse":
             from greg import rehearsal
             return rehearsal.main(args)
@@ -970,7 +1187,7 @@ def main(argv=None) -> int:
             from greg import planner
             from greg.capabilities import SecretBroker
             from greg.console import Console, serve
-            key = load_founder_key(args.key, _passphrase(args)) if args.key else None
+            key = _load_key(args.key, _passphrase(args)) if args.key else None
             layout = Layout(home)
             models_config, egress = None, None
             if layout.config.is_file():
@@ -1005,6 +1222,24 @@ def main(argv=None) -> int:
                                                 "expires_at": expires.isoformat().replace("+00:00", "Z")}, args))
         elif args.cmd == "device" and args.device_cmd == "revoke":
             print(_drop(home, "DEVICE_REVOKE", {"device_key_id": args.device_key_id}, args))
+        elif args.cmd == "node" and args.node_cmd == "enroll":
+            try:
+                cone = json.loads(Path(args.cone).expanduser().read_text())
+            except (OSError, ValueError) as exc:
+                raise BodyError(f"cannot read the light cone {args.cone}: {exc}") from None
+            print(_drop(home, "NODE_ENROLL", {"node_id": args.node_id, "node_public_key": args.pubkey,
+                                              "light_cone": cone,
+                                              **({"expires_at": args.expires_at} if args.expires_at else {})}, args))
+        elif args.cmd == "node" and args.node_cmd == "revoke":
+            print(_drop(home, "NODE_REVOKE", {"node_id": args.node_id}, args))
+        elif args.cmd == "node":
+            from greg import compute
+            if Layout(home).ledger.exists():   # the body is the ledger's one writer: read it through a read-only view
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    data = {"nodes": list(compute.node_states(journal).values())}
+            else:
+                data = {"nodes": [], "reality_status": "NO_BODY_LEDGER"}
+            print(json.dumps(data, indent=1))
         elif args.cmd == "anchor" and args.anchor_cmd == "configure":
             print(_drop(home, "ANCHOR_CONFIGURE", {"tsa_url": args.tsa_url,
                                                    "tsa_roots_pem": Path(args.roots).read_text(),
@@ -1036,9 +1271,7 @@ def main(argv=None) -> int:
                     result = anchor.export_witness(journal, Path(args.roots).read_text(), existing)
                 except anchor.AnchorError as exc:
                     raise BodyError(str(exc)) from None
-            tmp = out.with_suffix(out.suffix + ".tmp")
-            tmp.write_text(json.dumps(result["bundle"], indent=1) + "\n")
-            tmp.replace(out)
+            _replace_with(out, json.dumps(result["bundle"], indent=1) + "\n")
             print(json.dumps({"witness": str(out), "admitted": result["admitted"], "rejected": result["rejected"],
                               "witnessed_heads": len(result["bundle"]["witnesses"])}, indent=1))
         elif args.cmd == "serve":

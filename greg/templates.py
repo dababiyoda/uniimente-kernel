@@ -332,18 +332,25 @@ def verify_download(*, file: Path, sha256: str, workspace_root: Path, horizon_da
     }
 
 
-def word_limit(*, file: Path, max_words: int, workspace_root: Path, horizon_days: float = 2) -> dict:
+def word_limit(*, file: Path, max_words: int, workspace_root: Path, horizon_days: float = 2,
+               reader: bool = False) -> dict:
     """Confirm a draft is within a word limit, then file a record: a second, unrelated genesis function.
 
     Word counting is not built in either; genesis acquires and verifies an installed tool
     (wc). The record ``requires`` the limit check, so a draft over the limit is never
     recorded as within it. Filing stops for founder approval (outside the read-only cone).
+
+    ``reader``: the draft is a PDF, whose bytes are page syntax (wc -w counted 329 words in a PDF whose reader shows
+    1440), so its words are counted as its reader shows them: ``document.text``'s ``words`` (#201). A page with no
+    text layer makes that reading incomplete, and the judge never passes an at-most check on an incomplete count.
     """
     if not isinstance(max_words, int) or max_words < 1:
         raise ValueError("max_words must be a positive integer")
     file = Path(file).expanduser().resolve()
     slug = re.sub(r"[^a-z0-9]+", "-", file.name.lower()).strip("-")[:40] or "file"
-    mission_id = f"m:words-{slug}"
+    mission_id = f"m:{'document-' if reader else ''}words-{slug}"
+    counter = ({"function": "document.text", "params": {"path": str(file)}} if reader else
+               {"function": "text.wordcount", "params": {"path": str(file)}})
     record = Path(workspace_root) / mission_id.replace(":", "_") / f"{file.name}.words"
     statement = f"{file.name}: at most {max_words} words"
     return {
@@ -352,8 +359,9 @@ def word_limit(*, file: Path, max_words: int, workspace_root: Path, horizon_days
         "intended_effect": "the draft is proven within the word limit, and a record is filed only if it is",
         "priority": 60, "closure": {"kind": "bounded"},
         "success_checks": [
-            {"check_id": "within_limit", "description": f"{file.name} has at most {max_words} words",
-             "sensor": {"function": "text.wordcount", "params": {"path": str(file)}, "target": f"fs:{file.name}"},
+            {"check_id": "within_limit", "description": f"{file.name} has at most {max_words} words"
+                                                          + (" as its PDF reader shows them" if reader else ""),
+             "sensor": {**counter, "target": f"fs:{file.name}"},
              "predicate": {"op": "lte", "field": "words", "value": max_words}},
             {"check_id": "recorded", "description": "a record states the limit was met",
              "sensor": {"capability": "fs.read", "params": {"path": str(record)}, "target": f"fs:{record.name}"},
@@ -362,7 +370,71 @@ def word_limit(*, file: Path, max_words: int, workspace_root: Path, horizon_days
                         "params": {"relative_path": record.name, "content": statement + " (checked by GREG)\n"},
                         "target": f"workspace:{record.name}", "advances": ["recorded"], "requires": ["within_limit"],
                         "rationale": "file the record only after the count is within the limit (asks Alfonso first)"}],
-        "light_cone": {"capabilities": ["fs.read", "acquired.text.wordcount.*"], "targets": ["fs:*", "workspace:*"],
+        "light_cone": {"capabilities": ["fs.read", f"acquired.{counter['function']}.*"],
+                       "targets": ["fs:*", "workspace:*"],
+                       "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+        "auto_attach": {"max_consequence_class": "read_only"},
+    }
+
+
+def file_search(*, file: Path, phrases: list, absent: bool, horizon_days: float = 2) -> dict:
+    """Whether a file of any size mentions some phrases, or never mentions them: one read-only mission over
+    ``fs.search``, which reads the whole file streamed and answers in a few hundred bytes (greg/textquery.py).
+
+    Whitespace runs count as one space, in the file and in the phrases, so a phrase broken across lines is found.
+    Absence is claimed only when every byte was read and decoded; a file cut short by a limit, or not readable as
+    text, leaves the check undecided and GREG asks, with the reason."""
+    if not isinstance(phrases, list) or not phrases or not all(isinstance(p, str) and p.strip() for p in phrases):
+        raise ValueError("phrases must be a nonempty list of nonblank strings")
+    file = Path(file).expanduser().resolve()
+    slug = re.sub(r"[^a-z0-9]+", "-", file.name.lower()).strip("-")[:40] or "file"
+    digest = hashlib.sha256(json.dumps([str(file), phrases, absent]).encode()).hexdigest()[:8]
+    verb = "never mentions" if absent else "mentions"
+    sensor = {"capability": "fs.search", "params": {"path": str(file), "phrases": list(phrases),
+                                                    "whitespace": "collapse"}, "target": f"fs:{file.name}"}
+    return {
+        "mission_id": f"m:{'absent' if absent else 'mentions'}-{slug}-{digest}",
+        "founder_expression": f"Confirm {file} {verb} " + ", ".join(repr(p) for p in phrases) + ".",
+        "intended_effect": f"the whole of {file.name} is read and proven to be one that {verb} the phrases",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": f"phrase_{i}", "description": f"{file.name} {verb} {phrase!r}",
+                            "sensor": sensor,
+                            "predicate": {"op": "equals", "field": f"queries.{i}.found", "value": not absent}}
+                           for i, phrase in enumerate(phrases)],
+        "strategies": [],
+        "light_cone": {"capabilities": ["fs.search"], "targets": ["fs:*"], "max_consequence_class": "read_only",
+                       "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+
+
+def document_phrase(*, file: Path, phrases: list, absent: bool, horizon_days: float = 2) -> dict:
+    """Whether a PDF mentions some phrases, or never mentions them, as its reader shows them: one read-only mission
+    over ``document.text`` (#201), one check per phrase. A PDF's bytes are page syntax, not its text, so
+    ``fs.search`` refuses it.
+
+    ``document.text`` is not built in: genesis acquires a PDF reader and verifies it against a frozen oracle before it
+    may attach (read-only auto-attach is signed here). It answers each phrase over the whole extraction (``found``);
+    absence only over a complete one (every page yields text, no page holds an image), so a scanned page leaves the
+    check undecided and GREG asks, with the reason."""
+    if not isinstance(phrases, list) or not phrases or not all(isinstance(p, str) and p.strip() for p in phrases):
+        raise ValueError("phrases must be a nonempty list of nonblank strings")
+    file = Path(file).expanduser().resolve()
+    slug = re.sub(r"[^a-z0-9]+", "-", file.name.lower()).strip("-")[:40] or "file"
+    digest = hashlib.sha256(json.dumps([str(file), phrases, absent, "document.text"]).encode()).hexdigest()[:8]
+    verb = "never mentions" if absent else "mentions"
+    return {
+        "mission_id": f"m:document-{'absent' if absent else 'mentions'}-{slug}-{digest}",
+        "founder_expression": f"Confirm {file} {verb} " + ", ".join(repr(p) for p in phrases) + ".",
+        "intended_effect": f"the text of {file.name}, as a PDF reader shows it, is proven to be one that {verb} the "
+                           "phrases",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": f"phrase_{i}", "description": f"{file.name} {verb} {phrase!r}",
+                            "sensor": {"function": "document.text", "params": {"path": str(file), "phrase": phrase},
+                                       "target": f"fs:{file.name}"},
+                            "predicate": {"op": "equals", "field": "found", "value": not absent}}
+                           for i, phrase in enumerate(phrases)],
+        "strategies": [],
+        "light_cone": {"capabilities": ["acquired.document.text.*"], "targets": ["fs:*"],
                        "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
         "auto_attach": {"max_consequence_class": "read_only"},
     }

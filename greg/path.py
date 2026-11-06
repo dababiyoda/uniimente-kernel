@@ -19,6 +19,7 @@ exit evidence, pivot and kill conditions; a claim without evidence refs is
 """
 from __future__ import annotations
 
+import ast
 import json
 from pathlib import Path
 import re
@@ -72,6 +73,12 @@ def validate(data: dict) -> None:
         for kind in node.get("may_be_pulled_forward_by", []):
             if not isinstance(kind, str) or not kind.isupper():
                 raise PathError(f"{node['id']}: pull-forward triggers are decision kinds")
+        # Which tests build the node's structure (greg path --build). Their existence is a unit test's job, not
+        # this load's: `greg path` must run on an install that ships without tests/.
+        rehearsal = node.get("rehearsal")
+        if rehearsal is not None and not (isinstance(rehearsal, list) and rehearsal
+                                          and all(isinstance(r, str) and "::" in r for r in rehearsal)):
+            raise PathError(f"{node['id']}: rehearsal names pytest node ids (path::test)")
     for horizon in data.get("horizons") or []:
         for field in ("covers", "intended_effect", "node", "feasibility", "current_reality",
                       "nearest_precursor", "activation_evidence", "founder_sources"):
@@ -440,9 +447,8 @@ PREDICATES = {"vepmc_at_least_one": vepmc_at_least_one, "genesis_closure": genes
               "human_work_shared": human_work_shared, "venture_compounding": venture_compounding}
 
 
-def position(journal: Journal | None, data: dict | None = None) -> dict:
-    """The one operationally primary node and what stands between GREG and its exit."""
-    data = data or load()
+def _walk(journal: Journal | None, data: dict) -> tuple[list, dict | None, dict]:
+    """(achieved node ids, the active node, every node's measurement): the founder-tier walk of the path."""
     achieved, active, measurements = [], None, {}
     for node in data["nodes"]:
         if node["evidence_source"] == "repository":
@@ -465,6 +471,13 @@ def position(journal: Journal | None, data: dict | None = None) -> dict:
             achieved.append(node["id"])
         elif active is None:
             active = node
+    return achieved, active, measurements
+
+
+def position(journal: Journal | None, data: dict | None = None) -> dict:
+    """The one operationally primary node and what stands between GREG and its exit."""
+    data = data or load()
+    achieved, active, measurements = _walk(journal, data)
     ids = [n["id"] for n in data["nodes"]]
     following = data["nodes"][ids.index(active["id"]) + 1] if active and ids.index(active["id"]) + 1 < len(ids) \
         else None
@@ -533,6 +546,237 @@ def measure(journal: Journal | None, node_id: str, data: dict | None = None) -> 
         out["on_the_path"] = (f"not yet: the path stops at {active} until its exit evidence holds; this measurement "
                               "is reported, not counted")
     return out
+
+
+# -- the build frontier, beside the acceptance frontier ---------------------------------------------
+# Founder correction of 2026-10-30 (INTENT-20261030-BUILD-BEFORE-DEVICE-RUN): "Continue building and doing the
+# prompt verbatim. No real Chromebook run is needed. That is done when we completely build the prompt". The
+# sequence changed, not the evidence rule: the founder-device run is the final acceptance, after the build. So
+# how far the build has reached is read on its own axis, from the predicates' own ``structurally_met``, and it
+# moves nothing on the founder's path: ``achieved`` and ``position()['active']`` (the one operationally primary
+# node, the acceptance frontier) still move only at the founder tier.
+STRUCTURALLY_BUILT, BUILD_OPEN, NO_PREDICATE = "STRUCTURALLY_BUILT", "BUILD_OPEN", "NO_PREDICATE"
+BUILD_RULE = ("the build frontier is the first node, in path order, that is not structurally built; a node without a "
+              "ledger predicate stops it, and a node built past it is reported, never counted. Structural evidence (a "
+              "test key, a fixture, a rehearsal) moves only this frontier; the founder's path moves only at the "
+              "founder tier")
+# What the acceptance frontier waits for depends on its own build state: a node that is not built, or that has no
+# ledger predicate, is not one founder step from accepted, and saying so would be the inflated completion the
+# correction forbids (review WU01-F2).
+ACCEPTANCE_PENDING = "founder acceptance pending (final step)"
+ACCEPTANCE_AFTER_BUILD = "build open; acceptance follows the build"
+ACCEPTANCE_UNMEASURABLE = "no ledger predicate yet; cannot be accepted"
+ACCEPTANCE_STATUS = {STRUCTURALLY_BUILT: ACCEPTANCE_PENDING, BUILD_OPEN: ACCEPTANCE_AFTER_BUILD,
+                     NO_PREDICATE: ACCEPTANCE_UNMEASURABLE}
+MUTANT_GATE = Path(__file__).resolve().parents[1] / "scripts" / "ci" / "check_path_predicate_mutants.py"
+MUTATION_GUARD_RULE = ("mutation_guarded: the path-predicate mutation gate (scripts/ci/check_path_predicate_mutants.py) "
+                       "lists a live weakening of the node's predicate: its text occurs exactly once in greg/path.py, "
+                       "inside the node's predicate or a function that predicate calls, the replacement changes it, "
+                       "and the test it names is defined. The gate runs exactly the list read here. Whether that test "
+                       "catches it is evidenced only by a run of the gate, never by this read")
+PREDICATE_SOURCE = "greg/path.py"
+
+
+def _gate_mutants(gate: Path) -> list:
+    """The gate's ``MUTANTS``, parsed and never imported or run; [] when the gate is absent or the list is not a list
+    of plain literals. A literal that is not a list (``None``, a number, a set) reads as nothing, never a crash.
+
+    The gate runs this same read, so it must be the whole story (review WU01-ATK-2): ``MUTANTS`` is bound once, by
+    one top-level assignment, and named nowhere else in the gate (no second assignment, ``.clear()``, ``+=``,
+    ``del``, alias, attribute, ``global``, or ``"MUTANTS"`` string). A gate that names it again could run another
+    list, so it reads as nothing."""
+    try:
+        tree = ast.parse(Path(gate).read_text())
+    except (OSError, SyntaxError, ValueError, MemoryError, RecursionError):
+        return []
+    bindings = [s for s in tree.body if isinstance(s, ast.Assign) and len(s.targets) == 1
+                and isinstance(s.targets[0], ast.Name) and s.targets[0].id == "MUTANTS"]
+    if len(bindings) != 1:
+        return []
+    for node in ast.walk(tree):
+        if ((isinstance(node, ast.Name) and node.id == "MUTANTS" and node is not bindings[0].targets[0])
+                or (isinstance(node, (ast.Global, ast.Nonlocal)) and "MUTANTS" in node.names)
+                or (isinstance(node, ast.Constant) and node.value == "MUTANTS")
+                or "MUTANTS" in (getattr(node, "name", None), getattr(node, "asname", None),
+                                 getattr(node, "arg", None), getattr(node, "attr", None))):
+            return []
+    try:
+        mutants = ast.literal_eval(bindings[0].value)
+    except (ValueError, TypeError, MemoryError, RecursionError):   # e.g. {[1]: 2}: unhashable while evaluated
+        return []
+    return list(mutants) if isinstance(mutants, (list, tuple)) else []
+
+
+def _predicate_lines(root: Path) -> dict:
+    """{node id: set of 1-based lines of greg/path.py}: the node's predicate (``PREDICATES[name]``) and every
+    module-level function it reaches by name, as written in the repository at ``root``. {} when unreadable."""
+    try:
+        tree = ast.parse((root / PREDICATE_SOURCE).read_text())
+        nodes = json.loads((root / "greg" / "path.json").read_text())["nodes"]
+    except (OSError, SyntaxError, ValueError, KeyError, TypeError, MemoryError, RecursionError):
+        return {}
+    functions = {s.name: s for s in tree.body if isinstance(s, (ast.FunctionDef, ast.AsyncFunctionDef))}
+    table = next((s.value for s in tree.body if isinstance(s, ast.Assign) and isinstance(s.value, ast.Dict)
+                  and any(isinstance(t, ast.Name) and t.id == "PREDICATES" for t in s.targets)), None)
+    named = {} if table is None else {k.value: v.id for k, v in zip(table.keys, table.values)
+                                      if isinstance(k, ast.Constant) and isinstance(v, ast.Name)}
+    lines = {}
+    for node in nodes if isinstance(nodes, list) else []:
+        if not (isinstance(node, dict) and isinstance(node.get("id"), str) and isinstance(node.get("predicate"), str)):
+            continue
+        start = named.get(node["predicate"])
+        reached, todo = set(), [start] if start in functions else []
+        while todo:
+            name = todo.pop()
+            if name not in reached:
+                reached.add(name)
+                todo += [n.id for n in ast.walk(functions[name]) if isinstance(n, ast.Name) and n.id in functions]
+        if reached:
+            lines[node["id"]] = {line for f in reached
+                                 for line in range(functions[f].lineno, functions[f].end_lineno + 1)}
+    return lines
+
+
+def _test_defined(root: Path, test: str) -> bool:
+    """Whether ``path::name`` (or ``path::Class::name``) names a test pytest would collect: a ``test*`` function
+    defined at module level, or in that class, in the parsed file. Text that only looks like one (a ``def`` in a
+    docstring or a string, a nested function, a helper) is not a test."""
+    file, _, name = test.partition("::")
+    parts = [p.split("[")[0] for p in name.split("::")] if name else []
+    try:
+        tree = ast.parse((root / file).read_text())
+    except (OSError, SyntaxError, ValueError, MemoryError, RecursionError):
+        return False
+    body = tree.body
+    for cls in parts[:-1]:
+        body = next((s.body for s in body if isinstance(s, ast.ClassDef) and s.name == cls), None)
+        if body is None:
+            return False
+    found = [s for s in body if isinstance(s, (ast.FunctionDef, ast.AsyncFunctionDef))]
+    return bool(parts) and parts[-1].startswith("test") and any(s.name == parts[-1] for s in found)
+
+
+def _mutant_liveness(gate: Path) -> list:
+    """(mutant, [why it cannot be run as written]) for every listed mutant; an empty list means live.
+
+    Live: a (name, node or None, file, old, new, test) literal whose ``old`` text occurs exactly once in ``file``,
+    whose ``new`` text differs from it, and whose test (``path::name``) is defined (``_test_defined``). A mutant
+    tagged with a node must also sit on that node's predicate: in greg/path.py, inside the predicate or a function
+    it calls (``_predicate_lines``); text anywhere else weakens some other code. Files are read relative to the
+    repository that holds the gate (``<root>/scripts/ci/<gate>``). A stale, no-op or off-target mutant weakens
+    nothing of its node, and a mutant naming no test can be caught by nothing; this read says so without running
+    the gate."""
+    root = Path(gate).resolve().parent.parent.parent
+    predicate_lines = None
+    out = []
+    for mutant in _gate_mutants(gate):
+        if not (isinstance(mutant, tuple) and len(mutant) == 6 and (mutant[1] is None or isinstance(mutant[1], str))
+                and all(isinstance(mutant[i], str) for i in (0, 2, 3, 4, 5))):
+            out.append((mutant, ["not a (name, node, file, old, new, test) literal"]))
+            continue
+        _name, node, relative, old, new, test = mutant
+        why = []
+        try:
+            text = (root / relative).read_text()
+            found = text.count(old)
+        except (OSError, ValueError):
+            found = None
+            why.append(f"no file {relative}")
+        if found is not None and found != 1:
+            why.append(f"stale: its text occurs {found} times in {relative}")
+        if new == old:
+            why.append("no-op: its replacement equals its text")
+        if not _test_defined(root, test):
+            why.append(f"no test {test}")
+        if node is not None and found == 1:
+            predicate_lines = _predicate_lines(root) if predicate_lines is None else predicate_lines
+            first = text[:text.index(old)].count("\n") + 1
+            span = set(range(first, first + old.count("\n") - old.endswith("\n") + 1))
+            on_source = (root / relative).resolve() == (root / PREDICATE_SOURCE).resolve()
+            if not (on_source and span <= predicate_lines.get(node, set())):
+                why.append(f"off target: its text is not in {node}'s predicate in {PREDICATE_SOURCE}")
+        out.append((mutant, why))
+    return out
+
+
+def mutant_problems(gate: Path | None = None) -> list:
+    """(mutant name, why) for every listed mutant that is not live (``_mutant_liveness``)."""
+    return [(m[0] if isinstance(m, tuple) and m and isinstance(m[0], str) else repr(m)[:80], reason)
+            for m, why in _mutant_liveness(Path(gate or MUTANT_GATE)) for reason in why]
+
+
+def mutation_guarded(gate: Path | None = None) -> set:
+    """Node ids whose predicate the path-predicate mutation gate lists a live weakening for (``_mutant_liveness``).
+
+    Listed, not caught: the gate fails when any mutant survives its test, but only a run of the gate shows that.
+    An install without the gate, a list that is not plain literals, or a node whose every mutant is stale, a no-op
+    or names no test, guards nothing."""
+    return {m[1] for m, why in _mutant_liveness(Path(gate or MUTANT_GATE)) if not why and m[1] is not None}
+
+
+def build_status(journal: Journal | None, data: dict | None = None) -> dict:
+    """How much of the path is structurally built, beside the one node the founder's path stops at.
+
+    Per node: STRUCTURALLY_BUILT when its ledger predicate is structurally met on this ledger (a repository node
+    when its attestation says ACHIEVED), BUILD_OPEN when it is not, NO_PREDICATE when the node has no ledger
+    predicate yet (never built, however much code exists for it). ``mutation_guarded`` says whether the mutation
+    gate lists a live weakening of the node's predicate (``MUTATION_GUARD_RULE``); that a test catches it is shown
+    only by running the gate. The acceptance frontier's status follows its own build state (``ACCEPTANCE_STATUS``).
+    Nothing here is founder use, external verification or authority, and nothing here moves ``achieved``."""
+    data = data or load()
+    achieved, active, measurements = _walk(journal, data)
+    guarded = mutation_guarded()
+    rows, built, frontier = [], [], None
+    for node in data["nodes"]:
+        measured = measurements[node["id"]]
+        if node["evidence_source"] == "repository":
+            status = STRUCTURALLY_BUILT if node["attested"].startswith("ACHIEVED") else BUILD_OPEN
+        elif not node.get("predicate"):
+            status = NO_PREDICATE
+        else:
+            status = STRUCTURALLY_BUILT if measured.get("structurally_met") else BUILD_OPEN
+        if frontier is None and status == STRUCTURALLY_BUILT:
+            built.append(node["id"])
+        elif frontier is None:
+            frontier = node
+        rows.append({"id": node["id"], "title": node["title"], "build": status,
+                     "evidence_level": measured.get("evidence_level", measured.get("attested", "NONE")),
+                     "counted": node["id"] in built, "mutation_guarded": node["id"] in guarded,
+                     "operationally_primary": active is not None and node["id"] == active["id"],
+                     **({"why": measured["not_yet_measurable"]} if "not_yet_measurable" in measured else {}),
+                     **({"rehearsed_by": node["rehearsal"]} if node.get("rehearsal") else {})})
+    by_id = {r["id"]: r for r in rows}
+    # The build-phase depth: consecutive predicate nodes, from the first, built on THIS ledger and mutation-guarded
+    # (a live weakening listed in the gate; caught only where the gate is run).
+    # It is the path's build depth only on one body driven through the product CLI; separate bodies do not add up.
+    depth = 0
+    for node in data["nodes"]:
+        if node["evidence_source"] == "repository":
+            continue
+        row = by_id[node["id"]]
+        if not (node.get("predicate") and row["counted"] and row["mutation_guarded"]):
+            break
+        depth += 1
+    return {
+        "reality_status": "RETAINED_EVIDENCE_PROJECTION",
+        "build_frontier": None if frontier is None else {
+            "id": frontier["id"], "title": frontier["title"], "build": by_id[frontier["id"]]["build"],
+            "gate": frontier["gate"], "measurement": measurements[frontier["id"]]},
+        "acceptance_frontier": None if active is None else {
+            "id": active["id"], "title": active["title"], "operationally_primary": True,
+            "build": by_id[active["id"]]["build"], "status": ACCEPTANCE_STATUS[by_id[active["id"]]["build"]],
+            "evidence_level": by_id[active["id"]]["evidence_level"]},
+        "achieved": achieved,
+        "built": built,
+        "built_ahead": [{"id": r["id"], "title": r["title"]} for r in rows
+                        if r["build"] == STRUCTURALLY_BUILT and not r["counted"]],
+        "structural_depth": depth,
+        "nodes": rows,
+        "rule": BUILD_RULE,
+        "mutation_guard": MUTATION_GUARD_RULE,
+        "sequencing": "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN: the founder-device run is the final acceptance, "
+                      "after the build; it is not redefined, and a test key never moves it",
+    }
 
 
 # -- developmental inheritance: rules for placing lineages on the path ---------------------

@@ -49,6 +49,8 @@ conflict-resolution hierarchy).
 | Constitutional integrity | `python -m governance.integrity --check` |
 | Verifier | `python verifier/v2/verify.py` (V1–V5) |
 | Before running tests | `python scripts/dev_env_check.py` names missing modules, a tmpfs `/tmp`, a shallow clone and missing bubblewrap, pdftotext or Playwright: failures that come from the machine, not the code |
+| Land unfinished work (integrator) | the **intake queue** at the top of the newest `docs/collaboration/BRANCH-CATALOG-*.md`: open PRs that merge into the line with no conflict today, smallest first. Take from the top; a clean merge still needs its tests and review |
+| Find a document, record or branch | `docs/CATALOG.md` (every file under `docs/`, by area, kind and date) and the newest `docs/collaboration/BRANCH-CATALOG-*.md` (every branch: finished or not, and which PR carries it) |
 | Structural review | `python scripts/repo_review.py` (map, layering, mutation-gate liveness; `--lint` adds a ruff trend); cadence in `docs/REVIEW_CADENCE.md` |
 | CI | `.github/workflows/canonical-ci.yml` (job 1 is the full suite; the mutation gates run in their own job; read the file for the current job list rather than trusting a count here), plus `directive-completion.yml`, `build-frontier.yml`, `collaboration-receipt.yml` |
 | Live branch | the integration branch named on #96 (today `claude/greg-full-machine-completion-whgiee`, draft #196). `main` is behind it |

@@ -8,6 +8,9 @@
 | `p8_*`, `*_pilot.py`, `*_eval.py`, `qualify_*.py` | evidence builders and pilots for frozen evaluations | by hand, under a pre-registration |
 | `mind_status.py`, `mission_trace.py`, `verify_one_machine.py` | status and proof reports | by hand; some imported by tests |
 | `repo_review.py` | the recurring structural review: map, layering, mutation-gate liveness, lint trend (`docs/REVIEW_CADENCE.md`) | weekly workflow `repository-review.yml`; tests |
+| `docs_catalog.py` | generates `docs/CATALOG.md`: every document and record once, by area, kind and date; `--check` reports staleness | by hand at intake; weekly workflow (report only) |
+| `branch_catalog.py` | classifies every remote branch: finished (on the line), open PR, merged elsewhere, closed, or unclaimed commits | weekly workflow artifact; dated snapshots in `docs/collaboration/BRANCH-CATALOG-*.md` |
+| `ci/mutation_harness.py` | the shared loop for mutation gates (scratch copy, STALE check, FAILED-only catch). New gates call `run(MUTANTS, TESTS, prefix=...)` and keep their literal `MUTANTS` list | three gates so far; `tests/unit/test_mutation_harness.py` |
 | `dev_env_check.py` | environment doctor: what will fail because of this machine | by hand before tests; read-only |
 
 Known gap (2026-11-05): `ci/check_seed_mutants.py` is run by no workflow. It is the one entry in `repo_review.py`'s shrink-only `KEPT_UNWIRED_GATES`; any new unwired gate fails `tests/unit/test_repo_health_gates.py`.

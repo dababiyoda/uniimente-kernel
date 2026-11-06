@@ -46,8 +46,8 @@ KEPT_TWO_WAY = {
     ("capabilities", "cortex"): "router and cortex reference each other's genomes",
     ("capabilities", "greg"): "greg registers capabilities; the router reads greg genomes",
     ("capabilities", "provenance"): "capabilities/router.py uses provenance.digests (the right direction, #254); the "
-                                    "cycle is only the kept boundary defect provenance/witness.py -> capabilities "
-                                    "(KEPT_BOUNDARY, pain point S-2), and goes when that is fixed",
+                                    "cycle is only the deprecated wrapper provenance/witness.py capability_genome() "
+                                    "(KEPT_BOUNDARY, pain point S-2), and goes when the wrapper is removed",
     ("closure", "egregore"): "closure probes egregore; egregore reports closure",
     ("closure", "evolution"): "closure probes evolution; evolution uses closure fixtures",
     ("closure", "foundry"): "closure probes foundry; foundry uses closure fixtures",
@@ -57,9 +57,10 @@ KEPT_TWO_WAY = {
 }
 KEPT_BOUNDARY = {
     ("provenance", "capabilities"):
-        "provenance/witness.py capability_genome() imports capabilities.genome lazily; "
-        "calling it from a boundary-only install raises ImportError (recorded defect, "
-        "docs/collaboration/CONTRIBUTOR-PAIN-POINTS-2026-11-05.md S-2)",
+        "only the deprecated wrapper provenance/witness.py capability_genome() imports "
+        "capabilities.specs; the genome itself is plain data (GENOME_SPEC) and a "
+        "boundary-only install gets a clear ImportError (test_boundary_distribution_works_"
+        "installed_alone). Removing the wrapper needs a boundary version bump: owner decision (S-2)",
 }
 
 # Entry surfaces that must defer to the canonical reading order in AGENTS.md.

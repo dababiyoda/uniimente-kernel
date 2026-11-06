@@ -85,3 +85,10 @@ Contributors independently posted the following on #96 after the survey (comment
 | S-4 | No lint | **measured:** `repo_review.py --lint` baseline is 447 ruff F/E9 findings (F811 249, F401 167, F841 24, F541 6, F402 1). A trend in the weekly report, never a gate |
 
 **Later the same day, 13:00Z:** the #196 integrator adopted the contributor proposal for P-2. Base `6a96e020` runs the mutation gates as Canonical CI job "10 · Mutation gates" (26 min on #271's run 42031832471), separate from job 1's full suite. P-2's status is **addressed upstream (split landed)**. Whether job 1 alone now fits its limit is measured by the next runs, not assumed here.
+
+**2026-11-06, S-2 (boundary import):** fixed without breaking callers.
+- `provenance/witness.py` now declares its genome as plain data (`GENOME_SPEC`), and the kernel builds it with `capabilities.specs.genome_from_spec`.
+- `capability_genome()` is kept as a deprecated wrapper. In a boundary-only install it fails with an ImportError that names `GENOME_SPEC`, where before it failed with a bare `ModuleNotFoundError`.
+- `tests/unit/test_import_layering.py::test_boundary_distribution_works_installed_alone` installs only the four published packages and imports every module. It fails on the old code and passes now.
+- The wrapper is the last boundary import. Removing it needs a boundary version bump, which is the boundary owner's decision, so the `KEPT_BOUNDARY` entry stays with its new reason.
+- `capabilities/genome.py` is untouched because frozen evaluations pin it by digest.

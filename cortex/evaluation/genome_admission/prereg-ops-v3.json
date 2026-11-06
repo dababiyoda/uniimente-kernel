@@ -1,0 +1,35 @@
+{
+ "schema": "greg-preregistration/1",
+ "id": "operation-admission-v3",
+ "date": "2026-10-16",
+ "owner": "Track B session (PR #179), the converged Mind; review of #179, M17",
+ "question": "On the converged tree, on fresh seeds, does each of PR #155's benchmarked operation families keep the admission status its lineage measured, under the same benchmarks and the same frozen status rule?",
+ "why": "#155's frozen runners refuse on this tree (FROZEN_INPUT_CHANGED) and #158's harness enumerates genome executables only, so a positive operation verdict whose code closure drifts could be demoted but never re-admitted. This run is the first use of a live harness for those families.",
+ "runner": "cortex/evaluation/genome_admission/run_ops_v3.py",
+ "reused_unchanged": [
+  "cortex/evaluation/genome_admission/run.py: BENCHMARKS (12 families), STRUCTURAL, status (the rule), call and GEOMETRY",
+  "cortex/evaluation/genome_admission/run_v2.py: BENCHMARKS (robust_pattern, crowd, swarm, blackbox), call, GEOMETRY and BUDGET",
+  "cortex/evaluation/pr155_crowd_sparse/run.py: bench (sparse, structured-error crowds), GEOMETRY"
+ ],
+ "families": ["blackbox", "collective", "control", "crowd", "evolutionary", "exact", "game", "graph", "information", "micro", "pattern", "probabilistic", "robust_pattern", "sequential", "simulation", "swarm"],
+ "subgeometries": {"crowd_sparse": "the sparse-crowd geometry for the crowd family, reported as its own row"},
+ "structural_not_measured": ["search", "estimation", "formal", "optimization", "causal", "semantic", "human", "evidence", "protection"],
+ "seeds": [5001, 5040],
+ "seed_check": "No suite in this repository generates seeds 5001-5040 (searched cortex/, greg/, scripts/ and tests/ on 2026-10-16).",
+ "rule": "v1's frozen rule, unchanged: REJECTED when the baseline is better on more items with one-sided sign test p < 0.05; SUPERSEDED when the candidate beats the baseline (p < 0.05) and the competitor beats the candidate (p < 0.05); DEFAULT_FOR_GEOMETRY when the candidate beats the baseline (p < 0.05) and no competitor beats it (p < 0.05); EXPERIMENTAL otherwise. 'Better' is strictly better by more than 1e-9 on the family's metric.",
+ "freeze": "freeze-ops-v3.json binds the digests of the runner, the three reused runners, this file, greg/cognition/repertoire.py and greg/cognition/solvers.py, plus the static dependency closure of each family's dispatched solver (greg.cognition.code_binding). The run refuses on a dirty tree or on any changed input.",
+ "run": "once, from a clean tree at the freeze commit, under python -I. A crash or refusal is disclosed with a new freeze path; no partial result is reported.",
+ "consumption": "scripts/build_mind_evidence_index.py appends the result to OPERATION_RUNS after #155's three runs: the families row first, then crowd_sparse for crowd, in the order #155's lineage ran them. The latest run sets the routed status; every earlier verdict stays in history. ERRATA keyed on (family, raw label) continue to apply.",
+ "interpretation": [
+  "A status equal to #155's is a replication on fresh seeds at this tree's code.",
+  "A different status is reported as a disagreement with both runs kept in history. It is not resolved post hoc, and no benchmark, arm or threshold is changed in response.",
+  "A positive status binds the closures in the freeze; any later closure change routes the family as UNEVALUATED until this harness runs again under a new freeze."
+ ],
+ "known_limitations": [
+  "collective: v1's baseline uses the generator's hidden observer accuracies and is not deployable (review of #179, M3). Replicated unchanged; the index erratum on a REJECTED reading still applies.",
+  "These are synthetic native geometries. No result here is a real-world outcome.",
+  "Latency is wall clock on a shared container; it is a diagnostic, not part of the rule."
+ ],
+ "development_runs_disclosed": "Before this file was committed, measure() ran once on seeds 1-3 only to check that every benchmark executes on this tree (all statuses EXPERIMENTAL at n = 3; nothing was tuned and no held-out seed was generated).",
+ "authority": "None. No verdict attaches a family; attaching remains the founder's decision."
+}

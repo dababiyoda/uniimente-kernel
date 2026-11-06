@@ -1,0 +1,979 @@
+{
+ "declared_bounds": {
+  "max_edges": 10000,
+  "max_vertices": 10000
+ },
+ "declared_equals_derived": true,
+ "derived_bounds": {
+  "max_edges": 10000,
+  "max_vertices": 10000
+ },
+ "head": "d56fed24b6b611c9144313b69902ed40306b5371",
+ "host": {
+  "affinity": [
+   1
+  ],
+  "loadavg": [
+   "1.68",
+   "2.02",
+   "2.97"
+  ],
+  "python": "3.13.16"
+ },
+ "label": "DEVELOPMENT ONLY: exploratory, not confirmatory, not admission; genome dev seeds 0-9 and the natops development part only",
+ "latency_target_s": 0.5,
+ "levels": [
+  {
+   "edge_cap": 1250,
+   "host": {
+    "affinity": [
+     1
+    ],
+    "loadavg": [
+     "1.58",
+     "2.02",
+     "2.98"
+    ],
+    "python": "3.13.16"
+   },
+   "max_vertices_probed": 1125,
+   "rows": [
+    {
+     "case": "dense n=52 m=1250 seed=0",
+     "cpu_total_max_s": 0.1123,
+     "edges": 1250,
+     "k": 22,
+     "solve_max_s": 0.1135,
+     "status": "ANSWER",
+     "total_max_s": 0.1153,
+     "verify_max_s": 0.0018,
+     "vertices": 52
+    },
+    {
+     "case": "dense n=52 m=1250 seed=0",
+     "cpu_total_max_s": 0.0135,
+     "edges": 1250,
+     "k": 22,
+     "solve_max_s": 0.0119,
+     "status": "ANSWER",
+     "total_max_s": 0.0135,
+     "verify_max_s": 0.0022,
+     "vertices": 52
+    },
+    {
+     "case": "dense n=125 m=1250 seed=0",
+     "cpu_total_max_s": 0.0112,
+     "edges": 1250,
+     "k": 11,
+     "solve_max_s": 0.0095,
+     "status": "ANSWER",
+     "total_max_s": 0.0112,
+     "verify_max_s": 0.0017,
+     "vertices": 125
+    },
+    {
+     "case": "dense n=250 m=1250 seed=0",
+     "cpu_total_max_s": 0.0123,
+     "edges": 1250,
+     "k": 7,
+     "solve_max_s": 0.0107,
+     "status": "ANSWER",
+     "total_max_s": 0.0123,
+     "verify_max_s": 0.0016,
+     "vertices": 250
+    },
+    {
+     "case": "long sparse n=1125 seed=0",
+     "cpu_total_max_s": 0.0253,
+     "edges": 1250,
+     "k": 1,
+     "solve_max_s": 0.0241,
+     "status": "ANSWER",
+     "total_max_s": 0.0263,
+     "verify_max_s": 0.0022,
+     "vertices": 1125
+    },
+    {
+     "case": "dependency n=850 seed=1",
+     "cpu_total_max_s": 0.0332,
+     "edges": 1192,
+     "k": 3,
+     "solve_max_s": 0.0319,
+     "status": "ANSWER",
+     "total_max_s": 0.0337,
+     "verify_max_s": 0.0019,
+     "vertices": 512
+    },
+    {
+     "case": "dense n=52 m=1250 seed=1",
+     "cpu_total_max_s": 0.0171,
+     "edges": 1250,
+     "k": 20,
+     "solve_max_s": 0.0149,
+     "status": "ANSWER",
+     "total_max_s": 0.0171,
+     "verify_max_s": 0.0023,
+     "vertices": 52
+    },
+    {
+     "case": "dense n=52 m=1250 seed=1",
+     "cpu_total_max_s": 0.0129,
+     "edges": 1250,
+     "k": 19,
+     "solve_max_s": 0.0132,
+     "status": "ANSWER",
+     "total_max_s": 0.0179,
+     "verify_max_s": 0.0047,
+     "vertices": 52
+    },
+    {
+     "case": "dense n=125 m=1250 seed=1",
+     "cpu_total_max_s": 0.0156,
+     "edges": 1250,
+     "k": 9,
+     "solve_max_s": 0.0135,
+     "status": "ANSWER",
+     "total_max_s": 0.0157,
+     "verify_max_s": 0.0023,
+     "vertices": 125
+    },
+    {
+     "case": "dense n=250 m=1250 seed=1",
+     "cpu_total_max_s": 0.0026,
+     "edges": 1250,
+     "k": 0,
+     "solve_max_s": 0.0012,
+     "status": "ANSWER",
+     "total_max_s": 0.0026,
+     "verify_max_s": 0.0014,
+     "vertices": 250
+    },
+    {
+     "case": "long sparse n=1125 seed=1",
+     "cpu_total_max_s": 0.0267,
+     "edges": 1250,
+     "k": 1,
+     "solve_max_s": 0.0242,
+     "status": "ANSWER",
+     "total_max_s": 0.0267,
+     "verify_max_s": 0.0025,
+     "vertices": 1125
+    },
+    {
+     "case": "dependency n=850 seed=2",
+     "cpu_total_max_s": 0.016,
+     "edges": 1180,
+     "k": 1,
+     "solve_max_s": 0.0157,
+     "status": "ANSWER",
+     "total_max_s": 0.0172,
+     "verify_max_s": 0.0015,
+     "vertices": 500
+    },
+    {
+     "case": "dense n=52 m=1250 seed=2",
+     "cpu_total_max_s": 0.0111,
+     "edges": 1250,
+     "k": 20,
+     "solve_max_s": 0.0103,
+     "status": "ANSWER",
+     "total_max_s": 0.0119,
+     "verify_max_s": 0.0017,
+     "vertices": 52
+    },
+    {
+     "case": "dense n=52 m=1250 seed=2",
+     "cpu_total_max_s": 0.0107,
+     "edges": 1250,
+     "k": 20,
+     "solve_max_s": 0.0092,
+     "status": "ANSWER",
+     "total_max_s": 0.0112,
+     "verify_max_s": 0.0025,
+     "vertices": 52
+    },
+    {
+     "case": "dense n=125 m=1250 seed=2",
+     "cpu_total_max_s": 0.0103,
+     "edges": 1250,
+     "k": 7,
+     "solve_max_s": 0.0092,
+     "status": "ANSWER",
+     "total_max_s": 0.0107,
+     "verify_max_s": 0.0018,
+     "vertices": 125
+    },
+    {
+     "case": "dense n=250 m=1250 seed=2",
+     "cpu_total_max_s": 0.0238,
+     "edges": 1250,
+     "k": 4,
+     "solve_max_s": 0.0227,
+     "status": "ANSWER",
+     "total_max_s": 0.0244,
+     "verify_max_s": 0.0018,
+     "vertices": 250
+    },
+    {
+     "case": "long sparse n=1125 seed=2",
+     "cpu_total_max_s": 0.0277,
+     "edges": 1250,
+     "k": 1,
+     "solve_max_s": 0.0254,
+     "status": "ANSWER",
+     "total_max_s": 0.0277,
+     "verify_max_s": 0.0023,
+     "vertices": 1125
+    },
+    {
+     "case": "layered 34 wide x 2",
+     "cpu_total_max_s": 0.0163,
+     "edges": 1224,
+     "k": 34,
+     "solve_max_s": 0.0157,
+     "status": "ANSWER",
+     "total_max_s": 0.0172,
+     "verify_max_s": 0.0015,
+     "vertices": 70
+    },
+    {
+     "case": "layered 24 wide x 3",
+     "cpu_total_max_s": 0.0188,
+     "edges": 1200,
+     "k": 24,
+     "solve_max_s": 0.017,
+     "status": "ANSWER",
+     "total_max_s": 0.0188,
+     "verify_max_s": 0.0018,
+     "vertices": 74
+    },
+    {
+     "case": "layered 20 wide x 3",
+     "cpu_total_max_s": 0.0125,
+     "edges": 840,
+     "k": 20,
+     "solve_max_s": 0.0114,
+     "status": "ANSWER",
+     "total_max_s": 0.0125,
+     "verify_max_s": 0.0011,
+     "vertices": 62
+    }
+   ],
+   "under_target": true,
+   "worst_cpu_total_s": 0.1123,
+   "worst_wall_total_s": 0.1153
+  },
+  {
+   "edge_cap": 2500,
+   "host": {
+    "affinity": [
+     1
+    ],
+    "loadavg": [
+     "1.58",
+     "2.02",
+     "2.98"
+    ],
+    "python": "3.13.16"
+   },
+   "max_vertices_probed": 2250,
+   "rows": [
+    {
+     "case": "dependency n=1700 seed=0",
+     "cpu_total_max_s": 0.0422,
+     "edges": 2470,
+     "k": 1,
+     "solve_max_s": 0.0391,
+     "status": "ANSWER",
+     "total_max_s": 0.0426,
+     "verify_max_s": 0.0036,
+     "vertices": 1021
+    },
+    {
+     "case": "dense n=72 m=2500 seed=0",
+     "cpu_total_max_s": 0.0229,
+     "edges": 2500,
+     "k": 31,
+     "solve_max_s": 0.0201,
+     "status": "ANSWER",
+     "total_max_s": 0.0229,
+     "verify_max_s": 0.003,
+     "vertices": 72
+    },
+    {
+     "case": "dense n=75 m=2500 seed=0",
+     "cpu_total_max_s": 0.0255,
+     "edges": 2500,
+     "k": 36,
+     "solve_max_s": 0.0224,
+     "status": "ANSWER",
+     "total_max_s": 0.0255,
+     "verify_max_s": 0.0034,
+     "vertices": 75
+    },
+    {
+     "case": "dense n=250 m=2500 seed=0",
+     "cpu_total_max_s": 0.0198,
+     "edges": 2500,
+     "k": 6,
+     "solve_max_s": 0.0172,
+     "status": "ANSWER",
+     "total_max_s": 0.0203,
+     "verify_max_s": 0.0031,
+     "vertices": 250
+    },
+    {
+     "case": "dense n=500 m=2500 seed=0",
+     "cpu_total_max_s": 0.0202,
+     "edges": 2500,
+     "k": 3,
+     "solve_max_s": 0.0173,
+     "status": "ANSWER",
+     "total_max_s": 0.0204,
+     "verify_max_s": 0.0032,
+     "vertices": 500
+    },
+    {
+     "case": "long sparse n=2250 seed=0",
+     "cpu_total_max_s": 0.068,
+     "edges": 2500,
+     "k": 1,
+     "solve_max_s": 0.0632,
+     "status": "ANSWER",
+     "total_max_s": 0.068,
+     "verify_max_s": 0.0051,
+     "vertices": 2250
+    },
+    {
+     "case": "dense n=72 m=2500 seed=1",
+     "cpu_total_max_s": 0.0216,
+     "edges": 2500,
+     "k": 38,
+     "solve_max_s": 0.0189,
+     "status": "ANSWER",
+     "total_max_s": 0.0218,
+     "verify_max_s": 0.0034,
+     "vertices": 72
+    },
+    {
+     "case": "dense n=75 m=2500 seed=1",
+     "cpu_total_max_s": 0.0359,
+     "edges": 2500,
+     "k": 29,
+     "solve_max_s": 0.0315,
+     "status": "ANSWER",
+     "total_max_s": 0.0362,
+     "verify_max_s": 0.0047,
+     "vertices": 75
+    },
+    {
+     "case": "dense n=250 m=2500 seed=1",
+     "cpu_total_max_s": 0.0279,
+     "edges": 2500,
+     "k": 8,
+     "solve_max_s": 0.0237,
+     "status": "ANSWER",
+     "total_max_s": 0.0279,
+     "verify_max_s": 0.0042,
+     "vertices": 250
+    },
+    {
+     "case": "dense n=500 m=2500 seed=1",
+     "cpu_total_max_s": 0.019,
+     "edges": 2500,
+     "k": 5,
+     "solve_max_s": 0.0162,
+     "status": "ANSWER",
+     "total_max_s": 0.019,
+     "verify_max_s": 0.0028,
+     "vertices": 500
+    },
+    {
+     "case": "long sparse n=2250 seed=1",
+     "cpu_total_max_s": 0.0612,
+     "edges": 2500,
+     "k": 1,
+     "solve_max_s": 0.0568,
+     "status": "ANSWER",
+     "total_max_s": 0.0612,
+     "verify_max_s": 0.0045,
+     "vertices": 2250
+    },
+    {
+     "case": "dependency n=1700 seed=2",
+     "cpu_total_max_s": 0.0274,
+     "edges": 2467,
+     "k": 1,
+     "solve_max_s": 0.0242,
+     "status": "ANSWER",
+     "total_max_s": 0.0274,
+     "verify_max_s": 0.0034,
+     "vertices": 1023
+    },
+    {
+     "case": "dense n=72 m=2500 seed=2",
+     "cpu_total_max_s": 0.0235,
+     "edges": 2500,
+     "k": 33,
+     "solve_max_s": 0.0288,
+     "status": "ANSWER",
+     "total_max_s": 0.0318,
+     "verify_max_s": 0.0039,
+     "vertices": 72
+    },
+    {
+     "case": "dense n=75 m=2500 seed=2",
+     "cpu_total_max_s": 0.0306,
+     "edges": 2500,
+     "k": 29,
+     "solve_max_s": 0.0278,
+     "status": "ANSWER",
+     "total_max_s": 0.0306,
+     "verify_max_s": 0.0032,
+     "vertices": 75
+    },
+    {
+     "case": "dense n=250 m=2500 seed=2",
+     "cpu_total_max_s": 0.0177,
+     "edges": 2500,
+     "k": 5,
+     "solve_max_s": 0.0148,
+     "status": "ANSWER",
+     "total_max_s": 0.0177,
+     "verify_max_s": 0.0031,
+     "vertices": 250
+    },
+    {
+     "case": "dense n=500 m=2500 seed=2",
+     "cpu_total_max_s": 0.0208,
+     "edges": 2500,
+     "k": 4,
+     "solve_max_s": 0.0175,
+     "status": "ANSWER",
+     "total_max_s": 0.0209,
+     "verify_max_s": 0.0033,
+     "vertices": 500
+    },
+    {
+     "case": "long sparse n=2250 seed=2",
+     "cpu_total_max_s": 0.0602,
+     "edges": 2500,
+     "k": 1,
+     "solve_max_s": 0.0466,
+     "status": "ANSWER",
+     "total_max_s": 0.0603,
+     "verify_max_s": 0.0142,
+     "vertices": 2250
+    },
+    {
+     "case": "layered 49 wide x 2",
+     "cpu_total_max_s": 0.0359,
+     "edges": 2499,
+     "k": 49,
+     "solve_max_s": 0.0333,
+     "status": "ANSWER",
+     "total_max_s": 0.0364,
+     "verify_max_s": 0.0032,
+     "vertices": 100
+    },
+    {
+     "case": "layered 34 wide x 3",
+     "cpu_total_max_s": 0.0365,
+     "edges": 2380,
+     "k": 34,
+     "solve_max_s": 0.0349,
+     "status": "ANSWER",
+     "total_max_s": 0.0379,
+     "verify_max_s": 0.0029,
+     "vertices": 104
+    },
+    {
+     "case": "layered 20 wide x 6",
+     "cpu_total_max_s": 0.0369,
+     "edges": 2040,
+     "k": 20,
+     "solve_max_s": 0.0347,
+     "status": "ANSWER",
+     "total_max_s": 0.0372,
+     "verify_max_s": 0.0027,
+     "vertices": 122
+    }
+   ],
+   "under_target": true,
+   "worst_cpu_total_s": 0.068,
+   "worst_wall_total_s": 0.068
+  },
+  {
+   "edge_cap": 5000,
+   "host": {
+    "affinity": [
+     1
+    ],
+    "loadavg": [
+     "1.62",
+     "2.02",
+     "2.98"
+    ],
+    "python": "3.13.16"
+   },
+   "max_vertices_probed": 4500,
+   "rows": [
+    {
+     "case": "dense n=102 m=5000 seed=0",
+     "cpu_total_max_s": 0.0657,
+     "edges": 5000,
+     "k": 49,
+     "solve_max_s": 0.0486,
+     "status": "ANSWER",
+     "total_max_s": 0.0666,
+     "verify_max_s": 0.0185,
+     "vertices": 102
+    },
+    {
+     "case": "dense n=151 m=5000 seed=0",
+     "cpu_total_max_s": 0.0507,
+     "edges": 5000,
+     "k": 42,
+     "solve_max_s": 0.0446,
+     "status": "ANSWER",
+     "total_max_s": 0.0509,
+     "verify_max_s": 0.0066,
+     "vertices": 151
+    },
+    {
+     "case": "dense n=500 m=5000 seed=0",
+     "cpu_total_max_s": 0.0511,
+     "edges": 5000,
+     "k": 9,
+     "solve_max_s": 0.0459,
+     "status": "ANSWER",
+     "total_max_s": 0.0527,
+     "verify_max_s": 0.0096,
+     "vertices": 500
+    },
+    {
+     "case": "dense n=1000 m=5000 seed=0",
+     "cpu_total_max_s": 0.054,
+     "edges": 5000,
+     "k": 4,
+     "solve_max_s": 0.0363,
+     "status": "ANSWER",
+     "total_max_s": 0.0543,
+     "verify_max_s": 0.0188,
+     "vertices": 1000
+    },
+    {
+     "case": "long sparse n=4500 seed=0",
+     "cpu_total_max_s": 0.132,
+     "edges": 5000,
+     "k": 1,
+     "solve_max_s": 0.1261,
+     "status": "ANSWER",
+     "total_max_s": 0.1353,
+     "verify_max_s": 0.0109,
+     "vertices": 4500
+    },
+    {
+     "case": "dependency n=3400 seed=1",
+     "cpu_total_max_s": 0.0764,
+     "edges": 4988,
+     "k": 1,
+     "solve_max_s": 0.0688,
+     "status": "ANSWER",
+     "total_max_s": 0.0764,
+     "verify_max_s": 0.0084,
+     "vertices": 2072
+    },
+    {
+     "case": "dense n=102 m=5000 seed=1",
+     "cpu_total_max_s": 0.0486,
+     "edges": 5000,
+     "k": 40,
+     "solve_max_s": 0.0416,
+     "status": "ANSWER",
+     "total_max_s": 0.0488,
+     "verify_max_s": 0.0072,
+     "vertices": 102
+    },
+    {
+     "case": "dense n=151 m=5000 seed=1",
+     "cpu_total_max_s": 0.0526,
+     "edges": 5000,
+     "k": 31,
+     "solve_max_s": 0.0466,
+     "status": "ANSWER",
+     "total_max_s": 0.0526,
+     "verify_max_s": 0.0066,
+     "vertices": 151
+    },
+    {
+     "case": "dense n=500 m=5000 seed=1",
+     "cpu_total_max_s": 0.0647,
+     "edges": 5000,
+     "k": 6,
+     "solve_max_s": 0.0546,
+     "status": "ANSWER",
+     "total_max_s": 0.0647,
+     "verify_max_s": 0.0101,
+     "vertices": 500
+    },
+    {
+     "case": "dense n=1000 m=5000 seed=1",
+     "cpu_total_max_s": 0.0453,
+     "edges": 5000,
+     "k": 6,
+     "solve_max_s": 0.0387,
+     "status": "ANSWER",
+     "total_max_s": 0.0454,
+     "verify_max_s": 0.0071,
+     "vertices": 1000
+    },
+    {
+     "case": "long sparse n=4500 seed=1",
+     "cpu_total_max_s": 0.1301,
+     "edges": 5000,
+     "k": 1,
+     "solve_max_s": 0.1207,
+     "status": "ANSWER",
+     "total_max_s": 0.1301,
+     "verify_max_s": 0.01,
+     "vertices": 4500
+    },
+    {
+     "case": "dependency n=3400 seed=2",
+     "cpu_total_max_s": 0.0724,
+     "edges": 4933,
+     "k": 1,
+     "solve_max_s": 0.0642,
+     "status": "ANSWER",
+     "total_max_s": 0.0724,
+     "verify_max_s": 0.0082,
+     "vertices": 2041
+    },
+    {
+     "case": "dense n=102 m=5000 seed=2",
+     "cpu_total_max_s": 0.0475,
+     "edges": 5000,
+     "k": 41,
+     "solve_max_s": 0.0407,
+     "status": "ANSWER",
+     "total_max_s": 0.0475,
+     "verify_max_s": 0.0068,
+     "vertices": 102
+    },
+    {
+     "case": "dense n=151 m=5000 seed=2",
+     "cpu_total_max_s": 0.0547,
+     "edges": 5000,
+     "k": 20,
+     "solve_max_s": 0.0483,
+     "status": "ANSWER",
+     "total_max_s": 0.0547,
+     "verify_max_s": 0.0081,
+     "vertices": 151
+    },
+    {
+     "case": "dense n=500 m=5000 seed=2",
+     "cpu_total_max_s": 0.0436,
+     "edges": 5000,
+     "k": 10,
+     "solve_max_s": 0.0355,
+     "status": "ANSWER",
+     "total_max_s": 0.0436,
+     "verify_max_s": 0.0082,
+     "vertices": 500
+    },
+    {
+     "case": "dense n=1000 m=5000 seed=2",
+     "cpu_total_max_s": 0.0522,
+     "edges": 5000,
+     "k": 1,
+     "solve_max_s": 0.0458,
+     "status": "ANSWER",
+     "total_max_s": 0.0523,
+     "verify_max_s": 0.0078,
+     "vertices": 1000
+    },
+    {
+     "case": "long sparse n=4500 seed=2",
+     "cpu_total_max_s": 0.1228,
+     "edges": 5000,
+     "k": 1,
+     "solve_max_s": 0.1134,
+     "status": "ANSWER",
+     "total_max_s": 0.1228,
+     "verify_max_s": 0.0094,
+     "vertices": 4500
+    },
+    {
+     "case": "layered 69 wide x 2",
+     "cpu_total_max_s": 0.0924,
+     "edges": 4899,
+     "k": 69,
+     "solve_max_s": 0.0873,
+     "status": "ANSWER",
+     "total_max_s": 0.0931,
+     "verify_max_s": 0.0061,
+     "vertices": 140
+    },
+    {
+     "case": "layered 49 wide x 3",
+     "cpu_total_max_s": 0.0866,
+     "edges": 4900,
+     "k": 49,
+     "solve_max_s": 0.0809,
+     "status": "ANSWER",
+     "total_max_s": 0.0866,
+     "verify_max_s": 0.0058,
+     "vertices": 149
+    },
+    {
+     "case": "layered 20 wide x 12",
+     "cpu_total_max_s": 0.0967,
+     "edges": 4440,
+     "k": 20,
+     "solve_max_s": 0.0919,
+     "status": "ANSWER",
+     "total_max_s": 0.0973,
+     "verify_max_s": 0.006,
+     "vertices": 242
+    }
+   ],
+   "under_target": true,
+   "worst_cpu_total_s": 0.132,
+   "worst_wall_total_s": 0.1353
+  },
+  {
+   "edge_cap": 10000,
+   "host": {
+    "affinity": [
+     1
+    ],
+    "loadavg": [
+     "1.68",
+     "2.02",
+     "2.97"
+    ],
+    "python": "3.13.16"
+   },
+   "max_vertices_probed": 9000,
+   "rows": [
+    {
+     "case": "dense n=151 m=10000 seed=0",
+     "cpu_total_max_s": 0.1019,
+     "edges": 10000,
+     "k": 55,
+     "solve_max_s": 0.0886,
+     "status": "ANSWER",
+     "total_max_s": 0.1022,
+     "verify_max_s": 0.015,
+     "vertices": 151
+    },
+    {
+     "case": "dense n=303 m=10000 seed=0",
+     "cpu_total_max_s": 0.097,
+     "edges": 10000,
+     "k": 33,
+     "solve_max_s": 0.0706,
+     "status": "ANSWER",
+     "total_max_s": 0.0971,
+     "verify_max_s": 0.0274,
+     "vertices": 303
+    },
+    {
+     "case": "dense n=1000 m=10000 seed=0",
+     "cpu_total_max_s": 0.1031,
+     "edges": 10000,
+     "k": 17,
+     "solve_max_s": 0.0929,
+     "status": "ANSWER",
+     "total_max_s": 0.1072,
+     "verify_max_s": 0.0163,
+     "vertices": 1000
+    },
+    {
+     "case": "dense n=2000 m=10000 seed=0",
+     "cpu_total_max_s": 0.1168,
+     "edges": 10000,
+     "k": 5,
+     "solve_max_s": 0.1026,
+     "status": "ANSWER",
+     "total_max_s": 0.117,
+     "verify_max_s": 0.0159,
+     "vertices": 2000
+    },
+    {
+     "case": "long sparse n=9000 seed=0",
+     "cpu_total_max_s": 0.2751,
+     "edges": 10000,
+     "k": null,
+     "solve_max_s": 0.2842,
+     "status": "ABSTAIN",
+     "total_max_s": 0.2842,
+     "verify_max_s": 0.0,
+     "vertices": 9000
+    },
+    {
+     "case": "dense n=151 m=10000 seed=1",
+     "cpu_total_max_s": 0.1637,
+     "edges": 10000,
+     "k": 61,
+     "solve_max_s": 0.1349,
+     "status": "ANSWER",
+     "total_max_s": 0.1638,
+     "verify_max_s": 0.0289,
+     "vertices": 151
+    },
+    {
+     "case": "dense n=303 m=10000 seed=1",
+     "cpu_total_max_s": 0.0933,
+     "edges": 10000,
+     "k": 25,
+     "solve_max_s": 0.0807,
+     "status": "ANSWER",
+     "total_max_s": 0.0935,
+     "verify_max_s": 0.0144,
+     "vertices": 303
+    },
+    {
+     "case": "dense n=1000 m=10000 seed=1",
+     "cpu_total_max_s": 0.135,
+     "edges": 10000,
+     "k": 8,
+     "solve_max_s": 0.114,
+     "status": "ANSWER",
+     "total_max_s": 0.1351,
+     "verify_max_s": 0.0231,
+     "vertices": 1000
+    },
+    {
+     "case": "dense n=2000 m=10000 seed=1",
+     "cpu_total_max_s": 0.1242,
+     "edges": 10000,
+     "k": 3,
+     "solve_max_s": 0.1084,
+     "status": "ANSWER",
+     "total_max_s": 0.1253,
+     "verify_max_s": 0.0169,
+     "vertices": 2000
+    },
+    {
+     "case": "long sparse n=9000 seed=1",
+     "cpu_total_max_s": 0.2924,
+     "edges": 10000,
+     "k": null,
+     "solve_max_s": 0.2947,
+     "status": "ABSTAIN",
+     "total_max_s": 0.2947,
+     "verify_max_s": 0.0,
+     "vertices": 9000
+    },
+    {
+     "case": "dense n=151 m=10000 seed=2",
+     "cpu_total_max_s": 0.1164,
+     "edges": 10000,
+     "k": 60,
+     "solve_max_s": 0.1033,
+     "status": "ANSWER",
+     "total_max_s": 0.1164,
+     "verify_max_s": 0.0153,
+     "vertices": 151
+    },
+    {
+     "case": "dense n=303 m=10000 seed=2",
+     "cpu_total_max_s": 0.0916,
+     "edges": 10000,
+     "k": 27,
+     "solve_max_s": 0.0775,
+     "status": "ANSWER",
+     "total_max_s": 0.0916,
+     "verify_max_s": 0.0141,
+     "vertices": 303
+    },
+    {
+     "case": "dense n=1000 m=10000 seed=2",
+     "cpu_total_max_s": 0.099,
+     "edges": 10000,
+     "k": 12,
+     "solve_max_s": 0.0847,
+     "status": "ANSWER",
+     "total_max_s": 0.099,
+     "verify_max_s": 0.0156,
+     "vertices": 1000
+    },
+    {
+     "case": "dense n=2000 m=10000 seed=2",
+     "cpu_total_max_s": 0.1081,
+     "edges": 10000,
+     "k": 5,
+     "solve_max_s": 0.0949,
+     "status": "ANSWER",
+     "total_max_s": 0.1081,
+     "verify_max_s": 0.0152,
+     "vertices": 2000
+    },
+    {
+     "case": "long sparse n=9000 seed=2",
+     "cpu_total_max_s": 0.258,
+     "edges": 10000,
+     "k": null,
+     "solve_max_s": 0.258,
+     "status": "ABSTAIN",
+     "total_max_s": 0.258,
+     "verify_max_s": 0.0,
+     "vertices": 9000
+    },
+    {
+     "case": "layered 99 wide x 2",
+     "cpu_total_max_s": 0.3455,
+     "edges": 9999,
+     "k": 99,
+     "solve_max_s": 0.3248,
+     "status": "ANSWER",
+     "total_max_s": 0.3471,
+     "verify_max_s": 0.0223,
+     "vertices": 200
+    },
+    {
+     "case": "layered 69 wide x 3",
+     "cpu_total_max_s": 0.2623,
+     "edges": 9660,
+     "k": 69,
+     "solve_max_s": 0.2522,
+     "status": "ANSWER",
+     "total_max_s": 0.2733,
+     "verify_max_s": 0.021,
+     "vertices": 209
+    },
+    {
+     "case": "layered 20 wide x 25",
+     "cpu_total_max_s": 0.2137,
+     "edges": 9640,
+     "k": 20,
+     "solve_max_s": 0.2036,
+     "status": "ANSWER",
+     "total_max_s": 0.218,
+     "verify_max_s": 0.0144,
+     "vertices": 502
+    }
+   ],
+   "under_target": true,
+   "worst_cpu_total_s": 0.3455,
+   "worst_wall_total_s": 0.3471
+  }
+ ],
+ "levels_under_target": [
+  1250,
+  2500,
+  5000,
+  10000
+ ],
+ "note": "through cortex.reason the 64 KiB request limit binds first (about 1,000-1,300 edges at natural module-name lengths)",
+ "repeats": 3,
+ "rule": "bounds = the largest probed edge cap such that every probe at it and at every smaller cap finished solve + independent verify in under the target CPU seconds of the calling thread (max of 3 repeats; CPU time, because wall-clock on this shared host inflates with load: an earlier probe at load ~4 measured 0.84 s wall for 'layered 70 wide x 3' at 9,940 edges); wall-clock is recorded beside it; the vertex bound is set equal (long sparse probes reach 0.9x the edge cap in vertices)",
+ "versions": {
+  "networkx": "3.7",
+  "numpy": "2.5.3",
+  "scipy": "1.18.1"
+ }
+}

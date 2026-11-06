@@ -51,13 +51,13 @@ def decided_mission(mid: str, params: dict) -> dict:
                    capabilities=["cognition.solve"], targets=("cognition:*",), ceiling="read_only")
 
 
-def led_receipt(lead: str) -> dict:
+def led_receipt(lead: str, n: int = 0) -> dict:
     """A real cortex receipt for a feasibility question whose formal plan is led by ``lead``."""
     registry = seed_registry()
     other = CPSAT if lead == FORMAL else FORMAL
     registry.withhold(other, "test: the founder detached the other engine")
     receipt = Cortex(registry, clock=lambda: "2026-10-07T00:00:00Z").run(pigeonhole(4, 5.0)["problem"] |
-                                                                           {"problem_id": f"lead-{lead}"})
+                                                                           {"problem_id": f"lead-{lead}-{n}"})
     assert receipt["route"]["selected"] == [lead]
     return receipt
 
@@ -65,9 +65,10 @@ def led_receipt(lead: str) -> dict:
 def trained_ledger(z3_status: str, cpsat_status: str, n: int = 9) -> CompetenceLedger:
     ledger = CompetenceLedger()
     for lead, status in ((FORMAL, z3_status), (CPSAT, cpsat_status)):
-        receipt = led_receipt(lead)
         method, _, version = lead.partition("@")
-        for _ in range(n):
+        for i in range(n):
+            # cortex 0.2.2: one receipt is one decision and settles a method once, so each outcome is its own decision
+            receipt = led_receipt(lead, i)
             ledger.settle(receipt=receipt, method=method, method_version=version, outcome_status=status,
                           provenance=learned_routing.PROVENANCE,
                           attribution=[{"method": method, "role": "final_answer", "uncertainty": "medium"}])

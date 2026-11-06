@@ -21,12 +21,15 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
+import hashlib
 import json
 import os
 from pathlib import Path
 import secrets
 import shutil
 import signal
+import stat
+import sys
 import time
 
 from cryptography.hazmat.primitives import serialization
@@ -37,7 +40,7 @@ from events.spine import EventSpine
 from greg import anchor, asks, compute, dataplane, doctor, gravity, improvement, metrics, models, presence, sop, tribunal
 from greg.authority import AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityRegistry, SecretBroker
-from greg.founder import FounderAuthError, FounderVerifier, key_id, spent_nonce, validate_device_grant
+from greg.founder import FounderAuthError, FounderVerifier, instant, key_id, spent_nonce, validate_device_grant
 from greg.genesis import Genesis
 from greg.journal import Journal, iso, utcnow
 from greg.missions import MissionEngine, MissionError
@@ -78,11 +81,14 @@ CRASH_LOOP_WINDOW_SECONDS = 600
 BREAKER = "crash-loop breaker"
 RESUME_LIFTS = "a signed BODY_RESUME: the founder key, or a device key the founder delegated BODY_RESUME to"
 HOLD_ASK = "CRASH_LOOP_HOLD"  # no DECISION answers it (greg/missions.py NOT_ANSWERABLE); BODY_RESUME withdraws it
+# A body restored from a backup (greg/recovery.py) holds itself; Body._after_restore lets only the founder key lift it.
+RESTORE_LIFTS = "a BODY_RESUME signed by the founder key and issued after the restore (a device key cannot lift it)"
 
-# The separate-process appraiser (greg/appraisal.py) judges a closure VERIFIED or REFUTED. A run killed, timed out
-# or without a readable verdict judged nothing (acceptance H.G7): it is one unavailable attempt, retried on a later
-# tick, and after APPRAISAL_ATTEMPTS of them the closure is recorded appraised UNAVAILABLE (final, never VERIFIED).
-APPRAISER_VERDICTS = ("VERIFIED", "REFUTED")
+# The separate-process appraiser (greg/appraisal.py) judges a closure VERIFIED or REFUTED, and a failure closure
+# (mission.unmet) VERIFIED_UNMET or REFUTED. A run killed, timed out or without a readable verdict judged nothing
+# (acceptance H.G7): it is one unavailable attempt, retried on a later tick, and after APPRAISAL_ATTEMPTS of them the
+# closure is recorded appraised UNAVAILABLE (final, never VERIFIED).
+APPRAISER_VERDICTS = ("VERIFIED", "VERIFIED_UNMET", "REFUTED")
 APPRAISAL_ATTEMPTS = 3
 APPRAISAL_TIMEOUT_SECONDS = 120
 
@@ -123,6 +129,8 @@ def body_pauses(journal: Journal, *, pause_file: bool) -> list[dict]:
     if toggles and toggles[-1].type == "greg.body.paused":
         hold = toggles[-1].payload
         out.append({"by": BREAKER, "why": hold.get("why"), "lifted_by": RESUME_LIFTS} if hold.get("by") == BREAKER
+                   else {"by": "restore hold", "why": hold.get("reason"), "lifted_by": RESTORE_LIFTS}
+                   if "restore_id" in hold
                    else {"by": "body paused (signed BODY_PAUSE)", "lifted_by": RESUME_LIFTS})
     if pause_file:
         out.append({"by": "PAUSE file in the body home", "lifted_by": "removing that file on this machine"})
@@ -258,6 +266,11 @@ class Layout:
         self.rejected = self.inbox / "rejected"
         self.faulted = self.inbox / "faulted"   # files a paused or held body could not ingest; made when needed
         self.outbox = self.home / "outbox"
+        # Untrusted data a running body reads on each tick (dataplane.ingest): never a command, never authority.
+        # Made by the first drop_intake; a body without it simply has nothing to read.
+        self.intake = self.home / "intake"
+        self.intake_done = self.intake / "ingested"
+        self.intake_refused = self.intake / "refused"
         self.workspace = self.home / "workspace"
         self.artifacts = self.home / "artifacts"
         self.secrets = self.home / "secrets.json"
@@ -270,6 +283,46 @@ def _private_write(path: Path, data: bytes):
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(fd, "wb") as fh:
         fh.write(data)
+
+
+# Filesystems on which Linux may keep serving its cached view of a file after another machine replaces or deletes it,
+# by the type statfs(2) reports (what `stat -f -c %t` prints): 9p and every FUSE filesystem (ChromeOS shares
+# /mnt/chromeos over 9p or virtio-fs, which is FUSE), NFS, SMB and the cluster filesystems. The evidence ledger checks
+# only that cached view there, so recorded evidence could vanish without notice. greg/chromebook/install.sh refuses
+# the same list.
+_SHARED_FILESYSTEMS = {
+    0x01021997: "9p", 0x65735546: "FUSE: virtio-fs, sshfs and the like", 0x6969: "NFS", 0x517B: "SMB",
+    0xFF534D42: "CIFS", 0xFE534D42: "SMB2", 0x00C36400: "Ceph", 0x5346414F: "AFS", 0x6B414653: "kAFS",
+    0x0BD00BD0: "Lustre", 0x01161970: "GFS2", 0x7461636F: "OCFS2", 0x73757245: "Coda", 0x20030528: "OrangeFS",
+}
+
+
+def _statfs_type(path: str) -> int | None:
+    """The filesystem type statfs(2) reports for ``path``: the kernel's answer for the mount the path resolves to.
+    None where it cannot be asked (not Linux, or the call fails)."""
+    if not sys.platform.startswith("linux"):
+        return None
+    import ctypes
+    libc = ctypes.CDLL(None, use_errno=True)
+    buf = ctypes.create_string_buffer(512)            # struct statfs: 120 bytes on 64-bit Linux, f_type first
+    if libc.statfs(os.fsencode(path), buf) != 0:
+        return None
+    return ctypes.c_long.from_buffer(buf).value & 0xFFFFFFFF
+
+
+def shared_filesystem(path: str | Path) -> str | None:
+    """The shared or network filesystem holding ``path`` (or the nearest ancestor that exists), else None."""
+    p = Path(path).expanduser().absolute()
+    while not os.path.exists(p) and p != p.parent:
+        p = p.parent
+    return _SHARED_FILESYSTEMS.get(_statfs_type(str(p)))
+
+
+def refuse_shared_home(home: str | Path) -> None:
+    """A body home's ledger must be the file this machine sees, not a cached view of another machine's."""
+    if (shared := shared_filesystem(home)) is not None:
+        raise BodyError(f"the body home {Path(home).expanduser()} is on a shared or network filesystem ({shared}); "
+                        "keep it on this machine's own disk, inside Linux files (the default is ~/.uniimente/greg)")
 
 
 def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Path | None = None,
@@ -287,6 +340,7 @@ def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Pa
     layout = Layout(home)
     if layout.config.exists():
         raise BodyError(f"a body already exists at {layout.home}")
+    refuse_shared_home(layout.home)
     for d in (layout.home, layout.inbox, layout.processed, layout.rejected, layout.outbox, layout.workspace):
         d.mkdir(parents=True, exist_ok=True)
     os.chmod(layout.home, 0o700)
@@ -354,6 +408,7 @@ class Body:
             raise BodyError("Constitution changed since this body was created; an explicit founder-approved "
                             "migration is required (history is bound to the old constitution)")
         self._require_published_head()
+        refuse_shared_home(self.layout.home)
         # One writer. A final line torn by power loss or SIGKILL was never acknowledged:
         # quarantine its bytes and continue instead of crash-looping under the supervisor.
         self.ledger = EvidenceLedger(self.compiled.constitution_hash, str(self.layout.ledger), tail="quarantine")
@@ -547,6 +602,7 @@ class Body:
         env = verifier.verify(envelope, now=now)
         principal = verifier.principal(env, now=now)
         kind, body = env["kind"], env["body"]
+        self._after_restore(env, kind, principal)
         # Commands are applied before the next tick's rebuild; a request raised during the
         # previous tick must already be visible, or a fast approval is refused as "unknown".
         # A STOP authenticated mid-tick (while a worker runs) must not rebuild in-flight state.
@@ -561,11 +617,29 @@ class Body:
         self.journal.record("command.accepted", {"kind": kind, "digest": digest, "nonce": env["nonce"],
                                                   "founder_key_id": env["founder_key_id"], "signer": principal,
                                                   "issued_at": env["issued_at"], "accepted_at": iso(now),
-                                                  "body": body, "envelope": env, "channel": channel,
+                                                  "envelope": env, "channel": channel,   # body: env["body"]
                                                   "result": result}, key=digest)
         if kind == "DECISION":   # the answer counts from its acceptance (MissionBook): Goal Gravity reads it this tick
             self.engine.book.rebuild()
         return {"status": "APPLIED", "digest": digest, "result": result}
+
+    def _after_restore(self, env: dict, kind: str, principal: str) -> None:
+        """A body restored from a backup (greg/recovery.py) knows nothing after its recovery point: it refuses any
+        command issued before the restore, which the original may already have applied, and only the founder key
+        releases the restore hold."""
+        restores = self.journal.replay("body.restored")
+        if not restores:
+            return
+        restore = restores[-1].payload
+        if instant(env["issued_at"]) < instant(restore["restored_at"]):
+            raise FounderAuthError(f"issued before this body was restored from a backup at {restore['restored_at']}: "
+                                   "the original may already have applied it; sign it again if it is still wanted")
+        if kind == "BODY_RESUME" and principal != "founder" and self._restore_hold():
+            raise FounderAuthError("only the founder key releases a restore hold")
+
+    def _restore_hold(self) -> bool:
+        state = [e for e in self.journal.replay("body.") if e.type in ("greg.body.paused", "greg.body.resumed")]
+        return bool(state) and state[-1].type == "greg.body.paused" and "restore_id" in state[-1].payload
 
     def _dispatch(self, kind: str, body: dict, digest: str, *, principal: str = "founder",
                   envelope: dict | None = None, now: datetime | None = None):
@@ -578,16 +652,27 @@ class Body:
             self.engine.lifecycle(body, digest)
             return {"mission_id": body["mission_id"], "state": body["state"]}
         if kind == "REALIZATION":
-            # evidence only: the observed values of one retained forecast, labelled by source; it scores the
-            # forecaster's calibration and changes no mission, capability or authority
-            from greg.cognition.settlement import record_realization
+            # evidence only: the observed values of one retained forecast, or the realized objective of one
+            # construction answer, labelled by source; it scores the method's calibration or world competence and
+            # changes no mission, capability or authority
+            from greg.cognition.settlement import record_realization, record_resolution
+            if "resolves" in body:
+                # a correction of a disputed construction outcome: it accepts one independent observation already
+                # recorded, or invalidates the named reports; every fact stays on the record
+                if set(body) - {"receipt", "resolves", "accept", "note"}:
+                    raise MissionError("a resolution takes receipt, resolves, accept and note")
+                payload = record_resolution(self.journal, receipt=body.get("receipt"), resolves=body.get("resolves"),
+                                            accept=body.get("accept"), note=body.get("note", ""),
+                                            command_digest=digest)
+                return {"receipt": payload["receipt"], "resolves": payload["resolves"], "accept": payload["accept"]}
             if set(body) - {"receipt", "realized", "source", "note"}:
                 raise MissionError("a realization takes receipt, realized, source and note")
             payload = record_realization(self.journal, receipt=body.get("receipt"), realized=body.get("realized"),
                                          source=body.get("source", "founder_reported"), note=body.get("note", ""),
                                          command_digest=digest)
-            return {"receipt": payload["receipt"], "cognitive_receipt": payload["cognitive_receipt"],
-                    **({"compile_receipt": payload["compile_receipt"]} if "compile_receipt" in payload else {})}
+            return {"receipt": payload["receipt"], "cognitive_receipt": payload.get("cognitive_receipt"),
+                    **({"compile_receipt": payload["compile_receipt"]} if "compile_receipt" in payload else {}),
+                    **({"met": payload["met"]} if "met" in payload else {})}
         if kind == "CRITIQUE":
             record = tribunal.critique(self.journal, self.engine, body, digest)
             if record.get("epistemic"):   # founder evidence advances the held-out learning loop now
@@ -647,6 +732,8 @@ class Body:
             return {"stop": True, "persisted": True}
         if kind == "NODE_ENROLL":
             return compute.enroll_node(self.journal, body, digest)
+        if kind == "NODE_REVOKE":                # founder key only (DEVICE_KINDS excludes it)
+            return compute.revoke_node(self.journal, body, digest, now=now)
         if kind == "SOP_RATIFY":
             return sop.ratify(self.journal, body, digest)
         if kind == "FOUNDER_TIER":               # founder key only (DEVICE_KINDS excludes it)
@@ -734,6 +821,43 @@ class Body:
             if outcome is None:          # another kind, while only ``only_kind`` is read: left in the inbox
                 continue
             results.append(outcome)
+        return results
+
+    def _dropped(self) -> set:
+        """Signed commands and untrusted intake items waiting: a new one wakes the run loop before its tick."""
+        return set(self.layout.inbox.glob("*.json")) | set(self.layout.intake.glob("*.json"))
+
+    def ingest_intake(self) -> list[dict]:
+        """Read up to INTAKE_PER_TICK untrusted items dropped into intake/ into the data plane, oldest name first.
+
+        Each item is one JSON file {"source", "channel", "content"}. It is retained as evidence exactly as the
+        stopped-body intake retains it (dataplane.ingest: may_command and may_grant false, instruction-shaped text
+        quarantined), then moved to intake/ingested. A file that is not one regular, bounded, well-formed item is
+        moved to intake/refused with a recorded reason. A crash between retaining and moving re-reads the file,
+        and the data plane returns the retained fact instead of recording it twice."""
+        if not self.layout.intake.is_dir():
+            return []
+        results = []
+        for path in sorted(self.layout.intake.glob("*.json"))[:INTAKE_PER_TICK]:
+            raw, why = _read_intake(path)
+            item = None
+            if why is None:
+                try:
+                    item = json.loads(raw)
+                except ValueError:
+                    why = "not JSON"
+            if why is None:
+                why = _intake_shape(item)
+            if why is None:
+                results.append(dataplane.ingest(self.journal, source=item["source"], content=item["content"],
+                                                channel=item["channel"]))
+                _move(path, self.layout.intake_done)
+                continue
+            digest = hashlib.sha256(raw).hexdigest() if raw is not None else None
+            self.journal.record("external.intake_refused", {"file": path.name[:120], "why": why,
+                                                             "content_sha256": digest},
+                                key=[path.name[:120], digest, why])
+            _move(path, self.layout.intake_refused)
         return results
 
     def _stuck_file(self, path: Path, exc: Exception, failed: Exception) -> dict:
@@ -874,9 +998,13 @@ class Body:
             hold = crash_loop_hold(self.journal)
             self._heartbeat("HELD" if hold else "PAUSED", [])
             return {"commands": commands, "paused": True, **({"held": hold["why"]} if hold else {})}
+        # untrusted observations dropped while the body runs, read before Goal Gravity so a goal they wake is
+        # served this tick; reading them is data only and changes what a mission may do in no way
+        self.ingest_intake()
         # Goal Gravity first, so an awake goal's pulled observation is stepped in this same tick. Without a
         # founder-signed goal on the ledger it does no work and writes nothing (None).
-        from greg import goal_gravity
+        from greg import autonomy, disposition, goal_gravity
+        autonomy.regress(self.journal, self.engine.book, now)   # failure evidence withdraws a standing approval first
         gravity = goal_gravity.tick(self, now)
         self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
         recovered = self.genesis.recover(now)     # quarantined capabilities may earn back eligibility (sandbox)
@@ -884,10 +1012,13 @@ class Body:
         if self._stop_now():
             return {"commands": commands, "missions": summary, "stopped": True}
         self._close_out(now)
+        from greg import corrections     # a changed, expired or contradicted reading marks what rests on it
+        corrections.propagate(self.journal, now)
         from greg.cognition.settlement import reconcile as settle_cognition
         settle_cognition(self.journal)
         improvement.learn(self.journal, self.ledger, now)   # held-out evidence from this tick's briefs
         sop.propose(self.journal)
+        disposition.propose(self.journal, now)    # proposals and asks only; the registry changes by founder command
         transport = (anchor.relay_transport(self.egress, self.layout.workspace / ".anchor")
                      if getattr(self, "egress", None) is not None else None)
         anchored = anchor.anchor_once(self.journal, now, transport=transport) if anchor.due(self.journal, now) else None
@@ -899,7 +1030,10 @@ class Body:
     def _close_out(self, now):
         """Record where each closure happened and have it appraised by a separate process."""
         contexts = {e.payload["mission_id"] for e in self.journal.replay("mission.closure_context")}
-        appraised = {e.payload["mission_id"] for e in self.journal.replay("mission.appraised")}
+        # an achievement is judged as its own closure: an appraisal of an earlier failure or hold of the same
+        # mission (it names that closure_event) never stands in for the appraisal of its success (TXT-R4-1)
+        appraised = {e.payload["mission_id"] for e in self.journal.replay("mission.appraised")
+                     if not e.payload.get("closure_event")}
         for event in self.journal.replay("mission.achieved"):
             mid = event.payload["mission_id"]
             if mid not in contexts:
@@ -912,7 +1046,7 @@ class Body:
             if mid not in appraised:
                 self._appraise_closure(mid, None, now)
         judged = {e.payload.get("closure_event") for e in self.journal.replay("mission.appraised")}
-        for event in self.journal.replay("mission.held"):
+        for event in self.journal.replay("mission.held") + self.journal.replay("mission.unmet"):
             if event.event_id not in judged:
                 self._appraise_closure(event.payload["mission_id"], event.event_id, now)
 
@@ -1060,7 +1194,7 @@ class Body:
                 if self.layout.stop_file.exists():
                     reason = "local STOP file"
                     break
-                waiting = set(self.layout.inbox.glob("*.json"))   # one still here after this turn wakes nothing
+                waiting = self._dropped()   # one still here after this turn wakes nothing
                 seen = (self.clock(), self.monotonic())
                 if last_seen is not None:
                     self._contained(presence.note_gap, self.journal, self.boot_id, last_seen, seen)
@@ -1087,11 +1221,11 @@ class Body:
                     reason = "max_ticks reached"
                     break
                 # A paused or held body, or a paused mission, serves no due observation, so it waits a full tick
-                # instead of spinning on one (next_wake); a new inbox file (a signed resume, say) or a stop wakes
-                # the body sooner.
+                # instead of spinning on one (next_wake); a new inbox file (a signed resume, say), a new intake
+                # item or a stop wakes the body sooner.
                 deadline = time.monotonic() + self.next_wake(tick_seconds)
                 while time.monotonic() < deadline and not self.stop_requested:
-                    if self.layout.stop_file.exists() or set(self.layout.inbox.glob("*.json")) - waiting:
+                    if self.layout.stop_file.exists() or self._dropped() - waiting:
                         break
                     time.sleep(min(0.2, max(0.0, deadline - time.monotonic())))
             self.journal.record("body.stopped", {"boot_id": self.boot_id, "reason": reason,
@@ -1117,6 +1251,58 @@ def observe(home: str | Path, *, actor: str = "spiffe://uniimente.internal/greg/
         yield Journal(EventSpine(ledger), actor=actor)
     finally:
         ledger.close()
+
+
+INTAKE_PER_TICK = 32                 # a flood of drops cannot starve a tick; the rest wait for the next ones
+INTAKE_MAX_BYTES = 64 * 1024         # one item; the data plane retains its first MAX_RETAINED characters
+
+
+def _read_intake(path: Path) -> tuple[bytes | None, str | None]:
+    """The bytes of one dropped item, or why it is refused unread: never a link, a FIFO or a device."""
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    except OSError as exc:
+        return None, f"unreadable: {type(exc).__name__}"
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode):
+            return None, "not a regular file"
+        if info.st_size > INTAKE_MAX_BYTES:
+            return None, f"larger than {INTAKE_MAX_BYTES} bytes"
+        raw = os.read(fd, INTAKE_MAX_BYTES + 1)
+        return (raw, None) if len(raw) <= INTAKE_MAX_BYTES else (None, f"larger than {INTAKE_MAX_BYTES} bytes")
+    finally:
+        os.close(fd)
+
+
+def _intake_shape(item) -> str | None:
+    if not isinstance(item, dict) or set(item) != {"source", "channel", "content"}:
+        return "not one {source, channel, content} item"
+    if not all(isinstance(item[k], str) for k in item) or not item["source"].strip() or not item["channel"].strip():
+        return "source, channel and content must be text, source and channel non-empty"
+    return None
+
+
+def _move(path: Path, folder: Path):
+    folder.mkdir(mode=0o700, exist_ok=True)
+    os.replace(path, folder / path.name)
+
+
+def drop_intake(home: str | Path, *, source: str, content: str, channel: str) -> Path:
+    """Hand one untrusted item to the body, running or stopped: it is read on the next tick (Body.ingest_intake).
+    This writes data only. Nothing in intake/ can become a command."""
+    layout = Layout(home)
+    if not layout.config.exists():
+        raise BodyError(f"no body at {layout.home}")
+    layout.intake.mkdir(mode=0o700, exist_ok=True)
+    data = json.dumps({"source": source, "channel": channel, "content": content}).encode()
+    if len(data) > INTAKE_MAX_BYTES:
+        raise BodyError(f"an intake item holds at most {INTAKE_MAX_BYTES} bytes")
+    target = layout.intake / f"{iso(utcnow()).replace(':', '')}-{secrets.token_hex(4)}.json"
+    temporary = target.with_suffix(".tmp")       # not *.json: the body never reads a half-written item
+    temporary.write_bytes(data)
+    temporary.replace(target)
+    return target
 
 
 def send_signed(home: str | Path, key, kind: str, body: dict, *, ttl: timedelta = timedelta(hours=24)) -> Path:
@@ -1289,7 +1475,8 @@ def _path_summary(journal: Journal) -> dict:
     active = where["active"] or {}
     return {"achieved": where["achieved"], "active": active.get("id"), "title": active.get("title"),
             "gate": active.get("gate"), "measurement": active.get("measurement"),
-            "next": (where["next"] or {}).get("id"), "pull_forward_seams": where["pull_forward_seams"]}
+            "next": (where["next"] or {}).get("id"), "pull_forward_seams": where["pull_forward_seams"],
+            "met_ahead": [n["id"] for n in where["met_ahead"]]}
 
 
 def ingest_external(home: str | Path, *, source: str, content: str, channel: str) -> dict:

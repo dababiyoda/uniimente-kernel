@@ -64,9 +64,11 @@ def causal():
 @pytest.mark.parametrize('kind,data,status', [
     ('optimization', allocation(), 'OPTIMAL'), ('optimization', allocation(False), 'INFEASIBLE'),
     ('formal', allocation(optimize=False), 'SAT'), ('formal', allocation(False, False), 'UNSAT'),
-    ('estimation', estimation(), None), ('causal', causal(), None), ('evidence', evidence(), None)])
+    ('estimation', estimation(), None), ('causal', causal(), None), ('evidence', evidence, None)])
 def test_real_heterogeneous_methods_and_separate_verifier(kind, data, status):
-    r = evaluate_problem(problem(kind, data))
+    # A source's freshness is measured at run time, so its data is built here, not at collection: a suite that runs
+    # past the source's max_age_seconds otherwise makes this case abstain as stale (seen on CI at 78 minutes).
+    r = evaluate_problem(problem(kind, data() if callable(data) else data))
     assert r['answered'], r
     a = r['claims'][0]
     assert a['verification']['valid']

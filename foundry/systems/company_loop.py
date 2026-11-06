@@ -38,6 +38,7 @@ from foundry.systems import attribution, federation, payments, rabbit_hole, trea
 from foundry.systems import commons as community
 from foundry.systems import media_engine as media
 from foundry.territory import ContentNode, TerritoryGraph
+from foundry.systems.refusals import refusal_recorder
 
 PROHIBITED_PATTERNS = ("guaranteed income", "risk-free", "act now", "limited time", "secret method", "you will get rich")
 ESCALATION_TOPICS = {"legal_advice", "medical_advice", "regulated_product"}
@@ -46,10 +47,6 @@ PRODUCTION_COST_USD = 5.0
 
 class CompanyLoopError(RuntimeError):
     pass
-
-
-def _canon(v) -> bytes:
-    return json.dumps(v, sort_keys=True, separators=(",", ":")).encode()
 
 
 class CompanyLoop:
@@ -269,14 +266,7 @@ def exercise(root) -> dict:
         loop.open_rail(f"http://127.0.0.1:{server.server_address[1]}")
         ground = loop.open_ground(readers=readers)
         charter_hash = loop.charter(products=["operated delivery audit"])
-        refusals = {}
-
-        def refused(label, fn):
-            try:
-                fn()
-                refusals[label] = None
-            except (CompanyLoopError, FoundryError) as exc:
-                refusals[label] = str(exc)[:80]
+        refusals, refused = refusal_recorder((CompanyLoopError, FoundryError), limit=80)
         refused("publish_before_ratification", lambda: loop.publish_node("why-proof", topic="proof"))
         loop.ratify(reason="charter reviewed by the operator in sandbox")
         refused("off_topic_draft", lambda: loop.check_draft(topic="crypto", body=f"x {loop.disclosure}"))

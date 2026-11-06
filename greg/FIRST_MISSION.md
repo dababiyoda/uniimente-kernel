@@ -29,8 +29,8 @@ otherwise GitHub cannot be reached over HTTPS and the brief says so in its Gaps 
 ```bash
 PY=$(for p in python3.13 python3.12 python3.11 python3; do command -v $p >/dev/null && $p -c 'import sys; sys.exit(sys.version_info < (3, 11))' 2>/dev/null && echo $p && break; done); echo "${PY:?no Python 3.11+ found}"
 mkdir -p ~/src && cd ~/src
-git clone https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
-git checkout codex/one-greg-vepmc-convergence
+git clone -b claude/greg-full-machine-completion-whgiee https://github.com/dababiyoda/uniimente-kernel && cd uniimente-kernel
+git checkout claude/greg-full-machine-completion-whgiee   # the review candidate named in greg/chromebook/REVIEW_BRANCH; use main once merged
 $PY -m venv ~/.uniimente/venv && ~/.uniimente/venv/bin/pip install -r requirements-dev.txt
 echo 'alias greg="$HOME/.uniimente/venv/bin/python -m greg"' >> ~/.zshrc && source ~/.zshrc   # survives the reboot in step 4
 greg --help | head -1                                 # usage: greg ...

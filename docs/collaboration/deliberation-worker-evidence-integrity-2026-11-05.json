@@ -1,0 +1,275 @@
+{
+ "decision_id": "DELIB-20261105-WORKER-EVIDENCE-INTEGRITY",
+ "title": "worker.appraise: refuse compiled modules; certify unreachable changes only by mutation fallback or a founder oracle",
+ "problem": "On #196 (d35d92a5) a worker could close a mission with corrupted source in two ways: a planted unchecked-hash .pyc that the tests ran instead of the source, and a change (alias, import) the mutation adversary could not reach, certified by a test that only imports its subject.",
+ "founder_intent_refs": [
+  "INTENT-20261019-UPWARD-ASCENT",
+  "INTENT-2026-09-26-REAL-PRODUCT-METABOLISM",
+  "INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING"
+ ],
+ "baseline": "d35d92a5: both corrupted patches ACCEPTED, mission achieved (probed through the Body path).",
+ "alternatives": [
+  {
+   "name": "Proposed: refuse compiled paths in the patch + fallback mutation tier + fail closed when unmeasured unless a founder oracle passed",
+   "description": "Small checks in the existing appraiser and evidence_strength; no new subsystem.",
+   "advantages": [
+    "Closes both probes",
+    "PIT precedent for both halves"
+   ],
+   "disadvantages": [
+    "Honest changes with no mutable site need a founder acceptance test",
+    "Refuses legitimate native extensions in a patch"
+   ],
+   "revival_evidence": "n/a (selected)"
+  },
+  {
+   "name": "Run acceptance with PYTHONPYCACHEPREFIX pointing at an empty directory",
+   "description": "Python then ignores __pycache__ beside the source.",
+   "advantages": [
+    "No refusal of the patch"
+   ],
+   "disadvantages": [
+    "Does not stop sourceless .pyc or native extensions",
+    "Hides the attempt instead of recording it"
+   ],
+   "revival_evidence": "a founder repository that must ship bytecode"
+  },
+  {
+   "name": "Keep unmeasured as adequate; rely on discrimination",
+   "description": "Status quo for unreachable changes.",
+   "advantages": [
+    "No new rejections"
+   ],
+   "disadvantages": [
+    "An import-only test certifies any alias"
+   ],
+   "revival_evidence": "none expected"
+  },
+  {
+   "name": "Restrict inline-constant mutation (PIT INLINE_CONSTS off) or score per line",
+   "description": "Proposed 2026-10-21 to cut false rejections.",
+   "advantages": [
+    "Fewer equivalent mutants"
+   ],
+   "disadvantages": [
+    "Measured: does not remove 76ebb40's rejection; 'none' adds 53e0b3e"
+   ],
+   "revival_evidence": "a held-out replay where it removes a rejection without losing a true finding"
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "Workers can close missions on code the founder never saw.",
+  "advantages": [
+   "No change"
+  ],
+  "disadvantages": [
+   "Acceptance is not evidence"
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "A closed mission must mean the delivered source does what was asked; this restores that for two cheap attacks.",
+   "material_concerns": [
+    "Do not block honest string-only work"
+   ],
+   "evidence_refs": [
+    "fallback replay: 73f0425 2/2, 476d6cc 8/8 killed"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "Checks live in the one appraiser and the one evidence module; no new authority or registry.",
+   "material_concerns": [
+    "judge gains an oracle flag the caller must set"
+   ],
+   "evidence_refs": [
+    "greg/workers.py appraise",
+    "greg/evidence_strength.py judge"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "Both probes reproduce on the parent and fail closed here; ten appraisal mutants caught.",
+   "material_concerns": [
+    "A test checking callable(sub) still kills the -> None mutant",
+    "Other import-time hooks (.pth in site-packages) are outside the clone, not reachable by a worker"
+   ],
+   "evidence_refs": [
+    "scripts/ci/check_worker_appraisal_mutants.py 10/10"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "Appraisal cost unchanged where primary operators reach the change; fallback only adds runs where none ran before.",
+   "material_concerns": [
+    "Orders for import-only changes now need explicit acceptance tests"
+   ],
+   "evidence_refs": [
+    "finding text names the remedy"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "Negative result of the policy experiment recorded with its measurement hazard; earlier false-rejection reading corrected.",
+   "material_concerns": [
+    "Replayed commits are agent-authored; small sample"
+   ],
+   "evidence_refs": [
+    "tests/evidence/greg-product/worker-evidence-integrity-20261105.json"
+   ],
+   "recommendation": "RETAIN"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "Planted bytecode closed a mission",
+   "tier": "sandbox_execution",
+   "reference": "test_a_planted_bytecode_file_cannot_stand_in_for_the_source_under_review",
+   "finding": "fails on d35d92a5 (achieved), passes here (REJECTED)"
+  },
+  {
+   "claim": "Unreachable alias closed a mission",
+   "tier": "sandbox_execution",
+   "reference": "test_an_alias_certified_only_by_importing_it_is_refused_by_the_fallback_tier",
+   "finding": "fails on parent, passes here"
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "76ebb40 is mostly a false rejection",
+   "tier": "sandbox_execution",
+   "reference": "policy replay dev set",
+   "finding": "false as stated: with ordinal mutants removed the sample lands on other untested changed lines; still REJECTED under every policy"
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "worker.appraise ACCEPTS only when evidence tells the delivered source from a wrong one.",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "Closes two acceptance bypasses",
+    "amplified_value": "Every code_change mission and every Genesis build judged by worker.appraise inherits it"
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D1",
+    "statement": "Honest import-only changes are rejected without a founder oracle",
+    "severity": "medium",
+    "response_type": "governance",
+    "redesigned_response": "Finding names the remedy; fallback tier measures strings and bindings first"
+   },
+   {
+    "id": "D2",
+    "statement": "Legitimate native extensions in a patch are refused",
+    "severity": "low",
+    "response_type": "protective",
+    "redesigned_response": "Compiled code is not reviewable source; stated in the module"
+   },
+   {
+    "id": "D3",
+    "statement": "Fallback '-> None' is killed by trivially weak tests",
+    "severity": "medium",
+    "response_type": "evidence",
+    "redesigned_response": "Residual stated; founder oracle closes it"
+   }
+  ],
+  "comparisons": {
+   "baseline": "both bypasses open",
+   "do_nothing": "acceptance not evidence",
+   "simplest_viable_alternative": "refuse compiled paths + fail closed on unmeasured",
+   "strongest_competing_architecture": "cache-prefix isolation plus richer mutation operators",
+   "reversible_experiment": "three commits, each revertible"
+  },
+  "rejected_alternatives": [
+   {
+    "name": "Constant-policy switch",
+    "rejection_reason": "measured: no rejection removed, one added",
+    "revival_evidence": "held-out replay showing a net gain"
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Attack the fallback's strength, the oracle flag's honesty, the restore step and the replay's validity.",
+  "new_weaknesses": [
+   {
+    "id": "W1",
+    "category": "gaming",
+    "statement": "oracle=True whenever acceptance.tests is non-empty, even if the oracle does not exercise the change",
+    "strengthening_response": "Oracle files are sealed at the base and authored by the founder; judging what they test is the founder's call, stated in the module"
+   },
+   {
+    "id": "W2",
+    "category": "fragility",
+    "statement": "Replay could misreport survivors through stale bytecode",
+    "strengthening_response": "Found and fixed in the harness (PYTHONDONTWRITEBYTECODE); product runs already set it"
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D1",
+    "outcome": "accepted",
+    "rationale": "0 of 2 honest unreachable dev commits rejected after the fallback",
+    "owner": "Alfonso Lopez",
+    "review_trigger": "first founder mission rejected with 'name an acceptance test'"
+   },
+   {
+    "disadvantage_id": "D2",
+    "outcome": "accepted",
+    "rationale": "no GREG order so far delivers native code",
+    "owner": "session_018ar6HmbjXfYRpxR8eV4tjA",
+    "review_trigger": "an order that must deliver an extension"
+   },
+   {
+    "disadvantage_id": "D3",
+    "outcome": "accepted",
+    "rationale": "stated residual; oracle closes it",
+    "owner": "session_018ar6HmbjXfYRpxR8eV4tjA",
+    "review_trigger": "a probe that passes the fallback with a callable-only test"
+   }
+  ],
+  "final_design": "compiled_modules refusal with base restore; _Fallback tier; unmeasured adequate only with a founder oracle; shipped operators retained.",
+  "residual_risks": [
+   {
+    "risk": "Mutation sampling may still miss the semantics that matter (e.g. O_EXCL in b2475087)",
+    "mitigation": "recorded; operators unchanged",
+    "owner": "session_018ar6HmbjXfYRpxR8eV4tjA",
+    "review_trigger": "held-out replay completion"
+   }
+  ],
+  "recommendation": "RETAIN"
+ },
+ "dissent": {
+  "present": false,
+  "handling": "No dissent; D1 accepted with an owner and trigger.",
+  "entries": []
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": false,
+  "approval_status": "not_required",
+  "approver": null
+ },
+ "migration_plan": "Additive checks; no data migration. Orders for unreachable changes add an acceptance test.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "Revert 1d241094 (fallback tier and fail-closed rule)",
+   "Revert 6ff374a9 (compiled-module refusal)"
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "An honest change pinned by its tests is rejected only because of the fallback tier",
+  "A compiled path in a patch still reaches an acceptance run"
+ ],
+ "decision": "RETAIN",
+ "decision_owner": "Alfonso Lopez (merge); integrator of #196 (intake)",
+ "review_trigger": "Integrator intake, review findings or the held-out replay result"
+}

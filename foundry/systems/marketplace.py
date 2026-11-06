@@ -38,6 +38,8 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from business.commercial_loop import ACCEPTED_VERIFICATIONS, observation_problems
 from foundry.systems import accounting, mechanism, reputation
+from provenance.digests import compact_json_bytes as _canon
+from foundry.systems.refusals import refusal_recorder
 
 DEFAULT_RULES = {"newcomer_ceiling_cents": 25000, "take_bps": 500}
 VERDICTS = ("VERIFIED", "REFUTED")
@@ -45,10 +47,6 @@ VERDICTS = ("VERIFIED", "REFUTED")
 
 class MarketError(ValueError):
     pass
-
-
-def _canon(value) -> bytes:
-    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
 
 
 def _t(s: str) -> datetime:
@@ -347,14 +345,7 @@ def exercise(root) -> dict:
     open_market(root, {"newcomer_ceiling_cents": 25000, "take_bps": 500})
     for name in ("buyer", "alpha", "gamma", "delta", "newcomer", "auditor"):
         enroll(root, pid[name], public_bytes(keys[name].public_key()).hex())
-    refusals = {}
-
-    def refused(label, fn):
-        try:
-            fn()
-            refusals[label] = None
-        except (MarketError, payments.PaymentError) as exc:
-            refusals[label] = str(exc)[:80]
+    refusals, refused = refusal_recorder((MarketError, payments.PaymentError), limit=80)
 
     def request(rid, ceiling, closes_at, *, min_rep=None, produces="evidence", methods=("external_receipt", "human_review"), by="buyer"):
         return post_request(root, sign(keys[by], {"request_id": rid, "buyer": pid[by], "produces": produces, "ceiling_cents": ceiling,

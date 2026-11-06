@@ -51,8 +51,8 @@ from greg.authority import PRINCIPAL, AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityManifest
 from greg.founder import CLOCK_SKEW, MAX_TTL, instant, key_id, signing_bytes, spent_nonce
 from greg.journal import SOURCE, iso
-from greg.missions import TERMINAL, MissionBook, MissionError, evaluate_predicate, first_choice, measured, \
-    pursued_checks, signed_answer, strategy_scope
+from greg.missions import RESTORED_REFUSAL, TERMINAL, MissionBook, MissionError, evaluate_receipt, first_choice, \
+    measured, pursued_checks, signed_answer, strategy_scope
 from provenance.ledger import sha256_json
 
 SCHEMA = "greg-goal-gravity-binding/1"
@@ -66,6 +66,10 @@ DEVICE_GOAL_CONTROLS = ("stop_pushing", "lower_priority", "never_use_tactic", "d
                         "forget_route", "revoke_capability")
 VERIFIED_KINDS = ("MISSION", "DECISION", "GOAL", "GOAL_CONTROL")
 KEY_KINDS = ("ROTATE_FOUNDER_KEY", "DEVICE_ENROLL", "DEVICE_REVOKE")
+# Evidence commands verified like founder facts (envelope, fresh nonce, signed validity) so settlement can bind a
+# REALIZATION fact or resolution to the body the founder signed (review of #210, S1/S9). They set no goal, mission
+# or key state, and VERIFIED_KINDS consumers never see them.
+EVIDENCE_KINDS = ("REALIZATION",)
 STOP_KINDS = ("stop_pushing", "change_goal")
 # Signed narrowing controls and the goal-state preference list each one appends to.
 NARROWING = {"never_use_tactic": "never_use_tactic", "do_not_monitor": "do_not_monitor", "ask_before": "ask_before",
@@ -125,6 +129,12 @@ def asks_for_move(r: dict, scope: dict) -> bool:
         spent_usd=budget["spent_usd"], budget_usd=budget.get("budget_usd"))
 
 
+# A goal plan node may require a function rather than one implementation: ``"<function>@function"`` is
+# present when any registered implementation of the function is usable, and a woken goal missing it asks
+# Genesis to form it (``_form_requested``).
+FUNCTION_VERSION = "function"
+
+
 class _Genomes:
     """egregore.gps capability view over GREG's one CapabilityRegistry (present = registered + usable)."""
 
@@ -132,6 +142,9 @@ class _Genomes:
         self.registry = registry
 
     def get(self, name, version):
+        if version == FUNCTION_VERSION:
+            return next((m for m in self.registry.by_function(name) if self.registry.usable(m.capability_id)[0]),
+                        None)
         m = self.registry.manifests.get(name)
         return m if m is not None and m.version == version and self.registry.usable(name)[0] else None
 
@@ -158,6 +171,8 @@ def _verify_envelope(payload: dict, founders: dict, devices: dict, body_id: str,
             when = at or instant(env["issued_at"])
             if env["kind"] not in grant["kinds"] or not when < instant(grant["expires_at"]):
                 return None
+            if grant.get("signed_not_before") and instant(env["issued_at"]) < instant(grant["signed_not_before"]):
+                return None         # an old token never reactivates (FounderVerifier.verify, greg/founder.py)
             public, principal = grant["public_key"], "device:" + grant["label"]
         else:
             return None
@@ -221,6 +236,9 @@ class FounderFacts:
     book: Any = None                                    # MissionBook folded to the end of the ledger (answers
                                                         # counted at their signed DECISION's acceptance)
     manifests: dict = field(default_factory=dict)       # capability id -> manifest, at the end of the ledger
+    restored: Any = None                                # latest greg.body.restored so far (Body._after_restore)
+    revoked: set = field(default_factory=set)           # device keys revoked so far, by any route (a restore's too)
+    enrolled_at: dict = field(default_factory=dict)     # (device key, command digest) -> the body's enrollment time
 
     def open_goals(self) -> dict:
         return {g: self.specs[g] for g in self.admitted if g not in self.closed}
@@ -289,6 +307,13 @@ def founder_facts(ledger, *, body_id: str | None = None) -> FounderFacts:
                 facts.refused_at[p["digest"]] = max(refused_at, facts.refused_at.get(p["digest"], refused_at))
             book.fold("command.rejected", p, event_id=rec.payload["event_id"])
             continue
+        if kind == "greg.device.revoked":     # Body.device_keys honours every revocation: one only narrows trust
+            facts.revoked.add(p.get("device_key_id"))
+            devices.pop(p.get("device_key_id"), None)
+        elif kind == "greg.device.enrolled":  # when the body recorded a delegation: it narrows, never grants
+            facts.enrolled_at[(p.get("device_key_id"), p.get("command_digest"))] = p.get("at")
+        elif kind == "greg.body.restored":
+            facts.restored = p
         if kind == "greg.capability.registered":
             try:
                 manifest = CapabilityManifest.from_dict(p["manifest"])
@@ -315,8 +340,10 @@ def founder_facts(ledger, *, body_id: str | None = None) -> FounderFacts:
 
 # verified_decisions memo: ledger -> (records seen, hash of the last one, verified DECISIONs, their acceptance events)
 _VERIFIED: "weakref.WeakKeyDictionary" = weakref.WeakKeyDictionary()
-# The only records a DECISION's verification reads: the key root, key changes, nonces and acceptance times.
-FOUNDER_RECORDS = ("greg.command.accepted", "greg.command.rejected", "greg.founder.enrolled")
+# The only records a DECISION's verification reads: the key root, key changes, nonces, acceptance times, device
+# revocations and enrollment times, and restores.
+FOUNDER_RECORDS = ("greg.command.accepted", "greg.command.rejected", "greg.founder.enrolled",
+                   "greg.device.revoked", "greg.device.enrolled", "greg.body.restored")
 
 
 def _founder_record(rec) -> bool:
@@ -382,11 +409,20 @@ def _accepted(facts: FounderFacts, p: dict, founders: dict, devices: dict, seen_
     if principal is None:
         return None
     if not isinstance(p.get("nonce"), str) or p.get("nonce") != env.get("nonce"):
-        if ckind in VERIFIED_KINDS or ckind in KEY_KINDS:
+        if ckind in VERIFIED_KINDS or ckind in KEY_KINDS or ckind in EVIDENCE_KINDS:
             facts.refused[digest_] = ("its record's nonce is not its signed envelope's: not a record Body.apply "
                                       "wrote; it spends no nonce and counts for nothing")
         return None
-    if ckind not in VERIFIED_KINDS and ckind not in KEY_KINDS:
+    if facts.restored is not None:
+        try:          # Body._after_restore refuses every command issued before the latest restore; unreadable, all
+            before = instant(env["issued_at"]) < instant(facts.restored.get("restored_at"))
+        except (KeyError, TypeError, ValueError):
+            before = True
+        if before:
+            if ckind in VERIFIED_KINDS or ckind in KEY_KINDS or ckind in EVIDENCE_KINDS:
+                facts.refused[digest_] = f"{RESTORED_REFUSAL}; not a record Body.apply wrote, it spends no nonce"
+            return None
+    if ckind not in VERIFIED_KINDS and ckind not in KEY_KINDS and ckind not in EVIDENCE_KINDS:
         return principal
     if env["nonce"] in seen_nonces:
         facts.refused[digest_] = "replayed nonce: an earlier accepted or verified-then-rejected command used it"
@@ -424,15 +460,21 @@ def _founder_fact(facts: FounderFacts, p: dict, env: dict, ckind: str, digest_: 
             founders.pop(env["founder_key_id"], None)
             founders[key_id(body["new_public_key"])] = body["new_public_key"]
         elif ckind == "DEVICE_ENROLL" and principal == "founder":
-            devices[key_id(body["public_key"])] = {"public_key": body["public_key"], "label": str(body["label"]),
-                                                   "kinds": tuple(body["kinds"]), "expires_at": body["expires_at"]}
+            kid = key_id(body["public_key"])
+            devices[kid] = {"public_key": body["public_key"], "label": str(body["label"]),
+                            "kinds": tuple(body["kinds"]), "expires_at": body["expires_at"]}
+            if kid in facts.revoked:      # greg.body.device_delegations: a re-delegation verifies only later tokens
+                stated = [t for t in (p.get("accepted_at"), facts.enrolled_at.get((kid, digest_))) if _when(t)]
+                devices[kid]["signed_not_before"] = max(stated, key=_when) if stated else env["issued_at"]
         elif ckind == "DEVICE_REVOKE" and principal == "founder":
             devices.pop(body.get("device_key_id"), None)
     except (KeyError, TypeError, ValueError):
         return
-    if ckind not in VERIFIED_KINDS:
+    if ckind not in VERIFIED_KINDS and ckind not in EVIDENCE_KINDS:
         return
     facts.signed[digest_] = {**p, "principal": principal}
+    if ckind in EVIDENCE_KINDS:
+        return
     try:
         if ckind == "GOAL":
             _admit(facts, body, digest_, principal, env, accepted_at)
@@ -1125,12 +1167,25 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
             receipt = None if check is None else _sensor_receipt(body.ledger, gate, m, check, p["receipt"])
             if receipt is None:               # missing, or not this check's own sensor read: never evidence
                 continue
-            value, _ = evaluate_predicate(check["predicate"], receipt.payload.get("result", {}).get("output"))
+            # the receipt's kept output, or the whole output the body kept beside it (re-hashed on read)
+            artifacts = getattr(getattr(body, "layout", None), "artifacts", None)
+            value, _ = evaluate_receipt(check["predicate"], receipt.payload.get("result", {}), artifacts)
             trust = "attributed" if value == p["passed"] else "untrusted"
             latest[(p["mission_id"], p["check_id"])] = (rec.payload["event_id"], p["at"], rec.hash, value, trust)
         elif t == "greg.mission.appraised" and p.get("verdict") in ("VERIFIED", "REFUTED"):
             latest[(p["mission_id"], "appraised_verified")] = (rec.payload["event_id"], rec.ts_utc, rec.hash,
                                                                p["verdict"] == "VERIFIED", "attributed")
+        elif t in ("greg.capability.registered", "greg.capability.state"):
+            # Capability formation as perception: a capability that became usable (formed, recovered, attached)
+            # or stopped being usable changes what a mission blocked on its function can do. Recorded by Genesis
+            # or the founder's own command on the ledger; it creates no authority and pulls only timing.
+            cid = (p.get("manifest") or {}).get("capability_id") or p.get("capability_id")
+            manifest = body.registry.manifests.get(cid)
+            if manifest is not None and p.get("state") in CAPABILITY_USABLE:
+                for mid, waiting in _blocked_on(body, book, manifest.function) \
+                        + _goal_formations(body, manifest.function):
+                    latest[(mid, f"capability:{waiting}")] = (rec.payload["event_id"], p.get("at") or rec.ts_utc,
+                                                              rec.hash, p["state"], "attributed")
         elif t == "greg.external.ingested" and not p.get("quarantined"):
             about, terms = intake_about(p.get("content", ""), book, loop.registry)
             emit(rec.payload["event_id"], p["at"], rec.hash, trust="untrusted", tags=[p["channel"]],
@@ -1147,6 +1202,102 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
                 emit(f"greg.path:{node}:{met}:{end}", iso(body.clock()), body.ledger.head,
                      [{"subject": "greg.path", "attribute": node, "value": met, "confidence": 1.0}])
     return out, end
+
+
+# Each transition is its own change: formed or recovered (VERIFIED: attachable), attached (usable now),
+# quarantined or detached (no longer usable). The value is the state, so every one of them can wake a goal.
+CAPABILITY_USABLE = ("VERIFIED", "ATTACHED", "QUARANTINED", "DETACHED")
+
+
+def _blocked_on(body, book: MissionBook, function: str) -> list[tuple[str, str]]:
+    """(mission, the function it waits on) for open missions blocked on ``function`` directly, or on a
+    construction whose engine provides ``function``."""
+    genesis = getattr(body, "genesis", None)
+    out = []
+    for mid, m in sorted(book.missions.items()):
+        waiting = (m.blocker or {}).get("function")
+        if not waiting or m.status in TERMINAL:
+            continue
+        engine = genesis.construction_engine(waiting) if genesis is not None else None
+        if function in (waiting, engine):
+            out.append((mid, waiting))
+    return out
+
+
+def _goal_formations(body, function: str) -> list[tuple[str, str]]:
+    """(mission, function) for open deficits a goal asked Genesis to form, on ``function`` directly or on a
+    construction whose engine provides it: their mission is not blocked, but the goal waits on them."""
+    genesis = getattr(body, "genesis", None)
+    if genesis is None:
+        return []
+    resolved = {e.payload["deficit_id"] for e in body.journal.replay("deficit.resolved")}
+    out = set()
+    for e in body.journal.replay("deficit.opened"):
+        p = e.payload
+        if p.get("requested_by_goal") and p["deficit_id"] not in resolved \
+                and function in (p["function"], genesis.construction_engine(p["function"])):
+            out.add((p["mission_id"], p["function"]))
+    return sorted(out)
+
+
+def _form_requested(body, reg: GoalRegistry, facts: FounderFacts, woken, at: datetime) -> list[dict]:
+    """A woken goal whose active plan node requires ``<function>@function`` that no usable implementation
+    serves asks Genesis to form it, under the first open, unpaused mission the goal binds.
+
+    Formation only (``Genesis.form_for_goal``): the result is VERIFIED and waits for your signed attach;
+    no auto_attach, no builder, no spend, no scope. A function a person performs (``asks.human_work``),
+    one Genesis cannot form without a builder, a revoked capability and a stopped goal are left alone."""
+    genesis = getattr(body, "genesis", None)
+    if genesis is None:
+        return []
+    book = body.engine.book
+    out = []
+    for gid in woken:
+        if gid not in facts.admitted or facts.stopped(gid) is not None:
+            continue
+        state = reg.state(gid)
+        revoked = set(state.preferences.get("revoked_capabilities", []))
+        for cap in state.missing_capabilities:
+            function, _, version = cap.partition("@")
+            if version != FUNCTION_VERSION or cap in revoked or not genesis.formable(function) \
+                    or asks.human_work(function) is not None:
+                continue
+            mission = next((m for mid in sorted(reg.get(gid).authority.get("missions", []))
+                            if (m := book.missions.get(mid)) is not None and m.status not in TERMINAL
+                            and not m.paused), None)
+            if mission is None:
+                continue
+            found = genesis.form_for_goal(goal_id=gid, mission=mission, function=function, now=at,
+                                          purpose=f"goal {gid[:23]} plan node {state.active_node_id} requires "
+                                                  f"{function}")
+            out.append({"goal_id": gid, "function": function, "mission_id": mission.mission_id,
+                        "serving": found.capability_id if found is not None else None})
+    return out
+
+
+def _close_goal_formations(body, at: datetime) -> list[str]:
+    """Resolve each open goal-requested deficit once an attached, usable implementation serves its function
+    (attached by your signed command): the goal's plan then reads the function present."""
+    genesis = getattr(body, "genesis", None)
+    if genesis is None:
+        return []
+    resolved = {e.payload["deficit_id"] for e in body.journal.replay("deficit.resolved")}
+    closed = []
+    for e in body.journal.replay("deficit.opened"):
+        p = e.payload
+        if not p.get("requested_by_goal") or p["deficit_id"] in resolved:
+            continue
+        serving = genesis.find_attached(p["function"])
+        if serving is None:
+            continue
+        body.journal.record("deficit.resolved", {"deficit_id": p["deficit_id"],
+                                                 "capability_id": serving.capability_id,
+                                                 "mission_id": p["mission_id"],
+                                                 "resume": f"goal {p['requested_by_goal']}", "at": iso(at)},
+                            key=[p["deficit_id"], "resolved"])
+        resolved.add(p["deficit_id"])
+        closed.append(p["deficit_id"])
+    return closed
 
 
 def _sensor_receipt(ledger, gate: dict, m, check: dict, receipt_hash: str):
@@ -1245,6 +1396,9 @@ def _tick(body, now: datetime) -> dict:
     extra = {"pulls_released": released} if released else {}
     refusals = _settle(body, reg, facts, at)
     signals, end = _sense(body, loop, held.cursor)
+    closed = _close_goal_formations(body, at)    # after sensing: the attach that closes one still wakes its goal
+    if closed:
+        extra["formations_closed"] = closed
     reopened = _reopen(reg, facts, signals, at)
     if not (signals or reg.due_for_review(at) or reg.by_status("awake")):
         held.cursor = end
@@ -1254,6 +1408,8 @@ def _tick(body, now: datetime) -> dict:
                      evidence_confidence=1.0)   # an upper bound only: body mode derives it from world evidence
     held.cursor = end                              # advanced only after the turn succeeded
     pulled = _activate(body, held, turn, at)
+    formed = _form_requested(body, reg, facts, turn.woken, at)
+    extra.update({"formation_requested": formed} if formed else {})
     return {"state": turn.status, "turn_id": turn.turn_id, "woken": list(turn.woken), "missions_pulled": pulled,
             "asked": list(held.store.asked), "wake_refused": [w["goal_id"] for w in turn.wake_refused],
             "quarantined": quarantined, "refusals_mirrored": refusals, "reopened": reopened, **extra}

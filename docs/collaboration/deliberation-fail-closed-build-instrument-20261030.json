@@ -1,0 +1,538 @@
+{
+  "decision_id": "FAIL-CLOSED-BUILD-INSTRUMENT-20261030",
+  "title": "Fail instead of skip when the supervised rehearsals are required, keep greg rehearse bodies below the founder tier, and run the build-frontier gates on every pull request",
+  "problem": "Three gaps at base 44b3df96 (#236's head). (1) Both supervised rehearsal modules skip when supervisord is not on PATH. With the default PATH (supervisord only in /home/user/venv311/bin) they report '4 skipped' and exit 0, so the build frontier's N1/N2 count can rest on a skip. (2) Any holder of an enrolled key can sign FOUNDER_TIER directly (greg/metrics.py says so). A `greg rehearse` body keeps its throwaway key on disk with no passphrase. A probe on the base (rehearsal body, self-signed FOUNDER_TIER, then a MISSION, VEPMC rows stubbed) read tier FOUNDER_TIER, achieved ['N0', 'N1'], active N2. That is the failure evidence INTENT-20261030-BUILD-BEFORE-DEVICE-RUN names: 'a test key or rehearsal that moves VEPMC or greg path N1'. (3) No workflow ran #236's path-predicate mutation gate.",
+  "founder_intent_refs": [
+    "INTENT-20261030-BUILD-BEFORE-DEVICE-RUN (failure_evidence: 'a test key or rehearsal that moves VEPMC or greg path N1')",
+    "INTENT-20261028-OPUS-MAXIMUS-REISSUE (sections 56 reality ladder, 64 external reality is final judge, 70 and 73)",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-20261019-UPWARD-ASCENT",
+    "INTENT-20260930-MASTER-BUILD-GATE (the N1/N2 structural-candidate gate on the founder-tier rule)"
+  ],
+  "baseline": "44b3df96: test_greg_chromebook_rehearsal.py and test_greg_vepmc_path.py carry skipif marks on shutil.which('supervisord'). `greg rehearse` creates a body, enrolls an unprotected throwaway key and signs MISSIONs whose founder_expression opens with '[REHEARSAL]'. metrics.founder_tier admits any MISSION signed by the enrolled founder key after that key signed FOUNDER_TIER. scripts/ci/check_path_predicate_mutants.py exists, and no workflow runs it.",
+  "alternatives": [
+    {
+      "name": "Proposed: fail-closed helper, rehearsal mark plus ledger label read, a build-frontier workflow and a mutant gate",
+      "description": "tests/supervisor_requirement.py fails each supervised rehearsal test with one message under GREG_REQUIRE_SUPERVISOR=1, and skips otherwise; both modules call it from an autouse fixture. `greg rehearse` writes a 'rehearsal' mark into body.json before the throwaway key is enrolled. metrics.rehearsal_body reads the mark or an accepted MISSION whose signed founder_expression opens with rehearsal.LABEL, and founder_tier holds every mission of such a body at STRUCTURAL_CANDIDATE. tier_status and Mission Control's Proof row say why. .github/workflows/build-frontier.yml runs both mutation gates and the rehearsals under the requirement on every pull request. 29 mutants pin it.",
+      "advantages": [
+        "With GREG_REQUIRE_SUPERVISOR=1 and no supervisord, the run gives 4 setup errors with the exact message and exits 1, instead of '4 skipped' and exit 0",
+        "A self-attested rehearsal body stays STRUCTURAL_CANDIDATE and achieved stays ['N0'], including a body made by the base's code",
+        "Read side only: greg/body.py, greg/console.py, conftest.py and canonical-ci.yml are not edited, so no overlap with #221, #235, #233 or the Canonical CI PRs",
+        "Every safeguard has a caught mutant (29/29)"
+      ],
+      "disadvantages": [
+        "The body still accepts FOUNDER_TIER and a first_founder_body designation from a rehearsal key",
+        "The variable covers only the two named modules",
+        "The workflow has never run on GitHub Actions",
+        "One founder-signed MISSION opening with [REHEARSAL] holds the whole body below the tier, retroactively"
+      ],
+      "revival_evidence": "Retained as proposed. Revisit when #221 lands (write-side refusal) or the workflow's first run reports."
+    },
+    {
+      "name": "Simplest viable: put supervisord on PATH in CI and document the rehearsal key's limit",
+      "description": "Set PATH wherever the rehearsals must run, and add a sentence to greg/README.md that a rehearsal key must never attest. No code.",
+      "advantages": [
+        "No code and no new surface",
+        "With supervisord on PATH the rehearsals already pass (4 passed in 129.7 s at round 1)"
+      ],
+      "disadvantages": [
+        "A run without PATH set still reads '4 skipped' with exit 0: nothing fails closed",
+        "A rehearsal body's own key can still move achieved to N1, the failure the 2026-10-30 intent names",
+        "A sentence is a claim, not a check (directive section 56)"
+      ],
+      "revival_evidence": "Only if both the skip and the tier read were already enforced elsewhere."
+    },
+    {
+      "name": "Strongest competing: refuse at write time in greg/body.py, plus a suite-wide fail-on-skip",
+      "description": "The spec's full form: the body refuses FOUNDER_TIER and BODY_DESIGNATE purpose=first_founder_body from a rehearsal body, so the attestation never enters the ledger. A pytest policy turns every skip into a failure in CI.",
+      "advantages": [
+        "No reader has to know about rehearsals: the attestation is never written",
+        "Also closes the designation path; greg acceptance's FOUNDER-DEVICE label reads the designation, not the mark"
+      ],
+      "disadvantages": [
+        "greg/body.py is edited by open #221 and #235",
+        "Rehearsal bodies already made hold their attestations in their ledgers; a read-side check is still needed for them",
+        "A suite-wide fail-on-skip turns legitimately optional skips (Landlock, bubblewrap, browsers) into failures on hosts without them"
+      ],
+      "revival_evidence": "#221 lands; the write-side refusal is then the named follow-up, with fail-before tests and mutants."
+    },
+    {
+      "name": "Staged experiment: the workflow alone first",
+      "description": "Land build-frontier.yml running both gates and the rehearsals with supervisord on PATH, watch its first runs, then decide on metrics.",
+      "advantages": [
+        "Smallest diff; reversible by deleting one file",
+        "Gives the first real CI timings before more code"
+      ],
+      "disadvantages": [
+        "Leaves the founder-tier path open while later nodes are built on rehearsal bodies",
+        "Without the helper, a runner missing supervisord still reads skipped"
+      ],
+      "revival_evidence": "Adopted in part: the workflow is in this change and can be removed alone; its first run is a review trigger."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Containers keep building later directive nodes on rehearsal bodies, as INTENT-20261030-BUILD-BEFORE-DEVICE-RUN directs. One FOUNDER_TIER signed by a throwaway key moves achieved to N1 on a body that is not the founder's, and a missing supervisord keeps reading '4 skipped' with exit 0. At the base no workflow runs the path-predicate gate; #196 has since added it to Canonical CI job 1 (4dc0d581).",
+    "advantages": [
+      "No new code or workflow",
+      "No added CI minutes"
+    ],
+    "disadvantages": [
+      "The founder's named failure (a rehearsal moving N1) is one signature away",
+      "The build frontier's N1/N2 can rest on a skip"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "The 2026-10-30 correction puts the device run at the end of the build and names as failure 'a test key or rehearsal that moves VEPMC or greg path N1'. Before this change a rehearsal's own key did exactly that with one signature. The change closes that path on the read side for every `greg rehearse` body, leaves the founder's own path to the tier as it was, and grants nothing.",
+      "material_concerns": [
+        "Read side only: the body still accepts a rehearsal key's FOUNDER_TIER and first_founder_body designation (follow-up after #221)",
+        "The founder tier stays the key holder's unverified claim of custody; nothing here verifies custody",
+        "A real founder mission whose expression opens with [REHEARSAL] would hold the founder's own body below the tier",
+        "VEPMC stays 0; nothing here is founder-used"
+      ],
+      "evidence_refs": [
+        "docs/intent/INTENT-20261030-BUILD-BEFORE-DEVICE-RUN.json",
+        "docs/evidence/fail-closed-build-instrument-2026-10-30/README.md",
+        "tests/unit/test_greg_rehearsal_founder_tier.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Existing and commodity mechanisms only: an environment variable read in one helper, as GREG_REQUIRE_LANDLOCK and GREG_REQUIRE_WORKER_ISOLATION already are; one field in body.json written by the existing greg.body._private_write; the signed MISSION already in the hash-chained ledger; a standard GitHub Actions workflow. One owner decides the tier (metrics.founder_tier), and every reader already goes through it: the N1-N4, N6 and N7 predicates, VEPMC's evidence_level, position and tier_status.",
+      "material_concerns": [
+        "Two signals (mark and label) decide one fact; rehearsal_body takes either, and an unreadable body.json counts as marked",
+        "greg/metrics.py now imports greg.rehearsal.LABEL; a literal test and a mutant keep the label from drifting",
+        "Since #196 4dc0d581 Canonical CI job 1 also runs the path-predicate gate, so build-frontier.yml's first step runs it a second time per pull request"
+      ],
+      "evidence_refs": [
+        "greg/metrics.py",
+        "greg/rehearsal.py",
+        "tests/supervisor_requirement.py",
+        ".github/workflows/build-frontier.yml"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Two reviews of the round-1 head 08dcf2c3 were done by separate agents of this same session, one attack and one fidelity. They reported five findings, all confirmed. MWA-ATK-1 (a rehearsal body made before the mark still reached FOUNDER_TIER) and MWA-ATK-2/MWA-FID-1 (one defect: 'Run <code></code>' on the home banner and the Proof row) were reproduced, fixed and pinned by tests that fail on 08dcf2c3 and by 9 new mutants. MWA-FID-2 (a fail-before row's file count) is corrected. MWA-FID-3 (a stale timing comment and an overstated wording) is not addressed. A negative control shows the gate does not count a survivor or a syntax error as caught.",
+      "material_concerns": [
+        "Only `greg rehearse` writes the mark and the label; a --no-passphrase installer body has neither and stays below the tier only because its key never attests through the CLI",
+        "Neither signal stops a body made by hand, or a ledger rewritten past its chain",
+        "greg acceptance's FOUNDER-DEVICE label reads the body designation, not the mark; a hosted acceptance run on a rehearsal body was not attempted",
+        "MWA-FID-3 is open: the workflow comment says about 80 s and 90 s where 138-145 s and 122.6-169.2 s were measured, and the README says GREG_REQUIRE_WORKER_ISOLATION 'reports the same way' though it reports FAILED inside the test"
+      ],
+      "evidence_refs": [
+        "docs/evidence/fail-closed-build-instrument-2026-10-30/README.md (review round 1 table)",
+        "scripts/ci/check_fail_closed_build_instrument_mutants.py",
+        "tests/unit/test_greg_rehearsal_founder_tier.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "A runner that must exercise the rehearsals sets one variable; a developer without supervisord keeps today's skip. The workflow installs what Canonical CI job 1 installs and needs no user namespaces, so the AppArmor restriction stays in place. Rollback is a revert of this branch's commits with no data migration: an old body without the mark is still recognised by the label in its ledger.",
+      "material_concerns": [
+        "CI cost, measured locally only: this unit's gate 346-360 s, the path-predicate gate 138-145 s, the rehearsals 122.6-169.2 s; never timed on Actions",
+        "Under the variable a missing supervisord is a pytest setup ERROR, not FAILED; the run still exits 1",
+        "The path-predicate step duplicates Canonical CI job 1 at #196 4dc0d581",
+        "Five other supervisord test modules still skip silently"
+      ],
+      "evidence_refs": [
+        ".github/workflows/build-frontier.yml",
+        "tests/unit/test_build_frontier_workflow.py",
+        "docs/evidence/fail-closed-build-instrument-2026-10-30/README.md (commands and results)"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "The change removes two ways for evidence to overstate: a skip read as a pass, and a throwaway key's self-attestation read as the founder tier. Claims stay at UNIT-TESTED and INTEGRATION-TESTED in a Linux container. The workflow is labelled not executed. VEPMC stays 0. No person's data is touched, and the founder's surfaces now say why a rehearsal body is below the tier instead of showing an empty command.",
+      "material_concerns": [
+        "The banner shows an instruction ('greg --home <a new home> init, then enroll and attest your own passphrase-protected key on that body') inside the unchanged console's 'Run <code>...</code> once.'",
+        "On a self-attested rehearsal body the home banner is silent; only the Proof row and greg status say it is a rehearsal (greg/console.py was on the avoid list)",
+        "greg/README.md says '19 mutants' where the gate holds 29 (19 of them on greg/ source)",
+        "The reviews were separate agents of this same session, not independent sessions or humans"
+      ],
+      "evidence_refs": [
+        "docs/evidence/fail-closed-build-instrument-2026-10-30/README.md (limitations)",
+        "greg/README.md"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The silent skip is real at the base",
+      "tier": "sandbox_execution",
+      "reference": "pytest -q tests/integration/test_greg_chromebook_rehearsal.py tests/integration/test_greg_vepmc_path.py at 44b3df96, default PATH",
+      "finding": "4 skipped, exit 0"
+    },
+    {
+      "claim": "A rehearsal body's own key moved the path at the base, and does not at the head",
+      "tier": "sandbox_execution",
+      "reference": "probe: greg rehearse body, self-signed FOUNDER_TIER, then a MISSION, VEPMC rows stubbed; run on 44b3df96 and on the round-1 head",
+      "finding": "Base: tier FOUNDER_TIER, achieved ['N0', 'N1'], active N2. Head: STRUCTURAL_CANDIDATE, achieved ['N0'], active N1, and body.json carries the mark"
+    },
+    {
+      "claim": "The round-1 tests fail before the change",
+      "tier": "unit_test",
+      "reference": "test_require_supervisor.py and test_greg_rehearsal_founder_tier.py (round-1 versions) plus the helper, copied onto a detached worktree at 44b3df96",
+      "finding": "4 failed, 2 passed in 21.5 s, and again in 21.65 s at final verification. Two failures are behavioural: '4 skipped' with exit 0 under the requirement, and 'FOUNDER_TIER' == 'STRUCTURAL_CANDIDATE'"
+    },
+    {
+      "claim": "The review fixes' tests fail before the fixes",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_greg_rehearsal_founder_tier.py on detached worktrees at 08dcf2c3 and 44b3df96",
+      "finding": "08dcf2c3: 5 failed, 1 passed in 35.8 s; three behavioural (unmarked rehearsal body at FOUNDER_TIER, labelled body's missions at FOUNDER_TIER, '<code></code>' on both surfaces). 44b3df96: 6 failed in 35.2 s; two behavioural"
+    },
+    {
+      "claim": "The requirement fails closed and the default still skips",
+      "tier": "sandbox_execution",
+      "reference": "both rehearsal modules with supervisord hidden from PATH, at ac4e64cc",
+      "finding": "GREG_REQUIRE_SUPERVISOR=1: 4 errors in 0.50 s, each with the exact MISSING message, exit 1. Unset: 4 skipped in 0.65 s, exit 0"
+    },
+    {
+      "claim": "The supervised rehearsals run under the requirement",
+      "tier": "sandbox_execution",
+      "reference": "env PATH=/home/user/venv311/bin:$PATH GREG_REQUIRE_SUPERVISOR=1 pytest on both modules, at ac4e64cc",
+      "finding": "4 passed in 169.21 s, none skipped, exit 0 (122.6 s at 0c0c0166, 129.7 s at round 1)"
+    },
+    {
+      "claim": "A rehearsal body made by the base's code is now recognised",
+      "tier": "sandbox_execution",
+      "reference": "the attack reviewer's make_body.py (base code) and attest_on_head.py, re-run at the fix head 0c0c0166",
+      "finding": "rehearsal_body True, tier STRUCTURAL_CANDIDATE, achieved ['N0']; at 08dcf2c3 the same body read FOUNDER_TIER and ['N0', 'N1']"
+    },
+    {
+      "claim": "Every safeguard is pinned by a caught mutant",
+      "tier": "unit_test",
+      "reference": "python -B scripts/ci/check_fail_closed_build_instrument_mutants.py at ac4e64cc",
+      "finding": "BASELINE passes; 29/29 caught, exit 0, 360 s (13 metrics.py, 1 mission_control.py, 5 rehearsal.py, 3 helper, 3 module wiring, 4 workflow). A round-1 negative control read 0/2: SURVIVED_OR_INVALID and INVALID (SyntaxError)"
+    },
+    {
+      "claim": "Related suites pass at the head",
+      "tier": "unit_test",
+      "reference": "43 unit files (every importer of greg.metrics, greg.mission_control or greg.console, plus the new files); tests/integration/test_greg_mission_control.py and test_greg_mission_control_browser.py",
+      "finding": "769 unit tests passed (298 in 381.67 s and 471 in 779.20 s), nothing skipped in the first batch; Mission Control integration 11 passed in 183.54 s with a real Playwright browser"
+    },
+    {
+      "claim": "The path-predicate gate and the stale-mutant check hold on the changed tree",
+      "tier": "unit_test",
+      "reference": "scripts/ci/check_path_predicate_mutants.py at 0c0c0166; static check of every mutant text in scripts/ci/check_*mutants.py that targets greg/metrics.py, rehearsal.py or mission_control.py",
+      "finding": "33/33 caught, exit 0, 145 s. 22 mutant texts, each occurring exactly once at ac4e64cc"
+    },
+    {
+      "claim": "Authority and schema checks pass",
+      "tier": "unit_test",
+      "reference": "scripts/ci/check_authority_singleton.py and scripts/ci/check_schema_refs.py at ac4e64cc",
+      "finding": "One source of authority for each of 6 governed artifacts; 27 schemas, 130 local refs resolve"
+    },
+    {
+      "claim": "The branch merges cleanly with #196 and every open PR checked",
+      "tier": "other",
+      "reference": "git merge-tree --write-tree at ac4e64cc against #196 4dc0d581 and the heads of #209, #214, #215, #218, #221, #226, #228, #229, #232, #233, #235; the final verification also checked f65638b3 and four local unit branches",
+      "finding": "All clean (exit 0). The diff against #196's head is exactly this unit's 13 files (merge base 44b3df96)"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "The round-1 design missed rehearsal bodies made before the mark",
+      "tier": "sandbox_execution",
+      "reference": "MWA-ATK-1, reproduced at 08dcf2c3",
+      "finding": "body.json has mark: False, rehearsal_body False, tier FOUNDER_TIER, achieved ['N0', 'N1']; the ledger carried the signed '[REHEARSAL] ...' twice. Fixed by reading the label"
+    },
+    {
+      "claim": "Round 1 broke two founder surfaces",
+      "tier": "sandbox_execution",
+      "reference": "MWA-ATK-2 and MWA-FID-1, the reviewers' probe_console.py and console_probe.py at 08dcf2c3",
+      "finding": "Home banner 'Run <code></code> once.'; Proof row 'not attested: ... Run <code></code>'. Fixed: tier_status gives REHEARSAL_HOW and the Proof row names the rehearsal body"
+    },
+    {
+      "claim": "An evidence row overstated what it covered",
+      "tier": "readme_claim",
+      "reference": "MWA-FID-2; docs/evidence/fail-closed-build-instrument-2026-10-30/README.md fail-before row",
+      "finding": "Said three test files; 4 failed, 2 passed covers two. With the third file the base gives 6 failed, 2 passed. Corrected in ac4e64cc"
+    },
+    {
+      "claim": "Two record statements are still wrong",
+      "tier": "readme_claim",
+      "reference": "MWA-FID-3; .github/workflows/build-frontier.yml lines 33-34; README 'What changed' item 1",
+      "finding": "Timing comment says about 80 s and 90 s; measured 138-145 s and 122.6-169.2 s. 'GREG_REQUIRE_WORKER_ISOLATION reports the same way' is not so: it fails inside the test body (FAILED). Not addressed"
+    },
+    {
+      "claim": "The write side is open",
+      "tier": "other",
+      "reference": "greg/body.py unchanged; README limitations",
+      "finding": "A rehearsal key can still write FOUNDER_TIER and a first_founder_body designation; only the reads are held"
+    },
+    {
+      "claim": "The workflow is unexecuted, and part of it is now duplicated",
+      "tier": "other",
+      "reference": ".github/workflows/build-frontier.yml; .github/workflows/canonical-ci.yml at #196 4dc0d581 (job 1 step 'Path predicates and build frontier mutations')",
+      "finding": "Never run on GitHub Actions; checked only as YAML by tests/unit/test_build_frontier_workflow.py. Since 4dc0d581 Canonical CI also runs the path-predicate gate, so 'nothing in CI ran it' is true at the base only"
+    },
+    {
+      "claim": "The requirement covers two modules only",
+      "tier": "readme_claim",
+      "reference": "README limitations",
+      "finding": "test_greg_body_supervised.py, test_greg_product_path.py, test_greg_cortex_rehearsal.py, test_greg_phone_e2e.py and test_one_machine_ten_steps.py still skip silently"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "A run that must exercise the supervised rehearsals cannot pass by skipping them. No `greg rehearse` body can move greg path, achieved or VEPMC's evidence level, whatever its throwaway key signs. The path-predicate gate runs on every pull request. No authority moves.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "The supervised rehearsals fail closed when required",
+        "amplified_value": "The build frontier's N1 and N2 rest on runs that happened; the same helper can be extended to the five remaining supervisord modules"
+      },
+      {
+        "id": "A2",
+        "statement": "Rehearsal bodies are held below the founder tier by a signed ledger label as well as a body.json mark",
+        "amplified_value": "Containers can keep building later nodes on rehearsal bodies with no route from a throwaway key to N1, and bodies made before this change are covered"
+      },
+      {
+        "id": "A3",
+        "statement": "The founder's surfaces say why a rehearsal body is below the tier",
+        "amplified_value": "greg status, the Proof row and the banner stop advising an attestation that would not count"
+      },
+      {
+        "id": "A4",
+        "statement": "Every safeguard has a caught mutant, and a workflow runs the gates",
+        "amplified_value": "Once the workflow runs, weakening any guard fails a pull request"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Read side only: the body still accepts FOUNDER_TIER and a first_founder_body designation from a rehearsal key",
+        "severity": "medium",
+        "response_type": "governance",
+        "redesigned_response": "Every reader of the tier goes through metrics.founder_tier, so the read side alone keeps the predicates, achieved and VEPMC's evidence level below the tier. The write-side refusal is a named follow-up after #221, to avoid a conflicting greg/body.py edit"
+      },
+      {
+        "id": "D2",
+        "statement": "The mark and the label are not tamper-proof",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "The label lives in the hash-chained ledger, so editing body.json no longer clears a rehearsal. The remaining limit (a body made by hand, a ledger rewritten past its chain) is stated in both READMEs and here"
+      },
+      {
+        "id": "D3",
+        "statement": "The label is whole-body and retroactive: one founder MISSION opening with [REHEARSAL] holds the founder's own body below the tier",
+        "severity": "low",
+        "response_type": "protective",
+        "redesigned_response": "Only the enrolled founder key may sign a MISSION, and the label can only deny the tier. The same text anywhere else in an expression marks nothing (tested, and pinned by a mutant)"
+      },
+      {
+        "id": "D4",
+        "statement": "GREG_REQUIRE_SUPERVISOR covers two modules, and under it a missing supervisord is an ERROR, not FAILED",
+        "severity": "low",
+        "response_type": "learning",
+        "redesigned_response": "The run still exits 1. The five remaining modules are named as a follow-up; some are touched by other open PRs"
+      },
+      {
+        "id": "D5",
+        "statement": "The new workflow has never run and adds CI minutes",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "A structural unit test checks its install and steps; it is bounded at 45 minutes; its first run's result and timings go into the evidence README"
+      },
+      {
+        "id": "D6",
+        "statement": "On a self-attested rehearsal body the home banner is silent, and on an unattested one it shows an instruction, not one command",
+        "severity": "low",
+        "response_type": "modularity",
+        "redesigned_response": "greg/console.py was on the avoid list. The Proof row and greg status name the rehearsal body in both cases; a console branch on rehearsal_body is a follow-up"
+      }
+    ],
+    "comparisons": {
+      "baseline": "44b3df96: '4 skipped' with exit 0 without supervisord on PATH; a rehearsal body's self-attestation reaches FOUNDER_TIER and achieved ['N0', 'N1']; no workflow runs the path-predicate gate",
+      "do_nothing": "The founder's named failure stays one signature away while later nodes are built on rehearsal bodies",
+      "simplest_viable_alternative": "PATH set in CI plus a sentence: nothing fails closed and the tier path stays open; rejected",
+      "strongest_competing_architecture": "Write-side refusal in greg/body.py: stronger at write time, but it conflicts with #221 and #235 and still needs the read side for bodies already made; deferred as the follow-up",
+      "reversible_experiment": "Workflow alone first; this change is itself reversible by reverting this branch's commits with no data migration, and the workflow can be removed on its own"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "PATH set in CI plus documentation",
+        "rejection_reason": "Nothing fails closed, and the founder-tier path stays open",
+        "revival_evidence": "None expected"
+      },
+      {
+        "name": "Suite-wide fail-on-skip",
+        "rejection_reason": "Turns legitimately optional skips (Landlock, bubblewrap, browsers) into failures on hosts without them",
+        "revival_evidence": "A CI matrix where every host must have every facility"
+      },
+      {
+        "name": "Write-side refusal in greg/body.py now",
+        "rejection_reason": "#221 and #235 edit greg/body.py, and bodies already made still need the read side",
+        "revival_evidence": "#221 lands"
+      },
+      {
+        "name": "body.json mark alone (the round-1 design)",
+        "rejection_reason": "MWA-ATK-1: bodies made before the mark, and an edited body.json, escaped it",
+        "revival_evidence": "None; superseded by mark plus label"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Two reviews by separate agents of this same session attacked the round-1 head 08dcf2c3: one for breaks (old bodies, the status shape, every reader of the tier, where the mark lives, who writes body.json, the workflow), one for fidelity (fail-before claims, numbers, surfaces). A final verification re-ran the suites, the gate, the merge checks and every README number. #196 moved after the unit's base, so this record also re-ran the merge checks against #196's new head.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "fragility",
+        "statement": "MWA-ATK-1: a rehearsal body made before the mark had none; its self-attestation reached FOUNDER_TIER and achieved ['N0', 'N1'] at 08dcf2c3",
+        "strengthening_response": "rehearsal_body also reads an accepted MISSION whose signed founder_expression opens with rehearsal.LABEL. Two tests fail on 08dcf2c3 with FOUNDER_TIER; 7 mutants added, all caught"
+      },
+      {
+        "id": "W2",
+        "category": "comprehensibility",
+        "statement": "MWA-ATK-2 and MWA-FID-1: dropping 'how' from tier_status made the home banner and the Proof row print 'Run <code></code>'",
+        "strengthening_response": "tier_status gives a rehearsal body REHEARSAL_HOW; _tier_line names the rehearsal body whether or not its key attested. A render test fails on 08dcf2c3 with '<code></code>'; 2 mutants added"
+      },
+      {
+        "id": "W3",
+        "category": "other",
+        "statement": "MWA-FID-2: the fail-before row named three test files for a result that covers two",
+        "strengthening_response": "Re-run at 44b3df96 (4 failed, 2 passed in 21.65 s) and corrected in ac4e64cc"
+      },
+      {
+        "id": "W4",
+        "category": "comprehensibility",
+        "statement": "MWA-FID-3: the workflow's timing comment and the README's 'reports the same way' do not match what was measured",
+        "strengthening_response": "Not addressed in the unit. Recorded here and in the PR as open info-level record errors; no behaviour depends on them (the job is bounded at 45 minutes)"
+      },
+      {
+        "id": "W5",
+        "category": "dependency",
+        "statement": "After the base, #196 adopted #236 and runs the path-predicate gate in Canonical CI job 1 (4dc0d581), so build-frontier.yml's first step duplicates it",
+        "strengthening_response": "Named for the integrator: drop the duplicate step, or move this unit's gate and the GREG_REQUIRE_SUPERVISOR rehearsal step into canonical-ci.yml and remove the workflow"
+      },
+      {
+        "id": "W6",
+        "category": "gaming",
+        "statement": "Only a label that opens the expression counts, and a body made by hand has neither signal",
+        "strengthening_response": "The opening-only rule is pinned by a test and a mutant; hand-made bodies are a stated limit; the tier stays a custody claim, never verified custody"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "deferred",
+        "rationale": "No reader grants the tier on a rehearsal body; the write-side refusal needs greg/body.py, which #221 and #235 edit",
+        "owner": "greg/body.py maintainers after #221; #196 integrator",
+        "review_trigger": "#221 merges into #196"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Both signals guard against promoting a rehearsal by accident, which is the failure the intent names; deliberate forgery of a body is outside this unit",
+        "owner": "greg/metrics.py founder-tier maintainers",
+        "review_trigger": "A proposal to treat the founder tier as verified custody, or any rehearsal body found at the tier"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Only the founder can sign a MISSION, and the effect can only deny the tier",
+        "owner": "Alfonso Lopez",
+        "review_trigger": "A founder mission whose expression opens with [REHEARSAL]"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "deferred",
+        "rationale": "The run still exits 1; other modules are touched by open PRs",
+        "owner": "Maintainers of the five remaining supervisord test modules",
+        "review_trigger": "Those modules' open PRs land"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "experiment",
+        "rationale": "Only a real run settles it; the job is bounded and checked structurally",
+        "owner": "#196 integrator",
+        "review_trigger": "The first pull-request run of build-frontier.yml"
+      },
+      {
+        "disadvantage_id": "D6",
+        "outcome": "deferred",
+        "rationale": "greg/console.py was on the avoid list; two other surfaces already say it",
+        "owner": "greg/console.py maintainers",
+        "review_trigger": "greg/console.py leaves the avoid list"
+      }
+    ],
+    "final_design": "tests/supervisor_requirement.py fails each supervised rehearsal test with one message under GREG_REQUIRE_SUPERVISOR=1 and skips otherwise, through autouse fixtures in both modules. `greg rehearse` marks body.json before the key is enrolled and signs MISSIONs that open with rehearsal.LABEL. metrics.rehearsal_body is the mark or the label (an unreadable body.json counts as marked), and founder_tier holds every mission of such a body at STRUCTURAL_CANDIDATE. tier_status and the Proof row say so and give an instruction for another body. build-frontier.yml runs both gates and the rehearsals under the requirement on every pull request. 29 mutants pin it.",
+    "residual_risks": [
+      {
+        "risk": "A rehearsal key can still write FOUNDER_TIER and a first_founder_body designation",
+        "mitigation": "No reader grants the tier on a rehearsal body; a non-hosted acceptance probe still read LOCAL; a hosted run was not attempted",
+        "owner": "greg/body.py and greg acceptance maintainers",
+        "review_trigger": "#221 lands, or a hosted acceptance run on a rehearsal body"
+      },
+      {
+        "risk": "The workflow fails or times out on GitHub Actions",
+        "mitigation": "45-minute bound; structural unit test; Canonical CI job 1 already runs the named tests in its full suite",
+        "owner": "#196 integrator",
+        "review_trigger": "The first pull-request run of build-frontier.yml"
+      },
+      {
+        "risk": "Bodies made by the --no-passphrase installer carry neither signal",
+        "mitigation": "Their key never attests through the CLI; follow-up: label them through a ledger fact",
+        "owner": "greg/chromebook installer maintainers",
+        "review_trigger": "Any installer change that lets that key attest"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded with thresholds; neither blocks the draft. The first decides the write-side follow-up, the second the CI wiring.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "A read-side hold is not enough on its own: a rehearsal key's first_founder_body designation still enters the ledger, and greg acceptance's FOUNDER-DEVICE label reads the designation, not the mark.",
+        "rationale": "A non-hosted probe read LOCAL only because founder_body is False without a hosted closure context; a hosted acceptance run on a rehearsal body was not attempted.",
+        "evidence_threshold": "A hosted acceptance run labels a rehearsal body FOUNDER-DEVICE, or any reader other than metrics.founder_tier grants the tier on a rehearsal body",
+        "owner": "#196 integrator; greg/body.py and greg acceptance maintainers",
+        "review_trigger": "#221 lands, or the first hosted acceptance run"
+      },
+      {
+        "role": "Operator and Maintainer",
+        "position": "One CI workflow is easier to keep than two: this unit's gate and the required-supervisor rehearsal step belong in canonical-ci.yml, now that #196 runs the path-predicate gate there.",
+        "rationale": "Since 4dc0d581 the path-predicate gate runs in Canonical CI job 1 and again in build-frontier.yml on every pull request.",
+        "evidence_threshold": "The integrator can edit canonical-ci.yml without conflicting with #209, #214, #215 or #232",
+        "owner": "#196 integrator",
+        "review_trigger": "The CI wiring decision at intake"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": "Alfonso Lopez (adoption and any merge); #196 integrator for intake"
+  },
+  "migration_plan": "None required. Additive: one optional field in body.json, written only by new `greg rehearse` bodies; older rehearsal bodies are recognised by the label already in their ledgers. No ledger record is written or changed, and no file format changes. A body that is neither marked nor labelled reads exactly as before. The integrator chooses whether build-frontier.yml stays or its steps move into canonical-ci.yml.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert the commits on claude/fail-closed-build-instrument-20261030, or decline intake into #196",
+      "A body.json that carries the rehearsal field stays readable by the old code, which ignores it",
+      "To stop only the CI job, delete .github/workflows/build-frontier.yml"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Any `greg rehearse` body, marked or labelled, reads FOUNDER_TIER, moves achieved, or raises VEPMC founder_tier_count",
+    "A body that is neither marked nor labelled reads a different tier than at the base, the self-attestation residual included",
+    "With GREG_REQUIRE_SUPERVISOR=1 and no supervisord, either rehearsal module exits 0",
+    "Without the variable, a missing supervisord fails a developer's run instead of skipping",
+    "A founder surface shows an empty command, or advises an attestation, on a rehearsal body",
+    "The mutant gate counts a survivor or an import or syntax error as caught"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez decides adoption and any merge; the #196 integrator decides intake and whether build-frontier.yml stays or its steps move into canonical-ci.yml; session_01Kucyfm6YBHMTjaiC1M9hqD owns the reversible draft. The five role positions are recorded by the implementing session; the adversarial reviews were done by separate agents of this same session, not by independent sessions or humans. All five roles recommend RETAIN; the Adversarial Reviewer's and the Operator's dissents are recorded.",
+  "review_trigger": "#221 lands (write-side refusal); the first pull-request run of build-frontier.yml; the integrator's CI-wiring decision; or the founder's device acceptance"
+}

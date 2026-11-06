@@ -1,0 +1,6 @@
+start 2026-10-22T10:55:14Z load 1.00 0.99 1.04 commit 11a8e318e121c187fe93d4007128b41e1c9e5342
+{"family": "convex_qp_dual", "status": "DEFAULT_FOR_GEOMETRY", "vs_baseline": {"wins": 13, "losses": 1, "ties": 16, "p_better": 0.000916, "p_worse": 0.999939}, "vs_competitor": {"wins": 23, "losses": 0, "ties": 7, "p_better": 0.0, "p_worse": 1.0}}
+{
+ "convex_qp_dual": "DEFAULT_FOR_GEOMETRY"
+}
+exit 0 end 2026-10-22T10:56:32Z load 1.00 1.00 1.04

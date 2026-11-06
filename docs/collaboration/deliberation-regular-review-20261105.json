@@ -1,0 +1,320 @@
+{
+ "decision_id": "DELIB-20261105-REGULAR-REVIEW",
+ "title": "Contributor orientation, layering ratchets and a recurring read-only structural review",
+ "problem": "Six entry files gave five reading orders; 13 of 45 top-level directories had no README and 16 were missing from the README layout; docs/ had no index and docs/collaboration's ~170 records had no current-vs-historical signal; nothing guarded package layering (9 two-way package dependencies, one import out of the published boundary package); and SOP-06's measures were defined but never measured, with no recurring review. Contributors' records show orientation and coordination friction recurring (docs/collaboration/CONTRIBUTOR-PAIN-POINTS-2026-11-05.md).",
+ "founder_intent_refs": [
+  "INTENT-20261105-REGULAR-REVIEW",
+  "INTENT-20261021-PROFESSIONAL-PARALLEL-TEAM",
+  "INTENT-20261021-COMPLETE-COLLABORATION",
+  "INTENT-20261019-UPWARD-ASCENT"
+ ],
+ "baseline": "#196 head 3a2ba265: scripts/repo_review.py reports 38 hard findings; the six new map tests fail; no scheduled workflow exists.",
+ "alternatives": [
+  {
+   "name": "Rewrite and consolidate the entry files into one",
+   "description": "Merge AGENTS, CLAUDE, CONTRIBUTING, README agent sections and copilot instructions into one file and delete the rest",
+   "advantages": [
+    "one surface"
+   ],
+   "disadvantages": [
+    "deletes institutional memory against the founder's 'delete nothing'",
+    "CLAUDE.md and copilot instructions are client entry points that must exist",
+    "rewrites founder-correction text other tests and receipts reference"
+   ],
+   "revival_evidence": "A founder ruling that the entry files may be rewritten, and receipts no longer pin AGENTS.md text"
+  },
+  {
+   "name": "Adopt import-linter as a dependency",
+   "description": "Configure the import-linter package with layered contracts",
+   "advantages": [
+    "mature tool",
+    "rich contract language"
+   ],
+   "disadvantages": [
+    "a new dependency for two rules",
+    "its contracts would duplicate the KEPT tables the weekly report also needs"
+   ],
+   "revival_evidence": "More than three layering rules are wanted, or the ratchet's AST scan misses a real import"
+  },
+  {
+   "name": "Comment-based monthly reminders on board #96",
+   "description": "Post a recurring review prompt as an issue comment",
+   "advantages": [
+    "visible to every session"
+   ],
+   "disadvantages": [
+    "an outward posting effect every week",
+    "noise on the coordination surface"
+   ],
+   "revival_evidence": "The founder asks for review prompts on the board"
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "Agents keep entering through whichever order they see first; new undocumented directories and package cycles keep accumulating unnoticed; SOP-06 stays NOT_MEASURED",
+  "advantages": [
+   "no new files",
+   "no review burden"
+  ],
+  "disadvantages": [
+   "recurring stale-context and misrouted starts documented in the register",
+   "no trigger ever runs SOP-06 or protocol section 6"
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "The founder asked for exactly this: delete nothing, agent comprehension, contributor engagement, regular review. The package adds and removes no obligation. Adopt as draft; the order places the latest founder corrections first and states that a founder record wins any disagreement",
+   "material_concerns": [
+    "the canonical reading order must not silently reorder founder corrections"
+   ],
+   "evidence_refs": [
+    "docs/intent/sources/REGULAR-REVIEW-2026-11-05-source.md",
+    "AGENTS.md#canonical-reading-order"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "One instrument (scripts/repo_review.py) serves the unit tests and the weekly report, so the rule exists once. Only cycles and boundary escapes are ratcheted, not ordinary imports. Keep the ratchet narrow",
+   "material_concerns": [
+    "a ratchet on every edge would force KEPT-table edits in parallel PRs and recreate generated-record conflicts (pain point P-1/P-3)"
+   ],
+   "evidence_refs": [
+    "scripts/repo_review.py",
+    "tests/unit/test_import_layering.py"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "Self-review by one session, not independent. The weekly workflow is inert until a founder merge to main. Map tests can be satisfied with an empty README. Label the proxies as proxies in the report; leave README quality to the monthly review instead of a length rule",
+   "material_concerns": [
+    "a README containing only a heading passes the rule",
+    "word-count proxies could be mistaken for SOP-06 measures"
+   ],
+   "evidence_refs": [
+    "docs/REVIEW_CADENCE.md"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "The tests run in seconds inside the existing suite; the workflow is 10 minutes, weekly, read-only; no job timeout or pin changes. Acceptable; the added cost is under 10 seconds per suite run",
+   "material_concerns": [
+    "Canonical job 1 is already near its 120-minute limit (P-2)"
+   ],
+   "evidence_refs": [
+    "tests/unit/test_repository_map.py (about 2 s)",
+    "tests/unit/test_import_layering.py (about 6 s)"
+   ],
+   "recommendation": "RETAIN"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "No posting, no labels, no tokens with write scope; friction reports are voluntary; nothing ranks contributors. The form asks for the obstacle, not the person responsible; keep it that way",
+   "material_concerns": [
+    "a friction form could become a blame channel"
+   ],
+   "evidence_refs": [
+    ".github/ISSUE_TEMPLATE/contributor-friction.yml"
+   ],
+   "recommendation": "RETAIN"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "The map guards fail before and pass after",
+   "tier": "unit_test",
+   "reference": "local run on 3a2ba265 with the new tests copied in: 6 failed, 14 passed; after: 21 passed",
+   "finding": "confirmed"
+  },
+  {
+   "claim": "The structural report reaches zero",
+   "tier": "sandbox_execution",
+   "reference": "python scripts/repo_review.py --check: 38 findings before, exit 0 after",
+   "finding": "confirmed"
+  },
+  {
+   "claim": "No existing behaviour changed",
+   "tier": "unit_test",
+   "reference": "21 affected test files, 599 passed and 2 skipped, plus test_data_exposure_ledger 14/14; governance.integrity --check exit 0; check_authority_singleton, check_schema_refs and check_release_exclusions exit 0",
+   "finding": "confirmed after installing requirements-dev and requirements-cognition"
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "Guards that are not in CI still protect",
+   "tier": "sandbox_execution",
+   "reference": "scripts/ci/check_seed_mutants.py: 7/7 caught with the dependencies installed, but first 5/7 here because rfc3161_client was missing",
+   "finding": "a gate outside CI can be silently environment-broken; recorded as S-3"
+  },
+  {
+   "claim": "A docs index ends orientation drift",
+   "tier": "model_output",
+   "reference": "docs/collaboration/INDEX.md is pattern-based",
+   "finding": "it cannot tell a stale dated record from a current one; only #96 and the integration head can"
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "Two-hop orientation from AGENTS.md for any contributor; drift caught per PR; a measured, recurring review",
+  "advantages": [
+   {
+    "id": "A1",
+    "statement": "One rule source for tests and report",
+    "amplified_value": "the weekly report and a PR cannot disagree about a rule"
+   },
+   {
+    "id": "A2",
+    "statement": "Shrink-only tables with reasons",
+    "amplified_value": "each tolerated cycle is visible with its reason and can only be removed"
+   },
+   {
+    "id": "A3",
+    "statement": "A real latent defect surfaced (provenance/witness.py lazy import outside the boundary package)",
+    "amplified_value": "recorded where the next boundary release will see it"
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "D1",
+    "statement": "The weekly schedule cannot run until the workflow is on main",
+    "severity": "medium",
+    "response_type": "governance",
+    "redesigned_response": "REVIEW_CADENCE.md states this and gives the manual command for intake until then"
+   },
+   {
+    "id": "D2",
+    "statement": "Edits to AGENTS.md change the text receipts read at head",
+    "severity": "low",
+    "response_type": "modularity",
+    "redesigned_response": "The block is additive and at the top; receipts reread AGENTS.md at head anyway"
+   },
+   {
+    "id": "D3",
+    "statement": "Two PR templates remain",
+    "severity": "medium",
+    "response_type": "governance",
+    "redesigned_response": "The uppercase file is marked with the canonical one; the merge is a founder decision because foundry commissioning copies the lowercase template's bytes"
+   }
+  ],
+  "comparisons": {
+   "baseline": "38 findings, no review",
+   "do_nothing": "drift continues; SOP-06 unmeasured",
+   "simplest_viable_alternative": "READMEs and an index without tests (drifts again)",
+   "strongest_competing_architecture": "import-linter plus a docs-site generator",
+   "reversible_experiment": "this package: revert one commit; nothing to migrate"
+  },
+  "rejected_alternatives": [
+   {
+    "name": "Rewrite entry files",
+    "rejection_reason": "Violates delete-nothing; removes founder-correction text",
+    "revival_evidence": "Founder ruling"
+   },
+   {
+    "name": "Ratchet every cross-package edge",
+    "rejection_reason": "Forces table edits in ordinary feature PRs, recreating merge conflicts",
+    "revival_evidence": "Layering decay measured despite the narrow ratchet"
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Attacked the strengthened package for new bureaucracy, gaming and fragility.",
+  "new_weaknesses": [
+   {
+    "id": "W1",
+    "category": "gaming",
+    "statement": "An empty README satisfies the map test",
+    "strengthening_response": "The monthly review samples new READMEs; a length rule was rejected as noise"
+   },
+   {
+    "id": "W2",
+    "category": "bureaucracy",
+    "statement": "Five rhythms could add more process than they save",
+    "strengthening_response": "REVIEW_CADENCE.md kill criteria: two empty months reduce it to weekly plus quarterly; a rhythm nobody acted on for a quarter is killed"
+   },
+   {
+    "id": "W3",
+    "category": "fragility",
+    "statement": "The import scan reads every package file and could slow down as greg grows",
+    "strengthening_response": "It is an AST walk taking about 6 s on 169k lines; it is measured in each weekly report"
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "D1",
+    "outcome": "accepted",
+    "rationale": "GitHub restriction; the manual path exists",
+    "owner": "#196 integration owner",
+    "review_trigger": "merge of the integration line to main"
+   },
+   {
+    "disadvantage_id": "D2",
+    "outcome": "accepted",
+    "rationale": "Additive, top-of-file",
+    "owner": "claiming session",
+    "review_trigger": "a receipt check failure that cites AGENTS.md"
+   },
+   {
+    "disadvantage_id": "D3",
+    "outcome": "deferred",
+    "rationale": "Hash-sensitive consumer",
+    "owner": "Alfonso Lopez",
+    "review_trigger": "founder answer on P-10"
+   }
+  ],
+  "final_design": "As implemented: additive docs, two narrow ratchets, one read-only weekly workflow, a friction form, a dated pain-point register and the cadence with kill criteria. Proposed for adoption as a reversible experiment with the kill criteria below.",
+  "residual_risks": [
+   {
+    "risk": "The weekly report is produced but nobody reads it",
+    "mitigation": "Assigned to the integration owner's intake; the kill criterion applies",
+    "owner": "#196 integration owner",
+    "review_trigger": "first monthly review"
+   },
+   {
+    "risk": "Self-review only",
+    "mitigation": "Labelled as such; independent review requested on #96",
+    "owner": "unassigned",
+    "review_trigger": "a different session reviews the PR"
+   }
+  ],
+  "recommendation": "NEEDS_FOUNDER_DECISION"
+ },
+ "dissent": {
+  "present": true,
+  "handling": "Recorded; it blocks no draft",
+  "entries": [
+   {
+    "role": "Adversarial Reviewer",
+    "position": "Without independent review and without the schedule live, the package proves only that the rules hold today, not that the cadence improves anything.",
+    "rationale": "SOP-06 asks for a measured improvement, not a document",
+    "evidence_threshold": "After the first five coordinated PRs, if SOP-06's measures show no change, regress the monthly and quarterly rhythms",
+    "owner": "maintaining reviewer (SOP-06)",
+    "review_trigger": "the fifth completed coordinated PR after adoption"
+   }
+  ]
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": true,
+  "approval_status": "pending",
+  "approver": "Alfonso Lopez (merge to main activates the schedule); #196 integration owner (intake)"
+ },
+ "migration_plan": "None. Additive files and edits; no data, schema, pin or digest changes.",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "Revert the package's commits, or decline intake into #196",
+   "Delete nothing else: the register and intent record stay as history if the founder regresses the cadence"
+  ]
+ },
+ "kill_criteria": [
+  "The review workflow ever gains a write permission or a posting step",
+  "A KEPT table grows instead of shrinking",
+  "Two consecutive monthly reviews with no actionable finding and no friction report (simplify)",
+  "A rhythm nobody acted on for a quarter (kill that rhythm)"
+ ],
+ "decision": "NEEDS_FOUNDER_DECISION",
+ "decision_owner": "Offered as a reversible EXPERIMENT (pass 2). Alfonso Lopez decides adoption, the PR template merge (P-10) and F-1; the #196 integration owner decides intake; session_01KucyfnCuSTnjx5Fa6T4A3d owns the reversible draft. This is self-review by one session through five lenses, not five independent reviewers.",
+ "review_trigger": "Canonical CI on the PR head; an independent review by a different session; the first weekly report on main; the first five coordinated PRs (SOP-06)"
+}

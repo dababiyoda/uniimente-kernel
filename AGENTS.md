@@ -1,6 +1,62 @@
+> **Team entry:** Before new or resumed work, read [the pinned founder Discussion](https://github.com/dababiyoda/uniimente-kernel/discussions/89), follow [START_HERE](docs/collaboration/START_HERE.md), and refresh [work claims and handoffs](https://github.com/dababiyoda/uniimente-kernel/issues/96). Check relevant open branches and PRs before editing; searching only `main` is insufficient. Record your actual session identity, bounded scope, base/head, overlap split, acceptance evidence and integration destination. A claim coordinates work; it grants no authority. From a cloud session, where the github.com page is unreachable and the GitHub connector has no Discussion tool, read it with `curl -sS https://api.github.com/repos/dababiyoda/uniimente-kernel/discussions/89` (public REST API, no credential).
+
 > **Cognition continuity:** also read `docs/PROJECT_COGNITION_CONTINUITY.md` for continuous source ingestion, context checksum, repository registry, propagation receipts, and the anti-context-loss test.
 
 # UNIIMENTE Agent Entry Contract
+
+<!-- canonical-reading-order -->
+## Canonical reading order
+
+Six entry files (this one, `CLAUDE.md`, `README.md`, `CONTRIBUTING.md`,
+`.github/copilot-instructions.md`, `docs/collaboration/START_HERE.md`) each had their own
+"read first" list, in five different orders. This block consolidates them into one sequence.
+It adds and removes no obligation. Every other entry file points here. If this order ever
+disagrees with a founder record, the founder record wins: the latest explicit founder
+instruction outranks everything else (`docs/PROJECT_SOURCE_CENSUS_2026-09-26.md`,
+conflict-resolution hierarchy).
+
+1. **Coordinate.** Discussion #89 (from a cloud session:
+   `curl -sS https://api.github.com/repos/dababiyoda/uniimente-kernel/discussions/89`);
+   `docs/collaboration/START_HERE.md`; the **newest** comments on work board #96 (the comment
+   API pages oldest first); the open PRs for what you will touch. Work on the integration
+   branch the board names, not `main`. Post a bounded claim before editing.
+2. **Latest founder corrections.** Read the top entries of `docs/FOUNDER_INTENT_LEDGER.md`
+   (newest first). Today these are `INTENT-20261030-BUILD-BEFORE-DEVICE-RUN`,
+   `INTENT-20261019-UPWARD-ASCENT`, `INTENT-20261001-FULL-MACHINE-COMPLETION` and
+   `INTENT-2026-09-26-REAL-PRODUCT-METABOLISM`, each with its verbatim source under
+   `docs/intent/sources/`.
+3. **Procedure.** `docs/PROJECT_COGNITION_SOP.md`, `docs/PROJECT_COGNITION_CONTINUITY.md`,
+   `docs/PROJECT_SOURCE_CENSUS_2026-09-26.md`.
+4. **Doctrine.** `docs/FOUNDER_EFFECT_COMPILER.md`, the rest of
+   `docs/FOUNDER_INTENT_LEDGER.md`, `docs/RECURSIVE_COLLABORATION_PROTOCOL.md`,
+   `docs/UNIIMENTE_FINAL_BUILD_ORDER.md`, `docs/CANONICAL_EXECUTION_ORDER.md`.
+5. **Your task.** Use the table below.
+
+| If you will… | Read first |
+|---|---|
+| change any code | `docs/ARCHITECTURE.md` § Current module map, then the package `README.md` |
+| touch the Constitution, authority, identity, the Gate or founder keys | `governance/integrity/README.md`; these need a founder signature |
+| touch a frozen evaluation or evidence bundle | its `freeze*.json` and README; new runs get new paths |
+| add a dependency or model | `docs/OPEN_SOURCE_STACK.md`, `docs/intent/INTENT-20260930-open-source-first.json` |
+| open a PR | `.github/pull_request_template.md` and `docs/collaboration/RECEIPT.md` |
+| find any document | `docs/README.md`; for collaboration records, `docs/collaboration/INDEX.md` |
+
+**Working facts**
+
+| Fact | Value |
+|---|---|
+| Tests | `python -m pytest` (deps `requirements-dev.txt`); about 90 minutes in full. Run the files that import what you changed first. Frozen-history tests need `git fetch --unshallow` |
+| Constitutional integrity | `python -m governance.integrity --check` |
+| Verifier | `python verifier/v2/verify.py` (V1–V5) |
+| Before running tests | `python scripts/dev_env_check.py` names missing modules, a tmpfs `/tmp`, a shallow clone and missing bubblewrap, pdftotext or Playwright: failures that come from the machine, not the code |
+| Land unfinished work (integrator) | the **intake queue** at the top of the newest `docs/collaboration/BRANCH-CATALOG-*.md`: open PRs that merge into the line with no conflict today, smallest first. Take from the top; a clean merge still needs its tests and review |
+| Find a document, record or branch | `docs/CATALOG.md` (every file under `docs/`, by area, kind and date) and the newest `docs/collaboration/BRANCH-CATALOG-*.md` (every branch: finished or not, and which PR carries it) |
+| Structural review | `python scripts/repo_review.py` (map, layering, mutation-gate liveness; `--lint` adds a ruff trend); cadence in `docs/REVIEW_CADENCE.md` |
+| CI | `.github/workflows/canonical-ci.yml` (job 1 is the full suite; the mutation gates run in their own job; read the file for the current job list rather than trusting a count here), plus `directive-completion.yml`, `build-frontier.yml`, `collaboration-receipt.yml` |
+| Live branch | the integration branch named on #96 (today `claude/greg-full-machine-completion-whgiee`, draft #196). `main` is behind it |
+| Friction to report | `.github/ISSUE_TEMPLATE/contributor-friction.yml` |
+
+The rest of this file is kept as written.
 
 Current gate repair and source-coverage correction: read
 `docs/collaboration/GREG-GATE-REPAIR-20260930.md` and
@@ -34,6 +90,8 @@ Do not create another framework to implement this rule. Apply it to `greg/` and 
 
 
 This repository is the canonical institutional control plane for **UNIIMENTE: Artificial Egregore**.
+
+**Latest founder correction (2026-10-19):** Read [Universal Substrate Elevation](docs/intent/INTENT-20261019-UPWARD-ASCENT.md). Convergence must produce a demonstrated capability dividend, not stop at consolidation or archival. Apply Mechanism Recombination Foundry to material duplication and not-yet-elevated substrate; preserve the complete founder vision as the acceptance floor. This changes development requirements, not runtime authority.
 
 Current product correction: `docs/intent/INTENT-GREG-EMBODIED-2026-09-11.md`.
 GREG's interface belongs to a persistent operating layer above the founder's
@@ -120,6 +178,6 @@ This changes implementation selection, not Kernel consequence authority.
 
 ## GREG body (2026-09-25)
 
-Converged GREG path (2026-09-30): `claude/uniimente-greg-reconciliation-39syff` until merged; lineage dispositions in `docs/collaboration/GREG-RECONCILIATION-2026-09-30.md`. Stack new GREG work on it, not on #122 or the Chromebook line separately.
+Integration candidate (2026-10-22): the branch named on work board #96 (today `claude/greg-full-machine-completion-whgiee`, draft #196). It carries the 2026-09-30 converged path `claude/uniimente-greg-reconciliation-39syff` (#137) through #178 and its descendants; lineage dispositions in `docs/collaboration/GREG-RECONCILIATION-2026-09-30.md`. Stack new GREG work on the board's candidate, not on #137, #122 or the Chromebook line separately.
 
 The product runtime is `greg/` (persistent body, signed founder commands, missions, Capability Genesis, morning tribunal) under `INTENT-2026-09-25-EGREGORE-ECOLOGY`. It composes the canonical Gate, ledger and spine and owns no policy. Read `greg/README.md` and `docs/collaboration/GREG-BODY-DECISION-2026-09-25.md` before changing it.

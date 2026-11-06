@@ -1,0 +1,472 @@
+{
+ "schema": "greg-p8-stress-gate-audit/1",
+ "audited_commit": "239a87f",
+ "repair_commit": "b7b1ed9 (merged in 32246ee)",
+ "audit_fix_commits": [
+  "8498fd5",
+  "3587fcf"
+ ],
+ "claim_checked": "applying the wrong-answer stress gate of b7b1ed9 to historical item-level results leaves every recorded decision unchanged",
+ "result": "VERIFIED for cycles 1-6: all six are RESOLVED by item-level reproduction; every adversarial verdict and decision is unchanged under the 239a87f gate and under the audited fix. Only cycle 2 (strict set, 1 wrong answer each) exercises the item-level branch.",
+ "heldout": "no held-out item of any split was generated or scored",
+ "cycles": {
+  "cycle-forecast-1": {
+   "record": "docs/evidence/greg-protected-evolution/2026-10-08/cycle-forecast-1.json",
+   "target": "forecast_quantile",
+   "source_commit": "fe222f44f8ba362f18d885ab91d037d3dc5041bf",
+   "original": {
+    "decision": "REJECT",
+    "reason": null,
+    "adversarial_gate": "PASS",
+    "recorded_all_outputs_verified": true
+   },
+   "reanalysed": {
+    "adversarial_gate_old_means_rule": "PASS",
+    "adversarial_gate_239a87f": "PASS",
+    "adversarial_gate_audited_fix": "PASS",
+    "decision": "REJECT",
+    "decision_note": "the adversarial gate's outcome is unchanged and every later step is deterministic given it, so the recorded decision stands; no held-out item was built or scored by this audit"
+   },
+   "kinds": {
+    "shift": {
+     "recorded": {
+      "incumbent": 1.657236,
+      "candidate": 1.447427
+     },
+     "reproduced_summary": {
+      "incumbent": 1.657236,
+      "candidate": 1.447427
+     },
+     "reproduced_means_equal_recorded": true,
+     "items": 100,
+     "wrong_items": {
+      "incumbent": [],
+      "candidate": []
+     },
+     "item_level_branch_exercised": false,
+     "verdict_old_means_gate": "PASS",
+     "verdict_239a87f_gate": "PASS",
+     "verdict_audited_fix": "PASS"
+    },
+    "short": {
+     "recorded": {
+      "incumbent": 0.934593,
+      "candidate": 0.948784
+     },
+     "reproduced_summary": {
+      "incumbent": 0.934593,
+      "candidate": 0.948784
+     },
+     "reproduced_means_equal_recorded": true,
+     "items": 100,
+     "wrong_items": {
+      "incumbent": [],
+      "candidate": []
+     },
+     "item_level_branch_exercised": false,
+     "verdict_old_means_gate": "PASS",
+     "verdict_239a87f_gate": "PASS",
+     "verdict_audited_fix": "PASS"
+    }
+   },
+   "method": "item-level reproduction: train items rebuilt at the source commit by its own generator, train seal recomputed and equal to the record, stress sets derived by the commit's own stress function, incumbent and recorded candidate configurations run in-process through the commit's method (JSON round trip and the sandbox's caught exceptions as the sandbox did), scored by the commit's SealedEvaluator; then the 239a87f aggregation and stress_worsened, and the audited fix, applied to the per-item losses",
+   "inputs": {
+    "train_seal": "sha256:7e3928acfba20c6c0259cdaab38b0a6ad2cbb3684e4f0e683d4fa02265c5d12d",
+    "train_seal_equals_record": true,
+    "regenerated_train": "M4 weekly series ids (first half of fe222f4 forecasting_split(808)'s shuffled pool; the pool file was loaded and shuffled, only train items were built): W10, W103, W104, W105, W107, W109, W111, W115, W116, W118, W120, W121, W122, W125, W126, W132, W137, W138, W14, W141, W142, W144, W145, W147, W149, W15, W150, W151, W154, W155, W156, W157, W16, W162, W165, W166, W169, W17, W172, W173, W176, W186, W189, W197, W199, W2, W20, W202, W206, W208, W210, W211, W213, W215, W222, W223, W224, W228, W231, W237, W239, W240, W242, W246, W26, W27, W30, W31, W32, W36, W37, W39, W40, W42, W44, W45, W46, W48, W51, W52, W6, W67, W69, W7, W72, W73, W75, W8, W82, W83, W84, W85, W86, W89, W9, W90, W94, W95, W97, W98",
+    "incumbent_config_id": "cfg-1214fa9e37a4",
+    "candidate_config_id": "cfg-7a845995e588",
+    "sandbox_errors": {
+     "incumbent": [],
+     "candidate": []
+    }
+   },
+   "status": "RESOLVED"
+  },
+  "cycle-immune-2": {
+   "record": "docs/evidence/greg-protected-evolution/2026-10-09/cycle-immune-2.json",
+   "target": "immune_detect",
+   "source_commit": "ed4ee29c77f03893cfd80c195c0c92137a107831",
+   "original": {
+    "decision": "REJECT",
+    "reason": "adversarial evaluation failed",
+    "adversarial_gate": "REJECT",
+    "recorded_all_outputs_verified": false
+   },
+   "reanalysed": {
+    "adversarial_gate_old_means_rule": "REJECT",
+    "adversarial_gate_239a87f": "REJECT",
+    "adversarial_gate_audited_fix": "REJECT",
+    "decision": "REJECT",
+    "decision_note": "the adversarial gate's outcome is unchanged and every later step is deterministic given it, so the recorded decision stands; no held-out item was built or scored by this audit"
+   },
+   "kinds": {
+    "scarce": {
+     "recorded": {
+      "incumbent": -0.271043,
+      "candidate": Infinity
+     },
+     "reproduced_summary": {
+      "incumbent": -0.271043,
+      "candidate": Infinity,
+      "wrong": {
+       "incumbent": 0,
+       "candidate": 1,
+       "both_answered": 39,
+       "incumbent_answered_mean": -0.269644,
+       "candidate_answered_mean": -0.315988
+      }
+     },
+     "reproduced_means_equal_recorded": true,
+     "items": 40,
+     "wrong_items": {
+      "incumbent": [],
+      "candidate": [
+       "scarce:s7002"
+      ]
+     },
+     "item_level_branch_exercised": true,
+     "verdict_old_means_gate": "REJECT",
+     "verdict_239a87f_gate": "REJECT",
+     "verdict_audited_fix": "REJECT"
+    },
+    "strict": {
+     "recorded": {
+      "incumbent": Infinity,
+      "candidate": Infinity
+     },
+     "reproduced_summary": {
+      "incumbent": Infinity,
+      "candidate": Infinity,
+      "wrong": {
+       "incumbent": 1,
+       "candidate": 1,
+       "both_answered": 39,
+       "incumbent_answered_mean": -0.201329,
+       "candidate_answered_mean": -0.233221
+      }
+     },
+     "reproduced_means_equal_recorded": true,
+     "items": 40,
+     "wrong_items": {
+      "incumbent": [
+       "strict:s7002"
+      ],
+      "candidate": [
+       "strict:s7002"
+      ]
+     },
+     "item_level_branch_exercised": true,
+     "verdict_old_means_gate": "PASS",
+     "verdict_239a87f_gate": "PASS",
+     "verdict_audited_fix": "PASS"
+    }
+   },
+   "method": "item-level reproduction: train items rebuilt at the source commit by its own generator, train seal recomputed and equal to the record, stress sets derived by the commit's own stress function, incumbent and recorded candidate configurations run in-process through the commit's method (JSON round trip and the sandbox's caught exceptions as the sandbox did), scored by the commit's SealedEvaluator; then the 239a87f aggregation and stress_worsened, and the audited fix, applied to the per-item losses",
+   "inputs": {
+    "train_seal": "sha256:0ab53871e01d9a4f622ff0296ff035d6628aaa06ba21b15c132bbf934e60480a",
+    "train_seal_equals_record": true,
+    "regenerated_train": "seeds: 7000-7039 (40)",
+    "incumbent_config_id": "cfg-68b55c07dbdc",
+    "candidate_config_id": "cfg-7e4fdadb262f",
+    "sandbox_errors": {
+     "incumbent": [],
+     "candidate": []
+    }
+   },
+   "status": "RESOLVED"
+  },
+  "cycle-cr-3": {
+   "record": "docs/evidence/greg-protected-evolution/2026-10-14/cycle-cr-3.json",
+   "target": "constraint_release",
+   "source_commit": "5287303fb218a9444c79231432e3fd11ff2be51e",
+   "original": {
+    "decision": "REJECT",
+    "reason": "adversarial evaluation failed",
+    "adversarial_gate": "REJECT",
+    "recorded_all_outputs_verified": true
+   },
+   "reanalysed": {
+    "adversarial_gate_old_means_rule": "REJECT",
+    "adversarial_gate_239a87f": "REJECT",
+    "adversarial_gate_audited_fix": "REJECT",
+    "decision": "REJECT",
+    "decision_note": "the adversarial gate's outcome is unchanged and every later step is deterministic given it, so the recorded decision stands; no held-out item was built or scored by this audit"
+   },
+   "kinds": {
+    "fewval": {
+     "recorded": {
+      "incumbent": 0.010402,
+      "candidate": 0.011054
+     },
+     "reproduced_summary": {
+      "incumbent": 0.010402,
+      "candidate": 0.011054
+     },
+     "reproduced_means_equal_recorded": true,
+     "items": 60,
+     "wrong_items": {
+      "incumbent": [],
+      "candidate": []
+     },
+     "item_level_branch_exercised": false,
+     "verdict_old_means_gate": "REJECT",
+     "verdict_239a87f_gate": "REJECT",
+     "verdict_audited_fix": "REJECT"
+    },
+    "lean": {
+     "recorded": {
+      "incumbent": 0.00769,
+      "candidate": 0.00641
+     },
+     "reproduced_summary": {
+      "incumbent": 0.00769,
+      "candidate": 0.00641
+     },
+     "reproduced_means_equal_recorded": true,
+     "items": 60,
+     "wrong_items": {
+      "incumbent": [],
+      "candidate": []
+     },
+     "item_level_branch_exercised": false,
+     "verdict_old_means_gate": "PASS",
+     "verdict_239a87f_gate": "PASS",
+     "verdict_audited_fix": "PASS"
+    }
+   },
+   "method": "item-level reproduction: train items rebuilt at the source commit by its own generator, train seal recomputed and equal to the record, stress sets derived by the commit's own stress function, incumbent and recorded candidate configurations run in-process through the commit's method (JSON round trip and the sandbox's caught exceptions as the sandbox did), scored by the commit's SealedEvaluator; then the 239a87f aggregation and stress_worsened, and the audited fix, applied to the per-item losses",
+   "inputs": {
+    "train_seal": "sha256:5ba88a5570d97a3b4e3ccd1dd0b5e7386b0464b6abbcc3b70dd16c162fc9ab0c",
+    "train_seal_equals_record": true,
+    "regenerated_train": "seeds: 7200-7259 (60)",
+    "incumbent_config_id": "cfg-111751096c0d",
+    "candidate_config_id": "cfg-86c2f27f6580",
+    "sandbox_errors": {
+     "incumbent": [],
+     "candidate": []
+    }
+   },
+   "status": "RESOLVED"
+  },
+  "cycle-cr-4": {
+   "record": "docs/evidence/greg-protected-evolution/2026-10-15-cr-4/cycle-cr-4.json",
+   "target": "constraint_release",
+   "source_commit": "2cbb43dc5519e827e814b002b2c75e773c2e297a",
+   "original": {
+    "decision": "REJECT",
+    "reason": null,
+    "adversarial_gate": "PASS",
+    "recorded_all_outputs_verified": true
+   },
+   "reanalysed": {
+    "adversarial_gate_old_means_rule": "PASS",
+    "adversarial_gate_239a87f": "PASS",
+    "adversarial_gate_audited_fix": "PASS",
+    "decision": "REJECT",
+    "decision_note": "the adversarial gate's outcome is unchanged and every later step is deterministic given it, so the recorded decision stands; no held-out item was built or scored by this audit"
+   },
+   "kinds": {
+    "fewval": {
+     "recorded": {
+      "incumbent": 0.014268,
+      "candidate": 0.011466
+     },
+     "reproduced_summary": {
+      "incumbent": 0.014268,
+      "candidate": 0.011466
+     },
+     "reproduced_means_equal_recorded": true,
+     "items": 60,
+     "wrong_items": {
+      "incumbent": [],
+      "candidate": []
+     },
+     "item_level_branch_exercised": false,
+     "verdict_old_means_gate": "PASS",
+     "verdict_239a87f_gate": "PASS",
+     "verdict_audited_fix": "PASS"
+    },
+    "lean": {
+     "recorded": {
+      "incumbent": 0.010061,
+      "candidate": 0.008762
+     },
+     "reproduced_summary": {
+      "incumbent": 0.010061,
+      "candidate": 0.008762
+     },
+     "reproduced_means_equal_recorded": true,
+     "items": 60,
+     "wrong_items": {
+      "incumbent": [],
+      "candidate": []
+     },
+     "item_level_branch_exercised": false,
+     "verdict_old_means_gate": "PASS",
+     "verdict_239a87f_gate": "PASS",
+     "verdict_audited_fix": "PASS"
+    }
+   },
+   "method": "item-level reproduction: train items rebuilt at the source commit by its own generator, train seal recomputed and equal to the record, stress sets derived by the commit's own stress function, incumbent and recorded candidate configurations run in-process through the commit's method (JSON round trip and the sandbox's caught exceptions as the sandbox did), scored by the commit's SealedEvaluator; then the 239a87f aggregation and stress_worsened, and the audited fix, applied to the per-item losses",
+   "inputs": {
+    "train_seal": "sha256:614a4b099299e64f2912a6bea71bacc705a7fe105b199e4cb0a87c1b07348a5f",
+    "train_seal_equals_record": true,
+    "regenerated_train": "seeds: 7400-7459 (60)",
+    "incumbent_config_id": "cfg-111751096c0d",
+    "candidate_config_id": "cfg-afdb92cb42e7",
+    "sandbox_errors": {
+     "incumbent": [],
+     "candidate": []
+    }
+   },
+   "status": "RESOLVED"
+  },
+  "cycle-cr-5": {
+   "record": "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/cycle-cr-5.json",
+   "target": "constraint_release",
+   "source_commit": "6fa98ffb13819d446b2274808206cd4e8748b4cc",
+   "original": {
+    "decision": "REJECT",
+    "reason": "adversarial evaluation failed",
+    "adversarial_gate": "REJECT",
+    "recorded_all_outputs_verified": true
+   },
+   "reanalysed": {
+    "adversarial_gate_old_means_rule": "REJECT",
+    "adversarial_gate_239a87f": "REJECT",
+    "adversarial_gate_audited_fix": "REJECT",
+    "decision": "REJECT",
+    "decision_note": "the adversarial gate's outcome is unchanged and every later step is deterministic given it, so the recorded decision stands; no held-out item was built or scored by this audit"
+   },
+   "kinds": {
+    "fewval": {
+     "recorded": {
+      "incumbent": 0.013923,
+      "candidate": 0.012089
+     },
+     "reproduced_summary": {
+      "incumbent": 0.013923,
+      "candidate": 0.012089
+     },
+     "reproduced_means_equal_recorded": true,
+     "items": 60,
+     "wrong_items": {
+      "incumbent": [],
+      "candidate": []
+     },
+     "item_level_branch_exercised": false,
+     "verdict_old_means_gate": "PASS",
+     "verdict_239a87f_gate": "PASS",
+     "verdict_audited_fix": "PASS"
+    },
+    "lean": {
+     "recorded": {
+      "incumbent": 0.007737,
+      "candidate": 0.009868
+     },
+     "reproduced_summary": {
+      "incumbent": 0.007737,
+      "candidate": 0.009868
+     },
+     "reproduced_means_equal_recorded": true,
+     "items": 60,
+     "wrong_items": {
+      "incumbent": [],
+      "candidate": []
+     },
+     "item_level_branch_exercised": false,
+     "verdict_old_means_gate": "REJECT",
+     "verdict_239a87f_gate": "REJECT",
+     "verdict_audited_fix": "REJECT"
+    }
+   },
+   "method": "item-level reproduction: train items rebuilt at the source commit by its own generator, train seal recomputed and equal to the record, stress sets derived by the commit's own stress function, incumbent and recorded candidate configurations run in-process through the commit's method (JSON round trip and the sandbox's caught exceptions as the sandbox did), scored by the commit's SealedEvaluator; then the 239a87f aggregation and stress_worsened, and the audited fix, applied to the per-item losses",
+   "inputs": {
+    "train_seal": "sha256:4d3c458942c852f561397a86563fed629354aab1a8a6a3b125618662cd20e728",
+    "train_seal_equals_record": true,
+    "regenerated_train": "seeds: 7600-7659 (60)",
+    "incumbent_config_id": "cfg-111751096c0d",
+    "candidate_config_id": "cfg-562c6fdf85bc",
+    "sandbox_errors": {
+     "incumbent": [],
+     "candidate": []
+    }
+   },
+   "status": "RESOLVED"
+  },
+  "cycle-cr-6": {
+   "record": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/cycle-cr-6.json",
+   "target": "constraint_release",
+   "source_commit": "70bb77d20e4c5e0123050307e7adebeaa4bfba56",
+   "original": {
+    "decision": "RETAIN",
+    "reason": null,
+    "adversarial_gate": "PASS",
+    "recorded_all_outputs_verified": true
+   },
+   "reanalysed": {
+    "adversarial_gate_old_means_rule": "PASS",
+    "adversarial_gate_239a87f": "PASS",
+    "adversarial_gate_audited_fix": "PASS",
+    "decision": "RETAIN",
+    "decision_note": "the adversarial gate's outcome is unchanged and every later step is deterministic given it, so the recorded decision stands; no held-out item was built or scored by this audit"
+   },
+   "kinds": {
+    "fewval": {
+     "recorded": {
+      "incumbent": 0.010704,
+      "candidate": 0.008258
+     },
+     "reproduced_summary": {
+      "incumbent": 0.010704,
+      "candidate": 0.008258
+     },
+     "reproduced_means_equal_recorded": true,
+     "items": 120,
+     "wrong_items": {
+      "incumbent": [],
+      "candidate": []
+     },
+     "item_level_branch_exercised": false,
+     "verdict_old_means_gate": "PASS",
+     "verdict_239a87f_gate": "PASS",
+     "verdict_audited_fix": "PASS"
+    },
+    "lean": {
+     "recorded": {
+      "incumbent": 0.009947,
+      "candidate": 0.006105
+     },
+     "reproduced_summary": {
+      "incumbent": 0.009947,
+      "candidate": 0.006105
+     },
+     "reproduced_means_equal_recorded": true,
+     "items": 120,
+     "wrong_items": {
+      "incumbent": [],
+      "candidate": []
+     },
+     "item_level_branch_exercised": false,
+     "verdict_old_means_gate": "PASS",
+     "verdict_239a87f_gate": "PASS",
+     "verdict_audited_fix": "PASS"
+    }
+   },
+   "method": "item-level reproduction: train items rebuilt at the source commit by its own generator, train seal recomputed and equal to the record, stress sets derived by the commit's own stress function, incumbent and recorded candidate configurations run in-process through the commit's method (JSON round trip and the sandbox's caught exceptions as the sandbox did), scored by the commit's SealedEvaluator; then the 239a87f aggregation and stress_worsened, and the audited fix, applied to the per-item losses",
+   "inputs": {
+    "train_seal": "sha256:b8c00aed3043b6c86727af4f331eec1b98d78d51b3d138d107f4b2233fdeca26",
+    "train_seal_equals_record": true,
+    "regenerated_train": "seeds: 7880-7999 (120)",
+    "incumbent_config_id": "cfg-111751096c0d",
+    "candidate_config_id": "cfg-4398ea71018f",
+    "sandbox_errors": {
+     "incumbent": [],
+     "candidate": []
+    }
+   },
+   "status": "RESOLVED"
+  }
+ }
+}

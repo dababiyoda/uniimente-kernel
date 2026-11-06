@@ -138,10 +138,32 @@ class CompetenceLedger:
                 raise CortexError("attribution requires an uncertainty of low, medium or high")
         if outcome_status in SETTLING and not any(a.get("method") == method for a in attribution):
             raise CortexError("a settling outcome must attribute a role to the method being updated")
+        unsigned = dict(receipt)
+        if unsigned.pop("receipt_id", None) != digest(unsigned):
+            raise CortexError("receipt content address mismatch; refusing to settle")
         geometry = receipt["geometry"]["epistemic_class"] or "unresolved"
         selected = receipt["route"]["selected"]
-        if f"{method}@{method_version}" not in selected and method not in [s.split("@")[0] for s in selected]:
-            raise CortexError("a receipt can only settle a method it actually selected")
+        key = f"{method}@{method_version}"
+        ran = _ran(receipt)
+        if key not in selected and key not in ran:
+            raise CortexError(f"a receipt can only settle a method and version it actually selected or ran; "
+                              f"{key!r} is not among {sorted(set(selected) | set(ran))}")
+        if outcome_status in SETTLING and key not in ran:
+            raise CortexError(f"a receipt can only settle a method and version that actually ran; {key!r} "
+                              f"produced no result ({receipt.get('coverage')})")
+        if outcome_status == "verified_success" and key not in _ran(receipt, answered=True):
+            # A lead that ran and failed (a timeout superseded by a fallback) may settle its failure, never the
+            # success of the engine that answered (review of the 0.2.2 port).
+            raise CortexError(f"{key!r} ran but produced no answer in this receipt; only an observed failure "
+                              f"can settle it")
+        if outcome_status in SETTLING and any(
+                r.receipt_id == receipt["receipt_id"] and r.method == method and r.method_version == method_version
+                and r.outcome_status in SETTLING for r in self._records):
+            raise CortexError("this receipt already settled this method and version; one decision is one "
+                              "observation, and a correction must be an explicit supersession")
+        # A composed route settles under the geometry of the payload part it served,
+        # not under the receipt's first structural class.
+        geometry = (receipt["route"].get("part_geometries") or {}).get(key) or geometry
         weight = VALIDATION_WEIGHT.get(provenance.get("validation_status"), 0.0) if outcome_status in SETTLING else 0.0
         weight = min(weight, 1.0)  # bounded update
         before = self.estimate(method, method_version, geometry, conditions)
@@ -180,12 +202,16 @@ class CompetenceLedger:
 
     # ------------------------------------------------------------ routing use
     def reorder(self, eligible_keys: list[str], geometry, *, conditions: tuple[str, ...] = (),
-                margin: float = DEFAULT_MARGIN) -> list[str]:
-        """Permute *eligible* routes only. Needs sufficient evidence and a margin to move a default."""
+                margin: float = DEFAULT_MARGIN, part_geometries: Mapping[str, str] | None = None) -> list[str]:
+        """Permute *eligible* routes only. Needs sufficient evidence and a margin to move a default.
+
+        In a composition each route is scored under the geometry of the payload part it serves
+        (``part_geometries``), the same cell ``settle`` writes it to."""
         scored = []
         for index, key in enumerate(eligible_keys):
             method, _, version = key.partition("@")
-            est = self.estimate(method, version, geometry.epistemic_class or "unresolved", conditions)
+            cell = (part_geometries or {}).get(key) or geometry.epistemic_class or "unresolved"
+            est = self.estimate(method, version, cell, conditions)
             scored.append((est, index, key))
         if any(e["basis"] != "cell" for e, _, _ in scored):
             return list(eligible_keys)  # insufficient outcome evidence: keep the policy default
@@ -194,6 +220,19 @@ class CompetenceLedger:
         if best[2] != default[2] and best[0]["estimate"] - default[0]["estimate"] > margin:
             return [best[2]] + [k for k in eligible_keys if k != best[2]]
         return list(eligible_keys)
+
+
+def _ran(receipt: Mapping[str, Any], *, answered: bool = False) -> set[str]:
+    """Route keys that ran: the final per-route results and every engine attempt the formal slot ran before a
+    fallback or as a cross-check (route.attempts). ``answered``: only rows that produced an answer."""
+    rows = list((receipt.get("output") or {}).get("per_route") or []) + list(receipt["route"].get("attempts") or [])
+    out = set()
+    for r in rows:
+        if answered and r.get("answer") is None:
+            continue
+        organ = str(r.get("organ_id"))
+        out.add(organ if "@" in organ else f"{organ}@{r.get('organ_version')}")
+    return out
 
 
 def records_from_causal_memory(causal_memory, *, prefix: str = "cortex/") -> list[dict]:

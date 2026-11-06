@@ -204,6 +204,12 @@ def exit_verdict(arms: Mapping[str, Mapping[str, Any]]) -> dict:
         if arm is None or arm.get("status") != "RUN":
             reasons.append(f"declared baseline {name} not run: {(arm or {}).get('reason', 'absent')}")
             continue
+        errored = arm.get("summary", {}).get("errors", 0)
+        if errored:
+            # 0.2.2 (verified 2026-10-21): an item the baseline never answered is not a loss of the baseline; no
+            # superiority is claimed over an arm that did not run on every item.
+            reasons.append(f"declared baseline {name} not run: {errored} of {arm['summary']['n']} items errored")
+            continue
         gain = arm["paired_gain_vs_routed"]
         if gain["ci95"][0] <= THRESHOLDS["min_quality_gain_lower_bound"]:
             reasons.append(f"gain over {name} not established (lower bound {gain['ci95'][0]:.3f})")

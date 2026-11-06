@@ -1,0 +1,7 @@
+Broad related suite on the review fixes (snapshot before the experiment test's ablation-signature fix; that one failure is the stale stand-in, fixed in b1a3c1af and passing in run-final.txt):
+E           TypeError: test_an_authorized_correction_changes_the_later_selection_and_the_ablation_does_not.<locals>.<lambda>() takes 1 positional argument but 2 were given
+
+greg/cognition/settlement.py:273: TypeError
+=========================== short test summary info ============================
+FAILED tests/integration/test_outcome_correction_changes_decision.py::test_an_authorized_correction_changes_the_later_selection_and_the_ablation_does_not
+1 failed, 750 passed, 1 skipped in 914.82s (0:15:14)

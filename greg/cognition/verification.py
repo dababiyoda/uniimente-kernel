@@ -8,6 +8,35 @@ import time
 
 from .contracts import CognitionError, ProofArtifact, digest
 
+# The Z3 check below is bounded by a deterministic resource count and by a wall-clock backstop inside the verifier
+# worker's own CPU and time budget. The count gives the same answer the same certificate only because each check runs
+# in a fresh Z3 context: in the shared default context Z3's work on a question depends on what the process asked
+# before (one answer re-verified in one process took 1,999,353, then 1,745,208, then over 2,000,000 units). The
+# backstop is not deterministic: on a slow or loaded machine it can end a check before the resource count does, which
+# leaves the claim UNKNOWN (uncertified and unrefuted; the certificate's reason is 'timeout' rather than 'canceled').
+# Calibration (2026-10-15, one core of a shared machine): every composition model on dev and review seeds and F7's
+# development items certifies within 10k units in under 60 ms. Of the honest random answers on review seeds
+# 3000-3999, 100k leaves 8 UNKNOWN, each reaching the resource limit in 0.06-1.0 s, so close to the backstop; 2M
+# certifies one of them (seed 3082, in 1.0-1.3 s, so only without the 1 s backstop) and stops the other 7 after 2-9 s.
+# The backstop is also cut to the time the verifier has left (``deadline``): a fixed 1 s spent on an answer's
+# certificate at a tight latency limit timed out answers c360103 verified without one (review seeds 3181 and 3356
+# through cortex.reason at a 1.8 s limit). A check the remaining budget cannot afford is NOT_RUN, so an uncertifiable
+# check never costs the answer; the claim then stays uncertified and unrefuted, as an UNKNOWN one does. A timeout of 0
+# is not a short check: Z3 reads it as no limit.
+Z3_RLIMIT = 100_000
+Z3_TIMEOUT_MS = 1000
+Z3_MIN_TIMEOUT_MS = 20
+# CP-SAT reports the optimisation family's integer bound and objective as doubles computed from integers (a scaling
+# factor times an integer plus an offset), so an honest one sits within a few units in the last place of its integer
+# (review seed 3082: -172467568588.00003, one unit at that magnitude). A reported bound or gap is checked to that noise,
+# never to 1/2 (fix review r3: a bound and a gap each allowed 1/2 stacked, so a plan 1 short was certified with a gap
+# of 0.02): relative 1e-13 (at least 450 units in the last place at any magnitude, yet at most 0.1 up to the receipt's
+# 1e12 ceiling, where relative 1e-9 would allow 1000, review V1) with an absolute floor of 1e-9 near zero.
+# Calibration (2026-10-16, review seeds 3000-3999, honest CP-SAT answers from the review's, the round-3 fixer's and two
+# large-magnitude generators at full and 1-100 ms budgets): of 7,738 OPTIMAL and 1,112 FEASIBLE answers (1,198 of
+# them at magnitude 1e9 or more), 17 reported a bound, objective or gap off its exact value, each by at most one unit
+# in the last place (relative 2.1e-16).
+NOISE_REL, NOISE_ABS = Fraction(1, 10**13), Fraction(1, 10**9)
 
 def _holds(op, lhs, rhs):
     """One comparison table for every re-check: exact rationals and Z3 terms alike. Strict < and > are the
@@ -172,8 +201,129 @@ def _native_numeric_checks(family, data, answer):
         dissent.append(str(exc))
     return checks, dissent
 
-def verify(family, data, answer, proof_class):
-    checks, dissent, cross = {}, [], {}
+
+def _restatement_gaps(claim: str, support: list) -> tuple[bool, bool]:
+    """(a figure of the claim is absent from its supporting spans, the claim's polarity differs from theirs)."""
+    def numbers(text):
+        out, token = set(), ""
+        for ch in text.replace(" percent", "%").replace(" per cent", "%") + " ":
+            if ch.isdigit() or (token and ch in ",.%"):
+                token += ch
+            elif token:
+                out.add(token.replace(",", "").rstrip(".,"))
+                token = ""
+        return {n for n in out if n and n[0].isdigit()}
+
+    def negative(text):
+        words = ["".join(ch for ch in w.lower() if ch.isalpha() or ch == "'") for w in text.split()]
+        return any(w in ("not", "no", "never", "none", "nor", "neither", "without", "nobody", "nothing", "cannot")
+                   or w.endswith("n't") for w in words)
+    spans = " ".join(support)
+    # Spans that spell a number out ("twelve percent") are left to the solver's reading; this recheck reads digits.
+    spelled = any(w.strip(".,;:").lower() in ("two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+                                              "eleven", "twelve", "twenty", "thirty", "forty", "fifty", "hundred")
+                  for w in spans.split())
+    return (not spelled and bool(numbers(claim) - numbers(spans))), negative(claim) != negative(spans)
+
+
+def _exact(value):
+    """A finite JSON number as an exact Fraction, else None."""
+    if type(value) not in (int, float) or not math.isfinite(value):
+        return None
+    return Fraction(str(value))
+
+
+def _near(value, exact):
+    """``value`` is a finite number within 1/2 of ``exact``. The optimisation family's objectives are integers, so 1/2
+    tells any two apart at every magnitude, where a relative tolerance does not (review V1: at 1e11 rel_tol=1e-9 let a
+    plan 100 units short pass); it is not equality either, since CP-SAT can report an integer objective as a double
+    with rounding noise (-172467568588.00003 for -172467568588, review seed 3082)."""
+    value = _exact(value)
+    return value is not None and abs(value - exact) < Fraction(1, 2)
+
+
+def _noise(*values):
+    """The largest difference CP-SAT's honest rounding noise explains between numbers of these magnitudes."""
+    return max(NOISE_ABS, NOISE_REL * max(abs(v) for v in values))
+
+
+def _z3_certificate(data, *, integers, better_than=None, sense="max", deadline=None):
+    """Ask Z3 for an assignment within the model's bounds and constraints, strictly better than ``better_than`` when
+    it is given. Z3 shares no code with CP-SAT: sat REFUTES the claim (the witness is returned), unsat certifies it,
+    and unknown (the resource or time limit) leaves it uncertified, never refuted. A ``deadline`` (time.monotonic())
+    cuts the time limit to what is left before it; with less than Z3_MIN_TIMEOUT_MS left the check is NOT_RUN."""
+    limits = {"rlimit": Z3_RLIMIT, "timeout_ms": Z3_TIMEOUT_MS}
+
+    def unaffordable():
+        if deadline is None:
+            return None
+        left = math.floor(min(max(0.0, deadline - time.monotonic()), Z3_TIMEOUT_MS / 1000) * 1000)
+        limits["timeout_ms"] = left
+        if left < Z3_MIN_TIMEOUT_MS:            # nor may the timeout reach 0, which Z3 reads as no limit
+            return {"engine": "z3", "status": "NOT_RUN", "limits": limits,
+                    "reason": f"the verifier's remaining latency budget ({left} ms) cannot afford the check"}
+        return None
+    # asked before importing Z3 and building the model too, which take time of their own (0.1-0.2 s on a loaded core)
+    if spent := unaffordable():
+        return spent
+    try:
+        import z3
+    except ImportError:
+        return {"engine": "z3", "status": "NOT_RUN", "reason": "z3-solver is not installed", "limits": limits}
+    numbers = [b for bounds in data["variables"].values() for b in bounds]
+    numbers += [x for c in data["constraints"] for x in (*c["coefficients"].values(), c["rhs"])]
+    numbers += list((data.get("objective") or {}).get("coefficients", {}).values())
+    if integers and any(type(x) is not int for x in numbers):
+        return {"engine": "z3", "status": "NOT_RUN", "reason": "an integer model with a non-integer number",
+                "limits": limits}
+    ctx = z3.Context()                      # fresh per check, so the resource count is deterministic (above)
+
+    def const(x):
+        if integers:
+            return z3.IntVal(x, ctx)
+        x = Fraction(str(x))
+        return z3.Q(x.numerator, x.denominator, ctx)
+    vs = {n: (z3.Int if integers else z3.Real)(n, ctx) for n in data["variables"]}
+
+    def linear(coefficients):
+        return z3.Sum([const(co) * vs[n] for n, co in coefficients.items()]) if coefficients else const(0)
+    solver = z3.Solver(ctx=ctx)
+    solver.set("rlimit", Z3_RLIMIT)
+    for n, (lo, hi) in data["variables"].items():
+        solver.add(vs[n] >= const(lo), vs[n] <= const(hi))
+    for c in data["constraints"]:
+        lhs, rhs = linear(c["coefficients"]), const(c["rhs"])
+        solver.add(_holds(c["op"], lhs, rhs))
+    if better_than is not None:
+        objective = linear(data["objective"]["coefficients"])
+        value = (z3.IntVal(better_than.numerator, ctx) if integers and better_than.denominator == 1
+                 else z3.Q(better_than.numerator, better_than.denominator, ctx))
+        solver.add(objective > value if sense == "max" else objective < value)
+    if spent := unaffordable():
+        return spent
+    solver.set("timeout", limits["timeout_ms"])
+    status = solver.check()
+    out = {"engine": "z3", "version": z3.get_version_string(), "limits": limits,
+           "question": ("assignment within the bounds and constraints" +
+                        (f" with objective {'>' if sense == 'max' else '<'} {better_than}" if better_than is not None
+                         else "")),
+           # the bound the question tests: once CERTIFIED, no assignment's objective lies beyond it
+           **({"bound": int(better_than)} if better_than is not None and better_than.denominator == 1 else {})}
+    if status == z3.sat:
+        model = solver.model()
+        value = (lambda v: model.eval(v, model_completion=True).as_long()) if integers else \
+            (lambda v: str(model.eval(v, model_completion=True).as_fraction()))
+        return {**out, "status": "REFUTED", "witness": {n: value(v) for n, v in vs.items()}}
+    if status == z3.unsat:
+        return {**out, "status": "CERTIFIED"}
+    return {**out, "status": "UNKNOWN", "reason": str(solver.reason_unknown())[:200]}
+
+
+def verify(family, data, answer, proof_class, *, deadline=None):
+    """``deadline`` (time.monotonic()) bounds the Z3 certificate's time, never the checks; the verifier worker passes
+    the end of its caller's budget less a reserve for returning the answer. Without one (an in-process caller) the
+    certificate has its fixed backstop."""
+    checks, dissent, beyond, own_report, cross = {}, [], None, None, {}
     from .catalog import FAMILIES, NATIVE_QUALIFIED
     if family not in FAMILIES or proof_class != FAMILIES[family][3]:
         raise CognitionError("false proof type for selected method")
@@ -221,6 +371,7 @@ def verify(family, data, answer, proof_class):
         checks["artifact_sources_match_input"] = artifact["sources"] == [{k:v for k,v in s.items() if k != "text"} for s in data["sources"]]
         checks["artifact_bindings_match_input"] = artifact["bindings"] == data["bindings"]
         checks["artifact_contradictions_match_input"] = artifact["contradictions"] == [b for b in data["bindings"] if b["relationship"] == "contradicts"]
+        checks["artifact_distortions_match_output"] = artifact.get("distortions") == output.get("distortions")
     if family == "exact" and "polynomial" not in data:
         # A separately parsed Decimal evaluator attacks the Fraction solver.
         import ast
@@ -261,38 +412,39 @@ def verify(family, data, answer, proof_class):
         checks["constraint_substitution"] = bool(valid)
         if family == "optimization":
             checks["integer_domain"] = all(v.denominator == 1 for v in values.values())
-            objective = sum(c * values[n] for n, c in data["objective"]["coefficients"].items())
-            checks["objective_substitution"] = math.isclose(float(objective), output["objective_value"], abs_tol=1e-6)
+            # the family is integer, so the solution's objective is an exact integer the reported numbers must round to
+            objective = sum(Fraction(str(c)) * values[n] for n, c in data["objective"]["coefficients"].items())
+            checks["objective_substitution"] = _near(output["objective_value"], objective)
+            # Self-consistency of the solver's own report, not a certificate (review V2, V5): an OPTIMAL claim meets
+            # its bound (zero gap, review of #179 M6); a FEASIBLE claim's bound lies on the far side of its
+            # objective; a reported gap is |objective - bound|. Each to CP-SAT's rounding noise only (NOISE above).
+            maximise = data["objective"]["sense"] == "max"
+            bound, gap = _exact(artifact.get("bound")), artifact.get("optimality_gap")
+            noise = _noise(objective, bound) if bound is not None else None
             if output["solver_status"] == "OPTIMAL":
-                # OPTIMAL is a claim about the bound: the proof's best bound must meet the objective (gap 0).
-                bound = (answer.get("proof") or {}).get("bound")
-                checks["optimality_bound_met"] = bound is not None and math.isclose(
-                    float(bound), float(objective), abs_tol=1e-6)
-            if output["solver_status"] == "OPTIMAL" and checks["constraint_substitution"] and checks["integer_domain"]:
-                # A second engine attacks the optimality claim: no feasible assignment may beat it.
-                better = _z3_integer_check(data, strictly_better_than=objective)
-                cross["optimality_cross_engine"] = better
-                if better is not None:
-                    checks["optimality_cross_engine"] = better == "unsat"
-                else:
-                    dissent.append("OPTIMAL was not re-checked by a second engine (Z3 unavailable or undecided); "
-                                   "optimality rests on CP-SAT's report.")
+                checks["optimal_objective_meets_its_bound"] = bound is not None and abs(bound - objective) <= noise
             elif output["solver_status"] == "FEASIBLE":
-                dissent.append("FEASIBLE is not OPTIMAL: the assignment satisfies the model; optimality is unproven "
-                               f"(reported gap {artifact.get('optimality_gap')}).")
-    elif family == "optimization" and output["solver_status"] == "INFEASIBLE":
-        verdict = _z3_integer_check(data)
-        cross["infeasibility_cross_engine"] = verdict
-        if verdict is not None:
-            checks["infeasibility_cross_engine"] = verdict == "unsat"
-        else:
-            dissent.append("INFEASIBLE was not re-checked by a second engine (Z3 unavailable or undecided).")
-    elif family == "formal" and output["solver_status"] == "UNSAT":
-        cross["unsat_core"] = _z3_core_check(data, artifact.get("unsat_core") or [])
-        if cross["unsat_core"]["core_unsat"] is not None:
-            checks["unsat_core_recheck"] = cross["unsat_core"]["core_unsat"]
-        if cross["unsat_core"]["minimal"] is False:
-            dissent.append("The reported unsat core is valid but not minimal: a smaller core exists.")
+                checks["feasible_bound_beyond_its_objective"] = bound is not None and (
+                    bound >= objective - noise if maximise else bound <= objective + noise)
+            if gap is not None:
+                checks["optimality_gap_recomputed"] = bound is not None and _exact(gap) is not None and \
+                    abs(_exact(gap) - abs(objective - bound)) <= noise
+            failed = [k for k in ("optimal_objective_meets_its_bound", "feasible_bound_beyond_its_objective",
+                                  "optimality_gap_recomputed") if checks.get(k) is False]
+            if failed:
+                own_report = (f"its solution's objective is {objective}, its bound {artifact.get('bound')} and its gap "
+                              f"{gap} ({' and '.join(failed)} failed)")
+            # What the certificate below asks Z3 to beat: an OPTIMAL claim's own objective, or a FEASIBLE claim's
+            # bound (review r2: a forged bound, and the gap measured from it, verified unchecked). Objectives are
+            # integers, so a bound b stands for the integer floor(b + noise) (max) or ceil(b - noise) (min), the noise
+            # at b's own magnitude (the plan's objective may be far larger): any assignment beyond b by more than
+            # CP-SAT's rounding noise refutes it (fix review r3: with 1/2 here a bound 0.49 short of the optimum was
+            # certified), and an honest bound is never refuted. The certificate carries that integer as its bound,
+            # from which a consumer measures the gap, never from the artifact's own.
+            if output["solver_status"] == "OPTIMAL":
+                beyond = objective
+            elif output["solver_status"] == "FEASIBLE" and bound is not None:
+                beyond = Fraction(math.floor(bound + _noise(bound)) if maximise else math.ceil(bound - _noise(bound)))
     elif family in ("graph", "search"):
         # GREG's own Dijkstra (greg/cognition/network.py) shares no code with NetworkX. It refutes a
         # valid but longer path and a false "no path", which form checks alone let through.
@@ -353,6 +505,14 @@ def verify(family, data, answer, proof_class):
         checks["fresh_sources"] = all(datetime.fromisoformat(s["expires_at"].replace("Z", "+00:00")) > datetime.now(timezone.utc) for s in sources.values())
         checks["span_binding"] = all(b["source_id"] in sources and b["quote"] in sources[b["source_id"]]["text"] for b in data["bindings"])
         checks["contradiction_preserved"] = output["contested"] == any(b["relationship"] == "contradicts" for b in data["bindings"])
+        # Written apart from the solver's tokenizer: a restatement whose figures or polarity differ from its supporting
+        # spans may not be reported as unchanged.
+        support = [b["quote"] for b in data["bindings"] if b["relationship"] == "supports"]
+        if support:
+            reported = {c["class"] for c in output.get("distortions") or []}
+            figure_gap, polarity_gap = _restatement_gaps(data["claim"], support)
+            checks["restatement_rechecked"] = (not figure_gap or "figure" in reported) and \
+                (not polarity_gap or "negation" in reported)
         dissent.append("Declared provenance/quality need separate authentication; quote binding does not prove entailment.")
     elif family == "robust_pattern":
         # Recompute the median and MAD with the standard library and re-derive every flag.
@@ -380,6 +540,11 @@ def verify(family, data, answer, proof_class):
         checks["labels_are_posterior_argmax"] = all(
             labels[i] is None or labels[i] == classes[max(range(len(classes)), key=lambda c: (p[c], -c))]
             for i, p in post.items())
+        # an abstention is allowed only where the declared posterior threshold abstains (round-3 review of #179,
+        # finding 4: a total abstention verified)
+        minimum = float(data.get("min_posterior", 0.0))
+        checks["abstentions_match_threshold"] = all(
+            (labels.get(i) is None) == (max(p) < minimum) for i, p in post.items())
         tally = {}
         for r in data["labels"]:
             key = (str(r["item_id"]), str(r["independence_group"]))
@@ -415,20 +580,49 @@ def verify(family, data, answer, proof_class):
                 recomputed[item] = [math.exp(x - top) / total for x in logs]
             checks["posteriors_recomputed_from_votes"] = set(recomputed) == set(post) and all(
                 all(math.isclose(a, b, abs_tol=1e-6) for a, b in zip(recomputed[i], post[i])) for i in post)
-            smoothing = float(artifact["trace"].get("smoothing", data.get("smoothing", 1.0)))
-            em = artifact["trace"]["em"]
-            converged = len(em) >= 2 and abs(em[-1]["map_objective"] - em[-2]["map_objective"]) < 1e-7
-            if converged:
-                counts = {g: [[smoothing] * k for _ in range(k)] for g in confusion}
-                for item, by_group in votes.items():
-                    for g, label in by_group.items():
+            # Re-run EM here, independently of greg.cognition.repertoire (round-2 review of #179, N1). EM is
+            # deterministic from the soft-majority start, so a claimed stopping point (converged or capped) and
+            # the shipped model must match the verifier's own run; claiming non-convergence no longer skips a check.
+            smoothing = float(data.get("smoothing", 1.0))
+            cap = int(data.get("max_iterations", 50))
+            groups = sorted({str(r["independence_group"]) for r in data["labels"]})
+            items = sorted(votes)
+            mine = {i: [sum(1 for g in votes[i].values() if g == c) / len(votes[i]) for c in range(k)] for i in items}
+            steps, last, fit_prior, fit_conf = 0, None, None, None
+            for _ in range(cap):
+                fit_prior = [(sum(mine[i][c] for i in items) + smoothing) / (len(items) + k * smoothing)
+                             for c in range(k)]
+                tallies = {g: [[smoothing] * k for _ in range(k)] for g in groups}
+                for i in items:
+                    for g, label in votes[i].items():
                         for c in range(k):
-                            counts[g][c][label] += post[item][c]
-                checks["model_is_m_step_fixed_point"] = all(
-                    math.isclose(counts[g][c][j] / sum(counts[g][c]), confusion[g][c][j], abs_tol=1e-3)
-                    for g in counts for c in range(k) for j in range(k))
-            else:
-                dissent.append("EM stopped at its iteration cap: the M-step fixed-point check was not applied.")
+                            tallies[g][c][label] += mine[i][c]
+                fit_conf = {g: [[x / sum(row) for x in row] for row in rows] for g, rows in tallies.items()}
+                fit = 0.0
+                for i in items:
+                    logs = [math.log(fit_prior[c]) + sum(math.log(fit_conf[g][c][label])
+                                                         for g, label in votes[i].items()) for c in range(k)]
+                    top = max(logs)
+                    total = sum(math.exp(x - top) for x in logs)
+                    mine[i] = [math.exp(x - top) / total for x in logs]
+                    fit += top + math.log(total)
+                fit += smoothing * (sum(math.log(p) for p in fit_prior) + sum(
+                    math.log(x) for rows in fit_conf.values() for row in rows for x in row))
+                steps += 1
+                if last is not None and abs(fit - last) < 1e-7:
+                    break
+                last = fit
+            em = artifact["trace"]["em"]
+            checks["em_rerun_matches_reported_iterations"] = len(em) == steps == output.get("iterations", steps)
+            checks["em_rerun_matches_posteriors"] = set(mine) == set(post) and all(
+                all(math.isclose(a, b, abs_tol=1e-6) for a, b in zip(mine[i], post[i])) for i in post)
+            checks["em_rerun_matches_model"] = (
+                all(math.isclose(a, b, abs_tol=1e-6) for a, b in zip(fit_prior, prior))
+                and set(fit_conf) == set(confusion)
+                and all(math.isclose(fit_conf[g][c][j], confusion[g][c][j], abs_tol=1e-6)
+                        for g in fit_conf for c in range(k) for j in range(k)))
+            if steps == cap and not (len(em) >= 2 and abs(em[-1]["map_objective"] - em[-2]["map_objective"]) < 1e-7):
+                dissent.append("EM stopped at its iteration cap; the verifier's own run stopped at the same cap.")
             reliability = [sum(prior[c] * confusion[g][c][c] for c in range(k)) for g in confusion]
             checks["observers_better_than_chance_on_average"] = sum(reliability) / len(reliability) > 1 / k
         dissent.append("Dawid-Skene assumes observers err independently given the true class; correlated error "
@@ -456,6 +650,26 @@ def verify(family, data, answer, proof_class):
         trace = artifact.get("trace") or []
         if family == "swarm":                      # the swarm always spends its whole budget
             checks["evaluation_count_matches_method"] = output["evaluations"] == budget
+        elif data["function"] in closed and len(shift) == len(bounds):
+            # differential evolution may stop early, so no closed form gives its count; it is deterministic from the
+            # declared seed, so re-run the declared method on the verifier's own objective (round-2 review, M5)
+            from scipy.optimize import differential_evolution
+            population = int(data.get("population", 10))
+            per_generation = population * len(bounds)
+            spent, found = 0, math.inf
+
+            def counted(z):
+                nonlocal spent, found
+                spent += 1
+                y = closed[data["function"]]([a - b for a, b in zip(list(z), shift)])
+                found = min(found, y)
+                return y
+            if 4 <= population <= 50 and budget >= 2 * per_generation:
+                differential_evolution(counted, bounds, maxiter=budget // per_generation - 1, popsize=population,
+                                       seed=int(data["seed"]), polish=False, tol=0, atol=0, workers=1,
+                                       updating="immediate")
+                checks["evaluation_count_matches_method"] = output["evaluations"] == spent
+                checks["fitness_matches_method"] = math.isclose(found, output["fitness"], rel_tol=1e-9, abs_tol=1e-12)
         if trace:                                  # the last recorded improvement is the reported best
             checks["trace_consistent"] = (math.isclose(trace[-1]["fitness"], output["fitness"], rel_tol=1e-12,
                                                        abs_tol=1e-15)
@@ -476,78 +690,98 @@ def verify(family, data, answer, proof_class):
         dissent.append("Formal encoding may omit a material condition. Satisfiability/optimality is conditional on that encoding.")
         if output["solver_status"] in ("UNKNOWN", "MODEL_INVALID"):
             checks["unknown_not_valid"] = answer["formal_validity"] == "UNKNOWN" and answer["status"] != "ANSWER"
-        if output["solver_status"] in ("UNSAT", "INFEASIBLE"):
-            dissent.append("UNSAT/core and INFEASIBLE are solver reports; no independent infeasibility certificate is established.")
-        if output["solver_status"] == "INFEASIBLE" and checks.get("infeasibility_cross_engine"):
-            dissent.append("INFEASIBLE is corroborated by Z3 on the same integer model (a different engine); "
-                           "agreement between two engines is still not a proof certificate.")
-        elif output["solver_status"] == "UNSAT" and checks.get("unsat_core_recheck"):
+        claim, certificate = output["solver_status"], None
+        negative = claim in ("UNSAT", "INFEASIBLE")
+        if (negative or beyond is not None) and all(checks.values()):
+            # A negative claim is checked like a positive one (review: a false INFEASIBLE or UNSAT verified on
+            # artifact coherence alone), and an OPTIMAL or FEASIBLE claim gets a certificate rather than the solver's
+            # own bound (review V2): any assignment within the bounds and constraints (strictly better than the
+            # OPTIMAL objective, or beyond the FEASIBLE bound) refutes.
+            certificate = {"claim": claim, **_z3_certificate(
+                data, integers=family == "optimization", better_than=beyond,
+                sense=(data.get("objective") or {}).get("sense", "max"), deadline=deadline),
+                # the formal family's own engine is Z3: its re-check catches a forged or corrupted claim, not a Z3
+                # defect
+                "independence": "same engine as the solver (Z3), separate encoding and process" if family == "formal"
+                else "different engine from the solver (Z3 against CP-SAT)"}
+            checks["no_feasible_assignment_found" if negative else "no_strictly_better_assignment_found"
+                   if claim == "OPTIMAL" else "no_assignment_beyond_its_bound_found"] = (
+                certificate["status"] != "REFUTED")
+        if family == "formal" and claim == "UNSAT" and (certificate or {}).get("status") != "REFUTED":
+            # The certificate re-checks the whole model. The reported core is a further claim, that these
+            # constraints alone contradict each other (and minimally), so it is re-checked on its own; once the
+            # model is shown satisfiable every core is too, and the certificate's witness already says so.
+            cross["unsat_core"] = _z3_core_check(data, artifact.get("unsat_core") or [], deadline=deadline)
+            if cross["unsat_core"]["core_unsat"] is not None:
+                checks["unsat_core_recheck"] = cross["unsat_core"]["core_unsat"]
+            if cross["unsat_core"]["minimal"] is False:
+                dissent.append("The reported unsat core is valid but not minimal: a smaller core exists.")
+        settled = certificate["status"] if certificate else None
+        why = f"Z3: {certificate.get('reason')}" if certificate else "Z3 did not run"
+        violated = [k for k in ("solution_variable_set", "bounded_solution", "constraint_substitution",
+                                "integer_domain") if checks.get(k) is False]
+        if settled == "REFUTED":
+            dissent.append(f"Z3 found an {certificate['question']}: {certificate['witness']}; the " +
+                           (f"FEASIBLE claim's bound {artifact['bound']} is false." if claim == "FEASIBLE" else
+                            f"{claim} claim is false."))
+        elif violated:
+            # a solution outside its own model: never a solver-reported optimum or a verified feasible plan (fix
+            # review r3: an x+y=10 plan for x+y<=4, claimed OPTIMAL, was called solver-reported)
+            dissent.append(f"The {claim} claim is refuted: its solution violates its own model "
+                           f"({' and '.join(violated)} failed).")
+        elif own_report:
+            # its bound or gap contradicts its own solution: neither solver-reported optimality nor a certificate
+            dissent.append(f"The {claim} claim is refuted by its own report: {own_report}.")
+        elif refuted := [k for k, ok in checks.items() if not ok]:
+            dissent.append(f"The {claim} claim is refuted: {' and '.join(refuted)} failed.")
+        elif claim == "FEASIBLE":
+            dissent.append("FEASIBLE claims a verified feasible assignment only; its optimality is not established, "
+                           + (f"and its bound {artifact['bound']} is independently certified: Z3, a different engine "
+                              f"from CP-SAT, finds no {certificate['question']}." if settled == "CERTIFIED" else
+                              f"and CP-SAT's bound is not independently certified ({why})."))
+        elif settled == "CERTIFIED" and family == "optimization":
+            dissent.append(f"{claim} independently certified: Z3, a different engine from CP-SAT, finds no "
+                           f"{certificate['question']}.")
+        elif negative:
+            dissent.append("UNSAT/core and INFEASIBLE are solver reports; no independent infeasibility certificate is "
+                           "established (" + ("the verifier's Z3 re-check finds no assignment, but Z3 is also the "
+                                              "solver's engine" if settled == "CERTIFIED" else
+                                              f"the verifier's check was not conclusive; {why}") + ").")
+        elif claim == "OPTIMAL":
+            dissent.append("Optimality is solver-reported (CP-SAT OPTIMAL; bound equals objective) and not "
+                           f"independently certified ({why}).")
+        if claim == "UNSAT" and checks.get("unsat_core_recheck"):
             dissent.append("The unsat core was re-checked by a fresh Z3 solver: same engine, so a Z3 defect would be "
                            f"shared ({cross['unsat_core']['status']}).")
+    else:
+        certificate = None
     if family in NATIVE_QUALIFIED:
         native_checks, native_dissent = _native_numeric_checks(family, data, answer)
         checks.update(native_checks)
         dissent.extend(native_dissent)
     return {"verdict": "REFUTED" if not all(checks.values()) else "STRUCTURALLY_VERIFIED",
             "checks": checks, "dissent": dissent, "artifact_digest": digest(answer["proof"]),
+            **({"certificate": certificate} if certificate else {}),
             "cross_checks": cross,
-            "inconclusive": sorted(k for k, v in cross.items() if v is None or (isinstance(v, dict) and v["core_unsat"] is None)),
-            "independence": ("separate verification functions in reviewed Kernel code; CP-SAT optimality and "
-                             "infeasibility claims are re-checked by Z3 where it is installed; no independent "
-                             "external evaluator")}
+            "inconclusive": sorted(k for k, v in cross.items() if v["core_unsat"] is None),
+            "independence": "separate verification functions in reviewed Kernel code; no independent external evaluator"}
 
 
-# The verifier runs inside the cognition worker under the request's latency limit (5 s by default), so the
-# second engine gets a fixed share of it. Running out of budget is "undecided", never a pass or a refutation.
+# The core re-check runs inside the verifier worker after the certificate, so it gets a fixed share of the time and
+# never more than the caller's deadline leaves. Running out is "undecided", never a pass or a refutation.
 CROSS_CHECK_BUDGET_S = 1.5
 MINIMALITY_CAP = 16  # cores larger than this are re-checked but not tested for minimality
 
 
 def _remaining_ms(deadline):
     left = int((deadline - time.monotonic()) * 1000)
-    return left if left >= 50 else None
+    return left if left >= Z3_MIN_TIMEOUT_MS else None   # a timeout of 0 is no limit to Z3
 
 
-def _z3_integer_check(data, *, strictly_better_than=None, budget_s=CROSS_CHECK_BUDGET_S):
-    """'sat' | 'unsat' | None (engine unavailable or undecided). Integer model, as CP-SAT solved it."""
-    deadline = time.monotonic() + budget_s
-    try:
-        import z3
-    except ImportError:
-        return None
-
-    def whole(x):
-        value = Fraction(str(x))
-        if value.denominator != 1:
-            raise ValueError(x)
-        return int(value)
-
-    solver = z3.Solver()
-    vs = {n: z3.Int(n) for n in data["variables"]}
-    try:
-        for n, (lo, hi) in data["variables"].items():
-            solver.add(vs[n] >= whole(lo), vs[n] <= whole(hi))
-        for c in data["constraints"]:
-            lhs = z3.Sum([whole(co) * vs[n] for n, co in c["coefficients"].items()]) if c["coefficients"] else z3.IntVal(0)
-            rhs = whole(c["rhs"])
-            solver.add(_holds(c["op"], lhs, rhs))
-        if strictly_better_than is not None:
-            objective = data["objective"]
-            expr = z3.Sum([whole(co) * vs[n] for n, co in objective["coefficients"].items()])
-            bound = whole(strictly_better_than)
-            solver.add(expr < bound if objective["sense"] == "min" else expr > bound)
-    except (ValueError, TypeError, ArithmeticError, KeyError):
-        return None  # not a model this check can pose; the second engine stays silent rather than truncate or guess
-    left = _remaining_ms(deadline)
-    if left is None:
-        return None
-    solver.set(timeout=left)
-    return _status(z3, solver.check())
-
-
-def _z3_core_check(data, core, budget_s=CROSS_CHECK_BUDGET_S):
-    """Re-check a reported unsat core with a fresh solver, then test it for minimality."""
-    deadline = time.monotonic() + budget_s
+def _z3_core_check(data, core, budget_s=CROSS_CHECK_BUDGET_S, deadline=None):
+    """Re-check a reported unsat core with a fresh solver (and Z3 context), then test it for minimality."""
+    end = time.monotonic() + budget_s
+    deadline = end if deadline is None else min(end, deadline)
     try:
         import z3
     except ImportError:
@@ -557,18 +791,18 @@ def _z3_core_check(data, core, budget_s=CROSS_CHECK_BUDGET_S):
         left = _remaining_ms(deadline)
         if left is None:
             return None
-        solver = z3.Solver()
-        solver.set(timeout=left)
-        vs = {n: z3.Real(n) for n in data["variables"]}
+        ctx = z3.Context()
+        solver = z3.Solver(ctx=ctx)
+        solver.set("timeout", left)
+        vs = {n: z3.Real(n, ctx) for n in data["variables"]}
         for n, (lo, hi) in data["variables"].items():
-            solver.add(vs[n] >= z3.RealVal(str(lo)), vs[n] <= z3.RealVal(str(hi)))
+            solver.add(vs[n] >= z3.RealVal(str(lo), ctx), vs[n] <= z3.RealVal(str(hi), ctx))
         for i in indices:
             c = data["constraints"][i]
-            lhs = (z3.Sum([z3.RealVal(str(co)) * vs[n] for n, co in c["coefficients"].items()])
-                   if c["coefficients"] else z3.RealVal(0))
-            rhs = z3.RealVal(str(c["rhs"]))
+            lhs = (z3.Sum([z3.RealVal(str(co), ctx) * vs[n] for n, co in c["coefficients"].items()])
+                   if c["coefficients"] else z3.RealVal(0, ctx))
             try:
-                solver.add(_holds(c["op"], lhs, rhs))
+                solver.add(_holds(c["op"], lhs, z3.RealVal(str(c["rhs"]), ctx)))
             except KeyError:
                 return None  # an operator this re-check cannot pose is undecided, never a crash
         return _status(z3, solver.check())

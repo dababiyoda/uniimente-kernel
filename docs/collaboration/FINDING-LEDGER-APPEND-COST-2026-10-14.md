@@ -1,8 +1,9 @@
-# Ledger verification cost: finding and change (2026-10-14)
+# Ledger verification cost: finding and change (2026-10-14, second layer 2026-10-21)
 
 Status: **changed on the draft branch (`claude/uniimente-greg-reconciliation-39syff`), not merged.**
 It touches the Kernel evidence plane (`provenance/ledger.py`, `events/spine.py`), so it is yours to
-accept, change or revert. It creates no authority.
+accept, change or revert. It creates no authority. One further step needs your decision because it
+changes a continuity artifact: see [Founder decision](#founder-decision-the-gates-claim-scan).
 
 ## Finding
 
@@ -149,10 +150,8 @@ Where the whole chain is reconstructed now:
 - **Real body**, same mission as above: 32 ms per tick at 6,517 records, 65 ms at 13,017, 103 ms at
   19,517 and 49 ms at 37,446, with noisy peaks near 200 ms.
   - The tick no longer re-hashes anything: two hashes per tick, both for new records.
-  - What still grows is `MissionBook.rebuild`, which copies and folds every GREG event once per tick
-    (5,775 events at 37,446 records).
-  - That is the next layer: keep one book and fold only new events. It is not built here because draft
-    #168 changes `greg/missions.py`.
+  - What still grew was `MissionBook.rebuild`, which copied and folded every GREG event once per tick
+    (5,775 events at 37,446 records). The second layer below removes it.
   - Old code at 7,800 records: about 3 s per tick.
 - **Full suite:** 9 min 17 s before; 4 min 11 s to 4 min 38 s after, with the same tests plus the new ones.
 - **Tests:** `tests/unit/test_ledger_incremental_verification.py` (20).
@@ -174,7 +173,116 @@ Where the whole chain is reconstructed now:
     copies are new objects and fail the tail identity check. Pending outbox events are already isolated,
     because the mediator gets its own copy.
 
+## Second layer (2026-10-21): the mission book and per-observation lookups
+
+**Measured first.** Same body (one holding mission, 60 s cadence, 13 records per observation), median of
+600 active ticks, container CPU, nothing else running:
+
+| retained records | `291e037` | `bd0c17d` mission book | now: + ledger index | with the Gate change below (not applied) |
+|---:|---:|---:|---:|---:|
+| 7,817 | 25.2 ms | 13.3 ms | 10.1 ms | 8.0 ms |
+| 15,630 | 46.6 ms | 25.2 ms | 11.2 ms | 8.1 ms |
+| 23,443 | 90.2 ms | 38.6 ms | 14.6 ms | 7.9 ms |
+| 31,256 | 136.8 ms | 55.9 ms | 18.0 ms | 8.2 ms |
+
+Growth per thousand retained records: 4.8 ms, then 1.8 ms, now 0.34 ms; flat with the Gate change.
+
+**What changed.**
+
+1. **`MissionBook` folds only new events** (`bd0c17d`). `EventSpine.since(prefix, cursor)` returns the
+   events retained after a cursor; a cursor is honored only within one history, so a replaced history
+   is folded again from the beginning. The book keeps its own fold and hands out copies:
+   - missions are copied afresh on every rebuild, so what the engine changes on them never reaches
+     the fold;
+   - a decision record is copied once, when folded, because copying every decision ever made on every
+     rebuild would grow with history again. The fold reads only its own copy, so a caller that changes
+     a handed-out record cannot change mission state. **Given up:** such a change stays visible in that
+     handed-out record until the body restarts. Nothing in the code base changes one; the old book
+     dropped such a change at the next rebuild;
+   - a fold that raises part-way is redone from the beginning on the next call;
+   - a journal that offers only `replay()` (draft #168's gravity stand-in) is folded whole every time,
+     as before. The first version required `since()` and broke three #168 tests; the comparison
+     against #168 found it.
+2. **The ledger answers lookups from indexes** (`provenance/ledger.py`). `find(hash)`, `by_type(type)`
+   and a new `select(type, field=value, ...)` use indexes of positions kept up to date the way the
+   spine keeps its views: only records added since the last lookup are indexed, and a different record
+   where the last indexed one was (assigned or reloaded history) rebuilds them. Every answer is
+   re-checked against the record and handed out as a copy. A record altered in place in the private
+   list (which verification detects) is never returned for a value it no longer holds.
+3. **`AuthorityOffice._prior`** finds a proposal's dispatch claim and receipt with `select` instead of
+   copying every claim and receipt (`greg/authority.py`).
+4. **The engine numbers a sensor read** by counting only observations retained since its last count
+   (`MissionEngine._observations_retained`); a test checks every count against a replay of all of them.
+
+**Evidence.**
+
+- `tests/unit/test_greg_mission_book_incremental.py` (17): eight real mission scenarios re-run with
+  every rebuild compared to a fold from the first event; caller changes; replaced history; an
+  interrupted fold; each new event folded exactly once; the cursor contract; a replay-only journal;
+  observation numbering across a restart, two checks and a replaced history.
+- `tests/unit/test_ledger_lookup_index.py` (9): randomized queries against a scan while history grows,
+  after assignment and after reload; a lookup copies only what it returns; in-place alteration;
+  unhashable values; the first of a repeated hash; the Gate still refuses a second dispatch of a
+  claimed proposal or grant.
+- **Mutation:** 21 mutants (10 of the book and cursor, 11 of the index, prior lookup and counting);
+  20 caught. The survivor builds a field index from every record instead of one type's; answers are
+  identical (the re-check filters by type), so it is slower, not wrong.
+- **Full suite:** 1,383 passed, 6 skipped.
+- **Draft #168** merged with the book change: the same 24 failures as #168 alone (its optional solver
+  dependencies are missing here), no new ones; `git merge-tree` is clean against #168 and `main`.
+- **Negative evidence:** the first index version also changed the Gate. Thirteen repair-harness tests
+  failed, because `policy/consequence_gate.py` is one of the twelve continuity artifacts whose bytes
+  define identity and authority (`evolution/repair/spec.py`, `evolution/repair/subjects.py`). That
+  change was reverted; it is the decision below.
+
+## Founder decision: the Gate's claim scan
+
+What still grows is the Consequence Gate's own check that a proposal or grant was not dispatched
+before. It reads every `grant_dispatch` record (one per Gate-mediated act, so one per observation):
+about 2,400 copies per observation at 31,256 records, 0.34 ms per thousand records. A holding mission
+observed every minute writes about 18,700 records a day, so after 50 days this check alone would cost
+roughly half a second per observation.
+
+The change that removes it is three lines in `policy/consequence_gate.py`, step 11:
+
+```python
+            if (self.ledger.select('grant_dispatch', proposal_id=proposal.proposal_id)
+                    or self.ledger.select('grant_dispatch', grant_id=grant['grant_id'])):
+```
+
+It answers the same question from the index (tested: a claim found by proposal and by grant each still
+stops a second dispatch). It is not applied because the Gate's bytes are a continuity artifact: changing
+them changes the identity and authority fingerprint the repair harness pins (subject SR002), which needs
+your decision and a re-bound subject. Options: approve the change and re-bind SR002 at the new hash;
+keep the Gate and accept the growth; or have the Gate's claim check reviewed separately first.
+
+## Next measured limit: memory (not changed)
+
+With a tick's time flat, the next limit for months of operation is memory. The ledger keeps every
+record in memory: **2.45 KB of resident memory per retained record** (0.72 KB on disk), measured on the
+same body at 7,817, 15,617, 23,417 and 31,217 records (+18.8, +37.4, +56.2 and +74.5 MB).
+
+- A holding mission observed every minute writes about 18,700 records a day: about 46 MB of memory a day,
+  so 1 GB in about three weeks and 4 GB in about three months. On a 4–8 GB Chromebook the body would run
+  out of memory long before disk (13.5 MB a day).
+- The full reconstruction every 300 s also grows with history: about 0.3 s at 31,000 records, about 9 s
+  at a million on this CPU.
+
+Options, each an evidence-plane decision:
+1. **Keep payloads on disk.** Memory holds each record's hash and file offset plus the lookup indexes;
+   payloads are read when asked for. Nothing written changes. Verification still reads everything, now
+   from disk.
+2. **Checkpoint and archive.** Periodically anchor the head (the existing RFC 3161 path), move verified
+   history to a sealed segment file, and keep only the open segment in memory. History stays complete
+   and verifiable. Projections over old segments (the mission book on open, for example) need a signed
+   checkpoint of their state.
+3. **Write fewer records per observation.** A read-only sensor writes 13 records today, the full Gate
+   path. A lighter path for read-only observation changes governance, so it is not an engineering call.
+
+None is built here. Two changes to the evidence plane are already waiting for your review.
+
 ## Rollback
 
 Revert the commit. History files are byte-identical either way: the same JSON lines and the same hashes.
-The change is to memory and verification frequency only.
+The change is to memory and verification frequency only. The second layer reverts the same way
+(`bd0c17d` and the index commit); it changes no file format, no event and no record.

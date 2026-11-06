@@ -828,6 +828,13 @@ METABOLISM_MUTANTS = [
     ("a catalogued oracle's seed is not derived from the deficit", "greg/genesis.py",
      '        seed = int(sha256_json({"deficit": deficit_id})[7:15], 16)\n        acceptance = {"oracle":',
      '        seed = 0\n        acceptance = {"oracle":'),
+    # a tool whose output can never equal the contract is not spawned (CI job 1's time budget)
+    ("discovery runs every tool whatever its output type", "greg/genesis.py",
+     'if not all(_could_equal(candidate.parse, v["expected"]) for v in public):', "if False:"),
+    ("composition runs every stage 2 whatever its output type", "greg/genesis.py",
+     'if b and all(_could_equal(c.parse, v["expected"]) for v in public)]', "if b]"),
+    ("an integer parse is taken for a string", "greg/genesis.py",
+     '"first_int": (int, float),', '"first_int": (str,),'),
 ]
 
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),

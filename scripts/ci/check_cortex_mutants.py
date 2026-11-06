@@ -820,6 +820,13 @@ METABOLISM_MUTANTS = [
      "        firsts = [(cid, c, b) for cid, c, b in attached_sources]", "        firsts = []"),
     ("a changed stage-1 binary does not quarantine a restored pipeline", "greg/genesis.py",
      '                  (stage.get("binary"), stage.get("binary_sha256"))]', "                  ]"),
+    # a tool whose output can never equal the contract is not spawned (CI job 1's time budget)
+    ("discovery runs every tool whatever its output type", "greg/genesis.py",
+     'if not all(_could_equal(candidate.parse, v["expected"]) for v in public):', "if False:"),
+    ("composition runs every stage 2 whatever its output type", "greg/genesis.py",
+     'if b and all(_could_equal(c.parse, v["expected"]) for v in public)]', "if b]"),
+    ("an integer parse is taken for a string", "greg/genesis.py",
+     '"first_int": (int, float),', '"first_int": (str,),'),
 ]
 
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),

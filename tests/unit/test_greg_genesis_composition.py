@@ -215,3 +215,27 @@ def test_only_text_producing_templates_can_feed_a_pipeline():
     firsts = [t for t in genesis_mod.DISCOVERY_TEMPLATES if t.parse in genesis_mod.PIPELINE_STAGE1_PARSES]
     assert firsts and all(t.argv.count("{file}") == 1 and not t.companions for t in firsts)
     assert not any(t.parse in ("first_int", "first_hex_token") for t in firsts)
+
+
+def test_a_tool_whose_output_can_never_equal_the_contract_is_not_run_and_the_record_says_why(tmp_path, monkeypatch):
+    """A digest is never an integer: for an integer contract, sha256sum and the text filters are not spawned at all,
+    as single tools or as stage 2, and the discovery record names the reason. Numbers stay comparable across int and
+    float."""
+    assert genesis_mod._could_equal("first_int", 2) and genesis_mod._could_equal("first_int", 2.0)
+    assert not genesis_mod._could_equal("first_hex_token", 2) and not genesis_mod._could_equal("lines", "a")
+    assert genesis_mod._could_equal("an unknown parse", object())
+    spawned = []
+    real = genesis_mod._run_bounded
+    monkeypatch.setattr(genesis_mod, "_run_bounded",
+                        lambda argv, *a, **k: spawned.append(argv[0]) or real(argv, *a, **k))
+    home, key, body_id, data = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", _spec(data, DISTINCT, "m:distinct", 2)))
+    clock = Clock()
+    body = Body(home, clock=clock, builder=builders.StaticBuilder(BUILT, identity="would-build")).open()
+    body.boot()
+    assert "ACHIEVED" in _state(_tick(body, clock), "m:distinct")
+    tried = body.journal.replay("genesis.discovery")[-1].payload["tried"]
+    pruned = {t["binary_name"] for t in tried if "can never equal" in str(t.get("result"))}
+    assert {"sha256sum", "base64", "sort", "head"} <= pruned and "wc" not in pruned
+    assert not [a for a in spawned if any(n in a for n in ("sha1sum", "sha256sum", "sha512sum", "md5sum", "b2sum"))]
+    body.close()

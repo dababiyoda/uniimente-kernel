@@ -677,6 +677,18 @@ def _screen(candidate: Candidate, binary: str, examples: list) -> str | None:
     return None
 
 
+# What each parse can return. A stage 2 whose parse can never equal a contract's expected value (a digest is never an
+# integer; a list is never a string) is not run on that contract: the answer is known without spawning it.
+PARSE_RESULTS = {"first_hex_token": (str,), "last_hex_token": (str,), "first_int": (int, float), "words": (str,),
+                 "text": (str,), "lines": (list,)}
+
+
+def _could_equal(parse: str, expected) -> bool:
+    """Whether a value the parse returns could compare equal to ``expected`` (an unknown parse: assume it could)."""
+    kinds = PARSE_RESULTS.get(parse)
+    return kinds is None or isinstance(expected, kinds)
+
+
 # Two-stage composition (acceptance C.G4, doctrine rung 2): a stage that turns one file into text feeds any discovery
 # template. Only these parses hand the next stage a faithful text; the raw output of stage 1 is what stage 2 reads.
 PIPELINE_STAGE1_PARSES = ("text", "lines")
@@ -1985,6 +1997,9 @@ class Genesis:
             if cid in unusable:
                 entry["result"] = f"{cid} is {self.registry.state[cid]}; not re-registered by discovery"
                 continue
+            if not all(_could_equal(candidate.parse, v["expected"]) for v in public):
+                entry["result"] = f"its output ({candidate.parse}) can never equal the contract's expected values"
+                continue
             try:
                 miss = _screen(candidate, binary, public)
             except CapabilityError as exc:
@@ -2086,7 +2101,10 @@ class Genesis:
                 firsts.append((None, candidate, binary))
                 seen.add((binary, candidate.argv))
         seconds = [(c, installed_binary(c.binary_name)) for c in DISCOVERY_TEMPLATES]
-        seconds = [(c, b) for c, b in seconds if b]
+        seconds = [(c, b) for c, b in seconds if b and all(_could_equal(c.parse, v["expected"]) for v in public)]
+        # Stage 2 screened once per distinct stage-1 output: two stage 1s that print the same bytes (sort and sort -u on
+        # text without repeats) give every stage 2 the same input, so its answer is reused, never recomputed.
+        screened: dict = {}
         with tempfile.TemporaryDirectory(prefix="greg-compose-") as tmp:
             tmp = Path(tmp)
             for source, first, first_binary in firsts:
@@ -2108,8 +2126,10 @@ class Genesis:
                             f"{' '.join([second.binary_name, *second.argv[1:]])}"
                     if cid in unusable:
                         continue
+                    memo = (second_binary, second.argv, second.parse, tuple(middles))
                     try:
-                        miss = _screen_second(second, second_binary, middles, public, tmp)
+                        miss = screened[memo] if memo in screened else \
+                            screened.setdefault(memo, _screen_second(second, second_binary, middles, public, tmp))
                     except CapabilityError as exc:
                         if exc.failure_class == "transient":
                             self._route(deficit_id, "installed_software", f"composition not finished: host outage "

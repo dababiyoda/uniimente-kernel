@@ -3,7 +3,9 @@
 This folder holds about 170 collaboration records from many sessions. Most are
 **dated records of a moment**, not current truth. This index sorts them by kind
 so a newcomer can tell live procedure from history. It lists patterns, not every
-file, so it does not need regenerating after each merge.
+file, so it does not need regenerating after each merge. The per-file listing is
+[`../CATALOG.md`](../CATALOG.md); the state of every branch is the newest
+`BRANCH-CATALOG-*.md`.
 
 **Current coordination truth is not in this folder.** Read the live work board
 (issue #96, newest comments first), the integration PR it names (today #196), and
@@ -38,6 +40,7 @@ was true on that date.
 | `MIND-*`, `GREG-*`, `GOAL-CHASE-*`, `WHOLE-MACHINE-*`, `ONE-*` | product-line state reports | as of their date |
 | `*-AUDIT-*`, `*-COVERAGE-*`, `LINEAGE-*`, `SOURCE-COVERAGE-*`, `REPOSITORY-*`, `wave0-*` | inventories and audits | as of their date |
 | `DIGEST-RULE-CONSOLIDATION-*`, `LEDGER-DEDUP-*`, `FINDING-*` | duplication and defect findings | until their follow-up PRs land |
+| `BRANCH-CATALOG-*` | every remote branch: finished (on the line), open PR, parked or unclaimed (`scripts/branch_catalog.py`) | the newest one; regenerated weekly |
 | `CONTRIBUTOR-PAIN-POINTS-*` | contributor friction register | the newest one; re-measured by the monthly review (`docs/REVIEW_CADENCE.md`) |
 
 Sub-folders: `reviews/` (independent review reports), `lineage-archive/`

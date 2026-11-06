@@ -24,10 +24,12 @@ Failure semantics are the inline ones:
 - STOP reaches the adapter through ``stop_check``, a lock-free predicate (``Body._stop_flag``), and the Body joins
   every running dispatch before it records that it stopped;
 - the Body going away for any reason (an error included) stops every running adapter and joins it before the ledger
-  is closed (``shutdown``); a worker that ignores its stop has its process group killed;
+  is closed (``shutdown``); a worker that ignores its stop has its process group killed; a dispatch still running
+  after that writes nothing more (the ledger is closed under the turn lock) and is reconciled on restart;
 - commands keep being ingested while a worker runs (inline, only a founder STOP was). A founder cancel of the mission
   (LIFECYCLE ABANDONED or SUPERSEDED) or a detach of the capability interrupts the running adapter
-  (``interrupt``): the worker is terminated and its outcome is UNCERTAIN, reconciled as any interrupted worker. A
+  (``interrupt``): the worker is terminated and its outcome is UNCERTAIN, reconciled as any interrupted worker (also
+  when the worker finished before it saw the interruption); an adapter that already returned is not interrupted. A
   mission pause, a BODY_PAUSE, a DECISION and a DEVICE_REVOKE do not: they change what is admitted next, never an act
   the Gate already admitted, exactly as when they waited for an inline worker to return. Whether a pause should
   also interrupt a running worker is an open founder ruling.
@@ -55,7 +57,10 @@ class Background:
         self.failed: list[BaseException] = []
         self.recorded = 0    # outcomes recorded off the turn so far: a turn that sees it move rebuilds its book
         self.interrupted: dict[str, str] = {}   # mission_id -> why its running adapter must stop (set in a turn)
+        self.returned: set[str] = set()   # missions whose adapter has returned; it can no longer be interrupted
+        self._flags = threading.Lock()    # makes "adapter returned" and "interrupt requested" mutually exclusive
         self.closing = False   # the Body is going away: every running adapter stops
+        self.shut = False      # shutdown() ran: a closing Body does not wait for these dispatches again
 
     def stop_check(self) -> bool:
         """STOP for every running adapter, read lock-free from inside it."""
@@ -67,11 +72,15 @@ class Background:
         return lambda: self.stop_check() or mission_id in self.interrupted
 
     def interrupt(self, mission_id: str, why: str) -> bool:
-        """Ask one running dispatch's adapter to stop (caller holds the lock). True the first time."""
-        if mission_id not in self.running or mission_id in self.interrupted:
-            return False
-        self.interrupted[mission_id] = why
-        return True
+        """Ask one running dispatch's adapter to stop (caller holds the lock). True the first time.
+
+        An adapter that has already returned cannot be interrupted: its dispatch is only waiting for the turn to
+        record what it did, and recording an interruption there would contradict that record (#273 re-review A)."""
+        with self._flags:
+            if mission_id not in self.running or mission_id in self.interrupted or mission_id in self.returned:
+                return False
+            self.interrupted[mission_id] = why
+            return True
 
     def busy(self, mission_id: str) -> dict | None:
         """The dispatch of this mission that is still running, if any (caller holds the lock)."""
@@ -98,6 +107,8 @@ class Background:
                 try:
                     return adapter(params, ctx)
                 finally:
+                    with self._flags:          # from here on no turn may record an interruption of this adapter
+                        self.returned.add(mission_id)
                     lock.acquire()  # the Gate's commit and receipt, and the record, are serialized again
             return run_off_turn
 
@@ -115,6 +126,7 @@ class Background:
                         self.recorded += 1
                     self.running.pop(mission_id, None)
                     self.interrupted.pop(mission_id, None)
+                    self.returned.discard(mission_id)
                     handed.set()
 
         thread = threading.Thread(target=body, name=f"greg-dispatch {mission_id} {action_id}#{attempt}", daemon=True)
@@ -137,7 +149,9 @@ class Background:
     def raise_failed(self) -> None:
         """Raise an error a background dispatch hit after it was handed off (caller holds the lock)."""
         if self.failed:
-            raise self.failed.pop(0)
+            exc = self.failed.pop(0)
+            exc.greg_background_dispatch = True   # never contained by a paused body (Body._contained)
+            raise exc
 
     def join(self, timeout: float | None = None) -> list[str]:
         """Wait, without the turn lock, for every running dispatch to record its outcome; the missions still running
@@ -153,13 +167,16 @@ class Background:
 
         Every adapter polls ``stop_check``: a confined worker's supervisor kills its process group within a poll
         (greg.workers.supervised_run). An adapter that does not return within ``timeout`` is one that stopped
-        polling; the process groups of every worker child still alive are killed (greg.workers.kill_live_workers)
-        and the dispatches are given a short last wait. The missions still running after that are returned."""
+        polling; the process groups of the children those dispatches still run are killed
+        (greg.workers.kill_live_workers) and the dispatches are given a short last wait. The missions still running
+        after that are returned: the Body records them as unfinished and closes its ledger without waiting again, so
+        nothing they would write lands after body.stopped; the restart reconciles them (UNCERTAIN)."""
         self.closing = True
+        self.shut = True
         unfinished = self.join(timeout)
         if unfinished:
             from greg.workers import kill_live_workers
-            kill_live_workers()
+            kill_live_workers({entry["thread"].ident for entry in list(self.running.values())})
             unfinished = self.join(KILL_GRACE_SECONDS)
         return unfinished
 

@@ -381,3 +381,158 @@ def test_a_pause_while_the_worker_runs_does_not_interrupt_the_admitted_act(tmp_p
         assert list(body.journal.replay("mission.dispatch_interrupted")) == []
         os.kill(pid, 9)                     # end the test's sleeper; the dispatch records what the worker returned
         wait_for(lambda: mid not in body.engine.background.running, "the dispatch to record its outcome")
+
+
+class CountingLock(GatedLock):
+    """The turn lock, counting the acquires of every thread but the test's: a dispatch thread acquires it once when it
+    starts and once more when its adapter has returned (to record what the adapter did)."""
+
+    def __init__(self):
+        super().__init__()
+        self.others = 0
+        self.second = threading.Event()
+
+    def acquire(self, *args, **kwargs):
+        if threading.get_ident() != self.owner:
+            self.others += 1
+            if self.others >= 2:
+                self.second.set()
+        return super().acquire(*args, **kwargs)
+
+
+def test_a_cancel_ingested_after_the_adapter_returned_is_not_recorded_as_an_interruption(tmp_path, monkeypatch):
+    """#273 re-review A. The worker's adapter has returned and its dispatch waits for the turn to record it; a turn that
+    runs meanwhile ingests the founder's LIFECYCLE ABANDONED. Nothing interrupted the worker, so no
+    mission.dispatch_interrupted is recorded and the commission's outcome is the one the adapter returned. Before the
+    fix the ledger said "interrupted while its worker ran" and then recorded the commission DONE."""
+    data = tmp_path / "data"
+    data.mkdir()
+    repo = make_repo(data)
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    worker = HoldingWorker(GOOD)
+    monkeypatch.setitem(workers.PROVIDERS, "scripted", worker)
+    spec = worker_mission(home, repo, "add-sub", "scripted", 0)
+    mid = spec["mission_id"]
+    drop(home, signed(key, body_id, "MISSION", spec))
+    with Body(home) as body:
+        body._turn = turn = CountingLock()
+        body.engine.background = background = Background(turn, clock=body.clock, stop_check=body._stop_flag)
+        body.tick()
+        assert worker.holding.wait(WAIT) and mid in background.running
+        turn.acquire()                                   # a turn is running
+        try:
+            worker.release.set()
+            assert turn.second.wait(WAIT), "the adapter never returned"   # it waits for the turn to record it
+            drop(home, signed(key, body_id, "LIFECYCLE", {"mission_id": mid, "state": "ABANDONED"}))
+            body._tick()                                 # this turn ingests the cancel
+        finally:
+            turn.release()
+        wait_for(lambda: mid not in background.running, "the dispatch to record its outcome")
+        interrupted = [e.payload for e in body.journal.replay("mission.dispatch_interrupted")]
+        assert interrupted == [], "an adapter that already returned was recorded as interrupted"
+        assert worker_outcomes(body.journal, mid) == ["DONE"]
+
+
+def test_a_cancel_the_worker_finished_before_seeing_is_reconciled_not_recorded_done(tmp_path, monkeypatch):
+    """#273 re-review A, the other order (a guard, not a fail-first test: worker.commission already re-checks its stop
+    after the provider returns): the interruption is recorded while the adapter still runs, but the worker finishes
+    before it polls its stop. Its outcome is UNCERTAIN (reconciled), never DONE after its interruption."""
+    data = tmp_path / "data"
+    data.mkdir()
+    repo = make_repo(data)
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    worker = HoldingWorker(GOOD)                          # a test double that never polls its stop
+    monkeypatch.setitem(workers.PROVIDERS, "scripted", worker)
+    spec = worker_mission(home, repo, "add-sub", "scripted", 0)
+    mid = spec["mission_id"]
+    drop(home, signed(key, body_id, "MISSION", spec))
+    with Body(home) as body:
+        body.engine.background = background = Background(body._turn, clock=body.clock, stop_check=body._stop_flag)
+        body.tick()
+        assert worker.holding.wait(WAIT)
+        drop(home, signed(key, body_id, "LIFECYCLE", {"mission_id": mid, "state": "ABANDONED"}))
+        body.tick()                                      # the interruption is recorded; the worker has not seen it
+        assert [e.payload["mission_id"] for e in body.journal.replay("mission.dispatch_interrupted")] == [mid]
+        worker.release.set()
+        wait_for(lambda: mid not in background.running, "the dispatch to record its outcome")
+        assert worker_outcomes(body.journal, mid) == ["UNCERTAIN"]
+
+
+def test_nothing_is_written_after_body_stopped_names_an_unfinished_dispatch(tmp_path, monkeypatch):
+    """#273 re-review B. An adapter that ignores its stop and runs no supervised child outlives the STOP join and the
+    kill; body.stopped names it unfinished. The Body then closes its ledger without waiting for it again, so when it
+    returns nothing it would record lands after body.stopped; the restart reconciles it."""
+    from greg import background as background_module
+    from greg import body as body_module
+    monkeypatch.setattr(body_module, "STOP_JOIN_SECONDS", 1)
+    monkeypatch.setattr(background_module, "KILL_GRACE_SECONDS", 1)
+    home, worker, long_id = missions_ready(tmp_path, monkeypatch)
+    body = Body(home)
+    loop = threading.Thread(target=body.run, kwargs={"tick_seconds": 0.05}, daemon=True)
+    loop.start()
+
+    def stopped_recorded():
+        with observe(home, actor="spiffe://uniimente.internal/test/background") as journal:
+            return any(True for _ in journal.replay("body.stopped"))
+    try:
+        assert worker.holding.wait(WAIT), "the worker was never commissioned"
+        body.stop_requested = True
+        wait_for(stopped_recorded, "body.stopped")
+        # The stuck adapter returns now, while the body is closing: before the fix close() waited for it again and
+        # it recorded its outcome after body.stopped.
+        worker.release.set()
+        loop.join(WAIT)
+        assert not loop.is_alive(), "the body did not stop"
+    finally:
+        worker.release.set()
+    time.sleep(1.5)                                      # let the late dispatch try to record
+    with observe(home, actor="spiffe://uniimente.internal/test/background") as journal:
+        events = list(journal.replay(""))
+        stopped = [i for i, e in enumerate(events) if e.type == "greg.body.stopped"]
+        assert stopped, "body.stopped was not recorded"
+        assert events[stopped[-1]].payload.get("dispatches_unfinished") == [long_id]
+        after = [e.type for e in events[stopped[-1] + 1:]]
+        assert after == [], f"written after body.stopped: {after}"
+        assert journal.ledger.verify_chain()[0]
+
+
+def test_a_closing_body_kills_only_the_children_its_own_dispatches_started(tmp_path):
+    """#273 re-review D: kill_live_workers is scoped to the closing Body's dispatch threads."""
+    mine, other = threading.Event(), threading.Event()
+    pids = {}
+
+    def start(name, done):
+        proc = workers.subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"], start_new_session=True)
+        workers._live(proc.pid)
+        pids[name] = proc
+        done.wait(WAIT)
+    threads = {name: threading.Thread(target=start, args=(name, ev), daemon=True)
+               for name, ev in (("mine", mine), ("other", other))}
+    for t in threads.values():
+        t.start()
+    wait_for(lambda: len(pids) == 2, "both children to start")
+    try:
+        killed = workers.kill_live_workers({threads["mine"].ident})
+        assert killed == [pids["mine"].pid]
+        pids["mine"].wait(WAIT)
+        assert pids["other"].poll() is None, "another body's child was killed"
+    finally:
+        for name, proc in pids.items():
+            workers._dead(proc.pid)
+            if proc.poll() is None:
+                proc.kill()
+                proc.wait()
+        mine.set()
+        other.set()
+
+
+def test_a_background_error_is_not_contained_by_a_paused_body(tmp_path, monkeypatch):
+    """#273 re-review C: a paused body contains a failure of its own turn work, never a background dispatch's error,
+    which kills the process as an inline dispatch's error did."""
+    home, worker, long_id = missions_ready(tmp_path, monkeypatch)
+    with Body(home) as body:
+        body.engine.background = background = Background(body._turn, clock=body.clock, stop_check=body._stop_flag)
+        background.failed.append(RuntimeError("recording failed off the turn"))
+        monkeypatch.setattr(body, "paused", lambda: True)
+        with pytest.raises(RuntimeError, match="recording failed off the turn"):
+            body._contained(body.tick)

@@ -3606,6 +3606,13 @@ class MissionEngine:
             if off_turn:   # recorded after other turns ran: the mission as the ledger holds it now, at this time
                 self.book.rebuild()
                 mission, when = self.book.missions[m.mission_id], background.clock()
+            if off_turn and outcome.status == "DONE" and background.interrupted.get(m.mission_id):
+                # The founder withdrew this dispatch's authority while it ran (mission.dispatch_interrupted) and the
+                # adapter finished before it saw the stop: it is reconciled like any interrupted worker, never
+                # recorded as an ordinary success after its interruption (#273 re-review A).
+                outcome.status = "UNCERTAIN"
+                outcome.reasons = ["interrupted by the founder while it ran; it finished before it saw the stop, "
+                                   "so its outcome and spend require reconciliation"]
             if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"
                     and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):
                 # Extracted from #157 (#184): the Gate completed collection, but the cancellable worker stopped

@@ -547,7 +547,9 @@ class Body:
         # Every dispatch running off the turn stops and records its outcome before the ledger closes, whatever ended
         # the body (an error included): the turn lock is not held while they finish, since they need it to record.
         background = self.engine.background if getattr(self, "engine", None) is not None else None
-        if background is not None and background.running:
+        if background is not None and background.running and not background.shut:
+            # Once shut down (Body.run did, before it recorded body.stopped), it is not waited for again: what is
+            # still running then writes nothing more (the ledger closes below) and is reconciled on restart.
             background.shutdown(STOP_JOIN_SECONDS)
         with self._turn:     # a dispatch that outlived even that cannot be mid-write while the ledger closes
             if self.ledger is not None:
@@ -1165,7 +1167,7 @@ class Body:
                 horizon = min(horizon, max(at, now))
         return max(0.05, (horizon - now).total_seconds())
 
-    def _contained(self, work, *args):
+    def _contained(self, work, *args, locked: bool = False):
         """One piece of the work a paused or held body still does each turn (read its inbox, note a gap).
 
         A failure there would otherwise kill every restart with no further signal (a held body exists because
@@ -1175,22 +1177,31 @@ class Body:
         try:
             return work(*args)
         except Exception as exc:
-            if not self.paused():
+            # A background dispatch's error is never contained: it kills the process, as an inline one did.
+            if getattr(exc, "greg_background_dispatch", False):
                 raise
-            import traceback
-            frames = traceback.extract_tb(exc.__traceback__)
-            site = f"{Path(frames[-1].filename).name}:{frames[-1].lineno} {frames[-1].name}" if frames else "unknown"
-            digest = sha256_json({"error": type(exc).__name__, "site": site})
-            if all(e.payload["boot_id"] != self.boot_id or e.payload["fault_digest"] != digest
-                   for e in self.journal.replay("body.fault_contained")):
-                self.journal.record("body.fault_contained", {
-                    "boot_id": self.boot_id, "fault_digest": digest, "error": f"{type(exc).__name__}: {exc}"[:500],
-                    "site": site, "state": "HELD" if crash_loop_hold(self.journal) else "PAUSED",
-                    "inbox_waiting": sorted(p.name for p in self.layout.inbox.glob("*.json")),
-                    "at": iso(self.clock()), "action": "contained: the paused body stays up, observable and "
-                                                       "reading its inbox; recorded once per boot and site"},
-                    key=[self.boot_id, digest])
-            return None
+            if locked:
+                return self._contain(exc)
+            with self._turn:   # paused() and the record below read and write the ledger: they take the turn
+                return self._contain(exc)
+
+    def _contain(self, exc):
+        if not self.paused():
+            raise exc
+        import traceback
+        frames = traceback.extract_tb(exc.__traceback__)
+        site = f"{Path(frames[-1].filename).name}:{frames[-1].lineno} {frames[-1].name}" if frames else "unknown"
+        digest = sha256_json({"error": type(exc).__name__, "site": site})
+        if all(e.payload["boot_id"] != self.boot_id or e.payload["fault_digest"] != digest
+               for e in self.journal.replay("body.fault_contained")):
+            self.journal.record("body.fault_contained", {
+                "boot_id": self.boot_id, "fault_digest": digest, "error": f"{type(exc).__name__}: {exc}"[:500],
+                "site": site, "state": "HELD" if crash_loop_hold(self.journal) else "PAUSED",
+                "inbox_waiting": sorted(p.name for p in self.layout.inbox.glob("*.json")),
+                "at": iso(self.clock()), "action": "contained: the paused body stays up, observable and "
+                                                   "reading its inbox; recorded once per boot and site"},
+                key=[self.boot_id, digest])
+        return None
 
     def _working(self) -> list:
         """The missions whose dispatch runs off the turn, for a turn that stepped none (paused or held)."""
@@ -1234,7 +1245,8 @@ class Body:
                 seen = (self.clock(), self.monotonic())
                 if last_seen is not None:
                     with self._turn:
-                        self._contained(presence.note_gap, self.journal, self.boot_id, last_seen, seen)
+                        self._contained(presence.note_gap, self.journal, self.boot_id, last_seen, seen,
+                                        locked=True)
                 last_seen = seen
                 result = self._contained(self.tick)
                 if result is None:                # a paused body's turn failed, contained: it is still paused
@@ -1262,7 +1274,9 @@ class Body:
                 # A paused or held body, or a paused mission, serves no due observation, so it waits a full tick
                 # instead of spinning on one (next_wake); a new inbox file (a signed resume, say), a new intake
                 # item or a stop wakes the body sooner.
-                deadline = time.monotonic() + self.next_wake(tick_seconds)
+                with self._turn:        # next_wake reads the mission book and the journal
+                    wake = self.next_wake(tick_seconds)
+                deadline = time.monotonic() + wake
                 while time.monotonic() < deadline and not self.stop_requested:
                     if self.layout.stop_file.exists() or self._dropped() - waiting:
                         break

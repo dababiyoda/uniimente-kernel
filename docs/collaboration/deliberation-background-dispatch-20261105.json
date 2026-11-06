@@ -265,6 +265,18 @@
     "category": "fragility",
     "statement": "Commands mid-run: turns keep ingesting commands while a worker runs, but a cancel of its mission or a detach of its capability did not reach it",
     "strengthening_response": "MissionEngine.interrupt_withdrawn (every turn, paused too) interrupts the dispatch through Background.stop_for and records mission.dispatch_interrupted once; the worker stops and its outcome is UNCERTAIN, reconciled; pause, BODY_PAUSE, DECISION and DEVICE_REVOKE do not interrupt (documented, pinned by tests/unit/test_greg_background_dispatch.py::test_a_pause_while_the_worker_runs_does_not_interrupt_the_admitted_act); failing-first test tests/unit/test_greg_background_dispatch.py::test_a_founder_cancel_or_detach_while_the_worker_runs_interrupts_it"
+   },
+   {
+    "id": "W7",
+    "category": "fragility",
+    "statement": "An interruption could be recorded after the adapter had returned (its dispatch waiting for the turn), followed by a DONE outcome: the ledger said both",
+    "strengthening_response": "The dispatch marks 'returned' under a small lock before it waits for the turn; interrupt() refuses once set; a DONE after a recorded interruption is UNCERTAIN; failing-first test tests/unit/test_greg_background_dispatch.py::test_a_cancel_ingested_after_the_adapter_returned_is_not_recorded_as_an_interruption"
+   },
+   {
+    "id": "W8",
+    "category": "fragility",
+    "statement": "close() waited again after body.stopped named an unfinished dispatch, which then wrote mission.action, decision.requested and mission.blocked after body.stopped; git children outlived the body",
+    "strengthening_response": "close() does not wait for a background already shut down: it closes the ledger under the turn lock, so late writes fail and the restart reconciles; the worker's git calls run in registered process groups the kill reaches; failing-first test tests/unit/test_greg_background_dispatch.py::test_nothing_is_written_after_body_stopped_names_an_unfinished_dispatch"
    }
   ],
   "residual_risks": [
@@ -281,10 +293,16 @@
     "review_trigger": "A body.stopped record with dispatches_unfinished"
    },
    {
-    "risk": "kill_live_workers kills every supervised child of the process, not only this body's",
-    "mitigation": "Called only by a closing body after its join timeout; one body runs per process",
+    "risk": "A closing Body kills the process groups of its own dispatch threads' children only",
+    "mitigation": "kill_live_workers is scoped by the starting thread (#273 re-review D); tested",
     "owner": "GREG maintainers",
-    "review_trigger": "Two bodies in one process"
+    "review_trigger": "A child started off a dispatch thread on its behalf"
+   },
+   {
+    "risk": "DEVICE_REVOKE or ROTATE_FOUNDER_KEY can now be recorded before a running worker's receipt",
+    "mitigation": "Neither changes an act the Gate admitted; noted for the founder's pause ruling",
+    "owner": "Alfonso Lopez",
+    "review_trigger": "Founder review of this PR"
    }
   ],
   "pass_1_disadvantage_dispositions": [

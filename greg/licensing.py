@@ -1076,7 +1076,9 @@ def _go_value(value, kind: str, what: str) -> None:
     null is stored in every kind, as Go leaves the field empty; a string takes a string only (Go reads a lone
     surrogate escape as U+FFFD); an int takes an integer literal from -2**63 to 2**63 - 1, not 1.5, 1e2 or 2**63;
     an object or array kind takes that, with its members checked; "map" takes an object whose numbers, at any depth,
-    are float64."""
+    are float64. The check reads the object Python's json built, so of a key repeated in one object only the last
+    value is checked; an earlier value Go rejects goes unseen. Ollama then fails to decode the config and loads
+    nothing, so no model is cleared that Ollama would serve; it only narrows what "at any depth" covers."""
     if value is None:
         return
     wrong = None

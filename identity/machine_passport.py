@@ -18,6 +18,8 @@ and a mandatory expiry).
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import uuid
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone, timedelta
@@ -26,6 +28,19 @@ NAMESPACE = "spiffe://uniimente.internal"
 
 PASSPORT_KINDS = ("process", "agent", "workflow", "organ", "connector", "venture_cell")
 CONSEQUENCE_CLASSES = ("read_only", "internal_write", "external_contact", "financial", "irreversible")
+# A running body issues a passport per governed act. Unexpired ones stay. Expired ones stay
+# only inside this audit window; older expirations fold into a chain head. Revocations never fold.
+MAX_LIVE = 256
+MAX_EXPIRED_AUDIT = 1024
+_FOLDED_GENESIS = "sha256:" + "0" * 64
+
+
+def _fold_head(previous: str, passport_id: str, expires_at: str) -> str:
+    raw = json.dumps(
+        {"expires_at": expires_at, "passport_id": passport_id, "prev": previous},
+        sort_keys=True, separators=(",", ":"),
+    ).encode()
+    return "sha256:" + hashlib.sha256(raw).hexdigest()
 
 
 class PassportError(ValueError):
@@ -69,11 +84,26 @@ def _parse(ts: str) -> datetime:
 
 
 class PassportRegistry:
-    """Issues, verifies, and revokes short-lived machine passports."""
+    """Issues, verifies, and revokes short-lived machine passports.
 
-    def __init__(self, max_ttl_seconds: int = 3600):
+    At most ``max_live`` unexpired, unrevoked passports are issued. Expired identities
+    stay addressable until ``max_expired_audit`` of them have accumulated; older ones
+    leave the map and extend ``retention()["folded_head"]``. A revocation stays in the
+    map for the life of the registry: forgetting one would let a compromised identity
+    read as merely unknown.
+    """
+
+    def __init__(self, max_ttl_seconds: int = 3600, *, max_live: int = MAX_LIVE,
+                 max_expired_audit: int = MAX_EXPIRED_AUDIT):
+        if max_live < 1 or max_expired_audit < 1:
+            raise PassportError("passport retention bounds must be positive")
         self.max_ttl = timedelta(seconds=max_ttl_seconds)
+        self.max_live = max_live
+        self.max_expired_audit = max_expired_audit
         self._passports: dict[str, MachinePassport] = {}
+        self._expired: dict[str, MachinePassport] = {}
+        self._expired_order: list[str] = []
+        self._folded = {"count": 0, "head": _FOLDED_GENESIS}
 
     def issue(self, *, kind: str, creator: str, owner_organ: str, legal_principal: str,
               declared_capabilities: list[str], budget_ceiling_usd: float,
@@ -89,6 +119,9 @@ class PassportRegistry:
         ttl = timedelta(seconds=ttl_seconds) if ttl_seconds else self.max_ttl
         if ttl > self.max_ttl:
             raise PassportError("passport TTL exceeds registry maximum (identities are short-lived)")
+        self.retain()
+        if self.retention()["live"] >= self.max_live:
+            raise PassportError("live passport ceiling reached")
         now = _now()
         p = MachinePassport(
             passport_id=f"{NAMESPACE}/{kind}/{uuid.uuid4()}",
@@ -104,6 +137,8 @@ class PassportRegistry:
 
     def verify(self, passport_id: str, *, at: datetime | None = None) -> tuple[bool, str]:
         """Identity check only. Never an authorization decision."""
+        if passport_id in self._expired:
+            return False, "expired"
         p = self._passports.get(passport_id)
         if p is None:
             return False, "unknown_identity"
@@ -113,9 +148,46 @@ class PassportRegistry:
             return False, "expired"
         return True, "identity_verified"
 
+    def retain(self, *, at: datetime | None = None) -> dict:
+        """Move expired passports out of the live map. Ones past the audit window fold
+        into the chain head. A revoked passport stays, whole, for the life of the registry."""
+        now = at or _now()
+        for pid, p in list(self._passports.items()):
+            if p.revoked:
+                continue
+            if now >= _parse(p.expires_at):
+                self._passports.pop(pid)
+                self._remember_expired(p)
+        while len(self._expired_order) > self.max_expired_audit:
+            pid = self._expired_order.pop(0)
+            expired = self._expired.pop(pid)
+            self._folded["count"] += 1
+            self._folded["head"] = _fold_head(self._folded["head"], pid, expired.expires_at)
+        return self.retention()
+
+    def _remember_expired(self, passport: MachinePassport) -> None:
+        if passport.passport_id in self._expired or passport.revoked:
+            return
+        self._expired[passport.passport_id] = passport
+        self._expired_order.append(passport.passport_id)
+
+    def _find(self, passport_id: str) -> MachinePassport | None:
+        return self._passports.get(passport_id) or self._expired.get(passport_id)
+
+    def retention(self) -> dict:
+        return {
+            "live": sum(1 for p in self._passports.values() if not p.revoked),
+            "expired_retained": len(self._expired),
+            "revoked": sum(1 for p in self._passports.values() if p.revoked),
+            "folded": self._folded["count"],
+            "folded_head": self._folded["head"],
+            "max_live": self.max_live,
+            "max_expired_audit": self.max_expired_audit,
+        }
+
     def inspect(self, passport_id: str) -> dict:
-        """The six questions UNIIMENTE can always answer about an actor."""
-        p = self._passports.get(passport_id)
+        """The six questions UNIIMENTE can always answer about an actor still on record."""
+        p = self._find(passport_id)
         if p is None:
             raise PassportError("unknown_identity")
         return {
@@ -128,6 +200,11 @@ class PassportRegistry:
         }
 
     def revoke(self, passport_id: str, *, reason: str, revoker: str) -> None:
+        note = f"{reason} (by {revoker})"
+        expired = self._expired.pop(passport_id, None)
+        if expired is not None:
+            self._expired_order.remove(passport_id)
+            self._passports[passport_id] = expired
         p = self._passports.get(passport_id)
         if p is None:
             raise PassportError("unknown_identity")
@@ -135,7 +212,10 @@ class PassportRegistry:
             return
         p.revoked = True
         p.revoked_at = _rfc3339(_now())
-        p.revocation_reason = f"{reason} (by {revoker})"
+        p.revocation_reason = note
 
     def to_dict(self, passport_id: str) -> dict:
-        return asdict(self._passports[passport_id])
+        p = self._find(passport_id)
+        if p is None:
+            raise PassportError("unknown_identity")
+        return asdict(p)

@@ -1124,16 +1124,15 @@
      "ask": "A source coverage manifest records each source's reference, version, inspection status, relevance, intent, claims, contradictions, tier and open questions",
      "excerpt": "Create or update a SOURCE COVERAGE MANIFEST.",
      "owner_paths": [
-      "docs/opus-maximus/SOURCE_COVERAGE_LEDGER.json"
+      "docs/opus-maximus/SOURCE_COVERAGE_LEDGER.json",
+      "greg/source_coverage.py"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_source_coverage_ledger.py"
+     ],
      "required_tier": "UNIT_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
-     "blocker": {
-      "class": "BUILDABLE_NOT_BUILT",
-      "reason": "The ledger exists as a document; no validator checks its fields or its read status"
-     }
+     "tier": "UNIT_VERIFIED",
+     "coverage": "covered"
     },
     {
      "id": "S10.A2",
@@ -3518,6 +3517,7 @@
      ],
      "evidence": [
       "tests/unit/test_greg_community_evidence.py",
+      "tests/unit/test_goal_gravity_community_sources.py",
       "mission:I.I4"
      ],
      "required_tier": "SANDBOX_VERIFIED",
@@ -3525,7 +3525,7 @@
      "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "Community evidence is weighted per source but Goal Gravity counts intake by volume",
+      "reason": "Goal Gravity counts one community source once in an in-process body; the cited tests compute UNIT_VERIFIED, short of SANDBOX_VERIFIED",
       "unit": "S42-B"
      }
     },
@@ -3779,13 +3779,15 @@
      "owner_paths": [
       "greg/cognition/restatement.py"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_restatement_fact_interpretation.py"
+     ],
      "required_tier": "SANDBOX_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "The restatement contract does not label interpretation or weigh declared source quality",
+      "reason": "Fact and interpretation are separated and source quality decides acceptance in unit tests; no in-process Body appraisal is cited, so SANDBOX_VERIFIED is not attained",
       "unit": "S45-B"
      }
     },

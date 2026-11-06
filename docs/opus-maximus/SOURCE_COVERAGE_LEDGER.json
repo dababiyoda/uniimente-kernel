@@ -2136,7 +2136,10 @@
     "'Operate endlessly without human intervention' and automatic merge of self-modifications conflict with SR-INTENT-3 and the founder-authority rules; self-modification stays SHADOW until founder decision"
    ],
    "reliability_tier": "historical assistant roadmap; largely realized in different form",
-   "horizon": "BUILDABLE (realized); automatic self-merge PROHIBITED under current authority"
+   "horizon": "BUILDABLE (realized); automatic self-merge PROHIBITED under current authority",
+   "gaps": [
+    "The 2026-10-15 card omitted the gaps list. That omission is not a finding that no question remains."
+   ]
   },
   {
    "source": "By reconstructing the foundational primitives found in the codecrafters-io-build.txt",
@@ -2437,7 +2440,8 @@
     "The 'existing development branches' holding fixes are not named.",
     "Ambiguity about the producing assistant: ChatGPT-style sandbox links versus an 'Opus Maximus' (Claude) review filename; the file could be ChatGPT summarizing a Claude review.",
     "The file appears to be a single copied message with no surrounding context; it is complete in itself (ends with a concluding sentence), so no truncation is evident."
-   ]
+   ],
+   "contradictions": []
   },
   {
    "source": "continuously operating, compounding personal egregore.txt",
@@ -2458,7 +2462,10 @@
     "Vendor-specific stack (Pinecone, Neo4j, LangGraph) conflicts with the later open-source-first and acquire-before-build rules only where a simpler owned mechanism already exists; autonomous financial transactions require founder authority"
    ],
    "reliability_tier": "historical assistant sketch",
-   "horizon": "BUILDABLE core; autonomous finance requires founder authorization"
+   "horizon": "BUILDABLE core; autonomous finance requires founder authorization",
+   "gaps": [
+    "The 2026-10-15 card omitted the gaps list. That omission is not a finding that no question remains."
+   ]
   },
   {
    "source": "Create Egregore Image.txt",
@@ -3843,7 +3850,8 @@
     "'Substrate' and 'rail' are unspecified; the doctrine gives the effect, not the mechanism.",
     "The closing sentence is an instruction to an answerer embedded in untrusted data; it was recorded as data and not obeyed by this archivist.",
     "No truncation detected (file ends with a complete sentence and period); no unreadable bytes; the full 510 bytes were read."
-   ]
+   ],
+   "contradictions": []
   },
   {
    "source": "Egregore Red Team Review.txt",
@@ -4669,7 +4677,8 @@
     "The filename is the only link to DALEOBANKS and to 'vitality'; the meaning of 'vitality' (engagement vitality, a health/vitality niche, or an internal signal) cannot be resolved from the file.",
     "Possible transcription defects: line 20 'What I was silently ruining my progress in __.' is ungrammatical (likely 'What was silently ruining'); line 39 'Here you have a simple approach' is non-native phrasing suggesting the source may itself have been translated; line 93 has a double space after 'blank'.",
     "No turns, decisions, builds or tests exist in the file, so founder_quotes and decisions are necessarily near-empty."
-   ]
+   ],
+   "contradictions": []
   },
   {
    "source": "GitHub Project Update.txt",
@@ -7486,7 +7495,8 @@
    "gaps": [
     "the founder message being paraphrased is absent"
    ],
-   "horizon": "BUILDABLE core; 'robots' FRONTIER"
+   "horizon": "BUILDABLE core; 'robots' FRONTIER",
+   "contradictions": []
   },
   {
    "source": "Verify Egregore Architecture.txt",
@@ -7538,7 +7548,8 @@
     "no founder words",
     "no payment or legal analysis"
    ],
-   "horizon": "BUILDABLE as an organ product; regulated money flows need founder and legal decisions"
+   "horizon": "BUILDABLE as an organ product; regulated money flows need founder and legal decisions",
+   "contradictions": []
   },
   {
    "source": "What gives UNIIMENTE the “science-fiction” advantage.txt",
@@ -7563,7 +7574,10 @@
     "Its '172 passing tests' snapshot is long superseded (trunk suite is ~3,100 tests)"
    ],
    "reliability_tier": "historical assistant essay; its inventory is founder-bound, its status claims are stale",
-   "horizon": "BUILDABLE for most items; FRONTIER for agent-native commerce and regenerative treasury at scale"
+   "horizon": "BUILDABLE for most items; FRONTIER for agent-native commerce and regenerative treasury at scale",
+   "gaps": [
+    "The 2026-10-15 card omitted the gaps list. That omission is not a finding that no question remains."
+   ]
   },
   {
    "source": "Zinc and Magnesium Roles.txt",

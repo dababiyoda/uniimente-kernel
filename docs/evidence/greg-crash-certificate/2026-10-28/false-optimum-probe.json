@@ -1,0 +1,56 @@
+{
+ "generated_by": "docs/evidence/greg-crash-certificate/2026-10-28/false_optimum_probe.py",
+ "engine": "scipy.lp (HiGHS) through GREG's runner, in-process",
+ "rows": [
+  {
+   "duration_offset": 1,
+   "projects": 40,
+   "plans_offered": 535,
+   "suboptimal_offered": 491,
+   "before_called_cheapest_when_not": 0,
+   "after_called_cheapest_when_not": 0,
+   "before_refused_the_optimum": 0,
+   "after_refused_the_optimum": 0
+  },
+  {
+   "duration_offset": 10000,
+   "projects": 40,
+   "plans_offered": 357,
+   "suboptimal_offered": 317,
+   "before_called_cheapest_when_not": 0,
+   "after_called_cheapest_when_not": 0,
+   "before_refused_the_optimum": 0,
+   "after_refused_the_optimum": 0
+  },
+  {
+   "duration_offset": 1000000,
+   "projects": 40,
+   "plans_offered": 428,
+   "suboptimal_offered": 387,
+   "before_called_cheapest_when_not": 5,
+   "after_called_cheapest_when_not": 0,
+   "before_refused_the_optimum": 0,
+   "after_refused_the_optimum": 0
+  },
+  {
+   "duration_offset": 10000000,
+   "projects": 40,
+   "plans_offered": 397,
+   "suboptimal_offered": 355,
+   "before_called_cheapest_when_not": 242,
+   "after_called_cheapest_when_not": 0,
+   "before_refused_the_optimum": 0,
+   "after_refused_the_optimum": 0
+  },
+  {
+   "duration_offset": 100000000,
+   "projects": 40,
+   "plans_offered": 389,
+   "suboptimal_offered": 345,
+   "before_called_cheapest_when_not": 345,
+   "after_called_cheapest_when_not": 0,
+   "before_refused_the_optimum": 0,
+   "after_refused_the_optimum": 0
+  }
+ ]
+}

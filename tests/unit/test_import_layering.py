@@ -68,3 +68,35 @@ def test_removed_kept_entry_must_be_deleted(tmp_path):
     root = _tree(tmp_path, {"alpha/__init__.py": "", "beta/__init__.py": ""})
     pairs = review.two_way_pairs(review.import_edges(root))
     assert review.ratchet(pairs, {("alpha", "beta"): "was a cycle"})["gone"] == [("alpha", "beta")]
+
+
+def test_boundary_distribution_works_installed_alone(tmp_path):
+    """Install only the published packages and import every module, as a consumer would.
+
+    Also pins S-2's fix: the witness genome is readable as plain data, and the
+    deprecated kernel-only wrapper fails with a message that names the cause.
+    """
+    import shutil
+    import subprocess
+    import sys
+    for pkg in review.BOUNDARY:
+        shutil.copytree(ROOT / pkg, tmp_path / pkg, ignore=shutil.ignore_patterns("__pycache__"))
+    probe = (
+        "import importlib, pkgutil, sys\n"
+        "sys.path.insert(0, '.')  # -I leaves only stdlib and the copied packages\n"
+        f"for pkg in {list(review.BOUNDARY)!r}:\n"
+        "    importlib.import_module(pkg)\n"
+        "    for m in pkgutil.walk_packages([pkg], pkg + '.'):\n"
+        "        importlib.import_module(m.name)\n"
+        "import provenance.witness as w\n"
+        "assert w.GENOME_SPEC['name'] == 'provenance.append_only_witness'\n"
+        "try:\n"
+        "    w.capability_genome()\n"
+        "except ImportError as e:\n"
+        "    assert 'GENOME_SPEC' in str(e), e\n"
+        "else:\n"
+        "    raise SystemExit('capability_genome() should need the kernel package')\n"
+    )
+    r = subprocess.run([sys.executable, "-I", "-W", "ignore::DeprecationWarning", "-c", probe],
+                       cwd=tmp_path, capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr

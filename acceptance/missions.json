@@ -60,6 +60,11 @@
    "starts": "supervisord"
   },
   {
+   "file": "tests/integration/test_greg_business_path_process.py",
+   "starts": "greg run",
+   "note": "One marked rehearsal body reaches N3, N4 and N7 in order through the real CLI loop with its wall clock, signed test commands, a short-payment refusal and a SIGKILL restart after N3. Fictional customer files; no founder use or real commercial outcome."
+  },
+  {
    "file": "tests/integration/test_greg_cognition_process.py",
    "starts": "greg run"
   },

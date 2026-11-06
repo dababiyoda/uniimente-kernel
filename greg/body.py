@@ -29,6 +29,7 @@ import secrets
 import shutil
 import signal
 import stat
+import sys
 import time
 
 from cryptography.hazmat.primitives import serialization
@@ -284,6 +285,46 @@ def _private_write(path: Path, data: bytes):
         fh.write(data)
 
 
+# Filesystems on which Linux may keep serving its cached view of a file after another machine replaces or deletes it,
+# by the type statfs(2) reports (what `stat -f -c %t` prints): 9p and every FUSE filesystem (ChromeOS shares
+# /mnt/chromeos over 9p or virtio-fs, which is FUSE), NFS, SMB and the cluster filesystems. The evidence ledger checks
+# only that cached view there, so recorded evidence could vanish without notice. greg/chromebook/install.sh refuses
+# the same list.
+_SHARED_FILESYSTEMS = {
+    0x01021997: "9p", 0x65735546: "FUSE: virtio-fs, sshfs and the like", 0x6969: "NFS", 0x517B: "SMB",
+    0xFF534D42: "CIFS", 0xFE534D42: "SMB2", 0x00C36400: "Ceph", 0x5346414F: "AFS", 0x6B414653: "kAFS",
+    0x0BD00BD0: "Lustre", 0x01161970: "GFS2", 0x7461636F: "OCFS2", 0x73757245: "Coda", 0x20030528: "OrangeFS",
+}
+
+
+def _statfs_type(path: str) -> int | None:
+    """The filesystem type statfs(2) reports for ``path``: the kernel's answer for the mount the path resolves to.
+    None where it cannot be asked (not Linux, or the call fails)."""
+    if not sys.platform.startswith("linux"):
+        return None
+    import ctypes
+    libc = ctypes.CDLL(None, use_errno=True)
+    buf = ctypes.create_string_buffer(512)            # struct statfs: 120 bytes on 64-bit Linux, f_type first
+    if libc.statfs(os.fsencode(path), buf) != 0:
+        return None
+    return ctypes.c_long.from_buffer(buf).value & 0xFFFFFFFF
+
+
+def shared_filesystem(path: str | Path) -> str | None:
+    """The shared or network filesystem holding ``path`` (or the nearest ancestor that exists), else None."""
+    p = Path(path).expanduser().absolute()
+    while not os.path.exists(p) and p != p.parent:
+        p = p.parent
+    return _SHARED_FILESYSTEMS.get(_statfs_type(str(p)))
+
+
+def refuse_shared_home(home: str | Path) -> None:
+    """A body home's ledger must be the file this machine sees, not a cached view of another machine's."""
+    if (shared := shared_filesystem(home)) is not None:
+        raise BodyError(f"the body home {Path(home).expanduser()} is on a shared or network filesystem ({shared}); "
+                        "keep it on this machine's own disk, inside Linux files (the default is ~/.uniimente/greg)")
+
+
 def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Path | None = None,
               local_model: str | None = None, confined_egress: bool = False,
               worker_confinement: str = "required") -> dict:
@@ -299,6 +340,7 @@ def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Pa
     layout = Layout(home)
     if layout.config.exists():
         raise BodyError(f"a body already exists at {layout.home}")
+    refuse_shared_home(layout.home)
     for d in (layout.home, layout.inbox, layout.processed, layout.rejected, layout.outbox, layout.workspace):
         d.mkdir(parents=True, exist_ok=True)
     os.chmod(layout.home, 0o700)
@@ -366,6 +408,7 @@ class Body:
             raise BodyError("Constitution changed since this body was created; an explicit founder-approved "
                             "migration is required (history is bound to the old constitution)")
         self._require_published_head()
+        refuse_shared_home(self.layout.home)
         # One writer. A final line torn by power loss or SIGKILL was never acknowledged:
         # quarantine its bytes and continue instead of crash-looping under the supervisor.
         self.ledger = EvidenceLedger(self.compiled.constitution_hash, str(self.layout.ledger), tail="quarantine")

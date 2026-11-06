@@ -1,0 +1,332 @@
+# A body's memory no longer holds every payload in its history (2026-10-28)
+
+Status: **changed on draft branch `claude/bounded-body-memory-arm-engines`, a child of #196; not merged.**
+It changes how `provenance/ledger.py` and `events/spine.py` hold retained records in memory. The file
+format, hashes, events and verification points are unchanged. Accepting, changing or reverting it is the
+founder's and the #196 integrator's decision. It creates no authority and changes no Consequence Gate byte.
+
+Session: `session_01Kucyfm6YBHMTjaiC1M9hqD`. Claim: kernel issue #96, comment 6472033495.
+
+## Why
+
+The founder wants a body that keeps working while they are away, for months
+(INTENT-GREG-EMBODIED-2026-09-11, INTENT-2026-09-22-FIRST-BODY; `greg/path.json` horizon
+`persistent_goal_pursuit`, N1). `FINDING-LEDGER-APPEND-COST-2026-10-14.md` measured the next limit after
+tick time: the ledger kept every record's payload in memory, about 2.45 KB of resident memory per
+retained record. A mission observed once a minute writes about 18,700 records a day: about 46 MB a day,
+so 1 GB in about three weeks. On a 4–8 GB Chromebook the body runs out of memory long before disk.
+That finding listed three options. This is option 1, "keep payloads on disk". Its own words: "Nothing
+written changes. Verification still reads everything, now from disk." The next measurement showed the
+last clause does not hold up on the commit path, so the mechanism below differs from it there.
+
+## Measured first (baseline `190c58fb`, #196's head)
+
+Same scenario as the earlier finding: a real body, one holding mission, infinite closure, 60 s cadence, a
+simulated clock, 1,800 ticks (`scripts/measure_body_memory.py`; Python 3.11.17, 4-core container).
+
+- **Resident memory:** 2,639 B per retained record from 7,820 to 23,420 records
+  (`docs/evidence/body-memory-2026-10-28/baseline-190c58fb-rss.json`).
+- **Python heap (tracemalloc):** about 2,270 B per record. About 65% is parsed payloads (`json/decoder.py`),
+  22% is the ledger's own records and indexes, and 5% is the Consequence Gate's in-memory grants
+  (`baseline-190c58fb-heap-attribution.json`).
+- **Disk:** 722 B per record.
+
+## Change
+
+1. **The newest payloads stay in memory; older ones live only in the file.**
+   - A file-backed ledger keeps the payloads of the genesis record and the newest `RESIDENT_RECORDS`
+     (1,024) records, exactly as before.
+   - Older records keep a skeleton: sequence, type, hashes, timestamp, `corrects`, hash version, the
+     line's offset and length, and the SHA-256 of the line's bytes.
+   - Reading such a payload reads the line back with `pread` and refuses it unless its SHA-256 equals the
+     digest recorded when those bytes were written or verified.
+   - Readers get a new object every time, so a reader still cannot change retained evidence.
+   - An in-memory ledger keeps everything, as before.
+2. **What stays of dropped history is held to a running digest.**
+   - One SHA-256 runs over the dropped skeletons and their line digests, in order.
+   - The encoding is type-strict: `ascii()` of each field, after exact type checks. `None` is not `'None'`, and
+     `2` is not `'2'`.
+   - A reconstruction recomputes the digest. Any change to what stays in memory is then found the way a changed
+     in-memory payload is found by re-hashing it: a value, a type, a link, an offset, a digest, or a list entry
+     replaced by another object.
+   - Before a payload is dropped, its line pointer must name exactly that record's own bytes. Either the line
+     this ledger writes for the record has the recorded digest, or the line in the file parses to the same
+     record. A pointer altered while the payload was still in memory is never folded into the digest.
+3. **Two reconstructions, both whole.**
+   - `verify_chain()` (explicit: tribunal, appraisal, anchor, artifacts, disclosure) re-hashes resident records
+     and checks dropped history against the running digest. It then re-derives every dropped record from the
+     file alone: the bytes must have the bound digest, the parsed record must equal the skeleton, and it must
+     hash to its own hash and link to its predecessor. It also refuses a ledger path that now names another file
+     than the one opened.
+   - The commit path (every Commit Witness) and the scheduled hot-path reconstruction (every 300 s) re-hash
+     resident records and check dropped history against the running digest, without reading the file. They also
+     judge the pointer of any record kept in memory past the window.
+   - Once any read has found changed bytes, or a replaced file, every reconstruction (the commit path's
+     included) reads the whole file. Nothing is appended again until the file is intact.
+   - Failures are counted, not flagged: a reconstruction clears only failures found before it started, so a
+     concurrent reader's refusal is never erased.
+4. **A payload altered in memory is never dropped.** Eviction drops only a payload that still hashes to its
+   record. An altered one stays in memory, with everything after it, so the next reconstruction reports
+   the alteration. The file's copy never silently replaces it.
+5. **Opening streams the file.** It verifies each line as it is read and keeps only the window of
+   payloads, so reopening a long history does not hold all of it at once. Errors are reported in the order
+   a whole-file read reported them: a torn tail, then a blank or malformed line, then the first
+   verification failure.
+6. **The event spine keeps positions, not payloads.**
+   - Its views hold each event's ledger position, type and identity, and read payloads through the ledger
+     on demand.
+   - `_bindings` keeps 32-byte digests instead of 71-character strings.
+   - The unused `_seen_ids` set is now a view of `_bindings`' keys.
+
+## What is preserved, what is stronger, what is given up
+
+| Property | Before | Now |
+|---|---|---|
+| File bytes and hashes | — | identical (tested line for line) |
+| Every read API (records, find, by_type, select, spine replay/since/positions/latest/record_hash) | — | equal to a ledger holding everything in memory (tested on the same file) |
+| A reader changes what it was given | no effect on retained evidence | no effect (a new object per read of dropped history) |
+| In-memory alteration of retained history | found by explicit verification, the next Commit Witness, and the hot path within 300 s | the same, for resident payloads and for everything that stays of dropped history |
+| Bytes changed in the file after open | invisible until reopen | refused at the first read of a changed line and by any explicit `verify_chain()`; then every append refuses, the witness included |
+| Ledger file deleted, replaced or moved under a running body | invisible until reopen; an append to a deleted path created a new one-line history, and one to a replaced path forked it | every append refuses, the witness included, unless the file at the path ends with this ledger's last line (a byte-identical copy continues the history); a deleted path is never recreated; explicit `verify_chain()` checks the same, for small ledgers too |
+| Another writer appends while an append runs (ignoring the lock) | its bytes accepted, ours written after them | refused before our write if they landed after the check; reported uncertain if they land around or over our line (it is read back after the write) |
+| History assigned to a file-backed writer | appends wrote a forked line into the file | appends refused until the history in memory again ends with the file's last record |
+| A FIFO at the ledger, its lock or the quarantine sidecar name | the writer hung | refused without blocking |
+| A lease held on the ledger file, its writer lock or a quarantine sidecar | a blocking open waited for its break | the same wait at every one of those opens, at most the kernel's lease-break-time plus one second |
+| `close()` while another thread appends | the writer lock was released while that append still wrote | `close()` waits for the append |
+| Body home on a shared or network folder (9p, any FUSE filesystem including virtio-fs, NFS, SMB, cluster filesystems) | accepted | refused by the installer (exit 15), `greg init`, every body open and `greg foundry restore`, by the filesystem type the kernel reports (`statfs`): the ledger's checks see only Linux's cached copy there |
+| Tampered file at open | refused | refused |
+| Commit Witness cost | re-hash every retained record (about 9 µs each) | re-hash the 1,024 resident records, plus about 1 µs per dropped record for the running digest |
+
+Given up:
+- A dropped payload costs a file read and a parse each time it is read. Hot paths that read all of
+  history every tick (`greg/cognition/settlement.py` replays) now read old events from the file. The
+  measured run is faster overall because the commit path got cheaper, but such a replay is still linear
+  in history, as before.
+- The commit path's check of dropped history relies on the running digest this process bound. A
+  consistent in-process rewrite of skeletons and digest evades it, as a consistent in-process rewrite of
+  payloads and hashes evaded the old re-hash. Explicit `verify_chain()`, any reopening and the
+  separate-process appraiser re-derive every hash from the file.
+- **Writer and reader input types are stricter.** A record type or correction ancestry that is not text is
+  now refused before anything is written. A `str` subclass is stored as plain text, which is what reading
+  the line back always yielded.
+
+## Result
+
+Same scenario, 1,800 ticks (`bounded-rss.json`, `bounded-heap-attribution.json`):
+
+- **Resident memory:** 1,458 B per retained record from 7,820 to 23,420 records, against 2,639 (−45%).
+- **Python heap:** 833 B per record, against about 2,270 (−63%).
+- **Run time:** 223 s against 334 s. The two runs were concurrent on the same 4-core container, so treat
+  the time as indicative.
+- **Reclaimable memory:** `malloc_trim` before each reading (the `*-trim.json` files) changes neither slope
+  materially. The gap between resident memory and heap is not freeable at those points.
+
+For a body observing once a minute, about 27 MB a day instead of about 49 MB: 1 GB in about five weeks
+instead of under three.
+
+**Re-measured on `e3c6e723`**, after the review fixes below added a canonical-line check at
+eviction (`final-e3c6e723-rss.json`, `final-e3c6e723-heap-attribution.json`; the baseline was re-run beside
+it, `rerun-baseline-190c58fb-rss.json`):
+
+- **Resident memory:** 1,390 B per retained record, against 2,639 (−47%). The baseline reproduced to the byte.
+- **Python heap:** 807 B per record over 900 ticks, against 2,287 (−65%).
+- **Run time:** 279 s against 361 s. Both runs were concurrent with each other and with the integration suite,
+  so treat the time as indicative.
+- At one observation a minute (13 records a tick): about 26 MB a day instead of about 49 MB.
+
+The review fixes cost no measurable memory or time.
+
+**Re-measured on `0dddcf40`**, the code after the fourth and fifth reviews' fixes (the content anchor, the lease
+waits, the line read back after each append), beside a third baseline run (`final-0dddcf40-rss.json`,
+`rerun2-baseline-190c58fb-rss.json`; RSS every 600 ticks, slopes over ticks 600 to 1,800 as above):
+
+- **Resident memory:** 1,389.5 B per retained record, against 2,640.6 (−47%); `e3c6e723` gave 1,390.3.
+- **Run time:** 151.6 s against 222.8 s for 1,800 ticks, the two runs concurrent with each other only.
+- The two ledger files are the same length, 16,911,978 bytes.
+
+## Independent adversarial review (2026-10-28)
+
+A separate agent, given the diff and the guarantees but not this record, attacked commit `45d65a30`. It
+reproduced five breaks; each is fixed and pinned by a test in `tests/unit/test_ledger_dropped_payloads.py`
+that fails on `45d65a30`, 13 tests in all.
+
+- **F1 (high): pointer laundering.**
+  - The attack: a later record's payload holds a parseable copy of an earlier record (same hash and seq, forged
+    payload). Point the still-resident record's line pointer at it and let eviction run.
+  - Result before the fix: every reader saw the forgery, and explicit verification, the hot path and the Commit
+    Witness all passed.
+  - Fixed: the pointer is bound before dropping, and explicit verification re-derives every hash from the file.
+- **F2 (medium): type changes.** A change of type alone (`None` to `'None'`, `2` to `'2'`, an offset as text)
+  passed the running digest. An offset as text crashed readers with `TypeError`. Fixed by the type-strict
+  encoding and exact type checks; a bad pointer is now refused, not crashed on.
+- **F3 (medium): exceptions after fsync.**
+  - A lone surrogate in a record type or correction made the skeleton's UTF-8 encoding raise after fsync. Every
+    later append was then durable but raised, and the file could no longer be opened.
+  - A `str` subclass record type raised in `sys.intern` after fsync without marking the append uncertain, so the
+    next append reused the sequence number.
+  - Fixed: everything that can fail runs before the write, `ascii()` encodes any text, and a failure after fsync
+    marks the ledger uncertain.
+- **F4 (low–medium): a race on the tamper signal.** A whole-file reconstruction that started before a tamper
+  cleared a concurrent reader's tamper signal, and the next witness was appended. Fixed with failure counters.
+- **F5 (low): shared payload objects.** A reader racing eviction could be handed the retained object itself.
+  Fixed by reading the slot once.
+
+Also reported and changed:
+- A replaced ledger file was invisible here, as in the old code. It is now detected.
+- `rec in ledger.records` read payloads before comparing headers: 244 ms against 5 ms at 10k records. Headers
+  are now compared first.
+
+Kept as reported:
+- Whole-history spine replays cost about 2.3x the old code per event read from the file: 358 ms against 153 ms
+  for 20k events.
+- The first `select` on a new field reads that type's dropped records once.
+- After `records =` assignment, eviction stops for that ledger object.
+- The reviewer's differential test matched the old ledger and spine exactly: 36 random operation sequences at
+  windows 1, 2 and 3, with byte-identical files.
+
+## CI mutation check
+
+Canonical CI job 6 (`scripts/ci/check_cortex_mutants.py`) failed on `e3c6e723`. Its "a Gate commit trusts the
+incremental check on altered history" mutant named the commit-path line this change rewrote, so it went STALE
+and that safeguard was no longer checked. The mutant now names the new line and is caught again.
+
+Eight mutants were added, one per new safeguard. Each is caught by `tests/unit/test_ledger_dropped_payloads.py`:
+- a changed line served;
+- a payload dropped although its pointer was altered (F1);
+- explicit verification trusting dropped skeletons (F1);
+- the commit path ignoring dropped history;
+- a type-only change passing the digest (F2);
+- a found change forgotten by the next reconstruction;
+- a failure erased by a concurrent reconstruction (F4);
+- a replaced file unnoticed.
+
+A second, independent audit of those mutants found that the replaced-file check ran only on an explicit
+verification, after a first old-payload read. `8e986839` bound the ledger to its file's device and inode. A third
+review of that fix, with every finding re-checked by a separate skeptic, found it unsound:
+- **Inode reuse (high).** On ext4, the next file created after a delete usually gets the same inode number, so
+  appends forked onto it: 19 of 20 trials, and 10 of 10 for two atomic saves.
+- **False refusals (medium, a regression).** Overlayfs copy-up and eviction, and FUSE without stable inode numbers,
+  renumber the same file, so a body would refuse its own appends until restarted.
+- **Smaller defects:**
+  - a FIFO at the path hung appends;
+  - a reentrant-lock deadlock under garbage collection;
+  - `_load` measured one file and read another;
+  - quarantine truncated whatever the path named;
+  - small ledgers reported an intact chain while appends refused;
+  - a missing file surfaced as an uncounted `FileNotFoundError`.
+
+The anchor is now content, not identity. Before every append the file at the path must be a regular file that ends
+exactly where this history ends, with this history's last line (SHA-256). Opens never create and never block.
+Explicit verification checks the same and moves reads to that file. One descriptor serves all of `_load`.
+Quarantine checks the file, then truncates through the checked descriptor. The read source's lock is reentrant.
+
+A byte-identical copy put in place is accepted: appending to it continues the same history. Any other difference is
+a changed line, refused when read and by explicit verification, as in-place tampering always was. Each case has a
+test that fails on `8e986839` or `7d20cd81`. Only errors meaning the path no longer names a regular file (`ENOENT`,
+`ENOTDIR`, `EISDIR`, `ELOOP`, `ENXIO`) are refused as another history. Any other open error propagates as it always did:
+the full suite caught `135cc590` reporting a plain `OSError` as another history.
+
+A fourth review of the content anchor (`135cc590`), with every finding re-checked by a separate skeptic, confirmed six
+defects and refuted one:
+- **A read raced an append that closes its descriptor (medium, a regression).** With a byte-identical copy put in
+  place, an append adopted the copy and closed the cached read descriptor while another thread was between opening it
+  and reading. The read failed with `EBADF`, or, the number reused, counted a false failure. A read now holds the read
+  source's lock, so the append waits for it.
+- **A lease made opens fail (low, a regression).** `O_NONBLOCK` turns the break of an NFSv4 delegation, a Samba oplock
+  or any `F_SETLEASE` lease into `EWOULDBLOCK`. Opens now wait for the break, at most the kernel's `lease-break-time`
+  plus one second, as a blocking open does.
+- **Assigned history forked the file (low).** After `ledger.records = ...` on a file-backed writer, the file still
+  ended with its own last line, so the next append wrote a forked line. An append now refuses unless the history in
+  memory ends with the record the file ends with.
+- **Bytes another writer appended were accepted (low).** A process ignoring the lock could append between the check
+  and the write. The append now refuses before writing when the file grew after the check. It reports the append
+  uncertain when, after the write, the file is not exactly the checked history plus the new line.
+- **A FIFO at the writer lock or at the quarantine sidecar name hung the writer (low).** Both now open without
+  blocking. A lock that is not a regular file is refused, and so is a sidecar name that is not a regular file holding
+  exactly the torn bytes.
+- **A cached shared folder can hide a replacement (low).** On 9p, virtio-fs and other FUSE filesystems, NFS and SMB,
+  Linux may keep serving its cached copy after the other side replaces or deletes the file, so appends can be
+  acknowledged into an unlinked file. No check inside the ledger sees past that cache. The installer now stops with
+  exit 15, and `greg init` refuses, when the body home is on such a filesystem; the runbook says why.
+- **Refuted:** a crafted file with the same last line but a different middle. It behaves exactly like an in-place
+  edit, which every version allows and the next open finds; putting the bytes back recovers.
+
+Each fix has a test that fails without it. The new offset check made the anchor's exact-size check redundant on the
+append path, so that mutant survived; a new test pins that a writer's explicit verification reports bytes appended
+past its history.
+
+A fifth review of `f17ce785`, every finding re-checked by three separate skeptics, upheld 20 findings (all low or
+info) and refuted 7. The upheld ones come down to these, all fixed in the next commit:
+- **Leases, still (a regression).** The writer lock and an existing quarantine sidecar opened with a bare `O_NONBLOCK`,
+  so a lease on either refused the body its own ledger or its own crash recovery. Every open of the ledger, its lock
+  and its sidecar now waits out a lease break the same way, and each of those waits has a test.
+- **The shared-folder check chose the mount by its path string.** A share, or a local filesystem hidden under a later
+  mount, was misjudged, so the installer and `greg init` could disagree, and a mount point with a non-UTF-8 name crashed
+  `greg init`. The check now asks the kernel: `statfs(2)` on the home's nearest existing ancestor, the same type the
+  installer reads with `stat -f`, from one list in both. Ceph, AFS, Lustre, GFS2, OCFS2, Coda and OrangeFS are added.
+- **Only `greg init` refused a shared home.** `greg foundry restore` wrote onto one and a body opened on one; both now
+  refuse it.
+- **The installer's walk up the home path** never ended for a relative home in a directory the user cannot search,
+  and took a home given as `~/...` literally. It now starts from the absolute path greg will use and stops at `/`. Its
+  `fail` printed the exit code as part of every message.
+- **A fork while a reader thread held the read lock** hung the child's reads; a forked child now gets a new lock.
+  **`close()` released the writer lock under an append in flight on another thread** (older than this PR); it now
+  waits for that append.
+- **Claims.** The post-write check compared only the size; it now also reads our line back. "Each fix has a test"
+  overstated the lease waits at explicit verification and at old-payload reads; they now have tests. The handoff
+  called `e3c6e723` the final code; it now names the commit each measurement ran on.
+- **Refuted**, among others: the lease wait covering any `EAGAIN` from open (a contrived FUSE trigger, bounded at about
+  46 s), and refusing local FUSE homes such as a rootless container's. That refusal is kept: statfs cannot tell
+  virtio-fs, how ChromeOS shares folders, from other FUSE filesystems, and a refusal with its reason costs less than
+  evidence that vanishes.
+
+46 mutants pin these safeguards, all caught: 39 for the ledger, 6 for the shared-home refusal, 1 for the commit chain.
+
+## Next measured limit (not changed here; each needs a decision)
+
+What still grows, per retained record, at 11,720 records (`bounded-heap-attribution.json`):
+
+1. **The ledger's per-record skeleton, about 500 B.** A slotted object, the hash string, timestamp, offset,
+   line digest and index entries.
+   - Packing dropped skeletons into arrays would cut most of it.
+   - It changes `_records` from a list of objects to a sequence of views, so it touches every consumer of the
+     private list. Not attempted.
+2. **The Consequence Gate keeps every grant forever, about 120 B.** `_grants`, `_meta` and `_reservations`
+   each gain one entry per Gate-mediated act (one per observation), used or not.
+   - `policy/consequence_gate.py` is a hash-bound continuity artifact (SR-002), so changing it is the
+     founder's decision.
+3. **The passport registry keeps every process passport, about 40 B.** `identity/machine_passport.py`
+   `PassportRegistry._passports` gains a passport per observation. Expiring them is an identity decision.
+4. **Option 2 of the earlier finding** (checkpoint and archive segments) is still the only route to memory
+   that does not grow with history at all. It needs signed checkpoints of projection state, as that finding
+   says.
+
+## Negative evidence kept
+
+- **The first version slowed the body down 2×.** It read old payloads back with the strict per-object
+  parser and re-hashed them at every Commit Witness: 690 s against 352 s for the same 1,800 ticks.
+  - The cProfile run showed `verify_chain` at every Gate commit, re-reading every dropped line from disk.
+  - The two-level reconstruction and the running digest replaced that.
+- **The first version also failed open.** After a read had found changed bytes in the file, a Commit
+  Witness could still be appended, because the commit path did not read the file.
+  - `test_a_dropped_line_changed_on_disk_is_refused_when_read_and_stops_further_appends` caught it.
+  - Every reconstruction now reads the file once any read has found a change.
+
+## Evidence
+
+- `tests/unit/test_ledger_dropped_payloads.py`: byte-identical file; reads equal to a ledger holding
+  everything; the attacks below; streaming open and its error order; copies, equality and pickling.
+  The attacks:
+  - on-disk change refused at read and then at every append;
+  - six in-memory skeleton fields each found at the Commit Witness;
+  - a dropped record's link;
+  - a plain object put in a dropped position;
+  - a payload altered before eviction kept for detection;
+  - a payload put back after eviction.
+- The existing ledger, spine, Gate, mission-book and disclosure suites pass unchanged (136 tests). Their
+  ledgers are smaller than the window, so they also pin that nothing changes there.
+- The full unit suite and an independent adversarial review: see the PR.
+
+## Rollback
+
+Revert the commit. History files are byte-identical either way, so nothing needs migrating.

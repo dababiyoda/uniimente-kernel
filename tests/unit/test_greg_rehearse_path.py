@@ -4,6 +4,11 @@ Three bodies that each meet one node do not count. The order is recomputed from 
 ledger: at the head where N3 first holds, N4 and N7 do not; at the head where N4 first holds, N7 does
 not; only the final head holds all three. The throwaway key stays below the founder tier, so `met`
 stays false and the founder's path does not move.
+
+On that same ledger `structural_candidate_count` and `founder_tier_count` stay 0. The three teaching
+cases meet eight of the nine VEPMC conditions and are missing only `interruption_survived`, so a
+restart between registration and closure would make the structural count nonzero while the founder
+tier stayed 0. Both counts are pinned.
 """
 from __future__ import annotations
 
@@ -15,7 +20,7 @@ import subprocess
 import sys
 
 from greg.body import Body
-from greg.metrics import REHEARSAL_BODY, REHEARSAL_MARK
+from greg.metrics import REHEARSAL_BODY, REHEARSAL_MARK, vepmc
 from greg import path as devpath
 from greg import rehearsal
 
@@ -90,7 +95,15 @@ def test_one_throwaway_body_reaches_n3_then_n4_then_n7_in_that_order(tmp_path):
         assert expressions and all(text.startswith(rehearsal.LABEL) for text in expressions)
         assert not [record for record in body.journal.ledger.by_type("event")
                     if str(record.payload.get("type", "")).startswith("treasury.")]
+        report = vepmc(body.journal)
         where = devpath.position(body.journal)
+    # Three teaching cases are one interruption away from counting. A mid-mission restart would move
+    # structural_candidate_count and leave founder_tier_count at 0. Neither may drift.
+    assert report["structural_candidate_count"] == 0
+    assert report["founder_tier_count"] == 0
+    one_away = [row for row in report["missions"] if row["missing"] == ["interruption_survived"]]
+    assert len(one_away) == 3 and len(report["missions"]) == 6
+    assert all(row["counts"] is False and "interruption_survived" in row["missing"] for row in report["missions"])
     assert where["active"]["id"] == "N1" and "N3" not in where["achieved"]
     assert "N4" not in where["achieved"] and "N7" not in where["achieved"]
 

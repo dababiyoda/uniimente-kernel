@@ -80,6 +80,30 @@ def pull_requests(repo: str, token: str | None) -> list[dict]:
         page += 1
 
 
+def merge_conflicts(line_ref: str, sha: str, root: Path = ROOT) -> list[str]:
+    """Files that would conflict if the branch were merged into the line now.
+
+    ``git merge-tree --write-tree`` computes the merge in memory: it touches no
+    working tree, index or ref. An empty list means the branch lands cleanly.
+    """
+    r = subprocess.run(["git", "merge-tree", "--write-tree", "--name-only", "--no-messages",
+                        line_ref, sha], cwd=root, capture_output=True, text=True)
+    if r.returncode == 0:
+        return []
+    return [f for f in r.stdout.splitlines()[1:] if f] or ["(unrelated histories)"]
+
+
+def intake_queue(rows: list[dict], line: str = LINE) -> list[dict]:
+    """Unfinished work that merges cleanly today, easiest first.
+
+    PRs that already target the line come first, then other open PRs, then
+    branches with no PR. Within a group, fewer unfinished commits first.
+    """
+    rank = {"OPEN_PR": 1, "NO_PR": 2, "MERGED_ELSEWHERE": 3, "CLOSED_UNMERGED": 4}
+    ready = [r for r in rows if r["conflicts"] == [] and r["status"] in rank]
+    return sorted(ready, key=lambda r: (r["pr_base"] != line, rank[r["status"]], r["unique_commits"]))
+
+
 def classify(root: Path = ROOT, prs: list[dict] | None = None, line: str = LINE) -> list[dict]:
     line_ref = f"origin/{line}"
     by_head: dict[str, list[dict]] = {}
@@ -105,7 +129,11 @@ def classify(root: Path = ROOT, prs: list[dict] | None = None, line: str = LINE)
             status = "MERGED_ELSEWHERE"
         else:
             status = "CLOSED_UNMERGED"
+        conflicts = None
+        if status not in ("LINE", "INTEGRATED"):
+            conflicts = merge_conflicts(line_ref, sha, root)
         rows.append({
+            "conflicts": conflicts,
             "branch": name, "status": status, "unique_commits": unique, "last_commit": date,
             "pr": pr["number"] if pr else None, "pr_state": (pr and ("merged" if pr.get("merged_at") else pr["state"])),
             "pr_base": pr["base"]["ref"] if pr else None, "title": pr["title"] if pr else "",
@@ -132,19 +160,35 @@ def markdown(rows: list[dict], line: str = LINE, repo: str | None = None) -> str
     lines += [f"| `{s}` | {counts[s]} | {MEANING[s]} |" for s in ORDER]
     lines += [f"| **Total** | **{len(rows)}** | |", ""]
     url = f"https://github.com/{repo}/pull/" if repo else None
+    queue = intake_queue(rows, line)
+    unfinished = [r for r in rows if r["conflicts"] is not None]
+    lines += [
+        "## Intake queue: unfinished work that merges cleanly today", "",
+        f"{len(queue)} of {len(unfinished)} unfinished branches merge into the line with no conflict "
+        "(checked in memory with `git merge-tree`; nothing was merged). Clean is not the same as "
+        "correct: each still needs its tests and review. PRs that target the line come first, "
+        "smallest first.", "",
+        "| Branch | Status | Commits not on the line | PR |", "|---|---|---:|---|",
+    ]
+    for r in queue:
+        pr = (f"[#{r['pr']}]({url}{r['pr']})" if url else f"#{r['pr']}") + f" → `{r['pr_base']}`" if r["pr"] else ""
+        lines.append(f"| `{r['branch']}` | `{r['status']}` | {r['unique_commits']} | {pr} |")
+    lines.append("")
     for s in ORDER:
         group = [r for r in rows if r["status"] == s]
         if not group:
             continue
         lines += [f"## `{s}` ({len(group)})", "", MEANING[s], "",
-                  "| Branch | Last commit | Commits not on the line | PR | Title |", "|---|---|---:|---|---|"]
+                  "| Branch | Last commit | Commits not on the line | Conflicting files | PR | Title |",
+                  "|---|---|---:|---:|---|---|"]
         for r in group:
             pr = ""
             if r["pr"]:
                 pr = f"[#{r['pr']}]({url}{r['pr']})" if url else f"#{r['pr']}"
                 pr += f" {r['pr_state']}" + (f" → `{r['pr_base']}`" if r["pr_base"] else "")
             title = r["title"].replace("|", "\\|")
-            lines.append(f"| `{r['branch']}` | {r['last_commit']} | {r['unique_commits']} | {pr} | {title} |")
+            c = "" if r["conflicts"] is None else (len(r["conflicts"]) or "clean")
+            lines.append(f"| `{r['branch']}` | {r['last_commit']} | {r['unique_commits']} | {c} | {pr} | {title} |")
         lines.append("")
     return "\n".join(lines)
 

@@ -77,3 +77,23 @@ def test_branch_classification(tmp_path):
     got = {r["branch"]: r["status"] for r in branch_catalog.classify(work, prs, line="line")}
     assert got == {"line": "LINE", "finished": "INTEGRATED", "picked": "INTEGRATED",
                    "parked": "NO_PR", "open": "OPEN_PR", "closed": "CLOSED_UNMERGED"}
+
+
+def test_conflicts_and_intake_queue(tmp_path):
+    work = tmp_path / "w"
+    _run(tmp_path, "init", "-q", "-b", "line", str(work))
+    _commit(work, "a", "base\n")
+    _run(work, "branch", "clash"); _run(work, "branch", "clean")
+    _commit(work, "a", "line edit\n")
+    _run(work, "checkout", "-q", "clash"); _commit(work, "a", "branch edit\n")
+    _run(work, "checkout", "-q", "clean"); _commit(work, "b", "new file\n")
+    _run(work, "checkout", "-q", "line")
+    _run(work, "update-ref", "refs/remotes/origin/line", "line")
+    for b in ("clash", "clean"):
+        _run(work, "update-ref", f"refs/remotes/origin/{b}", b)
+    rows = {r["branch"]: r for r in branch_catalog.classify(work, [], line="line")}
+    assert rows["clash"]["conflicts"] == ["a"]
+    assert rows["clean"]["conflicts"] == []
+    assert [r["branch"] for r in branch_catalog.intake_queue(list(rows.values()), "line")] == ["clean"]
+    # the check merges nothing: the line is where it was
+    assert _run(work, "rev-parse", "line") == _run(work, "rev-parse", "origin/line")

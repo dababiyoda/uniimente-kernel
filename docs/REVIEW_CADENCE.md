@@ -52,7 +52,8 @@ non-zero):
 4. **Lint trend (`--lint`):** a ruff F/E9 finding count by rule. A trend, never a gate.
 5. **Catalogs:** `scripts/branch_catalog.py` classifies every branch (finished on
    the line, open PR, merged elsewhere, closed, or commits no PR carries) as a
-   weekly artifact; `scripts/docs_catalog.py --check` reports whether
+   weekly artifact, with an **intake queue** of unfinished branches that merge into
+   the line cleanly today (`git merge-tree`, in memory; nothing is merged); `scripts/docs_catalog.py --check` reports whether
    `docs/CATALOG.md` is stale. Neither gates a PR: a generated file that every PR
    must regenerate conflicts between parallel PRs (pain points P-1, P-3). The
    integrator regenerates `docs/CATALOG.md` at intake, and the monthly review

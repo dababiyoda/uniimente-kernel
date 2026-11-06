@@ -53,6 +53,12 @@
    "qualname": "git_read",
    "exempt_when": {},
    "why": "runs git with whatever arguments and repository path it is handed, git taken from the body's ambient PATH and the repository's own config applied; it checks neither, so every caller passes that spawn on"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "_tracked_run",
+   "exempt_when": {},
+   "why": "runs the argv and env it is handed in its own registered process group (so a closing Body can kill it) and adds nothing else; what is run comes from the caller"
   }
  ],
  "allowed": [
@@ -1179,14 +1185,14 @@
   {
    "module": "greg/workers.py",
    "qualname": "_git",
-   "callee": "subprocess.run",
+   "callee": "greg.workers._tracked_run",
    "count": 1,
    "serves": [
     "capability:worker.commission",
     "capability:worker.appraise"
    ],
    "justification": "git with _GIT_HARDENING on GREG's private clones and work trees",
-   "pin": "549ed86606f974ae06a5d66201e87f8520437bd081273d99f00dafdce9c368c1"
+   "pin": "75f9770ef13b36a5f1451b0ff513c33ad1b69f50f5b145541b4cfb9ad496e360"
   },
   {
    "module": "greg/workers.py",
@@ -1202,14 +1208,14 @@
   {
    "module": "greg/workers.py",
    "qualname": "private_clone",
-   "callee": "subprocess.run",
+   "callee": "greg.workers._tracked_run",
    "count": 1,
    "serves": [
     "capability:worker.commission",
     "capability:worker.appraise"
    ],
    "justification": "`git clone --no-hardlinks --no-checkout` into a private clone whose origin is then removed, so it reaches no remote",
-   "pin": "c19b9005860ed16775b0a96d468828dce2cc5e7331b0947e97c7169e429c1a51"
+   "pin": "ebd2aa05bd79f36013c093226748b0fc5be27b7ef0c41bba84eacda73ddcbee1"
   },
   {
    "module": "greg/workers.py",
@@ -1257,6 +1263,18 @@
    ],
    "justification": "after install_filter() in this process: the isolation probe, the absolute --python with -I -c PROBE, a scrubbed env and a 10 s timeout",
    "pin": "d4a2a3e4b70be2b628a45a9a4cc1e68fa5be05d0011a4b55aa478cf8a4eb4752"
+  },
+  {
+   "module": "greg/workers.py",
+   "qualname": "_tracked_run",
+   "callee": "subprocess.Popen",
+   "count": 1,
+   "serves": [
+    "capability:worker.commission",
+    "capability:worker.appraise"
+   ],
+   "justification": "the git calls of _git and private_clone, run as they were by subprocess.run but in their own process group registered while they run, so a closing Body's shutdown kills them (#273 re-review B)",
+   "pin": "9d4c5ba547ec9dd862c88e5ff543ea79d08f0f196356adb09e9ac525a9a9f777"
   }
  ],
  "known_unmediated": [
@@ -1586,8 +1604,8 @@
    "qualname": "_git",
    "program": "git",
    "count": 1,
-   "searches": "/usr/bin:/bin",
-   "note": "PATH=/usr/bin:/bin with _GIT_HARDENING, on GREG's private clones"
+   "searches": "<computed>",
+   "note": "PATH=/usr/bin:/bin with _GIT_HARDENING, on GREG's private clones; the env dict naming PATH=/usr/bin:/bin is built here and handed to _tracked_run, which passes it to Popen unchanged"
   },
   {
    "module": "greg/workers.py",
@@ -1602,8 +1620,8 @@
    "qualname": "private_clone",
    "program": "git",
    "count": 1,
-   "searches": "/usr/bin:/bin",
-   "note": "PATH=/usr/bin:/bin, the private clone with its origin removed"
+   "searches": "<computed>",
+   "note": "PATH=/usr/bin:/bin, the private clone with its origin removed; the env dict naming PATH=/usr/bin:/bin is built here and handed to _tracked_run, which passes it to Popen unchanged"
   }
  ]
 }

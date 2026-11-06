@@ -4866,7 +4866,9 @@
      "evidence": [
       "tests/unit/test_greg_business_case.py",
       "tests/unit/test_greg_sop_compounding.py",
-      "tests/unit/test_greg_venture_books.py"
+      "tests/unit/test_greg_venture_books.py",
+      "tests/unit/test_greg_rehearse_path.py::test_one_throwaway_body_reaches_n3_then_n4_then_n7_in_that_order",
+      "tests/unit/test_greg_rehearse_path.py::test_the_command_is_greg_rehearse_path"
      ],
      "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "BODY_VERIFIED",
@@ -4874,7 +4876,7 @@
      "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "N3, N4 and N7 are each met on separate test bodies, never in sequence on one body",
+      "reason": "greg rehearse --path reaches N3, then N4, then N7 structurally on one throwaway body. That run is in-process sandbox evidence, not a registered real Body process, so the ask is not BODY_VERIFIED",
       "unit": "WU-02"
      }
     },
@@ -5980,13 +5982,17 @@
      "owner_paths": [
       "greg/rehearsal.py"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_greg_rehearse_path.py::test_one_throwaway_body_reaches_n3_then_n4_then_n7_in_that_order",
+      "tests/unit/test_greg_rehearse_path.py::test_the_command_is_greg_rehearse_path"
+     ],
+     "tests_tier": "SANDBOX_VERIFIED",
      "required_tier": "BODY_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "SANDBOX_VERIFIED",
+     "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No whole-path rehearsal",
+      "reason": "greg rehearse --path runs N3 then N4 then N7 on one throwaway body. That evidence is sandbox (an in-process body), not a registered real Body process, so the ask is not BODY_VERIFIED",
       "unit": "WU-02"
      }
     },

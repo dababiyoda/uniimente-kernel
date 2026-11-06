@@ -709,8 +709,12 @@ def main(argv=None) -> int:
                                          "the evidence and authority it needs, and the next move")
     bl.add_argument("--mission", default=None, help="only this mission's blocker")
     rh = sub.add_parser("rehearse", help="credential-free rehearsal: a throwaway body and REHEARSAL key run the "
-                                          "Founder's First Mission end to end")
+                                          "Founder's First Mission end to end, or --path for N3 then N4 then N7 "
+                                          "on that one body")
     rh.add_argument("--dir"); rh.add_argument("--kernel-root"); rh.add_argument("--effort", type=int, default=8)
+    rh.add_argument("--path", action="store_true",
+                    help="on one throwaway body, reach N3, then N4, then N7 in that order; the founder's path "
+                         "does not move")
     rh.add_argument("--console", type=int, help="then serve Mission Control for that body on this port")
     c = sub.add_parser("console", help="the founder console on http://127.0.0.1:PORT")
     c.add_argument("--key", help="founder key; without it the console is read-only")

@@ -22,6 +22,7 @@ import hashlib
 import json
 import re
 from pathlib import Path
+from provenance.digests import sha256_json
 
 try:                                   # packaging >= 24.2 (requirements-dev.txt); absent, every license fails closed
     from packaging.licenses import InvalidLicenseExpression, canonicalize_license_expression
@@ -1482,8 +1483,7 @@ GREG_USE = {"interaction": "separate_process", "network": "none", "modified": Fa
 
 
 def _digest(value) -> str:
-    return "sha256:" + hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":"),
-                                                 default=str).encode()).hexdigest()
+    return sha256_json(value, default=str)
 
 
 NOT_OPEN_WHY = {

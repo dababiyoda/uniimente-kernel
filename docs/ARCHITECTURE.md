@@ -78,3 +78,52 @@ One governed institution does not need trustless consensus. Use content-addresse
 ## Hidden capabilities (scheduled, not built)
 
 Institutional forks (policy simulation branches), reputation compartments, black-start recovery core, memory immune system, evidence escrow, competence inheritance, controlled self-cannibalization, dependency leverage map. Each enters only through a phase gate in `docs/BUILD_ORDER.md`.
+
+## Current module map (2026-11-05)
+
+The sections above describe the Kernel pipeline as designed in September. Since
+then most code lives in packages they do not name. This map answers "where is
+the thing that does X?" for the live integration line. Each directory's
+`README.md` has the detail; sizes are from `python scripts/repo_review.py`.
+
+| Package | Owns | Entry point |
+|---|---|---|
+| `greg/` (~87k lines, the majority of the code) | the product: persistent body, signed founder commands, missions, Capability Genesis, Goal Gravity, organs bridge, Mission Control, morning tribunal | `python -m greg` (`greg/cli.py`); `greg/README.md` |
+| `greg/cognition/` | GREG's Mind: Competency Compiler, genome library (`genomes/`), certificates | `greg/cognition/compiler.py` |
+| `cortex/` | Polyintelligence Cortex: eligibility-first routing among solvers/verifiers/organs; frozen evaluations | `cortex/routing.py`; `cortex/README.md` |
+| `foundry/` | the 55 Foundry systems (`foundry/systems/`), Advantage Foundry, Lawful Leverage Foundry, research line | `foundry/README.md` |
+| `egregore/` | ADE-1 standing cognition, Goal Chase, the `main`-line Goal Gravity runtime, morning review | `egregore/runtime.py` |
+| `acceptance/` | whole-machine acceptance: Missions A–L, the completion contract, the directive's computed completeness | `python -m acceptance directive` |
+| `governance/` | live constitutional-integrity tripwire and the protected-file manifest | `python -m governance.integrity --check` |
+| `policy/`, `provenance/`, `events/`, `identity/`, `compiler/` | the consequence path described above (Gate, ledger, spine, passports, UCL) | sections above |
+| `capabilities/`, `closure/`, `evolution/`, `loom/`, `twins/`, `memory/`, `autonomy/`, `embassy/`, `capital/`, `business/`, `omnimorph/`, `morphogenesis/`, `linker/`, `adapters/` | the governed-capability layers from the July–September phases | each `README.md` |
+| `developmental/` | sealed mechanism-research laboratory | CI `sealed` job |
+
+**Two implementations, one open decision.** Goal Gravity exists as
+`egregore/gravity.py` (`main`'s runtime) and `greg/goal_gravity.py` /
+`greg/gravity.py` (the GREG line). Which is canonical is a recorded founder
+decision (`docs/FOUNDER_INTENT_LEDGER.md`, "the canonical Goal Gravity runtime");
+both are kept.
+
+### Dependency rules that are enforced
+
+`tests/unit/test_import_layering.py` (same rules as `scripts/repo_review.py`):
+
+- The published boundary distribution (`adapters/`, `contracts/`, `events/`,
+  `provenance/`; `pyproject.toml`) may import only itself. One violation is
+  recorded and kept: `provenance/witness.py` lazily imports `capabilities.genome`,
+  which a boundary-only install lacks.
+- No **new** two-way dependency between top-level packages. Nine exist today
+  (for example `greg`↔`cortex`, `greg`↔`foundry`, `closure`↔`foundry`) and are
+  listed with reasons; the list can only shrink.
+
+Ordinary one-way imports are not ratcheted: adding them is normal feature work.
+
+### What must not be edited without a founder signature
+
+`governance/integrity/manifest.json` is the authoritative list (Constitution,
+authority and identity registries, the Consequence Gate, founder keys). Frozen
+evaluation records (`cortex/evaluation/**/freeze*.json`,
+`docs/evidence/**/freeze.json`), the sealed `evolution/repair/` and
+`evolution/migration/` packages and `evolution/repair/continuity/` are
+evidence: new runs get new paths.

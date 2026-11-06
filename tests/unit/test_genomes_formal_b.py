@@ -293,15 +293,48 @@ def test_prover_reports_unknown_when_its_budget_is_exhausted(monkeypatch):
     assert out["status"] == "UNKNOWN" and out["output"] is None
 
 
-def test_prover_honours_the_request_latency_budget():
-    import time
+def _seven_hole_pigeonhole():
     holes = 7
     premises = [[f"In({p},{h})" for h in range(holes)] for p in range(holes + 1)]
     premises += [[f"~In({p},{h})", f"~In({q},{h})"] for h in range(holes) for p in range(holes + 1)
                  for q in range(p + 1, holes + 1)]
+    return {"premise_clauses": premises, "goal_clauses": [[]]}
+
+
+def test_prover_honours_the_request_latency_budget():
+    import time
+    # The budget is a wall-clock deadline inside the prover. CPU time is this process's work
+    # toward that deadline. A frozen host moves time.monotonic and not process_time, so a
+    # wall bound of 5s fails a prover that already returned UNKNOWN (job 9 on fef549d2; the
+    # same commit passed this test in job 1).
+    cpu0 = time.process_time()
+    out = formal_b.prove_solve(_seven_hole_pigeonhole(), {"latency_s": 0.5})
+    assert out["status"] == "UNKNOWN"
+    assert "request latency budget" in out["certificate"]["reason"]
+    assert time.process_time() - cpu0 < 5.0
+
+
+def test_a_host_pause_does_not_fail_an_honoured_latency_budget(monkeypatch):
+    import time
+    real = time.monotonic
+    origin = real()
+    state = {"extra": 0.0}
+
+    def clock():
+        now = real()
+        if state["extra"] == 0.0 and now - origin >= 0.02:
+            state["extra"] = 6.0
+        return now + state["extra"]
+
+    monkeypatch.setattr(time, "monotonic", clock)
     started = time.monotonic()
-    out = formal_b.prove_solve({"premise_clauses": premises, "goal_clauses": [[]]}, {"latency_s": 0.5})
-    assert out["status"] == "UNKNOWN" and time.monotonic() - started < 5.0
+    cpu0 = time.process_time()
+    out = formal_b.prove_solve(_seven_hole_pigeonhole(), {"latency_s": 0.5})
+    elapsed = time.monotonic() - started
+    assert out["status"] == "UNKNOWN"
+    assert "request latency budget" in out["certificate"]["reason"]
+    assert elapsed >= 6.0
+    assert time.process_time() - cpu0 < 5.0
 
 
 @pytest.mark.parametrize("bad", [

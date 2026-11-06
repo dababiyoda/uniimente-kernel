@@ -7,12 +7,13 @@ own module because ``capabilities/genome.py`` is pinned by digest in frozen
 evaluations (``cortex/evaluation/**/freeze-*.json``) and is not edited for this.
 """
 from __future__ import annotations
+import copy
 
 from capabilities.genome import AuthorityEnvelope, CapabilityGenome
 
 
 def genome_from_spec(spec: dict) -> CapabilityGenome:
     """A CapabilityGenome from a module's ``GENOME_SPEC`` (its ``authority`` is a dict)."""
-    data = dict(spec)
+    data = copy.deepcopy(spec)            # the genome owns its lists and dicts; the module spec stays as written
     data["authority"] = AuthorityEnvelope(**data["authority"])
     return CapabilityGenome(**data)

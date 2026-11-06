@@ -15,10 +15,10 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 |---|---:|---|
 | [`(top)`](#doctrine-orders-and-top-level-references) | 31 | Doctrine, orders and top-level references |
 | [`intent`](#founder-intent-records-and-their-verbatim-sources) | 68 | Founder intent records and their verbatim sources |
-| [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 183 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
+| [`collaboration`](#collaboration-records-handoffs-deliberations-reviews-reconciliations) | 184 | Collaboration records: handoffs, deliberations, reviews, reconciliations |
 | [`decisions`](#architecture-decision-records) | 5 | Architecture decision records |
 | [`deliberations`](#founder-rulings) | 1 | Founder rulings |
-| [`evidence`](#measured-evidence-frozen-runs-admissions-proofs) | 509 | Measured evidence (frozen runs, admissions, proofs) |
+| [`evidence`](#measured-evidence-frozen-runs-admissions-proofs) | 510 | Measured evidence (frozen runs, admissions, proofs) |
 | [`cortex`](#cortex-and-seed-genome-specifications-and-evidence) | 79 | Cortex and Seed Genome specifications and evidence |
 | [`opus-maximus`](#opus-maximus-deliverables-al) | 13 | OPUS MAXIMUS deliverables A–L |
 | [`open-source`](#open-source-mechanism-harvest-records) | 23 | Open-source mechanism harvest records |
@@ -167,7 +167,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 
 ## Collaboration records: handoffs, deliberations, reviews, reconciliations
 
-### Deliberation (five lenses, two passes) (41)
+### Deliberation (five lenses, two passes) (42)
 
 | File | Date | Title |
 |---|---|---|
@@ -176,6 +176,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | [`collaboration/deliberation-typed-blockers-20261030.json`](collaboration/deliberation-typed-blockers-20261030.json) | 2026-10-30 | Type every open mission blocker from retained facts and the engine's own rule, on greg blockers, the morning report and  |
 | [`collaboration/deliberation-standing-approval-regression-20261030.json`](collaboration/deliberation-standing-approval-regression-20261030.json) | 2026-10-30 | Withdraw a standing founder approval when failure evidence names a run it allowed; report the level each tuple has earne |
 | [`collaboration/deliberation-path-build-frontier-20261030.json`](collaboration/deliberation-path-build-frontier-20261030.json) | 2026-10-30 | Read the build frontier beside the acceptance frontier on greg path, and place the 2026-10-30 correction on N1 |
+| [`collaboration/deliberation-node-revoke-20261030.json`](collaboration/deliberation-node-revoke-20261030.json) | 2026-10-30 | Let the founder revoke an enrolled compute node and enroll it again later, keep a node's key apart from every key that s |
 | [`collaboration/deliberation-fail-closed-build-instrument-20261030.json`](collaboration/deliberation-fail-closed-build-instrument-20261030.json) | 2026-10-30 | Fail instead of skip when the supervised rehearsals are required, keep greg rehearse bodies below the founder tier, and  |
 | [`collaboration/deliberation-effect-call-allowlist-20261030.json`](collaboration/deliberation-effect-call-allowlist-20261030.json) | 2026-10-30 | List every place GREG's code starts a process, opens a connection or listens, and fail CI on any new or rewritten one un |
 | [`collaboration/deliberation-directive-completion-contract-20261030.json`](collaboration/deliberation-directive-completion-contract-20261030.json) | 2026-10-30 | Compute 'the prompt is completely built' section by section from cited evidence, conjunctively, with the ask set pinned |
@@ -450,6 +451,7 @@ For the state of every branch, see the newest `collaboration/BRANCH-CATALOG-*.md
 | [`evidence/oss-metabolism-201-fixes/model-license-mutants-2026-10-30.txt`](evidence/oss-metabolism-201-fixes/model-license-mutants-2026-10-30.txt) | 1 | 2026-10-30 |  |
 | [`evidence/oss-metabolism-201-fixes/license-mutants-2026-10-30.txt`](evidence/oss-metabolism-201-fixes/license-mutants-2026-10-30.txt) | 1 | 2026-10-30 |  |
 | [`evidence/oss-metabolism-201-fixes/copyright-notice-mutants-2026-10-30.txt`](evidence/oss-metabolism-201-fixes/copyright-notice-mutants-2026-10-30.txt) | 1 | 2026-10-30 |  |
+| [`evidence/node-revoke-2026-10-30/README.md`](evidence/node-revoke-2026-10-30/README.md) | 1 | 2026-10-30 | NODE_REVOKE and revocable node enrollment (WU-06 part a1), 2026-10-30 |
 | [`evidence/greg-section-ix/2026-10-30`](evidence/greg-section-ix/2026-10-30/README.md) | 1 | 2026-10-30 | Section IX: the nine scenarios on one combined tree; section X recombinations |
 | [`evidence/greg-faithful-text/2026-10-30`](evidence/greg-faithful-text/2026-10-30/README.md) | 1 | 2026-10-30 | A check judges the text the evidence holds |
 | [`evidence/greg-bounded-text-query/2026-10-30`](evidence/greg-bounded-text-query/2026-10-30/README.md) | 2 | 2026-10-30 | A question about a large file is answered over all of it, within stated limits |

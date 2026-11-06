@@ -92,3 +92,16 @@ Contributors independently posted the following on #96 after the survey (comment
 - `tests/unit/test_import_layering.py::test_boundary_distribution_works_installed_alone` installs only the four published packages and imports every module. It fails on the old code and passes now.
 - The wrapper is the last boundary import. Removing it needs a boundary version bump, which is the boundary owner's decision, so the `KEPT_BOUNDARY` entry stays with its new reason.
 - `capabilities/genome.py` is untouched because frozen evaluations pin it by digest.
+
+**2026-11-06, duplication measured:**
+- Copy-pasted function bodies are rare. Function bodies of 10+ lines repeated across files, renamed copies included, came to 5 shapes and 146 lines in non-test code.
+- The repository's structural cost is coupling (S-1, 9 two-way package pairs) and module size (S-5), not copy-paste.
+- The largest copy, three mutation-gate runners, now shares `scripts/ci/mutation_harness.py`. Their output is byte-identical before and after (18/18, 17/17 and 41/41 caught). The trend is now 4 shapes and 98 lines.
+- Left as they are:
+  - three gates with a different contract (other timeouts, a single target, no purge);
+  - two frozen P8 pilot scripts;
+  - `greg/organ_exchange.py` and `greg/ventures.py` `_deliver`;
+  - the two network filters.
+
+  Each needs its owner's look before merging, because the copies may be deliberate.
+- The weekly review reports the trend (`repo_review.py` § Duplicate function bodies).

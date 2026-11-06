@@ -59,9 +59,12 @@ non-zero):
    integrator regenerates `docs/CATALOG.md` at intake, and the monthly review
    commits a dated branch snapshot and asks the owners of `NO_PR` branches to
    claim, fold in or park them.
-6. **Size profile:** the largest files and how many exceed 1,500 lines. This is
+6. **Duplicate function bodies:** function bodies of 10+ lines repeated across files,
+   counting renamed copies as one shape. A trend, never a gate: some copies are
+   deliberate (frozen scripts, organs that must not import each other).
+7. **Size profile:** the largest files and how many exceed 1,500 lines. This is
    a trend, not a rule.
-7. **PR-flow proxies (SOP-06), when given `--github`:**
+8. **PR-flow proxies (SOP-06), when given `--github`:**
    - open PRs and drafts, and their base branches;
    - receipt coverage of recently closed PRs;
    - how many recently closed PRs mention rework words (stale, superseded,

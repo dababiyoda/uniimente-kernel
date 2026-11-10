@@ -1,0 +1,92 @@
+{
+  "decision_id": "DELIB-PROVIDER-CHANGE-2026-11-03",
+  "title": "Record evaluator shutdown, control-plane, batch, connector, and incident contracts without adopting provider authority",
+  "problem": "OpenAI Evals became read-only; Anthropic connectors had incomplete-read incidents; Kimi introduced a consequence-bearing Admin API and expanded asynchronous Batch contracts. Decide whether to amend protocol law, adopt or migrate, record evidence only, or make no repository change.",
+  "founder_intent_refs": ["INTENT-20260901-provider-change", "INTENT-0028", "INTENT-0030", "INTENT-20260930-open-source-first"],
+  "baseline": "Default routes are local-first. DALEOBANKS alone retains optional legacy OpenAI Chat Completions and embeddings. No Kimi Admin/Batch, OpenAI Evals, Anthropic connector runtime, or provider-owned scheduler was found. Draft PR 105 section 7 already governs leased provider state, exact contracts, receipts, retry, cost, evaluation, credentials/data scope, and duplicate runtimes.",
+  "alternatives": [
+    {"name": "Evidence-only update", "description": "Add the dated packet and this deliberation; change no protocol text or runtime.", "advantages": ["Preserves hard dates and new contracts", "Reversible and consequence-inert"], "disadvantages": ["Adds review debt", "Does not verify live provider behavior"], "revival_evidence": "Selected because a control plane, async contract, and effective evaluator transition cross the materiality gate."},
+    {"name": "Vendor-specific protocol amendment", "description": "Add named Kimi Admin/Batch and OpenAI Evals clauses.", "advantages": ["Makes current details prominent"], "disadvantages": ["Duplicates provider-neutral law", "Couples constitutional text to volatile products"], "revival_evidence": "A deterministic failure demonstrates an uncovered invariant."},
+    {"name": "Immediate adoption or migration", "description": "Adopt Kimi Admin/Batch or migrate Evals now.", "advantages": ["Could add visibility, lower batch rates, or evaluation continuity"], "disadvantages": ["No route, account inventory, residency proof, independent benchmark, or founder authorization exists"], "revival_evidence": "Founder-approved sandbox with pinned contracts, least privilege, independent acceptance, cost ceiling, and rollback."},
+    {"name": "Provider-native control and execution plane", "description": "Let provider admin, batch, connectors, and evaluation own workflow state.", "advantages": ["Reduces application-side orchestration"], "disadvantages": ["Violates canonical authority, one-source-of-truth, evaluator independence, and no-duplicate-runtime constraints"], "revival_evidence": "None while UNIIMENTE requires one canonical authority, task, receipt, evidence, cost, and consequence plane."}
+  ],
+  "do_nothing_option": {"expected_outcome": "Brief the user and leave PR 105 unchanged.", "advantages": ["No repository mutation", "Avoids review debt"], "disadvantages": ["Loses durable control-plane, batch, and Evals transition evidence"]},
+  "roles": [
+    {"role": "Founder-Intent Steward", "position": "Keep providers as replaceable adapters; admin roles, queues, and evaluators cannot manufacture authority.", "material_concerns": ["Control-plane convenience can redefine project authority", "Migration urgency can bypass human review"], "evidence_refs": ["AGENTS.md@d64a6c93", "Draft PR 105 section 7"], "recommendation": "NEEDS_FOUNDER_DECISION"},
+    {"role": "Systems Architect", "position": "Model admin calls, connector reads, eval runs, batches, items, and retries as subordinate attempts with canonical receipts.", "material_concerns": ["Async partial completion is not replay-equivalent", "Provider queues and admin automation can become a second runtime"], "evidence_refs": ["Kimi Admin API 2026-11-02", "Kimi Batch October 2026 entry"], "recommendation": "RETAIN"},
+    {"role": "Adversarial Reviewer", "position": "Make no repository change because direct exposure is negative and existing section 7 is sufficient.", "material_concerns": ["Weekly evidence can become bureaucracy", "Five role prompts are one model's self-review", "Kimi Batch publication day is unstated"], "evidence_refs": ["Negative searches on four default branches", "Draft PR 105 section 7"], "recommendation": "DEFER"},
+    {"role": "Operator and Maintainer", "position": "Record effective dates and recovery semantics; build no adapter until authorized exposure exists.", "material_concerns": ["Admin authorization cache and endpoint-specific writes complicate recovery", "Batch expiry, partial output, cache writes, and retries hide cost"], "evidence_refs": ["Provider docs and status histories 2026-10-27 through 2026-11-03"], "recommendation": "RETAIN"},
+    {"role": "Evidence and Welfare Guardian", "position": "Treat provider audit, billing, connector, search, upload, and eval results as bounded evidence requiring independent reconciliation.", "material_concerns": ["Admin data includes members, billing, usage, and audit history", "Connector failure can silently omit personal or organizational records", "Same-provider evaluation is circular"], "evidence_refs": ["OpenAI deprecations", "Anthropic status", "Kimi Admin overview"], "recommendation": "NEEDS_FOUNDER_DECISION"}
+  ],
+  "evidence": [
+    {"claim": "OpenAI Evals became read-only on October 31 and is scheduled to shut down November 30.", "tier": "primary_source", "reference": "https://developers.openai.com/api/docs/deprecations", "finding": "The effective read-only transition occurred in the review window; default-branch searches found no direct exposure."},
+    {"claim": "Anthropic connectors returned errors during the review window.", "tier": "primary_source", "reference": "https://status.claude.com/", "finding": "Gmail and Calendar connector incidents resolved October 28; no repository connector integration was found."},
+    {"claim": "Kimi introduced a beta organization control plane on November 2.", "tier": "primary_source", "reference": "https://platform.kimi.ai/docs/guide/admin-api-overview", "finding": "It manages membership, projects, inference keys, billing, usage, and audit data through separate admin credentials and scoped permissions."},
+    {"claim": "Kimi expanded Batch to K3/K3.1 with asynchronous, discounted, cache-write, and expiry semantics.", "tier": "primary_source", "reference": "https://platform.kimi.ai/docs/platform-changelog and https://platform.kimi.ai/docs/pricing/batch observed 2026-11-03", "finding": "The entry is labeled October 2026 without a publication day; direct exposure is negative."},
+    {"claim": "Current default branches have no direct exposure to the newly material features.", "tier": "deterministic_fixture", "reference": "Exact GitHub searches at Kernel d64a6c93, DALEOBANKS 667439f4, WMI ec82b802, PumpStation db6758df on 2026-11-03", "finding": "No Kimi Admin/Batch, OpenAI Evals/Promptfoo, or Anthropic connector runtime was found; DALEOBANKS retains optional legacy OpenAI calls only."}
+  ],
+  "counterevidence": [
+    {"claim": "New constitutional protocol text is necessary.", "tier": "historical_artifact", "reference": "Draft PR 105 section 7", "finding": "Existing provider-neutral rules already cover all material invariants."},
+    {"claim": "Provider documentation proves UNIIMENTE behavior.", "tier": "other", "reference": "No provider account, credential, contract, or live call was accessed", "finding": "All integration behavior remains prospective and unverified."}
+  ],
+  "pass_1": {
+    "intended_outcome": "Preserve one canonical, retry-safe, independently evaluated, privacy- and cost-bounded collaboration runtime while recording actionable provider deadlines and contracts.",
+    "advantages": [
+      {"id": "A1", "statement": "The dated evidence captures a hard evaluator transition and a new consequence-bearing control plane.", "amplified_value": "Future owners can migrate or reject features from official contracts without adopting them now."},
+      {"id": "A2", "statement": "Provider-neutral rules absorb new products without constitutional churn.", "amplified_value": "Canonical authority remains stable as vendors change control and execution surfaces."}
+    ],
+    "disadvantages": [
+      {"id": "D1", "statement": "Another weekly record increases review debt.", "severity": "high", "response_type": "governance", "redesigned_response": "Add two unique evidence files and one bounded PR-body delta only."},
+      {"id": "D2", "statement": "No new feature is directly exposed on current default branches.", "severity": "medium", "response_type": "evidence", "redesigned_response": "Label exposure negative and defer code until an authorized inventory or proposal reveals use."},
+      {"id": "D3", "statement": "Admin writes and async batch completion can produce ambiguous effects.", "severity": "critical", "response_type": "protective", "redesigned_response": "Require canonical operation/item identities, receipts, preconditions, and reconciliation before retry."},
+      {"id": "D4", "statement": "Admin credentials and connector data widen identity, billing, audit, and personal-data scope.", "severity": "critical", "response_type": "protective", "redesigned_response": "Perform no account action; require separate least-privilege authorization, residency/retention review, revocation, and deletion tests."},
+      {"id": "D5", "statement": "Evaluator migration can silently change case and grader semantics.", "severity": "high", "response_type": "evidence", "redesigned_response": "Export immutable cases, retain stable IDs and full contracts, and compare independently before promotion."},
+      {"id": "D6", "statement": "Kimi Batch lacks a stated publication day.", "severity": "medium", "response_type": "evidence", "redesigned_response": "Record the provider's month and the observation date; do not invent a day."}
+    ],
+    "comparisons": {
+      "baseline": "Local-first defaults, optional legacy OpenAI calls, no Anthropic/Kimi route, generic provider controls.",
+      "do_nothing": "Avoids review debt but loses durable evaluator, control-plane, and batch evidence.",
+      "simplest_viable_alternative": "User brief only; sufficient for incidents but weak for the hard Evals transition and Kimi control/batch contract lineage.",
+      "strongest_competing_architecture": "Provider admin, batch, connectors, and eval services own state and scheduling; convenient but incompatible with canonical authority and evaluator independence.",
+      "reversible_experiment": "If authorized, replay frozen admin/batch/eval fixtures offline, then run a cost-capped sandbox with no external effect and independent acceptance."
+    },
+    "rejected_alternatives": [
+      {"name": "Add vendor-specific law", "rejection_reason": "Section 7 covers the invariants.", "revival_evidence": "A deterministic failure proves an uncovered invariant."},
+      {"name": "Adopt or migrate now", "rejection_reason": "No authorized route, account inventory, residency proof, benchmark, or founder approval exists.", "revival_evidence": "Authorized need plus pinned fixtures, least privilege, independent evaluation, cost review, and rollback."},
+      {"name": "Inspect accounts or credentials", "rejection_reason": "This review lacks authority to access provider accounts, secrets, balances, projects, or contracts.", "revival_evidence": "A separate least-privilege authorized-human task."}
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "The evidence-only design can still become bureaucracy, overstate one-model review, rely on mutable provider pages, miss non-repository use, or permit wildcard admin scope and hidden async cost.",
+    "new_weaknesses": [
+      {"id": "N1", "category": "bureaucracy", "statement": "The recurring draft may become harder to review than the risk.", "strengthening_response": "Keep this cycle to two evidence files and one body section; no protocol or code change."},
+      {"id": "N2", "category": "dependency", "statement": "Five role perspectives are one model's self-review.", "strengthening_response": "Keep draft status and require founder or delegated independent human review."},
+      {"id": "N3", "category": "fragility", "statement": "Provider docs, status, and prices can change after observation.", "strengthening_response": "Preserve dates, URLs, exact branch SHAs, and require a fresh check before implementation."},
+      {"id": "N4", "category": "expense", "statement": "Batch discounts can hide cache-write, retry, expiry, and duplicate-submission cost.", "strengthening_response": "Reconcile every item and attempt; kill adoption when total cost is incomplete."},
+      {"id": "N5", "category": "other", "statement": "An admin wildcard scope may silently expand with future API scopes.", "strengthening_response": "Prohibit wildcard scope and provider-side policy automation without founder authorization and least-privilege fixtures."}
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {"disadvantage_id": "D1", "outcome": "accepted", "rationale": "The hard Evals transition and new control/batch contracts justify one evidence-only update.", "owner": "weekly provider reviewer", "review_trigger": "Next cycle; brief-only unless materiality is met"},
+      {"disadvantage_id": "D2", "outcome": "deferred", "rationale": "No adapter or migration is built until authorized exposure exists.", "owner": "future provider-adapter owner", "review_trigger": "Authorized inventory or adoption proposal"},
+      {"disadvantage_id": "D3", "outcome": "resolved", "rationale": "Canonical receipts, preconditions, and per-item reconciliation are required before any retry.", "owner": "workflow operator", "review_trigger": "Any admin write, batch expiry, partial output, timeout, or unknown state"},
+      {"disadvantage_id": "D4", "outcome": "prohibited", "rationale": "No account, credential, project, member, billing, audit, mailbox, calendar, or residency action occurs in this review.", "owner": "founder or delegated security operator", "review_trigger": "Any identity, admin, connector, or account task"},
+      {"disadvantage_id": "D5", "outcome": "deferred", "rationale": "Migration requires stable cases, full contract capture, and independent comparison before promotion.", "owner": "evaluation owner", "review_trigger": "Any non-repository OpenAI Evals inventory or replacement proposal"},
+      {"disadvantage_id": "D6", "outcome": "accepted", "rationale": "The record distinguishes the October label from the November 3 observation date.", "owner": "weekly provider reviewer", "review_trigger": "A dated Kimi notice or changed batch contract"}
+    ],
+    "final_design": "Add only the 2026-11-03 official-source evidence packet and validated deliberation to draft PR 105; leave section 7 and all runtime, routes, accounts, credentials, production, authority, and default branches unchanged.",
+    "residual_risks": [
+      {"risk": "Non-repository provider use remains unknown.", "mitigation": "Require a separate authorized inventory before the November 30 Evals shutdown or any adoption.", "owner": "founder or delegated operator", "review_trigger": "Suspected OpenAI Evals use or provider adoption"},
+      {"risk": "The deliberation is not independent approval.", "mitigation": "Keep draft status and require founder or delegated human decision.", "owner": "alfonso_lopez", "review_trigger": "PR 105 review"},
+      {"risk": "Provider contracts can change after capture.", "mitigation": "Recheck official sources and pin fixtures before any canary.", "owner": "provider-adapter owner", "review_trigger": "Any implementation or migration"}
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {"present": true, "handling": "Preserve the brief-only objection. It controls scope: no protocol text, runtime code, fixture, provider call, account inspection, or migration. The Kimi control plane, async batch contract, and OpenAI Evals effective transition justify only dated evidence.", "entries": [{"role": "Adversarial Reviewer", "position": "Make no repository change because direct exposure is negative and existing rules are sufficient.", "rationale": "Recurring model-authored records can create bureaucracy and de facto policy authority.", "evidence_threshold": "Future updates require direct exposure, a hard effective transition, breaking contract, material incident, or uncovered invariant.", "owner": "alfonso_lopez", "review_trigger": "Founder review or next weekly cycle"}]},
+  "authority_impact": {"level": "constitutional", "changes_authority": false, "requires_authorized_human": true, "approval_status": "pending", "approver": "alfonso_lopez"},
+  "migration_plan": "No runtime migration. If exposure is authorized, pin provider/model/API/region/tool/admin/evaluator contracts; translate every operation, batch item, connector read, retry, and cost into canonical attempts and receipts; prove idempotency and recovery with deterministic fixtures; perform independent evaluation and credential/retention/residency/cost review; then run a founder-approved sandbox canary.",
+  "rollback_plan": {"possible": true, "steps": ["Leave draft PR 105 unmerged or revert only the 2026-11-03 evidence commits", "Preserve evidence and dissent as historical records", "Return to brief-only reporting for immaterial cycles"], "reason_impossible": null},
+  "kill_criteria": ["Any default-branch write or unapproved merge", "Any account, credential, production, routing, spending, or authority change", "Any provider-owned canonical identity, policy, task, evidence, evaluator, receipt, retry, cost, queue, scheduler, or runtime", "Any wildcard or unreviewed admin scope", "Any retry or failover without receipt and idempotency reconciliation", "Any duplicate batch item or external effect", "Any migration treated as replay-equivalent without frozen cases and independent evaluation", "Any ineligible region, retention, residency, or data scope", "Any missing cache-write, expiry, retry, or duplicate-submission cost", "One immaterial recurring repository update"],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "alfonso_lopez",
+  "review_trigger": "Founder review of PR 105; any Kimi Admin/Batch proposal; any non-repository OpenAI Evals use before 2026-11-30; or an incident with ambiguous completion"
+}

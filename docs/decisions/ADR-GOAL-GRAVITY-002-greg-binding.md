@@ -374,7 +374,7 @@ Reality tier: a cloud container, per-test keys, no founder device, VEPMC 0.
 
 **Founder decision open.** Whether an attributed change in the goal's own mission observations should clear what the goal has already woken on.
 
-Card: `docs/mechanisms/MC-0003-independent-source-intake-count.md`. Evidence: `docs/evidence/greg-goal-intake/2026-11-11/`. Gate: `scripts/ci/check_goal_intake_mutants.py`.
+Card: `docs/mechanisms/MC-0004-independent-source-intake-count.md`. Evidence: `docs/evidence/greg-goal-intake/2026-11-11/`. Gate: `scripts/ci/check_goal_intake_mutants.py`.
 
 **Rollback.** Remove the `loop.router.intake = ...` line in `binding_for`: every item is scored alone again. No record needs migrating, because none was added.
 

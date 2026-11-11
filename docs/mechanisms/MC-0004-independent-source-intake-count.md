@@ -1,4 +1,4 @@
-# MC-0003 — Intake counted by independent source
+# MC-0004 — Intake counted by independent source
 
 Status: **built and on GREG's wake path.** Every founder-signed GOAL on a body uses it (`greg/goal_gravity.py`, `IntakeAccumulation`). It decides when a goal wakes. It decides nothing else.
 Reality tier: a cloud container, per-test keys, no founder device, VEPMC 0. Real Body, real ledger and Gate, in-process.

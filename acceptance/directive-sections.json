@@ -4125,15 +4125,20 @@
       "greg/compute.py",
       "greg/body.py"
      ],
-     "evidence": [],
+     "evidence": [
+      "tests/unit/test_greg_node_revoke.py::test_node_revoke_is_a_founder_only_command_kind",
+      "tests/unit/test_greg_node_revoke.py::test_a_device_key_delegated_every_device_kind_cannot_sign_node_commands",
+      "tests/unit/test_greg_node_revoke.py::test_enrol_revoke_re_enrol_is_allowed"
+     ],
      "required_tier": "SANDBOX_VERIFIED",
-     "tier": "INTENDED",
-     "coverage": "gap",
+     "tier": "UNIT_VERIFIED",
+     "coverage": "partial",
      "blocker": {
       "class": "BUILDABLE_NOT_BUILT",
-      "reason": "No NODE_REVOKE and no node-signed receipts",
+      "reason": "NODE_REVOKE exists: only the founder key enrolls or revokes a node, a revoked node is inactive, and its node_id can be enrolled again. Still open: nothing leases work to a node or verifies anything a node signs, so there are no node-signed receipts and no admission of a node's work inside its cone",
       "unit": "WU-06"
-     }
+     },
+     "note": "Corrected 2026-11-11. Of the reason recorded on 2026-10-30 ('No NODE_REVOKE and no node-signed receipts'), the first half described the tree before NODE_REVOKE (WU-06 part a1) and tests/unit/test_greg_node_revoke.py landed on this line; the second half stands (part a2). The canonical-ci.yml step that runs the mutant gate is named for receipts 'admitted only inside the node's cone', which neither the gate nor its test file mentions. Limits: docs/evidence/node-revoke-2026-10-30/README.md."
     },
     {
      "id": "S49.A3",

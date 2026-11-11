@@ -108,20 +108,30 @@ class AuthorityOffice:
 
         The one reading of a receipt, for the dispatch that just produced it (``reused`` None) and for a retained
         one found again after an interruption (``reused`` says why it stands and nothing was dispatched for it):
-        a capability that refused or failed left a negative receipt, and that is REFUSED with the receipt's
-        observed outcome and failure class and nothing booked, however often and whenever it is asked about;
-        a positive receipt is DONE with the output it kept and the action's cost.
+
+        - ``negative``: the capability refused or failed. REFUSED with the receipt's observed outcome and failure
+          class and nothing booked, however often and whenever it is asked about;
+        - ``positive``: DONE with the output it kept and the action's cost;
+        - anything else (another class, no class, a result that cannot be read): UNCERTAIN. This office's executor
+          writes exactly those two classes, so such a receipt does not say whether the capability acted. It is
+          not a success, and it is not a refusal either: a refusal lets the mission try the action again, which
+          would repeat an effect that may already have happened. It is reconciled like any unknown outcome.
 
         Before, ``act`` reported any retained receipt of the same proposal as DONE without reading its result. A
         body stopped between the Gate's receipt of a refusal and the mission's record of it then recorded the
         refusal as done: a refused compensation was on the record as DONE and the founder was never asked, and a
         refused read passed an ``absent`` check and closed its mission."""
-        result = receipt.payload.get("result") or {}
+        result = receipt.payload.get("result")
+        result = result if isinstance(result, dict) else {}
         kept = dict(receipt_hash=receipt.hash, grant_id=receipt.payload.get("grant_id"), proposal_id=proposal_id,
                     scope_digest=scope_digest)
-        if result.get("result_class") != "positive":
+        klass = result.get("result_class")
+        if klass == "negative":
             return ActionOutcome("REFUSED", [result.get("observed_outcome", "capability failed")],
                                  failure_class=result.get("failure_class"), **kept)
+        if klass != "positive":
+            return ActionOutcome("UNCERTAIN", [f"the receipt does not say whether the capability acted (result class "
+                                               f"{klass!r}); its outcome is unknown and must be reconciled"], **kept)
         return ActionOutcome("DONE", [reused] if reused else [], output=result.get("output"), cost_usd=cost_usd,
                              output_artifact=result.get("output_artifact"), **kept)
 

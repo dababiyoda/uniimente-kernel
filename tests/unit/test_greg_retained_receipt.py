@@ -194,16 +194,31 @@ def test_a_retained_receipt_under_the_earlier_scope_form_is_read_the_same_way(tm
     assert len(calls) == 1 and after == {"dispatch_claims": 1, "receipts": [first.receipt_hash], "grants_issued": 1}
 
 
+UNKNOWN = "the receipt does not say whether the capability acted (result class {!r}); its outcome is unknown and " \
+          "must be reconciled"
+
+
 @pytest.mark.parametrize("result, status, reasons", [
     ({"result_class": "positive", "output": {"n": 1}, "observed_outcome": "observation captured"}, "DONE", []),
     ({"result_class": "negative", "observed_outcome": "capability refused: no"}, "REFUSED", ["capability refused: no"]),
-    ({"result_class": "inconclusive", "observed_outcome": "half done"}, "REFUSED", ["half done"]),
-    ({"observed_outcome": "no class recorded"}, "REFUSED", ["no class recorded"]),
-    ({}, "REFUSED", ["capability failed"]),
-    (None, "REFUSED", ["capability failed"]),
+    ({"result_class": "negative"}, "REFUSED", ["capability failed"]),
+    # the three other classes of contracts/outcome.schema.json, which this office's executor never writes
+    ({"result_class": "inconclusive", "observed_outcome": "half done"}, "UNCERTAIN", [UNKNOWN.format("inconclusive")]),
+    ({"result_class": "zero_response", "output": {"n": 1}}, "UNCERTAIN", [UNKNOWN.format("zero_response")]),
+    ({"result_class": "harm", "observed_outcome": "it broke something"}, "UNCERTAIN", [UNKNOWN.format("harm")]),
+    # missing and malformed
+    ({"observed_outcome": "no class recorded", "output": {"n": 1}}, "UNCERTAIN", [UNKNOWN.format(None)]),
+    ({"result_class": "POSITIVE", "output": {"n": 1}}, "UNCERTAIN", [UNKNOWN.format("POSITIVE")]),
+    ({"result_class": ["positive"]}, "UNCERTAIN", [UNKNOWN.format(["positive"])]),
+    ({}, "UNCERTAIN", [UNKNOWN.format(None)]),
+    (None, "UNCERTAIN", [UNKNOWN.format(None)]),
+    ("positive", "UNCERTAIN", [UNKNOWN.format(None)]),
+    (["result_class", "positive"], "UNCERTAIN", [UNKNOWN.format(None)]),
 ])
-def test_only_a_positive_result_is_done(result, status, reasons):
-    """The one reading of a receipt: anything but a positive result is a refusal, with nothing booked."""
+def test_a_receipt_is_read_by_its_result_class_and_an_unreadable_one_is_unknown(result, status, reasons):
+    """The one reading of a receipt. Positive is done; negative is the capability's refusal; anything else does not
+    say whether the capability acted, so it is neither: it is unknown, with nothing booked and no output passed on.
+    (Read as a refusal, the mission would try the action again and could repeat an effect that already happened.)"""
     receipt = SimpleNamespace(hash="sha256:" + "a" * 64, payload={"grant_id": "g", "result": result})
     out = AuthorityOffice.outcome_of(receipt, cost_usd=2.0, proposal_id="p", scope_digest="s")
     assert out == ActionOutcome(status, reasons, "p", "s", output={"n": 1} if status == "DONE" else None,

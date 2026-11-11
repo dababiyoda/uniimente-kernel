@@ -26,11 +26,16 @@ TESTS = "tests/unit/test_greg_retained_receipt.py"
 # anchor, so tests/unit/test_repo_health_gates.py fails on a stale anchor here before this gate ever runs.
 MUTANTS = [
     # the office: one reading of a receipt
-    ("a retained refusal is reported DONE (the defect)", "greg/authority.py",
-     '        if result.get("result_class") != "positive":\n            return ActionOutcome("REFUSED", [result.get(',
+    ("a retained refusal is not reported as the refusal it was", "greg/authority.py",
+     '        if klass == "negative":\n            return ActionOutcome("REFUSED", [result.get(',
      '        if False:\n            return ActionOutcome("REFUSED", [result.get('),
-    ("only an explicit negative is a refusal: an inconclusive or unclassed result counts as done", "greg/authority.py",
-     'if result.get("result_class") != "positive":', 'if result.get("result_class") == "negative":'),
+    ("a receipt that is not positive is reported DONE (the defect)", "greg/authority.py",
+     '        if klass != "positive":\n            return ActionOutcome("UNCERTAIN", [',
+     '        if False:\n            return ActionOutcome("UNCERTAIN", ['),
+    ("an inconclusive, unclassed or unreadable result is read as a refusal, which lets the action be tried again",
+     "greg/authority.py", '        if klass == "negative":\n', '        if klass != "positive":\n'),
+    ("a result that is not a mapping crashes the reading", "greg/authority.py",
+     '        result = result if isinstance(result, dict) else {}\n', ''),
     ("a retained refusal loses the capability's own reason", "greg/authority.py",
      '[result.get("observed_outcome", "capability failed")]', '[reused or "capability failed"]'),
     ("a retained refusal loses its failure class", "greg/authority.py",

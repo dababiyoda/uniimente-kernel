@@ -137,6 +137,30 @@ def test_a_construction_that_lies_through_the_mind_is_repaired_by_the_same_mecha
         assert body.registry.state["acquired.graph.max_flow.scipy"] == "ATTACHED"
 
 
+def test_a_faulting_construction_is_repaired_without_asking_the_founder_for_a_strategy(tmp_path, monkeypatch):
+    """The only check that does not pass is the one a faulted construction could not answer. Nothing was measured
+    failing, so there is nothing to pursue: the mission re-observes and the second strike re-forms the construction.
+
+    Before (measured on #196 at 8d205324): the first strike was pursued as a failed goal. No strategy advances the
+    check, so the founder was asked a NO_STRATEGY question one pass before self-repair mended it. With the faulted
+    check only left out of what is pursued, the mission pursued nothing and never looked again."""
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", compiled_question(problem_id="staff-4", data=STAFFING,
+                                                                  allow_construction=True)))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 1)                              # deficit -> construction -> read-only attach
+        lie = network.RUNNERS["networkx.max_flow"].replace(
+            "def solve(req):", "def solve(req):\n    return {'flows': [], 'value': 0}\ndef _honest(req):", 1)
+        monkeypatch.setitem(network.RUNNERS, "networkx.max_flow", lie)   # the engine now lies in service
+        states = [s["state"] for s in ticks(body, clock, 4)]
+        assert states[:3] == ["SENSOR_RETRY", "REPAIRED", "ACHIEVED"], states
+        asked = [e.payload["kind"] for e in body.journal.replay("decision.requested")]
+        assert asked == [], asked
+        assert not list(body.journal.replay("mission.blocked"))
+
+
 def test_a_problem_no_reduction_fits_keeps_the_existing_deficit(tmp_path):
     home, key, body_id, _ = make_body(tmp_path)
     spec = compiled_question(problem_id="fold-1", data={"sequence": "ACDE"}, allow_construction=True,

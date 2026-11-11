@@ -300,20 +300,16 @@ def test_a_completed_write_is_not_replayed_when_only_the_function_that_reads_it_
     assert states[:2] == ["SENSOR_RETRY", "REPAIRED"], states
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason=(
-    "measured defect on #196 at 8d205324: a check left unmeasured because its formed sensor capability faulted is "
-    "pursued beside another check's real failure, so the completed write that advances it is dispatched again at "
-    "attempt 1 (second adapter call, second Gate claim and receipt) and overwrites the file, one pass before "
-    "self-repair replaces the capability. greg/missions.py pursues `failing - self.inconclusive`, and a check its "
-    "own sensor capability failed to read is not counted as inconclusive. Remove this mark when such a check no "
-    "longer rides along with a measured failure."))
 def test_a_completed_write_is_not_replayed_when_the_function_that_reads_it_faults_beside_a_real_failure(
         tmp_path, monkeypatch):
-    """Smallest reproduction found. The note is on disk with a person's line added, and the fs.read check on it
-    still passes. Only the formed capability that counts its open steps fails (it may no longer import ``re``), and
-    an unrelated check with no strategy fails for real in the same pass. Observed on 8d205324: states ACTED,
-    REPAIRED, BLOCKED; fs.write called twice for note.md; action records note DONE attempt 0 and note DONE attempt
-    1; the person's line is gone. Only this assertion may fail: the mark expects an AssertionError and every setup
-    problem raises something else."""
+    """The note is on disk with a person's line added, and the fs.read check on it still passes. Only the formed
+    capability that counts its open steps fails (it may no longer import ``re``), and an unrelated check with no
+    strategy fails for real in the same pass.
+
+    Before (measured on #196 at 8d205324, first recorded here as a strict expected failure): the check its faulted
+    sensor capability could not read was pursued beside the other check's real failure. fs.write was called twice
+    for note.md, the action records were note DONE attempt 0 and note DONE attempt 1, and the person's line was
+    gone, one pass before self-repair replaced the capability. Now such a check is not pursued: no strategy can mend
+    the instrument that reads it."""
     writes, actions, kept, states = _loss_beside(tmp_path, monkeypatch, other_check_fails=True)
     assert writes == ["note.md"] and actions == [("DONE", 0)] and kept, (writes, actions, kept, states)

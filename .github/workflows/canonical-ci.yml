@@ -162,6 +162,8 @@ jobs:
         run: python scripts/ci/check_node_revoke_mutants.py
       - name: Functional reconstitution mutations (a lost function returns by another mechanism; a completed write is not repeated; a founder detach stands)
         run: python scripts/ci/check_reconstitution_mutants.py
+      - name: Unmeasured-check mutations (a check a faulted capability could not read is never pursued, alone or beside a real failure)
+        run: python scripts/ci/check_unmeasured_check_mutants.py
 
   verifier:
     # Its V2 re-runs tests/unit, so inside job 1 it pushed that job past its 30 minutes once the

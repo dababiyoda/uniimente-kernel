@@ -2154,7 +2154,9 @@ class MissionEngine:
         repaired = self._self_repair(m, now)
         if repaired is not None:
             return repaired
-        errors = set(self.sensor_errors)
+        # A check whose formed sensor capability itself faulted was not measured, whichever way the fault reached
+        # this pass (the sensor call failed, or the Mind's answer named the construction that faulted).
+        errors = set(self.sensor_errors) | set(self.capability_faults)
         if errors and errors == failing:
             # The world was not measured; that is not a failed goal. Back off and
             # re-observe; escalate once after repeated measurement failure.
@@ -2191,7 +2193,11 @@ class MissionEngine:
         # and closes nothing. Before, it rode along with another check's real failure: its strategies were dispatched
         # and the failure closure named it as "re-observed failing" (review of #196, J1). A sensor the capability
         # refused keeps its route: a strategy may create what it reads (a catalog's offer before its discover).
-        return self._pursue(m, now, failing - self.inconclusive, evidence)
+        # A check whose formed sensor capability itself faulted (``capability_faults``) was not measured either, and
+        # no strategy can mend the instrument that reads it: self-repair replaces that capability on its second
+        # strike. Before, such a check rode along with another check's real failure, and the completed write that
+        # advances it was dispatched a second time, over whatever the world then held.
+        return self._pursue(m, now, failing - self.inconclusive - set(self.capability_faults), evidence)
 
     def _settle_uncertain(self, m: MissionState, s: dict, manifest, aid: str, attempt: int, scope_digest: str,
                           now: datetime, record: dict | None = None) -> dict:

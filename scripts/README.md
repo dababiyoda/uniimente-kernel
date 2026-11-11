@@ -13,4 +13,4 @@
 | `ci/mutation_harness.py` | the shared loop for mutation gates (scratch copy, STALE check, FAILED-only catch). New gates call `run(MUTANTS, TESTS, prefix=...)` and keep their literal `MUTANTS` list | four gates so far; `tests/unit/test_mutation_harness.py` pins what counts as caught, and `ci/check_gate_rules_mutants.py` removes each clause of that rule |
 | `dev_env_check.py` | environment doctor: what will fail because of this machine | by hand before tests; read-only |
 
-Known gap (2026-11-05): `ci/check_seed_mutants.py` is run by no workflow. It is the one entry in `repo_review.py`'s `KEPT_UNWIRED_GATES`; any new unwired gate fails `tests/unit/test_repo_health_gates.py`, and so does adding one to that list, whose contents the same file pins.
+Known gap (2026-11-05, corrected 2026-11-11): `ci/check_seed_mutants.py` is run by no workflow, and with its solver packages installed it exits 1 with 6 of 7 mutants caught (register S-3, dated correction). It is the one entry in `repo_review.py`'s `KEPT_UNWIRED_GATES`; any new unwired gate fails `tests/unit/test_repo_health_gates.py`, and so does adding one to that list, whose contents the same file pins.

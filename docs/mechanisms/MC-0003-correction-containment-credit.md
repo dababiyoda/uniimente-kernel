@@ -21,7 +21,7 @@ Reproduced on #196's `8d205324` on a real body. A cognition mission closed and t
 
 - the justifications: `Index` and `descendants` derive, each tick, which claims, actions, decisions, settled outcomes and procedures rest on a reading;
 - the labelling of delivered claims: `claims` reports CURRENT, EXPIRED or NEEDS_REVIEW, and a claim is NEEDS_REVIEW while an unrequalified correction lists it;
-- the early cutoff for claims: `Index.requalified` accepts a later passing reading of the same signed sensor, and `claims` confirms freshness from a later reading with the same source key and digest. The claim returns to CURRENT and no dependent mission is run again;
+- the early cutoff for claims. A later reading of the same source with the same digest raises no cause (`Index.causes`), and `claims` takes it as a confirmation, so nothing downstream is touched. After a cause, `Index.requalified` accepts a later passing reading of the same signed sensor: the claim returns to CURRENT and no dependent mission is run again;
 - the OUT set for credit: `contained_receipts`. It was computed and never read.
 
 **Added here:**

@@ -71,8 +71,14 @@ def test_the_record_has_every_ledger_field_and_quotes_only_what_the_source_says(
     for ref in record["source_refs"]:
         assert (ROOT / ref).is_file(), ref
     ledger = (ROOT / "docs/FOUNDER_INTENT_LEDGER.md").read_text(encoding="utf-8")
-    assert "`INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS`" in ledger
-    for quoted in re.findall(r'"([^"]{12,})"', ledger.split("## Regular structural review")[0]):
+    # This record's own entry only: from its heading to the next one. Other entries may sit above or below it
+    # (the ledger grows at the top, and two changes can each add one), and they quote their own sources.
+    [entry] = re.findall(r"^## Complete-machine execution on two tracks — 2026-11-11\n(.*?)(?=^## )", ledger,
+                         flags=re.S | re.M)
+    assert "`INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS`" in entry
+    quotes = re.findall(r'"([^"]{12,})"', entry)
+    assert len(quotes) >= 2
+    for quoted in quotes:
         assert quoted in whole, f"the ledger entry quotes words the source does not contain: {quoted}"
 
 

@@ -2,6 +2,19 @@
 
 # Founder Intent Ledger
 
+## Complete-machine execution on two tracks — 2026-11-11
+
+`INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS` ([record](intent/INTENT-20261111-ABSOLUTE-OPUS-MAXIMUS.json), [three messages, verbatim](intent/sources/ABSOLUTE-OPUS-MAXIMUS-2026-11-11-source.md)): the founder's directives of 2026-11-11 in session `session_01Kucyfm9exT5imDVYvHTYSv`. They are chat intent evidence, not founder authentication.
+
+- **Two tracks.** Track A is developmental engineering in controlled conditions. Track B is founder and external acceptance. "VEPMC = 0 does not stop Track A." A missing signature blocks the action that needs it, not independent engineering. Track B evidence is never manufactured.
+- **Method.** Start from a real defect. Reproduce it on the exact parent, fix it in the canonical owner, verify it on one composed tree with its neighbours, hand it to the integration owner, recompute the next unfinished dependency, continue. "A small build is the next step. It is never a substitute for the destination."
+- **First named build.** Truthful recovery of a retained negative receipt, with an eight-step acceptance sequence.
+- **Proposed extensions, as bounded experiments:** representation repair, evidence-dependency correction, proof-bearing plans, adaptive cognitive organization, transferable capability propagation, developmental-process improvement, goal opportunity synthesis, functional reconstitution. Each has a minimum test in the source. Existing mechanisms are inspected first.
+- **Revoked devices.** Revocation invalidates a device's unused authority at once. Completed actions stay in the ledger. A suspected compromise opens a separate retrospective review.
+- **Reporting.** Lead with what GREG can reliably do now that it could not do before. No probability estimates or process-quality scores in place of engineering results.
+
+**Changed axis:** sequence, immediate priority and evidence discipline. **State:** active. **Authority delta:** none. **VEPMC:** 0. The 2026-10-28 directive stays the controlling prompt and the 2026-10-30 correction stands.
+
 ## Regular structural review and contributor orientation — 2026-11-05
 
 `INTENT-20261105-REGULAR-REVIEW` ([record](intent/INTENT-20261105-REGULAR-REVIEW.json), [verbatim source](intent/sources/REGULAR-REVIEW-2026-11-05-source.md), [deliberation](collaboration/deliberation-regular-review-20261105.json)): delete nothing; audit organization, duplication and elegance against well-organized open-source projects; improve documentation for human and agent comprehension; engage contributors on pain points; establish a regular review process. It is chat intent evidence, not founder authentication.

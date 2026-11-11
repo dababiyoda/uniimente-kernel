@@ -9,8 +9,8 @@
         guard       every signed closure (revoke, supersede), stop or change, narrowing preference and priority
                     floor is restored if an unsigned record widened it
         sense       Gate receipts of each check's own sensor read (check predicate recomputed), separate-process
-                    appraisals, greg.path, non-quarantined intake (untrusted, judged by what its content names):
-                    only new or changed evidence
+                    appraisals, greg.path, non-quarantined intake (untrusted, judged by what its content names
+                    and counted per goal by independent source, never by volume): only new or changed evidence
         reopen      a completed goal whose plan node an attributed observation shows regressed is dormant again
         loop        egregore GoalGravityLoop.turn in body mode: no gate, no executor, no grant
                       awake goal  -> MissionEngine.observe_now for its signed missions (timing only; a mission
@@ -26,6 +26,7 @@ recomputed from Gate receipts), never a claim of external verification.
 """
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 import json
@@ -49,6 +50,7 @@ from events.spine import EventError
 from greg import asks, dataplane, path as devpath
 from greg.authority import PRINCIPAL, AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityManifest
+from greg.cognition import evidence as restatement
 from greg.founder import CLOCK_SKEW, MAX_TTL, instant, key_id, signing_bytes, spent_nonce
 from greg.journal import SOURCE, iso
 from greg.missions import RESTORED_REFUSAL, TERMINAL, MissionBook, MissionError, evaluate_receipt, first_choice, \
@@ -898,22 +900,237 @@ class _Mention:
         return f"{self.subject}.intake_mention"
 
 
+def intake_score(spec: GoalSpec, signal, observations=()) -> tuple[float, tuple[str, ...]]:
+    """One intake item's own score for one goal, alone. An item that names a goal's subject matches the goal's
+    subject conditions on any channel, and its channel counts too; one that names none is noise for that goal
+    whatever channel it came on."""
+    named = sorted(goal_subjects(spec) & set(signal.payload.get("about") or ()))
+    if not named:
+        bare = {k: v for k, v in signal.payload.items() if k not in ("domain", "tags")}
+        return score_signal(spec, SimpleNamespace(payload=bare), observations)
+    return score_signal(spec, signal, list(observations) + [_Mention(s) for s in named])
+
+
+# -- intake accumulated per goal: independent weak reports add up, repetition does not (directive S42-B) -------
+
+INTAKE_WINDOW_ITEMS = 256    # per goal, the latest relevant reports the fold keeps; older ones are forgotten
+INTAKE_CLAIM_WORDS = 128     # per report, the distinct words kept to recognise its claim reworded
+NEAR_DUPLICATE = 0.8         # two texts whose word sets overlap this much (Jaccard) are one claim reworded
+_CONTRACTED_NOT = re.compile(r"n['\u2019]t\b", re.IGNORECASE)
+
+
+def _plain_not(text: str) -> str:
+    """``isn't`` read as ``is not``, so a contracted denial is seen as one."""
+    return _CONTRACTED_NOT.sub(" not", text)
+
+
+def _claim_words(content: str) -> frozenset:
+    """The words that identify a claim however it is put: the data plane's normalised words, negations left out
+    (``it is broken`` and ``it is not broken`` are the same words on opposite sides)."""
+    words = dict.fromkeys(w for w in _norm(_plain_not(content)).split() if w not in restatement.NEGATORS)
+    return frozenset(list(words)[:INTAKE_CLAIM_WORDS])
+
+
+def _same_claim(a: frozenset, b: frozenset) -> bool:
+    """Word-set resemblance (Jaccard over one-word shingles). A wording heuristic: it catches an edited copy,
+    not a retelling in other words."""
+    union = len(a | b)
+    return bool(union) and len(a & b) / union >= NEAR_DUPLICATE
+
+
+def _opposed(a: str, b: str) -> bool:
+    """Whether two wordings of one claim take opposite sides: one negates the other or reverses its direction
+    (the restatement refuter's negation and direction classes, greg.cognition.evidence)."""
+    found = restatement.distortions(_plain_not(a), [_plain_not(b)])
+    return any(c["class"] in ("negation", "direction") for c in found)
+
+
+@dataclass(frozen=True)
+class _Report:
+    """One relevant intake item as a goal's fold reads it. Derived from the journal, in memory only: it keeps
+    the text's key and its distinct words, never the text, and nothing of it is written anywhere."""
+    position: int            # where its external.ingested record sits on the ledger
+    event_id: str
+    at: datetime
+    source: str
+    channel: str
+    weight: float            # the item's own score for this goal (its matched wake conditions)
+    key: str                 # the data plane's clustering key of its text
+    words: frozenset = field(repr=False, default=frozenset())
+
+
+@dataclass
+class _Side:
+    """One side of a claim: the sources counted for it, their weight, and whether the goal already woke on it."""
+    sources: list = field(default_factory=list)
+    weight: float = 0.0
+    spent: bool = False
+
+
+@dataclass
+class _Claim:
+    """One claim inside a goal's window and the two sides it is asserted on: as first worded, and denied."""
+    words: frozenset
+    first: int               # ledger position of the report that first made it (its wording is read there)
+    sides: tuple = field(default_factory=lambda: (_Side(), _Side()))
+
+    def worth(self) -> float:
+        """Sources that agree add up; the two sides never add to each other: the heavier unspent side counts."""
+        return max((side.weight for side in self.sides if not side.spent), default=0.0)
+
+
+class IntakeAccumulation:
+    """What a goal's untrusted intake adds up to, folded from the body ledger. Timing only, never a belief.
+
+    Per goal, the relevant reports of its signed window (``intersection_window_seconds``) are grouped into
+    claims: the data plane's clustering key, or the same words edited (``_same_claim``). One source adds one
+    unit per claim, capped by the data plane's campaign rule (``dataplane.claim_support``). A report that
+    denies a claim counts on that claim's other side, and the sides never add to each other. A goal's wake
+    record spends every report that had arrived by then, so a claim the goal already woke on adds nothing when
+    it is repeated. A new report is worth every unspent unit in its window when it adds one itself, and
+    nothing when it does not.
+
+    Nothing is stored. The reports are read from the ledger (``refresh``), so a fresh Body derives the same
+    ones and a restart changes no wake. Each goal keeps at most ``INTAKE_WINDOW_ITEMS`` reports."""
+
+    def __init__(self, ledger, registry: GoalRegistry, missions):
+        self.ledger, self.registry, self._missions = ledger, registry, missions
+        self._cursor = 0                          # ledger records read so far
+        self.reports: dict[str, deque] = {}       # goal -> its latest relevant reports, in ledger order
+        self.woken_at: dict[str, int] = {}        # goal -> ledger position of its latest wake record
+        self._folded: dict[str, tuple] = {}       # goal -> (what it was counted from, claims, what each added)
+
+    def refresh(self) -> None:
+        """Fold the ledger records appended since the last call. A goal's reports start at its authorization."""
+        records = self.ledger.records
+        for position, rec in enumerate(records[self._cursor:], self._cursor):
+            if rec.record_type == GoalRegistry.AUTHORIZED_RECORD:
+                self.reports.setdefault((rec.payload.get("goal") or {}).get("goal_id"),
+                                        deque(maxlen=INTAKE_WINDOW_ITEMS))
+            elif rec.record_type == GoalRegistry.TRANSITION_RECORD and "signal_ids" in rec.payload:
+                self.woken_at[rec.payload.get("goal_id")] = position  # GoalRegistry.wake, whatever woke it
+            elif rec.record_type == "event" and rec.payload.get("type") == "greg.external.ingested":
+                self._note(position, rec.payload)
+        self._cursor = len(records)
+
+    def _note(self, position: int, event: dict) -> None:
+        p = event.get("payload") or {}
+        at = _when(p.get("at"))
+        if p.get("quarantined") or at is None:
+            return                                 # quarantined, or stamped with no readable time: never counted
+        content = p.get("content", "")
+        about, _ = intake_about(content, self._missions(), self.registry)
+        payload = {"tags": [p.get("channel")], "domain": p.get("channel"), "intake": True, "about": about}
+        for goal_id in self.registry.goals():
+            kept = self.reports.get(goal_id)
+            if kept is None:
+                continue                           # this goal was authorized after the item arrived
+            weight, _ = intake_score(self.registry.get(goal_id), SimpleNamespace(payload=payload))
+            if weight > 0:                         # an item that is not about the goal never accumulates
+                kept.append(_Report(position=position, event_id=event["event_id"], at=at,
+                                    source=str(p.get("source")), channel=str(p.get("channel")), weight=weight,
+                                    key=dataplane.claim_key(content), words=_claim_words(content)))
+
+    def weigh(self, spec: GoalSpec, event_id: str, own: float) -> float:
+        """The score of one new relevant item for one goal: the goal's unspent intake if the item adds to it."""
+        self.refresh()
+        if not any(r.event_id == event_id for r in self.reports.get(spec.goal_id, ())):
+            return own       # recorded before the goal was authorized, or beyond the bound: judged alone
+        _, added = self._fold(spec)
+        return sum(added.values()) if added.get(event_id, 0.0) > 0 else 0.0
+
+    def _fold(self, spec: GoalSpec) -> tuple[list, dict]:
+        """Count the goal's reports in its signed window, which ends at the latest one:
+        (claims, {report event id: what it added}). Kept until a new report or a mute changes it, so a burst of
+        reports in one turn is counted once. (A wake changes nothing before the next report: every report it
+        spends lies before it.)"""
+        reports = self.reports.get(spec.goal_id, ())
+        if not reports:
+            return [], {}
+        woken = self.woken_at.get(spec.goal_id, -1)
+        muted = tuple(sorted(self.registry.state(spec.goal_id).preferences.get("do_not_monitor", [])))
+        state = (reports[-1].position, muted)
+        if self._folded.get(spec.goal_id, (None,))[0] != state:
+            start = reports[-1].at - timedelta(seconds=spec.intersection_window_seconds)
+            claims: list[_Claim] = []
+            placed: dict[str, tuple] = {}          # clustering key -> (its claim, the side it is on)
+            added = {}
+            for report in reports:
+                if report.at <= start or report.channel in muted:
+                    continue                       # outside the signed window, or on a channel the founder muted
+                added[report.event_id] = self._count(claims, placed, report, spent=report.position < woken)
+            self._folded[spec.goal_id] = (state, claims, added)
+        return self._folded[spec.goal_id][1:]
+
+    def view(self, spec: GoalSpec) -> dict:
+        """What the goal's intake adds up to as of its latest report, for the founder. Counts only: no text."""
+        self.refresh()
+        reports = self.reports.get(spec.goal_id, ())
+        woken = self.woken_at.get(spec.goal_id, -1)
+        claims, added = self._fold(spec)
+        waiting = [added[r.event_id] for r in reports if r.event_id in added and r.position > woken]
+        return {"as_of": iso(reports[-1].at) if reports else None,
+                "window_seconds": spec.intersection_window_seconds, "wake_threshold": spec.wake_threshold,
+                "reports_in_window": len(added), "claims": len(claims),
+                "claims_disputed": sum(1 for c in claims if all(side.sources for side in c.sides)),
+                "used_by_the_last_wake": len(added) - len(waiting),
+                "waiting_weight": sum(waiting),
+                "waiting_reports_that_added_nothing": sum(1 for a in waiting if a <= 0),
+                "rule": f"one unit per source per claim, at most {dataplane.claim_support(INTAKE_WINDOW_ITEMS)} "
+                        "sources per claim; the two sides of a claim never add to each other; a wake uses up "
+                        f"what had arrived; at most {INTAKE_WINDOW_ITEMS} reports are kept",
+                "tier": "timing only: when the goal's signed missions look, never a belief about the world"}
+
+    def _count(self, claims: list, placed: dict, report: _Report, *, spent: bool) -> float:
+        """Add one report to its claim; return what the goal's unspent intake grew by."""
+        claim, side = self._place(claims, placed, report)
+        before = claim.worth()
+        side.spent = side.spent or spent
+        if report.source not in side.sources \
+                and dataplane.claim_support(len(side.sources) + 1) > dataplane.claim_support(len(side.sources)):
+            side.sources.append(report.source)
+            side.weight += report.weight
+        return claim.worth() - before
+
+    def _place(self, claims: list, placed: dict, report: _Report) -> tuple:
+        """The claim a report restates and the side it takes; a report that restates none opens a new claim."""
+        if report.key not in placed:
+            claim = next((c for c in claims if _same_claim(report.words, c.words)), None)
+            if claim is None:
+                claim = _Claim(words=report.words, first=report.position)
+                claims.append(claim)
+                placed[report.key] = (claim, claim.sides[0])
+            else:
+                denied = _opposed(self._text(report.position), self._text(claim.first))
+                placed[report.key] = (claim, claim.sides[int(denied)])
+        return placed[report.key]
+
+    def _text(self, position: int) -> str:
+        """An intake item's wording, read from the ledger when two near-identical wordings must be told apart."""
+        return str((self.ledger.records[position].payload.get("payload") or {}).get("content", ""))
+
+
 class BodyRelevanceRouter(GoalRelevanceRouter):
     """The GREG body's relevance router: untrusted intake counts for a goal by what its content is about.
 
     An intake item that names a goal's subject (a bound mission's id or targets, a relevant entity) matches the
     goal's subject conditions on any channel, and its channel (domain, tag) counts too. An item that names none
-    of them is noise for that goal whatever channel it came on. Every other signal scores exactly as in egregore."""
+    of them is noise for that goal whatever channel it came on. Every other signal scores exactly as in egregore.
+
+    With ``intake`` set (``binding_for``), a relevant item scores what the goal's intake adds up to, by
+    independent source (``IntakeAccumulation``); egregore's router still decides muting, stops and the
+    threshold after scoring."""
+
+    intake: IntakeAccumulation | None = None
 
     def score(self, spec: GoalSpec, signal: SignalEnvelope, observations):
         about = signal.payload.get("about")
         if not signal.payload.get("intake") or not isinstance(about, list):
             return super().score(spec, signal, observations)
-        named = sorted(goal_subjects(spec) & set(about))
-        if not named:
-            bare = {k: v for k, v in signal.payload.items() if k not in ("domain", "tags")}
-            return score_signal(spec, SimpleNamespace(payload=bare), observations)
-        return score_signal(spec, signal, list(observations) + [_Mention(s) for s in named])
+        own, matched = intake_score(spec, signal, observations)
+        if own <= 0 or self.intake is None:
+            return own, matched
+        return self.intake.weigh(spec, signal.source_event_id, own), matched
 
 
 @dataclass
@@ -933,6 +1150,7 @@ def binding_for(body) -> _Binding:
                                actor=body.identity.passport_id, legal_principal=PRINCIPAL,
                                genomes=_Genomes(body.registry), body_mode=True, attention_store=store)
         loop.router = BodyRelevanceRouter(loop.registry)   # same registry; content-aware scoring of intake only
+        loop.router.intake = IntakeAccumulation(body.ledger, loop.registry, lambda: body.engine.book)
         store.registry = loop.registry
         held = _Binding(loop=loop, store=store)
         body._goal_gravity = held
@@ -1607,6 +1825,7 @@ def evidence(journal, goal_id: str) -> dict:
         "turns": [r.hash for r in ledger.by_type(GoalGravityLoop.TURN_RECORD)
                   if any(p["goal_id"] == gid for p in r.payload["turn"]["processed"])],
         "experiences": WorldModel(ledger=ledger).evidence_for_goal(gid)[0],
+        "intake": IntakeAccumulation(ledger, reg, lambda: book).view(spec),
         # an answer row the mission book does not count is shown too, labelled: answer_counted is False
         "asks": [{"request_id": rid, "answer": (_answer_row(book, rid) or {}).get("answer"),
                   "answer_command": (_answer_row(book, rid) or {}).get("command_digest"),

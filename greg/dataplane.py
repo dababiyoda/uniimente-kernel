@@ -228,7 +228,23 @@ def _normal(text: str) -> str:
     return words or folded.strip()
 
 
-def community_evidence(journal: Journal, channel: str, *, campaign_sources: int = 3) -> dict:
+CAMPAIGN_SOURCES = 3    # the same normalised text from this many sources is flagged as a possible campaign
+
+
+def claim_key(content: str) -> str:
+    """One claim's clustering key: the digest of its normalised text (``_normal``). Texts that differ only in
+    case, punctuation or spacing are one claim."""
+    return hashlib.sha256(_normal(content).encode()).hexdigest()
+
+
+def claim_support(sources: int, campaign_sources: int = CAMPAIGN_SOURCES) -> int:
+    """Units of weight a claim made by ``sources`` distinct sources carries: one per source, and never more than
+    ``campaign_sources - 1`` (sybils gain nothing over that many identities). Goal Gravity counts intake with
+    the same rule (greg/goal_gravity.py), so a wake and a community report weigh a claim alike."""
+    return min(sources, max(1, campaign_sources - 1))
+
+
+def community_evidence(journal: Journal, channel: str, *, campaign_sources: int = CAMPAIGN_SOURCES) -> dict:
     """Typed, manipulation-resistant community evidence with preserved minority reports. Never authority.
 
     * one source carries one unit of weight per claim, whatever its volume (brigading by repetition fails);
@@ -248,7 +264,7 @@ def community_evidence(journal: Journal, channel: str, *, campaign_sources: int 
     clusters: dict[str, dict] = {}
     for item in items:
         normal = _normal(item["content"])
-        key = hashlib.sha256(normal.encode()).hexdigest()
+        key = claim_key(item["content"])
         c = clusters.setdefault(key, {"text": item["content"][:500], "sources": set(), "first_at": item["at"],
                                       "kinds": set()})
         c["sources"].add(item["source"])
@@ -259,7 +275,7 @@ def community_evidence(journal: Journal, channel: str, *, campaign_sources: int 
     flagged = []
     for key, c in sorted(clusters.items()):
         campaign = len(c["sources"]) >= campaign_sources
-        weight = min(len(c["sources"]), max(1, campaign_sources - 1))
+        weight = claim_support(len(c["sources"]), campaign_sources)
         if campaign:
             flagged.append({"claim": c["text"][:200], "sources": len(c["sources"]),
                             "flag": "COORDINATED_CAMPAIGN_SUSPECTED", "counted_as": weight})

@@ -1073,21 +1073,36 @@ def signed_answer(signed: dict, request_id: str, answer: Any) -> dict | None:
     return cmd
 
 
+# What an answer to each kind of founder ask can still authorize once it is recorded. Every ask kind raised anywhere
+# in greg/ is in exactly one class (tests/unit/test_greg_revoked_device_authority.py scans the source and pins it),
+# so a new kind cannot appear without deciding what a device revocation does to its answers.
+# - GATE_SCOPE_ASKS: an "approve" puts the ask's exact scope into the mission's ``approved_scopes``, where
+#   AuthorityOffice.act honours it for as long as it stays: an action or a compensation outside the cone or needing
+#   a human (APPROVAL), a read-only observation outside the cone (SENSOR_SCOPE).
+# - RECONCILIATION_ASKS: a reconcile_* answer settles one interrupted dispatch when the engine records it.
+# - NO_AUTHORITY_ASKS: an answer only lets the mission look again or closes the ask; with greg.asks
+#   ANSWER_ONLY_RECORDS (an answer is a record) and NOT_ANSWERABLE (no DECISION closes it), nothing to void.
+GATE_SCOPE_ASKS = ("APPROVAL", "SENSOR_SCOPE")
+RECONCILIATION_ASKS = ("RECONCILIATION",)
+NO_AUTHORITY_ASKS = ("NO_STRATEGY", "SENSOR_FAILURE", "COMPUTE", "BODY_AVAILABILITY")
+
+
 def unused_authority(request: dict, answer: dict, *, consumed: bool, reconciled: bool) -> str | None:
     """What a recorded answer still authorizes that has not happened yet, or None (founder policy 2026-11-11: a
     revoked device's unused authority authorizes no new effect; ``MissionBook`` voids exactly these).
 
-    - ``approval``: an approve of an APPROVAL ask. An unpaid exact scope stands for the mission's lifetime, so it is
-      never used up; a paid one funds one run and is used once that run happened (``consumed``).
+    - ``approval``: an approve of an ask whose scope the Gate honours (``GATE_SCOPE_ASKS``). An unpaid exact scope
+      stands for the mission's lifetime, so it is never used up; a paid one funds one run and is used once that run
+      happened (``consumed``).
     - ``reconciliation``: a reconcile_* answer the engine has not recorded yet (``reconciled``). It would book or
       release an interrupted dispatch, and "not executed" lets the action be dispatched again.
 
     A rejection authorizes nothing, and neither does an answer that is only a record (greg.asks
-    ANSWER_ONLY_RECORDS) or one that only lets the mission look again (NO_STRATEGY, SENSOR_FAILURE)."""
+    ANSWER_ONLY_RECORDS) or one that only lets the mission look again (``NO_AUTHORITY_ASKS``)."""
     kind, given = request.get("kind"), answer.get("answer")
-    if kind == "APPROVAL" and given == "approve" and not consumed:
+    if kind in GATE_SCOPE_ASKS and given == "approve" and not consumed:
         return "approval"
-    if kind == "RECONCILIATION" and str(given).startswith("reconcile_") and not reconciled:
+    if kind in RECONCILIATION_ASKS and str(given).startswith("reconcile_") and not reconciled:
         return "reconciliation"
     return None
 
@@ -1500,20 +1515,19 @@ class MissionBook:
         kid = data.get("device_key_id")
         for rid, answer in list(self.answers.items()):
             key, principal = self._signer_of.get(answer.get("command_digest"), (None, ""))
-            if key != kid or not principal.startswith("device:") or rid in self.voided \
-                    or (self.withdrawn.get(rid) or {}).get("voids_approval"):
-                continue                     # another key's or the founder's, or already void (a restore, a failed run)
+            if key != kid or not principal.startswith("device:") or rid in self.voided:
+                continue                     # another key's or the founder's, or one this key's revocation voided
             request = self.requests.get(rid) or {}
             unused = unused_authority(request, answer, consumed=rid in self.consumed,
                                       reconciled=rid in self._reconciled)
-            if unused is None:
+            if unused is None:               # used, or withdrawn before (a restore, a failed run: both use it up)
                 continue
             approval = unused == "approval"
             record = {
                 "request_id": rid, "mission_id": answer.get("mission_id"), "voids_answer": True,
                 **({"voids_approval": True} if approval else {}),
                 "why": (f"signed by {principal} ({kid}), a device key revoked at {data.get('at')}: "
-                        + ("its approval no longer authorizes a new action" if approval else
+                        + ("its approval no longer authorizes a new dispatch" if approval else
                            "its unrecorded reconciliation answer settles nothing")
                         + "; what already ran under it stays as recorded, and the decision is asked again")[:400],
                 "voided_by": {"device_key_id": kid, "signer": principal, "revocation_event": event_id,

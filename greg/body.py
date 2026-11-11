@@ -37,7 +37,8 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from compiler.ucl_compiler import compile_constitution
 from events.spine import EventSpine
-from greg import anchor, asks, compute, dataplane, doctor, gravity, improvement, metrics, models, presence, sop, tribunal
+from greg import (anchor, asks, compute, dataplane, doctor, gravity, improvement, metrics, models, presence,
+                  revocation, sop, tribunal)
 from greg.authority import AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityRegistry, SecretBroker
 from greg.founder import FounderAuthError, FounderVerifier, instant, key_id, spent_nonce, validate_device_grant
@@ -764,21 +765,27 @@ class Body:
             # Founder policy 2026-11-11: from this record on, nothing the key approved and that was not yet used
             # authorizes a new effect (the mission fold derives that from the record, greg/missions.py); what
             # already ran under it keeps its receipts. ``suspected_compromise`` also opens a retrospective review.
-            from greg import revocation
             kid, suspected = revocation.revoke_fields(body)
-            retained = self.journal.retained("device.revoked", [kid, digest])
-            if retained is None:      # else: this very command revoked it before a stop; finish its acceptance
+            revoked = self.journal.retained("device.revoked", [kid, digest])
+            if revoked is None:       # else: this very command revoked it before a stop; finish its acceptance
+                marks = None
                 if kid not in self.device_keys():
-                    raise MissionError("revocation needs exactly one currently delegated device_key_id")
-                self.journal.record("device.revoked", {"device_key_id": kid, "command_digest": digest,
-                                                       "at": iso(self.clock()),
-                                                       **({revocation.SUSPECTED: True} if suspected else {})},
-                                    key=[kid, digest])
-            trail = revocation.settle(self.journal, self.engine.book)
+                    # A suspicion that arises after the key was revoked: the same command with suspected_compromise
+                    # opens the review of that standing revocation, once. It revokes nothing more.
+                    marks = revocation.unreviewed_revocation(self.journal, kid) if suspected else None
+                    if marks is None:
+                        raise MissionError("revocation needs exactly one currently delegated device_key_id"
+                                           + (", or a revoked one whose revocation has no integrity review yet"
+                                              if suspected else ""))
+                revoked = self.journal.record("device.revoked", {
+                    "device_key_id": kid, "command_digest": digest, "at": iso(self.clock()),
+                    **({revocation.SUSPECTED: True} if suspected else {}),
+                    **({"marks_revocation": marks} if marks else {})}, key=[kid, digest])
+            revocation.settle(self.journal, self.engine.book)
             voided = sorted(rid for rid, v in self.engine.book.voided.items()
                             if v["voided_by"].get("revocation_command") == digest)
             return {"device_key_id": kid, "revoked": True, **({"voided_requests": voided} if voided else {}),
-                    **({"integrity_review": trail["reviews"][0]} if suspected and trail["reviews"] else {})}
+                    **({"integrity_review": revocation.review_id(revoked)} if suspected else {})}
         if kind == "ANCHOR_CONFIGURE":
             try:
                 return anchor.configure(self.journal, body, digest)
@@ -1008,7 +1015,6 @@ class Body:
             return {"commands": commands, "stopped": True}
         # The trail of a device revocation (what it voided, the review a suspected compromise opens), finished here
         # if the body stopped between the revocation and its trail. Paused or not: it is a record, not an action.
-        from greg import revocation
         revocation.settle(self.journal, self.engine.book)
         if self.paused():
             hold = crash_loop_hold(self.journal)
@@ -1430,8 +1436,7 @@ def status(home: str | Path) -> dict:
                          "devices": [{k: d[k] for k in ("device_key_id", "label", "kinds", "expires_at")}
                                      for d in device_delegations(journal).values()],
                          # what each revocation voided, and the review a suspected compromise opened
-                         "device_revocations": __import__("greg.revocation", fromlist=["summary"]).summary(
-                             journal, book),
+                         "device_revocations": revocation.summary(journal, book),
                          "stop_file_present": layout.stop_file.exists(),
                          "pause_file_present": layout.pause_file.exists(),
                          "crash_loop_hold": (crash_loop_hold(journal) or {}).get("why"),

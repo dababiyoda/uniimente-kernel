@@ -15,12 +15,17 @@ import json
 
 import pytest
 
-from greg import asks, goal_gravity, revocation
+from greg import asks, goal_gravity
 from greg.body import Body, status
 from greg.founder import generate_founder_key, key_id, load_founder_key, sign_command, stamp
 from greg.missions import MissionBook, MissionError
 from provenance.ledger import sha256_json
 from tests.greg_fixtures import Clock, drop, make_body, mission, note_check, workspace, write_strategy
+
+try:                        # absent on the integration head 8d205324, where this file is copied to show what fails there
+    from greg import revocation
+except ImportError:
+    revocation = None
 
 
 class World:
@@ -200,6 +205,99 @@ def test_a_paused_body_voids_the_approval_and_acts_on_nothing_when_it_is_resumed
         world.tick(body, 4)
         assert not note.exists() and actions(body, "m:gated") == []
         assert [r["request_id"] for r in open_asks(body, "m:gated")] != [ask["request_id"]]
+
+
+def sensor_outside_the_cone(world, body, mid="m:scope"):
+    """A standing mission whose check reads with a capability outside its cone: it asks (SENSOR_SCOPE) first."""
+    folder = world.tmp / "data" / "d"
+    folder.mkdir(exist_ok=True)
+    check = {"check_id": "listed", "description": "the folder is listed", "predicate": {"op": "exists",
+             "field": "entries"}, "sensor": {"capability": "fs.list", "params": {"path": str(folder)}, "target": "fs:d"}}
+    body.apply(world.sign("MISSION", mission(mid, checks=[check], strategies=[], capabilities=["fs.read"],
+                                             ceiling="read_only",
+                                             closure={"kind": "infinite", "ladder": [["listed"]], "cadence_seconds": 60})))
+    world.tick(body, 2)
+    [ask] = open_asks(body, mid, kind="SENSOR_SCOPE")
+    return ask
+
+
+def approved_grants(body):
+    return [r.payload for r in body.ledger.by_type("event")
+            if r.payload.get("type") == "greg.authority.grant_issued" and r.payload.get("founder_approved_scope")]
+
+
+def test_a_sensor_scope_approval_of_a_revoked_device_admits_no_further_observation(world):
+    """An approve of a SENSOR_SCOPE ask puts the observation's exact scope where the Gate honours it, for the
+    mission's lifetime. Reproduced on the first draft of this change, which voided APPROVAL asks only: the Gate
+    granted two more out-of-cone reads after the revocation."""
+    with world.body() as body:
+        phone = world.enroll(body, "phone")
+        ask = sensor_outside_the_cone(world, body)
+        body.apply(world.approve(ask["request_id"], key=phone))
+        world.tick(body, 2)
+        read = approved_grants(body)
+        assert len(read) == 1 and read[0]["scope_digest"] == ask["scope_digest"]
+        observed = [e.payload for e in body.journal.replay("mission.observed")]
+        result = body.apply(world.revoke("phone", suspected_compromise=True))["result"]
+        assert result["voided_requests"] == [ask["request_id"]]
+        for _ in range(3):                                       # the cadence passes: the mission would read again
+            world.clock.advance(61)
+            world.tick(body, 2)
+        assert approved_grants(body) == read                     # nothing more was granted on the voided approval
+        assert [e.payload for e in body.journal.replay("mission.observed")] == observed   # and the reading stays
+        m = body.engine.book.missions["m:scope"]
+        assert m.approved_scopes == set()
+        [again] = open_asks(body, "m:scope", kind="SENSOR_SCOPE")
+        assert again["request_id"] != ask["request_id"] and again["scope_digest"] == ask["scope_digest"]
+        assert m.blocker["request_id"] == again["request_id"]
+        [void] = trail(body, ask["request_id"])
+        assert void["voids_approval"] is True and void["kind"] == "SENSOR_SCOPE"
+        # the review lists the observation that was read under the approval, with its receipt
+        [review] = [e.payload for e in body.journal.replay(revocation.REVIEW_RECORD)]
+        [command] = review["commands"]
+        assert command["request_kind"] == "SENSOR_SCOPE" and command["standing"].startswith("VOIDED_BY_THIS_REVOCATION")
+        [effect] = review["effects"]
+        assert effect["effect"] == "an observation read under its approval" and effect["check_id"] == "listed"
+        assert effect["receipt"] == observed[-1]["receipt"] and effect["grant_id"] == read[0]["grant_id"]
+        assert review["receipts"] == [effect["receipt"]]
+        body.apply(world.approve(again["request_id"]))            # the founder's own approval stands again
+        world.clock.advance(61)
+        world.tick(body, 2)
+        assert len(approved_grants(body)) == 2
+        assert body.ledger.verify_chain()[0]
+
+
+def test_every_kind_of_founder_ask_is_classified_for_revocation():
+    """A revocation voids the answers that still authorize something, by the kind of ask they answer. Every kind
+    raised anywhere in greg/ is in exactly one class, so a new kind cannot be added without deciding it (the first
+    draft of this change missed SENSOR_SCOPE, whose approve the Gate honours)."""
+    import re
+    from pathlib import Path
+    from greg import missions
+    from greg.body import HOLD_ASK
+    from greg.founder import COMMAND_KINDS
+    root = Path(__file__).resolve().parents[2] / "greg"
+    raised = {HOLD_ASK, revocation.REVIEW_ASK}
+    for path in root.rglob("*.py"):
+        raised |= set(re.findall(r'''(?:\bkind\s*=\s*|["']kind["']\s*:\s*)["']([A-Z][A-Z_]+)["']''',
+                                 path.read_text(encoding="utf-8")))
+    raised -= set(COMMAND_KINDS) - {"CAPABILITY_ATTACH"}        # CAPABILITY_ATTACH is a command and an ask
+    assert {"APPROVAL", "SENSOR_SCOPE", "RECONCILIATION", "HUMAN_JUDGMENT", "COMPUTE"} <= raised   # the scan finds them
+    classes = [set(missions.GATE_SCOPE_ASKS), set(missions.RECONCILIATION_ASKS), set(missions.NO_AUTHORITY_ASKS),
+               set(asks.ANSWER_ONLY_RECORDS), set(missions.NOT_ANSWERABLE)]
+    assert sorted(raised - set().union(*classes)) == []         # every kind is decided
+    assert sum(len(c) for c in classes) == len(set().union(*classes))   # in exactly one class
+    # what the classes mean, on the rule itself
+    for kind in sorted(raised):
+        request, approve = {"kind": kind}, {"answer": "approve"}
+        expected = "approval" if kind in missions.GATE_SCOPE_ASKS else None
+        assert missions.unused_authority(request, approve, consumed=False, reconciled=False) == expected, kind
+        assert missions.unused_authority(request, approve, consumed=True, reconciled=False) is None
+        assert missions.unused_authority(request, {"answer": "reject"}, consumed=False, reconciled=False) is None
+        settles = "reconciliation" if kind in missions.RECONCILIATION_ASKS else None
+        for answer in ("reconcile_executed", "reconcile_not_executed"):
+            assert missions.unused_authority(request, {"answer": answer}, consumed=False, reconciled=False) == settles
+            assert missions.unused_authority(request, {"answer": answer}, consumed=False, reconciled=True) is None
 
 
 # -- b. what was completed keeps its receipts ----------------------------------------------------------------------
@@ -438,6 +536,25 @@ def test_a_revocation_record_naming_the_founder_key_voids_no_founder_approval(wo
         assert verdict["verdict"] == "VERIFIED" and verdict["checks"]["approval_boundaries_honored"], verdict
 
 
+def test_an_approval_already_withdrawn_is_not_voided_a_second_time(world):
+    """A standing approval that failure evidence already withdrew (greg/autonomy.py ``regress`` writes this row) is
+    asked again by that withdrawal. Revoking the device that signed it finds nothing unused: no second record."""
+    with world.body() as body:
+        phone = world.enroll(body, "phone")
+        note, ask = asked(world, body)
+        body.apply(world.approve(ask["request_id"], key=phone))
+        body.journal.record("decision.withdrawn", {
+            "request_id": ask["request_id"], "mission_id": "m:gated", "voids_approval": True,
+            "why": "a run of w under this approval failed; the approval no longer stands",
+            "at": stamp(world.clock())}, key=[ask["request_id"], "withdrawn", "regressed"])
+        body.apply(world.revoke("phone"))
+        world.tick(body, 2)
+        assert body.engine.book.voided == {} and trail(body) == []
+        assert len([e for e in body.journal.replay("decision.withdrawn")
+                    if e.payload["request_id"] == ask["request_id"]]) == 1
+        assert not note.exists() and len(open_asks(body, "m:gated")) == 1
+
+
 def test_a_devices_rejection_stands_after_its_revocation(world):
     """A rejection authorizes nothing, so there is nothing to void: it stays the recorded decision."""
     with world.body() as body:
@@ -494,8 +611,14 @@ def test_an_unrecorded_reconciliation_answer_of_a_revoked_device_settles_nothing
         [again] = open_asks(body, "m:uncertain", kind="RECONCILIATION")
         assert again["request_id"] != ask["request_id"]
         assert again["authority_requested"] == ask["authority_requested"]     # the same one dispatch
+        # a suspicion signed later is a second revocation record of the same key: it voids nothing a second time
+        marked = body.apply(world.revoke("phone", suspected_compromise=True))["result"]
+        assert "voided_requests" not in marked
         [void] = trail(body, ask["request_id"])
         assert "voids_approval" not in void and void["voids_answer"] is True and void["kind"] == "RECONCILIATION"
+        assert void["voided_by"]["revocation_event"] == body.journal.replay("device.revoked")[0].event_id
+        [review] = [e.payload for e in body.journal.replay(revocation.REVIEW_RECORD)]
+        assert review["voided_by_this_revocation"] == [ask["request_id"]] and review["effects"] == []
         body.apply(world.approve(again["request_id"], answer="reconcile_not_executed"))   # the founder's own answer
         world.tick(body, 4)
         assert [a["status"] for a in actions(body, "m:uncertain")] == ["UNCERTAIN", "RECONCILED_NOT_EXECUTED", "DONE"]
@@ -577,6 +700,29 @@ def test_an_uncertain_dispatch_under_a_devices_approval_stays_and_its_retry_need
         assert len(calls) == 1 and not note.exists()                       # no retry on the voided approval
         [again] = open_asks(body, mid)
         assert again["request_id"] != ask["request_id"]
+
+
+def test_a_dispatch_the_founder_reconciles_as_executed_after_the_revocation_keeps_its_approval(world):
+    """The device approved, the dispatch's completion was unknown, the device was revoked, and the founder then
+    answered that it did run. It was dispatched before the revocation, so its approval was in force: the separate
+    appraiser finds the approval boundary honoured (it still cannot verify a run that has no Gate receipt)."""
+    mid = "m:gated"
+    with world.body() as body:
+        body.boot()
+        phone = world.enroll(body, "phone")
+        note, ask = asked(world, body, mid=mid)
+        calls = explode_once(body, after_effect=True)
+        body.apply(world.approve(ask["request_id"], key=phone))
+        world.tick(body, 2)
+        [question] = open_asks(body, mid, kind="RECONCILIATION")
+        body.apply(world.revoke("phone"))
+        world.tick(body, 2)
+        body.apply(world.approve(question["request_id"], answer="reconcile_executed"))
+        world.tick(body, 4)
+        assert [a["status"] for a in actions(body, mid)] == ["UNCERTAIN", "DONE"] and len(calls) == 1
+        verdict = body.journal.replay("mission.appraised")[-1].payload
+        assert verdict["checks"]["approval_boundaries_honored"] is True, verdict["findings"]
+        assert not [f for f in verdict["findings"] if "approval that was void" in f]
 
 
 # -- e. it holds across a restart -----------------------------------------------------------------------------------
@@ -712,14 +858,64 @@ def test_only_a_currently_delegated_key_is_revoked(world):
     with world.body() as body:
         world.enroll(body, "phone")
         body.apply(world.revoke("phone"))
-        with pytest.raises(MissionError, match="currently delegated"):
-            body.apply(world.revoke("phone", suspected_compromise=True))      # already revoked: a new command
-        with pytest.raises(MissionError, match="currently delegated"):
-            body.apply(world.sign("DEVICE_REVOKE", {"device_key_id": "ed25519:" + "0" * 32}))
+        with pytest.raises(MissionError, match="currently delegated device_key_id$"):
+            body.apply(world.revoke("phone"))                                 # already revoked, exactly as before
+        for never in ({}, {"suspected_compromise": True}):                    # a key that was never delegated
+            with pytest.raises(MissionError, match="currently delegated"):
+                body.apply(world.sign("DEVICE_REVOKE", {"device_key_id": "ed25519:" + "0" * 32, **never}))
         with pytest.raises(MissionError, match="currently delegated"):
             body.apply(world.sign("DEVICE_REVOKE", {"device_key_id": [world.kid("phone")]}))   # a key id is text
         assert len(body.journal.replay("device.revoked")) == 1
         assert body.journal.replay(revocation.REVIEW_RECORD) == []
+
+
+def test_a_suspicion_after_a_plain_revocation_opens_the_review_once(world):
+    """The phone is revoked first; the suspicion comes later. The founder signs DEVICE_REVOKE for the revoked key
+    again, with suspected_compromise: it revokes nothing more and opens the review of that revocation, once."""
+    with world.body() as body:
+        phone = world.enroll(body, "phone")
+        note, ask = asked(world, body)
+        decision = world.approve(ask["request_id"], key=phone)
+        body.apply(decision)
+        plain = body.apply(world.revoke("phone"))["result"]
+        assert plain == {"device_key_id": world.kid("phone"), "revoked": True, "voided_requests": [ask["request_id"]]}
+        world.tick(body, 2)
+        [first] = body.journal.replay("device.revoked")
+        assert body.journal.replay(revocation.REVIEW_RECORD) == []
+        marked = body.apply(world.revoke("phone", suspected_compromise=True))["result"]
+        [_, mark] = body.journal.replay("device.revoked")
+        assert mark.payload["marks_revocation"] == first.event_id and mark.payload["suspected_compromise"] is True
+        [review] = [e.payload for e in body.journal.replay(revocation.REVIEW_RECORD)]
+        assert marked == {"device_key_id": world.kid("phone"), "revoked": True, "integrity_review": review["review_id"]}
+        assert review["revocation"]["marks_revocation"] == first.event_id
+        assert [c["command_digest"] for c in review["commands"]] == [sha256_json(decision)]
+        assert review["commands"][0]["standing"].startswith("VOIDED_BY_THIS_REVOCATION")
+        assert review["voided_by_this_revocation"] == [ask["request_id"]]
+        # it revoked and voided nothing more: one withdrawal, by the first revocation; no key is delegated
+        [void] = trail(body, ask["request_id"])
+        assert void["voided_by"]["revocation_event"] == first.event_id and body.device_keys() == {}
+        with pytest.raises(MissionError, match="no integrity review yet"):   # once: the review is open
+            body.apply(world.revoke("phone", suspected_compromise=True))
+        world.tick(body, 3)
+        assert len(body.journal.replay("device.revoked")) == 2 and len(body.journal.replay(revocation.REVIEW_RECORD)) == 1
+        assert not note.exists() and body.ledger.verify_chain()[0]
+    rows = status(world.home)["security"]["device_revocations"]
+    assert [r.get("marks_revocation") for r in rows] == [None, first.event_id]
+    assert rows[0]["voided_requests"] == [ask["request_id"]] and rows[1]["integrity_review"]["state"] == "OPEN"
+    assert "integrity_review" not in rows[0]                 # the plain revocation itself opened none
+    # delegated again and revoked as suspected: that is a new revocation with its own review
+    with world.body() as body:
+        world.clock.advance(60)
+        world.enroll(body, "phone")
+        again = body.apply(world.revoke("phone", suspected_compromise=True))["result"]
+        assert again["integrity_review"] != marked["integrity_review"]
+        assert len(body.journal.replay(revocation.REVIEW_RECORD)) == 2
+        # and each later delegation starts clean: revoked plainly, its revocation can be marked in its turn
+        world.clock.advance(60)
+        world.enroll(body, "phone")
+        body.apply(world.revoke("phone"))
+        body.apply(world.revoke("phone", suspected_compromise=True))
+        assert len(body.journal.replay(revocation.REVIEW_RECORD)) == 3
 
 
 @pytest.mark.parametrize("extra", [{"suspected_compromise": False}, {"suspected_compromise": "yes"},
@@ -795,6 +991,79 @@ def test_a_suspected_compromise_review_lists_exactly_the_devices_commands_and_re
                               key=phone))
         world.tick(body, 2)
         assert revocation.build_review(body.journal, revoked) == review
+
+
+def test_a_review_that_cannot_be_built_is_recorded_as_such_and_the_body_keeps_turning(world, monkeypatch):
+    """A review is a reading over everything a suspected key signed. If that reading fails, the revocation and its
+    void still hold, the failure is recorded once as the review, the founder is still asked, and the body's turn
+    (also a paused body's) never stops on it."""
+    def broken(journal, revoked):
+        raise KeyError("a record the reading did not expect")
+    monkeypatch.setattr(revocation, "build_review", broken)
+    with world.body() as body:
+        phone = world.enroll(body, "phone")
+        note, ask = asked(world, body)
+        body.apply(world.approve(ask["request_id"], key=phone))
+        result = body.apply(world.revoke("phone", suspected_compromise=True))["result"]
+        assert result["voided_requests"] == [ask["request_id"]]
+        [review] = [e.payload for e in body.journal.replay(revocation.REVIEW_RECORD)]
+        assert review["status"] == "COULD_NOT_BE_BUILT" and "KeyError" in review["error"]
+        assert review["commands"] == [] and review["review_id"] == result["integrity_review"]
+        body.apply(world.sign("BODY_PAUSE", {}))
+        assert world.tick(body)["paused"]
+        body.apply(world.sign("BODY_RESUME", {}))
+        world.tick(body, 3)
+        assert not note.exists() and len(body.journal.replay(revocation.REVIEW_RECORD)) == 1
+    [shown] = [r for r in status(world.home)["decisions_required"] if r["kind"] == revocation.REVIEW_ASK]
+    assert "could not be built" in shown["why_now"] and "KeyError" in shown["why_now"]
+
+
+def test_what_a_revoked_device_resumed_keeps_running_and_the_review_lists_the_resume(world):
+    """The founder's sentence does not settle this (ADR open question 3); this pins the draft's default. A mission
+    the founder paused and the phone resumed, and a body the phone resumed, keep running after the phone is revoked:
+    a resume is not a Gate approval, and the mission runs under its own founder-signed mandate. The review lists
+    each resume, pause and stop the key signed, so the founder can pause again."""
+    with world.body() as body:
+        phone = world.enroll(body, "phone", ("LIFECYCLE", "BODY_PAUSE", "BODY_RESUME"))
+        note = workspace(world.home, "m:free") / "n.txt"
+        body.apply(world.sign("MISSION", mission("m:free", checks=[note_check("n", note, "x")],
+                                                 strategies=[write_strategy("w", "n.txt", "x", ["n"])],
+                                                 capabilities=["fs.read", "fs.write"])))
+        body.apply(world.sign("LIFECYCLE", {"mission_id": "m:free", "state": "PAUSED", "reason": "the founder's"}))
+        body.apply(world.sign("BODY_PAUSE", {}))
+        world.tick(body, 2)
+        assert not note.exists()
+        resumes = [world.sign("LIFECYCLE", {"mission_id": "m:free", "state": "ACTIVE", "reason": "phone"}, key=phone),
+                   world.sign("BODY_RESUME", {}, key=phone)]
+        for command in resumes:
+            body.apply(command)
+        result = body.apply(world.revoke("phone", suspected_compromise=True))["result"]
+        assert "voided_requests" not in result
+        [review] = [e.payload for e in body.journal.replay(revocation.REVIEW_RECORD)]
+        assert [c["command_digest"] for c in review["commands"]] == [sha256_json(c) for c in resumes]
+        assert [(x["effect"], x.get("mission_id"), x.get("state")) for x in review["effects"]] == [
+            ("a mission lifecycle it set", "m:free", "ACTIVE"), ("the body resumed by it", None, None)]
+        world.tick(body, 4)
+        assert not body.paused() and note.read_text() == "x"            # the default: what it resumed keeps running
+        # what it resumed and what still runs is in the founder's status, also for a plain revocation
+        body.apply(world.sign("MISSION", mission("m:held", checks=[note_check("n", note, "never")], strategies=[],
+                                                 capabilities=["fs.read"])))
+        laptop = world.enroll(body, "laptop", ("LIFECYCLE",))
+        body.apply(world.sign("LIFECYCLE", {"mission_id": "m:held", "state": "ACTIVE", "reason": "no-op"}, key=laptop))
+        body.apply(world.revoke("laptop"))
+    rows = {r["device_key_id"]: r for r in status(world.home)["security"]["device_revocations"]}
+    # m:free achieved since (it is listed while it runs, never after); the body is still resumed by the phone
+    assert rows[world.kid("phone")]["resumed_and_still_running"] == {"missions": [], "body": True}
+    assert "resumed_and_still_running" not in rows[world.kid("laptop")]   # its ACTIVE lifted no pause
+    with world.body() as body:
+        tablet = world.enroll(body, "tablet", ("LIFECYCLE",))
+        body.apply(world.sign("LIFECYCLE", {"mission_id": "m:held", "state": "PAUSED", "reason": "mine again"}))
+        body.apply(world.sign("LIFECYCLE", {"mission_id": "m:held", "state": "ACTIVE", "reason": "tablet"}, key=tablet))
+        body.apply(world.revoke("tablet"))
+        body.apply(world.sign("BODY_PAUSE", {}))
+    rows = {r["device_key_id"]: r for r in status(world.home)["security"]["device_revocations"]}
+    assert rows[world.kid("tablet")]["resumed_and_still_running"] == {"missions": ["m:held"], "body": False}
+    assert "resumed_and_still_running" not in rows[world.kid("phone")]    # the founder paused the body since
 
 
 def test_the_review_is_put_to_the_founder_where_pending_decisions_already_show(world):

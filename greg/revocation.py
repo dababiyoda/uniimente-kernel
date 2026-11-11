@@ -32,7 +32,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from greg import asks
 from greg.founder import signing_bytes
 from greg.journal import Journal
-from greg.missions import MissionBook, MissionError
+from greg.missions import GATE_SCOPE_ASKS, RECONCILIATION_ASKS, TERMINAL, MissionBook, MissionError
 from provenance.ledger import sha256_json
 
 SUSPECTED = "suspected_compromise"
@@ -63,6 +63,28 @@ def revoke_fields(body: dict) -> tuple[str | None, bool]:
     return body["device_key_id"], SUSPECTED in body
 
 
+def unreviewed_revocation(journal: Journal, kid: str) -> str | None:
+    """The event id of the revocation that ended ``kid``'s latest delegation, when the key stands revoked and no
+    review of that revocation was opened yet; else None. A suspicion often arises after the key was revoked: the
+    founder then signs DEVICE_REVOKE for it again with ``suspected_compromise`` (greg/body.py), which revokes
+    nothing more and opens the review once."""
+    ended, reviewed = None, False
+    for e in journal.replay("device."):
+        if e.payload.get("device_key_id") != kid:
+            continue
+        if e.type == "greg.device.enrolled":
+            ended, reviewed = None, False
+        elif e.type == "greg.device.revoked":
+            ended = ended or e.event_id
+            reviewed = reviewed or e.payload.get(SUSPECTED) is True
+    return ended if ended is not None and not reviewed else None
+
+
+def _revocations(revoked) -> set:
+    """The revocation a review is about: this record, and the earlier one it marks as suspected (if it does)."""
+    return {revoked.event_id, revoked.payload.get("marks_revocation")} - {None}
+
+
 def review_id(revoked) -> str:
     """The request id of the one review a suspected-compromise revocation opens."""
     return "review-" + sha256_json({"device": revoked.payload.get("device_key_id"),
@@ -89,7 +111,7 @@ def _verifies(envelope, public_hex) -> bool:
     return True
 
 
-def _standing(book: MissionBook, rid, answer: dict | None, digest: str, revoked_event: str) -> str:
+def _standing(book: MissionBook, rid, answer: dict | None, digest: str, revocations: set) -> str:
     """Where one DECISION of the revoked key stands as the revocation left the book."""
     if answer is None or answer.get("command_digest") != digest:
         return "NOT_COUNTED: the mission fold does not count this answer"
@@ -97,15 +119,15 @@ def _standing(book: MissionBook, rid, answer: dict | None, digest: str, revoked_
     if void is not None:
         return ("VOIDED_BY_THIS_REVOCATION: what ran under it stays as recorded; it authorizes nothing more, and "
                 "the decision is asked again if it is needed again"
-                if void["voided_by"].get("revocation_event") == revoked_event else
+                if void["voided_by"].get("revocation_event") in revocations else
                 "VOIDED_BY_AN_EARLIER_REVOCATION of this key")
     kind, given = (book.requests.get(rid) or {}).get("kind"), answer.get("answer")
-    if kind == "APPROVAL" and given == "approve":
+    if kind in GATE_SCOPE_ASKS and given == "approve":
         if rid in book.withdrawn:
             return "WITHDRAWN_EARLIER: " + str(book.withdrawn[rid].get("why"))[:200]
         return ("USED: its one paid run happened" if rid in book.consumed else
                 "STANDING: the fold did not attribute this approval to the revoked key; review it first")
-    if kind == "RECONCILIATION":
+    if kind in RECONCILIATION_ASKS:
         return "USED: the reconciliation it gave is recorded"
     if given == "reject":
         return "REJECTION_STANDS: a rejection authorizes nothing"
@@ -142,6 +164,7 @@ def build_review(journal: Journal, revoked) -> dict:
     granted = [r for r in ledger.by_type("event") if r.payload.get("type") == "greg.authority.grant_issued"
                and r.payload.get("founder_approved_scope") and r.seq < seq[revoked.event_id]]
     actions = asof.replay("mission.action")
+    observed = asof.replay("mission.observed")
     compensated = asof.replay("mission.compensated")
     lifecycles = {e.payload.get("command_digest"): e for e in asof.replay("mission.lifecycle")}
     critiques = {e.payload.get("command_digest"): e.payload for e in asof.replay("critique.recorded")}
@@ -162,12 +185,27 @@ def build_review(journal: Journal, revoked) -> dict:
             row.update(request_id=rid, answer=signed.get("answer"), request_kind=request.get("kind"),
                        mission_id=request.get("mission_id"), action_id=request.get("action_id"),
                        scope_digest=request.get("scope_digest"),
-                       standing=_standing(book, rid, answer, digest, revoked.event_id))
+                       standing=_standing(book, rid, answer, digest, _revocations(revoked)))
             basis["request_id"] = rid
             counted = answer is not None and answer.get("command_digest") == digest
-            if counted and request.get("kind") == "APPROVAL" and signed.get("answer") == "approve":
+            if counted and request.get("kind") in GATE_SCOPE_ASKS and signed.get("answer") == "approve":
                 end = min(withdrawn_at.get(rid, cut), cut)     # the approval stood from its acceptance to here
                 recorded = set()                               # grants the mission's own records account for
+                scoped = {r.payload.get("grant_id") for r in granted
+                          if r.payload.get("scope_digest") == request.get("scope_digest") and r.seq > seq[event.event_id]}
+                for e in observed if scoped else ():
+                    # an observation outside the cone (SENSOR_SCOPE): its record names no scope, its receipt's grant does
+                    p = e.payload
+                    if p.get("mission_id") == request.get("mission_id") and at < pos[e.event_id] <= end and p.get("receipt"):
+                        receipt = ledger.find(p["receipt"])
+                        grant_id = receipt.payload.get("grant_id") if receipt is not None else None
+                        if grant_id in scoped:
+                            effects.append({"effect": "an observation read under its approval", "event_id": e.event_id,
+                                            "mission_id": p.get("mission_id"), "check_id": p.get("check_id"),
+                                            "capability": p.get("capability"), "receipt": p.get("receipt"),
+                                            "scope_digest": request.get("scope_digest"), "grant_id": grant_id,
+                                            "at": p.get("at"), "rested_on": basis})
+                            recorded.add(grant_id)
                 for e in actions:
                     p = e.payload
                     if (p.get("mission_id") == request.get("mission_id") and at < pos[e.event_id] <= end
@@ -192,7 +230,7 @@ def build_review(journal: Journal, revoked) -> dict:
                             and p.get("scope_digest") == request.get("scope_digest")):
                         effects.append({**_action_row(e, "a compensation dispatched under its approval", basis),
                                         "original_receipt": p.get("original_receipt")})
-            elif counted and request.get("kind") == "RECONCILIATION":
+            elif counted and request.get("kind") in RECONCILIATION_ASKS:
                 for e in actions:
                     p = e.payload
                     named = (p.get("reconciles") or {}).get("request_id")
@@ -231,7 +269,8 @@ def build_review(journal: Journal, revoked) -> dict:
             effects.append({"effect": {"BODY_PAUSE": "the body paused by it", "BODY_RESUME": "the body resumed by it",
                                        "BODY_STOP": "the body stopped by it"}[kind], "rested_on": basis})
         commands.append(row)
-    voided = sorted(rid for rid, v in book.voided.items() if v["voided_by"].get("revocation_event") == revoked.event_id)
+    voided = sorted(rid for rid, v in book.voided.items()
+                    if v["voided_by"].get("revocation_event") in _revocations(revoked))
     missions = sorted({str(x.get("mission_id")) for x in commands + effects if x.get("mission_id")})
     return {
         "review_id": review_id(revoked), "status": "OPEN_FOR_FOUNDER_REVIEW",
@@ -239,7 +278,9 @@ def build_review(journal: Journal, revoked) -> dict:
                    "delegations": [{k: d.get(k) for k in ("command_digest", "kinds", "expires_at", "at")}
                                    for d in delegations]},
         "revocation": {"event_id": revoked.event_id, "command_digest": revoked.payload.get("command_digest"),
-                       "at": revoked.payload.get("at"), SUSPECTED: True},
+                       "at": revoked.payload.get("at"), SUSPECTED: True,
+                       **({"marks_revocation": revoked.payload["marks_revocation"]}
+                          if revoked.payload.get("marks_revocation") else {})},
         "commands": commands, "effects": effects, "voided_by_this_revocation": voided, "missions": missions,
         "receipts": sorted({x["receipt"] for x in effects if x.get("receipt")}),
         "scopes": sorted({x["scope_digest"] for x in commands + effects if x.get("scope_digest")}),
@@ -247,6 +288,24 @@ def build_review(journal: Journal, revoked) -> dict:
         "unknown": list(UNKNOWN),
         "history_rewritten": False, "revokes_further": False, "authority_created": False,
         "at": revoked.payload.get("at")}
+
+
+def unbuilt_review(revoked, exc: Exception) -> dict:
+    """The review record when the reading itself failed: it says so and lists nothing. A review is a reading, and the
+    body must keep turning without it (the void of the key's unused authority is the fold's and does not wait for
+    it); the founder is still asked, and reads the key's commands on the ledger (``command.accepted`` rows)."""
+    kid = revoked.payload.get("device_key_id")
+    return {"review_id": review_id(revoked), "status": "COULD_NOT_BE_BUILT",
+            "error": f"{type(exc).__name__}: {exc}"[:400],
+            "device": {"device_key_id": kid, "label": None, "delegations": []},
+            "revocation": {"event_id": revoked.event_id, "command_digest": revoked.payload.get("command_digest"),
+                           "at": revoked.payload.get("at"), SUSPECTED: True},
+            "commands": [], "effects": [], "voided_by_this_revocation": [], "missions": [], "receipts": [],
+            "scopes": [], "read_through": {"event_id": revoked.event_id, "what": "nothing: the reading failed"},
+            "unknown": ["everything this key signed: the list could not be built (see error); read the ledger's "
+                        "command.accepted rows whose founder_key_id is this key", *UNKNOWN],
+            "history_rewritten": False, "revokes_further": False, "authority_created": False,
+            "at": revoked.payload.get("at")}
 
 
 def review_ask(review: dict, review_event: str) -> dict:
@@ -259,7 +318,9 @@ def review_ask(review: dict, review_event: str) -> dict:
         "scope_digest": sha256_json({"device": device["device_key_id"], "revocation": review["revocation"]["event_id"]}),
         "why_now": (f"you revoked the device key {label} as a suspected compromise: {counts['commands']} accepted "
                     f"command(s) it signed and {counts['effects']} effect(s) that rested on them are listed for "
-                    "your review"),
+                    "your review" if review["status"] != "COULD_NOT_BE_BUILT" else
+                    f"you revoked the device key {label} as a suspected compromise, and the list of what it signed "
+                    f"could not be built ({review.get('error')}): nothing is listed, so read the ledger yourself"),
         "recommendation": "inspect each listed command and receipt; undo or accept each effect yourself, and answer "
                           "again where the revocation voided an approval",
         "alternatives": ["approve: record that you reviewed the list and the recorded history stands",
@@ -302,7 +363,11 @@ def settle(journal: Journal, book: MissionBook) -> dict:
         rid = review_id(revoked)
         record = journal.retained(REVIEW_RECORD, [rid])
         if record is None:
-            record = journal.record(REVIEW_RECORD, build_review(journal, revoked), key=[rid])
+            try:
+                review = build_review(journal, revoked)
+            except Exception as exc:     # a failed reading is recorded as one; it never stops the body's turn
+                review = unbuilt_review(revoked, exc)
+            record = journal.record(REVIEW_RECORD, review, key=[rid])
         if journal.retained("decision.requested", rid) is None:
             review = record.payload
             asks.record(journal, review_ask(review, record.event_id), quoted=asks.founder_text(
@@ -315,16 +380,47 @@ def settle(journal: Journal, book: MissionBook) -> dict:
     return {"voided": voided, "reviews": reviews}
 
 
+def resumed_and_running(journal: Journal, book: MissionBook) -> dict[str, dict]:
+    """Per device key: what it resumed that is still running. A mission counts when its latest lifecycle record is
+    an ACTIVE that key signed over a pause and the mission has not ended; the body counts when its
+    latest pause or resume record is that key's BODY_RESUME. A reading for the founder's status only: a resume is
+    not a Gate approval, and revoking the key pauses nothing (ADR-20261111, open question 3)."""
+    signer = {e.payload.get("digest"): e.payload.get("founder_key_id") for e in journal.replay("command.accepted")
+              if str(e.payload.get("signer") or "").startswith("device:")
+              and e.payload.get("kind") in ("LIFECYCLE", "BODY_RESUME")}
+    out: dict[str, dict] = {}
+    latest, paused = {}, set()
+    for e in journal.replay("mission.lifecycle"):
+        mid, state = e.payload.get("mission_id"), e.payload.get("state")
+        latest[mid] = e.payload.get("command_digest") if state == "ACTIVE" and mid in paused else None
+        paused = paused | {mid} if state == "PAUSED" else paused - {mid}
+    for mid, digest in sorted(latest.items(), key=lambda kv: str(kv[0])):
+        m = book.missions.get(mid)
+        if digest in signer and m is not None and m.status not in TERMINAL:
+            out.setdefault(signer[digest], {"missions": [], "body": False})["missions"].append(mid)
+    state = [e for e in journal.replay("body.") if e.type in ("greg.body.paused", "greg.body.resumed")]
+    if state and state[-1].type == "greg.body.resumed" and state[-1].payload.get("command_digest") in signer:
+        out.setdefault(signer[state[-1].payload["command_digest"]], {"missions": [], "body": False})["body"] = True
+    return out
+
+
 def summary(journal: Journal, book: MissionBook) -> list[dict]:
-    """Each device revocation on the ledger for the founder's status: what it voided and whether a review is open."""
+    """Each device revocation on the ledger for the founder's status: what it voided, what the key resumed that is
+    still running, and whether a review is open."""
     answered = {rid: a.get("answer") for rid, a in book.answers.items()}
+    revocations = journal.replay("device.revoked")
+    running = resumed_and_running(journal, book) if revocations else {}
     out = []
-    for revoked in journal.replay("device.revoked"):
+    for revoked in revocations:
         p = revoked.payload
         voided = sorted(rid for rid, v in book.voided.items()
                         if v["voided_by"].get("revocation_event") == revoked.event_id)
         row = {"device_key_id": p.get("device_key_id"), "at": p.get("at"),
                "by": p.get("by") or "founder DEVICE_REVOKE", "voided_requests": voided}
+        if p.get("marks_revocation"):       # a suspicion signed after the key was revoked: it revoked nothing itself
+            row["marks_revocation"] = p["marks_revocation"]
+        if p.get("device_key_id") in running:     # nothing is paused for it: the founder decides (pause it, or not)
+            row["resumed_and_still_running"] = running[p["device_key_id"]]
         if p.get(SUSPECTED) is True:
             rid = review_id(revoked)
             row["integrity_review"] = {"request_id": rid, "recorded": journal.retained(REVIEW_RECORD, [rid]) is not None,
